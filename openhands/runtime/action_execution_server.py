@@ -253,10 +253,10 @@ class ActionExecutor:
         # If we get here, the browser is ready
         logger.debug('Browser is ready')
 
-    def _create_bash_session(self):
+    def _create_bash_session(self, cwd: str | None = None):
         if sys.platform == 'win32':
             return WindowsPowershellSession(  # type: ignore[name-defined]
-                work_dir=self._initial_cwd,
+                work_dir=cwd or self._initial_cwd,
                 username=self.username,
                 no_change_timeout_seconds=int(
                     os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 10)
@@ -265,7 +265,7 @@ class ActionExecutor:
             )
         else:
             bash_session = BashSession(
-                work_dir=self._initial_cwd,
+                work_dir=cwd or self._initial_cwd,
                 username=self.username,
                 no_change_timeout_seconds=int(
                     os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 10)
@@ -393,7 +393,7 @@ class ActionExecutor:
         try:
             bash_session = self.bash_session
             if action.is_static:
-                bash_session = self._create_bash_session()
+                bash_session = self._create_bash_session(action.cwd)
             assert bash_session is not None
             obs = await call_sync_from_async(bash_session.execute, action)
             return obs
