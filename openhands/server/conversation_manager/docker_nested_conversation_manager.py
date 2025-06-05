@@ -90,7 +90,8 @@ class DockerNestedConversationManager(ConversationManager):
         """
         Get the running agent loops directly from docker.
         """
-        names = (container.name for container in self.docker_client.containers.list())
+        containers : list[Container]  = self.docker_client.containers.list()
+        names = (container.name or '' for container in containers)
         conversation_ids = {
             name[len('openhands-runtime-') :]
             for name in names
@@ -300,11 +301,11 @@ class DockerNestedConversationManager(ConversationManager):
             logger.error("error_stopping_container")
         container.stop()
 
-    async def get_agent_loop_info(self, user_id=None, filter_to_sids=None):
+    async def get_agent_loop_info(self, user_id: str | None = None, filter_to_sids: set[str] | None = None) -> list[AgentLoopInfo]:
         results = []
-        containers = self.docker_client.containers.list()
+        containers : list[Container] = self.docker_client.containers.list()
         for container in containers:
-            if not container.name.startswith('openhands-runtime-'):
+            if not container.name or not container.name.startswith('openhands-runtime-'):
                 continue
             conversation_id = container.name[len('openhands-runtime-') :]
             if filter_to_sids is not None and conversation_id not in filter_to_sids:
@@ -367,11 +368,12 @@ class DockerNestedConversationManager(ConversationManager):
     def get_nested_url_for_container(self, container: Container) -> str:
         env = container.attrs['Config']['Env']
         container_port = int(next(e[5:] for e in env if e.startswith('port=')))
-        conversation_id = container.name[len('openhands-runtime-') :]
+        container_name = container.name or ''
+        conversation_id = container_name[len('openhands-runtime-') :]
         nested_url = f'{self.config.sandbox.local_runtime_url}:{container_port}/api/conversations/{conversation_id}'
         return nested_url
 
-    def _get_session_api_key_for_conversation(self, conversation_id: str):
+    def _get_session_api_key_for_conversation(self, conversation_id: str) -> str:
         jwt_secret = self.config.jwt_secret.get_secret_value()  # type:ignore
         conversation_key = f'{jwt_secret}:{conversation_id}'.encode()
         session_api_key = (
@@ -381,7 +383,7 @@ class DockerNestedConversationManager(ConversationManager):
         )
         return session_api_key
 
-    async def ensure_num_conversations_below_limit(self, sid: str, user_id: str | None):
+    async def ensure_num_conversations_below_limit(self, sid: str, user_id: str | None) -> None:
         response_ids = await self.get_running_agent_loops(user_id)
         if len(response_ids) >= self.config.max_concurrent_conversations:
             logger.info(
@@ -413,7 +415,7 @@ class DockerNestedConversationManager(ConversationManager):
                 )
                 await self.close_session(oldest_conversation_id)
 
-    def _get_provider_handler(self, settings: Settings):
+    def _get_provider_handler(self, settings: Settings) -> ProviderHandler:
         provider_tokens = None
         if isinstance(settings, ConversationInitData):
             provider_tokens = settings.git_provider_tokens
@@ -423,7 +425,7 @@ class DockerNestedConversationManager(ConversationManager):
         )
         return provider_handler
 
-    async def _create_runtime(self, sid: str, user_id: str | None, settings: Settings):
+    async def _create_runtime(self, sid: str, user_id: str | None, settings: Settings) -> DockerRuntime:
         # This session is created here only because it is the easiest way to get a runtime, which
         # is the easiest way to create the needed docker container
         session = Session(
@@ -498,7 +500,7 @@ class DockerNestedConversationManager(ConversationManager):
             if container:
                 status = container.status
                 if status == 'exited':
-                    await call_sync_from_async(container.start())
+                    await call_sync_from_async(container.start)
                 return True
             return False
         except docker.errors.NotFound as e:
