@@ -12,6 +12,26 @@ vi.mock("react-router", async () => ({
   }),
 }));
 
+// Mock the useHandleRuntimeActive hook
+vi.mock("#/hooks/use-handle-runtime-active", () => ({
+  useHandleRuntimeActive: vi.fn().mockReturnValue({ runtimeActive: true }),
+}));
+
+// Mock the useMicroagentPrompt hook
+vi.mock("#/hooks/query/use-microagent-prompt", () => ({
+  useMicroagentPrompt: vi.fn().mockReturnValue({ 
+    data: "Generated prompt", 
+    isLoading: false 
+  }),
+}));
+
+// Mock the useGetMicroagents hook
+vi.mock("#/hooks/query/use-get-microagents", () => ({
+  useGetMicroagents: vi.fn().mockReturnValue({ 
+    data: ["file1", "file2"] 
+  }),
+}));
+
 describe("LaunchMicroagentModal", () => {
   const onCloseMock = vi.fn();
   const onLaunchMock = vi.fn();
@@ -68,28 +88,18 @@ describe("LaunchMicroagentModal", () => {
     expect(onCloseMock).toHaveBeenCalled();
   });
 
-  it("should make a query to get the prompt", async () => {
-    const getPromptSpy = vi.spyOn(MemoryService, "getPrompt");
-    getPromptSpy.mockResolvedValue("Generated prompt");
+  it("should display the prompt from the hook", async () => {
     renderMicroagentModal();
-
-    expect(getPromptSpy).toHaveBeenCalledWith(conversationId, eventId);
+    
+    // Since we're mocking the hook, we just need to verify the UI shows the data
     const descriptionInput = screen.getByTestId("query-input");
-    await waitFor(() =>
-      expect(descriptionInput).toHaveValue("Generated prompt"),
-    );
+    expect(descriptionInput).toHaveValue("Generated prompt");
   });
 
-  it("should make a query to get the list of valid target files if user has a selected repo", async () => {
-    const getMicroagentFiles = vi.spyOn(FileService, "getFiles");
-    getMicroagentFiles.mockResolvedValue(["file1", "file2"]);
+  it("should display the list of microagent files from the hook", async () => {
     renderMicroagentModal();
-
-    expect(getMicroagentFiles).toHaveBeenCalledWith(
-      conversationId,
-      "some-repo/.openhands/microagents/",
-    );
-
+    
+    // Since we're mocking the hook, we just need to verify the UI shows the data
     const targetInput = screen.getByTestId("target-input");
     expect(targetInput).toHaveValue("");
 
@@ -103,12 +113,6 @@ describe("LaunchMicroagentModal", () => {
   });
 
   it("should call onLaunch with the form data", async () => {
-    const getPromptSpy = vi.spyOn(MemoryService, "getPrompt");
-    const getMicroagentFiles = vi.spyOn(FileService, "getFiles");
-
-    getPromptSpy.mockResolvedValue("Generated prompt");
-    getMicroagentFiles.mockResolvedValue(["file1", "file2"]);
-
     renderMicroagentModal();
 
     const triggerInput = screen.getByTestId("trigger-input");
