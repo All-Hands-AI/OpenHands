@@ -70,16 +70,10 @@ def check_maximum_retries_exceeded(eval_output_dir):
             if content:
                 failed_instances = content.split('\n')
                 failed_count = len(failed_instances)
-                logger.warning(
+                logger.info(
                     f'ATTENTION: {failed_count} instances reached maximum error retries and were skipped.'
                 )
-                logger.warning(f'These instances are listed in: {retries_file_path}')
-                print(
-                    f'\n\033[1;33mATTENTION: {failed_count} instances reached maximum error retries and were skipped.\033[0m'
-                )
-                print(
-                    f'\033[1;33mThese instances are listed in: {retries_file_path}\033[0m'
-                )
+                logger.info(f'These instances are listed in: {retries_file_path}')
 
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
