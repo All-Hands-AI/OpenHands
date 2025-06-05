@@ -16,7 +16,6 @@ export const useActiveConversation = () => {
 
   useEffect(() => {
     const conversation = userConversation.data;
-    console.log("TRACE:setCurrentConversation", conversation);
     OpenHands.setCurrentConversation(conversation || null);
   }, [conversationId, userConversation.isFetched]);
   return userConversation;
