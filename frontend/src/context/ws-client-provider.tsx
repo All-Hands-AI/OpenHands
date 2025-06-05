@@ -301,11 +301,18 @@ export function WsClientProvider({
     if (!conversationId) {
       throw new Error("No conversation ID provided");
     }
-    if (!conversation || conversation.status === "STARTING") {
+    if (
+      !conversation ||
+      ["STOPPED", "STARTING"].includes(conversation.status)
+    ) {
       return () => undefined; // conversation not yet loaded
     }
 
     let sio = sioRef.current;
+
+    if (sio?.connected) {
+      sio.disconnect();
+    }
 
     const lastEvent = lastEventRef.current;
     const query = {

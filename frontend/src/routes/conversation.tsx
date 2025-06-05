@@ -43,7 +43,7 @@ function AppContent() {
   const { t } = useTranslation();
   const { data: settings } = useSettings();
   const { conversationId } = useConversationId();
-  const { data: conversation, isFetched } = useActiveConversation();
+  const { data: conversation, isFetched, refetch } = useActiveConversation();
   const { data: isAuthed } = useIsAuthed();
 
   const { curAgentState } = useSelector((state: RootState) => state.agent);
@@ -63,9 +63,11 @@ function AppContent() {
       navigate("/");
     } else if (conversation?.status === "STOPPED") {
       // start the conversation if the state is stopped on initial load
-      OpenHands.startConversation(conversation.conversation_id);
+      OpenHands.startConversation(conversation.conversation_id).then(() =>
+        refetch(),
+      );
     }
-  }, [conversation, isFetched, isAuthed]);
+  }, [conversation?.conversation_id, isFetched, isAuthed]);
 
   React.useEffect(() => {
     dispatch(clearTerminal());
