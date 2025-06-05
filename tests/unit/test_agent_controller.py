@@ -826,17 +826,19 @@ async def test_context_window_exceeded_error_handling(
     # size (because we return a message action, which triggers a recall, which
     # triggers a recall response). But if the pre/post-views are on the turn
     # when we throw the context window exceeded error, we should see the
-    # post-step view compressed (or rather, a CondensationAction added).
+    # post-step view compressed (condensation effects should be visible).
     for index, (first_view, second_view) in enumerate(
         zip(step_state.views[:-1], step_state.views[1:])
     ):
         if index == error_after:
-            # Verify that the CondensationAction is present in the second view (after error)
-            # but not in the first view (before error)
+            # Verify that no CondensationAction is present in either view
+            # (CondensationAction events are never included in views)
             assert not any(isinstance(e, CondensationAction) for e in first_view.events)
-            assert any(isinstance(e, CondensationAction) for e in second_view.events)
-            # The length might not strictly decrease due to CondensationAction being added
-            assert len(first_view) == len(second_view)
+            assert not any(
+                isinstance(e, CondensationAction) for e in second_view.events
+            )
+            # The view length should be compressed due to condensation effects
+            assert len(first_view) > len(second_view)
         else:
             # Before the error, the view length should increase
             assert len(first_view) < len(second_view)
