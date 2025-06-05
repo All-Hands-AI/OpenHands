@@ -3,6 +3,8 @@ import logging
 import os
 import sys
 
+from prompt_toolkit import print_formatted_text
+from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.shortcuts import clear
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
@@ -10,6 +12,7 @@ from openhands.cli.commands import (
     check_folder_security_agreement,
     handle_commands,
 )
+from openhands.cli.settings import modify_llm_settings_basic
 from openhands.cli.tui import (
     UsageMetrics,
     display_agent_running_message,
@@ -109,6 +112,7 @@ async def run_session(
     task_content: str | None = None,
     conversation_instructions: str | None = None,
     session_name: str | None = None,
+    skip_banner: bool = False,
 ) -> bool:
     reload_microagents = False
     new_session_requested = False
@@ -279,8 +283,9 @@ async def run_session(
     # Clear the terminal
     clear()
 
-    # Show OpenHands banner and session ID
-    display_banner(session_id=sid)
+    # Show OpenHands banner and session ID if not skipped
+    if not skip_banner:
+        display_banner(session_id=sid)
 
     welcome_message = 'What do you want to build?'  # from the application
     initial_message = ''  # from the user
@@ -325,7 +330,24 @@ async def run_session(
     return new_session_requested
 
 
-async def main(loop: asyncio.AbstractEventLoop) -> None:
+async def run_setup_flow(config: OpenHandsConfig, settings_store: FileSettingsStore):
+    """Run the setup flow to configure initial settings.
+
+    Returns:
+        bool: True if settings were successfully configured, False otherwise.
+    """
+    # Display the banner with ASCII art first
+    display_banner(session_id='setup')
+
+    print_formatted_text(
+        HTML('<grey>No settings found. Starting initial setup...</grey>\n')
+    )
+
+    # Use the existing settings modification function for basic setup
+    await modify_llm_settings_basic(config, settings_store)
+
+
+async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
     """Runs the agent in CLI mode."""
     args = parse_arguments()
 
@@ -338,6 +360,19 @@ async def main(loop: asyncio.AbstractEventLoop) -> None:
     # TODO: Make this generic?
     settings_store = await FileSettingsStore.get_instance(config=config, user_id=None)
     settings = await settings_store.load()
+
+    # Track if we've shown the banner during setup
+    banner_shown = False
+
+    # If settings don't exist, automatically enter the setup flow
+    if not settings:
+        # Clear the terminal before showing the banner
+        clear()
+
+        await run_setup_flow(config, settings_store)
+        banner_shown = True
+
+        settings = await settings_store.load()
 
     # Use settings from settings store if available and override with command line arguments
     if settings:
@@ -408,6 +443,7 @@ async def main(loop: asyncio.AbstractEventLoop) -> None:
         current_dir,
         task_str,
         session_name=args.name,
+        skip_banner=banner_shown,
     )
 
     # If a new session was requested, run it
@@ -417,11 +453,11 @@ async def main(loop: asyncio.AbstractEventLoop) -> None:
         )
 
 
-if __name__ == '__main__':
+def main():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
-        loop.run_until_complete(main(loop))
+        loop.run_until_complete(main_with_loop(loop))
     except KeyboardInterrupt:
         print('Received keyboard interrupt, shutting down...')
     except ConnectionRefusedError as e:
@@ -443,3 +479,7 @@ if __name__ == '__main__':
         except Exception as e:
             print(f'Error during cleanup: {e}')
             sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()

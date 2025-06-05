@@ -4,6 +4,7 @@ from typing import Any
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
+from openhands.experiments.experiment_manager import ExperimentManagerImpl
 from openhands.integrations.provider import (
     CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA,
     PROVIDER_TOKEN_TYPE,
@@ -78,6 +79,8 @@ async def create_new_conversation(
     session_init_args['git_provider'] = git_provider
     session_init_args['conversation_instructions'] = conversation_instructions
     conversation_init_data = ConversationInitData(**session_init_args)
+
+
     logger.info('Loading conversation store')
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
     logger.info('ServerConversation store loaded')
@@ -93,6 +96,7 @@ async def create_new_conversation(
             extra={'user_id': user_id, 'session_id': conversation_id},
         )
 
+        conversation_init_data = ExperimentManagerImpl.run_conversation_variant_test(user_id, conversation_id, conversation_init_data)
         conversation_title = get_default_conversation_title(conversation_id)
 
         logger.info(f'Saving metadata for conversation {conversation_id}')
@@ -105,6 +109,7 @@ async def create_new_conversation(
                 selected_repository=selected_repository,
                 selected_branch=selected_branch,
                 git_provider=git_provider,
+                llm_model=settings.llm_model,
             )
         )
 

@@ -21,6 +21,17 @@ from openhands.utils.import_utils import get_impl
 
 
 class GitLabService(BaseGitService, GitService):
+    """Default implementation of GitService for GitLab integration.
+
+    TODO: This doesn't seem a good candidate for the get_impl() pattern. What are the abstract methods we should actually separate and implement here?
+    This is an extension point in OpenHands that allows applications to customize GitLab
+    integration behavior. Applications can substitute their own implementation by:
+    1. Creating a class that inherits from GitService
+    2. Implementing all required methods
+    3. Setting server_config.gitlab_service_class to the fully qualified name of the class
+
+    The class is instantiated via get_impl() in openhands.server.shared.py.
+    """
     BASE_URL = 'https://gitlab.com/api/v4'
     GRAPHQL_URL = 'https://gitlab.com/api/graphql'
     token: SecretStr = SecretStr('')
@@ -465,38 +476,37 @@ class GitLabService(BaseGitService, GitService):
             - MR URL when successful
             - Error message when unsuccessful
         """
-        try:
-            # Convert string ID to URL-encoded path if needed
-            project_id = str(id).replace('/', '%2F') if isinstance(id, str) else id
-            url = f'{self.BASE_URL}/projects/{project_id}/merge_requests'
 
-            # Set default description if none provided
-            if not description:
-                description = (
-                    f'Merging changes from {source_branch} into {target_branch}'
-                )
+        # Convert string ID to URL-encoded path if needed
+        project_id = str(id).replace('/', '%2F') if isinstance(id, str) else id
+        url = f'{self.BASE_URL}/projects/{project_id}/merge_requests'
 
-            # Prepare the request payload
-            payload = {
-                'source_branch': source_branch,
-                'target_branch': target_branch,
-                'title': title,
-                'description': description,
-            }
-
-            # Make the POST request to create the MR
-            response, _ = await self._make_request(
-                url=url, params=payload, method=RequestMethod.POST
+        # Set default description if none provided
+        if not description:
+            description = (
+                f'Merging changes from {source_branch} into {target_branch}'
             )
 
-            # Return the web URL of the created MR
-            if 'web_url' in response:
-                return response['web_url']
-            else:
-                return f'MR created but URL not found in response: {response}'
+        # Prepare the request payload
+        payload = {
+            'source_branch': source_branch,
+            'target_branch': target_branch,
+            'title': title,
+            'description': description,
+        }
 
-        except Exception as e:
-            return f'Error creating merge request: {str(e)}'
+        # Make the POST request to create the MR
+        response, _ = await self._make_request(
+            url=url, params=payload, method=RequestMethod.POST
+        )
+
+        # Return the web URL of the created MR
+        if 'web_url' in response:
+            return response['web_url']
+        else:
+            return f'MR created but URL not found in response: {response}'
+
+
 
 
 gitlab_service_cls = os.environ.get(
