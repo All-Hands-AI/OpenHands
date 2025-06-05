@@ -20,6 +20,7 @@ from openhands.events.observation.commands import (
     CmdOutputMetadata,
     CmdOutputObservation,
 )
+from openhands.runtime.utils.bash_constants import TIMEOUT_MESSAGE_TEMPLATE
 from openhands.utils.shutdown_listener import should_continue
 
 pythonnet.load('coreclr')
@@ -559,9 +560,7 @@ class WindowsPowershellSession:
             else:
                 metadata.suffix = (
                     f'\n[The command timed out after {timeout_seconds} seconds. '
-                    "You may wait longer to see additional output by sending empty command '', "
-                    'send other commands to interact with the current process, '
-                    'send keys to interrupt/kill the command, or use the timeout parameter in execute_bash to set a longer timeout for future commands..]'
+                    f'{TIMEOUT_MESSAGE_TEMPLATE.format(timeout_param="the timeout", timeout_action="to set a longer timeout")}]'
                 )
 
             return CmdOutputObservation(
@@ -1331,9 +1330,7 @@ class WindowsPowershellSession:
             # Align suffix with bash.py timeout message
             suffix = (
                 f'\n[The command timed out after {timeout_seconds} seconds. '
-                "You may wait longer to see additional output by sending empty command '', "
-                'send other commands to interact with the current process, '
-                'send keys to interrupt/kill the command, or use the timeout parameter in execute_bash to set a longer timeout for future commands..]'
+                f'{TIMEOUT_MESSAGE_TEMPLATE.format(timeout_param="the timeout", timeout_action="to set a longer timeout")}]'
             )
         elif shutdown_requested:
             # Align suffix with bash.py equivalent (though bash.py might not have specific shutdown message)

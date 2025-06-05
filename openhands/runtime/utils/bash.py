@@ -17,6 +17,7 @@ from openhands.events.observation.commands import (
     CmdOutputMetadata,
     CmdOutputObservation,
 )
+from openhands.runtime.utils.bash_constants import TIMEOUT_MESSAGE_TEMPLATE
 from openhands.utils.shutdown_listener import should_continue
 
 
@@ -379,10 +380,7 @@ class BashSession:
         metadata = CmdOutputMetadata()  # No metadata available
         metadata.suffix = (
             f'\n[The command has no new output after {self.NO_CHANGE_TIMEOUT_SECONDS} seconds. '
-            "You may wait longer to see additional output by sending empty command '', "
-            'send other commands to interact with the current process, '
-            'send keys to interrupt/kill the command, '
-            'or use the timeout parameter in execute_bash to set a longer timeout for future commands.]'
+            f'{TIMEOUT_MESSAGE_TEMPLATE.format(timeout_param="the timeout", timeout_action="to set a longer timeout")}]'
         )
         command_output = self._get_command_output(
             command,
@@ -415,10 +413,7 @@ class BashSession:
         metadata = CmdOutputMetadata()  # No metadata available
         metadata.suffix = (
             f'\n[The command timed out after {timeout} seconds. '
-            "You may wait longer to see additional output by sending empty command '', "
-            'send other commands to interact with the current process, '
-            'send keys to interrupt/kill the command, '
-            'or use a higher timeout parameter in execute_bash for future commands.]'
+            f'{TIMEOUT_MESSAGE_TEMPLATE.format(timeout_param="a higher timeout", timeout_action="")}]'
         )
         command_output = self._get_command_output(
             command,

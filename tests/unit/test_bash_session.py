@@ -5,6 +5,15 @@ import time
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction
 from openhands.runtime.utils.bash import BashCommandStatus, BashSession
+from openhands.runtime.utils.bash_constants import TIMEOUT_MESSAGE_TEMPLATE
+
+
+def get_no_change_timeout_suffix(timeout_seconds):
+    """Helper function to generate the expected no-change timeout suffix."""
+    return (
+        f'\n[The command has no new output after {timeout_seconds} seconds. '
+        f'{TIMEOUT_MESSAGE_TEMPLATE.format(timeout_param="the timeout", timeout_action="to set a longer timeout")}]'
+    )
 
 
 def test_session_initialization():
