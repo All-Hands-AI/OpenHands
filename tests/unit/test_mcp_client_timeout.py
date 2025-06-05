@@ -7,7 +7,7 @@ from openhands.mcp.client import MCPClient
 
 @pytest.mark.asyncio
 async def test_connect_sse_timeout():
-    """Test that connect_sse properly times out when server_url is invalid."""
+    """Test that connect_http properly times out when server_url is invalid."""
     client = MCPClient()
 
     server = MCPSSEServerConfig(url='http://server1:8080')
