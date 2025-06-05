@@ -9,6 +9,7 @@ import { hasAdvancedSettingsSet } from "#/utils/has-advanced-settings-set";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { SettingsSwitch } from "#/components/features/settings/settings-switch";
 import { I18nKey } from "#/i18n/declaration";
+import { getProviderKey } from "#/utils/map-provider";
 import { SettingsInput } from "#/components/features/settings/settings-input";
 import { HelpLink } from "#/components/features/settings/help-link";
 import { BrandButton } from "#/components/features/settings/brand-button";
@@ -93,10 +94,15 @@ function LlmSettingsScreen() {
   };
 
   const basicFormAction = (formData: FormData) => {
-    const provider = formData.get("llm-provider-input")?.toString();
+    const providerDisplayName = formData.get("llm-provider-input")?.toString();
     const model = formData.get("llm-model-input")?.toString();
     const apiKey = formData.get("llm-api-key-input")?.toString();
     const searchApiKey = formData.get("search-api-key-input")?.toString();
+
+    // Convert display name to provider key
+    const provider = providerDisplayName
+      ? getProviderKey(providerDisplayName)
+      : undefined;
 
     const fullLlmModel =
       provider && model && `${provider}/${model}`.toLowerCase();
