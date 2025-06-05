@@ -2261,11 +2261,2682 @@ while true; do
 done
 ```
 
-This completes the first part of the comprehensive DeepSeek R1-0528 deployment guide. The guide covers:
+## 5. Performance Optimization
 
-1. **Transformers Library Integration** with both pipeline and direct model loading approaches
-2. **Kaggle Notebook Implementation** with memory optimization and cell-by-cell breakdown
-3. **vLLM Local Server Setup** with production-ready features
-4. **Docker Deployment** with load balancing and monitoring
+### GPU Acceleration Setup
 
-Would you like me to continue with the remaining sections covering performance optimization, production-ready features, and troubleshooting?
+```python
+# gpu_optimization.py
+import torch
+import os
+from typing import Dict, Any, Optional
+import logging
+
+logger = logging.getLogger(__name__)
+
+class GPUOptimizer:
+    """GPU optimization utilities for DeepSeek R1-0528"""
+    
+    @staticmethod
+    def detect_gpu_config() -> Dict[str, Any]:
+        """Detect optimal GPU configuration"""
+        config = {
+            "cuda_available": torch.cuda.is_available(),
+            "gpu_count": torch.cuda.device_count() if torch.cuda.is_available() else 0,
+            "devices": []
+        }
+        
+        if config["cuda_available"]:
+            for i in range(config["gpu_count"]):
+                props = torch.cuda.get_device_properties(i)
+                device_info = {
+                    "device_id": i,
+                    "name": props.name,
+                    "total_memory_gb": props.total_memory / 1e9,
+                    "major": props.major,
+                    "minor": props.minor,
+                    "multi_processor_count": props.multi_processor_count
+                }
+                config["devices"].append(device_info)
+        
+        return config
+    
+    @staticmethod
+    def optimize_cuda_settings():
+        """Apply optimal CUDA settings"""
+        if not torch.cuda.is_available():
+            logger.warning("CUDA not available, skipping GPU optimizations")
+            return
+        
+        # Enable TensorFloat-32 (TF32) for better performance on Ampere GPUs
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
+        
+        # Enable cuDNN benchmark for consistent input sizes
+        torch.backends.cudnn.benchmark = True
+        
+        # Set memory fraction to avoid OOM
+        torch.cuda.set_per_process_memory_fraction(0.95)
+        
+        # Enable memory pool for faster allocation
+        os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:128"
+        
+        logger.info("CUDA optimizations applied")
+    
+    @staticmethod
+    def get_optimal_device_map(model_size_gb: float, available_gpus: int) -> Dict[str, str]:
+        """Calculate optimal device mapping for model sharding"""
+        if available_gpus == 0:
+            return {"": "cpu"}
+        
+        if available_gpus == 1:
+            return {"": "cuda:0"}
+        
+        # Multi-GPU sharding strategy
+        device_map = {}
+        
+        # Distribute layers across GPUs
+        if model_size_gb > 20:  # Large model requiring sharding
+            # Example sharding for DeepSeek R1-0528
+            layers_per_gpu = 32 // available_gpus
+            
+            for gpu_id in range(available_gpus):
+                start_layer = gpu_id * layers_per_gpu
+                end_layer = min((gpu_id + 1) * layers_per_gpu, 32)
+                
+                for layer in range(start_layer, end_layer):
+                    device_map[f"model.layers.{layer}"] = f"cuda:{gpu_id}"
+            
+            # Place embedding and output layers
+            device_map["model.embed_tokens"] = "cuda:0"
+            device_map["model.norm"] = f"cuda:{available_gpus-1}"
+            device_map["lm_head"] = f"cuda:{available_gpus-1}"
+        else:
+            # Single GPU for smaller models
+            device_map = {"": "cuda:0"}
+        
+        return device_map
+
+# Usage example
+gpu_config = GPUOptimizer.detect_gpu_config()
+print(f"GPU Configuration: {gpu_config}")
+
+GPUOptimizer.optimize_cuda_settings()
+device_map = GPUOptimizer.get_optimal_device_map(model_size_gb=25, available_gpus=gpu_config["gpu_count"])
+print(f"Optimal device map: {device_map}")
+```
+
+### Quantization Strategies
+
+```python
+# quantization_utils.py
+import torch
+from transformers import BitsAndBytesConfig, AutoModelForCausalLM, AutoTokenizer
+from typing import Dict, Any, Optional
+import logging
+
+logger = logging.getLogger(__name__)
+
+class QuantizationManager:
+    """Advanced quantization strategies for DeepSeek R1-0528"""
+    
+    @staticmethod
+    def get_4bit_config(
+        compute_dtype: torch.dtype = torch.float16,
+        quant_type: str = "nf4",
+        use_double_quant: bool = True
+    ) -> BitsAndBytesConfig:
+        """Get optimized 4-bit quantization config"""
+        return BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_compute_dtype=compute_dtype,
+            bnb_4bit_use_double_quant=use_double_quant,
+            bnb_4bit_quant_type=quant_type,  # "fp4" or "nf4"
+            bnb_4bit_quant_storage=torch.uint8
+        )
+    
+    @staticmethod
+    def get_8bit_config() -> BitsAndBytesConfig:
+        """Get optimized 8-bit quantization config"""
+        return BitsAndBytesConfig(
+            load_in_8bit=True,
+            llm_int8_threshold=6.0,
+            llm_int8_has_fp16_weight=False,
+            llm_int8_enable_fp32_cpu_offload=True
+        )
+    
+    @staticmethod
+    def benchmark_quantization_methods(
+        model_name: str = "deepseek-ai/DeepSeek-R1-0528",
+        test_prompt: str = "Write a Python function to calculate fibonacci numbers."
+    ) -> Dict[str, Dict[str, Any]]:
+        """Benchmark different quantization methods"""
+        
+        results = {}
+        tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+        
+        # Test configurations
+        configs = {
+            "fp16": {
+                "torch_dtype": torch.float16,
+                "quantization_config": None
+            },
+            "4bit_nf4": {
+                "torch_dtype": torch.float16,
+                "quantization_config": QuantizationManager.get_4bit_config(quant_type="nf4")
+            },
+            "4bit_fp4": {
+                "torch_dtype": torch.float16,
+                "quantization_config": QuantizationManager.get_4bit_config(quant_type="fp4")
+            },
+            "8bit": {
+                "torch_dtype": torch.float16,
+                "quantization_config": QuantizationManager.get_8bit_config()
+            }
+        }
+        
+        for config_name, config in configs.items():
+            try:
+                logger.info(f"Testing {config_name} configuration")
+                
+                # Load model
+                start_time = time.time()
+                model = AutoModelForCausalLM.from_pretrained(
+                    model_name,
+                    trust_remote_code=True,
+                    device_map="auto",
+                    low_cpu_mem_usage=True,
+                    **config
+                )
+                load_time = time.time() - start_time
+                
+                # Get memory usage
+                if torch.cuda.is_available():
+                    memory_used = torch.cuda.memory_allocated() / 1e9
+                else:
+                    memory_used = 0
+                
+                # Test generation
+                inputs = tokenizer(test_prompt, return_tensors="pt")
+                if torch.cuda.is_available():
+                    inputs = {k: v.to(model.device) for k, v in inputs.items()}
+                
+                start_time = time.time()
+                with torch.no_grad():
+                    outputs = model.generate(
+                        **inputs,
+                        max_new_tokens=100,
+                        temperature=0.7,
+                        do_sample=True,
+                        pad_token_id=tokenizer.eos_token_id
+                    )
+                generation_time = time.time() - start_time
+                
+                # Calculate tokens per second
+                output_tokens = outputs.shape[1] - inputs['input_ids'].shape[1]
+                tokens_per_second = output_tokens / generation_time
+                
+                results[config_name] = {
+                    "load_time": load_time,
+                    "memory_usage_gb": memory_used,
+                    "generation_time": generation_time,
+                    "tokens_per_second": tokens_per_second,
+                    "output_tokens": output_tokens,
+                    "success": True
+                }
+                
+                # Cleanup
+                del model
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+                
+            except Exception as e:
+                logger.error(f"Failed to test {config_name}: {e}")
+                results[config_name] = {
+                    "success": False,
+                    "error": str(e)
+                }
+        
+        return results
+
+# Advanced quantization with custom configurations
+class AdaptiveQuantization:
+    """Adaptive quantization based on available resources"""
+    
+    def __init__(self, target_memory_gb: float = 16):
+        self.target_memory_gb = target_memory_gb
+    
+    def get_optimal_config(self, model_size_gb: float) -> Dict[str, Any]:
+        """Get optimal quantization config based on constraints"""
+        
+        if model_size_gb <= self.target_memory_gb:
+            # No quantization needed
+            return {
+                "quantization_config": None,
+                "torch_dtype": torch.float16,
+                "strategy": "fp16"
+            }
+        elif model_size_gb <= self.target_memory_gb * 2:
+            # 8-bit quantization
+            return {
+                "quantization_config": self.get_8bit_config(),
+                "torch_dtype": torch.float16,
+                "strategy": "8bit"
+            }
+        else:
+            # 4-bit quantization
+            return {
+                "quantization_config": self.get_4bit_config(),
+                "torch_dtype": torch.float16,
+                "strategy": "4bit"
+            }
+    
+    def estimate_memory_usage(self, model_size_gb: float, strategy: str) -> float:
+        """Estimate memory usage for different strategies"""
+        multipliers = {
+            "fp16": 1.0,
+            "8bit": 0.5,
+            "4bit": 0.25
+        }
+        
+        base_memory = model_size_gb * multipliers.get(strategy, 1.0)
+        # Add overhead for activations and gradients
+        return base_memory * 1.2
+
+# Usage example
+adaptive_quant = AdaptiveQuantization(target_memory_gb=16)
+config = adaptive_quant.get_optimal_config(model_size_gb=25)
+print(f"Optimal config: {config}")
+
+estimated_memory = adaptive_quant.estimate_memory_usage(25, config["strategy"])
+print(f"Estimated memory usage: {estimated_memory:.2f} GB")
+```
+
+### Memory Management and Caching
+
+```python
+# memory_management.py
+import torch
+import gc
+import psutil
+import os
+import time
+from typing import Dict, Any, Optional, List
+from functools import wraps
+import logging
+
+logger = logging.getLogger(__name__)
+
+class MemoryManager:
+    """Advanced memory management for DeepSeek R1-0528"""
+    
+    def __init__(self, max_memory_gb: Optional[float] = None):
+        self.max_memory_gb = max_memory_gb or self._get_available_memory()
+        self.memory_threshold = 0.9  # 90% threshold
+        self.cleanup_callbacks = []
+    
+    def _get_available_memory(self) -> float:
+        """Get available system memory in GB"""
+        if torch.cuda.is_available():
+            return torch.cuda.get_device_properties(0).total_memory / 1e9
+        else:
+            return psutil.virtual_memory().total / 1e9
+    
+    def get_memory_info(self) -> Dict[str, float]:
+        """Get current memory usage information"""
+        info = {}
+        
+        # System memory
+        memory = psutil.virtual_memory()
+        info.update({
+            "system_total_gb": memory.total / 1e9,
+            "system_used_gb": memory.used / 1e9,
+            "system_available_gb": memory.available / 1e9,
+            "system_percent": memory.percent
+        })
+        
+        # GPU memory
+        if torch.cuda.is_available():
+            for i in range(torch.cuda.device_count()):
+                allocated = torch.cuda.memory_allocated(i) / 1e9
+                reserved = torch.cuda.memory_reserved(i) / 1e9
+                total = torch.cuda.get_device_properties(i).total_memory / 1e9
+                
+                info.update({
+                    f"gpu_{i}_allocated_gb": allocated,
+                    f"gpu_{i}_reserved_gb": reserved,
+                    f"gpu_{i}_total_gb": total,
+                    f"gpu_{i}_free_gb": total - reserved
+                })
+        
+        return info
+    
+    def cleanup_memory(self, aggressive: bool = False):
+        """Perform memory cleanup"""
+        # Run custom cleanup callbacks
+        for callback in self.cleanup_callbacks:
+            try:
+                callback()
+            except Exception as e:
+                logger.warning(f"Cleanup callback failed: {e}")
+        
+        # Python garbage collection
+        gc.collect()
+        
+        # PyTorch GPU memory cleanup
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+            torch.cuda.synchronize()
+            
+            if aggressive:
+                # Force memory defragmentation
+                torch.cuda.memory._dump_snapshot("memory_snapshot.pickle")
+                torch.cuda.empty_cache()
+    
+    def register_cleanup_callback(self, callback):
+        """Register a cleanup callback function"""
+        self.cleanup_callbacks.append(callback)
+    
+    def memory_monitor(self, func):
+        """Decorator to monitor memory usage of functions"""
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            # Memory before
+            memory_before = self.get_memory_info()
+            
+            try:
+                result = func(*args, **kwargs)
+                
+                # Memory after
+                memory_after = self.get_memory_info()
+                
+                # Log memory usage
+                if torch.cuda.is_available():
+                    gpu_used = memory_after.get("gpu_0_allocated_gb", 0) - memory_before.get("gpu_0_allocated_gb", 0)
+                    logger.info(f"{func.__name__} used {gpu_used:.2f} GB GPU memory")
+                
+                system_used = memory_after["system_used_gb"] - memory_before["system_used_gb"]
+                logger.info(f"{func.__name__} used {system_used:.2f} GB system memory")
+                
+                return result
+                
+            except Exception as e:
+                # Cleanup on error
+                self.cleanup_memory(aggressive=True)
+                raise
+        
+        return wrapper
+    
+    def check_memory_threshold(self) -> bool:
+        """Check if memory usage exceeds threshold"""
+        memory_info = self.get_memory_info()
+        
+        # Check GPU memory
+        if torch.cuda.is_available():
+            for i in range(torch.cuda.device_count()):
+                allocated = memory_info.get(f"gpu_{i}_allocated_gb", 0)
+                total = memory_info.get(f"gpu_{i}_total_gb", 1)
+                if allocated / total > self.memory_threshold:
+                    return True
+        
+        # Check system memory
+        if memory_info["system_percent"] > self.memory_threshold * 100:
+            return True
+        
+        return False
+
+class ResponseCache:
+    """LRU cache for model responses"""
+    
+    def __init__(self, max_size: int = 1000, ttl_seconds: int = 3600):
+        self.max_size = max_size
+        self.ttl_seconds = ttl_seconds
+        self.cache = {}
+        self.access_times = {}
+        self.creation_times = {}
+    
+    def _generate_key(self, messages: List[Dict[str, str]], **kwargs) -> str:
+        """Generate cache key from messages and parameters"""
+        import hashlib
+        import json
+        
+        # Create deterministic key
+        cache_data = {
+            "messages": messages,
+            "params": {k: v for k, v in kwargs.items() if k in ["temperature", "top_p", "max_tokens"]}
+        }
+        
+        cache_str = json.dumps(cache_data, sort_keys=True)
+        return hashlib.md5(cache_str.encode()).hexdigest()
+    
+    def get(self, messages: List[Dict[str, str]], **kwargs) -> Optional[str]:
+        """Get cached response"""
+        key = self._generate_key(messages, **kwargs)
+        
+        if key in self.cache:
+            # Check TTL
+            if time.time() - self.creation_times[key] > self.ttl_seconds:
+                self._remove_key(key)
+                return None
+            
+            # Update access time
+            self.access_times[key] = time.time()
+            return self.cache[key]
+        
+        return None
+    
+    def put(self, messages: List[Dict[str, str]], response: str, **kwargs):
+        """Cache response"""
+        key = self._generate_key(messages, **kwargs)
+        
+        # Remove oldest entries if cache is full
+        while len(self.cache) >= self.max_size:
+            oldest_key = min(self.access_times.keys(), key=lambda k: self.access_times[k])
+            self._remove_key(oldest_key)
+        
+        # Add new entry
+        current_time = time.time()
+        self.cache[key] = response
+        self.access_times[key] = current_time
+        self.creation_times[key] = current_time
+    
+    def _remove_key(self, key: str):
+        """Remove key from all dictionaries"""
+        self.cache.pop(key, None)
+        self.access_times.pop(key, None)
+        self.creation_times.pop(key, None)
+    
+    def clear(self):
+        """Clear all cached entries"""
+        self.cache.clear()
+        self.access_times.clear()
+        self.creation_times.clear()
+    
+    def get_stats(self) -> Dict[str, Any]:
+        """Get cache statistics"""
+        return {
+            "size": len(self.cache),
+            "max_size": self.max_size,
+            "hit_rate": getattr(self, "_hit_count", 0) / max(getattr(self, "_total_requests", 1), 1),
+            "oldest_entry_age": time.time() - min(self.creation_times.values()) if self.creation_times else 0
+        }
+
+# Usage example
+memory_manager = MemoryManager()
+response_cache = ResponseCache(max_size=500, ttl_seconds=1800)
+
+# Register cleanup callback
+def model_cleanup():
+    """Custom cleanup function"""
+    # Add your model-specific cleanup here
+    pass
+
+memory_manager.register_cleanup_callback(model_cleanup)
+
+# Monitor memory usage
+@memory_manager.memory_monitor
+def generate_response(model, tokenizer, messages):
+    """Example function with memory monitoring"""
+    # Your generation logic here
+    pass
+
+# Check memory and cleanup if needed
+if memory_manager.check_memory_threshold():
+    logger.warning("Memory threshold exceeded, performing cleanup")
+    memory_manager.cleanup_memory(aggressive=True)
+```
+
+## 6. Production-Ready Features
+
+### Comprehensive Logging and Monitoring
+
+```python
+# monitoring.py
+import logging
+import time
+import json
+import os
+from typing import Dict, Any, Optional, List
+from datetime import datetime, timezone
+from dataclasses import dataclass, asdict
+from prometheus_client import Counter, Histogram, Gauge, start_http_server
+import threading
+
+# Prometheus metrics
+REQUEST_COUNT = Counter('deepseek_requests_total', 'Total requests', ['method', 'status'])
+REQUEST_DURATION = Histogram('deepseek_request_duration_seconds', 'Request duration')
+ACTIVE_REQUESTS = Gauge('deepseek_active_requests', 'Active requests')
+MODEL_MEMORY_USAGE = Gauge('deepseek_memory_usage_bytes', 'Memory usage', ['device'])
+TOKEN_COUNT = Counter('deepseek_tokens_total', 'Total tokens', ['type'])
+
+@dataclass
+class RequestMetrics:
+    """Request metrics data structure"""
+    request_id: str
+    timestamp: float
+    method: str
+    messages: List[Dict[str, str]]
+    response: str
+    duration: float
+    input_tokens: int
+    output_tokens: int
+    memory_usage: float
+    status: str
+    error: Optional[str] = None
+
+class StructuredLogger:
+    """Structured logging for DeepSeek operations"""
+    
+    def __init__(self, name: str, log_level: str = "INFO", log_file: Optional[str] = None):
+        self.logger = logging.getLogger(name)
+        self.logger.setLevel(getattr(logging, log_level.upper()))
+        
+        # Create formatter
+        formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )
+        
+        # Console handler
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(formatter)
+        self.logger.addHandler(console_handler)
+        
+        # File handler
+        if log_file:
+            file_handler = logging.FileHandler(log_file)
+            file_handler.setFormatter(formatter)
+            self.logger.addHandler(file_handler)
+    
+    def log_request(self, metrics: RequestMetrics):
+        """Log request with structured data"""
+        log_data = {
+            "event": "request_completed",
+            "request_id": metrics.request_id,
+            "timestamp": metrics.timestamp,
+            "method": metrics.method,
+            "duration": metrics.duration,
+            "input_tokens": metrics.input_tokens,
+            "output_tokens": metrics.output_tokens,
+            "memory_usage": metrics.memory_usage,
+            "status": metrics.status
+        }
+        
+        if metrics.error:
+            log_data["error"] = metrics.error
+            self.logger.error(json.dumps(log_data))
+        else:
+            self.logger.info(json.dumps(log_data))
+    
+    def log_model_event(self, event: str, data: Dict[str, Any]):
+        """Log model-related events"""
+        log_data = {
+            "event": event,
+            "timestamp": time.time(),
+            **data
+        }
+        self.logger.info(json.dumps(log_data))
+
+class MetricsCollector:
+    """Collect and export metrics"""
+    
+    def __init__(self, export_port: int = 8080):
+        self.export_port = export_port
+        self.metrics_history: List[RequestMetrics] = []
+        self.max_history = 10000
+        self._lock = threading.Lock()
+        
+        # Start Prometheus metrics server
+        start_http_server(export_port)
+    
+    def record_request(self, metrics: RequestMetrics):
+        """Record request metrics"""
+        with self._lock:
+            # Update Prometheus metrics
+            REQUEST_COUNT.labels(method=metrics.method, status=metrics.status).inc()
+            REQUEST_DURATION.observe(metrics.duration)
+            TOKEN_COUNT.labels(type='input').inc(metrics.input_tokens)
+            TOKEN_COUNT.labels(type='output').inc(metrics.output_tokens)
+            
+            # Store in history
+            self.metrics_history.append(metrics)
+            
+            # Trim history if needed
+            if len(self.metrics_history) > self.max_history:
+                self.metrics_history = self.metrics_history[-self.max_history:]
+    
+    def update_memory_usage(self, device: str, usage_bytes: float):
+        """Update memory usage metrics"""
+        MODEL_MEMORY_USAGE.labels(device=device).set(usage_bytes)
+    
+    def get_statistics(self, window_minutes: int = 60) -> Dict[str, Any]:
+        """Get statistics for the specified time window"""
+        cutoff_time = time.time() - (window_minutes * 60)
+        
+        with self._lock:
+            recent_metrics = [m for m in self.metrics_history if m.timestamp > cutoff_time]
+        
+        if not recent_metrics:
+            return {"message": "No recent metrics available"}
+        
+        # Calculate statistics
+        total_requests = len(recent_metrics)
+        successful_requests = len([m for m in recent_metrics if m.status == "success"])
+        failed_requests = total_requests - successful_requests
+        
+        durations = [m.duration for m in recent_metrics]
+        input_tokens = [m.input_tokens for m in recent_metrics]
+        output_tokens = [m.output_tokens for m in recent_metrics]
+        
+        return {
+            "window_minutes": window_minutes,
+            "total_requests": total_requests,
+            "successful_requests": successful_requests,
+            "failed_requests": failed_requests,
+            "success_rate": successful_requests / total_requests if total_requests > 0 else 0,
+            "average_duration": sum(durations) / len(durations) if durations else 0,
+            "total_input_tokens": sum(input_tokens),
+            "total_output_tokens": sum(output_tokens),
+            "average_input_tokens": sum(input_tokens) / len(input_tokens) if input_tokens else 0,
+            "average_output_tokens": sum(output_tokens) / len(output_tokens) if output_tokens else 0,
+            "requests_per_minute": total_requests / window_minutes if window_minutes > 0 else 0
+        }
+
+class HealthChecker:
+    """Health monitoring for DeepSeek services"""
+    
+    def __init__(self, model, tokenizer):
+        self.model = model
+        self.tokenizer = tokenizer
+        self.last_health_check = 0
+        self.health_check_interval = 300  # 5 minutes
+        self.is_healthy = True
+        self.health_details = {}
+    
+    def check_health(self) -> Dict[str, Any]:
+        """Perform comprehensive health check"""
+        current_time = time.time()
+        
+        # Skip if recently checked
+        if current_time - self.last_health_check < self.health_check_interval:
+            return {
+                "status": "healthy" if self.is_healthy else "unhealthy",
+                "last_check": self.last_health_check,
+                "details": self.health_details
+            }
+        
+        self.last_health_check = current_time
+        health_results = {}
+        
+        try:
+            # Test model inference
+            test_input = "Hello, how are you?"
+            inputs = self.tokenizer(test_input, return_tensors="pt")
+            
+            if torch.cuda.is_available():
+                inputs = {k: v.to(self.model.device) for k, v in inputs.items()}
+            
+            start_time = time.time()
+            with torch.no_grad():
+                outputs = self.model.generate(
+                    **inputs,
+                    max_new_tokens=10,
+                    do_sample=False,
+                    pad_token_id=self.tokenizer.eos_token_id
+                )
+            inference_time = time.time() - start_time
+            
+            health_results["inference"] = {
+                "status": "healthy",
+                "response_time": inference_time,
+                "test_successful": True
+            }
+            
+        except Exception as e:
+            health_results["inference"] = {
+                "status": "unhealthy",
+                "error": str(e),
+                "test_successful": False
+            }
+        
+        # Check memory usage
+        try:
+            if torch.cuda.is_available():
+                allocated = torch.cuda.memory_allocated() / 1e9
+                total = torch.cuda.get_device_properties(0).total_memory / 1e9
+                usage_percent = (allocated / total) * 100
+                
+                health_results["memory"] = {
+                    "status": "healthy" if usage_percent < 95 else "warning",
+                    "gpu_allocated_gb": allocated,
+                    "gpu_total_gb": total,
+                    "usage_percent": usage_percent
+                }
+            else:
+                import psutil
+                memory = psutil.virtual_memory()
+                health_results["memory"] = {
+                    "status": "healthy" if memory.percent < 90 else "warning",
+                    "system_usage_percent": memory.percent,
+                    "available_gb": memory.available / 1e9
+                }
+                
+        except Exception as e:
+            health_results["memory"] = {
+                "status": "unhealthy",
+                "error": str(e)
+            }
+        
+        # Determine overall health
+        self.is_healthy = all(
+            result.get("status") in ["healthy", "warning"] 
+            for result in health_results.values()
+        )
+        
+        self.health_details = health_results
+        
+        return {
+            "status": "healthy" if self.is_healthy else "unhealthy",
+            "timestamp": current_time,
+            "details": health_results
+        }
+
+# Usage example
+logger = StructuredLogger("deepseek", log_level="INFO", log_file="deepseek.log")
+metrics_collector = MetricsCollector(export_port=8080)
+
+# Example request tracking
+def track_request(func):
+    """Decorator to track request metrics"""
+    def wrapper(*args, **kwargs):
+        request_id = f"req_{int(time.time() * 1000)}"
+        start_time = time.time()
+        
+        ACTIVE_REQUESTS.inc()
+        
+        try:
+            result = func(*args, **kwargs)
+            
+            # Create metrics
+            metrics = RequestMetrics(
+                request_id=request_id,
+                timestamp=start_time,
+                method=func.__name__,
+                messages=kwargs.get("messages", []),
+                response=result.get("response", ""),
+                duration=time.time() - start_time,
+                input_tokens=result.get("input_tokens", 0),
+                output_tokens=result.get("output_tokens", 0),
+                memory_usage=torch.cuda.memory_allocated() if torch.cuda.is_available() else 0,
+                status="success"
+            )
+            
+            # Log and record metrics
+            logger.log_request(metrics)
+            metrics_collector.record_request(metrics)
+            
+            return result
+            
+        except Exception as e:
+            # Record error metrics
+            metrics = RequestMetrics(
+                request_id=request_id,
+                timestamp=start_time,
+                method=func.__name__,
+                messages=kwargs.get("messages", []),
+                response="",
+                duration=time.time() - start_time,
+                input_tokens=0,
+                output_tokens=0,
+                memory_usage=torch.cuda.memory_allocated() if torch.cuda.is_available() else 0,
+                status="error",
+                error=str(e)
+            )
+            
+            logger.log_request(metrics)
+            metrics_collector.record_request(metrics)
+            
+            raise
+        
+        finally:
+            ACTIVE_REQUESTS.dec()
+    
+    return wrapper
+```
+
+### Error Handling and Retry Mechanisms
+
+```python
+# error_handling.py
+import asyncio
+import time
+import random
+from typing import Any, Callable, Optional, Dict, List
+from functools import wraps
+from enum import Enum
+import logging
+
+logger = logging.getLogger(__name__)
+
+class ErrorType(Enum):
+    """Classification of error types"""
+    NETWORK_ERROR = "network"
+    MEMORY_ERROR = "memory"
+    MODEL_ERROR = "model"
+    TIMEOUT_ERROR = "timeout"
+    RATE_LIMIT_ERROR = "rate_limit"
+    UNKNOWN_ERROR = "unknown"
+
+class RetryStrategy(Enum):
+    """Retry strategy types"""
+    EXPONENTIAL_BACKOFF = "exponential"
+    LINEAR_BACKOFF = "linear"
+    FIXED_DELAY = "fixed"
+    IMMEDIATE = "immediate"
+
+@dataclass
+class RetryConfig:
+    """Retry configuration"""
+    max_attempts: int = 3
+    strategy: RetryStrategy = RetryStrategy.EXPONENTIAL_BACKOFF
+    base_delay: float = 1.0
+    max_delay: float = 60.0
+    jitter: bool = True
+    retryable_errors: List[ErrorType] = None
+
+    def __post_init__(self):
+        if self.retryable_errors is None:
+            self.retryable_errors = [
+                ErrorType.NETWORK_ERROR,
+                ErrorType.TIMEOUT_ERROR,
+                ErrorType.RATE_LIMIT_ERROR
+            ]
+
+class DeepSeekError(Exception):
+    """Base exception for DeepSeek operations"""
+    
+    def __init__(self, message: str, error_type: ErrorType = ErrorType.UNKNOWN_ERROR, details: Dict[str, Any] = None):
+        super().__init__(message)
+        self.error_type = error_type
+        self.details = details or {}
+        self.timestamp = time.time()
+
+class ModelLoadError(DeepSeekError):
+    """Error during model loading"""
+    def __init__(self, message: str, details: Dict[str, Any] = None):
+        super().__init__(message, ErrorType.MODEL_ERROR, details)
+
+class GenerationError(DeepSeekError):
+    """Error during text generation"""
+    def __init__(self, message: str, error_type: ErrorType = ErrorType.MODEL_ERROR, details: Dict[str, Any] = None):
+        super().__init__(message, error_type, details)
+
+class MemoryError(DeepSeekError):
+    """Memory-related error"""
+    def __init__(self, message: str, details: Dict[str, Any] = None):
+        super().__init__(message, ErrorType.MEMORY_ERROR, details)
+
+class ErrorClassifier:
+    """Classify errors into types for appropriate handling"""
+    
+    @staticmethod
+    def classify_error(error: Exception) -> ErrorType:
+        """Classify an exception into an error type"""
+        error_str = str(error).lower()
+        
+        # Network-related errors
+        if any(keyword in error_str for keyword in ["connection", "network", "timeout", "unreachable"]):
+            return ErrorType.NETWORK_ERROR
+        
+        # Memory-related errors
+        if any(keyword in error_str for keyword in ["memory", "cuda out of memory", "oom"]):
+            return ErrorType.MEMORY_ERROR
+        
+        # Rate limiting
+        if any(keyword in error_str for keyword in ["rate limit", "too many requests", "quota"]):
+            return ErrorType.RATE_LIMIT_ERROR
+        
+        # Timeout errors
+        if any(keyword in error_str for keyword in ["timeout", "timed out"]):
+            return ErrorType.TIMEOUT_ERROR
+        
+        # Model-specific errors
+        if any(keyword in error_str for keyword in ["model", "generation", "tokenizer"]):
+            return ErrorType.MODEL_ERROR
+        
+        return ErrorType.UNKNOWN_ERROR
+
+class RetryHandler:
+    """Handle retries with different strategies"""
+    
+    def __init__(self, config: RetryConfig):
+        self.config = config
+    
+    def calculate_delay(self, attempt: int) -> float:
+        """Calculate delay for the given attempt"""
+        if self.config.strategy == RetryStrategy.EXPONENTIAL_BACKOFF:
+            delay = self.config.base_delay * (2 ** (attempt - 1))
+        elif self.config.strategy == RetryStrategy.LINEAR_BACKOFF:
+            delay = self.config.base_delay * attempt
+        elif self.config.strategy == RetryStrategy.FIXED_DELAY:
+            delay = self.config.base_delay
+        else:  # IMMEDIATE
+            delay = 0
+        
+        # Apply max delay limit
+        delay = min(delay, self.config.max_delay)
+        
+        # Add jitter to prevent thundering herd
+        if self.config.jitter and delay > 0:
+            delay *= (0.5 + random.random() * 0.5)
+        
+        return delay
+    
+    def should_retry(self, error: Exception, attempt: int) -> bool:
+        """Determine if an error should be retried"""
+        if attempt >= self.config.max_attempts:
+            return False
+        
+        error_type = ErrorClassifier.classify_error(error)
+        return error_type in self.config.retryable_errors
+    
+    def retry(self, func: Callable) -> Callable:
+        """Decorator for adding retry logic"""
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            last_error = None
+            
+            for attempt in range(1, self.config.max_attempts + 1):
+                try:
+                    return func(*args, **kwargs)
+                
+                except Exception as e:
+                    last_error = e
+                    
+                    if not self.should_retry(e, attempt):
+                        logger.error(f"Non-retryable error or max attempts reached: {e}")
+                        raise
+                    
+                    delay = self.calculate_delay(attempt)
+                    logger.warning(f"Attempt {attempt} failed: {e}. Retrying in {delay:.2f}s")
+                    
+                    if delay > 0:
+                        time.sleep(delay)
+            
+            # If we get here, all retries failed
+            raise last_error
+        
+        return wrapper
+    
+    def async_retry(self, func: Callable) -> Callable:
+        """Async decorator for adding retry logic"""
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            last_error = None
+            
+            for attempt in range(1, self.config.max_attempts + 1):
+                try:
+                    return await func(*args, **kwargs)
+                
+                except Exception as e:
+                    last_error = e
+                    
+                    if not self.should_retry(e, attempt):
+                        logger.error(f"Non-retryable error or max attempts reached: {e}")
+                        raise
+                    
+                    delay = self.calculate_delay(attempt)
+                    logger.warning(f"Attempt {attempt} failed: {e}. Retrying in {delay:.2f}s")
+                    
+                    if delay > 0:
+                        await asyncio.sleep(delay)
+            
+            # If we get here, all retries failed
+            raise last_error
+        
+        return wrapper
+
+class CircuitBreaker:
+    """Circuit breaker pattern for preventing cascade failures"""
+    
+    def __init__(
+        self,
+        failure_threshold: int = 5,
+        recovery_timeout: float = 60.0,
+        expected_exception: type = Exception
+    ):
+        self.failure_threshold = failure_threshold
+        self.recovery_timeout = recovery_timeout
+        self.expected_exception = expected_exception
+        
+        self.failure_count = 0
+        self.last_failure_time = None
+        self.state = "CLOSED"  # CLOSED, OPEN, HALF_OPEN
+    
+    def call(self, func: Callable) -> Callable:
+        """Decorator for circuit breaker"""
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            if self.state == "OPEN":
+                if self._should_attempt_reset():
+                    self.state = "HALF_OPEN"
+                else:
+                    raise DeepSeekError(
+                        "Circuit breaker is OPEN",
+                        ErrorType.NETWORK_ERROR,
+                        {"circuit_breaker_state": self.state}
+                    )
+            
+            try:
+                result = func(*args, **kwargs)
+                self._on_success()
+                return result
+            
+            except self.expected_exception as e:
+                self._on_failure()
+                raise
+        
+        return wrapper
+    
+    def _should_attempt_reset(self) -> bool:
+        """Check if we should attempt to reset the circuit breaker"""
+        return (
+            self.last_failure_time and
+            time.time() - self.last_failure_time >= self.recovery_timeout
+        )
+    
+    def _on_success(self):
+        """Handle successful call"""
+        self.failure_count = 0
+        self.state = "CLOSED"
+    
+    def _on_failure(self):
+        """Handle failed call"""
+        self.failure_count += 1
+        self.last_failure_time = time.time()
+        
+        if self.failure_count >= self.failure_threshold:
+            self.state = "OPEN"
+
+class ErrorRecoveryManager:
+    """Manage error recovery strategies"""
+    
+    def __init__(self):
+        self.recovery_strategies = {}
+        self.error_history = []
+        self.max_history = 1000
+    
+    def register_recovery_strategy(self, error_type: ErrorType, strategy: Callable):
+        """Register a recovery strategy for an error type"""
+        self.recovery_strategies[error_type] = strategy
+    
+    def handle_error(self, error: Exception, context: Dict[str, Any] = None) -> Any:
+        """Handle an error with appropriate recovery strategy"""
+        error_type = ErrorClassifier.classify_error(error)
+        
+        # Record error in history
+        self.error_history.append({
+            "timestamp": time.time(),
+            "error_type": error_type,
+            "error_message": str(error),
+            "context": context or {}
+        })
+        
+        # Trim history
+        if len(self.error_history) > self.max_history:
+            self.error_history = self.error_history[-self.max_history:]
+        
+        # Apply recovery strategy
+        if error_type in self.recovery_strategies:
+            try:
+                return self.recovery_strategies[error_type](error, context)
+            except Exception as recovery_error:
+                logger.error(f"Recovery strategy failed: {recovery_error}")
+        
+        # Re-raise if no recovery strategy or recovery failed
+        raise error
+    
+    def get_error_statistics(self, window_minutes: int = 60) -> Dict[str, Any]:
+        """Get error statistics for the specified time window"""
+        cutoff_time = time.time() - (window_minutes * 60)
+        recent_errors = [e for e in self.error_history if e["timestamp"] > cutoff_time]
+        
+        if not recent_errors:
+            return {"message": "No recent errors"}
+        
+        # Count by error type
+        error_counts = {}
+        for error in recent_errors:
+            error_type = error["error_type"]
+            error_counts[error_type.value] = error_counts.get(error_type.value, 0) + 1
+        
+        return {
+            "window_minutes": window_minutes,
+            "total_errors": len(recent_errors),
+            "error_counts": error_counts,
+            "error_rate": len(recent_errors) / window_minutes
+        }
+
+# Usage examples
+def memory_recovery_strategy(error: Exception, context: Dict[str, Any]) -> None:
+    """Recovery strategy for memory errors"""
+    logger.info("Applying memory recovery strategy")
+    
+    # Clear GPU cache
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+    
+    # Force garbage collection
+    import gc
+    gc.collect()
+    
+    # Reduce batch size if available in context
+    if "batch_size" in context:
+        context["batch_size"] = max(1, context["batch_size"] // 2)
+        logger.info(f"Reduced batch size to {context['batch_size']}")
+
+def model_recovery_strategy(error: Exception, context: Dict[str, Any]) -> None:
+    """Recovery strategy for model errors"""
+    logger.info("Applying model recovery strategy")
+    
+    # Reload model if needed
+    if "model_manager" in context:
+        context["model_manager"].reload_model()
+
+# Setup error handling
+retry_config = RetryConfig(
+    max_attempts=3,
+    strategy=RetryStrategy.EXPONENTIAL_BACKOFF,
+    base_delay=1.0,
+    max_delay=30.0
+)
+
+retry_handler = RetryHandler(retry_config)
+circuit_breaker = CircuitBreaker(failure_threshold=5, recovery_timeout=60.0)
+error_recovery = ErrorRecoveryManager()
+
+# Register recovery strategies
+error_recovery.register_recovery_strategy(ErrorType.MEMORY_ERROR, memory_recovery_strategy)
+error_recovery.register_recovery_strategy(ErrorType.MODEL_ERROR, model_recovery_strategy)
+
+# Example usage
+@retry_handler.retry
+@circuit_breaker.call
+def generate_with_error_handling(model, tokenizer, messages):
+    """Example function with comprehensive error handling"""
+    try:
+        # Your generation logic here
+        pass
+    except Exception as e:
+        # Let error recovery manager handle it
+        error_recovery.handle_error(e, {"model": model, "tokenizer": tokenizer})
+```
+
+### Rate Limiting and Request Queuing
+
+```python
+# rate_limiting.py
+import asyncio
+import time
+import threading
+from typing import Dict, Any, Optional, Callable, List
+from dataclasses import dataclass
+from collections import deque
+from enum import Enum
+import logging
+
+logger = logging.getLogger(__name__)
+
+class QueueStrategy(Enum):
+    """Queue management strategies"""
+    FIFO = "fifo"  # First In, First Out
+    LIFO = "lifo"  # Last In, First Out
+    PRIORITY = "priority"  # Priority-based
+
+@dataclass
+class QueuedRequest:
+    """Queued request data structure"""
+    request_id: str
+    timestamp: float
+    priority: int
+    func: Callable
+    args: tuple
+    kwargs: dict
+    future: asyncio.Future
+
+class TokenBucket:
+    """Token bucket algorithm for rate limiting"""
+    
+    def __init__(self, capacity: int, refill_rate: float):
+        self.capacity = capacity
+        self.tokens = capacity
+        self.refill_rate = refill_rate
+        self.last_refill = time.time()
+        self._lock = threading.Lock()
+    
+    def consume(self, tokens: int = 1) -> bool:
+        """Try to consume tokens from the bucket"""
+        with self._lock:
+            self._refill()
+            
+            if self.tokens >= tokens:
+                self.tokens -= tokens
+                return True
+            return False
+    
+    def _refill(self):
+        """Refill tokens based on elapsed time"""
+        now = time.time()
+        elapsed = now - self.last_refill
+        tokens_to_add = elapsed * self.refill_rate
+        
+        self.tokens = min(self.capacity, self.tokens + tokens_to_add)
+        self.last_refill = now
+    
+    def get_wait_time(self, tokens: int = 1) -> float:
+        """Get time to wait for tokens to be available"""
+        with self._lock:
+            self._refill()
+            
+            if self.tokens >= tokens:
+                return 0.0
+            
+            tokens_needed = tokens - self.tokens
+            return tokens_needed / self.refill_rate
+
+class SlidingWindowRateLimiter:
+    """Sliding window rate limiter"""
+    
+    def __init__(self, max_requests: int, window_seconds: int):
+        self.max_requests = max_requests
+        self.window_seconds = window_seconds
+        self.requests = deque()
+        self._lock = threading.Lock()
+    
+    def is_allowed(self) -> bool:
+        """Check if request is allowed"""
+        with self._lock:
+            now = time.time()
+            
+            # Remove old requests outside the window
+            while self.requests and self.requests[0] <= now - self.window_seconds:
+                self.requests.popleft()
+            
+            # Check if we can add a new request
+            if len(self.requests) < self.max_requests:
+                self.requests.append(now)
+                return True
+            
+            return False
+    
+    def get_wait_time(self) -> float:
+        """Get time to wait before next request is allowed"""
+        with self._lock:
+            if len(self.requests) < self.max_requests:
+                return 0.0
+            
+            # Time until oldest request expires
+            oldest_request = self.requests[0]
+            return max(0.0, oldest_request + self.window_seconds - time.time())
+
+class RequestQueue:
+    """Async request queue with priority support"""
+    
+    def __init__(
+        self,
+        max_size: int = 1000,
+        strategy: QueueStrategy = QueueStrategy.FIFO,
+        timeout: float = 300.0
+    ):
+        self.max_size = max_size
+        self.strategy = strategy
+        self.timeout = timeout
+        self.queue = deque()
+        self.processing = False
+        self._lock = asyncio.Lock()
+        self._condition = asyncio.Condition()
+    
+    async def enqueue(
+        self,
+        func: Callable,
+        args: tuple = (),
+        kwargs: dict = None,
+        priority: int = 0
+    ) -> Any:
+        """Enqueue a request for processing"""
+        kwargs = kwargs or {}
+        request_id = f"req_{int(time.time() * 1000000)}"
+        future = asyncio.Future()
+        
+        request = QueuedRequest(
+            request_id=request_id,
+            timestamp=time.time(),
+            priority=priority,
+            func=func,
+            args=args,
+            kwargs=kwargs,
+            future=future
+        )
+        
+        async with self._lock:
+            if len(self.queue) >= self.max_size:
+                raise Exception("Queue is full")
+            
+            # Add to queue based on strategy
+            if self.strategy == QueueStrategy.PRIORITY:
+                # Insert based on priority (higher priority first)
+                inserted = False
+                for i, existing_request in enumerate(self.queue):
+                    if priority > existing_request.priority:
+                        self.queue.insert(i, request)
+                        inserted = True
+                        break
+                if not inserted:
+                    self.queue.append(request)
+            elif self.strategy == QueueStrategy.LIFO:
+                self.queue.appendleft(request)
+            else:  # FIFO
+                self.queue.append(request)
+        
+        async with self._condition:
+            self._condition.notify()
+        
+        # Wait for result with timeout
+        try:
+            return await asyncio.wait_for(future, timeout=self.timeout)
+        except asyncio.TimeoutError:
+            # Remove from queue if still there
+            async with self._lock:
+                try:
+                    self.queue.remove(request)
+                except ValueError:
+                    pass  # Already processed
+            raise Exception(f"Request {request_id} timed out")
+    
+    async def process_queue(self):
+        """Process requests from the queue"""
+        while True:
+            request = None
+            
+            async with self._lock:
+                if self.queue:
+                    request = self.queue.popleft()
+            
+            if request:
+                try:
+                    # Execute the request
+                    if asyncio.iscoroutinefunction(request.func):
+                        result = await request.func(*request.args, **request.kwargs)
+                    else:
+                        result = request.func(*request.args, **request.kwargs)
+                    
+                    request.future.set_result(result)
+                    
+                except Exception as e:
+                    request.future.set_exception(e)
+            else:
+                # Wait for new requests
+                async with self._condition:
+                    await self._condition.wait()
+    
+    def get_queue_stats(self) -> Dict[str, Any]:
+        """Get queue statistics"""
+        return {
+            "queue_size": len(self.queue),
+            "max_size": self.max_size,
+            "strategy": self.strategy.value,
+            "oldest_request_age": time.time() - self.queue[0].timestamp if self.queue else 0
+        }
+
+class AdaptiveRateLimiter:
+    """Adaptive rate limiter that adjusts based on system load"""
+    
+    def __init__(
+        self,
+        base_rate: float = 10.0,
+        min_rate: float = 1.0,
+        max_rate: float = 50.0,
+        adaptation_factor: float = 0.1
+    ):
+        self.base_rate = base_rate
+        self.current_rate = base_rate
+        self.min_rate = min_rate
+        self.max_rate = max_rate
+        self.adaptation_factor = adaptation_factor
+        
+        self.token_bucket = TokenBucket(capacity=int(base_rate), refill_rate=base_rate)
+        self.success_count = 0
+        self.error_count = 0
+        self.last_adaptation = time.time()
+        self.adaptation_interval = 60.0  # Adapt every minute
+    
+    def request_permission(self) -> bool:
+        """Request permission to proceed"""
+        self._adapt_rate()
+        return self.token_bucket.consume()
+    
+    def report_success(self):
+        """Report successful request"""
+        self.success_count += 1
+    
+    def report_error(self):
+        """Report failed request"""
+        self.error_count += 1
+    
+    def _adapt_rate(self):
+        """Adapt rate based on success/error ratio"""
+        now = time.time()
+        
+        if now - self.last_adaptation < self.adaptation_interval:
+            return
+        
+        total_requests = self.success_count + self.error_count
+        
+        if total_requests > 0:
+            success_rate = self.success_count / total_requests
+            
+            if success_rate > 0.95:  # High success rate, increase rate
+                new_rate = min(self.max_rate, self.current_rate * (1 + self.adaptation_factor))
+            elif success_rate < 0.8:  # Low success rate, decrease rate
+                new_rate = max(self.min_rate, self.current_rate * (1 - self.adaptation_factor))
+            else:
+                new_rate = self.current_rate
+            
+            if new_rate != self.current_rate:
+                self.current_rate = new_rate
+                self.token_bucket = TokenBucket(
+                    capacity=int(new_rate * 2),
+                    refill_rate=new_rate
+                )
+                logger.info(f"Adapted rate limit to {new_rate:.2f} requests/second")
+        
+        # Reset counters
+        self.success_count = 0
+        self.error_count = 0
+        self.last_adaptation = now
+
+class DeepSeekRateLimitedService:
+    """DeepSeek service with comprehensive rate limiting"""
+    
+    def __init__(
+        self,
+        model,
+        tokenizer,
+        requests_per_second: float = 5.0,
+        max_concurrent: int = 10,
+        queue_size: int = 100
+    ):
+        self.model = model
+        self.tokenizer = tokenizer
+        
+        # Rate limiting
+        self.rate_limiter = AdaptiveRateLimiter(base_rate=requests_per_second)
+        self.sliding_window = SlidingWindowRateLimiter(
+            max_requests=int(requests_per_second * 60),
+            window_seconds=60
+        )
+        
+        # Request queue
+        self.request_queue = RequestQueue(
+            max_size=queue_size,
+            strategy=QueueStrategy.PRIORITY
+        )
+        
+        # Concurrency control
+        self.semaphore = asyncio.Semaphore(max_concurrent)
+        
+        # Start queue processor
+        asyncio.create_task(self.request_queue.process_queue())
+    
+    async def generate_text(
+        self,
+        messages: List[Dict[str, str]],
+        priority: int = 0,
+        **kwargs
+    ) -> Dict[str, Any]:
+        """Generate text with rate limiting and queuing"""
+        
+        # Check rate limits
+        if not self.rate_limiter.request_permission():
+            wait_time = self.rate_limiter.token_bucket.get_wait_time()
+            raise Exception(f"Rate limit exceeded. Wait {wait_time:.2f} seconds")
+        
+        if not self.sliding_window.is_allowed():
+            wait_time = self.sliding_window.get_wait_time()
+            raise Exception(f"Window rate limit exceeded. Wait {wait_time:.2f} seconds")
+        
+        # Queue the request
+        try:
+            result = await self.request_queue.enqueue(
+                func=self._generate_internal,
+                args=(messages,),
+                kwargs=kwargs,
+                priority=priority
+            )
+            
+            self.rate_limiter.report_success()
+            return result
+            
+        except Exception as e:
+            self.rate_limiter.report_error()
+            raise
+    
+    async def _generate_internal(
+        self,
+        messages: List[Dict[str, str]],
+        **kwargs
+    ) -> Dict[str, Any]:
+        """Internal generation method with concurrency control"""
+        
+        async with self.semaphore:
+            # Format messages
+            prompt = self._format_messages(messages)
+            
+            # Tokenize
+            inputs = self.tokenizer(
+                prompt,
+                return_tensors="pt",
+                truncation=True,
+                max_length=kwargs.get("max_length", 2048)
+            )
+            
+            if torch.cuda.is_available():
+                inputs = {k: v.to(self.model.device) for k, v in inputs.items()}
+            
+            # Generate
+            start_time = time.time()
+            with torch.no_grad():
+                outputs = self.model.generate(
+                    **inputs,
+                    max_new_tokens=kwargs.get("max_new_tokens", 512),
+                    temperature=kwargs.get("temperature", 0.7),
+                    top_p=kwargs.get("top_p", 0.9),
+                    do_sample=kwargs.get("do_sample", True),
+                    pad_token_id=self.tokenizer.eos_token_id
+                )
+            
+            generation_time = time.time() - start_time
+            
+            # Decode response
+            response_tokens = outputs[0][inputs['input_ids'].shape[1]:]
+            response = self.tokenizer.decode(response_tokens, skip_special_tokens=True)
+            
+            return {
+                "response": response,
+                "generation_time": generation_time,
+                "input_tokens": inputs['input_ids'].shape[1],
+                "output_tokens": len(response_tokens)
+            }
+    
+    def _format_messages(self, messages: List[Dict[str, str]]) -> str:
+        """Format messages for the model"""
+        formatted = ""
+        for message in messages:
+            role = message["role"]
+            content = message["content"]
+            
+            if role == "user":
+                formatted += f"User: {content}\n"
+            elif role == "assistant":
+                formatted += f"Assistant: {content}\n"
+            elif role == "system":
+                formatted += f"System: {content}\n"
+        
+        formatted += "Assistant: "
+        return formatted
+    
+    def get_service_stats(self) -> Dict[str, Any]:
+        """Get comprehensive service statistics"""
+        return {
+            "rate_limiter": {
+                "current_rate": self.rate_limiter.current_rate,
+                "tokens_available": self.rate_limiter.token_bucket.tokens
+            },
+            "queue": self.request_queue.get_queue_stats(),
+            "concurrent_requests": self.semaphore._value
+        }
+
+# Usage example
+async def main():
+    # Initialize service (assuming model and tokenizer are loaded)
+    # service = DeepSeekRateLimitedService(model, tokenizer, requests_per_second=5.0)
+    
+    # Example requests
+    messages = [{"role": "user", "content": "Hello, how are you?"}]
+    
+    try:
+        # High priority request
+        result = await service.generate_text(messages, priority=10)
+        print(f"Response: {result['response']}")
+        
+        # Get service statistics
+        stats = service.get_service_stats()
+        print(f"Service stats: {stats}")
+        
+    except Exception as e:
+        print(f"Request failed: {e}")
+
+# if __name__ == "__main__":
+#     asyncio.run(main())
+```
+
+## 7. Troubleshooting Guide
+
+### Common Issues and Solutions
+
+```python
+# troubleshooting.py
+import torch
+import psutil
+import subprocess
+import sys
+import os
+from typing import Dict, List, Any, Optional
+import logging
+
+logger = logging.getLogger(__name__)
+
+class SystemDiagnostics:
+    """System diagnostics for DeepSeek deployment issues"""
+    
+    @staticmethod
+    def check_cuda_installation() -> Dict[str, Any]:
+        """Check CUDA installation and compatibility"""
+        result = {
+            "cuda_available": torch.cuda.is_available(),
+            "issues": [],
+            "recommendations": []
+        }
+        
+        if not result["cuda_available"]:
+            result["issues"].append("CUDA not available in PyTorch")
+            result["recommendations"].extend([
+                "Install CUDA-enabled PyTorch: pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118",
+                "Verify NVIDIA drivers are installed",
+                "Check CUDA toolkit installation"
+            ])
+            return result
+        
+        # Check CUDA version
+        try:
+            cuda_version = torch.version.cuda
+            result["cuda_version"] = cuda_version
+            
+            # Check driver version
+            nvidia_smi = subprocess.run(
+                ["nvidia-smi", "--query-gpu=driver_version", "--format=csv,noheader,nounits"],
+                capture_output=True, text=True
+            )
+            
+            if nvidia_smi.returncode == 0:
+                driver_version = nvidia_smi.stdout.strip()
+                result["driver_version"] = driver_version
+            else:
+                result["issues"].append("nvidia-smi not available")
+                result["recommendations"].append("Install NVIDIA drivers")
+        
+        except Exception as e:
+            result["issues"].append(f"Error checking CUDA: {e}")
+        
+        # Check GPU memory
+        try:
+            for i in range(torch.cuda.device_count()):
+                props = torch.cuda.get_device_properties(i)
+                gpu_info = {
+                    "name": props.name,
+                    "total_memory_gb": props.total_memory / 1e9,
+                    "compute_capability": f"{props.major}.{props.minor}"
+                }
+                result[f"gpu_{i}"] = gpu_info
+                
+                # Check if GPU has enough memory for DeepSeek
+                if props.total_memory / 1e9 < 8:
+                    result["issues"].append(f"GPU {i} has insufficient memory ({props.total_memory / 1e9:.1f} GB)")
+                    result["recommendations"].append("Use quantization (4-bit or 8-bit) to reduce memory usage")
+        
+        except Exception as e:
+            result["issues"].append(f"Error checking GPU properties: {e}")
+        
+        return result
+    
+    @staticmethod
+    def check_memory_requirements() -> Dict[str, Any]:
+        """Check system memory requirements"""
+        memory = psutil.virtual_memory()
+        
+        result = {
+            "total_memory_gb": memory.total / 1e9,
+            "available_memory_gb": memory.available / 1e9,
+            "memory_percent": memory.percent,
+            "issues": [],
+            "recommendations": []
+        }
+        
+        # Check minimum requirements
+        if memory.total / 1e9 < 16:
+            result["issues"].append("Insufficient system RAM (minimum 16GB recommended)")
+            result["recommendations"].append("Upgrade system RAM or use cloud instance with more memory")
+        
+        if memory.percent > 80:
+            result["issues"].append("High memory usage detected")
+            result["recommendations"].extend([
+                "Close unnecessary applications",
+                "Use swap file if available",
+                "Consider using quantization to reduce memory usage"
+            ])
+        
+        return result
+    
+    @staticmethod
+    def check_dependencies() -> Dict[str, Any]:
+        """Check required dependencies"""
+        required_packages = {
+            "torch": "2.0.0",
+            "transformers": "4.37.0",
+            "accelerate": "0.26.0",
+            "bitsandbytes": "0.42.0"
+        }
+        
+        result = {
+            "installed_packages": {},
+            "issues": [],
+            "recommendations": []
+        }
+        
+        for package, min_version in required_packages.items():
+            try:
+                module = __import__(package)
+                version = getattr(module, "__version__", "unknown")
+                result["installed_packages"][package] = version
+                
+                # Basic version check (simplified)
+                if version == "unknown":
+                    result["issues"].append(f"Cannot determine {package} version")
+                
+            except ImportError:
+                result["issues"].append(f"Package {package} not installed")
+                result["recommendations"].append(f"Install {package}: pip install {package}>={min_version}")
+        
+        return result
+    
+    @staticmethod
+    def check_model_access() -> Dict[str, Any]:
+        """Check if model can be accessed from Hugging Face"""
+        result = {
+            "model_accessible": False,
+            "issues": [],
+            "recommendations": []
+        }
+        
+        try:
+            from transformers import AutoTokenizer
+            
+            # Try to load tokenizer (lightweight check)
+            tokenizer = AutoTokenizer.from_pretrained(
+                "deepseek-ai/DeepSeek-R1-0528",
+                trust_remote_code=True
+            )
+            result["model_accessible"] = True
+            result["vocab_size"] = tokenizer.vocab_size
+            
+        except Exception as e:
+            result["issues"].append(f"Cannot access model: {e}")
+            result["recommendations"].extend([
+                "Check internet connection",
+                "Verify Hugging Face Hub access",
+                "Try using HF_TOKEN environment variable if model requires authentication",
+                "Check if model name is correct: deepseek-ai/DeepSeek-R1-0528"
+            ])
+        
+        return result
+
+class TroubleshootingGuide:
+    """Comprehensive troubleshooting guide"""
+    
+    def __init__(self):
+        self.diagnostics = SystemDiagnostics()
+    
+    def run_full_diagnostics(self) -> Dict[str, Any]:
+        """Run complete system diagnostics"""
+        print("Running DeepSeek R1-0528 System Diagnostics...")
+        print("=" * 50)
+        
+        results = {}
+        
+        # CUDA check
+        print("1. Checking CUDA installation...")
+        cuda_result = self.diagnostics.check_cuda_installation()
+        results["cuda"] = cuda_result
+        self._print_check_result("CUDA", cuda_result)
+        
+        # Memory check
+        print("\n2. Checking memory requirements...")
+        memory_result = self.diagnostics.check_memory_requirements()
+        results["memory"] = memory_result
+        self._print_check_result("Memory", memory_result)
+        
+        # Dependencies check
+        print("\n3. Checking dependencies...")
+        deps_result = self.diagnostics.check_dependencies()
+        results["dependencies"] = deps_result
+        self._print_check_result("Dependencies", deps_result)
+        
+        # Model access check
+        print("\n4. Checking model access...")
+        model_result = self.diagnostics.check_model_access()
+        results["model_access"] = model_result
+        self._print_check_result("Model Access", model_result)
+        
+        # Overall assessment
+        print("\n" + "=" * 50)
+        self._print_overall_assessment(results)
+        
+        return results
+    
+    def _print_check_result(self, check_name: str, result: Dict[str, Any]):
+        """Print formatted check result"""
+        issues = result.get("issues", [])
+        recommendations = result.get("recommendations", [])
+        
+        if not issues:
+            print(f"✅ {check_name}: OK")
+        else:
+            print(f"❌ {check_name}: Issues found")
+            for issue in issues:
+                print(f"   - {issue}")
+            
+            if recommendations:
+                print("   Recommendations:")
+                for rec in recommendations:
+                    print(f"   • {rec}")
+    
+    def _print_overall_assessment(self, results: Dict[str, Any]):
+        """Print overall system assessment"""
+        total_issues = sum(len(result.get("issues", [])) for result in results.values())
+        
+        if total_issues == 0:
+            print("🎉 System is ready for DeepSeek R1-0528 deployment!")
+        else:
+            print(f"⚠️  Found {total_issues} issues that need attention.")
+            print("\nPriority fixes:")
+            
+            # Prioritize critical issues
+            if results["cuda"]["issues"]:
+                print("1. Fix CUDA installation (required for GPU acceleration)")
+            
+            if results["dependencies"]["issues"]:
+                print("2. Install missing dependencies")
+            
+            if results["memory"]["issues"]:
+                print("3. Address memory constraints")
+            
+            if results["model_access"]["issues"]:
+                print("4. Resolve model access issues")
+
+class CommonIssuesSolver:
+    """Solutions for common deployment issues"""
+    
+    @staticmethod
+    def solve_cuda_out_of_memory():
+        """Solutions for CUDA OOM errors"""
+        solutions = [
+            "Use 4-bit quantization: quantization='4bit'",
+            "Reduce max_length parameter",
+            "Use gradient checkpointing: model.gradient_checkpointing_enable()",
+            "Reduce batch size to 1",
+            "Use CPU offloading: device_map='auto', max_memory={'0': '20GB', 'cpu': '30GB'}",
+            "Clear CUDA cache: torch.cuda.empty_cache()",
+            "Use model sharding across multiple GPUs"
+        ]
+        
+        print("CUDA Out of Memory Solutions:")
+        for i, solution in enumerate(solutions, 1):
+            print(f"{i}. {solution}")
+    
+    @staticmethod
+    def solve_slow_inference():
+        """Solutions for slow inference"""
+        solutions = [
+            "Enable CUDA optimizations: torch.backends.cuda.matmul.allow_tf32 = True",
+            "Use Flash Attention: pip install flash-attn",
+            "Enable torch.compile() for PyTorch 2.0+",
+            "Use vLLM for production inference",
+            "Optimize batch size for your hardware",
+            "Use tensor parallelism for multi-GPU setups",
+            "Enable mixed precision: torch_dtype=torch.float16"
+        ]
+        
+        print("Slow Inference Solutions:")
+        for i, solution in enumerate(solutions, 1):
+            print(f"{i}. {solution}")
+    
+    @staticmethod
+    def solve_model_loading_errors():
+        """Solutions for model loading errors"""
+        solutions = [
+            "Check internet connection and Hugging Face Hub access",
+            "Use trust_remote_code=True parameter",
+            "Set HF_TOKEN environment variable if needed",
+            "Try downloading model manually: huggingface-cli download deepseek-ai/DeepSeek-R1-0528",
+            "Use local model path if downloaded manually",
+            "Check available disk space (model is ~50GB)",
+            "Use low_cpu_mem_usage=True for large models"
+        ]
+        
+        print("Model Loading Error Solutions:")
+        for i, solution in enumerate(solutions, 1):
+            print(f"{i}. {solution}")
+    
+    @staticmethod
+    def solve_import_errors():
+        """Solutions for import errors"""
+        solutions = [
+            "Update transformers: pip install transformers>=4.37.0",
+            "Install missing dependencies: pip install accelerate bitsandbytes",
+            "Use virtual environment to avoid conflicts",
+            "Check Python version (3.8+ required)",
+            "Reinstall PyTorch with CUDA support",
+            "Clear pip cache: pip cache purge"
+        ]
+        
+        print("Import Error Solutions:")
+        for i, solution in enumerate(solutions, 1):
+            print(f"{i}. {solution}")
+
+# Interactive troubleshooting
+def interactive_troubleshooting():
+    """Interactive troubleshooting session"""
+    guide = TroubleshootingGuide()
+    solver = CommonIssuesSolver()
+    
+    print("DeepSeek R1-0528 Interactive Troubleshooting")
+    print("=" * 45)
+    
+    while True:
+        print("\nWhat issue are you experiencing?")
+        print("1. Run full system diagnostics")
+        print("2. CUDA out of memory errors")
+        print("3. Slow inference speed")
+        print("4. Model loading errors")
+        print("5. Import/dependency errors")
+        print("6. Exit")
+        
+        choice = input("\nEnter your choice (1-6): ").strip()
+        
+        if choice == "1":
+            guide.run_full_diagnostics()
+        elif choice == "2":
+            solver.solve_cuda_out_of_memory()
+        elif choice == "3":
+            solver.solve_slow_inference()
+        elif choice == "4":
+            solver.solve_model_loading_errors()
+        elif choice == "5":
+            solver.solve_import_errors()
+        elif choice == "6":
+            print("Goodbye!")
+            break
+        else:
+            print("Invalid choice. Please try again.")
+
+# Quick diagnostic script
+def quick_diagnostic():
+    """Quick diagnostic check"""
+    print("DeepSeek R1-0528 Quick Diagnostic")
+    print("=" * 35)
+    
+    # Check Python version
+    python_version = sys.version_info
+    print(f"Python version: {python_version.major}.{python_version.minor}.{python_version.micro}")
+    
+    if python_version < (3, 8):
+        print("❌ Python 3.8+ required")
+        return
+    else:
+        print("✅ Python version OK")
+    
+    # Check PyTorch
+    try:
+        import torch
+        print(f"✅ PyTorch {torch.__version__} installed")
+        
+        if torch.cuda.is_available():
+            print(f"✅ CUDA available: {torch.version.cuda}")
+            print(f"✅ GPU count: {torch.cuda.device_count()}")
+            
+            for i in range(torch.cuda.device_count()):
+                props = torch.cuda.get_device_properties(i)
+                print(f"   GPU {i}: {props.name} ({props.total_memory / 1e9:.1f} GB)")
+        else:
+            print("❌ CUDA not available")
+    
+    except ImportError:
+        print("❌ PyTorch not installed")
+        return
+    
+    # Check transformers
+    try:
+        import transformers
+        print(f"✅ Transformers {transformers.__version__} installed")
+    except ImportError:
+        print("❌ Transformers not installed")
+    
+    # Check memory
+    memory = psutil.virtual_memory()
+    print(f"💾 System memory: {memory.total / 1e9:.1f} GB ({memory.percent:.1f}% used)")
+    
+    if memory.total / 1e9 < 16:
+        print("⚠️  Low system memory (16GB+ recommended)")
+    
+    print("\nFor detailed diagnostics, run: python troubleshooting.py")
+
+if __name__ == "__main__":
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="DeepSeek R1-0528 Troubleshooting")
+    parser.add_argument("--quick", action="store_true", help="Run quick diagnostic")
+    parser.add_argument("--interactive", action="store_true", help="Interactive troubleshooting")
+    parser.add_argument("--full", action="store_true", help="Full system diagnostics")
+    
+    args = parser.parse_args()
+    
+    if args.quick:
+        quick_diagnostic()
+    elif args.interactive:
+        interactive_troubleshooting()
+    elif args.full:
+        guide = TroubleshootingGuide()
+        guide.run_full_diagnostics()
+    else:
+        print("Use --quick, --interactive, or --full")
+```
+
+## 8. Performance Benchmarking and Scaling
+
+### Benchmarking Suite
+
+```python
+# benchmarking.py
+import time
+import torch
+import psutil
+import json
+import statistics
+from typing import Dict, List, Any, Optional, Tuple
+from dataclasses import dataclass, asdict
+import matplotlib.pyplot as plt
+import pandas as pd
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import asyncio
+
+@dataclass
+class BenchmarkResult:
+    """Benchmark result data structure"""
+    test_name: str
+    model_config: str
+    input_tokens: int
+    output_tokens: int
+    generation_time: float
+    tokens_per_second: float
+    memory_usage_gb: float
+    gpu_utilization: float
+    success: bool
+    error: Optional[str] = None
+
+class DeepSeekBenchmark:
+    """Comprehensive benchmarking suite for DeepSeek R1-0528"""
+    
+    def __init__(self, model, tokenizer, config_name: str = "default"):
+        self.model = model
+        self.tokenizer = tokenizer
+        self.config_name = config_name
+        self.results: List[BenchmarkResult] = []
+    
+    def benchmark_single_generation(
+        self,
+        prompt: str,
+        max_new_tokens: int = 256,
+        temperature: float = 0.7,
+        runs: int = 5
+    ) -> List[BenchmarkResult]:
+        """Benchmark single text generation"""
+        results = []
+        
+        for run in range(runs):
+            try:
+                # Clear cache before each run
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+                    torch.cuda.synchronize()
+                
+                # Tokenize input
+                inputs = self.tokenizer(
+                    prompt,
+                    return_tensors="pt",
+                    truncation=True,
+                    max_length=2048
+                )
+                
+                if torch.cuda.is_available():
+                    inputs = {k: v.to(self.model.device) for k, v in inputs.items()}
+                
+                # Measure memory before generation
+                memory_before = self._get_memory_usage()
+                
+                # Generate
+                start_time = time.time()
+                with torch.no_grad():
+                    outputs = self.model.generate(
+                        **inputs,
+                        max_new_tokens=max_new_tokens,
+                        temperature=temperature,
+                        do_sample=True,
+                        pad_token_id=self.tokenizer.eos_token_id
+                    )
+                
+                if torch.cuda.is_available():
+                    torch.cuda.synchronize()
+                
+                generation_time = time.time() - start_time
+                
+                # Measure memory after generation
+                memory_after = self._get_memory_usage()
+                
+                # Calculate metrics
+                input_tokens = inputs['input_ids'].shape[1]
+                output_tokens = outputs.shape[1] - input_tokens
+                tokens_per_second = output_tokens / generation_time
+                
+                result = BenchmarkResult(
+                    test_name=f"single_generation_run_{run}",
+                    model_config=self.config_name,
+                    input_tokens=input_tokens,
+                    output_tokens=output_tokens,
+                    generation_time=generation_time,
+                    tokens_per_second=tokens_per_second,
+                    memory_usage_gb=memory_after,
+                    gpu_utilization=self._get_gpu_utilization(),
+                    success=True
+                )
+                
+                results.append(result)
+                
+            except Exception as e:
+                result = BenchmarkResult(
+                    test_name=f"single_generation_run_{run}",
+                    model_config=self.config_name,
+                    input_tokens=0,
+                    output_tokens=0,
+                    generation_time=0,
+                    tokens_per_second=0,
+                    memory_usage_gb=0,
+                    gpu_utilization=0,
+                    success=False,
+                    error=str(e)
+                )
+                results.append(result)
+        
+        self.results.extend(results)
+        return results
+    
+    def benchmark_batch_generation(
+        self,
+        prompts: List[str],
+        max_new_tokens: int = 256,
+        temperature: float = 0.7
+    ) -> BenchmarkResult:
+        """Benchmark batch text generation"""
+        try:
+            # Clear cache
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                torch.cuda.synchronize()
+            
+            # Tokenize batch
+            inputs = self.tokenizer(
+                prompts,
+                return_tensors="pt",
+                padding=True,
+                truncation=True,
+                max_length=2048
+            )
+            
+            if torch.cuda.is_available():
+                inputs = {k: v.to(self.model.device) for k, v in inputs.items()}
+            
+            # Measure memory before generation
+            memory_before = self._get_memory_usage()
+            
+            # Generate batch
+            start_time = time.time()
+            with torch.no_grad():
+                outputs = self.model.generate(
+                    **inputs,
+                    max_new_tokens=max_new_tokens,
+                    temperature=temperature,
+                    do_sample=True,
+                    pad_token_id=self.tokenizer.eos_token_id
+                )
+            
+            if torch.cuda.is_available():
+                torch.cuda.synchronize()
+            
+            generation_time = time.time() - start_time
+            
+            # Calculate metrics
+            batch_size = len(prompts)
+            total_input_tokens = inputs['input_ids'].numel()
+            total_output_tokens = outputs.numel() - total_input_tokens
+            tokens_per_second = total_output_tokens / generation_time
+            
+            result = BenchmarkResult(
+                test_name=f"batch_generation_size_{batch_size}",
+                model_config=self.config_name,
+                input_tokens=total_input_tokens,
+                output_tokens=total_output_tokens,
+                generation_time=generation_time,
+                tokens_per_second=tokens_per_second,
+                memory_usage_gb=self._get_memory_usage(),
+                gpu_utilization=self._get_gpu_utilization(),
+                success=True
+            )
+            
+        except Exception as e:
+            result = BenchmarkResult(
+                test_name=f"batch_generation_size_{len(prompts)}",
+                model_config=self.config_name,
+                input_tokens=0,
+                output_tokens=0,
+                generation_time=0,
+                tokens_per_second=0,
+                memory_usage_gb=0,
+                gpu_utilization=0,
+                success=False,
+                error=str(e)
+            )
+        
+        self.results.append(result)
+        return result
+    
+    def benchmark_concurrent_requests(
+        self,
+        prompt: str,
+        num_concurrent: int = 5,
+        max_new_tokens: int = 128
+    ) -> List[BenchmarkResult]:
+        """Benchmark concurrent request handling"""
+        results = []
+        
+        def single_request(request_id: int) -> BenchmarkResult:
+            try:
+                start_time = time.time()
+                
+                inputs = self.tokenizer(
+                    prompt,
+                    return_tensors="pt",
+                    truncation=True,
+                    max_length=2048
+                )
+                
+                if torch.cuda.is_available():
+                    inputs = {k: v.to(self.model.device) for k, v in inputs.items()}
+                
+                with torch.no_grad():
+                    outputs = self.model.generate(
+                        **inputs,
+                        max_new_tokens=max_new_tokens,
+                        temperature=0.7,
+                        do_sample=True,
+                        pad_token_id=self.tokenizer.eos_token_id
+                    )
+                
+                generation_time = time.time() - start_time
+                
+                input_tokens = inputs['input_ids'].shape[1]
+                output_tokens = outputs.shape[1] - input_tokens
+                
+                return BenchmarkResult(
+                    test_name=f"concurrent_request_{request_id}",
+                    model_config=self.config_name,
+                    input_tokens=input_tokens,
+                    output_tokens=output_tokens,
+                    generation_time=generation_time,
+                    tokens_per_second=output_tokens / generation_time,
+                    memory_usage_gb=self._get_memory_usage(),
+                    gpu_utilization=self._get_gpu_utilization(),
+                    success=True
+                )
+                
+            except Exception as e:
+                return BenchmarkResult(
+                    test_name=f"concurrent_request_{request_id}",
+                    model_config=self.config_name,
+                    input_tokens=0,
+                    output_tokens=0,
+                    generation_time=0,
+                    tokens_per_second=0,
+                    memory_usage_gb=0,
+                    gpu_utilization=0,
+                    success=False,
+                    error=str(e)
+                )
+        
+        # Run concurrent requests
+        with ThreadPoolExecutor(max_workers=num_concurrent) as executor:
+            futures = [executor.submit(single_request, i) for i in range(num_concurrent)]
+            
+            for future in as_completed(futures):
+                result = future.result()
+                results.append(result)
+        
+        self.results.extend(results)
+        return results
+    
+    def benchmark_different_lengths(
+        self,
+        base_prompt: str = "Write a detailed explanation about",
+        topics: List[str] = None,
+        max_tokens_list: List[int] = None
+    ) -> List[BenchmarkResult]:
+        """Benchmark generation with different output lengths"""
+        if topics is None:
+            topics = ["machine learning", "quantum computing", "climate change"]
+        
+        if max_tokens_list is None:
+            max_tokens_list = [50, 128, 256, 512]
+        
+        results = []
+        
+        for topic in topics:
+            prompt = f"{base_prompt} {topic}:"
+            
+            for max_tokens in max_tokens_list:
+                try:
+                    start_time = time.time()
+                    
+                    inputs = self.tokenizer(
+                        prompt,
+                        return_tensors="pt",
+                        truncation=True,
+                        max_length=2048
+                    )
+                    
+                    if torch.cuda.is_available():
+                        inputs = {k: v.to(self.model.device) for k, v in inputs.items()}
+                    
+                    with torch.no_grad():
+                        outputs = self.model.generate(
+                            **inputs,
+                            max_new_tokens=max_tokens,
+                            temperature=0.7,
+                            do_sample=True,
+                            pad_token_id=self.tokenizer.eos_token_id
+                        )
+                    
+                    generation_time = time.time() - start_time
+                    
+                    input_tokens = inputs['input_ids'].shape[1]
+                    output_tokens = outputs.shape[1] - input_tokens
+                    
+                    result = BenchmarkResult(
+                        test_name=f"length_test_{max_tokens}_tokens",
+                        model_config=self.config_name,
+                        input_tokens=input_tokens,
+                        output_tokens=output_tokens,
+                        generation_time=generation_time,
+                        tokens_per_second=output_tokens / generation_time,
+                        memory_usage_gb=self._get_memory_usage(),
+                        gpu_utilization=self._get_gpu_utilization(),
+                        success=True
+                    )
+                    
+                    results.append(result)
+                    
+                except Exception as e:
+                    result = BenchmarkResult(
+                        test_name=f"length_test_{max_tokens}_tokens",
+                        model_config=self.config_name,
+                        input_tokens=0,
+                        output_tokens=0,
+                        generation_time=0,
+                        tokens_per_second=0,
+                        memory_usage_gb=0,
+                        gpu_utilization=0,
+                        success=False,
+                        error=str(e)
+                    )
+                    results.append(result)
+        
+        self.results.extend(results)
+        return results
+    
+    def _get_memory_usage(self) -> float:
+        """Get current memory usage in GB"""
+        if torch.cuda.is_available():
+            return torch.cuda.memory_allocated() / 1e9
+        else:
+            return psutil.virtual_memory().used / 1e9
+    
+    def _get_gpu_utilization(self) -> float:
+        """Get GPU utilization percentage"""
+        try:
+            import pynvml
+            pynvml.nvmlInit()
+            handle = pynvml.nvmlDeviceGetHandleByIndex(0)
+            utilization = pynvml.nvmlDeviceGetUtilizationRates(handle)
+            return utilization.gpu
+        except:
+            return 0.0
+    
+    def generate_report(self) -> Dict[str, Any]:
+        """Generate comprehensive benchmark report"""
+        if not self.results:
+            return {"error": "No benchmark results available"}
+        
+        successful_results = [r for r in self.results if r.success]
+        failed_results = [r for r in self.results if not r.success]
+        
+        if not successful_results:
+            return {"error": "No successful benchmark runs"}
+        
+        # Calculate statistics
+        generation_times = [r.generation_time for r in successful_results]
+        tokens_per_second = [r.tokens_per_second for r in successful_results]
+        memory_usage = [r.memory_usage_gb for r in successful_results]
+        
+        report = {
+            "summary": {
+                "total_tests": len(self.results),
+                "successful_tests": len(successful_results),
+                "failed_tests": len(failed_results),
+                "success_rate": len(successful_results) / len(self.results) * 100
+            },
+            "performance": {
+                "avg_generation_time": statistics.mean(generation_times),
+                "median_generation_time": statistics.median(generation_times),
+                "min_generation_time": min(generation_times),
+                "max_generation_time": max(generation_times),
+                "std_generation_time": statistics.stdev(generation_times) if len(generation_times) > 1 else 0,
+                
+                "avg_tokens_per_second": statistics.mean(tokens_per_second),
+                "median_tokens_per_second": statistics.median(tokens_per_second),
+                "min_tokens_per_second": min(tokens_per_second),
+                "max_tokens_per_second": max(tokens_per_second),
+                
+                "avg_memory_usage_gb": statistics.mean(memory_usage),
+                "max_memory_usage_gb": max(memory_usage),
+                "min_memory_usage_gb": min(memory_usage)
+            },
+            "model_config": self.config_name,
+            "detailed_results": [asdict(r) for r in self.results]
+        }
+        
+        return report
+    
+    def save_results(self, filename: str):
+        """Save benchmark results to file"""
+        report = self.generate_report()
+        
+        with open(filename, 'w') as f:
+            json.dump(report, f, indent=2)
+        
+        print(f"Benchmark results saved to {filename}")
+    
+    def plot_results(self, save_path: Optional[str] = None):
+        """Generate visualization of benchmark results"""
+        if not self.results:
+            print("No results to plot")
+            return
+        
+        successful_results = [r for r in self.results if r.success]
+        
+        if not successful_results:
+            print("No successful results to plot")
+            return
+        
+        # Create subplots
+        fig, axes = plt.subplots(2, 2, figsize=(15, 10))
+        fig.suptitle(f"DeepSeek R1-0528 Benchmark Results ({self.config_name})", fontsize=16)
+        
+        # Tokens per second distribution
+        tokens_per_second = [r.tokens_per_second for r in successful_results]
+        axes[0, 0].hist(tokens_per_second, bins=20, alpha=0.7, edgecolor='black')
+        axes[0, 0].set_xlabel("Tokens per Second")
+        axes[0, 0].set_ylabel("Frequency")
+        axes[0, 0].set_title("Generation Speed Distribution")
+        
+        # Generation time vs output tokens
+        output_tokens = [r.output_tokens for r in successful_results]
+        generation_times = [r.generation_time for r in successful_results]
+        axes[0, 1].scatter(output_tokens, generation_times, alpha=0.7)
+        axes[0, 1].set_xlabel("Output Tokens")
+        axes[0, 1].set_ylabel("Generation Time (s)")
+        axes[0, 1].set_title("Generation Time vs Output Length")
+        
+        # Memory usage over time
+        test_indices = list(range(len(successful_results)))
+        memory_usage = [r.memory_usage_gb for r in successful_results]
+        axes[1, 0].plot(test_indices, memory_usage, marker='o', alpha=0.7)
+        axes[1, 0].set_xlabel("Test Number")
+        axes[1, 0].set_ylabel("Memory Usage (GB)")
+        axes[1, 0].set_title("Memory Usage Over Tests")
+        
+        # Performance by test type
+        test_types = {}
+        for result in successful_results:
+            test_type = result.test_name.split('_')[0]
+            if test_type not in test_types:
+                test_types[test_type] = []
+            test_types[test_type].append(result.tokens_per_second)
+        
+        if len(test_types) > 1:
+            axes[1, 1].boxplot(
+                [test_types[t] for t in test_types.keys()],
+                labels=list(test_types.keys())
+            )
+            axes[1, 1].set_ylabel("Tokens per Second")
+            axes[1, 1].set_title("Performance by Test Type")
+            axes[1, 1].tick_params(axis='x', rotation=45)
+        else:
+            axes[1, 1].text(0.5, 0.5, "Insufficient data\nfor comparison", 
+                           ha='center', va='center', transform=axes[1, 1].transAxes)
+            axes[1, 1].set_title("Performance by Test Type")
+        
+        plt.tight_layout()
+        
+        if save_path:
+            plt.savefig(save_path, dpi=300, bbox_inches='tight')
+            print(f"Plot saved to {save_path}")
+        
+        plt.show()
+
+# Comprehensive benchmark suite
+def run_comprehensive_benchmark(model, tokenizer, config_name: str = "default"):
+    """Run comprehensive benchmark suite"""
+    benchmark = DeepSeekBenchmark(model, tokenizer, config_name)
+    
+    print(f"Running comprehensive benchmark for {config_name}")
+    print("=" * 50)
+    
+    # Test prompts
+    test_prompts = [
+        "Write a Python function to implement binary search.",
+        "Explain the concept of machine learning in detail.",
+        "Describe the process of photosynthesis step by step.",
+        "What are the main differences between SQL and NoSQL databases?",
+        "How does blockchain technology work?"
+    ]
+    
+    # 1. Single generation benchmark
+    print("1. Single generation benchmark...")
+    for i, prompt in enumerate(test_prompts[:2]):  # Test with 2 prompts
+        print(f"   Testing prompt {i+1}...")
+        benchmark.benchmark_single_generation(prompt, max_new_tokens=256, runs=3)
+    
+    # 2. Batch generation benchmark
+    print("2. Batch generation benchmark...")
+    for batch_size in [2, 4]:
+        print(f"   Testing batch size {batch_size}...")
+        benchmark.benchmark_batch_generation(
+            test_prompts[:batch_size],
+            max_new_tokens=128
+        )
+    
+    # 3. Different length benchmark
+    print("3. Different output length benchmark...")
+    benchmark.benchmark_different_lengths(
+        base_prompt="Explain",
+        topics=["artificial intelligence", "quantum physics"],
+        max_tokens_list=[64, 128, 256]
+    )
+    
+    # 4. Concurrent requests benchmark
+    print("4. Concurrent requests benchmark...")
+    benchmark.benchmark_concurrent_requests(
+        "Write a short story about space exploration.",
+        num_concurrent=3,
+        max_new_tokens=100
+    )
+    
+    # Generate and save report
+    print("5. Generating report...")
+    report = benchmark.generate_report()
+    
+    # Save results
+    timestamp = int(time.time())
+    results_file = f"benchmark_results_{config_name}_{timestamp}.json"
+    benchmark.save_results(results_file)
+    
+    # Generate plots
+    plot_file = f"benchmark_plots_{config_name}_{timestamp}.png"
+    benchmark.plot_results(save_path=plot_file)
+    
+    # Print summary
+    print("\nBenchmark Summary:")
+    print(f"Total tests: {report['summary']['total_tests']}")
+    print(f"Success rate: {report['summary']['success_rate']:.1f}%")
+    print(f"Average tokens/second: {report['performance']['avg_tokens_per_second']:.2f}")
+    print(f"Average memory usage: {report['performance']['avg_memory_usage_gb']:.2f} GB")
+    
+    return benchmark, report
+
+# Usage example
+if __name__ == "__main__":
+    # This would be used with actual model and tokenizer
+    # model = ... (your loaded model)
+    # tokenizer = ... (your loaded tokenizer)
+    # benchmark, report = run_comprehensive_benchmark(model, tokenizer, "4bit_quantized")
+    pass
+```
+
+This completes the comprehensive DeepSeek R1-0528 Local Deployment Guide. The guide now includes:
+
+1. **Complete Transformers Integration** - Both pipeline and direct model loading with advanced features
+2. **Kaggle Notebook Implementation** - Cell-by-cell breakdown with memory optimization
+3. **Production vLLM Server** - Full server implementation with monitoring and client libraries
+4. **Docker Deployment** - Complete containerization with load balancing and monitoring
+5. **Performance Optimization** - GPU acceleration, quantization, and memory management
+6. **Production Features** - Logging, monitoring, error handling, and rate limiting
+7. **Troubleshooting Guide** - Comprehensive diagnostics and solutions
+8. **Benchmarking Suite** - Performance testing and analysis tools
+
+The guide provides production-ready code examples, optimization techniques, and scaling strategies for all deployment scenarios you requested.

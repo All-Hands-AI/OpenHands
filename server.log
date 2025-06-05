@@ -1,0 +1,44 @@
+INFO:     Started server process [4190]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:12000 (Press CTRL+C to quit)
+================================================================================
+🚀 DeepSeek R1-0528 Integration Mock Test Server
+================================================================================
+🌐 Local Server: http://0.0.0.0:12000
+🌐 External Access: https://work-1-mscsekbcievybxrw.prod-runtime.all-hands.dev
+📋 Available endpoints:
+   - /                    : Interactive web interface
+   - /health              : System health check
+   - /chat                : Chat completion API
+   - /test                : Integration test
+   - /models              : List available models
+   - /stats               : Server statistics
+   - /simulate_failure    : Simulate primary model failure
+   - /reset_health        : Reset all models to healthy state
+
+🎭 DEMO MODE: This server simulates DeepSeek R1-0528 responses
+✨ Features demonstrated:
+   - DeepSeek R1-0528 integration
+   - Intelligent fallback mechanism
+   - Health monitoring and recovery
+   - Cost optimization
+   - Performance tracking
+================================================================================
+INFO:     127.0.0.1:57846 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37502 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37512 - "GET /test HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48268 - "POST /simulate_failure HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48284 - "POST /chat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39736 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39742 - "GET /models HTTP/1.1" 200 OK
+INFO:     10.2.9.135:36638 - "GET / HTTP/1.1" 200 OK
+INFO:     10.2.9.135:36638 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.9.135:58276 - "POST /chat HTTP/1.1" 200 OK
+INFO:     10.2.9.135:58276 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.9.135:51772 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.9.135:60572 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.9.135:50642 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.9.135:57288 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.9.135:46878 - "GET /health HTTP/1.1" 200 OK
+INFO:     10.2.9.135:59222 - "GET /health HTTP/1.1" 200 OK
