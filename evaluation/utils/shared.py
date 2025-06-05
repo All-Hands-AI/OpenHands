@@ -300,6 +300,23 @@ def assert_and_raise(condition: bool, msg: str):
         raise EvalException(msg)
 
 
+def check_maximum_retries_exceeded(eval_output_dir):
+    """Check if maximum_retries_exceeded.txt exists and output a message."""
+    from openhands.core.logger import openhands_logger as logger
+
+    retries_file_path = os.path.join(eval_output_dir, 'maximum_retries_exceeded.txt')
+    if os.path.exists(retries_file_path):
+        with open(retries_file_path, 'r') as f:
+            content = f.read().strip()
+            if content:
+                failed_instances = content.split('\n')
+                failed_count = len(failed_instances)
+                logger.info(
+                    f'ATTENTION: {failed_count} instances reached maximum error retries and were skipped.'
+                )
+                logger.info(f'These instances are listed in: {retries_file_path}')
+
+
 def _process_instance_wrapper(
     process_instance_func: Callable[[pd.Series, EvalMetadata, bool], EvalOutput],
     instance: pd.Series,
@@ -352,33 +369,46 @@ def _process_instance_wrapper(
                     + f'[Encountered after {max_retries} retries. Please check the logs and report the issue.]'
                     + '-' * 10
                 )
-                # Instead of raising an error, log it and return an EvalOutput with the error
-                logger.exception(e)
-                logger.error(
-                    f'Maximum error retries reached for instance {instance.instance_id}. Skipping this instance and continuing with others.'
+
+                # Check if EVAL_SKIP_ERRORS is set to true
+                skip_errors = (
+                    os.environ.get('EVAL_SKIP_ERRORS', 'false').lower() == 'true'
                 )
 
-                # Add the instance name to maximum_retries_exceeded.txt in the same folder as output.jsonl
-                if metadata and metadata.eval_output_dir:
-                    retries_file_path = os.path.join(
-                        metadata.eval_output_dir, 'maximum_retries_exceeded.txt'
+                if skip_errors:
+                    # Instead of raising an error, log it and return an EvalOutput with the error
+                    logger.exception(e)
+                    logger.error(
+                        f'Maximum error retries reached for instance {instance.instance_id}. Skipping this instance and continuing with others.'
                     )
-                    try:
-                        with open(retries_file_path, 'a') as f:
-                            f.write(f'{instance.instance_id}\n')
-                        logger.info(
-                            f'Added instance {instance.instance_id} to {retries_file_path}'
-                        )
-                    except Exception as write_error:
-                        logger.error(
-                            f'Failed to write to maximum_retries_exceeded.txt: {write_error}'
-                        )
 
-                return EvalOutput(
-                    instance_id=instance.instance_id,
-                    test_result={},
-                    error=f'Maximum retries ({max_retries}) reached: {error}',
-                )
+                    # Add the instance name to maximum_retries_exceeded.txt in the same folder as output.jsonl
+                    if metadata and metadata.eval_output_dir:
+                        retries_file_path = os.path.join(
+                            metadata.eval_output_dir, 'maximum_retries_exceeded.txt'
+                        )
+                        try:
+                            with open(retries_file_path, 'a') as f:
+                                f.write(f'{instance.instance_id}\n')
+                            logger.info(
+                                f'Added instance {instance.instance_id} to {retries_file_path}'
+                            )
+                        except Exception as write_error:
+                            logger.error(
+                                f'Failed to write to maximum_retries_exceeded.txt: {write_error}'
+                            )
+
+                    return EvalOutput(
+                        instance_id=instance.instance_id,
+                        test_result={},
+                        error=f'Maximum retries ({max_retries}) reached: {error}',
+                    )
+                else:
+                    # Raise an error after all retries & stop the evaluation
+                    logger.exception(e)
+                    raise RuntimeError(
+                        f'Maximum error retries reached for instance {instance.instance_id}'
+                    ) from e
             msg = (
                 '-' * 10
                 + '\n'

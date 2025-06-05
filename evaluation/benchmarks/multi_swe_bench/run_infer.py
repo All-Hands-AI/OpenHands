@@ -17,6 +17,7 @@ from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
     assert_and_raise,
+    check_maximum_retries_exceeded,
     codeact_user_response,
     get_default_sandbox_config_for_eval,
     get_metrics,
@@ -46,6 +47,7 @@ from openhands.utils.shutdown_listener import sleep_if_should_continue
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
 USE_INSTANCE_IMAGE = os.environ.get('USE_INSTANCE_IMAGE', 'true').lower() == 'true'
 RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'true'
+EVAL_SKIP_ERRORS = os.environ.get('EVAL_SKIP_ERRORS', 'false').lower() == 'true'
 
 # TODO: migrate all swe-bench docker to ghcr.io/openhands
 # TODO: 适应所有的语言
@@ -843,3 +845,6 @@ if __name__ == '__main__':
         timeout_seconds=120 * 60,  # 2 hour PER instance should be more than enough
         max_retries=5,
     )
+
+    # Check if any instances reached maximum retries
+    check_maximum_retries_exceeded(metadata.eval_output_dir)
