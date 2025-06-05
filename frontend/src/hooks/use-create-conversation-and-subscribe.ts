@@ -1,4 +1,5 @@
 import React from "react";
+import toast from "react-hot-toast";
 import {
   renderConversationErroredToast,
   renderConversationCreatedToast,
@@ -18,6 +19,7 @@ import {
 } from "./use-subscribe-to-conversation";
 import { useUserProviders } from "./use-user-providers";
 import { Provider } from "#/types/settings";
+import { useConversationId } from "./use-conversation-id";
 
 const isErrorEvent = (
   event: unknown,
@@ -42,6 +44,7 @@ const isAgentStatusError = (
  * @returns
  */
 export const useCreateConversationAndSubscribe = () => {
+  const { conversationId: currentConversationId } = useConversationId();
   const { mutate: createConversation, isPending } = useCreateConversation();
   const { providers } = useUserProviders();
   const { connect, reconnect, disconnect } = useSubscribeToConversation();
@@ -118,6 +121,11 @@ export const useCreateConversationAndSubscribe = () => {
     },
     [createConversation, connect, reconnect, providers],
   );
+
+  React.useEffect(() => {
+    disconnect();
+    toast.dismiss("status");
+  }, [currentConversationId]);
 
   return { createConversationAndSubscribe, isPending };
 };

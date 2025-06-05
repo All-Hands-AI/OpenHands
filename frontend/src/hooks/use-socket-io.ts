@@ -141,6 +141,8 @@ export const useSocketIO = (): UseSocketIOReturn => {
   const disconnect = useCallback(() => {
     if (socketRef.current) {
       socketRef.current.disconnect();
+      socketRef.current.removeAllListeners();
+      socketRef.current = null;
     }
   }, []);
 
@@ -156,12 +158,7 @@ export const useSocketIO = (): UseSocketIOReturn => {
   useEffect(
     () => () => {
       console.warn("Cleaning up socket connection...");
-
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        socketRef.current.removeAllListeners();
-        socketRef.current = null;
-      }
+      disconnect();
     },
     [],
   );

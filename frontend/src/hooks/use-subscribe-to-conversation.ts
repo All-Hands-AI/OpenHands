@@ -1,8 +1,5 @@
-import React, { useCallback } from "react";
-import toast from "react-hot-toast";
+import { useCallback } from "react";
 import { useSocketIO } from "./use-socket-io";
-
-import { useConversationId } from "./use-conversation-id";
 
 export interface UseSubscribeToConversationOptions {
   conversation_id: string;
@@ -13,8 +10,6 @@ export interface UseSubscribeToConversationOptions {
 }
 
 export const useSubscribeToConversation = () => {
-  const { conversationId: currentConversationId } = useConversationId();
-
   // Use the socket hook with the event handlers
   const { connect, disconnect, isConnected, isConnecting, error, socket } =
     useSocketIO();
@@ -52,11 +47,6 @@ export const useSubscribeToConversation = () => {
     },
     [connect, disconnect],
   );
-
-  React.useEffect(() => {
-    disconnect();
-    toast.dismiss("status");
-  }, [currentConversationId]);
 
   return {
     connect: handleConnect,
