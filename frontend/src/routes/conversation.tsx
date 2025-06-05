@@ -61,6 +61,9 @@ function AppContent() {
         "This conversation does not exist, or you do not have permission to access it.",
       );
       navigate("/");
+    } else if (conversation?.status === "STOPPED") {
+      // start the conversation if the state is stopped on initial load
+      OpenHands.startConversation(conversation.conversation_id);
     }
   }, [conversation, isFetched, isAuthed]);
 

@@ -150,7 +150,8 @@ export function WsClientProvider({
   const { providers } = useUserProviders();
 
   const messageRateHandler = useRate({ threshold: 250 });
-  const { data: conversation } = useActiveConversation();
+  const { data: conversation, refetch: refetchConversation } =
+    useActiveConversation();
 
   function send(event: Record<string, unknown>) {
     if (!sioRef.current) {
@@ -277,6 +278,7 @@ export function WsClientProvider({
   }
 
   function handleError(data: unknown) {
+    // set status
     setStatus(WsClientProviderStatus.DISCONNECTED);
     updateStatusWhenErrorMessagePresent(data);
 
@@ -285,6 +287,9 @@ export function WsClientProvider({
         ? data.message
         : "An unknown error occurred on the WebSocket connection.",
     );
+
+    // check if something went wrong with the conversation.
+    refetchConversation();
   }
 
   React.useEffect(() => {

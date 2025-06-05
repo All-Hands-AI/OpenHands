@@ -8,14 +8,15 @@ const FIVE_MINUTES = 1000 * 60 * 5;
 export const useActiveConversation = () => {
   const { conversationId } = useConversationId();
   const userConversation = useUserConversation(conversationId, (query) => {
-    if (query.state.data?.status === "STARTING") {
-      return 2000; // 2 seconds
+    if (["STOPPED", "STARTING"].includes(query.state.data?.status || "")) {
+      return 3000; // 3 seconds
     }
     return FIVE_MINUTES;
   });
 
   useEffect(() => {
     const conversation = userConversation.data;
+    console.log("TRACE:setCurrentConversation", conversation);
     OpenHands.setCurrentConversation(conversation || null);
   }, [conversationId, userConversation.isFetched]);
   return userConversation;
