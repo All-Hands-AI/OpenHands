@@ -35,7 +35,10 @@ function UserSettingsScreen() {
     }
 
     // Check if verification status changed from false to true
-    if (prevVerificationStatusRef.current === false && settings?.EMAIL_VERIFIED === true) {
+    if (
+      prevVerificationStatusRef.current === false &&
+      settings?.EMAIL_VERIFIED === true
+    ) {
       // Show success message when email is verified
       setSaveSuccess(true);
       setResendSuccess(false); // Hide any resend success message
@@ -195,7 +198,8 @@ function UserSettingsScreen() {
 
               {saveSuccess && (
                 <div className="text-sm text-green-500 mt-1">
-                  {settings?.EMAIL_VERIFIED === true && prevVerificationStatusRef.current === false
+                  {settings?.EMAIL_VERIFIED === true &&
+                  prevVerificationStatusRef.current === false
                     ? t("SETTINGS$EMAIL_VERIFIED_SUCCESSFULLY")
                     : t("SETTINGS$EMAIL_SAVED_SUCCESSFULLY")}
                 </div>
