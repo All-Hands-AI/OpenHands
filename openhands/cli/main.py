@@ -455,8 +455,8 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
 def main():
     args = parse_arguments()
 
-    # Check if team mode is enabled
-    if args.team:
+    # Check if team command is used
+    if hasattr(args, 'command') and args.command == 'team':
         # Use subprocess to run the team CLI directly
         import subprocess
         import sys
@@ -464,23 +464,21 @@ def main():
         # Get the Python executable
         python_exe = sys.executable
 
-        # Get arguments after --team
+        # Get arguments after 'team'
         team_args = []
-        if '--team' in sys.argv:
-            team_index = sys.argv.index('--team')
-            if team_index + 1 < len(sys.argv):
-                team_args = sys.argv[team_index + 1 :]
+        if len(sys.argv) > 2:
+            team_args = sys.argv[2:]
 
         if not team_args:
             # If no additional arguments, show help message
             print('OpenHands Team CLI')
             print('=================')
             print('To use the team CLI, run one of the following commands:')
-            print('  openhands --team list        - List all conversations')
-            print('  openhands --team create      - Create a new conversation')
-            print('  openhands --team join <id>   - Join an existing conversation')
+            print('  openhands team list        - List all conversations')
+            print('  openhands team create      - Create a new conversation')
+            print('  openhands team join <id>   - Join an existing conversation')
             print()
-            print("For more information, run 'openhands --team --help'")
+            print("For more information, run 'openhands team --help'")
             return
 
         # Construct the command to run the appropriate team CLI command

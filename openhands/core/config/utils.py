@@ -744,19 +744,26 @@ def get_parser() -> argparse.ArgumentParser:
         type=bool,
         default=False,
     )
-    parser.add_argument(
-        '--team',
-        help='Use team mode to interact with the OpenHands API',
-        action='store_true',
-        default=False,
+    # Add team subcommand
+    subparsers = parser.add_subparsers(dest='command')
+    subparsers.add_parser(
+        'team', help='Use team mode to interact with the OpenHands API'
     )
+    # We'll handle the team subcommands separately
     return parser
 
 
 def parse_arguments() -> argparse.Namespace:
     """Parse command line arguments."""
     parser = get_parser()
-    args = parser.parse_args()
+
+    # Check if 'team' command is present
+    if len(sys.argv) > 1 and sys.argv[1] == 'team':
+        # Only parse known arguments, ignoring any team-specific arguments
+        args, _ = parser.parse_known_args()
+    else:
+        # Parse all arguments normally
+        args = parser.parse_args()
 
     if args.version:
         print(f'OpenHands version: {__version__}')
