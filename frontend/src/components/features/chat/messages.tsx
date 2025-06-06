@@ -86,12 +86,15 @@ export const Messages: React.FC<MessagesProps> = React.memo(
             isAwaitingUserConfirmation={isAwaitingUserConfirmation}
             isLastMessage={messages.length - 1 === index}
             userMessageActionButton={
-              <LaunchToMicroagentButton
-                onClick={() => {
-                  setSelectedEventId(message.id);
-                  setShowLaunchMicroagentModal(true);
-                }}
-              />
+              // Only show the button conversation has a selected repository
+              conversation?.selected_repository && (
+                <LaunchToMicroagentButton
+                  onClick={() => {
+                    setSelectedEventId(message.id);
+                    setShowLaunchMicroagentModal(true);
+                  }}
+                />
+              )
             }
           />
         ))}

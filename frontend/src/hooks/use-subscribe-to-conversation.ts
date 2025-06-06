@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { useSocketIO } from "./use-socket-io";
+import { createChatMessage } from "#/services/chat-service";
 
 export interface UseSubscribeToConversationOptions {
   conversation_id: string;
@@ -11,8 +12,7 @@ export interface UseSubscribeToConversationOptions {
 
 export const useSubscribeToConversation = () => {
   // Use the socket hook with the event handlers
-  const { connect, disconnect, isConnected, isConnecting, error, socket } =
-    useSocketIO();
+  const { connect, disconnect, emit } = useSocketIO();
 
   const handleConnect = useCallback(
     (
@@ -30,31 +30,24 @@ export const useSubscribeToConversation = () => {
     [connect],
   );
 
-  const handleReconnect = useCallback(
-    (
-      url: string,
-      options: UseSubscribeToConversationOptions,
-      eventHandlers?: Record<string, (data: unknown) => void>,
-    ) => {
-      disconnect();
+  const handleReconnect = useCallback(() => {
+    emit(
+      "oh_user_action",
+      createChatMessage("continue", [], new Date().toISOString()),
+    );
+    /* disconnect();
       connect(
         {
           url,
           query: options,
         },
         eventHandlers,
-      );
-    },
-    [connect, disconnect],
-  );
+      ); */
+  }, [emit]);
 
   return {
     connect: handleConnect,
     reconnect: handleReconnect,
     disconnect,
-    isConnected,
-    isConnecting,
-    error,
-    socket,
   };
 };

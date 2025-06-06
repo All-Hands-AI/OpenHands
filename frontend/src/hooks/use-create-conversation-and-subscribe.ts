@@ -93,7 +93,8 @@ export const useCreateConversationAndSubscribe = () => {
 
               if (isErrorEvent(event) || isAgentStatusError(event)) {
                 renderConversationErroredToast(event.message, () => {
-                  reconnect(baseUrl, opts, { oh_event: handleOhEvent });
+                  reconnect();
+                  renderConversationCreatedToast(data.conversation_id);
                 });
               } else if (isStatusUpdate(event)) {
                 if (
