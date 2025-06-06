@@ -44,7 +44,20 @@ class MCPProxyManager:
         self.auth_enabled = auth_enabled
         self.api_key = api_key
         self.proxy: Optional[FastMCP] = None
-        self.config: dict[str, Any] = {'mcpServers': {'default': {}}, 'tools': []}
+        # Initialize with a valid StdioMCPServer configuration
+        self.config: dict[str, Any] = {
+            'mcpServers': {
+                'default': {
+                    'StdioMCPServer': {
+                        'command': 'python',
+                        'args': ['-m', 'mcp.server'],
+                        'env': {},
+                        'transport': 'stdio',
+                    }
+                }
+            },
+            'tools': [],
+        }
 
         # Configure FastMCP logger
         if logger_level is not None:
