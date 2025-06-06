@@ -13,7 +13,7 @@ from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.provider import ProviderToken
 from openhands.integrations.service_types import GitService, ProviderType
 from openhands.server.dependencies import get_dependencies
-from openhands.server.shared import ConversationStoreImpl, config
+from openhands.server.shared import ConversationStoreImpl, config, server_config
 from openhands.server.types import AppMode
 from openhands.server.user_auth import (
     get_access_token,
@@ -21,32 +21,31 @@ from openhands.server.user_auth import (
     get_user_id,
 )
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
-from openhands.server.shared import server_config
 
-mcp_server = FastMCP('mcp', stateless_http=True, dependencies=get_dependencies(), mask_error_details=True)
+mcp_server = FastMCP(
+    'mcp', stateless_http=True, dependencies=get_dependencies(), mask_error_details=True
+)
 
-HOST = f'https://{os.getenv('WEB_HOST', 'app.all-hands.dev').strip()}'
+HOST = f'https://{os.getenv("WEB_HOST", "app.all-hands.dev").strip()}'
 CONVO_URL = HOST + '/{}'
 
-async def get_convo_link(
-    service: GitService,
-    conversation_id: str,
-    body: str
-) -> str:
+
+async def get_convo_link(service: GitService, conversation_id: str, body: str) -> str:
     """
-        Appends a followup link, in the PR body, to the OpenHands conversation that opened the PR
+    Appends a followup link, in the PR body, to the OpenHands conversation that opened the PR
     """
 
     if server_config.app_mode != AppMode.SAAS:
         return body
 
     user = await service.get_user()
-    username = user.login
+    username = user.name
     convo_url = CONVO_URL.format(conversation_id)
-    convo_link = f"@{username} can click here to [continue refining the PR]({convo_url})"
+    convo_link = (
+        f'@{username} can click here to [continue refining the PR]({convo_url})'
+    )
     body += f'\n\n{convo_link}'
     return body
-
 
 
 async def save_pr_metadata(
@@ -112,7 +111,7 @@ async def create_pr(
     )
 
     try:
-        body = await get_convo_link(github_service, conversation_id, body or "")
+        body = await get_convo_link(github_service, conversation_id, body or '')
     except Exception as e:
         logger.warning(f'Failed to append convo link: {e}')
 
@@ -129,7 +128,7 @@ async def create_pr(
             await save_pr_metadata(user_id, conversation_id, response)
 
     except Exception as e:
-        error = f"Error creating pull request: {e}"
+        error = f'Error creating pull request: {e}'
         raise ToolError(str(error))
 
     return response
@@ -173,10 +172,11 @@ async def create_mr(
     )
 
     try:
-        body: str = await get_convo_link(gitlab_service, conversation_id, body or "")
+        description = await get_convo_link(
+            gitlab_service, conversation_id, description or ''
+        )
     except Exception as e:
         logger.warning(f'Failed to append convo link: {e}')
-
 
     try:
         response = await gitlab_service.create_mr(
@@ -191,7 +191,7 @@ async def create_mr(
             await save_pr_metadata(user_id, conversation_id, response)
 
     except Exception as e:
-        error = f"Error creating merge request: {e}"
+        error = f'Error creating merge request: {e}'
         raise ToolError(str(error))
 
     return response
