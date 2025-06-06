@@ -39,7 +39,7 @@ async def get_convo_link(service: GitService, conversation_id: str, body: str) -
         return body
 
     user = await service.get_user()
-    username = user.name
+    username = user.login
     convo_url = CONVO_URL.format(conversation_id)
     convo_link = (
         f'@{username} can click here to [continue refining the PR]({convo_url})'

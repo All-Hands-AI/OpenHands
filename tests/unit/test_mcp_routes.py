@@ -34,7 +34,7 @@ async def test_get_convo_link_saas_mode():
     # Mock GitService and user
     mock_service = AsyncMock(spec=GitService)
     mock_user = AsyncMock()
-    mock_user.name = 'testuser'
+    mock_user.login = 'testuser'
     mock_service.get_user.return_value = mock_user
 
     # Test with SAAS mode
@@ -63,7 +63,7 @@ async def test_get_convo_link_empty_body():
     # Mock GitService and user
     mock_service = AsyncMock(spec=GitService)
     mock_user = AsyncMock()
-    mock_user.name = 'testuser'
+    mock_user.login = 'testuser'
     mock_service.get_user.return_value = mock_user
 
     # Test with SAAS mode and empty body
