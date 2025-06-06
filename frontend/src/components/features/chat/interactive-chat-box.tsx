@@ -9,8 +9,7 @@ interface InteractiveChatBoxProps {
   mode?: "stop" | "submit";
   onSubmit: (message: string, images: File[]) => void;
   onStop: () => void;
-  value?: string;
-  onChange?: (message: string) => void;
+  defaultValue?: string;
 }
 
 export function InteractiveChatBox({
@@ -18,8 +17,7 @@ export function InteractiveChatBox({
   mode = "submit",
   onSubmit,
   onStop,
-  value,
-  onChange,
+  defaultValue,
 }: InteractiveChatBoxProps) {
   const [images, setImages] = React.useState<File[]>([]);
 
@@ -38,9 +36,6 @@ export function InteractiveChatBox({
   const handleSubmit = (message: string) => {
     onSubmit(message, images);
     setImages([]);
-    if (message) {
-      onChange?.("");
-    }
   };
 
   return (
@@ -68,10 +63,9 @@ export function InteractiveChatBox({
         <ChatInput
           disabled={isDisabled}
           button={mode}
-          onChange={onChange}
           onSubmit={handleSubmit}
           onStop={onStop}
-          value={value}
+          defaultValue={defaultValue}
           onImagePaste={handleUpload}
           className="py-[10px]"
           buttonClassName="py-[10px]"

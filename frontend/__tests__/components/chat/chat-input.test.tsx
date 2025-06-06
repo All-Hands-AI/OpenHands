@@ -1,7 +1,10 @@
 import userEvent from "@testing-library/user-event";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, afterEach, vi, it, expect } from "vitest";
-import { ChatInput } from "#/components/features/chat/chat-input";
+import {
+  ChatInput,
+  ChatInputProvider,
+} from "#/components/features/chat/chat-input";
 
 describe("ChatInput", () => {
   const onSubmitMock = vi.fn();
@@ -11,14 +14,22 @@ describe("ChatInput", () => {
   });
 
   it("should render a textarea", () => {
-    render(<ChatInput onSubmit={onSubmitMock} />);
+    render(
+      <ChatInputProvider>
+        <ChatInput onSubmit={onSubmitMock} />
+      </ChatInputProvider>,
+    );
     expect(screen.getByTestId("chat-input")).toBeInTheDocument();
     expect(screen.getByRole("textbox")).toBeInTheDocument();
   });
 
   it("should call onSubmit when the user types and presses enter", async () => {
     const user = userEvent.setup();
-    render(<ChatInput onSubmit={onSubmitMock} />);
+    render(
+      <ChatInputProvider>
+        <ChatInput onSubmit={onSubmitMock} />
+      </ChatInputProvider>,
+    );
     const textarea = screen.getByRole("textbox");
 
     await user.type(textarea, "Hello, world!");
@@ -29,7 +40,11 @@ describe("ChatInput", () => {
 
   it("should call onSubmit when pressing the submit button", async () => {
     const user = userEvent.setup();
-    render(<ChatInput onSubmit={onSubmitMock} />);
+    render(
+      <ChatInputProvider>
+        <ChatInput onSubmit={onSubmitMock} />
+      </ChatInputProvider>,
+    );
     const textarea = screen.getByRole("textbox");
     const button = screen.getByRole("button");
 
@@ -41,7 +56,11 @@ describe("ChatInput", () => {
 
   it("should not call onSubmit when the message is empty", async () => {
     const user = userEvent.setup();
-    render(<ChatInput onSubmit={onSubmitMock} />);
+    render(
+      <ChatInputProvider>
+        <ChatInput onSubmit={onSubmitMock} />
+      </ChatInputProvider>,
+    );
     const button = screen.getByRole("button");
 
     await user.click(button);
@@ -53,7 +72,11 @@ describe("ChatInput", () => {
 
   it("should not call onSubmit when the message is only whitespace", async () => {
     const user = userEvent.setup();
-    render(<ChatInput onSubmit={onSubmitMock} />);
+    render(
+      <ChatInputProvider>
+        <ChatInput onSubmit={onSubmitMock} />
+      </ChatInputProvider>,
+    );
     const textarea = screen.getByRole("textbox");
 
     await user.type(textarea, "   ");
@@ -69,7 +92,11 @@ describe("ChatInput", () => {
 
   it("should disable submit", async () => {
     const user = userEvent.setup();
-    render(<ChatInput disabled onSubmit={onSubmitMock} />);
+    render(
+      <ChatInputProvider>
+        <ChatInput disabled onSubmit={onSubmitMock} />
+      </ChatInputProvider>,
+    );
 
     const button = screen.getByRole("button");
     const textarea = screen.getByRole("textbox");
@@ -85,7 +112,11 @@ describe("ChatInput", () => {
   });
 
   it("should render a placeholder with translation key", () => {
-    render(<ChatInput onSubmit={onSubmitMock} />);
+    render(
+      <ChatInputProvider>
+        <ChatInput onSubmit={onSubmitMock} />
+      </ChatInputProvider>,
+    );
 
     const textarea = screen.getByPlaceholderText("SUGGESTIONS$WHAT_TO_BUILD");
     expect(textarea).toBeInTheDocument();
@@ -93,7 +124,11 @@ describe("ChatInput", () => {
 
   it("should create a newline instead of submitting when shift + enter is pressed", async () => {
     const user = userEvent.setup();
-    render(<ChatInput onSubmit={onSubmitMock} />);
+    render(
+      <ChatInputProvider>
+        <ChatInput onSubmit={onSubmitMock} />
+      </ChatInputProvider>,
+    );
     const textarea = screen.getByRole("textbox");
 
     await user.type(textarea, "Hello, world!");
@@ -105,7 +140,11 @@ describe("ChatInput", () => {
 
   it("should clear the input message after sending a message", async () => {
     const user = userEvent.setup();
-    render(<ChatInput onSubmit={onSubmitMock} />);
+    render(
+      <ChatInputProvider>
+        <ChatInput onSubmit={onSubmitMock} />
+      </ChatInputProvider>,
+    );
     const textarea = screen.getByRole("textbox");
     const button = screen.getByRole("button");
 
@@ -119,23 +158,20 @@ describe("ChatInput", () => {
   });
 
   it("should hide the submit button", () => {
-    render(<ChatInput onSubmit={onSubmitMock} showButton={false} />);
+    render(
+      <ChatInputProvider>
+        <ChatInput onSubmit={onSubmitMock} showButton={false} />
+      </ChatInputProvider>,
+    );
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
-  it("should call onChange when the user types", async () => {
-    const user = userEvent.setup();
-    const onChangeMock = vi.fn();
-    render(<ChatInput onSubmit={onSubmitMock} onChange={onChangeMock} />);
-    const textarea = screen.getByRole("textbox");
-
-    await user.type(textarea, "Hello, world!");
-
-    expect(onChangeMock).toHaveBeenCalledTimes("Hello, world!".length);
-  });
-
-  it("should have set the passed value", () => {
-    render(<ChatInput value="Hello, world!" onSubmit={onSubmitMock} />);
+  it("should have set the passed defaultValue", () => {
+    render(
+      <ChatInputProvider>
+        <ChatInput defaultValue="Hello, world!" onSubmit={onSubmitMock} />
+      </ChatInputProvider>,
+    );
     const textarea = screen.getByRole("textbox");
 
     expect(textarea).toHaveValue("Hello, world!");
@@ -145,7 +181,9 @@ describe("ChatInput", () => {
     const user = userEvent.setup();
     const onStopMock = vi.fn();
     render(
-      <ChatInput onSubmit={onSubmitMock} button="stop" onStop={onStopMock} />,
+      <ChatInputProvider>
+        <ChatInput onSubmit={onSubmitMock} button="stop" onStop={onStopMock} />
+      </ChatInputProvider>,
     );
     const stopButton = screen.getByTestId("stop-button");
 
@@ -158,11 +196,13 @@ describe("ChatInput", () => {
     const onFocusMock = vi.fn();
     const onBlurMock = vi.fn();
     render(
-      <ChatInput
-        onSubmit={onSubmitMock}
-        onFocus={onFocusMock}
-        onBlur={onBlurMock}
-      />,
+      <ChatInputProvider>
+        <ChatInput
+          onSubmit={onSubmitMock}
+          onFocus={onFocusMock}
+          onBlur={onBlurMock}
+        />
+      </ChatInputProvider>,
     );
     const textarea = screen.getByRole("textbox");
 
@@ -175,9 +215,12 @@ describe("ChatInput", () => {
 
   it("should handle text paste correctly", () => {
     const onSubmit = vi.fn();
-    const onChange = vi.fn();
 
-    render(<ChatInput onSubmit={onSubmit} onChange={onChange} />);
+    render(
+      <ChatInputProvider>
+        <ChatInput onSubmit={onSubmit} />
+      </ChatInputProvider>,
+    );
 
     const input = screen.getByTestId("chat-input").querySelector("textarea");
     expect(input).toBeTruthy();
@@ -195,7 +238,11 @@ describe("ChatInput", () => {
     const onSubmit = vi.fn();
     const onImagePaste = vi.fn();
 
-    render(<ChatInput onSubmit={onSubmit} onImagePaste={onImagePaste} />);
+    render(
+      <ChatInputProvider>
+        <ChatInput onSubmit={onSubmit} onImagePaste={onImagePaste} />
+      </ChatInputProvider>,
+    );
 
     const input = screen.getByTestId("chat-input").querySelector("textarea");
     expect(input).toBeTruthy();
@@ -220,7 +267,11 @@ describe("ChatInput", () => {
   it("should use the default maxRows value", () => {
     // We can't directly test the maxRows prop as it's not exposed in the DOM
     // Instead, we'll verify the component renders with the default props
-    render(<ChatInput onSubmit={onSubmitMock} />);
+    render(
+      <ChatInputProvider>
+        <ChatInput onSubmit={onSubmitMock} />
+      </ChatInputProvider>,
+    );
     const textarea = screen.getByRole("textbox");
     expect(textarea).toBeInTheDocument();
 
@@ -230,7 +281,11 @@ describe("ChatInput", () => {
 
   it("should not submit when Enter is pressed during IME composition", async () => {
     const user = userEvent.setup();
-    render(<ChatInput onSubmit={onSubmitMock} />);
+    render(
+      <ChatInputProvider>
+        <ChatInput onSubmit={onSubmitMock} />
+      </ChatInputProvider>,
+    );
     const textarea = screen.getByRole("textbox");
 
     await user.type(textarea, "こんにちは");

@@ -5,17 +5,50 @@ import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
 import { SubmitButton } from "#/components/shared/buttons/submit-button";
 import { StopButton } from "#/components/shared/buttons/stop-button";
+import { useForceRender } from "#/hooks/use-force-render";
+
+const ChatInputContext = React.createContext<
+  | [
+      string | undefined,
+      React.Dispatch<React.SetStateAction<string | undefined>>,
+    ]
+  | undefined
+>(undefined);
+
+function useChatInput() {
+  const { t } = useTranslation();
+  const context = React.useContext(ChatInputContext);
+  if (!context) {
+    throw new Error(t(I18nKey.ERROR$USE_CHAT_INPUT_PROVIDER));
+  }
+  return context;
+}
+
+export function useInjectChatInputMessage() {
+  const [, setInjectedMessage] = useChatInput();
+
+  return setInjectedMessage;
+}
+
+export function ChatInputProvider({ children }: { children: React.ReactNode }) {
+  const value = React.useState<string | undefined>(undefined);
+
+  return (
+    <ChatInputContext.Provider value={value}>
+      {children}
+    </ChatInputContext.Provider>
+  );
+}
 
 interface ChatInputProps {
   name?: string;
   button?: "submit" | "stop";
   disabled?: boolean;
   showButton?: boolean;
-  value?: string;
+  defaultValue?: string;
   maxRows?: number;
   onSubmit: (message: string) => void;
   onStop?: () => void;
-  onChange?: (message: string) => void;
   onFocus?: () => void;
   onBlur?: () => void;
   onImagePaste?: (files: File[]) => void;
@@ -28,11 +61,10 @@ export function ChatInput({
   button = "submit",
   disabled,
   showButton = true,
-  value,
+  defaultValue,
   maxRows = 16,
   onSubmit,
   onStop,
-  onChange,
   onFocus,
   onBlur,
   onImagePaste,
@@ -42,6 +74,21 @@ export function ChatInput({
   const { t } = useTranslation();
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   const [isDraggingOver, setIsDraggingOver] = React.useState(false);
+
+  const forceRender = useForceRender();
+  const [injectedMessage] = useChatInput();
+
+  React.useEffect(() => {
+    if (textareaRef.current && injectedMessage !== undefined) {
+      const currentRef = textareaRef.current;
+      currentRef.value = injectedMessage;
+      currentRef.focus();
+
+      // Unfortunately, TextareaAutosize uses React.useLayoutEffect internally,
+      // so we need to force a React render here instead of merely triggering a DOM input update.
+      forceRender();
+    }
+  }, [injectedMessage]);
 
   const handlePaste = (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
     // Only handle paste if we have an image paste handler and there are files
@@ -84,10 +131,9 @@ export function ChatInput({
   };
 
   const handleSubmitMessage = () => {
-    const message = value || textareaRef.current?.value || "";
+    const message = textareaRef.current?.value || "";
     if (message.trim()) {
       onSubmit(message);
-      onChange?.("");
       if (textareaRef.current) {
         textareaRef.current.value = "";
       }
@@ -106,10 +152,6 @@ export function ChatInput({
     }
   };
 
-  const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    onChange?.(event.target.value);
-  };
-
   return (
     <div
       data-testid="chat-input"
@@ -120,14 +162,13 @@ export function ChatInput({
         name={name}
         placeholder={t(I18nKey.SUGGESTIONS$WHAT_TO_BUILD)}
         onKeyDown={handleKeyPress}
-        onChange={handleChange}
         onFocus={onFocus}
         onBlur={onBlur}
         onPaste={handlePaste}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
-        value={value}
+        defaultValue={defaultValue}
         minRows={1}
         maxRows={maxRows}
         data-dragging-over={isDraggingOver}

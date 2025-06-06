@@ -6,10 +6,15 @@ import type { Message } from "#/message";
 import { SUGGESTIONS } from "#/utils/suggestions";
 import { WsClientProviderStatus } from "#/context/ws-client-provider";
 import { ChatInterface } from "#/components/features/chat/chat-interface";
+import { ChatInputProvider } from "#/components/features/chat/chat-input";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const renderChatInterface = (messages: Message[]) =>
-  renderWithProviders(<ChatInterface />);
+  renderWithProviders(
+    <ChatInputProvider>
+      <ChatInterface />
+    </ChatInputProvider>,
+  );
 
 describe("Empty state", () => {
   const { send: sendMock } = vi.hoisted(() => ({
@@ -43,7 +48,11 @@ describe("Empty state", () => {
   it.todo("should render suggestions if empty");
 
   it("should render the default suggestions", () => {
-    renderWithProviders(<ChatInterface />);
+    renderWithProviders(
+      <ChatInputProvider>
+        <ChatInterface />
+      </ChatInputProvider>,
+    );
 
     const suggestions = screen.getByTestId("suggestions");
     const repoSuggestions = Object.keys(SUGGESTIONS.repo);
@@ -68,7 +77,11 @@ describe("Empty state", () => {
         isLoadingMessages: false,
       }));
       const user = userEvent.setup();
-      renderWithProviders(<ChatInterface />);
+      renderWithProviders(
+        <ChatInputProvider>
+          <ChatInterface />
+        </ChatInputProvider>,
+      );
 
       const suggestions = screen.getByTestId("suggestions");
       const displayedSuggestions = within(suggestions).getAllByRole("button");
@@ -91,7 +104,11 @@ describe("Empty state", () => {
         isLoadingMessages: false,
       }));
       const user = userEvent.setup();
-      const { rerender } = renderWithProviders(<ChatInterface />);
+      const { rerender } = renderWithProviders(
+        <ChatInputProvider>
+          <ChatInterface />
+        </ChatInputProvider>,
+      );
 
       const suggestions = screen.getByTestId("suggestions");
       const displayedSuggestions = within(suggestions).getAllByRole("button");
@@ -104,7 +121,11 @@ describe("Empty state", () => {
         status: WsClientProviderStatus.CONNECTED,
         isLoadingMessages: false,
       }));
-      rerender(<ChatInterface />);
+      rerender(
+        <ChatInputProvider>
+          <ChatInterface />
+        </ChatInputProvider>,
+      );
 
       await waitFor(() =>
         expect(sendMock).toHaveBeenCalledWith(expect.any(String)),
@@ -194,7 +215,11 @@ describe.skip("ChatInterface", () => {
       },
     ];
 
-    rerender(<ChatInterface />);
+    rerender(
+      <ChatInputProvider>
+        <ChatInterface />
+      </ChatInputProvider>,
+    );
 
     const imageCarousel = screen.getByTestId("image-carousel");
     expect(imageCarousel).toBeInTheDocument();
@@ -233,7 +258,11 @@ describe.skip("ChatInterface", () => {
       pending: true,
     });
 
-    rerender(<ChatInterface />);
+    rerender(
+      <ChatInputProvider>
+        <ChatInterface />
+      </ChatInputProvider>,
+    );
 
     expect(screen.getByTestId("continue-action-button")).toBeInTheDocument();
   });
@@ -309,7 +338,11 @@ describe.skip("ChatInterface", () => {
     await user.click(prButton);
 
     // Re-render to trigger state update
-    rerender(<ChatInterface />);
+    rerender(
+      <ChatInputProvider>
+        <ChatInterface />
+      </ChatInputProvider>,
+    );
 
     // Verify only one button is shown
     const pushToPrButton = screen.getByRole("button", {
@@ -359,7 +392,11 @@ describe.skip("ChatInterface", () => {
       pending: true,
     });
 
-    rerender(<ChatInterface />);
+    rerender(
+      <ChatInputProvider>
+        <ChatInterface />
+      </ChatInputProvider>,
+    );
 
     expect(screen.getByTestId("feedback-actions")).toBeInTheDocument();
   });

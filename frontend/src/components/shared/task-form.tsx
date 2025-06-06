@@ -6,7 +6,10 @@ import { addFile, removeFile } from "#/state/initial-query-slice";
 import { SuggestionBubble } from "#/components/features/suggestions/suggestion-bubble";
 import { SUGGESTIONS } from "#/utils/suggestions";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
-import { ChatInput } from "#/components/features/chat/chat-input";
+import {
+  ChatInput,
+  useInjectChatInputMessage,
+} from "#/components/features/chat/chat-input";
 import { getRandomKey } from "#/utils/get-random-key";
 import { cn } from "#/utils/utils";
 import { AttachImageLabel } from "../features/images/attach-image-label";
@@ -25,7 +28,6 @@ export function TaskForm({ ref }: TaskFormProps) {
 
   const { files } = useSelector((state: RootState) => state.initialQuery);
 
-  const [text, setText] = React.useState("");
   const [suggestion, setSuggestion] = React.useState(() => {
     const key = getRandomKey(SUGGESTIONS["non-repo"]);
     return { key, value: SUGGESTIONS["non-repo"][key] };
@@ -43,8 +45,10 @@ export function TaskForm({ ref }: TaskFormProps) {
     setSuggestion({ key, value: suggestions[key] });
   };
 
+  const injectChatInputMessage = useInjectChatInputMessage();
+
   const onClickSuggestion = () => {
-    setText(suggestion.value);
+    injectChatInputMessage(suggestion.value);
   };
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -84,7 +88,6 @@ export function TaskForm({ ref }: TaskFormProps) {
               onSubmit={() => {
                 if (typeof ref !== "function") ref?.current?.requestSubmit();
               }}
-              onChange={(message) => setText(message)}
               onFocus={() => setInputIsFocused(true)}
               onBlur={() => setInputIsFocused(false)}
               onImagePaste={async (imageFiles) => {
@@ -94,9 +97,7 @@ export function TaskForm({ ref }: TaskFormProps) {
                   dispatch(addFile(base64));
                 });
               }}
-              value={text}
               maxRows={15}
-              showButton={!!text}
               className="text-[17px] leading-5 py-[17px]"
               buttonClassName="pb-[17px]"
               disabled={navigation.state === "submitting"}
