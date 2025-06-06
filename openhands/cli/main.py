@@ -457,12 +457,10 @@ def main():
 
     # Check if team command is used
     if hasattr(args, 'command') and args.command == 'team':
-        # Use subprocess to run the team CLI directly
-        import subprocess
+        # Import and run the team CLI directly
         import sys
 
-        # Get the Python executable
-        python_exe = sys.executable
+        from openhands.cli.team import main as team_main
 
         # Get arguments after 'team'
         team_args = []
@@ -481,18 +479,9 @@ def main():
             print("For more information, run 'openhands team --help'")
             return
 
-        # Construct the command to run the appropriate team CLI command
-        cmd = [python_exe, '-m', 'openhands.cli.team'] + team_args
-
-        # Run the command
-        try:
-            result = subprocess.run(cmd, check=True)
-            sys.exit(result.returncode)
-        except subprocess.CalledProcessError as e:
-            sys.exit(e.returncode)
-        except Exception as e:
-            print(f'Error running team CLI: {e}')
-            sys.exit(1)
+        # Run the team CLI with the arguments
+        team_main(team_args)
+        return
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
