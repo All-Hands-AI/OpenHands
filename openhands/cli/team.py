@@ -121,15 +121,28 @@ def list_teams(args: argparse.Namespace) -> None:
                 print('No conversations found.')
                 return
 
+            # Filter conversations based on status if --all is not specified
+            filtered_results = data['results']
+            if not args.all:
+                filtered_results = [
+                    conv for conv in data['results'] if conv['status'] == 'RUNNING'
+                ]
+
+                if not filtered_results:
+                    print('No running conversations found.')
+                    print('Use --all to show all conversations including stopped ones.')
+                    return
+
             # Print the conversations in a formatted table
-            print('\nYour Conversations:')
+            status_text = 'All' if args.all else 'Running'
+            print(f'\nYour {status_text} Conversations:')
             print('-' * 100)
             print(
                 f'{"ID":<24} {"Title":<30} {"Status":<10} {"Repository":<20} {"Last Updated":<20}'
             )
             print('-' * 100)
 
-            for conv in data['results']:
+            for conv in filtered_results:
                 # Format the date
                 last_updated = datetime.fromisoformat(
                     conv['last_updated_at'].replace('Z', '+00:00')
@@ -258,6 +271,11 @@ def main() -> None:
     )
     list_parser.add_argument(
         '--page-id', help='Page ID for pagination when there are more results'
+    )
+    list_parser.add_argument(
+        '--all',
+        action='store_true',
+        help='Show all conversations including stopped ones (default: show only running)',
     )
     list_parser.set_defaults(func=list_teams)
 
