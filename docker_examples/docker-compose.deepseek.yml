@@ -1,0 +1,157 @@
+version: '3.8'
+
+services:
+  deepseek-basic:
+    build:
+      context: ..
+      dockerfile: docker_examples/Dockerfile.deepseek
+    container_name: deepseek-basic
+    environment:
+      - MODEL_NAME=deepseek-ai/DeepSeek-R1-0528
+      - QUANTIZATION=4bit
+      - MAX_MEMORY_GPU=20GB
+      - MAX_MEMORY_CPU=30GB
+      - LOG_LEVEL=INFO
+    volumes:
+      - deepseek_cache:/app/cache
+      - ./logs:/app/logs
+      - ../examples:/app/examples
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+    command: ["python", "examples/basic_deepseek_usage.py"]
+
+  deepseek-server:
+    build:
+      context: ..
+      dockerfile: docker_examples/Dockerfile.deepseek
+    container_name: deepseek-server
+    ports:
+      - "8000:8000"
+      - "8080:8080"  # Metrics port
+    environment:
+      - MODEL_NAME=deepseek-ai/DeepSeek-R1-0528
+      - HOST=0.0.0.0
+      - PORT=8000
+      - GPU_MEMORY_UTILIZATION=0.9
+      - TENSOR_PARALLEL_SIZE=1
+      - MAX_MODEL_LEN=4096
+      - QUANTIZATION=4bit
+    volumes:
+      - deepseek_cache:/app/cache
+      - ./logs:/app/logs
+      - ./config:/app/config
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    command: ["python", "-m", "vllm.entrypoints.openai.api_server", 
+              "--model", "deepseek-ai/DeepSeek-R1-0528",
+              "--host", "0.0.0.0",
+              "--port", "8000",
+              "--trust-remote-code"]
+
+  deepseek-jupyter:
+    build:
+      context: ..
+      dockerfile: docker_examples/Dockerfile.deepseek
+    container_name: deepseek-jupyter
+    ports:
+      - "8888:8888"
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+      - JUPYTER_TOKEN=deepseek123
+    volumes:
+      - deepseek_cache:/app/cache
+      - ../examples:/app/examples
+      - ../notebooks:/app/notebooks
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+    command: ["jupyter", "lab", 
+              "--ip=0.0.0.0", 
+              "--port=8888", 
+              "--no-browser", 
+              "--allow-root",
+              "--NotebookApp.token=deepseek123"]
+
+  nginx:
+    image: nginx:alpine
+    container_name: deepseek-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - deepseek-server
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: deepseek-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: deepseek-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=deepseek123
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+volumes:
+  deepseek_cache:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  default:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

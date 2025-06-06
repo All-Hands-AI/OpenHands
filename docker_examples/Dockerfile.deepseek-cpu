@@ -1,0 +1,87 @@
+# Dockerfile for DeepSeek R1-0528 Local Deployment (CPU-only for testing)
+FROM python:3.11-slim
+
+# Set environment variables
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    wget \
+    curl \
+    build-essential \
+    htop \
+    vim \
+    && rm -rf /var/lib/apt/lists/*
+
+# Upgrade pip
+RUN python -m pip install --upgrade pip setuptools wheel
+
+# Copy requirements file
+COPY requirements_deepseek.txt .
+
+# Install PyTorch CPU version
+RUN pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+# Install Python dependencies (excluding GPU-specific ones)
+RUN pip install \
+    transformers>=4.37.0 \
+    accelerate>=0.26.0 \
+    sentencepiece \
+    protobuf \
+    datasets \
+    evaluate \
+    scikit-learn \
+    numpy \
+    pandas \
+    matplotlib \
+    seaborn \
+    jupyter \
+    ipywidgets \
+    fastapi \
+    uvicorn \
+    aiofiles \
+    websockets \
+    prometheus-client \
+    psutil \
+    black \
+    isort \
+    flake8 \
+    mypy \
+    pytest \
+    pytest-asyncio \
+    tqdm \
+    rich \
+    click \
+    pyyaml \
+    python-dotenv
+
+# Copy application code
+COPY examples/ ./examples/
+COPY setup_scripts/ ./setup_scripts/
+COPY DEEPSEEK_R1_LOCAL_DEPLOYMENT_GUIDE.md .
+COPY README_DEEPSEEK_DEPLOYMENT.md .
+
+# Create cache directory
+RUN mkdir -p /app/cache/huggingface
+ENV HF_HOME=/app/cache/huggingface
+ENV TRANSFORMERS_CACHE=/app/cache/huggingface
+
+# Create non-root user
+RUN useradd -m -u 1000 deepseek && \
+    chown -R deepseek:deepseek /app
+USER deepseek
+
+# Expose ports
+EXPOSE 8000 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD python -c "import torch; print('PyTorch available:', torch.__version__)" || exit 1
+
+# Default command
+CMD ["python", "examples/basic_deepseek_usage.py"]
