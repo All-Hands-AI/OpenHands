@@ -70,6 +70,7 @@ async def save_pr_metadata(
         pr_number = int(match_merge_request.group(1))
 
     if pr_number:
+        logger.info(f'Saving PR number: {pr_number} for convo {conversation_id}')
         conversation.pr_number.append(pr_number)
 
     await conversation_store.save_metadata(conversation)
