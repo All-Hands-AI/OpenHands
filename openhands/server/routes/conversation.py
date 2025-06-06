@@ -145,5 +145,5 @@ async def search_events(
 @app.post('/events')
 async def add_event(request: Request, conversation: ServerConversation = Depends(get_conversation)):
     data = request.json()
-    conversation_manager.send_to_event_stream(conversation.sid, data)
+    await conversation_manager.send_to_event_stream(conversation.sid, data)
     return JSONResponse({'success': True})
