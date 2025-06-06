@@ -1141,20 +1141,87 @@ def test_make_commit_no_changes(mock_subprocess_run):
 
     # Mock subprocess.run to simulate no changes in the repo
     mock_subprocess_run.side_effect = [
-        MagicMock(returncode=0),
-        MagicMock(returncode=0),
-        MagicMock(returncode=1, stdout=''),  # git status --porcelain (no changes)
+        MagicMock(returncode=0),  # git config user.name
+        MagicMock(returncode=0),  # git add .
+        MagicMock(returncode=0, stdout=''),  # git status --porcelain (no changes)
     ]
 
-    with pytest.raises(
-        RuntimeError, match='ERROR: Openhands failed to make code changes.'
-    ):
-        make_commit(repo_dir, issue, 'issue')
-
-    # Check that subprocess.run was called for checking git status and add, but not commit
+    # Call make_commit and verify it returns False when there are no changes
+    result = make_commit(repo_dir, issue, 'issue')
+    assert result is False
     assert mock_subprocess_run.call_count == 3
     git_status_call = mock_subprocess_run.call_args_list[2][0][0]
     assert f'git -C {repo_dir} status --porcelain' in git_status_call
+
+
+@patch('openhands.resolver.send_pull_request.initialize_repo')
+@patch('openhands.resolver.send_pull_request.apply_patch')
+@patch('openhands.resolver.send_pull_request.send_pull_request')
+@patch('openhands.resolver.send_pull_request.make_commit')
+@patch('openhands.resolver.interfaces.gitlab.GitlabIssueHandler.send_comment_msg')
+def test_process_single_issue_no_changes(
+    mock_send_comment_msg,
+    mock_make_commit,
+    mock_send_pull_request,
+    mock_apply_patch,
+    mock_initialize_repo,
+    mock_output_dir,
+    mock_llm_config,
+):
+    """Test that process_single_issue handles issue with no changes correctly."""
+    # Setup
+    resolver_output = ResolverOutput(
+        issue=Issue(
+            owner='test-owner',
+            repo='test-repo',
+            number=1,
+            title='Test Issue',
+            body='Test body',
+        ),
+        success=True,
+        git_patch='',
+        issue_type='issue',
+        base_commit='def456',
+        result_explanation='No changes needed',
+        history=[],
+        metrics={},
+        instruction='Test instruction',
+        comment_success=None,
+        error=None,
+    )
+    token = 'test-token'
+    username = 'test-user'
+    platform = ProviderType.GITLAB
+
+    # Mock make_commit to return False (no changes)
+    mock_make_commit.return_value = False
+
+    # Mock initialize_repo to return a path
+    mock_initialize_repo.return_value = f'{mock_output_dir}/patches/issue_1'
+
+    # Call the function
+    process_single_issue(
+        mock_output_dir,
+        resolver_output,
+        token,
+        username,
+        platform,
+        'ready',
+        mock_llm_config,
+        None,
+        False,
+    )
+
+    # Assert that the mocked functions were called correctly
+    mock_initialize_repo.assert_called_once_with(mock_output_dir, 1, 'issue', 'def456')
+    mock_apply_patch.assert_called_once_with(
+        f'{mock_output_dir}/patches/issue_1', resolver_output.git_patch
+    )
+    mock_make_commit.assert_called_once_with(
+        f'{mock_output_dir}/patches/issue_1', resolver_output.issue, 'issue'
+    )
+    mock_send_pull_request.assert_not_called()
+    mock_send_comment_msg.assert_called_once_with(1, 'No changes needed')
 
 
 def test_apply_patch_rename_directory(mock_output_dir):
