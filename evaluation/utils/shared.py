@@ -300,12 +300,88 @@ def assert_and_raise(condition: bool, msg: str):
         raise EvalException(msg)
 
 
+def log_skipped_build_maximum_retries_exceeded(
+    instance, metadata, error, max_retries=5
+):
+    """Log and skip the instance when maximum retries are exceeded.
+
+    Args:
+        instance: The instance that failed
+        metadata: The evaluation metadata
+        error: The error that occurred
+        max_retries: The maximum number of retries that were attempted
+
+    Returns:
+        EvalOutput with the error information
+    """
+    from openhands.core.logger import openhands_logger as logger
+
+    # Log the error
+    logger.exception(error)
+    logger.error(
+        f'Maximum error retries reached for instance {instance.instance_id}. Could not build instance image. '
+        f'Check build_error_maximum_retries_exceeded.jsonl, fix the image and run evaluation again. '
+        f'Skipping this instance and continuing with others.'
+    )
+
+    # Add the instance name to build_error_maximum_retries_exceeded.jsonl in the same folder as output.jsonl
+    if metadata and metadata.eval_output_dir:
+        retries_file_path = os.path.join(
+            metadata.eval_output_dir,
+            'build_error_maximum_retries_exceeded.jsonl',
+        )
+        try:
+            # Write the instance info as a JSON line
+            with open(retries_file_path, 'a') as f:
+                import json
+
+                # Get the Docker image from metadata if available
+                docker_image = None
+                if (
+                    metadata
+                    and metadata.agent_config
+                    and hasattr(metadata.agent_config, 'sandbox_config')
+                ):
+                    docker_image = getattr(
+                        metadata.agent_config.sandbox_config,
+                        'base_container_image',
+                        None,
+                    )
+                elif (
+                    metadata
+                    and metadata.details
+                    and 'sandbox_config' in metadata.details
+                ):
+                    sandbox_config = metadata.details.get('sandbox_config', {})
+                    docker_image = sandbox_config.get('base_container_image')
+
+                error_entry = {
+                    'instance_id': instance.instance_id,
+                    'error': str(error),
+                    'timestamp': time.strftime('%Y-%m-%d %H:%M:%S'),
+                    'docker_image': docker_image,
+                }
+                f.write(json.dumps(error_entry) + '\n')
+            logger.info(f'Added instance {instance.instance_id} to {retries_file_path}')
+        except Exception as write_error:
+            logger.error(
+                f'Failed to write to build_error_maximum_retries_exceeded.jsonl: {write_error}'
+            )
+
+    return EvalOutput(
+        instance_id=instance.instance_id,
+        test_result={},
+        error=f'Maximum retries ({max_retries}) reached: {str(error)}',
+        status='error',
+    )
+
+
 def check_maximum_retries_exceeded(eval_output_dir):
-    """Check if build_error_maximum_retries_exceeded.txt exists and output a message."""
+    """Check if build_error_maximum_retries_exceeded.jsonl exists and output a message."""
     from openhands.core.logger import openhands_logger as logger
 
     retries_file_path = os.path.join(
-        eval_output_dir, 'build_error_maximum_retries_exceeded.txt'
+        eval_output_dir, 'build_error_maximum_retries_exceeded.jsonl'
     )
     if os.path.exists(retries_file_path):
         logger.info(
@@ -376,39 +452,9 @@ def _process_instance_wrapper(
                 )
 
                 if skip_errors:
-                    # Instead of raising an error, log it and return an EvalOutput with the error
-                    logger.exception(e)
-                    logger.error(
-                        f'Maximum error retries reached for instance {instance.instance_id}. Could not build instance image. Check build_error_maximum_retries_exceeded.txt, fix the image and run evaluation again. Skipping this instance and continuing with others.'
-                    )
-
-                    # Add the instance name to build_error_maximum_retries_exceeded.txt in the same folder as output.jsonl
-                    if metadata and metadata.eval_output_dir:
-                        retries_file_path = os.path.join(
-                            metadata.eval_output_dir,
-                            'build_error_maximum_retries_exceeded.txt',
-                        )
-                        try:
-                            # Check if file exists, if not add header
-                            file_exists = os.path.exists(retries_file_path)
-                            with open(retries_file_path, 'a') as f:
-                                if not file_exists:
-                                    f.write(
-                                        'These instances could not be built, please fix them and run evaluation again.\n'
-                                    )
-                                f.write(f'{instance.instance_id}\n')
-                            logger.info(
-                                f'Added instance {instance.instance_id} to {retries_file_path}'
-                            )
-                        except Exception as write_error:
-                            logger.error(
-                                f'Failed to write to build_error_maximum_retries_exceeded.txt: {write_error}'
-                            )
-
-                    return EvalOutput(
-                        instance_id=instance.instance_id,
-                        test_result={},
-                        error=f'Maximum retries ({max_retries}) reached: {error}',
+                    # Use the dedicated function to log and skip maximum retries exceeded
+                    return log_skipped_build_maximum_retries_exceeded(
+                        instance, metadata, e, max_retries
                     )
                 else:
                     # Raise an error after all retries & stop the evaluation
