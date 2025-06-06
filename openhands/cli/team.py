@@ -7,6 +7,10 @@ import urllib.request
 from datetime import datetime, timezone
 from typing import Optional
 
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
+
 
 def format_time_ago(dt: datetime) -> str:
     """Format a datetime as a human-readable 'time ago' string."""
@@ -52,19 +56,14 @@ def create_conversation(args: argparse.Namespace) -> None:
     api_key = get_api_key()
     host = get_host()
 
-    # Define colors
-    RESET = '\033[0m'
-    BOLD = '\033[1m'
-    GREEN = '\033[32m'
-    YELLOW = '\033[33m'
-    BLUE = '\033[34m'
-    CYAN = '\033[36m'
-    GRAY = '\033[90m'
-    RED = '\033[31m'
+    # Create a console for rich output
+    console = Console()
 
     if not api_key:
-        print(f'{RED}Error: OPENHANDS_API_KEY environment variable is not set.{RESET}')
-        print(f'{YELLOW}Please set it and try again.{RESET}')
+        console.print(
+            '[bold red]Error:[/] OPENHANDS_API_KEY environment variable is not set.'
+        )
+        console.print('[yellow]Please set it and try again.[/]')
         sys.exit(1)
 
     # Use the conversations API endpoint
@@ -103,7 +102,9 @@ def create_conversation(args: argparse.Namespace) -> None:
     )
 
     try:
-        print(f"{BOLD}Creating conversation with message: '{args.message}'...{RESET}")
+        console.print(
+            f"[bold]Creating conversation with message: '{args.message}'...[/]"
+        )
 
         # Make the API call
         with urllib.request.urlopen(req) as response:
@@ -114,43 +115,65 @@ def create_conversation(args: argparse.Namespace) -> None:
             ):
                 conversation_id = response_data['conversation_id']
                 conversation_url = f'{host}/conversations/{conversation_id}'
-
-                print(f'\n{GREEN}Conversation created successfully!{RESET}')
-                print(f'\n{BOLD}Conversation Details:{RESET}')
-                print(f'  {GRAY}Initial Message:{RESET} {args.message}')
-                if args.repository:
-                    print(f'  {GRAY}Repository:{RESET} {args.repository}')
-                    if args.branch:
-                        print(f'  {GRAY}Branch:{RESET} {args.branch}')
-
-                print(f'\n{BOLD}Access your conversation at:{RESET}')
-                print(f'  {BLUE}{conversation_url}{RESET}')
-
-                # Print the short ID for reference
                 short_id = conversation_id[:6]
-                print(f'\n{GRAY}Conversation ID: {CYAN}{short_id}{RESET}')
+
+                # Create a panel with conversation details
+                details_table = Table(show_header=False, box=None, padding=(0, 1))
+                details_table.add_column('Field', style='dim')
+                details_table.add_column('Value')
+
+                details_table.add_row('Initial Message', args.message)
+                if args.repository:
+                    details_table.add_row('Repository', args.repository)
+                    if args.branch:
+                        details_table.add_row('Branch', args.branch)
+                details_table.add_row(
+                    'Conversation URL',
+                    f'[link={conversation_url}]{conversation_url}[/link]',
+                )
+                details_table.add_row('Conversation ID', f'[cyan]{short_id}[/]')
+
+                # Display success message and details
+                console.print()
+                console.print('[bold green]Conversation created successfully![/]')
+                console.print()
+                console.print(
+                    Panel(
+                        details_table,
+                        title='[bold]Conversation Details[/]',
+                        expand=False,
+                    )
+                )
             else:
-                print(
-                    f'{RED}Error creating conversation: {response_data.get("message", "Unknown error")}{RESET}'
+                console.print(
+                    f'[bold red]Error creating conversation:[/] {response_data.get("message", "Unknown error")}'
                 )
 
     except urllib.error.HTTPError as e:
-        print(f'{RED}Error: HTTP {e.code} - {e.reason}{RESET}')
+        console.print(f'[bold red]Error: HTTP {e.code} - {e.reason}[/]')
         if e.code == 401:
-            print(f'{YELLOW}Authentication failed. Please check your API key.{RESET}')
+            console.print(
+                '[yellow]Authentication failed. Please check your API key.[/]'
+            )
         elif e.code == 403:
-            print(f"{YELLOW}You don't have permission to create conversations.{RESET}")
+            console.print(
+                "[yellow]You don't have permission to create conversations.[/]"
+            )
         else:
-            print(f'{GRAY}Server response: {e.read().decode("utf-8")}{RESET}')
+            console.print(f'[dim]Server response: {e.read().decode("utf-8")}[/]')
 
     except urllib.error.URLError as e:
-        print(f'{RED}Error: Could not connect to the server. {e.reason}{RESET}')
+        console.print(
+            f'[bold red]Error: Could not connect to the server.[/] {e.reason}'
+        )
 
     except json.JSONDecodeError:
-        print(f'{RED}Error: Could not parse the server response as JSON.{RESET}')
+        console.print(
+            '[bold red]Error: Could not parse the server response as JSON.[/]'
+        )
 
     except Exception as e:
-        print(f'{RED}Unexpected error: {str(e)}{RESET}')
+        console.print(f'[bold red]Unexpected error:[/] {str(e)}')
 
 
 def list_conversations(args: argparse.Namespace) -> None:
@@ -158,9 +181,14 @@ def list_conversations(args: argparse.Namespace) -> None:
     api_key = get_api_key()
     host = get_host()
 
+    # Create a console for rich output
+    console = Console()
+
     if not api_key:
-        print('Error: OPENHANDS_API_KEY environment variable is not set.')
-        print('Please set it and try again.')
+        console.print(
+            '[bold red]Error:[/] OPENHANDS_API_KEY environment variable is not set.'
+        )
+        console.print('[yellow]Please set it and try again.[/]')
         sys.exit(1)
 
     # Set up the request to list conversations
@@ -185,16 +213,6 @@ def list_conversations(args: argparse.Namespace) -> None:
         },
     )
 
-    # Define colors
-    RESET = '\033[0m'
-    BOLD = '\033[1m'
-    GREEN = '\033[32m'
-    YELLOW = '\033[33m'
-    BLUE = '\033[34m'
-    CYAN = '\033[36m'
-    GRAY = '\033[90m'
-    RED = '\033[31m'
-
     try:
         # Make the API call
         with urllib.request.urlopen(req) as response:
@@ -202,7 +220,7 @@ def list_conversations(args: argparse.Namespace) -> None:
 
             # Check if we have results
             if not data.get('results'):
-                print(f'{YELLOW}No conversations found.{RESET}')
+                console.print('[yellow]No conversations found.[/]')
                 return
 
             # Filter conversations based on status if --all is not specified
@@ -213,20 +231,24 @@ def list_conversations(args: argparse.Namespace) -> None:
                 ]
 
                 if not filtered_results:
-                    print(f'{YELLOW}No running conversations found.{RESET}')
-                    print(
-                        f'{GRAY}Use {CYAN}--all{GRAY} to show all conversations including stopped ones.{RESET}'
+                    console.print('[yellow]No running conversations found.[/]')
+                    console.print(
+                        '[dim]Use [cyan]--all[/dim] to show all conversations including stopped ones.[/]'
                     )
                     return
 
-            # Print the conversations in a formatted table
+            # Create a table for the conversations
             status_text = 'All' if args.all else 'Running'
-            print(f'\n{BOLD}Your {status_text} Conversations:{RESET}')
-            print('-' * 150)
-            print(
-                f'{BOLD}{"ID":<10} {"Title":<25} {"Status":<10} {"Repository":<50} {"Branch":<15} {"Last Updated":<20}{RESET}'
-            )
-            print('-' * 150)
+            table = Table(title=f'Your {status_text} Conversations', expand=True)
+
+            # Add columns to the table
+            table.add_column('ID', style='cyan', no_wrap=True)
+            table.add_column('Title', style='bold')
+            table.add_column('Status', justify='center')
+            table.add_column('Repository', style='blue')
+            table.add_column('Branch', style='yellow')
+            table.add_column('Last Updated', style='dim')
+            table.add_column('URL', style='link')
 
             for conv in filtered_results:
                 # Format the date
@@ -249,47 +271,59 @@ def list_conversations(args: argparse.Namespace) -> None:
                 full_id = conv['conversation_id']
                 short_id = full_id[:6]
 
-                # Set status color
-                status_color = GREEN if conv['status'] == 'RUNNING' else GRAY
+                # Create the conversation URL
+                conversation_url = f'{host}/conversations/{full_id}'
 
-                # Print the conversation details
-                print(
-                    f'{CYAN}{short_id:<10}{RESET} '
-                    f'{BOLD}{conv["title"][:23]:<25}{RESET} '
-                    f'{status_color}{conv["status"]:<10}{RESET} '
-                    f'{BLUE}{repo[:48]:<50}{RESET} '
-                    f'{YELLOW}{branch[:13]:<15}{RESET} '
-                    f'{GRAY}{time_ago:<20}{RESET}'
+                # Set status style
+                status_style = 'green' if conv['status'] == 'RUNNING' else 'dim'
+
+                # Add a row to the table
+                table.add_row(
+                    short_id,
+                    conv['title'][:30],
+                    f'[{status_style}]{conv["status"]}[/]',
+                    repo[:40],
+                    branch[:15],
+                    time_ago,
+                    conversation_url,
                 )
 
-                # Print the URL underneath
-                conversation_url = f'{host}/conversations/{full_id}'
-                print(f'  {GRAY}URL: {BLUE}{conversation_url}{RESET}')
-                print('')  # Empty line for better readability
+            # Print the table
+            console.print()
+            console.print(table)
+            console.print()
 
             # Print pagination info if available
             if data.get('next_page_id'):
-                print(
-                    f'\n{GRAY}More results available. Use {CYAN}--page-id={data["next_page_id"]}{GRAY} to see the next page.{RESET}'
+                console.print(
+                    f'[dim]More results available. Use [cyan]--page-id={data["next_page_id"]}[/cyan] to see the next page.[/]'
                 )
 
     except urllib.error.HTTPError as e:
-        print(f'{RED}Error: HTTP {e.code} - {e.reason}{RESET}')
+        console.print(f'[bold red]Error: HTTP {e.code} - {e.reason}[/]')
         if e.code == 401:
-            print(f'{YELLOW}Authentication failed. Please check your API key.{RESET}')
+            console.print(
+                '[yellow]Authentication failed. Please check your API key.[/]'
+            )
         elif e.code == 403:
-            print(f"{YELLOW}You don't have permission to access this resource.{RESET}")
+            console.print(
+                "[yellow]You don't have permission to access this resource.[/]"
+            )
         else:
-            print(f'{GRAY}Server response: {e.read().decode("utf-8")}{RESET}')
+            console.print(f'[dim]Server response: {e.read().decode("utf-8")}[/]')
 
     except urllib.error.URLError as e:
-        print(f'{RED}Error: Could not connect to the server. {e.reason}{RESET}')
+        console.print(
+            f'[bold red]Error: Could not connect to the server.[/] {e.reason}'
+        )
 
     except json.JSONDecodeError:
-        print(f'{RED}Error: Could not parse the server response as JSON.{RESET}')
+        console.print(
+            '[bold red]Error: Could not parse the server response as JSON.[/]'
+        )
 
     except Exception as e:
-        print(f'{RED}Unexpected error: {str(e)}{RESET}')
+        console.print(f'[bold red]Unexpected error:[/] {str(e)}')
 
 
 def main() -> None:
