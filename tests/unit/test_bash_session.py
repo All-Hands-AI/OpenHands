@@ -5,6 +5,15 @@ import time
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction
 from openhands.runtime.utils.bash import BashCommandStatus, BashSession
+from openhands.runtime.utils.bash_constants import TIMEOUT_MESSAGE_TEMPLATE
+
+
+def get_no_change_timeout_suffix(timeout_seconds):
+    """Helper function to generate the expected no-change timeout suffix."""
+    return (
+        f'\n[The command has no new output after {timeout_seconds} seconds. '
+        f'{TIMEOUT_MESSAGE_TEMPLATE}]'
+    )
 
 
 def test_session_initialization():
@@ -83,12 +92,7 @@ def test_long_running_command_follow_by_execute():
     assert '1' in obs.content  # First number should appear before timeout
     assert obs.metadata.exit_code == -1  # -1 indicates command is still running
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
-    assert obs.metadata.suffix == (
-        '\n[The command has no new output after 2 seconds. '
-        "You may wait longer to see additional output by sending empty command '', "
-        'send other commands to interact with the current process, '
-        'or send keys to interrupt/kill the command.]'
-    )
+    assert obs.metadata.suffix == get_no_change_timeout_suffix(2)
     assert obs.metadata.prefix == ''
 
     # Continue watching output
@@ -96,12 +100,7 @@ def test_long_running_command_follow_by_execute():
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert '2' in obs.content
     assert obs.metadata.prefix == '[Below is the output of the previous command.]\n'
-    assert obs.metadata.suffix == (
-        '\n[The command has no new output after 2 seconds. '
-        "You may wait longer to see additional output by sending empty command '', "
-        'send other commands to interact with the current process, '
-        'or send keys to interrupt/kill the command.]'
-    )
+    assert obs.metadata.suffix == get_no_change_timeout_suffix(2)
     assert obs.metadata.exit_code == -1  # -1 indicates command is still running
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
 
@@ -142,12 +141,7 @@ def test_interactive_command():
     assert 'Enter name:' in obs.content
     assert obs.metadata.exit_code == -1  # -1 indicates command is still running
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
-    assert obs.metadata.suffix == (
-        '\n[The command has no new output after 3 seconds. '
-        "You may wait longer to see additional output by sending empty command '', "
-        'send other commands to interact with the current process, '
-        'or send keys to interrupt/kill the command.]'
-    )
+    assert obs.metadata.suffix == get_no_change_timeout_suffix(3)
     assert obs.metadata.prefix == ''
 
     # Send input
@@ -164,36 +158,21 @@ def test_interactive_command():
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.metadata.exit_code == -1
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
-    assert obs.metadata.suffix == (
-        '\n[The command has no new output after 3 seconds. '
-        "You may wait longer to see additional output by sending empty command '', "
-        'send other commands to interact with the current process, '
-        'or send keys to interrupt/kill the command.]'
-    )
+    assert obs.metadata.suffix == get_no_change_timeout_suffix(3)
     assert obs.metadata.prefix == ''
 
     obs = session.execute(CmdRunAction('line 1', is_input=True))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.metadata.exit_code == -1
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
-    assert obs.metadata.suffix == (
-        '\n[The command has no new output after 3 seconds. '
-        "You may wait longer to see additional output by sending empty command '', "
-        'send other commands to interact with the current process, '
-        'or send keys to interrupt/kill the command.]'
-    )
+    assert obs.metadata.suffix == get_no_change_timeout_suffix(3)
     assert obs.metadata.prefix == '[Below is the output of the previous command.]\n'
 
     obs = session.execute(CmdRunAction('line 2', is_input=True))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.metadata.exit_code == -1
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
-    assert obs.metadata.suffix == (
-        '\n[The command has no new output after 3 seconds. '
-        "You may wait longer to see additional output by sending empty command '', "
-        'send other commands to interact with the current process, '
-        'or send keys to interrupt/kill the command.]'
-    )
+    assert obs.metadata.suffix == get_no_change_timeout_suffix(3)
     assert obs.metadata.prefix == '[Below is the output of the previous command.]\n'
 
     obs = session.execute(CmdRunAction('EOF', is_input=True))
@@ -216,12 +195,7 @@ def test_ctrl_c():
     )
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert 'looping' in obs.content
-    assert obs.metadata.suffix == (
-        '\n[The command has no new output after 2 seconds. '
-        "You may wait longer to see additional output by sending empty command '', "
-        'send other commands to interact with the current process, '
-        'or send keys to interrupt/kill the command.]'
-    )
+    assert obs.metadata.suffix == get_no_change_timeout_suffix(2)
     assert obs.metadata.prefix == ''
     assert obs.metadata.exit_code == -1  # -1 indicates command is still running
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT

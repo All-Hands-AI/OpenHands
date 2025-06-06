@@ -150,7 +150,8 @@ export function WsClientProvider({
   const { providers } = useUserProviders();
 
   const messageRateHandler = useRate({ threshold: 250 });
-  const { data: conversation } = useActiveConversation();
+  const { data: conversation, refetch: refetchConversation } =
+    useActiveConversation();
 
   function send(event: Record<string, unknown>) {
     if (!sioRef.current) {
@@ -269,14 +270,11 @@ export function WsClientProvider({
     sio.io.opts.query.latest_event_id = lastEventRef.current?.id;
     updateStatusWhenErrorMessagePresent(data);
 
-    setErrorMessage(
-      hasValidMessageProperty(data)
-        ? data.message
-        : "The WebSocket connection was closed.",
-    );
+    setErrorMessage(hasValidMessageProperty(data) ? data.message : "");
   }
 
   function handleError(data: unknown) {
+    // set status
     setStatus(WsClientProviderStatus.DISCONNECTED);
     updateStatusWhenErrorMessagePresent(data);
 
@@ -285,6 +283,9 @@ export function WsClientProvider({
         ? data.message
         : "An unknown error occurred on the WebSocket connection.",
     );
+
+    // check if something went wrong with the conversation.
+    refetchConversation();
   }
 
   React.useEffect(() => {
@@ -300,11 +301,18 @@ export function WsClientProvider({
     if (!conversationId) {
       throw new Error("No conversation ID provided");
     }
-    if (!conversation || conversation.status === "STARTING") {
+    if (
+      !conversation ||
+      ["STOPPED", "STARTING"].includes(conversation.status)
+    ) {
       return () => undefined; // conversation not yet loaded
     }
 
     let sio = sioRef.current;
+
+    if (sio?.connected) {
+      sio.disconnect();
+    }
 
     const lastEvent = lastEventRef.current;
     const query = {

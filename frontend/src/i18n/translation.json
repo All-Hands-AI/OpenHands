@@ -144,6 +144,22 @@
         "de": "Erfolg! Ihr Microagent Pull Request ist bereit.",
         "uk": "Успіх! Ваш запит на витягування мікроагента готовий."
     },
+    "STATUS$WEBSOCKET_CLOSED": {
+        "en": "The WebSocket connection was closed.",
+        "ja": "WebSocket接続が閉じられました。",
+        "zh-CN": "WebSocket连接已关闭。",
+        "zh-TW": "WebSocket連接已關閉。",
+        "ko-KR": "WebSocket 연결이 닫혔습니다.",
+        "no": "WebSocket-tilkoblingen ble lukket.",
+        "it": "La connessione WebSocket è stata chiusa.",
+        "pt": "A conexão WebSocket foi fechada.",
+        "es": "La conexión WebSocket se ha cerrado.",
+        "ar": "تم إغلاق اتصال WebSocket.",
+        "fr": "La connexion WebSocket a été fermée.",
+        "tr": "WebSocket bağlantısı kapatıldı.",
+        "de": "Die WebSocket-Verbindung wurde geschlossen.",
+        "uk": "З'єднання WebSocket було закрито."
+    },
     "HOME$LAUNCH_FROM_SCRATCH": {
         "en": "Launch from Scratch",
         "ja": "ゼロから始める",

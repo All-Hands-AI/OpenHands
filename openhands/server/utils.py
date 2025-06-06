@@ -1,5 +1,6 @@
-from fastapi import Depends, Request
+from fastapi import Depends, HTTPException, Request, status
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.server.shared import ConversationStoreImpl, config, conversation_manager
 from openhands.server.user_auth import get_user_id
 from openhands.storage.conversation.conversation_store import ConversationStore
@@ -11,7 +12,7 @@ async def get_conversation_store(request: Request) -> ConversationStore | None:
     )
     if conversation_store:
         return conversation_store
-    user_id = get_user_id(request)
+    user_id = await get_user_id(request)
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
     request.state.conversation_store = conversation_store
     return conversation_store
@@ -24,6 +25,15 @@ async def get_conversation(
     conversation = await conversation_manager.attach_to_conversation(
         conversation_id, user_id
     )
+    if not conversation:
+        logger.warn(
+            f'get_conversation: conversation {conversation_id} not found, attach_to_conversation returned None',
+            extra={'session_id': conversation_id, 'user_id': user_id},
+        )
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f'Conversation {conversation_id} not found',
+        )
     try:
         yield conversation
     finally:
