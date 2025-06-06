@@ -111,3 +111,19 @@ def is_extension_allowed(filename: str) -> bool:
         or file_ext in (ext.lower() for ext in ALLOWED_EXTENSIONS)
         or (file_ext == '' and '.' in ALLOWED_EXTENSIONS)
     )
+
+# TODO DOCS
+def get_unique_filename(filename: str, folder_path: str) -> str:
+    name, ext = os.path.splitext(filename)
+    filename_candidate = filename
+    copy_index = 0
+
+    while os.path.exists(os.path.join(folder_path, filename_candidate)):
+        if copy_index == 0:
+            filename_candidate = f"{name} copy{ext}"
+        else:
+            filename_candidate = f"{name} copy({copy_index}){ext}"
+        copy_index += 1
+    print(filename_candidate)
+
+    return filename_candidate

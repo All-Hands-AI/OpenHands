@@ -7,8 +7,10 @@ from fastapi import (
     HTTPException,
     Request,
     status,
+    UploadFile
 )
 from fastapi.responses import FileResponse, JSONResponse
+from openhands.storage.locations import get_conversation_event_filename, get_conversation_files_dir
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
 from starlette.background import BackgroundTask
@@ -26,6 +28,8 @@ from openhands.runtime.base import Runtime
 from openhands.server.dependencies import get_dependencies
 from openhands.server.file_config import (
     FILES_TO_IGNORE,
+    get_unique_filename,
+    sanitize_filename,
 )
 from openhands.server.shared import (
     ConversationStoreImpl,
@@ -308,3 +312,38 @@ async def get_cwd(
         cwd = os.path.join(cwd, repo_dir)
 
     return cwd
+
+@app.post('/upload-files')
+async def upload_file(conversation_id: str, files: list[UploadFile]):
+    conversation_files_path = os.path.expanduser(f"{config.file_store_path}/{get_conversation_files_dir(conversation_id, None)}")
+
+    try:
+
+        os.makedirs(conversation_files_path, exist_ok=True)
+         # TODO: we want to utilise size limit
+        MAX_FILE_SIZE_MB = 10
+
+        file_urls = []
+
+        for file in files:
+            safe_filename = get_unique_filename(sanitize_filename(file.filename), conversation_files_path)
+            file_content = await file.read()
+            file_content_length = len(file_content)
+            # TODO: we want to utilise this
+            file_content_length_over_limit = file_content_length > MAX_FILE_SIZE_MB * 1024 * 1024
+
+            file_path = f"{conversation_files_path}{safe_filename}"
+            with open(file_path, "wb") as f:
+                f.write(file_content)
+            file_urls.append(file_path)
+        return JSONResponse(status_code=status.HTTP_200_OK, content=file_urls)
+
+    except Exception as e:
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                   content={
+                'error': f'Error during file upload: {str(e)}',
+                'uploaded_files': [],
+                'skipped_files': [],
+            },
+        )

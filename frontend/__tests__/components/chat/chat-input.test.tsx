@@ -195,7 +195,7 @@ describe("ChatInput", () => {
     const onSubmit = vi.fn();
     const onImagePaste = vi.fn();
 
-    render(<ChatInput onSubmit={onSubmit} onImagePaste={onImagePaste} />);
+    render(<ChatInput onSubmit={onSubmit} onFilesPaste={onImagePaste} />);
 
     const input = screen.getByTestId("chat-input").querySelector("textarea");
     expect(input).toBeTruthy();
