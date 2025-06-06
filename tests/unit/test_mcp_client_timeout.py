@@ -1,49 +1,30 @@
-import asyncio
-from contextlib import asynccontextmanager
-from unittest import mock
-
 import pytest
+from httpx import ConnectError
+from mcp import McpError
 
+from openhands.core.config.mcp_config import MCPSSEServerConfig
 from openhands.mcp.client import MCPClient
 
 
 @pytest.mark.asyncio
 async def test_connect_sse_timeout():
-    """Test that connect_sse properly times out when server_url is invalid."""
+    """Test that connect_http properly times out"""
     client = MCPClient()
 
-    # Create a mock async context manager that simulates a timeout
-    @asynccontextmanager
-    async def mock_slow_context(*args, **kwargs):
-        # This will hang for longer than our timeout
-        await asyncio.sleep(10.0)
-        yield (mock.AsyncMock(), mock.AsyncMock())
+    server = MCPSSEServerConfig(url='http://server1:8080')
 
-    # Patch the sse_client function to return our slow context manager
-    with mock.patch(
-        'openhands.mcp.client.sse_client', return_value=mock_slow_context()
-    ):
-        # Test with a very short timeout
-        with pytest.raises(asyncio.TimeoutError):
-            await client.connect_sse('http://example.com', timeout=0.1)
+    # Test with a very short timeout
+    with pytest.raises(McpError, match='Timed out'):
+        await client.connect_http(server, timeout=0.001)
 
 
 @pytest.mark.asyncio
-async def test_connect_streamable_http_timeout():
-    """Test that connect_streamable_http properly times out when server_url is invalid."""
+async def test_connect_sse_invalid_url():
+    """Test that connect_http hits error when server_url is invalid."""
     client = MCPClient()
 
-    # Create a mock async context manager that simulates a timeout
-    @asynccontextmanager
-    async def mock_slow_context(*args, **kwargs):
-        # This will hang for longer than our timeout
-        await asyncio.sleep(10.0)
-        yield (mock.AsyncMock(), mock.AsyncMock(), mock.AsyncMock())
+    server = MCPSSEServerConfig(url='http://server1:8080')
 
-    # Patch the streamablehttp_client function to return our slow context manager
-    with mock.patch(
-        'openhands.mcp.client.streamablehttp_client', return_value=mock_slow_context()
-    ):
-        # Test with a very short timeout
-        with pytest.raises(asyncio.TimeoutError):
-            await client.connect_shttp('http://example.com', timeout=0.1)
+    # Test with larger timeout
+    with pytest.raises(ConnectError):
+        await client.connect_http(server, timeout=1)
