@@ -28,9 +28,55 @@ def create_team(args: argparse.Namespace) -> None:
         print('Please set it and try again.')
         sys.exit(1)
 
-    print(f"Creating team '{args.name}' using API at {host}")
-    print('This would create a new team with the provided name.')
-    # In a real implementation, this would make an API call to create the team
+    # In a real implementation, this would use a dedicated teams API endpoint
+    # For now, we'll use a placeholder implementation
+    url = f'{host}/api/teams'  # Placeholder URL
+
+    # Prepare the request data
+    data = json.dumps({'name': args.name, 'description': args.description}).encode(
+        'utf-8'
+    )
+
+    # Create the request with the API key in the header
+    urllib.request.Request(
+        url,
+        data=data,
+        headers={
+            'Authorization': f'Bearer {api_key}',
+            'Content-Type': 'application/json',
+        },
+        method='POST',
+    )
+
+    try:
+        print(f"Creating team '{args.name}'...")
+
+        # This is a placeholder - in a real implementation, we would make the API call
+        # with urllib.request.urlopen(req) as response:
+        #     data = json.loads(response.read().decode('utf-8'))
+        #     print(f"Team created successfully with ID: {data['team_id']}")
+
+        # For now, just show a placeholder message
+        print(f"Team '{args.name}' would be created using API at {host}")
+        print('Note: This is a placeholder. The teams API is not yet implemented.')
+
+    except urllib.error.HTTPError as e:
+        print(f'Error: HTTP {e.code} - {e.reason}')
+        if e.code == 401:
+            print('Authentication failed. Please check your API key.')
+        elif e.code == 403:
+            print("You don't have permission to create teams.")
+        else:
+            print(f'Server response: {e.read().decode("utf-8")}')
+
+    except urllib.error.URLError as e:
+        print(f'Error: Could not connect to the server. {e.reason}')
+
+    except json.JSONDecodeError:
+        print('Error: Could not parse the server response as JSON.')
+
+    except Exception as e:
+        print(f'Unexpected error: {str(e)}')
 
 
 def list_teams(args: argparse.Namespace) -> None:
@@ -135,9 +181,57 @@ def join_team(args: argparse.Namespace) -> None:
         print('Please set it and try again.')
         sys.exit(1)
 
-    print(f"Joining team with invite code '{args.invite_code}' using API at {host}")
-    print('This would join the team associated with the provided invite code.')
-    # In a real implementation, this would make an API call to join the team
+    # In a real implementation, this would use a dedicated teams API endpoint
+    # For now, we'll use a placeholder implementation
+    url = f'{host}/api/teams/join'  # Placeholder URL
+
+    # Prepare the request data
+    data = json.dumps({'invite_code': args.invite_code}).encode('utf-8')
+
+    # Create the request with the API key in the header
+    urllib.request.Request(
+        url,
+        data=data,
+        headers={
+            'Authorization': f'Bearer {api_key}',
+            'Content-Type': 'application/json',
+        },
+        method='POST',
+    )
+
+    try:
+        print(f"Joining team with invite code '{args.invite_code}'...")
+
+        # This is a placeholder - in a real implementation, we would make the API call
+        # with urllib.request.urlopen(req) as response:
+        #     data = json.loads(response.read().decode('utf-8'))
+        #     print(f"Successfully joined team: {data['team_name']}")
+
+        # For now, just show a placeholder message
+        print(
+            f"Would join team with invite code '{args.invite_code}' using API at {host}"
+        )
+        print('Note: This is a placeholder. The teams API is not yet implemented.')
+
+    except urllib.error.HTTPError as e:
+        print(f'Error: HTTP {e.code} - {e.reason}')
+        if e.code == 401:
+            print('Authentication failed. Please check your API key.')
+        elif e.code == 403:
+            print("You don't have permission to join this team.")
+        elif e.code == 404:
+            print('Invalid invite code. Please check and try again.')
+        else:
+            print(f'Server response: {e.read().decode("utf-8")}')
+
+    except urllib.error.URLError as e:
+        print(f'Error: Could not connect to the server. {e.reason}')
+
+    except json.JSONDecodeError:
+        print('Error: Could not parse the server response as JSON.')
+
+    except Exception as e:
+        print(f'Unexpected error: {str(e)}')
 
 
 def main() -> None:
@@ -148,6 +242,9 @@ def main() -> None:
     # Create team command
     create_parser = subparsers.add_parser('create', help='Create a new team')
     create_parser.add_argument('name', help='Name of the team to create')
+    create_parser.add_argument(
+        '--description', help='Description of the team (optional)'
+    )
     create_parser.set_defaults(func=create_team)
 
     # List teams command
