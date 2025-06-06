@@ -444,21 +444,89 @@ def main(args: Optional[list[str]] = None) -> None:
         parser.print_help()
         return
 
-    # Check if the first argument is a subcommand
-    if len(args) > 0 and args[0] in ['list', 'create', 'join']:
-        # If the second argument is a help flag, show help for the subcommand
-        if len(args) > 1 and args[1] in ['-h', '--help']:
-            # Get the subparser for the command
-            subparsers_actions = [
-                action
-                for action in parser._actions
-                if isinstance(action, argparse._SubParsersAction)
-            ]
-            for subparsers_action in subparsers_actions:
-                for choice, subparser in subparsers_action.choices.items():
-                    if choice == args[0]:
-                        subparser.print_help()
-                        return
+    # Special case for subcommand help
+    if (
+        len(args) >= 2
+        and args[0] in ['list', 'create', 'join']
+        and args[1] in ['-h', '--help']
+    ):
+        # Create a new parser just for this subcommand
+        if args[0] == 'list':
+            subparser = argparse.ArgumentParser(
+                description='List all available conversations',
+                formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+            )
+            subparser.add_argument(
+                '-l',
+                '--limit',
+                type=int,
+                default=20,
+                help='Maximum number of conversations to list',
+            )
+            subparser.add_argument(
+                '--url',
+                help='OpenHands API URL (default: $OPENHANDS_API_URL or https://staging.all-hands.dev)',
+            )
+            subparser.add_argument(
+                '--api-key',
+                help='OpenHands API key (default: $OPENHANDS_API_KEY)',
+            )
+            subparser.print_help()
+            return
+        elif args[0] == 'create':
+            subparser = argparse.ArgumentParser(
+                description='Create a new conversation with optional repository and message',
+                formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+            )
+            subparser.add_argument(
+                '-r',
+                '--repository',
+                help='Repository name (owner/repo)',
+            )
+            subparser.add_argument(
+                '-g',
+                '--git-provider',
+                help='Git provider (github or gitlab)',
+            )
+            subparser.add_argument('-b', '--branch', help='Branch name')
+            subparser.add_argument('-m', '--message', help='Initial user message')
+            subparser.add_argument(
+                '-i',
+                '--instructions',
+                help='Conversation instructions',
+            )
+            subparser.add_argument(
+                '-j',
+                '--join',
+                action='store_true',
+                help='Join the conversation after creation',
+            )
+            subparser.add_argument(
+                '--url',
+                help='OpenHands API URL (default: $OPENHANDS_API_URL or https://staging.all-hands.dev)',
+            )
+            subparser.add_argument(
+                '--api-key',
+                help='OpenHands API key (default: $OPENHANDS_API_KEY)',
+            )
+            subparser.print_help()
+            return
+        elif args[0] == 'join':
+            subparser = argparse.ArgumentParser(
+                description='Join an existing conversation by ID',
+                formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+            )
+            subparser.add_argument('conversation_id', help='Conversation ID')
+            subparser.add_argument(
+                '--url',
+                help='OpenHands API URL (default: $OPENHANDS_API_URL or https://staging.all-hands.dev)',
+            )
+            subparser.add_argument(
+                '--api-key',
+                help='OpenHands API key (default: $OPENHANDS_API_KEY)',
+            )
+            subparser.print_help()
+            return
 
     try:
         parsed_args = parser.parse_args(args)
