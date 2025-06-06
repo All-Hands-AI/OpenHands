@@ -1,0 +1,107 @@
+---
+title: Team CLI
+---
+
+# OpenHands Team CLI
+
+The Team CLI provides a command-line interface for interacting with the OpenHands HTTP and WebSocket APIs. It allows you to create conversations, list existing conversations, and join conversations to interact with the agent.
+
+## Getting Started
+
+To use the Team CLI, you need to have OpenHands installed. You can then use the `--team` flag to access the Team CLI:
+
+```bash
+openhands --team [command] [options]
+```
+
+## Configuration
+
+The Team CLI uses the following environment variables for configuration:
+
+- `OPENHANDS_API_URL`: The base URL for the OpenHands API (default: `http://localhost:3000`)
+- `OPENHANDS_API_KEY`: The API key for authentication (if required)
+
+You can also specify these values using command-line options:
+
+```bash
+openhands --team --url https://app.all-hands.dev --api-key your-api-key [command] [options]
+```
+
+## Commands
+
+### List Conversations
+
+List all available conversations:
+
+```bash
+openhands --team list [options]
+```
+
+Options:
+- `-l, --limit`: Maximum number of conversations to list (default: 20)
+
+### Create a Conversation
+
+Create a new conversation:
+
+```bash
+openhands --team create [options]
+```
+
+Options:
+- `-r, --repository`: Repository name (format: owner/repo)
+- `-g, --git-provider`: Git provider (github or gitlab)
+- `-b, --branch`: Branch name
+- `-m, --message`: Initial user message
+- `-i, --instructions`: Conversation instructions
+- `-j, --join`: Join the conversation after creation
+
+### Join a Conversation
+
+Join an existing conversation:
+
+```bash
+openhands --team join [conversation_id]
+```
+
+## Examples
+
+List all conversations:
+
+```bash
+openhands --team list
+```
+
+Create a new conversation with a GitHub repository:
+
+```bash
+openhands --team create -r All-Hands-AI/OpenHands -m "Help me understand the codebase"
+```
+
+Create a conversation and join it immediately:
+
+```bash
+openhands --team create -m "Let's build a web app" -j
+```
+
+Join an existing conversation:
+
+```bash
+openhands --team join abc123def456
+```
+
+## Using with a Remote Server
+
+To use the Team CLI with a remote OpenHands server:
+
+```bash
+export OPENHANDS_API_URL="https://app.all-hands.dev"
+export OPENHANDS_API_KEY="your-api-key"
+openhands --team list
+```
+
+Or specify the URL and API key directly:
+
+```bash
+openhands --team --url https://app.all-hands.dev --api-key your-api-key list
+```

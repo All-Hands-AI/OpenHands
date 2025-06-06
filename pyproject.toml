@@ -48,6 +48,7 @@ dirhash = "*"
 tornado = "*"
 python-dotenv = "*"
 rapidfuzz = "^3.9.0"
+rich = "^13.7.0"
 whatthepatch = "^1.0.6"
 protobuf = "^5.0.0,<6.0.0"                         # Updated to support newer opentelemetry
 opentelemetry-api = "^1.33.1"
@@ -150,6 +151,10 @@ joblib = "*"
 
 [tool.poetry.scripts]
 openhands = "openhands.cli.main:main"
+openhands-team = "openhands.cli.team:main"
+openhands-team-list = "openhands.cli.team_list:main"
+openhands-team-create = "openhands.cli.team_create:main"
+openhands-team-join = "openhands.cli.team_join:main"
 
 [tool.poetry.group.testgeneval.dependencies]
 fuzzywuzzy = "^0.18.0"

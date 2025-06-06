@@ -744,6 +744,12 @@ def get_parser() -> argparse.ArgumentParser:
         type=bool,
         default=False,
     )
+    parser.add_argument(
+        '--team',
+        help='Use team mode to interact with the OpenHands API',
+        action='store_true',
+        default=False,
+    )
     return parser
 
 

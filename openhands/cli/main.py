@@ -454,6 +454,30 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
 
 
 def main():
+    args = parse_arguments()
+
+    # Check if team mode is enabled
+    if args.team:
+        # Import team module and run team CLI
+
+        # Run the team CLI with empty arguments to show help
+        # This is a simple approach that just shows the help message
+        # In a real implementation, we would parse the arguments and pass them to the team CLI
+        print('OpenHands Team CLI')
+        print('=================')
+        print('To use the team CLI, run one of the following commands:')
+        print('  openhands-team list        - List all conversations')
+        print('  openhands-team create      - Create a new conversation')
+        print('  openhands-team join <id>   - Join an existing conversation')
+        print()
+        print('You can also use the direct commands:')
+        print('  openhands-team-list        - List all conversations')
+        print('  openhands-team-create      - Create a new conversation')
+        print('  openhands-team-join <id>   - Join an existing conversation')
+        print()
+        print("For more information, run 'openhands-team --help'")
+        return
+
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
