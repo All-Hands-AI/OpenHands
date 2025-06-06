@@ -84,7 +84,7 @@ export function AgentStatusBar() {
       setStatusMessage(t(I18nKey.STATUS$STARTING_RUNTIME));
       setIndicatorColor(IndicatorColor.RED);
     } else if (status === WsClientProviderStatus.DISCONNECTED) {
-      setStatusMessage(t(I18nKey.STATUS$CONNECTED)); // Using STATUS$CONNECTED instead of STATUS$CONNECTING
+      setStatusMessage(t(I18nKey.STATUS$WEBSOCKET_CLOSED));
       setIndicatorColor(IndicatorColor.RED);
     } else {
       setStatusMessage(AGENT_STATUS_MAP[curAgentState].message);

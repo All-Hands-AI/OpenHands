@@ -9,7 +9,7 @@ export const useActiveConversation = () => {
   const { conversationId } = useConversationId();
   const userConversation = useUserConversation(conversationId, (query) => {
     if (query.state.data?.status === "STARTING") {
-      return 2000; // 2 seconds
+      return 3000; // 3 seconds
     }
     return FIVE_MINUTES;
   });
