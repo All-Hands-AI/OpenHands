@@ -62,7 +62,6 @@ from openhands.utils.shutdown_listener import sleep_if_should_continue
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
 RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'true'
-
 BenchMode = Literal['swe', 'swt', 'swt-ci']
 
 
@@ -861,7 +860,6 @@ if __name__ == '__main__':
             * 60,  # 8 hour PER instance should be more than enough
             max_retries=5,
         )
-
     else:
         critic = AgentFinishedCritic()
 
