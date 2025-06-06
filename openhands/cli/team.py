@@ -47,8 +47,8 @@ def get_host() -> str:
     return os.environ.get('OPENHANDS_HOST', 'https://app.all-hands.dev')
 
 
-def create_team(args: argparse.Namespace) -> None:
-    """Create a new team (conversation)."""
+def create_conversation(args: argparse.Namespace) -> None:
+    """Create a new conversation."""
     api_key = get_api_key()
     host = get_host()
 
@@ -70,8 +70,8 @@ def create_team(args: argparse.Namespace) -> None:
     # Use the conversations API endpoint
     url = f'{host}/api/conversations'
 
-    # Prepare the initial message based on team name and description
-    initial_message = f"Create a new team called '{args.name}'"
+    # Prepare the initial message based on conversation name and description
+    initial_message = f"Create a new conversation called '{args.name}'"
     if args.description:
         initial_message += f' with the following description: {args.description}'
 
@@ -107,7 +107,7 @@ def create_team(args: argparse.Namespace) -> None:
     )
 
     try:
-        print(f"{BOLD}Creating team '{args.name}'...{RESET}")
+        print(f"{BOLD}Creating conversation '{args.name}'...{RESET}")
 
         # Make the API call
         with urllib.request.urlopen(req) as response:
@@ -119,8 +119,8 @@ def create_team(args: argparse.Namespace) -> None:
                 conversation_id = response_data['conversation_id']
                 conversation_url = f'{host}/conversations/{conversation_id}'
 
-                print(f'\n{GREEN}Team created successfully!{RESET}')
-                print(f'\n{BOLD}Team Details:{RESET}')
+                print(f'\n{GREEN}Conversation created successfully!{RESET}')
+                print(f'\n{BOLD}Conversation Details:{RESET}')
                 print(f'  {GRAY}Name:{RESET} {args.name}')
                 if args.description:
                     print(f'  {GRAY}Description:{RESET} {args.description}')
@@ -129,15 +129,15 @@ def create_team(args: argparse.Namespace) -> None:
                     if args.branch:
                         print(f'  {GRAY}Branch:{RESET} {args.branch}')
 
-                print(f'\n{BOLD}Access your team at:{RESET}')
+                print(f'\n{BOLD}Access your conversation at:{RESET}')
                 print(f'  {BLUE}{conversation_url}{RESET}')
 
                 # Print the short ID for reference
                 short_id = conversation_id[:6]
-                print(f'\n{GRAY}Team ID: {CYAN}{short_id}{RESET}')
+                print(f'\n{GRAY}Conversation ID: {CYAN}{short_id}{RESET}')
             else:
                 print(
-                    f'{RED}Error creating team: {response_data.get("message", "Unknown error")}{RESET}'
+                    f'{RED}Error creating conversation: {response_data.get("message", "Unknown error")}{RESET}'
                 )
 
     except urllib.error.HTTPError as e:
@@ -145,7 +145,7 @@ def create_team(args: argparse.Namespace) -> None:
         if e.code == 401:
             print(f'{YELLOW}Authentication failed. Please check your API key.{RESET}')
         elif e.code == 403:
-            print(f"{YELLOW}You don't have permission to create teams.{RESET}")
+            print(f"{YELLOW}You don't have permission to create conversations.{RESET}")
         else:
             print(f'{GRAY}Server response: {e.read().decode("utf-8")}{RESET}')
 
@@ -159,8 +159,8 @@ def create_team(args: argparse.Namespace) -> None:
         print(f'{RED}Unexpected error: {str(e)}{RESET}')
 
 
-def list_teams(args: argparse.Namespace) -> None:
-    """List all teams the user is a member of."""
+def list_conversations(args: argparse.Namespace) -> None:
+    """List all conversations the user is a member of."""
     api_key = get_api_key()
     host = get_host()
 
@@ -228,11 +228,11 @@ def list_teams(args: argparse.Namespace) -> None:
             # Print the conversations in a formatted table
             status_text = 'All' if args.all else 'Running'
             print(f'\n{BOLD}Your {status_text} Conversations:{RESET}')
-            print('-' * 120)
+            print('-' * 150)
             print(
-                f'{BOLD}{"ID":<10} {"Title":<25} {"Status":<10} {"Repository":<18} {"Branch":<15} {"Last Updated":<20}{RESET}'
+                f'{BOLD}{"ID":<10} {"Title":<25} {"Status":<10} {"Repository":<50} {"Branch":<15} {"Last Updated":<20}{RESET}'
             )
-            print('-' * 120)
+            print('-' * 150)
 
             for conv in filtered_results:
                 # Format the date
@@ -263,7 +263,7 @@ def list_teams(args: argparse.Namespace) -> None:
                     f'{CYAN}{short_id:<10}{RESET} '
                     f'{BOLD}{conv["title"][:23]:<25}{RESET} '
                     f'{status_color}{conv["status"]:<10}{RESET} '
-                    f'{BLUE}{repo[:16]:<18}{RESET} '
+                    f'{BLUE}{repo[:48]:<50}{RESET} '
                     f'{YELLOW}{branch[:13]:<15}{RESET} '
                     f'{GRAY}{time_ago:<20}{RESET}'
                 )
@@ -298,8 +298,8 @@ def list_teams(args: argparse.Namespace) -> None:
         print(f'{RED}Unexpected error: {str(e)}{RESET}')
 
 
-def join_team(args: argparse.Namespace) -> None:
-    """Join an existing team (conversation) using an invite code."""
+def join_conversation(args: argparse.Namespace) -> None:
+    """Join an existing conversation using an invite code."""
     api_key = get_api_key()
     host = get_host()
 
@@ -335,7 +335,9 @@ def join_team(args: argparse.Namespace) -> None:
     )
 
     try:
-        print(f"{BOLD}Joining team with invite code '{args.invite_code}'...{RESET}")
+        print(
+            f"{BOLD}Joining conversation with invite code '{args.invite_code}'...{RESET}"
+        )
 
         # Make the API call to get conversation details
         with urllib.request.urlopen(req) as response:
@@ -344,10 +346,10 @@ def join_team(args: argparse.Namespace) -> None:
             # If we get here, the conversation exists
             conversation_url = f'{host}/conversations/{conversation_id}'
 
-            # Now create a message to join the team
+            # Now create a message to join the conversation
             join_url = f'{host}/api/conversations/{conversation_id}/messages'
             join_data = json.dumps(
-                {'content': 'I would like to join this team.', 'role': 'user'}
+                {'content': 'I would like to join this conversation.', 'role': 'user'}
             ).encode('utf-8')
 
             join_req = urllib.request.Request(
@@ -365,12 +367,12 @@ def join_team(args: argparse.Namespace) -> None:
                 json.loads(join_response.read().decode('utf-8'))
 
                 # Display success message
-                print(f'\n{GREEN}Successfully joined the team!{RESET}')
+                print(f'\n{GREEN}Successfully joined the conversation!{RESET}')
 
-                # Display team details
-                print(f'\n{BOLD}Team Details:{RESET}')
+                # Display conversation details
+                print(f'\n{BOLD}Conversation Details:{RESET}')
                 print(
-                    f'  {GRAY}Name:{RESET} {conversation_data.get("title", "Unnamed Team")}'
+                    f'  {GRAY}Name:{RESET} {conversation_data.get("title", "Unnamed Conversation")}'
                 )
 
                 if conversation_data.get('selected_repository'):
@@ -383,19 +385,21 @@ def join_team(args: argparse.Namespace) -> None:
                         )
 
                 # Display access URL
-                print(f'\n{BOLD}Access your team at:{RESET}')
+                print(f'\n{BOLD}Access your conversation at:{RESET}')
                 print(f'  {BLUE}{conversation_url}{RESET}')
 
                 # Print the short ID for reference
                 short_id = conversation_id[:6]
-                print(f'\n{GRAY}Team ID: {CYAN}{short_id}{RESET}')
+                print(f'\n{GRAY}Conversation ID: {CYAN}{short_id}{RESET}')
 
     except urllib.error.HTTPError as e:
         print(f'{RED}Error: HTTP {e.code} - {e.reason}{RESET}')
         if e.code == 401:
             print(f'{YELLOW}Authentication failed. Please check your API key.{RESET}')
         elif e.code == 403:
-            print(f"{YELLOW}You don't have permission to join this team.{RESET}")
+            print(
+                f"{YELLOW}You don't have permission to join this conversation.{RESET}"
+            )
         elif e.code == 404:
             print(f'{YELLOW}Invalid invite code. Please check and try again.{RESET}')
         else:
@@ -411,8 +415,8 @@ def join_team(args: argparse.Namespace) -> None:
         print(f'{RED}Unexpected error: {str(e)}{RESET}')
 
 
-def info_team(args: argparse.Namespace) -> None:
-    """Show detailed information about a team (conversation)."""
+def info_conversation(args: argparse.Namespace) -> None:
+    """Show detailed information about a conversation."""
     api_key = get_api_key()
     host = get_host()
 
@@ -429,11 +433,11 @@ def info_team(args: argparse.Namespace) -> None:
         print(f'{YELLOW}Please set it and try again.{RESET}')
         sys.exit(1)
 
-    # Get the team ID (conversation ID)
-    team_id = args.team_id
+    # Get the conversation ID
+    conversation_id = args.conversation_id
 
     # Get the conversation details
-    url = f'{host}/api/conversations/{team_id}'
+    url = f'{host}/api/conversations/{conversation_id}'
 
     # Create the request with the API key in the header
     req = urllib.request.Request(
@@ -445,62 +449,72 @@ def info_team(args: argparse.Namespace) -> None:
     )
 
     try:
-        print(f"{BOLD}Fetching information for team '{team_id}'...{RESET}")
+        print(
+            f"{BOLD}Fetching information for conversation '{conversation_id}'...{RESET}"
+        )
 
         # Make the API call to get conversation details
         with urllib.request.urlopen(req) as response:
-            team_data = json.loads(response.read().decode('utf-8'))
+            conversation_data = json.loads(response.read().decode('utf-8'))
 
-            # Display team details
-            print(f'\n{BOLD}Team Details:{RESET}')
-            print(f'  {GRAY}ID:{RESET} {team_id}')
-            print(f'  {GRAY}Name:{RESET} {team_data.get("title", "Unnamed Team")}')
-            print(f'  {GRAY}Status:{RESET} {team_data.get("status", "Unknown")}')
+            # Display conversation details
+            print(f'\n{BOLD}Conversation Details:{RESET}')
+            print(f'  {GRAY}ID:{RESET} {conversation_id}')
+            print(
+                f'  {GRAY}Name:{RESET} {conversation_data.get("title", "Unnamed Conversation")}'
+            )
+            print(
+                f'  {GRAY}Status:{RESET} {conversation_data.get("status", "Unknown")}'
+            )
 
             # Display creation and update times
-            if team_data.get('created_at'):
+            if conversation_data.get('created_at'):
                 created_at = datetime.fromisoformat(
-                    team_data['created_at'].replace('Z', '+00:00')
+                    conversation_data['created_at'].replace('Z', '+00:00')
                 )
                 print(
                     f'  {GRAY}Created:{RESET} {created_at.strftime("%Y-%m-%d %H:%M:%S")}'
                 )
 
-            if team_data.get('last_updated_at'):
+            if conversation_data.get('last_updated_at'):
                 updated_at = datetime.fromisoformat(
-                    team_data['last_updated_at'].replace('Z', '+00:00')
+                    conversation_data['last_updated_at'].replace('Z', '+00:00')
                 )
                 print(
                     f'  {GRAY}Last Updated:{RESET} {updated_at.strftime("%Y-%m-%d %H:%M:%S")}'
                 )
 
             # Display repository information if available
-            if team_data.get('selected_repository'):
+            if conversation_data.get('selected_repository'):
                 print(f'\n{BOLD}Repository Information:{RESET}')
                 print(
-                    f'  {GRAY}Repository:{RESET} {team_data.get("selected_repository")}'
+                    f'  {GRAY}Repository:{RESET} {conversation_data.get("selected_repository")}'
                 )
-                if team_data.get('selected_branch'):
-                    print(f'  {GRAY}Branch:{RESET} {team_data.get("selected_branch")}')
-                if team_data.get('git_provider'):
+                if conversation_data.get('selected_branch'):
                     print(
-                        f'  {GRAY}Git Provider:{RESET} {team_data.get("git_provider")}'
+                        f'  {GRAY}Branch:{RESET} {conversation_data.get("selected_branch")}'
+                    )
+                if conversation_data.get('git_provider'):
+                    print(
+                        f'  {GRAY}Git Provider:{RESET} {conversation_data.get("git_provider")}'
                     )
 
             # Display access URL
-            team_url = f'{host}/conversations/{team_id}'
+            conversation_url = f'{host}/conversations/{conversation_id}'
             print(f'\n{BOLD}Access URL:{RESET}')
-            print(f'  {BLUE}{team_url}{RESET}')
+            print(f'  {BLUE}{conversation_url}{RESET}')
 
     except urllib.error.HTTPError as e:
         print(f'{RED}Error: HTTP {e.code} - {e.reason}{RESET}')
         if e.code == 401:
             print(f'{YELLOW}Authentication failed. Please check your API key.{RESET}')
         elif e.code == 403:
-            print(f"{YELLOW}You don't have permission to access this team.{RESET}")
+            print(
+                f"{YELLOW}You don't have permission to access this conversation.{RESET}"
+            )
         elif e.code == 404:
             print(
-                f'{YELLOW}Team not found. Please check the team ID and try again.{RESET}'
+                f'{YELLOW}Conversation not found. Please check the conversation ID and try again.{RESET}'
             )
         else:
             print(f'{GRAY}Server response: {e.read().decode("utf-8")}{RESET}')
@@ -516,18 +530,21 @@ def info_team(args: argparse.Namespace) -> None:
 
 
 def main() -> None:
-    """Main entry point for the team CLI."""
-    parser = argparse.ArgumentParser(description='OpenHands Team Management CLI')
+    """Main entry point for the conversation CLI."""
+    parser = argparse.ArgumentParser(
+        description='OpenHands Conversation Management CLI'
+    )
     subparsers = parser.add_subparsers(dest='command', help='Command to run')
 
-    # Create team command
-    create_parser = subparsers.add_parser('create', help='Create a new team')
-    create_parser.add_argument('name', help='Name of the team to create')
+    # Create conversation command
+    create_parser = subparsers.add_parser('create', help='Create a new conversation')
+    create_parser.add_argument('name', help='Name of the conversation to create')
     create_parser.add_argument(
-        '--description', help='Description of the team (optional)'
+        '--description', help='Description of the conversation (optional)'
     )
     create_parser.add_argument(
-        '--repository', help='Repository to associate with the team (e.g., owner/repo)'
+        '--repository',
+        help='Repository to associate with the conversation (e.g., owner/repo)',
     )
     create_parser.add_argument(
         '--git-provider',
@@ -535,11 +552,11 @@ def main() -> None:
         help='Git provider (github or gitlab)',
     )
     create_parser.add_argument('--branch', help='Branch to use for the repository')
-    create_parser.set_defaults(func=create_team)
+    create_parser.set_defaults(func=create_conversation)
 
-    # List teams command
+    # List conversations command
     list_parser = subparsers.add_parser(
-        'list', help='List all teams you are a member of'
+        'list', help='List all conversations you are a member of'
     )
     list_parser.add_argument(
         '--limit',
@@ -554,19 +571,21 @@ def main() -> None:
         action='store_true',
         help='Show all conversations including stopped ones (default: show only running)',
     )
-    list_parser.set_defaults(func=list_teams)
+    list_parser.set_defaults(func=list_conversations)
 
-    # Join team command
-    join_parser = subparsers.add_parser('join', help='Join an existing team')
-    join_parser.add_argument('invite_code', help='Invite code for the team')
-    join_parser.set_defaults(func=join_team)
+    # Join conversation command
+    join_parser = subparsers.add_parser('join', help='Join an existing conversation')
+    join_parser.add_argument('invite_code', help='Invite code for the conversation')
+    join_parser.set_defaults(func=join_conversation)
 
-    # Info team command
+    # Info conversation command
     info_parser = subparsers.add_parser(
-        'info', help='Show detailed information about a team'
+        'info', help='Show detailed information about a conversation'
     )
-    info_parser.add_argument('team_id', help='ID of the team to show information for')
-    info_parser.set_defaults(func=info_team)
+    info_parser.add_argument(
+        'conversation_id', help='ID of the conversation to show information for'
+    )
+    info_parser.set_defaults(func=info_conversation)
 
     args = parser.parse_args()
 
