@@ -4,10 +4,12 @@ import { ChevronRight } from "#/assets/chevron-right";
 import { ImagePreview } from "./image-preview";
 import { cn } from "#/utils/utils";
 
+type ImageFile = { src: string; id?: string };
+
 interface ImageCarouselProps {
   size: "small" | "large";
-  images: string[];
-  onRemove?: (index: number) => void;
+  images: ImageFile[];
+  onRemove?: (id: string) => void;
 }
 
 export function ImageCarousel({
@@ -55,12 +57,12 @@ export function ImageCarousel({
           size === "large" && "gap-4",
         )}
       >
-        {images.map((src, index) => (
+        {images.map((image) => (
           <ImagePreview
-            key={index}
+            key={image.id}
             size={size}
-            src={src}
-            onRemove={onRemove && (() => onRemove(index))}
+            src={image.src}
+            onRemove={onRemove ? () => onRemove(image.id!) : undefined}
           />
         ))}
       </div>
