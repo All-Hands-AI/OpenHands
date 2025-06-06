@@ -17,6 +17,10 @@ export const useActiveConversation = () => {
   useEffect(() => {
     const conversation = userConversation.data;
     OpenHands.setCurrentConversation(conversation || null);
-  }, [conversationId, userConversation.isFetched]);
+  }, [
+    conversationId,
+    userConversation.isFetched,
+    userConversation?.data?.status,
+  ]);
   return userConversation;
 };
