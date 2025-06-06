@@ -15,7 +15,7 @@ async def test_get_convo_link_non_saas_mode():
 
     # Test with non-SAAS mode
     with patch('openhands.server.routes.mcp.server_config') as mock_config:
-        mock_config.APP_MODE = AppMode.OSS
+        mock_config.app_mode = AppMode.OSS
 
         # Call the function
         result = await get_convo_link(
@@ -42,7 +42,7 @@ async def test_get_convo_link_saas_mode():
         patch('openhands.server.routes.mcp.server_config') as mock_config,
         patch('openhands.server.routes.mcp.CONVO_URL', 'https://test.example.com/{}'),
     ):
-        mock_config.APP_MODE = AppMode.SAAS
+        mock_config.app_mode = AppMode.SAAS
 
         # Call the function
         result = await get_convo_link(
@@ -71,7 +71,7 @@ async def test_get_convo_link_empty_body():
         patch('openhands.server.routes.mcp.server_config') as mock_config,
         patch('openhands.server.routes.mcp.CONVO_URL', 'https://test.example.com/{}'),
     ):
-        mock_config.APP_MODE = AppMode.SAAS
+        mock_config.app_mode = AppMode.SAAS
 
         # Call the function
         result = await get_convo_link(

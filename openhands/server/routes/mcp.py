@@ -37,7 +37,7 @@ async def get_convo_link(
         Appends a followup link, in the PR body, to the OpenHands conversation that opened the PR
     """
 
-    if server_config.APP_MODE != AppMode.SAAS:
+    if server_config.app_mode != AppMode.SAAS:
         return body
 
     user = await service.get_user()
