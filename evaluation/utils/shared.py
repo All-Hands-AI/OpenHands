@@ -504,6 +504,10 @@ def run_evaluation(
     output_fp.close()
     logger.info('\nEvaluation finished.\n')
 
+    # Check if any instances reached maximum retries
+    if metadata and metadata.eval_output_dir:
+        check_maximum_retries_exceeded(metadata.eval_output_dir)
+
 
 def reset_logger_for_multiprocessing(
     logger: logging.Logger, instance_id: str, log_dir: str

@@ -27,7 +27,6 @@ from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
     assert_and_raise,
-    check_maximum_retries_exceeded,
     codeact_user_response,
     get_default_sandbox_config_for_eval,
     get_metrics,
@@ -63,9 +62,7 @@ from openhands.utils.shutdown_listener import sleep_if_should_continue
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
 RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'true'
-EVAL_SKIP_BUILD_ERRORS = (
-    os.environ.get('EVAL_SKIP_BUILD_ERRORS', 'false').lower() == 'true'
-)
+
 BenchMode = Literal['swe', 'swt', 'swt-ci']
 
 
@@ -865,8 +862,6 @@ if __name__ == '__main__':
             max_retries=5,
         )
 
-        # Check if any instances reached maximum retries
-        check_maximum_retries_exceeded(metadata.eval_output_dir)
     else:
         critic = AgentFinishedCritic()
 
@@ -916,9 +911,6 @@ if __name__ == '__main__':
                 * 60,  # 8 hour PER instance should be more than enough
                 max_retries=5,
             )
-
-            # Check if any instances reached maximum retries
-            check_maximum_retries_exceeded(metadata.eval_output_dir)
 
             # When eval is done, we update eval_ids to the instances that failed the current attempt
             instances_failed = []
@@ -983,6 +975,3 @@ if __name__ == '__main__':
         logger.info(
             f'Done! Total {len(added_instance_ids)} instances added to {output_file}'
         )
-
-        # Check if maximum_retries_exceeded.txt exists and output a message
-        check_maximum_retries_exceeded(metadata.eval_output_dir)
