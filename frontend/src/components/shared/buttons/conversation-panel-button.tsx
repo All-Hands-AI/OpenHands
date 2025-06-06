@@ -8,11 +8,13 @@ import { cn } from "#/utils/utils";
 interface ConversationPanelButtonProps {
   isOpen: boolean;
   onClick: () => void;
+  disabled?: boolean;
 }
 
 export function ConversationPanelButton({
   isOpen,
   onClick,
+  disabled = false,
 }: ConversationPanelButtonProps) {
   const { t } = useTranslation();
 
@@ -22,10 +24,14 @@ export function ConversationPanelButton({
       tooltip={t(I18nKey.SIDEBAR$CONVERSATIONS)}
       ariaLabel={t(I18nKey.SIDEBAR$CONVERSATIONS)}
       onClick={onClick}
+      disabled={disabled}
     >
       <FaListUl
         size={22}
-        className={cn(isOpen ? "text-white" : "text-[#9099AC]")}
+        className={cn(
+          isOpen ? "text-white" : "text-[#9099AC]",
+          disabled && "opacity-50",
+        )}
       />
     </TooltipButton>
   );
