@@ -11,7 +11,7 @@ async def test_connect_sse_timeout():
     """Test that connect_http properly times out"""
     client = MCPClient()
 
-    server = MCPSSEServerConfig(url='http://server1:8080')
+    server = MCPSSEServerConfig(url='http://localhost:8080')
 
     # Test with a very short timeout
     with pytest.raises(McpError, match='Timed out'):
@@ -23,7 +23,7 @@ async def test_connect_sse_invalid_url():
     """Test that connect_http hits error when server_url is invalid."""
     client = MCPClient()
 
-    server = MCPSSEServerConfig(url='http://server1:8080')
+    server = MCPSSEServerConfig(url='http://localhost:8080')
 
     # Test with larger timeout
     with pytest.raises(ConnectError):
