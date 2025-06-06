@@ -78,17 +78,17 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageActio
 /workspace/{workspace_dir_name}
 </uploaded_files>
 
-I've uploaded a python code repository in the directory {workspace_dir_name}. Consider the following workload file which measures the runtime of a specific workload:
+I've uploaded a python code repository in the directory {workspace_dir_name}. Consider the following Python file, which measures the runtime of a specific workload in the `workload()` function:
 
 <workload>
 {instance.workload}
 </workload>
 
-Can you help me implement the necessary changes to the repository to optimize this workload to run faster and also make sure that existing test cases remain intact and unchanged?
-You only need to worry about speeding up the code that runs in the `workload()` function: you do not need to worry about optimizing any setup work that occurs outside of this function.
+Can you help me implement the necessary changes to the repository to optimize this specific workload to run faster and also make sure that existing test cases remain intact and unchanged?
+You should focus only on specifically speeding up the code that runs in the `workload()` function: you do not need to worry about optimizing any setup work that occurs outside of this function.
 Assume that no test cases will be changing: you should make sure that your changes do not result in any tests changing in status.
 Also the development Python environment is already set up for you (i.e., all dependencies already installed), so you don't need to install other packages.
-Your task is to make the minimal changes to non-test files in the /workspace/{workspace_dir_name} directory to ensure the the workload provided becomes faster without breaking the current correctness of the tests.
+Your task is to make the minimal changes to non-test files in the /workspace/{workspace_dir_name} directory to ensure that the exact given workload provided becomes faster without breaking the current correctness of the tests.
 
 Follow these phases to resolve the issue:
 
@@ -679,6 +679,8 @@ if __name__ == '__main__':
     # dataset = load_dataset(args.dataset, split=args.split)
     # swe_bench_tests = filter_dataset(dataset.to_pandas(), 'instance_id')
     dataset = pd.read_json("/home/jjma_google_com/SWE-Perf/harness_data/initial_data.jsonl", lines=True)
+
+    dataset['version'] = dataset['version'].astype(str)
 
     # Convert created_at column to string.
     dataset['created_at'] = dataset['created_at'].astype(str)
