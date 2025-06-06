@@ -1,3 +1,4 @@
+import os
 import re
 from typing import Annotated
 
@@ -10,9 +11,10 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.provider import ProviderToken
-from openhands.integrations.service_types import ProviderType
+from openhands.integrations.service_types import GitService, ProviderType
 from openhands.server.dependencies import get_dependencies
-from openhands.server.shared import ConversationStoreImpl, config
+from openhands.server.shared import ConversationStoreImpl, config, server_config
+from openhands.server.types import AppMode
 from openhands.server.user_auth import (
     get_access_token,
     get_provider_tokens,
@@ -20,10 +22,34 @@ from openhands.server.user_auth import (
 )
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 
-mcp_server = FastMCP('mcp', stateless_http=True, dependencies=get_dependencies(), mask_error_details=True)
+mcp_server = FastMCP(
+    'mcp', stateless_http=True, dependencies=get_dependencies(), mask_error_details=True
+)
+
+HOST = f'https://{os.getenv("WEB_HOST", "app.all-hands.dev").strip()}'
+CONVO_URL = HOST + '/{}'
+
+
+async def get_convo_link(service: GitService, conversation_id: str, body: str) -> str:
+    """
+    Appends a followup link, in the PR body, to the OpenHands conversation that opened the PR
+    """
+
+    if server_config.app_mode != AppMode.SAAS:
+        return body
+
+    user = await service.get_user()
+    username = user.login
+    convo_url = CONVO_URL.format(conversation_id)
+    convo_link = (
+        f'@{username} can click here to [continue refining the PR]({convo_url})'
+    )
+    body += f'\n\n{convo_link}'
+    return body
+
 
 async def save_pr_metadata(
-    user_id: str, conversation_id: str, tool_result: str
+    user_id: str | None, conversation_id: str, tool_result: str
 ) -> None:
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
     conversation: ConversationMetadata = await conversation_store.get_metadata(
@@ -44,7 +70,11 @@ async def save_pr_metadata(
         pr_number = int(match_merge_request.group(1))
 
     if pr_number:
+        logger.info(f'Saving PR number: {pr_number} for convo {conversation_id}')
         conversation.pr_number.append(pr_number)
+    else:
+        logger.warning(f'Failed to extract PR number for convo {conversation_id}')
+
     await conversation_store.save_metadata(conversation)
 
 
@@ -85,6 +115,11 @@ async def create_pr(
     )
 
     try:
+        body = await get_convo_link(github_service, conversation_id, body or '')
+    except Exception as e:
+        logger.warning(f'Failed to append convo link: {e}')
+
+    try:
         response = await github_service.create_pr(
             repo_name=repo_name,
             source_branch=source_branch,
@@ -93,11 +128,11 @@ async def create_pr(
             body=body,
         )
 
-        if conversation_id and user_id:
+        if conversation_id:
             await save_pr_metadata(user_id, conversation_id, response)
 
     except Exception as e:
-        error = f"Error creating pull request: {e}"
+        error = f'Error creating pull request: {e}'
         raise ToolError(str(error))
 
     return response
@@ -132,7 +167,7 @@ async def create_mr(
         else ProviderToken()
     )
 
-    github_service = GitLabServiceImpl(
+    gitlab_service = GitLabServiceImpl(
         user_id=github_token.user_id,
         external_auth_id=user_id,
         external_auth_token=access_token,
@@ -141,7 +176,14 @@ async def create_mr(
     )
 
     try:
-        response = await github_service.create_mr(
+        description = await get_convo_link(
+            gitlab_service, conversation_id, description or ''
+        )
+    except Exception as e:
+        logger.warning(f'Failed to append convo link: {e}')
+
+    try:
+        response = await gitlab_service.create_mr(
             id=id,
             source_branch=source_branch,
             target_branch=target_branch,
@@ -153,7 +195,7 @@ async def create_mr(
             await save_pr_metadata(user_id, conversation_id, response)
 
     except Exception as e:
-        error = f"Error creating merge request: {e}"
+        error = f'Error creating merge request: {e}'
         raise ToolError(str(error))
 
     return response
