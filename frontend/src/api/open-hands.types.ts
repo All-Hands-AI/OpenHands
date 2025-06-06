@@ -102,3 +102,8 @@ export interface GitChangeDiff {
   modified: string;
   original: string;
 }
+
+export interface GetMicroagentPromptResponse {
+  status: string;
+  prompt: string;
+}
