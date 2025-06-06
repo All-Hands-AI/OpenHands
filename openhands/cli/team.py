@@ -444,23 +444,21 @@ def main(args: Optional[list[str]] = None) -> None:
         parser.print_help()
         return
 
-    # Handle special case for help with subcommands
-    if (
-        len(args) >= 2
-        and args[0] in ['list', 'create', 'join']
-        and args[1] in ['-h', '--help']
-    ):
-        # Get the subparser for the command
-        subparsers_actions = [
-            action
-            for action in parser._actions
-            if isinstance(action, argparse._SubParsersAction)
-        ]
-        for subparsers_action in subparsers_actions:
-            for choice, subparser in subparsers_action.choices.items():
-                if choice == args[0]:
-                    subparser.print_help()
-                    return
+    # Check if the first argument is a subcommand
+    if len(args) > 0 and args[0] in ['list', 'create', 'join']:
+        # If the second argument is a help flag, show help for the subcommand
+        if len(args) > 1 and args[1] in ['-h', '--help']:
+            # Get the subparser for the command
+            subparsers_actions = [
+                action
+                for action in parser._actions
+                if isinstance(action, argparse._SubParsersAction)
+            ]
+            for subparsers_action in subparsers_actions:
+                for choice, subparser in subparsers_action.choices.items():
+                    if choice == args[0]:
+                        subparser.print_help()
+                        return
 
     try:
         parsed_args = parser.parse_args(args)
