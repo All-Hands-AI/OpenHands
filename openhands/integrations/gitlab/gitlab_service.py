@@ -4,6 +4,7 @@ from typing import Any
 import httpx
 from pydantic import SecretStr
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.service_types import (
     BaseGitService,
     Branch,
@@ -32,6 +33,7 @@ class GitLabService(BaseGitService, GitService):
 
     The class is instantiated via get_impl() in openhands.server.shared.py.
     """
+
     BASE_URL = 'https://gitlab.com/api/v4'
     GRAPHQL_URL = 'https://gitlab.com/api/graphql'
     token: SecretStr = SecretStr('')
@@ -55,6 +57,11 @@ class GitLabService(BaseGitService, GitService):
         if base_domain:
             self.BASE_URL = f'https://{base_domain}/api/v4'
             self.GRAPHQL_URL = f'https://{base_domain}/api/graphql'
+            logger.info(f'Using custom GitLab base URL: {self.BASE_URL}')
+            logger.info(f'Using custom GitLab GraphQL URL: {self.GRAPHQL_URL}')
+        else:
+            logger.info(f'Using default GitLab base URL: {self.BASE_URL}')
+            logger.info(f'Using default GitLab GraphQL URL: {self.GRAPHQL_URL}')
 
     @property
     def provider(self) -> str:
@@ -176,21 +183,39 @@ class GitLabService(BaseGitService, GitService):
 
     async def get_user(self) -> User:
         url = f'{self.BASE_URL}/user'
-        response, _ = await self._make_request(url)
+        logger.info(f'Getting GitLab user info from URL: {url}')
+        try:
+            response, _ = await self._make_request(url)
 
-        # Use a default avatar URL if not provided
-        # In some self-hosted GitLab instances, the avatar_url field may be returned as None.
-        avatar_url = response.get('avatar_url') or ''
+            # Use a default avatar URL if not provided
+            # In some self-hosted GitLab instances, the avatar_url field may be returned as None.
+            avatar_url = response.get('avatar_url') or ''
 
-        return User(
-            id=response.get('id'),
-            username=response.get('username'),
-            avatar_url=avatar_url,
-            name=response.get('name'),
-            email=response.get('email'),
-            company=response.get('organization'),
-            login=response.get('username'),
-        )
+            logger.info(f'Successfully retrieved GitLab user info from {url}')
+            return User(
+                id=response.get('id'),
+                username=response.get('username'),
+                avatar_url=avatar_url,
+                name=response.get('name'),
+                email=response.get('email'),
+                company=response.get('organization'),
+                login=response.get('username'),
+            )
+        except httpx.HTTPStatusError as e:
+            logger.warning(
+                f'HTTP status error retrieving GitLab user info from {url}: {e.response.status_code} - {e.response.reason_phrase}'
+            )
+            if hasattr(e.response, 'text'):
+                logger.warning(f'Response content: {e.response.text}')
+            raise
+        except httpx.HTTPError as e:
+            logger.warning(
+                f'HTTP error retrieving GitLab user info from {url}: {type(e).__name__} - {str(e)}'
+            )
+            raise
+        except Exception as e:
+            logger.warning(f'Failed to retrieve GitLab user info from {url}: {e}')
+            raise
 
     async def search_repositories(
         self, query: str, per_page: int = 30, sort: str = 'updated', order: str = 'desc'
