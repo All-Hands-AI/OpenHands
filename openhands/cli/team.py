@@ -70,14 +70,10 @@ def create_conversation(args: argparse.Namespace) -> None:
     # Use the conversations API endpoint
     url = f'{host}/api/conversations'
 
-    # Prepare the initial message based on conversation name and description
-    initial_message = f"Create a new conversation called '{args.name}'"
-    if args.description:
-        initial_message += f' with the following description: {args.description}'
-
+    # Use the message directly as the initial user message
     # Prepare the request data
     request_data = {
-        'initial_user_msg': initial_message,
+        'initial_user_msg': args.message,
     }
 
     # Add repository if specified
@@ -107,7 +103,7 @@ def create_conversation(args: argparse.Namespace) -> None:
     )
 
     try:
-        print(f"{BOLD}Creating conversation '{args.name}'...{RESET}")
+        print(f"{BOLD}Creating conversation with message: '{args.message}'...{RESET}")
 
         # Make the API call
         with urllib.request.urlopen(req) as response:
@@ -121,9 +117,7 @@ def create_conversation(args: argparse.Namespace) -> None:
 
                 print(f'\n{GREEN}Conversation created successfully!{RESET}')
                 print(f'\n{BOLD}Conversation Details:{RESET}')
-                print(f'  {GRAY}Name:{RESET} {args.name}')
-                if args.description:
-                    print(f'  {GRAY}Description:{RESET} {args.description}')
+                print(f'  {GRAY}Initial Message:{RESET} {args.message}')
                 if args.repository:
                     print(f'  {GRAY}Repository:{RESET} {args.repository}')
                     if args.branch:
@@ -538,10 +532,7 @@ def main() -> None:
 
     # Create conversation command
     create_parser = subparsers.add_parser('create', help='Create a new conversation')
-    create_parser.add_argument('name', help='Name of the conversation to create')
-    create_parser.add_argument(
-        '--description', help='Description of the conversation (optional)'
-    )
+    create_parser.add_argument('message', help='Initial message to send to the agent')
     create_parser.add_argument(
         '--repository',
         help='Repository to associate with the conversation (e.g., owner/repo)',
