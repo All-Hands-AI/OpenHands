@@ -299,66 +299,116 @@ def list_teams(args: argparse.Namespace) -> None:
 
 
 def join_team(args: argparse.Namespace) -> None:
-    """Join an existing team."""
+    """Join an existing team (conversation) using an invite code."""
     api_key = get_api_key()
     host = get_host()
 
+    # Define colors
+    RESET = '\033[0m'
+    BOLD = '\033[1m'
+    GREEN = '\033[32m'
+    YELLOW = '\033[33m'
+    BLUE = '\033[34m'
+    CYAN = '\033[36m'
+    GRAY = '\033[90m'
+    RED = '\033[31m'
+
     if not api_key:
-        print('Error: OPENHANDS_API_KEY environment variable is not set.')
-        print('Please set it and try again.')
+        print(f'{RED}Error: OPENHANDS_API_KEY environment variable is not set.{RESET}')
+        print(f'{YELLOW}Please set it and try again.{RESET}')
         sys.exit(1)
 
-    # In a real implementation, this would use a dedicated teams API endpoint
-    # For now, we'll use a placeholder implementation
-    url = f'{host}/api/teams/join'  # Placeholder URL
+    # For now, we'll treat the invite code as the conversation ID
+    # In a real implementation, there would be a dedicated endpoint for invite codes
+    conversation_id = args.invite_code
 
-    # Prepare the request data
-    data = json.dumps({'invite_code': args.invite_code}).encode('utf-8')
+    # First, check if the conversation exists
+    url = f'{host}/api/conversations/{conversation_id}'
 
     # Create the request with the API key in the header
-    urllib.request.Request(
+    req = urllib.request.Request(
         url,
-        data=data,
         headers={
             'Authorization': f'Bearer {api_key}',
             'Content-Type': 'application/json',
         },
-        method='POST',
     )
 
     try:
-        print(f"Joining team with invite code '{args.invite_code}'...")
+        print(f"{BOLD}Joining team with invite code '{args.invite_code}'...{RESET}")
 
-        # This is a placeholder - in a real implementation, we would make the API call
-        # with urllib.request.urlopen(req) as response:
-        #     data = json.loads(response.read().decode('utf-8'))
-        #     print(f"Successfully joined team: {data['team_name']}")
+        # Make the API call to get conversation details
+        with urllib.request.urlopen(req) as response:
+            conversation_data = json.loads(response.read().decode('utf-8'))
 
-        # For now, just show a placeholder message
-        print(
-            f"Would join team with invite code '{args.invite_code}' using API at {host}"
-        )
-        print('Note: This is a placeholder. The teams API is not yet implemented.')
+            # If we get here, the conversation exists
+            conversation_url = f'{host}/conversations/{conversation_id}'
+
+            # Now create a message to join the team
+            join_url = f'{host}/api/conversations/{conversation_id}/messages'
+            join_data = json.dumps(
+                {'content': 'I would like to join this team.', 'role': 'user'}
+            ).encode('utf-8')
+
+            join_req = urllib.request.Request(
+                join_url,
+                data=join_data,
+                headers={
+                    'Authorization': f'Bearer {api_key}',
+                    'Content-Type': 'application/json',
+                },
+                method='POST',
+            )
+
+            # Send the join message
+            with urllib.request.urlopen(join_req) as join_response:
+                json.loads(join_response.read().decode('utf-8'))
+
+                # Display success message
+                print(f'\n{GREEN}Successfully joined the team!{RESET}')
+
+                # Display team details
+                print(f'\n{BOLD}Team Details:{RESET}')
+                print(
+                    f'  {GRAY}Name:{RESET} {conversation_data.get("title", "Unnamed Team")}'
+                )
+
+                if conversation_data.get('selected_repository'):
+                    print(
+                        f'  {GRAY}Repository:{RESET} {conversation_data.get("selected_repository")}'
+                    )
+                    if conversation_data.get('selected_branch'):
+                        print(
+                            f'  {GRAY}Branch:{RESET} {conversation_data.get("selected_branch")}'
+                        )
+
+                # Display access URL
+                print(f'\n{BOLD}Access your team at:{RESET}')
+                print(f'  {BLUE}{conversation_url}{RESET}')
+
+                # Print the short ID for reference
+                short_id = conversation_id[:6]
+                print(f'\n{GRAY}Team ID: {CYAN}{short_id}{RESET}')
 
     except urllib.error.HTTPError as e:
-        print(f'Error: HTTP {e.code} - {e.reason}')
+        print(f'{RED}Error: HTTP {e.code} - {e.reason}{RESET}')
         if e.code == 401:
-            print('Authentication failed. Please check your API key.')
+            print(f'{YELLOW}Authentication failed. Please check your API key.{RESET}')
         elif e.code == 403:
-            print("You don't have permission to join this team.")
+            print(f"{YELLOW}You don't have permission to join this team.{RESET}")
         elif e.code == 404:
-            print('Invalid invite code. Please check and try again.')
+            print(f'{YELLOW}Invalid invite code. Please check and try again.{RESET}')
         else:
-            print(f'Server response: {e.read().decode("utf-8")}')
+            print(f'{GRAY}Server response: {e.read().decode("utf-8")}{RESET}')
 
     except urllib.error.URLError as e:
-        print(f'Error: Could not connect to the server. {e.reason}')
+        print(f'{RED}Error: Could not connect to the server. {e.reason}{RESET}')
 
     except json.JSONDecodeError:
-        print('Error: Could not parse the server response as JSON.')
+        print(f'{RED}Error: Could not parse the server response as JSON.{RESET}')
 
     except Exception as e:
-        print(f'Unexpected error: {str(e)}')
+        print(f'{RED}Unexpected error: {str(e)}{RESET}')
 
 
 def main() -> None:
