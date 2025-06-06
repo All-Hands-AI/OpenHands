@@ -1,10 +1,17 @@
 import React from "react";
+import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import { OpenHandsAction } from "#/types/core/actions";
 import { OpenHandsObservation } from "#/types/core/observations";
 import { isOpenHandsAction, isOpenHandsObservation } from "#/types/core/guards";
 import { EventMessage } from "./event-message";
 import { ChatMessage } from "./chat-message";
 import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
+import { LaunchMicroagentModal } from "./microagent/launch-microagent-modal";
+import { useUserConversation } from "#/hooks/query/use-user-conversation";
+import { useConversationId } from "#/hooks/use-conversation-id";
+import { LaunchToMicroagentButton } from "./microagent/launch-to-microagent-button";
+import { useCreateConversationAndSubscribe } from "#/hooks/use-create-conversation-and-subscribe";
 
 interface MessagesProps {
   messages: (OpenHandsAction | OpenHandsObservation)[];
@@ -13,9 +20,20 @@ interface MessagesProps {
 
 export const Messages: React.FC<MessagesProps> = React.memo(
   ({ messages, isAwaitingUserConfirmation }) => {
+    const { t } = useTranslation();
+    const { createConversationAndSubscribe, isPending } =
+      useCreateConversationAndSubscribe();
     const { getOptimisticUserMessage } = useOptimisticUserMessage();
+    const { conversationId } = useConversationId();
+    const { data: conversation } = useUserConversation(conversationId);
 
     const optimisticUserMessage = getOptimisticUserMessage();
+
+    const [selectedEventId, setSelectedEventId] = React.useState<number | null>(
+      null,
+    );
+    const [showLaunchMicroagentModal, setShowLaunchMicroagentModal] =
+      React.useState(false);
 
     const actionHasObservationPair = React.useCallback(
       (event: OpenHandsAction | OpenHandsObservation): boolean => {
@@ -30,6 +48,34 @@ export const Messages: React.FC<MessagesProps> = React.memo(
       [messages],
     );
 
+    const handleLaunchMicroagent = (
+      query: string,
+      target: string,
+      triggers: string[],
+    ) => {
+      const conversationInstructions = `Target file: ${target}\n\nDescription: ${query}\n\nTriggers: ${triggers.join(", ")}`;
+      if (
+        !conversation ||
+        !conversation.selected_repository ||
+        !conversation.selected_branch ||
+        !conversation.git_provider
+      ) {
+        console.warn(t("MICROAGENT$NO_REPOSITORY_FOUND"));
+        return;
+      }
+
+      createConversationAndSubscribe({
+        query,
+        conversationInstructions,
+        repository: {
+          name: conversation.selected_repository,
+          branch: conversation.selected_branch,
+          gitProvider: conversation.git_provider,
+        },
+        onSuccessCallback: () => setShowLaunchMicroagentModal(false),
+      });
+    };
+
     return (
       <>
         {messages.map((message, index) => (
@@ -39,12 +85,35 @@ export const Messages: React.FC<MessagesProps> = React.memo(
             hasObservationPair={actionHasObservationPair(message)}
             isAwaitingUserConfirmation={isAwaitingUserConfirmation}
             isLastMessage={messages.length - 1 === index}
+            userMessageActionButton={
+              // Only show the button conversation has a selected repository
+              conversation?.selected_repository && (
+                <LaunchToMicroagentButton
+                  onClick={() => {
+                    setSelectedEventId(message.id);
+                    setShowLaunchMicroagentModal(true);
+                  }}
+                />
+              )
+            }
           />
         ))}
 
         {optimisticUserMessage && (
           <ChatMessage type="user" message={optimisticUserMessage} />
         )}
+        {showLaunchMicroagentModal &&
+          selectedEventId &&
+          createPortal(
+            <LaunchMicroagentModal
+              onClose={() => setShowLaunchMicroagentModal(false)}
+              onLaunch={handleLaunchMicroagent}
+              eventId={selectedEventId}
+              selectedRepo={conversation?.selected_repository?.split("/").pop()}
+              isLoading={isPending}
+            />,
+            document.getElementById("modal-portal-exit") || document.body,
+          )}
       </>
     );
   },

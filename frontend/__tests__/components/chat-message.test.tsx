@@ -10,9 +10,7 @@ describe("ChatMessage", () => {
     expect(screen.getByText("Hello, World!")).toBeInTheDocument();
   });
 
-  it.todo("should render an assistant message");
-
-  it.skip("should support code syntax highlighting", () => {
+  it("should support code syntax highlighting", () => {
     const code = "```js\nconsole.log('Hello, World!')\n```";
     render(<ChatMessage type="user" message={code} />);
 
@@ -46,8 +44,6 @@ describe("ChatMessage", () => {
     );
   });
 
-  it("should display an error toast if copying content to clipboard fails", async () => {});
-
   it("should render a component passed as a prop", () => {
     function Component() {
       return <div data-testid="custom-component">Custom Component</div>;
@@ -68,5 +64,31 @@ describe("ChatMessage", () => {
 
     expect(codeElement.tagName.toLowerCase()).toBe("code");
     expect(codeElement.closest("article")).not.toBeNull();
+  });
+
+  it("should render an action button on hover if provided", async () => {
+    const user = userEvent.setup();
+    const actionButton = (
+      <button data-testid="action-button" type="button">
+        Action
+      </button>
+    );
+    render(
+      <ChatMessage
+        type="user"
+        message="Hello, World!"
+        actionButton={actionButton}
+      />,
+    );
+
+    const message = screen.getByText("Hello, World!");
+
+    expect(screen.queryByTestId("action-button")).not.toBeInTheDocument();
+
+    await user.hover(message);
+    expect(screen.getByTestId("action-button")).toBeVisible();
+
+    await user.unhover(message);
+    expect(screen.queryByTestId("action-button")).not.toBeInTheDocument();
   });
 });
