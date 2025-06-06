@@ -48,26 +48,55 @@ def get_host() -> str:
 
 
 def create_team(args: argparse.Namespace) -> None:
-    """Create a new team."""
+    """Create a new team (conversation)."""
     api_key = get_api_key()
     host = get_host()
 
+    # Define colors
+    RESET = '\033[0m'
+    BOLD = '\033[1m'
+    GREEN = '\033[32m'
+    YELLOW = '\033[33m'
+    BLUE = '\033[34m'
+    CYAN = '\033[36m'
+    GRAY = '\033[90m'
+    RED = '\033[31m'
+
     if not api_key:
-        print('Error: OPENHANDS_API_KEY environment variable is not set.')
-        print('Please set it and try again.')
+        print(f'{RED}Error: OPENHANDS_API_KEY environment variable is not set.{RESET}')
+        print(f'{YELLOW}Please set it and try again.{RESET}')
         sys.exit(1)
 
-    # In a real implementation, this would use a dedicated teams API endpoint
-    # For now, we'll use a placeholder implementation
-    url = f'{host}/api/teams'  # Placeholder URL
+    # Use the conversations API endpoint
+    url = f'{host}/api/conversations'
+
+    # Prepare the initial message based on team name and description
+    initial_message = f"Create a new team called '{args.name}'"
+    if args.description:
+        initial_message += f' with the following description: {args.description}'
 
     # Prepare the request data
-    data = json.dumps({'name': args.name, 'description': args.description}).encode(
-        'utf-8'
-    )
+    request_data = {
+        'initial_user_msg': initial_message,
+    }
+
+    # Add repository if specified
+    if args.repository:
+        request_data['repository'] = args.repository
+
+        # Add git provider if specified
+        if args.git_provider:
+            request_data['git_provider'] = args.git_provider
+
+        # Add branch if specified
+        if args.branch:
+            request_data['selected_branch'] = args.branch
+
+    # Encode the data
+    data = json.dumps(request_data).encode('utf-8')
 
     # Create the request with the API key in the header
-    urllib.request.Request(
+    req = urllib.request.Request(
         url,
         data=data,
         headers={
@@ -78,34 +107,56 @@ def create_team(args: argparse.Namespace) -> None:
     )
 
     try:
-        print(f"Creating team '{args.name}'...")
+        print(f"{BOLD}Creating team '{args.name}'...{RESET}")
 
-        # This is a placeholder - in a real implementation, we would make the API call
-        # with urllib.request.urlopen(req) as response:
-        #     data = json.loads(response.read().decode('utf-8'))
-        #     print(f"Team created successfully with ID: {data['team_id']}")
+        # Make the API call
+        with urllib.request.urlopen(req) as response:
+            response_data = json.loads(response.read().decode('utf-8'))
 
-        # For now, just show a placeholder message
-        print(f"Team '{args.name}' would be created using API at {host}")
-        print('Note: This is a placeholder. The teams API is not yet implemented.')
+            if response_data.get('status') == 'ok' and response_data.get(
+                'conversation_id'
+            ):
+                conversation_id = response_data['conversation_id']
+                conversation_url = f'{host}/conversations/{conversation_id}'
+
+                print(f'\n{GREEN}Team created successfully!{RESET}')
+                print(f'\n{BOLD}Team Details:{RESET}')
+                print(f'  {GRAY}Name:{RESET} {args.name}')
+                if args.description:
+                    print(f'  {GRAY}Description:{RESET} {args.description}')
+                if args.repository:
+                    print(f'  {GRAY}Repository:{RESET} {args.repository}')
+                    if args.branch:
+                        print(f'  {GRAY}Branch:{RESET} {args.branch}')
+
+                print(f'\n{BOLD}Access your team at:{RESET}')
+                print(f'  {BLUE}{conversation_url}{RESET}')
+
+                # Print the short ID for reference
+                short_id = conversation_id[:6]
+                print(f'\n{GRAY}Team ID: {CYAN}{short_id}{RESET}')
+            else:
+                print(
+                    f'{RED}Error creating team: {response_data.get("message", "Unknown error")}{RESET}'
+                )
 
     except urllib.error.HTTPError as e:
-        print(f'Error: HTTP {e.code} - {e.reason}')
+        print(f'{RED}Error: HTTP {e.code} - {e.reason}{RESET}')
         if e.code == 401:
-            print('Authentication failed. Please check your API key.')
+            print(f'{YELLOW}Authentication failed. Please check your API key.{RESET}')
         elif e.code == 403:
-            print("You don't have permission to create teams.")
+            print(f"{YELLOW}You don't have permission to create teams.{RESET}")
         else:
-            print(f'Server response: {e.read().decode("utf-8")}')
+            print(f'{GRAY}Server response: {e.read().decode("utf-8")}{RESET}')
 
     except urllib.error.URLError as e:
-        print(f'Error: Could not connect to the server. {e.reason}')
+        print(f'{RED}Error: Could not connect to the server. {e.reason}{RESET}')
 
     except json.JSONDecodeError:
-        print('Error: Could not parse the server response as JSON.')
+        print(f'{RED}Error: Could not parse the server response as JSON.{RESET}')
 
     except Exception as e:
-        print(f'Unexpected error: {str(e)}')
+        print(f'{RED}Unexpected error: {str(e)}{RESET}')
 
 
 def list_teams(args: argparse.Namespace) -> None:
@@ -321,6 +372,15 @@ def main() -> None:
     create_parser.add_argument(
         '--description', help='Description of the team (optional)'
     )
+    create_parser.add_argument(
+        '--repository', help='Repository to associate with the team (e.g., owner/repo)'
+    )
+    create_parser.add_argument(
+        '--git-provider',
+        choices=['github', 'gitlab'],
+        help='Git provider (github or gitlab)',
+    )
+    create_parser.add_argument('--branch', help='Branch to use for the repository')
     create_parser.set_defaults(func=create_team)
 
     # List teams command
