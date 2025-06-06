@@ -358,7 +358,7 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
 
     # Load settings from Settings Store
     # TODO: Make this generic?
-    settings_store = await FileSettingsStore.get_instance(config=config, user_id=None)
+    settings_store = await FileSettingsStore.get_instance(config=config)
     settings = await settings_store.load()
 
     # Track if we've shown the banner during setup

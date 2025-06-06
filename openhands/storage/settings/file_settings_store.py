@@ -31,7 +31,7 @@ class FileSettingsStore(SettingsStore):
 
     @classmethod
     async def get_instance(
-        cls, config: OpenHandsConfig, user_id: str | None
+        cls, config: OpenHandsConfig
     ) -> FileSettingsStore:
         file_store = file_store = get_file_store(
             config.file_store,

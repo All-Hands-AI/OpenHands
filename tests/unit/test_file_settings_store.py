@@ -82,7 +82,7 @@ async def test_get_instance():
         mock_store = MagicMock(spec=FileStore)
         mock_get_store.return_value = mock_store
 
-        store = await FileSettingsStore.get_instance(config, None)
+        store = await FileSettingsStore.get_instance(config)
 
         assert isinstance(store, FileSettingsStore)
         assert store.file_store == mock_store
