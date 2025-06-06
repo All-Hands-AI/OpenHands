@@ -50,14 +50,24 @@ export function EventMessage({
 
   if (hasObservationPair && isOpenHandsAction(event)) {
     if (hasThoughtProperty(event.args)) {
-      return <ChatMessage type="agent" message={event.args.thought} />;
+      return (
+        <ChatMessage
+          type="agent"
+          message={event.args.thought}
+          timestamp={event.timestamp}
+        />
+      );
     }
     return null;
   }
 
   if (isFinishAction(event)) {
     return (
-      <ChatMessage type="agent" message={getEventContent(event).details} />
+      <ChatMessage
+        type="agent"
+        message={getEventContent(event).details}
+        timestamp={event.timestamp}
+      />
     );
   }
 
@@ -65,6 +75,7 @@ export function EventMessage({
     return (
       <ChatMessage
         type={event.source}
+        timestamp={event.timestamp}
         message={isUserMessage(event) ? event.args.content : event.message}
       >
         {event.args.image_urls && event.args.image_urls.length > 0 && (
@@ -76,12 +87,19 @@ export function EventMessage({
   }
 
   if (isRejectObservation(event)) {
-    return <ChatMessage type="agent" message={event.content} />;
+    return (
+      <ChatMessage
+        type="agent"
+        message={event.content}
+        timestamp={event.timestamp}
+      />
+    );
   }
 
   if (isMcpObservation(event)) {
     return (
       <div>
+        {event.timestamp}
         <GenericEventMessage
           title={getEventContent(event).title}
           details={<MCPObservationContent event={event} />}
@@ -95,7 +113,11 @@ export function EventMessage({
   return (
     <div>
       {isOpenHandsAction(event) && hasThoughtProperty(event.args) && (
-        <ChatMessage type="agent" message={event.args.thought} />
+        <ChatMessage
+          type="agent"
+          message={event.args.thought}
+          timestamp={event.timestamp}
+        />
       )}
 
       <GenericEventMessage

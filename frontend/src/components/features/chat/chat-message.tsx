@@ -8,15 +8,18 @@ import { CopyToClipboardButton } from "#/components/shared/buttons/copy-to-clipb
 import { anchor } from "../markdown/anchor";
 import { OpenHandsSourceType } from "#/types/core/base";
 import { paragraph } from "../markdown/paragraph";
+import { useRelativeDateFormatter } from "#/hooks/query/use-relative-date-formatter";
 
 interface ChatMessageProps {
   type: OpenHandsSourceType;
   message: string;
+  timestamp: string;
 }
 
 export function ChatMessage({
   type,
   message,
+  timestamp,
   children,
 }: React.PropsWithChildren<ChatMessageProps>) {
   const [isHovering, setIsHovering] = React.useState(false);
@@ -26,6 +29,8 @@ export function ChatMessage({
     await navigator.clipboard.writeText(message);
     setIsCopy(true);
   };
+
+  const dateFormatter = useRelativeDateFormatter();
 
   React.useEffect(() => {
     let timeout: NodeJS.Timeout;
@@ -53,6 +58,9 @@ export function ChatMessage({
         type === "agent" && "mt-6 max-w-full bg-transparent",
       )}
     >
+      <span className="text-gray-400 font-light text-sm italic">
+        {dateFormatter(timestamp)}
+      </span>
       <CopyToClipboardButton
         isHidden={!isHovering}
         isDisabled={isCopy}
