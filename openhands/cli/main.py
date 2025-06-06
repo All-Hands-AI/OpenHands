@@ -465,7 +465,18 @@ def main():
         # Get arguments after 'team'
         team_args = []
         if len(sys.argv) > 2:
-            team_args = sys.argv[2:]
+            # If the first argument after 'team' is a subcommand, pass it along
+            if sys.argv[2] in ['list', 'create', 'join']:
+                team_args = [sys.argv[2]]
+                # Add any additional arguments
+                if len(sys.argv) > 3:
+                    team_args.extend(sys.argv[3:])
+            # If the first argument is a help flag, pass it along
+            elif sys.argv[2] in ['-h', '--help']:
+                team_args = [sys.argv[2]]
+            # Otherwise, pass all arguments
+            else:
+                team_args = sys.argv[2:]
 
         if not team_args:
             # If no additional arguments, show help message
