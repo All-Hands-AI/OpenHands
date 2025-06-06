@@ -411,6 +411,110 @@ def join_team(args: argparse.Namespace) -> None:
         print(f'{RED}Unexpected error: {str(e)}{RESET}')
 
 
+def info_team(args: argparse.Namespace) -> None:
+    """Show detailed information about a team (conversation)."""
+    api_key = get_api_key()
+    host = get_host()
+
+    # Define colors
+    RESET = '\033[0m'
+    BOLD = '\033[1m'
+    YELLOW = '\033[33m'
+    BLUE = '\033[34m'
+    GRAY = '\033[90m'
+    RED = '\033[31m'
+
+    if not api_key:
+        print(f'{RED}Error: OPENHANDS_API_KEY environment variable is not set.{RESET}')
+        print(f'{YELLOW}Please set it and try again.{RESET}')
+        sys.exit(1)
+
+    # Get the team ID (conversation ID)
+    team_id = args.team_id
+
+    # Get the conversation details
+    url = f'{host}/api/conversations/{team_id}'
+
+    # Create the request with the API key in the header
+    req = urllib.request.Request(
+        url,
+        headers={
+            'Authorization': f'Bearer {api_key}',
+            'Content-Type': 'application/json',
+        },
+    )
+
+    try:
+        print(f"{BOLD}Fetching information for team '{team_id}'...{RESET}")
+
+        # Make the API call to get conversation details
+        with urllib.request.urlopen(req) as response:
+            team_data = json.loads(response.read().decode('utf-8'))
+
+            # Display team details
+            print(f'\n{BOLD}Team Details:{RESET}')
+            print(f'  {GRAY}ID:{RESET} {team_id}')
+            print(f'  {GRAY}Name:{RESET} {team_data.get("title", "Unnamed Team")}')
+            print(f'  {GRAY}Status:{RESET} {team_data.get("status", "Unknown")}')
+
+            # Display creation and update times
+            if team_data.get('created_at'):
+                created_at = datetime.fromisoformat(
+                    team_data['created_at'].replace('Z', '+00:00')
+                )
+                print(
+                    f'  {GRAY}Created:{RESET} {created_at.strftime("%Y-%m-%d %H:%M:%S")}'
+                )
+
+            if team_data.get('last_updated_at'):
+                updated_at = datetime.fromisoformat(
+                    team_data['last_updated_at'].replace('Z', '+00:00')
+                )
+                print(
+                    f'  {GRAY}Last Updated:{RESET} {updated_at.strftime("%Y-%m-%d %H:%M:%S")}'
+                )
+
+            # Display repository information if available
+            if team_data.get('selected_repository'):
+                print(f'\n{BOLD}Repository Information:{RESET}')
+                print(
+                    f'  {GRAY}Repository:{RESET} {team_data.get("selected_repository")}'
+                )
+                if team_data.get('selected_branch'):
+                    print(f'  {GRAY}Branch:{RESET} {team_data.get("selected_branch")}')
+                if team_data.get('git_provider'):
+                    print(
+                        f'  {GRAY}Git Provider:{RESET} {team_data.get("git_provider")}'
+                    )
+
+            # Display access URL
+            team_url = f'{host}/conversations/{team_id}'
+            print(f'\n{BOLD}Access URL:{RESET}')
+            print(f'  {BLUE}{team_url}{RESET}')
+
+    except urllib.error.HTTPError as e:
+        print(f'{RED}Error: HTTP {e.code} - {e.reason}{RESET}')
+        if e.code == 401:
+            print(f'{YELLOW}Authentication failed. Please check your API key.{RESET}')
+        elif e.code == 403:
+            print(f"{YELLOW}You don't have permission to access this team.{RESET}")
+        elif e.code == 404:
+            print(
+                f'{YELLOW}Team not found. Please check the team ID and try again.{RESET}'
+            )
+        else:
+            print(f'{GRAY}Server response: {e.read().decode("utf-8")}{RESET}')
+
+    except urllib.error.URLError as e:
+        print(f'{RED}Error: Could not connect to the server. {e.reason}{RESET}')
+
+    except json.JSONDecodeError:
+        print(f'{RED}Error: Could not parse the server response as JSON.{RESET}')
+
+    except Exception as e:
+        print(f'{RED}Unexpected error: {str(e)}{RESET}')
+
+
 def main() -> None:
     """Main entry point for the team CLI."""
     parser = argparse.ArgumentParser(description='OpenHands Team Management CLI')
@@ -456,6 +560,13 @@ def main() -> None:
     join_parser = subparsers.add_parser('join', help='Join an existing team')
     join_parser.add_argument('invite_code', help='Invite code for the team')
     join_parser.set_defaults(func=join_team)
+
+    # Info team command
+    info_parser = subparsers.add_parser(
+        'info', help='Show detailed information about a team'
+    )
+    info_parser.add_argument('team_id', help='ID of the team to show information for')
+    info_parser.set_defaults(func=info_team)
 
     args = parser.parse_args()
 
