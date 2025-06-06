@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import os
-import sys
 
 from prompt_toolkit import print_formatted_text
 from prompt_toolkit.formatted_text import HTML
@@ -458,25 +457,44 @@ def main():
 
     # Check if team mode is enabled
     if args.team:
-        # Import team module and run team CLI
+        # Use subprocess to run the team CLI directly
+        import subprocess
+        import sys
 
-        # Run the team CLI with empty arguments to show help
-        # This is a simple approach that just shows the help message
-        # In a real implementation, we would parse the arguments and pass them to the team CLI
-        print('OpenHands Team CLI')
-        print('=================')
-        print('To use the team CLI, run one of the following commands:')
-        print('  openhands-team list        - List all conversations')
-        print('  openhands-team create      - Create a new conversation')
-        print('  openhands-team join <id>   - Join an existing conversation')
-        print()
-        print('You can also use the direct commands:')
-        print('  openhands-team-list        - List all conversations')
-        print('  openhands-team-create      - Create a new conversation')
-        print('  openhands-team-join <id>   - Join an existing conversation')
-        print()
-        print("For more information, run 'openhands-team --help'")
-        return
+        # Get the Python executable
+        python_exe = sys.executable
+
+        # Get arguments after --team
+        team_args = []
+        if '--team' in sys.argv:
+            team_index = sys.argv.index('--team')
+            if team_index + 1 < len(sys.argv):
+                team_args = sys.argv[team_index + 1 :]
+
+        if not team_args:
+            # If no additional arguments, show help message
+            print('OpenHands Team CLI')
+            print('=================')
+            print('To use the team CLI, run one of the following commands:')
+            print('  openhands --team list        - List all conversations')
+            print('  openhands --team create      - Create a new conversation')
+            print('  openhands --team join <id>   - Join an existing conversation')
+            print()
+            print("For more information, run 'openhands --team --help'")
+            return
+
+        # Construct the command to run the appropriate team CLI command
+        cmd = [python_exe, '-m', 'openhands.cli.team'] + team_args
+
+        # Run the command
+        try:
+            result = subprocess.run(cmd, check=True)
+            sys.exit(result.returncode)
+        except subprocess.CalledProcessError as e:
+            sys.exit(e.returncode)
+        except Exception as e:
+            print(f'Error running team CLI: {e}')
+            sys.exit(1)
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)

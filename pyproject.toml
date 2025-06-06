@@ -151,10 +151,6 @@ joblib = "*"
 
 [tool.poetry.scripts]
 openhands = "openhands.cli.main:main"
-openhands-team = "openhands.cli.team:main"
-openhands-team-list = "openhands.cli.team_list:main"
-openhands-team-create = "openhands.cli.team_create:main"
-openhands-team-join = "openhands.cli.team_join:main"
 
 [tool.poetry.group.testgeneval.dependencies]
 fuzzywuzzy = "^0.18.0"
