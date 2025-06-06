@@ -9,7 +9,7 @@ export const useActiveConversation = () => {
   const { conversationId } = useConversationId();
   const userConversation = useUserConversation(conversationId, (query) => {
     if (query.state.data?.status === "STARTING") {
-      return 2000; // 2 seconds
+      return 3000; // 3 seconds
     }
     return FIVE_MINUTES;
   });
@@ -17,6 +17,10 @@ export const useActiveConversation = () => {
   useEffect(() => {
     const conversation = userConversation.data;
     OpenHands.setCurrentConversation(conversation || null);
-  }, [conversationId, userConversation.isFetched]);
+  }, [
+    conversationId,
+    userConversation.isFetched,
+    userConversation?.data?.status,
+  ]);
   return userConversation;
 };
