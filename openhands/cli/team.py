@@ -324,8 +324,8 @@ def get_base_url() -> str:
     if base_url:
         return base_url
 
-    # Default to localhost
-    return 'http://localhost:3000'
+    # Default to staging server
+    return 'https://staging.all-hands.dev'
 
 
 def get_api_key() -> Optional[str]:
@@ -349,7 +349,7 @@ def setup_parser() -> argparse.ArgumentParser:
     # Server configuration
     parser.add_argument(
         '--url',
-        help='OpenHands API URL (default: $OPENHANDS_API_URL or http://localhost:3000)',
+        help='OpenHands API URL (default: $OPENHANDS_API_URL or https://staging.all-hands.dev)',
     )
     parser.add_argument(
         '--api-key', help='OpenHands API key (default: $OPENHANDS_API_KEY)'
