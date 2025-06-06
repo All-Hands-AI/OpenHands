@@ -138,7 +138,7 @@ def list_teams(args: argparse.Namespace) -> None:
             print(f'\nYour {status_text} Conversations:')
             print('-' * 100)
             print(
-                f'{"ID":<24} {"Title":<30} {"Status":<10} {"Repository":<20} {"Last Updated":<20}'
+                f'{"ID":<10} {"Title":<30} {"Status":<10} {"Repository":<20} {"Last Updated":<20}'
             )
             print('-' * 100)
 
@@ -154,10 +154,19 @@ def list_teams(args: argparse.Namespace) -> None:
                 if repo is None:
                     repo = 'N/A'
 
+                # Get the short ID (first 6 characters)
+                full_id = conv['conversation_id']
+                short_id = full_id[:6]
+
                 # Print the conversation details
                 print(
-                    f'{conv["conversation_id"]:<24} {conv["title"][:28]:<30} {conv["status"]:<10} {repo[:18]:<20} {formatted_date:<20}'
+                    f'{short_id:<10} {conv["title"][:28]:<30} {conv["status"]:<10} {repo[:18]:<20} {formatted_date:<20}'
                 )
+
+                # Print the URL underneath
+                conversation_url = f'{host}/conversations/{full_id}'
+                print(f'  URL: {conversation_url}')
+                print('')  # Empty line for better readability
 
             # Print pagination info if available
             if data.get('next_page_id'):
