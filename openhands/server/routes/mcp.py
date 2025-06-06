@@ -72,6 +72,8 @@ async def save_pr_metadata(
     if pr_number:
         logger.info(f'Saving PR number: {pr_number} for convo {conversation_id}')
         conversation.pr_number.append(pr_number)
+    else:
+        logger.warning(f'Failed to extract PR number for convo {conversation_id}')
 
     await conversation_store.save_metadata(conversation)
 
