@@ -72,38 +72,22 @@ async def create_mcp_clients(
     mcp_clients = []
 
     for server in servers:
-        is_sse = isinstance(server, MCPSSEServerConfig)
-        connection_type = 'SSE' if is_sse else 'SHTTP'
+        is_shttp = isinstance(server, MCPSHTTPServerConfig)
+        connection_type = 'SHTTP' if is_shttp else 'SSE'
         logger.info(
             f'Initializing MCP agent for {server} with {connection_type} connection...'
         )
         client = MCPClient()
 
         try:
-            if is_sse:
-                await client.connect_sse(
-                    server.url,
-                    api_key=server.api_key,
-                    conversation_id=conversation_id,
-                )
-            else:
-                await client.connect_shttp(
-                    server.url,
-                    api_key=server.api_key,
-                    conversation_id=conversation_id,
-                )
+            await client.connect_http(server, conversation_id=conversation_id)
 
             # Only add the client to the list after a successful connection
             mcp_clients.append(client)
 
         except Exception as e:
             logger.error(f'Failed to connect to {server}: {str(e)}', exc_info=True)
-            try:
-                await client.disconnect()
-            except Exception as disconnect_error:
-                logger.error(
-                    f'Error during disconnect after failed connection: {str(disconnect_error)}'
-                )
+
     return mcp_clients
 
 
@@ -142,13 +126,6 @@ async def fetch_mcp_tools_from_config(
 
         # Convert tools to the format expected by the agent
         mcp_tools = convert_mcp_clients_to_tools(mcp_clients)
-
-        # Always disconnect clients to clean up resources
-        for mcp_client in mcp_clients:
-            try:
-                await mcp_client.disconnect()
-            except Exception as disconnect_error:
-                logger.error(f'Error disconnecting MCP client: {str(disconnect_error)}')
 
     except Exception as e:
         logger.error(f'Error fetching MCP tools: {str(e)}')
