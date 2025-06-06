@@ -136,11 +136,11 @@ def list_teams(args: argparse.Namespace) -> None:
             # Print the conversations in a formatted table
             status_text = 'All' if args.all else 'Running'
             print(f'\nYour {status_text} Conversations:')
-            print('-' * 100)
+            print('-' * 120)
             print(
-                f'{"ID":<10} {"Title":<30} {"Status":<10} {"Repository":<20} {"Last Updated":<20}'
+                f'{"ID":<10} {"Title":<25} {"Status":<10} {"Repository":<18} {"Branch":<15} {"Last Updated":<20}'
             )
-            print('-' * 100)
+            print('-' * 120)
 
             for conv in filtered_results:
                 # Format the date
@@ -154,13 +154,18 @@ def list_teams(args: argparse.Namespace) -> None:
                 if repo is None:
                     repo = 'N/A'
 
+                # Format the branch name (if available)
+                branch = conv.get('selected_branch', 'N/A')
+                if branch is None:
+                    branch = 'N/A'
+
                 # Get the short ID (first 6 characters)
                 full_id = conv['conversation_id']
                 short_id = full_id[:6]
 
                 # Print the conversation details
                 print(
-                    f'{short_id:<10} {conv["title"][:28]:<30} {conv["status"]:<10} {repo[:18]:<20} {formatted_date:<20}'
+                    f'{short_id:<10} {conv["title"][:23]:<25} {conv["status"]:<10} {repo[:16]:<18} {branch[:13]:<15} {formatted_date:<20}'
                 )
 
                 # Print the URL underneath
