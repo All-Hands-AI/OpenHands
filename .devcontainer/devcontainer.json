@@ -12,4 +12,7 @@
 		"ghcr.io/devcontainers/features/node:1": {},
 	},
 	"postCreateCommand": ".devcontainer/setup.sh",
+	"mounts": [
+		"source=${localEnv:WORKSPACE_BASE},target=/opt/workspace_base,type=bind,consistency=cached"
+	]
 }
