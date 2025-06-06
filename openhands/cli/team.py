@@ -4,8 +4,37 @@ import os
 import sys
 import urllib.error
 import urllib.request
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
+
+
+def format_time_ago(dt: datetime) -> str:
+    """Format a datetime as a human-readable 'time ago' string."""
+    now = datetime.now(timezone.utc)
+    diff = now - dt
+
+    seconds = diff.total_seconds()
+
+    if seconds < 60:
+        return 'just now'
+    elif seconds < 3600:
+        minutes = int(seconds // 60)
+        return f'{minutes} minute{"s" if minutes != 1 else ""} ago'
+    elif seconds < 86400:
+        hours = int(seconds // 3600)
+        return f'{hours} hour{"s" if hours != 1 else ""} ago'
+    elif seconds < 604800:  # 7 days
+        days = int(seconds // 86400)
+        return f'{days} day{"s" if days != 1 else ""} ago'
+    elif seconds < 2592000:  # 30 days
+        weeks = int(seconds // 604800)
+        return f'{weeks} week{"s" if weeks != 1 else ""} ago'
+    elif seconds < 31536000:  # 365 days
+        months = int(seconds // 2592000)
+        return f'{months} month{"s" if months != 1 else ""} ago'
+    else:
+        years = int(seconds // 31536000)
+        return f'{years} year{"s" if years != 1 else ""} ago'
 
 
 def get_api_key() -> Optional[str]:
@@ -111,6 +140,16 @@ def list_teams(args: argparse.Namespace) -> None:
         },
     )
 
+    # Define colors
+    RESET = '\033[0m'
+    BOLD = '\033[1m'
+    GREEN = '\033[32m'
+    YELLOW = '\033[33m'
+    BLUE = '\033[34m'
+    CYAN = '\033[36m'
+    GRAY = '\033[90m'
+    RED = '\033[31m'
+
     try:
         # Make the API call
         with urllib.request.urlopen(req) as response:
@@ -118,7 +157,7 @@ def list_teams(args: argparse.Namespace) -> None:
 
             # Check if we have results
             if not data.get('results'):
-                print('No conversations found.')
+                print(f'{YELLOW}No conversations found.{RESET}')
                 return
 
             # Filter conversations based on status if --all is not specified
@@ -129,16 +168,18 @@ def list_teams(args: argparse.Namespace) -> None:
                 ]
 
                 if not filtered_results:
-                    print('No running conversations found.')
-                    print('Use --all to show all conversations including stopped ones.')
+                    print(f'{YELLOW}No running conversations found.{RESET}')
+                    print(
+                        f'{GRAY}Use {CYAN}--all{GRAY} to show all conversations including stopped ones.{RESET}'
+                    )
                     return
 
             # Print the conversations in a formatted table
             status_text = 'All' if args.all else 'Running'
-            print(f'\nYour {status_text} Conversations:')
+            print(f'\n{BOLD}Your {status_text} Conversations:{RESET}')
             print('-' * 120)
             print(
-                f'{"ID":<10} {"Title":<25} {"Status":<10} {"Repository":<18} {"Branch":<15} {"Last Updated":<20}'
+                f'{BOLD}{"ID":<10} {"Title":<25} {"Status":<10} {"Repository":<18} {"Branch":<15} {"Last Updated":<20}{RESET}'
             )
             print('-' * 120)
 
@@ -147,7 +188,7 @@ def list_teams(args: argparse.Namespace) -> None:
                 last_updated = datetime.fromisoformat(
                     conv['last_updated_at'].replace('Z', '+00:00')
                 )
-                formatted_date = last_updated.strftime('%Y-%m-%d %H:%M:%S')
+                time_ago = format_time_ago(last_updated)
 
                 # Format the repository name (if available)
                 repo = conv.get('selected_repository', 'N/A')
@@ -163,39 +204,47 @@ def list_teams(args: argparse.Namespace) -> None:
                 full_id = conv['conversation_id']
                 short_id = full_id[:6]
 
+                # Set status color
+                status_color = GREEN if conv['status'] == 'RUNNING' else GRAY
+
                 # Print the conversation details
                 print(
-                    f'{short_id:<10} {conv["title"][:23]:<25} {conv["status"]:<10} {repo[:16]:<18} {branch[:13]:<15} {formatted_date:<20}'
+                    f'{CYAN}{short_id:<10}{RESET} '
+                    f'{BOLD}{conv["title"][:23]:<25}{RESET} '
+                    f'{status_color}{conv["status"]:<10}{RESET} '
+                    f'{BLUE}{repo[:16]:<18}{RESET} '
+                    f'{YELLOW}{branch[:13]:<15}{RESET} '
+                    f'{GRAY}{time_ago:<20}{RESET}'
                 )
 
                 # Print the URL underneath
                 conversation_url = f'{host}/conversations/{full_id}'
-                print(f'  URL: {conversation_url}')
+                print(f'  {GRAY}URL: {BLUE}{conversation_url}{RESET}')
                 print('')  # Empty line for better readability
 
             # Print pagination info if available
             if data.get('next_page_id'):
                 print(
-                    f'\nMore results available. Use --page-id={data["next_page_id"]} to see the next page.'
+                    f'\n{GRAY}More results available. Use {CYAN}--page-id={data["next_page_id"]}{GRAY} to see the next page.{RESET}'
                 )
 
     except urllib.error.HTTPError as e:
-        print(f'Error: HTTP {e.code} - {e.reason}')
+        print(f'{RED}Error: HTTP {e.code} - {e.reason}{RESET}')
         if e.code == 401:
-            print('Authentication failed. Please check your API key.')
+            print(f'{YELLOW}Authentication failed. Please check your API key.{RESET}')
         elif e.code == 403:
-            print("You don't have permission to access this resource.")
+            print(f"{YELLOW}You don't have permission to access this resource.{RESET}")
         else:
-            print(f'Server response: {e.read().decode("utf-8")}')
+            print(f'{GRAY}Server response: {e.read().decode("utf-8")}{RESET}')
 
     except urllib.error.URLError as e:
-        print(f'Error: Could not connect to the server. {e.reason}')
+        print(f'{RED}Error: Could not connect to the server. {e.reason}{RESET}')
 
     except json.JSONDecodeError:
-        print('Error: Could not parse the server response as JSON.')
+        print(f'{RED}Error: Could not parse the server response as JSON.{RESET}')
 
     except Exception as e:
-        print(f'Unexpected error: {str(e)}')
+        print(f'{RED}Unexpected error: {str(e)}{RESET}')
 
 
 def join_team(args: argparse.Namespace) -> None:
