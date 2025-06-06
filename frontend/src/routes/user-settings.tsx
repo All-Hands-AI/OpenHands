@@ -5,6 +5,9 @@ import { useSettings } from "#/hooks/query/use-settings";
 import { openHands } from "#/api/open-hands-axios";
 import { displaySuccessToast } from "#/utils/custom-toast-handlers";
 
+// Email validation regex pattern
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
 function EmailInputSection({
   email,
   onEmailChange,
@@ -14,6 +17,7 @@ function EmailInputSection({
   isResendingVerification,
   isEmailChanged,
   emailVerified,
+  isEmailValid,
   children,
 }: {
   email: string;
@@ -24,6 +28,7 @@ function EmailInputSection({
   isResendingVerification: boolean;
   isEmailChanged: boolean;
   emailVerified?: boolean;
+  isEmailValid: boolean;
   children: React.ReactNode;
 }) {
   const { t } = useTranslation();
@@ -36,17 +41,27 @@ function EmailInputSection({
             type="email"
             value={email}
             onChange={onEmailChange}
-            className="text-base text-white p-2 bg-base-tertiary rounded border border-tertiary flex-grow focus:outline-none focus:border-transparent focus:ring-0"
+            className={`text-base text-white p-2 bg-base-tertiary rounded border ${
+              isEmailChanged && !isEmailValid
+                ? "border-red-500"
+                : "border-tertiary"
+            } flex-grow focus:outline-none focus:border-transparent focus:ring-0`}
             placeholder={t("SETTINGS$USER_EMAIL_LOADING")}
             data-testid="email-input"
           />
         </div>
+        
+        {isEmailChanged && !isEmailValid && (
+          <div className="text-red-500 text-sm mt-1" data-testid="email-validation-error">
+            {t("SETTINGS$INVALID_EMAIL_FORMAT")}
+          </div>
+        )}
 
         <div className="flex items-center gap-3 mt-2">
           <button
             type="button"
             onClick={onSaveEmail}
-            disabled={!isEmailChanged || isSaving}
+            disabled={!isEmailChanged || isSaving || !isEmailValid}
             className="px-4 py-2 rounded bg-primary text-white hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed disabled:text-[#0D0F11]"
             data-testid="save-email-button"
           >
@@ -98,6 +113,7 @@ function UserSettingsScreen() {
   const [originalEmail, setOriginalEmail] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isResendingVerification, setIsResendingVerification] = useState(false);
+  const [isEmailValid, setIsEmailValid] = useState(true);
   const queryClient = useQueryClient();
   const pollingIntervalRef = useRef<number | null>(null);
   const prevVerificationStatusRef = useRef<boolean | undefined>(undefined);
@@ -106,6 +122,7 @@ function UserSettingsScreen() {
     if (settings?.EMAIL) {
       setEmail(settings.EMAIL);
       setOriginalEmail(settings.EMAIL);
+      setIsEmailValid(EMAIL_REGEX.test(settings.EMAIL));
     }
   }, [settings?.EMAIL]);
 
@@ -143,11 +160,13 @@ function UserSettingsScreen() {
   }, [settings?.EMAIL_VERIFIED, refetch, queryClient, t]);
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEmail(e.target.value);
+    const newEmail = e.target.value;
+    setEmail(newEmail);
+    setIsEmailValid(EMAIL_REGEX.test(newEmail));
   };
 
   const handleSaveEmail = async () => {
-    if (email === originalEmail) return;
+    if (email === originalEmail || !isEmailValid) return;
     try {
       setIsSaving(true);
       await openHands.post("/api/email", { email }, { withCredentials: true });
@@ -194,6 +213,7 @@ function UserSettingsScreen() {
             isResendingVerification={isResendingVerification}
             isEmailChanged={isEmailChanged}
             emailVerified={settings?.EMAIL_VERIFIED}
+            isEmailValid={isEmailValid}
           >
             {settings?.EMAIL_VERIFIED === false && <VerificationAlert />}
           </EmailInputSection>

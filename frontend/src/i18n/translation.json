@@ -9071,6 +9071,22 @@
         "de": "Sie müssen Ihre E-Mail-Adresse bestätigen, bevor Sie All Hands verwenden können",
         "uk": "Ви повинні підтвердити свою електронну адресу перед використанням All Hands"
     },
+    "SETTINGS$INVALID_EMAIL_FORMAT": {
+        "en": "Please enter a valid email address",
+        "ja": "有効なメールアドレスを入力してください",
+        "zh-CN": "请输入有效的电子邮件地址",
+        "zh-TW": "請輸入有效的電子郵件地址",
+        "ko-KR": "유효한 이메일 주소를 입력하세요",
+        "no": "Vennligst skriv inn en gyldig e-postadresse",
+        "it": "Inserisci un indirizzo email valido",
+        "pt": "Por favor, insira um endereço de e-mail válido",
+        "es": "Por favor, introduzca una dirección de correo electrónico válida",
+        "ar": "الرجاء إدخال عنوان بريد إلكتروني صالح",
+        "fr": "Veuillez entrer une adresse e-mail valide",
+        "tr": "Lütfen geçerli bir e-posta adresi girin",
+        "de": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
+        "uk": "Будь ласка, введіть дійсну електронну адресу"
+    },
     "SETTINGS$EMAIL_VERIFICATION_RESTRICTION_MESSAGE": {
         "en": "Your access is limited until your email is verified. You can only access this settings page.",
         "ja": "メールが確認されるまでアクセスが制限されています。この設定ページにのみアクセスできます。",
