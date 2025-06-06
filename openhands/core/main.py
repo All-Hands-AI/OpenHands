@@ -25,6 +25,9 @@ from openhands.core.setup import (
     generate_sid,
     initialize_repository_for_runtime,
 )
+
+# Import warnings filter to suppress common warnings
+from openhands.core.warnings_filter import warnings  # noqa
 from openhands.events import EventSource, EventStreamSubscriber
 from openhands.events.action import MessageAction, NullAction
 from openhands.events.action.action import Action
