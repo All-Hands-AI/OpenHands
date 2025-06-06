@@ -627,11 +627,11 @@ class AgentController:
                     self.state.max_iterations += self._initial_max_iterations
 
             if (
-                self.state.metrics.accumulated_cost is not None
+                self.agent.llm.metrics.accumulated_cost is not None
                 and self.max_budget_per_task is not None
                 and self._initial_max_budget_per_task is not None
             ):
-                if self.state.metrics.accumulated_cost >= self.max_budget_per_task:
+                if self.agent.llm.metrics.accumulated_cost >= self.max_budget_per_task:
                     self.max_budget_per_task += self._initial_max_budget_per_task
         elif self._pending_action is not None and (
             new_state in (AgentState.USER_CONFIRMED, AgentState.USER_REJECTED)
@@ -807,7 +807,7 @@ class AgentController:
                 'iteration', self.state.iteration, self.state.max_iterations
             )
         if self.max_budget_per_task is not None:
-            current_cost = self.state.metrics.accumulated_cost
+            current_cost = self.agent.llm.metrics.accumulated_cost
             if current_cost > self.max_budget_per_task:
                 stop_step = await self._handle_traffic_control(
                     'budget', current_cost, self.max_budget_per_task
@@ -1343,6 +1343,7 @@ class AgentController:
         To avoid performance issues with long conversations, we only keep:
         - accumulated_cost: The current total cost
         - accumulated_token_usage: Accumulated token statistics across all API calls
+        - max_budget_per_task: The maximum budget allowed for the task
 
         This includes metrics from both the agent's LLM and the condenser's LLM if it exists.
 
@@ -1364,6 +1365,9 @@ class AgentController:
         metrics.accumulated_cost = agent_metrics.accumulated_cost
         if condenser_metrics:
             metrics.accumulated_cost += condenser_metrics.accumulated_cost
+
+        # Add max_budget_per_task to metrics
+        metrics.max_budget_per_task = self.max_budget_per_task
 
         # Set accumulated token usage (sum of agent and condenser token usage)
         # Use a deep copy to ensure we don't modify the original object
@@ -1387,7 +1391,7 @@ class AgentController:
         accumulated_usage = self.agent.llm.metrics.accumulated_token_usage
         self.log(
             'debug',
-            f'Action metrics - accumulated_cost: {metrics.accumulated_cost}, '
+            f'Action metrics - accumulated_cost: {metrics.accumulated_cost}, max_budget: {metrics.max_budget_per_task}, '
             f'latest tokens (prompt/completion/cache_read/cache_write): '
             f'{latest_usage.prompt_tokens if latest_usage else 0}/'
             f'{latest_usage.completion_tokens if latest_usage else 0}/'

@@ -23,6 +23,7 @@ describe("ConversationPanel", () => {
       preloadedState: {
         metrics: {
           cost: null,
+          max_budget_per_task: null,
           usage: null,
         },
       },
@@ -267,6 +268,7 @@ describe("ConversationPanel", () => {
       preloadedState: {
         metrics: {
           cost: null,
+          max_budget_per_task: null,
           usage: null,
         },
       },

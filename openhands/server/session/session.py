@@ -118,6 +118,13 @@ class Session:
         )
         max_iterations = settings.max_iterations or self.config.max_iterations
 
+        # Prioritize settings over config for max_budget_per_task
+        max_budget_per_task = (
+            settings.max_budget_per_task
+            if settings.max_budget_per_task is not None
+            else self.config.max_budget_per_task
+        )
+
         # This is a shallow copy of the default LLM config, so changes here will
         # persist if we retrieve the default LLM config again when constructing
         # the agent
@@ -189,7 +196,7 @@ class Session:
                 config=self.config,
                 agent=agent,
                 max_iterations=max_iterations,
-                max_budget_per_task=self.config.max_budget_per_task,
+                max_budget_per_task=max_budget_per_task,
                 agent_to_llm_config=self.config.get_agent_to_llm_config_map(),
                 agent_configs=self.config.get_agent_configs(),
                 git_provider_tokens=git_provider_tokens,
