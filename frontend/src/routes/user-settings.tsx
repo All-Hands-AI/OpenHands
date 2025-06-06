@@ -50,9 +50,12 @@ function EmailInputSection({
             data-testid="email-input"
           />
         </div>
-        
+
         {isEmailChanged && !isEmailValid && (
-          <div className="text-red-500 text-sm mt-1" data-testid="email-validation-error">
+          <div
+            className="text-red-500 text-sm mt-1"
+            data-testid="email-validation-error"
+          >
             {t("SETTINGS$INVALID_EMAIL_FORMAT")}
           </div>
         )}
