@@ -24,6 +24,7 @@ import { displaySuccessToast } from "#/utils/custom-toast-handlers";
 import { useIsOnTosPage } from "#/hooks/use-is-on-tos-page";
 import { useAutoLogin } from "#/hooks/use-auto-login";
 import { useAuthCallback } from "#/hooks/use-auth-callback";
+import { useHandleEmailVerification } from "#/hooks/use-handle-email-verification";
 import { LOCAL_STORAGE_KEYS } from "#/utils/local-storage";
 import { EmailVerificationGuard } from "#/components/features/guards/email-verification-guard";
 
@@ -92,6 +93,9 @@ export default function MainApp() {
 
   // Handle authentication callback and set login method after successful authentication
   useAuthCallback();
+
+  // Set up interceptor for email verification errors
+  useHandleEmailVerification();
 
   React.useEffect(() => {
     // Don't change language when on TOS page
