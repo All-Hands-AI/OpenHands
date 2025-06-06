@@ -500,12 +500,8 @@ class GitLabService(BaseGitService, GitService):
             url=url, params=payload, method=RequestMethod.POST
         )
 
-        # Return the web URL of the created MR
-        if 'web_url' in response:
-            return response['web_url']
-        else:
-            return f'MR created but URL not found in response: {response}'
 
+        return response['web_url']
 
 
 
