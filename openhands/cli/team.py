@@ -1,6 +1,10 @@
 import argparse
+import json
 import os
 import sys
+import urllib.error
+import urllib.request
+from datetime import datetime
 from typing import Optional
 
 
@@ -39,9 +43,86 @@ def list_teams(args: argparse.Namespace) -> None:
         print('Please set it and try again.')
         sys.exit(1)
 
-    print(f'Listing teams using API at {host}')
-    print('This would list all teams you are a member of.')
-    # In a real implementation, this would make an API call to list teams
+    # Set up the request to list conversations
+    url = f'{host}/api/conversations'
+
+    # Add query parameters if provided
+    params = []
+    if args.limit:
+        params.append(f'limit={args.limit}')
+    if args.page_id:
+        params.append(f'page_id={args.page_id}')
+
+    if params:
+        url += '?' + '&'.join(params)
+
+    # Create the request with the API key in the header
+    req = urllib.request.Request(
+        url,
+        headers={
+            'Authorization': f'Bearer {api_key}',
+            'Content-Type': 'application/json',
+        },
+    )
+
+    try:
+        # Make the API call
+        with urllib.request.urlopen(req) as response:
+            data = json.loads(response.read().decode('utf-8'))
+
+            # Check if we have results
+            if not data.get('results'):
+                print('No conversations found.')
+                return
+
+            # Print the conversations in a formatted table
+            print('\nYour Conversations:')
+            print('-' * 100)
+            print(
+                f'{"ID":<24} {"Title":<30} {"Status":<10} {"Repository":<20} {"Last Updated":<20}'
+            )
+            print('-' * 100)
+
+            for conv in data['results']:
+                # Format the date
+                last_updated = datetime.fromisoformat(
+                    conv['last_updated_at'].replace('Z', '+00:00')
+                )
+                formatted_date = last_updated.strftime('%Y-%m-%d %H:%M:%S')
+
+                # Format the repository name (if available)
+                repo = conv.get('selected_repository', 'N/A')
+                if repo is None:
+                    repo = 'N/A'
+
+                # Print the conversation details
+                print(
+                    f'{conv["conversation_id"]:<24} {conv["title"][:28]:<30} {conv["status"]:<10} {repo[:18]:<20} {formatted_date:<20}'
+                )
+
+            # Print pagination info if available
+            if data.get('next_page_id'):
+                print(
+                    f'\nMore results available. Use --page-id={data["next_page_id"]} to see the next page.'
+                )
+
+    except urllib.error.HTTPError as e:
+        print(f'Error: HTTP {e.code} - {e.reason}')
+        if e.code == 401:
+            print('Authentication failed. Please check your API key.')
+        elif e.code == 403:
+            print("You don't have permission to access this resource.")
+        else:
+            print(f'Server response: {e.read().decode("utf-8")}')
+
+    except urllib.error.URLError as e:
+        print(f'Error: Could not connect to the server. {e.reason}')
+
+    except json.JSONDecodeError:
+        print('Error: Could not parse the server response as JSON.')
+
+    except Exception as e:
+        print(f'Unexpected error: {str(e)}')
 
 
 def join_team(args: argparse.Namespace) -> None:
@@ -72,6 +153,14 @@ def main() -> None:
     # List teams command
     list_parser = subparsers.add_parser(
         'list', help='List all teams you are a member of'
+    )
+    list_parser.add_argument(
+        '--limit',
+        type=int,
+        help='Maximum number of conversations to display (default: 20)',
+    )
+    list_parser.add_argument(
+        '--page-id', help='Page ID for pagination when there are more results'
     )
     list_parser.set_defaults(func=list_teams)
 
