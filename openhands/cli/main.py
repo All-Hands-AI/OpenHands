@@ -1,6 +1,3 @@
-# Import suppress_warnings first to suppress warnings before any other imports
-from openhands.cli.suppress_warnings import warnings
-
 import asyncio
 import logging
 import os
@@ -53,8 +50,6 @@ from openhands.core.setup import (
     generate_sid,
     initialize_repository_for_runtime,
 )
-
-
 from openhands.events import EventSource, EventStreamSubscriber
 from openhands.events.action import (
     ChangeAgentStateAction,
