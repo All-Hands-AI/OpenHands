@@ -12,6 +12,8 @@ from fastapi import FastAPI
 from fastmcp import FastMCP
 from fastmcp.utilities.logging import get_logger as fastmcp_get_logger
 
+from openhands.core.config.mcp_config import MCPStdioServerConfig
+
 logger = logging.getLogger(__name__)
 fastmcp_logger = fastmcp_get_logger('fastmcp')
 
@@ -26,7 +28,6 @@ class MCPProxyManager:
 
     def __init__(
         self,
-        name: str = 'OpenHandsActionExecutionProxy',
         auth_enabled: bool = False,
         api_key: Optional[str] = None,
         logger_level: Optional[int] = None,
@@ -40,48 +41,36 @@ class MCPProxyManager:
             api_key: API key for authentication (required if auth_enabled is True)
             logger_level: Logging level for the FastMCP logger
         """
-        self.name = name
         self.auth_enabled = auth_enabled
         self.api_key = api_key
         self.proxy: Optional[FastMCP] = None
-        # Initialize with a valid StdioMCPServer configuration
+        # Initialize with a valid configuration format for FastMCP
         self.config: dict[str, Any] = {
-            'mcpServers': {
-                'default': {
-                    'StdioMCPServer': {
-                        'command': 'python',
-                        'args': ['-m', 'mcp.server'],
-                        'env': {},
-                        'transport': 'stdio',
-                    }
-                }
-            },
-            'tools': [],
+            'mcpServers': {},
         }
 
         # Configure FastMCP logger
         if logger_level is not None:
             fastmcp_logger.setLevel(logger_level)
 
-    def initialize(self) -> FastMCP:
+    def initialize(self) -> None:
         """
         Initialize the FastMCP proxy with the current configuration.
-
-        Returns:
-            The initialized FastMCP proxy instance
         """
-        logger.info(f"Initializing FastMCP Proxy '{self.name}'...")
+        if len(self.config['mcpServers']) == 0:
+            logger.info(
+                f"No MCP servers configured for FastMCP Proxy, skipping initialization."
+            )
+            return None
 
         # Create a new proxy with the current configuration
         self.proxy = FastMCP.as_proxy(
             self.config,
-            name=self.name,
             auth_enabled=self.auth_enabled,
             api_key=self.api_key,
         )
 
-        logger.info(f"FastMCP Proxy '{self.name}' initialized successfully")
-        return self.proxy
+        logger.info(f"FastMCP Proxy initialized successfully")
 
     async def shutdown(self) -> None:
         """
@@ -89,28 +78,18 @@ class MCPProxyManager:
         """
         if self.proxy:
             try:
-                logger.info(f"Shutting down FastMCP Proxy '{self.name}'...")
+                logger.info(f"Shutting down FastMCP Proxy...")
                 await self.proxy.shutdown()
-                logger.info(f"FastMCP Proxy '{self.name}' shutdown successfully")
+                logger.info(f"FastMCP Proxy shutdown successfully")
             except Exception as e:
                 logger.error(
-                    f"Error shutting down FastMCP Proxy '{self.name}': {e}",
+                    f"Error shutting down FastMCP Proxy: {e}",
                     exc_info=True,
                 )
             finally:
                 self.proxy = None
         else:
-            logger.info(f"FastMCP Proxy '{self.name}' instance not found for shutdown")
-
-    def update_tools(self, tools: list[Any]) -> None:
-        """
-        Update the tools configuration.
-
-        Args:
-            tools: List of tool configurations
-        """
-        logger.info(f"Updating tools for FastMCP Proxy '{self.name}'")
-        self.config['tools'] = tools
+            logger.info(f"FastMCP Proxy instance not found for shutdown")
 
     async def get_sse_server_app(
         self, allow_origins: Optional[list[str]] = None
@@ -143,6 +122,12 @@ class MCPProxyManager:
             app: FastAPI application to mount to
             allow_origins: List of allowed origins for CORS
         """
+        if len(self.config['mcpServers']) == 0:
+            logger.info(
+                f"No MCP servers configured for FastMCP Proxy, skipping mount."
+            )
+            return
+
         if not self.proxy:
             raise ValueError('FastMCP Proxy is not initialized')
 
@@ -163,7 +148,7 @@ class MCPProxyManager:
         # Mount the SSE app
         app.mount('/', sse_app)
         logger.info(
-            f"Mounted FastMCP Proxy '{self.name}' SSE app at root path with allowed origins: {allow_origins}"
+            f"Mounted FastMCP Proxy SSE app at root path with allowed origins: {allow_origins}"
         )
 
         # Additional debug logging
@@ -176,7 +161,10 @@ class MCPProxyManager:
                 logger.debug(f'  {route}')
 
     async def update_and_remount(
-        self, app: FastAPI, tools: list[Any], allow_origins: Optional[list[str]] = None
+        self,
+        app: FastAPI,
+        stdio_servers: list[MCPStdioServerConfig],
+        allow_origins: Optional[list[str]] = None,
     ) -> None:
         """
         Update the tools configuration and remount the proxy to the app.
@@ -190,8 +178,11 @@ class MCPProxyManager:
             tools: List of tool configurations
             allow_origins: List of allowed origins for CORS
         """
-        # Update the tools configuration
-        self.update_tools(tools)
+        tools = {
+            t.name: t.model_dump()
+            for t in stdio_servers
+        }
+        self.config['mcpServers'] = tools
 
         # Shutdown the existing proxy
         await self.shutdown()

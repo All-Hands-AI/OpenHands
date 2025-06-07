@@ -34,6 +34,7 @@ from starlette.background import BackgroundTask
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from uvicorn import run
 
+from openhands.core.config.mcp_config import MCPStdioServerConfig
 from openhands.core.exceptions import BrowserUnavailableException
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
@@ -676,15 +677,11 @@ if __name__ == '__main__':
             logger.info('Initializing MCP Proxy Manager...')
             # Create a MCP Proxy Manager
             mcp_proxy_manager = MCPProxyManager(
-                name='OpenHandsActionExecutionProxy',
                 auth_enabled=bool(SESSION_API_KEY),
                 api_key=SESSION_API_KEY,
                 logger_level=logger.getEffectiveLevel(),
             )
-
-            # Initialize the proxy
             mcp_proxy_manager.initialize()
-
             # Mount the proxy to the app
             allowed_origins = ['*']
             try:
@@ -826,14 +823,11 @@ if __name__ == '__main__':
             raise HTTPException(
                 status_code=400, detail='Request must be a list of MCP tools to sync'
             )
-
         logger.info(
             f'Updating MCP server with tools: {json.dumps(mcp_tools_to_sync, indent=2)}'
         )
-
-        # Update the proxy with the new tools
+        mcp_tools_to_sync = [MCPStdioServerConfig(**tool) for tool in mcp_tools_to_sync]
         try:
-            # Use the convenience method to update and remount the proxy
             await mcp_proxy_manager.update_and_remount(app, mcp_tools_to_sync, ['*'])
             logger.info('MCP Proxy Manager updated and remounted successfully')
             router_error_log = ''
