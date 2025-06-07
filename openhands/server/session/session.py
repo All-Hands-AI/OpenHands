@@ -138,7 +138,7 @@ class Session:
             )
         )
         if openhands_mcp_server:
-            self.config.mcp.sse_servers.append(openhands_mcp_server)
+            self.config.mcp.shttp_servers.append(openhands_mcp_server)
         self.config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
 
         # TODO: override other LLM config & agent config groups (#2075)
@@ -156,7 +156,7 @@ class Session:
                 condensers=[
                     BrowserOutputCondenserConfig(attention_window=2),
                     LLMSummarizingCondenserConfig(
-                        llm_config=llm.config, keep_first=4, max_size=80
+                        llm_config=llm.config, keep_first=4, max_size=140
                     ),
                 ]
             )
