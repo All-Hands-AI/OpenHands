@@ -304,7 +304,7 @@ async def test_microagent_and_one_stdio_mcp_in_config(
         # Actual invocation of the microagent involves `add_mcp_tools_to_agent`
         # which will call `get_mcp_config` with the stdio server from microagent's config
         fetch_config = MCPStdioServerConfig(
-            name='fetch', command='uvx', args=['mcp-server-fetch']
+            name='fetch_fetch', command='uvx', args=['mcp-server-fetch']
         )
         updated_config = runtime.get_mcp_config([fetch_config])
         logger.info(f'updated_config: {updated_config}')
