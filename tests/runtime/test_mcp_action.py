@@ -223,9 +223,7 @@ async def test_both_stdio_and_sse_mcp(
         )
 
         # ======= Test SSE server =======
-        mcp_action_sse = MCPAction(
-            name='filesystem_list_directory', arguments={'path': '.'}
-        )
+        mcp_action_sse = MCPAction(name='list_directory', arguments={'path': '.'})
         obs_sse = await runtime.call_tool_mcp(mcp_action_sse)
         logger.info(obs_sse, extra={'msg_type': 'OBSERVATION'})
         assert isinstance(obs_sse, MCPObservation), (
