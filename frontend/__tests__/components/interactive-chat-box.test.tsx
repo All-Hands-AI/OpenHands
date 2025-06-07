@@ -1,7 +1,14 @@
-import { render, screen, within, fireEvent } from "@testing-library/react";
+import {
+  render,
+  screen,
+  within,
+  fireEvent,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { InteractiveChatBox } from "#/components/features/chat/interactive-chat-box";
+import { ChatInputProvider } from "#/components/features/chat/chat-input";
 
 describe("InteractiveChatBox", () => {
   const onSubmitMock = vi.fn();
@@ -18,20 +25,28 @@ describe("InteractiveChatBox", () => {
   });
 
   it("should render", () => {
-    render(<InteractiveChatBox onSubmit={onSubmitMock} onStop={onStopMock} />);
+    render(
+      <ChatInputProvider>
+        <ChatInputProvider>
+          <InteractiveChatBox onSubmit={onSubmitMock} onStop={onStopMock} />
+        </ChatInputProvider>
+      </ChatInputProvider>,
+    );
 
     const chatBox = screen.getByTestId("interactive-chat-box");
     within(chatBox).getByTestId("chat-input");
     within(chatBox).getByTestId("upload-image-input");
   });
 
-  it.fails("should set custom values", () => {
+  it.fails("should set custom defaultValues", () => {
     render(
-      <InteractiveChatBox
-        onSubmit={onSubmitMock}
-        onStop={onStopMock}
-        value="Hello, world!"
-      />,
+      <ChatInputProvider>
+        <InteractiveChatBox
+          onSubmit={onSubmitMock}
+          onStop={onStopMock}
+          defaultValue="Hello, world!"
+        />
+      </ChatInputProvider>,
     );
 
     const chatBox = screen.getByTestId("interactive-chat-box");
@@ -42,7 +57,11 @@ describe("InteractiveChatBox", () => {
 
   it("should display the image previews when images are uploaded", async () => {
     const user = userEvent.setup();
-    render(<InteractiveChatBox onSubmit={onSubmitMock} onStop={onStopMock} />);
+    render(
+      <ChatInputProvider>
+        <InteractiveChatBox onSubmit={onSubmitMock} onStop={onStopMock} />
+      </ChatInputProvider>,
+    );
 
     const file = new File(["(⌐□_□)"], "chucknorris.png", { type: "image/png" });
     const input = screen.getByTestId("upload-image-input");
@@ -63,7 +82,11 @@ describe("InteractiveChatBox", () => {
 
   it("should remove the image preview when the close button is clicked", async () => {
     const user = userEvent.setup();
-    render(<InteractiveChatBox onSubmit={onSubmitMock} onStop={onStopMock} />);
+    render(
+      <ChatInputProvider>
+        <InteractiveChatBox onSubmit={onSubmitMock} onStop={onStopMock} />
+      </ChatInputProvider>,
+    );
 
     const file = new File(["(⌐□_□)"], "chucknorris.png", { type: "image/png" });
     const input = screen.getByTestId("upload-image-input");
@@ -80,7 +103,11 @@ describe("InteractiveChatBox", () => {
 
   it("should call onSubmit with the message and images", async () => {
     const user = userEvent.setup();
-    render(<InteractiveChatBox onSubmit={onSubmitMock} onStop={onStopMock} />);
+    render(
+      <ChatInputProvider>
+        <InteractiveChatBox onSubmit={onSubmitMock} onStop={onStopMock} />
+      </ChatInputProvider>,
+    );
 
     const textarea = within(screen.getByTestId("chat-input")).getByRole(
       "textbox",
@@ -101,11 +128,13 @@ describe("InteractiveChatBox", () => {
   it("should disable the submit button", async () => {
     const user = userEvent.setup();
     render(
-      <InteractiveChatBox
-        isDisabled
-        onSubmit={onSubmitMock}
-        onStop={onStopMock}
-      />,
+      <ChatInputProvider>
+        <InteractiveChatBox
+          isDisabled
+          onSubmit={onSubmitMock}
+          onStop={onStopMock}
+        />
+      </ChatInputProvider>,
     );
 
     const button = screen.getByRole("button");
@@ -118,11 +147,13 @@ describe("InteractiveChatBox", () => {
   it("should display the stop button if set and call onStop when clicked", async () => {
     const user = userEvent.setup();
     render(
-      <InteractiveChatBox
-        mode="stop"
-        onSubmit={onSubmitMock}
-        onStop={onStopMock}
-      />,
+      <ChatInputProvider>
+        <InteractiveChatBox
+          mode="stop"
+          onSubmit={onSubmitMock}
+          onStop={onStopMock}
+        />
+      </ChatInputProvider>,
     );
 
     const stopButton = screen.getByTestId("stop-button");
@@ -136,15 +167,15 @@ describe("InteractiveChatBox", () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn();
     const onStop = vi.fn();
-    const onChange = vi.fn();
 
     const { rerender } = render(
-      <InteractiveChatBox
-        onSubmit={onSubmit}
-        onStop={onStop}
-        onChange={onChange}
-        value="test message"
-      />
+      <ChatInputProvider>
+        <InteractiveChatBox
+          onSubmit={onSubmit}
+          onStop={onStop}
+          defaultValue="test message"
+        />
+      </ChatInputProvider>,
     );
 
     // Upload an image via the upload button - this should NOT clear the text input
@@ -154,7 +185,6 @@ describe("InteractiveChatBox", () => {
 
     // Verify text input was not cleared
     expect(screen.getByRole("textbox")).toHaveValue("test message");
-    expect(onChange).not.toHaveBeenCalledWith("");
 
     // Submit the message with image
     const submitButton = screen.getByRole("button", { name: "BUTTON$SEND" });
@@ -163,28 +193,27 @@ describe("InteractiveChatBox", () => {
     // Verify onSubmit was called with the message and image
     expect(onSubmit).toHaveBeenCalledWith("test message", [file]);
 
-    // Verify onChange was called to clear the text input
-    expect(onChange).toHaveBeenCalledWith("");
+    // Expect the text input to be cleared after submission
+    expect(screen.getByRole("textbox")).toHaveValue("");
 
     // Simulate parent component updating the value prop
     rerender(
-      <InteractiveChatBox
-        onSubmit={onSubmit}
-        onStop={onStop}
-        onChange={onChange}
-        value=""
-      />
+      <ChatInputProvider>
+        <InteractiveChatBox
+          onSubmit={onSubmit}
+          onStop={onStop}
+          defaultValue=""
+        />
+      </ChatInputProvider>,
     );
 
     // Verify the text input was cleared
     expect(screen.getByRole("textbox")).toHaveValue("");
 
     // Upload another image - this should NOT clear the text input
-    onChange.mockClear();
     await user.upload(input, file);
 
     // Verify text input is still empty and onChange was not called
     expect(screen.getByRole("textbox")).toHaveValue("");
-    expect(onChange).not.toHaveBeenCalled();
   });
 });

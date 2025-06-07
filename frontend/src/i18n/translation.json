@@ -7967,6 +7967,22 @@
         "tr": "Tüm ayarları sıfırlamak istediğinizden emin misiniz?",
         "uk": "Ви впевнені, що хочете скинути всі налаштування?"
     },
+    "ERROR$USE_CHAT_INPUT_PROVIDER": {
+        "en": "useChatInput must be used within a ChatInputProvider",
+        "ja": "`useChatInput` は `ChatInputProvider` 内で使用する必要があります",
+        "zh-CN": "`useChatInput` 必须在 `ChatInputProvider` 中使用",
+        "zh-TW": "`useChatInput` 必須在 `ChatInputProvider` 中使用",
+        "ko-KR": "`useChatInput`은 `ChatInputProvider` 내에서 사용해야 합니다",
+        "de": "`useChatInput` muss innerhalb eines `ChatInputProvider` verwendet werden",
+        "no": "`useChatInput` må brukes innenfor en `ChatInputProvider`",
+        "it": "`useChatInput` deve essere utilizzato all'interno di un `ChatInputProvider`",
+        "pt": "`useChatInput` deve ser usado dentro de um `ChatInputProvider`",
+        "es": "`useChatInput` debe ser utilizado dentro de un `ChatInputProvider`",
+        "ar": "يجب استخدام `useChatInput` ضمن `ChatInputProvider`",
+        "fr": "`useChatInput` doit être utilisé à l'intérieur d'un `ChatInputProvider`",
+        "tr": "`useChatInput`, bir `ChatInputProvider` içinde kullanılmalıdır",
+        "uk": "`useChatInput` необхідно використовувати в межах `ChatInputProvider`"
+    },
     "ERROR$GENERIC_OOPS": {
         "en": "Oops! An error occurred!",
         "ja": "おっと！エラーが発生しました！",

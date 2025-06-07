@@ -18,6 +18,7 @@ import { useWsClient } from "#/context/ws-client-provider";
 import { Messages } from "./messages";
 import { ChatSuggestions } from "./chat-suggestions";
 import { ActionSuggestions } from "./action-suggestions";
+import { useInjectChatInputMessage } from "./chat-input";
 
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
@@ -54,7 +55,6 @@ export function ChatInterface() {
     "positive" | "negative"
   >("positive");
   const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
-  const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
   const { selectedRepository, replayJson } = useSelector(
     (state: RootState) => state.initialQuery,
   );
@@ -88,7 +88,6 @@ export function ChatInterface() {
     const timestamp = new Date().toISOString();
     send(createChatMessage(content, imageUrls, timestamp));
     setOptimisticUserMessage(content);
-    setMessageToSend(null);
   };
 
   const handleStop = () => {
@@ -122,6 +121,8 @@ export function ChatInterface() {
     });
   };
 
+  const injectChatInputMessage = useInjectChatInputMessage();
+
   const isWaitingForUserInput =
     curAgentState === AgentState.AWAITING_USER_INPUT ||
     curAgentState === AgentState.FINISHED;
@@ -129,7 +130,7 @@ export function ChatInterface() {
   return (
     <div className="h-full flex flex-col justify-between">
       {events.length === 0 && !optimisticUserMessage && (
-        <ChatSuggestions onSuggestionsClick={setMessageToSend} />
+        <ChatSuggestions onSuggestionsClick={injectChatInputMessage} />
       )}
 
       <div
@@ -190,8 +191,6 @@ export function ChatInterface() {
             curAgentState === AgentState.AWAITING_USER_CONFIRMATION
           }
           mode={curAgentState === AgentState.RUNNING ? "stop" : "submit"}
-          value={messageToSend ?? undefined}
-          onChange={setMessageToSend}
         />
       </div>
 
