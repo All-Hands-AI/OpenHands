@@ -183,9 +183,7 @@ async def test_filesystem_mcp_via_sse(
             override_mcp_config=override_mcp_config,
         )
 
-        mcp_action = MCPAction(
-            name='filesystem_list_directory', arguments={'path': '.'}
-        )
+        mcp_action = MCPAction(name='list_directory', arguments={'path': '.'})
         obs = await runtime.call_tool_mcp(mcp_action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert isinstance(obs, MCPObservation), (
