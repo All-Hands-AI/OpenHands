@@ -49,7 +49,7 @@ async def get_convo_link(service: GitService, conversation_id: str, body: str) -
 
 
 async def save_pr_metadata(
-    user_id: str, conversation_id: str, tool_result: str
+    user_id: str | None, conversation_id: str, tool_result: str
 ) -> None:
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
     conversation: ConversationMetadata = await conversation_store.get_metadata(
@@ -70,7 +70,11 @@ async def save_pr_metadata(
         pr_number = int(match_merge_request.group(1))
 
     if pr_number:
+        logger.info(f'Saving PR number: {pr_number} for convo {conversation_id}')
         conversation.pr_number.append(pr_number)
+    else:
+        logger.warning(f'Failed to extract PR number for convo {conversation_id}')
+
     await conversation_store.save_metadata(conversation)
 
 
@@ -124,7 +128,7 @@ async def create_pr(
             body=body,
         )
 
-        if conversation_id and user_id:
+        if conversation_id:
             await save_pr_metadata(user_id, conversation_id, response)
 
     except Exception as e:
