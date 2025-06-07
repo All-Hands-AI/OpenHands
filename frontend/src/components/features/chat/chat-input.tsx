@@ -5,17 +5,50 @@ import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
 import { SubmitButton } from "#/components/shared/buttons/submit-button";
 import { StopButton } from "#/components/shared/buttons/stop-button";
-import { useForceRender } from "#/hooks/use-force-render";
 
-const ChatInputContext = React.createContext<
-  | [
-      string | undefined,
-      React.Dispatch<React.SetStateAction<string | undefined>>,
-    ]
-  | undefined
->(undefined);
+// Use a lightweight pubsub pattern to notify components
+// when the chat input message is injected outside of the
+// react component tree.
+interface ChatInputCoordinator {
+  textareaRef: React.RefObject<HTMLTextAreaElement | null>;
+  subscribe: (callback: () => void) => () => void;
+  publish: () => void;
+}
 
-function useChatInput() {
+const ChatInputContext = React.createContext<ChatInputCoordinator | undefined>(
+  undefined,
+);
+
+export function ChatInputProvider({ children }: { children: React.ReactNode }) {
+  const coordinatorRef = React.useRef<ChatInputCoordinator | null>(null);
+
+  // Initialize the coordinator only once.
+  // After which it will be stable and never change
+  if (coordinatorRef.current === null) {
+    const listeners = new Set<() => void>();
+    coordinatorRef.current = {
+      textareaRef: React.createRef<HTMLTextAreaElement>(),
+      subscribe: (callback) => {
+        listeners.add(callback);
+
+        return () => listeners.delete(callback);
+      },
+      publish: () => {
+        listeners.forEach((callback) => callback());
+      },
+    };
+  }
+
+  // Provider is also stable due to using .current and can safely
+  // be used anywhere in the application without extra renders
+  return (
+    <ChatInputContext.Provider value={coordinatorRef.current}>
+      {children}
+    </ChatInputContext.Provider>
+  );
+}
+
+function useChatInputRef() {
   const { t } = useTranslation();
   const context = React.useContext(ChatInputContext);
   if (!context) {
@@ -25,19 +58,32 @@ function useChatInput() {
 }
 
 export function useInjectChatInputMessage() {
-  const [, setInjectedMessage] = useChatInput();
+  const coordinator = useChatInputRef();
 
-  return setInjectedMessage;
+  return React.useCallback(
+    (injectedMessage: string) => {
+      const textarea = coordinator.textareaRef.current;
+
+      if (textarea) {
+        textarea.value = injectedMessage;
+        textarea.focus();
+
+        coordinator.publish();
+      }
+    },
+    [coordinator],
+  );
 }
 
-export function ChatInputProvider({ children }: { children: React.ReactNode }) {
-  const value = React.useState<string | undefined>(undefined);
+function useRenderOnMessageInject() {
+  const coordinator = useChatInputRef();
+  const [, forceRender] = React.useReducer((x) => x + 1, 0);
 
-  return (
-    <ChatInputContext.Provider value={value}>
-      {children}
-    </ChatInputContext.Provider>
-  );
+  React.useEffect(() => {
+    const unsubscribe = coordinator.subscribe(forceRender);
+
+    return unsubscribe;
+  }, [coordinator]);
 }
 
 interface ChatInputProps {
@@ -72,23 +118,10 @@ export function ChatInput({
   buttonClassName,
 }: ChatInputProps) {
   const { t } = useTranslation();
-  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   const [isDraggingOver, setIsDraggingOver] = React.useState(false);
 
-  const forceRender = useForceRender();
-  const [injectedMessage] = useChatInput();
-
-  React.useEffect(() => {
-    if (textareaRef.current && injectedMessage !== undefined) {
-      const currentRef = textareaRef.current;
-      currentRef.value = injectedMessage;
-      currentRef.focus();
-
-      // Unfortunately, TextareaAutosize uses React.useLayoutEffect internally,
-      // so we need to force a React render here instead of merely triggering a DOM input update.
-      forceRender();
-    }
-  }, [injectedMessage]);
+  const { textareaRef } = useChatInputRef();
+  useRenderOnMessageInject();
 
   const handlePaste = (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
     // Only handle paste if we have an image paste handler and there are files
