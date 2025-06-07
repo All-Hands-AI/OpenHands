@@ -616,23 +616,27 @@ class AgentController:
         ):
             # user intends to interrupt traffic control and let the task resume temporarily
             self.state.traffic_control_state = TrafficControlState.PAUSED
-            # User has chosen to deliberately continue - lets double the max iterations
+
+            # User has chosen to deliberately continue
+            # Lets double max_iteration or max_budget_per_task (they are independent of each other)
+
             if (
                 self.state.iteration is not None
                 and self.state.max_iterations is not None
                 and self._initial_max_iterations is not None
                 and not self.headless_mode
+                and self.state.iteration >= self.state.max_iterations
             ):
-                if self.state.iteration >= self.state.max_iterations:
-                    self.state.max_iterations += self._initial_max_iterations
+                self.state.max_iterations += self._initial_max_iterations
 
             if (
                 self.state.metrics.accumulated_cost is not None
                 and self.max_budget_per_task is not None
                 and self._initial_max_budget_per_task is not None
+                and self.state.metrics.accumulated_cost >= self.max_budget_per_task
             ):
-                if self.state.metrics.accumulated_cost >= self.max_budget_per_task:
-                    self.max_budget_per_task += self._initial_max_budget_per_task
+                self.max_budget_per_task += self._initial_max_budget_per_task
+
         elif self._pending_action is not None and (
             new_state in (AgentState.USER_CONFIRMED, AgentState.USER_REJECTED)
         ):
@@ -808,10 +812,11 @@ class AgentController:
             )
         if self.max_budget_per_task is not None:
             current_cost = self.state.metrics.accumulated_cost
-            if current_cost > self.max_budget_per_task:
+            if current_cost >= self.max_budget_per_task:
                 stop_step = await self._handle_traffic_control(
-                    'budget', current_cost, self.max_budget_per_task
+                    'task budget', current_cost, self.max_budget_per_task
                 )
+
         if stop_step:
             logger.warning('Stopping agent due to traffic control')
             return
@@ -923,6 +928,7 @@ class AgentController:
             self.state.traffic_control_state = TrafficControlState.NORMAL
         else:
             self.state.traffic_control_state = TrafficControlState.THROTTLING
+
             # Format values as integers for iterations, keep decimals for budget
             if limit_type == 'iteration':
                 current_str = str(int(current_value))
