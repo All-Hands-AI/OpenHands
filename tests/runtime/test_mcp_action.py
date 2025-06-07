@@ -223,7 +223,9 @@ async def test_both_stdio_and_sse_mcp(
         )
 
         # ======= Test SSE server =======
-        mcp_action_sse = MCPAction(name='list_directory', arguments={'path': '.'})
+        mcp_action_sse = MCPAction(
+            name='filesystem_list_directory', arguments={'path': '.'}
+        )
         obs_sse = await runtime.call_tool_mcp(mcp_action_sse)
         logger.info(obs_sse, extra={'msg_type': 'OBSERVATION'})
         assert isinstance(obs_sse, MCPObservation), (
@@ -251,7 +253,11 @@ async def test_both_stdio_and_sse_mcp(
         assert obs_cat.exit_code == 0
 
         mcp_action_fetch = MCPAction(
-            name='fetch', arguments={'url': 'http://localhost:8000'}
+            # NOTE: the tool name is `fetch_fetch` because the tool name is `fetch`
+            # And FastMCP Proxy will pre-pend the server name (in this case, `fetch`)
+            # to the tool name, so the full tool name becomes `fetch_fetch`
+            name='fetch_fetch',
+            arguments={'url': 'http://localhost:8000'},
         )
         obs_fetch = await runtime.call_tool_mcp(mcp_action_fetch)
         logger.info(obs_fetch, extra={'msg_type': 'OBSERVATION'})
@@ -306,7 +312,9 @@ async def test_microagent_and_one_stdio_mcp_in_config(
         logger.info(f'updated_config: {updated_config}')
 
         # ======= Test the stdio server in the config =======
-        mcp_action_sse = MCPAction(name='list_directory', arguments={'path': '/'})
+        mcp_action_sse = MCPAction(
+            name='filesystem_list_directory', arguments={'path': '/'}
+        )
         obs_sse = await runtime.call_tool_mcp(mcp_action_sse)
         logger.info(obs_sse, extra={'msg_type': 'OBSERVATION'})
         assert isinstance(obs_sse, MCPObservation), (
@@ -334,7 +342,7 @@ async def test_microagent_and_one_stdio_mcp_in_config(
         assert obs_cat.exit_code == 0
 
         mcp_action_fetch = MCPAction(
-            name='fetch', arguments={'url': 'http://localhost:8000'}
+            name='fetch_fetch', arguments={'url': 'http://localhost:8000'}
         )
         obs_fetch = await runtime.call_tool_mcp(mcp_action_fetch)
         logger.info(obs_fetch, extra={'msg_type': 'OBSERVATION'})
