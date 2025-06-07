@@ -14,10 +14,15 @@ from typing import Callable, cast
 from zipfile import ZipFile
 
 import httpx
+import tenacity
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
 from openhands.core.config import OpenHandsConfig, SandboxConfig
 from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig
-from openhands.core.exceptions import AgentRuntimeDisconnectedError
+from openhands.core.exceptions import (
+    AgentRuntimeDisconnectedError,
+    AgentRuntimeUnavailableError,
+)
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import (
@@ -339,31 +344,140 @@ class Runtime(FileEditRuntimeMixin):
                 f'Failed export latest github token to runtime: {self.sid}, {e}'
             )
 
+    async def _handle_runtime_error(
+        self,
+        event: Action,
+        error: Exception,
+        retry_count: int,
+        max_retries: int = 3,
+        retry_delay: int = 10,
+    ) -> None:
+        """
+        Handle runtime-related errors with retry logic.
+
+        Args:
+            event: The action that caused the error
+            error: The exception that was raised
+            retry_count: Current retry attempt number
+            max_retries: Maximum number of retry attempts
+            retry_delay: Delay in seconds between retries
+
+        Returns:
+            None
+        """
+        error_message = f'{type(error).__name__}: {str(error)}'
+        self.log('error', f'Runtime error while running action: {error_message}')
+        self.log('error', f'Problematic action: {str(event)}')
+
+        # Reset MCP stdio servers tracking when error happens
+        if hasattr(self, '_last_updated_mcp_stdio_servers'):
+            from openhands.core.config.mcp_config import MCPStdioServerConfig
+
+            self._last_updated_mcp_stdio_servers: list[MCPStdioServerConfig] = []
+            self.log(
+                'debug',
+                'Reset _last_updated_mcp_stdio_servers to empty list due to runtime error',
+            )
+
+        # Create error message for the observation
+        error_content = (
+            f'Your command may have consumed too much resources, and the previous runtime died. '
+            f'You are connected to a new runtime container, all dependencies you have installed '
+            f'outside /workspace may not be persisted. (Retry {retry_count} of {max_retries})'
+        )
+
+        # Create an error observation
+        observation = ErrorObservation(content=error_content)
+
+        # Add the observation to the event stream
+        observation._cause = event.id  # type: ignore[attr-defined]
+        observation.tool_call_metadata = event.tool_call_metadata
+        self.event_stream.add_event(observation, EventSource.ENVIRONMENT)  # type: ignore[arg-type]
+
+        # Log the retry attempt
+        self.log(
+            'warning',
+            f'Runtime error occurred. Retry {retry_count} of {max_retries}.',
+        )
+
+    async def _execute_action_core(self, event: Action) -> Observation:
+        """
+        Core logic for executing an action.
+
+        Args:
+            event: The action to execute
+
+        Returns:
+            The observation resulting from the action
+        """
+        await self._export_latest_git_provider_tokens(event)
+        if isinstance(event, MCPAction):
+            observation: Observation = await self.call_tool_mcp(event)
+        else:
+            observation = await call_sync_from_async(self.run_action, event)
+        return observation
+
     async def _handle_action(self, event: Action) -> None:
         if event.timeout is None:
             # We don't block the command if this is a default timeout action
             event.set_hard_timeout(self.config.sandbox.timeout, blocking=False)
         assert event.timeout is not None
+
+        # Define a before_sleep callback for tenacity
+        async def before_sleep_callback(retry_state: tenacity.RetryCallState) -> None:
+            exception = retry_state.outcome.exception()
+            if exception:
+                await self._handle_runtime_error(
+                    event,
+                    exception,
+                    retry_state.attempt_number,
+                    max_retries=3,
+                    retry_delay=10,
+                )
+
+        # Create a retry decorator based on configuration
+        if self.config.sandbox.retry_on_unrecoverable_runtime_error:
+            retry_decorator = retry(
+                retry=retry_if_exception_type(
+                    (AgentRuntimeDisconnectedError, AgentRuntimeUnavailableError)
+                ),
+                stop=stop_after_attempt(3),
+                wait=wait_fixed(10),
+                before_sleep=before_sleep_callback,
+                reraise=True,
+            )
+            execute_with_retry = retry_decorator(self._execute_action_core)
+        else:
+            # No retry if not enabled in config
+            execute_with_retry = self._execute_action_core
+
         try:
-            await self._export_latest_git_provider_tokens(event)
-            if isinstance(event, MCPAction):
-                observation: Observation = await self.call_tool_mcp(event)
-            else:
-                observation = await call_sync_from_async(self.run_action, event)
+            # Execute the action with retry if configured
+            observation: Observation = await execute_with_retry(event)
+
+            # Set observation metadata
+            observation._cause = event.id  # type: ignore[attr-defined]
+            observation.tool_call_metadata = event.tool_call_metadata
+
+        except (AgentRuntimeDisconnectedError, AgentRuntimeUnavailableError) as e:
+            # This will only be reached if retries are disabled or all retries failed
+            err_id = 'STATUS$ERROR_RUNTIME_DISCONNECTED'
+            error_message = f'{type(e).__name__}: {str(e)}'
+            self.log('error', f'Runtime error while running action: {error_message}')
+            self.log('error', f'Problematic action: {str(event)}')
+            self.send_error_message(err_id, error_message)
+            return
+
         except Exception as e:
+            # Handle other exceptions
             err_id = ''
-            if isinstance(e, httpx.NetworkError) or isinstance(
-                e, AgentRuntimeDisconnectedError
-            ):
+            if isinstance(e, httpx.NetworkError):
                 err_id = 'STATUS$ERROR_RUNTIME_DISCONNECTED'
             error_message = f'{type(e).__name__}: {str(e)}'
             self.log('error', f'Unexpected error while running action: {error_message}')
             self.log('error', f'Problematic action: {str(event)}')
             self.send_error_message(err_id, error_message)
             return
-
-        observation._cause = event.id  # type: ignore[attr-defined]
-        observation.tool_call_metadata = event.tool_call_metadata
 
         # this might be unnecessary, since source should be set by the event stream when we're here
         source = event.source if event.source else EventSource.AGENT
