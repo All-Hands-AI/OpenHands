@@ -82,23 +82,6 @@ Key features:
 - **Always active**: Automatically loaded for the repository
 - **Locally maintained**: Updated with the project
 
-#### Creating a Repository Agent
-
-To create an effective repository agent, you can ask OpenHands to analyze your repository with a prompt like:
-
-```
-Please browse the repository, look at the documentation and relevant code, and understand the purpose of this repository.
-
-Specifically, I want you to create a `.openhands/microagents/repo.md` file. This file should contain succinct information that summarizes:
-1. The purpose of this repository
-2. The general setup of this repo
-3. A brief description of the structure of this repo
-
-Read all the GitHub workflows under .github/ of the repository (if this folder exists) to understand the CI checks (e.g., linter, pre-commit), and include those in the repo.md file.
-```
-
-This approach helps OpenHands capture repository context efficiently, reducing the need for repeated searches during conversations and ensuring more accurate solutions.
-
 You can see an example of a repo agent in [the agent for the OpenHands repo itself](https://github.com/All-Hands-AI/OpenHands/blob/main/.openhands/microagents/repo.md).
 
 
