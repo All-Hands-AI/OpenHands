@@ -72,46 +72,6 @@ class MCPProxyManager:
 
         logger.info(f"FastMCP Proxy initialized successfully")
 
-    async def shutdown(self) -> None:
-        """
-        Shutdown the FastMCP proxy.
-        """
-        if self.proxy:
-            try:
-                logger.info(f"Shutting down FastMCP Proxy...")
-                await self.proxy.shutdown()
-                logger.info(f"FastMCP Proxy shutdown successfully")
-            except Exception as e:
-                logger.error(
-                    f"Error shutting down FastMCP Proxy: {e}",
-                    exc_info=True,
-                )
-            finally:
-                self.proxy = None
-        else:
-            logger.info(f"FastMCP Proxy instance not found for shutdown")
-
-    async def get_sse_server_app(
-        self, allow_origins: Optional[list[str]] = None
-    ) -> FastAPI:
-        """
-        Get the SSE server app for the proxy.
-
-        Args:
-            allow_origins: List of allowed origins for CORS
-
-        Returns:
-            FastAPI application for the SSE server
-        """
-        if not self.proxy:
-            raise ValueError('FastMCP Proxy is not initialized')
-
-        origins = ['*'] if allow_origins is None else allow_origins
-
-        return await self.proxy.get_sse_server_app(
-            allow_origins=origins, include_lifespan=False
-        )
-
     async def mount_to_app(
         self, app: FastAPI, allow_origins: Optional[list[str]] = None
     ) -> None:
@@ -132,33 +92,17 @@ class MCPProxyManager:
             raise ValueError('FastMCP Proxy is not initialized')
 
         # Get the SSE app
-        sse_app = await self.get_sse_server_app(allow_origins)
-
-        # Check for route conflicts
-        main_app_routes = {route.path for route in app.routes}
-        sse_app_routes = {route.path for route in sse_app.routes}
-        conflicts = main_app_routes.intersection(sse_app_routes)
-
-        if conflicts:
-            logger.warning(f'Route conflicts detected: {conflicts}')
+        # mcp_app = self.proxy.http_app(path='/shttp')
+        mcp_app = self.proxy.http_app(path='/sse', transport='sse')
+        app.mount('/mcp', mcp_app)
 
         # Remove any existing mounts at root path
-        self._remove_existing_mounts(app)
+        if '/mcp' in app.routes:
+            app.routes.remove('/mcp')
 
-        # Mount the SSE app
-        app.mount('/', sse_app)
-        logger.info(
-            f"Mounted FastMCP Proxy SSE app at root path with allowed origins: {allow_origins}"
-        )
+        app.mount('/', mcp_app)
+        logger.info(f"Mounted FastMCP Proxy app at /mcp")
 
-        # Additional debug logging
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug('Main app routes:')
-            for route in main_app_routes:
-                logger.debug(f'  {route}')
-            logger.debug('FastMCP SSE server app routes:')
-            for route in sse_app_routes:
-                logger.debug(f'  {route}')
 
     async def update_and_remount(
         self,
@@ -184,22 +128,11 @@ class MCPProxyManager:
         }
         self.config['mcpServers'] = tools
 
-        # Shutdown the existing proxy
-        await self.shutdown()
+        del self.proxy
+        self.proxy = None
 
         # Initialize a new proxy
         self.initialize()
 
         # Mount the new proxy to the app
         await self.mount_to_app(app, allow_origins)
-
-    def _remove_existing_mounts(self, app: FastAPI) -> None:
-        """
-        Remove any existing mounts at the root path.
-
-        Args:
-            app: FastAPI application to remove mounts from
-        """
-        for route in list(app.routes):
-            if getattr(route, 'path', '') == '/':
-                app.routes.remove(route)

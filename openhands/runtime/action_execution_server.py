@@ -695,13 +695,8 @@ if __name__ == '__main__':
         # Clean up & release the resources
         logger.info('Shutting down MCP Proxy Manager...')
         if mcp_proxy_manager:
-            try:
-                await mcp_proxy_manager.shutdown()
-                logger.info('MCP Proxy Manager shutdown successfully.')
-            except Exception as e:
-                logger.error(
-                    f'Error shutting down MCP Proxy Manager: {e}', exc_info=True
-                )
+            del mcp_proxy_manager
+            mcp_proxy_manager = None
         else:
             logger.info('MCP Proxy Manager instance not found for shutdown.')
 
