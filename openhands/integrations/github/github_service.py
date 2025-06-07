@@ -505,10 +505,7 @@ class GitHubService(BaseGitService, GitService):
         )
 
         # Return the HTML URL of the created PR
-        if 'html_url' in response:
-            return response['html_url']
-        else:
-            return f'PR created but URL not found in response: {response}'
+        return response['html_url']
 
 
 

@@ -12,7 +12,7 @@ async def get_conversation_store(request: Request) -> ConversationStore | None:
     )
     if conversation_store:
         return conversation_store
-    user_id = get_user_id(request)
+    user_id = await get_user_id(request)
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
     request.state.conversation_store = conversation_store
     return conversation_store

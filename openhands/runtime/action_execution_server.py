@@ -65,7 +65,6 @@ from openhands.runtime.browser.browser_env import BrowserEnv
 from openhands.runtime.file_viewer_server import start_file_viewer_server
 from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCodePlugin
 from openhands.runtime.utils import find_available_tcp_port
-from openhands.runtime.utils.async_bash import AsyncBashSession
 from openhands.runtime.utils.bash import BashSession
 from openhands.runtime.utils.files import insert_lines, read_lines
 from openhands.runtime.utils.log_capture import capture_logs
@@ -254,12 +253,10 @@ class ActionExecutor:
         # If we get here, the browser is ready
         logger.debug('Browser is ready')
 
-    async def ainit(self):
-        # bash needs to be initialized first
-        logger.debug('Initializing bash session')
+    def _create_bash_session(self, cwd: str | None = None):
         if sys.platform == 'win32':
-            self.bash_session = WindowsPowershellSession(  # type: ignore[name-defined]
-                work_dir=self._initial_cwd,
+            return WindowsPowershellSession(  # type: ignore[name-defined]
+                work_dir=cwd or self._initial_cwd,
                 username=self.username,
                 no_change_timeout_seconds=int(
                     os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 10)
@@ -267,15 +264,21 @@ class ActionExecutor:
                 max_memory_mb=self.max_memory_gb * 1024 if self.max_memory_gb else None,
             )
         else:
-            self.bash_session = BashSession(
-                work_dir=self._initial_cwd,
+            bash_session = BashSession(
+                work_dir=cwd or self._initial_cwd,
                 username=self.username,
                 no_change_timeout_seconds=int(
                     os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 10)
                 ),
                 max_memory_mb=self.max_memory_gb * 1024 if self.max_memory_gb else None,
             )
-            self.bash_session.initialize()
+            bash_session.initialize()
+            return bash_session
+
+    async def ainit(self):
+        # bash needs to be initialized first
+        logger.debug('Initializing bash session')
+        self.bash_session = self._create_bash_session()
         logger.debug('Bash session initialized')
 
         # Start browser initialization in the background
@@ -388,18 +391,11 @@ class ActionExecutor:
         self, action: CmdRunAction
     ) -> CmdOutputObservation | ErrorObservation:
         try:
+            bash_session = self.bash_session
             if action.is_static:
-                path = action.cwd or self._initial_cwd
-                result = await AsyncBashSession.execute(action.command, path)
-                obs = CmdOutputObservation(
-                    content=result.content,
-                    exit_code=result.exit_code,
-                    command=action.command,
-                )
-                return obs
-
-            assert self.bash_session is not None
-            obs = await call_sync_from_async(self.bash_session.execute, action)
+                bash_session = self._create_bash_session(action.cwd)
+            assert bash_session is not None
+            obs = await call_sync_from_async(bash_session.execute, action)
             return obs
         except Exception as e:
             logger.error(f'Error running command: {e}')

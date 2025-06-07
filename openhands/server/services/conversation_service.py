@@ -124,8 +124,8 @@ async def create_new_conversation(
             image_urls=image_urls or [],
         )
 
-    if attach_convo_id and conversation_instructions:
-        conversation_instructions = conversation_instructions.format(conversation_id)
+    if attach_convo_id:
+        logger.warning('Attaching convo ID is deprecated, skipping process')
 
     agent_loop_info = await conversation_manager.maybe_start_agent_loop(
         conversation_id,

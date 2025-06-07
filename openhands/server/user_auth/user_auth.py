@@ -39,6 +39,10 @@ class UserAuth(ABC):
         """Get the unique identifier for the current user"""
 
     @abstractmethod
+    async def get_user_email(self) -> str | None:
+        """Get the email for the current user"""
+
+    @abstractmethod
     async def get_access_token(self) -> SecretStr | None:
         """Get the access token for the current user"""
 
