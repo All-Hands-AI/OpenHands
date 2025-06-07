@@ -8680,12 +8680,22 @@
         "no": "Du kan tilpasse OpenHands for ditt repo ved å bruke en mikroagent. Be OpenHands om å legge en beskrivelse av repoet, inkludert hvordan du kjører koden, i .openhands/microagents/repo.md.",
         "it": "Puoi personalizzare OpenHands per il tuo repository utilizzando un microagente. Chiedi a OpenHands di inserire una descrizione del repository, incluso come eseguire il codice, in .openhands/microagents/repo.md.",
         "pt": "Você pode personalizar o OpenHands para seu repositório usando um microagente. Peça ao OpenHands para colocar uma descrição do repositório, incluindo como executar o código, em .openhands/microagents/repo.md.",
-        "es": "Puede personalizar OpenHands para su repositorio utilizando un microagente. Pídale a OpenHands que ponga una descripción del repositorio, incluido cómo ejecutar el código, en .openhands/microagents/repo.md.",
-        "ar": "يمكنك تخصيص OpenHands لمستودعك باستخدام وكيل مصغر. اطلب من OpenHands وضع وصف للمستودع، بما في ذلك كيفية تشغيل الكود، في .openhands/microagents/repo.md.",
-        "fr": "Vous pouvez personnaliser OpenHands pour votre dépôt en utilisant un micro-agent. Demandez à OpenHands de mettre une description du dépôt, y compris comment exécuter le code, dans .openhands/microagents/repo.md.",
-        "tr": "Bir mikro ajan kullanarak deponuz için OpenHands'i özelleştirebilirsiniz. OpenHands'ten kodun nasıl çalıştırılacağı da dahil olmak üzere deponun açıklamasını .openhands/microagents/repo.md dosyasına koymasını isteyin.",
-        "de": "Sie können OpenHands für Ihr Repository mit einem Mikroagenten anpassen. Bitten Sie OpenHands, eine Beschreibung des Repositorys, einschließlich der Ausführung des Codes, in .openhands/microagents/repo.md zu platzieren.",
-        "uk": "Ви можете налаштувати OpenHands для вашого репозиторію за допомогою мікроагента. Попросіть OpenHands розмістити опис репозиторію, включаючи інструкції з запуску коду, у файлі .openhands/microagents/repo.md."
+        "es": "Puede personalizar OpenHands para su repositorio utilizando un microagente. Pídale a OpenHands que ponga una descripción del repositorio, incluido cómo ejecutar el código, en .openhands/microagents/repo.md."
+    },
+    "CONVERSATION$SHOW_MICROAGENTS": {
+        "en": "Show Microagents",
+        "ja": "マイクロエージェントを表示",
+        "zh-CN": "显示微代理",
+        "zh-TW": "顯示微代理",
+        "ko-KR": "마이크로에이전트 표시",
+        "no": "Vis mikroagenter",
+        "it": "Mostra microagenti",
+        "pt": "Mostrar microagentes",
+        "es": "Mostrar microagentes",
+        "ar": "عرض الوكلاء المصغرين",
+        "fr": "Afficher les micro-agents",
+        "tr": "Mikro ajanları göster",
+        "de": "Mikroagenten anzeigen"
     },
     "TIPS$SETUP_SCRIPT": {
         "en": "You can add .openhands/setup.sh to your repository to automatically run a setup script every time you start an OpenHands conversation.",

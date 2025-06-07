@@ -11,6 +11,7 @@ import {
 import { EllipsisButton } from "./ellipsis-button";
 import { ConversationCardContextMenu } from "./conversation-card-context-menu";
 import { SystemMessageModal } from "./system-message-modal";
+import { MicroagentsModal } from "./microagents-modal";
 import { cn } from "#/utils/utils";
 import { BaseModal } from "../../shared/modals/base-modal/base-modal";
 import { RootState } from "#/store";
@@ -19,6 +20,7 @@ import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
 import OpenHands from "#/api/open-hands";
 import { useWsClient } from "#/context/ws-client-provider";
 import { isSystemMessage } from "#/types/core/guards";
+import { Microagent } from "#/api/open-hands.types";
 
 interface ConversationCardProps {
   onClick?: () => void;
@@ -59,6 +61,9 @@ export function ConversationCard({
   const [titleMode, setTitleMode] = React.useState<"view" | "edit">("view");
   const [metricsModalVisible, setMetricsModalVisible] = React.useState(false);
   const [systemModalVisible, setSystemModalVisible] = React.useState(false);
+  const [microagentsModalVisible, setMicroagentsModalVisible] = React.useState(false);
+  const [microagents, setMicroagents] = React.useState<Microagent[] | null>(null);
+  const [loadingMicroagents, setLoadingMicroagents] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const systemMessage = parsedEvents.find(isSystemMessage);
@@ -142,6 +147,23 @@ export function ConversationCard({
     setSystemModalVisible(true);
   };
 
+  const handleShowMicroagents = async (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    if (conversationId) {
+      setLoadingMicroagents(true);
+      setMicroagentsModalVisible(true);
+      try {
+        const data = await OpenHands.getMicroagents(conversationId);
+        setMicroagents(data.microagents);
+      } catch (error) {
+        console.error("Failed to fetch microagents:", error);
+        setMicroagents(null);
+      } finally {
+        setLoadingMicroagents(false);
+      }
+    }
+  };
+
   React.useEffect(() => {
     if (titleMode === "edit") {
       inputRef.current?.focus();
@@ -223,6 +245,11 @@ export function ConversationCard({
                   onShowAgentTools={
                     showOptions && systemMessage
                       ? handleShowAgentTools
+                      : undefined
+                  }
+                  onShowMicroagents={
+                    showOptions && conversationId
+                      ? handleShowMicroagents
                       : undefined
                   }
                   position={variant === "compact" ? "top" : "bottom"}
@@ -366,6 +393,13 @@ export function ConversationCard({
         isOpen={systemModalVisible}
         onClose={() => setSystemModalVisible(false)}
         systemMessage={systemMessage ? systemMessage.args : null}
+      />
+
+      <MicroagentsModal
+        isOpen={microagentsModalVisible}
+        onClose={() => setMicroagentsModalVisible(false)}
+        microagents={microagents}
+        isLoading={loadingMicroagents}
       />
     </>
   );
