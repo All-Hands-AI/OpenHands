@@ -173,7 +173,7 @@ def test_invalid_microagent_type(temp_microagents_dir):
     # Create a microagent with an invalid type
     invalid_agent = """---
 name: invalid_type_agent
-type: task
+type: invalid_type
 version: 1.0.0
 agent: CodeActAgent
 triggers:
@@ -196,7 +196,8 @@ This microagent has an invalid type.
     # Check that the error message contains helpful information
     error_msg = str(excinfo.value)
     assert 'invalid_type.md' in error_msg
-    assert 'Invalid "type" value: "task"' in error_msg
+    assert 'Invalid "type" value: "invalid_type"' in error_msg
     assert 'Valid types are:' in error_msg
     assert '"knowledge"' in error_msg
     assert '"repo"' in error_msg
+    assert '"task"' in error_msg
