@@ -295,6 +295,14 @@ class DockerNestedConversationManager(ConversationManager):
             ) as client:
                 response = await client.post(f'{nested_url}/api/conversations/{sid}/stop')
                 response.raise_for_status()
+
+                # Check up to 3 times that client has closed
+                for _ in range(3):
+                    response = await client.get(f'{nested_url}/api/conversations/{sid}')
+                    if response.status_code == status.HTTP_200_OK and response.json().get('status') == "STOPPED":
+                        break
+                    await asyncio.sleep(1)
+
         except Exception:
             logger.exception("error_stopping_container")
         container.stop()
