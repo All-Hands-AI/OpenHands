@@ -45,6 +45,7 @@ export const useSettings = () => {
     // would want to show the modal immediately if the
     // settings are not found
     retry: (_, error) => error.status !== 404,
+    refetchOnWindowFocus: false,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes
     enabled: !isOnTosPage && !!userIsAuthenticated,
