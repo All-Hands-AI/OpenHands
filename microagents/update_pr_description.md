@@ -1,10 +1,10 @@
 ---
-name: pr_update
+name: update_pr_description
 version: 1.0.0
 author: openhands
 agent: CodeActAgent
 triggers:
-- /pr_update
+- /update_pr_description
 inputs:
   - name: PR_URL
     description: "URL of the pull request"
