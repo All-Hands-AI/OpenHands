@@ -22,8 +22,8 @@ from openhands.llm.tool_names import (
     BROWSER_TOOL_NAME,
     EXECUTE_BASH_TOOL_NAME,
     FINISH_TOOL_NAME,
-    STR_REPLACE_EDITOR_TOOL_NAME,
     LLM_BASED_EDIT_TOOL_NAME,
+    STR_REPLACE_EDITOR_TOOL_NAME,
 )
 
 # Inspired by: https://docs.together.ai/docs/llama-3-function-calling#function-calling-w-llama-31-70b
@@ -303,7 +303,7 @@ The file /workspace/app.py has been edited. Here's the result of running `cat -n
      9  if __name__ == '__main__':
     10      app.run(port=5000)
 Review the changes and make sure they are as expected. Edit the file again if necessary.
-"""   
+"""
     },
     'finish': {
         'task_completed': """
