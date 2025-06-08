@@ -14,8 +14,6 @@ inputs:
 
 Can you check out branch "{{ BRANCH_NAME }}", and run {{ TEST_COMMAND_TO_RUN }}.
 
-{%- if FUNCTION_TO_FIX and FILE_FOR_FUNCTION %}
-Help me fix these tests to pass by fixing the {{ FUNCTION_TO_FIX }} function in file {{ FILE_FOR_FUNCTION }}.
-{%- endif %}
+The current implementation of the code is correct BUT the test functions {{ FUNCTION_TO_FIX }} in file {{ FILE_FOR_FUNCTION }} are failing.
 
-PLEASE DO NOT modify the tests by yourselves -- Let me know if you think some of the tests are incorrect.
+Please update the test file so that they pass with the current version of the implementation.
