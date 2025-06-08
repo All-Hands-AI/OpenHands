@@ -1,15 +1,13 @@
 ---
+inputs:
+- description: Branch for the agent to work on
+  name: BRANCH_NAME
+- description: The test command you want the agent to work on. For example, `pytest
+    tests/unit/test_bash_parsing.py`
+  name: TEST_COMMAND_TO_RUN
 name: update_test
-version: 1.0.0
-author: openhands
-agent: CodeActAgent
 triggers:
 - /update_test
-inputs:
-  - name: BRANCH_NAME
-    description: "Branch for the agent to work on"
-  - name: TEST_COMMAND_TO_RUN
-    description: "The test command you want the agent to work on. For example, `pytest tests/unit/test_bash_parsing.py`"
 ---
 
 Can you check out branch "{{ BRANCH_NAME }}", and run {{ TEST_COMMAND_TO_RUN }}.

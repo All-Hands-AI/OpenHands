@@ -1,16 +1,17 @@
 ---
+inputs:
+- description: Branch for the agent to work on
+  name: BRANCH_NAME
+- description: The test command you want the agent to work on. For example, `pytest
+    tests/unit/test_bash_parsing.py`
+  name: TEST_COMMAND_TO_RUN
+- description: The name of function to fix
+  name: FUNCTION_TO_FIX
+- description: The path of the file that contains the function
+  name: FILE_FOR_FUNCTION
 name: fix_test
 triggers:
 - /fix_test
-inputs:
-  - name: BRANCH_NAME
-    description: "Branch for the agent to work on"
-  - name: TEST_COMMAND_TO_RUN
-    description: "The test command you want the agent to work on. For example, `pytest tests/unit/test_bash_parsing.py`"
-  - name: FUNCTION_TO_FIX
-    description: "The name of function to fix"
-  - name: FILE_FOR_FUNCTION
-    description: "The path of the file that contains the function"
 ---
 
 Can you check out branch "{{ BRANCH_NAME }}", and run {{ TEST_COMMAND_TO_RUN }}.

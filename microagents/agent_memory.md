@@ -1,10 +1,8 @@
 ---
 name: agent_memory
-type: knowledge
-version: 1.0.0
-agent: CodeActAgent
 triggers:
 - /remember
+type: knowledge
 ---
 
 * Repository memory: Use .openhands/microagents/repo.md under each repository root to store and access important information.

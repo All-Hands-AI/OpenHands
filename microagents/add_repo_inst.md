@@ -1,13 +1,10 @@
 ---
+inputs:
+- description: Branch for the agent to work on
+  name: REPO_FOLDER_NAME
 name: add_repo_inst
-version: 1.0.0
-author: openhands
-agent: CodeActAgent
 triggers:
 - /add_repo_inst
-inputs:
-  - name: REPO_FOLDER_NAME
-    description: "Branch for the agent to work on"
 ---
 
 Please browse the current repository under /workspace/{{ REPO_FOLDER_NAME }}, look at the documentation and relevant code, and understand the purpose of this repository.

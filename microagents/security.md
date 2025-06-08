@@ -1,15 +1,14 @@
 ---
 name: security
-type: knowledge
-version: 1.0.0
-agent: CodeActAgent
 triggers:
-  - security
-  - vulnerability
-  - authentication
-  - authorization
-  - permissions
+- security
+- vulnerability
+- authentication
+- authorization
+- permissions
+type: knowledge
 ---
+
 This document provides guidance on security best practices
 
 You should always be considering security implications when developing.

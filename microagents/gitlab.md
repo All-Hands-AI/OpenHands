@@ -1,11 +1,9 @@
 ---
 name: gitlab
-type: knowledge
-version: 1.0.0
-agent: CodeActAgent
 triggers:
 - gitlab
 - git
+type: knowledge
 ---
 
 You have access to an environment variable, `GITLAB_TOKEN`, which allows you to interact with

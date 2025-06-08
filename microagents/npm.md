@@ -1,10 +1,8 @@
 ---
 name: npm
-type: knowledge
-version: 1.0.0
-agent: CodeActAgent
 triggers:
 - npm
+type: knowledge
 ---
 
 When using npm to install packages, you will not be able to use an interactive shell, and it may be hard to confirm your actions.

@@ -1,11 +1,9 @@
 ---
 name: github
-type: knowledge
-version: 1.0.0
-agent: CodeActAgent
 triggers:
 - github
 - git
+type: knowledge
 ---
 
 You have access to an environment variable, `GITHUB_TOKEN`, which allows you to interact with

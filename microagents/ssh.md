@@ -1,16 +1,14 @@
 ---
 name: SSH Microagent
-type: knowledge
-version: 1.0.0
-agent: CodeActAgent
 triggers:
-  - ssh
-  - remote server
-  - remote machine
-  - remote host
-  - remote connection
-  - secure shell
-  - ssh keys
+- ssh
+- remote server
+- remote machine
+- remote host
+- remote connection
+- secure shell
+- ssh keys
+type: knowledge
 ---
 
 # SSH Microagent

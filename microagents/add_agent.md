@@ -1,20 +1,18 @@
 ---
 name: add_agent
-type: knowledge
-version: 1.0.0
-agent: CodeActAgent
 triggers:
-  - new agent
-  - new microagent
-  - create agent
-  - create an agent
-  - create microagent
-  - create a microagent
-  - add agent
-  - add an agent
-  - add microagent
-  - add a microagent
-  - microagent template
+- new agent
+- new microagent
+- create agent
+- create an agent
+- create microagent
+- create a microagent
+- add agent
+- add an agent
+- add microagent
+- add a microagent
+- microagent template
+type: knowledge
 ---
 
 This agent helps create new microagents in the `.openhands/microagents` directory by providing guidance and templates.
