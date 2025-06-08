@@ -53,6 +53,7 @@ class DockerNestedConversationManager(ConversationManager):
     docker_client: docker.DockerClient = field(default_factory=docker.from_env)
     _conversation_store_class: type[ConversationStore] | None = None
     _starting_conversation_ids: set[str] = field(default_factory=set)
+    _sessions: dict[str, Session] = field(default_factory=dict)
     _runtime_container_image: str | None = None
 
     async def __aenter__(self):
@@ -284,6 +285,9 @@ class DockerNestedConversationManager(ConversationManager):
         try:
             container = self.docker_client.containers.get(f'openhands-runtime-{sid}')
         except docker.errors.NotFound:
+            # Clean up the stored session if it exists
+            if sid in self._sessions:
+                del self._sessions[sid]
             return
         try:
             nested_url = self.get_nested_url_for_container(container)
@@ -300,6 +304,10 @@ class DockerNestedConversationManager(ConversationManager):
             logger.exception('error_stopping_container')
         container.stop()
 
+        # Clean up the stored session
+        if sid in self._sessions:
+            del self._sessions[sid]
+
     def get_agent_session(self, sid: str):
         """Get the agent session for a given session ID.
 
@@ -309,9 +317,9 @@ class DockerNestedConversationManager(ConversationManager):
         Returns:
             The agent session, or None if not found.
         """
-        # In the Docker nested manager, we don't have direct access to agent sessions
-        # This would need to be implemented with appropriate Docker container communication
-        # For now, return None to indicate no agent session is available
+        # Return the agent_session from the stored session if available
+        if sid in self._sessions:
+            return self._sessions[sid].agent_session
         return None
 
     async def get_agent_loop_info(
@@ -456,6 +464,8 @@ class DockerNestedConversationManager(ConversationManager):
             sio=self.sio,
             user_id=user_id,
         )
+        # Store the session for later use
+        self._sessions[sid] = session
         agent_cls = settings.agent or self.config.default_agent
         agent_name = agent_cls if agent_cls is not None else 'agent'
         llm = LLM(
