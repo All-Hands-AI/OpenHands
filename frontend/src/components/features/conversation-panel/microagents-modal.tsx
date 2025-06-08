@@ -41,9 +41,7 @@ export function MicroagentsModal({
           testID="microagents-modal"
         >
           <div className="flex flex-col gap-6 w-full">
-            <BaseModalTitle
-              title={t(I18nKey.MICROAGENTS_MODAL$TITLE)}
-            />
+            <BaseModalTitle title={t(I18nKey.MICROAGENTS_MODAL$TITLE)} />
           </div>
 
           <div className="w-full h-[60vh] overflow-auto rounded-md">
@@ -121,7 +119,8 @@ export function MicroagentsModal({
                             </h4>
                             <div className="text-sm mt-2 p-3 bg-gray-900 rounded-md overflow-auto text-gray-300 max-h-[400px] shadow-inner">
                               <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed">
-                                {agent.content}
+                                {agent.content ||
+                                  t(I18nKey.MICROAGENTS_MODAL$NO_CONTENT)}
                               </pre>
                             </div>
                           </div>

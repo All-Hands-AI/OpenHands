@@ -8783,6 +8783,22 @@
         "tr": "İçerik",
         "uk": "Вміст"
     },
+    "MICROAGENTS_MODAL$NO_CONTENT": {
+        "en": "Microagent has no content",
+        "ja": "マイクロエージェントにコンテンツがありません",
+        "zh-CN": "微代理没有内容",
+        "zh-TW": "微代理沒有內容",
+        "ko-KR": "마이크로에이전트에 콘텐츠가 없습니다",
+        "no": "Mikroagenten har ikke innhold",
+        "ar": "الوكيل المصغر ليس لديه محتوى",
+        "de": "Mikroagent hat keinen Inhalt",
+        "fr": "Le micro-agent n'a pas de contenu",
+        "it": "Il microagente non ha contenuto",
+        "pt": "Microagente não tem conteúdo",
+        "es": "El microagente no tiene contenido",
+        "tr": "Mikroajanın içeriği yok",
+        "uk": "Мікроагент не має вмісту"
+    },
     "TIPS$SETUP_SCRIPT": {
         "en": "You can add .openhands/setup.sh to your repository to automatically run a setup script every time you start an OpenHands conversation.",
         "ja": "OpenHandsの会話を開始するたびに自動的にセットアップスクリプトを実行するために、.openhands/setup.shをリポジトリに追加できます。",
