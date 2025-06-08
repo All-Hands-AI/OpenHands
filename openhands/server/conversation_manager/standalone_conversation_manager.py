@@ -112,7 +112,7 @@ class StandaloneConversationManager(ConversationManager):
             end_time = time.time()
             logger.info(
                 f'ServerConversation {c.sid} connected in {end_time - start_time} seconds',
-                extra={'session_id': sid}
+                extra={'session_id': sid},
             )
             self._active_conversations[sid] = (c, 1)
             return c
@@ -355,6 +355,20 @@ class StandaloneConversationManager(ConversationManager):
         session = self._local_agent_loops_by_sid.get(sid)
         if session:
             await self._close_session(sid)
+
+    def get_agent_session(self, sid: str):
+        """Get the agent session for a given session ID.
+
+        Args:
+            sid: The session ID.
+
+        Returns:
+            The agent session, or None if not found.
+        """
+        session = self._local_agent_loops_by_sid.get(sid)
+        if session:
+            return session.agent_session
+        return None
 
     async def _close_session(self, sid: str):
         logger.info(f'_close_session:{sid}', extra={'session_id': sid})

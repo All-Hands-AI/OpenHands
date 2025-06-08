@@ -115,6 +115,17 @@ class ConversationManager(ABC):
         """Close a session."""
 
     @abstractmethod
+    def get_agent_session(self, sid: str):
+        """Get the agent session for a given session ID.
+
+        Args:
+            sid: The session ID.
+
+        Returns:
+            The agent session, or None if not found.
+        """
+
+    @abstractmethod
     async def get_agent_loop_info(
         self, user_id: str | None = None, filter_to_sids: set[str] | None = None
     ) -> list[AgentLoopInfo]:
