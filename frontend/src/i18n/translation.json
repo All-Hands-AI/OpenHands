@@ -9134,5 +9134,37 @@
         "tr": "Doğrulama e-postası yeniden gönderilemedi",
         "de": "Bestätigungs-E-Mail konnte nicht erneut gesendet werden",
         "uk": "Не вдалося повторно надіслати лист підтвердження"
+    },
+    "FEEDBACK$RATE_AGENT_PERFORMANCE": {
+        "en": "Rate the agent's performance:",
+        "ja": "エージェントのパフォーマンスを評価してください：",
+        "zh-CN": "评价代理的表现：",
+        "zh-TW": "評價代理的表現：",
+        "ko-KR": "에이전트의 성능을 평가하세요:",
+        "no": "Vurder agentens ytelse:",
+        "it": "Valuta le prestazioni dell'agente:",
+        "pt": "Avalie o desempenho do agente:",
+        "es": "Evalúe el rendimiento del agente:",
+        "ar": "قيم أداء الوكيل:",
+        "fr": "Évaluez la performance de l'agent :",
+        "tr": "Ajanın performansını değerlendirin:",
+        "de": "Bewerten Sie die Leistung des Agenten:",
+        "uk": "Оцініть продуктивність агента:"
+    },
+    "FEEDBACK$SELECT_REASON": {
+        "en": "Select a reason (optional):",
+        "ja": "理由を選択してください（任意）：",
+        "zh-CN": "选择原因（可选）：",
+        "zh-TW": "選擇原因（可選）：",
+        "ko-KR": "이유 선택 (선택 사항):",
+        "no": "Velg en grunn (valgfritt):",
+        "it": "Seleziona un motivo (opzionale):",
+        "pt": "Selecione um motivo (opcional):",
+        "es": "Seleccione un motivo (opcional):",
+        "ar": "حدد سببًا (اختياري):",
+        "fr": "Sélectionnez une raison (facultatif) :",
+        "tr": "Bir neden seçin (isteğe bağlı):",
+        "de": "Wählen Sie einen Grund (optional):",
+        "uk": "Виберіть причину (необов'язково):"
     }
 }

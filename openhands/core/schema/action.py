@@ -91,3 +91,6 @@ class ActionType(str, Enum):
 
     CONDENSATION = 'condensation'
     """Condenses a list of events into a summary."""
+
+    USER_FEEDBACK = 'user_feedback'
+    """User feedback on the agent's performance."""

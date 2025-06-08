@@ -18,6 +18,8 @@ import { MCPObservationContent } from "./mcp-observation-content";
 import { getObservationResult } from "./event-content-helpers/get-observation-result";
 import { getEventContent } from "./event-content-helpers/get-event-content";
 import { GenericEventMessage } from "./generic-event-message";
+import { LikertScale } from "../feedback/likert-scale";
+import { useEventStream } from "#/hooks/query/use-event-stream";
 
 const hasThoughtProperty = (
   obj: Record<string, unknown>,
@@ -39,6 +41,20 @@ export function EventMessage({
   const shouldShowConfirmationButtons =
     isLastMessage && event.source === "agent" && isAwaitingUserConfirmation;
 
+  const { pushEvent } = useEventStream();
+
+  const handleRatingSubmit = (rating: number, reason?: string) => {
+    // Send the user feedback action to the event stream
+    pushEvent({
+      action: "user_feedback",
+      source: "user",
+      args: {
+        rating,
+        reason,
+      },
+    });
+  };
+
   if (isErrorObservation(event)) {
     return (
       <ErrorMessage
@@ -57,7 +73,10 @@ export function EventMessage({
 
   if (isFinishAction(event)) {
     return (
-      <ChatMessage type="agent" message={getEventContent(event).details} />
+      <>
+        <ChatMessage type="agent" message={getEventContent(event).details} />
+        <LikertScale onRatingSubmit={handleRatingSubmit} />
+      </>
     );
   }
 

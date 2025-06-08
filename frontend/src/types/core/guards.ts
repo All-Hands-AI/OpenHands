@@ -5,6 +5,7 @@ import {
   OpenHandsAction,
   SystemMessageAction,
   CommandAction,
+  UserFeedbackAction,
 } from "./actions";
 import {
   AgentStateChangeObservation,
@@ -80,3 +81,8 @@ export const isStatusUpdate = (
   event: OpenHandsParsedEvent,
 ): event is StatusUpdate =>
   "status_update" in event && "type" in event && "id" in event;
+
+export const isUserFeedbackAction = (
+  event: OpenHandsParsedEvent,
+): event is UserFeedbackAction =>
+  isOpenHandsAction(event) && event.action === "user_feedback";
