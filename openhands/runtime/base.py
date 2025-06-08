@@ -90,10 +90,33 @@ def _default_env_vars(sandbox_config: SandboxConfig) -> dict[str, str]:
 
 
 class Runtime(FileEditRuntimeMixin):
-    """The runtime is how the agent interacts with the external environment.
-    This includes a bash sandbox, a browser, and filesystem interactions.
+    """Abstract base class for agent runtime environments.
 
-    sid is the session id, which is used to identify the current user session.
+    This is an extension point in OpenHands that allows applications to customize how
+    agents interact with the external environment. The runtime provides a sandbox with:
+    - Bash shell access
+    - Browser interaction
+    - Filesystem operations
+    - Git operations
+    - Environment variable management
+
+    Applications can substitute their own implementation by:
+    1. Creating a class that inherits from Runtime
+    2. Implementing all required methods
+    3. Setting the runtime name in configuration or using get_runtime_cls()
+
+    The class is instantiated via get_impl() in get_runtime_cls().
+
+    Built-in implementations include:
+    - DockerRuntime: Containerized environment using Docker
+    - E2BRuntime: Secure sandbox using E2B
+    - RemoteRuntime: Remote execution environment
+    - ModalRuntime: Scalable cloud environment using Modal
+    - LocalRuntime: Local execution for development
+    - DaytonaRuntime: Cloud development environment using Daytona
+
+    Args:
+        sid: Session ID that uniquely identifies the current user session
     """
 
     sid: str
@@ -377,7 +400,7 @@ class Runtime(FileEditRuntimeMixin):
                     'No repository selected. Initializing a new git repository in the workspace.'
                 )
                 action = CmdRunAction(
-                    command='git init',
+                    command=f'git init && git config --global --add safe.directory {self.workspace_root}'
                 )
                 self.run_action(action)
             else:
@@ -397,6 +420,10 @@ class Runtime(FileEditRuntimeMixin):
         }
 
         domain = provider_domains[provider]
+
+        # If git_provider_tokens is provided, use the host from the token if available
+        if git_provider_tokens and provider in git_provider_tokens:
+            domain = git_provider_tokens[provider].host or domain
 
         # Try to use token if available, otherwise use public URL
         if git_provider_tokens and provider in git_provider_tokens:
@@ -888,6 +915,14 @@ fi
         raise NotImplementedError('This method is not implemented in the base class.')
 
     # ====================================================================
+    # Authentication
+    # ====================================================================
+
+    @property
+    def session_api_key(self) -> str | None:
+        return None
+
+    # ====================================================================
     # VSCode
     # ====================================================================
 
@@ -916,6 +951,9 @@ fi
         obs = self.run(CmdRunAction(command=command, is_static=True, cwd=cwd))
         exit_code = 0
         content = ''
+
+        if isinstance(obs, ErrorObservation):
+            exit_code = -1
 
         if hasattr(obs, 'exit_code'):
             exit_code = obs.exit_code
