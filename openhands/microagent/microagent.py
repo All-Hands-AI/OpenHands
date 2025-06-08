@@ -103,7 +103,9 @@ class BaseMicroagent(BaseModel):
         if metadata.inputs:
             inferred_type = MicroagentType.TASK
             # Add a trigger for the agent name if not already present
-            trigger = f'/{metadata.name}'
+            # Use derived_name if available, otherwise use metadata.name
+            agent_name = derived_name if derived_name is not None and (metadata.name == 'default' or not metadata.name) else metadata.name
+            trigger = f'/{agent_name}'
             if not metadata.triggers or trigger not in metadata.triggers:
                 if not metadata.triggers:
                     metadata.triggers = [trigger]
@@ -121,7 +123,11 @@ class BaseMicroagent(BaseModel):
             raise ValueError(f'Could not determine microagent type for: {path}')
 
         # Use derived_name if available (from relative path), otherwise fallback to metadata.name
-        agent_name = derived_name if derived_name is not None else metadata.name
+        # If metadata.name is still the default 'default', use the derived_name
+        if derived_name is not None and (metadata.name == 'default' or not metadata.name):
+            agent_name = derived_name
+        else:
+            agent_name = metadata.name
 
         agent_class = subclass_map[inferred_type]
         return agent_class(
