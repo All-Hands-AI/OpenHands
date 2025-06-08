@@ -19,7 +19,7 @@ import { getObservationResult } from "./event-content-helpers/get-observation-re
 import { getEventContent } from "./event-content-helpers/get-event-content";
 import { GenericEventMessage } from "./generic-event-message";
 import { LikertScale } from "../feedback/likert-scale";
-import { useEventStream } from "#/hooks/query/use-event-stream";
+import { useWsClient } from "#/context/ws-client-provider";
 
 const hasThoughtProperty = (
   obj: Record<string, unknown>,
@@ -41,11 +41,11 @@ export function EventMessage({
   const shouldShowConfirmationButtons =
     isLastMessage && event.source === "agent" && isAwaitingUserConfirmation;
 
-  const { pushEvent } = useEventStream();
+  const { send } = useWsClient();
 
   const handleRatingSubmit = (rating: number, reason?: string) => {
     // Send the user feedback action to the event stream
-    pushEvent({
+    send({
       action: "user_feedback",
       source: "user",
       args: {

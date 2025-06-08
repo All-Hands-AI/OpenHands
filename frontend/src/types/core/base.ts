@@ -18,7 +18,8 @@ export type OpenHandsEventType =
   | "recall"
   | "mcp"
   | "call_tool_mcp"
-  | "user_rejected";
+  | "user_rejected"
+  | "user_feedback";
 
 export type OpenHandsSourceType = "agent" | "user" | "environment";
 

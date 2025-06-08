@@ -9166,5 +9166,53 @@
         "tr": "Bir neden seçin (isteğe bağlı):",
         "de": "Wählen Sie einen Grund (optional):",
         "uk": "Виберіть причину (необов'язково):"
+    },
+    "FEEDBACK$REASON_NOT_FOLLOW_INSTRUCTION": {
+        "en": "The agent did not follow my instruction",
+        "ja": "エージェントは私の指示に従いませんでした",
+        "zh-CN": "代理没有遵循我的指示",
+        "zh-TW": "代理沒有遵循我的指示",
+        "ko-KR": "에이전트가 내 지시를 따르지 않았습니다",
+        "no": "Agenten fulgte ikke instruksjonene mine",
+        "it": "L'agente non ha seguito le mie istruzioni",
+        "pt": "O agente não seguiu minhas instruções",
+        "es": "El agente no siguió mis instrucciones",
+        "ar": "لم يتبع الوكيل تعليماتي",
+        "fr": "L'agent n'a pas suivi mes instructions",
+        "tr": "Ajan talimatlarımı takip etmedi",
+        "de": "Der Agent hat meine Anweisungen nicht befolgt",
+        "uk": "Агент не дотримувався моїх інструкцій"
+    },
+    "FEEDBACK$REASON_NOT_GOOD_SOLUTION": {
+        "en": "The agent did not implement a good solution",
+        "ja": "エージェントは良い解決策を実装しませんでした",
+        "zh-CN": "代理没有实现一个好的解决方案",
+        "zh-TW": "代理沒有實現一個好的解決方案",
+        "ko-KR": "에이전트가 좋은 솔루션을 구현하지 않았습니다",
+        "no": "Agenten implementerte ikke en god løsning",
+        "it": "L'agente non ha implementato una buona soluzione",
+        "pt": "O agente não implementou uma boa solução",
+        "es": "El agente no implementó una buena solución",
+        "ar": "لم ينفذ الوكيل حلاً جيدًا",
+        "fr": "L'agent n'a pas implémenté une bonne solution",
+        "tr": "Ajan iyi bir çözüm uygulamadı",
+        "de": "Der Agent hat keine gute Lösung implementiert",
+        "uk": "Агент не реалізував хороше рішення"
+    },
+    "FEEDBACK$REASON_LACKS_ACCESS": {
+        "en": "The agent lacks access to software or hardware that is not installable in the runtime to complete the task",
+        "ja": "エージェントはタスクを完了するためにランタイムにインストールできないソフトウェアまたはハードウェアへのアクセスが不足しています",
+        "zh-CN": "代理缺乏对无法在运行时安装的软件或硬件的访问权限，无法完成任务",
+        "zh-TW": "代理缺乏對無法在運行時安裝的軟件或硬件的訪問權限，無法完成任務",
+        "ko-KR": "에이전트는 런타임에 설치할 수 없는 소프트웨어 또는 하드웨어에 대한 액세스가 부족하여 작업을 완료할 수 없습니다",
+        "no": "Agenten mangler tilgang til programvare eller maskinvare som ikke kan installeres i kjøretidsmiljøet for å fullføre oppgaven",
+        "it": "L'agente non ha accesso a software o hardware non installabili nel runtime per completare l'attività",
+        "pt": "O agente não tem acesso a software ou hardware que não pode ser instalado no ambiente de execução para concluir a tarefa",
+        "es": "El agente carece de acceso a software o hardware que no se puede instalar en el entorno de ejecución para completar la tarea",
+        "ar": "يفتقر الوكيل إلى الوصول إلى البرامج أو الأجهزة التي لا يمكن تثبيتها في وقت التشغيل لإكمال المهمة",
+        "fr": "L'agent n'a pas accès à des logiciels ou du matériel qui ne peuvent pas être installés dans l'environnement d'exécution pour accomplir la tâche",
+        "tr": "Ajan, görevi tamamlamak için çalışma zamanında yüklenemeyen yazılım veya donanıma erişim eksikliği yaşıyor",
+        "de": "Dem Agenten fehlt der Zugriff auf Software oder Hardware, die nicht in der Laufzeitumgebung installiert werden kann, um die Aufgabe zu erledigen",
+        "uk": "Агент не має доступу до програмного або апаратного забезпечення, яке неможливо встановити в середовищі виконання для виконання завдання"
     }
 }

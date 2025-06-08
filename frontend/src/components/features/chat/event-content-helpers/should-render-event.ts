@@ -14,7 +14,7 @@ const COMMON_NO_RENDER_LIST: OpenHandsEventType[] = [
   "change_agent_state",
 ];
 
-const ACTION_NO_RENDER_LIST: OpenHandsEventType[] = ["recall"];
+const ACTION_NO_RENDER_LIST: OpenHandsEventType[] = ["recall", "user_feedback"];
 
 export const shouldRenderEvent = (
   event: OpenHandsAction | OpenHandsObservation,

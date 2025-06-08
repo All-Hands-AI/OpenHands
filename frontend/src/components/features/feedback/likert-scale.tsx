@@ -7,9 +7,9 @@ interface LikertScaleProps {
 }
 
 const FEEDBACK_REASONS = [
-  "The agent did not follow my instruction",
-  "The agent did not implement a good solution",
-  "The agent lacks access to software or hardware that is not installable in the runtime to complete the task",
+  i18n.t("FEEDBACK$REASON_NOT_FOLLOW_INSTRUCTION"),
+  i18n.t("FEEDBACK$REASON_NOT_GOOD_SOLUTION"),
+  i18n.t("FEEDBACK$REASON_LACKS_ACCESS"),
 ];
 
 export function LikertScale({ onRatingSubmit }: LikertScaleProps) {
