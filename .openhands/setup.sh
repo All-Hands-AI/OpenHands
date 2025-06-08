@@ -9,4 +9,5 @@ python -m pip install pre-commit
 if [ -d ".git" ]; then
     echo "Installing pre-commit hooks..."
     pre-commit install
+    make install-pre-commit-hooks
 fi

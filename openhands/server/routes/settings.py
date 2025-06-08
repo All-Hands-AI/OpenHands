@@ -6,6 +6,7 @@ from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
     ProviderType,
 )
+from openhands.server.dependencies import get_dependencies
 from openhands.server.routes.secrets import invalidate_legacy_secrets_store
 from openhands.server.settings import (
     GETSettingsModel,
@@ -14,13 +15,14 @@ from openhands.server.shared import config
 from openhands.server.user_auth import (
     get_provider_tokens,
     get_secrets_store,
+    get_user_settings,
     get_user_settings_store,
 )
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.secrets.secrets_store import SecretsStore
 from openhands.storage.settings.settings_store import SettingsStore
 
-app = APIRouter(prefix='/api')
+app = APIRouter(prefix='/api', dependencies=get_dependencies())
 
 
 @app.get(
@@ -34,10 +36,9 @@ app = APIRouter(prefix='/api')
 async def load_settings(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     settings_store: SettingsStore = Depends(get_user_settings_store),
+    settings: Settings = Depends(get_user_settings),
     secrets_store: SecretsStore = Depends(get_secrets_store),
 ) -> GETSettingsModel | JSONResponse:
-    settings = await settings_store.load()
-
     try:
         if not settings:
             return JSONResponse(
@@ -65,9 +66,12 @@ async def load_settings(
             **settings.model_dump(exclude='secrets_store'),
             llm_api_key_set=settings.llm_api_key is not None
             and bool(settings.llm_api_key),
+            search_api_key_set=settings.search_api_key is not None
+            and bool(settings.search_api_key),
             provider_tokens_set=provider_tokens_set,
         )
         settings_with_token_data.llm_api_key = None
+        settings_with_token_data.search_api_key = None
         return settings_with_token_data
     except Exception as e:
         logger.warning(f'Invalid token: {e}')
@@ -116,6 +120,9 @@ async def store_llm_settings(
             settings.llm_model = existing_settings.llm_model
         if settings.llm_base_url is None:
             settings.llm_base_url = existing_settings.llm_base_url
+        # Keep existing search API key if not provided
+        if settings.search_api_key is None:
+            settings.search_api_key = existing_settings.search_api_key
 
     return settings
 
@@ -180,8 +187,9 @@ def convert_to_settings(settings_with_token_data: Settings) -> Settings:
         if key in Settings.model_fields  # Ensures only `Settings` fields are included
     }
 
-    # Convert the `llm_api_key` to a `SecretStr` instance
+    # Convert the API keys to `SecretStr` instances
     filtered_settings_data['llm_api_key'] = settings_with_token_data.llm_api_key
+    filtered_settings_data['search_api_key'] = settings_with_token_data.search_api_key
 
     # Create a new Settings instance
     settings = Settings(**filtered_settings_data)

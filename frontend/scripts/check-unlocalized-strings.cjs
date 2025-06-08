@@ -47,6 +47,7 @@ const SCAN_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"];
 
 // Attributes that typically don't contain user-facing text
 const NON_TEXT_ATTRIBUTES = [
+  "allow",
   "className",
   "i18nKey",
   "testId",
@@ -69,6 +70,7 @@ const NON_TEXT_ATTRIBUTES = [
   "aria-describedby",
   "aria-hidden",
   "role",
+  "sandbox",
 ];
 
 function shouldIgnorePath(filePath) {
@@ -113,10 +115,24 @@ const EXCLUDED_TECHNICAL_STRINGS = [
   "GitHub API", // Git provider specific terminology
   "add-secret-form", // Test ID for secret form
   "edit-secret-form", // Test ID for secret form
+  "search-api-key-input", // Input name for search API key
+  "noopener,noreferrer", // Options for window.open
 ];
 
 function isExcludedTechnicalString(str) {
   return EXCLUDED_TECHNICAL_STRINGS.includes(str);
+}
+
+function isLikelyCode(str) {
+  // A string with no spaces and at least one underscore or colon is likely a code.
+  // (e.g.: "browser_interactive" or "error:")
+  if (str.includes(" ")) {
+    return false
+  }
+  if (str.includes(":") || str.includes("_")){
+    return true
+  }
+  return false
 }
 
 function isCommonDevelopmentString(str) {
@@ -383,6 +399,11 @@ function isLikelyUserFacingText(str) {
   // Check if it's a specifically excluded technical string
   if (isExcludedTechnicalString(str)) {
     return false;
+  }
+
+  // Check if it looks like a code rather than a key
+  if (isLikelyCode(str)) {
+    return false
   }
 
   // Check if it's a raw translation key that should be wrapped in t()

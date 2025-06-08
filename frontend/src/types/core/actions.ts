@@ -20,7 +20,7 @@ export interface SystemMessageAction extends OpenHandsActionEvent<"system"> {
 }
 
 export interface CommandAction extends OpenHandsActionEvent<"run"> {
-  source: "agent";
+  source: "agent" | "user";
   args: {
     command: string;
     security_risk: ActionSecurityRisk;

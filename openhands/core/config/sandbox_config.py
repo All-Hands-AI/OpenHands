@@ -37,7 +37,7 @@ class SandboxConfig(BaseModel):
             Must be one of [1, 2, 4, 8]. Will only be used if the runtime is remote.
         enable_gpu: Whether to enable GPU.
         docker_runtime_kwargs: Additional keyword arguments to pass to the Docker runtime when running containers.
-            This should be a JSON string that will be parsed into a dictionary.
+            This should be a Python dictionary literal string that will be parsed into a dictionary.
         trusted_dirs: List of directories that can be trusted to run the OpenHands CLI.
         vscode_port: The port to use for VSCode. If None, a random port will be chosen.
             This is useful when deploying OpenHands in a remote machine where you need to expose a specific port.
@@ -73,7 +73,10 @@ class SandboxConfig(BaseModel):
     runtime_startup_env_vars: dict[str, str] = Field(default_factory=dict)
     browsergym_eval_env: str | None = Field(default=None)
     platform: str | None = Field(default=None)
-    close_delay: int = Field(default=15)
+    close_delay: int = Field(
+        default=3600,
+        description='The delay in seconds before closing the sandbox after the agent is done.',
+    )
     remote_runtime_resource_factor: int = Field(default=1)
     enable_gpu: bool = Field(default=False)
     docker_runtime_kwargs: dict | None = Field(default=None)

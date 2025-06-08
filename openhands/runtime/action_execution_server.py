@@ -65,9 +65,9 @@ from openhands.runtime.browser.browser_env import BrowserEnv
 from openhands.runtime.file_viewer_server import start_file_viewer_server
 from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCodePlugin
 from openhands.runtime.utils import find_available_tcp_port
-from openhands.runtime.utils.async_bash import AsyncBashSession
 from openhands.runtime.utils.bash import BashSession
 from openhands.runtime.utils.files import insert_lines, read_lines
+from openhands.runtime.utils.log_capture import capture_logs
 from openhands.runtime.utils.memory_monitor import MemoryMonitor
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
 from openhands.runtime.utils.system_stats import get_system_stats
@@ -253,12 +253,10 @@ class ActionExecutor:
         # If we get here, the browser is ready
         logger.debug('Browser is ready')
 
-    async def ainit(self):
-        # bash needs to be initialized first
-        logger.debug('Initializing bash session')
+    def _create_bash_session(self, cwd: str | None = None):
         if sys.platform == 'win32':
-            self.bash_session = WindowsPowershellSession(  # type: ignore[name-defined]
-                work_dir=self._initial_cwd,
+            return WindowsPowershellSession(  # type: ignore[name-defined]
+                work_dir=cwd or self._initial_cwd,
                 username=self.username,
                 no_change_timeout_seconds=int(
                     os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 10)
@@ -266,15 +264,21 @@ class ActionExecutor:
                 max_memory_mb=self.max_memory_gb * 1024 if self.max_memory_gb else None,
             )
         else:
-            self.bash_session = BashSession(
-                work_dir=self._initial_cwd,
+            bash_session = BashSession(
+                work_dir=cwd or self._initial_cwd,
                 username=self.username,
                 no_change_timeout_seconds=int(
                     os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 10)
                 ),
                 max_memory_mb=self.max_memory_gb * 1024 if self.max_memory_gb else None,
             )
-            self.bash_session.initialize()
+            bash_session.initialize()
+            return bash_session
+
+    async def ainit(self):
+        # bash needs to be initialized first
+        logger.debug('Initializing bash session')
+        self.bash_session = self._create_bash_session()
         logger.debug('Bash session initialized')
 
         # Start browser initialization in the background
@@ -283,7 +287,7 @@ class ActionExecutor:
 
         await wait_all(
             (self._init_plugin(plugin) for plugin in self.plugins_to_load),
-            timeout=60,
+            timeout=int(os.environ.get('INIT_PLUGIN_TIMEOUT', '120')),
         )
         logger.debug('All plugins initialized')
 
@@ -387,18 +391,11 @@ class ActionExecutor:
         self, action: CmdRunAction
     ) -> CmdOutputObservation | ErrorObservation:
         try:
+            bash_session = self.bash_session
             if action.is_static:
-                path = action.cwd or self._initial_cwd
-                result = await AsyncBashSession.execute(action.command, path)
-                obs = CmdOutputObservation(
-                    content=result.content,
-                    exit_code=result.exit_code,
-                    command=action.command,
-                )
-                return obs
-
-            assert self.bash_session is not None
-            obs = await call_sync_from_async(self.bash_session.execute, action)
+                bash_session = self._create_bash_session(action.cwd)
+            assert bash_session is not None
+            obs = await call_sync_from_async(bash_session.execute, action)
             return obs
         except Exception as e:
             logger.error(f'Error running command: {e}')
@@ -676,44 +673,53 @@ if __name__ == '__main__':
         await client.ainit()
         logger.info('ActionExecutor initialized.')
 
-        # Initialize and mount MCP Router
-        logger.info('Initializing MCP Router...')
-        mcp_router = MCPRouter(
-            profile_path=MCP_ROUTER_PROFILE_PATH,
-            router_config=RouterConfig(
-                api_key=SESSION_API_KEY,
-                auth_enabled=bool(SESSION_API_KEY),
-            ),
-        )
-        allowed_origins = ['*']
-        sse_app = await mcp_router.get_sse_server_app(
-            allow_origins=allowed_origins, include_lifespan=False
-        )
+        # Check if we're on Windows
+        is_windows = sys.platform == 'win32'
 
-        # Check for route conflicts before mounting
-        main_app_routes = {route.path for route in app.routes}
-        sse_app_routes = {route.path for route in sse_app.routes}
-        conflicting_routes = main_app_routes.intersection(sse_app_routes)
-
-        if conflicting_routes:
-            logger.error(f'Route conflicts detected: {conflicting_routes}')
-            raise RuntimeError(
-                f'Cannot mount SSE app - conflicting routes found: {conflicting_routes}'
+        # Initialize and mount MCP Router (skip on Windows)
+        if is_windows:
+            logger.info('Skipping MCP Router initialization on Windows')
+            mcp_router = None
+        else:
+            logger.info('Initializing MCP Router...')
+            mcp_router = MCPRouter(
+                profile_path=MCP_ROUTER_PROFILE_PATH,
+                router_config=RouterConfig(
+                    api_key=SESSION_API_KEY,
+                    auth_enabled=bool(SESSION_API_KEY),
+                ),
+            )
+            allowed_origins = ['*']
+            sse_app = await mcp_router.get_sse_server_app(
+                allow_origins=allowed_origins, include_lifespan=False
             )
 
-        app.mount('/', sse_app)
-        logger.info(
-            f'Mounted MCP Router SSE app at root path with allowed origins: {allowed_origins}'
-        )
+        # Only mount SSE app if MCP Router is initialized (not on Windows)
+        if mcp_router is not None:
+            # Check for route conflicts before mounting
+            main_app_routes = {route.path for route in app.routes}
+            sse_app_routes = {route.path for route in sse_app.routes}
+            conflicting_routes = main_app_routes.intersection(sse_app_routes)
 
-        # Additional debug logging
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug('Main app routes:')
-            for route in main_app_routes:
-                logger.debug(f'  {route}')
-            logger.debug('MCP SSE server app routes:')
-            for route in sse_app_routes:
-                logger.debug(f'  {route}')
+            if conflicting_routes:
+                logger.error(f'Route conflicts detected: {conflicting_routes}')
+                raise RuntimeError(
+                    f'Cannot mount SSE app - conflicting routes found: {conflicting_routes}'
+                )
+
+            app.mount('/', sse_app)
+            logger.info(
+                f'Mounted MCP Router SSE app at root path with allowed origins: {allowed_origins}'
+            )
+
+            # Additional debug logging
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug('Main app routes:')
+                for route in main_app_routes:
+                    logger.debug(f'  {route}')
+                logger.debug('MCP SSE server app routes:')
+                for route in sse_app_routes:
+                    logger.debug(f'  {route}')
 
         yield
 
@@ -815,6 +821,23 @@ if __name__ == '__main__':
 
     @app.post('/update_mcp_server')
     async def update_mcp_server(request: Request):
+        # Check if we're on Windows
+        is_windows = sys.platform == 'win32'
+
+        if is_windows:
+            # On Windows, just return a success response without doing anything
+            logger.info(
+                'MCP server update request received on Windows - skipping as MCP is disabled'
+            )
+            return JSONResponse(
+                status_code=200,
+                content={
+                    'detail': 'MCP server update skipped (MCP is disabled on Windows)',
+                    'router_error_log': '',
+                },
+            )
+
+        # Non-Windows implementation
         assert mcp_router is not None
         assert os.path.exists(MCP_ROUTER_PROFILE_PATH)
 
@@ -849,13 +872,22 @@ if __name__ == '__main__':
         # Manually reload the profile and update the servers
         mcp_router.profile_manager.reload()
         servers_wait_for_update = mcp_router.get_unique_servers()
-        await mcp_router.update_servers(servers_wait_for_update)
+        async with capture_logs('mcpm.router.router') as log_capture:
+            await mcp_router.update_servers(servers_wait_for_update)
+        router_error_log = log_capture.getvalue()
+
         logger.info(
             f'MCP router updated successfully with unique servers: {servers_wait_for_update}'
         )
+        if router_error_log:
+            logger.warning(f'Some MCP servers failed to be added: {router_error_log}')
 
         return JSONResponse(
-            status_code=200, content={'detail': 'MCP server updated successfully'}
+            status_code=200,
+            content={
+                'detail': 'MCP server updated successfully',
+                'router_error_log': router_error_log,
+            },
         )
 
     @app.post('/upload_file')
@@ -1003,12 +1035,12 @@ if __name__ == '__main__':
 
         if not os.path.exists(full_path):
             # if user just removed a folder, prevent server error 500 in UI
-            return []
+            return JSONResponse(content=[])
 
         try:
             # Check if the directory exists
             if not os.path.exists(full_path) or not os.path.isdir(full_path):
-                return []
+                return JSONResponse(content=[])
 
             entries = os.listdir(full_path)
 
@@ -1037,11 +1069,11 @@ if __name__ == '__main__':
 
             # Combine sorted directories and files
             sorted_entries = directories + files
-            return sorted_entries
+            return JSONResponse(content=sorted_entries)
 
         except Exception as e:
             logger.error(f'Error listing files: {e}')
-            return []
+            return JSONResponse(content=[])
 
     logger.debug(f'Starting action execution API on port {args.port}')
     run(app, host='0.0.0.0', port=args.port)

@@ -9,14 +9,18 @@ from openhands.controller import AgentController
 from openhands.controller.agent import Agent
 from openhands.controller.replay import ReplayManager
 from openhands.controller.state.state import State
-from openhands.core.config import AgentConfig, AppConfig, LLMConfig
+from openhands.core.config import AgentConfig, LLMConfig, OpenHandsConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.event import Event, EventSource
 from openhands.events.stream import EventStream
-from openhands.integrations.provider import CUSTOM_SECRETS_TYPE, PROVIDER_TOKEN_TYPE, ProviderHandler
+from openhands.integrations.provider import (
+    CUSTOM_SECRETS_TYPE,
+    PROVIDER_TOKEN_TYPE,
+    ProviderHandler,
+)
 from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroagent
@@ -79,7 +83,7 @@ class AgentSession:
     async def start(
         self,
         runtime_name: str,
-        config: AppConfig,
+        config: OpenHandsConfig,
         agent: Agent,
         max_iterations: int,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
@@ -90,6 +94,7 @@ class AgentSession:
         selected_repository: str | None = None,
         selected_branch: str | None = None,
         initial_message: MessageAction | None = None,
+        conversation_instructions: str | None = None,
         replay_json: str | None = None,
     ) -> None:
         """Starts the Agent session
@@ -116,7 +121,9 @@ class AgentSession:
         finished = False  # For monitoring
         runtime_connected = False
 
-        custom_secrets_handler = UserSecrets(custom_secrets=custom_secrets if custom_secrets else {})
+        custom_secrets_handler = UserSecrets(
+            custom_secrets=custom_secrets if custom_secrets else {}
+        )
 
         try:
             self._create_security_analyzer(config.security.security_analyzer)
@@ -144,13 +151,14 @@ class AgentSession:
             self.memory = await self._create_memory(
                 selected_repository=selected_repository,
                 repo_directory=repo_directory,
-                custom_secrets_descriptions=custom_secrets_handler.get_custom_secrets_descriptions()
+                conversation_instructions=conversation_instructions,
+                custom_secrets_descriptions=custom_secrets_handler.get_custom_secrets_descriptions(),
             )
 
             # NOTE: this needs to happen before controller is created
             # so MCP tools can be included into the SystemMessageAction
-            if self.runtime and runtime_connected:
-                await add_mcp_tools_to_agent(agent, self.runtime, self.memory, config.mcp)
+            if self.runtime and runtime_connected and agent.config.enable_mcp:
+                await add_mcp_tools_to_agent(agent, self.runtime, self.memory, config)
 
             if replay_json:
                 initial_message = self._run_replay(
@@ -229,7 +237,7 @@ class AgentSession:
         initial_message: MessageAction | None,
         replay_json: str,
         agent: Agent,
-        config: AppConfig,
+        config: OpenHandsConfig,
         max_iterations: int,
         max_budget_per_task: float | None,
         agent_to_llm_config: dict[str, LLMConfig] | None,
@@ -268,10 +276,25 @@ class AgentSession:
                 security_analyzer, SecurityAnalyzer
             )(self.event_stream)
 
+    def override_provider_tokens_with_custom_secret(
+        self,
+        git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
+        custom_secrets: CUSTOM_SECRETS_TYPE | None,
+    ):
+        if git_provider_tokens and custom_secrets:
+            tokens = dict(git_provider_tokens)
+            for provider, _ in tokens.items():
+                token_name = ProviderHandler.get_provider_env_key(provider)
+                if token_name in custom_secrets or token_name.upper() in custom_secrets:
+                    del tokens[provider]
+
+            return MappingProxyType(tokens)
+        return git_provider_tokens
+
     async def _create_runtime(
         self,
         runtime_name: str,
-        config: AppConfig,
+        config: OpenHandsConfig,
         agent: Agent,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
         custom_secrets: CUSTOM_SECRETS_TYPE | None = None,
@@ -298,6 +321,14 @@ class AgentSession:
         self.logger.debug(f'Initializing runtime `{runtime_name}` now...')
         runtime_cls = get_runtime_cls(runtime_name)
         if runtime_cls == RemoteRuntime:
+            # If provider tokens is passed in custom secrets, then remove provider from provider tokens
+            # We prioritize provider tokens set in custom secrets
+            provider_tokens_without_gitlab = (
+                self.override_provider_tokens_with_custom_secret(
+                    git_provider_tokens, custom_secrets
+                )
+            )
+
             self.runtime = runtime_cls(
                 config=config,
                 event_stream=self.event_stream,
@@ -306,7 +337,7 @@ class AgentSession:
                 status_callback=self._status_callback,
                 headless_mode=False,
                 attach_to_existing=False,
-                git_provider_tokens=git_provider_tokens,
+                git_provider_tokens=provider_tokens_without_gitlab,
                 env_vars=env_vars,
                 user_id=self.user_id,
             )
@@ -315,7 +346,7 @@ class AgentSession:
                 provider_tokens=git_provider_tokens
                 or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({}))
             )
-            
+
             # Merge git provider tokens with custom secrets before passing over to runtime
             env_vars.update(await provider_handler.get_env_vars(expose_secrets=True))
             self.runtime = runtime_cls(
@@ -387,12 +418,9 @@ class AgentSession:
             '\n--------------------------------- OpenHands Configuration ---------------------------------\n'
             f'LLM: {agent.llm.config.model}\n'
             f'Base URL: {agent.llm.config.base_url}\n'
-        )
-
-        msg += (
             f'Agent: {agent.name}\n'
             f'Runtime: {self.runtime.__class__.__name__}\n'
-            f'Plugins: {agent.sandbox_plugins}\n'
+            f'Plugins: {[p.name for p in agent.sandbox_plugins] if agent.sandbox_plugins else "None"}\n'
             '-------------------------------------------------------------------------------------------'
         )
         self.logger.debug(msg)
@@ -415,7 +443,11 @@ class AgentSession:
         return controller
 
     async def _create_memory(
-        self, selected_repository: str | None, repo_directory: str | None, custom_secrets_descriptions: dict[str, str]
+        self,
+        selected_repository: str | None,
+        repo_directory: str | None,
+        conversation_instructions: str | None,
+        custom_secrets_descriptions: dict[str, str],
     ) -> Memory:
         memory = Memory(
             event_stream=self.event_stream,
@@ -426,6 +458,7 @@ class AgentSession:
         if self.runtime:
             # sets available hosts and other runtime info
             memory.set_runtime_info(self.runtime, custom_secrets_descriptions)
+            memory.set_conversation_instructions(conversation_instructions)
 
             # loads microagents from repo/.openhands/microagents
             microagents: list[BaseMicroagent] = await call_sync_from_async(

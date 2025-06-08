@@ -15,7 +15,8 @@ from zipfile import ZipFile
 
 import httpx
 
-from openhands.core.config import AppConfig, SandboxConfig
+from openhands.core.config import OpenHandsConfig, SandboxConfig
+from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig
 from openhands.core.exceptions import AgentRuntimeDisconnectedError
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventSource, EventStream, EventStreamSubscriber
@@ -26,6 +27,7 @@ from openhands.events.action import (
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
+    FileEditAction,
     FileReadAction,
     FileWriteAction,
     IPythonRunCellAction,
@@ -88,21 +90,45 @@ def _default_env_vars(sandbox_config: SandboxConfig) -> dict[str, str]:
 
 
 class Runtime(FileEditRuntimeMixin):
-    """The runtime is how the agent interacts with the external environment.
-    This includes a bash sandbox, a browser, and filesystem interactions.
+    """Abstract base class for agent runtime environments.
 
-    sid is the session id, which is used to identify the current user session.
+    This is an extension point in OpenHands that allows applications to customize how
+    agents interact with the external environment. The runtime provides a sandbox with:
+    - Bash shell access
+    - Browser interaction
+    - Filesystem operations
+    - Git operations
+    - Environment variable management
+
+    Applications can substitute their own implementation by:
+    1. Creating a class that inherits from Runtime
+    2. Implementing all required methods
+    3. Setting the runtime name in configuration or using get_runtime_cls()
+
+    The class is instantiated via get_impl() in get_runtime_cls().
+
+    Built-in implementations include:
+    - DockerRuntime: Containerized environment using Docker
+    - E2BRuntime: Secure sandbox using E2B
+    - RemoteRuntime: Remote execution environment
+    - ModalRuntime: Scalable cloud environment using Modal
+    - LocalRuntime: Local execution for development
+    - DaytonaRuntime: Cloud development environment using Daytona
+
+    Args:
+        sid: Session ID that uniquely identifies the current user session
     """
 
     sid: str
-    config: AppConfig
+    config: OpenHandsConfig
     initial_env_vars: dict[str, str]
     attach_to_existing: bool
     status_callback: Callable[[str, str, str], None] | None
+    _runtime_initialized: bool = False
 
     def __init__(
         self,
-        config: AppConfig,
+        config: OpenHandsConfig,
         event_stream: EventStream,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
@@ -118,9 +144,10 @@ class Runtime(FileEditRuntimeMixin):
         )
         self.sid = sid
         self.event_stream = event_stream
-        self.event_stream.subscribe(
-            EventStreamSubscriber.RUNTIME, self.on_event, self.sid
-        )
+        if event_stream:
+            event_stream.subscribe(
+                EventStreamSubscriber.RUNTIME, self.on_event, self.sid
+            )
         self.plugins = (
             copy.deepcopy(plugins) if plugins is not None and len(plugins) > 0 else []
         )
@@ -135,10 +162,6 @@ class Runtime(FileEditRuntimeMixin):
         atexit.register(self.close)
 
         self.initial_env_vars = _default_env_vars(config.sandbox)
-
-        # also update with runtime_startup_env_vars
-        self.initial_env_vars.update(self.config.sandbox.runtime_startup_env_vars)
-
         if env_vars is not None:
             self.initial_env_vars.update(env_vars)
 
@@ -164,6 +187,10 @@ class Runtime(FileEditRuntimeMixin):
 
         self.user_id = user_id
         self.git_provider_tokens = git_provider_tokens
+
+    @property
+    def runtime_initialized(self) -> bool:
+        return self._runtime_initialized
 
     def setup_initial_env(self) -> None:
         if self.attach_to_existing:
@@ -214,35 +241,66 @@ class Runtime(FileEditRuntimeMixin):
             # Note: we don't log the vars values, they're leaking info
             logger.debug('Added env vars to IPython')
 
-        # Add env vars to the Bash shell and .bashrc for persistence
-        cmd = ''
-        bashrc_cmd = ''
-        for key, value in env_vars.items():
-            # Note: json.dumps gives us nice escaping for free
-            cmd += f'export {key}={json.dumps(value)}; '
-            # Add to .bashrc if not already present
-            bashrc_cmd += f'grep -q "^export {key}=" ~/.bashrc || echo "export {key}={json.dumps(value)}" >> ~/.bashrc; '
-        if not cmd:
-            return
-        cmd = cmd.strip()
-        logger.debug(
-            'Adding env vars to bash'
-        )  # don't log the vars values, they're leaking info
+        # Check if we're on Windows
+        import os
+        import sys
 
-        obs = self.run(CmdRunAction(cmd))
-        if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
-            raise RuntimeError(
-                f'Failed to add env vars [{env_vars.keys()}] to environment: {obs.content}'
-            )
+        is_windows = os.name == 'nt' or sys.platform == 'win32'
 
-        # Add to .bashrc for persistence
-        bashrc_cmd = bashrc_cmd.strip()
-        logger.debug(f'Adding env var to .bashrc: {env_vars.keys()}')
-        obs = self.run(CmdRunAction(bashrc_cmd))
-        if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
-            raise RuntimeError(
-                f'Failed to add env vars [{env_vars.keys()}] to .bashrc: {obs.content}'
-            )
+        if is_windows:
+            # Add env vars using PowerShell commands for Windows
+            cmd = ''
+            for key, value in env_vars.items():
+                # Use PowerShell's $env: syntax for environment variables
+                # Note: json.dumps gives us nice escaping for free
+                cmd += f'$env:{key} = {json.dumps(value)}; '
+
+            if not cmd:
+                return
+
+            cmd = cmd.strip()
+            logger.debug('Adding env vars to PowerShell')  # don't log the values
+
+            obs = self.run(CmdRunAction(cmd))
+            if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
+                raise RuntimeError(
+                    f'Failed to add env vars [{env_vars.keys()}] to environment: {obs.content}'
+                )
+
+            # We don't add to profile persistence on Windows as it's more complex
+            # and varies between PowerShell versions
+            logger.debug(f'Added env vars to PowerShell session: {env_vars.keys()}')
+
+        else:
+            # Original bash implementation for Unix systems
+            cmd = ''
+            bashrc_cmd = ''
+            for key, value in env_vars.items():
+                # Note: json.dumps gives us nice escaping for free
+                cmd += f'export {key}={json.dumps(value)}; '
+                # Add to .bashrc if not already present
+                bashrc_cmd += f'grep -q "^export {key}=" ~/.bashrc || echo "export {key}={json.dumps(value)}" >> ~/.bashrc; '
+
+            if not cmd:
+                return
+
+            cmd = cmd.strip()
+            logger.debug('Adding env vars to bash')  # don't log the values
+
+            obs = self.run(CmdRunAction(cmd))
+            if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
+                raise RuntimeError(
+                    f'Failed to add env vars [{env_vars.keys()}] to environment: {obs.content}'
+                )
+
+            # Add to .bashrc for persistence
+            bashrc_cmd = bashrc_cmd.strip()
+            logger.debug(f'Adding env var to .bashrc: {env_vars.keys()}')
+            obs = self.run(CmdRunAction(bashrc_cmd))
+            if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
+                raise RuntimeError(
+                    f'Failed to add env vars [{env_vars.keys()}] to .bashrc: {obs.content}'
+                )
 
     def on_event(self, event: Event) -> None:
         if isinstance(event, Action):
@@ -271,9 +329,10 @@ class Runtime(FileEditRuntimeMixin):
             return
 
         try:
-            await self.provider_handler.set_event_stream_secrets(
-                self.event_stream, env_vars=env_vars
-            )
+            if self.event_stream:
+                await self.provider_handler.set_event_stream_secrets(
+                    self.event_stream, env_vars=env_vars
+                )
             self.add_env_vars(self.provider_handler.expose_env_vars(env_vars))
         except Exception as e:
             logger.warning(
@@ -341,7 +400,7 @@ class Runtime(FileEditRuntimeMixin):
                     'No repository selected. Initializing a new git repository in the workspace.'
                 )
                 action = CmdRunAction(
-                    command='git init',
+                    command=f'git init && git config --global --add safe.directory {self.workspace_root}'
                 )
                 self.run_action(action)
             else:
@@ -361,6 +420,10 @@ class Runtime(FileEditRuntimeMixin):
         }
 
         domain = provider_domains[provider]
+
+        # If git_provider_tokens is provided, use the host from the token if available
+        if git_provider_tokens and provider in git_provider_tokens:
+            domain = git_provider_tokens[provider].host or domain
 
         # Try to use token if available, otherwise use public URL
         if git_provider_tokens and provider in git_provider_tokens:
@@ -401,9 +464,13 @@ class Runtime(FileEditRuntimeMixin):
             else f'git checkout -b {openhands_workspace_branch}'
         )
 
-        action = CmdRunAction(
-            command=f'{clone_command} ; cd {dir_name} ; {checkout_command}',
+        clone_action = CmdRunAction(command=clone_command)
+        self.run_action(clone_action)
+
+        cd_checkout_action = CmdRunAction(
+            command=f'cd {dir_name} && {checkout_command}'
         )
+        action = cd_checkout_action
         self.log('info', f'Cloning repo: {selected_repository}')
         self.run_action(action)
         return dir_name
@@ -426,8 +493,13 @@ class Runtime(FileEditRuntimeMixin):
         )
         action.set_hard_timeout(600)
         obs = self.run_action(action)
-        if isinstance(obs, CmdOutputObservation) and obs.exit_code != 0:
+        if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
             self.log('error', f'Setup script failed: {obs.content}')
+
+    @property
+    def workspace_root(self) -> Path:
+        """Return the workspace root path."""
+        return Path(self.config.workspace_mount_path_in_sandbox)
 
     def maybe_setup_git_hooks(self):
         """Set up git hooks if .openhands/pre-commit.sh exists in the workspace or repository."""
@@ -613,7 +685,6 @@ fi
             A list of loaded microagents from the org/user level repository
         """
         loaded_microagents: list[BaseMicroagent] = []
-        workspace_root = Path(self.config.workspace_mount_path_in_sandbox)
 
         repo_parts = selected_repository.split('/')
         if len(repo_parts) < 2:
@@ -636,20 +707,17 @@ fi
         # Try to clone the org-level .openhands repo
         try:
             # Create a temporary directory for the org-level repo
-            org_repo_dir = workspace_root / f'org_openhands_{org_name}'
+            org_repo_dir = self.workspace_root / f'org_openhands_{org_name}'
 
             # Get authenticated URL and do a shallow clone (--depth 1) for efficiency
             remote_url = self._get_authenticated_git_url(org_openhands_repo)
-            clone_cmd = f"git clone --depth 1 {remote_url} {org_repo_dir} 2>/dev/null || echo 'Org repo not found'"
+
+            clone_cmd = f'git clone --depth 1 {remote_url} {org_repo_dir}'
 
             action = CmdRunAction(command=clone_cmd)
             obs = self.run_action(action)
 
-            if (
-                isinstance(obs, CmdOutputObservation)
-                and obs.exit_code == 0
-                and 'Org repo not found' not in obs.content
-            ):
+            if isinstance(obs, CmdOutputObservation) and obs.exit_code == 0:
                 self.log(
                     'info',
                     f'Successfully cloned org-level microagents from {org_openhands_repo}',
@@ -685,10 +753,8 @@ fi
         For example, if the repository is github.com/acme-co/api, it will also check for
         github.com/acme-co/.openhands and load microagents from there if it exists.
         """
-
         loaded_microagents: list[BaseMicroagent] = []
-        workspace_root = Path(self.config.workspace_mount_path_in_sandbox)
-        microagents_dir = workspace_root / '.openhands' / 'microagents'
+        microagents_dir = self.workspace_root / '.openhands' / 'microagents'
         repo_root = None
 
         # Check for user/org level microagents if a repository is selected
@@ -698,7 +764,7 @@ fi
             loaded_microagents.extend(org_microagents)
 
             # Continue with repository-specific microagents
-            repo_root = workspace_root / selected_repository.split('/')[-1]
+            repo_root = self.workspace_root / selected_repository.split('/')[-1]
             microagents_dir = repo_root / '.openhands' / 'microagents'
 
         self.log(
@@ -709,7 +775,7 @@ fi
         # Legacy Repo Instructions
         # Check for legacy .openhands_instructions file
         obs = self.read(
-            FileReadAction(path=str(workspace_root / '.openhands_instructions'))
+            FileReadAction(path=str(self.workspace_root / '.openhands_instructions'))
         )
         if isinstance(obs, ErrorObservation) and repo_root is not None:
             # If the instructions file is not found in the workspace root, try to load it from the repo root
@@ -785,6 +851,12 @@ fi
     async def connect(self) -> None:
         pass
 
+    @abstractmethod
+    def get_mcp_config(
+        self, extra_stdio_servers: list[MCPStdioServerConfig] | None = None
+    ) -> MCPConfig:
+        pass
+
     # ====================================================================
     # Action execution
     # ====================================================================
@@ -803,6 +875,10 @@ fi
 
     @abstractmethod
     def write(self, action: FileWriteAction) -> Observation:
+        pass
+
+    @abstractmethod
+    def edit(self, action: FileEditAction) -> Observation:
         pass
 
     @abstractmethod
@@ -839,6 +915,14 @@ fi
         raise NotImplementedError('This method is not implemented in the base class.')
 
     # ====================================================================
+    # Authentication
+    # ====================================================================
+
+    @property
+    def session_api_key(self) -> str | None:
+        return None
+
+    # ====================================================================
     # VSCode
     # ====================================================================
 
@@ -868,6 +952,9 @@ fi
         exit_code = 0
         content = ''
 
+        if isinstance(obs, ErrorObservation):
+            exit_code = -1
+
         if hasattr(obs, 'exit_code'):
             exit_code = obs.exit_code
         if hasattr(obs, 'content'):
@@ -886,3 +973,19 @@ fi
     @property
     def additional_agent_instructions(self) -> str:
         return ''
+
+    def subscribe_to_shell_stream(
+        self, callback: Callable[[str], None] | None = None
+    ) -> bool:
+        """
+        Subscribe to shell command output stream.
+        This method is meant to be overridden by runtime implementations
+        that want to stream shell command output to external consumers.
+
+        Args:
+            callback: A function that will be called with each line of output from shell commands.
+                     If None, any existing subscription will be removed.
+
+        Returns False by default.
+        """
+        return False

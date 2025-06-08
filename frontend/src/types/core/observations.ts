@@ -6,11 +6,12 @@ export interface AgentStateChangeObservation
   source: "agent";
   extras: {
     agent_state: AgentState;
+    reason?: string;
   };
 }
 
 export interface CommandObservation extends OpenHandsObservationEvent<"run"> {
-  source: "agent";
+  source: "agent" | "user";
   extras: {
     command: string;
     hidden?: boolean;
@@ -23,6 +24,7 @@ export interface IPythonObservation
   source: "agent";
   extras: {
     code: string;
+    image_urls?: string[];
   };
 }
 
@@ -133,8 +135,15 @@ export interface RecallObservation extends OpenHandsObservationEvent<"recall"> {
 export interface MCPObservation extends OpenHandsObservationEvent<"mcp"> {
   source: "agent";
   extras: {
-    // Add any specific fields for MCP observations
+    name: string;
+    arguments: Record<string, unknown>;
   };
+}
+
+export interface UserRejectedObservation
+  extends OpenHandsObservationEvent<"user_rejected"> {
+  source: "agent";
+  extras: Record<string, unknown>;
 }
 
 export type OpenHandsObservation =
@@ -150,4 +159,5 @@ export type OpenHandsObservation =
   | EditObservation
   | ErrorObservation
   | RecallObservation
-  | MCPObservation;
+  | MCPObservation
+  | UserRejectedObservation;

@@ -7,10 +7,11 @@ import { ul, ol } from "../markdown/list";
 import { anchor } from "../markdown/anchor";
 import { MessageActions } from "./message-actions";
 import { useHover } from "#/hooks/use-hover";
+import { OpenHandsSourceType } from "#/types/core/base";
 import { paragraph } from "../markdown/paragraph";
 
 interface ChatMessageProps {
-  type: "user" | "assistant";
+  type: OpenHandsSourceType;
   message: string;
   messageId?: number;
   feedback?: "positive" | "negative" | null;
@@ -54,7 +55,7 @@ export function ChatMessage({
         "rounded-xl relative",
         "flex flex-col gap-2",
         type === "user" && " max-w-[305px] p-4 bg-tertiary self-end",
-        type === "assistant" && "mt-6 max-w-full bg-transparent",
+        type === "agent" && "mt-6 max-w-full bg-transparent",
       )}
     >
       {/* Action buttons */}

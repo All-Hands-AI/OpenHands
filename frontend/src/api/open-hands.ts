@@ -1,3 +1,4 @@
+import { AxiosHeaders } from "axios";
 import {
   Feedback,
   FeedbackResponse,
@@ -17,6 +18,38 @@ import { GitUser, GitRepository, Branch } from "#/types/git";
 import { SuggestedTask } from "#/components/features/home/tasks/task.types";
 
 class OpenHands {
+  private static currentConversation: Conversation | null = null;
+
+  /**
+   * Get a current conversation
+   * @return the current conversation
+   */
+  static getCurrentConversation(): Conversation | null {
+    return this.currentConversation;
+  }
+
+  /**
+   * Set a current conversation
+   * @param url Custom URL to use for conversation endpoints
+   */
+  static setCurrentConversation(
+    currentConversation: Conversation | null,
+  ): void {
+    this.currentConversation = currentConversation;
+  }
+
+  /**
+   * Get the url for the conversation. If
+   */
+  static getConversationUrl(conversationId: string): string {
+    if (this.currentConversation?.conversation_id === conversationId) {
+      if (this.currentConversation.url) {
+        return this.currentConversation.url;
+      }
+    }
+    return `/api/conversations/${conversationId}`;
+  }
+
   /**
    * Retrieve the list of models available
    * @returns List of models available
@@ -53,6 +86,15 @@ class OpenHands {
     return data;
   }
 
+  static getConversationHeaders(): AxiosHeaders {
+    const headers = new AxiosHeaders();
+    const sessionApiKey = this.currentConversation?.session_api_key;
+    if (sessionApiKey) {
+      headers.set("X-Session-API-Key", sessionApiKey);
+    }
+    return headers;
+  }
+
   /**
    * Send feedback to the server
    * @param data Feedback data
@@ -86,11 +128,24 @@ class OpenHands {
    * @returns Blob of the workspace zip
    */
   static async getWorkspaceZip(conversationId: string): Promise<Blob> {
-    const url = `/api/conversations/${conversationId}/zip-directory`;
+    const url = `${this.getConversationUrl(conversationId)}/zip-directory`;
     const response = await openHands.get(url, {
       responseType: "blob",
+      headers: this.getConversationHeaders(),
     });
     return response.data;
+  }
+
+  /**
+   * Get the web hosts
+   * @returns Array of web hosts
+   */
+  static async getWebHosts(conversationId: string): Promise<string[]> {
+    const url = `${this.getConversationUrl(conversationId)}/web-hosts`;
+    const response = await openHands.get(url, {
+      headers: this.getConversationHeaders(),
+    });
+    return Object.keys(response.data.hosts);
   }
 
   /**
@@ -116,18 +171,20 @@ class OpenHands {
   static async getVSCodeUrl(
     conversationId: string,
   ): Promise<GetVSCodeUrlResponse> {
-    const { data } = await openHands.get<GetVSCodeUrlResponse>(
-      `/api/conversations/${conversationId}/vscode-url`,
-    );
+    const url = `${this.getConversationUrl(conversationId)}/vscode-url`;
+    const { data } = await openHands.get<GetVSCodeUrlResponse>(url, {
+      headers: this.getConversationHeaders(),
+    });
     return data;
   }
 
   static async getRuntimeId(
     conversationId: string,
   ): Promise<{ runtime_id: string }> {
-    const { data } = await openHands.get<{ runtime_id: string }>(
-      `/api/conversations/${conversationId}/config`,
-    );
+    const url = `${this.getConversationUrl(conversationId)}/config`;
+    const { data } = await openHands.get<{ runtime_id: string }>(url, {
+      headers: this.getConversationHeaders(),
+    });
     return data;
   }
 
@@ -174,6 +231,26 @@ class OpenHands {
   ): Promise<Conversation | null> {
     const { data } = await openHands.get<Conversation | null>(
       `/api/conversations/${conversationId}`,
+    );
+
+    return data;
+  }
+
+  static async startConversation(
+    conversationId: string,
+  ): Promise<Conversation | null> {
+    const { data } = await openHands.post<Conversation | null>(
+      `/api/conversations/${conversationId}/start`,
+    );
+
+    return data;
+  }
+
+  static async stopConversation(
+    conversationId: string,
+  ): Promise<Conversation | null> {
+    const { data } = await openHands.post<Conversation | null>(
+      `/api/conversations/${conversationId}/stop`,
     );
 
     return data;
@@ -259,9 +336,10 @@ class OpenHands {
   static async getTrajectory(
     conversationId: string,
   ): Promise<GetTrajectoryResponse> {
-    const { data } = await openHands.get<GetTrajectoryResponse>(
-      `/api/conversations/${conversationId}/trajectory`,
-    );
+    const url = `${this.getConversationUrl(conversationId)}/trajectory`;
+    const { data } = await openHands.get<GetTrajectoryResponse>(url, {
+      headers: this.getConversationHeaders(),
+    });
     return data;
   }
 
@@ -272,9 +350,10 @@ class OpenHands {
   }
 
   static async getGitChanges(conversationId: string): Promise<GitChange[]> {
-    const { data } = await openHands.get<GitChange[]>(
-      `/api/conversations/${conversationId}/git/changes`,
-    );
+    const url = `${this.getConversationUrl(conversationId)}/git/changes`;
+    const { data } = await openHands.get<GitChange[]>(url, {
+      headers: this.getConversationHeaders(),
+    });
     return data;
   }
 
@@ -282,12 +361,11 @@ class OpenHands {
     conversationId: string,
     path: string,
   ): Promise<GitChangeDiff> {
-    const { data } = await openHands.get<GitChangeDiff>(
-      `/api/conversations/${conversationId}/git/diff`,
-      {
-        params: { path },
-      },
-    );
+    const url = `${this.getConversationUrl(conversationId)}/git/diff`;
+    const { data } = await openHands.get<GitChangeDiff>(url, {
+      params: { path },
+      headers: this.getConversationHeaders(),
+    });
     return data;
   }
 

@@ -22,7 +22,7 @@ const MOCK_GET_SECRETS_RESPONSE: GetSecretsResponse["custom_secrets"] = [
 
 const RouterStub = createRoutesStub([
   {
-    Component: Outlet,
+    Component: () => <Outlet />,
     path: "/settings",
     children: [
       {

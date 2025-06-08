@@ -14,7 +14,18 @@ from conftest import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction
 from openhands.events.observation import CmdOutputObservation, ErrorObservation
+from openhands.runtime.impl.cli.cli_runtime import CLIRuntime
 from openhands.runtime.impl.local.local_runtime import LocalRuntime
+from openhands.runtime.utils.bash_constants import TIMEOUT_MESSAGE_TEMPLATE
+
+
+def get_timeout_suffix(timeout_seconds):
+    """Helper function to generate the expected timeout suffix."""
+    return (
+        f'[The command timed out after {timeout_seconds} seconds. '
+        f'{TIMEOUT_MESSAGE_TEMPLATE}]'
+    )
+
 
 # ============================================================================================================================
 # Bash-specific tests
@@ -51,25 +62,34 @@ def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
         assert isinstance(obs, CmdOutputObservation)
         assert obs.exit_code == -1
         assert 'Serving HTTP on' in obs.content
-        assert (
-            "[The command timed out after 1.0 seconds. You may wait longer to see additional output by sending empty command '', send other commands to interact with the current process, or send keys to interrupt/kill the command.]"
-            in obs.metadata.suffix
-        )
+
+        if runtime_cls == CLIRuntime:
+            assert '[The command timed out after 1.0 seconds.]' in obs.metadata.suffix
+        else:
+            assert get_timeout_suffix(1.0) in obs.metadata.suffix
 
         action = CmdRunAction(command='C-c', is_input=True)
         action.set_hard_timeout(30)
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
-        assert obs.exit_code == 0
-        if not is_windows():
-            # Linux/macOS behavior
-            assert 'Keyboard interrupt received, exiting.' in obs.content
-            assert config.workspace_mount_path_in_sandbox in obs.metadata.working_dir
+        obs_interrupt = runtime.run_action(action)
+        logger.info(obs_interrupt, extra={'msg_type': 'OBSERVATION'})
+
+        if runtime_cls == CLIRuntime:
+            assert isinstance(obs_interrupt, ErrorObservation)
+            assert (
+                "CLIRuntime does not support interactive input from the agent (e.g., 'C-c'). The command 'C-c' was not sent to any process."
+                in obs_interrupt.content
+            )
+            assert obs_interrupt.error_id == 'AGENT_ERROR$BAD_ACTION'
         else:
-            # Windows behavior: Stop-Job might not produce output, but exit code should be 0
-            # The working directory check might also be less relevant/predictable here
-            pass
+            assert isinstance(obs_interrupt, CmdOutputObservation)
+            assert obs_interrupt.exit_code == 0
+            if not is_windows():
+                # Linux/macOS behavior
+                assert 'Keyboard interrupt received, exiting.' in obs_interrupt.content
+                assert (
+                    config.workspace_mount_path_in_sandbox
+                    in obs_interrupt.metadata.working_dir
+                )
 
         # Verify the server is actually stopped by trying to start another one
         # on the same port (regardless of OS)
@@ -82,7 +102,12 @@ def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
         # Check that the interrupt message is NOT present in subsequent output
         assert 'Keyboard interrupt received, exiting.' not in obs.content
         # Check working directory remains correct after interrupt handling
-        assert config.workspace_mount_path_in_sandbox in obs.metadata.working_dir
+        if runtime_cls == CLIRuntime:
+            # For CLIRuntime, working_dir is the absolute host path
+            assert obs.metadata.working_dir == config.workspace_base
+        else:
+            # For other runtimes (e.g., Docker), it's relative to or contains the sandbox path
+            assert config.workspace_mount_path_in_sandbox in obs.metadata.working_dir
 
         # run it again!
         action = CmdRunAction(command='python -u -m http.server 8081')
@@ -106,35 +131,66 @@ def test_bash_background_server(temp_dir, runtime_cls, run_as_openhands):
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert isinstance(obs, CmdOutputObservation)
-        assert obs.exit_code == 0  # Should not timeout since this runs in background
 
-        # Give the server a moment to be ready
-        time.sleep(1)
+        if runtime_cls == CLIRuntime:
+            # The '&' does not detach cleanly; the PTY session remains active.
+            # the main cmd ends, then the server may receive SIGHUP.
+            assert obs.exit_code == 0
 
-        # Verify the server is running by curling it
-        if is_windows():
+            # Give the server a moment to be ready
+            time.sleep(1)
+
+            # `curl --fail` exits non-zero if connection fails or server returns an error.
+            # Use a short connect timeout as the server is expected to be down.
             curl_action = CmdRunAction(
-                f'Invoke-WebRequest -Uri http://localhost:{server_port} -UseBasicParsing | Select-Object -ExpandProperty Content'
+                f'curl --fail --connect-timeout 1 http://localhost:{server_port}'
             )
-        else:
-            curl_action = CmdRunAction(f'curl http://localhost:{server_port}')
-        curl_obs = runtime.run_action(curl_action)
-        logger.info(curl_obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(curl_obs, CmdOutputObservation)
-        assert curl_obs.exit_code == 0
-        # Check for content typical of python http.server directory listing
-        assert 'Directory listing for' in curl_obs.content
+            curl_obs = runtime.run_action(curl_action)
+            logger.info(curl_obs, extra={'msg_type': 'OBSERVATION'})
+            assert isinstance(curl_obs, CmdOutputObservation)
+            assert curl_obs.exit_code != 0
 
-        # Kill the server
-        if is_windows():
-            # Use PowerShell job management commands instead of trying to kill process directly
-            kill_action = CmdRunAction('Get-Job | Stop-Job')
-        else:
+            # Confirm with pkill (CLIRuntime is assumed non-Windows here).
+            # pkill returns 1 if no processes were matched.
             kill_action = CmdRunAction('pkill -f "http.server"')
-        kill_obs = runtime.run_action(kill_action)
-        logger.info(kill_obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(kill_obs, CmdOutputObservation)
-        assert kill_obs.exit_code == 0
+            kill_obs = runtime.run_action(kill_action)
+            logger.info(kill_obs, extra={'msg_type': 'OBSERVATION'})
+            assert isinstance(kill_obs, CmdOutputObservation)
+            # For CLIRuntime, bash -c "cmd &" exits quickly, orphaning "cmd".
+            # CLIRuntime's timeout tries to kill the already-exited bash -c.
+            # The orphaned http.server continues running.
+            # So, pkill should find and kill the server.
+            assert kill_obs.exit_code == 0
+        else:
+            assert obs.exit_code == 0
+
+            # Give the server a moment to be ready
+            time.sleep(1)
+
+            # Verify the server is running by curling it
+            if is_windows():
+                curl_action = CmdRunAction(
+                    f'Invoke-WebRequest -Uri http://localhost:{server_port} -UseBasicParsing | Select-Object -ExpandProperty Content'
+                )
+            else:
+                curl_action = CmdRunAction(f'curl http://localhost:{server_port}')
+            curl_obs = runtime.run_action(curl_action)
+            logger.info(curl_obs, extra={'msg_type': 'OBSERVATION'})
+            assert isinstance(curl_obs, CmdOutputObservation)
+            assert curl_obs.exit_code == 0
+            # Check for content typical of python http.server directory listing
+            assert 'Directory listing for' in curl_obs.content
+
+            # Kill the server
+            if is_windows():
+                # This assumes PowerShell context if LocalRuntime is used on Windows.
+                kill_action = CmdRunAction('Get-Job | Stop-Job')
+            else:
+                kill_action = CmdRunAction('pkill -f "http.server"')
+            kill_obs = runtime.run_action(kill_action)
+            logger.info(kill_obs, extra={'msg_type': 'OBSERVATION'})
+            assert isinstance(kill_obs, CmdOutputObservation)
+            assert kill_obs.exit_code == 0
 
     finally:
         _close_test_runtime(runtime)
@@ -241,6 +297,10 @@ done && echo "success"
         _close_test_runtime(runtime)
 
 
+@pytest.mark.skipif(
+    os.getenv('TEST_RUNTIME') == 'cli',
+    reason='CLIRuntime uses bash -c which handles newline-separated commands. This test expects rejection. See test_cliruntime_multiple_newline_commands.',
+)
 def test_multiple_multiline_commands(temp_dir, runtime_cls, run_as_openhands):
     if is_windows():
         cmds = [
@@ -302,6 +362,45 @@ def test_multiple_multiline_commands(temp_dir, runtime_cls, run_as_openhands):
         _close_test_runtime(runtime)
 
 
+def test_cliruntime_multiple_newline_commands(temp_dir, run_as_openhands):
+    # This test is specific to CLIRuntime
+    runtime_cls = CLIRuntime
+    if is_windows():
+        # Minimal check for Windows if CLIRuntime were to support it robustly with PowerShell for this.
+        # For now, this test primarily targets the bash -c behavior on non-Windows.
+        pytest.skip(
+            'CLIRuntime newline command test primarily for non-Windows bash behavior'
+        )
+        # cmds = [
+        #     'Get-ChildItem -Name .git_config', # Simpler command
+        #     'Write-Output "hello`nworld"'
+        # ]
+        # expected_outputs = ['.git_config', 'hello\nworld']
+    else:
+        cmds = [
+            'echo "hello"',  # A command that will always work
+            'echo -e "hello\nworld"',
+            """echo -e "hello it's me\"""",
+        ]
+        expected_outputs = [
+            'hello',  # Simple string output
+            'hello\nworld',
+            "hello it's me",
+        ]  # Simplified expectations
+    joined_cmds = '\n'.join(cmds)
+
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    try:
+        obs = _run_cmd_action(runtime, joined_cmds)
+        assert isinstance(obs, CmdOutputObservation)
+        assert obs.exit_code == 0
+        # Check that parts of each command's expected output are present
+        for expected_part in expected_outputs:
+            assert expected_part in obs.content
+    finally:
+        _close_test_runtime(runtime)
+
+
 def test_cmd_run(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
@@ -348,9 +447,13 @@ def test_cmd_run(temp_dir, runtime_cls, run_as_openhands):
 
             obs = _run_cmd_action(runtime, 'ls -l')
             assert obs.exit_code == 0
-            if run_as_openhands:
+            if (
+                run_as_openhands
+                and runtime_cls != CLIRuntime
+                and runtime_cls != LocalRuntime
+            ):
                 assert 'openhands' in obs.content
-            elif runtime_cls == LocalRuntime:
+            elif runtime_cls == LocalRuntime or runtime_cls == CLIRuntime:
                 assert 'root' not in obs.content and 'openhands' not in obs.content
             else:
                 assert 'root' in obs.content
@@ -372,6 +475,10 @@ def test_cmd_run(temp_dir, runtime_cls, run_as_openhands):
         _close_test_runtime(runtime)
 
 
+@pytest.mark.skipif(
+    sys.platform != 'win32' and os.getenv('TEST_RUNTIME') == 'cli',
+    reason='CLIRuntime runs as the host user, so ~ is the host home. This test assumes a sandboxed user.',
+)
 def test_run_as_user_correct_home_dir(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
@@ -445,12 +552,22 @@ def test_stateful_cmd(temp_dir, runtime_cls):
             obs = _run_cmd_action(runtime, 'mkdir -p test')
             assert obs.exit_code == 0, 'The exit code should be 0.'
 
-            obs = _run_cmd_action(runtime, 'cd test')
-            assert obs.exit_code == 0, 'The exit code should be 0.'
+            if runtime_cls == CLIRuntime:
+                # For CLIRuntime, test CWD change and command execution within a single action
+                # as CWD is enforced in the workspace.
+                obs = _run_cmd_action(runtime, 'cd test && pwd')
+            else:
+                # For other runtimes, test stateful CWD change across actions
+                obs = _run_cmd_action(runtime, 'cd test')
+                assert obs.exit_code == 0, 'The exit code should be 0 for cd test.'
+                obs = _run_cmd_action(runtime, 'pwd')
 
-            obs = _run_cmd_action(runtime, 'pwd')
-            assert obs.exit_code == 0, 'The exit code should be 0.'
-            assert f'{config.workspace_mount_path_in_sandbox}/test' in obs.content
+            assert obs.exit_code == 0, (
+                'The exit code for the pwd command (or combined command) should be 0.'
+            )
+            assert (
+                f'{config.workspace_mount_path_in_sandbox}/test' in obs.content.strip()
+            )
     finally:
         _close_test_runtime(runtime)
 
@@ -694,7 +811,8 @@ def test_git_operation(temp_dir, runtime_cls):
     # this will happen if permission of runtime is not properly configured
     # fatal: detected dubious ownership in repository at config.workspace_mount_path_in_sandbox
     try:
-        if runtime_cls != LocalRuntime:
+        if runtime_cls != LocalRuntime and runtime_cls != CLIRuntime:
+            # on local machine, permissionless sudo will probably not be available
             obs = _run_cmd_action(runtime, 'sudo chown -R openhands:root .')
             assert obs.exit_code == 0
 
@@ -704,7 +822,7 @@ def test_git_operation(temp_dir, runtime_cls):
         # drwx--S--- 2 openhands root   64 Aug  7 23:32 .
         # drwxr-xr-x 1 root      root 4.0K Aug  7 23:33 ..
         for line in obs.content.split('\n'):
-            if runtime_cls == LocalRuntime:
+            if runtime_cls == LocalRuntime or runtime_cls == CLIRuntime:
                 continue  # skip these checks
 
             if ' ..' in line:
@@ -725,17 +843,17 @@ def test_git_operation(temp_dir, runtime_cls):
         obs = _run_cmd_action(runtime, 'echo "hello" > test_file.txt')
         assert obs.exit_code == 0
 
-        if runtime_cls == LocalRuntime:
+        if runtime_cls == LocalRuntime or runtime_cls == CLIRuntime:
             # set git config author in CI only, not on local machine
             logger.info('Setting git config author')
             obs = _run_cmd_action(
                 runtime,
-                'git config --file ./.git_config user.name "openhands" && git config --file ./.git_config user.email "openhands@all-hands.dev"',
+                'git config user.name "openhands" && git config user.email "openhands@all-hands.dev"',
             )
             assert obs.exit_code == 0
 
-            # Set up git config
-            obs = _run_cmd_action(runtime, 'git config --file ./.git_config')
+            # Set up git config - list current settings (should be empty or just what was set)
+            obs = _run_cmd_action(runtime, 'git config --list')
             assert obs.exit_code == 0
 
         # git add
@@ -847,6 +965,10 @@ def test_basic_command(temp_dir, runtime_cls, run_as_openhands):
 @pytest.mark.skipif(
     is_windows(), reason='Powershell does not support interactive commands'
 )
+@pytest.mark.skipif(
+    os.getenv('TEST_RUNTIME') == 'cli',
+    reason='CLIRuntime does not support interactive commands from the agent.',
+)
 def test_interactive_command(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(
         temp_dir,
@@ -904,6 +1026,10 @@ def test_long_output(temp_dir, runtime_cls, run_as_openhands):
 @pytest.mark.skipif(
     is_windows(),
     reason='Test relies on Linux-specific commands like seq and bash for loops',
+)
+@pytest.mark.skipif(
+    os.getenv('TEST_RUNTIME') == 'cli',
+    reason='CLIRuntime does not truncate command output.',
 )
 def test_long_output_exceed_history_limit(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
@@ -982,6 +1108,10 @@ def test_command_backslash(temp_dir, runtime_cls, run_as_openhands):
 
 @pytest.mark.skipif(
     is_windows(), reason='Test uses Linux-specific ps aux, awk, and grep commands'
+)
+@pytest.mark.skipif(
+    os.getenv('TEST_RUNTIME') == 'cli',
+    reason='CLIRuntime does not support interactive commands from the agent.',
 )
 def test_stress_long_output_with_soft_and_hard_timeout(
     temp_dir, runtime_cls, run_as_openhands
@@ -1073,6 +1203,10 @@ def test_stress_long_output_with_soft_and_hard_timeout(
         _close_test_runtime(runtime)
 
 
+@pytest.mark.skipif(
+    os.getenv('TEST_RUNTIME') == 'cli',
+    reason='FIXME: CLIRuntime does not watch previously timed-out commands except for getting full output a short time after timeout.',
+)
 def test_command_output_continuation(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
@@ -1157,6 +1291,10 @@ def test_command_output_continuation(temp_dir, runtime_cls, run_as_openhands):
         _close_test_runtime(runtime)
 
 
+@pytest.mark.skipif(
+    os.getenv('TEST_RUNTIME') == 'cli',
+    reason='FIXME: CLIRuntime does not implement empty command behavior.',
+)
 def test_long_running_command_follow_by_execute(
     temp_dir, runtime_cls, run_as_openhands
 ):
@@ -1204,6 +1342,10 @@ def test_long_running_command_follow_by_execute(
         _close_test_runtime(runtime)
 
 
+@pytest.mark.skipif(
+    os.getenv('TEST_RUNTIME') == 'cli',
+    reason='FIXME: CLIRuntime does not implement empty command behavior.',
+)
 def test_empty_command_errors(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
@@ -1219,6 +1361,10 @@ def test_empty_command_errors(temp_dir, runtime_cls, run_as_openhands):
 
 @pytest.mark.skipif(
     is_windows(), reason='Powershell does not support interactive commands'
+)
+@pytest.mark.skipif(
+    os.getenv('TEST_RUNTIME') == 'cli',
+    reason='CLIRuntime does not support interactive commands from the agent.',
 )
 def test_python_interactive_input(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
@@ -1251,6 +1397,10 @@ def test_python_interactive_input(temp_dir, runtime_cls, run_as_openhands):
 
 @pytest.mark.skipif(
     is_windows(), reason='Powershell does not support interactive commands'
+)
+@pytest.mark.skipif(
+    os.getenv('TEST_RUNTIME') == 'cli',
+    reason='CLIRuntime does not support interactive commands from the agent.',
 )
 def test_python_interactive_input_without_set_input(
     temp_dir, runtime_cls, run_as_openhands
