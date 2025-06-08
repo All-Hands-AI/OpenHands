@@ -3,30 +3,55 @@ title: Keyword-Triggered Microagents
 description: Keyword-triggered microagents provide OpenHands with specific instructions that are activated when certain keywords appear in the prompt. This is useful for tailoring behavior based on particular tools, languages, or frameworks.
 ---
 
-<Note>
-For workflows that require user input, see [Task Microagents](./microagents-task) which use command-style triggers (e.g., `/command`) instead of keywords embedded in text.
-</Note>
-
 ## Usage
 
-These microagents are only loaded when a prompt includes one of the trigger words.
+Keyword-triggered microagents are only loaded when a prompt includes one of the trigger words. There are two types of keyword-triggered microagents:
+
+1. **Standard Keyword Microagents**: Triggered by keywords embedded in text
+2. **Command-Style Microagents**: Triggered by command-style inputs (e.g., `/fix_test`) that can prompt for user input
 
 ## Frontmatter Syntax
 
 Frontmatter is required for keyword-triggered microagents. It must be placed at the top of the file,
-above the guidelines.
+above the guidelines. Enclose the frontmatter in triple dashes (---).
 
-Enclose the frontmatter in triple dashes (---) and include the following fields:
+### Standard Keyword Microagents
+
+For standard keyword microagents, include the following fields:
 
 | Field      | Description                                      | Required | Default          |
 |------------|--------------------------------------------------|----------|------------------|
 | `triggers` | A list of keywords that activate the microagent. | Yes      | None             |
 | `agent`    | The agent this microagent applies to.            | No       | 'CodeActAgent'   |
+| `version`  | The version of the microagent.                   | No       | '1.0.0'          |
+| `author`   | The author of the microagent.                    | No       | None             |
+
+### Command-Style Microagents
+
+For command-style microagents that require user input, include the following fields:
+
+| Field      | Description                                                | Required | Default          |
+|------------|------------------------------------------------------------|----------|------------------|
+| `name`     | The name of the microagent                                 | Yes      | None             |
+| `triggers` | A list of command triggers (e.g., `/fix_test`)             | No       | `/[name]`        |
+| `inputs`   | A list of input variables the microagent requires          | Yes      | None             |
+| `agent`    | The agent this microagent applies to                       | No       | 'CodeActAgent'   |
+| `version`  | The version of the microagent                              | No       | '1.0.0'          |
+| `author`   | The author of the microagent                               | No       | None             |
+
+Each input in the `inputs` list requires:
+
+| Field         | Description                                      | Required |
+|---------------|--------------------------------------------------|----------|
+| `name`        | The name of the input variable                   | Yes      |
+| `description` | A description of what the input should contain   | Yes      |
 
 
-## Example
+## Examples
 
-Keyword-triggered microagent file example located at `.openhands/microagents/yummy.md`:
+### Standard Keyword Microagent Example
+
+Standard keyword microagent file example located at `.openhands/microagents/yummy.md`:
 ```
 ---
 triggers:
@@ -37,4 +62,61 @@ triggers:
 The user has said the magic word. Respond with "That was delicious!"
 ```
 
-[See examples of microagents triggered by keywords in the official OpenHands repository](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents)
+### Command-Style Microagent Example
+
+Command-style microagent file example located at `.openhands/microagents/fix_test.md`:
+```
+---
+name: fix_test
+version: 1.0.0
+author: openhands
+agent: CodeActAgent
+triggers:
+- /fix_test
+inputs:
+  - name: BRANCH_NAME
+    description: "Branch for the agent to work on"
+  - name: TEST_COMMAND_TO_RUN
+    description: "The test command you want the agent to work on. For example, `pytest tests/unit/test_bash_parsing.py`"
+  - name: FUNCTION_TO_FIX
+    description: "The name of function to fix"
+  - name: FILE_FOR_FUNCTION
+    description: "The path of the file that contains the function"
+---
+
+Can you check out branch "{{ BRANCH_NAME }}", and run {{ TEST_COMMAND_TO_RUN }}.
+
+Help me fix these tests to pass by fixing the {{ FUNCTION_TO_FIX }} function in file {{ FILE_FOR_FUNCTION }}.
+
+PLEASE DO NOT modify the tests by yourself -- Let me know if you think some of the tests are incorrect.
+```
+
+## Using Command-Style Microagents
+
+Command-style microagents are designed to streamline common development tasks by providing structured templates for specific operations. They are triggered using a command-style format and will prompt the user for any required inputs.
+
+### How to Use
+
+1. Type `/` in the chat input to see available command-style microagents
+2. Select a microagent from the dropdown or type its name (e.g., `/fix_test`)
+3. The agent will prompt you for any required inputs
+4. Provide the requested information
+5. The agent will execute the task with your inputs
+
+### Template Variables
+
+In the body of a command-style microagent, you can reference input variables using the `{{ VARIABLE_NAME }}` syntax. These will be replaced with the user-provided values when the microagent is triggered.
+
+### Available Command-Style Microagents
+
+OpenHands includes several built-in command-style microagents:
+
+| Command              | Description                                           |
+|----------------------|-------------------------------------------------------|
+| `/fix_test`          | Fix failing tests by modifying a specific function    |
+| `/update_test`       | Update tests for a new implementation                 |
+| `/update_pr`         | Update a pull request description                     |
+| `/address_pr_comments` | Address comments on a pull request                  |
+| `/add_repo_instruction` | Add instructions to the repository microagent      |
+
+[See examples of microagents in the official OpenHands repository](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents)
