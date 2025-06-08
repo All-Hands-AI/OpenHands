@@ -117,7 +117,10 @@ You can see an example of a repo agent in [the agent for the OpenHands repo itse
    - Include repository structure details
    - Specify testing and build procedures
    - List environment requirements
+   - Document CI workflows and checks
+   - Include information about code quality standards
    - Maintain up-to-date team practices
+   - Consider using OpenHands to generate a comprehensive repo.md (see [Creating a Repository Agent](#creating-a-repository-agent))
    - YAML frontmatter is optional - files without frontmatter will be loaded with default settings
 
 ### Submission Process
