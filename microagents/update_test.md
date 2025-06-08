@@ -5,7 +5,6 @@ inputs:
 - description: The test command you want the agent to work on. For example, `pytest
     tests/unit/test_bash_parsing.py`
   name: TEST_COMMAND_TO_RUN
-name: update_test
 triggers:
 - /update_test
 ---

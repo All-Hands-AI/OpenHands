@@ -1,5 +1,4 @@
 ---
-name: pdflatex
 triggers:
 - pdflatex
 type: knowledge

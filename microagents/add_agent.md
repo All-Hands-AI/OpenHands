@@ -1,5 +1,4 @@
 ---
-name: add_agent
 triggers:
 - new agent
 - new microagent

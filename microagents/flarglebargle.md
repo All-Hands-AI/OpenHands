@@ -1,5 +1,4 @@
 ---
-name: flarglebargle
 triggers:
 - flarglebargle
 type: knowledge

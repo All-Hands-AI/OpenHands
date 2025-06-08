@@ -1,5 +1,4 @@
 ---
-name: kubernetes
 triggers:
 - kubernetes
 - k8s

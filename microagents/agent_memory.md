@@ -1,5 +1,4 @@
 ---
-name: agent_memory
 triggers:
 - /remember
 type: knowledge

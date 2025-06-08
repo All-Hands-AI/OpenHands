@@ -9,7 +9,6 @@ inputs:
   name: FUNCTION_TO_FIX
 - description: The path of the file that contains the function
   name: FILE_FOR_FUNCTION
-name: fix_test
 triggers:
 - /fix_test
 ---

@@ -1,5 +1,4 @@
 ---
-name: gitlab
 triggers:
 - gitlab
 - git

@@ -1,5 +1,4 @@
 ---
-name: swift-linux
 triggers:
 - swift-linux
 - swift-debian

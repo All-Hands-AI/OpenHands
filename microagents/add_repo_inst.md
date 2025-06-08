@@ -2,7 +2,6 @@
 inputs:
 - description: Branch for the agent to work on
   name: REPO_FOLDER_NAME
-name: add_repo_inst
 triggers:
 - /add_repo_inst
 ---

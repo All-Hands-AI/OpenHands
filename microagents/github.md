@@ -1,5 +1,4 @@
 ---
-name: github
 triggers:
 - github
 - git

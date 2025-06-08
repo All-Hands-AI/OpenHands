@@ -8,7 +8,6 @@ inputs:
 - description: Branch name corresponds to the pull request
   name: BRANCH_NAME
   type: string
-name: update_pr_description
 triggers:
 - /update_pr_description
 ---

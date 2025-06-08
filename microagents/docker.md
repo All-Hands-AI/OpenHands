@@ -1,5 +1,4 @@
 ---
-name: docker
 triggers:
 - docker
 - container

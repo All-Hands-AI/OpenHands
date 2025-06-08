@@ -1,5 +1,4 @@
 ---
-name: security
 triggers:
 - security
 - vulnerability

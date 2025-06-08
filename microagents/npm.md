@@ -1,5 +1,4 @@
 ---
-name: npm
 triggers:
 - npm
 type: knowledge

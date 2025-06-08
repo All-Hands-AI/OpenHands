@@ -4,7 +4,6 @@ inputs:
   name: PR_URL
 - description: Branch name corresponds to the pull request
   name: BRANCH_NAME
-name: address_pr_comments
 triggers:
 - /address_pr_comments
 ---

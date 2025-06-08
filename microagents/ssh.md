@@ -1,5 +1,4 @@
 ---
-name: SSH Microagent
 triggers:
 - ssh
 - remote server
