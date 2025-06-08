@@ -98,6 +98,7 @@ class RemoteRuntime(ActionExecutionClient):
             self.session,
         )
         self.available_hosts: dict[str, int] = {}
+        self._session_api_key: str | None = None
 
     def log(self, level: str, message: str, exc_info: bool | None = None) -> None:
         getattr(logger, level)(
@@ -358,6 +359,15 @@ class RemoteRuntime(ActionExecutionClient):
             self.session.headers.update(
                 {'X-Session-API-Key': start_response['session_api_key']}
             )
+            self._session_api_key = start_response['session_api_key']
+            self.log(
+                'debug',
+                f'Session API key setted',
+            )
+
+    @property
+    def session_api_key(self) -> str | None:
+        return self._session_api_key
 
     @property
     def vscode_url(self) -> str | None:
