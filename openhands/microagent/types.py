@@ -25,7 +25,7 @@ class InputMetadata(BaseModel):
 class MicroagentMetadata(BaseModel):
     """Metadata for all microagents."""
 
-    name: str = 'default'
+    name: str = Field(default='default', exclude=True)
     type: MicroagentType = Field(default=MicroagentType.REPO_KNOWLEDGE)
     # Keep these fields for backward compatibility but they're not used
     version: str = Field(default='1.0.0', exclude=True)
