@@ -1,7 +1,6 @@
 ---
 triggers:
 - npm
-type: knowledge
 ---
 
 When using npm to install packages, you will not be able to use an interactive shell, and it may be hard to confirm your actions.

@@ -7,7 +7,6 @@ triggers:
 - remote connection
 - secure shell
 - ssh keys
-type: knowledge
 ---
 
 # SSH Microagent

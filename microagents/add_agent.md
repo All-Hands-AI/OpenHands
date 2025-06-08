@@ -11,7 +11,6 @@ triggers:
 - add microagent
 - add a microagent
 - microagent template
-type: knowledge
 ---
 
 This agent helps create new microagents in the `.openhands/microagents` directory by providing guidance and templates.

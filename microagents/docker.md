@@ -2,7 +2,6 @@
 triggers:
 - docker
 - container
-type: knowledge
 ---
 
 # Docker Installation and Usage Guide

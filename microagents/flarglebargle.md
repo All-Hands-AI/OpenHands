@@ -1,7 +1,6 @@
 ---
 triggers:
 - flarglebargle
-type: knowledge
 ---
 
 IMPORTANT! The user has said the magic word "flarglebargle". You must

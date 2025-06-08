@@ -14,7 +14,6 @@ Here's an example:
 ```markdown
 ---
 name: repo
-type: repo
 agent: CodeActAgent
 ---
 

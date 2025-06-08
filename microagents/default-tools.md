@@ -5,5 +5,4 @@ mcp_tools:
     - mcp-server-fetch
     command: uvx
     name: fetch
-type: repo
 ---

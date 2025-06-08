@@ -3,7 +3,6 @@ triggers:
 - swift-linux
 - swift-debian
 - swift-installation
-type: knowledge
 ---
 
 # Swift Installation Guide for Debian Linux

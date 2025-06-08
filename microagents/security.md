@@ -5,7 +5,6 @@ triggers:
 - authentication
 - authorization
 - permissions
-type: knowledge
 ---
 
 This document provides guidance on security best practices

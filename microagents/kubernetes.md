@@ -3,7 +3,6 @@ triggers:
 - kubernetes
 - k8s
 - kube
-type: knowledge
 ---
 
 # Kubernetes Local Development with KIND
