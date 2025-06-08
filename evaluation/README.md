@@ -71,7 +71,6 @@ EVAL_CONDENSER=summarizer_for_eval \
 The name is up to you, but should match a name defined in your `config.toml` file. The last argument in the command specifies the condenser configuration to use. In this case, `summarizer_for_eval` is used, which refers to the LLM-based summarizing condenser as defined above.
 
 If no condenser configuration is specified, the 'noop' condenser will be used by default, which keeps the full conversation history.
-```
 
 For other configurations specific to evaluation, such as `save_trajectory_path`, these are typically set in the `get_config` function of the respective `run_infer.py` file for each benchmark.
 
