@@ -15,7 +15,7 @@ from openhands.events.stream import EventStreamSubscriber, session_exists
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.monitoring import MonitoringListener
-from openhands.server.session.agent_session import WAIT_TIME_BEFORE_CLOSE
+from openhands.server.session.agent_session import AgentSession, WAIT_TIME_BEFORE_CLOSE
 from openhands.server.session.conversation import ServerConversation
 from openhands.server.session.session import ROOM_KEY, Session
 from openhands.storage.conversation.conversation_store import ConversationStore
@@ -356,7 +356,7 @@ class StandaloneConversationManager(ConversationManager):
         if session:
             await self._close_session(sid)
 
-    def get_agent_session(self, sid: str):
+    def get_agent_session(self, sid: str) -> AgentSession | None:
         """Get the agent session for a given session ID.
 
         Args:

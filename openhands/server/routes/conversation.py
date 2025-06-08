@@ -192,6 +192,11 @@ async def get_microagents(
 
         # Access the memory to get the microagents
         memory = agent_session.memory
+        if memory is None:
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content={'error': 'Memory is not yet initialized for this conversation'},
+            )
 
         # Prepare the response
         microagents = []

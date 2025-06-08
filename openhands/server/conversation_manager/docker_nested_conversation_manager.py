@@ -32,6 +32,7 @@ from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.conversation import ServerConversation
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.session.session import ROOM_KEY, Session
+from openhands.server.session.agent_session import AgentSession
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_status import ConversationStatus
@@ -308,7 +309,7 @@ class DockerNestedConversationManager(ConversationManager):
         if sid in self._sessions:
             del self._sessions[sid]
 
-    def get_agent_session(self, sid: str):
+    def get_agent_session(self, sid: str) -> AgentSession | None:
         """Get the agent session for a given session ID.
 
         Args:

@@ -9,6 +9,7 @@ from openhands.events.action import MessageAction
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.monitoring import MonitoringListener
+from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation import ServerConversation
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.settings import Settings
@@ -115,7 +116,7 @@ class ConversationManager(ABC):
         """Close a session."""
 
     @abstractmethod
-    def get_agent_session(self, sid: str):
+    def get_agent_session(self, sid: str) -> AgentSession | None:
         """Get the agent session for a given session ID.
 
         Args:
