@@ -251,10 +251,7 @@ async def test_both_stdio_and_sse_mcp(
         assert obs_cat.exit_code == 0
 
         mcp_action_fetch = MCPAction(
-            # NOTE: the tool name is `fetch_fetch` because the tool name is `fetch`
-            # And FastMCP Proxy will pre-pend the server name (in this case, `fetch`)
-            # to the tool name, so the full tool name becomes `fetch_fetch`
-            name='fetch_fetch',
+            name='fetch',
             arguments={'url': 'http://localhost:8000'},
         )
         obs_fetch = await runtime.call_tool_mcp(mcp_action_fetch)
