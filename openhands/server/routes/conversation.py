@@ -167,6 +167,8 @@ class MicroagentResponse(BaseModel):
     type: str
     content: str
     triggers: list[str] = []
+    inputs: list[str] = []
+    tools: list[str] = []
 
 
 @app.get('/microagents')
@@ -205,7 +207,12 @@ async def get_microagents(
         for name, agent in memory.repo_microagents.items():
             microagents.append(
                 MicroagentResponse(
-                    name=name, type='repo', content=agent.content, triggers=[]
+                    name=name, 
+                    type='repo', 
+                    content=agent.content, 
+                    triggers=[],
+                    inputs=getattr(agent, 'inputs', []),
+                    tools=getattr(agent, 'tools', [])
                 )
             )
 
@@ -217,6 +224,8 @@ async def get_microagents(
                     type='knowledge',
                     content=agent.content,
                     triggers=agent.triggers,
+                    inputs=getattr(agent, 'inputs', []),
+                    tools=getattr(agent, 'tools', [])
                 )
             )
 

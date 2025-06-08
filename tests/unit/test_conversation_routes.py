@@ -18,7 +18,10 @@ async def test_get_microagents():
         name='test_repo',
         content='This is a test repo microagent',
         metadata=MicroagentMetadata(
-            name='test_repo', type=MicroagentType.REPO_KNOWLEDGE
+            name='test_repo', 
+            type=MicroagentType.REPO_KNOWLEDGE,
+            inputs=['repository_path'],
+            tools=['git', 'file_editor'],
         ),
         source='test_source',
         type=MicroagentType.REPO_KNOWLEDGE,
@@ -31,6 +34,8 @@ async def test_get_microagents():
             name='test_knowledge',
             type=MicroagentType.KNOWLEDGE,
             triggers=['test', 'knowledge'],
+            inputs=['user_input', 'context'],
+            tools=['search', 'fetch'],
         ),
         source='test_source',
         type=MicroagentType.KNOWLEDGE,
@@ -72,6 +77,8 @@ async def test_get_microagents():
         assert repo_agent['type'] == 'repo'
         assert repo_agent['content'] == 'This is a test repo microagent'
         assert repo_agent['triggers'] == []
+        assert repo_agent['inputs'] == ['repository_path']
+        assert repo_agent['tools'] == ['git', 'file_editor']
 
         # Check knowledge microagent
         knowledge_agent = next(
@@ -80,6 +87,8 @@ async def test_get_microagents():
         assert knowledge_agent['type'] == 'knowledge'
         assert knowledge_agent['content'] == 'This is a test knowledge microagent'
         assert knowledge_agent['triggers'] == ['test', 'knowledge']
+        assert knowledge_agent['inputs'] == ['user_input', 'context']
+        assert knowledge_agent['tools'] == ['search', 'fetch']
 
 
 @pytest.mark.asyncio

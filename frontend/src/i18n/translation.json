@@ -8767,6 +8767,38 @@
         "tr": "Tetikleyiciler",
         "uk": "Тригери"
     },
+    "MICROAGENTS_MODAL$INPUTS": {
+        "en": "Inputs",
+        "ja": "入力",
+        "zh-CN": "输入",
+        "zh-TW": "輸入",
+        "ko-KR": "입력",
+        "no": "Inndata",
+        "ar": "المدخلات",
+        "de": "Eingaben",
+        "fr": "Entrées",
+        "it": "Input",
+        "pt": "Entradas",
+        "es": "Entradas",
+        "tr": "Girdiler",
+        "uk": "Вхідні дані"
+    },
+    "MICROAGENTS_MODAL$TOOLS": {
+        "en": "Tools",
+        "ja": "ツール",
+        "zh-CN": "工具",
+        "zh-TW": "工具",
+        "ko-KR": "도구",
+        "no": "Verktøy",
+        "ar": "الأدوات",
+        "de": "Werkzeuge",
+        "fr": "Outils",
+        "it": "Strumenti",
+        "pt": "Ferramentas",
+        "es": "Herramientas",
+        "tr": "Araçlar",
+        "uk": "Інструменти"
+    },
     "MICROAGENTS_MODAL$CONTENT": {
         "en": "Content",
         "ja": "コンテンツ",
