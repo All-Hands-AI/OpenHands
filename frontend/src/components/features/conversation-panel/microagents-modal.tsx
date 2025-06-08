@@ -42,7 +42,7 @@ export function MicroagentsModal({
         >
           <div className="flex flex-col gap-6 w-full">
             <BaseModalTitle
-              title={t("MICROAGENTS_MODAL$TITLE", "Microagents")}
+              title={t(I18nKey.MICROAGENTS_MODAL$TITLE)}
             />
           </div>
 
@@ -100,7 +100,7 @@ export function MicroagentsModal({
                           {agent.triggers && agent.triggers.length > 0 && (
                             <div className="mt-2 mb-3">
                               <h4 className="text-sm font-semibold text-gray-300 mb-2">
-                                {t("MICROAGENTS_MODAL$TRIGGERS", "Triggers")}
+                                {t(I18nKey.MICROAGENTS_MODAL$TRIGGERS)}
                               </h4>
                               <div className="flex flex-wrap gap-1">
                                 {agent.triggers.map((trigger) => (
@@ -117,7 +117,7 @@ export function MicroagentsModal({
 
                           <div className="mt-2">
                             <h4 className="text-sm font-semibold text-gray-300 mb-2">
-                              {t("MICROAGENTS_MODAL$CONTENT", "Content")}
+                              {t(I18nKey.MICROAGENTS_MODAL$CONTENT)}
                             </h4>
                             <div className="text-sm mt-2 p-3 bg-gray-900 rounded-md overflow-auto text-gray-300 max-h-[400px] shadow-inner">
                               <pre className="whitespace-pre-wrap font-mono text-sm leading-relaxed">

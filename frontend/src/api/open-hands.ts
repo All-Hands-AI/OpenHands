@@ -396,9 +396,9 @@ class OpenHands {
   }
 
   /**
-   * Get the microagents associated with a conversation
+   * Get the available microagents associated with a conversation
    * @param conversationId The ID of the conversation
-   * @returns The microagents associated with the conversation
+   * @returns The available microagents associated with the conversation
    */
   static async getMicroagents(
     conversationId: string,
