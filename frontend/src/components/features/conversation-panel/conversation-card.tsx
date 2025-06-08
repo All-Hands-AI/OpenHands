@@ -61,8 +61,11 @@ export function ConversationCard({
   const [titleMode, setTitleMode] = React.useState<"view" | "edit">("view");
   const [metricsModalVisible, setMetricsModalVisible] = React.useState(false);
   const [systemModalVisible, setSystemModalVisible] = React.useState(false);
-  const [microagentsModalVisible, setMicroagentsModalVisible] = React.useState(false);
-  const [microagents, setMicroagents] = React.useState<Microagent[] | null>(null);
+  const [microagentsModalVisible, setMicroagentsModalVisible] =
+    React.useState(false);
+  const [microagents, setMicroagents] = React.useState<Microagent[] | null>(
+    null,
+  );
   const [loadingMicroagents, setLoadingMicroagents] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
@@ -147,7 +150,9 @@ export function ConversationCard({
     setSystemModalVisible(true);
   };
 
-  const handleShowMicroagents = async (event: React.MouseEvent<HTMLButtonElement>) => {
+  const handleShowMicroagents = async (
+    event: React.MouseEvent<HTMLButtonElement>,
+  ) => {
     event.stopPropagation();
     if (conversationId) {
       setLoadingMicroagents(true);
@@ -156,7 +161,10 @@ export function ConversationCard({
         const data = await OpenHands.getMicroagents(conversationId);
         setMicroagents(data.microagents);
       } catch (error) {
-        console.error("Failed to fetch microagents:", error);
+        console.error(
+          `${t(I18nKey.CONVERSATION$FAILED_TO_FETCH_MICROAGENTS)}:`,
+          error,
+        );
         setMicroagents(null);
       } finally {
         setLoadingMicroagents(false);
