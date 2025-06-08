@@ -400,7 +400,9 @@ class OpenHands {
    * @param conversationId The ID of the conversation
    * @returns The microagents associated with the conversation
    */
-  static async getMicroagents(conversationId: string): Promise<GetMicroagentsResponse> {
+  static async getMicroagents(
+    conversationId: string,
+  ): Promise<GetMicroagentsResponse> {
     const url = `${this.getConversationUrl(conversationId)}/microagents`;
     const { data } = await openHands.get<GetMicroagentsResponse>(url, {
       headers: this.getConversationHeaders(),

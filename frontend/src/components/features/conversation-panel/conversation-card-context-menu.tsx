@@ -1,8 +1,8 @@
+import { useTranslation } from "react-i18next";
 import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 import { cn } from "#/utils/utils";
 import { ContextMenu } from "../context-menu/context-menu";
 import { ContextMenuListItem } from "../context-menu/context-menu-list-item";
-import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 
 interface ConversationCardContextMenuProps {
