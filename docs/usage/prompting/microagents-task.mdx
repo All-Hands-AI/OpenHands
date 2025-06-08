@@ -1,0 +1,98 @@
+---
+title: Task Microagents
+description: Task microagents are specialized workflows triggered by command-style inputs that prompt users for required information. They streamline common development tasks by providing structured templates for specific operations.
+---
+
+## Overview
+
+Task microagents are a special type of microagent designed to handle specific workflows that require user input. They are triggered using a command-style format (e.g., `/fix_test`) and will prompt the user for any required inputs before proceeding with the task.
+
+When typing `/` in the chat input, a dropdown of available task microagents appears, making it easier to discover and use these specialized workflows.
+
+## Usage
+
+To use a task microagent:
+
+1. Type `/` in the chat input to see available task microagents
+2. Select a microagent from the dropdown or type its name (e.g., `/fix_test`)
+3. The agent will prompt you for any required inputs
+4. Provide the requested information
+5. The agent will execute the task with your inputs
+
+## Frontmatter Syntax
+
+Frontmatter is required for task microagents. It must be placed at the top of the file, enclosed in triple dashes (---).
+
+| Field      | Description                                                | Required | Default          |
+|------------|------------------------------------------------------------|----------|------------------|
+| `name`     | The name of the microagent                                 | Yes      | None             |
+| `triggers` | A list of command triggers (e.g., `/fix_test`)             | No       | `/[name]`        |
+| `inputs`   | A list of input variables the microagent requires          | Yes      | None             |
+| `agent`    | The agent this microagent applies to                       | No       | 'CodeActAgent'   |
+| `version`  | The version of the microagent                              | No       | '1.0.0'          |
+| `author`   | The author of the microagent                               | No       | None             |
+
+### Input Definition
+
+Each input in the `inputs` list requires:
+
+| Field         | Description                                      | Required |
+|---------------|--------------------------------------------------|----------|
+| `name`        | The name of the input variable                   | Yes      |
+| `description` | A description of what the input should contain   | Yes      |
+
+## Template Variables
+
+In the body of the microagent, you can reference input variables using the `{{ VARIABLE_NAME }}` syntax. These will be replaced with the user-provided values when the microagent is triggered.
+
+## Example
+
+Here's an example of a task microagent that helps fix failing tests:
+
+```markdown
+---
+name: fix_test
+version: 1.0.0
+author: openhands
+agent: CodeActAgent
+triggers:
+- /fix_test
+inputs:
+  - name: BRANCH_NAME
+    description: "Branch for the agent to work on"
+  - name: TEST_COMMAND_TO_RUN
+    description: "The test command you want the agent to work on. For example, `pytest tests/unit/test_bash_parsing.py`"
+  - name: FUNCTION_TO_FIX
+    description: "The name of function to fix"
+  - name: FILE_FOR_FUNCTION
+    description: "The path of the file that contains the function"
+---
+
+Can you check out branch "{{ BRANCH_NAME }}", and run {{ TEST_COMMAND_TO_RUN }}.
+
+Help me fix these tests to pass by fixing the {{ FUNCTION_TO_FIX }} function in file {{ FILE_FOR_FUNCTION }}.
+
+PLEASE DO NOT modify the tests by yourself -- Let me know if you think some of the tests are incorrect.
+```
+
+When a user types `/fix_test`, OpenHands will prompt them to provide values for:
+- The branch name
+- The test command to run
+- The function name to fix
+- The file path containing the function
+
+After receiving these inputs, OpenHands will execute the task with the provided information.
+
+## Available Task Microagents
+
+OpenHands includes several built-in task microagents:
+
+| Command              | Description                                           |
+|----------------------|-------------------------------------------------------|
+| `/fix_test`          | Fix failing tests by modifying a specific function    |
+| `/update_test`       | Update tests for a new implementation                 |
+| `/update_pr`         | Update a pull request description                     |
+| `/address_pr_comments` | Address comments on a pull request                  |
+| `/add_repo_instruction` | Add instructions to the repository microagent      |
+
+[See examples of task microagents in the official OpenHands repository](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents)
