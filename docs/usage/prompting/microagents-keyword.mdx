@@ -26,6 +26,7 @@ For standard keyword microagents, include the following fields:
 | Field      | Description                                      | Required | Default          |
 |------------|--------------------------------------------------|----------|------------------|
 | `name`     | The name of the microagent                       | No       | Filename         |
+| `type`     | The type of microagent (`knowledge`)             | No       | Inferred         |
 | `triggers` | A list of keywords that activate the microagent. | Yes      | None             |
 
 ### Command-Style Microagents
@@ -35,6 +36,7 @@ For command-style microagents that require user input, include the following fie
 | Field      | Description                                                | Required | Default          |
 |------------|------------------------------------------------------------|----------|------------------|
 | `name`     | The name of the microagent                                 | No       | Filename         |
+| `type`     | The type of microagent (`task`)                            | No       | Inferred         |
 | `triggers` | A list of command triggers (e.g., `/fix_test`)             | No       | `/[name]`        |
 | `inputs`   | A list of input variables the microagent requires          | Yes      | None             |
 
@@ -45,7 +47,7 @@ Repository microagents are always active for a specific repository. They provide
 | Field      | Description                                                | Required | Default          |
 |------------|------------------------------------------------------------|----------|------------------|
 | `name`     | The name of the microagent                                 | No       | Filename         |
-| `type`     | The type of microagent (must be `repo`)                    | Yes      | None             |
+| `type`     | The type of microagent (`repo`)                            | No       | Inferred         |
 
 #### Repository Microagent Example
 
@@ -53,7 +55,7 @@ Here's an example of a repository microagent:
 
 ```yaml
 ---
-type: repo
+# The type field is optional and will be inferred as 'repo' when no triggers are present
 ---
 
 # Repository Guidelines
@@ -80,7 +82,7 @@ Here's an example of a microagent that provides an additional MCP tool (the `fet
 
 ```yaml
 ---
-type: repo
+# The type field is optional and will be inferred as 'repo' when no triggers are present
 mcp_tools:
   stdio_servers:
     - name: "fetch"
@@ -105,8 +107,9 @@ Each input in the `inputs` list requires:
 ### Standard Keyword Microagent Example
 
 Standard keyword microagent file example located at `.openhands/microagents/yummy.md`:
-```
+```yaml
 ---
+# The type field is optional and will be inferred as 'knowledge' when triggers are present
 triggers:
 - yummyhappy
 - happyyummy
@@ -118,8 +121,9 @@ The user has said the magic word. Respond with "That was delicious!"
 ### Command-Style Microagent Example
 
 Command-style microagent file example located at `.openhands/microagents/fix_test.md`:
-```
+```yaml
 ---
+# The type field is optional and will be inferred as 'task' when inputs are present
 triggers:
 - /fix_test
 inputs:
