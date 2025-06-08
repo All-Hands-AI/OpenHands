@@ -22,9 +22,6 @@ For standard keyword microagents, include the following fields:
 | Field      | Description                                      | Required | Default          |
 |------------|--------------------------------------------------|----------|------------------|
 | `triggers` | A list of keywords that activate the microagent. | Yes      | None             |
-| `agent`    | The agent this microagent applies to.            | No       | 'CodeActAgent'   |
-| `version`  | The version of the microagent.                   | No       | '1.0.0'          |
-| `author`   | The author of the microagent.                    | No       | None             |
 
 ### Command-Style Microagents
 
@@ -35,9 +32,6 @@ For command-style microagents that require user input, include the following fie
 | `name`     | The name of the microagent                                 | Yes      | None             |
 | `triggers` | A list of command triggers (e.g., `/fix_test`)             | No       | `/[name]`        |
 | `inputs`   | A list of input variables the microagent requires          | Yes      | None             |
-| `agent`    | The agent this microagent applies to                       | No       | 'CodeActAgent'   |
-| `version`  | The version of the microagent                              | No       | '1.0.0'          |
-| `author`   | The author of the microagent                               | No       | None             |
 
 Each input in the `inputs` list requires:
 
@@ -68,9 +62,6 @@ Command-style microagent file example located at `.openhands/microagents/fix_tes
 ```
 ---
 name: fix_test
-version: 1.0.0
-author: openhands
-agent: CodeActAgent
 triggers:
 - /fix_test
 inputs:
