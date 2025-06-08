@@ -1,6 +1,7 @@
 import os
 from functools import lru_cache
 from typing import Callable
+import typing
 from uuid import UUID
 
 import docker
@@ -164,7 +165,7 @@ class DockerRuntime(ActionExecutionClient):
                 f'Container started: {self.container_name}. VSCode URL: {self.vscode_url}',
             )
 
-        if DEBUG_RUNTIME:
+        if DEBUG_RUNTIME and self.container:
             self.log_streamer = LogStreamer(self.container, self.log)
         else:
             self.log_streamer = None
@@ -281,7 +282,7 @@ class DockerRuntime(ActionExecutionClient):
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
 
         use_host_network = self.config.sandbox.use_host_network
-        network_mode: str | None = 'host' if use_host_network else None
+        network_mode: typing.Literal['host'] | None = 'host' if use_host_network else None
 
         # Initialize port mappings
         port_mapping: dict[str, list[dict[str, str]]] | None = None
@@ -353,6 +354,8 @@ class DockerRuntime(ActionExecutionClient):
         command = self.get_action_execution_server_startup_command()
 
         try:
+            if self.runtime_container_image is None:
+                raise ValueError("Runtime container image is not set")
             self.container = self.docker_client.containers.run(
                 self.runtime_container_image,
                 command=command,
@@ -364,7 +367,7 @@ class DockerRuntime(ActionExecutionClient):
                 name=self.container_name,
                 detach=True,
                 environment=environment,
-                volumes=volumes,
+                volumes=volumes,  # type: ignore
                 device_requests=(
                     [docker.types.DeviceRequest(capabilities=[['gpu']], count=-1)]
                     if self.config.sandbox.enable_gpu
@@ -374,28 +377,11 @@ class DockerRuntime(ActionExecutionClient):
             )
             self.log('debug', f'Container started. Server url: {self.api_url}')
             self.send_status_message('STATUS$CONTAINER_STARTED')
-        except docker.errors.APIError as e:
-            if '409' in str(e):
-                self.log(
-                    'warning',
-                    f'Container {self.container_name} already exists. Removing...',
-                )
-                stop_all_containers(self.container_name)
-                return self.init_container()
-
-            else:
-                self.log(
-                    'error',
-                    f'Error: Instance {self.container_name} FAILED to start container!\n',
-                )
-                self.log('error', str(e))
-                raise e
         except Exception as e:
             self.log(
                 'error',
                 f'Error: Instance {self.container_name} FAILED to start container!\n',
             )
-            self.log('error', str(e))
             self.close()
             raise e
 

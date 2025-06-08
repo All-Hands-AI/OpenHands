@@ -12,6 +12,7 @@ export default [
     route("settings", "routes/settings.tsx", [
       index("routes/llm-settings.tsx"),
       route("mcp", "routes/mcp-settings.tsx"),
+      route("user", "routes/user-settings.tsx"),
       route("git", "routes/git-settings.tsx"),
       route("app", "routes/app-settings.tsx"),
       route("billing", "routes/billing.tsx"),
