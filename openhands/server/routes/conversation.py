@@ -197,7 +197,9 @@ async def get_microagents(
         if memory is None:
             return JSONResponse(
                 status_code=status.HTTP_404_NOT_FOUND,
-                content={'error': 'Memory is not yet initialized for this conversation'},
+                content={
+                    'error': 'Memory is not yet initialized for this conversation'
+                },
             )
 
         # Prepare the response
@@ -207,12 +209,16 @@ async def get_microagents(
         for name, agent in memory.repo_microagents.items():
             microagents.append(
                 MicroagentResponse(
-                    name=name, 
-                    type='repo', 
-                    content=agent.content, 
+                    name=name,
+                    type='repo',
+                    content=agent.content,
                     triggers=[],
                     inputs=getattr(agent, 'inputs', []),
-                    tools=getattr(agent, 'tools', [])
+                    tools=getattr(agent.metadata, 'mcp_tools', None)
+                    and [
+                        server.name for server in agent.metadata.mcp_tools.stdio_servers
+                    ]
+                    or [],
                 )
             )
 
@@ -225,7 +231,11 @@ async def get_microagents(
                     content=agent.content,
                     triggers=agent.triggers,
                     inputs=getattr(agent, 'inputs', []),
-                    tools=getattr(agent, 'tools', [])
+                    tools=getattr(agent.metadata, 'mcp_tools', None)
+                    and [
+                        server.name for server in agent.metadata.mcp_tools.stdio_servers
+                    ]
+                    or [],
                 )
             )
 

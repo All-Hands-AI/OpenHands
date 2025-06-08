@@ -14,14 +14,21 @@ from openhands.server.session.conversation import ServerConversation
 async def test_get_microagents():
     """Test the get_microagents function directly."""
     # Create mock microagents
+    from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig
+
     repo_microagent = RepoMicroagent(
         name='test_repo',
         content='This is a test repo microagent',
         metadata=MicroagentMetadata(
-            name='test_repo', 
+            name='test_repo',
             type=MicroagentType.REPO_KNOWLEDGE,
             inputs=['repository_path'],
-            tools=['git', 'file_editor'],
+            mcp_tools=MCPConfig(
+                stdio_servers=[
+                    MCPStdioServerConfig(name='git', command='git'),
+                    MCPStdioServerConfig(name='file_editor', command='editor'),
+                ]
+            ),
         ),
         source='test_source',
         type=MicroagentType.REPO_KNOWLEDGE,
@@ -35,7 +42,12 @@ async def test_get_microagents():
             type=MicroagentType.KNOWLEDGE,
             triggers=['test', 'knowledge'],
             inputs=['user_input', 'context'],
-            tools=['search', 'fetch'],
+            mcp_tools=MCPConfig(
+                stdio_servers=[
+                    MCPStdioServerConfig(name='search', command='search'),
+                    MCPStdioServerConfig(name='fetch', command='fetch'),
+                ]
+            ),
         ),
         source='test_source',
         type=MicroagentType.KNOWLEDGE,
