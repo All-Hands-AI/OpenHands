@@ -10,6 +10,10 @@ Keyword-triggered microagents are only loaded when a prompt includes one of the 
 1. **Standard Keyword Microagents**: Triggered by keywords embedded in text
 2. **Command-Style Microagents**: Triggered by command-style inputs (e.g., `/fix_test`) that can prompt for user input
 
+Additionally, there's a special type of microagent that's always active:
+
+3. **Repository Microagents**: Always active for a specific repository, providing repository-specific context and tools
+
 ## Frontmatter Syntax
 
 Frontmatter is required for keyword-triggered microagents. It must be placed at the top of the file,
@@ -21,6 +25,7 @@ For standard keyword microagents, include the following fields:
 
 | Field      | Description                                      | Required | Default          |
 |------------|--------------------------------------------------|----------|------------------|
+| `name`     | The name of the microagent                       | No       | Filename         |
 | `triggers` | A list of keywords that activate the microagent. | Yes      | None             |
 
 ### Command-Style Microagents
@@ -29,9 +34,63 @@ For command-style microagents that require user input, include the following fie
 
 | Field      | Description                                                | Required | Default          |
 |------------|------------------------------------------------------------|----------|------------------|
-| `name`     | The name of the microagent                                 | Yes      | None             |
+| `name`     | The name of the microagent                                 | No       | Filename         |
 | `triggers` | A list of command triggers (e.g., `/fix_test`)             | No       | `/[name]`        |
 | `inputs`   | A list of input variables the microagent requires          | Yes      | None             |
+
+### Repository Microagents
+
+Repository microagents are always active for a specific repository. They provide repository-specific context and tools.
+
+| Field      | Description                                                | Required | Default          |
+|------------|------------------------------------------------------------|----------|------------------|
+| `name`     | The name of the microagent                                 | No       | Filename         |
+| `type`     | The type of microagent (must be `repo`)                    | Yes      | None             |
+
+#### Repository Microagent Example
+
+Here's an example of a repository microagent:
+
+```yaml
+---
+type: repo
+---
+
+# Repository Guidelines
+
+This repository follows these coding standards:
+1. Use PEP 8 for Python code
+2. Use ESLint for JavaScript code
+3. Write unit tests for all new features
+```
+
+This microagent is always active when working with the repository and provides repository-specific guidelines.
+
+### MCP Tools Support
+
+Microagents can also provide additional MCP (Model-Code-Prompt) tools to the agent. This is useful for extending the agent's capabilities with custom tools.
+
+| Field        | Description                                                | Required | Default          |
+|--------------|-----------------------------------------------------------|----------|------------------|
+| `mcp_tools`  | Configuration for additional MCP tools                     | No       | None             |
+
+#### MCP Tools Example
+
+Here's an example of a microagent that provides an additional MCP tool (the `fetch` tool for accessing web content):
+
+```yaml
+---
+type: repo
+mcp_tools:
+  stdio_servers:
+    - name: "fetch"
+      command: uvx
+      args:
+        - mcp-server-fetch
+---
+```
+
+This microagent is a repository microagent (always active) that adds the `fetch` tool to the agent's capabilities.
 
 Each input in the `inputs` list requires:
 
@@ -61,7 +120,6 @@ The user has said the magic word. Respond with "That was delicious!"
 Command-style microagent file example located at `.openhands/microagents/fix_test.md`:
 ```
 ---
-name: fix_test
 triggers:
 - /fix_test
 inputs:
