@@ -150,6 +150,8 @@ export interface UserFeedbackAction
     feedback_type: "positive" | "negative";
     target_type: "message" | "trajectory";
     target_id?: number; // Event ID for message feedback, null for trajectory feedback
+    rating?: number; // 1-5 rating for SAAS mode
+    reason?: string | null; // Reason for the rating in SAAS mode
   };
 }
 

@@ -5,7 +5,7 @@ import { ConfirmationButtons } from "#/components/shared/buttons/confirmation-bu
 import { ImageCarousel } from "../images/image-carousel";
 import { ExpandableMessage } from "./expandable-message";
 import { useUserConversation } from "#/hooks/query/use-user-conversation";
-import { useConversation } from "#/context/conversation-context";
+import { useConversationId } from "#/hooks/use-conversation-id";
 import { I18nKey } from "#/i18n/declaration";
 
 interface MessagesProps {
@@ -15,7 +15,7 @@ interface MessagesProps {
 
 export const Messages: React.FC<MessagesProps> = React.memo(
   ({ messages, isAwaitingUserConfirmation }) => {
-    const { conversationId } = useConversation();
+    const { conversationId } = useConversationId();
     const { data: conversation } = useUserConversation(conversationId || null);
 
     // Check if conversation metadata has trigger=resolver

@@ -16,6 +16,8 @@ export function createUserFeedback(
   feedbackType: "positive" | "negative",
   targetType: "message" | "trajectory",
   targetId?: number,
+  rating?: number,
+  reason?: string | null,
 ) {
   const event = {
     action: ActionType.USER_FEEDBACK,
@@ -23,6 +25,8 @@ export function createUserFeedback(
       feedback_type: feedbackType,
       target_type: targetType,
       target_id: targetId,
+      rating,
+      reason,
     },
   };
   return event;

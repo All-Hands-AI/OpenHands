@@ -10,6 +10,7 @@ from openhands.events.action.agent import (
 from openhands.events.action.browse import BrowseInteractiveAction, BrowseURLAction
 from openhands.events.action.commands import CmdRunAction, IPythonRunCellAction
 from openhands.events.action.empty import NullAction
+from openhands.events.action.feedback import UserFeedbackAction
 from openhands.events.action.files import (
     FileEditAction,
     FileReadAction,
@@ -38,4 +39,5 @@ __all__ = [
     'AgentThinkAction',
     'RecallAction',
     'MCPAction',
+    'UserFeedbackAction',
 ]
