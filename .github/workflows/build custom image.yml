@@ -35,18 +35,18 @@ env:
   YQ_VERSION: v4.2.1
   YQ_BINARY: yq_linux_amd64
   RISKTHINKING_GITLAB_TOKEN: ${{ secrets.RISKTHINKING_GITLAB_TOKEN }}
-  
+
 
 jobs:
   build-custom-image:
     name: Build a custom image
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
 
     steps:
     - name: Echo parameters
       shell: bash
       run: echo "Build with \n Context ${{ github.event.inputs.context }} \n Dockerfile ${{ github.event.inputs.dockerfilepath }} \n Additional Build Args ${{ github.event.inputs.additional_build_args }} \n Push to gcr.io/${{ env.PROJECT_ID }}/${{ github.event.inputs.ref }}/${{ github.event.inputs.fullimagename }}:${{ github.sha }} and gcr.io/${{ env.PROJECT_ID }}/${{ github.event.inputs.fullimagename }}:${{ github.event.inputs.imagetag }}"
-      
+
     - name: Checkout
       uses: actions/checkout@v2
       with:
@@ -71,7 +71,7 @@ jobs:
     # helper for authentication
     - run: |-
         gcloud --quiet auth configure-docker
-    
+
     - name: Extract branch name
       shell: bash
       run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
@@ -79,9 +79,9 @@ jobs:
 
     - name: Download yq
       shell: bash
-      run: |- 
+      run: |-
         wget https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/${YQ_BINARY}.tar.gz -O - | tar xz && mv ${YQ_BINARY} ./yq
-    
+
     - uses: docker/setup-buildx-action@v3
       id: buildx
       with:
@@ -93,15 +93,15 @@ jobs:
     #   with:
     #     registry: rgst.ds.hyperplane.dev
     #     username: ${{ secrets.DOCKER_USERNAME }}
-    #     password: ${{ secrets.DOCKER_PASSWORD }}    
-    
+    #     password: ${{ secrets.DOCKER_PASSWORD }}
+
     - name: Free Disk Space (Ubuntu)
       uses: jlumbroso/free-disk-space@main
       with:
         # this might remove tools that are actually needed,
         # when set to "true" but frees about 6 GB
         tool-cache: false
-        
+
         # all of these default to true, but feel free to set to
         # "false" if necessary for your workflow
         android: true
@@ -131,7 +131,7 @@ jobs:
         GITHUB_SHA: ${{ github.sha }}
         GITHUB_REF: ${{ github.ref }}
         RISKTHINKING_GITLAB_TOKEN: ${{ env.RISKTHINKING_GITLAB_TOKEN }}
-    
+
     - name: Save image to local tarball
       run: |
         docker save gcr.io/${{ env.PROJECT_ID }}/${{ github.event.inputs.ref }}/${{ github.event.inputs.fullimagename }}:${{ github.sha }} -o ./custom_image_${{ github.event.inputs.fullimagename }}_${{ github.sha }}.tar
