@@ -292,6 +292,7 @@ class DockerNestedConversationManager(ConversationManager):
                     'X-Session-API-Key': self._get_session_api_key_for_conversation(sid)
                 }
             ) as client:
+                # Stop conversation
                 response = await client.post(
                     f'{nested_url}/api/conversations/{sid}/stop'
                 )
@@ -307,8 +308,8 @@ class DockerNestedConversationManager(ConversationManager):
                         break
                     await asyncio.sleep(1)
 
-        except Exception:
-            logger.exception('error_stopping_container')
+        except Exception as e:
+            logger.warning('error_stopping_container', extra={"sid": sid, "error": str(e)})
         container.stop()
 
     async def get_agent_loop_info(
