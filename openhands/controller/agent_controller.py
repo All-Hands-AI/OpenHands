@@ -588,21 +588,9 @@ class AgentController:
         # reset the pending action, this will be called when the agent is STOPPED or ERROR
         self._pending_action = None
 
-        # We don't want to reset the agent's LLM metrics, so we need to save them first
-        llm_metrics = None
-        if hasattr(self.agent, 'llm') and hasattr(self.agent.llm, 'metrics'):
-            llm_metrics = copy.deepcopy(self.agent.llm.metrics)
-
-        # Reset the agent (this will reset the LLM metrics)
+        # We still call reset on the agent, but the reset methods have been modified
+        # to be no-ops for metrics, preserving the accumulated cost across resets
         self.agent.reset()
-
-        # Restore the LLM metrics if we saved them
-        if (
-            llm_metrics is not None
-            and hasattr(self.agent, 'llm')
-            and hasattr(self.agent.llm, 'metrics')
-        ):
-            self.agent.llm.metrics = llm_metrics
 
     async def set_agent_state_to(self, new_state: AgentState) -> None:
         """Updates the agent's state and handles side effects. Can emit events to the event stream.

@@ -194,20 +194,13 @@ class Metrics:
         }
 
     def reset(self) -> None:
-        self._accumulated_cost = 0.0
-        self._costs = []
-        self._response_latencies = []
-        self._token_usages = []
-        # Reset accumulated token usage with a new instance
-        self._accumulated_token_usage = TokenUsage(
-            model=self.model_name,
-            prompt_tokens=0,
-            completion_tokens=0,
-            cache_read_tokens=0,
-            cache_write_tokens=0,
-            context_window=0,
-            response_id='',
-        )
+        """Reset method is now a no-op to ensure accurate cost tracking.
+
+        This method used to reset all metrics, but now it does nothing to ensure
+        that accumulated costs are preserved throughout the agent's lifecycle.
+        """
+        # Do not reset metrics to ensure accurate cost tracking
+        pass
 
     def log(self) -> str:
         """Log the metrics."""

@@ -774,7 +774,13 @@ class LLM(RetryMixin, DebugMixin):
         return str(self)
 
     def reset(self) -> None:
-        self.metrics.reset()
+        """Reset method is now a no-op to ensure accurate cost tracking.
+
+        This method used to reset metrics, but now it does nothing to ensure
+        that accumulated costs are preserved throughout the agent's lifecycle.
+        """
+        # Do not reset metrics to ensure accurate cost tracking
+        pass
 
     def format_messages_for_llm(self, messages: Message | list[Message]) -> list[dict]:
         if isinstance(messages, Message):
