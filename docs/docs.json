@@ -54,7 +54,6 @@
           {
             "group": "Customization",
             "pages": [
-              "usage/prompting/prompting-best-practices",
               "usage/prompting/repository",
               {
                 "group": "Microagents",
@@ -116,6 +115,12 @@
             "usage/how-to/custom-sandbox-guide",
             "usage/search-engine-setup",
             "usage/mcp"
+            ]
+          },
+          {
+            "group": "Tips and Tricks",
+            "pages": [
+              "usage/prompting/prompting-best-practices"
             ]
           },
           {

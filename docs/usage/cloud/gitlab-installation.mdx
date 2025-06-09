@@ -1,7 +1,7 @@
 ---
 title: GitLab Integration
 description: This guide walks you through the process of installing OpenHands Cloud for your GitLab repositories. Once
-  set up, it will allow OpenHands to work with your GitLab repository.
+  set up, it will allow OpenHands to work with your GitLab repository through the Cloud UI or straight from GitLab!.
 ---
 
 ## Prerequisites
@@ -18,6 +18,30 @@ After signing in with a Gitlab account, use the `select a repo` and `select a br
 appropriate repository and branch you'd like OpenHands to work on. Then click on `Launch` to start the conversation!
 
 ![Connect Repo](/static/img/connect-repo.png)
+
+## Working on GitLab Issues and Merge Requests Using Openhands
+
+<Note>
+This feature works for personal projects and is available for group projects with a
+[Premium or Ultimate tier subscription](https://docs.gitlab.com/user/project/integrations/webhooks/#group-webhooks).
+</Note>
+
+Giving GitLab repository access to OpenHands also allows you to work on GitLab issues and merge requests directly.
+
+### Working with Issues
+
+On your repository, label an issue with `openhands` or add a message starting with `@openhands`. OpenHands will:
+1. Comment on the issue to let you know it is working on it.
+   - You can click on the link to track the progress on OpenHands Cloud.
+2. Open a pull request if it determines that the issue has been successfully resolved.
+3. Comment on the issue with a summary of the performed tasks and a link to the PR.
+
+### Working with Merge Requests
+
+To get OpenHands to work on merge requests, mention `@openhands` in the comments to:
+- Ask questions
+- Request updates
+- Get code explanations
 
 ## Next Steps
 
