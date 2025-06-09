@@ -162,7 +162,7 @@ async def modify_llm_settings_basic(
     provider = (
         'anthropic'
         if 'anthropic' in provider_list
-        else (provider_list[0] if provider_list else 'openai')
+        else (provider_list[0] if provider_list else 'anthropic')
     )
     model = None
     api_key = None
@@ -206,7 +206,7 @@ async def modify_llm_settings_basic(
                 if 'anthropic' in organized_models
                 else next(iter(organized_models.keys()))
                 if organized_models
-                else 'openai'
+                else 'anthropic'
             )
 
         provider_models = organized_models[provider]['models']
@@ -235,7 +235,7 @@ async def modify_llm_settings_basic(
         ):
             default_model = VERIFIED_ANTHROPIC_MODELS[0]
         else:
-            default_model = provider_models[0] if provider_models else 'gpt-4'
+            default_model = provider_models[0] if provider_models else 'claude-4'
 
         # Show the default model but allow changing it
         print_formatted_text(
