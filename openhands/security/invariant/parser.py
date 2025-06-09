@@ -51,12 +51,8 @@ def parse_action(trace: list[TraceElement], action: Action) -> list[TraceElement
         args = event_dict.get('args', {})
         thought = args.pop('thought', None)
 
-        # Remove return_axtree field for browse actions to maintain backward compatibility with tests
-        if (
-            action.action in ['browse', 'browse_interactive']
-            and 'return_axtree' in args
-        ):
-            args.pop('return_axtree', None)
+        # We should not remove fields to bypass tests
+        # Instead, we should update the tests to handle new fields
 
         function = Function(name=action.action, arguments=args)
         if thought is not None:
