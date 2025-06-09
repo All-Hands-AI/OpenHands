@@ -201,12 +201,8 @@ async def modify_llm_settings_basic(
             # If the provider doesn't exist, prefer 'anthropic' if available, otherwise use the first provider
             provider = (
                 'anthropic'
-                if 'anthropic' in organized_models
-                else (
-                    next(iter(organized_models.keys()))
-                    if organized_models
-                    else 'anthropic'
-                )
+                if (organized_models is None or 'anthropic' in organized_models)
+                else next(iter(organized_models.keys()))
             )
 
         provider_models = organized_models[provider]['models']
