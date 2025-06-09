@@ -224,6 +224,7 @@ def display_error(error: str) -> None:
                 read_only=True,
                 style='ansired',
                 wrap_lines=True,
+                focusable=True,  # Allow focusing to enable text selection
             ),
             title='Error',
             style='ansired',
@@ -239,6 +240,7 @@ def display_command(event: CmdRunAction) -> None:
             read_only=True,
             style=COLOR_GREY,
             wrap_lines=True,
+            focusable=True,  # Allow focusing to enable text selection
         ),
         title='Command',
         style='ansiblue',
@@ -267,6 +269,7 @@ def display_command_output(output: str) -> None:
             read_only=True,
             style=COLOR_GREY,
             wrap_lines=True,
+            focusable=True,  # Allow focusing to enable text selection
         ),
         title='Command Output',
         style=f'fg:{COLOR_GREY}',
@@ -282,6 +285,7 @@ def display_file_edit(event: FileEditObservation) -> None:
             read_only=True,
             wrap_lines=True,
             lexer=CustomDiffLexer(),
+            focusable=True,  # Allow focusing to enable text selection
         ),
         title='File Edit',
         style=f'fg:{COLOR_GREY}',
@@ -298,6 +302,7 @@ def display_file_read(event: FileReadObservation) -> None:
             read_only=True,
             style=COLOR_GREY,
             wrap_lines=True,
+            focusable=True,  # Allow focusing to enable text selection
         ),
         title='File Read',
         style=f'fg:{COLOR_GREY}',
@@ -316,6 +321,7 @@ def initialize_streaming_output():
         read_only=True,
         style=COLOR_GREY,
         wrap_lines=True,
+        focusable=True,  # Allow focusing to enable text selection
     )
     container = Frame(
         streaming_output_text_area,
@@ -425,6 +431,7 @@ def display_usage_metrics(usage_metrics: UsageMetrics) -> None:
             read_only=True,
             style=COLOR_GREY,
             wrap_lines=True,
+            focusable=True,  # Allow focusing to enable text selection
         ),
         title='Usage Metrics',
         style=f'fg:{COLOR_GREY}',
