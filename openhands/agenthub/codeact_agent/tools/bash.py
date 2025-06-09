@@ -9,10 +9,10 @@ _DETAILED_BASH_DESCRIPTION = """Execute a bash command in the terminal within a 
 ### Command Execution
 * One command at a time: You can only execute one bash command at a time. If you need to run multiple commands sequentially, use `&&` or `;` to chain them together.
 * Persistent session: Commands execute in a persistent shell session where environment variables, virtual environments, and working directory persist between commands.
-* Timeout: Commands have a soft timeout of 10 seconds, once that's reached, you have the option to continue or interrupt the command (see section below for details)
+* Timeout: You must specify a timeout in seconds for the command execution. A value of 10 seconds is recommended if you cannot estimate how long the command should take.
 
 ### Running and Interacting with Processes
-* Long running commands: For commands that may run indefinitely, run them in the background and redirect output to a file, e.g. `python3 app.py > server.log 2>&1 &`. For commands that need to run for a specific duration, like "sleep", you can set the "timeout" argument to specify a hard timeout in seconds.
+* Long running commands: For commands that may run indefinitely, run them in the background and redirect output to a file, e.g. `python3 app.py > server.log 2>&1 &`.
 * Interact with running process: If a bash command returns exit code `-1`, this means the process is not yet finished. By setting `is_input` to `true`, you can:
   - Send empty `command` to retrieve additional logs
   - Send text (set `command` to the text) to STDIN of the running process
@@ -27,7 +27,7 @@ _DETAILED_BASH_DESCRIPTION = """Execute a bash command in the terminal within a 
 """
 
 _SHORT_BASH_DESCRIPTION = """Execute a bash command in the terminal.
-* Long running commands: For commands that may run indefinitely, it should be run in the background and the output should be redirected to a file, e.g. command = `python3 app.py > server.log 2>&1 &`. For commands that need to run for a specific duration, you can set the "timeout" argument to specify a hard timeout in seconds.
+* Long running commands: For commands that may run indefinitely, it should be run in the background and the output should be redirected to a file, e.g. command = `python3 app.py > server.log 2>&1 &`. You must specify a timeout in seconds for the command execution. A value of 10 seconds is recommended if you cannot estimate how long the command should take.
 * Interact with running process: If a bash command returns exit code `-1`, this means the process is not yet finished. By setting `is_input` to `true`, the assistant can interact with the running process and send empty `command` to retrieve any additional logs, or send additional text (set `command` to the text) to STDIN of the running process, or send command like `C-c` (Ctrl+C), `C-d` (Ctrl+D), `C-z` (Ctrl+Z) to interrupt the process.
 * One command at a time: You can only execute one bash command at a time. If you need to run multiple commands sequentially, you can use `&&` or `;` to chain them together."""
 
@@ -67,10 +67,10 @@ def create_cmd_run_tool(
                     },
                     'timeout': {
                         'type': 'number',
-                        'description': 'Optional. Sets a hard timeout in seconds for the command execution. If not provided, the command will use the default soft timeout behavior.',
+                        'description': 'Sets a hard timeout in seconds for the command execution. Select a reasonable value, and 10 is a good option if you cannot estimate a-priori how long the command should take.',
                     },
                 },
-                'required': ['command'],
+                'required': ['command', 'timeout'],
             },
         ),
     )
