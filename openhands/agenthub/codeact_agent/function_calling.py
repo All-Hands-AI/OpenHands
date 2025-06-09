@@ -87,18 +87,21 @@ def response_to_actions(
                     raise FunctionCallValidationError(
                         f'Missing required argument "command" in tool call {tool_call.function.name}'
                     )
+                if 'timeout' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "timeout" in tool call {tool_call.function.name}'
+                    )
                 # convert is_input to boolean
                 is_input = arguments.get('is_input', 'false') == 'true'
                 action = CmdRunAction(command=arguments['command'], is_input=is_input)
 
-                # Set hard timeout if provided
-                if 'timeout' in arguments:
-                    try:
-                        action.set_hard_timeout(float(arguments['timeout']))
-                    except ValueError as e:
-                        raise FunctionCallValidationError(
-                            f"Invalid float passed to 'timeout' argument: {arguments['timeout']}"
-                        ) from e
+                # Set hard timeout
+                try:
+                    action.set_hard_timeout(float(arguments['timeout']))
+                except ValueError as e:
+                    raise FunctionCallValidationError(
+                        f"Invalid float passed to 'timeout' argument: {arguments['timeout']}"
+                    ) from e
 
             # ================================================
             # IPythonTool (Jupyter)
