@@ -52,25 +52,45 @@ class TestDisplayFunctions:
         assert 'Starting Docker runtime' in str(args[0])
 
     @patch('openhands.cli.tui.print_formatted_text')
-    def test_display_banner(self, mock_print):
+    @patch('openhands.cli.tui.print_container')
+    def test_display_banner(self, mock_print_container, mock_print):
         session_id = 'test-session-id'
 
         display_banner(session_id)
 
         # Verify banner calls
         assert mock_print.call_count >= 3
-        # Check the last call has the session ID
-        args, kwargs = mock_print.call_args_list[-2]
-        assert session_id in str(args[0])
-        assert 'Initialized conversation' in str(args[0])
+        assert mock_print_container.call_count >= 3
+
+        # Check that the session ID is in one of the container calls
+        session_found = False
+        for call in mock_print_container.call_args_list:
+            container = call[0][0]
+            if hasattr(container, 'body') and hasattr(container.body, 'text'):
+                if (
+                    session_id in container.body.text
+                    and 'Initialized conversation' in container.body.text
+                ):
+                    session_found = True
+                    break
+        assert session_found, 'Session ID not found in any container'
 
     @patch('openhands.cli.tui.print_formatted_text')
-    def test_display_welcome_message(self, mock_print):
+    @patch('openhands.cli.tui.print_container')
+    def test_display_welcome_message(self, mock_print_container, mock_print):
         display_welcome_message()
         assert mock_print.call_count == 2
-        # Check the first call contains the welcome message
-        args, kwargs = mock_print.call_args_list[0]
-        assert "Let's start building" in str(args[0])
+        assert mock_print_container.call_count == 2
+
+        # Check that the welcome message is in one of the container calls
+        welcome_found = False
+        for call in mock_print_container.call_args_list:
+            container = call[0][0]
+            if hasattr(container, 'body') and hasattr(container.body, 'text'):
+                if "Let's start building" in container.body.text:
+                    welcome_found = True
+                    break
+        assert welcome_found, 'Welcome message not found in any container'
 
     @patch('openhands.cli.tui.display_message')
     def test_display_event_message_action(self, mock_display_message):

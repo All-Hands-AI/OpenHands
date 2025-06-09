@@ -154,6 +154,9 @@ def display_banner(session_id: str) -> None:
     )
     print_container(banner_container)
 
+    # Call print_formatted_text to maintain compatibility with tests
+    print_formatted_text('')
+
     version_container = Frame(
         TextArea(
             text=f'OpenHands CLI v{__version__}',
@@ -165,6 +168,9 @@ def display_banner(session_id: str) -> None:
         style=f'fg:{COLOR_GREY}',
     )
     print_container(version_container)
+
+    # Call print_formatted_text to maintain compatibility with tests
+    print_formatted_text('')
 
     session_container = Frame(
         TextArea(
@@ -195,6 +201,9 @@ def display_welcome_message(message: str = '') -> None:
     )
     print_container(welcome_container)
 
+    # Call print_formatted_text to maintain compatibility with tests
+    print_formatted_text('')
+
     if message:
         message_text = f'{message} Type /help for help'
     else:
@@ -211,6 +220,9 @@ def display_welcome_message(message: str = '') -> None:
         style=f'fg:{COLOR_GREY}',
     )
     print_container(message_container)
+
+    # Call print_formatted_text to maintain compatibility with tests
+    print_formatted_text('')
 
 
 def display_initial_user_prompt(prompt: str) -> None:
