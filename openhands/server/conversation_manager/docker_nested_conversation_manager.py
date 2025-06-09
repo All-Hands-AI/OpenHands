@@ -29,10 +29,10 @@ from openhands.server.conversation_manager.conversation_manager import (
 )
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.monitoring import MonitoringListener
+from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation import ServerConversation
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.session.session import ROOM_KEY, Session
-from openhands.server.session.agent_session import AgentSession
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_status import ConversationStatus
@@ -85,6 +85,10 @@ class DockerNestedConversationManager(ConversationManager):
         # Not supported - clients should connect directly to the nested server!
         raise ValueError('unsupported_operation')
 
+    async def is_agent_loop_running(self, sid: str) -> bool:
+        """Check if an agent loop is running for the given session ID."""
+        raise ValueError('unsupported_operation')
+
     async def get_running_agent_loops(
         self, user_id: str | None = None, filter_to_sids: set[str] | None = None
     ) -> set[str]:
@@ -121,7 +125,9 @@ class DockerNestedConversationManager(ConversationManager):
         initial_user_msg: MessageAction | None = None,
         replay_json: str | None = None,
     ) -> AgentLoopInfo:
-        if not await self.is_agent_loop_running(sid):
+        # Check if the agent loop is running by directly checking if the container exists
+        running_sids = await self.get_running_agent_loops(filter_to_sids={sid})
+        if not running_sids:
             await self._start_agent_loop(
                 sid, settings, user_id, initial_user_msg, replay_json
             )
@@ -305,7 +311,10 @@ class DockerNestedConversationManager(ConversationManager):
                 # Check up to 3 times that client has closed
                 for _ in range(3):
                     response = await client.get(f'{nested_url}/api/conversations/{sid}')
-                    if response.status_code == status.HTTP_200_OK and response.json().get('status') == "STOPPED":
+                    if (
+                        response.status_code == status.HTTP_200_OK
+                        and response.json().get('status') == 'STOPPED'
+                    ):
                         break
                     await asyncio.sleep(1)
 
