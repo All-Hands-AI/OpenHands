@@ -52,6 +52,7 @@ whatthepatch = "^1.0.6"
 protobuf = "^5.0.0,<6.0.0"                         # Updated to support newer opentelemetry
 opentelemetry-api = "^1.33.1"
 opentelemetry-exporter-otlp-proto-grpc = "^1.33.1"
+logfire = "^3.16.0"
 modal = ">=0.66.26,<0.78.0"
 runloop-api-client = "0.33.0"
 libtmux = ">=0.37,<0.40"

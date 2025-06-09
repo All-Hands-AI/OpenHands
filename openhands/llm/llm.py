@@ -26,6 +26,8 @@ from litellm.utils import create_pretrained_tokenizer
 from openhands.core.exceptions import LLMNoResponseError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
+from openhands.core.telemetry import Event as TelemetryLogEvent
+from openhands.core.telemetry import TelemetryManager
 from openhands.llm.debug_mixin import DebugMixin
 from openhands.llm.fn_call_converter import (
     STOP_WORDS,
@@ -114,6 +116,7 @@ class LLM(RetryMixin, DebugMixin):
         self,
         config: LLMConfig,
         metrics: Metrics | None = None,
+        telemetry: TelemetryManager | None = None,
         retry_listener: Callable[[int, int], None] | None = None,
     ) -> None:
         """Initializes the LLM. If LLMConfig is passed, its values will be the fallback.
@@ -128,6 +131,7 @@ class LLM(RetryMixin, DebugMixin):
         self.metrics: Metrics = (
             metrics if metrics is not None else Metrics(model_name=config.model)
         )
+        self.telemetry = telemetry
         self.cost_metric_supported: bool = True
         self.config: LLMConfig = copy.deepcopy(config)
 
@@ -294,6 +298,68 @@ class LLM(RetryMixin, DebugMixin):
             latency = time.time() - start_time
             response_id = resp.get('id', 'unknown')
             self.metrics.add_response_latency(latency, response_id)
+
+            # Trace successful API call with telemetry
+            if self.telemetry:
+                # set provider to openai for now
+                provider = 'openai'
+                events: list[TelemetryLogEvent] = []
+
+                events.extend(self.telemetry.messages_to_otel_event(messages))
+
+                attributes = {
+                    'gen_ai.request.model': self.config.model,
+                    'gen_ai.request.name': 'llm_completion',
+                    'gen_ai.request.provider': 'openai',
+                    'gen_ai.request.endpoint': '/v1/chat/completions',
+                    'gen_ai.request.top_p': self.config.top_p,
+                    'gen_ai.request.seed': self.config.seed,
+                    'api.duration_ms': max(0.0, latency) * 1000,
+                    'gen_ai.response.id': resp.id,
+                    'gen_ai.response.model': resp.model,
+                    'gen_ai.usage.input_tokens': resp.get('usage', {}).get(
+                        'prompt_tokens'
+                    ),
+                    'gen_ai.usage.output_tokens': resp.get('usage', {}).get(
+                        'completion_tokens'
+                    ),
+                }
+
+                if len(resp.choices) > 0:
+                    response_messages = []
+                    for choice in resp.choices:
+                        response_messages.append(
+                            {
+                                'role': choice.message.role,
+                                'content': choice.message.content,
+                            }
+                        )
+                    events.extend(
+                        self.telemetry.messages_to_otel_event(response_messages)
+                    )
+
+                gen_ai_attributes = {
+                    'gen_ai.operation.name': 'chat',
+                    'logfire.json_schema': json.dumps(
+                        {
+                            'type': 'object',
+                            'properties': {
+                                'model_request_parameters': {'type': 'object'}
+                            },
+                        }
+                    ),
+                    'gen_ai.system': provider,
+                }
+                with self.telemetry.tracer.start_as_current_span(
+                    f'[Model][{self.config.model}]', attributes=gen_ai_attributes
+                ) as span:
+                    span.set_attributes(attributes)
+                    for event in events:
+                        event.attributes = {
+                            'gen_ai.system': provider,
+                            **(event.attributes or {}),
+                        }
+                    self.telemetry.emit_events(span, events)
 
             non_fncall_response = copy.deepcopy(resp)
 
@@ -790,3 +856,6 @@ class LLM(RetryMixin, DebugMixin):
 
         # let pydantic handle the serialization
         return [message.model_dump() for message in messages]
+
+    def inject_telemetry(self, telemetry: TelemetryManager):
+        self.telemetry = telemetry
