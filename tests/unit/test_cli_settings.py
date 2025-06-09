@@ -315,6 +315,50 @@ class TestModifyLLMSettingsBasic:
         assert settings.llm_api_key.get_secret_value() == 'new-api-key'
         assert settings.llm_base_url is None
 
+    def test_default_provider_is_anthropic(self):
+        """Test that the default provider is set to 'anthropic' when no providers are available."""
+        # This is a simple test to verify that the default provider is 'anthropic'
+        # We're directly checking the code in settings.py where the default provider is set
+
+        # Import the settings module to check the default provider
+        # Find the line where the default provider is set
+        import inspect
+
+        import openhands.cli.settings as settings_module
+
+        source_lines = inspect.getsource(
+            settings_module.modify_llm_settings_basic
+        ).splitlines()
+
+        # Look for the line that sets the default provider
+        default_provider_line = None
+        for line in source_lines:
+            if 'provider_list[0] if provider_list else' in line:
+                default_provider_line = line
+                break
+
+        # Assert that the default provider is 'anthropic'
+        assert default_provider_line is not None, (
+            'Could not find the line that sets the default provider'
+        )
+        assert "'anthropic'" in default_provider_line, (
+            "Default provider should be 'anthropic'"
+        )
+
+        # Also check the fallback provider when provider not in organized_models
+        fallback_provider_line = None
+        for i, line in enumerate(source_lines):
+            if 'next(iter(organized_models.keys())) if organized_models else' in line:
+                fallback_provider_line = line
+                break
+
+        assert fallback_provider_line is not None, (
+            'Could not find the fallback provider line'
+        )
+        assert "'anthropic'" in fallback_provider_line, (
+            "Fallback provider should be 'anthropic'"
+        )
+
 
 class TestModifyLLMSettingsAdvanced:
     @pytest.fixture

@@ -159,7 +159,7 @@ async def modify_llm_settings_basic(
     session = PromptSession(key_bindings=kb_cancel())
 
     # Set default provider - use the first available provider from the list
-    provider = provider_list[0] if provider_list else 'openai'
+    provider = provider_list[0] if provider_list else 'anthropic'
     model = None
     api_key = None
 
@@ -198,7 +198,7 @@ async def modify_llm_settings_basic(
         if provider not in organized_models:
             # If the provider doesn't exist, use the first available provider
             provider = (
-                next(iter(organized_models.keys())) if organized_models else 'openai'
+                next(iter(organized_models.keys())) if organized_models else 'anthropic'
             )
 
         provider_models = organized_models[provider]['models']
