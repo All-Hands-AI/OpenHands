@@ -139,8 +139,3 @@ To clean up the environment:
 ```bash
 kind delete cluster --name local-hands
 ```
-
-## Deployment with Helm
-
-For deployments to Kubernetes clusters, OpenHands includes a Helm chart located in the `charts/openhands/` directory.
-Please see the charts directory for more information.
