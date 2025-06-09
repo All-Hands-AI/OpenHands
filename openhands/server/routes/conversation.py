@@ -171,6 +171,25 @@ class MicroagentResponse(BaseModel):
     tools: list[str] = []
 
 
+def _get_input_names(agent) -> list[str]:
+    """Extract input names from a microagent.
+
+    This handles the case where the agent's inputs property returns InputMetadata objects.
+    """
+    if not hasattr(agent, 'inputs'):
+        return []
+
+    inputs = agent.inputs
+    if not inputs:
+        return []
+
+    # If inputs is a list of InputMetadata objects, extract the names
+    if inputs and hasattr(inputs[0], 'name'):
+        return [input_metadata.name for input_metadata in inputs]
+
+    return inputs
+
+
 @app.get('/microagents')
 async def get_microagents(
     conversation: ServerConversation = Depends(get_conversation),
@@ -213,7 +232,7 @@ async def get_microagents(
                     type='repo',
                     content=agent.content,
                     triggers=[],
-                    inputs=getattr(agent, 'inputs', []),
+                    inputs=_get_input_names(agent),
                     tools=getattr(agent.metadata, 'mcp_tools', None)
                     and [
                         server.name for server in agent.metadata.mcp_tools.stdio_servers
@@ -230,7 +249,7 @@ async def get_microagents(
                     type='knowledge',
                     content=agent.content,
                     triggers=agent.triggers,
-                    inputs=getattr(agent, 'inputs', []),
+                    inputs=_get_input_names(agent),
                     tools=getattr(agent.metadata, 'mcp_tools', None)
                     and [
                         server.name for server in agent.metadata.mcp_tools.stdio_servers
