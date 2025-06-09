@@ -587,7 +587,22 @@ class AgentController:
 
         # reset the pending action, this will be called when the agent is STOPPED or ERROR
         self._pending_action = None
+
+        # We don't want to reset the agent's LLM metrics, so we need to save them first
+        llm_metrics = None
+        if hasattr(self.agent, 'llm') and hasattr(self.agent.llm, 'metrics'):
+            llm_metrics = copy.deepcopy(self.agent.llm.metrics)
+
+        # Reset the agent (this will reset the LLM metrics)
         self.agent.reset()
+
+        # Restore the LLM metrics if we saved them
+        if (
+            llm_metrics is not None
+            and hasattr(self.agent, 'llm')
+            and hasattr(self.agent.llm, 'metrics')
+        ):
+            self.agent.llm.metrics = llm_metrics
 
     async def set_agent_state_to(self, new_state: AgentState) -> None:
         """Updates the agent's state and handles side effects. Can emit events to the event stream.
@@ -632,7 +647,12 @@ class AgentController:
                 and self._initial_max_budget_per_task is not None
             ):
                 if self.state.metrics.accumulated_cost >= self.max_budget_per_task:
-                    self.max_budget_per_task += self._initial_max_budget_per_task
+                    # Set the new budget cap to the current accumulated cost plus the initial budget
+                    # This ensures we have enough budget to continue and don't immediately hit the limit again
+                    self.max_budget_per_task = (
+                        self.state.metrics.accumulated_cost
+                        + self._initial_max_budget_per_task
+                    )
         elif self._pending_action is not None and (
             new_state in (AgentState.USER_CONFIRMED, AgentState.USER_REJECTED)
         ):

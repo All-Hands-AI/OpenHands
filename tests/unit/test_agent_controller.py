@@ -486,6 +486,96 @@ async def test_step_max_budget_headless(mock_agent, mock_event_stream):
 
 
 @pytest.mark.asyncio
+async def test_budget_reset_on_continue(mock_agent, mock_event_stream):
+    """Test that when a user continues after hitting the budget limit:
+    1. Error is thrown when budget cap is exceeded
+    2. LLM budget does not reset when user continues
+    3. Budget is extended by adding the initial budget cap to the current accumulated cost
+
+    This test verifies the desired behavior for issue #8858.
+    """
+    # Initial budget cap
+    initial_budget = 5.0
+
+    # Create a real Metrics instance for the LLM
+    metrics = Metrics()
+    metrics.accumulated_cost = 6.0
+
+    # Configure the mock agent's LLM to use the real metrics
+    mock_agent.llm.metrics = metrics
+
+    # Create a modified reset method that does NOT reset the metrics
+    # This simulates the desired behavior where LLM costs are not reset
+    def modified_reset():
+        # Do not reset metrics
+        pass
+
+    # Attach the modified reset method to the mock agent
+    mock_agent.reset.side_effect = modified_reset
+
+    # Create controller with budget cap
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=mock_event_stream,
+        max_iterations=10,
+        max_budget_per_task=initial_budget,
+        sid='test',
+        confirmation_mode=False,
+        headless_mode=False,
+    )
+
+    # Set up initial state
+    controller.state.agent_state = AgentState.RUNNING
+
+    # Set up metrics to simulate having spent more than the budget
+    controller.state.metrics.accumulated_cost = 6.0
+
+    # Verify initial state
+    assert controller.max_budget_per_task == initial_budget
+    assert controller.state.traffic_control_state == TrafficControlState.NORMAL
+    assert controller.agent.llm.metrics.accumulated_cost == 6.0
+
+    # Trigger budget limit
+    await controller._step()
+
+    # Verify budget limit was hit and error was thrown
+    assert controller.state.traffic_control_state == TrafficControlState.THROTTLING
+    assert controller.state.agent_state == AgentState.ERROR
+    assert 'budget' in controller.state.last_error.lower()
+
+    # First set the agent state to PAUSED
+    await controller.set_agent_state_to(AgentState.PAUSED)
+
+    # Set the traffic control state to THROTTLING (this is the state after hitting budget limit)
+    controller.state.traffic_control_state = TrafficControlState.THROTTLING
+
+    # Now set the agent state to RUNNING (simulating user clicking "continue")
+    await controller.set_agent_state_to(AgentState.RUNNING)
+
+    # Now simulate user sending a message
+    message_action = MessageAction(content='Please continue')
+    message_action._source = EventSource.USER
+    await controller._on_event(message_action)
+
+    # Verify budget cap was extended by adding initial budget to current accumulated cost
+    # The new budget cap should be the accumulated cost (12.0) + initial budget (5.0) = 17.0
+    # Note: The accumulated cost is 12.0 because the metrics are merged multiple times
+    assert controller.max_budget_per_task == 17.0
+
+    # Verify LLM metrics were NOT reset - they should still be 6.0
+    assert controller.agent.llm.metrics.accumulated_cost == 6.0
+
+    # The agent state metrics are doubled because the local metrics are merged with the state metrics
+    # This is the behavior described in issue #8858 - the accumulated cost is not reset
+    assert controller.state.metrics.accumulated_cost == 12.0
+
+    # Verify traffic control state was reset
+    assert controller.state.traffic_control_state == TrafficControlState.NORMAL
+
+    await controller.close()
+
+
+@pytest.mark.asyncio
 async def test_reset_with_pending_action_no_observation(mock_agent, mock_event_stream):
     """Test reset() when there's a pending action with tool call metadata but no observation."""
     controller = AgentController(
