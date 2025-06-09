@@ -167,7 +167,7 @@ class AgentController:
         self.agent_to_llm_config = agent_to_llm_config if agent_to_llm_config else {}
         self.agent_configs = agent_configs if agent_configs else {}
         self._initial_max_iterations = max_iterations
-        self._initial_max_budget_per_task = max_budget_per_task
+        self._initial_max_budget_per_task = 0.01
 
         # stuck helper
         self._stuck_detector = StuckDetector(self.state)
@@ -592,6 +592,8 @@ class AgentController:
             'info',
             f'Setting agent({self.agent.name}) state from {self.state.agent_state} to {new_state}',
         )
+
+        self.log('info', f'Traffic control state: {self.state.traffic_control_state}')
 
         if new_state == self.state.agent_state:
             return
