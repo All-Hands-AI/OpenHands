@@ -5,7 +5,7 @@ import pytest
 from fastapi.responses import JSONResponse
 
 from openhands.microagent.microagent import KnowledgeMicroagent, RepoMicroagent
-from openhands.microagent.types import InputMetadata, MicroagentMetadata, MicroagentType
+from openhands.microagent.types import MicroagentMetadata, MicroagentType
 from openhands.server.routes.conversation import get_microagents
 from openhands.server.session.conversation import ServerConversation
 
