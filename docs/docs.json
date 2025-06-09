@@ -38,7 +38,6 @@
                 ]
               },
               "usage/cloud/cloud-ui",
-              "usage/cloud/cloud-issue-resolver",
               "usage/cloud/cloud-api"
             ]
           },
