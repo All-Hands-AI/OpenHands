@@ -83,11 +83,9 @@ export function EventMessage({
   if (isUserMessage(event) || isAssistantMessage(event)) {
     // Only show Likert scale for agent messages that are not finish actions
     // and are the last message in the conversation
-    const showLikertScale = 
-      isLastMessage && 
-      isAssistantMessage(event) && 
-      !isFinishAction(event);
-      
+    const showLikertScale =
+      isLastMessage && isAssistantMessage(event) && !isFinishAction(event);
+
     return (
       <>
         <ChatMessage
