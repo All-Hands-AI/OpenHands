@@ -9214,5 +9214,21 @@
         "tr": "Ajan, görevi tamamlamak için çalışma zamanında yüklenemeyen yazılım veya donanıma erişim eksikliği yaşıyor",
         "de": "Dem Agenten fehlt der Zugriff auf Software oder Hardware, die nicht in der Laufzeitumgebung installiert werden kann, um die Aufgabe zu erledigen",
         "uk": "Агент не має доступу до програмного або апаратного забезпечення, яке неможливо встановити в середовищі виконання для виконання завдання"
+    },
+    "FEEDBACK$THANK_YOU_FOR_FEEDBACK": {
+        "en": "Thank you for your feedback!",
+        "ja": "フィードバックをありがとうございます！",
+        "zh-CN": "感谢您的反馈！",
+        "zh-TW": "感謝您的反饋！",
+        "ko-KR": "피드백 감사합니다!",
+        "no": "Takk for tilbakemeldingen!",
+        "it": "Grazie per il tuo feedback!",
+        "pt": "Obrigado pelo seu feedback!",
+        "es": "¡Gracias por su comentario!",
+        "ar": "شكرا على ملاحظاتك!",
+        "fr": "Merci pour votre retour !",
+        "tr": "Geri bildiriminiz için teşekkürler!",
+        "de": "Vielen Dank für Ihr Feedback!",
+        "uk": "Дякуємо за ваш відгук!"
     }
 }
