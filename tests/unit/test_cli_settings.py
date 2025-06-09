@@ -315,9 +315,9 @@ class TestModifyLLMSettingsBasic:
         assert settings.llm_api_key.get_secret_value() == 'new-api-key'
         assert settings.llm_base_url is None
 
-    def test_default_provider_is_anthropic(self):
-        """Test that the default provider is set to 'anthropic' when no providers are available."""
-        # This is a simple test to verify that the default provider is 'anthropic'
+    def test_default_provider_preference(self):
+        """Test that the default provider prefers 'anthropic' if available."""
+        # This is a simple test to verify that the default provider prefers 'anthropic'
         # We're directly checking the code in settings.py where the default provider is set
 
         # Import the settings module to check the default provider
@@ -333,30 +333,95 @@ class TestModifyLLMSettingsBasic:
         # Look for the line that sets the default provider
         default_provider_line = None
         for line in source_lines:
-            if 'provider_list[0] if provider_list else' in line:
+            if "'anthropic' if 'anthropic' in provider_list" in line:
                 default_provider_line = line
                 break
 
-        # Assert that the default provider is 'anthropic'
+        # Assert that the default provider prefers 'anthropic'
         assert default_provider_line is not None, (
             'Could not find the line that sets the default provider'
         )
-        assert "'anthropic'" in default_provider_line, (
-            "Default provider should be 'anthropic'"
+        assert "'anthropic' if 'anthropic' in provider_list" in default_provider_line, (
+            "Default provider should prefer 'anthropic' if available"
         )
 
         # Also check the fallback provider when provider not in organized_models
         fallback_provider_line = None
         for i, line in enumerate(source_lines):
-            if 'next(iter(organized_models.keys())) if organized_models else' in line:
+            if "'anthropic' if 'anthropic' in organized_models" in line:
                 fallback_provider_line = line
                 break
 
         assert fallback_provider_line is not None, (
             'Could not find the fallback provider line'
         )
-        assert "'anthropic'" in fallback_provider_line, (
-            "Fallback provider should be 'anthropic'"
+        assert (
+            "'anthropic' if 'anthropic' in organized_models" in fallback_provider_line
+        ), "Fallback provider should prefer 'anthropic' if available"
+
+    def test_default_model_selection(self):
+        """Test that the default model selection prefers verified models."""
+        # This is a simple test to verify that the default model selection prefers verified models
+        # We're directly checking the code in settings.py where the default model is set
+
+        import inspect
+
+        import openhands.cli.settings as settings_module
+
+        source_lines = inspect.getsource(
+            settings_module.modify_llm_settings_basic
+        ).splitlines()
+
+        # Look for the block that sets the default model
+        default_model_block = []
+        in_default_model_block = False
+        for line in source_lines:
+            if '# Set default model to the first model in the list' in line:
+                in_default_model_block = True
+                default_model_block.append(line)
+            elif in_default_model_block:
+                default_model_block.append(line)
+                if '# Show the default model' in line:
+                    break
+
+        # Assert that we found the default model selection logic
+        assert default_model_block, (
+            'Could not find the block that sets the default model'
+        )
+
+        # Print the actual lines for debugging
+        print('Default model block found:')
+        for line in default_model_block:
+            print(f'  {line.strip()}')
+
+        # Check that the logic prefers verified models for both openai and anthropic
+        openai_check = any(
+            "provider == 'openai'" in line for line in default_model_block
+        )
+        anthropic_check = any(
+            "provider == 'anthropic'" in line for line in default_model_block
+        )
+
+        assert openai_check, (
+            'Default model selection should prefer verified OpenAI models'
+        )
+        assert anthropic_check, (
+            'Default model selection should prefer verified Anthropic models'
+        )
+
+        # Also check that we're using the first verified model
+        openai_first_model = any(
+            'VERIFIED_OPENAI_MODELS[0]' in line for line in default_model_block
+        )
+        anthropic_first_model = any(
+            'VERIFIED_ANTHROPIC_MODELS[0]' in line for line in default_model_block
+        )
+
+        assert openai_first_model, (
+            'Default model selection should use the first verified OpenAI model'
+        )
+        assert anthropic_first_model, (
+            'Default model selection should use the first verified Anthropic model'
         )
 
 

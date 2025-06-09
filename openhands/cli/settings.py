@@ -158,8 +158,12 @@ async def modify_llm_settings_basic(
     provider_completer = FuzzyWordCompleter(provider_list)
     session = PromptSession(key_bindings=kb_cancel())
 
-    # Set default provider - use the first available provider from the list
-    provider = provider_list[0] if provider_list else 'anthropic'
+    # Set default provider - prefer 'anthropic' if available, otherwise use the first provider
+    provider = (
+        'anthropic'
+        if 'anthropic' in provider_list
+        else (provider_list[0] if provider_list else 'openai')
+    )
     model = None
     api_key = None
 
@@ -196,9 +200,13 @@ async def modify_llm_settings_basic(
 
         # Make sure the provider exists in organized_models
         if provider not in organized_models:
-            # If the provider doesn't exist, use the first available provider
+            # If the provider doesn't exist, prefer 'anthropic' if available, otherwise use the first provider
             provider = (
-                next(iter(organized_models.keys())) if organized_models else 'anthropic'
+                'anthropic'
+                if 'anthropic' in organized_models
+                else next(iter(organized_models.keys()))
+                if organized_models
+                else 'openai'
             )
 
         provider_models = organized_models[provider]['models']
@@ -213,8 +221,21 @@ async def modify_llm_settings_basic(
             ]
             provider_models = VERIFIED_ANTHROPIC_MODELS + provider_models
 
-        # Set default model to the first model in the list
-        default_model = provider_models[0] if provider_models else 'gpt-4'
+        # Set default model to the first model in the list (which will be a verified model if available)
+        if (
+            provider == 'openai'
+            and VERIFIED_OPENAI_MODELS
+            and VERIFIED_OPENAI_MODELS[0] in provider_models
+        ):
+            default_model = VERIFIED_OPENAI_MODELS[0]
+        elif (
+            provider == 'anthropic'
+            and VERIFIED_ANTHROPIC_MODELS
+            and VERIFIED_ANTHROPIC_MODELS[0] in provider_models
+        ):
+            default_model = VERIFIED_ANTHROPIC_MODELS[0]
+        else:
+            default_model = provider_models[0] if provider_models else 'gpt-4'
 
         # Show the default model but allow changing it
         print_formatted_text(
