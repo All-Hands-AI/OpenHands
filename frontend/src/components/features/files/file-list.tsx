@@ -22,7 +22,7 @@ export function FileList({ files, onRemove }: FileListProps) {
         <FileItem
           key={index}
           filename={f.filename}
-          onRemove={onRemove ? () => onRemove(f.id!) : undefined}
+          onRemove={() => onRemove?.(f.id!)}
         />
       ))}
     </div>

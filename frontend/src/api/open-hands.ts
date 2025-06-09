@@ -393,23 +393,6 @@ class OpenHands {
 
     return data;
   }
-
-  static async uploadFiles(
-    conversationId: string,
-    files: File[],
-  ): Promise<string[]> {
-    const formData = new FormData();
-    for (const file of files) {
-      formData.append("files", file);
-    }
-    const url = `${this.getConversationUrl(conversationId)}/upload-files`;
-    const response = await openHands.post<string[]>(url, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-    return response.data;
-  }
 }
 
 export default OpenHands;

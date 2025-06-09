@@ -1,7 +1,6 @@
 import { useSelector } from "react-redux";
 import React from "react";
 import posthog from "posthog-js";
-import i18next from "i18next";
 import { useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
@@ -29,7 +28,7 @@ import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
 import { useWSErrorMessage } from "#/hooks/use-ws-error-message";
 import { ErrorMessageBanner } from "./error-message-banner";
 import { shouldRenderEvent } from "./event-content-helpers/should-render-event";
-import OpenHands from "#/api/open-hands";
+import { useUploadFiles } from "#/hooks/mutation/use-upload-files";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -62,6 +61,7 @@ export function ChatInterface() {
   );
   const params = useParams();
   const { mutate: getTrajectory } = useGetTrajectory();
+  const { mutateAsync: uploadFiles } = useUploadFiles();
 
   const optimisticUserMessage = getOptimisticUserMessage();
   const errorMessage = getErrorMessage();
@@ -95,10 +95,10 @@ export function ChatInterface() {
 
     const fileUrls =
       files.length > 0
-        ? await OpenHands.uploadFiles(params.conversationId!, files)
+        ? await uploadFiles({ conversationId: params.conversationId!, files })
         : [];
 
-    const filePrompt = `${i18next.t("CHAT_INTERFACE$AUGMENTED_PROMPT_FILES_TITLE")}: ${fileUrls.join("\n\n")}`;
+    const filePrompt = `${t("CHAT_INTERFACE$AUGMENTED_PROMPT_FILES_TITLE")}: ${fileUrls.join("\n\n")}`;
 
     const prompt =
       fileUrls.length > 0 ? `${content}\n\n${filePrompt}` : content;
