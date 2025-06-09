@@ -59,7 +59,6 @@ export function ChatMessage({
       )}
     >
       <div
-        hidden={!isHovering}
         className={cn(
           "absolute -top-2.5 -right-2.5",
           !isHovering ? "hidden" : "flex",

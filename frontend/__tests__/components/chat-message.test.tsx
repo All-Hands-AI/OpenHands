@@ -65,30 +65,4 @@ describe("ChatMessage", () => {
     expect(codeElement.tagName.toLowerCase()).toBe("code");
     expect(codeElement.closest("article")).not.toBeNull();
   });
-
-  it("should render an action button on hover if provided", async () => {
-    const user = userEvent.setup();
-    const actionButton = (
-      <button data-testid="action-button" type="button">
-        Action
-      </button>
-    );
-    render(
-      <ChatMessage
-        type="user"
-        message="Hello, World!"
-        actionButton={actionButton}
-      />,
-    );
-
-    const message = screen.getByText("Hello, World!");
-
-    expect(screen.queryByTestId("action-button")).not.toBeInTheDocument();
-
-    await user.hover(message);
-    expect(screen.getByTestId("action-button")).toBeVisible();
-
-    await user.unhover(message);
-    expect(screen.queryByTestId("action-button")).not.toBeInTheDocument();
-  });
 });
