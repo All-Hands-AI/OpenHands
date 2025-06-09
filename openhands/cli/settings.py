@@ -160,9 +160,7 @@ async def modify_llm_settings_basic(
 
     # Set default provider - prefer 'anthropic' if available, otherwise use the first provider
     provider = (
-        'anthropic'
-        if 'anthropic' in provider_list
-        else (provider_list[0] if provider_list else 'anthropic')
+        'anthropic' if (provider_list is None or 'anthropic' in provider_list) else provider_list[0]
     )
     model = None
     api_key = None
