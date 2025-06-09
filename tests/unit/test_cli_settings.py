@@ -331,33 +331,48 @@ class TestModifyLLMSettingsBasic:
         ).splitlines()
 
         # Look for the line that sets the default provider
-        default_provider_line = None
-        for line in source_lines:
-            if "'anthropic' if 'anthropic' in provider_list" in line:
-                default_provider_line = line
+        default_provider_found = False
+        for i, line in enumerate(source_lines):
+            if "# Set default provider - prefer 'anthropic' if available" in line:
+                default_provider_found = True
                 break
 
-        # Assert that the default provider prefers 'anthropic'
-        assert default_provider_line is not None, (
-            'Could not find the line that sets the default provider'
-        )
-        assert "'anthropic' if 'anthropic' in provider_list" in default_provider_line, (
-            "Default provider should prefer 'anthropic' if available"
+        # Assert that the default provider comment exists
+        assert default_provider_found, 'Could not find the default provider comment'
+
+        # Now look for the actual implementation
+        provider_impl_found = False
+        for i, line in enumerate(source_lines):
+            if "'anthropic'" in line and "if 'anthropic' in provider_list" in line:
+                provider_impl_found = True
+                break
+
+        assert provider_impl_found, (
+            "Could not find the implementation that prefers 'anthropic'"
         )
 
         # Also check the fallback provider when provider not in organized_models
-        fallback_provider_line = None
+        fallback_comment_found = False
         for i, line in enumerate(source_lines):
-            if "'anthropic' if 'anthropic' in organized_models" in line:
-                fallback_provider_line = line
+            if (
+                "# If the provider doesn't exist, prefer 'anthropic' if available"
+                in line
+            ):
+                fallback_comment_found = True
                 break
 
-        assert fallback_provider_line is not None, (
-            'Could not find the fallback provider line'
+        assert fallback_comment_found, 'Could not find the fallback provider comment'
+
+        # Now look for the actual implementation
+        fallback_impl_found = False
+        for i, line in enumerate(source_lines):
+            if "'anthropic'" in line and "if 'anthropic' in organized_models" in line:
+                fallback_impl_found = True
+                break
+
+        assert fallback_impl_found, (
+            "Could not find the fallback implementation that prefers 'anthropic'"
         )
-        assert (
-            "'anthropic' if 'anthropic' in organized_models" in fallback_provider_line
-        ), "Fallback provider should prefer 'anthropic' if available"
 
     def test_default_model_selection(self):
         """Test that the default model selection prefers verified models."""
