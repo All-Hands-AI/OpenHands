@@ -1,16 +1,17 @@
-import asyncio
 import json
 from unittest.mock import MagicMock, patch
 
+import pytest
 from fastapi.responses import JSONResponse
 
 from openhands.microagent.microagent import KnowledgeMicroagent, RepoMicroagent
-from openhands.microagent.types import MicroagentMetadata, MicroagentType
+from openhands.microagent.types import InputMetadata, MicroagentMetadata, MicroagentType
 from openhands.server.routes.conversation import get_microagents
 from openhands.server.session.conversation import ServerConversation
 
 
-def test_get_microagents():
+@pytest.mark.asyncio
+async def test_get_microagents():
     """Test the get_microagents function directly."""
     # Create mock microagents
     from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig
@@ -21,7 +22,7 @@ def test_get_microagents():
         metadata=MicroagentMetadata(
             name='test_repo',
             type=MicroagentType.REPO_KNOWLEDGE,
-            inputs=[],
+            inputs=[],  # Empty inputs to match the expected behavior
             mcp_tools=MCPConfig(
                 stdio_servers=[
                     MCPStdioServerConfig(name='git', command='git'),
@@ -40,7 +41,7 @@ def test_get_microagents():
             name='test_knowledge',
             type=MicroagentType.KNOWLEDGE,
             triggers=['test', 'knowledge'],
-            inputs=[],
+            inputs=[],  # Empty inputs to match the expected behavior
             mcp_tools=MCPConfig(
                 stdio_servers=[
                     MCPStdioServerConfig(name='search', command='search'),
@@ -71,8 +72,8 @@ def test_get_microagents():
         # Set up the mocks
         mock_manager.get_agent_session.return_value = mock_agent_session
 
-        # Call the function directly using asyncio.run
-        response = asyncio.run(get_microagents(conversation=mock_conversation))
+        # Call the function directly
+        response = await get_microagents(conversation=mock_conversation)
 
         # Verify the response
         assert isinstance(response, JSONResponse)
@@ -88,7 +89,7 @@ def test_get_microagents():
         assert repo_agent['type'] == 'repo'
         assert repo_agent['content'] == 'This is a test repo microagent'
         assert repo_agent['triggers'] == []
-        assert repo_agent['inputs'] == []
+        assert repo_agent['inputs'] == []  # Expect empty inputs
         assert repo_agent['tools'] == ['git', 'file_editor']
 
         # Check knowledge microagent
@@ -98,11 +99,12 @@ def test_get_microagents():
         assert knowledge_agent['type'] == 'knowledge'
         assert knowledge_agent['content'] == 'This is a test knowledge microagent'
         assert knowledge_agent['triggers'] == ['test', 'knowledge']
-        assert knowledge_agent['inputs'] == []
+        assert knowledge_agent['inputs'] == []  # Expect empty inputs
         assert knowledge_agent['tools'] == ['search', 'fetch']
 
 
-def test_get_microagents_no_agent_session():
+@pytest.mark.asyncio
+async def test_get_microagents_no_agent_session():
     """Test the get_microagents function when no agent session is found."""
     # Create a mock ServerConversation
     mock_conversation = MagicMock(spec=ServerConversation)
@@ -116,7 +118,7 @@ def test_get_microagents_no_agent_session():
         mock_manager.get_agent_session.return_value = None
 
         # Call the function directly
-        response = asyncio.run(get_microagents(conversation=mock_conversation))
+        response = await get_microagents(conversation=mock_conversation)
 
         # Verify the response
         assert isinstance(response, JSONResponse)
@@ -128,7 +130,8 @@ def test_get_microagents_no_agent_session():
         assert 'Agent session not found' in content['error']
 
 
-def test_get_microagents_exception():
+@pytest.mark.asyncio
+async def test_get_microagents_exception():
     """Test the get_microagents function when an exception occurs."""
     # Create a mock ServerConversation
     mock_conversation = MagicMock(spec=ServerConversation)
@@ -142,7 +145,7 @@ def test_get_microagents_exception():
         mock_manager.get_agent_session.side_effect = Exception('Test exception')
 
         # Call the function directly
-        response = asyncio.run(get_microagents(conversation=mock_conversation))
+        response = await get_microagents(conversation=mock_conversation)
 
         # Verify the response
         assert isinstance(response, JSONResponse)
