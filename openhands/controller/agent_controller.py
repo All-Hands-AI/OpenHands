@@ -100,8 +100,8 @@ class AgentController:
         self,
         agent: Agent,
         event_stream: EventStream,
-        max_iterations: int,
-        max_budget_per_task: float | None = None,
+        iteration_delta: int,
+        budget_per_task_delta: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
         sid: str | None = None,
@@ -160,14 +160,15 @@ class AgentController:
         # state from the previous session, state from a parent agent, or a fresh state
         self.set_initial_state(
             state=initial_state,
-            max_iterations=max_iterations,
+            max_iterations=iteration_delta,
+            max_budget_per_task=budget_per_task_delta,
             confirmation_mode=confirmation_mode,
         )
         self.max_budget_per_task = 0.01
         self.agent_to_llm_config = agent_to_llm_config if agent_to_llm_config else {}
         self.agent_configs = agent_configs if agent_configs else {}
-        self._initial_max_iterations = max_iterations
-        self._initial_max_budget_per_task = 0.01
+        self._initial_max_iterations = iteration_delta
+        self._initial_max_budget_per_task = budget_per_task_delta
 
         # stuck helper
         self._stuck_detector = StuckDetector(self.state)
@@ -582,6 +583,32 @@ class AgentController:
         # to be no-ops for metrics, preserving the accumulated cost across resets
         self.agent.reset()
 
+    def maybe_extend_max_iterations(self):
+        if (
+            self.state.iteration is not None
+            and self.state.max_iterations is not None
+            and self._initial_max_iterations is not None
+            and not self.headless_mode
+            and self.state.iteration >= self.state.max_iterations
+        ):
+            self.state.max_iterations = (
+                self.state.max_iterations + self._initial_max_iterations
+            )
+
+    def maybe_extend_max_budget_per_task(self):
+        if (
+            self.agent.llm.metrics.accumulated_cost is not None
+            and self.max_budget_per_task is not None
+            and self._initial_max_budget_per_task is not None
+            and self.agent.llm.metrics.accumulated_cost >= self.max_budget_per_task
+        ):
+            # Set the new budget cap to the current accumulated cost plus the initial budget
+            # This ensures we have enough budget to continue and don't immediately hit the limit again
+            self.max_budget_per_task = (
+                self.agent.llm.metrics.accumulated_cost
+                + self._initial_max_budget_per_task
+            )
+
     async def set_agent_state_to(self, new_state: AgentState) -> None:
         """Updates the agent's state and handles side effects. Can emit events to the event stream.
 
@@ -611,28 +638,8 @@ class AgentController:
             and new_state == AgentState.RUNNING
         ):
             if self.state.traffic_control_state == TrafficControlState.THROTTLING:
-                if (
-                    self.state.iteration is not None
-                    and self.state.max_iterations is not None
-                    and self._initial_max_iterations is not None
-                    and not self.headless_mode
-                    and self.state.iteration >= self.state.max_iterations
-                ):
-                    self.state.max_iterations += self._initial_max_iterations
-
-                if (
-                    self.agent.llm.metrics.accumulated_cost is not None
-                    and self.max_budget_per_task is not None
-                    and self._initial_max_budget_per_task is not None
-                    and self.agent.llm.metrics.accumulated_cost
-                    >= self.max_budget_per_task
-                ):
-                    # Set the new budget cap to the current accumulated cost plus the initial budget
-                    # This ensures we have enough budget to continue and don't immediately hit the limit again
-                    self.max_budget_per_task = (
-                        self.agent.llm.metrics.accumulated_cost
-                        + self._initial_max_budget_per_task
-                    )
+                self.maybe_extend_max_iterations()
+                self.maybe_extend_max_budget_per_task()
 
             # Reset throttle state
             self.state.traffic_control_state = TrafficControlState.NORMAL
@@ -697,6 +704,7 @@ class AgentController:
             local_iteration=0,
             iteration=self.state.iteration,
             max_iterations=self.state.max_iterations,
+            max_budget_per_task=self.max_budget_per_task,
             delegate_level=self.state.delegate_level + 1,
             # global metrics should be shared between parent and child
             metrics=self.state.metrics,
@@ -713,8 +721,8 @@ class AgentController:
             sid=self.id + '-delegate',
             agent=delegate_agent,
             event_stream=self.event_stream,
-            max_iterations=self.state.max_iterations,
-            max_budget_per_task=self.max_budget_per_task,
+            iteration_delta=self._initial_max_iterations,
+            budget_per_task_delta=self._initial_max_budget_per_task,
             agent_to_llm_config=self.agent_to_llm_config,
             agent_configs=self.agent_configs,
             initial_state=state,
@@ -1011,6 +1019,7 @@ class AgentController:
         self,
         state: State | None,
         max_iterations: int,
+        max_budget_per_task: float | None,
         confirmation_mode: bool = False,
     ) -> None:
         """Sets the initial state for the agent, either from the previous session, or from a parent agent, or by creating a new one.
@@ -1031,6 +1040,7 @@ class AgentController:
                 session_id=self.id.removesuffix('-delegate'),
                 inputs={},
                 max_iterations=max_iterations,
+                max_budget_per_task=max_budget_per_task,
                 confirmation_mode=confirmation_mode,
             )
             self.state.start_id = 0

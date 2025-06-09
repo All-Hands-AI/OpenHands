@@ -78,6 +78,7 @@ class State:
     local_iteration: int = 0
     # max number of iterations for the current task
     max_iterations: int = 100
+    max_budget_per_task: float | None = None
     confirmation_mode: bool = False
     history: list[Event] = field(default_factory=list)
     inputs: dict = field(default_factory=dict)
