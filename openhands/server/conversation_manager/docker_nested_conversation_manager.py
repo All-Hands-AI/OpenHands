@@ -292,6 +292,7 @@ class DockerNestedConversationManager(ConversationManager):
                     'X-Session-API-Key': self._get_session_api_key_for_conversation(sid)
                 }
             ) as client:
+                # Stop conversation
                 response = await client.post(
                     f'{nested_url}/api/conversations/{sid}/stop'
                 )
@@ -300,15 +301,15 @@ class DockerNestedConversationManager(ConversationManager):
                 # Check up to 3 times that client has closed
                 for _ in range(3):
                     response = await client.get(f'{nested_url}/api/conversations/{sid}')
-                    if (
-                        response.status_code == status.HTTP_200_OK
-                        and response.json().get('status') == 'STOPPED'
-                    ):
+                    response.raise_for_status()
+                    if response.json().get('status') == 'STOPPED':
                         break
                     await asyncio.sleep(1)
 
-        except Exception:
-            logger.exception('error_stopping_container')
+        except Exception as e:
+            logger.warning(
+                'error_stopping_container', extra={'sid': sid, 'error': str(e)}
+            )
         container.stop()
 
     async def get_agent_loop_info(
@@ -477,6 +478,7 @@ class DockerNestedConversationManager(ConversationManager):
         env_vars['ALLOW_SET_CONVERSATION_ID'] = '1'
         env_vars['WORKSPACE_BASE'] = '/workspace'
         env_vars['SANDBOX_CLOSE_DELAY'] = '0'
+        env_vars['SKIP_DEPENDENCY_CHECK'] = '1'
 
         # Set up mounted volume for conversation directory within workspace
         # TODO: Check if we are using the standard event store and file store
