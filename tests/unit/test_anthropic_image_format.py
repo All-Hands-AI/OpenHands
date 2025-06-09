@@ -1,4 +1,4 @@
-from unittest.mock import patch
+import os
 
 import numpy as np
 import pytest
@@ -16,8 +16,13 @@ def create_test_image():
     return Image.fromarray(img_array)
 
 
-def test_anthropic_image_format_issue():
+def test_anthropic_image_format_issue(caplog):
     """Test that demonstrates the issue with image format for Anthropic."""
+    # Skip if no API key
+    anthropic_api_key = os.environ.get('ANTHROPIC_API_KEY')
+    if not anthropic_api_key:
+        pytest.skip('ANTHROPIC_API_KEY not set')
+
     # Create a test image
     test_image = create_test_image()
 
@@ -51,24 +56,53 @@ def test_anthropic_image_format_issue():
     assert 'url' in serialized_message['content'][1]['image_url']
     assert serialized_message['content'][1]['image_url']['url'] == screenshot
 
-    # Mock the litellm.completion function to simulate the error
-    with patch('litellm.completion') as mock_completion:
-        # Configure the mock to raise an exception
-        mock_completion.side_effect = Exception(
-            """Image url not in expected format. Example Expected input - "image_url": "data:image/jpeg;base64,{base64_image}". Supported formats - ['image/jpeg', 'image/png', 'image/gif', 'image/webp']."""
+    # Try to call the Anthropic API through litellm
+    # This actually succeeds with PNG format, which is surprising
+    import litellm
+
+    try:
+        print('\n\nTesting with PNG format:')
+        response = litellm.completion(
+            model='anthropic/claude-3-opus-20240229',
+            messages=[serialized_message],
+            api_key=anthropic_api_key,
+        )
+        print(f'Response: {response}')
+        print('PNG format works with Anthropic API directly!')
+
+        # Let's also try with a JPEG format to compare
+        import base64
+        import io
+
+        # Convert the test image to JPEG
+        buffered = io.BytesIO()
+        test_image.save(buffered, format='JPEG')
+        jpeg_base64 = base64.b64encode(buffered.getvalue()).decode()
+        jpeg_url = f'data:image/jpeg;base64,{jpeg_base64}'
+
+        # Create a message with the JPEG screenshot
+        jpeg_message = Message(
+            role='user',
+            content=[
+                TextContent(text="What's in this JPEG image?"),
+                ImageContent(image_urls=[jpeg_url]),
+            ],
+            vision_enabled=True,
         )
 
-        # Try to call the Anthropic API through litellm
-        with pytest.raises(Exception) as excinfo:
-            import litellm
+        # Serialize the message for litellm
+        jpeg_serialized_message = jpeg_message.serialize_model()
 
-            litellm.completion(
-                model='anthropic/claude-3-opus-20240229',
-                messages=[serialized_message],
-                api_key='fake_api_key',
-            )
+        # Try with JPEG format
+        print('\n\nTesting with JPEG format:')
+        jpeg_response = litellm.completion(
+            model='anthropic/claude-3-opus-20240229',
+            messages=[jpeg_serialized_message],
+            api_key=anthropic_api_key,
+        )
+        print(f'JPEG Response: {jpeg_response}')
+        print('JPEG format also works with Anthropic API directly!')
 
-        # Verify the error message
-        error_message = str(excinfo.value)
-        assert 'Image url not in expected format' in error_message
-        assert 'data:image/jpeg;base64' in error_message
+    except Exception as e:
+        print(f'Error: {str(e)}')
+        raise
