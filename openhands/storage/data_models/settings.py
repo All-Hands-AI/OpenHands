@@ -41,6 +41,8 @@ class Settings(BaseModel):
     mcp_config: MCPConfig | None = None
     search_api_key: SecretStr | None = None
     max_budget_per_task: float | None = None
+    email: str | None = None
+    email_verified: bool | None = None
 
     model_config = {
         'validate_assignment': True,

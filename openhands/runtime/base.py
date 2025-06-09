@@ -90,10 +90,33 @@ def _default_env_vars(sandbox_config: SandboxConfig) -> dict[str, str]:
 
 
 class Runtime(FileEditRuntimeMixin):
-    """The runtime is how the agent interacts with the external environment.
-    This includes a bash sandbox, a browser, and filesystem interactions.
+    """Abstract base class for agent runtime environments.
 
-    sid is the session id, which is used to identify the current user session.
+    This is an extension point in OpenHands that allows applications to customize how
+    agents interact with the external environment. The runtime provides a sandbox with:
+    - Bash shell access
+    - Browser interaction
+    - Filesystem operations
+    - Git operations
+    - Environment variable management
+
+    Applications can substitute their own implementation by:
+    1. Creating a class that inherits from Runtime
+    2. Implementing all required methods
+    3. Setting the runtime name in configuration or using get_runtime_cls()
+
+    The class is instantiated via get_impl() in get_runtime_cls().
+
+    Built-in implementations include:
+    - DockerRuntime: Containerized environment using Docker
+    - E2BRuntime: Secure sandbox using E2B
+    - RemoteRuntime: Remote execution environment
+    - ModalRuntime: Scalable cloud environment using Modal
+    - LocalRuntime: Local execution for development
+    - DaytonaRuntime: Cloud development environment using Daytona
+
+    Args:
+        sid: Session ID that uniquely identifies the current user session
     """
 
     sid: str
@@ -218,35 +241,66 @@ class Runtime(FileEditRuntimeMixin):
             # Note: we don't log the vars values, they're leaking info
             logger.debug('Added env vars to IPython')
 
-        # Add env vars to the Bash shell and .bashrc for persistence
-        cmd = ''
-        bashrc_cmd = ''
-        for key, value in env_vars.items():
-            # Note: json.dumps gives us nice escaping for free
-            cmd += f'export {key}={json.dumps(value)}; '
-            # Add to .bashrc if not already present
-            bashrc_cmd += f'grep -q "^export {key}=" ~/.bashrc || echo "export {key}={json.dumps(value)}" >> ~/.bashrc; '
-        if not cmd:
-            return
-        cmd = cmd.strip()
-        logger.debug(
-            'Adding env vars to bash'
-        )  # don't log the vars values, they're leaking info
+        # Check if we're on Windows
+        import os
+        import sys
 
-        obs = self.run(CmdRunAction(cmd))
-        if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
-            raise RuntimeError(
-                f'Failed to add env vars [{env_vars.keys()}] to environment: {obs.content}'
-            )
+        is_windows = os.name == 'nt' or sys.platform == 'win32'
 
-        # Add to .bashrc for persistence
-        bashrc_cmd = bashrc_cmd.strip()
-        logger.debug(f'Adding env var to .bashrc: {env_vars.keys()}')
-        obs = self.run(CmdRunAction(bashrc_cmd))
-        if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
-            raise RuntimeError(
-                f'Failed to add env vars [{env_vars.keys()}] to .bashrc: {obs.content}'
-            )
+        if is_windows:
+            # Add env vars using PowerShell commands for Windows
+            cmd = ''
+            for key, value in env_vars.items():
+                # Use PowerShell's $env: syntax for environment variables
+                # Note: json.dumps gives us nice escaping for free
+                cmd += f'$env:{key} = {json.dumps(value)}; '
+
+            if not cmd:
+                return
+
+            cmd = cmd.strip()
+            logger.debug('Adding env vars to PowerShell')  # don't log the values
+
+            obs = self.run(CmdRunAction(cmd))
+            if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
+                raise RuntimeError(
+                    f'Failed to add env vars [{env_vars.keys()}] to environment: {obs.content}'
+                )
+
+            # We don't add to profile persistence on Windows as it's more complex
+            # and varies between PowerShell versions
+            logger.debug(f'Added env vars to PowerShell session: {env_vars.keys()}')
+
+        else:
+            # Original bash implementation for Unix systems
+            cmd = ''
+            bashrc_cmd = ''
+            for key, value in env_vars.items():
+                # Note: json.dumps gives us nice escaping for free
+                cmd += f'export {key}={json.dumps(value)}; '
+                # Add to .bashrc if not already present
+                bashrc_cmd += f'grep -q "^export {key}=" ~/.bashrc || echo "export {key}={json.dumps(value)}" >> ~/.bashrc; '
+
+            if not cmd:
+                return
+
+            cmd = cmd.strip()
+            logger.debug('Adding env vars to bash')  # don't log the values
+
+            obs = self.run(CmdRunAction(cmd))
+            if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
+                raise RuntimeError(
+                    f'Failed to add env vars [{env_vars.keys()}] to environment: {obs.content}'
+                )
+
+            # Add to .bashrc for persistence
+            bashrc_cmd = bashrc_cmd.strip()
+            logger.debug(f'Adding env var to .bashrc: {env_vars.keys()}')
+            obs = self.run(CmdRunAction(bashrc_cmd))
+            if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
+                raise RuntimeError(
+                    f'Failed to add env vars [{env_vars.keys()}] to .bashrc: {obs.content}'
+                )
 
     def on_event(self, event: Event) -> None:
         if isinstance(event, Action):
@@ -346,7 +400,7 @@ class Runtime(FileEditRuntimeMixin):
                     'No repository selected. Initializing a new git repository in the workspace.'
                 )
                 action = CmdRunAction(
-                    command='git init',
+                    command=f'git init && git config --global --add safe.directory {self.workspace_root}'
                 )
                 self.run_action(action)
             else:
@@ -366,6 +420,10 @@ class Runtime(FileEditRuntimeMixin):
         }
 
         domain = provider_domains[provider]
+
+        # If git_provider_tokens is provided, use the host from the token if available
+        if git_provider_tokens and provider in git_provider_tokens:
+            domain = git_provider_tokens[provider].host or domain
 
         # Try to use token if available, otherwise use public URL
         if git_provider_tokens and provider in git_provider_tokens:
@@ -406,9 +464,13 @@ class Runtime(FileEditRuntimeMixin):
             else f'git checkout -b {openhands_workspace_branch}'
         )
 
-        action = CmdRunAction(
-            command=f'{clone_command} ; cd {dir_name} ; {checkout_command}',
+        clone_action = CmdRunAction(command=clone_command)
+        self.run_action(clone_action)
+
+        cd_checkout_action = CmdRunAction(
+            command=f'cd {dir_name} && {checkout_command}'
         )
+        action = cd_checkout_action
         self.log('info', f'Cloning repo: {selected_repository}')
         self.run_action(action)
         return dir_name
@@ -649,16 +711,13 @@ fi
 
             # Get authenticated URL and do a shallow clone (--depth 1) for efficiency
             remote_url = self._get_authenticated_git_url(org_openhands_repo)
-            clone_cmd = f"git clone --depth 1 {remote_url} {org_repo_dir} 2>/dev/null || echo 'Org repo not found'"
+
+            clone_cmd = f'git clone --depth 1 {remote_url} {org_repo_dir}'
 
             action = CmdRunAction(command=clone_cmd)
             obs = self.run_action(action)
 
-            if (
-                isinstance(obs, CmdOutputObservation)
-                and obs.exit_code == 0
-                and 'Org repo not found' not in obs.content
-            ):
+            if isinstance(obs, CmdOutputObservation) and obs.exit_code == 0:
                 self.log(
                     'info',
                     f'Successfully cloned org-level microagents from {org_openhands_repo}',
@@ -856,6 +915,14 @@ fi
         raise NotImplementedError('This method is not implemented in the base class.')
 
     # ====================================================================
+    # Authentication
+    # ====================================================================
+
+    @property
+    def session_api_key(self) -> str | None:
+        return None
+
+    # ====================================================================
     # VSCode
     # ====================================================================
 
@@ -884,6 +951,9 @@ fi
         obs = self.run(CmdRunAction(command=command, is_static=True, cwd=cwd))
         exit_code = 0
         content = ''
+
+        if isinstance(obs, ErrorObservation):
+            exit_code = -1
 
         if hasattr(obs, 'exit_code'):
             exit_code = obs.exit_code

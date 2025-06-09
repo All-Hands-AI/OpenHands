@@ -20,6 +20,8 @@ export const DEFAULT_SETTINGS: Settings = {
   SEARCH_API_KEY: "",
   IS_NEW_USER: true,
   MAX_BUDGET_PER_TASK: null,
+  EMAIL: "",
+  EMAIL_VERIFIED: true, // Default to true to avoid restricting access unnecessarily
   MCP_CONFIG: {
     sse_servers: [],
     stdio_servers: [],

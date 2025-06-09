@@ -28,6 +28,8 @@ const getSettingsQueryFn = async (): Promise<Settings> => {
     USER_CONSENTS_TO_ANALYTICS: apiSettings.user_consents_to_analytics,
     SEARCH_API_KEY: apiSettings.search_api_key || "",
     MAX_BUDGET_PER_TASK: apiSettings.max_budget_per_task,
+    EMAIL: apiSettings.email || "",
+    EMAIL_VERIFIED: apiSettings.email_verified,
     MCP_CONFIG: apiSettings.mcp_config,
     IS_NEW_USER: false,
   };
@@ -44,6 +46,7 @@ export const useSettings = () => {
     // would want to show the modal immediately if the
     // settings are not found
     retry: (_, error) => error.status !== 404,
+    refetchOnWindowFocus: false,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes
     enabled: !isOnTosPage && !!userIsAuthenticated,

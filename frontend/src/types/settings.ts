@@ -46,6 +46,8 @@ export type Settings = {
   IS_NEW_USER?: boolean;
   MCP_CONFIG?: MCPConfig;
   MAX_BUDGET_PER_TASK: number | null;
+  EMAIL?: string;
+  EMAIL_VERIFIED?: boolean;
 };
 
 export type ApiSettings = {
@@ -70,6 +72,8 @@ export type ApiSettings = {
     sse_servers: (string | MCPSSEServer)[];
     stdio_servers: MCPStdioServer[];
   };
+  email?: string;
+  email_verified?: boolean;
 };
 
 export type PostSettings = Settings & {
