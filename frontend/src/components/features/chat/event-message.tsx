@@ -51,7 +51,7 @@ export function EventMessage({
 
     // Check if there's a user_feedback action for this specific event ID
     return parsedEvents.some(
-      (e) => isUserFeedbackAction(e) && e.args.event_id === event.id.toString(),
+      (e) => isUserFeedbackAction(e) && e.args.event_id === event.id,
     );
   }, [event.id, parsedEvents]);
 
