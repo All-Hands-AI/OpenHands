@@ -12,6 +12,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import MessageAction
 from openhands.events.stream import EventStreamSubscriber, session_exists
+from openhands.runtime import get_runtime_cls
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.monitoring import MonitoringListener
@@ -63,12 +64,16 @@ class StandaloneConversationManager(ConversationManager):
 
     async def __aenter__(self):
         self._cleanup_task = asyncio.create_task(self._cleanup_stale())
+        runtime_cls = get_runtime_cls(self.config)
+        runtime_cls.setup(self.config)
         return self
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         if self._cleanup_task:
             self._cleanup_task.cancel()
             self._cleanup_task = None
+        runtime_cls = get_runtime_cls(self.config)
+        runtime_cls.teardown(self.config)
 
     async def attach_to_conversation(
         self, sid: str, user_id: str | None = None

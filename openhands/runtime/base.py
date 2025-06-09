@@ -989,3 +989,15 @@ fi
         Returns False by default.
         """
         return False
+
+    @classmethod
+    def setup(cls, config: OpenHandsConfig):
+        """
+        Set up the environment for runtimes to be created.
+        """
+
+    @classmethod
+    def teardown(cls, config: OpenHandsConfig):
+        """
+        Tear down the environment in which runtimes are created
+        """

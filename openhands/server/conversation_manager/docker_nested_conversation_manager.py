@@ -22,6 +22,7 @@ from openhands.events.nested_event_store import NestedEventStore
 from openhands.events.stream import EventStream
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
 from openhands.llm.llm import LLM
+from openhands.runtime import get_runtime_cls
 from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.conversation_manager.conversation_manager import (
@@ -56,12 +57,12 @@ class DockerNestedConversationManager(ConversationManager):
     _runtime_container_image: str | None = None
 
     async def __aenter__(self):
-        # No action is required on startup for this implementation
-        pass
+        runtime_cls = get_runtime_cls(self.config)
+        runtime_cls.setup(self.config)
 
     async def __aexit__(self, exc_type, exc_value, traceback):
-        # No action is required on shutdown for this implementation
-        pass
+        runtime_cls = get_runtime_cls(self.config)
+        runtime_cls.teardown(self.config)
 
     async def attach_to_conversation(
         self, sid: str, user_id: str | None = None
