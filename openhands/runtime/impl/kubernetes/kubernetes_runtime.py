@@ -49,7 +49,6 @@ from openhands.runtime.impl.action_execution.action_execution_client import (
 )
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.command import get_action_execution_server_startup_command
-from openhands.runtime.utils.log_streamer import LogStreamer
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.shutdown_listener import add_shutdown_listener
 from openhands.utils.tenacity_stop import stop_if_should_exit
@@ -127,9 +126,6 @@ class KubernetesRuntime(ActionExecutionClient):
         # Initialize the API URL with the initial port value
         self.k8s_local_url = f'http://{self._get_svc_name(self.pod_name)}.{self._k8s_namespace}.svc.cluster.local'
         self.api_url = f'{self.k8s_local_url}:{self._container_port}'
-
-        # Buffer for container logs
-        self.log_streamer: Optional[LogStreamer] = None
 
         super().__init__(
             config,
@@ -238,13 +234,6 @@ class KubernetesRuntime(ActionExecutionClient):
                     f'Failed to initialize kubernetes resources: {init_error}'
                 ) from init_error
 
-        if DEBUG_RUNTIME:
-            # Log streamer for kubernetes pods
-            # This is a simplified version that just uses the pod name
-            self.log_streamer = LogStreamer(self.pod_name, self.log)
-        else:
-            self.log_streamer = None
-
         if not self.attach_to_existing:
             self.log('info', 'Waiting for pod to become ready ...')
             self.send_status_message('STATUS$WAITING_FOR_CLIENT')
@@ -298,7 +287,7 @@ class KubernetesRuntime(ActionExecutionClient):
             raise
 
     @tenacity.retry(
-        stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),
+        stop=tenacity.stop_after_delay(300) | stop_if_should_exit(),
         retry=tenacity.retry_if_exception_type(TimeoutError),
         reraise=True,
         wait=tenacity.wait_fixed(2),
@@ -671,10 +660,6 @@ class KubernetesRuntime(ActionExecutionClient):
         self.log('info', f'Closing runtime and cleaning up resources for conersation ID: {self.sid}')
         # Call parent class close method first
         super().close()
-
-        # Close log streamer if it exists
-        if self.log_streamer:
-            self.log_streamer.close()
 
         # Return early if we should keep the runtime alive or if we're attaching to existing
         if self.config.sandbox.keep_runtime_alive or self.attach_to_existing:
