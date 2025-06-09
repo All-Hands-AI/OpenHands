@@ -50,6 +50,14 @@ def parse_action(trace: list[TraceElement], action: Action) -> list[TraceElement
         event_dict = event_to_dict(action)
         args = event_dict.get('args', {})
         thought = args.pop('thought', None)
+
+        # Remove return_axtree field for browse actions to maintain backward compatibility with tests
+        if (
+            action.action in ['browse', 'browse_interactive']
+            and 'return_axtree' in args
+        ):
+            args.pop('return_axtree', None)
+
         function = Function(name=action.action, arguments=args)
         if thought is not None:
             inv_trace.append(Message(role='assistant', content=thought))
