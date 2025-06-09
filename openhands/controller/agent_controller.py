@@ -520,15 +520,22 @@ class AgentController:
                 self.state.max_iterations = (
                     self.state.iteration + self._initial_max_iterations
                 )
+                # Only reset traffic control state if we're not in ERROR state due to budget limit
+                # This ensures that the budget extension logic in set_agent_state_to will work
                 if (
                     self.state.traffic_control_state == TrafficControlState.THROTTLING
                     or self.state.traffic_control_state == TrafficControlState.PAUSED
+                ) and not (
+                    self.state.agent_state == AgentState.ERROR
+                    and 'budget' in self.state.last_error.lower()
                 ):
                     self.state.traffic_control_state = TrafficControlState.NORMAL
                 self.log(
                     'debug',
                     f'Extended max iterations to {self.state.max_iterations} after user message',
                 )
+
+            # Budget extension is now handled in set_agent_state_to method
             # try to retrieve microagents relevant to the user message
             # set pending_action while we search for information
 
@@ -611,11 +618,20 @@ class AgentController:
             await self.update_state_after_step()
             self.state.metrics.merge(self.state.local_metrics)
             self._reset()
-        elif (
-            new_state == AgentState.RUNNING
-            and self.state.agent_state == AgentState.PAUSED
-            # TODO: do we really need both THROTTLING and PAUSED states, or can we clean up one of them completely?
-            and self.state.traffic_control_state == TrafficControlState.THROTTLING
+        elif new_state == AgentState.RUNNING and (
+            # Handle transition from PAUSED state with THROTTLING traffic control
+            (
+                self.state.agent_state == AgentState.PAUSED
+                # TODO: do we really need both THROTTLING and PAUSED states, or can we clean up one of them completely?
+                and self.state.traffic_control_state == TrafficControlState.THROTTLING
+            )
+            # Handle transition from ERROR state due to budget limit
+            or (
+                self.state.agent_state == AgentState.ERROR
+                and 'budget' in self.state.last_error.lower()
+                and self.state.traffic_control_state == TrafficControlState.THROTTLING
+                and not self.headless_mode
+            )
         ):
             # user intends to interrupt traffic control and let the task resume temporarily
             self.state.traffic_control_state = TrafficControlState.PAUSED
