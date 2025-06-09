@@ -15,7 +15,6 @@ from fastapi import (
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands import __version__
 from openhands.server.routes.conversation import app as conversation_api_router
-from openhands.server.routes.feedback import app as feedback_api_router
 from openhands.server.routes.files import app as files_api_router
 from openhands.server.routes.git import app as git_api_router
 from openhands.server.routes.health import add_health_endpoints
@@ -63,7 +62,6 @@ app = FastAPI(
 app.include_router(public_api_router)
 app.include_router(files_api_router)
 app.include_router(security_api_router)
-app.include_router(feedback_api_router)
 app.include_router(conversation_api_router)
 app.include_router(manage_conversation_api_router)
 app.include_router(settings_router)
