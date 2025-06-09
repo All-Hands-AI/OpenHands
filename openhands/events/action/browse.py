@@ -10,6 +10,7 @@ class BrowseURLAction(Action):
     url: str
     thought: str = ''
     action: str = ActionType.BROWSE
+    return_all: bool = False
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None
 
@@ -31,6 +32,7 @@ class BrowseInteractiveAction(Action):
     thought: str = ''
     browsergym_send_msg_to_user: str = ''
     action: str = ActionType.BROWSE_INTERACTIVE
+    return_all: bool = False
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None
 

@@ -2,23 +2,78 @@ import base64
 import datetime
 import os
 from pathlib import Path
+from typing import Any
 
 from PIL import Image
 
 from openhands.core.exceptions import BrowserUnavailableException
 from openhands.core.schema import ActionType
 from openhands.events.action import BrowseInteractiveAction, BrowseURLAction
-from openhands.events.observation import BrowserOutputObservation
 from openhands.runtime.browser.base64 import png_base64_url_to_image
 from openhands.runtime.browser.browser_env import BrowserEnv
 from openhands.utils.async_utils import call_sync_from_async
+
+
+def get_agent_obs_text(observation: Any) -> str:
+    """Get a concise text that will be shown to the agent."""
+    if observation.trigger_by_action == ActionType.BROWSE_INTERACTIVE:
+        text = f'[Current URL: {observation.url}]\n'
+        text += f'[Focused element bid: {observation.focused_element_bid}]\n'
+
+        # Add screenshot path information if available
+        if observation.screenshot_path:
+            text += f'[Screenshot saved to: {observation.screenshot_path}]\n'
+
+        text += '\n'
+
+        if observation.error:
+            text += (
+                '================ BEGIN error message ===============\n'
+                'The following error occurred when executing the last action:\n'
+                f'{observation.last_browser_action_error}\n'
+                '================ END error message ===============\n'
+            )
+        else:
+            text += '[Action executed successfully.]\n'
+        try:
+            # We do not filter visible only here because we want to show the full content
+            # of the web page to the agent for simplicity.
+            # FIXME: handle the case when the web page is too large
+            cur_axtree_txt = observation.get_axtree_str(filter_visible_only=False)
+            text += (
+                f'============== BEGIN accessibility tree ==============\n'
+                f'{cur_axtree_txt}\n'
+                f'============== END accessibility tree ==============\n'
+            )
+        except Exception as e:
+            text += f'\n[Error encountered when processing the accessibility tree: {e}]'
+        return text
+
+    elif observation.trigger_by_action == ActionType.BROWSE:
+        text = f'[Current URL: {observation.url}]\n'
+
+        if observation.error:
+            text += (
+                '================ BEGIN error message ===============\n'
+                'The following error occurred when trying to visit the URL:\n'
+                f'{observation.last_browser_action_error}\n'
+                '================ END error message ===============\n'
+            )
+        text += '============== BEGIN webpage content ==============\n'
+        text += observation.content
+        text += '\n============== END webpage content ==============\n'
+        return text
+    else:
+        raise ValueError(f'Invalid trigger_by_action: {observation.trigger_by_action}')
 
 
 async def browse(
     action: BrowseURLAction | BrowseInteractiveAction,
     browser: BrowserEnv | None,
     workspace_dir: str | None = None,
-) -> BrowserOutputObservation:
+) -> Any:  # Will be BrowserOutputObservation
+    from openhands.events.observation import BrowserOutputObservation
+
     if browser is None:
         raise BrowserUnavailableException()
 
@@ -78,7 +133,7 @@ async def browse(
                 image = png_base64_url_to_image(obs.get('screenshot'))
                 image.save(screenshot_path, format='PNG', optimize=True)
 
-        return BrowserOutputObservation(
+        observation = BrowserOutputObservation(
             content=obs['text_content'],  # text content of the page
             url=obs.get('url', ''),  # URL of the page
             screenshot=obs.get('screenshot', None),  # base64-encoded screenshot, png
@@ -103,8 +158,14 @@ async def browse(
             error=True if obs.get('last_action_error', '') else False,  # error flag
             trigger_by_action=action.action,
         )
+
+        # If return_all is False, set content to the result of get_agent_obs_text
+        if not getattr(action, 'return_all', False):
+            observation.content = get_agent_obs_text(observation)
+
+        return observation
     except Exception as e:
-        return BrowserOutputObservation(
+        observation = BrowserOutputObservation(
             content=str(e),
             screenshot='',
             screenshot_path=None,
@@ -113,3 +174,13 @@ async def browse(
             url=asked_url if action.action == ActionType.BROWSE else '',
             trigger_by_action=action.action,
         )
+
+        # If return_all is False, set content to the result of get_agent_obs_text
+        if not getattr(action, 'return_all', False):
+            try:
+                observation.content = get_agent_obs_text(observation)
+            except Exception:
+                # If get_agent_obs_text fails, keep the original error message
+                pass
+
+        return observation

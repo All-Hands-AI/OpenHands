@@ -3,7 +3,7 @@ from typing import Any
 
 from browsergym.utils.obs import flatten_axtree_to_str
 
-from openhands.core.schema import ActionType, ObservationType
+from openhands.core.schema import ObservationType
 from openhands.events.observation.observation import Observation
 
 
@@ -40,6 +40,8 @@ class BrowserOutputObservation(Observation):
         return 'Visited ' + self.url
 
     def __str__(self) -> str:
+        from openhands.runtime.browser.utils import get_agent_obs_text
+
         ret = (
             '**BrowserOutputObservation**\n'
             f'URL: {self.url}\n'
@@ -53,62 +55,10 @@ class BrowserOutputObservation(Observation):
         if self.screenshot_path:
             ret += f'Screenshot saved to: {self.screenshot_path}\n'
         ret += '--- Agent Observation ---\n'
-        ret += self.get_agent_obs_text()
+        ret += get_agent_obs_text(self)
         return ret
 
-    def get_agent_obs_text(self) -> str:
-        """Get a concise text that will be shown to the agent."""
-        if self.trigger_by_action == ActionType.BROWSE_INTERACTIVE:
-            text = f'[Current URL: {self.url}]\n'
-            text += f'[Focused element bid: {self.focused_element_bid}]\n'
-
-            # Add screenshot path information if available
-            if self.screenshot_path:
-                text += f'[Screenshot saved to: {self.screenshot_path}]\n'
-
-            text += '\n'
-
-            if self.error:
-                text += (
-                    '================ BEGIN error message ===============\n'
-                    'The following error occurred when executing the last action:\n'
-                    f'{self.last_browser_action_error}\n'
-                    '================ END error message ===============\n'
-                )
-            else:
-                text += '[Action executed successfully.]\n'
-            try:
-                # We do not filter visible only here because we want to show the full content
-                # of the web page to the agent for simplicity.
-                # FIXME: handle the case when the web page is too large
-                cur_axtree_txt = self.get_axtree_str(filter_visible_only=False)
-                text += (
-                    f'============== BEGIN accessibility tree ==============\n'
-                    f'{cur_axtree_txt}\n'
-                    f'============== END accessibility tree ==============\n'
-                )
-            except Exception as e:
-                text += (
-                    f'\n[Error encountered when processing the accessibility tree: {e}]'
-                )
-            return text
-
-        elif self.trigger_by_action == ActionType.BROWSE:
-            text = f'[Current URL: {self.url}]\n'
-
-            if self.error:
-                text += (
-                    '================ BEGIN error message ===============\n'
-                    'The following error occurred when trying to visit the URL:\n'
-                    f'{self.last_browser_action_error}\n'
-                    '================ END error message ===============\n'
-                )
-            text += '============== BEGIN webpage content ==============\n'
-            text += self.content
-            text += '\n============== END webpage content ==============\n'
-            return text
-        else:
-            raise ValueError(f'Invalid trigger_by_action: {self.trigger_by_action}')
+    # The get_agent_obs_text method has been moved to openhands/runtime/browser/utils.py
 
     def get_axtree_str(self, filter_visible_only: bool = False) -> str:
         cur_axtree_txt = flatten_axtree_to_str(
