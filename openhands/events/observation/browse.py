@@ -1,8 +1,6 @@
 from dataclasses import dataclass, field
 from typing import Any
 
-from browsergym.utils.obs import flatten_axtree_to_str
-
 from openhands.core.schema import ObservationType
 from openhands.events.observation.observation import Observation
 
@@ -55,15 +53,3 @@ class BrowserOutputObservation(Observation):
         ret += '--- Agent Observation ---\n'
         ret += self.content
         return ret
-
-    # The get_agent_obs_text method has been moved to openhands/runtime/browser/utils.py
-
-    def get_axtree_str(self, filter_visible_only: bool = False) -> str:
-        cur_axtree_txt = flatten_axtree_to_str(
-            self.axtree_object,
-            extra_properties=self.extra_element_properties,
-            with_clickable=True,
-            skip_generic=False,
-            filter_visible_only=filter_visible_only,
-        )
-        return str(cur_axtree_txt)

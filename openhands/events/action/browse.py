@@ -12,7 +12,7 @@ class BrowseURLAction(Action):
     action: str = ActionType.BROWSE
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None
-    return_all: bool = False
+    return_axtree: bool = False
 
     @property
     def message(self) -> str:
@@ -34,7 +34,7 @@ class BrowseInteractiveAction(Action):
     action: str = ActionType.BROWSE_INTERACTIVE
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None
-    return_all: bool = False
+    return_axtree: bool = False
 
     @property
     def message(self) -> str:

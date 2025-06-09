@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from PIL import Image
+from browsergym.utils.obs import flatten_axtree_to_str
 
 from openhands.core.exceptions import BrowserUnavailableException
 from openhands.core.schema import ActionType
@@ -14,8 +15,21 @@ from openhands.runtime.browser.base64 import png_base64_url_to_image
 from openhands.runtime.browser.browser_env import BrowserEnv
 from openhands.utils.async_utils import call_sync_from_async
 
+def get_axtree_str(
+    axtree_object: dict[str, Any],
+    extra_element_properties: dict[str, Any],
+    filter_visible_only: bool = False,
+) -> str:
+    cur_axtree_txt = flatten_axtree_to_str(
+        axtree_object,
+        extra_properties=extra_element_properties,
+        with_clickable=True,
+        skip_generic=False,
+        filter_visible_only=filter_visible_only,
+    )
+    return str(cur_axtree_txt)
 
-def get_agent_obs_text(obs: Any) -> str:
+def get_agent_obs_text(obs: BrowserOutputObservation) -> str:
     """Get a concise text that will be shown to the agent."""
     if obs.trigger_by_action == ActionType.BROWSE_INTERACTIVE:
         text = f'[Current URL: {obs.url}]\n'
@@ -40,7 +54,9 @@ def get_agent_obs_text(obs: Any) -> str:
             # We do not filter visible only here because we want to show the full content
             # of the web page to the agent for simplicity.
             # FIXME: handle the case when the web page is too large
-            cur_axtree_txt = obs.get_axtree_str(filter_visible_only=False)
+            cur_axtree_txt = get_axtree_str(
+                obs.axtree_object, obs.extra_element_properties, filter_visible_only=False
+            )
             text += (
                 f'============== BEGIN accessibility tree ==============\n'
                 f'{cur_axtree_txt}\n'
@@ -159,11 +175,12 @@ async def browse(
             trigger_by_action=action.action,
         )
 
-        # If return_all is False, process the content and remove the axtree_object
-        if not getattr(action, 'return_all', False):
-            # Process the content first using the axtree_object
-            observation.content = get_agent_obs_text(observation)
+        # Process the content first using the axtree_object
+        observation.content = get_agent_obs_text(observation)
+
+        if not action.return_axtree:
             # Then remove the axtree_object to save space
+            observation.dom_object = {}
             observation.axtree_object = {}
             observation.extra_element_properties = {}
 
@@ -183,8 +200,7 @@ async def browse(
             trigger_by_action=action.action,
         )
 
-        # If return_all is False, try to format the error message
-        if not getattr(action, 'return_all', False):
+        if not action.return_axtree:
             try:
                 observation.content = get_agent_obs_text(observation)
             except Exception:
