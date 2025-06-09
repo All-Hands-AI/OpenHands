@@ -81,16 +81,26 @@ export function EventMessage({
   }
 
   if (isUserMessage(event) || isAssistantMessage(event)) {
+    // Only show Likert scale for agent messages that are not finish actions
+    // and are the last message in the conversation
+    const showLikertScale = 
+      isLastMessage && 
+      isAssistantMessage(event) && 
+      !isFinishAction(event);
+      
     return (
-      <ChatMessage
-        type={event.source}
-        message={isUserMessage(event) ? event.args.content : event.message}
-      >
-        {event.args.image_urls && event.args.image_urls.length > 0 && (
-          <ImageCarousel size="small" images={event.args.image_urls} />
-        )}
-        {shouldShowConfirmationButtons && <ConfirmationButtons />}
-      </ChatMessage>
+      <>
+        <ChatMessage
+          type={event.source}
+          message={isUserMessage(event) ? event.args.content : event.message}
+        >
+          {event.args.image_urls && event.args.image_urls.length > 0 && (
+            <ImageCarousel size="small" images={event.args.image_urls} />
+          )}
+          {shouldShowConfirmationButtons && <ConfirmationButtons />}
+        </ChatMessage>
+        {showLikertScale && <LikertScale onRatingSubmit={handleRatingSubmit} />}
+      </>
     );
   }
 
