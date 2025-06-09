@@ -301,10 +301,8 @@ class DockerNestedConversationManager(ConversationManager):
                 # Check up to 3 times that client has closed
                 for _ in range(3):
                     response = await client.get(f'{nested_url}/api/conversations/{sid}')
-                    if (
-                        response.status_code == status.HTTP_200_OK
-                        and response.json().get('status') == 'STOPPED'
-                    ):
+                    response.raise_for_status()
+                    if response.json().get('status') == 'STOPPED':
                         break
                     await asyncio.sleep(1)
 
