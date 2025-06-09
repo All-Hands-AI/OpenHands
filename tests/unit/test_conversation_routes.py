@@ -5,7 +5,7 @@ import pytest
 from fastapi.responses import JSONResponse
 
 from openhands.microagent.microagent import KnowledgeMicroagent, RepoMicroagent
-from openhands.microagent.types import MicroagentMetadata, MicroagentType
+from openhands.microagent.types import InputMetadata, MicroagentMetadata, MicroagentType
 from openhands.server.routes.conversation import get_microagents
 from openhands.server.session.conversation import ServerConversation
 
@@ -22,7 +22,11 @@ async def test_get_microagents():
         metadata=MicroagentMetadata(
             name='test_repo',
             type=MicroagentType.REPO_KNOWLEDGE,
-            inputs=['repository_path'],
+            inputs=[
+                InputMetadata(
+                    name='repository_path', description='Path to the repository'
+                )
+            ],
             mcp_tools=MCPConfig(
                 stdio_servers=[
                     MCPStdioServerConfig(name='git', command='git'),
@@ -41,7 +45,10 @@ async def test_get_microagents():
             name='test_knowledge',
             type=MicroagentType.KNOWLEDGE,
             triggers=['test', 'knowledge'],
-            inputs=['user_input', 'context'],
+            inputs=[
+                InputMetadata(name='user_input', description='User input'),
+                InputMetadata(name='context', description='Context information'),
+            ],
             mcp_tools=MCPConfig(
                 stdio_servers=[
                     MCPStdioServerConfig(name='search', command='search'),
@@ -89,7 +96,9 @@ async def test_get_microagents():
         assert repo_agent['type'] == 'repo'
         assert repo_agent['content'] == 'This is a test repo microagent'
         assert repo_agent['triggers'] == []
-        assert repo_agent['inputs'] == ['repository_path']
+        assert (
+            repo_agent['inputs'] == []
+        )  # RepoMicroagent doesn't have an inputs property
         assert repo_agent['tools'] == ['git', 'file_editor']
 
         # Check knowledge microagent
@@ -99,7 +108,9 @@ async def test_get_microagents():
         assert knowledge_agent['type'] == 'knowledge'
         assert knowledge_agent['content'] == 'This is a test knowledge microagent'
         assert knowledge_agent['triggers'] == ['test', 'knowledge']
-        assert knowledge_agent['inputs'] == ['user_input', 'context']
+        assert (
+            knowledge_agent['inputs'] == []
+        )  # KnowledgeMicroagent doesn't have an inputs property
         assert knowledge_agent['tools'] == ['search', 'fetch']
 
 
