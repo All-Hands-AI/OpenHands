@@ -50,10 +50,6 @@ def parse_action(trace: list[TraceElement], action: Action) -> list[TraceElement
         event_dict = event_to_dict(action)
         args = event_dict.get('args', {})
         thought = args.pop('thought', None)
-
-        # We should not remove fields to bypass tests
-        # Instead, we should update the tests to handle new fields
-
         function = Function(name=action.action, arguments=args)
         if thought is not None:
             inv_trace.append(Message(role='assistant', content=thought))
