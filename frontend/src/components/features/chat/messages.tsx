@@ -1,6 +1,7 @@
 import React from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
+import { FaBrain } from "react-icons/fa6";
 import { OpenHandsAction } from "#/types/core/actions";
 import { OpenHandsObservation } from "#/types/core/observations";
 import { isOpenHandsAction, isOpenHandsObservation } from "#/types/core/guards";
@@ -10,7 +11,6 @@ import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
 import { LaunchMicroagentModal } from "./microagent/launch-microagent-modal";
 import { useUserConversation } from "#/hooks/query/use-user-conversation";
 import { useConversationId } from "#/hooks/use-conversation-id";
-import { LaunchToMicroagentButton } from "./microagent/launch-to-microagent-button";
 import { useCreateConversationAndSubscribe } from "#/hooks/use-create-conversation-and-subscribe";
 
 interface MessagesProps {
@@ -85,17 +85,15 @@ export const Messages: React.FC<MessagesProps> = React.memo(
             hasObservationPair={actionHasObservationPair(message)}
             isAwaitingUserConfirmation={isAwaitingUserConfirmation}
             isLastMessage={messages.length - 1 === index}
-            userMessageActionButton={
-              // Only show the button conversation has a selected repository
-              conversation?.selected_repository && (
-                <LaunchToMicroagentButton
-                  onClick={() => {
-                    setSelectedEventId(message.id);
-                    setShowLaunchMicroagentModal(true);
-                  }}
-                />
-              )
-            }
+            actions={[
+              {
+                icon: <FaBrain className="w-[14px] h-[14px]" />,
+                onClick: () => {
+                  setSelectedEventId(message.id);
+                  setShowLaunchMicroagentModal(true);
+                },
+              },
+            ]}
           />
         ))}
 
