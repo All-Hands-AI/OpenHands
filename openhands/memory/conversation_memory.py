@@ -391,9 +391,7 @@ class ConversationMemory:
                 role='user', content=[TextContent(text=obs.content)]
             )  # Content is already truncated by openhands-aci
         elif isinstance(obs, BrowserOutputObservation):
-            from openhands.runtime.browser.utils import get_agent_obs_text
-
-            text = get_agent_obs_text(obs)
+            text = obs.content
             if (
                 obs.trigger_by_action == ActionType.BROWSE_INTERACTIVE
                 and enable_som_visual_browsing
