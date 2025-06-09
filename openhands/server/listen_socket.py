@@ -53,7 +53,16 @@ def create_provider_tokens_object(
 async def connect(connection_id: str, environ):
     logger.info(f'sio:connect: {connection_id}')
     query_params = parse_qs(environ.get('QUERY_STRING', ''))
-    latest_event_id = int(query_params.get('latest_event_id', [-1])[0])
+    try:
+        latest_event_id = query_params.get('latest_event_id', [-1])[0]
+        # check latest_event_id is a number and handle 'undefined' case
+
+        if latest_event_id and latest_event_id != 'undefined':
+            latest_event_id = int(latest_event_id)
+        else:
+            latest_event_id = -1
+    except (ValueError, AttributeError):
+        latest_event_id = -1
     conversation_id = query_params.get('conversation_id', [None])[0]
     system_prompt = query_params.get('system_prompt', [None])[0]
     user_prompt = query_params.get('user_prompt', [None])[0]
