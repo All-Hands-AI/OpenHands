@@ -1,6 +1,3 @@
-import numpy as np
-import sglang as sgl
-from sglang import RuntimeEndpoint, assistant, set_default_backend, system, user
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 
 from openhands.core.config import ModelRoutingConfig
@@ -10,34 +7,26 @@ from openhands.router.cost_saving.prompt import (
     CLASSIFIER_SYSTEM_MESSAGE,
     CLASSIFIER_USER_MESSAGE,
 )
+from transformers import AutoTokenizer
+import requests
 
-set_default_backend(
-    RuntimeEndpoint(
-        base_url='https://onuug1q6jd24ou.r21.modal.host',
-        api_key='ht-test-key',
-    )
-)
+API_URL = "https://blc5ptpat6uzvg.r26.modal.host/classify"
+TOKENIZER_NAME = "Qwen/Qwen2.5-Coder-1.5B-Instruct"
+MODEL_NAME = "router-1.5b-claude-4-devstral"
+tokenizer = AutoTokenizer.from_pretrained(TOKENIZER_NAME)
 
-
-@sgl.function
-def score_trajectory(s, trajectory, **kwargs):
-    s += system(CLASSIFIER_SYSTEM_MESSAGE)
-    s += user(CLASSIFIER_USER_MESSAGE.format(conversation=trajectory))
-    s += assistant(
-        sgl.gen(
-            'answer',
-            return_logprob=True,
-            max_tokens=1,
-            temperature=0.0,
-            choices=['0', '1'],
-            choices_method=sgl.token_length_normalized,
-        )
-    )
-
+def post_http_request(payload: dict, api_url: str) -> requests.Response:
+    """Send HTTP request to VLLM classification endpoint."""
+    headers = {
+        "Authorization": "Bearer ht-test-key",
+        "Content-Type": "application/json",
+    }
+    response = requests.post(api_url, headers=headers, json=payload)
+    return response
 
 class ThresholdBasedCostSavingRouter(BaseRouter):
     WEAK_MODEL_CONFIG = 'weak_model'
-    CPT_THRESHOLD = 0.4073334000459302
+    CPT_THRESHOLD = 0.5546875
 
     def __init__(
         self,
@@ -53,18 +42,12 @@ class ThresholdBasedCostSavingRouter(BaseRouter):
         self.routing_history: list[int] = []
         self.max_token_exceeded = False
 
-    @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(3))
     def should_route_to(self, prompt: str) -> LLM:
         if self.max_token_exceeded:
             self.routing_history.append(0)
             return self.llm
 
-        state = score_trajectory(prompt)
-        prob_0 = np.exp(state.get_meta_info('answer')['input_token_logprobs'][0][0][0])
-        prob_1 = np.exp(state.get_meta_info('answer')['input_token_logprobs'][1][0][0])
-        threshold = prob_1 / (prob_0 + prob_1)
-        # print('CostSavingRouter prob_0:', prob_0)
-        # print('CostSavingRouter prob_1:', prob_1)
+        threshold = self.score_trajectory(prompt)
         print('CostSavingRouter threshold:', threshold)
 
         if threshold < self.CPT_THRESHOLD:
@@ -73,6 +56,33 @@ class ThresholdBasedCostSavingRouter(BaseRouter):
 
         self.routing_history.append(1)
         return self.weak_llm
+
+    @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(3))
+    def score_trajectory(self, trajectory, **kwargs):
+        """Score the trajectory using the weak model."""
+        convo = self.create_conversation_prompt(trajectory)
+        prompt = tokenizer.apply_chat_template([convo], tokenize=False, add_generation_prompt=True)[0]
+
+        payload = {
+            "model": MODEL_NAME,
+            "input": [prompt],
+        }
+
+        response = post_http_request(payload=payload, api_url=API_URL)
+        response.raise_for_status()
+
+        result = response.json()
+        threshold = result['data'][0]['probs'][1] # Probability for class 1
+        return threshold
+
+
+    def create_conversation_prompt(self, trajectory: str) -> list:
+        """Create conversation format for the tokenizer."""
+        conversation = [
+            {"role": "system", "content": CLASSIFIER_SYSTEM_MESSAGE},
+            {"role": "user", "content": CLASSIFIER_USER_MESSAGE.format(conversation=trajectory)}
+        ]
+        return conversation
 
     def _validate_model_routing_config(
         self, model_routing_config: ModelRoutingConfig, routing_llms: dict[str, LLM]
