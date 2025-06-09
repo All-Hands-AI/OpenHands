@@ -33,6 +33,7 @@ body:
         - Docker command in README
         - GitHub resolver
         - Development workflow
+        - CLI
         - app.all-hands.dev
         - Other
       default: 0
