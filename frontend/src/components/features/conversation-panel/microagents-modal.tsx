@@ -121,10 +121,11 @@ export function MicroagentsModal({
                               <div className="flex flex-wrap gap-1">
                                 {agent.inputs.map((input) => (
                                   <span
-                                    key={input}
+                                    key={input.name}
                                     className="px-2 py-1 text-xs rounded-full bg-green-900"
+                                    title={input.description}
                                   >
-                                    {input}
+                                    {input.name}
                                   </span>
                                 ))}
                               </div>

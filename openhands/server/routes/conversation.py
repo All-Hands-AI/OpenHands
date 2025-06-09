@@ -10,6 +10,8 @@ from openhands.server.dependencies import get_dependencies
 from openhands.server.session.conversation import ServerConversation
 from openhands.server.shared import conversation_manager
 from openhands.server.utils import get_conversation
+from openhands.microagent.types import InputMetadata
+from openhands.memory.memory import Memory
 
 app = APIRouter(
     prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies()
@@ -167,27 +169,8 @@ class MicroagentResponse(BaseModel):
     type: str
     content: str
     triggers: list[str] = []
-    inputs: list[str] = []
+    inputs: list[InputMetadata] = []
     tools: list[str] = []
-
-
-def _get_input_names(agent) -> list[str]:
-    """Extract input names from a microagent.
-
-    This handles the case where the agent's inputs property returns InputMetadata objects.
-    """
-    if not hasattr(agent, 'inputs'):
-        return []
-
-    inputs = agent.inputs
-    if not inputs:
-        return []
-
-    # If inputs is a list of InputMetadata objects, extract the names
-    if inputs and hasattr(inputs[0], 'name'):
-        return [input_metadata.name for input_metadata in inputs]
-
-    return inputs
 
 
 @app.get('/microagents')
@@ -212,7 +195,7 @@ async def get_microagents(
             )
 
         # Access the memory to get the microagents
-        memory = agent_session.memory
+        memory: Memory | None = agent_session.memory
         if memory is None:
             return JSONResponse(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -232,12 +215,8 @@ async def get_microagents(
                     type='repo',
                     content=agent.content,
                     triggers=[],
-                    inputs=_get_input_names(agent),
-                    tools=getattr(agent.metadata, 'mcp_tools', None)
-                    and [
-                        server.name for server in agent.metadata.mcp_tools.stdio_servers
-                    ]
-                    or [],
+                    inputs=agent.metadata.inputs,
+                    tools=[server.name for server in agent.metadata.mcp_tools.stdio_servers] if agent.metadata.mcp_tools else [],
                 )
             )
 
@@ -249,12 +228,8 @@ async def get_microagents(
                     type='knowledge',
                     content=agent.content,
                     triggers=agent.triggers,
-                    inputs=_get_input_names(agent),
-                    tools=getattr(agent.metadata, 'mcp_tools', None)
-                    and [
-                        server.name for server in agent.metadata.mcp_tools.stdio_servers
-                    ]
-                    or [],
+                    inputs=agent.metadata.inputs,
+                    tools=[server.name for server in agent.metadata.mcp_tools.stdio_servers] if agent.metadata.mcp_tools else [],
                 )
             )
 
