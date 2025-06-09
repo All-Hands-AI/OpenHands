@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This is ONLY used for pushing docker images created by https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md
 

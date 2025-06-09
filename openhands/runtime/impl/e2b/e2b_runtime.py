@@ -1,6 +1,6 @@
-from typing import Callable, Optional
+from typing import Callable
 
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.events.action import (
     FileReadAction,
     FileWriteAction,
@@ -22,12 +22,12 @@ from openhands.runtime.utils.files import insert_lines, read_lines
 class E2BRuntime(Runtime):
     def __init__(
         self,
-        config: AppConfig,
+        config: OpenHandsConfig,
         event_stream: EventStream,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         sandbox: E2BSandbox | None = None,
-        status_callback: Optional[Callable] = None,
+        status_callback: Callable | None = None,
     ):
         super().__init__(
             config,

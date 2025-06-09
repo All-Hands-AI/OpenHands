@@ -25,6 +25,7 @@ from evaluation.utils.shared import (
     EvalOutput,
     codeact_user_response,
     compatibility_for_eval_history_pairs,
+    get_default_sandbox_config_for_eval,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -32,11 +33,10 @@ from evaluation.utils.shared import (
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
-    AppConfig,
-    SandboxConfig,
+    OpenHandsConfig,
     get_llm_config_arg,
     get_parser,
-    load_app_config,
+    load_openhands_config,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
@@ -45,7 +45,7 @@ from openhands.events.observation import CmdOutputObservation
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
 
-config = load_app_config()
+config = load_openhands_config()
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
@@ -76,17 +76,15 @@ ID2CONDA = {
 
 def get_config(
     metadata: EvalMetadata,
-) -> AppConfig:
-    config = AppConfig(
+) -> OpenHandsConfig:
+    sandbox_config = get_default_sandbox_config_for_eval()
+    sandbox_config.base_container_image = 'public.ecr.aws/i5g0m1f6/ml-bench'
+    config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         runtime='docker',
         max_iterations=metadata.max_iterations,
-        sandbox=SandboxConfig(
-            base_container_image='public.ecr.aws/i5g0m1f6/ml-bench',
-            enable_auto_lint=True,
-            use_host_network=False,
-        ),
+        sandbox=sandbox_config,
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,
@@ -105,7 +103,7 @@ def initialize_runtime(
 
     This function is called before the runtime is used to run the agent.
     """
-    logger.info(f"{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} BEGIN Runtime Initialization Fn {"-" * 50}')
     obs: CmdOutputObservation
 
     # Set instance id
@@ -139,7 +137,7 @@ def initialize_runtime(
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
-    logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} END Runtime Initialization Fn {"-" * 50}')
 
 
 def complete_runtime(
@@ -152,7 +150,7 @@ def complete_runtime(
     If you need to do something in the sandbox to get the correctness metric after
     the agent has run, modify this function.
     """
-    logger.info(f"{'-' * 50} BEGIN Runtime Completion Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} BEGIN Runtime Completion Fn {"-" * 50}')
     obs: CmdOutputObservation
 
     repo_url = instance['github']
@@ -201,7 +199,7 @@ def complete_runtime(
         outputs['success'] = 1
     outputs['eval_exit_code'] = obs.exit_code
 
-    logger.info(f"{'-' * 50} END Runtime Completion Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} END Runtime Completion Fn {"-" * 50}')
     return outputs
 
 

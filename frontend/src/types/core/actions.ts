@@ -9,8 +9,18 @@ export interface UserMessageAction extends OpenHandsActionEvent<"message"> {
   };
 }
 
-export interface CommandAction extends OpenHandsActionEvent<"run"> {
+export interface SystemMessageAction extends OpenHandsActionEvent<"system"> {
   source: "agent";
+  args: {
+    content: string;
+    tools: Array<Record<string, unknown>> | null;
+    openhands_version: string | null;
+    agent_class: string | null;
+  };
+}
+
+export interface CommandAction extends OpenHandsActionEvent<"run"> {
+  source: "agent" | "user";
   args: {
     command: string;
     security_risk: ActionSecurityRisk;
@@ -41,9 +51,18 @@ export interface IPythonAction extends OpenHandsActionEvent<"run_ipython"> {
   };
 }
 
+export interface ThinkAction extends OpenHandsActionEvent<"think"> {
+  source: "agent";
+  args: {
+    thought: string;
+  };
+}
+
 export interface FinishAction extends OpenHandsActionEvent<"finish"> {
   source: "agent";
   args: {
+    final_thought: string;
+    task_completed: "success" | "failure" | "partial";
     outputs: Record<string, unknown>;
     thought: string;
   };
@@ -83,7 +102,9 @@ export interface FileReadAction extends OpenHandsActionEvent<"read"> {
   args: {
     path: string;
     thought: string;
-    translated_ipython_code: string | null;
+    security_risk: ActionSecurityRisk | null;
+    impl_source?: string;
+    view_range?: number[] | null;
   };
 }
 
@@ -100,7 +121,18 @@ export interface FileEditAction extends OpenHandsActionEvent<"edit"> {
   source: "agent";
   args: {
     path: string;
-    translated_ipython_code: string;
+    command?: string;
+    file_text?: string | null;
+    view_range?: number[] | null;
+    old_str?: string | null;
+    new_str?: string | null;
+    insert_line?: number | null;
+    content?: string;
+    start?: number;
+    end?: number;
+    thought: string;
+    security_risk: ActionSecurityRisk | null;
+    impl_source?: string;
   };
 }
 
@@ -111,11 +143,31 @@ export interface RejectAction extends OpenHandsActionEvent<"reject"> {
   };
 }
 
+export interface RecallAction extends OpenHandsActionEvent<"recall"> {
+  source: "agent";
+  args: {
+    recall_type: "workspace_context" | "knowledge";
+    query: string;
+    thought: string;
+  };
+}
+
+export interface MCPAction extends OpenHandsActionEvent<"call_tool_mcp"> {
+  source: "agent";
+  args: {
+    name: string;
+    arguments: Record<string, unknown>;
+    thought?: string;
+  };
+}
+
 export type OpenHandsAction =
   | UserMessageAction
   | AssistantMessageAction
+  | SystemMessageAction
   | CommandAction
   | IPythonAction
+  | ThinkAction
   | FinishAction
   | DelegateAction
   | BrowseAction
@@ -123,4 +175,6 @@ export type OpenHandsAction =
   | FileReadAction
   | FileEditAction
   | FileWriteAction
-  | RejectAction;
+  | RejectAction
+  | RecallAction
+  | MCPAction;

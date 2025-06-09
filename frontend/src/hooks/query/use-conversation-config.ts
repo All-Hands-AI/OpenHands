@@ -4,12 +4,12 @@ import {
   useWsClient,
   WsClientProviderStatus,
 } from "#/context/ws-client-provider";
-import { useConversation } from "#/context/conversation-context";
+import { useConversationId } from "#/hooks/use-conversation-id";
 import OpenHands from "#/api/open-hands";
 
 export const useConversationConfig = () => {
   const { status } = useWsClient();
-  const { conversationId } = useConversation();
+  const { conversationId } = useConversationId();
 
   const query = useQuery({
     queryKey: ["conversation_config", conversationId],
@@ -18,6 +18,8 @@ export const useConversationConfig = () => {
       return OpenHands.getRuntimeId(conversationId);
     },
     enabled: status !== WsClientProviderStatus.DISCONNECTED && !!conversationId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 15, // 15 minutes
   });
 
   React.useEffect(() => {

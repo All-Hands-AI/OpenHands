@@ -22,7 +22,6 @@ from openhands.events.observation import (
     CmdOutputObservation,
     FileReadObservation,
     FileWriteObservation,
-    NullObservation,
     Observation,
 )
 from openhands.events.serialization.event import event_to_dict
@@ -109,7 +108,7 @@ class DummyAgent(Agent):
             },
             {
                 'action': AgentRejectAction(),
-                'observations': [NullObservation('')],
+                'observations': [AgentStateChangedObservation('', AgentState.REJECTED)],
             },
             {
                 'action': AgentFinishAction(
@@ -131,7 +130,7 @@ class DummyAgent(Agent):
 
             if 'observations' in prev_step and prev_step['observations']:
                 expected_observations = prev_step['observations']
-                hist_events = state.history[-len(expected_observations) :]
+                hist_events = state.view[-len(expected_observations) :]
 
                 if len(hist_events) < len(expected_observations):
                     print(

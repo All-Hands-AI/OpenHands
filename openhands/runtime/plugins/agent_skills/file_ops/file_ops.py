@@ -1,6 +1,8 @@
-"""file_ops.py
+"""File operations module for OpenHands agent.
 
-This module provides various file manipulation skills for the OpenHands agent.
+This module provides a collection of file manipulation skills that enable the OpenHands
+agent to perform various file operations such as opening, searching, and navigating
+through files and directories.
 
 Functions:
 - open_file(path: str, line_number: int | None = 1, context_lines: int = 100): Opens a file and optionally moves to a specific line.
@@ -10,6 +12,9 @@ Functions:
 - search_dir(search_term: str, dir_path: str = './'): Searches for a term in all files in the specified directory.
 - search_file(search_term: str, file_path: str | None = None): Searches for a term in the specified file or the currently open file.
 - find_file(file_name: str, dir_path: str = './'): Finds all files with the given name in the specified directory.
+
+Note:
+    All functions return string representations of their results.
 """
 
 import os
@@ -33,7 +38,7 @@ def _output_error(error_msg: str) -> bool:
     return False
 
 
-def _is_valid_filename(file_name) -> bool:
+def _is_valid_filename(file_name: str) -> bool:
     if not file_name or not isinstance(file_name, str) or not file_name.strip():
         return False
     invalid_chars = '<>:"/\\|?*'
@@ -48,7 +53,7 @@ def _is_valid_filename(file_name) -> bool:
     return True
 
 
-def _is_valid_path(path) -> bool:
+def _is_valid_path(path: str) -> bool:
     if not path or not isinstance(path, str):
         return False
     try:
@@ -57,7 +62,7 @@ def _is_valid_path(path) -> bool:
         return False
 
 
-def _create_paths(file_name) -> bool:
+def _create_paths(file_name: str) -> bool:
     try:
         dirname = os.path.dirname(file_name)
         if dirname:
@@ -76,16 +81,23 @@ def _check_current_file(file_path: str | None = None) -> bool:
     return True
 
 
-def _clamp(value, min_value, max_value):
+def _clamp(value: int, min_value: int, max_value: int) -> int:
     return max(min_value, min(value, max_value))
 
 
 def _lint_file(file_path: str) -> tuple[str | None, int | None]:
-    """Lint the file at the given path and return a tuple with a boolean indicating if there are errors,
+    """Perform linting on a file and identify the first error location.
+
+    Lint the file at the given path and return a tuple with a boolean indicating if there are errors,
     and the line number of the first error, if any.
 
+    Args:
+        file_path: str: The path to the file to lint.
+
     Returns:
-        tuple[str | None, int | None]: (lint_error, first_error_line_number)
+    A tuple containing:
+        - The lint error message if found, None otherwise
+        - The line number of the first error, None if no errors
     """
     linter = DefaultLinter()
     lint_error: list[LintResult] = linter.lint(file_path)
@@ -100,10 +112,15 @@ def _lint_file(file_path: str) -> tuple[str | None, int | None]:
 
 
 def _print_window(
-    file_path, targeted_line, window, return_str=False, ignore_window=False
-):
+    file_path: str | None,
+    targeted_line: int,
+    window: int,
+    return_str: bool = False,
+    ignore_window: bool = False,
+) -> str:
     global CURRENT_LINE
-    _check_current_file(file_path)
+    if not _check_current_file(file_path) or file_path is None:
+        return ''
     with open(file_path) as file:
         content = file.read()
 
@@ -140,7 +157,7 @@ def _print_window(
         else:
             output += '(this is the beginning of the file)\n'
         for i in range(start, end + 1):
-            _new_line = f'{i}|{lines[i-1]}'
+            _new_line = f'{i}|{lines[i - 1]}'
             if not _new_line.endswith('\n'):
                 _new_line += '\n'
             output += _new_line
@@ -154,9 +171,10 @@ def _print_window(
             return output
         else:
             print(output)
+            return ''
 
 
-def _cur_file_header(current_file, total_lines) -> str:
+def _cur_file_header(current_file: str | None, total_lines: int) -> str:
     if not current_file:
         return ''
     return f'[File: {os.path.abspath(current_file)} ({total_lines} lines total)]\n'
@@ -165,14 +183,18 @@ def _cur_file_header(current_file, total_lines) -> str:
 def open_file(
     path: str, line_number: int | None = 1, context_lines: int | None = WINDOW
 ) -> None:
-    """Opens the file at the given path in the editor. IF the file is to be edited, first use `scroll_down` repeatedly to read the full file!
-    If line_number is provided, the window will be moved to include that line.
-    It only shows the first 100 lines by default! `context_lines` is the max number of lines to be displayed, up to 100. Use `scroll_up` and `scroll_down` to view more content up or down.
+    """Opens a file in the editor and optionally positions at a specific line.
+
+    The function displays a limited window of content, centered around the specified line
+    number if provided. To view the complete file content, the agent should use scroll_down and scroll_up
+    commands iteratively.
 
     Args:
-        path: str: The path to the file to open, preferred absolute path.
-        line_number: int | None = 1: The line number to move to. Defaults to 1.
-        context_lines: int | None = 100: Only shows this number of lines in the context window (usually from line 1), with line_number as the center (if possible). Defaults to 100.
+        path: The path to the file to open. Absolute path is recommended.
+        line_number: The target line number to center the view on (if possible).
+            Defaults to 1.
+        context_lines: Maximum number of lines to display in the view window.
+            Limited to 100 lines. Defaults to 100.
     """
     global CURRENT_FILE, CURRENT_LINE, WINDOW
 
@@ -213,7 +235,8 @@ def goto_line(line_number: int) -> None:
         line_number: int: The line number to move to.
     """
     global CURRENT_FILE, CURRENT_LINE, WINDOW
-    _check_current_file()
+    if not _check_current_file():
+        return
 
     with open(str(CURRENT_FILE)) as file:
         total_lines = max(1, sum(1 for _ in file))
@@ -222,7 +245,6 @@ def goto_line(line_number: int) -> None:
         return
 
     CURRENT_LINE = _clamp(line_number, 1, total_lines)
-
     output = _cur_file_header(CURRENT_FILE, total_lines)
     output += _print_window(
         CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True, ignore_window=False
@@ -237,8 +259,8 @@ def scroll_down() -> None:
         None
     """
     global CURRENT_FILE, CURRENT_LINE, WINDOW
-    _check_current_file()
-
+    if not _check_current_file():
+        return
     with open(str(CURRENT_FILE)) as file:
         total_lines = max(1, sum(1 for _ in file))
     CURRENT_LINE = _clamp(CURRENT_LINE + WINDOW, 1, total_lines)
@@ -256,8 +278,8 @@ def scroll_up() -> None:
         None
     """
     global CURRENT_FILE, CURRENT_LINE, WINDOW
-    _check_current_file()
-
+    if not _check_current_file():
+        return
     with open(str(CURRENT_FILE)) as file:
         total_lines = max(1, sum(1 for _ in file))
     CURRENT_LINE = _clamp(CURRENT_LINE - WINDOW, 1, total_lines)
@@ -316,8 +338,8 @@ def search_file(search_term: str, file_path: str | None = None) -> None:
     """Searches for search_term in file. If file is not provided, searches in the current open file.
 
     Args:
-        search_term: str: The term to search for.
-        file_path: str | None: The path to the file to search.
+        search_term: The term to search for.
+        file_path: The path to the file to search.
     """
     global CURRENT_FILE
     if file_path is None:

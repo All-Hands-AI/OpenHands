@@ -1,4 +1,4 @@
-import { Tooltip } from "@nextui-org/react";
+import { Tooltip } from "@heroui/react";
 import { useTranslation } from "react-i18next";
 import ConfirmIcon from "#/assets/confirm";
 import RejectIcon from "#/assets/reject";
@@ -27,7 +27,7 @@ export function ActionTooltip({ type, onClick }: ActionTooltipProps) {
             ? t(I18nKey.ACTION$CONFIRM)
             : t(I18nKey.ACTION$REJECT)
         }
-        className="bg-neutral-700 rounded-full p-1 hover:bg-neutral-800"
+        className="bg-tertiary rounded-full p-1 hover:bg-base-secondary"
         onClick={onClick}
       >
         {type === "confirm" ? <ConfirmIcon /> : <RejectIcon />}

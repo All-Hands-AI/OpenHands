@@ -19,9 +19,10 @@ Access with browser the above MiniWoB URLs and see if they load correctly.
 ./evaluation/benchmarks/miniwob/scripts/run_infer.sh llm.claude-35-sonnet-eval
 ```
 
-### Run Inference on `RemoteRuntime` (experimental)
+### Run Inference on `RemoteRuntime`
 
-This is in limited beta. Contact Xingyao over slack if you want to try this out!
+This is in beta. Fill out [this form](https://docs.google.com/forms/d/e/1FAIpQLSckVz_JFwg2_mOxNZjCtr7aoBFI2Mwdan3f75J_TrdMS1JV2g/viewform) to apply if you want to try this out!
+
 
 ```bash
 ./evaluation/benchmarks/miniwob/scripts/run_infer.sh [model_config] [git-version] [agent] [note] [eval_limit] [num_workers]

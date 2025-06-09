@@ -10,15 +10,12 @@ updates:
       pre-commit:
         patterns:
           - "pre-commit"
-      llama:
-        patterns:
-          - "llama*"
-      chromadb:
-        patterns:
-          - "chromadb"
       browsergym:
         patterns:
           - "browsergym*"
+      mcp-packages:
+        patterns:
+          - "mcp"
       security-all:
         applies-to: "security-updates"
         patterns:

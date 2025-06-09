@@ -17,6 +17,7 @@ from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
     compatibility_for_eval_history_pairs,
+    get_default_sandbox_config_for_eval,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -24,8 +25,7 @@ from evaluation.utils.shared import (
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
-    AppConfig,
-    SandboxConfig,
+    OpenHandsConfig,
     get_llm_config_arg,
     parse_arguments,
 )
@@ -70,17 +70,16 @@ AGENT_CLS_TO_INST_SUFFIX = {
 
 def get_config(
     metadata: EvalMetadata,
-) -> AppConfig:
-    config = AppConfig(
+) -> OpenHandsConfig:
+    sandbox_config = get_default_sandbox_config_for_eval()
+    sandbox_config.base_container_image = 'python:3.12-bookworm'
+
+    config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         runtime='docker',
         max_iterations=metadata.max_iterations,
-        sandbox=SandboxConfig(
-            base_container_image='python:3.12-bookworm',
-            enable_auto_lint=True,
-            use_host_network=False,
-        ),
+        sandbox=sandbox_config,
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,
@@ -185,7 +184,7 @@ def load_bird():
                     .fetchall()
                 )
                 prompt += (
-                    f"/*\n3 example rows:\n{top_k_row_query}\n{'    '.join(headers)}\n"
+                    f'/*\n3 example rows:\n{top_k_row_query}\n{"    ".join(headers)}\n'
                 )
                 for row in top_k_rows:
                     row = [str(x) for x in row]
@@ -202,10 +201,10 @@ def load_bird():
 
         # Extract the CREATE TABLE statements and sample data from the database
         prompt = _extract_create_table_prompt(db_path)
-        prompt += f"-- External Knowledge: {e['evidence']}\n\n"
+        prompt += f'-- External Knowledge: {e["evidence"]}\n\n'
         prompt += '-- Using valid SQLite and understanding External Knowledge, answer the following questions for the tables provided above.\n\n'
         prompt += '-- Using valid SQLite, answer the following questions for the tables provided above.\n'
-        prompt += f"Question: {e['question']}\n"
+        prompt += f'Question: {e["question"]}\n'
 
         return prompt
 
@@ -225,7 +224,7 @@ def load_bird():
                     item = {
                         'instance_id': f'{len(processed_data)}',
                         'db_path': os.path.join(
-                            database_path, e['db_id'], f"{e['db_id']}.sqlite"
+                            database_path, e['db_id'], f'{e["db_id"]}.sqlite'
                         ),
                         'db_id': e['db_id'],
                         'instruction': _create_prompt(e, database_path),
@@ -254,7 +253,7 @@ def initialize_runtime(
 
     This function is called before the runtime is used to run the agent.
     """
-    logger.info(f"{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} BEGIN Runtime Initialization Fn {"-" * 50}')
     obs: CmdOutputObservation
 
     # Copy the database to the workspace
@@ -274,7 +273,7 @@ def initialize_runtime(
     assert obs.exit_code == 0
     assert f'{instance.db_id}.sqlite' in obs.content
 
-    logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} END Runtime Initialization Fn {"-" * 50}')
 
 
 def complete_runtime(
@@ -287,7 +286,7 @@ def complete_runtime(
     If you need to do something in the sandbox to get the correctness metric after
     the agent has run, modify this function.
     """
-    logger.info(f"{'-' * 50} BEGIN Runtime Completion Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} BEGIN Runtime Completion Fn {"-" * 50}')
     obs: CmdOutputObservation
     timeout = 30
 
@@ -344,7 +343,7 @@ def complete_runtime(
         'gen_sql': gen_sql,
         'gold_sql': gold_sql,
     }
-    logger.info(f"{'-' * 50} END Runtime Completion Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} END Runtime Completion Fn {"-" * 50}')
     return test_result
 
 

@@ -8,12 +8,11 @@ NOTE: this will be executed inside the docker sandbox.
 import argparse
 import asyncio
 import base64
-import io
 import json
 import mimetypes
 import os
-import re
 import shutil
+import sys
 import tempfile
 import time
 import traceback
@@ -21,21 +20,29 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from zipfile import ZipFile
 
+from binaryornot.check import is_binary
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import APIKeyHeader
+from openhands_aci.editor.editor import OHEditor
+from openhands_aci.editor.exceptions import ToolError
+from openhands_aci.editor.results import ToolResult
 from openhands_aci.utils.diff import get_diff
 from pydantic import BaseModel
+from starlette.background import BackgroundTask
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from uvicorn import run
 
+from openhands.core.config.mcp_config import MCPStdioServerConfig
+from openhands.core.exceptions import BrowserUnavailableException
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     Action,
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
+    FileEditAction,
     FileReadAction,
     FileWriteAction,
     IPythonRunCellAction,
@@ -53,12 +60,21 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
+from openhands.runtime.file_viewer_server import start_file_viewer_server
+
+# Import our custom MCP Proxy Manager
+from openhands.runtime.mcp.proxy import MCPProxyManager
 from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCodePlugin
+from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.bash import BashSession
 from openhands.runtime.utils.files import insert_lines, read_lines
+from openhands.runtime.utils.memory_monitor import MemoryMonitor
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
 from openhands.runtime.utils.system_stats import get_system_stats
 from openhands.utils.async_utils import call_sync_from_async, wait_all
+
+if sys.platform == 'win32':
+    from openhands.runtime.utils.windows_bash import WindowsPowershellSession
 
 
 class ActionRequest(BaseModel):
@@ -66,9 +82,6 @@ class ActionRequest(BaseModel):
 
 
 ROOT_GID = 0
-INIT_COMMANDS = [
-    'git config --global user.name "openhands" && git config --global user.email "openhands@all-hands.dev" && alias git="git --no-pager"',
-]
 
 SESSION_API_KEY = os.environ.get('SESSION_API_KEY')
 api_key_header = APIKeyHeader(name='X-Session-API-Key', auto_error=False)
@@ -78,6 +91,72 @@ def verify_api_key(api_key: str = Depends(api_key_header)):
     if SESSION_API_KEY and api_key != SESSION_API_KEY:
         raise HTTPException(status_code=403, detail='Invalid API Key')
     return api_key
+
+
+def _execute_file_editor(
+    editor: OHEditor,
+    command: str,
+    path: str,
+    file_text: str | None = None,
+    view_range: list[int] | None = None,
+    old_str: str | None = None,
+    new_str: str | None = None,
+    insert_line: int | str | None = None,
+    enable_linting: bool = False,
+) -> tuple[str, tuple[str | None, str | None]]:
+    """Execute file editor command and handle exceptions.
+
+    Args:
+        editor: The OHEditor instance
+        command: Editor command to execute
+        path: File path
+        file_text: Optional file text content
+        view_range: Optional view range tuple (start, end)
+        old_str: Optional string to replace
+        new_str: Optional replacement string
+        insert_line: Optional line number for insertion (can be int or str)
+        enable_linting: Whether to enable linting
+
+    Returns:
+        tuple: A tuple containing the output string and a tuple of old and new file content
+    """
+    result: ToolResult | None = None
+
+    # Convert insert_line from string to int if needed
+    if insert_line is not None and isinstance(insert_line, str):
+        try:
+            insert_line = int(insert_line)
+        except ValueError:
+            return (
+                f"ERROR:\nInvalid insert_line value: '{insert_line}'. Expected an integer.",
+                (None, None),
+            )
+
+    try:
+        result = editor(
+            command=command,
+            path=path,
+            file_text=file_text,
+            view_range=view_range,
+            old_str=old_str,
+            new_str=new_str,
+            insert_line=insert_line,
+            enable_linting=enable_linting,
+        )
+    except ToolError as e:
+        result = ToolResult(error=e.message)
+    except TypeError as e:
+        # Handle unexpected arguments or type errors
+        return f'ERROR:\n{str(e)}', (None, None)
+
+    if result.error:
+        return f'ERROR:\n{result.error}', (None, None)
+
+    if not result.output:
+        logger.warning(f'No output from file_editor for {path}')
+        return '', (None, None)
+
+    return result.output, (result.old_content, result.new_content)
 
 
 class ActionExecutor:
@@ -103,36 +182,115 @@ class ActionExecutor:
         if _updated_user_id is not None:
             self.user_id = _updated_user_id
 
-        self.bash_session: BashSession | None = None
+        self.bash_session: BashSession | 'WindowsPowershellSession' | None = None  # type: ignore[name-defined]
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
-        self.browser = BrowserEnv(browsergym_eval_env)
+        self.file_editor = OHEditor(workspace_root=self._initial_cwd)
+        self.browser: BrowserEnv | None = None
+        self.browser_init_task: asyncio.Task | None = None
+        self.browsergym_eval_env = browsergym_eval_env
+
         self.start_time = time.time()
         self.last_execution_time = self.start_time
         self._initialized = False
+
+        self.max_memory_gb: int | None = None
+        if _override_max_memory_gb := os.environ.get('RUNTIME_MAX_MEMORY_GB', None):
+            self.max_memory_gb = int(_override_max_memory_gb)
+            logger.info(
+                f'Setting max memory to {self.max_memory_gb}GB (according to the RUNTIME_MAX_MEMORY_GB environment variable)'
+            )
+        else:
+            logger.info('No max memory limit set, using all available system memory')
+
+        self.memory_monitor = MemoryMonitor(
+            enable=os.environ.get('RUNTIME_MEMORY_MONITOR', 'False').lower()
+            in ['true', '1', 'yes']
+        )
+        self.memory_monitor.start_monitoring()
 
     @property
     def initial_cwd(self):
         return self._initial_cwd
 
+    async def _init_browser_async(self):
+        """Initialize the browser asynchronously."""
+        if sys.platform == 'win32':
+            logger.warning('Browser environment not supported on windows')
+            return
+
+        logger.debug('Initializing browser asynchronously')
+        try:
+            self.browser = BrowserEnv(self.browsergym_eval_env)
+            logger.debug('Browser initialized asynchronously')
+        except Exception as e:
+            logger.error(f'Failed to initialize browser: {e}')
+            self.browser = None
+
+    async def _ensure_browser_ready(self):
+        """Ensure the browser is ready for use."""
+        if self.browser is None:
+            if self.browser_init_task is None:
+                # Start browser initialization if it hasn't been started
+                self.browser_init_task = asyncio.create_task(self._init_browser_async())
+            elif self.browser_init_task.done():
+                # If the task is done but browser is still None, restart initialization
+                self.browser_init_task = asyncio.create_task(self._init_browser_async())
+
+            # Wait for browser to be initialized
+            if self.browser_init_task:
+                logger.debug('Waiting for browser to be ready...')
+                await self.browser_init_task
+
+            # Check if browser was successfully initialized
+            if self.browser is None:
+                raise BrowserUnavailableException('Browser initialization failed')
+
+        # If we get here, the browser is ready
+        logger.debug('Browser is ready')
+
+    def _create_bash_session(self, cwd: str | None = None):
+        if sys.platform == 'win32':
+            return WindowsPowershellSession(  # type: ignore[name-defined]
+                work_dir=cwd or self._initial_cwd,
+                username=self.username,
+                no_change_timeout_seconds=int(
+                    os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 10)
+                ),
+                max_memory_mb=self.max_memory_gb * 1024 if self.max_memory_gb else None,
+            )
+        else:
+            bash_session = BashSession(
+                work_dir=cwd or self._initial_cwd,
+                username=self.username,
+                no_change_timeout_seconds=int(
+                    os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 10)
+                ),
+                max_memory_mb=self.max_memory_gb * 1024 if self.max_memory_gb else None,
+            )
+            bash_session.initialize()
+            return bash_session
+
     async def ainit(self):
         # bash needs to be initialized first
-        self.bash_session = BashSession(
-            work_dir=self._initial_cwd,
-            username=self.username,
-            no_change_timeout_seconds=int(
-                os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 30)
-            ),
-        )
-        self.bash_session.initialize()
+        logger.debug('Initializing bash session')
+        self.bash_session = self._create_bash_session()
+        logger.debug('Bash session initialized')
+
+        # Start browser initialization in the background
+        self.browser_init_task = asyncio.create_task(self._init_browser_async())
+        logger.debug('Browser initialization started in background')
+
         await wait_all(
             (self._init_plugin(plugin) for plugin in self.plugins_to_load),
-            timeout=30,
+            timeout=int(os.environ.get('INIT_PLUGIN_TIMEOUT', '120')),
         )
+        logger.debug('All plugins initialized')
 
         # This is a temporary workaround
         # TODO: refactor AgentSkills to be part of JupyterPlugin
         # AFTER ServerRuntime is deprecated
+        logger.debug('Initializing AgentSkills')
         if 'agent_skills' in self.plugins and 'jupyter' in self.plugins:
             obs = await self.run_ipython(
                 IPythonRunCellAction(
@@ -141,7 +299,9 @@ class ActionExecutor:
             )
             logger.debug(f'AgentSkills initialized: {obs}')
 
+        logger.debug('Initializing bash commands')
         await self._init_bash_commands()
+
         logger.debug('Runtime client initialized.')
         self._initialized = True
 
@@ -156,14 +316,55 @@ class ActionExecutor:
         logger.debug(f'Initializing plugin: {plugin.name}')
 
         if isinstance(plugin, JupyterPlugin):
+            # Escape backslashes in Windows path
+            cwd = self.bash_session.cwd.replace('\\', '/')
             await self.run_ipython(
-                IPythonRunCellAction(
-                    code=f'import os; os.chdir("{self.bash_session.cwd}")'
-                )
+                IPythonRunCellAction(code=f'import os; os.chdir(r"{cwd}")')
             )
 
     async def _init_bash_commands(self):
-        logger.debug(f'Initializing by running {len(INIT_COMMANDS)} bash commands...')
+        INIT_COMMANDS = []
+        is_local_runtime = os.environ.get('LOCAL_RUNTIME_MODE') == '1'
+        is_windows = sys.platform == 'win32'
+
+        # Determine git config commands based on platform and runtime mode
+        if is_local_runtime:
+            if is_windows:
+                # Windows, local - split into separate commands
+                INIT_COMMANDS.append(
+                    'git config --file ./.git_config user.name "openhands"'
+                )
+                INIT_COMMANDS.append(
+                    'git config --file ./.git_config user.email "openhands@all-hands.dev"'
+                )
+                INIT_COMMANDS.append(
+                    '$env:GIT_CONFIG = (Join-Path (Get-Location) ".git_config")'
+                )
+            else:
+                # Linux/macOS, local
+                base_git_config = (
+                    'git config --file ./.git_config user.name "openhands" && '
+                    'git config --file ./.git_config user.email "openhands@all-hands.dev" && '
+                    'export GIT_CONFIG=$(pwd)/.git_config'
+                )
+                INIT_COMMANDS.append(base_git_config)
+        else:
+            # Non-local (implies Linux/macOS)
+            base_git_config = (
+                'git config --global user.name "openhands" && '
+                'git config --global user.email "openhands@all-hands.dev"'
+            )
+            INIT_COMMANDS.append(base_git_config)
+
+        # Determine no-pager command
+        if is_windows:
+            no_pager_cmd = 'function git { git.exe --no-pager $args }'
+        else:
+            no_pager_cmd = 'alias git="git --no-pager"'
+
+        INIT_COMMANDS.append(no_pager_cmd)
+
+        logger.info(f'Initializing by running {len(INIT_COMMANDS)} bash commands...')
         for command in INIT_COMMANDS:
             action = CmdRunAction(command=command)
             action.set_hard_timeout(300)
@@ -174,23 +375,27 @@ class ActionExecutor:
                 f'Init command outputs (exit code: {obs.exit_code}): {obs.content}'
             )
             assert obs.exit_code == 0
-
         logger.debug('Bash init commands completed')
 
     async def run_action(self, action) -> Observation:
         async with self.lock:
             action_type = action.action
-            logger.debug(f'Running action:\n{action}')
             observation = await getattr(self, action_type)(action)
-            logger.debug(f'Action output:\n{observation}')
             return observation
 
     async def run(
         self, action: CmdRunAction
     ) -> CmdOutputObservation | ErrorObservation:
-        assert self.bash_session is not None
-        obs = await call_sync_from_async(self.bash_session.execute, action)
-        return obs
+        try:
+            bash_session = self.bash_session
+            if action.is_static:
+                bash_session = self._create_bash_session(action.cwd)
+            assert bash_session is not None
+            obs = await call_sync_from_async(bash_session.execute, action)
+            return obs
+        except Exception as e:
+            logger.error(f'Error running command: {e}')
+            return ErrorObservation(str(e))
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         assert self.bash_session is not None
@@ -203,9 +408,9 @@ class ActionExecutor:
                 logger.debug(
                     f'{self.bash_session.cwd} != {jupyter_cwd} -> reset Jupyter PWD'
                 )
-                reset_jupyter_cwd_code = (
-                    f'import os; os.chdir("{self.bash_session.cwd}")'
-                )
+                # escape windows paths
+                cwd = self.bash_session.cwd.replace('\\', '/')
+                reset_jupyter_cwd_code = f'import os; os.chdir("{cwd}")'
                 _aux_action = IPythonRunCellAction(code=reset_jupyter_cwd_code)
                 _reset_obs: IPythonRunCellObservation = await _jupyter_plugin.run(
                     _aux_action
@@ -217,65 +422,6 @@ class ActionExecutor:
 
             obs: IPythonRunCellObservation = await _jupyter_plugin.run(action)
             obs.content = obs.content.rstrip()
-            matches = re.findall(
-                r'<oh_aci_output_[0-9a-f]{32}>(.*?)</oh_aci_output_[0-9a-f]{32}>',
-                obs.content,
-                re.DOTALL,
-            )
-            if matches:
-                results: list[str] = []
-                if len(matches) == 1:
-                    # Use specific actions/observations types
-                    match = matches[0]
-                    try:
-                        result_dict = json.loads(match)
-                        if result_dict.get('path'):  # Successful output
-                            if (
-                                result_dict['new_content'] is not None
-                            ):  # File edit commands
-                                diff = get_diff(
-                                    old_contents=result_dict['old_content']
-                                    or '',  # old_content is None when file is created
-                                    new_contents=result_dict['new_content'],
-                                    filepath=result_dict['path'],
-                                )
-                                return FileEditObservation(
-                                    content=diff,
-                                    path=result_dict['path'],
-                                    old_content=result_dict['old_content'],
-                                    new_content=result_dict['new_content'],
-                                    prev_exist=result_dict['prev_exist'],
-                                    impl_source=FileEditSource.OH_ACI,
-                                    formatted_output_and_error=result_dict[
-                                        'formatted_output_and_error'
-                                    ],
-                                )
-                            else:  # File view commands
-                                return FileReadObservation(
-                                    content=result_dict['formatted_output_and_error'],
-                                    path=result_dict['path'],
-                                    impl_source=FileReadSource.OH_ACI,
-                                )
-                        else:  # Error output
-                            results.append(result_dict['formatted_output_and_error'])
-                    except json.JSONDecodeError:
-                        # Handle JSON decoding errors if necessary
-                        results.append(
-                            f"Invalid JSON in 'openhands-aci' output: {match}"
-                        )
-                else:
-                    for match in matches:
-                        try:
-                            result_dict = json.loads(match)
-                            results.append(result_dict['formatted_output_and_error'])
-                        except json.JSONDecodeError:
-                            # Handle JSON decoding errors if necessary
-                            results.append(
-                                f"Invalid JSON in 'openhands-aci' output: {match}"
-                            )
-
-                # Combine the results (e.g., join them) or handle them as required
-                obs.content = '\n'.join(str(result) for result in results)
 
             if action.include_extra:
                 obs.content += (
@@ -296,12 +442,23 @@ class ActionExecutor:
 
     async def read(self, action: FileReadAction) -> Observation:
         assert self.bash_session is not None
+
+        # Cannot read binary files
+        if is_binary(action.path):
+            return ErrorObservation('ERROR_BINARY_FILE')
+
         if action.impl_source == FileReadSource.OH_ACI:
-            return await self.run_ipython(
-                IPythonRunCellAction(
-                    code=action.translated_ipython_code,
-                    include_extra=False,
-                )
+            result_str, _ = _execute_file_editor(
+                self.file_editor,
+                command='view',
+                path=action.path,
+                view_range=action.view_range,
+            )
+
+            return FileReadObservation(
+                content=result_str,
+                path=action.path,
+                impl_source=FileReadSource.OH_ACI,
             )
 
         # NOTE: the client code is running inside the sandbox,
@@ -358,69 +515,107 @@ class ActionExecutor:
         filepath = self._resolve_path(action.path, working_dir)
 
         insert = action.content.split('\n')
+        if not os.path.exists(os.path.dirname(filepath)):
+            os.makedirs(os.path.dirname(filepath))
+
+        file_exists = os.path.exists(filepath)
+        if file_exists:
+            file_stat = os.stat(filepath)
+        else:
+            file_stat = None
+
+        mode = 'w' if not file_exists else 'r+'
         try:
-            if not os.path.exists(os.path.dirname(filepath)):
-                os.makedirs(os.path.dirname(filepath))
-
-            file_exists = os.path.exists(filepath)
-            if file_exists:
-                file_stat = os.stat(filepath)
-            else:
-                file_stat = None
-
-            mode = 'w' if not file_exists else 'r+'
-            try:
-                with open(filepath, mode, encoding='utf-8') as file:
-                    if mode != 'w':
-                        all_lines = file.readlines()
-                        new_file = insert_lines(
-                            insert, all_lines, action.start, action.end
-                        )
-                    else:
-                        new_file = [i + '\n' for i in insert]
-
-                    file.seek(0)
-                    file.writelines(new_file)
-                    file.truncate()
-
-                # Handle file permissions
-                if file_exists:
-                    assert file_stat is not None
-                    # restore the original file permissions if the file already exists
-                    os.chmod(filepath, file_stat.st_mode)
-                    os.chown(filepath, file_stat.st_uid, file_stat.st_gid)
+            with open(filepath, mode, encoding='utf-8') as file:
+                if mode != 'w':
+                    all_lines = file.readlines()
+                    new_file = insert_lines(insert, all_lines, action.start, action.end)
                 else:
-                    # set the new file permissions if the file is new
-                    os.chmod(filepath, 0o664)
-                    os.chown(filepath, self.user_id, self.user_id)
+                    new_file = [i + '\n' for i in insert]
 
-            except FileNotFoundError:
-                return ErrorObservation(f'File not found: {filepath}')
-            except IsADirectoryError:
-                return ErrorObservation(
-                    f'Path is a directory: {filepath}. You can only write to files'
-                )
-            except UnicodeDecodeError:
-                return ErrorObservation(
-                    f'File could not be decoded as utf-8: {filepath}'
-                )
-        except PermissionError:
-            return ErrorObservation(f'Malformed paths not permitted: {filepath}')
+                file.seek(0)
+                file.writelines(new_file)
+                file.truncate()
+
+        except FileNotFoundError:
+            return ErrorObservation(f'File not found: {filepath}')
+        except IsADirectoryError:
+            return ErrorObservation(
+                f'Path is a directory: {filepath}. You can only write to files'
+            )
+        except UnicodeDecodeError:
+            return ErrorObservation(f'File could not be decoded as utf-8: {filepath}')
+
+        # Attempt to handle file permissions
+        try:
+            if file_exists:
+                assert file_stat is not None
+                # restore the original file permissions if the file already exists
+                os.chmod(filepath, file_stat.st_mode)
+                os.chown(filepath, file_stat.st_uid, file_stat.st_gid)
+            else:
+                # set the new file permissions if the file is new
+                os.chmod(filepath, 0o664)
+                os.chown(filepath, self.user_id, self.user_id)
+        except PermissionError as e:
+            return ErrorObservation(
+                f'File {filepath} written, but failed to change ownership and permissions: {e}'
+            )
         return FileWriteObservation(content='', path=filepath)
 
+    async def edit(self, action: FileEditAction) -> Observation:
+        assert action.impl_source == FileEditSource.OH_ACI
+        result_str, (old_content, new_content) = _execute_file_editor(
+            self.file_editor,
+            command=action.command,
+            path=action.path,
+            file_text=action.file_text,
+            old_str=action.old_str,
+            new_str=action.new_str,
+            insert_line=action.insert_line,
+            enable_linting=False,
+        )
+
+        return FileEditObservation(
+            content=result_str,
+            path=action.path,
+            old_content=action.old_str,
+            new_content=action.new_str,
+            impl_source=FileEditSource.OH_ACI,
+            diff=get_diff(
+                old_contents=old_content or '',
+                new_contents=new_content or '',
+                filepath=action.path,
+            ),
+        )
+
     async def browse(self, action: BrowseURLAction) -> Observation:
-        return await browse(action, self.browser)
+        if self.browser is None:
+            return ErrorObservation(
+                'Browser functionality is not supported on Windows.'
+            )
+        await self._ensure_browser_ready()
+        return await browse(action, self.browser, self.initial_cwd)
 
     async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
-        return await browse(action, self.browser)
+        if self.browser is None:
+            return ErrorObservation(
+                'Browser functionality is not supported on Windows.'
+            )
+        await self._ensure_browser_ready()
+        return await browse(action, self.browser, self.initial_cwd)
 
     def close(self):
+        self.memory_monitor.stop_monitoring()
         if self.bash_session is not None:
             self.bash_session.close()
-        self.browser.close()
+        if self.browser is not None:
+            self.browser.close()
 
 
 if __name__ == '__main__':
+    logger.warning('Starting Action Execution Server')
+
     parser = argparse.ArgumentParser()
     parser.add_argument('port', type=int, help='Port to listen on')
     parser.add_argument('--working-dir', type=str, help='Working directory')
@@ -435,8 +630,17 @@ if __name__ == '__main__':
         help='BrowserGym environment used for browser evaluation',
         default=None,
     )
+
     # example: python client.py 8000 --working-dir /workspace --plugins JupyterRequirement
     args = parser.parse_args()
+
+    # Start the file viewer server in a separate thread
+    logger.info('Starting file viewer server')
+    _file_viewer_port = find_available_tcp_port(
+        min_port=args.port + 1, max_port=min(args.port + 1024, 65535)
+    )
+    server_url, _ = start_file_viewer_server(port=_file_viewer_port)
+    logger.info(f'File viewer server started at {server_url}')
 
     plugins_to_load: list[Plugin] = []
     if args.plugins:
@@ -446,10 +650,12 @@ if __name__ == '__main__':
             plugins_to_load.append(ALL_PLUGINS[plugin]())  # type: ignore
 
     client: ActionExecutor | None = None
+    mcp_proxy_manager: MCPProxyManager | None = None
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        global client
+        global client, mcp_proxy_manager
+        logger.info('Initializing ActionExecutor...')
         client = ActionExecutor(
             plugins_to_load,
             work_dir=args.working_dir,
@@ -458,9 +664,52 @@ if __name__ == '__main__':
             browsergym_eval_env=args.browsergym_eval_env,
         )
         await client.ainit()
+        logger.info('ActionExecutor initialized.')
+
+        # Check if we're on Windows
+        is_windows = sys.platform == 'win32'
+
+        # Initialize and mount MCP Proxy Manager (skip on Windows)
+        if is_windows:
+            logger.info('Skipping MCP Proxy initialization on Windows')
+            mcp_proxy_manager = None
+        else:
+            logger.info('Initializing MCP Proxy Manager...')
+            # Create a MCP Proxy Manager
+            mcp_proxy_manager = MCPProxyManager(
+                auth_enabled=bool(SESSION_API_KEY),
+                api_key=SESSION_API_KEY,
+                logger_level=logger.getEffectiveLevel(),
+            )
+            mcp_proxy_manager.initialize()
+            # Mount the proxy to the app
+            allowed_origins = ['*']
+            try:
+                await mcp_proxy_manager.mount_to_app(app, allowed_origins)
+            except Exception as e:
+                logger.error(f'Error mounting MCP Proxy: {e}', exc_info=True)
+                raise RuntimeError(f'Cannot mount MCP Proxy: {e}')
+
         yield
+
         # Clean up & release the resources
-        client.close()
+        logger.info('Shutting down MCP Proxy Manager...')
+        if mcp_proxy_manager:
+            del mcp_proxy_manager
+            mcp_proxy_manager = None
+        else:
+            logger.info('MCP Proxy Manager instance not found for shutdown.')
+
+        logger.info('Closing ActionExecutor...')
+        if client:
+            try:
+                client.close()
+                logger.info('ActionExecutor closed successfully.')
+            except Exception as e:
+                logger.error(f'Error closing ActionExecutor: {e}', exc_info=True)
+        else:
+            logger.info('ActionExecutor instance not found for closing.')
+        logger.info('Shutdown complete.')
 
     app = FastAPI(lifespan=lifespan)
 
@@ -486,7 +735,10 @@ if __name__ == '__main__':
         logger.error(f'Validation error occurred: {exc}')
         return JSONResponse(
             status_code=422,
-            content={'detail': 'Invalid request parameters', 'errors': exc.errors()},
+            content={
+                'detail': 'Invalid request parameters',
+                'errors': str(exc.errors()),
+            },
         )
 
     @app.middleware('http')
@@ -495,7 +747,9 @@ if __name__ == '__main__':
             try:
                 verify_api_key(request.headers.get('X-Session-API-Key'))
             except HTTPException as e:
-                return e
+                return JSONResponse(
+                    status_code=e.status_code, content={'detail': e.detail}
+                )
         response = await call_next(request)
         return response
 
@@ -530,6 +784,59 @@ if __name__ == '__main__':
                 status_code=500,
                 detail=traceback.format_exc(),
             )
+
+    @app.post('/update_mcp_server')
+    async def update_mcp_server(request: Request):
+        # Check if we're on Windows
+        is_windows = sys.platform == 'win32'
+
+        # Access the global mcp_proxy_manager variable
+        global mcp_proxy_manager
+
+        if is_windows:
+            # On Windows, just return a success response without doing anything
+            logger.info(
+                'MCP server update request received on Windows - skipping as MCP is disabled'
+            )
+            return JSONResponse(
+                status_code=200,
+                content={
+                    'detail': 'MCP server update skipped (MCP is disabled on Windows)',
+                    'router_error_log': '',
+                },
+            )
+
+        # Non-Windows implementation
+        if mcp_proxy_manager is None:
+            raise HTTPException(
+                status_code=500, detail='MCP Proxy Manager is not initialized'
+            )
+
+        # Get the request body
+        mcp_tools_to_sync = await request.json()
+        if not isinstance(mcp_tools_to_sync, list):
+            raise HTTPException(
+                status_code=400, detail='Request must be a list of MCP tools to sync'
+            )
+        logger.info(
+            f'Updating MCP server with tools: {json.dumps(mcp_tools_to_sync, indent=2)}'
+        )
+        mcp_tools_to_sync = [MCPStdioServerConfig(**tool) for tool in mcp_tools_to_sync]
+        try:
+            await mcp_proxy_manager.update_and_remount(app, mcp_tools_to_sync, ['*'])
+            logger.info('MCP Proxy Manager updated and remounted successfully')
+            router_error_log = ''
+        except Exception as e:
+            logger.error(f'Error updating MCP Proxy Manager: {e}', exc_info=True)
+            router_error_log = str(e)
+
+        return JSONResponse(
+            status_code=200,
+            content={
+                'detail': 'MCP server updated successfully',
+                'router_error_log': router_error_log,
+            },
+        )
 
     @app.post('/upload_file')
     async def upload_file(
@@ -586,7 +893,7 @@ if __name__ == '__main__':
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.get('/download_files')
-    async def download_file(path: str):
+    def download_file(path: str):
         logger.debug('Downloading files')
         try:
             if not os.path.isabs(path):
@@ -597,7 +904,7 @@ if __name__ == '__main__':
             if not os.path.exists(path):
                 raise HTTPException(status_code=404, detail='File not found')
 
-            with tempfile.TemporaryFile() as temp_zip:
+            with tempfile.NamedTemporaryFile(suffix='.zip', delete=False) as temp_zip:
                 with ZipFile(temp_zip, 'w') as zipf:
                     for root, _, files in os.walk(path):
                         for file in files:
@@ -605,15 +912,11 @@ if __name__ == '__main__':
                             zipf.write(
                                 file_path, arcname=os.path.relpath(file_path, path)
                             )
-                temp_zip.seek(0)  # Rewind the file to the beginning after writing
-                content = temp_zip.read()
-                # Good for small to medium-sized files. For very large files, streaming directly from the
-                # file chunks may be more memory-efficient.
-                zip_stream = io.BytesIO(content)
-                return StreamingResponse(
-                    content=zip_stream,
+                return FileResponse(
+                    path=temp_zip.name,
                     media_type='application/zip',
-                    headers={'Content-Disposition': f'attachment; filename={path}.zip'},
+                    filename=f'{os.path.basename(path)}.zip',
+                    background=BackgroundTask(lambda: os.unlink(temp_zip.name)),
                 )
 
         except Exception as e:
@@ -651,7 +954,7 @@ if __name__ == '__main__':
 
         To list files:
         ```sh
-        curl http://localhost:3000/api/list-files
+        curl -X POST -d '{"path": "/"}' http://localhost:3000/list_files
         ```
 
         Args:
@@ -680,12 +983,12 @@ if __name__ == '__main__':
 
         if not os.path.exists(full_path):
             # if user just removed a folder, prevent server error 500 in UI
-            return []
+            return JSONResponse(content=[])
 
         try:
             # Check if the directory exists
             if not os.path.exists(full_path) or not os.path.isdir(full_path):
-                return []
+                return JSONResponse(content=[])
 
             entries = os.listdir(full_path)
 
@@ -714,11 +1017,11 @@ if __name__ == '__main__':
 
             # Combine sorted directories and files
             sorted_entries = directories + files
-            return sorted_entries
+            return JSONResponse(content=sorted_entries)
 
         except Exception as e:
             logger.error(f'Error listing files: {e}')
-            return []
+            return JSONResponse(content=[])
 
     logger.debug(f'Starting action execution API on port {args.port}')
     run(app, host='0.0.0.0', port=args.port)

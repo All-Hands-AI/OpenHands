@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import translations from "../../src/i18n/translation.json";
 import { UserAvatar } from "../../src/components/features/sidebar/user-avatar";
 
-vi.mock("@nextui-org/react", () => ({
+vi.mock("@heroui/react", () => ({
   Tooltip: ({ content, children }: { content: string; children: React.ReactNode }) => (
     <div>
       {children}

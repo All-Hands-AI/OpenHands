@@ -11,7 +11,7 @@ interface SuggestionItemProps {
 export function SuggestionItem({ suggestion, onClick }: SuggestionItemProps) {
   const { t } = useTranslation();
   return (
-    <li className="list-none border border-neutral-600 rounded-xl hover:bg-neutral-700 flex-1">
+    <li className="list-none border border-neutral-600 rounded-xl hover:bg-tertiary flex-1">
       <button
         type="button"
         data-testid="suggestion"

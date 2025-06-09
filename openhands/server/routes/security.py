@@ -1,14 +1,21 @@
 from fastapi import (
     APIRouter,
+    Depends,
     HTTPException,
     Request,
+    Response,
+    status,
 )
 
-app = APIRouter(prefix='/api/conversations/{conversation_id}')
+from openhands.server.dependencies import get_dependencies
+from openhands.server.utils import get_conversation
+from openhands.server.session.conversation import ServerConversation
+
+app = APIRouter(prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies())
 
 
 @app.route('/security/{path:path}', methods=['GET', 'POST', 'PUT', 'DELETE'])
-async def security_api(request: Request):
+async def security_api(request: Request, conversation: ServerConversation = Depends(get_conversation)) -> Response:
     """Catch-all route for security analyzer API requests.
 
     Each request is handled directly to the security analyzer.
@@ -17,14 +24,17 @@ async def security_api(request: Request):
         request (Request): The incoming FastAPI request object.
 
     Returns:
-        Any: The response from the security analyzer.
+        Response: The response from the security analyzer.
 
     Raises:
         HTTPException: If the security analyzer is not initialized.
     """
-    if not request.state.conversation.security_analyzer:
-        raise HTTPException(status_code=404, detail='Security analyzer not initialized')
+    if not conversation.security_analyzer:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail='Security analyzer not initialized',
+        )
 
-    return await request.state.conversation.security_analyzer.handle_api_request(
+    return await conversation.security_analyzer.handle_api_request(
         request
     )

@@ -7,6 +7,7 @@ OpenHands uses its own `Message` class (`openhands/core/message.py`) which provi
 ## Class Structure
 
 Our `Message` class (`openhands/core/message.py`):
+
 ```python
 class Message(BaseModel):
     role: Literal['user', 'system', 'assistant', 'tool']
@@ -22,13 +23,14 @@ class Message(BaseModel):
 ```
 
 litellm's `Message` class (`litellm/types/utils.py`):
+
 ```python
 class Message(OpenAIObject):
-    content: Optional[str]
+    content: str | None
     role: Literal["assistant", "user", "system", "tool", "function"]
-    tool_calls: Optional[List[ChatCompletionMessageToolCall]]
-    function_call: Optional[FunctionCall]
-    audio: Optional[ChatCompletionAudioResponse] = None
+    tool_calls: List[ChatCompletionMessageToolCall] | None
+    function_call: FunctionCall | None
+    audio: ChatCompletionAudioResponse | None = None
 ```
 
 ## How It Works
@@ -36,6 +38,7 @@ class Message(OpenAIObject):
 1. **Message Creation**: Our `Message` class is a Pydantic model that supports rich content (text and images) through its `content` field.
 
 2. **Serialization**: The class uses Pydantic's `@model_serializer` to convert messages into dictionaries that litellm can understand. We have two serialization methods:
+
    ```python
    def _string_serializer(self) -> dict:
        # convert content to a single string
@@ -55,6 +58,7 @@ class Message(OpenAIObject):
    ```
 
    The appropriate serializer is chosen based on the message's capabilities:
+
    ```python
    @model_serializer
    def serialize_model(self) -> dict:
@@ -64,11 +68,13 @@ class Message(OpenAIObject):
    ```
 
 3. **Tool Call Handling**: Tool calls require special attention in serialization because:
+
    - They need to work with litellm's API calls (which accept both dicts and objects)
    - They need to be properly serialized for token counting
    - They need to maintain compatibility with different LLM providers' formats
 
 4. **litellm Integration**: When we pass our messages to `litellm.completion()`, litellm doesn't care about the message class type - it works with the dictionary representation. This works because:
+
    - litellm's transformation code (e.g., `litellm/llms/anthropic/chat/transformation.py`) processes messages based on their structure, not their type
    - our serialization produces dictionaries that match litellm's expected format
    - litellm handles rich content by looking at the message structure, supporting both simple string content and lists of content items
@@ -78,6 +84,7 @@ class Message(OpenAIObject):
 ### Token Counting
 
 To use litellm's token counter, we need to make sure that all message components (including tool calls) are properly serialized to dictionaries. This is because:
+
 - litellm's token counter expects dictionary structures
 - Tool calls need to be included in the token count
 - Different providers may count tokens differently for structured content

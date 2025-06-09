@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Step 1: Stop all running containers
 echo "Stopping all running containers..."

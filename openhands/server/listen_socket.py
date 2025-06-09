@@ -1,103 +1,217 @@
+import asyncio
+import os
+from types import MappingProxyType
+from typing import Any
 from urllib.parse import parse_qs
 
-import jwt
-from pydantic import SecretStr
 from socketio.exceptions import ConnectionRefusedError
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     NullAction,
 )
+from openhands.events.action.agent import RecallAction
+from openhands.events.async_event_store_wrapper import AsyncEventStoreWrapper
+from openhands.events.event_store import EventStore
 from openhands.events.observation import (
     NullObservation,
 )
-from openhands.events.observation.agent import AgentStateChangedObservation
+from openhands.events.observation.agent import (
+    AgentStateChangedObservation,
+)
 from openhands.events.serialization import event_to_dict
-from openhands.events.stream import AsyncEventStreamWrapper
-from openhands.server.routes.settings import ConversationStoreImpl, SettingsStoreImpl
-from openhands.server.shared import config, conversation_manager, openhands_config, sio
+from openhands.experiments.experiment_manager import ExperimentManagerImpl
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderToken
+from openhands.integrations.service_types import ProviderType
+from openhands.server.session.conversation_init_data import ConversationInitData
+from openhands.server.shared import (
+    SecretsStoreImpl,
+    SettingsStoreImpl,
+    config,
+    conversation_manager,
+    server_config,
+    sio,
+)
 from openhands.server.types import AppMode
+from openhands.storage.conversation.conversation_validator import (
+    create_conversation_validator,
+)
+from openhands.storage.data_models.user_secrets import UserSecrets
 
 
-@sio.event
-async def connect(connection_id: str, environ, auth):
-    logger.info(f'sio:connect: {connection_id}')
-    query_params = parse_qs(environ.get('QUERY_STRING', ''))
-    latest_event_id = int(query_params.get('latest_event_id', [-1])[0])
-    conversation_id = query_params.get('conversation_id', [None])[0]
-    if not conversation_id:
-        logger.error('No conversation_id in query params')
-        raise ConnectionRefusedError('No conversation_id in query params')
+def create_provider_tokens_object(
+    providers_set: list[ProviderType],
+) -> PROVIDER_TOKEN_TYPE:
+    provider_information: dict[ProviderType, ProviderToken] = {}
 
-    user_id = None
-    if openhands_config.app_mode != AppMode.OSS:
-        cookies_str = environ.get('HTTP_COOKIE', '')
-        cookies = dict(cookie.split('=', 1) for cookie in cookies_str.split('; '))
-        signed_token = cookies.get('github_auth', '')
-        if not signed_token:
-            logger.error('No github_auth cookie')
-            raise ConnectionRefusedError('No github_auth cookie')
-        if not config.jwt_secret:
-            raise RuntimeError('JWT secret not found')
+    for provider in providers_set:
+        provider_information[provider] = ProviderToken(token=None, user_id=None)
 
-        jwt_secret = (
-            config.jwt_secret.get_secret_value()
-            if isinstance(config.jwt_secret, SecretStr)
-            else config.jwt_secret
-        )
-        decoded = jwt.decode(signed_token, jwt_secret, algorithms=['HS256'])
-        user_id = decoded['github_user_id']
+    return MappingProxyType(provider_information)
 
-        logger.info(f'User {user_id} is connecting to conversation {conversation_id}')
 
-        conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
-        metadata = await conversation_store.get_metadata(conversation_id)
-
-        if metadata.github_user_id != str(user_id):
-            logger.error(
-                f'User {user_id} is not allowed to join conversation {conversation_id}'
-            )
-            raise ConnectionRefusedError(
-                f'User {user_id} is not allowed to join conversation {conversation_id}'
-            )
-
+async def setup_init_convo_settings(
+    user_id: str | None, conversation_id: str, providers_set: list[ProviderType]
+) -> ConversationInitData:
     settings_store = await SettingsStoreImpl.get_instance(config, user_id)
     settings = await settings_store.load()
+
+    secrets_store = await SecretsStoreImpl.get_instance(config, user_id)
+    user_secrets: UserSecrets | None = await secrets_store.load()
 
     if not settings:
         raise ConnectionRefusedError(
             'Settings not found', {'msg_id': 'CONFIGURATION$SETTINGS_NOT_FOUND'}
         )
 
-    event_stream = await conversation_manager.join_conversation(
-        conversation_id, connection_id, settings, user_id
-    )
+    session_init_args: dict = {}
+    session_init_args = {**settings.__dict__, **session_init_args}
 
-    agent_state_changed = None
-    async_stream = AsyncEventStreamWrapper(event_stream, latest_event_id + 1)
-    async for event in async_stream:
-        if isinstance(
-            event,
-            (
-                NullAction,
-                NullObservation,
-            ),
-        ):
-            continue
-        elif isinstance(event, AgentStateChangedObservation):
-            agent_state_changed = event
-        else:
-            await sio.emit('oh_event', event_to_dict(event), to=connection_id)
-    if agent_state_changed:
-        await sio.emit('oh_event', event_to_dict(agent_state_changed), to=connection_id)
+    git_provider_tokens = create_provider_tokens_object(providers_set)
+    if server_config.app_mode != AppMode.SAAS and user_secrets:
+        git_provider_tokens = user_secrets.provider_tokens
+
+    session_init_args['git_provider_tokens'] = git_provider_tokens
+    if user_secrets:
+        session_init_args['custom_secrets'] = user_secrets.custom_secrets
+
+    convo_init_data = ConversationInitData(**session_init_args)
+    # We should recreate the same experiment conditions when restarting a conversation
+    return ExperimentManagerImpl.run_conversation_variant_test(
+        user_id, conversation_id, convo_init_data
+    )
 
 
 @sio.event
-async def oh_action(connection_id: str, data: dict):
+async def connect(connection_id: str, environ: dict) -> None:
+    try:
+        logger.info(f'sio:connect: {connection_id}')
+        query_params = parse_qs(environ.get('QUERY_STRING', ''))
+        latest_event_id_str = query_params.get('latest_event_id', [-1])[0]
+        try:
+            latest_event_id = int(latest_event_id_str)
+        except ValueError:
+            logger.debug(
+                f'Invalid latest_event_id value: {latest_event_id_str}, defaulting to -1'
+            )
+            latest_event_id = -1
+        conversation_id = query_params.get('conversation_id', [None])[0]
+        logger.info(
+            f'Socket request for conversation {conversation_id} with connection_id {connection_id}'
+        )
+        raw_list = query_params.get('providers_set', [])
+        providers_list = []
+        for item in raw_list:
+            providers_list.extend(item.split(',') if isinstance(item, str) else [])
+        providers_list = [p for p in providers_list if p]
+        providers_set = [ProviderType(p) for p in providers_list]
+
+        if not conversation_id:
+            logger.error('No conversation_id in query params')
+            raise ConnectionRefusedError('No conversation_id in query params')
+
+        if _invalid_session_api_key(query_params):
+            raise ConnectionRefusedError('invalid_session_api_key')
+
+        cookies_str = environ.get('HTTP_COOKIE', '')
+        # Get Authorization header from the environment
+        # Headers in WSGI/ASGI are prefixed with 'HTTP_' and have dashes replaced with underscores
+        authorization_header = environ.get('HTTP_AUTHORIZATION', None)
+        conversation_validator = create_conversation_validator()
+        user_id = await conversation_validator.validate(
+            conversation_id, cookies_str, authorization_header
+        )
+        logger.info(
+            f'User {user_id} is allowed to connect to conversation {conversation_id}'
+        )
+
+        try:
+            event_store = EventStore(
+                conversation_id, conversation_manager.file_store, user_id
+            )
+        except FileNotFoundError as e:
+            logger.error(
+                f'Failed to create EventStore for conversation {conversation_id}: {e}'
+            )
+            raise ConnectionRefusedError(f'Failed to access conversation events: {e}')
+
+        logger.info(
+            f'Replaying event stream for conversation {conversation_id} with connection_id {connection_id}...'
+        )
+        agent_state_changed = None
+
+        # Create an async store to replay events
+        async_store = AsyncEventStoreWrapper(event_store, latest_event_id + 1)
+
+        # Process all available events
+        async for event in async_store:
+            logger.debug(f'oh_event: {event.__class__.__name__}')
+
+            if isinstance(
+                event,
+                (NullAction, NullObservation, RecallAction),
+            ):
+                continue
+            elif isinstance(event, AgentStateChangedObservation):
+                agent_state_changed = event
+            else:
+                await sio.emit('oh_event', event_to_dict(event), to=connection_id)
+
+        # Send the agent state changed event last if we have one
+        if agent_state_changed:
+            await sio.emit(
+                'oh_event', event_to_dict(agent_state_changed), to=connection_id
+            )
+
+        logger.info(
+            f'Finished replaying event stream for conversation {conversation_id}'
+        )
+
+        conversation_init_data = await setup_init_convo_settings(
+            user_id, conversation_id, providers_set
+        )
+        agent_loop_info = await conversation_manager.join_conversation(
+            conversation_id,
+            connection_id,
+            conversation_init_data,
+            user_id,
+        )
+
+        if agent_loop_info is None:
+            raise ConnectionRefusedError('Failed to join conversation')
+
+        logger.info(
+            f'Successfully joined conversation {conversation_id} with connection_id {connection_id}'
+        )
+    except ConnectionRefusedError:
+        # Close the broken connection after sending an error message
+        asyncio.create_task(sio.disconnect(connection_id))
+        raise
+
+
+@sio.event
+async def oh_user_action(connection_id: str, data: dict[str, Any]) -> None:
     await conversation_manager.send_to_event_stream(connection_id, data)
 
 
 @sio.event
-async def disconnect(connection_id: str):
+async def oh_action(connection_id: str, data: dict[str, Any]) -> None:
+    # TODO: Remove this handler once all clients are updated to use oh_user_action
+    # Keeping for backward compatibility with in-progress sessions
+    await conversation_manager.send_to_event_stream(connection_id, data)
+
+
+@sio.event
+async def disconnect(connection_id: str) -> None:
     logger.info(f'sio:disconnect:{connection_id}')
     await conversation_manager.disconnect_from_session(connection_id)
+
+
+def _invalid_session_api_key(query_params: dict[str, list[Any]]):
+    session_api_key = os.getenv('SESSION_API_KEY')
+    if not session_api_key:
+        return False
+    query_api_keys = query_params['session_api_key']
+    if not query_api_keys:
+        return True
+    return query_api_keys[0] != session_api_key

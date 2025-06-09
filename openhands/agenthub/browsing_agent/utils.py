@@ -5,7 +5,7 @@ from warnings import warn
 import yaml
 
 
-def yaml_parser(message):
+def yaml_parser(message: str) -> tuple[dict, bool, str]:
     """Parse a yaml message for the retry function."""
     # saves gpt-3.5 from some yaml parsing errors
     message = re.sub(r':\s*\n(?=\S|\n)', ': ', message)
@@ -22,7 +22,9 @@ def yaml_parser(message):
     return value, valid, retry_message
 
 
-def _compress_chunks(text, identifier, skip_list, split_regex='\n\n+'):
+def _compress_chunks(
+    text: str, identifier: str, skip_list: list[str], split_regex: str = '\n\n+'
+) -> tuple[dict[str, str], str]:
     """Compress a string by replacing redundant chunks by identifiers. Chunks are defined by the split_regex."""
     text_list = re.split(split_regex, text)
     text_list = [chunk.strip() for chunk in text_list]
@@ -44,7 +46,7 @@ def _compress_chunks(text, identifier, skip_list, split_regex='\n\n+'):
     return def_dict, compressed_text
 
 
-def compress_string(text):
+def compress_string(text: str) -> str:
     """Compress a string by replacing redundant paragraphs and lines with identifiers."""
     # Perform paragraph-level compression
     def_dict, compressed_text = _compress_chunks(
@@ -67,7 +69,7 @@ def compress_string(text):
     return definitions + '\n' + compressed_text
 
 
-def extract_html_tags(text, keys):
+def extract_html_tags(text: str, keys: list[str]) -> dict[str, list[str]]:
     """Extract the content within HTML tags for a list of keys.
 
     Parameters
@@ -102,7 +104,12 @@ class ParseError(Exception):
     pass
 
 
-def parse_html_tags_raise(text, keys=(), optional_keys=(), merge_multiple=False):
+def parse_html_tags_raise(
+    text: str,
+    keys: list[str] | None = None,
+    optional_keys: list[str] | None = None,
+    merge_multiple: bool = False,
+) -> dict[str, str]:
     """A version of parse_html_tags that raises an exception if the parsing is not successful."""
     content_dict, valid, retry_message = parse_html_tags(
         text, keys, optional_keys, merge_multiple=merge_multiple
@@ -112,7 +119,12 @@ def parse_html_tags_raise(text, keys=(), optional_keys=(), merge_multiple=False)
     return content_dict
 
 
-def parse_html_tags(text, keys=(), optional_keys=(), merge_multiple=False):
+def parse_html_tags(
+    text: str,
+    keys: list[str] | None = None,
+    optional_keys: list[str] | None = None,
+    merge_multiple: bool = False,
+) -> tuple[dict[str, str], bool, str]:
     """Satisfy the parse api, extracts 1 match per key and validates that all keys are present
 
     Parameters
@@ -133,9 +145,12 @@ def parse_html_tags(text, keys=(), optional_keys=(), merge_multiple=False):
     str
         A message to be displayed to the agent if the parsing was not successful.
     """
-    all_keys = tuple(keys) + tuple(optional_keys)
+    keys = keys or []
+    optional_keys = optional_keys or []
+    all_keys = list(keys) + list(optional_keys)
     content_dict = extract_html_tags(text, all_keys)
     retry_messages = []
+    result_dict: dict[str, str] = {}
 
     for key in all_keys:
         if key not in content_dict:
@@ -143,7 +158,6 @@ def parse_html_tags(text, keys=(), optional_keys=(), merge_multiple=False):
                 retry_messages.append(f'Missing the key <{key}> in the answer.')
         else:
             val = content_dict[key]
-            content_dict[key] = val[0]
             if len(val) > 1:
                 if not merge_multiple:
                     retry_messages.append(
@@ -151,8 +165,10 @@ def parse_html_tags(text, keys=(), optional_keys=(), merge_multiple=False):
                     )
                 else:
                     # merge the multiple instances
-                    content_dict[key] = '\n'.join(val)
+                    result_dict[key] = '\n'.join(val)
+            else:
+                result_dict[key] = val[0]
 
     valid = len(retry_messages) == 0
     retry_message = '\n'.join(retry_messages)
-    return content_dict, valid, retry_message
+    return result_dict, valid, retry_message

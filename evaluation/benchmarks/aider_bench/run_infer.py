@@ -16,6 +16,7 @@ from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
     compatibility_for_eval_history_pairs,
+    get_default_sandbox_config_for_eval,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -23,8 +24,7 @@ from evaluation.utils.shared import (
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
-    AppConfig,
-    SandboxConfig,
+    OpenHandsConfig,
     get_llm_config_arg,
     load_from_toml,
     parse_arguments,
@@ -46,22 +46,15 @@ SKIP_NUM = (
 
 def get_config(
     metadata: EvalMetadata,
-) -> AppConfig:
-    config = AppConfig(
+) -> OpenHandsConfig:
+    sandbox_config = get_default_sandbox_config_for_eval()
+    sandbox_config.base_container_image = 'python:3.11-bookworm'
+    config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         runtime=os.environ.get('RUNTIME', 'docker'),
         max_iterations=metadata.max_iterations,
-        sandbox=SandboxConfig(
-            base_container_image='python:3.11-bookworm',
-            enable_auto_lint=True,
-            use_host_network=False,
-            timeout=100,
-            api_key=os.environ.get('ALLHANDS_API_KEY', None),
-            remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
-            keep_runtime_alive=False,
-            remote_runtime_init_timeout=1800,
-        ),
+        sandbox=sandbox_config,
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,
@@ -87,7 +80,7 @@ def initialize_runtime(
 
     This function is called before the runtime is used to run the agent.
     """
-    logger.info(f"\n{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}\n")
+    logger.info(f'\n{"-" * 50} BEGIN Runtime Initialization Fn {"-" * 50}\n')
     obs: CmdOutputObservation
 
     # Set instance id
@@ -117,7 +110,7 @@ def initialize_runtime(
                 file_path,
                 '/workspace',
             )
-    logger.info(f"\n{'-' * 50} END Runtime Initialization Fn {'-' * 50}\n")
+    logger.info(f'\n{"-" * 50} END Runtime Initialization Fn {"-" * 50}\n')
 
 
 def complete_runtime(
@@ -130,7 +123,7 @@ def complete_runtime(
     If you need to do something in the sandbox to get the correctness metric after
     the agent has run, modify this function.
     """
-    logger.info(f"\n{'-' * 50} BEGIN Runtime Completion Fn {'-' * 50}\n")
+    logger.info(f'\n{"-" * 50} BEGIN Runtime Completion Fn {"-" * 50}\n')
     obs: CmdOutputObservation
 
     # Rewriting the test file to ignore any changes Agent may have made.
@@ -154,7 +147,7 @@ def complete_runtime(
     if isinstance(obs, CmdOutputObservation):
         exit_code = obs.exit_code
 
-    logger.info(f"\n{'-' * 50} END Runtime Completion Fn {'-' * 50}\n")
+    logger.info(f'\n{"-" * 50} END Runtime Completion Fn {"-" * 50}\n')
 
     runtime.close()
 
@@ -212,7 +205,6 @@ def process_instance(
 
     runtime: Runtime = create_runtime(config)
     call_async_from_sync(runtime.connect)
-
     initialize_runtime(runtime, instance=instance)
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state

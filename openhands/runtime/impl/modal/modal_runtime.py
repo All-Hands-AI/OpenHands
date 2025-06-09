@@ -3,11 +3,11 @@ import tempfile
 from pathlib import Path
 from typing import Callable
 
+import httpx
 import modal
-import requests
 import tenacity
 
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.events import EventStream
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
@@ -31,7 +31,7 @@ class ModalRuntime(ActionExecutionClient):
     When receive an event, it will send the event to runtime-client which run inside the Modal sandbox environment.
 
     Args:
-        config (AppConfig): The application configuration.
+        config (OpenHandsConfig): The application configuration.
         event_stream (EventStream): The event stream to subscribe to.
         sid (str, optional): The session ID. Defaults to 'default'.
         plugins (list[PluginRequirement] | None, optional): List of plugin requirements. Defaults to None.
@@ -44,7 +44,7 @@ class ModalRuntime(ActionExecutionClient):
 
     def __init__(
         self,
-        config: AppConfig,
+        config: OpenHandsConfig,
         event_stream: EventStream,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
@@ -146,14 +146,13 @@ class ModalRuntime(ActionExecutionClient):
             self.send_status_message(' ')
         self._runtime_initialized = True
 
-    def _get_action_execution_server_host(self):
+    @property
+    def action_execution_server_url(self):
         return self.api_url
 
     @tenacity.retry(
         stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),
-        retry=tenacity.retry_if_exception_type(
-            (ConnectionError, requests.exceptions.ConnectionError)
-        ),
+        retry=tenacity.retry_if_exception_type((ConnectionError, httpx.NetworkError)),
         reraise=True,
         wait=tenacity.wait_fixed(2),
     )
@@ -270,7 +269,10 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
 
         tunnel = self.sandbox.tunnels()[self._vscode_port]
         tunnel_url = tunnel.url
-        self._vscode_url = tunnel_url + f'/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        self._vscode_url = (
+            tunnel_url
+            + f'/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        )
 
         self.log(
             'debug',

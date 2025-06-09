@@ -31,10 +31,6 @@ const selectConversationCard = async (page: Page, index: number) => {
 
 test.beforeEach(async ({ page }) => {
   await page.goto("/");
-  await page.evaluate(() => {
-    localStorage.setItem("FEATURE_MULTI_CONVERSATION_UI", "true");
-    localStorage.setItem("analytics-consent", "true");
-  });
 });
 
 test("should only display the create new conversation button when in a conversation", async ({

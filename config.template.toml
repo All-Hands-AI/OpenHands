@@ -17,8 +17,14 @@
 #modal_api_token_id = ""
 #modal_api_token_secret = ""
 
+# API key for Daytona
+#daytona_api_key = ""
+
+# Daytona Target
+#daytona_target = ""
+
 # Base path for the workspace
-workspace_base = "./workspace"
+#workspace_base = "./workspace"
 
 # Cache directory path
 #cache_dir = "/tmp/cache"
@@ -32,12 +38,13 @@ workspace_base = "./workspace"
 # Disable color in terminal output
 #disable_color = false
 
-# Enable saving and restoring the session when run from CLI
-#enable_cli_session = false
-
 # Path to store trajectories, can be a folder or a file
 # If it's a folder, the session id will be used as the file name
 #save_trajectory_path="./trajectories"
+
+# Whether to save screenshots in the trajectory
+# The screenshots are encoded and can make trajectory json files very large
+#save_screenshots_in_trajectory = false
 
 # Path to replay a trajectory, must be a file path
 # If provided, trajectory will be loaded and replayed before the
@@ -50,9 +57,6 @@ workspace_base = "./workspace"
 # File store type
 #file_store = "memory"
 
-# List of allowed file extensions for uploads
-#file_uploads_allowed_extensions = [".*"]
-
 # Maximum file size for uploads, in megabytes
 #file_uploads_max_file_size_mb = 0
 
@@ -60,7 +64,7 @@ workspace_base = "./workspace"
 #max_budget_per_task = 0.0
 
 # Maximum number of iterations
-#max_iterations = 100
+#max_iterations = 250
 
 # Path to mount the workspace in the sandbox
 #workspace_mount_path_in_sandbox = "/workspace"
@@ -88,6 +92,17 @@ workspace_base = "./workspace"
 
 # List of allowed file extensions for uploads
 #file_uploads_allowed_extensions = [".*"]
+
+# Whether to enable the default LLM summarizing condenser when no condenser is specified in config
+# When true, a LLMSummarizingCondenserConfig will be used as the default condenser
+# When false, a NoOpCondenserConfig (no summarization) will be used
+#enable_default_condenser = true
+
+# Maximum number of concurrent conversations per user
+#max_concurrent_conversations = 3
+
+# Maximum age of conversations in seconds before they are automatically closed
+#conversation_max_age_seconds = 864000  # 10 days
 
 #################################### LLM #####################################
 # Configuration for LLM models (group name starts with 'llm')
@@ -120,15 +135,6 @@ api_key = ""
 
 # Custom LLM provider
 #custom_llm_provider = ""
-
-# Embedding API base URL
-#embedding_base_url = ""
-
-# Embedding deployment name
-#embedding_deployment_name = ""
-
-# Embedding model to use
-embedding_model = "local"
 
 # Maximum number of characters in an observation's content
 #max_message_chars = 10000
@@ -194,6 +200,8 @@ model = "gpt-4o"
 # https://github.com/All-Hands-AI/OpenHands/pull/4711
 #native_tool_calling = None
 
+
+
 [llm.gpt4o-mini]
 api_key = ""
 model = "gpt-4o"
@@ -207,23 +215,27 @@ model = "gpt-4o"
 ##############################################################################
 [agent]
 
-# whether the browsing tool is enabled
-codeact_enable_browsing = true
+# Whether the browsing tool is enabled
+enable_browsing = true
 
-# whether the LLM draft editor is enabled
-codeact_enable_llm_editor = false
+# Whether the LLM draft editor is enabled
+enable_llm_editor = false
 
-# whether the IPython tool is enabled
-codeact_enable_jupyter = true
+# Whether the standard editor tool (str_replace_editor) is enabled
+# Only has an effect if enable_llm_editor is False
+enable_editor = true
 
-# Name of the micro agent to use for this agent
-#micro_agent_name = ""
+# Whether the IPython tool is enabled
+enable_jupyter = true
 
-# Memory enabled
-#memory_enabled = false
+# Whether the command tool is enabled
+enable_cmd = true
 
-# Memory maximum threads
-#memory_max_threads = 3
+# Whether the think tool is enabled
+enable_think = true
+
+# Whether the finish tool is enabled
+enable_finish = true
 
 # LLM config group to use
 #llm_config = 'your-llm-config-group'
@@ -234,10 +246,19 @@ codeact_enable_jupyter = true
 # List of microagents to disable
 #disabled_microagents = []
 
+# Whether history should be truncated to continue the session when hitting LLM context
+# length limit
+enable_history_truncation = true
+
 [agent.RepoExplorerAgent]
 # Example: use a cheaper model for RepoExplorerAgent to reduce cost, especially
 # useful when an agent doesn't demand high quality but uses a lot of tokens
 llm_config = 'gpt3'
+
+[agent.CustomAgent]
+# Example: use a custom agent from a different package
+# This will be automatically be registered as a new agent named "CustomAgent"
+classpath = "my_package.my_module.MyCustomAgent"
 
 #################################### Sandbox ###################################
 # Configuration for the sandbox
@@ -255,7 +276,7 @@ llm_config = 'gpt3'
 # Use host network
 #use_host_network = false
 
-# runtime extra build args
+# Runtime extra build args
 #runtime_extra_build_args = ["--network=host", "--add-host=host.docker.internal:host-gateway"]
 
 # Enable auto linting after editing
@@ -273,6 +294,46 @@ llm_config = 'gpt3'
 # BrowserGym environment to use for evaluation
 #browsergym_eval_env = ""
 
+# Platform to use for building the runtime image (e.g., "linux/amd64")
+#platform = ""
+
+# Force rebuild of runtime image even if it exists
+#force_rebuild_runtime = false
+
+# Runtime container image to use (if not provided, will be built from base_container_image)
+#runtime_container_image = ""
+
+# Keep runtime alive after session ends
+#keep_runtime_alive = false
+
+# Pause closed runtimes instead of stopping them
+#pause_closed_runtimes = false
+
+# Delay in seconds before closing idle runtimes
+#close_delay = 300
+
+# Remove all containers when stopping the runtime
+#rm_all_containers = false
+
+# Enable GPU support in the runtime
+#enable_gpu = false
+
+# Additional Docker runtime kwargs
+#docker_runtime_kwargs = {}
+
+# Specific port to use for VSCode. If not set, a random port will be chosen.
+# Useful when deploying OpenHands in a remote machine where you need to expose a specific port.
+#vscode_port = 41234
+
+# Volume mounts in the format 'host_path:container_path[:mode]'
+# e.g. '/my/host/dir:/workspace:rw'
+# Multiple mounts can be specified using commas
+# e.g. '/path1:/workspace/path1,/path2:/workspace/path2:ro'
+
+# Configure volumes under the [sandbox] section:
+# [sandbox]
+# volumes = "/my/host/dir:/workspace:rw,/path2:/workspace/path2:ro"
+
 #################################### Security ###################################
 # Configuration for security features
 ##############################################################################
@@ -283,6 +344,72 @@ llm_config = 'gpt3'
 
 # The security analyzer to use (For Headless / CLI only -  In Web this is overridden by Session Init)
 #security_analyzer = ""
+
+# Whether to enable security analyzer
+#enable_security_analyzer = false
+
+#################################### Condenser #################################
+# Condensers control how conversation history is managed and compressed when
+# the context grows too large. Each agent uses one condenser configuration.
+##############################################################################
+[condenser]
+# The type of condenser to use. Available options:
+# - "noop": No condensing, keeps full history (default)
+# - "observation_masking": Keeps full event structure but masks older observations
+# - "recent": Keeps only recent events and discards older ones
+# - "llm": Uses an LLM to summarize conversation history
+# - "amortized": Intelligently forgets older events while preserving important context
+# - "llm_attention": Uses an LLM to prioritize most relevant context
+type = "noop"
+
+# Examples for each condenser type (uncomment and modify as needed):
+
+# 1. NoOp Condenser - No additional settings needed
+#type = "noop"
+
+# 2. Observation Masking Condenser
+#type = "observation_masking"
+# Number of most-recent events where observations will not be masked
+#attention_window = 100
+
+# 3. Recent Events Condenser
+#type = "recent"
+# Number of initial events to always keep (typically includes task description)
+#keep_first = 1
+# Maximum number of events to keep in history
+#max_events = 100
+
+# 4. LLM Summarizing Condenser
+#type = "llm"
+# Reference to an LLM config to use for summarization
+#llm_config = "condenser"
+# Number of initial events to always keep (typically includes task description)
+#keep_first = 1
+# Maximum size of history before triggering summarization
+#max_size = 100
+
+# 5. Amortized Forgetting Condenser
+#type = "amortized"
+# Number of initial events to always keep (typically includes task description)
+#keep_first = 1
+# Maximum size of history before triggering forgetting
+#max_size = 100
+
+# 6. LLM Attention Condenser
+#type = "llm_attention"
+# Reference to an LLM config to use for attention scoring
+#llm_config = "condenser"
+# Number of initial events to always keep (typically includes task description)
+#keep_first = 1
+# Maximum size of history before triggering attention mechanism
+#max_size = 100
+
+# Example of a custom LLM configuration for condensers that require an LLM
+# If not provided, it falls back to the default LLM
+#[llm.condenser]
+#model = "gpt-4o"
+#temperature = 0.1
+#max_input_tokens = 1024
 
 #################################### Eval ####################################
 # Configuration for the evaluation, please refer to the specific evaluation

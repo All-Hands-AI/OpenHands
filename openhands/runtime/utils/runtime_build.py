@@ -6,7 +6,6 @@ import string
 import tempfile
 from enum import Enum
 from pathlib import Path
-from typing import List
 
 import docker
 from dirhash import dirhash
@@ -25,7 +24,7 @@ class BuildFromImageType(Enum):
     LOCK = 'lock'  # Fastest: Reuse the most recent image with the exact SAME dependencies (lock files)
 
 
-def get_runtime_image_repo():
+def get_runtime_image_repo() -> str:
     return os.getenv('OH_RUNTIME_RUNTIME_IMAGE_REPO', 'ghcr.io/all-hands-ai/runtime')
 
 
@@ -69,7 +68,6 @@ def get_runtime_image_repo_and_tag(base_image: str) -> tuple[str, str]:
     Returns:
     - tuple[str, str]: The Docker repo and tag of the Docker image
     """
-
     if get_runtime_image_repo() in base_image:
         logger.debug(
             f'The provided image [{base_image}] is already a valid runtime image.\n'
@@ -112,9 +110,10 @@ def build_runtime_image(
     build_folder: str | None = None,
     dry_run: bool = False,
     force_rebuild: bool = False,
-    extra_build_args: List[str] | None = None,
+    extra_build_args: list[str] | None = None,
 ) -> str:
     """Prepares the final docker build folder.
+
     If dry_run is False, it will also build the OpenHands runtime Docker image using the docker build folder.
 
     Parameters:
@@ -130,7 +129,7 @@ def build_runtime_image(
     Returns:
     - str: <image_repo>:<MD5 hash>. Where MD5 hash is the hash of the docker build folder
 
-    See https://docs.all-hands.dev/modules/usage/architecture/runtime for more details.
+    See https://docs.all-hands.dev/usage/architecture/runtime for more details.
     """
     if build_folder is None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -167,7 +166,7 @@ def build_runtime_image_in_folder(
     dry_run: bool,
     force_rebuild: bool,
     platform: str | None = None,
-    extra_build_args: List[str] | None = None,
+    extra_build_args: list[str] | None = None,
 ) -> str:
     runtime_image_repo, _ = get_runtime_image_repo_and_tag(base_image)
     lock_tag = f'oh_v{oh_version}_{get_hash_for_lock_files(base_image)}'
@@ -252,7 +251,7 @@ def prep_build_folder(
     base_image: str,
     build_from: BuildFromImageType,
     extra_deps: str | None,
-):
+) -> None:
     # Copy the source code to directory. It will end up in build_folder/code
     # If package is not found, build from source code
     openhands_source_dir = Path(openhands.__file__).parent
@@ -284,8 +283,9 @@ def prep_build_folder(
         build_from=build_from,
         extra_deps=extra_deps,
     )
-    with open(Path(build_folder, 'Dockerfile'), 'w') as file:  # type: ignore
-        file.write(dockerfile_content)  # type: ignore
+    dockerfile_path = Path(build_folder, 'Dockerfile')
+    with open(str(dockerfile_path), 'w') as f:
+        f.write(dockerfile_content)
 
 
 _ALPHABET = string.digits + string.ascii_lowercase
@@ -294,14 +294,14 @@ _ALPHABET = string.digits + string.ascii_lowercase
 def truncate_hash(hash: str) -> str:
     """Convert the base16 hash to base36 and truncate at 16 characters."""
     value = int(hash, 16)
-    result: List[str] = []
+    result: list[str] = []
     while value > 0 and len(result) < 16:
         value, remainder = divmod(value, len(_ALPHABET))
         result.append(_ALPHABET[remainder])
     return ''.join(result)
 
 
-def get_hash_for_lock_files(base_image: str):
+def get_hash_for_lock_files(base_image: str) -> str:
     openhands_source_dir = Path(openhands.__file__).parent
     md5 = hashlib.md5()
     md5.update(base_image.encode())
@@ -318,11 +318,11 @@ def get_hash_for_lock_files(base_image: str):
     return result
 
 
-def get_tag_for_versioned_image(base_image: str):
+def get_tag_for_versioned_image(base_image: str) -> str:
     return base_image.replace('/', '_s_').replace(':', '_t_').lower()[-96:]
 
 
-def get_hash_for_source_files():
+def get_hash_for_source_files() -> str:
     openhands_source_dir = Path(openhands.__file__).parent
     dir_hash = dirhash(
         openhands_source_dir,
@@ -347,9 +347,9 @@ def _build_sandbox_image(
     lock_tag: str,
     versioned_tag: str | None,
     platform: str | None = None,
-    extra_build_args: List[str] | None = None,
-):
-    """Build and tag the sandbox image. The image will be tagged with all tags that do not yet exist"""
+    extra_build_args: list[str] | None = None,
+) -> str:
+    """Build and tag the sandbox image. The image will be tagged with all tags that do not yet exist."""
     names = [
         f'{runtime_image_repo}:{source_tag}',
         f'{runtime_image_repo}:{lock_tag}',
@@ -385,9 +385,9 @@ if __name__ == '__main__':
         # and create a Dockerfile dynamically and place it in the build_folder only. This allows the Docker image to
         # then be created using the Dockerfile (most likely using the containers/build.sh script)
         build_folder = args.build_folder
-        assert os.path.exists(
-            build_folder
-        ), f'Build folder {build_folder} does not exist'
+        assert os.path.exists(build_folder), (
+            f'Build folder {build_folder} does not exist'
+        )
         logger.debug(
             f'Copying the source code and generating the Dockerfile in the build folder: {build_folder}'
         )

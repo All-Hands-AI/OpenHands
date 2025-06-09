@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -eo pipefail
 
 # Initialize variables with default values
@@ -7,15 +7,17 @@ org_name=""
 push=0
 load=0
 tag_suffix=""
+dry_run=0
 
 # Function to display usage information
 usage() {
-    echo "Usage: $0 -i <image_name> [-o <org_name>] [--push] [--load] [-t <tag_suffix>]"
+    echo "Usage: $0 -i <image_name> [-o <org_name>] [--push] [--load] [-t <tag_suffix>] [--dry]"
     echo "  -i: Image name (required)"
     echo "  -o: Organization name"
     echo "  --push: Push the image"
     echo "  --load: Load the image"
     echo "  -t: Tag suffix"
+    echo "  --dry: Don't build, only create build-args.json"
     exit 1
 }
 
@@ -27,6 +29,7 @@ while [[ $# -gt 0 ]]; do
         --push) push=1; shift ;;
         --load) load=1; shift ;;
         -t) tag_suffix="$2"; shift 2 ;;
+        --dry) dry_run=1; shift ;;
         *) usage ;;
     esac
 done
@@ -113,9 +116,12 @@ echo "Repo: $DOCKER_REPOSITORY"
 echo "Base dir: $DOCKER_BASE_DIR"
 
 args=""
+full_tags=()
 for tag in "${tags[@]}"; do
   args+=" -t $DOCKER_REPOSITORY:$tag"
+  full_tags+=("$DOCKER_REPOSITORY:$tag")
 done
+
 
 if [[ $push -eq 1 ]]; then
   args+=" --push"
@@ -136,6 +142,26 @@ else
   # For push or without load, build for multiple platforms
   platform="linux/amd64,linux/arm64"
 fi
+if [[ $dry_run -eq 1 ]]; then
+  echo "Dry Run is enabled. Writing build config to docker-build-dry.json"
+  jq -n \
+    --argjson tags "$(printf '%s\n' "${full_tags[@]}" | jq -R . | jq -s .)" \
+    --arg platform "$platform" \
+    --arg openhands_build_version "$OPENHANDS_BUILD_VERSION" \
+    --arg dockerfile "$dir/Dockerfile" \
+    '{
+      tags: $tags,
+      platform: $platform,
+      build_args: [
+        "OPENHANDS_BUILD_VERSION=" + $openhands_build_version
+      ],
+      dockerfile: $dockerfile
+    }' > docker-build-dry.json
+
+    exit 0
+fi
+
+
 
 echo "Building for platform(s): $platform"
 

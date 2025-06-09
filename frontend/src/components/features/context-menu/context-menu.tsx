@@ -18,7 +18,7 @@ export function ContextMenu({
     <ul
       data-testid={testId}
       ref={ref}
-      className={cn("bg-[#404040] rounded-md w-[140px]", className)}
+      className={cn("bg-tertiary rounded-md", className)}
     >
       {children}
     </ul>

@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
 import {
   BaseModalTitle,
   BaseModalDescription,
@@ -17,13 +19,14 @@ export function FeedbackModal({
   isOpen,
   polarity,
 }: FeedbackModalProps) {
+  const { t } = useTranslation();
   if (!isOpen) return null;
 
   return (
     <ModalBackdrop onClose={onClose}>
-      <ModalBody>
-        <BaseModalTitle title="Feedback" />
-        <BaseModalDescription description="To help us improve, we collect feedback from your interactions to improve our prompts. By submitting this form, you consent to us collecting this data." />
+      <ModalBody className="border border-tertiary">
+        <BaseModalTitle title={t(I18nKey.FEEDBACK$TITLE)} />
+        <BaseModalDescription description={t(I18nKey.FEEDBACK$DESCRIPTION)} />
         <FeedbackForm onClose={onClose} polarity={polarity} />
       </ModalBody>
     </ModalBackdrop>

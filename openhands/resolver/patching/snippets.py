@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import os
+import re
 from shutil import rmtree
 
 
-def remove(path):
+def remove(path: str) -> None:
     if os.path.exists(path):
         if os.path.isdir(path):
             rmtree(path)
@@ -13,7 +14,7 @@ def remove(path):
 
 
 # find all indices of a list of strings that match a regex
-def findall_regex(items, regex):
+def findall_regex(items: list[str], regex: re.Pattern[str]) -> list[int]:
     found = list()
     for i in range(0, len(items)):
         k = regex.match(items[i])
@@ -24,7 +25,7 @@ def findall_regex(items, regex):
     return found
 
 
-def split_by_regex(items, regex):
+def split_by_regex(items: list[str], regex: re.Pattern[str]) -> list[list[str]]:
     splits = list()
     indices = findall_regex(items, regex)
     if not indices:
@@ -45,8 +46,8 @@ def split_by_regex(items, regex):
 
 
 # http://stackoverflow.com/questions/377017/test-if-executable-exists-in-python
-def which(program):
-    def is_exe(fpath):
+def which(program: str) -> str | None:
+    def is_exe(fpath: str) -> bool:
         return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 
     fpath, fname = os.path.split(program)

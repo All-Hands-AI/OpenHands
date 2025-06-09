@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 FOLDER_PATH=$1
 NEW_FOLDER_PATH=${FOLDER_PATH}.swebench_submission

@@ -16,7 +16,8 @@ from pydantic import BaseModel
 from tqdm import tqdm
 
 from openhands.controller.state.state import State
-from openhands.core.config import LLMConfig
+from openhands.core.config import LLMConfig, SandboxConfig
+from openhands.core.config.agent_config import AgentConfig
 from openhands.core.config.condenser_config import (
     CondenserConfig,
     NoOpCondenserConfig,
@@ -43,6 +44,7 @@ from openhands.memory.condenser import get_condensation_metadata
 class EvalMetadata(BaseModel):
     agent_class: str
     llm_config: LLMConfig
+    agent_config: AgentConfig | None = None
     max_iterations: int
     eval_output_dir: str
     start_time: str
@@ -167,6 +169,7 @@ def make_metadata(
     eval_output_dir: str,
     data_split: str | None = None,
     details: dict[str, Any] | None = None,
+    agent_config: AgentConfig | None = None,
     condenser_config: CondenserConfig | None = None,
 ) -> EvalMetadata:
     model_name = llm_config.model.split('/')[-1]
@@ -189,6 +192,7 @@ def make_metadata(
     metadata = EvalMetadata(
         agent_class=agent_class,
         llm_config=llm_config,
+        agent_config=agent_config,
         max_iterations=max_iterations,
         eval_output_dir=eval_output_path,
         start_time=time.strftime('%Y-%m-%d %H:%M:%S'),
@@ -217,9 +221,9 @@ def prepare_dataset(
     eval_ids: list[str] | None = None,
     skip_num: int | None = None,
 ):
-    assert (
-        'instance_id' in dataset.columns
-    ), "Expected 'instance_id' column in the dataset. You should define your own unique identifier for each instance and use it as the 'instance_id' column."
+    assert 'instance_id' in dataset.columns, (
+        "Expected 'instance_id' column in the dataset. You should define your own unique identifier for each instance and use it as the 'instance_id' column."
+    )
     id_column = 'instance_id'
     logger.info(f'Writing evaluation output to {output_file}')
     finished_ids: set[str] = set()
@@ -243,11 +247,21 @@ def prepare_dataset(
             f'Starting evaluation with skipping first {skip_num} instances ({len(dataset)} instances to run).'
         )
         if eval_n_limit and eval_n_limit > 0:
-            dataset = dataset.head(eval_n_limit)
-            logger.info(f'Limiting evaluation to {eval_n_limit} instances.')
+            # Use fixed random seed 42 for sampling without replacement
+            dataset = dataset.sample(
+                min(eval_n_limit, len(dataset)), random_state=42, replace=False
+            )
+            logger.info(
+                f'Randomly sampling {eval_n_limit} unique instances with random seed 42.'
+            )
     elif eval_n_limit and eval_n_limit > 0:
-        dataset = dataset.head(eval_n_limit)
-        logger.info(f'Limiting evaluation to first {eval_n_limit} instances.')
+        # Use fixed random seed 42 for sampling without replacement
+        dataset = dataset.sample(
+            min(eval_n_limit, len(dataset)), random_state=42, replace=False
+        )
+        logger.info(
+            f'Randomly sampling {eval_n_limit} unique instances with random seed 42.'
+        )
 
     new_dataset = [
         instance
@@ -507,6 +521,11 @@ def compatibility_for_eval_history_pairs(
 
 
 def is_fatal_evaluation_error(error: str | None) -> bool:
+    """
+    The AgentController class overrides last error for certain exceptions
+    We want to ensure those exeption do not overlap with fatal exceptions defined here
+    This is because we do a comparisino against the stringified error
+    """
     if not error:
         return False
 
@@ -551,3 +570,19 @@ def get_metrics(state: State) -> dict[str, Any]:
     metrics = state.metrics.get() if state.metrics else {}
     metrics['condenser'] = get_condensation_metadata(state)
     return metrics
+
+
+def get_default_sandbox_config_for_eval() -> SandboxConfig:
+    return SandboxConfig(
+        use_host_network=False,
+        # large enough timeout, since some testcases take very long to run
+        timeout=300,
+        api_key=os.environ.get('ALLHANDS_API_KEY', None),
+        runtime_startup_env_vars={'NO_CHANGE_TIMEOUT_SECONDS': '30'},
+        remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
+        keep_runtime_alive=False,
+        remote_runtime_init_timeout=3600,
+        remote_runtime_api_timeout=120,
+        remote_runtime_enable_retries=True,
+        remote_runtime_class='sysbox',
+    )

@@ -1,16 +1,32 @@
-import json
 import logging
 import multiprocessing as mp
 import os
+import re
 from typing import Callable
 
-import pandas as pd
+from pydantic import SecretStr
 
 from openhands.controller.state.state import State
 from openhands.core.logger import get_console_handler
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import Action
 from openhands.events.action.message import MessageAction
+from openhands.integrations.service_types import ProviderType
+from openhands.integrations.utils import validate_provider_token
+
+
+async def identify_token(token: str, base_domain: str | None) -> ProviderType:
+    """
+    Identifies whether a token belongs to GitHub or GitLab.
+    Parameters:
+        token (str): The personal access token to check.
+        base_domain (str): Custom base domain for provider (e.g GitHub Enterprise)
+    """
+    provider = await validate_provider_token(SecretStr(token), base_domain)
+    if not provider:
+        raise ValueError('Token is invalid.')
+
+    return provider
 
 
 def codeact_user_response(
@@ -63,52 +79,17 @@ def codeact_user_response(
     return msg
 
 
-def cleanup():
-    print('Cleaning up child processes...')
+def cleanup() -> None:
+    logger.info('Cleaning up child processes...')
     for process in mp.active_children():
-        print(f'Terminating child process: {process.name}')
+        logger.info(f'Terminating child process: {process.name}')
         process.terminate()
         process.join()
 
 
-def prepare_dataset(dataset: pd.DataFrame, output_file: str, eval_n_limit: int):
-    assert 'instance_id' in dataset.columns, (
-        "Expected 'instance_id' column in the dataset. You should define your own "
-        "unique identifier for each instance and use it as the 'instance_id' column."
-    )
-    id_column = 'instance_id'
-    logger.info(f'Writing evaluation output to {output_file}')
-    finished_ids = set()
-    if os.path.exists(output_file):
-        with open(output_file, 'r') as f:
-            for line in f:
-                data = json.loads(line)
-                finished_ids.add(data[id_column])
-        logger.warning(
-            f'Output file {output_file} already exists. Loaded '
-            f'{len(finished_ids)} finished instances.'
-        )
-
-    if eval_n_limit:
-        dataset = dataset.head(eval_n_limit)
-        logger.info(f'Limiting evaluation to first {eval_n_limit} instances.')
-
-    new_dataset = [
-        instance
-        for _, instance in dataset.iterrows()
-        if instance[id_column] not in finished_ids
-    ]
-    logger.info(
-        f'Finished instances: {len(finished_ids)}, '
-        f'Remaining instances: {len(new_dataset)}'
-    )
-
-    return pd.DataFrame(new_dataset)
-
-
 def reset_logger_for_multiprocessing(
     logger: logging.Logger, instance_id: str, log_dir: str
-):
+) -> None:
     """Reset the logger for multiprocessing.
 
     Save logs to a separate file for each process, instead of trying to write to the
@@ -137,3 +118,45 @@ def reset_logger_for_multiprocessing(
         logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
     )
     logger.addHandler(file_handler)
+
+
+def extract_image_urls(issue_body: str) -> list[str]:
+    # Regular expression to match Markdown image syntax ![alt text](image_url)
+    image_pattern = r'!\[.*?\]\((https?://[^\s)]+)\)'
+    return re.findall(image_pattern, issue_body)
+
+
+def extract_issue_references(body: str) -> list[int]:
+    # First, remove code blocks as they may contain false positives
+    body = re.sub(r'```.*?```', '', body, flags=re.DOTALL)
+
+    # Remove inline code
+    body = re.sub(r'`[^`]*`', '', body)
+
+    # Remove URLs that contain hash symbols
+    body = re.sub(r'https?://[^\s)]*#\d+[^\s)]*', '', body)
+
+    # Now extract issue numbers, making sure they're not part of other text
+    # The pattern matches #number that:
+    # 1. Is at the start of text or after whitespace/punctuation
+    # 2. Is followed by whitespace, punctuation, or end of text
+    # 3. Is not part of a URL
+    pattern = r'(?:^|[\s\[({]|[^\w#])#(\d+)(?=[\s,.\])}]|$)'
+    return [int(match) for match in re.findall(pattern, body)]
+
+
+def get_unique_uid(start_uid: int = 1000) -> int:
+    existing_uids = set()
+    with open('/etc/passwd', 'r') as passwd_file:
+        for line in passwd_file:
+            parts = line.split(':')
+            if len(parts) > 2:
+                try:
+                    existing_uids.add(int(parts[2]))
+                except ValueError:
+                    continue
+
+    while start_uid in existing_uids:
+        start_uid += 1
+
+    return start_uid

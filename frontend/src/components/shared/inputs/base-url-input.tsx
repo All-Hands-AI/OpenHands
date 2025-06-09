@@ -1,4 +1,4 @@
-import { Input } from "@nextui-org/react";
+import { Input } from "@heroui/react";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 
@@ -20,7 +20,7 @@ export function BaseUrlInput({ isDisabled, defaultValue }: BaseUrlInputProps) {
         id="base-url"
         name="base-url"
         defaultValue={defaultValue}
-        aria-label="Base URL"
+        aria-label={t(I18nKey.SETTINGS_FORM$BASE_URL)}
         classNames={{
           inputWrapper: "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
         }}

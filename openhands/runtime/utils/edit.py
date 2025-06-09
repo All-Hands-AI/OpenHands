@@ -2,10 +2,11 @@ import os
 import re
 import tempfile
 from abc import ABC, abstractmethod
+from typing import Any
 
-from openhands_aci.utils.diff import get_diff
+from openhands_aci.utils.diff import get_diff  # type: ignore
 
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     FileEditAction,
@@ -13,7 +14,6 @@ from openhands.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
-from openhands.events.event import FileEditSource
 from openhands.events.observation import (
     ErrorObservation,
     FileEditObservation,
@@ -26,39 +26,31 @@ from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics
 from openhands.utils.chunk_localizer import Chunk, get_top_k_chunk_matches
 
-SYS_MSG = """Your job is to produce a new version of the file based on the old version and the
-provided draft of the new version. The provided draft may be incomplete (it may skip lines) and/or incorrectly indented. You should try to apply the changes present in the draft to the old version, and output a new version of the file.
-NOTE:
-- The output file should be COMPLETE and CORRECTLY INDENTED. Do not omit any lines, and do not change any lines that are not part of the changes.
-- You should output the new version of the file by wrapping the new version of the file content in a ``` block.
-- If there's no explicit comment to remove the existing code, we should keep them and append the new code to the end of the file.
-- If there's placeholder comments like `# no changes before` or `# no changes here`, we should replace these comments with the original code near the placeholder comments.
-"""
-
 USER_MSG = """
-HERE IS THE OLD VERSION OF THE FILE:
-```
-{old_contents}
-```
+Code changes will be provided in the form of a draft. You will need to apply the draft to the original code. 
+The original code will be enclosed within `<original_code>` tags.
+The draft will be enclosed within `<update_snippet>` tags.
+You need to output the update code within `<updated_code>` tags.
 
-HERE IS THE DRAFT OF THE NEW VERSION OF THE FILE:
-```
-{draft_changes}
-```
+Within the `<updated_code>` tag, include only the final code after updation. Do not include any explanations or other content within these tags.
 
-GIVE ME THE NEW VERSION OF THE FILE.
-IMPORTANT:
-- There should be NO placeholder comments like `# no changes before` or `# no changes here`. They should be replaced with the original code near the placeholder comments.
-- The output file should be COMPLETE and CORRECTLY INDENTED. Do not omit any lines, and do not change any lines that are not part of the changes.
-""".strip()
+<original_code>{old_contents}</original_code>
+
+<update_snippet>{draft_changes}</update_snippet>
+    """
 
 
-def _extract_code(string):
-    pattern = r'```(?:\w*\n)?(.*?)```'
+def _extract_code(string: str) -> str | None:
+    pattern = r'<updated_code>(.*?)</updated_code>'
     matches = re.findall(pattern, string, re.DOTALL)
     if not matches:
         return None
-    return matches[0]
+
+    content = str(matches[0])
+    if content.startswith('#EDIT:'):
+        #Remove first line
+        content = content[content.find('\n') + 1:]
+    return content
 
 
 def get_new_file_contents(
@@ -66,7 +58,6 @@ def get_new_file_contents(
 ) -> str | None:
     while num_retries > 0:
         messages = [
-            {'role': 'system', 'content': SYS_MSG},
             {
                 'role': 'user',
                 'content': USER_MSG.format(
@@ -83,7 +74,7 @@ def get_new_file_contents(
 
 
 class FileEditRuntimeInterface(ABC):
-    config: AppConfig
+    config: OpenHandsConfig
 
     @abstractmethod
     def read(self, action: FileReadAction) -> Observation:
@@ -103,7 +94,7 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
     # This restricts the number of lines we can edit to avoid exceeding the token limit.
     MAX_LINES_TO_EDIT = 300
 
-    def __init__(self, enable_llm_editor: bool, *args, **kwargs):
+    def __init__(self, enable_llm_editor: bool, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.enable_llm_editor = enable_llm_editor
 
@@ -205,16 +196,7 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
                 return ErrorObservation(error_message)
         return None
 
-    def edit(self, action: FileEditAction) -> Observation:
-        if action.impl_source == FileEditSource.OH_ACI:
-            # Translate to ipython command to file_editor
-            return self.run_ipython(
-                IPythonRunCellAction(
-                    code=action.translated_ipython_code,
-                    include_extra=False,
-                )
-            )
-
+    def llm_based_edit(self, action: FileEditAction) -> Observation:
         obs = self.read(FileReadAction(path=action.path))
         if (
             isinstance(obs, ErrorObservation)
@@ -311,10 +293,10 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
                 'Here are some snippets that maybe relevant to the provided edit.\n'
             )
             for i, chunk in enumerate(topk_chunks):
-                error_msg += f'[begin relevant snippet {i+1}. Line range: L{chunk.line_range[0]}-L{chunk.line_range[1]}. Similarity: {chunk.normalized_lcs}]\n'
+                error_msg += f'[begin relevant snippet {i + 1}. Line range: L{chunk.line_range[0]}-L{chunk.line_range[1]}. Similarity: {chunk.normalized_lcs}]\n'
                 error_msg += f'[Browse around it via `open_file("{action.path}", {(chunk.line_range[0] + chunk.line_range[1]) // 2})`]\n'
                 error_msg += chunk.visualize() + '\n'
-                error_msg += f'[end relevant snippet {i+1}]\n'
+                error_msg += f'[end relevant snippet {i + 1}]\n'
                 error_msg += '-' * 40 + '\n'
 
             error_msg += 'Consider using `open_file` to explore around the relevant snippets if needed.\n'

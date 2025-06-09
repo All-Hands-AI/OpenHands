@@ -1,7 +1,7 @@
 import ast
 import re
 import uuid
-from typing import Any
+from typing import Any, cast
 
 import docker
 from fastapi import HTTPException, Request
@@ -32,12 +32,12 @@ class InvariantAnalyzer(SecurityAnalyzer):
     """Security analyzer based on Invariant."""
 
     trace: list[TraceElement]
-    input: list[dict]
+    input: list[dict[str, Any]]
     container_name: str = 'openhands-invariant-server'
     image_name: str = 'ghcr.io/invariantlabs-ai/server:openhands'
     api_host: str = 'http://localhost'
     timeout: int = 180
-    settings: dict = {}
+    settings: dict[str, Any] = {}
 
     check_browsing_alignment: bool = False
     guardrail_llm: LLM | None = None
@@ -47,7 +47,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
         event_stream: EventStream,
         policy: str | None = None,
         sid: str | None = None,
-    ):
+    ) -> None:
         """Initializes a new instance of the InvariantAnalzyer class."""
         super().__init__(event_stream)
         self.trace = []
@@ -108,14 +108,16 @@ class InvariantAnalyzer(SecurityAnalyzer):
                 policy = ''
         self.monitor = self.client.Monitor.from_string(policy)
 
-    async def close(self):
+    async def close(self) -> None:
         self.container.stop()
 
     async def log_event(self, event: Event) -> None:
         if isinstance(event, Observation):
             element = parse_element(self.trace, event)
             self.trace.extend(element)
-            self.input.extend([e.model_dump(exclude_none=True) for e in element])  # type: ignore [call-overload]
+            self.input.extend(
+                [cast(dict[str, Any], e.model_dump(exclude_none=True)) for e in element]
+            )
         else:
             logger.debug('Invariant skipping element: event')
 
@@ -126,7 +128,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
             'low': ActionSecurityRisk.LOW,
         }
         regex = r'(?<=risk=)\w+'
-        risks = []
+        risks: list[ActionSecurityRisk] = []
         for result in results:
             m = re.search(regex, result)
             if m and m.group() in mapping:
@@ -148,7 +150,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
             await self.check_usertask()
             await self.check_fillaction()
 
-    async def check_usertask(self):
+    async def check_usertask(self) -> None:
         """Looks at the most recent trace element. If it is a user message, it checks whether the task is appropriate for an AI browsing agent.
 
         Ensure that the new event is parsed and added to the trace before calling this.
@@ -174,9 +176,9 @@ class InvariantAnalyzer(SecurityAnalyzer):
                     ],
                 )
             )
-            assert (
-                self.guardrail_llm is not None
-            ), 'InvariantAnalyzer.guardrail_llm should be initialized before calling check_usertask'
+            assert self.guardrail_llm is not None, (
+                'InvariantAnalyzer.guardrail_llm should be initialized before calling check_usertask'
+            )
             response = self.guardrail_llm.completion(
                 messages=self.guardrail_llm.format_messages_for_llm(messages),
                 stop=['.'],
@@ -198,23 +200,24 @@ class InvariantAnalyzer(SecurityAnalyzer):
                     self.event_stream.add_event, new_event, event_source
                 )
 
-    def parse_browser_action(self, browser_action):
+    def parse_browser_action(
+        self, browser_action: str
+    ) -> list[tuple[str | None, list[str]]]:
         assert browser_action[-1] == ')'
         tree = ast.parse(browser_action, mode='exec')
-        function_calls = []
+        function_calls: list[tuple[str | None, list[str]]] = []
 
         for node in tree.body:
             if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
                 call_node = node.value  # This contains the actual function call
                 # Extract function name
+                func_name: str | None = None
                 if isinstance(call_node.func, ast.Name):
                     func_name = call_node.func.id
                 elif isinstance(call_node.func, ast.Attribute):
                     func_name = (
                         f'{ast.unparse(call_node.func.value)}.{call_node.func.attr}'
                     )
-                else:
-                    func_name = None
 
                 # Extract positional arguments
                 args = [ast.unparse(arg) for arg in call_node.args]
@@ -223,7 +226,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
                 raise ValueError('The code does not represent a function call.')
         return function_calls
 
-    async def check_fillaction(self):
+    async def check_fillaction(self) -> None:
         """Looks at the most recent trace element. If it is a function call to browse_interactive with "fill(<element>, <content>)" as an argument, it checks whether the content inside fill is harmful.
 
         Ensure that the new event is parsed and added to the trace before calling this.
@@ -258,9 +261,9 @@ class InvariantAnalyzer(SecurityAnalyzer):
                             ],
                         )
                     )
-                    assert (
-                        self.guardrail_llm is not None
-                    ), 'InvariantAnalyzer.guardrail_llm should be initialized before calling check_fillaction'
+                    assert self.guardrail_llm is not None, (
+                        'InvariantAnalyzer.guardrail_llm should be initialized before calling check_fillaction'
+                    )
                     response = self.guardrail_llm.completion(
                         messages=self.guardrail_llm.format_messages_for_llm(messages),
                         stop=['.'],
@@ -285,7 +288,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
                     break
 
     async def should_confirm(self, event: Event) -> bool:
-        risk = event.security_risk  # type: ignore [attr-defined]
+        risk = event.security_risk if hasattr(event, 'security_risk') else None  # type: ignore [attr-defined]
         return (
             risk is not None
             and risk < self.settings.get('RISK_SEVERITY', ActionSecurityRisk.MEDIUM)
@@ -305,18 +308,21 @@ class InvariantAnalyzer(SecurityAnalyzer):
     async def security_risk(self, event: Action) -> ActionSecurityRisk:
         logger.debug('Calling security_risk on InvariantAnalyzer')
         new_elements = parse_element(self.trace, event)
-        input = [e.model_dump(exclude_none=True) for e in new_elements]  # type: ignore [call-overload]
+        input_data = [
+            cast(dict[str, Any], e.model_dump(exclude_none=True)) for e in new_elements
+        ]
         self.trace.extend(new_elements)
-        result, err = self.monitor.check(self.input, input)
-        self.input.extend(input)
+        check_result = self.monitor.check(self.input, input_data)
+        self.input.extend(input_data)
         risk = ActionSecurityRisk.UNKNOWN
+
+        # Process check_result
+        result, err = check_result
         if err:
             logger.warning(f'Error checking policy: {err}')
             return risk
 
-        risk = self.get_risk(result)
-
-        return risk
+        return self.get_risk(result)
 
     ### Handle API requests
     async def handle_api_request(self, request: Request) -> Any:
@@ -337,23 +343,23 @@ class InvariantAnalyzer(SecurityAnalyzer):
                 return await self.update_settings(request)
         raise HTTPException(status_code=405, detail='Method Not Allowed')
 
-    async def export_trace(self, request: Request) -> Any:
+    async def export_trace(self, request: Request) -> JSONResponse:
         return JSONResponse(content=self.input)
 
-    async def get_policy(self, request: Request) -> Any:
+    async def get_policy(self, request: Request) -> JSONResponse:
         return JSONResponse(content={'policy': self.monitor.policy})
 
-    async def update_policy(self, request: Request) -> Any:
+    async def update_policy(self, request: Request) -> JSONResponse:
         data = await request.json()
         policy = data.get('policy')
         new_monitor = self.client.Monitor.from_string(policy)
         self.monitor = new_monitor
         return JSONResponse(content={'policy': policy})
 
-    async def get_settings(self, request: Request) -> Any:
+    async def get_settings(self, request: Request) -> JSONResponse:
         return JSONResponse(content=self.settings)
 
-    async def update_settings(self, request: Request) -> Any:
+    async def update_settings(self, request: Request) -> JSONResponse:
         settings = await request.json()
         self.settings = settings
         return JSONResponse(content=self.settings)

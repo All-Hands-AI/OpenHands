@@ -9,12 +9,14 @@ from litellm import ChatCompletionToolParam
 from openhands.llm.fn_call_converter import (
     IN_CONTEXT_LEARNING_EXAMPLE_PREFIX,
     IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX,
+    TOOL_EXAMPLES,
     FunctionCallConversionError,
     convert_fncall_messages_to_non_fncall_messages,
     convert_from_multiple_tool_calls_to_single_tool_call_messages,
     convert_non_fncall_messages_to_fncall_messages,
     convert_tool_call_to_string,
     convert_tools_to_description,
+    get_example_for_tools,
 )
 
 FNCALL_TOOLS: list[ChatCompletionToolParam] = [
@@ -140,6 +142,264 @@ Allowed values: [`view`, `create`, `str_replace`, `insert`, `undo_edit`]
     )
 
 
+def test_get_example_for_tools_no_tools():
+    """Test that get_example_for_tools returns empty string when no tools are available."""
+    tools = []
+    example = get_example_for_tools(tools)
+    assert example == ''
+
+
+def test_get_example_for_tools_single_tool():
+    """Test that get_example_for_tools generates correct example with a single tool."""
+    tools = [
+        {
+            'type': 'function',
+            'function': {
+                'name': 'execute_bash',
+                'description': 'Execute a bash command in the terminal.',
+                'parameters': {
+                    'type': 'object',
+                    'properties': {
+                        'command': {
+                            'type': 'string',
+                            'description': 'The bash command to execute.',
+                        }
+                    },
+                    'required': ['command'],
+                },
+            },
+        }
+    ]
+    example = get_example_for_tools(tools)
+    assert example.startswith(
+        "Here's a running example of how to perform a task with the provided tools."
+    )
+    assert (
+        'USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000.'
+        in example
+    )
+    assert TOOL_EXAMPLES['execute_bash']['check_dir'] in example
+    assert TOOL_EXAMPLES['execute_bash']['run_server'] in example
+    assert TOOL_EXAMPLES['execute_bash']['kill_server'] in example
+    assert TOOL_EXAMPLES['str_replace_editor']['create_file'] not in example
+    assert TOOL_EXAMPLES['browser']['view_page'] not in example
+    assert TOOL_EXAMPLES['finish']['task_completed'] not in example
+
+
+def test_get_example_for_tools_single_tool_is_finish():
+    """Test get_example_for_tools with only the finish tool."""
+    tools = [
+        {
+            'type': 'function',
+            'function': {
+                'name': 'finish',
+                'description': 'Finish the interaction when the task is complete.',
+            },
+        }
+    ]
+    example = get_example_for_tools(tools)
+    assert example.startswith(
+        "Here's a running example of how to perform a task with the provided tools."
+    )
+    assert (
+        'USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000.'
+        in example
+    )
+    assert TOOL_EXAMPLES['finish']['task_completed'] in example
+    assert TOOL_EXAMPLES['execute_bash']['check_dir'] not in example
+    assert TOOL_EXAMPLES['str_replace_editor']['create_file'] not in example
+    assert TOOL_EXAMPLES['browser']['view_page'] not in example
+
+
+def test_get_example_for_tools_multiple_tools():
+    """Test that get_example_for_tools generates correct example with multiple tools."""
+    tools = [
+        {
+            'type': 'function',
+            'function': {
+                'name': 'execute_bash',
+                'description': 'Execute a bash command in the terminal.',
+                'parameters': {
+                    'type': 'object',
+                    'properties': {
+                        'command': {
+                            'type': 'string',
+                            'description': 'The bash command to execute.',
+                        }
+                    },
+                    'required': ['command'],
+                },
+            },
+        },
+        {
+            'type': 'function',
+            'function': {
+                'name': 'str_replace_editor',
+                'description': 'Custom editing tool for viewing, creating and editing files.',
+                'parameters': {
+                    'type': 'object',
+                    'properties': {
+                        'command': {
+                            'type': 'string',
+                            'description': 'The commands to run.',
+                            'enum': [
+                                'view',
+                                'create',
+                                'str_replace',
+                                'insert',
+                                'undo_edit',
+                            ],
+                        },
+                        'path': {
+                            'type': 'string',
+                            'description': 'Absolute path to file or directory.',
+                        },
+                    },
+                    'required': ['command', 'path'],
+                },
+            },
+        },
+    ]
+    example = get_example_for_tools(tools)
+    assert example.startswith(
+        "Here's a running example of how to perform a task with the provided tools."
+    )
+    assert (
+        'USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000.'
+        in example
+    )
+    assert TOOL_EXAMPLES['execute_bash']['check_dir'] in example
+    assert TOOL_EXAMPLES['execute_bash']['run_server'] in example
+    assert TOOL_EXAMPLES['execute_bash']['kill_server'] in example
+    assert TOOL_EXAMPLES['str_replace_editor']['create_file'] in example
+    assert TOOL_EXAMPLES['str_replace_editor']['edit_file'] in example
+    assert TOOL_EXAMPLES['browser']['view_page'] not in example
+    assert TOOL_EXAMPLES['finish']['task_completed'] not in example
+
+
+def test_get_example_for_tools_multiple_tools_with_finish():
+    """Test get_example_for_tools with multiple tools including finish."""
+    # Uses execute_bash and finish tools
+    tools = [
+        {
+            'type': 'function',
+            'function': {
+                'name': 'execute_bash',
+                'description': 'Execute a bash command in the terminal.',
+                'parameters': {  # Params added for completeness, not strictly needed by get_example_for_tools
+                    'type': 'object',
+                    'properties': {
+                        'command': {
+                            'type': 'string',
+                            'description': 'The bash command to execute.',
+                        }
+                    },
+                    'required': ['command'],
+                },
+            },
+        },
+        {
+            'type': 'function',
+            'function': {
+                'name': 'str_replace_editor',
+                'description': 'Custom editing tool for viewing, creating and editing files.',
+                'parameters': {
+                    'type': 'object',
+                    'properties': {
+                        'command': {
+                            'type': 'string',
+                            'description': 'The commands to run.',
+                            'enum': [
+                                'view',
+                                'create',
+                                'str_replace',
+                                'insert',
+                                'undo_edit',
+                            ],
+                        },
+                        'path': {
+                            'type': 'string',
+                            'description': 'Absolute path to file or directory.',
+                        },
+                    },
+                    'required': ['command', 'path'],
+                },
+            },
+        },
+        {
+            'type': 'function',
+            'function': {
+                'name': 'browser',
+                'description': 'Interact with the browser.',
+                'parameters': {
+                    'type': 'object',
+                    'properties': {
+                        'code': {
+                            'type': 'string',
+                            'description': 'The Python code that interacts with the browser.',
+                        }
+                    },
+                    'required': ['code'],
+                },
+            },
+        },
+        {
+            'type': 'function',
+            'function': {
+                'name': 'finish',
+                'description': 'Finish the interaction.',
+            },
+        },
+    ]
+    example = get_example_for_tools(tools)
+    assert example.startswith(
+        "Here's a running example of how to perform a task with the provided tools."
+    )
+    assert (
+        'USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000.'
+        in example
+    )
+
+    # Check for execute_bash parts (order matters for get_example_for_tools)
+    assert TOOL_EXAMPLES['execute_bash']['check_dir'].strip() in example
+    assert TOOL_EXAMPLES['execute_bash']['run_server'].strip() in example
+    assert TOOL_EXAMPLES['execute_bash']['kill_server'].strip() in example
+    assert TOOL_EXAMPLES['execute_bash']['run_server_again'].strip() in example
+
+    # Check for str_replace_editor parts
+    assert TOOL_EXAMPLES['str_replace_editor']['create_file'] in example
+    assert TOOL_EXAMPLES['str_replace_editor']['edit_file'] in example
+
+    # Check for browser part
+    assert TOOL_EXAMPLES['browser']['view_page'] in example
+
+    # Check for finish part
+    assert TOOL_EXAMPLES['finish']['task_completed'] in example
+
+
+def test_get_example_for_tools_all_tools():
+    """Test that get_example_for_tools generates correct example with all tools."""
+    tools = FNCALL_TOOLS  # FNCALL_TOOLS already includes 'finish'
+    example = get_example_for_tools(tools)
+    assert example.startswith(
+        "Here's a running example of how to perform a task with the provided tools."
+    )
+    assert (
+        'USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000.'
+        in example
+    )
+    assert TOOL_EXAMPLES['execute_bash']['check_dir'] in example
+    assert TOOL_EXAMPLES['execute_bash']['run_server'] in example
+    assert TOOL_EXAMPLES['execute_bash']['kill_server'] in example
+    assert TOOL_EXAMPLES['str_replace_editor']['create_file'] in example
+    assert TOOL_EXAMPLES['str_replace_editor']['edit_file'] in example
+    assert TOOL_EXAMPLES['finish']['task_completed'] in example
+
+    # These are not in global FNCALL_TOOLS
+    # assert TOOL_EXAMPLES['web_read']['read_docs'] not in example # web_read is removed
+    assert TOOL_EXAMPLES['browser']['view_page'] not in example
+
+
 FNCALL_MESSAGES = [
     {
         'content': [
@@ -261,7 +521,7 @@ NON_FNCALL_MESSAGES = [
         'content': [
             {
                 'type': 'text',
-                'text': 'You are a helpful assistant that can interact with a computer to solve tasks.\n<IMPORTANT>\n* If user provides a path, you should NOT assume it\'s relative to the current working directory. Instead, you should explore the file system to find the file before working on it.\n</IMPORTANT>\n\n\nYou have access to the following functions:\n\n---- BEGIN FUNCTION #1: execute_bash ----\nDescription: Execute a bash command in the terminal.\n* Long running commands: For commands that may run indefinitely, it should be run in the background and the output should be redirected to a file, e.g. command = `python3 app.py > server.log 2>&1 &`.\n* Interactive: If a bash command returns exit code `-1`, this means the process is not yet finished. The assistant must then send a second call to terminal with an empty `command` (which will retrieve any additional logs), or it can send additional text (set `command` to the text) to STDIN of the running process, or it can send command=`ctrl+c` to interrupt the process.\n* Timeout: If a command execution result says "Command timed out. Sending SIGINT to the process", the assistant should retry running the command in the background.\n\nParameters:\n  (1) command (string, required): The bash command to execute. Can be empty to view additional logs when previous exit code is `-1`. Can be `ctrl+c` to interrupt the currently running process.\n---- END FUNCTION #1 ----\n\n---- BEGIN FUNCTION #2: finish ----\nDescription: Finish the interaction when the task is complete OR if the assistant cannot proceed further with the task.\nNo parameters are required for this function.\n---- END FUNCTION #2 ----\n\n---- BEGIN FUNCTION #3: str_replace_editor ----\nDescription: Custom editing tool for viewing, creating and editing files\n* State is persistent across command calls and discussions with the user\n* If `path` is a file, `view` displays the result of applying `cat -n`. If `path` is a directory, `view` lists non-hidden files and directories up to 2 levels deep\n* The `create` command cannot be used if the specified `path` already exists as a file\n* If a `command` generates a long output, it will be truncated and marked with `<response clipped>`\n* The `undo_edit` command will revert the last edit made to the file at `path`\n\nNotes for using the `str_replace` command:\n* The `old_str` parameter should match EXACTLY one or more consecutive lines from the original file. Be mindful of whitespaces!\n* If the `old_str` parameter is not unique in the file, the replacement will not be performed. Make sure to include enough context in `old_str` to make it unique\n* The `new_str` parameter should contain the edited lines that should replace the `old_str`\n\nParameters:\n  (1) command (string, required): The commands to run. Allowed options are: `view`, `create`, `str_replace`, `insert`, `undo_edit`.\nAllowed values: [`view`, `create`, `str_replace`, `insert`, `undo_edit`]\n  (2) path (string, required): Absolute path to file or directory, e.g. `/repo/file.py` or `/repo`.\n  (3) file_text (string, optional): Required parameter of `create` command, with the content of the file to be created.\n  (4) old_str (string, optional): Required parameter of `str_replace` command containing the string in `path` to replace.\n  (5) new_str (string, optional): Optional parameter of `str_replace` command containing the new string (if not given, no string will be added). Required parameter of `insert` command containing the string to insert.\n  (6) insert_line (integer, optional): Required parameter of `insert` command. The `new_str` will be inserted AFTER the line `insert_line` of `path`.\n  (7) view_range (array, optional): Optional parameter of `view` command when `path` points to a file. If none is given, the full file is shown. If provided, the file will be shown in the indicated line number range, e.g. [11, 12] will show lines 11 and 12. Indexing at 1 to start. Setting `[start_line, -1]` shows all lines from `start_line` to the end of the file.\n---- END FUNCTION #3 ----\n\n\nIf you choose to call a function ONLY reply in the following format with NO suffix:\n\n<function=example_function_name>\n<parameter=example_parameter_1>value_1</parameter>\n<parameter=example_parameter_2>\nThis is the value for the second parameter\nthat can span\nmultiple lines\n</parameter>\n</function>\n\n<IMPORTANT>\nReminder:\n- Function calls MUST follow the specified format, start with <function= and end with </function>\n- Required parameters MUST be specified\n- Only call one function at a time\n- You may provide optional reasoning for your function call in natural language BEFORE the function call, but NOT after.\n- If there is no function call available, answer the question like normal with your current knowledge and do not tell the user about function calls\n',
+                'text': 'You are a helpful assistant that can interact with a computer to solve tasks.\n<IMPORTANT>\n* If user provides a path, you should NOT assume it\'s relative to the current working directory. Instead, you should explore the file system to find the file before working on it.\n</IMPORTANT>\n\n\nYou have access to the following functions:\n\n---- BEGIN FUNCTION #1: execute_bash ----\nDescription: Execute a bash command in the terminal.\n* Long running commands: For commands that may run indefinitely, it should be run in the background and the output should be redirected to a file, e.g. command = `python3 app.py > server.log 2>&1 &`.\n* Interactive: If a bash command returns exit code `-1`, this means the process is not yet finished. The assistant must then send a second call to terminal with an empty `command` (which will retrieve any additional logs), or it can send additional text (set `command` to the text) to STDIN of the running process, or it can send command=`ctrl+c` to interrupt the process.\n* Timeout: If a command execution result says "Command timed out. Sending SIGINT to the process", the assistant should retry running the command in the background.\n\nParameters:\n  (1) command (string, required): The bash command to execute. Can be empty to view additional logs when previous exit code is `-1`. Can be `ctrl+c` to interrupt the currently running process.\n---- END FUNCTION #1 ----\n\n---- BEGIN FUNCTION #2: finish ----\nDescription: Finish the interaction when the task is complete OR if the assistant cannot proceed further with the task.\nNo parameters are required for this function.\n---- END FUNCTION #2 ----\n\n---- BEGIN FUNCTION #3: str_replace_editor ----\nDescription: Custom editing tool for viewing, creating and editing files\n* State is persistent across command calls and discussions with the user\n* If `path` is a file, `view` displays the result of applying `cat -n`. If `path` is a directory, `view` lists non-hidden files and directories up to 2 levels deep\n* The `create` command cannot be used if the specified `path` already exists as a file\n* If a `command` generates a long output, it will be truncated and marked with `<response clipped>`\n* The `undo_edit` command will revert the last edit made to the file at `path`\n\nNotes for using the `str_replace` command:\n* The `old_str` parameter should match EXACTLY one or more consecutive lines from the original file. Be mindful of whitespaces!\n* If the `old_str` parameter is not unique in the file, the replacement will not be performed. Make sure to include enough context in `old_str` to make it unique\n* The `new_str` parameter should contain the edited lines that should replace the `old_str`\n\nParameters:\n  (1) command (string, required): The commands to run. Allowed options are: `view`, `create`, `str_replace`, `insert`, `undo_edit`.\nAllowed values: [`view`, `create`, `str_replace`, `insert`, `undo_edit`]\n  (2) path (string, required): Absolute path to file or directory, e.g. `/repo/file.py` or `/repo`.\n  (3) file_text (string, optional): Required parameter of `create` command, with the content of the file to be created.\n  (4) old_str (string, optional): Required parameter of `str_replace` command containing the string in `path` to replace.\n  (5) new_str (string, optional): Optional parameter of `str_replace` command containing the new string (if not given, no string will be added). Required parameter of `insert` command containing the string to insert.\n  (6) insert_line (integer, optional): Required parameter of `insert` command. The `new_str` will be inserted AFTER the line `insert_line` of `path`.\n  (7) view_range (array, optional): Optional parameter of `view` command when `path` points to a file. If none is given, the full file is shown. If provided, the file will be shown in the indicated line number range, e.g. [11, 12] will show lines 11 and 12. Indexing at 1 to start. Setting `[start_line, -1]` shows all lines from `start_line` to the end of the file.\n---- END FUNCTION #3 ----\n\n\nIf you choose to call a function ONLY reply in the following format with NO suffix:\n\n<function=example_function_name>\n<parameter=example_parameter_1>value_1</parameter>\n<parameter=example_parameter_2>\nThis is the value for the second parameter\nthat can span\nmultiple lines\n</parameter>\n</function>\n\n<IMPORTANT>\nReminder:\n- Function calls MUST follow the specified format, start with <function= and end with </function>\n- Required parameters MUST be specified\n- Only call one function at a time\n- You may provide optional reasoning for your function call in natural language BEFORE the function call, but NOT after.\n- If there is no function call available, answer the question like normal with your current knowledge and do not tell the user about function calls\n</IMPORTANT>\n',
                 'cache_control': {'type': 'ephemeral'},
             }
         ],
@@ -270,7 +530,7 @@ NON_FNCALL_MESSAGES = [
         'content': [
             {
                 'type': 'text',
-                'text': IN_CONTEXT_LEARNING_EXAMPLE_PREFIX
+                'text': IN_CONTEXT_LEARNING_EXAMPLE_PREFIX(FNCALL_TOOLS)
                 + "<uploaded_files>\n/workspace/astropy__astropy__5.1\n</uploaded_files>\nI've uploaded a python code repository in the directory astropy__astropy__5.1. LONG DESCRIPTION:\n\n"
                 + IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX,
             }
@@ -392,6 +652,34 @@ NON_FNCALL_RESPONSE_MESSAGE = {
 <parameter=command>view</parameter>
 <parameter=path>/test/file.py</parameter>
 <parameter=view_range>[1, 10]</parameter>
+</function>""",
+        ),
+        # Test case with indented code block to verify indentation is preserved
+        (
+            [
+                {
+                    'index': 1,
+                    'function': {
+                        'arguments': '{"command": "str_replace", "path": "/test/file.py", "old_str": "def example():\\n    pass", "new_str": "def example():\\n    # This is indented\\n    print(\\"hello\\")\\n    return True"}',
+                        'name': 'str_replace_editor',
+                    },
+                    'id': 'test_id',
+                    'type': 'function',
+                }
+            ],
+            """<function=str_replace_editor>
+<parameter=command>str_replace</parameter>
+<parameter=path>/test/file.py</parameter>
+<parameter=old_str>
+def example():
+    pass
+</parameter>
+<parameter=new_str>
+def example():
+    # This is indented
+    print("hello")
+    return True
+</parameter>
 </function>""",
         ),
     ],
@@ -684,3 +972,81 @@ def test_convert_from_multiple_tool_calls_no_tool_calls():
         input_messages
     )
     assert result == input_messages
+
+
+def test_convert_fncall_messages_with_cache_control():
+    """Test that cache_control is properly handled in tool messages."""
+    # Prepare test data
+    messages = [
+        {
+            'role': 'tool',
+            'name': 'test_tool',
+            'content': [{'type': 'text', 'text': 'test content'}],
+            'cache_control': {'type': 'ephemeral'},
+        }
+    ]
+
+    # Call the function
+    result = convert_fncall_messages_to_non_fncall_messages(messages, [])
+
+    # Verify the result
+    assert len(result) == 1
+    assert result[0]['role'] == 'user'
+    assert 'cache_control' in result[0]['content'][-1]
+    assert result[0]['content'][-1]['cache_control'] == {'type': 'ephemeral'}
+    assert (
+        result[0]['content'][0]['text']
+        == 'EXECUTION RESULT of [test_tool]:\ntest content'
+    )
+
+
+def test_convert_fncall_messages_without_cache_control():
+    """Test that tool messages without cache_control work as expected."""
+    # Prepare test data
+    messages = [
+        {
+            'role': 'tool',
+            'name': 'test_tool',
+            'content': [{'type': 'text', 'text': 'test content'}],
+        }
+    ]
+
+    # Call the function
+    result = convert_fncall_messages_to_non_fncall_messages(messages, [])
+
+    # Verify the result
+    assert len(result) == 1
+    assert result[0]['role'] == 'user'
+    assert 'cache_control' not in result[0]['content'][-1]
+    assert (
+        result[0]['content'][0]['text']
+        == 'EXECUTION RESULT of [test_tool]:\ntest content'
+    )
+
+
+def test_convert_fncall_messages_with_image_url():
+    """Test that convert_fncall_messages_to_non_fncall_messages handles image URLs correctly."""
+    messages = [
+        {
+            'role': 'tool',
+            'name': 'browser',
+            'content': [
+                {
+                    'type': 'text',
+                    'text': 'some browser tool results',
+                },
+                {
+                    'type': 'image_url',
+                    'image_url': {'url': 'data:image/gif;base64,R0lGODlhAQABAAAAACw='},
+                },
+            ],
+        }
+    ]
+    converted_messages = convert_fncall_messages_to_non_fncall_messages(messages, [])
+    assert len(converted_messages) == 1
+    assert converted_messages[0]['role'] == 'user'
+    assert len(converted_messages[0]['content']) == len(messages[0]['content'])
+    assert (
+        next(c for c in converted_messages[0]['content'] if c['type'] == 'text')['text']
+        == f'EXECUTION RESULT of [{messages[0]["name"]}]:\n{messages[0]["content"][0]["text"]}'
+    )

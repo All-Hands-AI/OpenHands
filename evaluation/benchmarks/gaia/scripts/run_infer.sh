@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -eo pipefail
 
 source "evaluation/utils/version_control.sh"
@@ -9,6 +9,7 @@ AGENT=$3
 EVAL_LIMIT=$4
 LEVELS=$5
 NUM_WORKERS=$6
+AGENT_CONFIG=$7
 
 if [ -z "$NUM_WORKERS" ]; then
   NUM_WORKERS=1
@@ -47,6 +48,11 @@ COMMAND="poetry run python ./evaluation/benchmarks/gaia/run_infer.py \
 if [ -n "$EVAL_LIMIT" ]; then
   echo "EVAL_LIMIT: $EVAL_LIMIT"
   COMMAND="$COMMAND --eval-n-limit $EVAL_LIMIT"
+fi
+
+if [ -n "$AGENT_CONFIG" ]; then
+  echo "AGENT_CONFIG: $AGENT_CONFIG"
+  COMMAND="$COMMAND --agent-config $AGENT_CONFIG"
 fi
 
 # Run the command

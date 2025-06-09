@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -eo pipefail
 
 source "evaluation/utils/version_control.sh"
@@ -12,6 +12,8 @@ NUM_WORKERS=$6
 DATASET=$7
 SPLIT=$8
 N_RUNS=$9
+MODE=${10}
+
 
 if [ -z "$NUM_WORKERS" ]; then
   NUM_WORKERS=1
@@ -27,11 +29,6 @@ fi
 if [ -z "$MAX_ITER" ]; then
   echo "MAX_ITER not specified, use default 100"
   MAX_ITER=100
-fi
-
-if [ -z "$USE_INSTANCE_IMAGE" ]; then
-  echo "USE_INSTANCE_IMAGE not specified, use default true"
-  USE_INSTANCE_IMAGE=true
 fi
 
 if [ -z "$RUN_WITH_BROWSING" ]; then
@@ -50,8 +47,17 @@ if [ -z "$SPLIT" ]; then
   SPLIT="test"
 fi
 
-export USE_INSTANCE_IMAGE=$USE_INSTANCE_IMAGE
-echo "USE_INSTANCE_IMAGE: $USE_INSTANCE_IMAGE"
+if [ -z "$MODE" ]; then
+  MODE="swe"
+  echo "MODE not specified, use default $MODE"
+fi
+
+if [ -n "$EVAL_CONDENSER" ]; then
+  echo "Using Condenser Config: $EVAL_CONDENSER"
+else
+  echo "No Condenser Config provided via EVAL_CONDENSER, use default (NoOpCondenser)."
+fi
+
 export RUN_WITH_BROWSING=$RUN_WITH_BROWSING
 echo "RUN_WITH_BROWSING: $RUN_WITH_BROWSING"
 
@@ -62,6 +68,11 @@ echo "OPENHANDS_VERSION: $OPENHANDS_VERSION"
 echo "MODEL_CONFIG: $MODEL_CONFIG"
 echo "DATASET: $DATASET"
 echo "SPLIT: $SPLIT"
+echo "MAX_ITER: $MAX_ITER"
+echo "NUM_WORKERS: $NUM_WORKERS"
+echo "COMMIT_HASH: $COMMIT_HASH"
+echo "MODE: $MODE"
+echo "EVAL_CONDENSER: $EVAL_CONDENSER"
 
 # Default to NOT use Hint
 if [ -z "$USE_HINT_TEXT" ]; then
@@ -81,9 +92,17 @@ fi
 if [ -n "$EXP_NAME" ]; then
   EVAL_NOTE="$EVAL_NOTE-$EXP_NAME"
 fi
+# if mode != swe, add mode to the eval note
+if [ "$MODE" != "swe" ]; then
+  EVAL_NOTE="${EVAL_NOTE}-${MODE}"
+fi
+# Add condenser config to eval note if provided
+if [ -n "$EVAL_CONDENSER" ]; then
+  EVAL_NOTE="${EVAL_NOTE}-${EVAL_CONDENSER}"
+fi
 
 function run_eval() {
-  local eval_note=$1
+  local eval_note="${1}"
   COMMAND="poetry run python evaluation/benchmarks/swe_bench/run_infer.py \
     --agent-cls $AGENT \
     --llm-config $MODEL_CONFIG \
@@ -91,7 +110,10 @@ function run_eval() {
     --eval-num-workers $NUM_WORKERS \
     --eval-note $eval_note \
     --dataset $DATASET \
-    --split $SPLIT"
+    --split $SPLIT \
+    --mode $MODE"
+
+
 
   if [ -n "$EVAL_LIMIT" ]; then
     echo "EVAL_LIMIT: $EVAL_LIMIT"

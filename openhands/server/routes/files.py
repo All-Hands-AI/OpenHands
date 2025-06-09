@@ -1,43 +1,57 @@
 import os
-import tempfile
+from typing import Any
 
 from fastapi import (
     APIRouter,
-    BackgroundTasks,
+    Depends,
     HTTPException,
     Request,
-    UploadFile,
     status,
 )
 from fastapi.responses import FileResponse, JSONResponse
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
+from starlette.background import BackgroundTask
 
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     FileReadAction,
-    FileWriteAction,
 )
 from openhands.events.observation import (
     ErrorObservation,
     FileReadObservation,
-    FileWriteObservation,
 )
 from openhands.runtime.base import Runtime
+from openhands.server.dependencies import get_dependencies
 from openhands.server.file_config import (
     FILES_TO_IGNORE,
-    MAX_FILE_SIZE_MB,
-    is_extension_allowed,
-    sanitize_filename,
 )
+from openhands.server.shared import (
+    ConversationStoreImpl,
+    config,
+)
+from openhands.server.user_auth import get_user_id
+from openhands.server.utils import get_conversation, get_conversation_store
+from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.utils.async_utils import call_sync_from_async
+from openhands.server.session.conversation import ServerConversation
 
-app = APIRouter(prefix='/api/conversations/{conversation_id}')
+app = APIRouter(prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies())
 
 
-@app.get('/list-files')
-async def list_files(request: Request, conversation_id: str, path: str | None = None):
+@app.get(
+    '/list-files',
+    response_model=list[str],
+    responses={
+        404: {'description': 'Runtime not initialized', 'model': dict},
+        500: {'description': 'Error listing or filtering files', 'model': dict},
+    },
+)
+async def list_files(
+    conversation: ServerConversation = Depends(get_conversation),
+    path: str | None = None
+) -> list[str] | JSONResponse:
     """List files in the specified path.
 
     This function retrieves a list of files from the agent's runtime file store,
@@ -58,13 +72,13 @@ async def list_files(request: Request, conversation_id: str, path: str | None = 
     Raises:
         HTTPException: If there's an error listing the files.
     """
-    if not request.state.conversation.runtime:
+    if not conversation.runtime:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content={'error': 'Runtime not yet initialized'},
         )
 
-    runtime: Runtime = request.state.conversation.runtime
+    runtime: Runtime = conversation.runtime
     try:
         file_list = await call_sync_from_async(runtime.list_files, path)
     except AgentRuntimeUnavailableError as e:
@@ -78,7 +92,7 @@ async def list_files(request: Request, conversation_id: str, path: str | None = 
 
     file_list = [f for f in file_list if f not in FILES_TO_IGNORE]
 
-    async def filter_for_gitignore(file_list, base_path):
+    async def filter_for_gitignore(file_list: list[str], base_path: str) -> list[str]:
         gitignore_path = os.path.join(base_path, '.gitignore')
         try:
             read_action = FileReadAction(gitignore_path)
@@ -104,8 +118,21 @@ async def list_files(request: Request, conversation_id: str, path: str | None = 
     return file_list
 
 
-@app.get('/select-file')
-async def select_file(file: str, request: Request):
+# NOTE: We use response_model=None for endpoints that can return multiple response types
+# (like FileResponse | JSONResponse). This is because FastAPI's response_model expects a
+# Pydantic model, but Starlette response classes like FileResponse are not Pydantic models.
+# Instead, we document the possible responses using the 'responses' parameter and maintain
+# proper type annotations for mypy.
+@app.get(
+    '/select-file',
+    response_model=None,
+    responses={
+        200: {'description': 'File content returned as JSON', 'model': dict[str, str]},
+        500: {'description': 'Error opening file', 'model': dict},
+        415: {'description': 'Unsupported media type', 'model': dict},
+    },
+)
+async def select_file(file: str, conversation: ServerConversation = Depends(get_conversation)) -> FileResponse | JSONResponse:
     """Retrieve the content of a specified file.
 
     To select a file:
@@ -124,7 +151,7 @@ async def select_file(file: str, request: Request):
     Raises:
         HTTPException: If there's an error opening the file.
     """
-    runtime: Runtime = request.state.conversation.runtime
+    runtime: Runtime = conversation.runtime
 
     file = os.path.join(runtime.config.workspace_mount_path_in_sandbox, file)
     read_action = FileReadAction(file)
@@ -139,204 +166,145 @@ async def select_file(file: str, request: Request):
 
     if isinstance(observation, FileReadObservation):
         content = observation.content
-        return {'code': content}
+        return JSONResponse(content={'code': content})
     elif isinstance(observation, ErrorObservation):
         logger.error(f'Error opening file {file}: {observation}')
+
+        if 'ERROR_BINARY_FILE' in observation.message:
+            return JSONResponse(
+                status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+                content={'error': f'Unable to open binary file: {file}'},
+            )
+
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={'error': f'Error opening file: {observation}'},
         )
-
-
-@app.post('/upload-files')
-async def upload_file(request: Request, conversation_id: str, files: list[UploadFile]):
-    """Upload a list of files to the workspace.
-
-    To upload a files:
-    ```sh
-    curl -X POST -F "file=@<file_path1>" -F "file=@<file_path2>" http://localhost:3000/api/conversations/{conversation_id}/upload-files
-    ```
-
-    Args:
-        request (Request): The incoming request object.
-        files (list[UploadFile]): A list of files to be uploaded.
-
-    Returns:
-        dict: A message indicating the success of the upload operation.
-
-    Raises:
-        HTTPException: If there's an error saving the files.
-    """
-    try:
-        uploaded_files = []
-        skipped_files = []
-        for file in files:
-            safe_filename = sanitize_filename(file.filename)
-            file_contents = await file.read()
-
-            if (
-                MAX_FILE_SIZE_MB > 0
-                and len(file_contents) > MAX_FILE_SIZE_MB * 1024 * 1024
-            ):
-                skipped_files.append(
-                    {
-                        'name': safe_filename,
-                        'reason': f'Exceeds maximum size limit of {MAX_FILE_SIZE_MB}MB',
-                    }
-                )
-                continue
-
-            if not is_extension_allowed(safe_filename):
-                skipped_files.append(
-                    {'name': safe_filename, 'reason': 'File type not allowed'}
-                )
-                continue
-
-            # copy the file to the runtime
-            with tempfile.TemporaryDirectory() as tmp_dir:
-                tmp_file_path = os.path.join(tmp_dir, safe_filename)
-                with open(tmp_file_path, 'wb') as tmp_file:
-                    tmp_file.write(file_contents)
-                    tmp_file.flush()
-
-                runtime: Runtime = request.state.conversation.runtime
-                try:
-                    await call_sync_from_async(
-                        runtime.copy_to,
-                        tmp_file_path,
-                        runtime.config.workspace_mount_path_in_sandbox,
-                    )
-                except AgentRuntimeUnavailableError as e:
-                    logger.error(f'Error saving file {safe_filename}: {e}')
-                    return JSONResponse(
-                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                        content={'error': f'Error saving file: {e}'},
-                    )
-            uploaded_files.append(safe_filename)
-
-        response_content = {
-            'message': 'File upload process completed',
-            'uploaded_files': uploaded_files,
-            'skipped_files': skipped_files,
-        }
-
-        if not uploaded_files and skipped_files:
-            return JSONResponse(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                content={
-                    **response_content,
-                    'error': 'No files were uploaded successfully',
-                },
-            )
-
-        return JSONResponse(status_code=status.HTTP_200_OK, content=response_content)
-
-    except Exception as e:
-        logger.error(f'Error during file upload: {e}')
+    else:
+        # Handle unexpected observation types
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={
-                'error': f'Error during file upload: {str(e)}',
-                'uploaded_files': [],
-                'skipped_files': [],
-            },
+            content={'error': f'Unexpected observation type: {type(observation)}'},
         )
 
 
-@app.post('/save-file')
-async def save_file(request: Request):
-    """Save a file to the agent's runtime file store.
-
-    This endpoint allows saving a file when the agent is in a paused, finished,
-    or awaiting user input state. It checks the agent's state before proceeding
-    with the file save operation.
-
-    Args:
-        request (Request): The incoming FastAPI request object.
-
-    Returns:
-        JSONResponse: A JSON response indicating the success of the operation.
-
-    Raises:
-        HTTPException:
-            - 403 error if the agent is not in an allowed state for editing.
-            - 400 error if the file path or content is missing.
-            - 500 error if there's an unexpected error during the save operation.
-    """
-    try:
-        # Extract file path and content from the request
-        data = await request.json()
-        file_path = data.get('filePath')
-        content = data.get('content')
-
-        # Validate the presence of required data
-        if not file_path or content is None:
-            raise HTTPException(status_code=400, detail='Missing filePath or content')
-
-        # Save the file to the agent's runtime file store
-        runtime: Runtime = request.state.conversation.runtime
-        file_path = os.path.join(
-            runtime.config.workspace_mount_path_in_sandbox, file_path
-        )
-        write_action = FileWriteAction(file_path, content)
-        try:
-            observation = await call_sync_from_async(runtime.run_action, write_action)
-        except AgentRuntimeUnavailableError as e:
-            logger.error(f'Error saving file: {e}')
-            return JSONResponse(
-                status_code=500,
-                content={'error': f'Error saving file: {e}'},
-            )
-
-        if isinstance(observation, FileWriteObservation):
-            return JSONResponse(
-                status_code=200, content={'message': 'File saved successfully'}
-            )
-        elif isinstance(observation, ErrorObservation):
-            return JSONResponse(
-                status_code=500,
-                content={'error': f'Failed to save file: {observation}'},
-            )
-        else:
-            return JSONResponse(
-                status_code=500,
-                content={'error': f'Unexpected observation: {observation}'},
-            )
-    except Exception as e:
-        # Log the error and return a 500 response
-        logger.error(f'Error saving file: {e}')
-        raise HTTPException(status_code=500, detail=f'Error saving file: {e}')
-
-
-@app.get('/zip-directory')
-async def zip_current_workspace(
-    request: Request, conversation_id: str, background_tasks: BackgroundTasks
-):
+@app.get(
+    '/zip-directory',
+    response_model=None,
+    responses={
+        200: {'description': 'Zipped workspace returned as FileResponse'},
+        500: {'description': 'Error zipping workspace', 'model': dict},
+    },
+)
+def zip_current_workspace(conversation: ServerConversation = Depends(get_conversation)) -> FileResponse | JSONResponse:
     try:
         logger.debug('Zipping workspace')
-        runtime: Runtime = request.state.conversation.runtime
+        runtime: Runtime = conversation.runtime
         path = runtime.config.workspace_mount_path_in_sandbox
         try:
-            zip_file = await call_sync_from_async(runtime.copy_from, path)
+            zip_file_path = runtime.copy_from(path)
         except AgentRuntimeUnavailableError as e:
             logger.error(f'Error zipping workspace: {e}')
             return JSONResponse(
                 status_code=500,
                 content={'error': f'Error zipping workspace: {e}'},
             )
-        response = FileResponse(
-            path=zip_file,
+        return FileResponse(
+            path=zip_file_path,
             filename='workspace.zip',
-            media_type='application/x-zip-compressed',
+            media_type='application/zip',
+            background=BackgroundTask(lambda: os.unlink(zip_file_path)),
         )
-
-        # This will execute after the response is sent (So the file is not deleted before being sent)
-        background_tasks.add_task(zip_file.unlink)
-
-        return response
     except Exception as e:
         logger.error(f'Error zipping workspace: {e}')
         raise HTTPException(
             status_code=500,
             detail='Failed to zip workspace',
         )
+
+
+@app.get(
+    '/git/changes',
+    response_model=list[dict[str, str]],
+    responses={
+        404: {'description': 'Not a git repository', 'model': dict},
+        500: {'description': 'Error getting changes', 'model': dict},
+    },
+)
+async def git_changes(
+    conversation: ServerConversation = Depends(get_conversation),
+    conversation_store: ConversationStore = Depends(get_conversation_store),
+    user_id: str = Depends(get_user_id),
+) -> list[dict[str, str]] | JSONResponse:
+    runtime: Runtime = conversation.runtime
+
+    cwd = await get_cwd(
+        conversation_store,
+        conversation.sid,
+        runtime.config.workspace_mount_path_in_sandbox,
+    )
+    logger.info(f'Getting git changes in {cwd}')
+
+    try:
+        changes = await call_sync_from_async(runtime.get_git_changes, cwd)
+        if changes is None:
+            return JSONResponse(
+                status_code=404,
+                content={'error': 'Not a git repository'},
+            )
+        return changes
+    except AgentRuntimeUnavailableError as e:
+        logger.error(f'Runtime unavailable: {e}')
+        return JSONResponse(
+            status_code=500,
+            content={'error': f'Error getting changes: {e}'},
+        )
+    except Exception as e:
+        logger.error(f'Error getting changes: {e}')
+        return JSONResponse(
+            status_code=500,
+            content={'error': str(e)},
+        )
+
+
+@app.get(
+    '/git/diff',
+    response_model=dict[str, Any],
+    responses={500: {'description': 'Error getting diff', 'model': dict}},
+)
+async def git_diff(
+    path: str,
+    conversation_store: Any = Depends(get_conversation_store),
+    conversation: ServerConversation = Depends(get_conversation),
+) -> dict[str, Any] | JSONResponse:
+    runtime: Runtime = conversation.runtime
+
+    cwd = await get_cwd(
+        conversation_store,
+        conversation.sid,
+        runtime.config.workspace_mount_path_in_sandbox,
+    )
+
+    try:
+        diff = await call_sync_from_async(runtime.get_git_diff, path, cwd)
+        return diff
+    except AgentRuntimeUnavailableError as e:
+        logger.error(f'Error getting diff: {e}')
+        return JSONResponse(
+            status_code=500,
+            content={'error': f'Error getting diff: {e}'},
+        )
+
+
+async def get_cwd(
+    conversation_store: ConversationStore,
+    conversation_id: str,
+    workspace_mount_path_in_sandbox: str,
+) -> str:
+    metadata = await conversation_store.get_metadata(conversation_id)
+    cwd = workspace_mount_path_in_sandbox
+    if metadata and metadata.selected_repository:
+        repo_dir = metadata.selected_repository.split('/')[-1]
+        cwd = os.path.join(cwd, repo_dir)
+
+    return cwd

@@ -9,6 +9,8 @@ class LocalFileStore(FileStore):
     root: str
 
     def __init__(self, root: str):
+        if root.startswith('~'):
+            root = os.path.expanduser(root)
         self.root = root
         os.makedirs(self.root, exist_ok=True)
 
@@ -17,7 +19,7 @@ class LocalFileStore(FileStore):
             path = path[1:]
         return os.path.join(self.root, path)
 
-    def write(self, path: str, contents: str | bytes):
+    def write(self, path: str, contents: str | bytes) -> None:
         full_path = self.get_full_path(path)
         os.makedirs(os.path.dirname(full_path), exist_ok=True)
         mode = 'w' if isinstance(contents, str) else 'wb'

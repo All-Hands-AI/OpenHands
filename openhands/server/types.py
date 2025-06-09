@@ -1,8 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import ClassVar, Protocol
-
-from fastapi import FastAPI
+from typing import Any, ClassVar, Protocol
 
 
 class AppMode(Enum):
@@ -16,7 +14,7 @@ class SessionMiddlewareInterface(Protocol):
     pass
 
 
-class OpenhandsConfigInterface(ABC):
+class ServerConfigInterface(ABC):
     CONFIG_PATH: ClassVar[str | None]
     APP_MODE: ClassVar[AppMode]
     POSTHOG_CLIENT_KEY: ClassVar[str]
@@ -29,18 +27,8 @@ class OpenhandsConfigInterface(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def verify_github_repo_list(self, installation_id: int | None) -> None:
-        """Verify that repo list is being called via user's profile or Github App installations."""
-        raise NotImplementedError
-
-    @abstractmethod
-    async def get_config(self) -> dict[str, str]:
+    def get_config(self) -> dict[str, Any]:
         """Configure attributes for frontend"""
-        raise NotImplementedError
-
-    @abstractmethod
-    def attach_middleware(self, api: FastAPI) -> None:
-        """Attach required middleware for the current environment"""
         raise NotImplementedError
 
 

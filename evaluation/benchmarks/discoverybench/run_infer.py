@@ -16,6 +16,7 @@ from evaluation.utils.shared import (
     EvalOutput,
     codeact_user_response,
     compatibility_for_eval_history_pairs,
+    get_default_sandbox_config_for_eval,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -24,8 +25,7 @@ from evaluation.utils.shared import (
 from openhands.controller.state.state import State
 from openhands.core.config import (
     AgentConfig,
-    AppConfig,
-    SandboxConfig,
+    OpenHandsConfig,
     get_llm_config_arg,
     parse_arguments,
 )
@@ -61,17 +61,15 @@ AGENT_CLS_TO_INST_SUFFIX = {
 
 def get_config(
     metadata: EvalMetadata,
-) -> AppConfig:
-    config = AppConfig(
+) -> OpenHandsConfig:
+    sandbox_config = get_default_sandbox_config_for_eval()
+    sandbox_config.base_container_image = 'python:3.12-bookworm'
+    config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         runtime='docker',
         max_iterations=metadata.max_iterations,
-        sandbox=SandboxConfig(
-            base_container_image='python:3.12-bookworm',
-            enable_auto_lint=True,
-            use_host_network=False,
-        ),
+        sandbox=sandbox_config,
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,
@@ -81,8 +79,8 @@ def get_config(
     agent_config.enable_prompt_extensions = False
     agent_config = AgentConfig(
         function_calling=False,
-        codeact_enable_jupyter=True,
-        codeact_enable_browsing_delegate=True,
+        enable_jupyter=True,
+        enable_browsing=True,
     )
     config.set_agent_config(agent_config)
     return config
@@ -147,7 +145,7 @@ def initialize_runtime(runtime: Runtime, data_files: list[str]):
 
     This function is called before the runtime is used to run the agent.
     """
-    logger.info(f"{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} BEGIN Runtime Initialization Fn {"-" * 50}')
     obs: CmdOutputObservation
 
     action = CmdRunAction(command='mkdir -p /workspace')
@@ -172,7 +170,7 @@ def initialize_runtime(runtime: Runtime, data_files: list[str]):
         obs = runtime.run_action(action)
         assert obs.exit_code == 0
 
-    logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} END Runtime Initialization Fn {"-" * 50}')
 
 
 def get_last_agent_finish_action(state: State) -> AgentFinishAction:

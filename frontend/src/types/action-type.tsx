@@ -5,6 +5,9 @@ enum ActionType {
   // Represents a message from the user or agent.
   MESSAGE = "message",
 
+  // Represents a system message for an agent, including the system prompt and available tools.
+  SYSTEM = "system",
+
   // Reads the contents of a file.
   READ = "read",
 
@@ -26,6 +29,9 @@ enum ActionType {
   // Delegate a (sub)task to another agent.
   DELEGATE = "delegate",
 
+  // Logs a thought.
+  THINK = "think",
+
   // If you're absolutely certain that you've completed your task and have tested your work,
   // use the finish action to stop working.
   FINISH = "finish",
@@ -35,6 +41,9 @@ enum ActionType {
 
   // Changes the state of the agent, e.g. to paused or running
   CHANGE_AGENT_STATE = "change_agent_state",
+
+  // Interact with the MCP server.
+  MCP = "call_tool_mcp",
 }
 
 export default ActionType;

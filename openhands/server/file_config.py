@@ -1,7 +1,7 @@
 import os
 import re
 
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.shared import config as shared_config
 
@@ -10,10 +10,12 @@ FILES_TO_IGNORE = [
     '.DS_Store',
     'node_modules/',
     '__pycache__/',
+    'lost+found/',
+    '.vscode/',
 ]
 
 
-def sanitize_filename(filename):
+def sanitize_filename(filename: str) -> str:
     """Sanitize the filename to prevent directory traversal"""
     # Remove any directory components
     filename = os.path.basename(filename)
@@ -28,7 +30,7 @@ def sanitize_filename(filename):
 
 
 def load_file_upload_config(
-    config: AppConfig = shared_config,
+    config: OpenHandsConfig = shared_config,
 ) -> tuple[int, bool, list[str]]:
     """Load file upload configuration from the config object.
 
@@ -88,7 +90,7 @@ def load_file_upload_config(
 MAX_FILE_SIZE_MB, RESTRICT_FILE_TYPES, ALLOWED_EXTENSIONS = load_file_upload_config()
 
 
-def is_extension_allowed(filename):
+def is_extension_allowed(filename: str) -> bool:
     """Check if the file extension is allowed based on the current configuration.
 
     This function supports wildcards and files without extensions.

@@ -24,7 +24,7 @@ def load_completions(output_dir: str, instance_id: str):
     # create messages
     messages = result['messages']
     messages.append(result['response']['choices'][0]['message'])
-    tools = result['kwargs']['tools']
+    tools = result['kwargs'].get('tools', [])
     return {
         'messages': messages,
         'tools': tools,

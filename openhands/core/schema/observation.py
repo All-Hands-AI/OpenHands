@@ -1,51 +1,54 @@
-from pydantic import BaseModel, Field
-
-__all__ = ['ObservationType']
+from enum import Enum
 
 
-class ObservationTypeSchema(BaseModel):
-    READ: str = Field(default='read')
+class ObservationType(str, Enum):
+    READ = 'read'
     """The content of a file
     """
 
-    WRITE: str = Field(default='write')
+    WRITE = 'write'
 
-    EDIT: str = Field(default='edit')
+    EDIT = 'edit'
 
-    BROWSE: str = Field(default='browse')
+    BROWSE = 'browse'
     """The HTML content of a URL
     """
 
-    RUN: str = Field(default='run')
+    RUN = 'run'
     """The output of a command
     """
 
-    RUN_IPYTHON: str = Field(default='run_ipython')
+    RUN_IPYTHON = 'run_ipython'
     """Runs a IPython cell.
     """
 
-    CHAT: str = Field(default='chat')
+    CHAT = 'chat'
     """A message from the user
     """
 
-    DELEGATE: str = Field(default='delegate')
+    DELEGATE = 'delegate'
     """The result of a task delegated to another agent
     """
 
-    MESSAGE: str = Field(default='message')
+    MESSAGE = 'message'
 
-    ERROR: str = Field(default='error')
+    ERROR = 'error'
 
-    SUCCESS: str = Field(default='success')
+    SUCCESS = 'success'
 
-    NULL: str = Field(default='null')
+    NULL = 'null'
 
-    AGENT_STATE_CHANGED: str = Field(default='agent_state_changed')
+    THINK = 'think'
 
-    USER_REJECTED: str = Field(default='user_rejected')
+    AGENT_STATE_CHANGED = 'agent_state_changed'
 
-    CONDENSE: str = Field(default='condense')
+    USER_REJECTED = 'user_rejected'
+
+    CONDENSE = 'condense'
     """Result of a condensation operation."""
 
+    RECALL = 'recall'
+    """Result of a recall operation. This can be the workspace context, a microagent, or other types of information."""
 
-ObservationType = ObservationTypeSchema()
+    MCP = 'mcp'
+    """Result of a MCP Server operation"""

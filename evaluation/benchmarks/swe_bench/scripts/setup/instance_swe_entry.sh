@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 source ~/.bashrc
 SWEUTIL_DIR=/swe_util
@@ -18,6 +18,7 @@ if [[ -z "$item" ]]; then
   exit 1
 fi
 
+
 WORKSPACE_NAME=$(echo "$item" | jq -r '(.repo | tostring) + "__" + (.version | tostring) | gsub("/"; "__")')
 
 echo "WORKSPACE_NAME: $WORKSPACE_NAME"
@@ -36,5 +37,7 @@ mkdir -p /workspace
 cp -r /testbed /workspace/$WORKSPACE_NAME
 
 # Activate instance-specific environment
-. /opt/miniconda3/etc/profile.d/conda.sh
-conda activate testbed
+if [ -d /opt/miniconda3 ]; then
+    . /opt/miniconda3/etc/profile.d/conda.sh
+    conda activate testbed
+fi

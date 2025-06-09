@@ -19,7 +19,7 @@ export function EditorActionButton({
       disabled={disabled}
       className={cn(
         "text-sm py-0.5 rounded w-20",
-        "hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed",
+        "hover:bg-tertiary disabled:opacity-50 disabled:cursor-not-allowed",
         className,
       )}
     >

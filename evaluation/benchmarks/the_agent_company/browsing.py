@@ -7,7 +7,7 @@ import os
 import re
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Dict, List, Optional, Union
+from typing import Union
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import BrowseInteractiveAction
@@ -100,7 +100,7 @@ class ClickAction(BrowserAction):
         return f'click("{self.selector}")'
 
 
-def parse_content_to_elements(content: str) -> Dict[str, str]:
+def parse_content_to_elements(content: str) -> dict[str, str]:
     """Parse the observation content into a dictionary mapping anchors to their descriptions"""
     elements = {}
     current_anchor = None
@@ -133,7 +133,7 @@ def parse_content_to_elements(content: str) -> Dict[str, str]:
     return elements
 
 
-def find_matching_anchor(content: str, selector: str) -> Optional[str]:
+def find_matching_anchor(content: str, selector: str) -> str | None:
     """Find the anchor ID that matches the given selector description"""
     elements = parse_content_to_elements(content)
 
@@ -170,7 +170,7 @@ def resolve_action(action: BrowserAction, content: str) -> BrowserAction:
 
 def pre_login(
     runtime: Runtime,
-    services: List[str],
+    services: list[str],
     save_screenshots=True,
     screenshots_dir='screenshots',
 ):
@@ -267,7 +267,9 @@ def pre_login(
             obs: BrowserOutputObservation = runtime.run_action(browser_action)
             logger.debug(obs, extra={'msg_type': 'OBSERVATION'})
             if save_screenshots:
-                image_data = base64.b64decode(obs.screenshot)
+                image_data = base64.b64decode(
+                    obs.screenshot.replace('data:image/png;base64,', '')
+                )
                 with open(os.path.join(directory, f'{image_id}.png'), 'wb') as file:
                     file.write(image_data)
                     image_id += 1

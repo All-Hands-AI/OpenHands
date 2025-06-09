@@ -1,4 +1,4 @@
-from openhands.events.event import Event, EventSource
+from openhands.events.event import Event, EventSource, RecallType
 from openhands.events.stream import EventStream, EventStreamSubscriber
 
 __all__ = [
@@ -6,4 +6,5 @@ __all__ = [
     'EventSource',
     'EventStream',
     'EventStreamSubscriber',
+    'RecallType',
 ]

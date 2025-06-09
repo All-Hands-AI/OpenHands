@@ -7,7 +7,12 @@ interface UploadImageInputProps {
 
 export function UploadImageInput({ onUpload, label }: UploadImageInputProps) {
   const handleUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files) onUpload(Array.from(event.target.files));
+    if (event.target.files) {
+      const validFiles = Array.from(event.target.files).filter((file) =>
+        file.type.startsWith("image/"),
+      );
+      onUpload(validFiles);
+    }
   };
 
   return (

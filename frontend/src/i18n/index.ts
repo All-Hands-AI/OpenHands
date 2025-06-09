@@ -17,6 +17,7 @@ export const AvailableLanguages = [
   { label: "Português", value: "pt" },
   { label: "Español", value: "es" },
   { label: "Türkçe", value: "tr" },
+  { label: "Українська", value: "uk" },
 ];
 
 i18n
@@ -26,6 +27,7 @@ i18n
   .init({
     fallbackLng: "en",
     debug: import.meta.env.NODE_ENV === "development",
+    load: "languageOnly",
   });
 
 export default i18n;

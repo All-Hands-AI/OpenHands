@@ -9,6 +9,7 @@ from openhands.events.observation import (
     CmdOutputObservation,
     IPythonRunCellObservation,
 )
+from openhands.events.observation.agent import AgentCondensationObservation
 from openhands.events.observation.empty import NullObservation
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.observation import Observation
@@ -24,7 +25,7 @@ class StuckDetector:
     def __init__(self, state: State):
         self.state = state
 
-    def is_stuck(self, headless_mode: bool = True):
+    def is_stuck(self, headless_mode: bool = True) -> bool:
         """Checks if the agent is stuck in a loop.
 
         Args:
@@ -97,14 +98,20 @@ class StuckDetector:
             return True
 
         # scenario 4: action, observation pattern on the last six steps
-        if len(filtered_history) < 6:
-            return False
-        if self._is_stuck_action_observation_pattern(filtered_history):
-            return True
+        if len(filtered_history) >= 6:
+            if self._is_stuck_action_observation_pattern(filtered_history):
+                return True
+
+        # scenario 5: context window error loop
+        if len(filtered_history) >= 10:
+            if self._is_stuck_context_window_error(filtered_history):
+                return True
 
         return False
 
-    def _is_stuck_repeating_action_observation(self, last_actions, last_observations):
+    def _is_stuck_repeating_action_observation(
+        self, last_actions: list[Event], last_observations: list[Event]
+    ) -> bool:
         # scenario 1: same action, same observation
         # it takes 4 actions and 4 observations to detect a loop
         # assert len(last_actions) == 4 and len(last_observations) == 4
@@ -125,12 +132,14 @@ class StuckDetector:
 
         return False
 
-    def _is_stuck_repeating_action_error(self, last_actions, last_observations):
+    def _is_stuck_repeating_action_error(
+        self, last_actions: list[Event], last_observations: list[Event]
+    ) -> bool:
         # scenario 2: same action, errors
         # it takes 3 actions and 3 observations to detect a loop
         # check if the last three actions are the same and result in errors
 
-        if len(last_actions) < 4 or len(last_observations) < 4:
+        if len(last_actions) < 3 or len(last_observations) < 3:
             return False
 
         # are the last three actions the "same"?
@@ -150,7 +159,12 @@ class StuckDetector:
                         'SyntaxError: unterminated string literal (detected at line'
                     ):
                         if self._check_for_consistent_line_error(
-                            last_observations[:3], error_message
+                            [
+                                obs
+                                for obs in last_observations[:3]
+                                if isinstance(obs, IPythonRunCellObservation)
+                            ],
+                            error_message,
                         ):
                             logger.warning(warning)
                             return True
@@ -158,13 +172,20 @@ class StuckDetector:
                         'SyntaxError: invalid syntax. Perhaps you forgot a comma?',
                         'SyntaxError: incomplete input',
                     ) and self._check_for_consistent_invalid_syntax(
-                        last_observations[:3], error_message
+                        [
+                            obs
+                            for obs in last_observations[:3]
+                            if isinstance(obs, IPythonRunCellObservation)
+                        ],
+                        error_message,
                     ):
                         logger.warning(warning)
                         return True
         return False
 
-    def _check_for_consistent_invalid_syntax(self, observations, error_message):
+    def _check_for_consistent_invalid_syntax(
+        self, observations: list[IPythonRunCellObservation], error_message: str
+    ) -> bool:
         first_lines = []
         valid_observations = []
 
@@ -205,7 +226,9 @@ class StuckDetector:
             == 1
         )
 
-    def _check_for_consistent_line_error(self, observations, error_message):
+    def _check_for_consistent_line_error(
+        self, observations: list[IPythonRunCellObservation], error_message: str
+    ) -> bool:
         error_lines = []
 
         for obs in observations:
@@ -232,7 +255,7 @@ class StuckDetector:
         # and the 3rd-to-last line is identical across all occurrences
         return len(error_lines) == 3 and len(set(error_lines)) == 1
 
-    def _is_stuck_monologue(self, filtered_history):
+    def _is_stuck_monologue(self, filtered_history: list[Event]) -> bool:
         # scenario 3: monologue
         # check for repeated MessageActions with source=AGENT
         # see if the agent is engaged in a good old monologue, telling itself the same thing over and over
@@ -266,7 +289,9 @@ class StuckDetector:
                     return True
         return False
 
-    def _is_stuck_action_observation_pattern(self, filtered_history):
+    def _is_stuck_action_observation_pattern(
+        self, filtered_history: list[Event]
+    ) -> bool:
         # scenario 4: action, observation pattern on the last six steps
         # check if the agent repeats the same (Action, Observation)
         # every other step in the last six steps
@@ -308,7 +333,55 @@ class StuckDetector:
                 return True
         return False
 
-    def _eq_no_pid(self, obj1, obj2):
+    def _is_stuck_context_window_error(self, filtered_history: list[Event]) -> bool:
+        """Detects if we're stuck in a loop of context window errors.
+
+        This happens when we repeatedly get context window errors and try to trim,
+        but the trimming doesn't work, causing us to get more context window errors.
+        The pattern is repeated AgentCondensationObservation events without any other
+        events between them.
+
+        Args:
+            filtered_history: List of filtered events to check
+
+        Returns:
+            bool: True if we detect a context window error loop
+        """
+        # Look for AgentCondensationObservation events
+        condensation_events = [
+            (i, event)
+            for i, event in enumerate(filtered_history)
+            if isinstance(event, AgentCondensationObservation)
+        ]
+
+        # Need at least 10 condensation events to detect a loop
+        if len(condensation_events) < 10:
+            return False
+
+        # Get the last 10 condensation events
+        last_condensation_events = condensation_events[-10:]
+
+        # Check if there are any non-condensation events between them
+        for i in range(len(last_condensation_events) - 1):
+            start_idx = last_condensation_events[i][0]
+            end_idx = last_condensation_events[i + 1][0]
+
+            # Look for any non-condensation events between these two
+            has_other_events = False
+            for event in filtered_history[start_idx + 1 : end_idx]:
+                if not isinstance(event, AgentCondensationObservation):
+                    has_other_events = True
+                    break
+
+            if not has_other_events:
+                logger.warning(
+                    'Context window error loop detected - repeated condensation events'
+                )
+                return True
+
+        return False
+
+    def _eq_no_pid(self, obj1: Event, obj2: Event) -> bool:
         if isinstance(obj1, IPythonRunCellAction) and isinstance(
             obj2, IPythonRunCellAction
         ):

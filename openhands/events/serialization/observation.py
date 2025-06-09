@@ -1,8 +1,13 @@
 import copy
+from typing import Any
 
+from openhands.events.event import RecallType
 from openhands.events.observation.agent import (
     AgentCondensationObservation,
     AgentStateChangedObservation,
+    AgentThinkObservation,
+    MicroagentKnowledge,
+    RecallObservation,
 )
 from openhands.events.observation.browse import BrowserOutputObservation
 from openhands.events.observation.commands import (
@@ -11,13 +16,16 @@ from openhands.events.observation.commands import (
     IPythonRunCellObservation,
 )
 from openhands.events.observation.delegate import AgentDelegateObservation
-from openhands.events.observation.empty import NullObservation
+from openhands.events.observation.empty import (
+    NullObservation,
+)
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.files import (
     FileEditObservation,
     FileReadObservation,
     FileWriteObservation,
 )
+from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.observation.reject import UserRejectObservation
 from openhands.events.observation.success import SuccessObservation
@@ -36,6 +44,9 @@ observations = (
     AgentStateChangedObservation,
     UserRejectObservation,
     AgentCondensationObservation,
+    AgentThinkObservation,
+    RecallObservation,
+    MCPObservation,
 )
 
 OBSERVATION_TYPE_TO_CLASS = {
@@ -45,8 +56,8 @@ OBSERVATION_TYPE_TO_CLASS = {
 
 
 def _update_cmd_output_metadata(
-    metadata: dict | CmdOutputMetadata | None, **kwargs
-) -> dict | CmdOutputMetadata:
+    metadata: dict[str, Any] | CmdOutputMetadata | None, **kwargs: Any
+) -> dict[str, Any] | CmdOutputMetadata:
     """Update the metadata of a CmdOutputObservation.
 
     If metadata is None, create a new CmdOutputMetadata instance.
@@ -64,6 +75,23 @@ def _update_cmd_output_metadata(
     return metadata
 
 
+def handle_observation_deprecated_extras(extras: dict) -> dict:
+    # These are deprecated in https://github.com/All-Hands-AI/OpenHands/pull/4881
+    if 'exit_code' in extras:
+        extras['metadata'] = _update_cmd_output_metadata(
+            extras.get('metadata', None), exit_code=extras.pop('exit_code')
+        )
+    if 'command_id' in extras:
+        extras['metadata'] = _update_cmd_output_metadata(
+            extras.get('metadata', None), pid=extras.pop('command_id')
+        )
+
+    # formatted_output_and_error has been deprecated in https://github.com/All-Hands-AI/OpenHands/pull/6671
+    if 'formatted_output_and_error' in extras:
+        extras.pop('formatted_output_and_error')
+    return extras
+
+
 def observation_from_dict(observation: dict) -> Observation:
     observation = observation.copy()
     if 'observation' not in observation:
@@ -78,15 +106,8 @@ def observation_from_dict(observation: dict) -> Observation:
     content = observation.pop('content', '')
     extras = copy.deepcopy(observation.pop('extras', {}))
 
-    # Handle legacy attributes for CmdOutputObservation
-    if 'exit_code' in extras:
-        extras['metadata'] = _update_cmd_output_metadata(
-            extras.get('metadata', None), exit_code=extras.pop('exit_code')
-        )
-    if 'command_id' in extras:
-        extras['metadata'] = _update_cmd_output_metadata(
-            extras.get('metadata', None), pid=extras.pop('command_id')
-        )
+    extras = handle_observation_deprecated_extras(extras)
+
     # convert metadata to CmdOutputMetadata if it is a dict
     if observation_class is CmdOutputObservation:
         if 'metadata' in extras and isinstance(extras['metadata'], dict):
@@ -96,4 +117,20 @@ def observation_from_dict(observation: dict) -> Observation:
         else:
             extras['metadata'] = CmdOutputMetadata()
 
-    return observation_class(content=content, **extras)
+    if observation_class is RecallObservation:
+        # handle the Enum conversion
+        if 'recall_type' in extras:
+            extras['recall_type'] = RecallType(extras['recall_type'])
+
+        # convert dicts in microagent_knowledge to MicroagentKnowledge objects
+        if 'microagent_knowledge' in extras and isinstance(
+            extras['microagent_knowledge'], list
+        ):
+            extras['microagent_knowledge'] = [
+                MicroagentKnowledge(**item) if isinstance(item, dict) else item
+                for item in extras['microagent_knowledge']
+            ]
+
+    obs = observation_class(content=content, **extras)
+    assert isinstance(obs, Observation)
+    return obs

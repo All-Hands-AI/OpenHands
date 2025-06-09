@@ -8,9 +8,10 @@ vi.mock("react-i18next", () => ({
   useTranslation: () => ({
     t: (key: string) => {
       const translations: Record<string, string> = {
-        "SUGGESTIONS$TODO_APP": "ToDoリストアプリを開発する",
-        "LANDING$BUILD_APP_BUTTON": "プルリクエストを表示するアプリを開発する",
-        "SUGGESTIONS$HACKER_NEWS": "Hacker Newsのトップ記事を表示するbashスクリプトを作成する",
+        SUGGESTIONS$TODO_APP: "ToDoリストアプリを開発する",
+        LANDING$BUILD_APP_BUTTON: "プルリクエストを表示するアプリを開発する",
+        SUGGESTIONS$HACKER_NEWS:
+          "Hacker Newsのトップ記事を表示するbashスクリプトを作成する",
       };
       return translations[key] || key;
     },
@@ -38,9 +39,9 @@ describe("SuggestionItem", () => {
       value: "todo app value",
     };
 
-    const { container } = render(<SuggestionItem suggestion={translatedSuggestion} onClick={onClick} />);
-    console.log('Rendered HTML:', container.innerHTML);
-
+    render(
+      <SuggestionItem suggestion={translatedSuggestion} onClick={onClick} />,
+    );
 
     expect(screen.getByText("ToDoリストアプリを開発する")).toBeInTheDocument();
   });

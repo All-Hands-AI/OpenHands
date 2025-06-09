@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ##################################################################################################
 # Adapted from https://github.com/TheAgentCompany/TheAgentCompany/blob/main/evaluation/run_eval.sh
@@ -44,6 +44,10 @@ while [[ $# -gt 0 ]]; do
             ENV_LLM_CONFIG="$2"
             shift 2
             ;;
+        --agent-config)
+            AGENT_CONFIG="$2"
+            shift 2
+            ;;
         --outputs-path)
             OUTPUTS_PATH="$2"
             shift 2
@@ -54,6 +58,14 @@ while [[ $# -gt 0 ]]; do
             ;;
         --version)
             VERSION="$2"
+            shift 2
+            ;;
+        --start-percentile)
+            START_PERCENTILE="$2"
+            shift 2
+            ;;
+        --end-percentile)
+            END_PERCENTILE="$2"
             shift 2
             ;;
         *)
@@ -69,19 +81,54 @@ if [[ ! "$OUTPUTS_PATH" = /* ]]; then
     OUTPUTS_PATH="$(cd "$(dirname "$OUTPUTS_PATH")" 2>/dev/null && pwd)/$(basename "$OUTPUTS_PATH")"
 fi
 
+: "${START_PERCENTILE:=0}"  # Default to 0 percentile (first line)
+: "${END_PERCENTILE:=100}"  # Default to 100 percentile (last line)
+
+# Validate percentile ranges if provided
+if ! [[ "$START_PERCENTILE" =~ ^[0-9]+$ ]] || ! [[ "$END_PERCENTILE" =~ ^[0-9]+$ ]]; then
+    echo "Error: Percentiles must be integers"
+    exit 1
+fi
+
+if [ "$START_PERCENTILE" -ge "$END_PERCENTILE" ]; then
+    echo "Error: Start percentile must be less than end percentile"
+    exit 1
+fi
+
+if [ "$START_PERCENTILE" -lt 0 ] || [ "$END_PERCENTILE" -gt 100 ]; then
+    echo "Error: Percentiles must be between 0 and 100"
+    exit 1
+fi
+
 echo "Using agent LLM config: $AGENT_LLM_CONFIG"
 echo "Using environment LLM config: $ENV_LLM_CONFIG"
 echo "Outputs path: $OUTPUTS_PATH"
 echo "Server hostname: $SERVER_HOSTNAME"
 echo "Version: $VERSION"
+echo "Start Percentile: $START_PERCENTILE"
+echo "End Percentile: $END_PERCENTILE"
 
 echo "Downloading tasks.md..."
 rm -f tasks.md
 wget https://github.com/TheAgentCompany/TheAgentCompany/releases/download/${VERSION}/tasks.md
 
-while IFS= read -r task_image; do
-    docker pull $task_image
+total_lines=$(cat tasks.md | grep "ghcr.io/theagentcompany" | wc -l)
+if [ "$total_lines" -ne 175 ]; then
+    echo "Error: Expected 175 tasks in tasks.md but found $total_lines lines"
+    exit 1
+fi
 
+# Calculate line numbers based on percentiles
+start_line=$(echo "scale=0; ($total_lines * $START_PERCENTILE / 100) + 1" | bc)
+end_line=$(echo "scale=0; $total_lines * $END_PERCENTILE / 100" | bc)
+
+echo "Using tasks No. $start_line to $end_line (inclusive) out of 1-175 tasks"
+
+# Create a temporary file with just the desired range
+temp_file="tasks_${START_PERCENTILE}_${END_PERCENTILE}.md"
+sed -n "${start_line},${end_line}p" tasks.md > "$temp_file"
+
+while IFS= read -r task_image; do
     # Remove prefix using ## to remove longest matching pattern from start
     task_name=${task_image##ghcr.io/theagentcompany/}
 
@@ -95,21 +142,31 @@ while IFS= read -r task_image; do
         continue
     fi
 
-    export PYTHONPATH=evaluation/benchmarks/the_agent_company:\$PYTHONPATH && \
-        poetry run python run_infer.py \
-            --agent-llm-config "$AGENT_LLM_CONFIG" \
-            --env-llm-config "$ENV_LLM_CONFIG" \
-            --outputs-path "$OUTPUTS_PATH" \
-            --server-hostname "$SERVER_HOSTNAME" \
-            --task-image-name "$task_image"
+    docker pull $task_image
+
+    # Build the Python command
+    COMMAND="poetry run python -m evaluation.benchmarks.the_agent_company.run_infer \
+            --agent-llm-config \"$AGENT_LLM_CONFIG\" \
+            --env-llm-config \"$ENV_LLM_CONFIG\" \
+            --outputs-path \"$OUTPUTS_PATH\" \
+            --server-hostname \"$SERVER_HOSTNAME\" \
+            --task-image-name \"$task_image\""
+
+    # Add agent-config if it's defined
+    if [ -n "$AGENT_CONFIG" ]; then
+        COMMAND="$COMMAND --agent-config $AGENT_CONFIG"
+    fi
+
+    export PYTHONPATH=evaluation/benchmarks/the_agent_company:$PYTHONPATH && \
+        eval "$COMMAND"
 
     # Prune unused images and volumes
     docker image rm "$task_image"
     docker images "ghcr.io/all-hands-ai/runtime" -q | xargs -r docker rmi -f
     docker volume prune -f
     docker system prune -f
-done < tasks.md
+done < "$temp_file"
 
-rm tasks.md
+rm tasks.md "$temp_file"
 
 echo "All evaluation completed successfully!"
