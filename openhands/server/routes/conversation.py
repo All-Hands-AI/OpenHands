@@ -10,11 +10,15 @@ from openhands.server.session.conversation import ServerConversation
 from openhands.server.shared import conversation_manager
 from openhands.server.utils import get_conversation
 
-app = APIRouter(prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies())
+app = APIRouter(
+    prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies()
+)
 
 
 @app.get('/config')
-async def get_remote_runtime_config(conversation: ServerConversation = Depends(get_conversation)) -> JSONResponse:
+async def get_remote_runtime_config(
+    conversation: ServerConversation = Depends(get_conversation),
+) -> JSONResponse:
     """Retrieve the runtime configuration.
 
     Currently, this is the session ID and runtime ID (if available).
@@ -31,7 +35,9 @@ async def get_remote_runtime_config(conversation: ServerConversation = Depends(g
 
 
 @app.get('/vscode-url')
-async def get_vscode_url(conversation: ServerConversation = Depends(get_conversation)) -> JSONResponse:
+async def get_vscode_url(
+    conversation: ServerConversation = Depends(get_conversation),
+) -> JSONResponse:
     """Get the VSCode URL.
 
     This endpoint allows getting the VSCode URL.
@@ -61,7 +67,9 @@ async def get_vscode_url(conversation: ServerConversation = Depends(get_conversa
 
 
 @app.get('/web-hosts')
-async def get_hosts(conversation: ServerConversation = Depends(get_conversation)) -> JSONResponse:
+async def get_hosts(
+    conversation: ServerConversation = Depends(get_conversation),
+) -> JSONResponse:
     """Get the hosts used by the runtime.
 
     This endpoint allows getting the hosts used by the runtime.
@@ -143,7 +151,9 @@ async def search_events(
 
 
 @app.post('/events')
-async def add_event(request: Request, conversation: ServerConversation = Depends(get_conversation)):
+async def add_event(
+    request: Request, conversation: ServerConversation = Depends(get_conversation)
+):
     data = request.json()
     await conversation_manager.send_to_event_stream(conversation.sid, data)
     return JSONResponse({'success': True})

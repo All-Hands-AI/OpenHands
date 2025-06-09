@@ -32,6 +32,7 @@ class GitLabService(BaseGitService, GitService):
 
     The class is instantiated via get_impl() in openhands.server.shared.py.
     """
+
     BASE_URL = 'https://gitlab.com/api/v4'
     GRAPHQL_URL = 'https://gitlab.com/api/graphql'
     token: SecretStr = SecretStr('')
@@ -483,9 +484,7 @@ class GitLabService(BaseGitService, GitService):
 
         # Set default description if none provided
         if not description:
-            description = (
-                f'Merging changes from {source_branch} into {target_branch}'
-            )
+            description = f'Merging changes from {source_branch} into {target_branch}'
 
         # Prepare the request payload
         payload = {
@@ -500,9 +499,7 @@ class GitLabService(BaseGitService, GitService):
             url=url, params=payload, method=RequestMethod.POST
         )
 
-
         return response['web_url']
-
 
 
 gitlab_service_cls = os.environ.get(

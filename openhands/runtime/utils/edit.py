@@ -27,7 +27,7 @@ from openhands.llm.metrics import Metrics
 from openhands.utils.chunk_localizer import Chunk, get_top_k_chunk_matches
 
 USER_MSG = """
-Code changes will be provided in the form of a draft. You will need to apply the draft to the original code. 
+Code changes will be provided in the form of a draft. You will need to apply the draft to the original code.
 The original code will be enclosed within `<original_code>` tags.
 The draft will be enclosed within `<update_snippet>` tags.
 You need to output the update code within `<updated_code>` tags.
@@ -48,8 +48,8 @@ def _extract_code(string: str) -> str | None:
 
     content = str(matches[0])
     if content.startswith('#EDIT:'):
-        #Remove first line
-        content = content[content.find('\n') + 1:]
+        # Remove first line
+        content = content[content.find('\n') + 1 :]
     return content
 
 

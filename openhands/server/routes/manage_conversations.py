@@ -324,7 +324,6 @@ async def start_conversation(
     logger.info(f'Starting conversation: {conversation_id}')
 
     try:
-
         # Check that the conversation exists
         try:
             await conversation_store.get_metadata(conversation_id)
@@ -378,10 +377,17 @@ async def stop_conversation(
 
     try:
         # Check if the conversation is running
-        agent_loop_info = await conversation_manager.get_agent_loop_info(user_id=user_id, filter_to_sids={conversation_id})
-        conversation_status = agent_loop_info[0].status if agent_loop_info else ConversationStatus.STOPPED
+        agent_loop_info = await conversation_manager.get_agent_loop_info(
+            user_id=user_id, filter_to_sids={conversation_id}
+        )
+        conversation_status = (
+            agent_loop_info[0].status if agent_loop_info else ConversationStatus.STOPPED
+        )
 
-        if conversation_status not in (ConversationStatus.STARTING, ConversationStatus.RUNNING):
+        if conversation_status not in (
+            ConversationStatus.STARTING,
+            ConversationStatus.RUNNING,
+        ):
             return ConversationResponse(
                 status='ok',
                 conversation_id=conversation_id,
