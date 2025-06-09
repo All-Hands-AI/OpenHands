@@ -40,7 +40,7 @@ Two configuration options are required to use the Kubernetes runtime:
 2. **Runtime Container Image**: Specify the container image to use for the runtime environment
    ```toml
    [sandbox]
-   runtime_container_image = "ghcr.io/all-hands-ai/runtime:oh_v0.40.0_image_nikolaik_s_python-nodejs_tag_python3.12-nodejs22"
+   runtime_container_image = "docker.all-hands.dev/all-hands-ai/runtime:0.41-nikolaik"
    ```
 
 #### Additional Kubernetes Options
