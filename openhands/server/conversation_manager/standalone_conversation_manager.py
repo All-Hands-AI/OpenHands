@@ -436,6 +436,8 @@ class StandaloneConversationManager(ConversationManager):
                 AgentState.FINISHED,
                 AgentState.REJECTED,
                 AgentState.ERROR,
+                AgentState.AWAITING_USER_INPUT,
+                AgentState.AWAITING_USER_CONFIRMATION,
             ]:
                 # Check if there are no other active connections to this session
                 # Count remaining connections for this session
