@@ -40,8 +40,6 @@ class BrowserOutputObservation(Observation):
         return 'Visited ' + self.url
 
     def __str__(self) -> str:
-        from openhands.runtime.browser.utils import get_agent_obs_text
-
         ret = (
             '**BrowserOutputObservation**\n'
             f'URL: {self.url}\n'
@@ -55,7 +53,7 @@ class BrowserOutputObservation(Observation):
         if self.screenshot_path:
             ret += f'Screenshot saved to: {self.screenshot_path}\n'
         ret += '--- Agent Observation ---\n'
-        ret += get_agent_obs_text(self)
+        ret += self.content
         return ret
 
     # The get_agent_obs_text method has been moved to openhands/runtime/browser/utils.py
