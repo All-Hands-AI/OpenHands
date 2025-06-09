@@ -1,4 +1,4 @@
-"""Tests for CLI text selection functionality."""
+"""Tests for CLI text selection functionality in OpenHands."""
 
 import os
 from pathlib import Path
