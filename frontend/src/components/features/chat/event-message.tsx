@@ -1,3 +1,4 @@
+import React from "react";
 import { ConfirmationButtons } from "#/components/shared/buttons/confirmation-buttons";
 import { OpenHandsAction } from "#/types/core/actions";
 import {
@@ -50,7 +51,7 @@ export function EventMessage({
 
     // Check if there's a user_feedback action for this specific event ID
     return parsedEvents.some(
-      (e) => isUserFeedbackAction(e) && e.args.event_id === event.id,
+      (e) => isUserFeedbackAction(e) && e.args.event_id === event.id.toString(),
     );
   }, [event.id, parsedEvents]);
 
