@@ -375,8 +375,8 @@ class TestModifyLLMSettingsBasic:
         )
 
     def test_default_model_selection(self):
-        """Test that the default model selection prefers verified models."""
-        # This is a simple test to verify that the default model selection prefers verified models
+        """Test that the default model selection uses the first model in the list."""
+        # This is a simple test to verify that the default model selection uses the first model in the list
         # We're directly checking the code in settings.py where the default model is set
 
         import inspect
@@ -409,34 +409,13 @@ class TestModifyLLMSettingsBasic:
         for line in default_model_block:
             print(f'  {line.strip()}')
 
-        # Check that the logic prefers verified models for both openai and anthropic
-        openai_check = any(
-            "provider == 'openai'" in line for line in default_model_block
-        )
-        anthropic_check = any(
-            "provider == 'anthropic'" in line for line in default_model_block
+        # Check that the logic uses the first model in the list
+        first_model_check = any(
+            'provider_models[0]' in line for line in default_model_block
         )
 
-        assert openai_check, (
-            'Default model selection should prefer verified OpenAI models'
-        )
-        assert anthropic_check, (
-            'Default model selection should prefer verified Anthropic models'
-        )
-
-        # Also check that we're using the first verified model
-        openai_first_model = any(
-            'VERIFIED_OPENAI_MODELS[0]' in line for line in default_model_block
-        )
-        anthropic_first_model = any(
-            'VERIFIED_ANTHROPIC_MODELS[0]' in line for line in default_model_block
-        )
-
-        assert openai_first_model, (
-            'Default model selection should use the first verified OpenAI model'
-        )
-        assert anthropic_first_model, (
-            'Default model selection should use the first verified Anthropic model'
+        assert first_model_check, (
+            'Default model selection should use the first model in the list'
         )
 
 
