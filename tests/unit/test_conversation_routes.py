@@ -1,17 +1,16 @@
+import asyncio
 import json
 from unittest.mock import MagicMock, patch
 
-import pytest
 from fastapi.responses import JSONResponse
 
 from openhands.microagent.microagent import KnowledgeMicroagent, RepoMicroagent
-from openhands.microagent.types import InputMetadata, MicroagentMetadata, MicroagentType
+from openhands.microagent.types import MicroagentMetadata, MicroagentType
 from openhands.server.routes.conversation import get_microagents
 from openhands.server.session.conversation import ServerConversation
 
 
-@pytest.mark.asyncio
-async def test_get_microagents():
+def test_get_microagents():
     """Test the get_microagents function directly."""
     # Create mock microagents
     from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig
@@ -22,11 +21,7 @@ async def test_get_microagents():
         metadata=MicroagentMetadata(
             name='test_repo',
             type=MicroagentType.REPO_KNOWLEDGE,
-            inputs=[
-                InputMetadata(
-                    name='repository_path', description='Path to the repository'
-                )
-            ],
+            inputs=[],
             mcp_tools=MCPConfig(
                 stdio_servers=[
                     MCPStdioServerConfig(name='git', command='git'),
@@ -45,10 +40,7 @@ async def test_get_microagents():
             name='test_knowledge',
             type=MicroagentType.KNOWLEDGE,
             triggers=['test', 'knowledge'],
-            inputs=[
-                InputMetadata(name='user_input', description='User input'),
-                InputMetadata(name='context', description='Context information'),
-            ],
+            inputs=[],
             mcp_tools=MCPConfig(
                 stdio_servers=[
                     MCPStdioServerConfig(name='search', command='search'),
@@ -79,8 +71,8 @@ async def test_get_microagents():
         # Set up the mocks
         mock_manager.get_agent_session.return_value = mock_agent_session
 
-        # Call the function directly
-        response = await get_microagents(conversation=mock_conversation)
+        # Call the function directly using asyncio.run
+        response = asyncio.run(get_microagents(conversation=mock_conversation))
 
         # Verify the response
         assert isinstance(response, JSONResponse)
@@ -96,9 +88,7 @@ async def test_get_microagents():
         assert repo_agent['type'] == 'repo'
         assert repo_agent['content'] == 'This is a test repo microagent'
         assert repo_agent['triggers'] == []
-        assert (
-            repo_agent['inputs'] == []
-        )  # RepoMicroagent doesn't have an inputs property
+        assert repo_agent['inputs'] == []
         assert repo_agent['tools'] == ['git', 'file_editor']
 
         # Check knowledge microagent
@@ -108,14 +98,11 @@ async def test_get_microagents():
         assert knowledge_agent['type'] == 'knowledge'
         assert knowledge_agent['content'] == 'This is a test knowledge microagent'
         assert knowledge_agent['triggers'] == ['test', 'knowledge']
-        assert (
-            knowledge_agent['inputs'] == []
-        )  # KnowledgeMicroagent doesn't have an inputs property
+        assert knowledge_agent['inputs'] == []
         assert knowledge_agent['tools'] == ['search', 'fetch']
 
 
-@pytest.mark.asyncio
-async def test_get_microagents_no_agent_session():
+def test_get_microagents_no_agent_session():
     """Test the get_microagents function when no agent session is found."""
     # Create a mock ServerConversation
     mock_conversation = MagicMock(spec=ServerConversation)
@@ -129,7 +116,7 @@ async def test_get_microagents_no_agent_session():
         mock_manager.get_agent_session.return_value = None
 
         # Call the function directly
-        response = await get_microagents(conversation=mock_conversation)
+        response = asyncio.run(get_microagents(conversation=mock_conversation))
 
         # Verify the response
         assert isinstance(response, JSONResponse)
@@ -141,8 +128,7 @@ async def test_get_microagents_no_agent_session():
         assert 'Agent session not found' in content['error']
 
 
-@pytest.mark.asyncio
-async def test_get_microagents_exception():
+def test_get_microagents_exception():
     """Test the get_microagents function when an exception occurs."""
     # Create a mock ServerConversation
     mock_conversation = MagicMock(spec=ServerConversation)
@@ -156,7 +142,7 @@ async def test_get_microagents_exception():
         mock_manager.get_agent_session.side_effect = Exception('Test exception')
 
         # Call the function directly
-        response = await get_microagents(conversation=mock_conversation)
+        response = asyncio.run(get_microagents(conversation=mock_conversation))
 
         # Verify the response
         assert isinstance(response, JSONResponse)
