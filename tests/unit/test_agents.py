@@ -132,7 +132,7 @@ def test_cmd_run_tool():
     assert CmdRunTool['type'] == 'function'
     assert CmdRunTool['function']['name'] == 'execute_bash'
     assert 'command' in CmdRunTool['function']['parameters']['properties']
-    assert CmdRunTool['function']['parameters']['required'] == ['command']
+    assert CmdRunTool['function']['parameters']['required'] == ['command', 'timeout']
 
 
 def test_ipython_tool():
