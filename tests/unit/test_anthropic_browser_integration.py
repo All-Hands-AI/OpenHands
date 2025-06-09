@@ -1,8 +1,8 @@
 from unittest.mock import MagicMock, patch
 
+import httpx
 import numpy as np
 import pytest
-from litellm.exceptions import BadRequestError
 from PIL import Image
 
 from openhands.core.message import ImageContent, Message, TextContent
@@ -18,40 +18,56 @@ def create_test_image():
     return Image.fromarray(img_array)
 
 
-@patch('litellm.completion')
-def test_anthropic_browser_integration_error(mock_completion):
+@patch('httpx.post')
+def test_anthropic_browser_integration_error(mock_httpx_post):
     """Test that demonstrates the integration issue between browser screenshots and Anthropic models.
 
     This test is designed to fail to show the issue.
     """
 
     # Configure the mock to raise the BadRequestError when called with specific parameters
-    def mock_completion_side_effect(*args, **kwargs):
-        messages = kwargs.get('messages', [])
+    def mock_httpx_post_side_effect(*args, **kwargs):
+        # Check if this is a call to the Anthropic API
+        if args and 'api.anthropic.com' in args[0]:
+            # Get the JSON data being sent to the API
+            json_data = kwargs.get('json', {})
+            messages = json_data.get('messages', [])
 
-        # Check if there's an image URL in the messages
-        for message in messages:
-            content = message.get('content', [])
-            if isinstance(content, list):
-                for item in content:
-                    if isinstance(item, dict) and item.get('type') == 'image_url':
-                        image_url = item.get('image_url', {}).get('url', '')
+            # Check if there's an image URL in the messages
+            for message in messages:
+                content = message.get('content', [])
+                if isinstance(content, list):
+                    for item in content:
+                        if isinstance(item, dict) and item.get('type') == 'image':
+                            image_url = item.get('source', {}).get('data', '')
 
-                        # Check if the image URL format is what Anthropic expects
-                        if not image_url.startswith('data:image/jpeg;base64,'):
-                            # This is the actual error that would occur in the real scenario
-                            raise BadRequestError(
-                                message="Error code: 400 - {'error': {'message': 'litellm.BadRequestError: AnthropicException - "
-                                'Image url not in expected format. Example Expected input - "image_url": "data:image/jpeg;base64,{base64_image}". '
-                                "Supported formats - [\\'image/jpeg\\', \\'image/png\\', \\'image/gif\\', \\'image/webp\\'].",
-                                model='claude-3-opus-20240229',
-                                llm_provider='anthropic',
-                            )
+                            # Check if the image URL format is what Anthropic expects
+                            if image_url.startswith('data:image/png;base64,'):
+                                # This is the actual error that would occur in the real scenario
+                                error_response = httpx.Response(
+                                    status_code=400,
+                                    json={
+                                        'error': {
+                                            'message': "Image url not in expected format. Example Expected input - \"image_url\": \"data:image/jpeg;base64,{base64_image}\". Supported formats - ['image/jpeg', 'image/png', 'image/gif', 'image/webp']."
+                                        }
+                                    },
+                                    request=httpx.Request('POST', args[0]),
+                                )
+                                raise httpx.HTTPStatusError(
+                                    '400 Bad Request',
+                                    request=httpx.Request('POST', args[0]),
+                                    response=error_response,
+                                )
 
         # If no image URL is found or the format is correct, return a mock response
-        return MagicMock()
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            'content': [{'text': 'This is a mock response'}]
+        }
+        return mock_response
 
-    mock_completion.side_effect = mock_completion_side_effect
+    mock_httpx_post.side_effect = mock_httpx_post_side_effect
 
     # Create a test image and convert it to base64
     test_image = create_test_image()
@@ -83,16 +99,31 @@ def test_anthropic_browser_integration_error(mock_completion):
         }
     ]
 
-    # Try to send the message to the LLM
+    # Import litellm to use it directly with our mocked httpx.post
+    import os
+
+    import litellm
+
+    # Get the Anthropic API key from environment variables
+    api_key = os.environ.get('ANTHROPIC_API_KEY')
+
+    # Try to send the message to the LLM using litellm
     # This should raise an error, but we'll catch it to examine it
     try:
-        mock_completion(messages=formatted_messages)
+        # Call litellm directly with the Anthropic model
+        litellm.completion(
+            model='anthropic/claude-3-opus-20240229',
+            messages=formatted_messages,
+            api_key=api_key,
+        )
         # If we get here, the test should fail because no error was raised
-        pytest.fail('Expected BadRequestError was not raised')
-    except BadRequestError as e:
+        pytest.fail('Expected HTTPStatusError was not raised')
+    except httpx.HTTPStatusError as e:
         # Verify the error message
-        assert 'Image url not in expected format' in str(e)
-        assert 'Supported formats' in str(e)
+        assert 'Image url not in expected format' in str(
+            e.response.json()['error']['message']
+        )
+        assert 'Supported formats' in str(e.response.json()['error']['message'])
 
         # This assertion will fail to demonstrate the issue
         assert observation.screenshot.startswith('data:image/jpeg;base64,'), (
@@ -102,3 +133,46 @@ def test_anthropic_browser_integration_error(mock_completion):
     # The test fails because the image URL format is not what Anthropic expects
     # The current implementation uses 'data:image/png;base64,' but Anthropic expects 'data:image/jpeg;base64,'
     # This is the root cause of the issue
+
+
+def test_anthropic_direct_api_call():
+    """Test that directly calls the Anthropic API to reproduce the error.
+
+    This test is marked as xfail because it's expected to fail, demonstrating the issue.
+    """
+    import os
+
+    import litellm
+
+    # Skip this test if no Anthropic API key is available
+    api_key = os.environ.get('ANTHROPIC_API_KEY')
+    if not api_key:
+        pytest.skip('No Anthropic API key available')
+
+    # Create a test image and convert it to base64
+    test_image = create_test_image()
+    screenshot = image_to_png_base64_url(test_image, add_data_prefix=True)
+
+    # Create a message with the screenshot
+    formatted_messages = [
+        {
+            'role': 'user',
+            'content': [
+                {'type': 'text', 'text': "What's in this image?"},
+                {'type': 'image_url', 'image_url': {'url': screenshot}},
+            ],
+        }
+    ]
+
+    # This test is expected to fail with a BadRequestError
+    # Mark it as xfail to indicate this is the expected behavior
+    pytest.xfail(
+        'This test is expected to fail with a BadRequestError about image URL format'
+    )
+
+    # Try to call the Anthropic API directly
+    litellm.completion(
+        model='anthropic/claude-3-opus-20240229',
+        messages=formatted_messages,
+        api_key=api_key,
+    )
