@@ -1,7 +1,5 @@
 import { AxiosHeaders } from "axios";
 import {
-  Feedback,
-  FeedbackResponse,
   GitHubAccessTokenResponse,
   GetConfigResponse,
   GetVSCodeUrlResponse,
@@ -95,19 +93,7 @@ class OpenHands {
     return headers;
   }
 
-  /**
-   * Send feedback to the server
-   * @param data Feedback data
-   * @returns The stored feedback data
-   */
-  static async submitFeedback(
-    conversationId: string,
-    feedback: Feedback,
-  ): Promise<FeedbackResponse> {
-    const url = `/api/conversations/${conversationId}/submit-feedback`;
-    const { data } = await openHands.post<FeedbackResponse>(url, feedback);
-    return data;
-  }
+  // Feedback functionality has been removed
 
   /**
    * Authenticate with GitHub token

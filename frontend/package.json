@@ -14,6 +14,7 @@
     "@react-router/serve": "^7.6.1",
     "@react-types/shared": "^3.29.1",
     "@reduxjs/toolkit": "^2.8.2",
+    "@remix-run/router": "^1.23.0",
     "@stripe/react-stripe-js": "^3.7.0",
     "@stripe/stripe-js": "^7.3.0",
     "@tanstack/react-query": "^5.77.2",
