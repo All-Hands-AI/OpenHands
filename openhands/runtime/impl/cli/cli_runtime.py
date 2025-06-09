@@ -22,7 +22,7 @@ from openhands_aci.editor.results import ToolResult
 from openhands_aci.utils.diff import get_diff
 from pydantic import SecretStr
 
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig
 from openhands.core.exceptions import LLMMalformedActionError
 from openhands.core.logger import openhands_logger as logger
@@ -57,7 +57,7 @@ class CLIRuntime(Runtime):
     file operations using Python's standard library. It does not implement browser functionality.
 
     Args:
-        config (AppConfig): The application configuration.
+        config (OpenHandsConfig): The application configuration.
         event_stream (EventStream): The event stream to subscribe to.
         sid (str, optional): The session ID. Defaults to 'default'.
         plugins (list[PluginRequirement] | None, optional): List of plugin requirements. Defaults to None.
@@ -71,7 +71,7 @@ class CLIRuntime(Runtime):
 
     def __init__(
         self,
-        config: AppConfig,
+        config: OpenHandsConfig,
         event_stream: EventStream,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
@@ -109,6 +109,9 @@ class CLIRuntime(Runtime):
                 prefix=f'openhands_workspace_{sid}_'
             )
             logger.info(f'Created temporary workspace at {self._workspace_path}')
+
+        # Runtime tests rely on this being set correctly.
+        self.config.workspace_mount_path_in_sandbox = self._workspace_path
 
         # Initialize runtime state
         self._runtime_initialized = False

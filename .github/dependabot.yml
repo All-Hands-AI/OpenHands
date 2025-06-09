@@ -16,7 +16,6 @@ updates:
       mcp-packages:
         patterns:
           - "mcp"
-          - "mcpm"
       security-all:
         applies-to: "security-updates"
         patterns:

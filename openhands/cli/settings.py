@@ -18,7 +18,7 @@ from openhands.cli.utils import (
     organize_models_and_providers,
 )
 from openhands.controller.agent import Agent
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.config.condenser_config import NoOpCondenserConfig
 from openhands.core.config.utils import OH_DEFAULT_AGENT
 from openhands.memory.condenser.impl.llm_summarizing_condenser import (
@@ -29,7 +29,7 @@ from openhands.storage.settings.file_settings_store import FileSettingsStore
 from openhands.utils.llm import get_supported_llm_models
 
 
-def display_settings(config: AppConfig) -> None:
+def display_settings(config: OpenHandsConfig) -> None:
     llm_config = config.get_llm_config()
     advanced_llm_settings = True if llm_config.base_url else False
 
@@ -145,7 +145,7 @@ def save_settings_confirmation() -> bool:
 
 
 async def modify_llm_settings_basic(
-    config: AppConfig, settings_store: FileSettingsStore
+    config: OpenHandsConfig, settings_store: FileSettingsStore
 ) -> None:
     model_list = get_supported_llm_models(config)
     organized_models = organize_models_and_providers(model_list)
@@ -158,18 +158,48 @@ async def modify_llm_settings_basic(
     provider_completer = FuzzyWordCompleter(provider_list)
     session = PromptSession(key_bindings=kb_cancel())
 
-    provider = None
+    # Set default provider - use the first available provider from the list
+    provider = provider_list[0] if provider_list else 'openai'
     model = None
     api_key = None
 
     try:
-        provider = await get_validated_input(
-            session,
-            '(Step 1/3) Select LLM Provider (TAB for options, CTRL-c to cancel): ',
-            completer=provider_completer,
-            validator=lambda x: x in organized_models,
-            error_message='Invalid provider selected',
+        # Show the default provider but allow changing it
+        print_formatted_text(
+            HTML(f'\n<grey>Default provider: </grey><green>{provider}</green>')
         )
+        change_provider = (
+            cli_confirm(
+                'Do you want to use a different provider?',
+                [f'Use {provider}', 'Select another provider'],
+            )
+            == 1
+        )
+
+        if change_provider:
+            # Define a validator function that prints an error message
+            def provider_validator(x):
+                is_valid = x in organized_models
+                if not is_valid:
+                    print_formatted_text(
+                        HTML('<grey>Invalid provider selected: {}</grey>'.format(x))
+                    )
+                return is_valid
+
+            provider = await get_validated_input(
+                session,
+                '(Step 1/3) Select LLM Provider (TAB for options, CTRL-c to cancel): ',
+                completer=provider_completer,
+                validator=provider_validator,
+                error_message='Invalid provider selected',
+            )
+
+        # Make sure the provider exists in organized_models
+        if provider not in organized_models:
+            # If the provider doesn't exist, use the first available provider
+            provider = (
+                next(iter(organized_models.keys())) if organized_models else 'openai'
+            )
 
         provider_models = organized_models[provider]['models']
         if provider == 'openai':
@@ -183,14 +213,45 @@ async def modify_llm_settings_basic(
             ]
             provider_models = VERIFIED_ANTHROPIC_MODELS + provider_models
 
-        model_completer = FuzzyWordCompleter(provider_models)
-        model = await get_validated_input(
-            session,
-            '(Step 2/3) Select LLM Model (TAB for options, CTRL-c to cancel): ',
-            completer=model_completer,
-            validator=lambda x: x in provider_models,
-            error_message=f'Invalid model selected for provider {provider}',
+        # Set default model to the first model in the list
+        default_model = provider_models[0] if provider_models else 'gpt-4'
+
+        # Show the default model but allow changing it
+        print_formatted_text(
+            HTML(f'\n<grey>Default model: </grey><green>{default_model}</green>')
         )
+        change_model = (
+            cli_confirm(
+                'Do you want to use a different model?',
+                [f'Use {default_model}', 'Select another model'],
+            )
+            == 1
+        )
+
+        if change_model:
+            model_completer = FuzzyWordCompleter(provider_models)
+
+            # Define a validator function that prints an error message
+            def model_validator(x):
+                is_valid = x in provider_models
+                if not is_valid:
+                    print_formatted_text(
+                        HTML(
+                            f'<grey>Invalid model selected for provider {provider}: {x}</grey>'
+                        )
+                    )
+                return is_valid
+
+            model = await get_validated_input(
+                session,
+                '(Step 2/3) Select LLM Model (TAB for options, CTRL-c to cancel): ',
+                completer=model_completer,
+                validator=model_validator,
+                error_message=f'Invalid model selected for provider {provider}',
+            )
+        else:
+            # Use the default model
+            model = default_model
 
         api_key = await get_validated_input(
             session,
@@ -243,7 +304,7 @@ async def modify_llm_settings_basic(
 
 
 async def modify_llm_settings_advanced(
-    config: AppConfig, settings_store: FileSettingsStore
+    config: OpenHandsConfig, settings_store: FileSettingsStore
 ) -> None:
     session = PromptSession(key_bindings=kb_cancel())
 

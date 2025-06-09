@@ -9,7 +9,7 @@ from openhands.controller.agent import Agent
 from openhands.controller.replay import ReplayManager
 from openhands.controller.state.state import State
 from openhands.core.config import (
-    AppConfig,
+    OpenHandsConfig,
     parse_arguments,
     setup_config_from_args,
 )
@@ -47,7 +47,7 @@ class FakeUserResponseFunc(Protocol):
 
 
 async def run_controller(
-    config: AppConfig,
+    config: OpenHandsConfig,
     initial_user_action: Action,
     sid: str | None = None,
     runtime: Runtime | None = None,
@@ -90,7 +90,7 @@ async def run_controller(
           config.max_budget_per_task.
 
     Example:
-        >>> config = load_app_config()
+        >>> config = load_openhands_config()
         >>> action = MessageAction(content="Write a hello world program")
         >>> state = await run_controller(config=config, initial_user_action=action)
     """
@@ -134,14 +134,11 @@ async def run_controller(
     # Add MCP tools to the agent
     if agent.config.enable_mcp:
         # Add OpenHands' MCP server by default
-        openhands_mcp_server, openhands_mcp_stdio_servers = (
+        _, openhands_mcp_stdio_servers = (
             OpenHandsMCPConfigImpl.create_default_mcp_server_config(
                 config.mcp_host, config, None
             )
         )
-        # FIXME: OpenHands' SSE server may not be running when headless mode is started
-        # if openhands_mcp_server:
-        #     config.mcp.sse_servers.append(openhands_mcp_server)
         config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
 
         await add_mcp_tools_to_agent(agent, runtime, memory, config)
@@ -279,7 +276,7 @@ def load_replay_log(trajectory_path: str) -> tuple[list[Event] | None, Action]:
 if __name__ == '__main__':
     args = parse_arguments()
 
-    config: AppConfig = setup_config_from_args(args)
+    config: OpenHandsConfig = setup_config_from_args(args)
 
     # Read task from file, CLI args, or stdin
     task_str = read_task(args, config.cli_multiline_input)

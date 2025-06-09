@@ -4,6 +4,7 @@ import {
   AssistantMessageAction,
   OpenHandsAction,
   SystemMessageAction,
+  CommandAction,
 } from "./actions";
 import {
   AgentStateChangeObservation,
@@ -40,6 +41,10 @@ export const isErrorObservation = (
   event: OpenHandsParsedEvent,
 ): event is ErrorObservation =>
   isOpenHandsObservation(event) && event.observation === "error";
+
+export const isCommandAction = (
+  event: OpenHandsParsedEvent,
+): event is CommandAction => isOpenHandsAction(event) && event.action === "run";
 
 export const isAgentStateChangeObservation = (
   event: OpenHandsParsedEvent,

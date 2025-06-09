@@ -71,7 +71,6 @@ EVAL_CONDENSER=summarizer_for_eval \
 The name is up to you, but should match a name defined in your `config.toml` file. The last argument in the command specifies the condenser configuration to use. In this case, `summarizer_for_eval` is used, which refers to the LLM-based summarizing condenser as defined above.
 
 If no condenser configuration is specified, the 'noop' condenser will be used by default, which keeps the full conversation history.
-```
 
 For other configurations specific to evaluation, such as `save_trajectory_path`, these are typically set in the `get_config` function of the respective `run_infer.py` file for each benchmark.
 
@@ -138,7 +137,7 @@ You can start your own fork of [our huggingface evaluation outputs](https://hugg
 
 ## For Benchmark Developers
 
-To learn more about how to integrate your benchmark into OpenHands, check out [tutorial here](https://docs.all-hands.dev/modules/usage/how-to/evaluation-harness). Briefly,
+To learn more about how to integrate your benchmark into OpenHands, check out [tutorial here](https://docs.all-hands.dev/usage/how-to/evaluation-harness). Briefly,
 
 - Each subfolder contains a specific benchmark or experiment. For example, [`evaluation/benchmarks/swe_bench`](./benchmarks/swe_bench) should contain
 all the preprocessing/evaluation/analysis scripts.

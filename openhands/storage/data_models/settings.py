@@ -12,7 +12,7 @@ from pydantic.json import pydantic_encoder
 
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.mcp_config import MCPConfig
-from openhands.core.config.utils import load_app_config
+from openhands.core.config.utils import load_openhands_config
 from openhands.storage.data_models.user_secrets import UserSecrets
 
 
@@ -40,7 +40,8 @@ class Settings(BaseModel):
     sandbox_runtime_container_image: str | None = None
     mcp_config: MCPConfig | None = None
     search_api_key: SecretStr | None = None
-
+    email: str | None = None
+    email_verified: bool | None = None
 
     model_config = {
         'validate_assignment': True,
@@ -54,7 +55,7 @@ class Settings(BaseModel):
         """
         if api_key is None:
             return None
-        
+
         context = info.context
         if context and context.get('expose_secrets', False):
             return api_key.get_secret_value()
@@ -106,7 +107,7 @@ class Settings(BaseModel):
 
     @staticmethod
     def from_config() -> Settings | None:
-        app_config = load_app_config()
+        app_config = load_openhands_config()
         llm_config: LLMConfig = app_config.get_llm_config()
         if llm_config.api_key is None:
             # If no api key has been set, we take this to mean that there is no reasonable default
