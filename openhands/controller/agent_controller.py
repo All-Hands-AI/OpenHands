@@ -596,18 +596,19 @@ class AgentController:
         if new_state == self.state.agent_state:
             return
 
-
         if new_state in (AgentState.STOPPED, AgentState.ERROR):
             # sync existing metrics BEFORE resetting the agent
             await self.update_state_after_step()
             self.state.metrics.merge(self.state.local_metrics)
             self._reset()
 
-
         # This block will always either extend max_iterations or max_budget_per_task, which removes any previous throttling effects
         # Iteration and budget extensions are independent of each other
-        if (self.state.agent_state == AgentState.STOPPED or self.state.agent_state == AgentState.ERROR) and new_state == AgentState.RUNNING:
-            if (self.state.traffic_control_state == TrafficControlState.THROTTLING):
+        if (
+            self.state.agent_state == AgentState.ERROR
+            and new_state == AgentState.RUNNING
+        ):
+            if self.state.traffic_control_state == TrafficControlState.THROTTLING:
                 if (
                     self.state.iteration is not None
                     and self.state.max_iterations is not None
@@ -621,7 +622,8 @@ class AgentController:
                     self.agent.llm.metrics.accumulated_cost is not None
                     and self.max_budget_per_task is not None
                     and self._initial_max_budget_per_task is not None
-                    and self.agent.llm.metrics.accumulated_cost >= self.max_budget_per_task
+                    and self.agent.llm.metrics.accumulated_cost
+                    >= self.max_budget_per_task
                 ):
                     # Set the new budget cap to the current accumulated cost plus the initial budget
                     # This ensures we have enough budget to continue and don't immediately hit the limit again
@@ -632,7 +634,6 @@ class AgentController:
 
             # Reset throttle state
             self.state.traffic_control_state = TrafficControlState.NORMAL
-
 
         if self._pending_action is not None and (
             new_state in (AgentState.USER_CONFIRMED, AgentState.USER_REJECTED)
@@ -658,9 +659,6 @@ class AgentController:
             AgentStateChangedObservation('', self.state.agent_state, reason),
             EventSource.ENVIRONMENT,
         )
-
-
-
 
     def get_agent_state(self) -> AgentState:
         """Returns the current state of the agent.
