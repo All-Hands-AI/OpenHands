@@ -12,11 +12,13 @@ class UserFeedbackAction(Action):
     Attributes:
         rating (int): The user's rating of the agent's performance (1-5).
         reason (Optional[str]): The reason for the rating, if provided.
+        event_id (Optional[str]): The ID of the event this feedback corresponds to.
         action (str): The action type, namely ActionType.USER_FEEDBACK.
     """
 
     rating: int
     reason: Optional[str] = None
+    event_id: Optional[str] = None
     action: str = "user_feedback"  # This will be added to ActionType
 
     @property
@@ -24,4 +26,6 @@ class UserFeedbackAction(Action):
         msg = f"User rated the agent's performance: {self.rating}/5"
         if self.reason:
             msg += f" - Reason: {self.reason}"
+        if self.event_id:
+            msg += f" for event {self.event_id}"
         return msg

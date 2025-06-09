@@ -412,6 +412,7 @@ def test_user_feedback_action_serialization_deserialization():
         'args': {
             'rating': 4,
             'reason': 'The agent did not follow my instruction',
+            'event_id': 'event-123',
         },
     }
 
@@ -422,8 +423,10 @@ def test_user_feedback_action_serialization_deserialization():
     # Check that the properties are correctly set
     assert action_instance.rating == 4
     assert action_instance.reason == 'The agent did not follow my instruction'
+    assert action_instance.event_id == 'event-123'
 
     # Serialize back to dict and check
     serialized = event_to_dict(action_instance)
     assert serialized['args']['rating'] == 4
     assert serialized['args']['reason'] == 'The agent did not follow my instruction'
+    assert serialized['args']['event_id'] == 'event-123'

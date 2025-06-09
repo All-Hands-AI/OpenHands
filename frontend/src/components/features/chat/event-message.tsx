@@ -44,38 +44,15 @@ export function EventMessage({
 
   const { send, parsedEvents } = useWsClient();
 
-  // Check if there's already a UserFeedbackAction in the event stream
+  // Check if there's already a UserFeedbackAction in the event stream for this event
   const hasFeedbackBeenSubmitted = React.useMemo(() => {
     if (!parsedEvents) return false;
 
-    // If this is a finish action, check if there's a user_feedback action after it
-    if (isFinishAction(event)) {
-      const currentEventIndex = parsedEvents.findIndex(
-        (e) => e.id === event.id,
-      );
-      if (currentEventIndex === -1) return false;
-
-      // Check if there's a user_feedback action after this finish action
-      return parsedEvents
-        .slice(currentEventIndex + 1)
-        .some(isUserFeedbackAction);
-    }
-
-    // If this is an assistant message, check if there's a user_feedback action after it
-    if (isAssistantMessage(event) && isLastMessage) {
-      const currentEventIndex = parsedEvents.findIndex(
-        (e) => e.id === event.id,
-      );
-      if (currentEventIndex === -1) return false;
-
-      // Check if there's a user_feedback action after this assistant message
-      return parsedEvents
-        .slice(currentEventIndex + 1)
-        .some(isUserFeedbackAction);
-    }
-
-    return false;
-  }, [event, parsedEvents, isLastMessage]);
+    // Check if there's a user_feedback action for this specific event ID
+    return parsedEvents.some(
+      (e) => isUserFeedbackAction(e) && e.args.event_id === event.id,
+    );
+  }, [event.id, parsedEvents]);
 
   const handleRatingSubmit = (rating: number, reason?: string) => {
     // Send the user feedback action to the event stream
@@ -85,6 +62,7 @@ export function EventMessage({
       args: {
         rating,
         reason,
+        event_id: event.id, // Add the event ID to track which event this feedback corresponds to
       },
     });
   };

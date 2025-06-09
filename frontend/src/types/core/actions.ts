@@ -167,6 +167,7 @@ export interface UserFeedbackAction
   args: {
     rating: number;
     reason?: string;
+    event_id?: string;
   };
 }
 
