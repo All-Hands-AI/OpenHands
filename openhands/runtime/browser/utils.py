@@ -133,50 +133,114 @@ async def browse(
                 image = png_base64_url_to_image(obs.get('screenshot'))
                 image.save(screenshot_path, format='PNG', optimize=True)
 
-        observation = BrowserOutputObservation(
-            content=obs['text_content'],  # text content of the page
-            url=obs.get('url', ''),  # URL of the page
-            screenshot=obs.get('screenshot', None),  # base64-encoded screenshot, png
-            screenshot_path=screenshot_path,  # path to saved screenshot file
-            set_of_marks=obs.get(
-                'set_of_marks', None
-            ),  # base64-encoded Set-of-Marks annotated screenshot, png,
-            goal_image_urls=obs.get('image_content', []),
-            open_pages_urls=obs.get('open_pages_urls', []),  # list of open pages
-            active_page_index=obs.get(
-                'active_page_index', -1
-            ),  # index of the active page
-            axtree_object=obs.get('axtree_object', {}),  # accessibility tree object
-            extra_element_properties=obs.get('extra_element_properties', {}),
-            focused_element_bid=obs.get(
-                'focused_element_bid', None
-            ),  # focused element bid
-            last_browser_action=obs.get(
-                'last_action', ''
-            ),  # last browser env action performed
-            last_browser_action_error=obs.get('last_action_error', ''),
-            error=True if obs.get('last_action_error', '') else False,  # error flag
-            trigger_by_action=action.action,
-        )
+        # Check if we should return all data or just the processed content
+        if getattr(action, 'return_all', False):
+            # Return all data including axtree_object
+            observation = BrowserOutputObservation(
+                content=obs['text_content'],  # text content of the page
+                url=obs.get('url', ''),  # URL of the page
+                screenshot=obs.get(
+                    'screenshot', None
+                ),  # base64-encoded screenshot, png
+                screenshot_path=screenshot_path,  # path to saved screenshot file
+                set_of_marks=obs.get(
+                    'set_of_marks', None
+                ),  # base64-encoded Set-of-Marks annotated screenshot, png,
+                goal_image_urls=obs.get('image_content', []),
+                open_pages_urls=obs.get('open_pages_urls', []),  # list of open pages
+                active_page_index=obs.get(
+                    'active_page_index', -1
+                ),  # index of the active page
+                axtree_object=obs.get('axtree_object', {}),  # accessibility tree object
+                extra_element_properties=obs.get('extra_element_properties', {}),
+                focused_element_bid=obs.get(
+                    'focused_element_bid', None
+                ),  # focused element bid
+                last_browser_action=obs.get(
+                    'last_action', ''
+                ),  # last browser env action performed
+                last_browser_action_error=obs.get('last_action_error', ''),
+                error=True if obs.get('last_action_error', '') else False,  # error flag
+                trigger_by_action=action.action,
+            )
+        else:
+            # Create a lightweight observation without the axtree_object and extra_element_properties
+            # Process the content first to use the axtree_object before discarding it
+            temp_observation = BrowserOutputObservation(
+                content=obs['text_content'],
+                url=obs.get('url', ''),
+                screenshot=obs.get('screenshot', None),
+                screenshot_path=screenshot_path,
+                set_of_marks=obs.get('set_of_marks', None),
+                goal_image_urls=obs.get('image_content', []),
+                open_pages_urls=obs.get('open_pages_urls', []),
+                active_page_index=obs.get('active_page_index', -1),
+                axtree_object=obs.get('axtree_object', {}),
+                extra_element_properties=obs.get('extra_element_properties', {}),
+                focused_element_bid=obs.get('focused_element_bid', None),
+                last_browser_action=obs.get('last_action', ''),
+                last_browser_action_error=obs.get('last_action_error', ''),
+                error=True if obs.get('last_action_error', '') else False,
+                trigger_by_action=action.action,
+            )
 
-        # If return_all is False, set content to the result of get_agent_obs_text
-        if not getattr(action, 'return_all', False):
-            observation.content = get_agent_obs_text(observation)
+            # Get the processed text content
+            processed_content = get_agent_obs_text(temp_observation)
+
+            # Create the final lightweight observation without the heavy objects
+            observation = BrowserOutputObservation(
+                content=processed_content,
+                url=obs.get('url', ''),
+                screenshot=obs.get('screenshot', None),
+                screenshot_path=screenshot_path,
+                set_of_marks=obs.get('set_of_marks', None),
+                goal_image_urls=obs.get('image_content', []),
+                open_pages_urls=obs.get('open_pages_urls', []),
+                active_page_index=obs.get('active_page_index', -1),
+                axtree_object={},  # Empty dict to save space
+                extra_element_properties={},  # Empty dict to save space
+                focused_element_bid=obs.get('focused_element_bid', None),
+                last_browser_action=obs.get('last_action', ''),
+                last_browser_action_error=obs.get('last_action_error', ''),
+                error=True if obs.get('last_action_error', '') else False,
+                trigger_by_action=action.action,
+            )
 
         return observation
     except Exception as e:
-        observation = BrowserOutputObservation(
-            content=str(e),
-            screenshot='',
-            screenshot_path=None,
-            error=True,
-            last_browser_action_error=str(e),
-            url=asked_url if action.action == ActionType.BROWSE else '',
-            trigger_by_action=action.action,
-        )
+        error_message = str(e)
+        error_url = asked_url if action.action == ActionType.BROWSE else ''
 
-        # If return_all is False, set content to the result of get_agent_obs_text
-        if not getattr(action, 'return_all', False):
+        if getattr(action, 'return_all', False):
+            # Return with full objects even in error case
+            observation = BrowserOutputObservation(
+                content=error_message,
+                screenshot='',
+                screenshot_path=None,
+                error=True,
+                last_browser_action_error=error_message,
+                url=error_url,
+                trigger_by_action=action.action,
+                # Include empty objects but don't omit them
+                axtree_object={},
+                extra_element_properties={},
+            )
+        else:
+            # Return lightweight observation with empty objects
+            observation = BrowserOutputObservation(
+                content=error_message,
+                screenshot='',
+                screenshot_path=None,
+                error=True,
+                last_browser_action_error=error_message,
+                url=error_url,
+                trigger_by_action=action.action,
+                # Explicitly set empty objects to save space
+                axtree_object={},
+                extra_element_properties={},
+            )
+
+            # Try to format the error message using get_agent_obs_text
             try:
                 observation.content = get_agent_obs_text(observation)
             except Exception:
