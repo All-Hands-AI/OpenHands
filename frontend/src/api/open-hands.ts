@@ -93,8 +93,6 @@ class OpenHands {
     return headers;
   }
 
-  // Feedback functionality has been removed
-
   /**
    * Authenticate with GitHub token
    * @returns Response with authentication status and user info if successful
