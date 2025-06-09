@@ -9,6 +9,7 @@ import {
   isFinishAction,
   isRejectObservation,
   isMcpObservation,
+  isUserFeedbackAction,
 } from "#/types/core/guards";
 import { OpenHandsObservation } from "#/types/core/observations";
 import { ImageCarousel } from "../images/image-carousel";
@@ -41,7 +42,40 @@ export function EventMessage({
   const shouldShowConfirmationButtons =
     isLastMessage && event.source === "agent" && isAwaitingUserConfirmation;
 
-  const { send } = useWsClient();
+  const { send, parsedEvents } = useWsClient();
+
+  // Check if there's already a UserFeedbackAction in the event stream
+  const hasFeedbackBeenSubmitted = React.useMemo(() => {
+    if (!parsedEvents) return false;
+
+    // If this is a finish action, check if there's a user_feedback action after it
+    if (isFinishAction(event)) {
+      const currentEventIndex = parsedEvents.findIndex(
+        (e) => e.id === event.id,
+      );
+      if (currentEventIndex === -1) return false;
+
+      // Check if there's a user_feedback action after this finish action
+      return parsedEvents
+        .slice(currentEventIndex + 1)
+        .some(isUserFeedbackAction);
+    }
+
+    // If this is an assistant message, check if there's a user_feedback action after it
+    if (isAssistantMessage(event) && isLastMessage) {
+      const currentEventIndex = parsedEvents.findIndex(
+        (e) => e.id === event.id,
+      );
+      if (currentEventIndex === -1) return false;
+
+      // Check if there's a user_feedback action after this assistant message
+      return parsedEvents
+        .slice(currentEventIndex + 1)
+        .some(isUserFeedbackAction);
+    }
+
+    return false;
+  }, [event, parsedEvents, isLastMessage]);
 
   const handleRatingSubmit = (rating: number, reason?: string) => {
     // Send the user feedback action to the event stream
@@ -75,7 +109,10 @@ export function EventMessage({
     return (
       <>
         <ChatMessage type="agent" message={getEventContent(event).details} />
-        <LikertScale onRatingSubmit={handleRatingSubmit} />
+        <LikertScale
+          onRatingSubmit={handleRatingSubmit}
+          initiallySubmitted={hasFeedbackBeenSubmitted}
+        />
       </>
     );
   }
@@ -97,7 +134,12 @@ export function EventMessage({
           )}
           {shouldShowConfirmationButtons && <ConfirmationButtons />}
         </ChatMessage>
-        {showLikertScale && <LikertScale onRatingSubmit={handleRatingSubmit} />}
+        {showLikertScale && (
+          <LikertScale
+            onRatingSubmit={handleRatingSubmit}
+            initiallySubmitted={hasFeedbackBeenSubmitted}
+          />
+        )}
       </>
     );
   }

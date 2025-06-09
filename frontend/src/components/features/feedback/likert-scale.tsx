@@ -4,6 +4,7 @@ import i18n from "#/i18n";
 
 interface LikertScaleProps {
   onRatingSubmit: (rating: number, reason?: string) => void;
+  initiallySubmitted?: boolean;
 }
 
 const FEEDBACK_REASONS = [
@@ -12,13 +13,21 @@ const FEEDBACK_REASONS = [
   i18n.t("FEEDBACK$REASON_LACKS_ACCESS"),
 ];
 
-export function LikertScale({ onRatingSubmit }: LikertScaleProps) {
+export function LikertScale({
+  onRatingSubmit,
+  initiallySubmitted = false,
+}: LikertScaleProps) {
   const [selectedRating, setSelectedRating] = useState<number | null>(null);
   const [showReasons, setShowReasons] = useState(false);
   const [reasonTimeout, setReasonTimeout] = useState<NodeJS.Timeout | null>(
     null,
   );
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(initiallySubmitted);
+
+  // Update isSubmitted if initiallySubmitted changes
+  useEffect(() => {
+    setIsSubmitted(initiallySubmitted);
+  }, [initiallySubmitted]);
 
   // Submit feedback and disable the component
   const submitFeedback = (rating: number, reason?: string) => {
@@ -72,6 +81,18 @@ export function LikertScale({ onRatingSubmit }: LikertScaleProps) {
       ? "text-yellow-400"
       : "text-gray-300 hover:text-yellow-200";
   };
+
+  // If feedback has already been submitted but we don't know the rating,
+  // just show the thank you message without stars
+  if (initiallySubmitted && !selectedRating) {
+    return (
+      <div className="mt-4 flex flex-col gap-2">
+        <div className="text-sm text-gray-500 mb-1">
+          {i18n.t("FEEDBACK$THANK_YOU_FOR_FEEDBACK")}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mt-4 flex flex-col gap-2">
