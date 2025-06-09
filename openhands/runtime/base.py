@@ -400,7 +400,7 @@ class Runtime(FileEditRuntimeMixin):
                     'No repository selected. Initializing a new git repository in the workspace.'
                 )
                 action = CmdRunAction(
-                    command='git init',
+                    command=f'git init && git config --global --add safe.directory {self.workspace_root}'
                 )
                 self.run_action(action)
             else:
@@ -951,6 +951,9 @@ fi
         obs = self.run(CmdRunAction(command=command, is_static=True, cwd=cwd))
         exit_code = 0
         content = ''
+
+        if isinstance(obs, ErrorObservation):
+            exit_code = -1
 
         if hasattr(obs, 'exit_code'):
             exit_code = obs.exit_code

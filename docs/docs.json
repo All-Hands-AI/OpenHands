@@ -31,20 +31,20 @@
             "pages": [
               "usage/cloud/openhands-cloud",
               {
-                "group": "Installation",
+                "group": "Integrations",
                 "pages": [
                   "usage/cloud/github-installation",
                   "usage/cloud/gitlab-installation"
                 ]
               },
               "usage/cloud/cloud-ui",
-              "usage/cloud/cloud-issue-resolver",
               "usage/cloud/cloud-api"
             ]
           },
           {
-            "group": "Usage Methods",
+            "group": "Running OpenHands Locally",
             "pages": [
+              "usage/local-setup",
               "usage/how-to/gui-mode",
               "usage/how-to/cli-mode",
               "usage/how-to/headless-mode",
