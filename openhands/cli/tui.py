@@ -12,7 +12,7 @@ from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.application import Application
 from prompt_toolkit.completion import CompleteEvent, Completer, Completion
 from prompt_toolkit.document import Document
-from prompt_toolkit.formatted_text import HTML, FormattedText, StyleAndTextTuples
+from prompt_toolkit.formatted_text import HTML, StyleAndTextTuples
 from prompt_toolkit.input import create_input
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
@@ -132,51 +132,101 @@ def display_initialization_animation(text: str, is_loaded: asyncio.Event) -> Non
 
 
 def display_banner(session_id: str) -> None:
-    print_formatted_text(
-        HTML(r"""<gold>
+    banner_text = r"""<gold>
      ___                    _   _                 _
     /  _ \ _ __   ___ _ __ | | | | __ _ _ __   __| |___
     | | | | '_ \ / _ \ '_ \| |_| |/ _` | '_ \ / _` / __|
     | |_| | |_) |  __/ | | |  _  | (_| | | | | (_| \__ \
     \___ /| .__/ \___|_| |_|_| |_|\__,_|_| |_|\__,_|___/
           |_|
-    </gold>"""),
-        style=DEFAULT_STYLE,
+    </gold>"""
+
+    # Use TextArea with focusable=True to allow text selection
+    banner_container = Frame(
+        TextArea(
+            text=banner_text.replace('<gold>', '').replace('</gold>', ''),
+            read_only=True,
+            style=COLOR_GOLD,
+            wrap_lines=True,
+            focusable=True,  # Allow focusing to enable text selection
+        ),
+        style=f'fg:{COLOR_GOLD}',
     )
+    print_container(banner_container)
 
-    print_formatted_text(HTML(f'<grey>OpenHands CLI v{__version__}</grey>'))
+    version_container = Frame(
+        TextArea(
+            text=f'OpenHands CLI v{__version__}',
+            read_only=True,
+            style=COLOR_GREY,
+            wrap_lines=True,
+            focusable=True,  # Allow focusing to enable text selection
+        ),
+        style=f'fg:{COLOR_GREY}',
+    )
+    print_container(version_container)
 
+    session_container = Frame(
+        TextArea(
+            text=f'Initialized conversation {session_id}',
+            read_only=True,
+            style=COLOR_GREY,
+            wrap_lines=True,
+            focusable=True,  # Allow focusing to enable text selection
+        ),
+        style=f'fg:{COLOR_GREY}',
+    )
     print_formatted_text('')
-    print_formatted_text(HTML(f'<grey>Initialized conversation {session_id}</grey>'))
+    print_container(session_container)
     print_formatted_text('')
 
 
 def display_welcome_message(message: str = '') -> None:
-    print_formatted_text(
-        HTML("<gold>Let's start building!</gold>\n"), style=DEFAULT_STYLE
+    # Use TextArea with focusable=True to allow text selection
+    welcome_container = Frame(
+        TextArea(
+            text="Let's start building!",
+            read_only=True,
+            style=COLOR_GOLD,
+            wrap_lines=True,
+            focusable=True,  # Allow focusing to enable text selection
+        ),
+        style=f'fg:{COLOR_GOLD}',
     )
+    print_container(welcome_container)
+
     if message:
-        print_formatted_text(
-            HTML(f'{message} <grey>Type /help for help</grey>'),
-            style=DEFAULT_STYLE,
-        )
+        message_text = f'{message} Type /help for help'
     else:
-        print_formatted_text(
-            HTML('What do you want to build? <grey>Type /help for help</grey>'),
-            style=DEFAULT_STYLE,
-        )
+        message_text = 'What do you want to build? Type /help for help'
+
+    message_container = Frame(
+        TextArea(
+            text=message_text,
+            read_only=True,
+            style=COLOR_GREY,
+            wrap_lines=True,
+            focusable=True,  # Allow focusing to enable text selection
+        ),
+        style=f'fg:{COLOR_GREY}',
+    )
+    print_container(message_container)
 
 
 def display_initial_user_prompt(prompt: str) -> None:
-    print_formatted_text(
-        FormattedText(
-            [
-                ('', '\n'),
-                (COLOR_GOLD, '> '),
-                ('', prompt),
-            ]
-        )
+    # Use TextArea with focusable=True to allow text selection
+    prompt_container = Frame(
+        TextArea(
+            text=f'> {prompt}',
+            read_only=True,
+            style=COLOR_GOLD,
+            wrap_lines=True,
+            focusable=True,  # Allow focusing to enable text selection
+        ),
+        style=f'fg:{COLOR_GOLD}',
     )
+    print_formatted_text('')
+    print_container(prompt_container)
 
 
 # Prompt output display functions
