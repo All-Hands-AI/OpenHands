@@ -409,7 +409,7 @@ class LocalRuntime(ActionExecutionClient):
 
     @tenacity.retry(
         wait=tenacity.wait_fixed(2),
-        stop=tenacity.stop_after_attempt(10) | stop_if_should_exit(),
+        stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),
         before_sleep=lambda retry_state: logger.debug(
             f'Waiting for server to be ready... (attempt {retry_state.attempt_number})'
         ),
