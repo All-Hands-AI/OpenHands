@@ -34,6 +34,7 @@ class BrowserOutputObservation(Observation):
     last_browser_action: str = ''
     last_browser_action_error: str = ''
     focused_element_bid: str = ''
+    filter_visible_only: bool = False
 
     @property
     def message(self) -> str:
@@ -59,6 +60,7 @@ class BrowserOutputObservation(Observation):
     def get_agent_obs_text(self) -> str:
         """Get a concise text that will be shown to the agent."""
         if self.trigger_by_action == ActionType.BROWSE_INTERACTIVE:
+            text = 'Observation from the previous action:\n'
             text = f'[Current URL: {self.url}]\n'
             text += f'[Focused element bid: {self.focused_element_bid}]\n'
 
@@ -81,12 +83,23 @@ class BrowserOutputObservation(Observation):
                 # We do not filter visible only here because we want to show the full content
                 # of the web page to the agent for simplicity.
                 # FIXME: handle the case when the web page is too large
-                cur_axtree_txt = self.get_axtree_str(filter_visible_only=False)
-                text += (
-                    f'============== BEGIN accessibility tree ==============\n'
-                    f'{cur_axtree_txt}\n'
-                    f'============== END accessibility tree ==============\n'
+                cur_axtree_txt = self.get_axtree_str(
+                    filter_visible_only=self.filter_visible_only
                 )
+                if not self.filter_visible_only:
+                    text += (
+                        f'Accessibility tree of the COMPLETE webpage:\nNote: [bid] is the unique alpha-numeric identifier at the beginning of lines for each element in the AXTree. Always use bid to refer to elements in your actions.\n'
+                        f'============== BEGIN accessibility tree ==============\n'
+                        f'{cur_axtree_txt}\n'
+                        f'============== END accessibility tree ==============\n'
+                    )
+                else:
+                    text += (
+                        f'Accessibility tree of the VISIBLE portion of the webpage (accessibility tree of complete webpage is too large and you may need to scroll to view remaining portion of the webpage):\nNote: [bid] is the unique alpha-numeric identifier at the beginning of lines for each element in the AXTree. Always use bid to refer to elements in your actions.\n'
+                        f'============== BEGIN accessibility tree ==============\n'
+                        f'{cur_axtree_txt}\n'
+                        f'============== END accessibility tree ==============\n'
+                    )
             except Exception as e:
                 text += (
                     f'\n[Error encountered when processing the accessibility tree: {e}]'
