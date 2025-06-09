@@ -216,7 +216,7 @@ async def modify_llm_settings_basic(
             provider_models = VERIFIED_ANTHROPIC_MODELS + provider_models
 
         # Set default model to the first model in the list (which will be a verified model if available)
-        default_model = provider_models[0] if provider_models else 'claude-4'
+        default_model = provider_models[0] if provider_models else 'claude-sonnet-4-20250514'
 
         # Show the default model but allow changing it
         print_formatted_text(
