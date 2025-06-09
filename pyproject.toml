@@ -85,7 +85,6 @@ stripe = ">=11.5,<13.0"
 google-cloud-aiplatform = "*"
 anthropic = { extras = [ "vertex" ], version = "*" }
 boto3 = "*"
-pytest = "^8.4.0"
 
 [tool.poetry.group.dev]
 optional = true
