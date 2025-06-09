@@ -159,9 +159,7 @@ async def modify_llm_settings_basic(
     session = PromptSession(key_bindings=kb_cancel())
 
     # Set default provider - prefer 'anthropic' if available, otherwise use the first provider
-    provider = (
-        'anthropic' if (provider_list is None or 'anthropic' in provider_list) else provider_list[0]
-    )
+    provider = 'anthropic' if 'anthropic' in provider_list else provider_list[0]
     model = None
     api_key = None
 
@@ -201,7 +199,7 @@ async def modify_llm_settings_basic(
             # If the provider doesn't exist, prefer 'anthropic' if available, otherwise use the first provider
             provider = (
                 'anthropic'
-                if (organized_models is None or 'anthropic' in organized_models)
+                if 'anthropic' in organized_models
                 else next(iter(organized_models.keys()))
             )
 
