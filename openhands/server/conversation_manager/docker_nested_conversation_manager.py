@@ -335,10 +335,7 @@ class DockerNestedConversationManager(ConversationManager):
         Returns:
             The agent session, or None if not found.
         """
-        # Return the agent_session from the stored session if available
-        if sid in self._sessions:
-            return self._sessions[sid].agent_session
-        return None
+        raise ValueError('unsupported_operation')
 
     async def get_agent_loop_info(
         self, user_id: str | None = None, filter_to_sids: set[str] | None = None
