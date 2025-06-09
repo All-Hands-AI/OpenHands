@@ -188,7 +188,7 @@ class EventStream(EventStore):
             # Write the event to the store - this can take some time
             event_json = json.dumps(data)
             filename = self._get_filename_for_id(event.id, self.user_id)
-            if len(event_json) > 1_000_000:  # Roughtly 1MB in bytes, encoding aside
+            if len(event_json) > 1_000_000:  # Roughly 1MB in bytes, ignoring encoding
                 logger.warning(
                     f'Saving event JSON over 1MB: {len(event_json)} bytes, filename: {filename}',
                     extra={
