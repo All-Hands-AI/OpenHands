@@ -109,7 +109,7 @@ async def test_budget_extension_after_error_state(
 
     # Verify agent state was changed from ERROR to RUNNING
     assert controller.state.agent_state == AgentState.RUNNING
-    assert controller.state.traffic_control_state == TrafficControlState.PAUSED
+    assert controller.state.traffic_control_state == TrafficControlState.NORMAL
 
     # Verify LLM metrics were NOT reset
     assert controller.agent.llm.metrics.accumulated_cost == 6.0

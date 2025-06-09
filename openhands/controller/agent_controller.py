@@ -163,7 +163,7 @@ class AgentController:
             max_iterations=max_iterations,
             confirmation_mode=confirmation_mode,
         )
-        self.max_budget_per_task = max_budget_per_task
+        self.max_budget_per_task = 0.01
         self.agent_to_llm_config = agent_to_llm_config if agent_to_llm_config else {}
         self.agent_configs = agent_configs if agent_configs else {}
         self._initial_max_iterations = max_iterations
@@ -517,27 +517,10 @@ class AgentController:
             )
             # Extend max iterations when the user sends a message (only in non-headless mode)
             if self._initial_max_iterations is not None and not self.headless_mode:
-                self.state.max_iterations = (
-                    self.state.iteration + self._initial_max_iterations
-                )
-                # Only reset traffic control state if we're not in ERROR state due to budget limit
-                # This ensures that the budget extension logic in set_agent_state_to will work
-                if (
-                    self.state.traffic_control_state == TrafficControlState.THROTTLING
-                    or self.state.traffic_control_state == TrafficControlState.PAUSED
-                ) and not (
-                    self.state.agent_state == AgentState.ERROR
-                    and 'budget' in self.state.last_error.lower()
-                ):
-                    self.state.traffic_control_state = TrafficControlState.NORMAL
                 self.log(
                     'debug',
                     f'Extended max iterations to {self.state.max_iterations} after user message',
                 )
-
-            # Budget extension is now handled in set_agent_state_to method
-            # try to retrieve microagents relevant to the user message
-            # set pending_action while we search for information
 
             # if this is the first user message for this agent, matters for the microagent info type
             first_user_message = self._first_user_message()
@@ -613,51 +596,45 @@ class AgentController:
         if new_state == self.state.agent_state:
             return
 
+
         if new_state in (AgentState.STOPPED, AgentState.ERROR):
             # sync existing metrics BEFORE resetting the agent
             await self.update_state_after_step()
             self.state.metrics.merge(self.state.local_metrics)
             self._reset()
-        elif new_state == AgentState.RUNNING and (
-            # Handle transition from PAUSED state with THROTTLING traffic control
-            (
-                self.state.agent_state == AgentState.PAUSED
-                # TODO: do we really need both THROTTLING and PAUSED states, or can we clean up one of them completely?
-                and self.state.traffic_control_state == TrafficControlState.THROTTLING
-            )
-            # Handle transition from ERROR state due to budget limit
-            or (
-                self.state.agent_state == AgentState.ERROR
-                and 'budget' in self.state.last_error.lower()
-                and self.state.traffic_control_state == TrafficControlState.THROTTLING
-                and not self.headless_mode
-            )
-        ):
-            # user intends to interrupt traffic control and let the task resume temporarily
-            self.state.traffic_control_state = TrafficControlState.PAUSED
-            # User has chosen to deliberately continue - lets double the max iterations
-            if (
-                self.state.iteration is not None
-                and self.state.max_iterations is not None
-                and self._initial_max_iterations is not None
-                and not self.headless_mode
-            ):
-                if self.state.iteration >= self.state.max_iterations:
+
+
+        # This block will always either extend max_iterations or max_budget_per_task, which removes any previous throttling effects
+        # Iteration and budget extensions are independent of each other
+        if (self.state.agent_state == AgentState.STOPPED or self.state.agent_state == AgentState.ERROR) and new_state == AgentState.RUNNING:
+            if (self.state.traffic_control_state == TrafficControlState.THROTTLING):
+                if (
+                    self.state.iteration is not None
+                    and self.state.max_iterations is not None
+                    and self._initial_max_iterations is not None
+                    and not self.headless_mode
+                    and self.state.iteration >= self.state.max_iterations
+                ):
                     self.state.max_iterations += self._initial_max_iterations
 
-            if (
-                self.state.metrics.accumulated_cost is not None
-                and self.max_budget_per_task is not None
-                and self._initial_max_budget_per_task is not None
-            ):
-                if self.state.metrics.accumulated_cost >= self.max_budget_per_task:
+                if (
+                    self.agent.llm.metrics.accumulated_cost is not None
+                    and self.max_budget_per_task is not None
+                    and self._initial_max_budget_per_task is not None
+                    and self.agent.llm.metrics.accumulated_cost >= self.max_budget_per_task
+                ):
                     # Set the new budget cap to the current accumulated cost plus the initial budget
                     # This ensures we have enough budget to continue and don't immediately hit the limit again
                     self.max_budget_per_task = (
-                        self.state.metrics.accumulated_cost
+                        self.agent.llm.metrics.accumulated_cost
                         + self._initial_max_budget_per_task
                     )
-        elif self._pending_action is not None and (
+
+            # Reset throttle state
+            self.state.traffic_control_state = TrafficControlState.NORMAL
+
+
+        if self._pending_action is not None and (
             new_state in (AgentState.USER_CONFIRMED, AgentState.USER_REJECTED)
         ):
             if hasattr(self._pending_action, 'thought'):
@@ -681,6 +658,9 @@ class AgentController:
             AgentStateChangedObservation('', self.state.agent_state, reason),
             EventSource.ENVIRONMENT,
         )
+
+
+
 
     def get_agent_state(self) -> AgentState:
         """Returns the current state of the agent.
@@ -831,7 +811,7 @@ class AgentController:
                 'iteration', self.state.iteration, self.state.max_iterations
             )
         if self.max_budget_per_task is not None:
-            current_cost = self.state.metrics.accumulated_cost
+            current_cost = self.agent.llm.metrics.accumulated_cost
             if current_cost > self.max_budget_per_task:
                 stop_step = await self._handle_traffic_control(
                     'budget', current_cost, self.max_budget_per_task
@@ -939,36 +919,29 @@ class AgentController:
             current_value (float): The current value of the limit.
             max_value (float): The maximum value of the limit.
         """
-        stop_step = False
-        if self.state.traffic_control_state == TrafficControlState.PAUSED:
-            self.log(
-                'debug', 'Hitting traffic control, temporarily resume upon user request'
-            )
-            self.state.traffic_control_state = TrafficControlState.NORMAL
+        self.state.traffic_control_state = TrafficControlState.THROTTLING
+        # Format values as integers for iterations, keep decimals for budget
+        if limit_type == 'iteration':
+            current_str = str(int(current_value))
+            max_str = str(int(max_value))
         else:
-            self.state.traffic_control_state = TrafficControlState.THROTTLING
-            # Format values as integers for iterations, keep decimals for budget
-            if limit_type == 'iteration':
-                current_str = str(int(current_value))
-                max_str = str(int(max_value))
-            else:
-                current_str = f'{current_value:.2f}'
-                max_str = f'{max_value:.2f}'
+            current_str = f'{current_value:.2f}'
+            max_str = f'{max_value:.2f}'
 
-            if self.headless_mode:
-                e = RuntimeError(
-                    f'Agent reached maximum {limit_type} in headless mode. '
-                    f'Current {limit_type}: {current_str}, max {limit_type}: {max_str}'
-                )
-                await self._react_to_exception(e)
-            else:
-                e = RuntimeError(
-                    f'Agent reached maximum {limit_type}. '
-                    f'Current {limit_type}: {current_str}, max {limit_type}: {max_str}. '
-                )
-                # FIXME: this isn't really an exception--we should have a different path
-                await self._react_to_exception(e)
-            stop_step = True
+        if self.headless_mode:
+            e = RuntimeError(
+                f'Agent reached maximum {limit_type} in headless mode. '
+                f'Current {limit_type}: {current_str}, max {limit_type}: {max_str}'
+            )
+            await self._react_to_exception(e)
+        else:
+            e = RuntimeError(
+                f'Agent reached maximum {limit_type}. '
+                f'Current {limit_type}: {current_str}, max {limit_type}: {max_str}. '
+            )
+            # FIXME: this isn't really an exception--we should have a different path
+            await self._react_to_exception(e)
+        stop_step = True
         return stop_step
 
     @property

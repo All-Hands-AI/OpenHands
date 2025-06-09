@@ -28,9 +28,6 @@ class TrafficControlState(str, Enum):
     # task paused due to traffic control
     THROTTLING = 'throttling'
 
-    # traffic control is temporarily paused
-    PAUSED = 'paused'
-
 
 RESUMABLE_STATES = [
     AgentState.RUNNING,
