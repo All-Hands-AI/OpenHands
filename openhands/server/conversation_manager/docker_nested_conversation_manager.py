@@ -57,11 +57,11 @@ class DockerNestedConversationManager(ConversationManager):
     _runtime_container_image: str | None = None
 
     async def __aenter__(self):
-        runtime_cls = get_runtime_cls(self.config)
+        runtime_cls = get_runtime_cls(self.config.runtime)
         runtime_cls.setup(self.config)
 
     async def __aexit__(self, exc_type, exc_value, traceback):
-        runtime_cls = get_runtime_cls(self.config)
+        runtime_cls = get_runtime_cls(self.config.runtime)
         runtime_cls.teardown(self.config)
 
     async def attach_to_conversation(

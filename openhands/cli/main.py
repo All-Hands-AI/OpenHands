@@ -437,7 +437,7 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
     task_str = read_task(args, config.cli_multiline_input)
 
     # Setup the runtime
-    get_runtime_cls(config).setup(config)
+    get_runtime_cls(config.runtime).setup(config)
 
     # Run the first session
     new_session_requested = await run_session(
@@ -457,7 +457,7 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
         )
 
     # Teardown the runtime
-    get_runtime_cls(config).teardown(config)
+    get_runtime_cls(config.runtime).teardown(config)
 
 
 def main():

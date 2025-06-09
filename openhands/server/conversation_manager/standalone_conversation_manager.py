@@ -64,16 +64,14 @@ class StandaloneConversationManager(ConversationManager):
 
     async def __aenter__(self):
         self._cleanup_task = asyncio.create_task(self._cleanup_stale())
-        runtime_cls = get_runtime_cls(self.config)
-        runtime_cls.setup(self.config)
+        get_runtime_cls(self.config.runtime).setup(self.config)
         return self
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         if self._cleanup_task:
             self._cleanup_task.cancel()
             self._cleanup_task = None
-        runtime_cls = get_runtime_cls(self.config)
-        runtime_cls.teardown(self.config)
+        get_runtime_cls(self.config).teardown(self.config)
 
     async def attach_to_conversation(
         self, sid: str, user_id: str | None = None
