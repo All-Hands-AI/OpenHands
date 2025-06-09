@@ -36,7 +36,9 @@ from openhands.server.utils import get_conversation_store
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.utils.async_utils import call_sync_from_async
 
-app = APIRouter(prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies())
+app = APIRouter(
+    prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies()
+)
 
 
 @app.get(

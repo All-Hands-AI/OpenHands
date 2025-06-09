@@ -372,7 +372,6 @@ def log_skipped_build_maximum_retries_exceeded(
         instance_id=instance.instance_id,
         test_result={},
         error=f'Maximum retries ({max_retries}) reached: {str(error)}',
-        status='error',
     )
 
 

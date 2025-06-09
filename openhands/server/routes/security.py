@@ -8,7 +8,9 @@ from fastapi import (
 
 from openhands.server.dependencies import get_dependencies
 
-app = APIRouter(prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies())
+app = APIRouter(
+    prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies()
+)
 
 
 @app.route('/security/{path:path}', methods=['GET', 'POST', 'PUT', 'DELETE'])

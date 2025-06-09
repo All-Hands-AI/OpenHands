@@ -23,7 +23,7 @@ We recommend using [LMStudio](https://lmstudio.ai/) for serving these models loc
    - Option 2: Download a LLM in GGUF format. For example, to download [Devstral Small 2505 GGUF](https://huggingface.co/mistralai/Devstral-Small-2505_gguf), using `huggingface-cli download mistralai/Devstral-Small-2505_gguf --local-dir mistralai/Devstral-Small-2505_gguf`. Then in bash terminal, run `lms import {model_name}` in the directory where you've downloaded the model checkpoint (e.g. run `lms import devstralQ4_K_M.gguf` in `mistralai/Devstral-Small-2505_gguf`)
 
 3. Open LM Studio application, you should first switch to `power user` mode, and then open the developer tab:
-  
+
 ![image](./screenshots/1_select_power_user.png)
 
 4. Then click `Select a model to load` on top of the application:
@@ -152,7 +152,7 @@ Start OpenHands using `make run`.
 
 ### Configure OpenHands
 
-Once OpenHands is running, you'll need to set the following in the OpenHands UI through the Settings under the `LLM` tab: 
+Once OpenHands is running, you'll need to set the following in the OpenHands UI through the Settings under the `LLM` tab:
 1. Enable `Advanced` options.
 2. Set the following:
 - `Custom Model` to `openai/<served-model-name>` (e.g. `openai/openhands-lm-32b-v0.1`)

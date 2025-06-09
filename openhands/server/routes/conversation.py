@@ -8,7 +8,9 @@ from openhands.runtime.base import Runtime
 from openhands.server.dependencies import get_dependencies
 from openhands.server.shared import conversation_manager
 
-app = APIRouter(prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies())
+app = APIRouter(
+    prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies()
+)
 
 
 @app.get('/config')
