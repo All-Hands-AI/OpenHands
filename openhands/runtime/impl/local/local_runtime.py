@@ -307,8 +307,10 @@ class LocalRuntime(ActionExecutionClient):
             env['PATH'] = f'{python_bin_path}{os.pathsep}{env.get("PATH", "")}'
             logger.debug(f'Updated PATH for subprocesses: {env["PATH"]}')
 
-            # Check dependencies using the derived env_root_path
-            check_dependencies(code_repo_path, env_root_path)
+            # Check dependencies using the derived env_root_path if not skipped
+            if os.getenv('SKIP_DEPENDENCY_CHECK', '') != '1':
+                check_dependencies(code_repo_path, env_root_path)
+
             self.server_process = subprocess.Popen(  # noqa: S603
                 cmd,
                 stdout=subprocess.PIPE,
