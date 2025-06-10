@@ -90,24 +90,28 @@ export function EventMessage({
     return null;
   }
 
+  // Show Likert scale for agent messages if:
+  // 1. It's the last message, OR
+  // 2. Feedback has already been submitted for this message
+  const showLikertScale =
+    isAssistantMessage(event) && (isLastMessage || feedbackInfo.submitted);
+
   if (isFinishAction(event)) {
     return (
       <>
         <ChatMessage type="agent" message={getEventContent(event).details} />
-        <LikertScale
-          onRatingSubmit={handleRatingSubmit}
-          initiallySubmitted={feedbackInfo.submitted}
-          initialRating={feedbackInfo.rating}
-        />
+        {showLikertScale && (
+          <LikertScale
+            onRatingSubmit={handleRatingSubmit}
+            initiallySubmitted={feedbackInfo.submitted}
+            initialRating={feedbackInfo.rating}
+          />
+        )}
       </>
     );
   }
 
   if (isUserMessage(event) || isAssistantMessage(event)) {
-    // Only show Likert scale for agent messages that are not finish actions
-    // and are the last message in the conversation
-    const showLikertScale = isAssistantMessage(event);
-
     return (
       <>
         <ChatMessage
