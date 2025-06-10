@@ -224,8 +224,7 @@ class AgentSession:
         if self.event_stream is not None:
             self.event_stream.close()
         if self.controller is not None:
-            end_state = self.controller.get_state()
-            end_state.save_to_session(self.sid, self.file_store, self.user_id)
+            self.controller.save_state()
             await self.controller.close()
         if self.runtime is not None:
             EXECUTOR.submit(self.runtime.close)
@@ -427,6 +426,8 @@ class AgentSession:
 
         controller = AgentController(
             sid=self.sid,
+            user_id=self.user_id,
+            file_store=self.file_store,
             event_stream=self.event_stream,
             agent=agent,
             iteration_delta=int(max_iterations),

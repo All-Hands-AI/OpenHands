@@ -71,6 +71,7 @@ from openhands.events.observation import (
 from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics, TokenUsage
+from openhands.storage.files import FileStore
 
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (
@@ -104,6 +105,8 @@ class AgentController:
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
         sid: str | None = None,
+        file_store: FileStore | None = None,
+        user_id: str | None = None,
         confirmation_mode: bool = False,
         initial_state: State | None = None,
         is_delegate: bool = False,
@@ -134,6 +137,8 @@ class AgentController:
         print('current delta', budget_per_task_delta)
 
         self.id = sid or event_stream.sid
+        self.user_id = user_id
+        self.file_store = file_store
         self.agent = agent
         self.headless_mode = headless_mode
         self.is_delegate = is_delegate
@@ -147,7 +152,7 @@ class AgentController:
                 EventStreamSubscriber.AGENT_CONTROLLER, self.on_event, self.id
             )
 
-        self.state_manager = StateManager()
+        self.state_manager = StateManager(sid, file_store, user_id)
 
         # state from the previous session, state from a parent agent, or a fresh state
         self.set_initial_state(
@@ -669,6 +674,8 @@ class AgentController:
         # Create the delegate with is_delegate=True so it does NOT subscribe directly
         self.delegate = AgentController(
             sid=self.id + '-delegate',
+            file_store=self.file_store,
+            user_id=self.user_id,
             agent=delegate_agent,
             event_stream=self.event_stream,
             iteration_delta=self._initial_max_iterations,
@@ -1295,3 +1302,6 @@ class AgentController:
             None,
         )
         return self._cached_first_user_message
+
+    def save_state(self):
+        self.state_manager.save_state()

@@ -10,12 +10,19 @@ from openhands.events.observation.delegate import AgentDelegateObservation
 from openhands.events.observation.empty import NullObservation
 from openhands.events.serialization.event import event_to_trajectory
 from openhands.events.stream import EventStream
+from openhands.storage.files import FileStore
 
 
 class StateManager:
     """ """
 
-    def __init__(self):
+    def __init__(
+        self, sid: str | None, file_store: FileStore | None, user_id: str | None
+    ):
+        self.sid = sid
+        self.file_store = file_store
+        self.user_id = user_id
+
         # filter out events that are not relevant to the agent
         # so they will not be included in the agent history
         self.agent_history_filter = EventFilter(
@@ -238,3 +245,7 @@ class StateManager:
 
     def get_metrics_snapshot(self):
         return self.state.metrics.snapshot()
+
+    def save_state(self):
+        if self.sid and self.file_store:
+            self.state.save_to_session(self.sid, self.file_store, self.user_id)
