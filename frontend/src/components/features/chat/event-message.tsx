@@ -23,6 +23,8 @@ import { GenericEventMessage } from "./generic-event-message";
 import { LikertScale } from "../feedback/likert-scale";
 import { useWsClient } from "#/context/ws-client-provider";
 import { useConfig } from "#/hooks/query/use-config";
+import { useConversationId } from "#/hooks/use-conversation-id";
+import OpenHands from "#/api/open-hands";
 
 const hasThoughtProperty = (
   obj: Record<string, unknown>,
@@ -44,38 +46,39 @@ export function EventMessage({
   const shouldShowConfirmationButtons =
     isLastMessage && event.source === "agent" && isAwaitingUserConfirmation;
 
-  const { send, parsedEvents } = useWsClient();
+  const { parsedEvents } = useWsClient();
   const { data: config } = useConfig();
+  const { conversationId } = useConversationId();
+  
+  // State to track feedback submission status
+  const [feedbackState, setFeedbackState] = React.useState<{
+    submitted: boolean;
+    rating?: number;
+    reason?: string;
+  }>({ submitted: false });
+  
+  // We no longer check for feedback in the event stream since we're using the database
+  // Instead, we'll rely on local state to track if feedback has been submitted for this session
 
-  // Check if there's already a UserFeedbackAction in the event stream for this event
-  // and extract the rating if available
-  const feedbackInfo = React.useMemo(() => {
-    if (!parsedEvents)
-      return { submitted: false, rating: undefined, reason: undefined };
-
-    // Find the user_feedback action for this specific event ID
-    const feedbackAction = parsedEvents.find(
-      (e) => isUserFeedbackAction(e) && e.args.event_id === event.id,
-    ) as UserFeedbackAction | undefined;
-
-    return {
-      submitted: !!feedbackAction,
-      rating: feedbackAction?.args.rating,
-      reason: feedbackAction?.args.reason,
-    };
-  }, [event.id, parsedEvents]);
-
-  const handleRatingSubmit = (rating: number, reason?: string) => {
-    // Send the user feedback action to the event stream
-    send({
-      action: "user_feedback",
-      source: "user",
-      args: {
+  const handleRatingSubmit = async (rating: number, reason?: string) => {
+    try {
+      // Submit feedback to our new endpoint instead of the event stream
+      await OpenHands.submitConversationFeedback(
+        conversationId,
+        rating,
+        event.id, // Pass the event ID this feedback corresponds to
+        reason
+      );
+      
+      // Update local state to reflect that feedback has been submitted
+      setFeedbackState({
+        submitted: true,
         rating,
         reason,
-        event_id: event.id, // Add the event ID to track which event this feedback corresponds to
-      },
-    });
+      });
+    } catch (error) {
+      console.error("Failed to submit feedback:", error);
+    }
   };
 
   if (isErrorObservation(event)) {
@@ -100,7 +103,7 @@ export function EventMessage({
   const showLikertScale =
     config?.APP_MODE === "saas" &&
     isAssistantMessage(event) &&
-    (isLastMessage || feedbackInfo.submitted);
+    (isLastMessage || feedbackState.submitted);
 
   if (isFinishAction(event)) {
     return (
@@ -109,8 +112,9 @@ export function EventMessage({
         {showLikertScale && (
           <LikertScale
             onRatingSubmit={handleRatingSubmit}
-            initiallySubmitted={feedbackInfo.submitted}
-            initialRating={feedbackInfo.rating}
+            initiallySubmitted={feedbackState.submitted}
+            initialRating={feedbackState.rating}
+            initialReason={feedbackState.reason}
           />
         )}
       </>
@@ -132,9 +136,9 @@ export function EventMessage({
         {showLikertScale && (
           <LikertScale
             onRatingSubmit={handleRatingSubmit}
-            initiallySubmitted={feedbackInfo.submitted}
-            initialRating={feedbackInfo.rating}
-            initialReason={feedbackInfo.reason}
+            initiallySubmitted={feedbackState.submitted}
+            initialRating={feedbackState.rating}
+            initialReason={feedbackState.reason}
           />
         )}
       </>

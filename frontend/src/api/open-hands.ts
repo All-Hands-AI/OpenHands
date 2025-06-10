@@ -108,6 +108,32 @@ class OpenHands {
     const { data } = await openHands.post<FeedbackResponse>(url, feedback);
     return data;
   }
+  
+  /**
+   * Submit conversation feedback with rating
+   * @param conversationId The conversation ID
+   * @param rating The rating (1-5)
+   * @param eventId Optional event ID this feedback corresponds to
+   * @param reason Optional reason for the rating
+   * @returns Response from the feedback endpoint
+   */
+  static async submitConversationFeedback(
+    conversationId: string,
+    rating: number,
+    eventId?: number,
+    reason?: string,
+  ): Promise<{ status: string; message: string }> {
+    const url = `/feedback/conversation`;
+    const payload = {
+      conversation_id: conversationId,
+      event_id: eventId,
+      rating,
+      reason,
+      metadata: { source: "likert-scale" }
+    };
+    const { data } = await openHands.post<{ status: string; message: string }>(url, payload);
+    return data;
+  }
 
   /**
    * Authenticate with GitHub token
