@@ -648,7 +648,6 @@ class AgentController:
 
         # Take a snapshot of the current metrics before starting the delegate
         # Store it in the extra_data for later use
-        metrics_snapshot = self.state.metrics.snapshot()
 
         state = State(
             session_id=self.id.removesuffix('-delegate'),
@@ -662,8 +661,7 @@ class AgentController:
             metrics=self.state.metrics,
             # start on top of the stream
             start_id=self.event_stream.get_latest_event_id() + 1,
-            # Store the metrics snapshot in extra_data
-            extra_data={'metrics_snapshot': metrics_snapshot},
+            parent_metrics_snapshot=self.state_manager.get_metrics_snapshot(),
         )
         self.log(
             'debug',
@@ -698,15 +696,11 @@ class AgentController:
         self.state.iteration = self.delegate.state.iteration
 
         # Calculate delegate-specific metrics before closing the delegate
-        metrics_snapshot = self.delegate.state.extra_data.get('metrics_snapshot')
+        metrics_snapshot = self.delegate.state.parent_metrics_snapshot
         if metrics_snapshot:
             # Calculate the difference between current metrics and the snapshot
             delegate_metrics = self.state.metrics.diff(metrics_snapshot)
-
-            # Store the delegate-specific metrics in the delegate's outputs
-            if not self.delegate.state.outputs:
-                self.delegate.state.outputs = {}
-            self.delegate.state.outputs['metrics'] = delegate_metrics.get()
+            logger.info(f'Local metrics for delegate: {delegate_metrics}')
 
         # close the delegate controller before adding new events
         asyncio.get_event_loop().run_until_complete(self.delegate.close())

@@ -235,3 +235,6 @@ class StateManager:
             self.state.max_budget_per_task = (
                 self.state.max_budget_per_task + initial_max_budget_per_task
             )
+
+    def get_metrics_snapshot(self):
+        return self.state.metrics.snapshot()
