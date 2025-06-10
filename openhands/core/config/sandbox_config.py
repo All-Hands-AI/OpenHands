@@ -2,8 +2,6 @@ import os
 
 from pydantic import BaseModel, Field, ValidationError, model_validator
 
-from openhands.core.config.kubernetes_config import KubernetesConfig
-
 
 class SandboxConfig(BaseModel):
     """Configuration for the sandbox.
@@ -55,16 +53,14 @@ class SandboxConfig(BaseModel):
         default='nikolaik/python-nodejs:python3.12-nodejs22'
     )
     runtime_container_image: str | None = Field(default=None)
-    user_id: int = Field(default=os.getuid()
-                         if hasattr(os, 'getuid') else 1000)
+    user_id: int = Field(default=os.getuid() if hasattr(os, 'getuid') else 1000)
     timeout: int = Field(default=120)
     remote_runtime_init_timeout: int = Field(default=180)
     remote_runtime_api_timeout: int = Field(default=10)
     remote_runtime_enable_retries: bool = Field(default=True)
     remote_runtime_class: str | None = Field(
         default=None
-        # can be "None" (default to gvisor) or "sysbox" (support docker inside runtime + more stable)
-    )
+    )  # can be "None" (default to gvisor) or "sysbox" (support docker inside runtime + more stable)
     enable_auto_lint: bool = Field(
         default=False
     )  # once enabled, OpenHands would lint files after editing
@@ -86,7 +82,6 @@ class SandboxConfig(BaseModel):
     docker_runtime_kwargs: dict | None = Field(default=None)
     selected_repo: str | None = Field(default=None)
     trusted_dirs: list[str] = Field(default_factory=list)
-    kubernetes: KubernetesConfig = Field(default_factory=KubernetesConfig)
     vscode_port: int | None = Field(default=None)
     volumes: str | None = Field(
         default=None,

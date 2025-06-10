@@ -45,7 +45,7 @@ Two configuration options are required to use the Kubernetes runtime:
 
 #### Additional Kubernetes Options
 
-OpenHands provides extensive configuration options for Kubernetes deployments under the `[sandbox.kubernetes]` section. These options allow you to customize:
+OpenHands provides extensive configuration options for Kubernetes deployments under the `[kubernetes]` section. These options allow you to customize:
 
 - Kubernetes namespace
 - Persistent volume configuration
@@ -53,7 +53,7 @@ OpenHands provides extensive configuration options for Kubernetes deployments un
 - Runtime Pod Security settings
 - Resource limits and requests
 
-For a complete list of available Kubernetes configuration options, refer to the `[sandbox.kubernetes]` section in the `config.template.toml` file in the repository root.
+For a complete list of available Kubernetes configuration options, refer to the `[kubernetes]` section in the `config.template.toml` file in the repository root.
 
 ## Local Development Setup
 

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 
 class KubernetesConfig(BaseModel):
@@ -73,3 +73,24 @@ class KubernetesConfig(BaseModel):
     )
 
     model_config = {"extra": "forbid"}
+
+    @classmethod
+    def from_toml_section(cls, data: dict) -> dict[str, 'KubernetesConfig']:
+        """
+        Create a mapping of KubernetesConfig instances from a toml dictionary representing the [kubernetes] section.
+
+        The configuration is built from all keys in data.
+
+        Returns:
+            dict[str, KubernetesConfig]: A mapping where the key "kubernetes" corresponds to the [kubernetes] configuration
+        """
+        # Initialize the result mapping
+        kubernetes_mapping: dict[str, KubernetesConfig] = {}
+
+        # Try to create the configuration instance
+        try:
+            kubernetes_mapping['kubernetes'] = cls.model_validate(data)
+        except ValidationError as e:
+            raise ValueError(f'Invalid kubernetes configuration: {e}')
+
+        return kubernetes_mapping

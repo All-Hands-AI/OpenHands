@@ -98,11 +98,11 @@ class KubernetesRuntime(ActionExecutionClient):
         self.status_callback = status_callback
 
         # Load and validate Kubernetes configuration
-        if self.config.sandbox.kubernetes is None:
+        if self.config.kubernetes is None:
             raise ValueError("Kubernetes configuration is required when using KubernetesRuntime. "
-                             "Please add a [sandbox.kubernetes] section to your configuration.")
+                             "Please add a [kubernetes] section to your configuration.")
 
-        self._k8s_config = self.config.sandbox.kubernetes
+        self._k8s_config = self.config.kubernetes
         self._k8s_namespace = self._k8s_config.namespace
         KubernetesRuntime._namespace = self._k8s_namespace
 
