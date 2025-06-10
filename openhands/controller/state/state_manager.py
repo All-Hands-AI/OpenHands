@@ -14,7 +14,7 @@ from openhands.events.stream import EventStream
 from openhands.storage.files import FileStore
 
 
-class StateManager:
+class StateTracker:
     """ """
 
     def __init__(

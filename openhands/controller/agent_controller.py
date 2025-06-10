@@ -25,7 +25,7 @@ from litellm.exceptions import (  # noqa
 from openhands.controller.agent import Agent
 from openhands.controller.replay import ReplayManager
 from openhands.controller.state.state import State
-from openhands.controller.state.state_manager import StateManager
+from openhands.controller.state.state_manager import StateTracker
 from openhands.controller.stuck import StuckDetector
 from openhands.core.config import AgentConfig, LLMConfig
 from openhands.core.exceptions import (
@@ -152,7 +152,7 @@ class AgentController:
                 EventStreamSubscriber.AGENT_CONTROLLER, self.on_event, self.id
             )
 
-        self.state_manager = StateManager(sid, file_store, user_id)
+        self.state_manager = StateTracker(sid, file_store, user_id)
 
         # state from the previous session, state from a parent agent, or a fresh state
         self.set_initial_state(
