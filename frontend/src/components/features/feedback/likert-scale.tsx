@@ -115,7 +115,7 @@ export function LikertScale({
           : i18n.t("FEEDBACK$RATE_AGENT_PERFORMANCE")}
       </div>
       <div className="flex flex-col gap-1">
-        <div className="flex gap-1 items-center">
+        <span className="flex gap-2 items-center flex-wrap">
           {[1, 2, 3, 4, 5].map((rating) => (
             <button
               type="button"
@@ -128,11 +128,13 @@ export function LikertScale({
               ★
             </button>
           ))}
-        </div>
-        {/* Show selected reason below stars when submitted */}
-        {isSubmitted && selectedReason && (
-          <div className="text-sm text-gray-500">{selectedReason}</div>
-        )}
+          {/* Show selected reason inline with stars when submitted */}
+          {isSubmitted && selectedReason && (
+            <span className="text-sm text-gray-500 italic">
+              {selectedReason}
+            </span>
+          )}
+        </span>
       </div>
 
       {showReasons && !isSubmitted && (
