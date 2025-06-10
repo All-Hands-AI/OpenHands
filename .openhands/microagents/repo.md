@@ -44,6 +44,11 @@ Frontend:
   - Available variables: VITE_BACKEND_HOST, VITE_USE_TLS, VITE_INSECURE_SKIP_VERIFY, VITE_FRONTEND_PORT
 - Internationalization:
   - Generate i18n declaration file: `npm run make-i18n`
+- State Management:
+  - We use TanStack Query (React Query) for server state management
+  - Custom hooks are located in `frontend/src/hooks/query/` and `frontend/src/hooks/mutation/`
+  - Query hooks should follow the pattern `use[Resource]` (e.g., `useConversationMicroagents`)
+  - Mutation hooks should follow the pattern `use[Action]` (e.g., `useDeleteConversation`)
 
 
 ## Template for Github Pull Request
