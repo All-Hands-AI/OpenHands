@@ -554,33 +554,6 @@ class AgentController:
         # to be no-ops for metrics, preserving the accumulated cost across resets
         self.agent.reset()
 
-    def maybe_extend_max_iterations(self):
-        if (
-            self.state.iteration is not None
-            and self.state.max_iterations is not None
-            and self._initial_max_iterations is not None
-            and not self.headless_mode
-            and self.state.iteration >= self.state.max_iterations
-        ):
-            self.state.max_iterations = (
-                self.state.max_iterations + self._initial_max_iterations
-            )
-
-    def maybe_extend_max_budget_per_task(self):
-        if (
-            self.agent.llm.metrics.accumulated_cost is not None
-            and self.state.max_budget_per_task is not None
-            and self._initial_max_budget_per_task is not None
-            and self.agent.llm.metrics.accumulated_cost
-            >= self.state.max_budget_per_task
-        ):
-            # Set the new budget cap to the current accumulated cost plus the initial budget
-            # This ensures we have enough budget to continue and don't immediately hit the limit again
-            self.state.max_budget_per_task = (
-                self.agent.llm.metrics.accumulated_cost
-                + self._initial_max_budget_per_task
-            )
-
     async def set_agent_state_to(self, new_state: AgentState) -> None:
         """Updates the agent's state and handles side effects. Can emit events to the event stream.
 
@@ -608,8 +581,12 @@ class AgentController:
             and new_state == AgentState.RUNNING
         ):
             if self.state.traffic_control_state == TrafficControlState.THROTTLING:
-                self.maybe_extend_max_iterations()
-                self.maybe_extend_max_budget_per_task()
+                self.state_manager.maybe_extend_max_iterations(
+                    self._initial_max_iterations, self.headless_mode
+                )
+                self.state_manager.maybe_extend_max_budget_per_task(
+                    self._initial_max_budget_per_task
+                )
 
             # Reset throttle state
             self.state.traffic_control_state = TrafficControlState.NORMAL

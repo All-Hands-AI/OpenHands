@@ -208,3 +208,30 @@ class StateManager:
             event_to_trajectory(event, include_screenshots)
             for event in self.state.history
         ]
+
+    def maybe_extend_max_iterations(
+        self, inital_max_iteration: int | None, headless_mode: bool
+    ):
+        if (
+            self.state.iteration is not None
+            and self.state.max_iterations is not None
+            and inital_max_iteration is not None
+            and not headless_mode
+            and self.state.iteration >= self.state.max_iterations
+        ):
+            self.state.max_iterations = self.state.max_iterations + inital_max_iteration
+
+    def maybe_extend_max_budget_per_task(
+        self, initial_max_budget_per_task: float | None
+    ):
+        if (
+            self.state.metrics.accumulated_cost is not None
+            and self.state.max_budget_per_task is not None
+            and initial_max_budget_per_task is not None
+            and self.state.metrics.accumulated_cost >= self.state.max_budget_per_task
+        ):
+            # Set the new budget cap to the current accumulated cost plus the initial budget
+            # This ensures we have enough budget to continue and don't immediately hit the limit again
+            self.state.max_budget_per_task = (
+                self.state.max_budget_per_task + initial_max_budget_per_task
+            )
