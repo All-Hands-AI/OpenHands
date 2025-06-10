@@ -14,17 +14,6 @@ export interface FileUploadSuccessResponse {
   skipped_files: { name: string; reason: string }[];
 }
 
-export interface FeedbackBodyResponse {
-  message: string;
-  feedback_id: string;
-  password: string;
-}
-
-export interface FeedbackResponse {
-  statusCode: number;
-  body: FeedbackBodyResponse;
-}
-
 export interface GitHubAccessTokenResponse {
   access_token: string;
 }
@@ -32,15 +21,6 @@ export interface GitHubAccessTokenResponse {
 export interface AuthenticationResponse {
   message: string;
   login?: string; // Only present when allow list is enabled
-}
-
-export interface Feedback {
-  version: string;
-  email: string;
-  token: string;
-  polarity: "positive" | "negative";
-  permissions: "public" | "private";
-  trajectory: unknown[];
 }
 
 export interface GetConfigResponse {

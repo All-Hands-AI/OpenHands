@@ -11,7 +11,6 @@ import { InteractiveChatBox } from "./interactive-chat-box";
 import { RootState } from "#/store";
 import { AgentState } from "#/types/agent-state";
 import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
-import { FeedbackModal } from "../feedback/feedback-modal";
 import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
 import { TypingIndicator } from "./typing-indicator";
 import { useWsClient } from "#/context/ws-client-provider";
@@ -50,10 +49,6 @@ export function ChatInterface() {
 
   const { curAgentState } = useSelector((state: RootState) => state.agent);
 
-  const [feedbackPolarity, setFeedbackPolarity] = React.useState<
-    "positive" | "negative"
-  >("positive");
-  const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
   const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
   const { selectedRepository, replayJson } = useSelector(
     (state: RootState) => state.initialQuery,
@@ -94,13 +89,6 @@ export function ChatInterface() {
   const handleStop = () => {
     posthog.capture("stop_button_clicked");
     send(generateAgentStateChangeEvent(AgentState.STOPPED));
-  };
-
-  const onClickShareFeedbackActionButton = async (
-    polarity: "positive" | "negative",
-  ) => {
-    setFeedbackModalIsOpen(true);
-    setFeedbackPolarity(polarity);
   };
 
   const onClickExportTrajectoryButton = () => {
@@ -164,12 +152,6 @@ export function ChatInterface() {
       <div className="flex flex-col gap-[6px] px-4 pb-4">
         <div className="flex justify-between relative">
           <TrajectoryActions
-            onPositiveFeedback={() =>
-              onClickShareFeedbackActionButton("positive")
-            }
-            onNegativeFeedback={() =>
-              onClickShareFeedbackActionButton("negative")
-            }
             onExportTrajectory={() => onClickExportTrajectoryButton()}
           />
 
@@ -194,12 +176,6 @@ export function ChatInterface() {
           onChange={setMessageToSend}
         />
       </div>
-
-      <FeedbackModal
-        isOpen={feedbackModalIsOpen}
-        onClose={() => setFeedbackModalIsOpen(false)}
-        polarity={feedbackPolarity}
-      />
     </div>
   );
 }
