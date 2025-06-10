@@ -20,7 +20,6 @@ import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
 import OpenHands from "#/api/open-hands";
 import { useWsClient } from "#/context/ws-client-provider";
 import { isSystemMessage } from "#/types/core/guards";
-import { Microagent } from "#/api/open-hands.types";
 
 interface ConversationCardProps {
   onClick?: () => void;
@@ -63,10 +62,6 @@ export function ConversationCard({
   const [systemModalVisible, setSystemModalVisible] = React.useState(false);
   const [microagentsModalVisible, setMicroagentsModalVisible] =
     React.useState(false);
-  const [microagents, setMicroagents] = React.useState<Microagent[] | null>(
-    null,
-  );
-  const [loadingMicroagents, setLoadingMicroagents] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const systemMessage = parsedEvents.find(isSystemMessage);
@@ -150,23 +145,11 @@ export function ConversationCard({
     setSystemModalVisible(true);
   };
 
-  const handleShowMicroagents = async (
+  const handleShowMicroagents = (
     event: React.MouseEvent<HTMLButtonElement>,
   ) => {
     event.stopPropagation();
-    if (conversationId) {
-      setLoadingMicroagents(true);
-      setMicroagentsModalVisible(true);
-      try {
-        const data = await OpenHands.getMicroagents(conversationId);
-        setMicroagents(data.microagents);
-      } catch (error) {
-        console.error(`${t(I18nKey.MICROAGENTS_MODAL$FETCH_ERROR)}:`, error);
-        setMicroagents(null);
-      } finally {
-        setLoadingMicroagents(false);
-      }
-    }
+    setMicroagentsModalVisible(true);
   };
 
   React.useEffect(() => {
@@ -403,8 +386,7 @@ export function ConversationCard({
       <MicroagentsModal
         isOpen={microagentsModalVisible}
         onClose={() => setMicroagentsModalVisible(false)}
-        microagents={microagents}
-        isLoading={loadingMicroagents}
+        conversationId={conversationId}
       />
     </>
   );

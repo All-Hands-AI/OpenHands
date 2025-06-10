@@ -4,26 +4,29 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { BaseModalTitle } from "#/components/shared/modals/confirmation-modals/base-modal";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModalBody } from "#/components/shared/modals/modal-body";
-import { Microagent } from "#/api/open-hands.types";
 import { I18nKey } from "#/i18n/declaration";
+import { useConversationMicroagents } from "#/hooks/query/use-conversation-microagents";
 
 interface MicroagentsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  microagents: Microagent[] | null;
-  isLoading: boolean;
+  conversationId: string | undefined;
 }
 
 export function MicroagentsModal({
   isOpen,
   onClose,
-  microagents,
-  isLoading,
+  conversationId,
 }: MicroagentsModalProps) {
   const { t } = useTranslation();
   const [expandedAgents, setExpandedAgents] = useState<Record<string, boolean>>(
     {},
   );
+
+  const { microagents, isLoading, isError } = useConversationMicroagents({
+    conversationId,
+    enabled: isOpen,
+  });
 
   const toggleAgent = (agentName: string) => {
     setExpandedAgents((prev) => ({
@@ -51,15 +54,16 @@ export function MicroagentsModal({
               </div>
             )}
 
-            {!isLoading && (!microagents || microagents.length === 0) && (
-              <div className="flex items-center justify-center h-full p-4">
-                <p className="text-gray-400">
-                  {microagents === null
-                    ? t(I18nKey.MICROAGENTS_MODAL$FETCH_ERROR)
-                    : t(I18nKey.CONVERSATION$NO_MICROAGENTS)}
-                </p>
-              </div>
-            )}
+            {!isLoading &&
+              (isError || !microagents || microagents.length === 0) && (
+                <div className="flex items-center justify-center h-full p-4">
+                  <p className="text-gray-400">
+                    {isError
+                      ? t(I18nKey.MICROAGENTS_MODAL$FETCH_ERROR)
+                      : t(I18nKey.CONVERSATION$NO_MICROAGENTS)}
+                  </p>
+                </div>
+              )}
 
             {!isLoading && microagents && microagents.length > 0 && (
               <div className="p-2 space-y-3">
