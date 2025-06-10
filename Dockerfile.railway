@@ -47,10 +47,13 @@ ENV FILE_STORE_PATH=/.openhands-state
 ENV PORT=3000
 ENV DOCKER_TLS_CERTDIR=""
 ENV DOCKER_HOST=unix:///var/run/docker.sock
+ENV DOCKERD_ROOTLESS_ROOTLESSKIT_FLAGS="-p 0.0.0.0:2375:2375/tcp"
 
 # Create necessary directories
 RUN mkdir -p $FILE_STORE_PATH
 RUN mkdir -p $WORKSPACE_BASE
+RUN mkdir -p /var/lib/docker
+RUN mkdir -p /var/log
 
 # Install Python and system dependencies
 RUN apk add --no-cache \
@@ -62,6 +65,7 @@ RUN apk add --no-cache \
     shadow \
     git \
     openssh-client \
+    supervisor \
     && ln -sf python3 /usr/bin/python
 
 # Default is 1000, but OSX is often 501
@@ -112,7 +116,7 @@ RUN find /app \! -group app -exec chgrp app {} + 2>/dev/null || true
 COPY --chown=openhands:app --chmod=770 --from=frontend-builder /app/build ./frontend/build
 
 # Copy Railway-specific entrypoint
-COPY --chown=openhands:app --chmod=770 ./railway-entrypoint.sh /app/railway-entrypoint.sh
+COPY --chown=root:root --chmod=755 ./railway-entrypoint.sh /app/railway-entrypoint.sh
 
 # Switch back to root for final setup
 USER root
@@ -121,10 +125,22 @@ USER root
 RUN addgroup -g 999 docker || true
 RUN addgroup openhands docker || true
 
-# Expose the port
-EXPOSE 3000
+# Create supervisor configuration
+RUN mkdir -p /etc/supervisor/conf.d
+COPY --chown=root:root ./supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Set up proper permissions for Docker
+RUN chmod 755 /var/lib/docker
+RUN chmod 755 /var/log
+
+# Expose the port (Railway will set PORT environment variable)
+EXPOSE $PORT
+
+# Health check for Railway
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:${PORT:-3000}/health || exit 1
 
 WORKDIR /app
 
 ENTRYPOINT ["/app/railway-entrypoint.sh"]
-CMD ["uvicorn", "openhands.server.listen:app", "--host", "0.0.0.0", "--port", "3000"]
+CMD []
