@@ -28,7 +28,7 @@ COPY ./pyproject.toml ./poetry.lock ./
 RUN touch README.md
 RUN export POETRY_CACHE_DIR && poetry install --no-root && rm -rf $POETRY_CACHE_DIR
 
-FROM docker:27-dind AS openhands-railway
+FROM python:3.12.3-slim AS openhands-railway
 
 WORKDIR /app
 
@@ -37,51 +37,35 @@ ARG OPENHANDS_BUILD_VERSION #re-declare for this section
 # Railway-specific environment variables
 ENV RUN_AS_OPENHANDS=true
 ENV OPENHANDS_USER_ID=42420
-ENV SANDBOX_LOCAL_RUNTIME_URL=http://localhost
-ENV USE_HOST_NETWORK=false
-ENV WORKSPACE_BASE=/opt/workspace_base
+ENV RUNTIME=e2b
 ENV OPENHANDS_BUILD_VERSION=$OPENHANDS_BUILD_VERSION
-ENV SANDBOX_USER_ID=0
 ENV FILE_STORE=local
 ENV FILE_STORE_PATH=/.openhands-state
-ENV DOCKER_TLS_CERTDIR=""
-ENV DOCKER_HOST=unix:///var/run/docker.sock
-ENV DOCKERD_ROOTLESS_ROOTLESSKIT_FLAGS="-p 0.0.0.0:2375:2375/tcp"
 
 # Create necessary directories
 RUN mkdir -p $FILE_STORE_PATH
-RUN mkdir -p $WORKSPACE_BASE
-RUN mkdir -p /var/lib/docker
 RUN mkdir -p /var/log
 
-# Install Python and system dependencies
-RUN apk add --no-cache \
-    python3 \
-    py3-pip \
-    curl \
-    bash \
-    sudo \
-    shadow \
-    git \
-    openssh-client \
-    supervisor \
-    && ln -sf python3 /usr/bin/python
-
-# Default is 1000, but OSX is often 501
-RUN sed -i 's/^UID_MIN.*/UID_MIN 499/' /etc/login.defs || echo "UID_MIN 499" >> /etc/login.defs
-# Default is 60000, but we've seen up to 200000
-RUN sed -i 's/^UID_MAX.*/UID_MAX 1000000/' /etc/login.defs || echo "UID_MAX 1000000" >> /etc/login.defs
+# Install system dependencies
+RUN apt-get update -y \
+    && apt-get install -y \
+        curl \
+        bash \
+        sudo \
+        git \
+        openssh-client \
+        build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
 # Create app group and openhands user
-RUN addgroup app
-RUN adduser -D -u $OPENHANDS_USER_ID -s /bin/bash openhands && \
-    addgroup openhands app && \
-    addgroup openhands wheel && \
-    echo '%wheel ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+RUN groupadd app
+RUN useradd -u $OPENHANDS_USER_ID -s /bin/bash -m openhands && \
+    usermod -a -G app openhands && \
+    usermod -a -G sudo openhands && \
+    echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 # Set ownership and permissions
 RUN chown -R openhands:app /app && chmod -R 770 /app
-RUN chown -R openhands:app $WORKSPACE_BASE && chmod -R 770 $WORKSPACE_BASE
 RUN chown -R openhands:app $FILE_STORE_PATH && chmod -R 770 $FILE_STORE_PATH
 
 # Switch to openhands user
@@ -106,7 +90,7 @@ COPY --chown=openhands:app ./MANIFEST.in ./MANIFEST.in
 COPY --chown=openhands:app ./LICENSE ./LICENSE
 
 # This is run as "openhands" user, and will create __pycache__ with openhands:openhands ownership
-RUN python openhands/core/download.py # No-op to download assets
+RUN $VIRTUAL_ENV/bin/python openhands/core/download.py # No-op to download assets
 # Add this line to set group ownership of all files/directories not already in "app" group
 # openhands:openhands -> openhands:app
 RUN find /app \! -group app -exec chgrp app {} + 2>/dev/null || true
@@ -114,23 +98,14 @@ RUN find /app \! -group app -exec chgrp app {} + 2>/dev/null || true
 # Copy frontend build
 COPY --chown=openhands:app --chmod=770 --from=frontend-builder /app/build ./frontend/build
 
-# Copy Railway-specific entrypoint
-COPY --chown=root:root --chmod=755 ./railway-entrypoint.sh /app/railway-entrypoint.sh
-
 # Switch back to root for final setup
 USER root
 
-# Create Docker group and add openhands user to it
-RUN addgroup -g 999 docker 2>/dev/null || addgroup docker
-RUN addgroup openhands docker
-
-# Create supervisor configuration
-RUN mkdir -p /etc/supervisor/conf.d
-COPY --chown=root:root ./supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-
-# Set up proper permissions for Docker
-RUN chmod 755 /var/lib/docker
+# Set up proper permissions
 RUN chmod 755 /var/log
+
+# Switch back to openhands user for runtime
+USER openhands
 
 # Expose the port (Railway will set PORT environment variable dynamically)
 EXPOSE 3000
@@ -141,5 +116,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 
 WORKDIR /app
 
-ENTRYPOINT ["/app/railway-entrypoint.sh"]
-CMD []
+# Run OpenHands directly without supervisor
+CMD ["bash", "-c", "uvicorn openhands.server.listen:app --host 0.0.0.0 --port ${PORT:-3000}"]
