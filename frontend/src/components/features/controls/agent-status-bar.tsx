@@ -9,10 +9,7 @@ import {
   AGENT_STATUS_MAP,
   IndicatorColor,
 } from "../../agent-status-map.constant";
-import {
-  useWsClient,
-  WsClientProviderStatus,
-} from "#/context/ws-client-provider";
+import { useWsClient } from "#/context/ws-client-provider";
 import { useNotification } from "#/hooks/useNotification";
 import { browserTab } from "#/utils/browser-tab";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
@@ -80,11 +77,14 @@ export function AgentStatusBar() {
   );
 
   React.useEffect(() => {
-    if (conversation?.status === "STARTING") {
+    if (conversation?.status === "CONNECTING") {
+      setStatusMessage(t(I18nKey.STATUS$CONNECTING_TO_RUNTIME));
+      setIndicatorColor(IndicatorColor.YELLOW);
+    } else if (conversation?.status === "STARTING") {
       setStatusMessage(t(I18nKey.STATUS$STARTING_RUNTIME));
       setIndicatorColor(IndicatorColor.RED);
-    } else if (status === WsClientProviderStatus.DISCONNECTED) {
-      setStatusMessage(t(I18nKey.STATUS$CONNECTED)); // Using STATUS$CONNECTED instead of STATUS$CONNECTING
+    } else if (status === "DISCONNECTED") {
+      setStatusMessage(t(I18nKey.STATUS$WEBSOCKET_CLOSED));
       setIndicatorColor(IndicatorColor.RED);
     } else {
       setStatusMessage(AGENT_STATUS_MAP[curAgentState].message);

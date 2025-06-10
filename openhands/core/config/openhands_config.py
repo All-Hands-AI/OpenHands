@@ -1,3 +1,4 @@
+import os
 from typing import Any, ClassVar
 
 from pydantic import BaseModel, Field, SecretStr
@@ -29,6 +30,8 @@ class OpenHandsConfig(BaseModel):
         runtime: Runtime environment identifier.
         file_store: Type of file store to use.
         file_store_path: Path to the file store.
+        file_store_web_hook_url: Optional url for file store web hook
+        file_store_web_hook_headers: Optional headers for file_store web hook
         save_trajectory_path: Either a folder path to store trajectories with auto-generated filenames, or a designated trajectory file path.
         save_screenshots_in_trajectory: Whether to save screenshots in trajectory (in encoded image format).
         replay_trajectory_path: Path to load trajectory and replay. If provided, trajectory would be replayed first before user's instruction.
@@ -61,7 +64,9 @@ class OpenHandsConfig(BaseModel):
     extended: ExtendedConfig = Field(default_factory=lambda: ExtendedConfig({}))
     runtime: str = Field(default='docker')
     file_store: str = Field(default='local')
-    file_store_path: str = Field(default='/tmp/openhands_file_store')
+    file_store_path: str = Field(default='~/.openhands/file_store')
+    file_store_web_hook_url: str | None = Field(default=None)
+    file_store_web_hook_headers: dict | None = Field(default=None)
     save_trajectory_path: str | None = Field(default=None)
     save_screenshots_in_trajectory: bool = Field(default=False)
     replay_trajectory_path: str | None = Field(default=None)
@@ -100,7 +105,7 @@ class OpenHandsConfig(BaseModel):
     max_concurrent_conversations: int = Field(
         default=3
     )  # Maximum number of concurrent agent loops allowed per user
-    mcp_host: str = Field(default='localhost:3000')
+    mcp_host: str = Field(default=f'localhost:{os.getenv("port", 3000)}')
     mcp: MCPConfig = Field(default_factory=MCPConfig)
 
     defaults_dict: ClassVar[dict] = {}
