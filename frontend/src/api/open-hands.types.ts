@@ -113,8 +113,6 @@ export interface Microagent {
   type: "repo" | "knowledge";
   content: string;
   triggers: string[];
-  inputs: InputMetadata[];
-  tools: string[];
 }
 
 export interface GetMicroagentsResponse {

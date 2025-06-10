@@ -113,43 +113,6 @@ export function MicroagentsModal({
                             </div>
                           )}
 
-                          {agent.inputs && agent.inputs.length > 0 && (
-                            <div className="mt-2 mb-3">
-                              <h4 className="text-sm font-semibold text-gray-300 mb-2">
-                                {t(I18nKey.MICROAGENTS_MODAL$INPUTS)}
-                              </h4>
-                              <div className="flex flex-wrap gap-1">
-                                {agent.inputs.map((input) => (
-                                  <span
-                                    key={input.name}
-                                    className="px-2 py-1 text-xs rounded-full bg-green-900"
-                                    title={input.description}
-                                  >
-                                    {input.name}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {agent.tools && agent.tools.length > 0 && (
-                            <div className="mt-2 mb-3">
-                              <h4 className="text-sm font-semibold text-gray-300 mb-2">
-                                {t(I18nKey.MICROAGENTS_MODAL$TOOLS)}
-                              </h4>
-                              <div className="flex flex-wrap gap-1">
-                                {agent.tools.map((tool) => (
-                                  <span
-                                    key={tool}
-                                    className="px-2 py-1 text-xs rounded-full bg-purple-900"
-                                  >
-                                    {tool}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
                           <div className="mt-2">
                             <h4 className="text-sm font-semibold text-gray-300 mb-2">
                               {t(I18nKey.MICROAGENTS_MODAL$CONTENT)}
