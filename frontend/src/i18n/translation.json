@@ -5855,6 +5855,22 @@
         "tr": "Konuşmalar",
         "uk": "Розмови"
     },
+    "STATUS$CONNECTING_TO_RUNTIME": {
+        "en": "Connecting to runtime...",
+        "zh-CN": "正在连接到运行时...",
+        "zh-TW": "正在連接到執行時...",
+        "de": "Verbinde mit der Laufzeitumgebung...",
+        "ko-KR": "런타임에 연결 중...",
+        "no": "Kobler til kjøretidsmiljø...",
+        "it": "Connessione all'ambiente di esecuzione in corso...",
+        "pt": "Conectando ao ambiente de execução...",
+        "es": "Conectando al entorno de ejecución...",
+        "ar": "جارٍ الاتصال ببيئة التشغيل...",
+        "fr": "Connexion à l'environnement d'exécution en cours...",
+        "tr": "Çalışma zamanı ortamına bağlanılıyor...",
+        "ja": "ランタイムに接続中",
+        "uk": "Підключення до середовища виконання..."
+    },
     "STATUS$STARTING_RUNTIME": {
         "en": "Starting runtime...",
         "zh-CN": "启动运行时...",

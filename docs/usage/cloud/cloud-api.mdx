@@ -1,9 +1,11 @@
 ---
 title: Cloud API
-description: OpenHands Cloud provides a REST API that allows you to programmatically interact with the service. This guide explains how to obtain an API key and use the API to start conversations.
+description: OpenHands Cloud provides a REST API that allows you to programmatically interact with OpenHands.
+  This guide explains how to obtain an API key and use the API to start conversations and retrieve their status.
 ---
 
-For more detailed information about the API, refer to the [OpenHands API Reference](https://docs.all-hands.dev/swagger-ui/).
+For the available API endpoints, refer to the
+[OpenHands API Reference](https://docs.all-hands.dev/api-reference).
 
 ## Obtaining an API Key
 
@@ -16,7 +18,7 @@ To use the OpenHands Cloud API, you'll need to generate an API key:
 5. Give your key a descriptive name (Example: "Development" or "Production") and select `Create`.
 6. Copy the generated API key and store it securely. It will only be shown once.
 
-![API Key Generation](/static/img/docs/api-key-generation.png)
+![API Key Generation](/static/img/api-key-generation.png)
 
 ## API Usage
 
@@ -33,87 +35,81 @@ To start a new conversation with OpenHands to perform a task, you'll need to mak
 
 #### Examples
 
-<details>
-<summary>cURL</summary>
 
-```bash
-curl -X POST "https://app.all-hands.dev/api/conversations" \
-  -H "Authorization: Bearer YOUR_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "initial_user_msg": "Check whether there is any incorrect information in the README.md file and send a PR to fix it if so.",
-    "repository": "yourusername/your-repo"
-  }'
-```
-</details>
+<Accordion title="cURL">
+  ```bash
+  curl -X POST "https://app.all-hands.dev/api/conversations" \
+    -H "Authorization: Bearer YOUR_API_KEY" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "initial_user_msg": "Check whether there is any incorrect information in the README.md file and send a PR to fix it if so.",
+      "repository": "yourusername/your-repo"
+    }'
+  ```
+</Accordion>
 
-<details>
-<summary>Python (with requests)</summary>
+<Accordion title="Python (with requests)">
+  ```python
+  import requests
 
-```python
-import requests
+  api_key = "YOUR_API_KEY"
+  url = "https://app.all-hands.dev/api/conversations"
 
-api_key = "YOUR_API_KEY"
-url = "https://app.all-hands.dev/api/conversations"
-
-headers = {
-    "Authorization": f"Bearer {api_key}",
-    "Content-Type": "application/json"
-}
-
-data = {
-    "initial_user_msg": "Check whether there is any incorrect information in the README.md file and send a PR to fix it if so.",
-    "repository": "yourusername/your-repo"
-}
-
-response = requests.post(url, headers=headers, json=data)
-conversation = response.json()
-
-print(f"Conversation Link: https://app.all-hands.dev/conversations/{conversation['conversation_id']}")
-print(f"Status: {conversation['status']}")
-```
-</details>
-
-<details>
-<summary>TypeScript/JavaScript (with fetch)</summary>
-
-```typescript
-const apiKey = "YOUR_API_KEY";
-const url = "https://app.all-hands.dev/api/conversations";
-
-const headers = {
-  "Authorization": `Bearer ${apiKey}`,
-  "Content-Type": "application/json"
-};
-
-const data = {
-  initial_user_msg: "Check whether there is any incorrect information in the README.md file and send a PR to fix it if so.",
-  repository: "yourusername/your-repo"
-};
-
-async function startConversation() {
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: headers,
-      body: JSON.stringify(data)
-    });
-
-    const conversation = await response.json();
-
-    console.log(`Conversation Link: https://app.all-hands.dev/conversations/${conversation.id}`);
-    console.log(`Status: ${conversation.status}`);
-
-    return conversation;
-  } catch (error) {
-    console.error("Error starting conversation:", error);
+  headers = {
+      "Authorization": f"Bearer {api_key}",
+      "Content-Type": "application/json"
   }
-}
 
-startConversation();
-```
+  data = {
+      "initial_user_msg": "Check whether there is any incorrect information in the README.md file and send a PR to fix it if so.",
+      "repository": "yourusername/your-repo"
+  }
 
-</details>
+  response = requests.post(url, headers=headers, json=data)
+  conversation = response.json()
+
+  print(f"Conversation Link: https://app.all-hands.dev/conversations/{conversation['conversation_id']}")
+  print(f"Status: {conversation['status']}")
+  ```
+</Accordion>
+
+<Accordion title="TypeScript/JavaScript (with fetch)">
+  ```typescript
+  const apiKey = "YOUR_API_KEY";
+  const url = "https://app.all-hands.dev/api/conversations";
+
+  const headers = {
+    "Authorization": `Bearer ${apiKey}`,
+    "Content-Type": "application/json"
+  };
+
+  const data = {
+    initial_user_msg: "Check whether there is any incorrect information in the README.md file and send a PR to fix it if so.",
+    repository: "yourusername/your-repo"
+  };
+
+  async function startConversation() {
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify(data)
+      });
+
+      const conversation = await response.json();
+
+      console.log(`Conversation Link: https://app.all-hands.dev/conversations/${conversation.id}`);
+      console.log(`Status: ${conversation.status}`);
+
+      return conversation;
+    } catch (error) {
+      console.error("Error starting conversation:", error);
+    }
+  }
+
+  startConversation();
+  ```
+</Accordion>
 
 #### Response
 
@@ -145,14 +141,12 @@ GET https://app.all-hands.dev/api/conversations/{conversation_id}
 
 #### Example
 
-<details>
-<summary>cURL</summary>
-
-```bash
-curl -X GET "https://app.all-hands.dev/api/conversations/{conversation_id}" \
-  -H "Authorization: Bearer YOUR_API_KEY"
-```
-</details>
+<Accordion title="cURL">
+  ```bash
+  curl -X GET "https://app.all-hands.dev/api/conversations/{conversation_id}" \
+    -H "Authorization: Bearer YOUR_API_KEY"
+  ```
+</Accordion>
 
 #### Response
 
