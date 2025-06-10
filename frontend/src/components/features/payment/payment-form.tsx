@@ -9,6 +9,7 @@ import { BrandButton } from "../settings/brand-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { amountIsValid } from "#/utils/amount-is-valid";
 import { I18nKey } from "#/i18n/declaration";
+import { PoweredByStripeTag } from "./powered-by-stripe-tag";
 
 export function PaymentForm() {
   const { t } = useTranslation();
@@ -79,6 +80,7 @@ export function PaymentForm() {
             {t(I18nKey.PAYMENT$ADD_CREDIT)}
           </BrandButton>
           {isPending && <LoadingSpinner size="small" />}
+          <PoweredByStripeTag />
         </div>
       </div>
     </form>

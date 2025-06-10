@@ -28,6 +28,7 @@ import {
 } from "#/types/core/guards";
 import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
 import { useWSErrorMessage } from "#/hooks/use-ws-error-message";
+import { ProjectStatus } from "#/components/features/conversation-panel/conversation-state-indicator";
 
 const hasValidMessageProperty = (obj: unknown): obj is { message: string } =>
   typeof obj === "object" &&
@@ -67,14 +68,8 @@ const isMessageAction = (
 ): event is UserMessageAction | AssistantMessageAction =>
   isUserMessage(event) || isAssistantMessage(event);
 
-export enum WsClientProviderStatus {
-  CONNECTED,
-  DISCONNECTED,
-  CONNECTING,
-}
-
 interface UseWsClient {
-  status: WsClientProviderStatus;
+  status: ProjectStatus;
   isLoadingMessages: boolean;
   events: Record<string, unknown>[];
   parsedEvents: (OpenHandsAction | OpenHandsObservation)[];
@@ -82,7 +77,7 @@ interface UseWsClient {
 }
 
 const WsClientContext = React.createContext<UseWsClient>({
-  status: WsClientProviderStatus.DISCONNECTED,
+  status: "DISCONNECTED",
   isLoadingMessages: true,
   events: [],
   parsedEvents: [],
@@ -139,9 +134,7 @@ export function WsClientProvider({
   const { setErrorMessage, removeErrorMessage } = useWSErrorMessage();
   const queryClient = useQueryClient();
   const sioRef = React.useRef<Socket | null>(null);
-  const [status, setStatus] = React.useState(
-    WsClientProviderStatus.DISCONNECTED,
-  );
+  const [status, setStatus] = React.useState<ProjectStatus>("CONNECTING");
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
   const [parsedEvents, setParsedEvents] = React.useState<
     (OpenHandsAction | OpenHandsObservation)[]
@@ -162,7 +155,7 @@ export function WsClientProvider({
   }
 
   function handleConnect() {
-    setStatus(WsClientProviderStatus.CONNECTED);
+    setStatus("CONNECTED");
     removeErrorMessage();
   }
 
@@ -261,7 +254,7 @@ export function WsClientProvider({
   }
 
   function handleDisconnect(data: unknown) {
-    setStatus(WsClientProviderStatus.DISCONNECTED);
+    setStatus("DISCONNECTED");
     const sio = sioRef.current;
     if (!sio) {
       return;
@@ -275,7 +268,7 @@ export function WsClientProvider({
 
   function handleError(data: unknown) {
     // set status
-    setStatus(WsClientProviderStatus.DISCONNECTED);
+    setStatus("DISCONNECTED");
     updateStatusWhenErrorMessagePresent(data);
 
     setErrorMessage(
@@ -294,7 +287,7 @@ export function WsClientProvider({
     // reset events when conversationId changes
     setEvents([]);
     setParsedEvents([]);
-    setStatus(WsClientProviderStatus.DISCONNECTED);
+    setStatus("CONNECTING");
   }, [conversationId]);
 
   React.useEffect(() => {

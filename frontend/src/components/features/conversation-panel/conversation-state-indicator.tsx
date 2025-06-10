@@ -2,9 +2,20 @@ import ColdIcon from "./state-indicators/cold.svg?react";
 import RunningIcon from "./state-indicators/running.svg?react";
 
 type SVGIcon = React.FunctionComponent<React.SVGProps<SVGSVGElement>>;
-export type ProjectStatus = "RUNNING" | "STOPPED" | "STARTING";
+export type ProjectStatus =
+  | "RUNNING"
+  | "STOPPED"
+  | "STARTING"
+  | "CONNECTING"
+  | "CONNECTED"
+  | "DISCONNECTED";
 
-const INDICATORS: Record<ProjectStatus, SVGIcon> = {
+type ProjectStatusWithIcon = Exclude<
+  ProjectStatus,
+  "CONNECTING" | "CONNECTED" | "DISCONNECTED"
+>;
+
+const INDICATORS: Record<ProjectStatusWithIcon, SVGIcon> = {
   STOPPED: ColdIcon,
   RUNNING: RunningIcon,
   STARTING: ColdIcon,
@@ -17,6 +28,7 @@ interface ConversationStateIndicatorProps {
 export function ConversationStateIndicator({
   status,
 }: ConversationStateIndicatorProps) {
+  // @ts-expect-error - Type 'ProjectStatus' is not assignable to type 'ProjectStatusWithIcon'.
   const StateIcon = INDICATORS[status];
 
   return (
