@@ -35,7 +35,7 @@ This guide explains how to deploy OpenHands to Railway.com with Docker-in-Docker
    **Required:**
    - `PORT` - Railway sets this automatically (DO NOT override)
    - `RUNTIME=e2b` - Uses E2B runtime (no Docker needed)
-   - `e2b_0f5e9be2badef13d11cee76adf5ea351effadfa0` - Your E2B API key (get from e2b.dev)
+   - `e2b api key` - Your E2B API key (get from e2b.dev)
 
    **Required (LLM providers - choose one):**
    - `OPENAI_API_KEY` - Your OpenAI API key
