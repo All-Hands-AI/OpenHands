@@ -193,15 +193,6 @@ class Metrics:
             'token_usages': [usage.model_dump() for usage in self._token_usages],
         }
 
-    def reset(self) -> None:
-        """Reset method is now a no-op to ensure accurate cost tracking.
-
-        This method used to reset all metrics, but now it does nothing to ensure
-        that accumulated costs are preserved throughout the agent's lifecycle.
-        """
-        # Do not reset metrics to ensure accurate cost tracking
-        pass
-
     def log(self) -> str:
         """Log the metrics."""
         metrics = self.get()
