@@ -38,7 +38,7 @@ def send_request(
     session: HttpSession,
     method: str,
     url: str,
-    timeout: int = 10,
+    timeout: int = 60,
     **kwargs: Any,
 ) -> httpx.Response:
     response = session.request(method, url, timeout=timeout, **kwargs)
