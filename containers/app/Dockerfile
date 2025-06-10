@@ -48,7 +48,7 @@ RUN mkdir -p $FILE_STORE_PATH
 RUN mkdir -p $WORKSPACE_BASE
 
 RUN apt-get update -y \
-    && apt-get install -y curl ssh sudo \
+    && apt-get install -y git curl ssh sudo \
     && rm -rf /var/lib/apt/lists/*
 
 # Default is 1000, but OSX is often 501
