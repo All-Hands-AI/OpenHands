@@ -7535,6 +7535,22 @@
         "de": "Fügen Sie eine Kreditkarte mit Stripe hinzu, um $50 zu erhalten. <b>Wir belasten Sie nicht ohne vorherige Zustimmung!</b>",
         "uk": "Додайте кредитну картку до Stripe, щоб отримати свої 50 доларів. <b>Ми не стягуватимемо з вас плату без попереднього запиту!</b>"
     },
+    "BILLING$POWERED_BY": {
+        "en": "Powered by",
+        "ja": "提供：",
+        "zh-CN": "技术支持：",
+        "zh-TW": "技術支援：",
+        "ko-KR": "제공: ",
+        "no": "Drevet av",
+        "it": "Offerto da",
+        "pt": "Oferecido por",
+        "es": "Ofrecido por",
+        "ar": "مشغل بواسطة",
+        "fr": "Propulsé par",
+        "tr": "Tarafından desteklenmektedir",
+        "de": "Bereitgestellt von",
+        "uk": "Працює на базі"
+    },
     "BILLING$PROCEED_TO_STRIPE": {
         "en": "Add Billing Info",
         "ja": "請求情報を追加",
