@@ -262,8 +262,8 @@ class AgentController:
         self.state.local_iteration += 1
 
     async def update_state_after_step(self) -> None:
-        # update metrics especially for cost. Use deepcopy to avoid it being modified by agent._reset()
-        self.state.local_metrics = copy.deepcopy(self.agent.llm.metrics)
+        # No need to update local metrics anymore as we're using snapshots instead
+        pass
 
     async def _react_to_exception(
         self,
@@ -457,11 +457,11 @@ class AgentController:
 
         elif isinstance(action, AgentFinishAction):
             self.state.outputs = action.outputs
-            self.state.metrics.merge(self.state.local_metrics)
+            # No need to merge local metrics anymore
             await self.set_agent_state_to(AgentState.FINISHED)
         elif isinstance(action, AgentRejectAction):
             self.state.outputs = action.outputs
-            self.state.metrics.merge(self.state.local_metrics)
+            # No need to merge local metrics anymore
             await self.set_agent_state_to(AgentState.REJECTED)
 
     async def _handle_observation(self, observation: Observation) -> None:
@@ -497,8 +497,8 @@ class AgentController:
                 await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
             return
         elif isinstance(observation, ErrorObservation):
-            if self.state.agent_state == AgentState.ERROR:
-                self.state.metrics.merge(self.state.local_metrics)
+            # No need to merge local metrics anymore
+            pass
 
     async def _handle_message_action(self, action: MessageAction) -> None:
         """Handles message actions from the event stream.
@@ -595,6 +595,14 @@ class AgentController:
                 self.state.max_iterations + self._initial_max_iterations
             )
 
+    @property
+    def max_budget_per_task(self) -> float | None:
+        return self.state.max_budget_per_task
+
+    @max_budget_per_task.setter
+    def max_budget_per_task(self, value: float | None) -> None:
+        self.state.max_budget_per_task = value
+
     def maybe_extend_max_budget_per_task(self):
         if (
             self.agent.llm.metrics.accumulated_cost is not None
@@ -626,9 +634,7 @@ class AgentController:
             return
 
         if new_state in (AgentState.STOPPED, AgentState.ERROR):
-            # sync existing metrics BEFORE resetting the agent
-            await self.update_state_after_step()
-            self.state.metrics.merge(self.state.local_metrics)
+            # No need to update or merge local metrics anymore
             self._reset()
 
         # This block will always either extend max_iterations or max_budget_per_task, which removes any previous throttling effects
@@ -698,6 +704,11 @@ class AgentController:
         llm_config = self.agent_to_llm_config.get(action.agent, self.agent.llm.config)
         llm = LLM(config=llm_config, retry_listener=self._notify_on_llm_retry)
         delegate_agent = agent_cls(llm=llm, config=agent_config)
+
+        # Take a snapshot of the current metrics before starting the delegate
+        # Store it in the extra_data for later use
+        metrics_snapshot = self.state.metrics.snapshot()
+
         state = State(
             session_id=self.id.removesuffix('-delegate'),
             inputs=action.inputs or {},
@@ -710,6 +721,8 @@ class AgentController:
             metrics=self.state.metrics,
             # start on top of the stream
             start_id=self.event_stream.get_latest_event_id() + 1,
+            # Store the metrics snapshot in extra_data
+            extra_data={'metrics_snapshot': metrics_snapshot},
         )
         self.log(
             'debug',
@@ -743,6 +756,17 @@ class AgentController:
         # update iteration that is shared across agents
         self.state.iteration = self.delegate.state.iteration
 
+        # Calculate delegate-specific metrics before closing the delegate
+        metrics_snapshot = self.delegate.state.extra_data.get('metrics_snapshot')
+        if metrics_snapshot:
+            # Calculate the difference between current metrics and the snapshot
+            delegate_metrics = self.state.metrics.diff(metrics_snapshot)
+
+            # Store the delegate-specific metrics in the delegate's outputs
+            if not self.delegate.state.outputs:
+                self.delegate.state.outputs = {}
+            self.delegate.state.outputs['metrics'] = delegate_metrics.get()
+
         # close the delegate controller before adding new events
         asyncio.get_event_loop().run_until_complete(self.delegate.close())
 
@@ -754,8 +778,12 @@ class AgentController:
 
             # prepare delegate result observation
             # TODO: replace this with AI-generated summary (#2395)
+            # Filter out metrics from the formatted output to avoid clutter
+            display_outputs = {
+                k: v for k, v in delegate_outputs.items() if k != 'metrics'
+            }
             formatted_output = ', '.join(
-                f'{key}: {value}' for key, value in delegate_outputs.items()
+                f'{key}: {value}' for key, value in display_outputs.items()
             )
             content = (
                 f'{self.delegate.agent.name} finishes task with {formatted_output}'
@@ -1062,6 +1090,10 @@ class AgentController:
 
         # Always load from the event stream to avoid losing history
         self._init_history()
+
+        # Share the state metrics with the agent's LLM metrics
+        # This ensures that all metrics are tracked in one place
+        self.agent.llm.metrics = self.state.metrics
 
     def get_trajectory(self, include_screenshots: bool = False) -> list[dict]:
         # state history could be partially hidden/truncated before controller is closed

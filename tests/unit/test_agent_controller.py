@@ -128,7 +128,7 @@ async def test_set_agent_state(mock_agent, mock_event_stream):
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        max_iterations=10,
+        iteration_delta=10,
         sid='test',
         confirmation_mode=False,
         headless_mode=True,
@@ -146,7 +146,7 @@ async def test_on_event_message_action(mock_agent, mock_event_stream):
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        max_iterations=10,
+        iteration_delta=10,
         sid='test',
         confirmation_mode=False,
         headless_mode=True,
@@ -163,7 +163,7 @@ async def test_on_event_change_agent_state_action(mock_agent, mock_event_stream)
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        max_iterations=10,
+        iteration_delta=10,
         sid='test',
         confirmation_mode=False,
         headless_mode=True,
@@ -181,7 +181,7 @@ async def test_react_to_exception(mock_agent, mock_event_stream, mock_status_cal
         agent=mock_agent,
         event_stream=mock_event_stream,
         status_callback=mock_status_callback,
-        max_iterations=10,
+        iteration_delta=10,
         sid='test',
         confirmation_mode=False,
         headless_mode=True,
@@ -201,7 +201,7 @@ async def test_react_to_content_policy_violation(
         agent=mock_agent,
         event_stream=mock_event_stream,
         status_callback=mock_status_callback,
-        max_iterations=10,
+        iteration_delta=10,
         sid='test',
         confirmation_mode=False,
         headless_mode=True,
@@ -378,12 +378,12 @@ async def test_run_controller_stop_with_stuck(
 @pytest.mark.asyncio
 async def test_max_iterations_extension(mock_agent, mock_event_stream):
     # Test with headless_mode=False - should extend max_iterations
-    initial_state = State(max_iterations=10)
+    initial_state = State(iteration_delta=10)
 
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        max_iterations=10,
+        iteration_delta=10,
         sid='test',
         confirmation_mode=False,
         headless_mode=False,
@@ -414,11 +414,11 @@ async def test_max_iterations_extension(mock_agent, mock_event_stream):
     await controller.close()
 
     # Test with headless_mode=True - should NOT extend max_iterations
-    initial_state = State(max_iterations=10)
+    initial_state = State(iteration_delta=10)
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        max_iterations=10,
+        iteration_delta=10,
         sid='test',
         confirmation_mode=False,
         headless_mode=True,
@@ -449,7 +449,7 @@ async def test_step_max_budget(mock_agent, mock_event_stream):
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        max_iterations=10,
+        iteration_delta=10,
         max_budget_per_task=10,
         sid='test',
         confirmation_mode=False,
@@ -469,7 +469,7 @@ async def test_step_max_budget_headless(mock_agent, mock_event_stream):
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        max_iterations=10,
+        iteration_delta=10,
         max_budget_per_task=10,
         sid='test',
         confirmation_mode=False,
@@ -517,7 +517,7 @@ async def test_budget_reset_on_continue(mock_agent, mock_event_stream):
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        max_iterations=10,
+        iteration_delta=10,
         max_budget_per_task=initial_budget,
         sid='test',
         confirmation_mode=False,
@@ -581,7 +581,7 @@ async def test_reset_with_pending_action_no_observation(mock_agent, mock_event_s
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        max_iterations=10,
+        iteration_delta=10,
         sid='test',
         confirmation_mode=False,
         headless_mode=True,
@@ -630,7 +630,7 @@ async def test_reset_with_pending_action_existing_observation(
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        max_iterations=10,
+        iteration_delta=10,
         sid='test',
         confirmation_mode=False,
         headless_mode=True,
@@ -672,7 +672,7 @@ async def test_reset_without_pending_action(mock_agent, mock_event_stream):
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        max_iterations=10,
+        iteration_delta=10,
         sid='test',
         confirmation_mode=False,
         headless_mode=True,
@@ -703,7 +703,7 @@ async def test_reset_with_pending_action_no_metadata(
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        max_iterations=10,
+        iteration_delta=10,
         sid='test',
         confirmation_mode=False,
         headless_mode=True,
@@ -744,7 +744,7 @@ async def test_run_controller_max_iterations_has_metrics(
     test_event_stream, mock_memory, mock_agent
 ):
     config = OpenHandsConfig(
-        max_iterations=3,
+        iteration_delta=3,
     )
     event_stream = test_event_stream
 
@@ -824,7 +824,7 @@ async def test_notify_on_llm_retry(mock_agent, mock_event_stream, mock_status_ca
         agent=mock_agent,
         event_stream=mock_event_stream,
         status_callback=mock_status_callback,
-        max_iterations=10,
+        iteration_delta=10,
         sid='test',
         confirmation_mode=False,
         headless_mode=True,
@@ -895,7 +895,7 @@ async def test_context_window_exceeded_error_handling(
     # handles the truncation correctly.
     final_state = await asyncio.wait_for(
         run_controller(
-            config=OpenHandsConfig(max_iterations=max_iterations),
+            config=OpenHandsConfig(iteration_delta=max_iterations),
             initial_user_action=MessageAction(content='INITIAL'),
             runtime=mock_runtime,
             sid='test',
@@ -1035,7 +1035,7 @@ async def test_run_controller_with_context_window_exceeded_with_truncation(
     try:
         state = await asyncio.wait_for(
             run_controller(
-                config=OpenHandsConfig(max_iterations=5),
+                config=OpenHandsConfig(iteration_delta=5),
                 initial_user_action=MessageAction(content='INITIAL'),
                 runtime=mock_runtime,
                 sid='test',
@@ -1111,7 +1111,7 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
     try:
         state = await asyncio.wait_for(
             run_controller(
-                config=OpenHandsConfig(max_iterations=3),
+                config=OpenHandsConfig(iteration_delta=3),
                 initial_user_action=MessageAction(content='INITIAL'),
                 runtime=mock_runtime,
                 sid='test',
@@ -1260,7 +1260,7 @@ async def test_action_metrics_copy(mock_agent):
     controller = AgentController(
         agent=mock_agent,
         event_stream=event_stream,
-        max_iterations=10,
+        iteration_delta=10,
         sid='test',
         confirmation_mode=False,
         headless_mode=True,
@@ -1369,7 +1369,7 @@ async def test_condenser_metrics_included(mock_agent, test_event_stream):
     controller = AgentController(
         agent=mock_agent,
         event_stream=test_event_stream,
-        max_iterations=10,
+        iteration_delta=10,
         sid='test',
         confirmation_mode=False,
         headless_mode=True,
@@ -1427,7 +1427,7 @@ async def test_first_user_message_with_identical_content(test_event_stream, mock
     controller = AgentController(
         agent=mock_agent,
         event_stream=test_event_stream,
-        max_iterations=10,
+        iteration_delta=10,
         sid='test',
         confirmation_mode=False,
         headless_mode=True,
@@ -1499,7 +1499,7 @@ async def test_agent_controller_processes_null_observation_with_cause():
     controller = AgentController(
         agent=mock_agent,
         event_stream=event_stream,
-        max_iterations=10,
+        iteration_delta=10,
         sid='test-session',
     )
 
@@ -1570,7 +1570,7 @@ def test_agent_controller_should_step_with_null_observation_cause_zero(mock_agen
     controller = AgentController(
         agent=mock_agent,
         event_stream=event_stream,
-        max_iterations=10,
+        iteration_delta=10,
         sid='test-session',
     )
 
@@ -1591,7 +1591,7 @@ def test_agent_controller_should_step_with_null_observation_cause_zero(mock_agen
 def test_system_message_in_event_stream(mock_agent, test_event_stream):
     """Test that SystemMessageAction is added to event stream in AgentController."""
     _ = AgentController(
-        agent=mock_agent, event_stream=test_event_stream, max_iterations=10
+        agent=mock_agent, event_stream=test_event_stream, iteration_delta=10
     )
 
     # Get events from the event stream
@@ -1643,7 +1643,7 @@ async def test_openrouter_context_window_exceeded_error(
     controller = AgentController(
         agent=mock_agent,
         event_stream=test_event_stream,
-        max_iterations=max_iterations,
+        iteration_delta=max_iterations,
         sid='test',
         confirmation_mode=False,
         headless_mode=True,

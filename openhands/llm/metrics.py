@@ -214,5 +214,67 @@ class Metrics:
         """Create a deep copy of the Metrics object."""
         return copy.deepcopy(self)
 
+    def snapshot(self) -> 'Metrics':
+        """Create a snapshot of the current metrics state.
+
+        Returns:
+            A deep copy of the current metrics object that can be used as a baseline
+            for calculating differences later.
+        """
+        return self.copy()
+
+    def diff(self, baseline: 'Metrics') -> 'Metrics':
+        """Calculate the difference between current metrics and a baseline.
+
+        This is useful for tracking metrics for specific operations like delegates.
+
+        Args:
+            baseline: A metrics object representing the baseline state
+
+        Returns:
+            A new Metrics object containing only the differences since the baseline
+        """
+        result = Metrics(self.model_name)
+
+        # Calculate cost difference
+        result._accumulated_cost = self._accumulated_cost - baseline._accumulated_cost
+
+        # Include only costs that were added after the baseline
+        if baseline._costs:
+            last_baseline_timestamp = baseline._costs[-1].timestamp
+            result._costs = [
+                cost for cost in self._costs if cost.timestamp > last_baseline_timestamp
+            ]
+        else:
+            result._costs = self._costs.copy()
+
+        # Include only response latencies that were added after the baseline
+        result._response_latencies = self._response_latencies[
+            len(baseline._response_latencies) :
+        ]
+
+        # Include only token usages that were added after the baseline
+        result._token_usages = self._token_usages[len(baseline._token_usages) :]
+
+        # Calculate accumulated token usage difference
+        base_usage = baseline.accumulated_token_usage
+        current_usage = self.accumulated_token_usage
+
+        result._accumulated_token_usage = TokenUsage(
+            model=self.model_name,
+            prompt_tokens=current_usage.prompt_tokens - base_usage.prompt_tokens,
+            completion_tokens=current_usage.completion_tokens
+            - base_usage.completion_tokens,
+            cache_read_tokens=current_usage.cache_read_tokens
+            - base_usage.cache_read_tokens,
+            cache_write_tokens=current_usage.cache_write_tokens
+            - base_usage.cache_write_tokens,
+            context_window=current_usage.context_window,
+            per_turn_token=0,
+            response_id='',
+        )
+
+        return result
+
     def __repr__(self) -> str:
         return f'Metrics({self.get()}'
