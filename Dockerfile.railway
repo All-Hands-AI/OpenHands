@@ -44,7 +44,6 @@ ENV OPENHANDS_BUILD_VERSION=$OPENHANDS_BUILD_VERSION
 ENV SANDBOX_USER_ID=0
 ENV FILE_STORE=local
 ENV FILE_STORE_PATH=/.openhands-state
-ENV PORT=3000
 ENV DOCKER_TLS_CERTDIR=""
 ENV DOCKER_HOST=unix:///var/run/docker.sock
 ENV DOCKERD_ROOTLESS_ROOTLESSKIT_FLAGS="-p 0.0.0.0:2375:2375/tcp"
@@ -122,8 +121,8 @@ COPY --chown=root:root --chmod=755 ./railway-entrypoint.sh /app/railway-entrypoi
 USER root
 
 # Create Docker group and add openhands user to it
-RUN addgroup -g 999 docker || true
-RUN addgroup openhands docker || true
+RUN addgroup -g 999 docker 2>/dev/null || addgroup docker
+RUN addgroup openhands docker
 
 # Create supervisor configuration
 RUN mkdir -p /etc/supervisor/conf.d
@@ -133,8 +132,8 @@ COPY --chown=root:root ./supervisord.conf /etc/supervisor/conf.d/supervisord.con
 RUN chmod 755 /var/lib/docker
 RUN chmod 755 /var/log
 
-# Expose the port (Railway will set PORT environment variable)
-EXPOSE $PORT
+# Expose the port (Railway will set PORT environment variable dynamically)
+EXPOSE 3000
 
 # Health check for Railway
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \

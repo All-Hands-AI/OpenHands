@@ -4,6 +4,7 @@ set -e
 # Railway entrypoint script for OpenHands with Docker-in-Docker support
 
 echo "Starting OpenHands Railway deployment with supervisor..."
+echo "PORT is set to: ${PORT:-3000}"
 
 # Function to cleanup on exit
 cleanup() {
@@ -24,13 +25,36 @@ fi
 
 # Create necessary directories with proper permissions
 echo "Setting up directories and permissions..."
-mkdir -p $FILE_STORE_PATH $WORKSPACE_BASE /var/lib/docker /var/log
-chown -R openhands:app $FILE_STORE_PATH $WORKSPACE_BASE
-chmod -R 770 $FILE_STORE_PATH $WORKSPACE_BASE
+mkdir -p ${FILE_STORE_PATH:-/.openhands-state} ${WORKSPACE_BASE:-/opt/workspace_base} /var/lib/docker /var/log
+chown -R openhands:app ${FILE_STORE_PATH:-/.openhands-state} ${WORKSPACE_BASE:-/opt/workspace_base}
+chmod -R 770 ${FILE_STORE_PATH:-/.openhands-state} ${WORKSPACE_BASE:-/opt/workspace_base}
 
 # Ensure Docker socket directory exists
 mkdir -p /var/run
 chmod 755 /var/run
+
+# Ensure openhands user is in docker group and can access docker socket
+echo "Setting up Docker permissions for openhands user..."
+addgroup openhands docker 2>/dev/null || true
+
+# Create a script to handle Docker socket permissions after Docker starts
+cat > /usr/local/bin/setup-docker-permissions.sh << 'EOF'
+#!/bin/bash
+# Wait for Docker socket to be created
+for i in {1..30}; do
+    if [ -S /var/run/docker.sock ]; then
+        echo "Docker socket found, setting permissions..."
+        chown root:docker /var/run/docker.sock
+        chmod 660 /var/run/docker.sock
+        echo "Docker socket permissions set"
+        exit 0
+    fi
+    echo "Waiting for Docker socket... ($i/30)"
+    sleep 1
+done
+echo "Docker socket not found within timeout"
+EOF
+chmod +x /usr/local/bin/setup-docker-permissions.sh
 
 # Pre-pull the runtime container image in background after Docker starts
 echo "Setting up runtime image pull..."
@@ -40,7 +64,7 @@ cat > /usr/local/bin/pull-runtime-image.sh << 'EOF'
 for i in {1..60}; do
     if docker version >/dev/null 2>&1; then
         echo "Docker is ready, pulling runtime image..."
-        docker pull $SANDBOX_RUNTIME_CONTAINER_IMAGE &
+        docker pull ${SANDBOX_RUNTIME_CONTAINER_IMAGE:-docker.all-hands.dev/all-hands-ai/runtime:0.41-nikolaik} &
         echo "Runtime image pull started in background"
         exit 0
     fi
@@ -52,9 +76,15 @@ exit 1
 EOF
 chmod +x /usr/local/bin/pull-runtime-image.sh
 
-# Start the background image pull
+# Start the background setup processes
+/usr/local/bin/setup-docker-permissions.sh &
 /usr/local/bin/pull-runtime-image.sh &
 
 echo "Starting supervisor to manage Docker and OpenHands..."
+echo "OpenHands will be available on port ${PORT:-3000}"
+
+# Export PORT for supervisor to use
+export PORT=${PORT:-3000}
+
 # Start supervisor with our configuration
 exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
