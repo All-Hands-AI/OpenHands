@@ -157,9 +157,7 @@ class AgentController:
             confirmation_mode=confirmation_mode,
         )
 
-        self.state = (
-            self.state_manager.state
-        )  # share for now, but port over all state process to the manager
+        self.state = self.state_manager.state  # TODO: share between manager and controller for backward compatability; we should ideally move all state related logic to the state manager
 
         self.agent_to_llm_config = agent_to_llm_config if agent_to_llm_config else {}
         self.agent_configs = agent_configs if agent_configs else {}

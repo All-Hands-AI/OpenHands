@@ -79,7 +79,7 @@ class StateManager:
             )
 
         # Share the state metrics with the agent's LLM metrics
-        # This ensures that all metrics are tracked in one place
+        # This ensures that all accumulated metrics are always in sync between controller and llm
         agent.llm.metrics = self.state.metrics
 
     def _init_history(self, event_stream: EventStream) -> None:
