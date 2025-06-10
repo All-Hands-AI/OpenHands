@@ -335,31 +335,12 @@ def log_skipped_build_maximum_retries_exceeded(
             with open(retries_file_path, 'a') as f:
                 import json
 
-                # Get the Docker image from metadata if available
-                docker_image = None
-                if (
-                    metadata
-                    and metadata.agent_config
-                    and hasattr(metadata.agent_config, 'sandbox_config')
-                ):
-                    docker_image = getattr(
-                        metadata.agent_config.sandbox_config,
-                        'base_container_image',
-                        None,
-                    )
-                elif (
-                    metadata
-                    and metadata.details
-                    and 'sandbox_config' in metadata.details
-                ):
-                    sandbox_config = metadata.details.get('sandbox_config', {})
-                    docker_image = sandbox_config.get('base_container_image')
+                # No need to get Docker image as we're not including it in the error entry
 
                 error_entry = {
                     'instance_id': instance.instance_id,
                     'error': str(error),
                     'timestamp': time.strftime('%Y-%m-%d %H:%M:%S'),
-                    'docker_image': docker_image,
                 }
                 f.write(json.dumps(error_entry) + '\n')
             logger.info(f'Added instance {instance.instance_id} to {retries_file_path}')
