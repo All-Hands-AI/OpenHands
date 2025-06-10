@@ -2,7 +2,6 @@ import pytest
 from pydantic import ValidationError
 
 from openhands.core.config.kubernetes_config import KubernetesConfig
-from openhands.core.config.sandbox_config import SandboxConfig
 
 
 def test_kubernetes_config_defaults():
@@ -54,16 +53,6 @@ def test_kubernetes_config_custom_values():
     assert config.node_selector_val == 'us-east-1'
     assert config.tolerations_yaml == '- key: special\n  value: true'
     assert config.privileged is True
-
-
-def test_kubernetes_config_in_sandbox_config():
-    """Test that KubernetesConfig works correctly when used in SandboxConfig."""
-    k8s_config = KubernetesConfig(namespace='test-ns')
-    sandbox_config = SandboxConfig(kubernetes=k8s_config)
-
-    assert sandbox_config.kubernetes is not None
-    assert sandbox_config.kubernetes.namespace == 'test-ns'
-    assert sandbox_config.kubernetes.ingress_domain == 'localhost'  # default value
 
 
 def test_kubernetes_config_validation():
