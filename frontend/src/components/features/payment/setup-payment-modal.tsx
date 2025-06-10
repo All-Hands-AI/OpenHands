@@ -7,7 +7,6 @@ import { ModalBody } from "#/components/shared/modals/modal-body";
 import OpenHands from "#/api/open-hands";
 import { BrandButton } from "../settings/brand-button";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
-import stripeLogo from "../../../assets/stripe.svg";
 
 export function SetupPaymentModal() {
   const { t } = useTranslation();
@@ -35,12 +34,6 @@ export function SetupPaymentModal() {
               components={{ b: <strong /> }}
             />
           </p>
-        </div>
-        <div className="flex flex-row items-center">
-          <span className="text-medium font-semi-bold">
-            {t(I18nKey.BILLING$POWERED_BY)}
-          </span>
-          <img src={stripeLogo} alt="Stripe" className="h-8" />
         </div>
         <BrandButton
           testId="proceed-to-stripe-button"
