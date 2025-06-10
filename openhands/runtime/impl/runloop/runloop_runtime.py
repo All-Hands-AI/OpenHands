@@ -13,6 +13,7 @@ from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
 from openhands.runtime.plugins import PluginRequirement
+from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.runtime.utils.command import get_action_execution_server_startup_command
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
@@ -114,7 +115,7 @@ class RunloopRuntime(ActionExecutionClient):
         return self._wait_for_devbox(devbox)
 
     async def connect(self):
-        self.send_status_message('STATUS$STARTING_RUNTIME')
+        self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
 
         if self.attach_to_existing:
             active_devboxes = self.runloop_api_client.devboxes.list(
@@ -139,7 +140,7 @@ class RunloopRuntime(ActionExecutionClient):
         # End Runloop connect
         # NOTE: Copied from DockerRuntime
         logger.info('Waiting for client to become ready...')
-        self.send_status_message('STATUS$WAITING_FOR_CLIENT')
+        self.set_runtime_status(RuntimeStatus.WAITING_FOR_CLIENT)
         self._wait_until_alive()
 
         if not self.attach_to_existing:
@@ -148,7 +149,7 @@ class RunloopRuntime(ActionExecutionClient):
         logger.info(
             f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}'
         )
-        self.send_status_message(' ')
+        self.set_runtime_status(RuntimeStatus.READY)
 
     @tenacity.retry(
         stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),

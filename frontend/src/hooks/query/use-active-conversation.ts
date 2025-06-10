@@ -8,7 +8,7 @@ const FIVE_MINUTES = 1000 * 60 * 5;
 export const useActiveConversation = () => {
   const { conversationId } = useConversationId();
   const userConversation = useUserConversation(conversationId, (query) => {
-    if (query.state.data?.status === "STARTING") {
+    if (!query.state.data?.runtime_status) {
       return 3000; // 3 seconds
     }
     return FIVE_MINUTES;

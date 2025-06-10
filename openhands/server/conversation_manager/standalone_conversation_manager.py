@@ -20,6 +20,7 @@ from openhands.server.session.conversation import ServerConversation
 from openhands.server.session.session import ROOM_KEY, Session
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
+from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync, wait_all
@@ -492,10 +493,19 @@ class StandaloneConversationManager(ConversationManager):
             url=self._get_conversation_url(session.sid),
             session_api_key=None,
             event_store=session.agent_session.event_stream,
+            status=_get_status_from_session(session),
+            runtime_status=getattr(session.agent_session.runtime, 'runtime_status', None),
         )
 
     def _get_conversation_url(self, conversation_id: str):
         return f'/api/conversations/{conversation_id}'
+
+
+def _get_status_from_session(session: Session) -> ConversationStatus:
+    agent_session = session.agent_session
+    if agent_session.runtime and agent_session.runtime.runtime_initialized:
+        return ConversationStatus.RUNNING
+    return ConversationStatus.STARTING
 
 
 def _last_updated_at_key(conversation: ConversationMetadata) -> float:

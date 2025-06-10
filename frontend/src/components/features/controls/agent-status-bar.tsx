@@ -46,6 +46,7 @@ export function AgentStatusBar() {
       });
       return;
     }
+    console.log("TRACE:agent-status-bar", message);
     if (message.trim()) {
       setStatusMessage(message);
     } else {

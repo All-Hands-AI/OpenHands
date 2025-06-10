@@ -81,6 +81,7 @@ export interface Conversation {
   last_updated_at: string;
   created_at: string;
   status: ProjectStatus;
+  runtime_status: string | null;
   trigger?: ConversationTrigger;
   url: string | null;
   session_api_key: string | null;
