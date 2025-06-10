@@ -25,6 +25,7 @@ from litellm.exceptions import (  # noqa
 from openhands.controller.agent import Agent
 from openhands.controller.replay import ReplayManager
 from openhands.controller.state.state import State, TrafficControlState
+from openhands.controller.state_manager import StateManager
 from openhands.controller.stuck import StuckDetector
 from openhands.core.config import AgentConfig, LLMConfig
 from openhands.core.exceptions import (
@@ -60,7 +61,6 @@ from openhands.events.action import (
 )
 from openhands.events.action.agent import CondensationAction, RecallAction
 from openhands.events.event import Event
-from openhands.events.event_filter import EventFilter
 from openhands.events.observation import (
     AgentDelegateObservation,
     AgentStateChangedObservation,
@@ -68,7 +68,7 @@ from openhands.events.observation import (
     NullObservation,
     Observation,
 )
-from openhands.events.serialization.event import event_to_trajectory, truncate_content
+from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics, TokenUsage
 
@@ -130,6 +130,9 @@ class AgentController:
             status_callback: Optional callback function to handle status updates.
             replay_events: A list of logs to replay.
         """
+
+        print('current delta', budget_per_task_delta)
+
         self.id = sid or event_stream.sid
         self.agent = agent
         self.headless_mode = headless_mode
@@ -144,17 +147,7 @@ class AgentController:
                 EventStreamSubscriber.AGENT_CONTROLLER, self.on_event, self.id
             )
 
-        # filter out events that are not relevant to the agent
-        # so they will not be included in the agent history
-        self.agent_history_filter = EventFilter(
-            exclude_types=(
-                NullAction,
-                NullObservation,
-                ChangeAgentStateAction,
-                AgentStateChangedObservation,
-            ),
-            exclude_hidden=True,
-        )
+        self.state_manager = StateManager()
 
         # state from the previous session, state from a parent agent, or a fresh state
         self.set_initial_state(
@@ -163,6 +156,10 @@ class AgentController:
             max_budget_per_task=budget_per_task_delta,
             confirmation_mode=confirmation_mode,
         )
+
+        self.state = (
+            self.state_manager.state
+        )  # share for now, but port over all state process to the manager
 
         self.agent_to_llm_config = agent_to_llm_config if agent_to_llm_config else {}
         self.agent_configs = agent_configs if agent_configs else {}
@@ -213,26 +210,7 @@ class AgentController:
         if set_stop_state:
             await self.set_agent_state_to(AgentState.STOPPED)
 
-        # we made history, now is the time to rewrite it!
-        # the final state.history will be used by external scripts like evals, tests, etc.
-        # history will need to be complete WITH delegates events
-        # like the regular agent history, it does not include:
-        # - 'hidden' events, events with hidden=True
-        # - backend events (the default 'filtered out' types, types in self.filter_out)
-        start_id = self.state.start_id if self.state.start_id >= 0 else 0
-        end_id = (
-            self.state.end_id
-            if self.state.end_id >= 0
-            else self.event_stream.get_latest_event_id()
-        )
-        self.state.history = list(
-            self.event_stream.search_events(
-                start_id=start_id,
-                end_id=end_id,
-                reverse=False,
-                filter=self.agent_history_filter,
-            )
-        )
+        self.state_manager.close(self.event_stream)
 
         # unsubscribe from the event stream
         # only the root parent controller subscribes to the event stream
@@ -407,9 +385,7 @@ class AgentController:
         if hasattr(event, 'hidden') and event.hidden:
             return
 
-        # if the event is not filtered out, add it to the history
-        if self.agent_history_filter.include(event):
-            self.state.history.append(event)
+        self.state_manager.add_history(event)
 
         if isinstance(event, Action):
             await self._handle_action(event)
@@ -1035,154 +1011,24 @@ class AgentController:
         max_iterations: int,
         max_budget_per_task: float | None,
         confirmation_mode: bool = False,
-    ) -> None:
-        """Sets the initial state for the agent, either from the previous session, or from a parent agent, or by creating a new one.
-
-        Args:
-            state: The state to initialize with, or None to create a new state.
-            max_iterations: The maximum number of iterations allowed for the task.
-            confirmation_mode: Whether to enable confirmation mode.
-        """
-        # state can come from:
-        # - the previous session, in which case it has history
-        # - from a parent agent, in which case it has no history
-        # - None / a new state
-
-        # If state is None, we create a brand new state and still load the event stream so we can restore the history
-        if state is None:
-            self.state = State(
-                session_id=self.id.removesuffix('-delegate'),
-                inputs={},
-                max_iterations=max_iterations,
-                max_budget_per_task=max_budget_per_task,
-                confirmation_mode=confirmation_mode,
-            )
-            self.state.start_id = 0
-
-            self.log(
-                'info',
-                f'AgentController {self.id} - created new state. start_id: {self.state.start_id}',
-            )
-        else:
-            self.state = state
-
-            if self.state.start_id <= -1:
-                self.state.start_id = 0
-
-            self.log(
-                'info',
-                f'AgentController {self.id} initializing history from event {self.state.start_id}',
-            )
-
+    ):
+        self.state_manager.set_initial_state(
+            self.id,
+            self.agent,
+            state,
+            max_iterations,
+            max_budget_per_task,
+            confirmation_mode,
+        )
         # Always load from the event stream to avoid losing history
-        self._init_history()
-
-        # Share the state metrics with the agent's LLM metrics
-        # This ensures that all metrics are tracked in one place
-        self.agent.llm.metrics = self.state.metrics
+        self.state_manager._init_history(
+            self.event_stream,
+        )
 
     def get_trajectory(self, include_screenshots: bool = False) -> list[dict]:
         # state history could be partially hidden/truncated before controller is closed
         assert self._closed
-        return [
-            event_to_trajectory(event, include_screenshots)
-            for event in self.state.history
-        ]
-
-    def _init_history(self) -> None:
-        """Initializes the agent's history from the event stream.
-
-        The history is a list of events that:
-        - Excludes events of types listed in self.filter_out
-        - Excludes events with hidden=True attribute
-        - For delegate events (between AgentDelegateAction and AgentDelegateObservation):
-            - Excludes all events between the action and observation
-            - Includes the delegate action and observation themselves
-        """
-        # define range of events to fetch
-        # delegates start with a start_id and initially won't find any events
-        # otherwise we're restoring a previous session
-        start_id = self.state.start_id if self.state.start_id >= 0 else 0
-        end_id = (
-            self.state.end_id
-            if self.state.end_id >= 0
-            else self.event_stream.get_latest_event_id()
-        )
-
-        # sanity check
-        if start_id > end_id + 1:
-            self.log(
-                'warning',
-                f'start_id {start_id} is greater than end_id + 1 ({end_id + 1}). History will be empty.',
-            )
-            self.state.history = []
-            return
-
-        events: list[Event] = []
-
-        # Get rest of history
-        events_to_add = list(
-            self.event_stream.search_events(
-                start_id=start_id,
-                end_id=end_id,
-                reverse=False,
-                filter=self.agent_history_filter,
-            )
-        )
-        events.extend(events_to_add)
-
-        # Find all delegate action/observation pairs
-        delegate_ranges: list[tuple[int, int]] = []
-        delegate_action_ids: list[int] = []  # stack of unmatched delegate action IDs
-
-        for event in events:
-            if isinstance(event, AgentDelegateAction):
-                delegate_action_ids.append(event.id)
-                # Note: we can get agent=event.agent and task=event.inputs.get('task','')
-                # if we need to track these in the future
-
-            elif isinstance(event, AgentDelegateObservation):
-                # Match with most recent unmatched delegate action
-                if not delegate_action_ids:
-                    self.log(
-                        'warning',
-                        f'Found AgentDelegateObservation without matching action at id={event.id}',
-                    )
-                    continue
-
-                action_id = delegate_action_ids.pop()
-                delegate_ranges.append((action_id, event.id))
-
-        # Filter out events between delegate action/observation pairs
-        if delegate_ranges:
-            filtered_events: list[Event] = []
-            current_idx = 0
-
-            for start_id, end_id in sorted(delegate_ranges):
-                # Add events before delegate range
-                filtered_events.extend(
-                    event for event in events[current_idx:] if event.id < start_id
-                )
-
-                # Add delegate action and observation
-                filtered_events.extend(
-                    event for event in events if event.id in (start_id, end_id)
-                )
-
-                # Update index to after delegate range
-                current_idx = next(
-                    (i for i, e in enumerate(events) if e.id > end_id), len(events)
-                )
-
-            # Add any remaining events after last delegate range
-            filtered_events.extend(events[current_idx:])
-
-            self.state.history = filtered_events
-        else:
-            self.state.history = events
-
-        # make sure history is in sync
-        self.state.start_id = start_id
+        return self.state_manager.get_trajectory(include_screenshots)
 
     def _handle_long_context_error(self) -> None:
         # When context window is exceeded, keep roughly half of agent interactions
