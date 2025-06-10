@@ -139,7 +139,7 @@ class CLIRuntime(Runtime):
             await asyncio.to_thread(self.setup_initial_env)
 
         self._runtime_initialized = True
-        self.set_runtime_status(RuntimeStatus.CONTAINER_STARTED)
+        self.set_runtime_status(RuntimeStatus.RUNTIME_STARTED)
         logger.info(f'CLIRuntime initialized with workspace at {self._workspace_path}')
 
     def add_env_vars(self, env_vars: dict[str, Any]) -> None:

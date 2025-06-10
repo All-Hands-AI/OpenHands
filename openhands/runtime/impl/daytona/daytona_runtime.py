@@ -180,7 +180,7 @@ class DaytonaRuntime(ActionExecutionClient):
             should_start_action_execution_server = True
 
         if self.workspace is None:
-            self.set_runtime_status(RuntimeStatus.PREPARING_CONTAINER)
+            self.set_runtime_status(RuntimeStatus.BUILDING_RUNTIME)
             self.workspace = await call_sync_from_async(self._create_workspace)
             self.log('info', f'Created new workspace with id: {self.workspace_id}')
 
@@ -206,7 +206,7 @@ class DaytonaRuntime(ActionExecutionClient):
             )
 
         self.log('info', 'Waiting for client to become ready...')
-        self.set_runtime_status(RuntimeStatus.WAITING_FOR_CLIENT)
+        self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
         await call_sync_from_async(self._wait_until_alive)
 
         if should_start_action_execution_server:

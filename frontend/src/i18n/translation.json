@@ -5887,54 +5887,6 @@
         "ja": "ランタイムを開始中",
         "uk": "Запуск середовища виконання..."
     },
-    "STATUS$STARTING_CONTAINER": {
-        "en": "Preparing container, this might take a few minutes...",
-        "zh-CN": "正在准备容器，这可能需要几分钟...",
-        "zh-TW": "正在準備容器，這可能需要幾分鐘...",
-        "de": "Container wird vorbereitet, dies kann einige Minuten dauern...",
-        "ko-KR": "컨테이너를 준비 중입니다. 몇 분 정도 걸릴 수 있습니다...",
-        "no": "Forbereder container, dette kan ta noen minutter...",
-        "it": "Preparazione del container in corso, potrebbe richiedere alcuni minuti...",
-        "pt": "Preparando o container, isso pode levar alguns minutos...",
-        "es": "Preparando el contenedor, esto puede tardar unos minutos...",
-        "ar": "جارٍ إعداد الحاوية، قد يستغرق هذا بضع دقائق...",
-        "fr": "Préparation du conteneur, cela peut prendre quelques minutes...",
-        "tr": "Konteyner hazırlanıyor, bu işlem birkaç dakika sürebilir...",
-        "ja": "コンテナを開始中",
-        "uk": "Підготовка контейнера, це може тривати кілька хвилин..."
-    },
-    "STATUS$PREPARING_CONTAINER": {
-        "en": "Preparing to start container...",
-        "zh-CN": "正在准备启动容器...",
-        "zh-TW": "正在準備啟動容器...",
-        "de": "Vorbereitung zum Starten des Containers...",
-        "ko-KR": "컨테이너 시작 준비 중...",
-        "no": "Forbereder å starte container...",
-        "it": "Preparazione all'avvio del container...",
-        "pt": "Preparando para iniciar o container...",
-        "es": "Preparando para iniciar el contenedor...",
-        "ar": "جارٍ التحضير لبدء الحاوية...",
-        "fr": "Préparation du démarrage du conteneur...",
-        "tr": "Konteyner başlatılmaya hazırlanıyor...",
-        "ja": "コンテナを準備中",
-        "uk": "Preparing to start container..."
-    },
-    "STATUS$CONTAINER_STARTED": {
-        "en": "Container started.",
-        "zh-CN": "容器已启动。",
-        "zh-TW": "容器已啟動。",
-        "de": "Container gestartet.",
-        "ko-KR": "컨테이너가 시작되었습니다.",
-        "no": "Container startet.",
-        "it": "Container avviato.",
-        "pt": "Container iniciado.",
-        "es": "Contenedor iniciado.",
-        "ar": "تم بدء الحاوية.",
-        "fr": "Conteneur démarré.",
-        "tr": "Konteyner başlatıldı.",
-        "ja": "コンテナが開始されました",
-        "uk": "Контейнер запущено."
-    },
     "STATUS$SETTING_UP_WORKSPACE": {
         "en": "Setting up workspace...",
         "zh-CN": "正在设置工作区...",
@@ -7375,21 +7327,8 @@
         "tr": "Gönder",
         "uk": "Надіслати"
     },
-    "STATUS$WAITING_FOR_CLIENT": {
-        "en": "Waiting for client to become ready...",
-        "zh-CN": "等待客户端准备就绪...",
-        "zh-TW": "等待客戶端準備就緒...",
-        "de": "Warten auf Bereitschaft des Clients...",
-        "ko-KR": "클라이언트가 준비될 때까지 기다리는 중...",
-        "no": "Venter på at klienten skal bli klar...",
-        "it": "In attesa che il client sia pronto...",
-        "pt": "Aguardando o cliente ficar pronto...",
-        "es": "Esperando a que el cliente esté listo...",
-        "ar": "في انتظار جاهزية العميل...",
-        "fr": "En attente que le client soit prêt...",
-        "tr": "İstemcinin hazır olması bekleniyor...",
-        "ja": "クライアントの準備を待機中",
-        "uk": "Чекаємо на готовність клієнта..."
+    "STATUS$BUILDING_RUNTIME": {
+        "en": "Building Runtime..."
     },
     "SUGGESTIONS$WHAT_TO_BUILD": {
         "en": "What do you want to build?",

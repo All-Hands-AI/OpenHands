@@ -384,7 +384,7 @@ class LocalRuntime(ActionExecutionClient):
             )
 
         self.log('info', f'Waiting for server to become ready at {self.api_url}...')
-        self.set_runtime_status(RuntimeStatus.WAITING_FOR_CLIENT)
+        self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
 
         await call_sync_from_async(self._wait_until_alive)
 

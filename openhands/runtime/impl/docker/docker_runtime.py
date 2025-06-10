@@ -173,7 +173,7 @@ class DockerRuntime(ActionExecutionClient):
 
         if not self.attach_to_existing:
             self.log('info', f'Waiting for client to become ready at {self.api_url}...')
-            self.set_runtime_status(RuntimeStatus.WAITING_FOR_CLIENT)
+            self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
 
         await call_sync_from_async(self.wait_until_alive)
 
@@ -197,7 +197,7 @@ class DockerRuntime(ActionExecutionClient):
                 raise ValueError(
                     'Neither runtime container image nor base container image is set'
                 )
-            self.set_runtime_status(RuntimeStatus.STARTING_CONTAINER)
+            self.set_runtime_status(RuntimeStatus.BUILDING_RUNTIME)
             self.runtime_container_image = build_runtime_image(
                 self.base_container_image,
                 self.runtime_builder,
@@ -268,7 +268,7 @@ class DockerRuntime(ActionExecutionClient):
 
     def init_container(self) -> None:
         self.log('debug', 'Preparing to start container...')
-        self.set_runtime_status(RuntimeStatus.PREPARING_CONTAINER)
+        self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
         self._host_port = self._find_available_port(EXECUTION_SERVER_PORT_RANGE)
         self._container_port = self._host_port
         # Use the configured vscode_port if provided, otherwise find an available port
@@ -377,7 +377,7 @@ class DockerRuntime(ActionExecutionClient):
                 **(self.config.sandbox.docker_runtime_kwargs or {}),
             )
             self.log('debug', f'Container started. Server url: {self.api_url}')
-            self.set_runtime_status(RuntimeStatus.CONTAINER_STARTED)
+            self.set_runtime_status(RuntimeStatus.RUNTIME_STARTED)
         except Exception as e:
             self.log(
                 'error',

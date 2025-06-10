@@ -140,7 +140,7 @@ class RunloopRuntime(ActionExecutionClient):
         # End Runloop connect
         # NOTE: Copied from DockerRuntime
         logger.info('Waiting for client to become ready...')
-        self.set_runtime_status(RuntimeStatus.WAITING_FOR_CLIENT)
+        self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
         self._wait_until_alive()
 
         if not self.attach_to_existing:

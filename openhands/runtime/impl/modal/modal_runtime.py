@@ -121,14 +121,14 @@ class ModalRuntime(ActionExecutionClient):
                     sandbox_id, client=self.modal_client
                 )
         else:
-            self.set_runtime_status(RuntimeStatus.PREPARING_CONTAINER)
+            self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
             await call_sync_from_async(
                 self._init_sandbox,
                 sandbox_workspace_dir=self.config.workspace_mount_path_in_sandbox,
                 plugins=self.plugins,
             )
 
-            self.set_runtime_status(RuntimeStatus.CONTAINER_STARTED)
+            self.set_runtime_status(RuntimeStatus.RUNTIME_STARTED)
 
         if self.sandbox is None:
             raise Exception('Sandbox not initialized')
@@ -138,7 +138,7 @@ class ModalRuntime(ActionExecutionClient):
 
         if not self.attach_to_existing:
             self.log('debug', 'Waiting for client to become ready...')
-            self.set_runtime_status(RuntimeStatus.WAITING_FOR_CLIENT)
+            self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
 
         self._wait_until_alive()
         self.setup_initial_env()

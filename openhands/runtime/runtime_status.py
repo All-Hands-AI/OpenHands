@@ -7,11 +7,9 @@ class RuntimeStatus(Enum):
         self.message = message
 
     STOPPED = 'STATUS$STOPPED', 'Stopped'
+    BUILDING_RUNTIME = 'STATUS$BUILDING_RUNTIME', 'Building runtime...'
     STARTING_RUNTIME = 'STATUS$STARTING_RUNTIME', 'Starting runtime...'
-    STARTING_CONTAINER = 'STATUS$STARTING_CONTAINER', 'Starting container...'
-    PREPARING_CONTAINER = 'STATUS$PREPARING_CONTAINER', 'Preparing container...'
-    CONTAINER_STARTED = 'STATUS$CONTAINER_STARTED', 'Container started.'
-    WAITING_FOR_CLIENT = 'STATUS$WAITING_FOR_CLIENT', 'Waiting for client...'
+    RUNTIME_STARTED = 'STATUS$RUNTIME_STARTED', 'Runtime started...'
     SETTING_UP_WORKSPACE = 'STATUS$SETTING_UP_WORKSPACE', 'Setting up workspace...'
     SETTING_UP_GIT_HOOKS = 'STATUS$SETTING_UP_GIT_HOOKS', 'Setting up git hooks...'
     READY = 'STATUS$READY', 'Ready...'
