@@ -6,10 +6,12 @@ dockerfilePath = "Dockerfile.railway"
 [deploy]
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
+healthcheckPath = "/health"
+healthcheckTimeout = 300
 
 # Environment variables for Railway deployment
 [env]
-PORT = "3000"
+# Railway sets PORT automatically, don't override
 HOST = "0.0.0.0"
 SANDBOX_RUNTIME_CONTAINER_IMAGE = "docker.all-hands.dev/all-hands-ai/runtime:0.41-nikolaik"
 SANDBOX_USER_ID = "0"
@@ -19,3 +21,7 @@ FILE_STORE = "local"
 FILE_STORE_PATH = "/.openhands-state"
 USE_HOST_NETWORK = "false"
 DOCKER_HOST = "unix:///var/run/docker.sock"
+DOCKER_TLS_CERTDIR = ""
+RUN_AS_OPENHANDS = "true"
+OPENHANDS_USER_ID = "42420"
+SANDBOX_LOCAL_RUNTIME_URL = "http://localhost"
