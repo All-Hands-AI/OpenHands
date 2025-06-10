@@ -107,11 +107,8 @@ def controller_fixture():
     )
     controller.state = State(session_id='test_sid')
 
-    # Mock _first_user_message directly on the instance
-    mock_first_user_message = MagicMock(spec=MessageAction)
-    controller._first_user_message = MagicMock(return_value=mock_first_user_message)
-
-    return controller, mock_first_user_message
+    # Don't mock _first_user_message anymore since we need it to work with history
+    return controller
 
 
 # =============================================
@@ -120,7 +117,7 @@ def controller_fixture():
 
 
 def test_basic_truncation(controller_fixture):
-    controller, mock_first_user_message = controller_fixture
+    controller = controller_fixture
 
     controller.state.history = create_events(
         [
@@ -155,7 +152,7 @@ def test_basic_truncation(controller_fixture):
             },  # 10
         ]
     )
-    mock_first_user_message.id = 2  # Set the ID of the mocked first user message
+    # No longer need to set mock_first_user_message.id since we're using the actual function
 
     # Calculation (RecallAction now essential):
     # History len = 10
@@ -179,7 +176,7 @@ def test_basic_truncation(controller_fixture):
 
 
 def test_no_system_message(controller_fixture):
-    controller, mock_first_user_message = controller_fixture
+    controller = controller_fixture
 
     controller.state.history = create_events(
         [
@@ -213,7 +210,7 @@ def test_no_system_message(controller_fixture):
             },  # 9
         ]
     )
-    mock_first_user_message.id = 1
+    # No longer need to set mock ID
 
     # Calculation (RecallAction now essential):
     # History len = 9
@@ -234,7 +231,7 @@ def test_no_system_message(controller_fixture):
 
 
 def test_no_recall_observation(controller_fixture):
-    controller, mock_first_user_message = controller_fixture
+    controller = controller_fixture
 
     controller.state.history = create_events(
         [
@@ -269,7 +266,7 @@ def test_no_recall_observation(controller_fixture):
             },  # 9
         ]
     )
-    mock_first_user_message.id = 2
+    # No longer need to set mock ID
 
     # Calculation (RecallAction essential only if RecallObs exists):
     # History len = 9
@@ -290,7 +287,7 @@ def test_no_recall_observation(controller_fixture):
 
 
 def test_short_history_no_truncation(controller_fixture):
-    controller, mock_first_user_message = controller_fixture
+    controller = controller_fixture
 
     history = create_events(
         [
@@ -312,7 +309,7 @@ def test_short_history_no_truncation(controller_fixture):
         ]
     )
     controller.state.history = history
-    mock_first_user_message.id = 2
+    # No longer need to set mock ID
 
     # Calculation (RecallAction now essential):
     # History len = 6
@@ -333,7 +330,7 @@ def test_short_history_no_truncation(controller_fixture):
 
 
 def test_only_essential_events(controller_fixture):
-    controller, mock_first_user_message = controller_fixture
+    controller = controller_fixture
 
     history = create_events(
         [
@@ -348,7 +345,7 @@ def test_only_essential_events(controller_fixture):
         ]
     )
     controller.state.history = history
-    mock_first_user_message.id = 2
+    # No longer need to set mock ID
 
     # Calculation (RecallAction now essential):
     # History len = 4
@@ -369,7 +366,7 @@ def test_only_essential_events(controller_fixture):
 
 
 def test_dangling_observations_at_cut_point(controller_fixture):
-    controller, mock_first_user_message = controller_fixture
+    controller = controller_fixture
 
     history_forced_dangle = create_events(
         [
@@ -409,7 +406,7 @@ def test_dangling_observations_at_cut_point(controller_fixture):
         ]
     )  # 10 events total
     controller.state.history = history_forced_dangle
-    mock_first_user_message.id = 2
+    # No longer need to set mock ID
 
     # Calculation (RecallAction now essential):
     # History len = 10
@@ -431,7 +428,7 @@ def test_dangling_observations_at_cut_point(controller_fixture):
 
 
 def test_only_dangling_observations_in_recent_slice(controller_fixture):
-    controller, mock_first_user_message = controller_fixture
+    controller = controller_fixture
 
     history = create_events(
         [
@@ -457,7 +454,7 @@ def test_only_dangling_observations_in_recent_slice(controller_fixture):
         ]
     )  # 6 events total
     controller.state.history = history
-    mock_first_user_message.id = 2
+    # No longer need to set mock ID
 
     # Calculation (RecallAction now essential):
     # History len = 6
@@ -472,7 +469,9 @@ def test_only_dangling_observations_in_recent_slice(controller_fixture):
     with patch(
         'openhands.controller.agent_controller.logger.warning'
     ) as mock_log_warning:
-        truncated_events = controller._apply_conversation_window(controller.state.history)
+        truncated_events = controller._apply_conversation_window(
+            controller.state.history
+        )
 
         assert len(truncated_events) == 4
         expected_ids = [1, 2, 3, 4]
@@ -492,7 +491,7 @@ def test_only_dangling_observations_in_recent_slice(controller_fixture):
 
 
 def test_empty_history(controller_fixture):
-    controller, _ = controller_fixture
+    controller = controller_fixture
     controller.state.history = []
 
     truncated_events = controller._apply_conversation_window(controller.state.history)
@@ -500,7 +499,7 @@ def test_empty_history(controller_fixture):
 
 
 def test_multiple_user_messages(controller_fixture):
-    controller, mock_first_user_message = controller_fixture
+    controller = controller_fixture
 
     history = create_events(
         [
@@ -544,7 +543,7 @@ def test_multiple_user_messages(controller_fixture):
         ]
     )  # 11 events total
     controller.state.history = history
-    mock_first_user_message.id = 2  # Explicitly set the first user message ID
+    # No longer need to set mock ID  # Explicitly set the first user message ID
 
     # Calculation (RecallAction now essential):
     # History len = 11

@@ -1219,6 +1219,9 @@ class AgentController:
         Returns:
             Filtered list of events keeping newest half while preserving pairs and essential initial events.
         """
+        # Handle empty history
+        if not history:
+            return []
         # 1. Identify essential initial events
         system_message: SystemMessageAction | None = None
         first_user_msg: MessageAction | None = None
@@ -1235,23 +1238,24 @@ class AgentController:
             and system_message.id == history[0].id
         )
 
-        # Find First User Message, which MUST exist
-        first_user_msg = self._first_user_message()
+        # Find First User Message in the history, which MUST exist
+        first_user_msg = self._first_user_message(history)
         if first_user_msg is None:
-            raise RuntimeError('No first user message found in the event stream.')
+            # If not found in history, try the event stream
+            first_user_msg = self._first_user_message()
+            if first_user_msg is None:
+                raise RuntimeError('No first user message found in the event stream.')
+            self.log(
+                'warning',
+                'First user message not found in history. Using cached version from event stream.',
+            )
 
-        # Find the first user message in the history
+        # Find the first user message index in the history
         first_user_msg_index = -1
         for i, event in enumerate(history):
             if isinstance(event, MessageAction) and event.source == EventSource.USER:
-                first_user_msg = event  # Use the one from history to preserve IDs
                 first_user_msg_index = i
                 break
-
-        # If we didn't find the first user message in history, something is wrong
-        if first_user_msg_index == -1:
-            self.log('warning', 'First user message not found in history. Using cached version.')
-            first_user_msg = self._first_user_message()  # Fallback to cached version
 
         # Find Recall Action and Observation related to the First User Message
         # Look for RecallAction after the first user message
@@ -1435,15 +1439,32 @@ class AgentController:
                 return result
         return False
 
-    def _first_user_message(self) -> MessageAction | None:
+    def _first_user_message(
+        self, events: list[Event] | None = None
+    ) -> MessageAction | None:
         """Get the first user message for this agent.
 
         For regular agents, this is the first user message from the beginning (start_id=0).
         For delegate agents, this is the first user message after the delegate's start_id.
 
+        Args:
+            events: Optional list of events to search through. If None, uses the event stream.
+
         Returns:
             MessageAction | None: The first user message, or None if no user message found
         """
+        # If events list is provided, search through it
+        if events is not None:
+            return next(
+                (
+                    e
+                    for e in events
+                    if isinstance(e, MessageAction) and e.source == EventSource.USER
+                ),
+                None,
+            )
+
+        # Otherwise, use the original event stream logic with caching
         # Return cached message if any
         if self._cached_first_user_message is not None:
             return self._cached_first_user_message
