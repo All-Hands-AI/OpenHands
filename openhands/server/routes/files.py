@@ -10,6 +10,7 @@ from fastapi import (
     UploadFile
 )
 from fastapi.responses import FileResponse, JSONResponse
+from openhands.events.action.files import FileWriteAction
 from openhands.storage.locations import get_conversation_event_filename, get_conversation_files_dir
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
@@ -314,27 +315,28 @@ async def get_cwd(
     return cwd
 
 @app.post('/upload-files')
-async def upload_file(conversation_id: str, files: list[UploadFile]):
-    conversation_files_path = os.path.expanduser(f"{config.file_store_path}/{get_conversation_files_dir(conversation_id, None)}")
-
+async def upload_files(
+    request: Request,
+    conversation_id: str,
+    files: list[UploadFile],
+    conversation: ServerConversation = Depends(get_conversation),
+):
     try:
-
-        os.makedirs(conversation_files_path, exist_ok=True)
-         # TODO: we want to utilise size limit
-        MAX_FILE_SIZE_MB = 10
-
         file_urls = []
+        runtime: Runtime =  conversation.runtime
+
 
         for file in files:
-            safe_filename = get_unique_filename(sanitize_filename(file.filename), conversation_files_path)
+            file_path = os.path.join(
+                runtime.config.workspace_mount_path_in_sandbox, str(file.filename)
+            )
             file_content = await file.read()
-            file_content_length = len(file_content)
-            # TODO: we want to utilise this
-            file_content_length_over_limit = file_content_length > MAX_FILE_SIZE_MB * 1024 * 1024
-
-            file_path = f"{conversation_files_path}{safe_filename}"
-            with open(file_path, "wb") as f:
-                f.write(file_content)
+            write_action = FileWriteAction(
+                # TODO: DISCUSS UTF8 encoding here
+                path=file_path, content=file_content.decode('utf-8',  errors="replace")
+            )
+            # TODO: DISCUSS file name unique issues
+            await call_sync_from_async(runtime.run_action, write_action)
             file_urls.append(file_path)
         return JSONResponse(status_code=status.HTTP_200_OK, content=file_urls)
 
