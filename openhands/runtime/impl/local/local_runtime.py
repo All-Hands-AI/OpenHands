@@ -54,6 +54,7 @@ class ActionExecutionServerInfo:
     log_thread_exit_event: threading.Event
     temp_workspace: str | None
     workspace_mount_path: str
+    workspace_venv_path: str | None
 
 
 # Global dictionary to track running server processes by session ID
@@ -72,16 +73,21 @@ def get_user_info() -> tuple[int, str | None]:
         return os.getuid(), username
 
 
-def create_or_get_venv(code_repo_path: str) -> str:
-    """Create a virtual environment if it doesn't exist and install dependencies.
+def create_workspace_venv(workspace_path: str, session_id: str) -> str | None:
+    """Create a workspace virtual environment for the LLM to use.
+    
+    This creates a clean Python environment that the LLM can use for its tasks,
+    without installing OpenHands itself.
     
     Args:
-        code_repo_path: Path to the OpenHands repository
+        workspace_path: Path to the workspace directory
+        session_id: Session ID for naming the venv
         
     Returns:
-        Path to the Python executable in the virtual environment
+        Path to the venv directory or None if creation failed
     """
-    venv_path = os.path.join(code_repo_path, '.openhands_venv')
+    venv_name = f'.venv_{session_id}'
+    venv_path = os.path.join(workspace_path, venv_name)
     python_executable = os.path.join(venv_path, 'bin', 'python')
     
     # On Windows, the executable is in Scripts directory
@@ -99,23 +105,24 @@ def create_or_get_venv(code_repo_path: str) -> str:
                 timeout=10
             )
             if result.returncode == 0:
-                logger.info(f'Using existing virtual environment at {venv_path}')
-                return python_executable
+                logger.info(f'Using existing workspace venv at {venv_path}')
+                return venv_path
         except (subprocess.TimeoutExpired, OSError):
-            logger.warning('Existing venv appears broken, recreating...')
+            logger.warning('Existing workspace venv appears broken, recreating...')
             shutil.rmtree(venv_path, ignore_errors=True)
     
-    # Create new virtual environment
-    logger.info(f'Creating virtual environment at {venv_path}')
+    # Create new workspace virtual environment
+    logger.info(f'Creating workspace virtual environment at {venv_path}')
     try:
         venv.create(venv_path, with_pip=True, clear=True)
     except Exception as e:
-        logger.error(f'Failed to create virtual environment: {e}')
-        raise RuntimeError(f'Failed to create virtual environment: {e}')
+        logger.error(f'Failed to create workspace virtual environment: {e}')
+        return None
     
-    # Upgrade pip
-    logger.info('Upgrading pip in virtual environment')
+    # Upgrade pip and install basic packages
+    logger.info('Setting up workspace virtual environment')
     try:
+        # Upgrade pip
         subprocess.run(
             [python_executable, '-m', 'pip', 'install', '--upgrade', 'pip'],
             check=True,
@@ -123,26 +130,49 @@ def create_or_get_venv(code_repo_path: str) -> str:
             text=True,
             timeout=120
         )
+        
+        # Install basic commonly used packages for development
+        basic_packages = [
+            'requests',
+            'numpy', 
+            'pandas',
+            'matplotlib',
+            'jupyter',
+            'ipython'
+        ]
+        
+        for package in basic_packages:
+            try:
+                subprocess.run(
+                    [python_executable, '-m', 'pip', 'install', package],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                    timeout=60
+                )
+                logger.debug(f'Installed {package} in workspace venv')
+            except subprocess.CalledProcessError:
+                logger.warning(f'Failed to install {package}, but continuing...')
+                
     except subprocess.CalledProcessError as e:
-        logger.warning(f'Failed to upgrade pip: {e}')
+        logger.warning(f'Failed to setup workspace venv packages: {e}')
     
-    # Install the package in development mode
-    logger.info('Installing OpenHands in development mode')
-    try:
-        subprocess.run(
-            [python_executable, '-m', 'pip', 'install', '-e', '.'],
-            cwd=code_repo_path,
-            check=True,
-            capture_output=True,
-            text=True,
-            timeout=300
-        )
-    except subprocess.CalledProcessError as e:
-        logger.error(f'Failed to install OpenHands: {e}')
-        raise RuntimeError(f'Failed to install OpenHands in venv: {e}')
+    logger.info(f'Workspace virtual environment ready at {venv_path}')
+    return venv_path
+
+
+def cleanup_workspace_venv(venv_path: str) -> None:
+    """Clean up a workspace virtual environment.
     
-    logger.info('Virtual environment setup complete')
-    return python_executable
+    Args:
+        venv_path: Path to the venv directory to remove
+    """
+    if venv_path and os.path.exists(venv_path):
+        logger.info(f'Cleaning up workspace venv at {venv_path}')
+        try:
+            shutil.rmtree(venv_path)
+        except Exception as e:
+            logger.warning(f'Failed to cleanup workspace venv {venv_path}: {e}')
 
 
 def check_dependencies(code_repo_path: str, poetry_venvs_path: str) -> None:
@@ -241,6 +271,7 @@ class LocalRuntime(ActionExecutionClient):
 
         # Initialize these values to be set in connect()
         self._temp_workspace: str | None = None
+        self._workspace_venv_path: str | None = None
         self._execution_server_port = -1
         self._vscode_port = -1
         self._app_ports: list[int] = []
@@ -293,6 +324,7 @@ class LocalRuntime(ActionExecutionClient):
             self._vscode_port = server_info.vscode_port
             self._app_ports = server_info.app_ports
             self._temp_workspace = server_info.temp_workspace
+            self._workspace_venv_path = server_info.workspace_venv_path
             self.config.workspace_mount_path_in_sandbox = (
                 server_info.workspace_mount_path
             )
@@ -329,6 +361,16 @@ class LocalRuntime(ActionExecutionClient):
                 f'Using workspace directory: {self.config.workspace_mount_path_in_sandbox}'
             )
 
+            # Create workspace virtual environment for the LLM
+            self._workspace_venv_path = create_workspace_venv(
+                self.config.workspace_mount_path_in_sandbox, 
+                self.sid
+            )
+            if self._workspace_venv_path:
+                logger.info(f'Created workspace venv: {self._workspace_venv_path}')
+            else:
+                logger.warning('Failed to create workspace venv, LLM will use system Python')
+
             # Start a new server
             self._execution_server_port = self._find_available_port(
                 EXECUTION_SERVER_PORT_RANGE
@@ -354,15 +396,9 @@ class LocalRuntime(ActionExecutionClient):
             # Get the code repo path
             code_repo_path = os.path.dirname(os.path.dirname(openhands.__file__))
             
-            # Create or get virtual environment and get python executable
-            try:
-                venv_python = create_or_get_venv(code_repo_path)
-                python_prefix = [venv_python]
-            except Exception as e:
-                self.log('error', f'Failed to setup virtual environment: {e}')
-                # Fallback to system python if venv creation fails
-                self.log('warning', 'Falling back to system python')
-                python_prefix = [sys.executable]
+            # Use system Python to run OpenHands action execution server
+            # The workspace venv will be available for the LLM to use via environment variables
+            python_prefix = [sys.executable]
 
             # Start the server process
             cmd = get_action_execution_server_startup_command(
@@ -382,6 +418,14 @@ class LocalRuntime(ActionExecutionClient):
             env['OPENHANDS_REPO_PATH'] = code_repo_path
             env['LOCAL_RUNTIME_MODE'] = '1'
             env['VSCODE_PORT'] = str(self._vscode_port)
+            
+            # Set workspace venv path for the LLM to use
+            if self._workspace_venv_path:
+                env['WORKSPACE_VENV_PATH'] = self._workspace_venv_path
+                venv_python = os.path.join(self._workspace_venv_path, 'bin', 'python')
+                if sys.platform == 'win32':
+                    venv_python = os.path.join(self._workspace_venv_path, 'Scripts', 'python.exe')
+                env['WORKSPACE_PYTHON'] = venv_python
 
             # Derive environment paths using the venv python or system python
             if python_prefix != [sys.executable]:
@@ -470,6 +514,7 @@ class LocalRuntime(ActionExecutionClient):
                 log_thread_exit_event=self._log_thread_exit_event,
                 temp_workspace=self._temp_workspace,
                 workspace_mount_path=self.config.workspace_mount_path_in_sandbox,
+                workspace_venv_path=self._workspace_venv_path,
             )
 
         self.log('info', f'Waiting for server to become ready at {self.api_url}...')
@@ -579,6 +624,11 @@ class LocalRuntime(ActionExecutionClient):
             self.server_process = None
             self._log_thread.join(timeout=5)  # Add timeout to join
 
+        # Clean up workspace venv
+        if self._workspace_venv_path and not self.attach_to_existing:
+            cleanup_workspace_venv(self._workspace_venv_path)
+            self._workspace_venv_path = None
+
         # Clean up temp workspace if it exists and we created it
         if self._temp_workspace and not self.attach_to_existing:
             shutil.rmtree(self._temp_workspace)
@@ -606,6 +656,17 @@ class LocalRuntime(ActionExecutionClient):
 
             # Wait for the log thread to finish
             server_info.log_thread.join(timeout=5)
+
+            # Clean up workspace venv
+            if server_info.workspace_venv_path:
+                cleanup_workspace_venv(server_info.workspace_venv_path)
+
+            # Clean up temp workspace
+            if server_info.temp_workspace:
+                try:
+                    shutil.rmtree(server_info.temp_workspace)
+                except Exception as e:
+                    logger.warning(f'Failed to cleanup temp workspace {server_info.temp_workspace}: {e}')
 
             # Remove from global dictionary
             del _RUNNING_SERVERS[conversation_id]
