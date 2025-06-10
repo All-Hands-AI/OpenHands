@@ -1240,45 +1240,53 @@ class AgentController:
         if first_user_msg is None:
             raise RuntimeError('No first user message found in the event stream.')
 
+        # Find the first user message in the history
         first_user_msg_index = -1
         for i, event in enumerate(history):
             if isinstance(event, MessageAction) and event.source == EventSource.USER:
-                first_user_msg = event
+                first_user_msg = event  # Use the one from history to preserve IDs
                 first_user_msg_index = i
                 break
 
+        # If we didn't find the first user message in history, something is wrong
+        if first_user_msg_index == -1:
+            self.log('warning', 'First user message not found in history. Using cached version.')
+            first_user_msg = self._first_user_message()  # Fallback to cached version
+
         # Find Recall Action and Observation related to the First User Message
-        if first_user_msg is not None and first_user_msg_index != -1:
-            # Look for RecallAction after the first user message
-            for i in range(first_user_msg_index + 1, len(history)):
-                event = history[i]
-                if (
-                    isinstance(event, RecallAction)
-                    and event.query == first_user_msg.content
-                ):
-                    # Found RecallAction, now look for its Observation
-                    recall_action = event
-                    for j in range(i + 1, len(history)):
-                        obs_event = history[j]
-                        # Check for Observation caused by this RecallAction
-                        if (
-                            isinstance(obs_event, Observation)
-                            and obs_event.cause == recall_action.id
-                        ):
-                            recall_observation = obs_event
-                            break  # Found the observation, stop inner loop
-                    break  # Found the recall action (and maybe obs), stop outer loop
+        # Look for RecallAction after the first user message
+        for i in range(first_user_msg_index + 1, len(history)):
+            event = history[i]
+            if (
+                isinstance(event, RecallAction)
+                and event.query == first_user_msg.content
+            ):
+                # Found RecallAction, now look for its Observation
+                recall_action = event
+                for j in range(i + 1, len(history)):
+                    obs_event = history[j]
+                    # Check for Observation caused by this RecallAction
+                    if (
+                        isinstance(obs_event, Observation)
+                        and obs_event.cause == recall_action.id
+                    ):
+                        recall_observation = obs_event
+                        break  # Found the observation, stop inner loop
+                break  # Found the recall action (and maybe obs), stop outer loop
 
         essential_events: list[Event] = []
         if system_message:
             essential_events.append(system_message)
-        if first_user_msg:
+        # Only include first user message if history is not empty
+        if history:
             essential_events.append(first_user_msg)
-        # Also keep the RecallAction that triggered the essential RecallObservation
-        if recall_action:
-            essential_events.append(recall_action)
-        if recall_observation:
-            essential_events.append(recall_observation)
+            # Include recall action and observation if both exist
+            if recall_action and recall_observation:
+                essential_events.append(recall_action)
+                essential_events.append(recall_observation)
+            # Include recall action without observation for backward compatibility
+            elif recall_action:
+                essential_events.append(recall_action)
 
         # 2. Determine the slice of recent events to potentially keep
         num_non_essential_events = len(history) - len(essential_events)
