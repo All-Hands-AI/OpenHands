@@ -10,7 +10,7 @@ This guide explains how to deploy OpenHands to Railway.com with Docker-in-Docker
 
 ## Files Created for Railway Deployment
 
-1. **`Dockerfile.railway`** - Railway-optimized Dockerfile with E2B runtime support
+1. **`Dockerfile.railway`** - Railway-optimized Dockerfile with Local runtime support
 2. **`railway.toml`** - Railway service configuration
 3. **`RAILWAY_DEPLOYMENT.md`** - This deployment guide
 
@@ -34,8 +34,7 @@ This guide explains how to deploy OpenHands to Railway.com with Docker-in-Docker
 
    **Required:**
    - `PORT` - Railway sets this automatically (DO NOT override)
-   - `RUNTIME=e2b` - Uses E2B runtime (no Docker needed)
-   - `e2b api key` - Your E2B API key (get from e2b.dev)
+   - `RUNTIME=local` - Uses Local runtime (no Docker needed)
 
    **Required (LLM providers - choose one):**
    - `OPENAI_API_KEY` - Your OpenAI API key
@@ -47,7 +46,7 @@ This guide explains how to deploy OpenHands to Railway.com with Docker-in-Docker
 
    **Important:** 
    - Do not set the `PORT` environment variable manually. Railway automatically assigns and manages ports.
-   - You must set an E2B_API_KEY to use the E2B runtime. Sign up at https://e2b.dev for free API access.
+   - Local runtime runs the action execution server directly in Railway's container for maximum compatibility.
 
 4. **Deploy**
    - Click "Deploy" and wait for the build to complete
@@ -71,11 +70,11 @@ railway up
 
 ## Configuration Details
 
-### E2B Runtime Setup
+### Local Runtime Setup
 
 The `Dockerfile.railway` includes:
-- E2B runtime configuration (no Docker daemon needed)
-- Streamlined Python-based container
+- Local runtime configuration (no Docker daemon needed)
+- Streamlined Python-based container with Poetry
 - Proper user and permission setup
 - Health checks for Railway monitoring
 
@@ -98,8 +97,8 @@ The deployment is configured for:
 |----------|---------|-------------|
 | `PORT` | (auto-assigned) | Application port (set automatically by Railway) |
 | `HOST` | `0.0.0.0` | Host binding |
-| `RUNTIME` | `e2b` | Runtime type (E2B cloud sandboxes) |
-| `E2B_API_KEY` | (required) | E2B API key for sandbox access |
+| `RUNTIME` | `local` | Runtime type (Local action execution server) |
+| `SKIP_DEPENDENCY_CHECK` | `1` | Skip dependency checks for faster startup |
 | `LOG_ALL_EVENTS` | `true` | Enable comprehensive logging |
 | `FILE_STORE` | `local` | File storage type |
 | `FILE_STORE_PATH` | `/.openhands-state` | State storage path |
