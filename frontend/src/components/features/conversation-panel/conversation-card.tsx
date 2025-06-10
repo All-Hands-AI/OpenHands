@@ -161,7 +161,7 @@ export function ConversationCard({
         const data = await OpenHands.getMicroagents(conversationId);
         setMicroagents(data.microagents);
       } catch (error) {
-        // Silent failure - just set microagents to null
+        console.error(`${t(I18nKey.MICROAGENTS_MODAL$FETCH_ERROR)}:`, error);
         setMicroagents(null);
       } finally {
         setLoadingMicroagents(false);

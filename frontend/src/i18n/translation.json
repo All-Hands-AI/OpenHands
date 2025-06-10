@@ -8863,6 +8863,22 @@
         "tr": "Mikroajanın içeriği yok",
         "uk": "Мікроагент не має вмісту"
     },
+    "MICROAGENTS_MODAL$FETCH_ERROR": {
+        "en": "Failed to fetch microagents. Please try again later.",
+        "ja": "マイクロエージェントの取得に失敗しました。後でもう一度お試しください。",
+        "zh-CN": "获取微代理失败。请稍后再试。",
+        "zh-TW": "獲取微代理失敗。請稍後再試。",
+        "ko-KR": "마이크로에이전트를 가져오지 못했습니다. 나중에 다시 시도해 주세요.",
+        "no": "Kunne ikke hente mikroagenter. Prøv igjen senere.",
+        "ar": "فشل في جلب الوكلاء المصغرين. يرجى المحاولة مرة أخرى لاحقًا.",
+        "de": "Mikroagenten konnten nicht abgerufen werden. Bitte versuchen Sie es später erneut.",
+        "fr": "Échec de la récupération des micro-agents. Veuillez réessayer plus tard.",
+        "it": "Impossibile recuperare i microagenti. Riprova più tardi.",
+        "pt": "Falha ao buscar microagentes. Por favor, tente novamente mais tarde.",
+        "es": "Error al obtener microagentes. Por favor, inténtelo de nuevo más tarde.",
+        "tr": "Mikroajanlar getirilemedi. Lütfen daha sonra tekrar deneyin.",
+        "uk": "Не вдалося отримати мікроагентів. Будь ласка, спробуйте пізніше."
+    },
     "TIPS$SETUP_SCRIPT": {
         "en": "You can add .openhands/setup.sh to your repository to automatically run a setup script every time you start an OpenHands conversation.",
         "ja": "OpenHandsの会話を開始するたびに自動的にセットアップスクリプトを実行するために、.openhands/setup.shをリポジトリに追加できます。",

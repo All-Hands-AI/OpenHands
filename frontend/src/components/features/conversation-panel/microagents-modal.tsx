@@ -54,7 +54,9 @@ export function MicroagentsModal({
             {!isLoading && (!microagents || microagents.length === 0) && (
               <div className="flex items-center justify-center h-full p-4">
                 <p className="text-gray-400">
-                  {t(I18nKey.CONVERSATION$NO_MICROAGENTS)}
+                  {microagents === null
+                    ? t(I18nKey.MICROAGENTS_MODAL$FETCH_ERROR)
+                    : t(I18nKey.CONVERSATION$NO_MICROAGENTS)}
                 </p>
               </div>
             )}
