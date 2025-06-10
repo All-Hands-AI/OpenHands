@@ -10,7 +10,7 @@ This guide explains how to deploy OpenHands to Railway.com with Docker-in-Docker
 
 ## Files Created for Railway Deployment
 
-1. **`Dockerfile.railway`** - Railway-optimized Dockerfile with DinD support
+1. **`Dockerfile.railway`** - Railway-optimized Dockerfile with E2B runtime support
 2. **`railway.toml`** - Railway service configuration
 3. **`RAILWAY_DEPLOYMENT.md`** - This deployment guide
 
@@ -34,15 +34,20 @@ This guide explains how to deploy OpenHands to Railway.com with Docker-in-Docker
 
    **Required:**
    - `PORT` - Railway sets this automatically (DO NOT override)
-   - `SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.41-nikolaik`
+   - `RUNTIME=e2b` - Uses E2B runtime (no Docker needed)
+   - `e2b api key` - Your E2B API key (get from e2b.dev)
 
-   **Optional (for LLM providers):**
+   **Required (LLM providers - choose one):**
    - `OPENAI_API_KEY` - Your OpenAI API key
-   - `ANTHROPIC_API_KEY` - Your Anthropic API key
+   - `ANTHROPIC_API_KEY` - Your Anthropic API key  
    - `GOOGLE_API_KEY` - Your Google API key
+
+   **Optional:**
    - Add other LLM provider keys as needed
 
-   **Important:** Do not set the `PORT` environment variable manually. Railway automatically assigns and manages ports.
+   **Important:** 
+   - Do not set the `PORT` environment variable manually. Railway automatically assigns and manages ports.
+   - You must set an E2B_API_KEY to use the E2B runtime. Sign up at https://e2b.dev for free API access.
 
 4. **Deploy**
    - Click "Deploy" and wait for the build to complete
@@ -66,11 +71,11 @@ railway up
 
 ## Configuration Details
 
-### Docker-in-Docker Setup
+### E2B Runtime Setup
 
 The `Dockerfile.railway` includes:
-- Docker daemon installation and configuration
-- Supervisor to manage both Docker daemon and OpenHands
+- E2B runtime configuration (no Docker daemon needed)
+- Streamlined Python-based container
 - Proper user and permission setup
 - Health checks for Railway monitoring
 
@@ -93,14 +98,11 @@ The deployment is configured for:
 |----------|---------|-------------|
 | `PORT` | (auto-assigned) | Application port (set automatically by Railway) |
 | `HOST` | `0.0.0.0` | Host binding |
-| `SANDBOX_RUNTIME_CONTAINER_IMAGE` | `docker.all-hands.dev/all-hands-ai/runtime:0.41-nikolaik` | Runtime container image |
-| `SANDBOX_USER_ID` | `0` | Sandbox user ID (0 = root) |
+| `RUNTIME` | `e2b` | Runtime type (E2B cloud sandboxes) |
+| `E2B_API_KEY` | (required) | E2B API key for sandbox access |
 | `LOG_ALL_EVENTS` | `true` | Enable comprehensive logging |
-| `WORKSPACE_MOUNT_PATH` | `/opt/workspace_base` | Workspace directory |
 | `FILE_STORE` | `local` | File storage type |
 | `FILE_STORE_PATH` | `/.openhands-state` | State storage path |
-| `USE_HOST_NETWORK` | `false` | Network configuration |
-| `DOCKER_HOST` | `unix:///var/run/docker.sock` | Docker socket path |
 
 ## LLM Provider Configuration
 
