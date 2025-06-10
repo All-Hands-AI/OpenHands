@@ -408,11 +408,11 @@ class ActionExecutionClient(Runtime):
             )
             self.log(
                 'info',
-                f'{self.action_execution_server_url}/update_mcp_server',
+                f'Shabbir->{self.action_execution_server_url}/update_mcp_server',
             )
             response = self._send_action_server_request(
                 'POST',
-                f'Shabbir-> {self.action_execution_server_url}/update_mcp_server',
+                f'{self.action_execution_server_url}/update_mcp_server',
                 json=stdio_tools,
                 timeout=60,
             )
