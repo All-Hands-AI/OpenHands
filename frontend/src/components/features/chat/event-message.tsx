@@ -64,15 +64,22 @@ export function EventMessage({
     const checkExistingFeedback = async () => {
       if (event.id && !feedbackState.checked) {
         try {
-          const exists = await OpenHands.checkFeedbackExists(conversationId, event.id);
+          const exists = await OpenHands.checkFeedbackExists(
+            conversationId,
+            event.id,
+          );
           if (exists) {
-            setFeedbackState(prev => ({ ...prev, submitted: true, checked: true }));
+            setFeedbackState((prev) => ({
+              ...prev,
+              submitted: true,
+              checked: true,
+            }));
           } else {
-            setFeedbackState(prev => ({ ...prev, checked: true }));
+            setFeedbackState((prev) => ({ ...prev, checked: true }));
           }
         } catch (error) {
-          console.error("Error checking feedback existence:", error);
-          setFeedbackState(prev => ({ ...prev, checked: true }));
+          // Silent error handling for feedback existence check
+          setFeedbackState((prev) => ({ ...prev, checked: true }));
         }
       }
     };
@@ -93,7 +100,7 @@ export function EventMessage({
       );
 
       // Update local state to reflect that feedback has been submitted
-      setFeedbackState(prev => ({
+      setFeedbackState((prev) => ({
         ...prev,
         submitted: true,
         rating,
@@ -132,7 +139,7 @@ export function EventMessage({
   const showLikertScale =
     config?.APP_MODE === "saas" &&
     (isAssistantMessage(event) || isFinishAction(event)) &&
-    (isLastMessage || feedbackState.submitted) && 
+    (isLastMessage || feedbackState.submitted) &&
     (!feedbackState.submitted ? feedbackState.checked : true);
 
   if (isFinishAction(event)) {

@@ -153,7 +153,7 @@ class OpenHands {
       const { data } = await openHands.get<{ exists: boolean }>(url);
       return data.exists;
     } catch (error) {
-      console.error("Failed to check if feedback exists:", error);
+      // Error checking if feedback exists
       return false;
     }
   }
