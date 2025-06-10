@@ -9167,6 +9167,22 @@
         "de": "Wählen Sie einen Grund (optional):",
         "uk": "Виберіть причину (необов'язково):"
     },
+    "FEEDBACK$SELECT_REASON_COUNTDOWN": {
+        "en": "Auto-submitting in {{countdown}} seconds...",
+        "ja": "{{countdown}}秒後に自動送信されます...",
+        "zh-CN": "{{countdown}}秒后自动提交...",
+        "zh-TW": "{{countdown}}秒後自動提交...",
+        "ko-KR": "{{countdown}}초 후 자동 제출...",
+        "no": "Sender automatisk om {{countdown}} sekunder...",
+        "it": "Invio automatico tra {{countdown}} secondi...",
+        "pt": "Enviando automaticamente em {{countdown}} segundos...",
+        "es": "Enviando automáticamente en {{countdown}} segundos...",
+        "ar": "الإرسال التلقائي خلال {{countdown}} ثانية...",
+        "fr": "Envoi automatique dans {{countdown}} secondes...",
+        "tr": "{{countdown}} saniye içinde otomatik gönderilecek...",
+        "de": "Automatische Übermittlung in {{countdown}} Sekunden...",
+        "uk": "Автоматична відправка через {{countdown}} секунд..."
+    },
     "FEEDBACK$REASON_MISUNDERSTOOD_INSTRUCTION": {
         "en": "The agent misunderstood my instruction",
         "ja": "エージェントは私の指示を誤解しました",

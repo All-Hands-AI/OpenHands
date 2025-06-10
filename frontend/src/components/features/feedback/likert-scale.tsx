@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import { cn } from "#/utils/utils";
 import i18n from "#/i18n";
 
+// Global timeout duration in milliseconds
+const AUTO_SUBMIT_TIMEOUT = 10000;
+
 interface LikertScaleProps {
   onRatingSubmit: (rating: number, reason?: string) => void;
   initiallySubmitted?: boolean;
@@ -33,6 +36,7 @@ export function LikertScale({
     null,
   );
   const [isSubmitted, setIsSubmitted] = useState(initiallySubmitted);
+  const [countdown, setCountdown] = useState<number>(0);
 
   // Update isSubmitted if initiallySubmitted changes
   useEffect(() => {
@@ -67,11 +71,12 @@ export function LikertScale({
 
     setSelectedRating(rating);
     setShowReasons(true);
+    setCountdown(Math.ceil(AUTO_SUBMIT_TIMEOUT / 1000));
 
     // Set a timeout to auto-submit if no reason is selected
     const timeout = setTimeout(() => {
       submitFeedback(rating);
-    }, 3000);
+    }, AUTO_SUBMIT_TIMEOUT);
 
     setReasonTimeout(timeout);
   };
@@ -80,9 +85,21 @@ export function LikertScale({
   const handleReasonClick = (reason: string) => {
     if (selectedRating && reasonTimeout && !isSubmitted) {
       clearTimeout(reasonTimeout);
+      setCountdown(0);
       submitFeedback(selectedRating, reason);
     }
   };
+
+  // Countdown effect
+  useEffect(() => {
+    if (countdown > 0 && showReasons && !isSubmitted) {
+      const timer = setTimeout(() => {
+        setCountdown(countdown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+    return () => {};
+  }, [countdown, showReasons, isSubmitted]);
 
   // Clean up timeout on unmount
   useEffect(
@@ -142,13 +159,20 @@ export function LikertScale({
           <div className="text-xs text-gray-500 mb-1">
             {i18n.t("FEEDBACK$SELECT_REASON")}
           </div>
+          {countdown > 0 && (
+            <div className="text-xs text-gray-400 mb-1 italic">
+              {i18n.t("FEEDBACK$SELECT_REASON_COUNTDOWN", {
+                countdown,
+              })}
+            </div>
+          )}
           <div className="flex flex-col gap-0.5">
             {FEEDBACK_REASONS.map((reason) => (
               <button
                 type="button"
                 key={reason}
                 onClick={() => handleReasonClick(reason)}
-                className="text-sm text-left py-1 px-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="text-sm text-left py-1 px-2 rounded hover:bg-gray-700 transition-colors"
               >
                 {reason}
               </button>
