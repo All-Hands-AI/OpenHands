@@ -11,7 +11,6 @@ healthcheckTimeout = 300
 
 # Environment variables for Railway deployment
 [env]
-# Railway sets PORT automatically, don't override
 HOST = "0.0.0.0"
 SANDBOX_RUNTIME_CONTAINER_IMAGE = "docker.all-hands.dev/all-hands-ai/runtime:0.41-nikolaik"
 SANDBOX_USER_ID = "0"

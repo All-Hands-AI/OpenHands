@@ -33,7 +33,7 @@ This guide explains how to deploy OpenHands to Railway.com with Docker-in-Docker
    The following environment variables are pre-configured in `railway.toml` but you may want to customize:
 
    **Required:**
-   - `PORT=3000` (Railway sets this automatically)
+   - `PORT` - Railway sets this automatically (DO NOT override)
    - `SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.41-nikolaik`
 
    **Optional (for LLM providers):**
@@ -41,6 +41,8 @@ This guide explains how to deploy OpenHands to Railway.com with Docker-in-Docker
    - `ANTHROPIC_API_KEY` - Your Anthropic API key
    - `GOOGLE_API_KEY` - Your Google API key
    - Add other LLM provider keys as needed
+
+   **Important:** Do not set the `PORT` environment variable manually. Railway automatically assigns and manages ports.
 
 4. **Deploy**
    - Click "Deploy" and wait for the build to complete
@@ -89,7 +91,7 @@ The deployment is configured for:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `PORT` | `3000` | Application port (set by Railway) |
+| `PORT` | (auto-assigned) | Application port (set automatically by Railway) |
 | `HOST` | `0.0.0.0` | Host binding |
 | `SANDBOX_RUNTIME_CONTAINER_IMAGE` | `docker.all-hands.dev/all-hands-ai/runtime:0.41-nikolaik` | Runtime container image |
 | `SANDBOX_USER_ID` | `0` | Sandbox user ID (0 = root) |
