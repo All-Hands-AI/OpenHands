@@ -139,6 +139,26 @@ class OpenHands {
   }
 
   /**
+   * Check if feedback exists for a specific conversation and event
+   * @param conversationId The conversation ID
+   * @param eventId The event ID to check
+   * @returns Whether feedback exists for this conversation and event
+   */
+  static async checkFeedbackExists(
+    conversationId: string,
+    eventId: number,
+  ): Promise<boolean> {
+    try {
+      const url = `/feedback/conversation/${conversationId}/${eventId}`;
+      const { data } = await openHands.get<{ exists: boolean }>(url);
+      return data.exists;
+    } catch (error) {
+      console.error("Failed to check if feedback exists:", error);
+      return false;
+    }
+  }
+
+  /**
    * Authenticate with GitHub token
    * @returns Response with authentication status and user info if successful
    */

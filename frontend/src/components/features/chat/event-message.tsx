@@ -56,10 +56,31 @@ export function EventMessage({
     submitted: boolean;
     rating?: number;
     reason?: string;
-  }>({ submitted: false });
+    checked: boolean;
+  }>({ submitted: false, checked: false });
 
-  // We no longer check for feedback in the event stream since we're using the database
-  // Instead, we'll rely on local state to track if feedback has been submitted for this session
+  // Check if feedback already exists for this event
+  React.useEffect(() => {
+    const checkExistingFeedback = async () => {
+      if (event.id && !feedbackState.checked) {
+        try {
+          const exists = await OpenHands.checkFeedbackExists(conversationId, event.id);
+          if (exists) {
+            setFeedbackState(prev => ({ ...prev, submitted: true, checked: true }));
+          } else {
+            setFeedbackState(prev => ({ ...prev, checked: true }));
+          }
+        } catch (error) {
+          console.error("Error checking feedback existence:", error);
+          setFeedbackState(prev => ({ ...prev, checked: true }));
+        }
+      }
+    };
+
+    if (isLastMessage && (isFinishAction(event) || isAssistantMessage(event))) {
+      checkExistingFeedback();
+    }
+  }, [conversationId, event, isLastMessage, feedbackState.checked]);
 
   const handleRatingSubmit = async (rating: number, reason?: string) => {
     try {
@@ -72,11 +93,12 @@ export function EventMessage({
       );
 
       // Update local state to reflect that feedback has been submitted
-      setFeedbackState({
+      setFeedbackState(prev => ({
+        ...prev,
         submitted: true,
         rating,
         reason,
-      });
+      }));
     } catch (error) {
       // Log error but continue - user will just see the UI stay in unsubmitted state
       // eslint-disable-next-line no-console
@@ -102,11 +124,16 @@ export function EventMessage({
 
   // Show Likert scale for agent messages if:
   // 1. It's in SaaS mode, AND
-  // 2. It's the last message OR feedback has already been submitted for this message
+  // 2. It's an assistant message or finish action, AND
+  // 3. It's the last message OR feedback has already been submitted in this session, AND
+  // 4. Either:
+  //    a. We've checked the database and no feedback exists yet, OR
+  //    b. Feedback has been submitted in this session
   const showLikertScale =
     config?.APP_MODE === "saas" &&
-    isAssistantMessage(event) &&
-    (isLastMessage || feedbackState.submitted);
+    (isAssistantMessage(event) || isFinishAction(event)) &&
+    (isLastMessage || feedbackState.submitted) && 
+    (!feedbackState.submitted ? feedbackState.checked : true);
 
   if (isFinishAction(event)) {
     return (
