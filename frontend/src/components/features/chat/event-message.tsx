@@ -48,7 +48,8 @@ export function EventMessage({
   // Check if there's already a UserFeedbackAction in the event stream for this event
   // and extract the rating if available
   const feedbackInfo = React.useMemo(() => {
-    if (!parsedEvents) return { submitted: false, rating: undefined };
+    if (!parsedEvents)
+      return { submitted: false, rating: undefined, reason: undefined };
 
     // Find the user_feedback action for this specific event ID
     const feedbackAction = parsedEvents.find(
@@ -58,6 +59,7 @@ export function EventMessage({
     return {
       submitted: !!feedbackAction,
       rating: feedbackAction?.args.rating,
+      reason: feedbackAction?.args.reason,
     };
   }, [event.id, parsedEvents]);
 
@@ -128,6 +130,7 @@ export function EventMessage({
             onRatingSubmit={handleRatingSubmit}
             initiallySubmitted={feedbackInfo.submitted}
             initialRating={feedbackInfo.rating}
+            initialReason={feedbackInfo.reason}
           />
         )}
       </>

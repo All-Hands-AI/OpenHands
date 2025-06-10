@@ -6,6 +6,7 @@ interface LikertScaleProps {
   onRatingSubmit: (rating: number, reason?: string) => void;
   initiallySubmitted?: boolean;
   initialRating?: number;
+  initialReason?: string;
 }
 
 const FEEDBACK_REASONS = [
@@ -19,9 +20,13 @@ export function LikertScale({
   onRatingSubmit,
   initiallySubmitted = false,
   initialRating,
+  initialReason,
 }: LikertScaleProps) {
   const [selectedRating, setSelectedRating] = useState<number | null>(
     initialRating || null,
+  );
+  const [selectedReason, setSelectedReason] = useState<string | null>(
+    initialReason || null,
   );
   const [showReasons, setShowReasons] = useState(false);
   const [reasonTimeout, setReasonTimeout] = useState<NodeJS.Timeout | null>(
@@ -41,9 +46,17 @@ export function LikertScale({
     }
   }, [initialRating]);
 
+  // Update selectedReason if initialReason changes
+  useEffect(() => {
+    if (initialReason) {
+      setSelectedReason(initialReason);
+    }
+  }, [initialReason]);
+
   // Submit feedback and disable the component
   const submitFeedback = (rating: number, reason?: string) => {
     onRatingSubmit(rating, reason);
+    setSelectedReason(reason || null);
     setShowReasons(false);
     setIsSubmitted(true);
   };
@@ -84,7 +97,7 @@ export function LikertScale({
   // Helper function to get button class based on state
   const getButtonClass = (rating: number) => {
     if (isSubmitted) {
-      return selectedRating === rating
+      return selectedRating && selectedRating >= rating
         ? "text-yellow-400 cursor-not-allowed"
         : "text-gray-300 opacity-50 cursor-not-allowed";
     }
@@ -95,20 +108,20 @@ export function LikertScale({
   };
 
   return (
-    <div className="mt-4 flex flex-col gap-2">
+    <div className="mt-3 flex flex-col gap-1">
       <div className="text-sm text-gray-500 mb-1">
         {isSubmitted
           ? i18n.t("FEEDBACK$THANK_YOU_FOR_FEEDBACK")
           : i18n.t("FEEDBACK$RATE_AGENT_PERFORMANCE")}
       </div>
-      <div className="flex gap-2">
+      <div className="flex gap-1">
         {[1, 2, 3, 4, 5].map((rating) => (
           <button
             type="button"
             key={rating}
             onClick={() => handleRatingClick(rating)}
             disabled={isSubmitted}
-            className={cn("text-2xl transition-all", getButtonClass(rating))}
+            className={cn("text-xl transition-all", getButtonClass(rating))}
             aria-label={`Rate ${rating} stars`}
           >
             ★
@@ -116,12 +129,24 @@ export function LikertScale({
         ))}
       </div>
 
+      {/* Show selected reason when submitted */}
+      {isSubmitted && selectedReason && (
+        <div className="mt-1">
+          <div className="text-xs text-gray-500 mb-1">
+            {i18n.t("FEEDBACK$SELECTED_REASON")}
+          </div>
+          <div className="text-sm text-gray-500 py-1 px-2 bg-transparent rounded">
+            {selectedReason}
+          </div>
+        </div>
+      )}
+
       {showReasons && !isSubmitted && (
-        <div className="mt-2 flex flex-col gap-2">
-          <div className="text-sm text-gray-500 mb-1">
+        <div className="mt-1 flex flex-col gap-1">
+          <div className="text-xs text-gray-500 mb-1">
             {i18n.t("FEEDBACK$SELECT_REASON")}
           </div>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-0.5">
             {FEEDBACK_REASONS.map((reason) => (
               <button
                 type="button"
