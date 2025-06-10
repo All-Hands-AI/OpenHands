@@ -44,9 +44,6 @@ enum ActionType {
 
   // Interact with the MCP server.
   MCP = "call_tool_mcp",
-
-  // User feedback on the agent's performance
-  USER_FEEDBACK = "user_feedback",
 }
 
 export default ActionType;

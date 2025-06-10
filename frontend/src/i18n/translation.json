@@ -9294,5 +9294,21 @@
         "tr": "Geri bildiriminiz için teşekkürler! Bu, OpenHands'i ileride geliştirmemize yardımcı olacak.",
         "de": "Vielen Dank für Ihr Feedback! Das hilft uns, OpenHands in Zukunft zu verbessern.",
         "uk": "Дякуємо за ваш відгук! Це допоможе нам покращити OpenHands у майбутньому."
+    },
+    "FEEDBACK$FAILED_TO_SUBMIT": {
+        "en": "Failed to submit feedback",
+        "ja": "フィードバックの送信に失敗しました",
+        "zh-CN": "提交反馈失败",
+        "zh-TW": "提交反饋失敗",
+        "ko-KR": "피드백 제출 실패",
+        "no": "Kunne ikke sende tilbakemelding",
+        "it": "Impossibile inviare feedback",
+        "pt": "Falha ao enviar feedback",
+        "es": "Error al enviar comentarios",
+        "ar": "فشل في تقديم التعليقات",
+        "fr": "Échec de l'envoi des commentaires",
+        "tr": "Geri bildirim gönderilemedi",
+        "de": "Feedback konnte nicht gesendet werden",
+        "uk": "Не вдалося надіслати відгук"
     }
 }

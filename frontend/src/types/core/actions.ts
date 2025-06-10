@@ -161,16 +161,6 @@ export interface MCPAction extends OpenHandsActionEvent<"call_tool_mcp"> {
   };
 }
 
-export interface UserFeedbackAction
-  extends OpenHandsActionEvent<"user_feedback"> {
-  source: "user";
-  args: {
-    rating: number;
-    reason?: string;
-    event_id?: number;
-  };
-}
-
 export type OpenHandsAction =
   | UserMessageAction
   | AssistantMessageAction
@@ -187,5 +177,4 @@ export type OpenHandsAction =
   | FileWriteAction
   | RejectAction
   | RecallAction
-  | MCPAction
-  | UserFeedbackAction;
+  | MCPAction;

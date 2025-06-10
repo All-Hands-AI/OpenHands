@@ -1,6 +1,6 @@
 import React from "react";
 import { ConfirmationButtons } from "#/components/shared/buttons/confirmation-buttons";
-import { OpenHandsAction, UserFeedbackAction } from "#/types/core/actions";
+import { OpenHandsAction } from "#/types/core/actions";
 import {
   isUserMessage,
   isErrorObservation,
@@ -10,7 +10,6 @@ import {
   isFinishAction,
   isRejectObservation,
   isMcpObservation,
-  isUserFeedbackAction,
 } from "#/types/core/guards";
 import { OpenHandsObservation } from "#/types/core/observations";
 import { ImageCarousel } from "../images/image-carousel";
@@ -21,7 +20,7 @@ import { getObservationResult } from "./event-content-helpers/get-observation-re
 import { getEventContent } from "./event-content-helpers/get-event-content";
 import { GenericEventMessage } from "./generic-event-message";
 import { LikertScale } from "../feedback/likert-scale";
-import { useWsClient } from "#/context/ws-client-provider";
+
 import { useConfig } from "#/hooks/query/use-config";
 import { useConversationId } from "#/hooks/use-conversation-id";
 import OpenHands from "#/api/open-hands";
@@ -46,17 +45,17 @@ export function EventMessage({
   const shouldShowConfirmationButtons =
     isLastMessage && event.source === "agent" && isAwaitingUserConfirmation;
 
-  const { parsedEvents } = useWsClient();
+  // We don't need parsedEvents from useWsClient() anymore
   const { data: config } = useConfig();
   const { conversationId } = useConversationId();
-  
+
   // State to track feedback submission status
   const [feedbackState, setFeedbackState] = React.useState<{
     submitted: boolean;
     rating?: number;
     reason?: string;
   }>({ submitted: false });
-  
+
   // We no longer check for feedback in the event stream since we're using the database
   // Instead, we'll rely on local state to track if feedback has been submitted for this session
 
@@ -67,9 +66,9 @@ export function EventMessage({
         conversationId,
         rating,
         event.id, // Pass the event ID this feedback corresponds to
-        reason
+        reason,
       );
-      
+
       // Update local state to reflect that feedback has been submitted
       setFeedbackState({
         submitted: true,
@@ -77,7 +76,9 @@ export function EventMessage({
         reason,
       });
     } catch (error) {
-      console.error("Failed to submit feedback:", error);
+      // Log error but continue - user will just see the UI stay in unsubmitted state
+      // eslint-disable-next-line no-console
+      console.error(i18n.t("FEEDBACK$FAILED_TO_SUBMIT"), error);
     }
   };
 

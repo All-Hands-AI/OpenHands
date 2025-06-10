@@ -10,7 +10,6 @@ from openhands.events.action import (
     FileWriteAction,
     MessageAction,
     RecallAction,
-    UserFeedbackAction,
 )
 from openhands.events.action.action import ActionConfirmationStatus
 from openhands.events.action.files import FileEditSource, FileReadSource
@@ -399,34 +398,3 @@ def test_file_read_action_legacy_serialization():
     # Read-specific arguments in serialized form
     assert event_dict['args']['start'] == 0
     assert event_dict['args']['end'] == -1
-
-
-def test_user_feedback_action_serialization_deserialization():
-    """Test serialization and deserialization of UserFeedbackAction."""
-    original_action_dict = {
-        'id': 1,
-        'source': 'user',
-        'action': 'user_feedback',
-        'message': 'User feedback on agent performance',
-        'timestamp': '2023-01-01T00:00:00Z',
-        'args': {
-            'rating': 4,
-            'reason': 'The agent did not follow my instruction',
-            'event_id': 'event-123',
-        },
-    }
-
-    action_instance = event_from_dict(original_action_dict)
-    assert isinstance(action_instance, Action)
-    assert isinstance(action_instance, UserFeedbackAction)
-
-    # Check that the properties are correctly set
-    assert action_instance.rating == 4
-    assert action_instance.reason == 'The agent did not follow my instruction'
-    assert action_instance.event_id == 'event-123'
-
-    # Serialize back to dict and check
-    serialized = event_to_dict(action_instance)
-    assert serialized['args']['rating'] == 4
-    assert serialized['args']['reason'] == 'The agent did not follow my instruction'
-    assert serialized['args']['event_id'] == 'event-123'
