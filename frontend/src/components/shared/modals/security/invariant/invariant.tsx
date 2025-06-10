@@ -269,19 +269,19 @@ function SecurityInvariant() {
         <hr className="border-t border-neutral-600 my-2" />
         <ul className="space-y-2">
           <div
-            className={`cursor-pointer p-2 rounded ${activeSection === "logs" && "bg-neutral-600"}`}
+            className={`cursor-pointer p-2 rounded-sm ${activeSection === "logs" && "bg-neutral-600"}`}
             onClick={() => setActiveSection("logs")}
           >
             {t(I18nKey.INVARIANT$LOG_LABEL)}
           </div>
           <div
-            className={`cursor-pointer p-2 rounded ${activeSection === "policy" && "bg-neutral-600"}`}
+            className={`cursor-pointer p-2 rounded-sm ${activeSection === "policy" && "bg-neutral-600"}`}
             onClick={() => setActiveSection("policy")}
           >
             {t(I18nKey.INVARIANT$POLICY_LABEL)}
           </div>
           <div
-            className={`cursor-pointer p-2 rounded ${activeSection === "settings" && "bg-neutral-600"}`}
+            className={`cursor-pointer p-2 rounded-sm ${activeSection === "settings" && "bg-neutral-600"}`}
             onClick={() => setActiveSection("settings")}
           >
             {t(I18nKey.INVARIANT$SETTINGS_LABEL)}
