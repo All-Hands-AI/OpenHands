@@ -103,10 +103,7 @@ class Agent(ABC):
         pass
 
     def reset(self) -> None:
-        """Resets the agent's execution status.
-
-        Note: This method no longer resets LLM metrics to ensure accurate cost tracking.
-        """
+        """Resets the agent's execution status."""
         # Only reset the completion status, not the LLM metrics
         self._complete = False
 

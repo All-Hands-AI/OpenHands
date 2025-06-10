@@ -177,8 +177,6 @@ Note:
 
     def reset(self) -> None:
         """Resets the VisualBrowsingAgent's internal state.
-
-        Note: This method no longer resets LLM metrics to ensure accurate cost tracking.
         """
         super().reset()
         # Reset agent-specific counters but not LLM metrics
