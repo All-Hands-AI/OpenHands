@@ -1,6 +1,6 @@
 {
   "name": "openhands-frontend",
-  "version": "0.41.0",
+  "version": "0.42.0",
   "private": true,
   "type": "module",
   "engines": {
