@@ -1,6 +1,6 @@
 import React from "react";
 import { ConfirmationButtons } from "#/components/shared/buttons/confirmation-buttons";
-import { OpenHandsAction } from "#/types/core/actions";
+import { OpenHandsAction, UserFeedbackAction } from "#/types/core/actions";
 import {
   isUserMessage,
   isErrorObservation,
@@ -46,13 +46,19 @@ export function EventMessage({
   const { send, parsedEvents } = useWsClient();
 
   // Check if there's already a UserFeedbackAction in the event stream for this event
-  const hasFeedbackBeenSubmitted = React.useMemo(() => {
-    if (!parsedEvents) return false;
+  // and extract the rating if available
+  const feedbackInfo = React.useMemo(() => {
+    if (!parsedEvents) return { submitted: false, rating: undefined };
 
-    // Check if there's a user_feedback action for this specific event ID
-    return parsedEvents.some(
+    // Find the user_feedback action for this specific event ID
+    const feedbackAction = parsedEvents.find(
       (e) => isUserFeedbackAction(e) && e.args.event_id === event.id,
-    );
+    ) as UserFeedbackAction | undefined;
+
+    return {
+      submitted: !!feedbackAction,
+      rating: feedbackAction?.args.rating,
+    };
   }, [event.id, parsedEvents]);
 
   const handleRatingSubmit = (rating: number, reason?: string) => {
@@ -90,7 +96,8 @@ export function EventMessage({
         <ChatMessage type="agent" message={getEventContent(event).details} />
         <LikertScale
           onRatingSubmit={handleRatingSubmit}
-          initiallySubmitted={hasFeedbackBeenSubmitted}
+          initiallySubmitted={feedbackInfo.submitted}
+          initialRating={feedbackInfo.rating}
         />
       </>
     );
@@ -115,7 +122,8 @@ export function EventMessage({
         {showLikertScale && (
           <LikertScale
             onRatingSubmit={handleRatingSubmit}
-            initiallySubmitted={hasFeedbackBeenSubmitted}
+            initiallySubmitted={feedbackInfo.submitted}
+            initialRating={feedbackInfo.rating}
           />
         )}
       </>
