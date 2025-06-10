@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { ConfirmationButtons } from "#/components/shared/buttons/confirmation-buttons";
 import { OpenHandsAction } from "#/types/core/actions";
 import {
@@ -48,6 +49,7 @@ export function EventMessage({
   // We don't need parsedEvents from useWsClient() anymore
   const { data: config } = useConfig();
   const { conversationId } = useConversationId();
+  const { t } = useTranslation();
 
   // State to track feedback submission status
   const [feedbackState, setFeedbackState] = React.useState<{
@@ -78,7 +80,7 @@ export function EventMessage({
     } catch (error) {
       // Log error but continue - user will just see the UI stay in unsubmitted state
       // eslint-disable-next-line no-console
-      console.error(i18n.t("FEEDBACK$FAILED_TO_SUBMIT"), error);
+      console.error(t("FEEDBACK$FAILED_TO_SUBMIT"), error);
     }
   };
 

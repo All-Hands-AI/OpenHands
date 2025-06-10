@@ -108,7 +108,7 @@ class OpenHands {
     const { data } = await openHands.post<FeedbackResponse>(url, feedback);
     return data;
   }
-  
+
   /**
    * Submit conversation feedback with rating
    * @param conversationId The conversation ID
@@ -129,9 +129,12 @@ class OpenHands {
       event_id: eventId,
       rating,
       reason,
-      metadata: { source: "likert-scale" }
+      metadata: { source: "likert-scale" },
     };
-    const { data } = await openHands.post<{ status: string; message: string }>(url, payload);
+    const { data } = await openHands.post<{ status: string; message: string }>(
+      url,
+      payload,
+    );
     return data;
   }
 
