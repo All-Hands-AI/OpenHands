@@ -290,9 +290,6 @@ class AgentController:
     async def _step_with_exception_handling(self) -> None:
         try:
             await self._step()
-            # Save state after successful step to ensure we don't lose state
-            # in case of crashes or unexpected circumstances
-            self.save_state()
         except Exception as e:
             self.log(
                 'error',
@@ -794,7 +791,7 @@ class AgentController:
                 'iteration', self.state.iteration, self.state.max_iterations
             )
         if self.state.max_budget_per_task is not None:
-            current_cost = self.agent.llm.metrics.accumulated_cost
+            current_cost = self.state.metrics.accumulated_cost
             if current_cost > self.state.max_budget_per_task:
                 stop_step = await self._handle_traffic_control(
                     'budget', current_cost, self.state.max_budget_per_task
@@ -1204,7 +1201,7 @@ class AgentController:
             action: The action to attach metrics to
         """
         # Get metrics from agent LLM
-        agent_metrics = self.agent.llm.metrics
+        agent_metrics = self.state.metrics
 
         # Get metrics from condenser LLM if it exists
         condenser_metrics: TokenUsage | None = None
@@ -1235,10 +1232,10 @@ class AgentController:
         # Log the metrics information for debugging
         # Get the latest usage directly from the agent's metrics
         latest_usage = None
-        if self.agent.llm.metrics.token_usages:
-            latest_usage = self.agent.llm.metrics.token_usages[-1]
+        if self.state.metrics.token_usages:
+            latest_usage = self.state.metrics.token_usages[-1]
 
-        accumulated_usage = self.agent.llm.metrics.accumulated_token_usage
+        accumulated_usage = self.state.metrics.accumulated_token_usage
         self.log(
             'debug',
             f'Action metrics - accumulated_cost: {metrics.accumulated_cost}, '
