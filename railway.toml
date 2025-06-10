@@ -12,9 +12,10 @@ healthcheckTimeout = 300
 # Environment variables for Railway deployment
 [env]
 HOST = "0.0.0.0"
-RUNTIME = "e2b"
+RUNTIME = "local"
 LOG_ALL_EVENTS = "true"
 FILE_STORE = "local"
 FILE_STORE_PATH = "/.openhands-state"
 RUN_AS_OPENHANDS = "true"
 OPENHANDS_USER_ID = "42420"
+SKIP_DEPENDENCY_CHECK = "1"
