@@ -7,7 +7,6 @@ import time
 import traceback
 from typing import Callable
 
-import litellm  # noqa
 from litellm.exceptions import (  # noqa
     APIConnectionError,
     APIError,
@@ -260,10 +259,6 @@ class AgentController:
     def update_state_before_step(self) -> None:
         self.state.iteration += 1
         self.state.local_iteration += 1
-
-    async def update_state_after_step(self) -> None:
-        # No need to update local metrics anymore as we're using snapshots instead
-        pass
 
     async def _react_to_exception(
         self,
@@ -595,24 +590,17 @@ class AgentController:
                 self.state.max_iterations + self._initial_max_iterations
             )
 
-    @property
-    def max_budget_per_task(self) -> float | None:
-        return self.state.max_budget_per_task
-
-    @max_budget_per_task.setter
-    def max_budget_per_task(self, value: float | None) -> None:
-        self.state.max_budget_per_task = value
-
     def maybe_extend_max_budget_per_task(self):
         if (
             self.agent.llm.metrics.accumulated_cost is not None
-            and self.max_budget_per_task is not None
+            and self.state.max_budget_per_task is not None
             and self._initial_max_budget_per_task is not None
-            and self.agent.llm.metrics.accumulated_cost >= self.max_budget_per_task
+            and self.agent.llm.metrics.accumulated_cost
+            >= self.state.max_budget_per_task
         ):
             # Set the new budget cap to the current accumulated cost plus the initial budget
             # This ensures we have enough budget to continue and don't immediately hit the limit again
-            self.max_budget_per_task = (
+            self.state.max_budget_per_task = (
                 self.agent.llm.metrics.accumulated_cost
                 + self._initial_max_budget_per_task
             )
@@ -715,7 +703,7 @@ class AgentController:
             local_iteration=0,
             iteration=self.state.iteration,
             max_iterations=self.state.max_iterations,
-            max_budget_per_task=self.max_budget_per_task,
+            max_budget_per_task=self.state.max_budget_per_task,
             delegate_level=self.state.delegate_level + 1,
             # global metrics should be shared between parent and child
             metrics=self.state.metrics,
@@ -846,11 +834,11 @@ class AgentController:
             stop_step = await self._handle_traffic_control(
                 'iteration', self.state.iteration, self.state.max_iterations
             )
-        if self.max_budget_per_task is not None:
+        if self.state.max_budget_per_task is not None:
             current_cost = self.agent.llm.metrics.accumulated_cost
-            if current_cost > self.max_budget_per_task:
+            if current_cost > self.state.max_budget_per_task:
                 stop_step = await self._handle_traffic_control(
-                    'budget', current_cost, self.max_budget_per_task
+                    'budget', current_cost, self.state.max_budget_per_task
                 )
         if stop_step:
             logger.warning('Stopping agent due to traffic control')
@@ -932,8 +920,6 @@ class AgentController:
             self._prepare_metrics_for_frontend(action)
 
             self.event_stream.add_event(action, action._source)  # type: ignore [attr-defined]
-
-        await self.update_state_after_step()
 
         log_level = 'info' if LOG_ALL_EVENTS else 'debug'
         self.log(log_level, str(action), extra={'msg_type': 'ACTION'})
