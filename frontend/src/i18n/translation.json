@@ -9232,19 +9232,19 @@
         "uk": "Інше"
     },
     "FEEDBACK$THANK_YOU_FOR_FEEDBACK": {
-        "en": "Thank you for your feedback!",
-        "ja": "フィードバックをありがとうございます！",
-        "zh-CN": "感谢您的反馈！",
-        "zh-TW": "感謝您的反饋！",
-        "ko-KR": "피드백 감사합니다!",
-        "no": "Takk for tilbakemeldingen!",
-        "it": "Grazie per il tuo feedback!",
-        "pt": "Obrigado pelo seu feedback!",
-        "es": "¡Gracias por su comentario!",
-        "ar": "شكرا على ملاحظاتك!",
-        "fr": "Merci pour votre retour !",
-        "tr": "Geri bildiriminiz için teşekkürler!",
-        "de": "Vielen Dank für Ihr Feedback!",
-        "uk": "Дякуємо за ваш відгук!"
+        "en": "Thank you for your feedback! This will help us improve OpenHands going forward.",
+        "ja": "フィードバックをありがとうございます！これにより、今後OpenHandsを改善していくことができます。",
+        "zh-CN": "感谢您的反馈！这将帮助我们改进OpenHands。",
+        "zh-TW": "感謝您的反饋！這將幫助我們改進OpenHands。",
+        "ko-KR": "피드백 감사합니다! 이를 통해 OpenHands를 개선해 나가겠습니다.",
+        "no": "Takk for tilbakemeldingen! Dette vil hjelpe oss med å forbedre OpenHands fremover.",
+        "it": "Grazie per il tuo feedback! Questo ci aiuterà a migliorare OpenHands in futuro.",
+        "pt": "Obrigado pelo seu feedback! Isso nos ajudará a melhorar o OpenHands no futuro.",
+        "es": "¡Gracias por su comentario! Esto nos ayudará a mejorar OpenHands en el futuro.",
+        "ar": "شكرا على ملاحظاتك! سيساعدنا هذا في تحسين OpenHands في المستقبل.",
+        "fr": "Merci pour votre retour ! Cela nous aidera à améliorer OpenHands à l'avenir.",
+        "tr": "Geri bildiriminiz için teşekkürler! Bu, OpenHands'i ileride geliştirmemize yardımcı olacak.",
+        "de": "Vielen Dank für Ihr Feedback! Das hilft uns, OpenHands in Zukunft zu verbessern.",
+        "uk": "Дякуємо за ваш відгук! Це допоможе нам покращити OpenHands у майбутньому."
     }
 }
