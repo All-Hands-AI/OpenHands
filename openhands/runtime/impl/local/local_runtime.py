@@ -58,6 +58,9 @@ class ActionExecutionServerInfo:
 # Global dictionary to track running server processes by session ID
 _RUNNING_SERVERS: dict[str, ActionExecutionServerInfo] = {}
 
+# Global list to track warm servers waiting for use
+_WARM_SERVERS: list[ActionExecutionServerInfo] = []
+
 
 def get_user_info() -> tuple[int, str | None]:
     """Get user ID and username in a cross-platform way."""
@@ -208,6 +211,10 @@ class LocalRuntime(ActionExecutionClient):
         """Start the action_execution_server on the local machine or connect to an existing one."""
         self.send_status_message('STATUS$STARTING_RUNTIME')
 
+        # Get environment variables for warm server configuration
+        initial_num_warm_servers = int(os.getenv('INITIAL_NUM_WARM_SERVERS', '0'))
+        desired_num_warm_servers = int(os.getenv('DESIRED_NUM_WARM_SERVERS', '0'))
+
         # Check if there's already a server running for this session ID
         if self.sid in _RUNNING_SERVERS:
             self.log('info', f'Connecting to existing server for session {self.sid}')
@@ -255,132 +262,96 @@ class LocalRuntime(ActionExecutionClient):
                 f'Using workspace directory: {self.config.workspace_mount_path_in_sandbox}'
             )
 
-            # Start a new server
-            self._execution_server_port = self._find_available_port(
-                EXECUTION_SERVER_PORT_RANGE
-            )
-            self._vscode_port = int(
-                os.getenv('VSCODE_PORT')
-                or str(self._find_available_port(VSCODE_PORT_RANGE))
-            )
-            self._app_ports = [
-                int(
-                    os.getenv('APP_PORT_1')
-                    or str(self._find_available_port(APP_PORT_RANGE_1))
-                ),
-                int(
-                    os.getenv('APP_PORT_2')
-                    or str(self._find_available_port(APP_PORT_RANGE_2))
-                ),
-            ]
-            self.api_url = (
-                f'{self.config.sandbox.local_runtime_url}:{self._execution_server_port}'
-            )
-
-            # Start the server process
-            cmd = get_action_execution_server_startup_command(
-                server_port=self._execution_server_port,
-                plugins=self.plugins,
-                app_config=self.config,
-                python_prefix=['poetry', 'run'],
-                override_user_id=self._user_id,
-                override_username=self._username,
-            )
-
-            self.log('debug', f'Starting server with command: {cmd}')
-            env = os.environ.copy()
-            # Get the code repo path
-            code_repo_path = os.path.dirname(os.path.dirname(openhands.__file__))
-            env['PYTHONPATH'] = os.pathsep.join(
-                [code_repo_path, env.get('PYTHONPATH', '')]
-            )
-            env['OPENHANDS_REPO_PATH'] = code_repo_path
-            env['LOCAL_RUNTIME_MODE'] = '1'
-            env['VSCODE_PORT'] = str(self._vscode_port)
-
-            # Derive environment paths using sys.executable
-            interpreter_path = sys.executable
-            python_bin_path = os.path.dirname(interpreter_path)
-            env_root_path = os.path.dirname(python_bin_path)
-
-            # Prepend the interpreter's bin directory to PATH for subprocesses
-            env['PATH'] = f'{python_bin_path}{os.pathsep}{env.get("PATH", "")}'
-            logger.debug(f'Updated PATH for subprocesses: {env["PATH"]}')
-
-            # Check dependencies using the derived env_root_path if not skipped
-            if os.getenv('SKIP_DEPENDENCY_CHECK', '') != '1':
-                check_dependencies(code_repo_path, env_root_path)
-
-            self.server_process = subprocess.Popen(  # noqa: S603
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                universal_newlines=True,
-                bufsize=1,
-                env=env,
-                cwd=code_repo_path,  # Explicitly set the working directory
-            )
-
-            # Start a thread to read and log server output
-            def log_output() -> None:
-                if not self.server_process or not self.server_process.stdout:
-                    self.log(
-                        'error', 'Server process or stdout not available for logging.'
-                    )
-                    return
-
+            # Check if we have a warm server available
+            warm_server_available = False
+            if _WARM_SERVERS and not self.attach_to_existing:
                 try:
-                    # Read lines while the process is running and stdout is available
-                    while self.server_process.poll() is None:
-                        if self._log_thread_exit_event.is_set():  # Check exit event
-                            self.log('info', 'Log thread received exit signal.')
-                            break  # Exit loop if signaled
-                        line = self.server_process.stdout.readline()
-                        if not line:
-                            # Process might have exited between poll() and readline()
-                            break
-                        self.log('info', f'Server: {line.strip()}')
+                    # Pop a warm server from the list
+                    self.log('info', 'Using a warm server')
+                    server_info = _WARM_SERVERS.pop(0)
 
-                    # Capture any remaining output after the process exits OR if signaled
-                    if (
-                        not self._log_thread_exit_event.is_set()
-                    ):  # Check again before reading remaining
-                        self.log(
-                            'info', 'Server process exited, reading remaining output.'
+                    # Use the warm server
+                    self.server_process = server_info.process
+                    self._execution_server_port = server_info.execution_server_port
+                    self._log_thread = server_info.log_thread
+                    self._log_thread_exit_event = server_info.log_thread_exit_event
+                    self._vscode_port = server_info.vscode_port
+                    self._app_ports = server_info.app_ports
+
+                    # We need to clean up the warm server's temp workspace and create a new one
+                    if server_info.temp_workspace:
+                        shutil.rmtree(server_info.temp_workspace)
+
+                    # Create a new temp workspace for this session
+                    if self._temp_workspace is None:
+                        self._temp_workspace = tempfile.mkdtemp(
+                            prefix=f'openhands_workspace_{self.sid}',
                         )
-                        for line in self.server_process.stdout:
-                            if (
-                                self._log_thread_exit_event.is_set()
-                            ):  # Check inside loop too
-                                self.log(
-                                    'info',
-                                    'Log thread received exit signal while reading remaining output.',
-                                )
-                                break
-                            self.log('info', f'Server (remaining): {line.strip()}')
+                        self.config.workspace_mount_path_in_sandbox = (
+                            self._temp_workspace
+                        )
 
+                    self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._execution_server_port}'
+
+                    # Store the server process in the global dictionary with the new workspace
+                    _RUNNING_SERVERS[self.sid] = ActionExecutionServerInfo(
+                        process=self.server_process,
+                        execution_server_port=self._execution_server_port,
+                        vscode_port=self._vscode_port,
+                        app_ports=self._app_ports,
+                        log_thread=self._log_thread,
+                        log_thread_exit_event=self._log_thread_exit_event,
+                        temp_workspace=self._temp_workspace,
+                        workspace_mount_path=self.config.workspace_mount_path_in_sandbox,
+                    )
+
+                    warm_server_available = True
+                except IndexError:
+                    # No warm servers available
+                    self.log('info', 'No warm servers available, starting a new server')
+                    warm_server_available = False
                 except Exception as e:
-                    # Log the error, but don't prevent the thread from potentially exiting
-                    self.log('error', f'Error reading server output: {e}')
-                finally:
-                    self.log(
-                        'info', 'Log output thread finished.'
-                    )  # Add log for thread exit
+                    # Error using warm server
+                    self.log('error', f'Error using warm server: {e}')
+                    warm_server_available = False
 
-            self._log_thread = threading.Thread(target=log_output, daemon=True)
-            self._log_thread.start()
+            # If no warm server is available, start a new one
+            if not warm_server_available:
+                # Create a new server
+                server_info, api_url = self._create_server(
+                    workspace_prefix=self.sid,
+                    is_warm_server=False,
+                    should_check_dependencies=True,
+                )
 
-            # Store the server process in the global dictionary
-            _RUNNING_SERVERS[self.sid] = ActionExecutionServerInfo(
-                process=self.server_process,
-                execution_server_port=self._execution_server_port,
-                vscode_port=self._vscode_port,
-                app_ports=self._app_ports,
-                log_thread=self._log_thread,
-                log_thread_exit_event=self._log_thread_exit_event,
-                temp_workspace=self._temp_workspace,
-                workspace_mount_path=self.config.workspace_mount_path_in_sandbox,
-            )
+                # Set instance variables
+                self.server_process = server_info.process
+                self._execution_server_port = server_info.execution_server_port
+                self._vscode_port = server_info.vscode_port
+                self._app_ports = server_info.app_ports
+                self._log_thread = server_info.log_thread
+                self._log_thread_exit_event = server_info.log_thread_exit_event
+
+                # We need to use the existing temp workspace, not the one created by _create_server
+                if (
+                    server_info.temp_workspace
+                    and server_info.temp_workspace != self._temp_workspace
+                ):
+                    shutil.rmtree(server_info.temp_workspace)
+
+                self.api_url = api_url
+
+                # Store the server process in the global dictionary with the correct workspace
+                _RUNNING_SERVERS[self.sid] = ActionExecutionServerInfo(
+                    process=self.server_process,
+                    execution_server_port=self._execution_server_port,
+                    vscode_port=self._vscode_port,
+                    app_ports=self._app_ports,
+                    log_thread=self._log_thread,
+                    log_thread_exit_event=self._log_thread_exit_event,
+                    temp_workspace=self._temp_workspace,
+                    workspace_mount_path=self.config.workspace_mount_path_in_sandbox,
+                )
 
         self.log('info', f'Waiting for server to become ready at {self.api_url}...')
         self.send_status_message('STATUS$WAITING_FOR_CLIENT')
@@ -390,6 +361,14 @@ class LocalRuntime(ActionExecutionClient):
         if not self.attach_to_existing:
             await call_sync_from_async(self.setup_initial_env)
 
+            # Initialize warm servers if needed
+            if initial_num_warm_servers > 0 and len(_WARM_SERVERS) == 0:
+                self.log(
+                    'info', f'Initializing {initial_num_warm_servers} warm servers'
+                )
+                for _ in range(initial_num_warm_servers):
+                    self._create_warm_server_in_background()
+
         self.log(
             'debug',
             f'Server initialized with plugins: {[plugin.name for plugin in self.plugins]}',
@@ -397,6 +376,19 @@ class LocalRuntime(ActionExecutionClient):
         if not self.attach_to_existing:
             self.send_status_message(' ')
         self._runtime_initialized = True
+
+        # Check if we need to create more warm servers after connecting
+        if (
+            desired_num_warm_servers > 0
+            and len(_WARM_SERVERS) < desired_num_warm_servers
+        ):
+            num_to_create = desired_num_warm_servers - len(_WARM_SERVERS)
+            self.log(
+                'info',
+                f'Creating {num_to_create} additional warm servers to reach desired count',
+            )
+            for _ in range(num_to_create):
+                self._create_warm_server_in_background()
 
     def _find_available_port(
         self, port_range: tuple[int, int], max_attempts: int = 5
@@ -406,6 +398,179 @@ class LocalRuntime(ActionExecutionClient):
             port = find_available_tcp_port(port_range[0], port_range[1])
             return port
         return port
+
+    def _create_server(
+        self,
+        workspace_prefix: str,
+        is_warm_server: bool = False,
+        should_check_dependencies: bool = False,
+    ) -> tuple[ActionExecutionServerInfo, str]:
+        """Create a server process and return the server info and API URL.
+
+        Args:
+            workspace_prefix: Prefix for the temporary workspace directory
+            is_warm_server: Whether this is a warm server (for logging purposes)
+            should_check_dependencies: Whether to check dependencies before starting the server
+
+        Returns:
+            A tuple of (server_info, api_url)
+        """
+        server_type = 'warm' if is_warm_server else 'regular'
+        logger.info(f'Creating a {server_type} server')
+
+        # Set up workspace directory
+        temp_workspace = tempfile.mkdtemp(
+            prefix=f'openhands_workspace_{workspace_prefix}',
+        )
+        workspace_mount_path = temp_workspace
+
+        # Find available ports
+        execution_server_port = self._find_available_port(EXECUTION_SERVER_PORT_RANGE)
+        vscode_port = int(
+            os.getenv('VSCODE_PORT')
+            or str(self._find_available_port(VSCODE_PORT_RANGE))
+        )
+        app_ports = [
+            int(
+                os.getenv('APP_PORT_1')
+                or str(self._find_available_port(APP_PORT_RANGE_1))
+            ),
+            int(
+                os.getenv('APP_PORT_2')
+                or str(self._find_available_port(APP_PORT_RANGE_2))
+            ),
+        ]
+
+        # Start the server process
+        cmd = get_action_execution_server_startup_command(
+            server_port=execution_server_port,
+            plugins=self.plugins,
+            app_config=self.config,
+            python_prefix=['poetry', 'run'],
+            override_user_id=self._user_id,
+            override_username=self._username,
+        )
+
+        if not is_warm_server:
+            self.log('debug', f'Starting server with command: {cmd}')
+
+        env = os.environ.copy()
+        # Get the code repo path
+        code_repo_path = os.path.dirname(os.path.dirname(openhands.__file__))
+        env['PYTHONPATH'] = os.pathsep.join([code_repo_path, env.get('PYTHONPATH', '')])
+        env['OPENHANDS_REPO_PATH'] = code_repo_path
+        env['LOCAL_RUNTIME_MODE'] = '1'
+        env['VSCODE_PORT'] = str(vscode_port)
+
+        # Derive environment paths using sys.executable
+        interpreter_path = sys.executable
+        python_bin_path = os.path.dirname(interpreter_path)
+
+        # Prepend the interpreter's bin directory to PATH for subprocesses
+        env['PATH'] = f'{python_bin_path}{os.pathsep}{env.get("PATH", "")}'
+
+        if not is_warm_server:
+            logger.debug(f'Updated PATH for subprocesses: {env["PATH"]}')
+
+        # Check dependencies if requested
+        if should_check_dependencies and os.getenv('SKIP_DEPENDENCY_CHECK', '') != '1':
+            env_root_path = os.path.dirname(python_bin_path)
+            check_dependencies(code_repo_path, env_root_path)
+
+        server_process = subprocess.Popen(  # noqa: S603
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True,
+            bufsize=1,
+            env=env,
+            cwd=code_repo_path,
+        )
+
+        log_thread_exit_event = threading.Event()
+
+        # Start a thread to read and log server output
+        def log_output() -> None:
+            if not server_process or not server_process.stdout:
+                log_msg = (
+                    f'{server_type} server process or stdout not available for logging.'
+                )
+                if is_warm_server:
+                    logger.error(log_msg)
+                else:
+                    self.log('error', log_msg)
+                return
+
+            try:
+                # Read lines while the process is running and stdout is available
+                while server_process.poll() is None:
+                    if log_thread_exit_event.is_set():
+                        log_msg = (
+                            f'{server_type} server log thread received exit signal.'
+                        )
+                        if is_warm_server:
+                            logger.info(log_msg)
+                        else:
+                            self.log('info', log_msg)
+                        break
+                    line = server_process.stdout.readline()
+                    if not line:
+                        break
+                    log_msg = f'{server_type} server: {line.strip()}'
+                    if is_warm_server:
+                        logger.info(log_msg)
+                    else:
+                        self.log('info', log_msg)
+
+                # Capture any remaining output
+                if not log_thread_exit_event.is_set():
+                    log_msg = f'{server_type} server process exited, reading remaining output.'
+                    if is_warm_server:
+                        logger.info(log_msg)
+                    else:
+                        self.log('info', log_msg)
+
+                    for line in server_process.stdout:
+                        if log_thread_exit_event.is_set():
+                            break
+                        log_msg = f'{server_type} server (remaining): {line.strip()}'
+                        if is_warm_server:
+                            logger.info(log_msg)
+                        else:
+                            self.log('info', log_msg)
+
+            except Exception as e:
+                log_msg = f'Error reading {server_type} server output: {e}'
+                if is_warm_server:
+                    logger.error(log_msg)
+                else:
+                    self.log('error', log_msg)
+            finally:
+                log_msg = f'{server_type} server log output thread finished.'
+                if is_warm_server:
+                    logger.info(log_msg)
+                else:
+                    self.log('info', log_msg)
+
+        log_thread = threading.Thread(target=log_output, daemon=True)
+        log_thread.start()
+
+        # Create server info object
+        server_info = ActionExecutionServerInfo(
+            process=server_process,
+            execution_server_port=execution_server_port,
+            vscode_port=vscode_port,
+            app_ports=app_ports,
+            log_thread=log_thread,
+            log_thread_exit_event=log_thread_exit_event,
+            temp_workspace=temp_workspace,
+            workspace_mount_path=workspace_mount_path,
+        )
+
+        # API URL for the server
+        api_url = f'{self.config.sandbox.local_runtime_url}:{execution_server_port}'
+
+        return server_info, api_url
 
     @tenacity.retry(
         wait=tenacity.wait_fixed(2),
@@ -455,9 +620,82 @@ class LocalRuntime(ActionExecutionClient):
                         json={'action': event_to_dict(action)},
                     )
                 )
+
+                # After executing the action, check if we need to create more warm servers
+                desired_num_warm_servers = int(
+                    os.getenv('DESIRED_NUM_WARM_SERVERS', '0')
+                )
+                if (
+                    desired_num_warm_servers > 0
+                    and len(_WARM_SERVERS) < desired_num_warm_servers
+                ):
+                    self.log(
+                        'info',
+                        f'Creating a new warm server to maintain desired count of {desired_num_warm_servers}',
+                    )
+                    self._create_warm_server_in_background()
+
                 return observation_from_dict(response.json())
             except httpx.NetworkError:
                 raise AgentRuntimeDisconnectedError('Server connection lost')
+
+    def _create_warm_server(self) -> None:
+        """Create a warm server in the background."""
+        try:
+            server_info, api_url = self._create_server(
+                workspace_prefix='warm',
+                is_warm_server=True,
+            )
+
+            # Wait for the server to be ready
+            session = httpx.Client(timeout=30)
+
+            # Use tenacity to retry the connection
+            @tenacity.retry(
+                wait=tenacity.wait_fixed(2),
+                stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),
+                before_sleep=lambda retry_state: logger.debug(
+                    f'Waiting for warm server to be ready... (attempt {retry_state.attempt_number})'
+                ),
+            )
+            def wait_until_alive() -> bool:
+                if server_info.process.poll() is not None:
+                    raise RuntimeError('Warm server process died')
+
+                try:
+                    response = session.get(f'{api_url}/alive')
+                    response.raise_for_status()
+                    return True
+                except Exception as e:
+                    logger.debug(f'Warm server not ready yet: {e}')
+                    raise
+
+            wait_until_alive()
+            logger.info(
+                f'Warm server ready at port {server_info.execution_server_port}'
+            )
+
+            # Add to the warm servers list
+            _WARM_SERVERS.append(server_info)
+        except Exception as e:
+            logger.error(f'Failed to create warm server: {e}')
+            # Clean up resources
+            if 'server_info' in locals():
+                server_info.log_thread_exit_event.set()
+                if server_info.process:
+                    server_info.process.terminate()
+                    try:
+                        server_info.process.wait(timeout=5)
+                    except subprocess.TimeoutExpired:
+                        server_info.process.kill()
+                server_info.log_thread.join(timeout=5)
+                if server_info.temp_workspace:
+                    shutil.rmtree(server_info.temp_workspace)
+
+    def _create_warm_server_in_background(self) -> None:
+        """Start a new thread to create a warm server."""
+        thread = threading.Thread(target=self._create_warm_server, daemon=True)
+        thread.start()
 
     def close(self) -> None:
         """Stop the server process if not in attach_to_existing mode."""
@@ -520,6 +758,33 @@ class LocalRuntime(ActionExecutionClient):
             # Remove from global dictionary
             del _RUNNING_SERVERS[conversation_id]
             logger.info(f'LocalRuntime for conversation {conversation_id} deleted')
+
+        # Also clean up any warm servers if this is the last conversation being deleted
+        if not _RUNNING_SERVERS:
+            logger.info('No active conversations, cleaning up warm servers')
+            for server_info in _WARM_SERVERS[:]:
+                # Signal the log thread to exit
+                server_info.log_thread_exit_event.set()
+
+                # Terminate the server process
+                if server_info.process:
+                    server_info.process.terminate()
+                    try:
+                        server_info.process.wait(timeout=5)
+                    except subprocess.TimeoutExpired:
+                        server_info.process.kill()
+
+                # Wait for the log thread to finish
+                server_info.log_thread.join(timeout=5)
+
+                # Clean up temp workspace
+                if server_info.temp_workspace:
+                    shutil.rmtree(server_info.temp_workspace)
+
+                # Remove from warm servers list
+                _WARM_SERVERS.remove(server_info)
+
+            logger.info('All warm servers cleaned up')
 
     @property
     def runtime_url(self) -> str:
