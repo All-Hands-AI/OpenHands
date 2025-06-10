@@ -759,8 +759,6 @@ class AgentController:
             )
             return
 
-        self.state_manager.run_control_flags()
-
         self.log(
             'debug',
             f'LEVEL {self.state.delegate_level} LOCAL STEP {self.state.get_local_step()} GLOBAL STEP {self.state.iteration_flag.current_value}',
