@@ -1,4 +1,5 @@
 import asyncio
+import copy
 import functools
 import os
 import re
@@ -6,6 +7,7 @@ import re
 import huggingface_hub
 import pandas as pd
 from datasets import load_dataset
+from pydantic import SecretStr
 
 from evaluation.benchmarks.gaia.scorer import question_scorer
 from evaluation.utils.shared import (
@@ -24,6 +26,7 @@ from openhands.core.config import (
     OpenHandsConfig,
     get_llm_config_arg,
     get_parser,
+    load_from_toml,
 )
 from openhands.core.config.utils import get_agent_config_arg
 from openhands.core.logger import openhands_logger as logger
@@ -41,7 +44,7 @@ AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
-    'CodeActAgent': 'When you think you have solved the question, please first send your answer to user through message and then exit.\n'
+    'CodeActAgent': 'When you think you have solved the question, please use the finish tool and include your final answer in the message parameter of the finish tool. Your final answer MUST be encapsulated within <solution> and </solution>.\n'
 }
 
 
@@ -67,6 +70,11 @@ def get_config(
         logger.info('Agent config not provided, using default settings')
         agent_config = config.get_agent_config(metadata.agent_class)
         agent_config.enable_prompt_extensions = False
+
+    config_copy = copy.deepcopy(config)
+    load_from_toml(config_copy)
+    if config_copy.search_api_key:
+        config.search_api_key = SecretStr(config_copy.search_api_key)
     return config
 
 
@@ -134,16 +142,26 @@ def process_instance(
         dest_file = None
 
     # Prepare instruction
-    instruction = f'{instance["Question"]}\n'
+    instruction = """You have one question to answer. It is paramount that you provide a correct answer.
+Give it all you can: I know for a fact that you have access to all the relevant tools to solve it and find the correct answer (the answer does exist). Failure or 'I cannot answer' or 'None found' will not be tolerated, success will be rewarded.
+You must make sure you find the correct answer! You MUST strictly follow the task-specific formatting instructions for your final answer.
+Here is the task:
+{task_question}
+""".format(
+        task_question=instance['Question'],
+    )
     logger.info(f'Instruction: {instruction}')
     if dest_file:
         instruction += f'\n\nThe mentioned file is provided in the workspace at: {dest_file.split("/")[-1]}'
 
-    instruction += 'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
-    instruction += 'Please encapsulate your final answer (answer ONLY) within <solution> and </solution>.\n'
+    instruction += """IMPORTANT: When seeking information from a website, REFRAIN from arbitrary URL navigation. You should utilize the designated search engine tool with precise keywords to obtain relevant URLs or use the specific website's search interface. DO NOT navigate directly to specific URLs as they may not exist.\n\nFor example: if you want to search for a research paper on Arxiv, either use the search engine tool with specific keywords or navigate to arxiv.org and then use its interface.\n"""
+    instruction += 'IMPORTANT: You should NEVER ask for Human Help.\n'
+    instruction += 'IMPORTANT: Please encapsulate your final answer (answer ONLY) within <solution> and </solution>. Your answer will be evaluated using string matching approaches so it important that you STRICTLY adhere to the output formatting instructions specified in the task (e.g., alphabetization, sequencing, units, rounding, decimal places, etc.)\n'
     instruction += (
         'For example: The answer to the question is <solution> 42 </solution>.\n'
     )
+    instruction += "IMPORTANT: Your final answer should be a number OR as few words as possible OR a comma separated list of numbers and/or strings. If you are asked for a number, express it numerically (i.e., with digits rather than words), do not use commas, and do not include units such as $ or percent signs unless specified otherwise. If you are asked for a string, don't use articles, neither abbreviations (e.g. for cities). If you are asked for a comma separated list, apply the above rules depending of whether the element to be put in the list is a number or a string.\n"
+
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += AGENT_CLS_TO_INST_SUFFIX.get(metadata.agent_class, '')
     logger.info(f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'})
@@ -175,7 +193,7 @@ def process_instance(
     for event in reversed(state.history):
         if event.source == 'agent':
             if isinstance(event, AgentFinishAction):
-                model_answer_raw = event.thought
+                model_answer_raw = event.final_thought
                 break
             elif isinstance(event, CmdRunAction):
                 model_answer_raw = event.thought
@@ -222,6 +240,7 @@ def process_instance(
         error=state.last_error if state and state.last_error else None,
         test_result=test_result,
     )
+    runtime.close()
     return output
 
 
