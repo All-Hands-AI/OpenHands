@@ -152,7 +152,6 @@ def test_basic_truncation(controller_fixture):
             },  # 10
         ]
     )
-    # No longer need to set mock_first_user_message.id since we're using the actual function
 
     # Calculation (RecallAction now essential):
     # History len = 10
@@ -266,7 +265,6 @@ def test_no_recall_observation(controller_fixture):
             },  # 9
         ]
     )
-    # No longer need to set mock ID
 
     # Calculation (RecallAction essential only if RecallObs exists):
     # History len = 9
@@ -309,7 +307,6 @@ def test_short_history_no_truncation(controller_fixture):
         ]
     )
     controller.state.history = history
-    # No longer need to set mock ID
 
     # Calculation (RecallAction now essential):
     # History len = 6
@@ -345,7 +342,6 @@ def test_only_essential_events(controller_fixture):
         ]
     )
     controller.state.history = history
-    # No longer need to set mock ID
 
     # Calculation (RecallAction now essential):
     # History len = 4
@@ -406,7 +402,6 @@ def test_dangling_observations_at_cut_point(controller_fixture):
         ]
     )  # 10 events total
     controller.state.history = history_forced_dangle
-    # No longer need to set mock ID
 
     # Calculation (RecallAction now essential):
     # History len = 10
@@ -454,7 +449,6 @@ def test_only_dangling_observations_in_recent_slice(controller_fixture):
         ]
     )  # 6 events total
     controller.state.history = history
-    # No longer need to set mock ID
 
     # Calculation (RecallAction now essential):
     # History len = 6
@@ -543,7 +537,6 @@ def test_multiple_user_messages(controller_fixture):
         ]
     )  # 11 events total
     controller.state.history = history
-    # No longer need to set mock ID  # Explicitly set the first user message ID
 
     # Calculation (RecallAction now essential):
     # History len = 11
