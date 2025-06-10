@@ -22,6 +22,7 @@ import { getEventContent } from "./event-content-helpers/get-event-content";
 import { GenericEventMessage } from "./generic-event-message";
 import { LikertScale } from "../feedback/likert-scale";
 import { useWsClient } from "#/context/ws-client-provider";
+import { useConfig } from "#/hooks/query/use-config";
 
 const hasThoughtProperty = (
   obj: Record<string, unknown>,
@@ -44,6 +45,7 @@ export function EventMessage({
     isLastMessage && event.source === "agent" && isAwaitingUserConfirmation;
 
   const { send, parsedEvents } = useWsClient();
+  const { data: config } = useConfig();
 
   // Check if there's already a UserFeedbackAction in the event stream for this event
   // and extract the rating if available
@@ -93,10 +95,12 @@ export function EventMessage({
   }
 
   // Show Likert scale for agent messages if:
-  // 1. It's the last message, OR
-  // 2. Feedback has already been submitted for this message
+  // 1. It's in SaaS mode, AND
+  // 2. It's the last message OR feedback has already been submitted for this message
   const showLikertScale =
-    isAssistantMessage(event) && (isLastMessage || feedbackInfo.submitted);
+    config?.APP_MODE === "saas" &&
+    isAssistantMessage(event) &&
+    (isLastMessage || feedbackInfo.submitted);
 
   if (isFinishAction(event)) {
     return (
