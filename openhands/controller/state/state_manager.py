@@ -220,6 +220,7 @@ class StateTracker:
     def maybe_expand_control_flags(
         self, headless_mode: bool
     ):
+        # Iteration and budget extensions are independent of each other
         self.state.iteration_flag.expand(headless_mode)
         if self.state.budget_flag:
             self.state.budget_flag.expand(headless_mode)

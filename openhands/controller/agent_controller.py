@@ -427,11 +427,9 @@ class AgentController:
 
         elif isinstance(action, AgentFinishAction):
             self.state.outputs = action.outputs
-            # No need to merge local metrics anymore
             await self.set_agent_state_to(AgentState.FINISHED)
         elif isinstance(action, AgentRejectAction):
             self.state.outputs = action.outputs
-            # No need to merge local metrics anymore
             await self.set_agent_state_to(AgentState.REJECTED)
 
     async def _handle_observation(self, observation: Observation) -> None:
@@ -466,9 +464,6 @@ class AgentController:
             if self.state.agent_state == AgentState.USER_REJECTED:
                 await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
             return
-        elif isinstance(observation, ErrorObservation):
-            # No need to merge local metrics anymore
-            pass
 
     async def _handle_message_action(self, action: MessageAction) -> None:
         """Handles message actions from the event stream.
@@ -542,9 +537,6 @@ class AgentController:
 
         # reset the pending action, this will be called when the agent is STOPPED or ERROR
         self._pending_action = None
-
-        # We still call reset on the agent, but the reset methods have been modified
-        # to be no-ops for metrics, preserving the accumulated cost across resets
         self.agent.reset()
 
     async def set_agent_state_to(self, new_state: AgentState) -> None:
@@ -562,11 +554,9 @@ class AgentController:
             return
 
         if new_state in (AgentState.STOPPED, AgentState.ERROR):
-            # No need to update or merge local metrics anymore
             self._reset()
 
-        # This block will always either extend max_iterations or max_budget_per_task, which removes any previous throttling effects
-        # Iteration and budget extensions are independent of each other
+        # User is allowing to check control limits and expand them if applicable
         if (
             self.state.agent_state == AgentState.ERROR
             and new_state == AgentState.RUNNING
@@ -633,7 +623,6 @@ class AgentController:
         delegate_agent = agent_cls(llm=llm, config=agent_config)
 
         # Take a snapshot of the current metrics before starting the delegate
-        # Store it in the extra_data for later use
 
         state = State(
             session_id=self.id.removesuffix('-delegate'),
@@ -776,8 +765,6 @@ class AgentController:
                 AgentStuckInLoopError('Agent got stuck in a loop')
             )
             return
-
-        # self.update_state_before_step()
 
         action: Action = NullAction()
 
