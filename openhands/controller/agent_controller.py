@@ -1161,7 +1161,7 @@ class AgentController:
 
     def _handle_long_context_error(self) -> None:
         # When context window is exceeded, keep roughly half of agent interactions
-        kept_events = self._apply_conversation_window()
+        kept_events = self._apply_conversation_window(self.state.history)
         kept_event_ids = {e.id for e in kept_events}
 
         self.log(
@@ -1198,7 +1198,7 @@ class AgentController:
             EventSource.AGENT,
         )
 
-    def _apply_conversation_window(self) -> list[Event]:
+    def _apply_conversation_window(self, history: list[Event]) -> list[Event]:
         """Cuts history roughly in half when context window is exceeded.
 
         It preserves action-observation pairs and ensures that the system message,
@@ -1217,11 +1217,6 @@ class AgentController:
         Returns:
             Filtered list of events keeping newest half while preserving pairs and essential initial events.
         """
-        if not self.state.history:
-            return []
-
-        history = self.state.history
-
         # 1. Identify essential initial events
         system_message: SystemMessageAction | None = None
         first_user_msg: MessageAction | None = None
