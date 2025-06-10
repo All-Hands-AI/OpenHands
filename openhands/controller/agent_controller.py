@@ -290,6 +290,9 @@ class AgentController:
     async def _step_with_exception_handling(self) -> None:
         try:
             await self._step()
+            # Save state after successful step to ensure we don't lose state
+            # in case of crashes or unexpected circumstances
+            self.save_state()
         except Exception as e:
             self.log(
                 'error',
@@ -618,6 +621,10 @@ class AgentController:
             AgentStateChangedObservation('', self.state.agent_state, reason),
             EventSource.ENVIRONMENT,
         )
+
+        # Save state whenever agent state changes to ensure we don't lose state
+        # in case of crashes or unexpected circumstances
+        self.save_state()
 
     def get_agent_state(self) -> AgentState:
         """Returns the current state of the agent.
