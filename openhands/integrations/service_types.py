@@ -1,3 +1,4 @@
+import logging
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Protocol
@@ -6,8 +7,10 @@ from httpx import AsyncClient, HTTPError, HTTPStatusError
 from jinja2 import Environment, FileSystemLoader
 from pydantic import BaseModel, SecretStr
 
-from openhands.core.logger import openhands_logger as logger
 from openhands.server.types import AppMode
+
+# Use standard logging instead of importing from core.logger
+logger = logging.getLogger('openhands')
 
 
 class ProviderType(Enum):

@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import urllib.parse
 from typing import Union
@@ -6,8 +7,10 @@ from typing import Union
 import httpx
 from requests.exceptions import RequestException
 
-from openhands.core.logger import openhands_logger as logger
 from openhands.storage.files import FileStore
+
+# Use standard logging instead of importing from core.logger
+logger = logging.getLogger('openhands')
 
 
 class HTTPFileStore(FileStore):
