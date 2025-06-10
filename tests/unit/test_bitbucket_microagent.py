@@ -22,7 +22,7 @@ def test_bitbucket_microagent_loading():
     assert microagent.metadata.version == '1.0.0'
     assert microagent.metadata.agent == 'CodeActAgent'
     assert 'bitbucket' in microagent.metadata.triggers
-    assert 'git' in microagent.metadata.triggers
+    assert 'git' not in microagent.metadata.triggers
 
 
 def test_bitbucket_microagent_trigger_matching():
@@ -39,8 +39,8 @@ def test_bitbucket_microagent_trigger_matching():
     # Test that the microagent triggers on "bitbucket"
     assert microagent.match_trigger('I need help with bitbucket') == 'bitbucket'
 
-    # Test that the microagent triggers on "git"
-    assert microagent.match_trigger('I need help with git') == 'git'
+    # Test that the microagent doesn't trigger on "git" anymore
+    assert microagent.match_trigger('I need help with git') is None
 
     # Test that the microagent doesn't trigger on unrelated text
     assert microagent.match_trigger('I need help with something else') is None
