@@ -27,7 +27,7 @@ from openhands.llm.metrics import Metrics
 from openhands.utils.chunk_localizer import Chunk, get_top_k_chunk_matches
 
 USER_MSG = """
-Code changes will be provided in the form of a draft. You will need to apply the draft to the original code. 
+Code changes will be provided in the form of a draft. You will need to apply the draft to the original code.
 The original code will be enclosed within `<original_code>` tags.
 The draft will be enclosed within `<update_snippet>` tags.
 You need to output the update code within `<updated_code>` tags.
@@ -305,7 +305,6 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             return ErrorObservation(error_msg)
 
         content_to_edit = '\n'.join(old_file_lines[start_idx:end_idx])
-        self.draft_editor_llm.reset()
         _edited_content = get_new_file_contents(
             self.draft_editor_llm, content_to_edit, action.content
         )
