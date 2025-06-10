@@ -34,6 +34,9 @@ export function AgentStatusBar() {
     let message = curStatusMessage.message || "";
     if (curStatusMessage?.id) {
       const id = curStatusMessage.id.trim();
+      if (id === "STATUS$READY") {
+        message = "awaiting_user_input";
+      }
       if (i18n.exists(id)) {
         message = t(curStatusMessage.id.trim()) || message;
       }
@@ -46,7 +49,6 @@ export function AgentStatusBar() {
       });
       return;
     }
-    console.log("TRACE:agent-status-bar", message);
     if (message.trim()) {
       setStatusMessage(message);
     } else {
@@ -81,7 +83,10 @@ export function AgentStatusBar() {
     if (conversation?.status === "CONNECTING") {
       setStatusMessage(t(I18nKey.STATUS$CONNECTING_TO_RUNTIME));
       setIndicatorColor(IndicatorColor.YELLOW);
-    } else if (conversation?.status === "STARTING") {
+    } else if (
+      conversation?.status === "STARTING" &&
+      !conversation.runtime_status
+    ) {
       setStatusMessage(t(I18nKey.STATUS$STARTING_RUNTIME));
       setIndicatorColor(IndicatorColor.RED);
     } else if (status === "DISCONNECTED") {
