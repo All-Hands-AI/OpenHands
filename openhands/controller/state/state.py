@@ -8,6 +8,7 @@ from enum import Enum
 from typing import Any
 
 import openhands
+from openhands.controller.state.control_flags import BudgetControlFlag, IterationControlFlag
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import AgentState
 from openhands.events.action import (
@@ -19,14 +20,6 @@ from openhands.llm.metrics import Metrics
 from openhands.memory.view import View
 from openhands.storage.files import FileStore
 from openhands.storage.locations import get_conversation_agent_state_filename
-
-
-class TrafficControlState(str, Enum):
-    # default state, no rate limiting
-    NORMAL = 'normal'
-
-    # task paused due to traffic control
-    THROTTLING = 'throttling'
 
 
 RESUMABLE_STATES = [
@@ -72,20 +65,14 @@ class State:
     """
 
     session_id: str = ''
-    # global iteration for the current task
-    iteration: int = 0
-    # local iteration for the current subtask
-    local_iteration: int = 0
-    # max number of iterations for the current task
-    max_iterations: int = 100
-    max_budget_per_task: float | None = None
+    iteration_flag: IterationControlFlag = IterationControlFlag(0,0,0)
+    budget_flag: BudgetControlFlag | None = None
     confirmation_mode: bool = False
     history: list[Event] = field(default_factory=list)
     inputs: dict = field(default_factory=dict)
     outputs: dict = field(default_factory=dict)
     agent_state: AgentState = AgentState.LOADING
     resume_state: AgentState | None = None
-    traffic_control_state: TrafficControlState = TrafficControlState.NORMAL
     # global metrics for the current task
     metrics: Metrics = field(default_factory=Metrics)
     # root agent has level 0, and every delegate increases the level by one
@@ -95,6 +82,7 @@ class State:
     end_id: int = -1
 
     parent_metrics_snapshot: Metrics | None = None
+    parent_iteration: int = 100
 
     # NOTE: this is used by the controller to track parent's metrics snapshot before delegation
     # evaluation tasks to store extra data needed to track the progress/state of the task.
@@ -219,6 +207,13 @@ class State:
                 f'openhands_version:{openhands.__version__}',
             ],
         }
+
+
+    def get_local_step(self):
+        if not self.parent_iteration:
+            return self.iteration_flag.current_value
+
+        return self.parent_iteration - self.parent_iteration
 
     @property
     def view(self) -> View:

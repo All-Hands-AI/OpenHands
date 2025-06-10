@@ -24,8 +24,8 @@ from litellm.exceptions import (  # noqa
 
 from openhands.controller.agent import Agent
 from openhands.controller.replay import ReplayManager
-from openhands.controller.state.state import State, TrafficControlState
-from openhands.controller.state_manager import StateManager
+from openhands.controller.state.state import State
+from openhands.controller.state.state_manager import StateManager
 from openhands.controller.stuck import StuckDetector
 from openhands.core.config import AgentConfig, LLMConfig
 from openhands.core.exceptions import (
@@ -236,10 +236,6 @@ class AgentController:
             extra = {}
         extra_merged = {'session_id': self.id, **extra}
         getattr(logger, level)(message, extra=extra_merged, stacklevel=2)
-
-    def update_state_before_step(self) -> None:
-        self.state.iteration += 1
-        self.state.local_iteration += 1
 
     async def _react_to_exception(
         self,
@@ -490,12 +486,6 @@ class AgentController:
                 str(action),
                 extra={'msg_type': 'ACTION', 'event_source': EventSource.USER},
             )
-            # Extend max iterations when the user sends a message (only in non-headless mode)
-            if self._initial_max_iterations is not None and not self.headless_mode:
-                self.log(
-                    'debug',
-                    f'Extended max iterations to {self.state.max_iterations} after user message',
-                )
 
             # if this is the first user message for this agent, matters for the microagent info type
             first_user_message = self._first_user_message()
@@ -568,8 +558,6 @@ class AgentController:
             f'Setting agent({self.agent.name}) state from {self.state.agent_state} to {new_state}',
         )
 
-        self.log('info', f'Traffic control state: {self.state.traffic_control_state}')
-
         if new_state == self.state.agent_state:
             return
 
@@ -583,16 +571,7 @@ class AgentController:
             self.state.agent_state == AgentState.ERROR
             and new_state == AgentState.RUNNING
         ):
-            if self.state.traffic_control_state == TrafficControlState.THROTTLING:
-                self.state_manager.maybe_extend_max_iterations(
-                    self._initial_max_iterations, self.headless_mode
-                )
-                self.state_manager.maybe_extend_max_budget_per_task(
-                    self._initial_max_budget_per_task
-                )
-
-            # Reset throttle state
-            self.state.traffic_control_state = TrafficControlState.NORMAL
+            self.state_manager.maybe_expand_control_flags(self.headless_mode)
 
         if self._pending_action is not None and (
             new_state in (AgentState.USER_CONFIRMED, AgentState.USER_REJECTED)
@@ -650,7 +629,7 @@ class AgentController:
         agent_cls: type[Agent] = Agent.get_cls(action.agent)
         agent_config = self.agent_configs.get(action.agent, self.agent.config)
         llm_config = self.agent_to_llm_config.get(action.agent, self.agent.llm.config)
-        llm = LLM(config=llm_config, retry_listener=self._notify_on_llm_retry)
+        llm = LLM(config=llm_config, retry_listener=self.agent.llm.retry_listener)
         delegate_agent = agent_cls(llm=llm, config=agent_config)
 
         # Take a snapshot of the current metrics before starting the delegate
@@ -659,16 +638,15 @@ class AgentController:
         state = State(
             session_id=self.id.removesuffix('-delegate'),
             inputs=action.inputs or {},
-            local_iteration=0,
-            iteration=self.state.iteration,
-            max_iterations=self.state.max_iterations,
-            max_budget_per_task=self.state.max_budget_per_task,
+            iteration_flag=self.state.iteration_flag,
+            budget_flag=self.state.budget_flag,
             delegate_level=self.state.delegate_level + 1,
             # global metrics should be shared between parent and child
             metrics=self.state.metrics,
             # start on top of the stream
             start_id=self.event_stream.get_latest_event_id() + 1,
             parent_metrics_snapshot=self.state_manager.get_metrics_snapshot(),
+            parent_iteration=self.state.iteration_flag.current_value,
         )
         self.log(
             'debug',
@@ -702,7 +680,9 @@ class AgentController:
         delegate_state = self.delegate.get_agent_state()
 
         # update iteration that is shared across agents
-        self.state.iteration = self.delegate.state.iteration
+        self.state.iteration_flag.current_value = (
+            self.delegate.state.iteration_flag.current_value
+        )
 
         # Calculate delegate-specific metrics before closing the delegate
         metrics_snapshot = self.delegate.state.parent_metrics_snapshot
@@ -779,26 +759,19 @@ class AgentController:
             )
             return
 
+        self.state_manager.run_control_flags()
+
         self.log(
             'debug',
-            f'LEVEL {self.state.delegate_level} LOCAL STEP {self.state.local_iteration} GLOBAL STEP {self.state.iteration}',
+            f'LEVEL {self.state.delegate_level} LOCAL STEP {self.state.get_local_step()} GLOBAL STEP {self.state.iteration_flag.current_value}',
             extra={'msg_type': 'STEP'},
         )
 
-        stop_step = False
-        if self.state.iteration >= self.state.max_iterations:
-            stop_step = await self._handle_traffic_control(
-                'iteration', self.state.iteration, self.state.max_iterations
-            )
-        if self.state.max_budget_per_task is not None:
-            current_cost = self.state.metrics.accumulated_cost
-            if current_cost > self.state.max_budget_per_task:
-                stop_step = await self._handle_traffic_control(
-                    'budget', current_cost, self.state.max_budget_per_task
-                )
-        if stop_step:
-            logger.warning('Stopping agent due to traffic control')
-            return
+        try:
+            self.state_manager.run_control_flags()
+        except Exception as e:
+            logger.warning('Control flag limits hit')
+            await self._react_to_exception(e)
 
         if self._is_stuck():
             await self._react_to_exception(
@@ -806,7 +779,8 @@ class AgentController:
             )
             return
 
-        self.update_state_before_step()
+        # self.update_state_before_step()
+
         action: Action = NullAction()
 
         if self._replay_manager.should_replay():
@@ -879,48 +853,6 @@ class AgentController:
 
         log_level = 'info' if LOG_ALL_EVENTS else 'debug'
         self.log(log_level, str(action), extra={'msg_type': 'ACTION'})
-
-    def _notify_on_llm_retry(self, retries: int, max: int) -> None:
-        if self.status_callback is not None:
-            msg_id = 'STATUS$LLM_RETRY'
-            self.status_callback(
-                'info', msg_id, f'Retrying LLM request, {retries} / {max}'
-            )
-
-    async def _handle_traffic_control(
-        self, limit_type: str, current_value: float, max_value: float
-    ) -> bool:
-        """Handles agent state after hitting the traffic control limit.
-
-        Args:
-            limit_type (str): The type of limit that was hit.
-            current_value (float): The current value of the limit.
-            max_value (float): The maximum value of the limit.
-        """
-        self.state.traffic_control_state = TrafficControlState.THROTTLING
-        # Format values as integers for iterations, keep decimals for budget
-        if limit_type == 'iteration':
-            current_str = str(int(current_value))
-            max_str = str(int(max_value))
-        else:
-            current_str = f'{current_value:.2f}'
-            max_str = f'{max_value:.2f}'
-
-        if self.headless_mode:
-            e = RuntimeError(
-                f'Agent reached maximum {limit_type} in headless mode. '
-                f'Current {limit_type}: {current_str}, max {limit_type}: {max_str}'
-            )
-            await self._react_to_exception(e)
-        else:
-            e = RuntimeError(
-                f'Agent reached maximum {limit_type}. '
-                f'Current {limit_type}: {current_str}, max {limit_type}: {max_str}. '
-            )
-            # FIXME: this isn't really an exception--we should have a different path
-            await self._react_to_exception(e)
-        stop_step = True
-        return stop_step
 
     @property
     def _pending_action(self) -> Action | None:

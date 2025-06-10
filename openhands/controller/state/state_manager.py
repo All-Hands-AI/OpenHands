@@ -1,4 +1,5 @@
 from openhands.controller.agent import Agent
+from openhands.controller.state.control_flags import BudgetControlFlag, IterationControlFlag
 from openhands.controller.state.state import State
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.agent import AgentDelegateAction, ChangeAgentStateAction
@@ -64,9 +65,9 @@ class StateManager:
             self.state = State(
                 session_id=id.removesuffix('-delegate'),
                 inputs={},
-                max_iterations=max_iterations,
-                max_budget_per_task=max_budget_per_task,
-                confirmation_mode=confirmation_mode,
+                iteration_flag=IterationControlFlag(initial_value=max_iterations, current_value=0, max_value= max_iterations),
+                budget_flag=None if not max_budget_per_task else BudgetControlFlag(initial_value=max_budget_per_task, current_value=0, max_value=max_budget_per_task),                confirmation_mode=confirmation_mode,
+
             )
             self.state.start_id = 0
 
@@ -76,7 +77,7 @@ class StateManager:
         else:
             self.state = state
 
-            print('restored budget cap', state.max_budget_per_task)
+            print('restored budget cap', state.budget_flag)
 
             if self.state.start_id <= -1:
                 self.state.start_id = 0
@@ -216,32 +217,12 @@ class StateManager:
             for event in self.state.history
         ]
 
-    def maybe_extend_max_iterations(
-        self, inital_max_iteration: int | None, headless_mode: bool
+    def maybe_expand_control_flags(
+        self, headless_mode: bool
     ):
-        if (
-            self.state.iteration is not None
-            and self.state.max_iterations is not None
-            and inital_max_iteration is not None
-            and not headless_mode
-            and self.state.iteration >= self.state.max_iterations
-        ):
-            self.state.max_iterations = self.state.max_iterations + inital_max_iteration
-
-    def maybe_extend_max_budget_per_task(
-        self, initial_max_budget_per_task: float | None
-    ):
-        if (
-            self.state.metrics.accumulated_cost is not None
-            and self.state.max_budget_per_task is not None
-            and initial_max_budget_per_task is not None
-            and self.state.metrics.accumulated_cost >= self.state.max_budget_per_task
-        ):
-            # Set the new budget cap to the current accumulated cost plus the initial budget
-            # This ensures we have enough budget to continue and don't immediately hit the limit again
-            self.state.max_budget_per_task = (
-                self.state.max_budget_per_task + initial_max_budget_per_task
-            )
+        self.state.iteration_flag.expand(headless_mode)
+        if self.state.budget_flag:
+            self.state.budget_flag.expand(headless_mode)
 
     def get_metrics_snapshot(self):
         return self.state.metrics.snapshot()
@@ -249,3 +230,13 @@ class StateManager:
     def save_state(self):
         if self.sid and self.file_store:
             self.state.save_to_session(self.sid, self.file_store, self.user_id)
+
+
+    def run_control_flags(self):
+        self.state.iteration_flag.next()
+        if self.state.budget_flag:
+            self.state.budget_flag.next()
+
+
+
+
