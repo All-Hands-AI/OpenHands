@@ -26,7 +26,7 @@ async def get_conversation(
         conversation_id, user_id
     )
     if not conversation:
-        logger.warn(
+        logger.warning(
             f'get_conversation: conversation {conversation_id} not found, attach_to_conversation returned None',
             extra={'session_id': conversation_id, 'user_id': user_id},
         )
