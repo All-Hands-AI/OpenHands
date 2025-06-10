@@ -71,7 +71,7 @@ class StandaloneConversationManager(ConversationManager):
         if self._cleanup_task:
             self._cleanup_task.cancel()
             self._cleanup_task = None
-        get_runtime_cls(self.config).teardown(self.config)
+        get_runtime_cls(self.config.runtime).teardown(self.config)
 
     async def attach_to_conversation(
         self, sid: str, user_id: str | None = None
