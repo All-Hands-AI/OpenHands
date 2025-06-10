@@ -72,6 +72,7 @@ from openhands.events.observation import (
 from openhands.events.serialization.event import event_to_trajectory, truncate_content
 from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics, TokenUsage
+from openhands.memory.view import View
 
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (
@@ -1161,7 +1162,8 @@ class AgentController:
 
     def _handle_long_context_error(self) -> None:
         # When context window is exceeded, keep roughly half of agent interactions
-        kept_events = self._apply_conversation_window(self.state.history)
+        current_view = View.from_events(self.state.history)
+        kept_events = self._apply_conversation_window(current_view.events)
         kept_event_ids = {e.id for e in kept_events}
 
         self.log(
