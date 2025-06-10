@@ -42,21 +42,43 @@ def get_action_execution_server_startup_command(
         sandbox_config.user_id if app_config.run_as_openhands else 0
     )
 
-    base_cmd = [
-        *python_prefix,
-        'python',
-        '-u',
-        '-m',
-        main_module,
-        str(server_port),
-        '--working-dir',
-        app_config.workspace_mount_path_in_sandbox,
-        *plugin_args,
-        '--username',
-        username,
-        '--user-id',
-        str(user_id),
-        *browsergym_args,
-    ]
+    # Check if python_prefix is a direct python executable or a command prefix
+    if len(python_prefix) == 1 and (
+        python_prefix[0].endswith('python') or python_prefix[0].endswith('python.exe')
+    ):
+        # Direct python executable
+        base_cmd = [
+            python_prefix[0],
+            '-u',
+            '-m',
+            main_module,
+            str(server_port),
+            '--working-dir',
+            app_config.workspace_mount_path_in_sandbox,
+            *plugin_args,
+            '--username',
+            username,
+            '--user-id',
+            str(user_id),
+            *browsergym_args,
+        ]
+    else:
+        # Command prefix (like poetry run)
+        base_cmd = [
+            *python_prefix,
+            'python',
+            '-u',
+            '-m',
+            main_module,
+            str(server_port),
+            '--working-dir',
+            app_config.workspace_mount_path_in_sandbox,
+            *plugin_args,
+            '--username',
+            username,
+            '--user-id',
+            str(user_id),
+            *browsergym_args,
+        ]
 
     return base_cmd

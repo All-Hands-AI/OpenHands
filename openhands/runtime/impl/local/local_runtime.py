@@ -6,6 +6,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import venv
 from dataclasses import dataclass
 from typing import Callable
 from urllib.parse import urlparse
@@ -69,6 +70,79 @@ def get_user_info() -> tuple[int, str | None]:
     else:
         # On Unix systems, use os.getuid()
         return os.getuid(), username
+
+
+def create_or_get_venv(code_repo_path: str) -> str:
+    """Create a virtual environment if it doesn't exist and install dependencies.
+    
+    Args:
+        code_repo_path: Path to the OpenHands repository
+        
+    Returns:
+        Path to the Python executable in the virtual environment
+    """
+    venv_path = os.path.join(code_repo_path, '.openhands_venv')
+    python_executable = os.path.join(venv_path, 'bin', 'python')
+    
+    # On Windows, the executable is in Scripts directory
+    if sys.platform == 'win32':
+        python_executable = os.path.join(venv_path, 'Scripts', 'python.exe')
+    
+    # Check if venv already exists and is functional
+    if os.path.exists(python_executable):
+        try:
+            # Test if the venv python works
+            result = subprocess.run(
+                [python_executable, '-c', 'import sys; print(sys.version)'],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            if result.returncode == 0:
+                logger.info(f'Using existing virtual environment at {venv_path}')
+                return python_executable
+        except (subprocess.TimeoutExpired, OSError):
+            logger.warning('Existing venv appears broken, recreating...')
+            shutil.rmtree(venv_path, ignore_errors=True)
+    
+    # Create new virtual environment
+    logger.info(f'Creating virtual environment at {venv_path}')
+    try:
+        venv.create(venv_path, with_pip=True, clear=True)
+    except Exception as e:
+        logger.error(f'Failed to create virtual environment: {e}')
+        raise RuntimeError(f'Failed to create virtual environment: {e}')
+    
+    # Upgrade pip
+    logger.info('Upgrading pip in virtual environment')
+    try:
+        subprocess.run(
+            [python_executable, '-m', 'pip', 'install', '--upgrade', 'pip'],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=120
+        )
+    except subprocess.CalledProcessError as e:
+        logger.warning(f'Failed to upgrade pip: {e}')
+    
+    # Install the package in development mode
+    logger.info('Installing OpenHands in development mode')
+    try:
+        subprocess.run(
+            [python_executable, '-m', 'pip', 'install', '-e', '.'],
+            cwd=code_repo_path,
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=300
+        )
+    except subprocess.CalledProcessError as e:
+        logger.error(f'Failed to install OpenHands: {e}')
+        raise RuntimeError(f'Failed to install OpenHands in venv: {e}')
+    
+    logger.info('Virtual environment setup complete')
+    return python_executable
 
 
 def check_dependencies(code_repo_path: str, poetry_venvs_path: str) -> None:
@@ -277,20 +351,31 @@ class LocalRuntime(ActionExecutionClient):
                 f'{self.config.sandbox.local_runtime_url}:{self._execution_server_port}'
             )
 
+            # Get the code repo path
+            code_repo_path = os.path.dirname(os.path.dirname(openhands.__file__))
+            
+            # Create or get virtual environment and get python executable
+            try:
+                venv_python = create_or_get_venv(code_repo_path)
+                python_prefix = [venv_python]
+            except Exception as e:
+                self.log('error', f'Failed to setup virtual environment: {e}')
+                # Fallback to system python if venv creation fails
+                self.log('warning', 'Falling back to system python')
+                python_prefix = [sys.executable]
+
             # Start the server process
             cmd = get_action_execution_server_startup_command(
                 server_port=self._execution_server_port,
                 plugins=self.plugins,
                 app_config=self.config,
-                python_prefix=['poetry', 'run'],
+                python_prefix=python_prefix,
                 override_user_id=self._user_id,
                 override_username=self._username,
             )
 
             self.log('debug', f'Starting server with command: {cmd}')
             env = os.environ.copy()
-            # Get the code repo path
-            code_repo_path = os.path.dirname(os.path.dirname(openhands.__file__))
             env['PYTHONPATH'] = os.pathsep.join(
                 [code_repo_path, env.get('PYTHONPATH', '')]
             )
@@ -298,8 +383,14 @@ class LocalRuntime(ActionExecutionClient):
             env['LOCAL_RUNTIME_MODE'] = '1'
             env['VSCODE_PORT'] = str(self._vscode_port)
 
-            # Derive environment paths using sys.executable
-            interpreter_path = sys.executable
+            # Derive environment paths using the venv python or system python
+            if python_prefix != [sys.executable]:
+                # Using venv, get paths from venv python
+                interpreter_path = python_prefix[0]
+            else:
+                # Using system python
+                interpreter_path = sys.executable
+                
             python_bin_path = os.path.dirname(interpreter_path)
             env_root_path = os.path.dirname(python_bin_path)
 
@@ -307,9 +398,8 @@ class LocalRuntime(ActionExecutionClient):
             env['PATH'] = f'{python_bin_path}{os.pathsep}{env.get("PATH", "")}'
             logger.debug(f'Updated PATH for subprocesses: {env["PATH"]}')
 
-            # Check dependencies using the derived env_root_path if not skipped
-            if os.getenv('SKIP_DEPENDENCY_CHECK', '') != '1':
-                check_dependencies(code_repo_path, env_root_path)
+            # Skip the old dependency check since we're using our own venv setup
+            # The venv creation already handles dependencies
 
             self.server_process = subprocess.Popen(  # noqa: S603
                 cmd,
