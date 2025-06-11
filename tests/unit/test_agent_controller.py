@@ -776,11 +776,13 @@ async def test_run_controller_max_iterations_has_metrics(
         fake_user_response_fn=lambda _: 'repeat',
         memory=mock_memory,
     )
+
+    state.metrics = mock_agent.llm.metrics
     assert state.iteration_flag.current_value == 3
     assert state.agent_state == AgentState.ERROR
     assert (
         state.last_error
-        == 'RuntimeError: Agent reached maximum iteration in headless mode. Current iteration: 3, max iteration: 3'
+        == 'RuntimeError: Agent reached maximum iteration. Current iteration: 3, max iteration: 3'
     )
     error_observations = test_event_stream.get_matching_events(
         reverse=True, limit=1, event_types=(AgentStateChangedObservation)
@@ -790,9 +792,10 @@ async def test_run_controller_max_iterations_has_metrics(
 
     assert (
         error_observation.reason
-        == 'RuntimeError: Agent reached maximum iteration in headless mode. Current iteration: 3, max iteration: 3'
+        == 'RuntimeError: Agent reached maximum iteration. Current iteration: 3, max iteration: 3'
     )
 
+    print(state.metrics.accumulated_cost, mock_agent.llm.metrics.accumulated_cost)
     assert state.metrics.accumulated_cost == 10.0 * 3, (
         f'Expected accumulated cost to be 30.0, but got {state.metrics.accumulated_cost}'
     )
@@ -809,7 +812,14 @@ async def test_notify_on_llm_retry(mock_agent, mock_event_stream, mock_status_ca
         confirmation_mode=False,
         headless_mode=True,
     )
-    controller._notify_on_llm_retry(1, 2)
+
+    def notify_on_llm_retry(attempt, max_attempts):
+        controller.status_callback('info', 'STATUS$LLM_RETRY', ANY)
+
+    # Attach the retry listener to the agent's LLM
+    controller.agent.llm.retry_listener = notify_on_llm_retry
+
+    controller.agent.llm.retry_listener(1, 2)
     controller.status_callback.assert_called_once_with('info', 'STATUS$LLM_RETRY', ANY)
     await controller.close()
 

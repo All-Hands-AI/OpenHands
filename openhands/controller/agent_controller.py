@@ -755,16 +755,17 @@ class AgentController:
             extra={'msg_type': 'STEP'},
         )
 
+        if self._is_stuck():
+            await self._react_to_exception(
+                AgentStuckInLoopError('Agent got stuck in a loop')
+            )
+            return
+
         try:
             self.state_manager.run_control_flags()
         except Exception as e:
             logger.warning('Control flag limits hit')
             await self._react_to_exception(e)
-
-        if self._is_stuck():
-            await self._react_to_exception(
-                AgentStuckInLoopError('Agent got stuck in a loop')
-            )
             return
 
         action: Action = NullAction()
