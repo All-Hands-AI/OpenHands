@@ -125,6 +125,10 @@ class ActionExecutionClient(Runtime):
         return send_request(self.session, method, url, **kwargs)
 
     def check_if_alive(self) -> None:
+        self.log(
+            'info',
+            f'Shabbir - Check Alive URL: {self.action_execution_server_url}/alive',
+        )
         response = self._send_action_server_request(
             'GET',
             f'{self.action_execution_server_url}/alive',
