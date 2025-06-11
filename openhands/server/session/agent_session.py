@@ -51,6 +51,7 @@ class AgentSession:
     controller: AgentController | None = None
     runtime: Runtime | None = None
     security_analyzer: SecurityAnalyzer | None = None
+    memory: Memory | None = None
     _starting: bool = False
     _started_at: float = 0
     _closed: bool = False

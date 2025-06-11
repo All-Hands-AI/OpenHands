@@ -11,6 +11,7 @@ import {
 import { EllipsisButton } from "./ellipsis-button";
 import { ConversationCardContextMenu } from "./conversation-card-context-menu";
 import { SystemMessageModal } from "./system-message-modal";
+import { MicroagentsModal } from "./microagents-modal";
 import { cn } from "#/utils/utils";
 import { BaseModal } from "../../shared/modals/base-modal/base-modal";
 import { RootState } from "#/store";
@@ -59,6 +60,8 @@ export function ConversationCard({
   const [titleMode, setTitleMode] = React.useState<"view" | "edit">("view");
   const [metricsModalVisible, setMetricsModalVisible] = React.useState(false);
   const [systemModalVisible, setSystemModalVisible] = React.useState(false);
+  const [microagentsModalVisible, setMicroagentsModalVisible] =
+    React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const systemMessage = parsedEvents.find(isSystemMessage);
@@ -142,6 +145,13 @@ export function ConversationCard({
     setSystemModalVisible(true);
   };
 
+  const handleShowMicroagents = (
+    event: React.MouseEvent<HTMLButtonElement>,
+  ) => {
+    event.stopPropagation();
+    setMicroagentsModalVisible(true);
+  };
+
   React.useEffect(() => {
     if (titleMode === "edit") {
       inputRef.current?.focus();
@@ -223,6 +233,11 @@ export function ConversationCard({
                   onShowAgentTools={
                     showOptions && systemMessage
                       ? handleShowAgentTools
+                      : undefined
+                  }
+                  onShowMicroagents={
+                    showOptions && conversationId
+                      ? handleShowMicroagents
                       : undefined
                   }
                   position={variant === "compact" ? "top" : "bottom"}
@@ -367,6 +382,13 @@ export function ConversationCard({
         onClose={() => setSystemModalVisible(false)}
         systemMessage={systemMessage ? systemMessage.args : null}
       />
+
+      {microagentsModalVisible && (
+        <MicroagentsModal
+          onClose={() => setMicroagentsModalVisible(false)}
+          conversationId={conversationId}
+        />
+      )}
     </>
   );
 }

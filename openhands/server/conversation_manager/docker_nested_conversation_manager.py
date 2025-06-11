@@ -307,7 +307,9 @@ class DockerNestedConversationManager(ConversationManager):
                     await asyncio.sleep(1)
 
         except Exception as e:
-            logger.warning('error_stopping_container', extra={"sid": sid, "error": str(e)})
+            logger.warning(
+                'error_stopping_container', extra={'sid': sid, 'error': str(e)}
+            )
         container.stop()
 
     async def get_agent_loop_info(
@@ -363,6 +365,15 @@ class DockerNestedConversationManager(ConversationManager):
             server_config=server_config,
             file_store=file_store,
         )
+
+    def get_agent_session(self, sid: str):
+        """Get the agent session for a given session ID.
+        Args:
+            sid: The session ID.
+        Returns:
+            The agent session, or None if not found.
+        """
+        raise ValueError('unsupported_operation')
 
     async def _get_conversation_store(self, user_id: str | None) -> ConversationStore:
         conversation_store_class = self._conversation_store_class
