@@ -92,7 +92,7 @@ export function ModelSelector({
           inputProps={{
             classNames: {
               inputWrapper:
-                "bg-tertiary border border-[#717888] h-10 w-full rounded p-2 placeholder:italic",
+                "bg-tertiary border border-[#717888] h-10 w-full rounded-sm p-2 placeholder:italic",
             },
           }}
         >
@@ -142,7 +142,7 @@ export function ModelSelector({
           inputProps={{
             classNames: {
               inputWrapper:
-                "bg-tertiary border border-[#717888] h-10 w-full rounded p-2 placeholder:italic",
+                "bg-tertiary border border-[#717888] h-10 w-full rounded-sm p-2 placeholder:italic",
             },
           }}
         >
