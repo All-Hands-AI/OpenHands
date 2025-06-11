@@ -376,7 +376,7 @@ class ConversationMemory:
             text = truncate_content(text, max_message_chars)
 
             # Create message content with text
-            content = [TextContent(text=text)]
+            content: list[TextContent | ImageContent] = [TextContent(text=text)]
 
             # Add image URLs if available and vision is active
             if vision_is_active and obs.image_urls:
@@ -506,7 +506,7 @@ class ConversationMemory:
                 has_microagent_knowledge = bool(filtered_agents)
 
                 # Generate appropriate content based on what is present
-                message_content = []
+                message_content: list[TextContent | ImageContent] = []
 
                 # Build the workspace context information
                 if (

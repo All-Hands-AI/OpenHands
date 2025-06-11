@@ -44,6 +44,8 @@ class Memory:
     event_stream: EventStream
     status_callback: Callable | None
     loop: asyncio.AbstractEventLoop | None
+    repo_microagents: dict[str, RepoMicroagent]
+    knowledge_microagents: dict[str, KnowledgeMicroagent]
 
     def __init__(
         self,
@@ -63,8 +65,8 @@ class Memory:
         )
 
         # Additional placeholders to store user workspace microagents
-        self.repo_microagents: dict[str, RepoMicroagent] = {}
-        self.knowledge_microagents: dict[str, KnowledgeMicroagent] = {}
+        self.repo_microagents = {}
+        self.knowledge_microagents = {}
 
         # Store repository / runtime info to send them to the templating later
         self.repository_info: RepositoryInfo | None = None
@@ -265,12 +267,12 @@ class Memory:
         repo_agents, knowledge_agents = load_microagents_from_dir(
             GLOBAL_MICROAGENTS_DIR
         )
-        for name, agent in knowledge_agents.items():
-            if isinstance(agent, KnowledgeMicroagent):
-                self.knowledge_microagents[name] = agent
-        for name, agent in repo_agents.items():
-            if isinstance(agent, RepoMicroagent):
-                self.repo_microagents[name] = agent
+        for name, k_agent in knowledge_agents.items():
+            if isinstance(k_agent, KnowledgeMicroagent):
+                self.knowledge_microagents[name] = k_agent
+        for name, r_agent in repo_agents.items():
+            if isinstance(r_agent, RepoMicroagent):
+                self.repo_microagents[name] = r_agent
 
     def get_microagent_mcp_tools(self) -> list[MCPConfig]:
         """

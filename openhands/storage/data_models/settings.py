@@ -76,10 +76,10 @@ class Settings(BaseModel):
         custom_secrets = secrets_store.get('custom_secrets')
         tokens = secrets_store.get('provider_tokens')
 
-        secret_store = UserSecrets(provider_tokens={}, custom_secrets={})
+        secret_store = UserSecrets(provider_tokens={}, custom_secrets={})  # type: ignore[arg-type]
 
         if isinstance(tokens, dict):
-            converted_store = UserSecrets(provider_tokens=tokens)
+            converted_store = UserSecrets(provider_tokens=tokens)  # type: ignore[arg-type]
             secret_store = secret_store.model_copy(
                 update={'provider_tokens': converted_store.provider_tokens}
             )
@@ -87,7 +87,7 @@ class Settings(BaseModel):
             secret_store.model_copy(update={'provider_tokens': tokens})
 
         if isinstance(custom_secrets, dict):
-            converted_store = UserSecrets(custom_secrets=custom_secrets)
+            converted_store = UserSecrets(custom_secrets=custom_secrets)  # type: ignore[arg-type]
             secret_store = secret_store.model_copy(
                 update={'custom_secrets': converted_store.custom_secrets}
             )
