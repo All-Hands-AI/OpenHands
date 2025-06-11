@@ -118,3 +118,8 @@ export interface Microagent {
 export interface GetMicroagentsResponse {
   microagents: Microagent[];
 }
+
+export interface GetMicroagentPromptResponse {
+  status: string;
+  prompt: string;
+}
