@@ -768,6 +768,8 @@ class AgentController:
             await self._react_to_exception(e)
             return
 
+
+
         action: Action = NullAction()
 
         if self._replay_manager.should_replay():

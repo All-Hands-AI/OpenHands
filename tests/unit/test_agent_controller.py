@@ -732,6 +732,7 @@ async def test_run_controller_max_iterations_has_metrics(
     mock_agent.llm.metrics = Metrics()
     mock_agent.llm.config = config.get_llm_config()
 
+    step_count = 0
     def agent_step_fn(state):
         print(f'agent_step_fn received state: {state}')
         # Mock the cost of the LLM
@@ -739,7 +740,9 @@ async def test_run_controller_max_iterations_has_metrics(
         print(
             f'mock_agent.llm.metrics.accumulated_cost: {mock_agent.llm.metrics.accumulated_cost}'
         )
-        return CmdRunAction(command='ls')
+        nonlocal step_count
+        step_count += 1
+        return CmdRunAction(command=f'ls {step_count}')
 
     mock_agent.step = agent_step_fn
 
