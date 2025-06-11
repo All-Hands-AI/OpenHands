@@ -43,7 +43,13 @@ class TestDisplaySettings:
         security_mock.confirmation_mode = True
         config.security = security_mock
 
+        # Set up sandbox as a separate mock
+        sandbox_mock = MagicMock()
+        sandbox_mock.volumes = '/host:/container:rw'
+        config.sandbox = sandbox_mock
+
         config.enable_default_condenser = True
+        config.workspace_base = '/workspace'
         return config
 
     @pytest.fixture
@@ -58,6 +64,13 @@ class TestDisplaySettings:
 
         # Set up security as a separate mock
         security_mock = MagicMock()
+
+        # Set up sandbox as a separate mock
+        sandbox_mock = MagicMock()
+        sandbox_mock.volumes = '/custom/host:/custom/container:ro'
+        config.sandbox = sandbox_mock
+
+        config.workspace_base = '/custom/workspace'
         security_mock.confirmation_mode = True
         config.security = security_mock
 
