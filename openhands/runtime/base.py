@@ -59,6 +59,7 @@ from openhands.runtime.plugins import (
     PluginRequirement,
     VSCodeRequirement,
 )
+from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.runtime.utils.edit import FileEditRuntimeMixin
 from openhands.runtime.utils.git_handler import CommandResult, GitHandler
 from openhands.utils.async_utils import (
@@ -66,16 +67,6 @@ from openhands.utils.async_utils import (
     call_async_from_sync,
     call_sync_from_async,
 )
-
-STATUS_MESSAGES = {
-    'STATUS$STARTING_RUNTIME': 'Starting runtime...',
-    'STATUS$STARTING_CONTAINER': 'Starting container...',
-    'STATUS$PREPARING_CONTAINER': 'Preparing container...',
-    'STATUS$CONTAINER_STARTED': 'Container started.',
-    'STATUS$WAITING_FOR_CLIENT': 'Waiting for client...',
-    'STATUS$SETTING_UP_WORKSPACE': 'Setting up workspace...',
-    'STATUS$SETTING_UP_GIT_HOOKS': 'Setting up git hooks...',
-}
 
 
 def _default_env_vars(sandbox_config: SandboxConfig) -> dict[str, str]:
@@ -124,6 +115,7 @@ class Runtime(FileEditRuntimeMixin):
     initial_env_vars: dict[str, str]
     attach_to_existing: bool
     status_callback: Callable[[str, str, str], None] | None
+    runtime_status: RuntimeStatus | None
     _runtime_initialized: bool = False
 
     def __init__(
@@ -187,6 +179,7 @@ class Runtime(FileEditRuntimeMixin):
 
         self.user_id = user_id
         self.git_provider_tokens = git_provider_tokens
+        self.runtime_status = None
 
     @property
     def runtime_initialized(self) -> bool:
@@ -215,11 +208,12 @@ class Runtime(FileEditRuntimeMixin):
         message = f'[runtime {self.sid}] {message}'
         getattr(logger, level)(message, stacklevel=2)
 
-    def send_status_message(self, message_id: str):
+    def set_runtime_status(self, runtime_status: RuntimeStatus):
         """Sends a status message if the callback function was provided."""
+        self.runtime_status = runtime_status
         if self.status_callback:
-            msg = STATUS_MESSAGES.get(message_id, '')
-            self.status_callback('info', message_id, msg)
+            msg_id: str = runtime_status.value  # type: ignore
+            self.status_callback('info', msg_id, runtime_status.message)
 
     def send_error_message(self, message_id: str, message: str):
         if self.status_callback:

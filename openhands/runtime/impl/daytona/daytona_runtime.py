@@ -17,6 +17,7 @@ from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
 from openhands.runtime.plugins.requirement import PluginRequirement
+from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.runtime.utils.command import get_action_execution_server_startup_command
 from openhands.runtime.utils.request import RequestHTTPError
 from openhands.utils.async_utils import call_sync_from_async
@@ -170,7 +171,7 @@ class DaytonaRuntime(ActionExecutionClient):
         super().check_if_alive()
 
     async def connect(self):
-        self.send_status_message('STATUS$STARTING_RUNTIME')
+        self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
         should_start_action_execution_server = False
 
         if self.attach_to_existing:
@@ -179,7 +180,7 @@ class DaytonaRuntime(ActionExecutionClient):
             should_start_action_execution_server = True
 
         if self.workspace is None:
-            self.send_status_message('STATUS$PREPARING_CONTAINER')
+            self.set_runtime_status(RuntimeStatus.BUILDING_RUNTIME)
             self.workspace = await call_sync_from_async(self._create_workspace)
             self.log('info', f'Created new workspace with id: {self.workspace_id}')
 
@@ -205,7 +206,7 @@ class DaytonaRuntime(ActionExecutionClient):
             )
 
         self.log('info', 'Waiting for client to become ready...')
-        self.send_status_message('STATUS$WAITING_FOR_CLIENT')
+        self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
         await call_sync_from_async(self._wait_until_alive)
 
         if should_start_action_execution_server:
@@ -217,7 +218,7 @@ class DaytonaRuntime(ActionExecutionClient):
         )
 
         if should_start_action_execution_server:
-            self.send_status_message(' ')
+            self.set_runtime_status(RuntimeStatus.READY)
         self._runtime_initialized = True
 
     @tenacity.retry(
