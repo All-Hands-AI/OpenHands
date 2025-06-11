@@ -1,6 +1,8 @@
 import asyncio
 import logging
 import os
+import pathlib
+import subprocess
 import sys
 
 from prompt_toolkit import print_formatted_text
@@ -348,6 +350,76 @@ async def run_setup_flow(config: OpenHandsConfig, settings_store: FileSettingsSt
     await modify_llm_settings_basic(config, settings_store)
 
 
+def attempt_vscode_extension_install():
+    """
+    Checks if running in VS Code and attempts to install the OpenHands companion extension.
+    This is a best-effort, one-time attempt.
+    """
+    if os.environ.get('TERM_PROGRAM') == 'vscode':
+        flag_dir = pathlib.Path.home() / '.openhands'
+        flag_file = flag_dir / '.vscode_extension_install_attempted'
+
+        try:
+            flag_dir.mkdir(parents=True, exist_ok=True)
+            if flag_file.exists():
+                return  # Already attempted
+        except OSError as e:
+            logger.warning(
+                f'Could not create or check VS Code extension flag directory: {e}'
+            )
+            return  # Don't proceed if we can't manage the flag
+
+        print(
+            'INFO: OpenHands is running in a VS Code terminal.'
+            ' Attempting to install/verify the OpenHands VS Code companion extension for an enhanced experience...'
+        )
+        extension_id = 'openhands.openhands-vscode'  # Matches publisher.name in extension's package.json
+
+        try:
+            # The --force flag might help if the extension is already installed but needs an update,
+            # or to avoid certain prompts if re-running.
+            # VS Code itself will still likely prompt for confirmation for a new install.
+            process = subprocess.run(
+                ['code', '--install-extension', extension_id, '--force'],
+                capture_output=True,
+                text=True,
+                check=False,  # Don't raise exception for non-zero exit codes
+            )
+
+            if process.returncode == 0:
+                print(
+                    f"INFO: VS Code extension '{extension_id}' installation command sent successfully."
+                    ' Please check VS Code for any confirmation prompts. A VS Code reload might be needed.'
+                )
+            else:
+                error_message = (
+                    f"INFO: Attempted to install/update the VS Code extension '{extension_id}', but it might have failed "
+                    f'or requires your confirmation within VS Code. '
+                    f"(Details: Exit Code: {process.returncode}, STDOUT: '{process.stdout.strip()}', STDERR: '{process.stderr.strip()}'). "
+                    f'If it did not install, please try manually from the VS Code Marketplace.'
+                )
+                print(error_message)
+
+        except FileNotFoundError:
+            print(
+                f"INFO: Could not automatically install the OpenHands VS Code extension ('code' command not found in PATH). "
+                f"For a better experience, please install '{extension_id}' manually from the VS Code Marketplace, "
+                f"or ensure the 'code' command-line tool is in your PATH and try again."
+            )
+        except Exception as e:
+            print(
+                f"INFO: An unexpected error occurred while trying to install the VS Code extension '{extension_id}': {e}. "
+                f'Please try installing it manually from the VS Code Marketplace.'
+            )
+        finally:
+            try:
+                flag_file.touch()  # Mark that an attempt was made
+            except OSError as e:
+                logger.warning(
+                    f'Could not create VS Code extension attempt flag file: {e}'
+                )
+
+
 async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
     """Runs the agent in CLI mode."""
     args = parse_arguments()
@@ -356,6 +428,9 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
 
     # Load config from toml and override with command line arguments
     config: OpenHandsConfig = setup_config_from_args(args)
+
+    # Attempt to install VS Code extension if applicable (one-time attempt)
+    attempt_vscode_extension_install()
 
     # Load settings from Settings Store
     # TODO: Make this generic?

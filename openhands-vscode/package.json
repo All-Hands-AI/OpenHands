@@ -1,0 +1,71 @@
+{
+  "name": "openhands-vscode",
+  "displayName": "OpenHands Integration",
+  "description": "Integrates OpenHands with VS Code for easy conversation starting and context passing.",
+  "version": "0.0.1",
+  "publisher": "openhands",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "activationEvents": [
+    "onCommand:openhands.startConversation",
+    "onCommand:openhands.startConversationWithFileContext",
+    "onCommand:openhands.startConversationWithSelectionContext"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "openhands.startConversation",
+        "title": "OpenHands: Start New Conversation",
+        "category": "OpenHands"
+      },
+      {
+        "command": "openhands.startConversationWithFileContext",
+        "title": "OpenHands: Start Conversation with Active File Content",
+        "category": "OpenHands"
+      },
+      {
+        "command": "openhands.startConversationWithSelectionContext",
+        "title": "OpenHands: Start Conversation with Selected Text",
+        "category": "OpenHands"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "editorHasSelection",
+          "command": "openhands.startConversationWithSelectionContext",
+          "group": "navigation@1"
+        },
+        {
+          "command": "openhands.startConversationWithFileContext",
+          "group": "navigation@2"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "openhands.startConversation",
+          "when": "true"
+        },
+        {
+          "command": "openhands.startConversationWithFileContext",
+          "when": "editorIsOpen"
+        },
+        {
+          "command": "openhands.startConversationWithSelectionContext",
+          "when": "editorHasSelection"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.80.0",
+    "typescript": "^5.0.0"
+  }
+}
