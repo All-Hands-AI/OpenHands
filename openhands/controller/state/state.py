@@ -204,13 +204,9 @@ class State:
         return state
 
     def __setstate__(self, state: dict) -> None:
-        # Update the state first
-        self.__dict__.update(state)
-
         # Check if we're restoring from an older version (before control flags)
-        is_old_version = hasattr(self, 'iteration') and (
-            not hasattr(self, 'iteration_flag')
-            or self.iteration_flag.current_value == 0
+        is_old_version = 'iteration' in state and (
+            'iteration_flag' not in state or state.get('iteration', 0) > 0
         )
 
         # Convert old iteration tracking to new iteration_flag if needed
@@ -218,18 +214,21 @@ class State:
             from openhands.controller.state.control_flags import IterationControlFlag
 
             # Create iteration_flag from old values
-            max_iterations = getattr(self, 'max_iterations', 100)
-            current_iteration = getattr(self, 'iteration', 0)
+            max_iterations = state.get('max_iterations', 100)
+            current_iteration = state.get('iteration', 0)
 
-            # Replace the existing iteration_flag or create a new one
-            self.iteration_flag = IterationControlFlag(
+            # Add the iteration_flag to the state
+            state['iteration_flag'] = IterationControlFlag(
                 initial_value=max_iterations,
                 current_value=current_iteration,
                 max_value=max_iterations,
             )
 
-            # We keep the deprecated fields for backward compatibility
-            # They will be removed by __getstate__ when the state is saved again
+        # Update the state
+        self.__dict__.update(state)
+
+        # We keep the deprecated fields for backward compatibility
+        # They will be removed by __getstate__ when the state is saved again
 
         # make sure we always have the attribute history
         if not hasattr(self, 'history'):
