@@ -161,7 +161,7 @@ export class VSCodeRuntimeActionHandler {
         try {
             const uri = vscode.Uri.file(sanitizedPath);
             const contentBuffer = await vscode.workspace.fs.readFile(uri);
-            const content = contentBuffer.toString('utf8');
+            const content = contentBuffer.toString();
             this.sendObservation(event, 'read', content, { path: filePath });
             // Optionally open the file in the editor for viewing
             await this.openOrFocusFile(sanitizedPath);
@@ -218,7 +218,7 @@ export class VSCodeRuntimeActionHandler {
             let oldContent = '';
             try {
                 const currentContentBuffer = await vscode.workspace.fs.readFile(uri);
-                oldContent = currentContentBuffer.toString('utf8');
+                oldContent = currentContentBuffer.toString();
             } catch (error) {
                 console.warn(`Could not read current content of ${filePath} for diff, file might not exist yet.`, error);
             }

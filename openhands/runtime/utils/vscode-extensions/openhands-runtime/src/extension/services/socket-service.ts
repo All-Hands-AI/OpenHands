@@ -39,7 +39,8 @@ export class SocketService {
             }
 
             const data = await response.json();
-            this.conversationId = data.conversation_id;
+            // TODO: Type check, do this better
+            this.conversationId = (data as { conversation_id: string }).conversation_id;
 
             // Now connect via Socket.IO
             this.socket = io(this.serverUrl, {
