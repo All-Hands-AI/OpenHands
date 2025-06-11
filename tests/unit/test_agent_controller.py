@@ -481,8 +481,6 @@ async def test_budget_reset_on_continue(mock_agent, mock_event_stream):
     1. Error is thrown when budget cap is exceeded
     2. LLM budget does not reset when user continues
     3. Budget is extended by adding the initial budget cap to the current accumulated cost
-
-    This test verifies the desired behavior for issue #8858.
     """
 
     # Create a real Metrics instance shared between controller state and llm
@@ -497,15 +495,6 @@ async def test_budget_reset_on_continue(mock_agent, mock_event_stream):
             initial_value=initial_budget, current_value=6.0, max_value=initial_budget
         ),
     )
-
-    # Create a modified reset method that does NOT reset the metrics
-    # This simulates the desired behavior where LLM costs are not reset
-    def modified_reset():
-        # Do not reset metrics
-        pass
-
-    # Attach the modified reset method to the mock agent
-    mock_agent.reset.side_effect = modified_reset
 
     # Create controller with budget cap
     controller = AgentController(
