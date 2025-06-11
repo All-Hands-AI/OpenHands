@@ -322,7 +322,6 @@ class LocalRuntime(ActionExecutionClient):
                 server_info, api_url = self._create_server(
                     workspace_prefix=self.sid,
                     is_warm_server=False,
-                    should_check_dependencies=True,
                 )
 
                 # Set instance variables
@@ -404,7 +403,7 @@ class LocalRuntime(ActionExecutionClient):
         self,
         workspace_prefix: str,
         is_warm_server: bool = False,
-        should_check_dependencies: bool = False,
+        should_check_dependencies: bool = os.getenv('SKIP_DEPENDENCY_CHECK', '') != '1',
     ) -> tuple[ActionExecutionServerInfo, str]:
         """Create a server process and return the server info and API URL.
 
@@ -474,7 +473,7 @@ class LocalRuntime(ActionExecutionClient):
             logger.debug(f'Updated PATH for subprocesses: {env["PATH"]}')
 
         # Check dependencies if requested
-        if should_check_dependencies and os.getenv('SKIP_DEPENDENCY_CHECK', '') != '1':
+        if should_check_dependencies:
             env_root_path = os.path.dirname(python_bin_path)
             check_dependencies(code_repo_path, env_root_path)
 
