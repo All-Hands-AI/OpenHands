@@ -119,43 +119,19 @@ def create_workspace_venv(workspace_path: str, session_id: str) -> str | None:
         logger.error(f'Failed to create workspace virtual environment: {e}')
         return None
     
-    # Upgrade pip and install basic packages
-    logger.info('Setting up workspace virtual environment')
+    # Just upgrade pip - keep the venv lightweight
+    logger.info('Setting up lightweight workspace virtual environment')
     try:
-        # Upgrade pip
+        # Only upgrade pip, no heavy packages
         subprocess.run(
             [python_executable, '-m', 'pip', 'install', '--upgrade', 'pip'],
             check=True,
             capture_output=True,
             text=True,
-            timeout=120
+            timeout=60
         )
-        
-        # Install basic commonly used packages for development
-        basic_packages = [
-            'requests',
-            'numpy', 
-            'pandas',
-            'matplotlib',
-            'jupyter',
-            'ipython'
-        ]
-        
-        for package in basic_packages:
-            try:
-                subprocess.run(
-                    [python_executable, '-m', 'pip', 'install', package],
-                    check=True,
-                    capture_output=True,
-                    text=True,
-                    timeout=60
-                )
-                logger.debug(f'Installed {package} in workspace venv')
-            except subprocess.CalledProcessError:
-                logger.warning(f'Failed to install {package}, but continuing...')
-                
     except subprocess.CalledProcessError as e:
-        logger.warning(f'Failed to setup workspace venv packages: {e}')
+        logger.warning(f'Failed to upgrade pip in workspace venv: {e}')
     
     logger.info(f'Workspace virtual environment ready at {venv_path}')
     return venv_path
@@ -369,7 +345,7 @@ class LocalRuntime(ActionExecutionClient):
                 self.sid
             )
             if self._workspace_venv_path:
-                logger.info(f'Created workspace venv: {self._workspace_venv_path}')
+                logger.info(f'Created lightweight workspace venv: {self._workspace_venv_path}')
             else:
                 logger.warning('Failed to create workspace venv, LLM will use system Python')
 
