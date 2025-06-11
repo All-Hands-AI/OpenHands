@@ -89,7 +89,11 @@ function getStatusCode(
     return I18nKey.CHAT_INTERFACE$CONNECTING;
   }
 
-  if (statusMessage?.id && statusMessage.id !== "STATUS$READY") {
+  if (
+    agentState === AgentState.LOADING &&
+    statusMessage?.id &&
+    statusMessage.id !== "STATUS$READY"
+  ) {
     return statusMessage.id;
   }
 
