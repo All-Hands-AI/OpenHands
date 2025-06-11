@@ -85,15 +85,24 @@ export function LikertScale({
     if (isSubmitted) return; // Prevent changes after submission
 
     setSelectedRating(rating);
-    setShowReasons(true);
-    setCountdown(Math.ceil(AUTO_SUBMIT_TIMEOUT / 1000));
 
-    // Set a timeout to auto-submit if no reason is selected
-    const timeout = setTimeout(() => {
+    // Only show reasons if rating is 3 or less
+    const shouldShowReasons = rating <= 3;
+    setShowReasons(shouldShowReasons);
+
+    if (shouldShowReasons) {
+      setCountdown(Math.ceil(AUTO_SUBMIT_TIMEOUT / 1000));
+
+      // Set a timeout to auto-submit if no reason is selected
+      const timeout = setTimeout(() => {
+        submitFeedback(rating);
+      }, AUTO_SUBMIT_TIMEOUT);
+
+      setReasonTimeout(timeout);
+    } else {
+      // For ratings > 3, submit immediately without showing reasons
       submitFeedback(rating);
-    }, AUTO_SUBMIT_TIMEOUT);
-
-    setReasonTimeout(timeout);
+    }
   };
 
   // Handle reason selection
@@ -160,12 +169,15 @@ export function LikertScale({
               ★
             </button>
           ))}
-          {/* Show selected reason inline with stars when submitted */}
-          {isSubmitted && selectedReason && (
-            <span className="text-sm text-gray-500 italic">
-              {selectedReason}
-            </span>
-          )}
+          {/* Show selected reason inline with stars when submitted (only for ratings <= 3) */}
+          {isSubmitted &&
+            selectedReason &&
+            selectedRating &&
+            selectedRating <= 3 && (
+              <span className="text-sm text-gray-500 italic">
+                {selectedReason}
+              </span>
+            )}
         </span>
       </div>
 
