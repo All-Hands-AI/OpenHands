@@ -15,7 +15,6 @@ import { browserTab } from "#/utils/browser-tab";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { ConversationStatus } from "#/types/conversation-status";
 import { RuntimeStatus } from "#/types/runtime-status";
-import { StatusMessage } from "#/types/message";
 
 const notificationStates = [
   AgentState.AWAITING_USER_INPUT,
@@ -23,53 +22,75 @@ const notificationStates = [
   AgentState.AWAITING_USER_CONFIRMATION,
 ];
 
-function getIndicatorColor(webSocketStatus: WebSocketStatus, conversationStatus: ConversationStatus | null, runtimeStatus: RuntimeStatus | null, agentState: AgentState | null) {
-  if (webSocketStatus == "DISCONNECTED" || conversationStatus === "STOPPED" || runtimeStatus === "STATUS$STOPPED" || agentState == AgentState.STOPPED) {
-    return IndicatorColor.RED
+function getIndicatorColor(
+  webSocketStatus: WebSocketStatus,
+  conversationStatus: ConversationStatus | null,
+  runtimeStatus: RuntimeStatus | null,
+  agentState: AgentState | null,
+) {
+  if (
+    webSocketStatus === "DISCONNECTED" ||
+    conversationStatus === "STOPPED" ||
+    runtimeStatus === "STATUS$STOPPED" ||
+    agentState === AgentState.STOPPED
+  ) {
+    return IndicatorColor.RED;
   }
   // Display a yellow working icon while the runtime is starting
-  if (conversationStatus === "STARTING" || runtimeStatus !== "STATUS$READY" || [AgentState.PAUSED, AgentState.REJECTED, AgentState.RATE_LIMITED].includes(agentState as AgentState)) {
-    return IndicatorColor.YELLOW
+  if (
+    conversationStatus === "STARTING" ||
+    runtimeStatus !== "STATUS$READY" ||
+    [AgentState.PAUSED, AgentState.REJECTED, AgentState.RATE_LIMITED].includes(
+      agentState as AgentState,
+    )
+  ) {
+    return IndicatorColor.YELLOW;
   }
 
   if ([AgentState.LOADING].includes(agentState as AgentState)) {
-    return IndicatorColor.DARK_ORANGE
+    return IndicatorColor.DARK_ORANGE;
   }
 
-  if ([AgentState.AWAITING_USER_CONFIRMATION].includes(agentState as AgentState)) {
-    return IndicatorColor.ORANGE
+  if (
+    [AgentState.AWAITING_USER_CONFIRMATION].includes(agentState as AgentState)
+  ) {
+    return IndicatorColor.ORANGE;
   }
 
-  if (agentState == AgentState.AWAITING_USER_INPUT) {
-    return IndicatorColor.BLUE
+  if (agentState === AgentState.AWAITING_USER_INPUT) {
+    return IndicatorColor.BLUE;
   }
 
   // All other agent states are green
-  return IndicatorColor.GREEN
+  return IndicatorColor.GREEN;
 }
 
-function getStatusCode(webSocketStatus: WebSocketStatus, conversationStatus: ConversationStatus | null, runtimeStatus: RuntimeStatus | null, agentState: AgentState | null){
-  if (webSocketStatus == "DISCONNECTED") {
-    return I18nKey.CHAT_INTERFACE$DISCONNECTED
+function getStatusCode(
+  webSocketStatus: WebSocketStatus,
+  conversationStatus: ConversationStatus | null,
+  runtimeStatus: RuntimeStatus | null,
+  agentState: AgentState | null,
+) {
+  if (webSocketStatus === "DISCONNECTED") {
+    return I18nKey.CHAT_INTERFACE$DISCONNECTED;
   }
-  if (webSocketStatus == "CONNECTING") {
-    return I18nKey.CHAT_INTERFACE$CONNECTING
+  if (webSocketStatus === "CONNECTING") {
+    return I18nKey.CHAT_INTERFACE$CONNECTING;
   }
-  if (conversationStatus == "STOPPED" || runtimeStatus === "STATUS$STOPPED") {
-    return I18nKey.CHAT_INTERFACE$STOPPED
+  if (conversationStatus === "STOPPED" || runtimeStatus === "STATUS$STOPPED") {
+    return I18nKey.CHAT_INTERFACE$STOPPED;
   }
 
   if (agentState) {
-    return AGENT_STATUS_MAP[agentState]
+    return AGENT_STATUS_MAP[agentState];
   }
 
   if (runtimeStatus && runtimeStatus !== "STATUS$READY" && !agentState) {
-    return runtimeStatus
+    return runtimeStatus;
   }
 
-  return "STATUS$ERROR" // illegal state
+  return "STATUS$ERROR"; // illegal state
 }
-
 
 export function AgentStatusBar() {
   const { t, i18n } = useTranslation();
@@ -77,15 +98,24 @@ export function AgentStatusBar() {
   const { curStatusMessage } = useSelector((state: RootState) => state.status);
   const { webSocketStatus } = useWsClient();
   const { data: conversation } = useActiveConversation();
-  const indicatorColor = getIndicatorColor(webSocketStatus, conversation?.status || null, conversation?.runtime_status || null, curAgentState)
-  const statusCode = getStatusCode(webSocketStatus, conversation?.status || null, conversation?.runtime_status || null, curAgentState)
-  console.log('TRACE:statusCode', statusCode)
+  const indicatorColor = getIndicatorColor(
+    webSocketStatus,
+    conversation?.status || null,
+    conversation?.runtime_status || null,
+    curAgentState,
+  );
+  const statusCode = getStatusCode(
+    webSocketStatus,
+    conversation?.status || null,
+    conversation?.runtime_status || null,
+    curAgentState,
+  );
   const { notify } = useNotification();
 
   // Show error toast if required
   React.useEffect(() => {
     if (curStatusMessage?.type !== "error") {
-      return
+      return;
     }
     let message = curStatusMessage.message || "";
     if (curStatusMessage?.id) {
@@ -118,7 +148,7 @@ export function AgentStatusBar() {
         browserTab.startNotification(message);
       }
     }
-  }, [curAgentState, statusCode])
+  }, [curAgentState, statusCode]);
 
   // Handle window focus/blur
   React.useEffect(() => {
