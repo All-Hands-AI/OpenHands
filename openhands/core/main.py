@@ -139,7 +139,7 @@ async def run_controller(
                 config.mcp_host, config, None
             )
         )
-        config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
+        runtime.config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
 
         await add_mcp_tools_to_agent(agent, runtime, memory, config)
 
