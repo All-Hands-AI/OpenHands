@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { cn } from "#/utils/utils";
 import i18n from "#/i18n";
+import { useSubmitConversationFeedback } from "#/hooks/mutation/use-submit-conversation-feedback";
 
 // Global timeout duration in milliseconds
 const AUTO_SUBMIT_TIMEOUT = 10000;
 
 interface LikertScaleProps {
-  onRatingSubmit: (rating: number, reason?: string) => void;
+  eventId?: number;
   initiallySubmitted?: boolean;
   initialRating?: number;
   initialReason?: string;
@@ -20,7 +21,7 @@ const FEEDBACK_REASONS = [
 ];
 
 export function LikertScale({
-  onRatingSubmit,
+  eventId,
   initiallySubmitted = false,
   initialRating,
   initialReason,
@@ -37,6 +38,10 @@ export function LikertScale({
   );
   const [isSubmitted, setIsSubmitted] = useState(initiallySubmitted);
   const [countdown, setCountdown] = useState<number>(0);
+
+  // Use our mutation hook
+  const { mutate: submitConversationFeedback } =
+    useSubmitConversationFeedback();
 
   // Update isSubmitted if initiallySubmitted changes
   useEffect(() => {
@@ -59,10 +64,20 @@ export function LikertScale({
 
   // Submit feedback and disable the component
   const submitFeedback = (rating: number, reason?: string) => {
-    onRatingSubmit(rating, reason);
-    setSelectedReason(reason || null);
-    setShowReasons(false);
-    setIsSubmitted(true);
+    submitConversationFeedback(
+      {
+        rating,
+        eventId,
+        reason,
+      },
+      {
+        onSuccess: () => {
+          setSelectedReason(reason || null);
+          setShowReasons(false);
+          setIsSubmitted(true);
+        },
+      },
+    );
   };
 
   // Handle star rating selection

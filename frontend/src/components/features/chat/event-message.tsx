@@ -1,5 +1,4 @@
 import React from "react";
-import { useTranslation } from "react-i18next";
 import { ConfirmationButtons } from "#/components/shared/buttons/confirmation-buttons";
 import { OpenHandsAction } from "#/types/core/actions";
 import {
@@ -23,8 +22,7 @@ import { GenericEventMessage } from "./generic-event-message";
 import { LikertScale } from "../feedback/likert-scale";
 
 import { useConfig } from "#/hooks/query/use-config";
-import { useConversationId } from "#/hooks/use-conversation-id";
-import OpenHands from "#/api/open-hands";
+import { useFeedbackExists } from "#/hooks/query/use-feedback-exists";
 
 const hasThoughtProperty = (
   obj: Record<string, unknown>,
@@ -46,72 +44,11 @@ export function EventMessage({
   const shouldShowConfirmationButtons =
     isLastMessage && event.source === "agent" && isAwaitingUserConfirmation;
 
-  // We don't need parsedEvents from useWsClient() anymore
   const { data: config } = useConfig();
-  const { conversationId } = useConversationId();
-  const { t } = useTranslation();
 
-  // State to track feedback submission status
-  const [feedbackState, setFeedbackState] = React.useState<{
-    submitted: boolean;
-    rating?: number;
-    reason?: string;
-    checked: boolean;
-  }>({ submitted: false, checked: false });
-
-  // Check if feedback already exists for this event
-  React.useEffect(() => {
-    const checkExistingFeedback = async () => {
-      if (event.id && !feedbackState.checked) {
-        try {
-          const exists = await OpenHands.checkFeedbackExists(
-            conversationId,
-            event.id,
-          );
-          if (exists) {
-            setFeedbackState((prev) => ({
-              ...prev,
-              submitted: true,
-              checked: true,
-            }));
-          } else {
-            setFeedbackState((prev) => ({ ...prev, checked: true }));
-          }
-        } catch (error) {
-          // Silent error handling for feedback existence check
-          setFeedbackState((prev) => ({ ...prev, checked: true }));
-        }
-      }
-    };
-
-    if (isLastMessage && (isFinishAction(event) || isAssistantMessage(event))) {
-      checkExistingFeedback();
-    }
-  }, [conversationId, event, isLastMessage, feedbackState.checked]);
-
-  const handleRatingSubmit = async (rating: number, reason?: string) => {
-    try {
-      // Submit feedback to our new endpoint instead of the event stream
-      await OpenHands.submitConversationFeedback(
-        conversationId,
-        rating,
-        event.id, // Pass the event ID this feedback corresponds to
-        reason,
-      );
-
-      // Update local state to reflect that feedback has been submitted
-      setFeedbackState((prev) => ({
-        ...prev,
-        submitted: true,
-        rating,
-        reason,
-      }));
-    } catch (error) {
-      // Log error but continue - user will just see the UI stay in unsubmitted state
-      // eslint-disable-next-line no-console
-      console.error(t("FEEDBACK$FAILED_TO_SUBMIT"), error);
-    }
-  };
+  // Use our query hook to check if feedback exists
+  const { data: feedbackExists = false, isLoading: isCheckingFeedback } =
+    useFeedbackExists(isFinishAction(event) ? event.id : undefined);
 
   if (isErrorObservation(event)) {
     return (
@@ -131,28 +68,21 @@ export function EventMessage({
 
   // Show Likert scale for agent messages if:
   // 1. It's in SaaS mode, AND
-  // 2. It's an assistant message or finish action, AND
-  // 3. It's the last message OR feedback has already been submitted in this session, AND
-  // 4. Either:
-  //    a. We've checked the database and no feedback exists yet, OR
-  //    b. Feedback has been submitted in this session
+  // 2. It's a finish action, AND
+  // 3. It's the last message, AND
+  // 4. We've checked if feedback exists
   const showLikertScale =
     config?.APP_MODE === "saas" &&
-    (isAssistantMessage(event) || isFinishAction(event)) &&
-    (isLastMessage || feedbackState.submitted) &&
-    (!feedbackState.submitted ? feedbackState.checked : true);
+    isFinishAction(event) &&
+    isLastMessage &&
+    !isCheckingFeedback;
 
   if (isFinishAction(event)) {
     return (
       <>
         <ChatMessage type="agent" message={getEventContent(event).details} />
         {showLikertScale && (
-          <LikertScale
-            onRatingSubmit={handleRatingSubmit}
-            initiallySubmitted={feedbackState.submitted}
-            initialRating={feedbackState.rating}
-            initialReason={feedbackState.reason}
-          />
+          <LikertScale eventId={event.id} initiallySubmitted={feedbackExists} />
         )}
       </>
     );
@@ -160,25 +90,15 @@ export function EventMessage({
 
   if (isUserMessage(event) || isAssistantMessage(event)) {
     return (
-      <>
-        <ChatMessage
-          type={event.source}
-          message={isUserMessage(event) ? event.args.content : event.message}
-        >
-          {event.args.image_urls && event.args.image_urls.length > 0 && (
-            <ImageCarousel size="small" images={event.args.image_urls} />
-          )}
-          {shouldShowConfirmationButtons && <ConfirmationButtons />}
-        </ChatMessage>
-        {showLikertScale && (
-          <LikertScale
-            onRatingSubmit={handleRatingSubmit}
-            initiallySubmitted={feedbackState.submitted}
-            initialRating={feedbackState.rating}
-            initialReason={feedbackState.reason}
-          />
+      <ChatMessage
+        type={event.source}
+        message={isUserMessage(event) ? event.args.content : event.message}
+      >
+        {event.args.image_urls && event.args.image_urls.length > 0 && (
+          <ImageCarousel size="small" images={event.args.image_urls} />
         )}
-      </>
+        {shouldShowConfirmationButtons && <ConfirmationButtons />}
+      </ChatMessage>
     );
   }
 
