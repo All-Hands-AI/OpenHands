@@ -29,10 +29,7 @@ import {
 import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
 import { useWSErrorMessage } from "#/hooks/use-ws-error-message";
 
-export type WebSocketStatus =
-  | "CONNECTING"
-  | "CONNECTED"
-  | "DISCONNECTED";
+export type WebSocketStatus = "CONNECTING" | "CONNECTED" | "DISCONNECTED";
 
 const hasValidMessageProperty = (obj: unknown): obj is { message: string } =>
   typeof obj === "object" &&
@@ -138,7 +135,8 @@ export function WsClientProvider({
   const { setErrorMessage, removeErrorMessage } = useWSErrorMessage();
   const queryClient = useQueryClient();
   const sioRef = React.useRef<Socket | null>(null);
-  const [webSocketStatus, setWebSocketStatus] = React.useState<WebSocketStatus>("DISCONNECTED");
+  const [webSocketStatus, setWebSocketStatus] =
+    React.useState<WebSocketStatus>("DISCONNECTED");
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
   const [parsedEvents, setParsedEvents] = React.useState<
     (OpenHandsAction | OpenHandsObservation)[]
@@ -298,7 +296,7 @@ export function WsClientProvider({
     if (!conversationId) {
       throw new Error("No conversation ID provided");
     }
-    if (!conversation?.runtime_status) {
+    if (conversation?.status !== "RUNNING" && !conversation?.runtime_status) {
       return () => undefined; // conversation not yet loaded
     }
 
@@ -309,7 +307,7 @@ export function WsClientProvider({
     }
 
     // Set initial status...
-    setWebSocketStatus(conversation.status)
+    setWebSocketStatus("CONNECTING");
 
     const lastEvent = lastEventRef.current;
     const query = {
@@ -371,7 +369,12 @@ export function WsClientProvider({
       parsedEvents,
       send,
     }),
-    [status, messageRateHandler.isUnderThreshold, events, parsedEvents],
+    [
+      webSocketStatus,
+      messageRateHandler.isUnderThreshold,
+      events,
+      parsedEvents,
+    ],
   );
 
   return <WsClientContext value={value}>{children}</WsClientContext>;

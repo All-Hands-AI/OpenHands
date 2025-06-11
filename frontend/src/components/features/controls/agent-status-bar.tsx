@@ -40,7 +40,7 @@ function getIndicatorColor(
   // Display a yellow working icon while the runtime is starting
   if (
     conversationStatus === "STARTING" ||
-    runtimeStatus !== "STATUS$READY" ||
+    !["STATUS$READY", null].includes(runtimeStatus) ||
     [AgentState.PAUSED, AgentState.REJECTED, AgentState.RATE_LIMITED].includes(
       agentState as AgentState,
     )
@@ -73,12 +73,6 @@ function getStatusCode(
   runtimeStatus: RuntimeStatus | null,
   agentState: AgentState | null,
 ) {
-  if (webSocketStatus === "DISCONNECTED") {
-    return I18nKey.CHAT_INTERFACE$DISCONNECTED;
-  }
-  if (webSocketStatus === "CONNECTING") {
-    return I18nKey.CHAT_INTERFACE$CONNECTING;
-  }
   if (conversationStatus === "STOPPED" || runtimeStatus === "STATUS$STOPPED") {
     return I18nKey.CHAT_INTERFACE$STOPPED;
   }
@@ -87,6 +81,12 @@ function getStatusCode(
   }
   if (runtimeStatus === "STATUS$STARTING_RUNTIME") {
     return I18nKey.STATUS$STARTING_RUNTIME;
+  }
+  if (webSocketStatus === "DISCONNECTED") {
+    return I18nKey.CHAT_INTERFACE$DISCONNECTED;
+  }
+  if (webSocketStatus === "CONNECTING") {
+    return I18nKey.CHAT_INTERFACE$CONNECTING;
   }
 
   if (statusMessage?.id && statusMessage.id !== "STATUS$READY") {
