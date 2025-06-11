@@ -2,14 +2,9 @@ import React from "react";
 import { cn } from "#/utils/utils";
 import { FileItem } from "./file-item";
 
-type FileItemType = {
-  filename: string;
-  id?: string;
-};
-
 interface FileListProps {
-  files: FileItemType[];
-  onRemove?: (id: string) => void;
+  files: string[];
+  onRemove?: (index: number) => void;
 }
 
 export function FileList({ files, onRemove }: FileListProps) {
@@ -19,11 +14,7 @@ export function FileList({ files, onRemove }: FileListProps) {
       className={cn("flex flex-col gap-y-1.5 justify-start")}
     >
       {files.map((f, index) => (
-        <FileItem
-          key={index}
-          filename={f.filename}
-          onRemove={() => onRemove?.(f.id!)}
-        />
+        <FileItem key={index} filename={f} onRemove={() => onRemove?.(index)} />
       ))}
     </div>
   );

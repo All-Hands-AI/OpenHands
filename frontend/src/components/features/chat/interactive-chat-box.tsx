@@ -6,8 +6,6 @@ import { UploadImageInput } from "../images/upload-image-input";
 import { FileList } from "../files/file-list";
 import { isFileImage } from "#/utils/is-file-image";
 
-type SelectedFile = { file: File; id: string };
-
 interface InteractiveChatBoxProps {
   isDisabled?: boolean;
   mode?: "stop" | "submit";
@@ -25,33 +23,35 @@ export function InteractiveChatBox({
   value,
   onChange,
 }: InteractiveChatBoxProps) {
-  const [files, setFiles] = React.useState<SelectedFile[]>([]);
+  const [images, setImages] = React.useState<File[]>([]);
+  const [files, setFiles] = React.useState<File[]>([]);
 
   const handleUpload = (selectedFiles: File[]) => {
     setFiles((prevFiles) => [
       ...prevFiles,
-      ...selectedFiles.map((file) => ({ file, id: crypto.randomUUID() })),
+      ...selectedFiles.filter((f) => !isFileImage(f)),
+    ]);
+    setImages((prevImages) => [
+      ...prevImages,
+      ...selectedFiles.filter((f) => isFileImage(f)),
     ]);
   };
 
-  const handleRemoveFile = (id: string) => {
-    setFiles((prevFiles) => {
-      const newFiles = [...prevFiles];
-      const index = newFiles.findIndex((f) => f.id === id);
-      newFiles.splice(index, 1);
-      return newFiles;
-    });
+  const removeElementByIndex = (array: Array<File>, index: number) => {
+    const newArray = [...array];
+    newArray.splice(index, 1);
+    return newArray;
   };
 
-  const images = files.filter((f) => isFileImage(f.file));
-  const nonImageFiles = files.filter((f) => !isFileImage(f.file));
+  const handleRemoveFile = (index: number) => {
+    setFiles(removeElementByIndex(files, index));
+  };
+  const handleRemoveImage = (index: number) => {
+    setImages(removeElementByIndex(images, index));
+  };
 
   const handleSubmit = (message: string) => {
-    onSubmit(
-      message,
-      images.map((f) => f.file),
-      nonImageFiles.map((f) => f.file),
-    );
+    onSubmit(message, images, files);
     setFiles([]);
     if (message) {
       onChange?.("");
@@ -66,19 +66,13 @@ export function InteractiveChatBox({
       {images.length > 0 && (
         <ImageCarousel
           size="small"
-          images={images.map((image) => ({
-            id: image.id,
-            src: URL.createObjectURL(image.file),
-          }))}
-          onRemove={handleRemoveFile}
+          images={images.map((image) => URL.createObjectURL(image))}
+          onRemove={handleRemoveImage}
         />
       )}
-      {nonImageFiles.length > 0 && (
+      {files.length > 0 && (
         <FileList
-          files={nonImageFiles.map((f) => ({
-            filename: f.file.name,
-            id: f.id,
-          }))}
+          files={files.map((f) => f.name)}
           onRemove={handleRemoveFile}
         />
       )}

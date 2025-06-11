@@ -18,7 +18,6 @@ import { MCPObservationContent } from "./mcp-observation-content";
 import { getObservationResult } from "./event-content-helpers/get-observation-result";
 import { getEventContent } from "./event-content-helpers/get-event-content";
 import { GenericEventMessage } from "./generic-event-message";
-import { FileList } from "../files/file-list";
 
 const hasThoughtProperty = (
   obj: Record<string, unknown>,
@@ -67,10 +66,7 @@ export function EventMessage({
     return (
       <ChatMessage type={event.source} message={message}>
         {event.args.image_urls && event.args.image_urls.length > 0 && (
-          <ImageCarousel
-            size="small"
-            images={event.args.image_urls.map((i) => ({ src: i }))}
-          />
+          <ImageCarousel size="small" images={event.args.image_urls} />
         )}
         {shouldShowConfirmationButtons && <ConfirmationButtons />}
       </ChatMessage>
