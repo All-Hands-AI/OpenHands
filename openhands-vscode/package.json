@@ -62,10 +62,16 @@
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./"
+    "watch": "tsc -watch -p ./",
+    "test": "npm run compile && node ./out/test/runTest.js"
   },
   "devDependencies": {
     "@types/vscode": "^1.80.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "@types/mocha": "^10.0.6",
+    "mocha": "^10.4.0",
+    "@vscode/test-electron": "^2.3.9",
+    "@types/node": "^20.12.12",
+    "@types/glob": "^8.1.0"
   }
 }
