@@ -3967,6 +3967,15 @@
         "ja": "設定を更新しました",
         "uk": "Налаштування оновлено"
     },
+    "CHAT_INTERFACE$DISCONNECTED": {
+        "en": "Disconnected"
+    },
+    "CHAT_INTERFACE$CONNECTING": {
+        "en": "Connecting"
+    },
+    "CHAT_INTERFACE$STOPPED": {
+        "en": "Stopped"
+    },
     "CHAT_INTERFACE$INITIALIZING_AGENT_LOADING_MESSAGE": {
         "en": "Starting up!",
         "de": "Wird gestartet!",

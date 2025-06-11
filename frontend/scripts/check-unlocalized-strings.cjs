@@ -117,7 +117,9 @@ const EXCLUDED_TECHNICAL_STRINGS = [
   "edit-secret-form", // Test ID for secret form
   "search-api-key-input", // Input name for search API key
   "noopener,noreferrer", // Options for window.open
-  "STATUS$READY", // Initial status
+  "STATUS$READY",
+  "STATUS$STOPPED",
+  "STATUS$ERROR",
 ];
 
 function isExcludedTechnicalString(str) {

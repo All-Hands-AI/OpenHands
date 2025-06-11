@@ -4,10 +4,7 @@ import posthog from "posthog-js";
 import { useTranslation } from "react-i18next";
 import { formatTimeDelta } from "#/utils/format-time-delta";
 import { ConversationRepoLink } from "./conversation-repo-link";
-import {
-  ProjectStatus,
-  ConversationStateIndicator,
-} from "./conversation-state-indicator";
+import { ConversationStateIndicator } from "./conversation-state-indicator";
 import { EllipsisButton } from "./ellipsis-button";
 import { ConversationCardContextMenu } from "./conversation-card-context-menu";
 import { SystemMessageModal } from "./system-message-modal";
@@ -19,6 +16,7 @@ import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
 import OpenHands from "#/api/open-hands";
 import { useWsClient } from "#/context/ws-client-provider";
 import { isSystemMessage } from "#/types/core/guards";
+import { ConversationStatus } from "#/types/conversation-status";
 
 interface ConversationCardProps {
   onClick?: () => void;
@@ -30,7 +28,7 @@ interface ConversationCardProps {
   selectedRepository: string | null;
   lastUpdatedAt: string; // ISO 8601
   createdAt?: string; // ISO 8601
-  status?: ProjectStatus;
+  conversationStatus?: ConversationStatus;
   variant?: "compact" | "default";
   conversationId?: string; // Optional conversation ID for VS Code URL
 }
@@ -49,7 +47,7 @@ export function ConversationCard({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   lastUpdatedAt,
   createdAt,
-  status = "STOPPED",
+  conversationStatus = "STOPPED",
   variant = "default",
   conversationId,
 }: ConversationCardProps) {
@@ -196,7 +194,7 @@ export function ConversationCard({
           </div>
 
           <div className="flex items-center">
-            <ConversationStateIndicator status={status} />
+            <ConversationStateIndicator conversationStatus={conversationStatus} />
             {hasContextMenu && (
               <div className="pl-2">
                 <EllipsisButton

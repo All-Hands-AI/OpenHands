@@ -1,4 +1,5 @@
-import { ProjectStatus } from "#/components/features/conversation-panel/conversation-state-indicator";
+import { ConversationStatus } from "#/types/conversation-status";
+import { RuntimeStatus } from "#/types/runtime-status";
 
 export interface ErrorResponse {
   error: string;
@@ -80,8 +81,8 @@ export interface Conversation {
   git_provider: string | null;
   last_updated_at: string;
   created_at: string;
-  status: ProjectStatus;
-  runtime_status: string | null;
+  status: ConversationStatus;
+  runtime_status: RuntimeStatus | null;
   trigger?: ConversationTrigger;
   url: string | null;
   session_api_key: string | null;

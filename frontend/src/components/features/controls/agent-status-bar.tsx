@@ -9,10 +9,13 @@ import {
   AGENT_STATUS_MAP,
   IndicatorColor,
 } from "../../agent-status-map.constant";
-import { useWsClient } from "#/context/ws-client-provider";
+import { useWsClient, WebSocketStatus } from "#/context/ws-client-provider";
 import { useNotification } from "#/hooks/useNotification";
 import { browserTab } from "#/utils/browser-tab";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
+import { ConversationStatus } from "#/types/conversation-status";
+import { RuntimeStatus } from "#/types/runtime-status";
+import { StatusMessage } from "#/types/message";
 
 const notificationStates = [
   AgentState.AWAITING_USER_INPUT,
@@ -20,17 +23,70 @@ const notificationStates = [
   AgentState.AWAITING_USER_CONFIRMATION,
 ];
 
+function getIndicatorColor(webSocketStatus: WebSocketStatus, conversationStatus: ConversationStatus | null, runtimeStatus: RuntimeStatus | null, agentState: AgentState | null) {
+  if (webSocketStatus == "DISCONNECTED" || conversationStatus === "STOPPED" || runtimeStatus === "STATUS$STOPPED" || agentState == AgentState.STOPPED) {
+    return IndicatorColor.RED
+  }
+  // Display a yellow working icon while the runtime is starting
+  if (conversationStatus === "STARTING" || runtimeStatus !== "STATUS$READY" || [AgentState.PAUSED, AgentState.REJECTED, AgentState.RATE_LIMITED].includes(agentState as AgentState)) {
+    return IndicatorColor.YELLOW
+  }
+
+  if ([AgentState.LOADING].includes(agentState as AgentState)) {
+    return IndicatorColor.DARK_ORANGE
+  }
+
+  if ([AgentState.AWAITING_USER_CONFIRMATION].includes(agentState as AgentState)) {
+    return IndicatorColor.ORANGE
+  }
+
+  if (agentState == AgentState.AWAITING_USER_INPUT) {
+    return IndicatorColor.BLUE
+  }
+
+  // All other agent states are green
+  return IndicatorColor.GREEN
+}
+
+function getStatusCode(webSocketStatus: WebSocketStatus, conversationStatus: ConversationStatus | null, runtimeStatus: RuntimeStatus | null, agentState: AgentState | null){
+  if (webSocketStatus == "DISCONNECTED") {
+    return I18nKey.CHAT_INTERFACE$DISCONNECTED
+  }
+  if (webSocketStatus == "CONNECTING") {
+    return I18nKey.CHAT_INTERFACE$CONNECTING
+  }
+  if (conversationStatus == "STOPPED" || runtimeStatus === "STATUS$STOPPED") {
+    return I18nKey.CHAT_INTERFACE$STOPPED
+  }
+
+  if (agentState) {
+    return AGENT_STATUS_MAP[agentState]
+  }
+
+  if (runtimeStatus && runtimeStatus !== "STATUS$READY" && !agentState) {
+    return runtimeStatus
+  }
+
+  return "STATUS$ERROR" // illegal state
+}
+
+
 export function AgentStatusBar() {
   const { t, i18n } = useTranslation();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const { curStatusMessage } = useSelector((state: RootState) => state.status);
-  const { status } = useWsClient();
-  const { notify } = useNotification();
+  const { webSocketStatus } = useWsClient();
   const { data: conversation } = useActiveConversation();
+  const indicatorColor = getIndicatorColor(webSocketStatus, conversation?.status || null, conversation?.runtime_status || null, curAgentState)
+  const statusCode = getStatusCode(webSocketStatus, conversation?.status || null, conversation?.runtime_status || null, curAgentState)
+  console.log('TRACE:statusCode', statusCode)
+  const { notify } = useNotification();
 
-  const [statusMessage, setStatusMessage] = React.useState<string>("");
-
-  const updateStatusMessage = () => {
+  // Show error toast if required
+  React.useEffect(() => {
+    if (curStatusMessage?.type !== "error") {
+      return
+    }
     let message = curStatusMessage.message || "";
     if (curStatusMessage?.id) {
       const id = curStatusMessage.id.trim();
@@ -41,24 +97,28 @@ export function AgentStatusBar() {
         message = t(curStatusMessage.id.trim()) || message;
       }
     }
-    if (curStatusMessage?.type === "error") {
-      showErrorToast({
-        message,
-        source: "agent-status",
-        metadata: { ...curStatusMessage },
-      });
-      return;
-    }
-    if (message.trim()) {
-      setStatusMessage(message);
-    } else {
-      setStatusMessage(AGENT_STATUS_MAP[curAgentState].message);
-    }
-  };
-
-  React.useEffect(() => {
-    updateStatusMessage();
+    showErrorToast({
+      message,
+      source: "agent-status",
+      metadata: { ...curStatusMessage },
+    });
   }, [curStatusMessage.id]);
+
+  // Handle notify
+  React.useEffect(() => {
+    if (notificationStates.includes(curAgentState)) {
+      const message = t(statusCode);
+      notify(message, {
+        body: t(`Agent state changed to ${curAgentState}`),
+        playSound: true,
+      });
+
+      // Update browser tab if window exists and is not focused
+      if (typeof document !== "undefined" && !document.hasFocus()) {
+        browserTab.startNotification(message);
+      }
+    }
+  }, [curAgentState, statusCode])
 
   // Handle window focus/blur
   React.useEffect(() => {
@@ -75,48 +135,13 @@ export function AgentStatusBar() {
     };
   }, []);
 
-  const [indicatorColor, setIndicatorColor] = React.useState<string>(
-    AGENT_STATUS_MAP[curAgentState].indicator,
-  );
-
-  React.useEffect(() => {
-    if (conversation?.status === "CONNECTING") {
-      setStatusMessage(t(I18nKey.STATUS$CONNECTING_TO_RUNTIME));
-      setIndicatorColor(IndicatorColor.YELLOW);
-    } else if (
-      conversation?.status === "STARTING" &&
-      !conversation.runtime_status
-    ) {
-      setStatusMessage(t(I18nKey.STATUS$STARTING_RUNTIME));
-      setIndicatorColor(IndicatorColor.RED);
-    } else if (status === "DISCONNECTED") {
-      setStatusMessage(t(I18nKey.STATUS$WEBSOCKET_CLOSED));
-      setIndicatorColor(IndicatorColor.RED);
-    } else {
-      setStatusMessage(AGENT_STATUS_MAP[curAgentState].message);
-      setIndicatorColor(AGENT_STATUS_MAP[curAgentState].indicator);
-      if (notificationStates.includes(curAgentState)) {
-        const message = t(AGENT_STATUS_MAP[curAgentState].message);
-        notify(t(AGENT_STATUS_MAP[curAgentState].message), {
-          body: t(`Agent state changed to ${curAgentState}`),
-          playSound: true,
-        });
-
-        // Update browser tab if window exists and is not focused
-        if (typeof document !== "undefined" && !document.hasFocus()) {
-          browserTab.startNotification(message);
-        }
-      }
-    }
-  }, [curAgentState, status, notify, t, conversation?.status]);
-
   return (
     <div className="flex flex-col items-center">
       <div className="flex items-center bg-base-secondary px-2 py-1 text-gray-400 rounded-[100px] text-sm gap-[6px]">
         <div
           className={`w-2 h-2 rounded-full animate-pulse ${indicatorColor}`}
         />
-        <span className="text-sm text-stone-400">{t(statusMessage)}</span>
+        <span className="text-sm text-stone-400">{t(statusCode)}</span>
       </div>
     </div>
   );
