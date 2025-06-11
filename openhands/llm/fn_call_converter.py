@@ -712,6 +712,7 @@ def convert_non_fncall_messages_to_fncall_messages(
                 tool_result_match = re.search(
                     TOOL_RESULT_REGEX_PATTERN, content, re.DOTALL
                 )
+                first_tool_call_content = None
             elif isinstance(content, list):
                 tool_result_match, first_tool_call_content = next(
                     (
