@@ -4,11 +4,13 @@ import base64
 import os
 import pickle
 from dataclasses import dataclass, field
-from enum import Enum
 from typing import Any
 
 import openhands
-from openhands.controller.state.control_flags import BudgetControlFlag, IterationControlFlag
+from openhands.controller.state.control_flags import (
+    BudgetControlFlag,
+    IterationControlFlag,
+)
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import AgentState
 from openhands.events.action import (
@@ -20,7 +22,6 @@ from openhands.llm.metrics import Metrics
 from openhands.memory.view import View
 from openhands.storage.files import FileStore
 from openhands.storage.locations import get_conversation_agent_state_filename
-
 
 RESUMABLE_STATES = [
     AgentState.RUNNING,
@@ -65,7 +66,11 @@ class State:
     """
 
     session_id: str = ''
-    iteration_flag: IterationControlFlag = field(default_factory=lambda: IterationControlFlag(initial_value=100, current_value=0, max_value=100))
+    iteration_flag: IterationControlFlag = field(
+        default_factory=lambda: IterationControlFlag(
+            initial_value=100, current_value=0, max_value=100
+        )
+    )
     budget_flag: BudgetControlFlag | None = None
     confirmation_mode: bool = False
     history: list[Event] = field(default_factory=list)
@@ -119,13 +124,13 @@ class State:
         Restores the state from the previously saved session.
         """
 
-        state: State
+        loaded_state: Any
         try:
             encoded = file_store.read(
                 get_conversation_agent_state_filename(sid, user_id)
             )
             pickled = base64.b64decode(encoded)
-            state = pickle.loads(pickled)
+            loaded_state = pickle.loads(pickled)
         except FileNotFoundError:
             # if user_id is provided, we are in a saas/remote use case
             # and we need to check if the state is in the old directory.
@@ -133,7 +138,7 @@ class State:
                 filename = get_conversation_agent_state_filename(sid)
                 encoded = file_store.read(filename)
                 pickled = base64.b64decode(encoded)
-                state = pickle.loads(pickled)
+                loaded_state = pickle.loads(pickled)
             else:
                 raise FileNotFoundError(
                     f'Could not restore state from session file for sid: {sid}'
@@ -141,6 +146,31 @@ class State:
         except Exception as e:
             logger.debug(f'Could not restore state from session: {e}')
             raise e
+
+        # Handle backward compatibility with older state format
+        if hasattr(loaded_state, 'iteration') and hasattr(
+            loaded_state, 'max_iterations'
+        ):
+            # This is an older version of the state (pre-IterationControlFlag)
+            logger.debug(f'Converting older state format for session {sid}')
+
+            # Create a new state with the current format
+            state = State(session_id=getattr(loaded_state, 'session_id', sid))
+
+            # Copy all attributes from the old state
+            for key, value in loaded_state.__dict__.items():
+                if key not in ['iteration', 'max_iterations']:
+                    setattr(state, key, value)
+
+            # Convert iteration and max_iterations to IterationControlFlag
+            state.iteration_flag = IterationControlFlag(
+                initial_value=loaded_state.max_iterations,
+                current_value=loaded_state.iteration,
+                max_value=loaded_state.max_iterations,
+            )
+        else:
+            # This is already a current State object
+            state = loaded_state
 
         # update state
         if state.agent_state in RESUMABLE_STATES:
@@ -207,7 +237,6 @@ class State:
                 f'openhands_version:{openhands.__version__}',
             ],
         }
-
 
     def get_local_step(self):
         if not self.parent_iteration:
