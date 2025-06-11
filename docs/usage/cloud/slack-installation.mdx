@@ -26,3 +26,23 @@ Once a conversation is started, all thread messages underneath it will be follow
 To send follow-up messages for the same conversation, mention `@openhands` in a thread reply to the original message. You must be the user who started the conversation.
 
 ## Example conversation
+
+### Start a new conversation, and select repo
+
+![slack-create-convo.png](/static/img/slack-create-convo.png)
+
+### See agent response and send follow up messages
+
+![slack-results-and-follow-up.png](/static/img/slack-results-and-follow-up.png)
+
+## Pro tip
+
+You can mention a repo name when starting a new conversation in the following formats
+
+1. "My-Repo" repo (e.g `@openhands in the openhands repo ...`)
+2. "All-Hands-AI/OpenHands" (e.g `@openhands in All-Hands-AI/OpenHands ...`)
+
+The repo match is case insensitive. If a repo name match is made, it will kick off the conversation.
+If the repo name partially matches against, multiple repos, you'll be asked to select a repo from the filtered list
+
+![slack-pro-tip.png](/static/img/slack-pro-tip.png)
