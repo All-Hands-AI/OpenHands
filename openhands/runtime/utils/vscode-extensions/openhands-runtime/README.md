@@ -37,10 +37,37 @@ Configure the connection to the OpenHands backend by setting the server URL in V
 
 This extension operates in the background and does not provide a user interface. It connects to the OpenHands backend upon VSCode startup (if configured) and listens for delegated actions. Ensure that the OpenHands backend is running and configured to use the VSCode runtime for your session.
 
+## Building and Compiling
+
+To compile the OpenHands VSCode Runtime extension from source, follow these steps:
+
+1. **Navigate to the Extension Directory**: Open a terminal and change to the directory containing the extension:
+   ```
+   cd openhands/runtime/utils/vscode-extensions/openhands-runtime
+   ```
+2. **Install Dependencies**: Ensure all required npm packages are installed by running:
+   ```
+   npm install
+   ```
+   This will download and install the dependencies defined in `package.json`, such as TypeScript and the necessary type declarations.
+3. **Compile the Extension**: Build the TypeScript code into JavaScript with:
+   ```
+   npm run compile
+   ```
+   This command uses the TypeScript compiler (`tsc`) as configured in `tsconfig.extension.json` to transpile the source code in the `src/extension` directory into executable JavaScript in the `out` directory.
+4. **Package the Extension for Installation**: To create a `.vsix` file for installing the extension in VSCode, use the `vsce` tool:
+   ```
+   npx vsce package
+   ```
+   This will generate a file named something like `openhands-vscode-runtime-0.0.1.vsix` in the current directory.
+5. **Development Mode**: For development purposes, you can use watch mode to automatically recompile on file changes:
+   ```
+   npm run dev
+   ```
+
 ## Development
 
 - **Source Code**: The source code is located in the `src/extension` directory.
-- **Building**: Use `npm run compile` to build the extension. For development, `npm run dev` can be used for watch mode.
 - **Testing**: Currently, there are no specific tests for this extension. Contributions to add testing are welcome.
 
 ## License
