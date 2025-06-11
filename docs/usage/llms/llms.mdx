@@ -14,23 +14,28 @@ recommendations for model selection. Our latest benchmarking results can be foun
 
 Based on these findings and community feedback, these are the latest models that have been verified to work reasonably well with OpenHands:
 
+### Cloud / API-Based Models
+
 - [anthropic/claude-sonnet-4-20250514](https://www.anthropic.com/api) (recommended)
 - [openai/o4-mini](https://openai.com/index/introducing-o3-and-o4-mini/)
 - [gemini/gemini-2.5-pro](https://blog.google/technology/google-deepmind/gemini-model-thinking-updates-march-2025/)
 - [deepseek/deepseek-chat](https://api-docs.deepseek.com/)
-- [all-hands/openhands-lm-32b-v0.1](https://www.all-hands.dev/blog/introducing-openhands-lm-32b----a-strong-open-coding-agent-model) -- available through [OpenRouter](https://openrouter.ai/all-hands/openhands-lm-32b-v0.1)
 
+If you have successfully run OpenHands with specific providers, we encourage you to open a PR to share your setup process
+to help others using the same provider!
+
+For a full list of the providers and models available, please consult the
+[litellm documentation](https://docs.litellm.ai/docs/providers).
 
 <Warning>
 OpenHands will issue many prompts to the LLM you configure. Most of these LLMs cost money, so be sure to set spending
 limits and monitor usage.
 </Warning>
 
-If you have successfully run OpenHands with specific providers, we encourage you to open a PR to share your setup process 
-to help others using the same provider!
+### Local / Self-Hosted Models
 
-For a full list of the providers and models available, please consult the
-[litellm documentation](https://docs.litellm.ai/docs/providers).
+- [mistralai/devstral-small](https://www.all-hands.dev/blog/devstral-a-new-state-of-the-art-open-model-for-coding-agents) (20 May 2025) -- also available through [OpenRouter](https://openrouter.ai/mistralai/devstral-small:free)
+- [all-hands/openhands-lm-32b-v0.1](https://www.all-hands.dev/blog/introducing-openhands-lm-32b----a-strong-open-coding-agent-model) (31 March 2025) -- also available through [OpenRouter](https://openrouter.ai/all-hands/openhands-lm-32b-v0.1)
 
 <Note>
 Most current local and open source models are not as powerful. When using such models, you may see long
