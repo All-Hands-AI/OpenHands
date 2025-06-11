@@ -121,7 +121,7 @@ class AgentSession:
         self._started_at = started_at
         finished = False  # For monitoring
         runtime_connected = False
-
+        restored_state = False
         custom_secrets_handler = UserSecrets(
             custom_secrets=custom_secrets if custom_secrets else {}
         )
@@ -172,7 +172,7 @@ class AgentSession:
                     agent_configs,
                 )
             else:
-                self.controller = self._create_controller(
+                self.controller, restored_state = self._create_controller(
                     agent,
                     config.security.confirmation_mode,
                     max_iterations,
@@ -203,7 +203,7 @@ class AgentSession:
                 'signal': 'agent_session_start',
                 'success': success,
                 'duration': duration,
-                'has_replay': replay_json is not None
+                'restored_state': restored_state
             }
             if success:
                 self.logger.info(
@@ -261,7 +261,7 @@ class AgentSession:
         """
         assert initial_message is None
         replay_events = ReplayManager.get_replay_events(json.loads(replay_json))
-        self.controller = self._create_controller(
+        self.controller, _ = self._create_controller(
             agent,
             config.security.confirmation_mode,
             max_iterations,
@@ -405,7 +405,7 @@ class AgentSession:
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
         replay_events: list[Event] | None = None,
-    ) -> AgentController:
+    ) -> tuple[AgentController, bool]:
         """Creates an AgentController instance
 
         Parameters:
@@ -415,6 +415,9 @@ class AgentSession:
         - max_budget_per_task:
         - agent_to_llm_config:
         - agent_configs:
+
+        Returns:
+            Agent Controller and a bool indicating if state was restored from a previous conversation
         """
 
         if self.controller is not None:
@@ -434,7 +437,7 @@ class AgentSession:
             '-------------------------------------------------------------------------------------------'
         )
         self.logger.debug(msg)
-
+        initial_state = self._maybe_restore_state()
         controller = AgentController(
             sid=self.sid,
             event_stream=self.event_stream,
@@ -446,11 +449,11 @@ class AgentSession:
             confirmation_mode=confirmation_mode,
             headless_mode=False,
             status_callback=self._status_callback,
-            initial_state=self._maybe_restore_state(),
+            initial_state=initial_state,
             replay_events=replay_events,
         )
 
-        return controller
+        return (controller, initial_state is not None)
 
     async def _create_memory(
         self,
