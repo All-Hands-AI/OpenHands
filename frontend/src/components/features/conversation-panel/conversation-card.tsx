@@ -383,11 +383,12 @@ export function ConversationCard({
         systemMessage={systemMessage ? systemMessage.args : null}
       />
 
-      <MicroagentsModal
-        isOpen={microagentsModalVisible}
-        onClose={() => setMicroagentsModalVisible(false)}
-        conversationId={conversationId}
-      />
+      {microagentsModalVisible && (
+        <MicroagentsModal
+          onClose={() => setMicroagentsModalVisible(false)}
+          conversationId={conversationId}
+        />
+      )}
     </>
   );
 }
