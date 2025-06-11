@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import Depends, HTTPException, Request, status
 
 from openhands.core.logger import openhands_logger as logger
@@ -18,6 +20,15 @@ async def get_conversation_store(request: Request) -> ConversationStore | None:
     return conversation_store
 
 
+async def generate_unique_conversation_id(
+    conversation_store: ConversationStore,
+) -> str:
+    conversation_id = uuid.uuid4().hex
+    while await conversation_store.exists(conversation_id):
+        conversation_id = uuid.uuid4().hex
+    return conversation_id
+
+
 async def get_conversation(
     conversation_id: str, user_id: str | None = Depends(get_user_id)
 ):
@@ -26,7 +37,7 @@ async def get_conversation(
         conversation_id, user_id
     )
     if not conversation:
-        logger.warn(
+        logger.warning(
             f'get_conversation: conversation {conversation_id} not found, attach_to_conversation returned None',
             extra={'session_id': conversation_id, 'user_id': user_id},
         )

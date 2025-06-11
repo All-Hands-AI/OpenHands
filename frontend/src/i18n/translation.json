@@ -5855,6 +5855,22 @@
         "tr": "Konuşmalar",
         "uk": "Розмови"
     },
+    "STATUS$CONNECTING_TO_RUNTIME": {
+        "en": "Connecting to runtime...",
+        "zh-CN": "正在连接到运行时...",
+        "zh-TW": "正在連接到執行時...",
+        "de": "Verbinde mit der Laufzeitumgebung...",
+        "ko-KR": "런타임에 연결 중...",
+        "no": "Kobler til kjøretidsmiljø...",
+        "it": "Connessione all'ambiente di esecuzione in corso...",
+        "pt": "Conectando ao ambiente de execução...",
+        "es": "Conectando al entorno de ejecución...",
+        "ar": "جارٍ الاتصال ببيئة التشغيل...",
+        "fr": "Connexion à l'environnement d'exécution en cours...",
+        "tr": "Çalışma zamanı ortamına bağlanılıyor...",
+        "ja": "ランタイムに接続中",
+        "uk": "Підключення до середовища виконання..."
+    },
     "STATUS$STARTING_RUNTIME": {
         "en": "Starting runtime...",
         "zh-CN": "启动运行时...",
@@ -7518,6 +7534,22 @@
         "tr": "50$ almak için Stripe ile kredi kartı ekleyin. <b>Önce sormadan ücret almayacağız!</b>",
         "de": "Fügen Sie eine Kreditkarte mit Stripe hinzu, um $50 zu erhalten. <b>Wir belasten Sie nicht ohne vorherige Zustimmung!</b>",
         "uk": "Додайте кредитну картку до Stripe, щоб отримати свої 50 доларів. <b>Ми не стягуватимемо з вас плату без попереднього запиту!</b>"
+    },
+    "BILLING$POWERED_BY": {
+        "en": "Powered by",
+        "ja": "提供：",
+        "zh-CN": "技术支持：",
+        "zh-TW": "技術支援：",
+        "ko-KR": "제공: ",
+        "no": "Drevet av",
+        "it": "Offerto da",
+        "pt": "Oferecido por",
+        "es": "Ofrecido por",
+        "ar": "مشغل بواسطة",
+        "fr": "Propulsé par",
+        "tr": "Tarafından desteklenmektedir",
+        "de": "Bereitgestellt von",
+        "uk": "Працює на базі"
     },
     "BILLING$PROCEED_TO_STRIPE": {
         "en": "Add Billing Info",
