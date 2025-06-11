@@ -481,15 +481,17 @@ class DockerRuntime(ActionExecutionClient):
     def vscode_url(self) -> str | None:
         token = super().get_vscode_token()
         domain = os.getenv("DOMAIN", None)
+
+        self.log('info', f'Shabbir: Domain: {domain} | Token: {token}')
         if not token:
             return None
 
-        return f'http://localhost:{self._vscode_port}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
-        # if not domain:
-        #     return f'http://localhost:{self._vscode_port}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        # return f'http://localhost:{self._vscode_port}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        if not domain:
+            return f'http://localhost:{self._vscode_port}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
 
-        # vscode_url = f'http://openhands-code-{self._vscode_port}.{domain}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
-        # return vscode_url
+        vscode_url = f'http://openhands-code-{self._vscode_port}.{domain}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        return vscode_url
 
     @property
     def web_hosts(self) -> dict[str, int]:
