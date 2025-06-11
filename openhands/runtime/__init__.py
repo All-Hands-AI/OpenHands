@@ -10,6 +10,7 @@ from openhands.runtime.impl.local.local_runtime import LocalRuntime
 from openhands.runtime.impl.modal.modal_runtime import ModalRuntime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.runtime.impl.runloop.runloop_runtime import RunloopRuntime
+from openhands.runtime.vscode.vscode_runtime import VsCodeRuntime
 from openhands.utils.import_utils import get_impl
 
 # mypy: disable-error-code="type-abstract"
@@ -24,6 +25,7 @@ _DEFAULT_RUNTIME_CLASSES: dict[str, type[Runtime]] = {
     'daytona': DaytonaRuntime,
     'kubernetes': KubernetesRuntime,
     'cli': CLIRuntime,
+    'vscode': VsCodeRuntime,
 }
 
 
@@ -54,5 +56,6 @@ __all__ = [
     'DaytonaRuntime',
     'KubernetesRuntime',
     'CLIRuntime',
+    'VsCodeRuntime',
     'get_runtime_cls',
 ]
