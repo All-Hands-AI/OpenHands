@@ -161,6 +161,76 @@ def create_workspace_venv(workspace_path: str, session_id: str) -> str | None:
     return venv_path
 
 
+def create_runtime_venv(code_repo_path: str) -> str:
+    """Create or get the OpenHands runtime virtual environment.
+    
+    Args:
+        code_repo_path: Path to the OpenHands repository
+        
+    Returns:
+        Path to the Python executable in the runtime virtual environment
+    """
+    venv_path = os.path.join(code_repo_path, '.openhands_runtime_venv')
+    python_executable = os.path.join(venv_path, 'bin', 'python')
+    
+    # On Windows, the executable is in Scripts directory
+    if sys.platform == 'win32':
+        python_executable = os.path.join(venv_path, 'Scripts', 'python.exe')
+    
+    # Check if runtime venv already exists and is functional
+    if os.path.exists(python_executable):
+        try:
+            # Test if the venv python works and has OpenHands
+            result = subprocess.run(
+                [python_executable, '-c', 'import openhands; print("OK")'],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            if result.returncode == 0 and 'OK' in result.stdout:
+                logger.info(f'Using existing runtime venv at {venv_path}')
+                return python_executable
+        except (subprocess.TimeoutExpired, OSError):
+            logger.warning('Existing runtime venv appears broken, recreating...')
+            shutil.rmtree(venv_path, ignore_errors=True)
+    
+    # Create new runtime virtual environment
+    logger.info(f'Creating OpenHands runtime virtual environment at {venv_path}')
+    try:
+        venv.create(venv_path, with_pip=True, clear=True)
+    except Exception as e:
+        logger.error(f'Failed to create runtime virtual environment: {e}')
+        raise RuntimeError(f'Failed to create runtime virtual environment: {e}')
+    
+    # Upgrade pip and install OpenHands
+    logger.info('Installing OpenHands in runtime virtual environment')
+    try:
+        # Upgrade pip
+        subprocess.run(
+            [python_executable, '-m', 'pip', 'install', '--upgrade', 'pip'],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=120
+        )
+        
+        # Install OpenHands in development mode
+        subprocess.run(
+            [python_executable, '-m', 'pip', 'install', '-e', '.'],
+            cwd=code_repo_path,
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=300
+        )
+    except subprocess.CalledProcessError as e:
+        logger.error(f'Failed to install OpenHands in runtime venv: {e}')
+        raise RuntimeError(f'Failed to install OpenHands in runtime venv: {e}')
+    
+    logger.info('OpenHands runtime virtual environment ready')
+    return python_executable
+
+
 def cleanup_workspace_venv(venv_path: str) -> None:
     """Clean up a workspace virtual environment.
     
@@ -396,9 +466,16 @@ class LocalRuntime(ActionExecutionClient):
             # Get the code repo path
             code_repo_path = os.path.dirname(os.path.dirname(openhands.__file__))
             
-            # Use system Python to run OpenHands action execution server
-            # The workspace venv will be available for the LLM to use via environment variables
-            python_prefix = [sys.executable]
+            # Create or get OpenHands runtime virtual environment
+            try:
+                runtime_python = create_runtime_venv(code_repo_path)
+                python_prefix = [runtime_python]
+                logger.info(f'Using OpenHands runtime venv: {runtime_python}')
+            except Exception as e:
+                logger.error(f'Failed to setup runtime virtual environment: {e}')
+                # Fallback to system python if runtime venv creation fails
+                logger.warning('Falling back to system python for OpenHands runtime')
+                python_prefix = [sys.executable]
 
             # Start the server process
             cmd = get_action_execution_server_startup_command(
@@ -427,13 +504,8 @@ class LocalRuntime(ActionExecutionClient):
                     venv_python = os.path.join(self._workspace_venv_path, 'Scripts', 'python.exe')
                 env['WORKSPACE_PYTHON'] = venv_python
 
-            # Derive environment paths using the venv python or system python
-            if python_prefix != [sys.executable]:
-                # Using venv, get paths from venv python
-                interpreter_path = python_prefix[0]
-            else:
-                # Using system python
-                interpreter_path = sys.executable
+            # Derive environment paths using the runtime venv python or system python
+            interpreter_path = python_prefix[0]
                 
             python_bin_path = os.path.dirname(interpreter_path)
             env_root_path = os.path.dirname(python_bin_path)
