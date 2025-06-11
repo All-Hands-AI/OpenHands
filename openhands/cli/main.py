@@ -370,56 +370,47 @@ def attempt_vscode_extension_install():
             )
             return  # Don't proceed if we can't manage the flag
 
-        print(
-            'INFO: OpenHands is running in a VS Code terminal.'
-            + ' Attempting to install/verify the OpenHands VS Code companion extension for an enhanced experience...'
-        )
+        print('INFO: Setting up OpenHands VS Code integration...')
         extension_id = 'openhands.openhands-vscode'
-        # Ensure this version matches the one packaged in openhands-vscode/package.json
         vsix_filename = 'openhands-vscode-0.0.1.vsix'
-        installed_from_bundled = False
+        install_command_executed = False
+        installation_successful_message_shown = False
 
-        # 1. Try to find and install bundled .vsix
+        # Attempt 1: Install from bundled .vsix
         try:
-            # The .vsix should be in a 'resources' subdirectory of the 'openhands' package
-            # Python 3.12+ is assumed, so importlib.resources.files() is available.
             with importlib.resources.as_file(
                 importlib.resources.files('openhands').joinpath(
                     'resources', vsix_filename
                 )
             ) as vsix_path:
                 if vsix_path.exists():
-                    print(
-                        f"INFO: Found bundled OpenHands VS Code extension at '{vsix_path}'. Attempting local installation..."
-                    )
+                    # print(f"DEBUG: Found bundled .vsix at '{vsix_path}'. Attempting install...") # Optional debug
                     process = subprocess.run(
                         ['code', '--install-extension', str(vsix_path), '--force'],
                         capture_output=True,
                         text=True,
                         check=False,
                     )
+                    install_command_executed = True
                     if process.returncode == 0:
                         print(
-                            f"INFO: Bundled VS Code extension '{vsix_path.name}' installed successfully. A VS Code reload may be needed."
+                            f'INFO: OpenHands VS Code extension installed successfully (from bundled {vsix_filename}).'
                         )
-                        installed_from_bundled = True
-                    else:
                         print(
-                            f"INFO: Failed to install bundled VS Code extension '{vsix_path.name}'. Exit code: {process.returncode}. STDOUT: '{process.stdout.strip()}', STDERR: '{process.stderr.strip()}'."
+                            '      Please reload VS Code if prompted to activate the extension.'
+                        )
+                        installation_successful_message_shown = True
+                    else:
+                        logger.warning(
+                            f'Bundled .vsix installation failed. RC: {process.returncode}, STDOUT: {process.stdout.strip()}, STDERR: {process.stderr.strip()}'
                         )
         except (FileNotFoundError, TypeError, Exception) as e:
-            # FileNotFoundError if 'openhands' package or 'resources' dir isn't structured as expected by importlib.resources
-            # TypeError if importlib.resources.files('openhands') itself fails (e.g. not a package)
-            # Exception for other potential issues with importlib.resources or path handling
             logger.info(
-                f"Could not locate or process bundled .vsix ('{vsix_filename}'): {e}. Will try Marketplace if applicable."
+                f"Could not locate/process bundled .vsix ('{vsix_filename}'): {e}. Proceeding to Marketplace attempt."
             )
 
-        # 2. If bundled install didn't happen or failed, try Marketplace
-        if not installed_from_bundled:
-            print(
-                f"INFO: Attempting to install '{extension_id}' from VS Code Marketplace..."
-            )
+        # Attempt 2: Install from Marketplace (if bundled failed or wasn't found)
+        if not installation_successful_message_shown:
             try:
                 process = subprocess.run(
                     ['code', '--install-extension', extension_id, '--force'],
@@ -427,30 +418,57 @@ def attempt_vscode_extension_install():
                     text=True,
                     check=False,
                 )
+                install_command_executed = True
                 if process.returncode == 0:
                     print(
-                        f"INFO: VS Code extension '{extension_id}' (Marketplace) installation command sent successfully."
-                        ' Please check VS Code for any confirmation prompts. A VS Code reload might be needed.'
+                        f'INFO: OpenHands VS Code extension installed successfully (from Marketplace: {extension_id}).'
                     )
+                    print(
+                        '      Please reload VS Code if prompted to activate the extension.'
+                    )
+                    installation_successful_message_shown = True
                 else:
-                    error_message = (
-                        f"INFO: Attempted to install/update the VS Code extension '{extension_id}' (Marketplace), but it might have failed "
-                        f'or requires your confirmation within VS Code. '
-                        f"(Details: Exit Code: {process.returncode}, STDOUT: '{process.stdout.strip()}', STDERR: '{process.stderr.strip()}'). "
-                        f'If it did not install, please try manually.'
+                    # This is a common failure point if 'code' is fine but install fails (e.g. user cancels prompt in VSCode)
+                    print(
+                        'INFO: Attempted to install OpenHands VS Code extension, but it may require your confirmation in VS Code or encountered an issue.'
                     )
-                    print(error_message)
-            except FileNotFoundError:  # 'code' command not found
+                    print(
+                        f"      If not installed, search for '{extension_id}' in the VS Code Marketplace."
+                    )
+                    logger.warning(
+                        f"Marketplace installation for '{extension_id}' failed. RC: {process.returncode}, STDOUT: {process.stdout.strip()}, STDERR: {process.stderr.strip()}"
+                    )
+
+            except FileNotFoundError:
                 print(
-                    f"INFO: Could not automatically install the OpenHands VS Code extension ('code' command not found in PATH). "
-                    f"For a better experience, please install '{extension_id}' manually from the VS Code Marketplace, "
-                    f"or ensure the 'code' command-line tool is in your PATH and try again."
+                    "INFO: To complete VS Code integration, please ensure the 'code' command-line tool is in your PATH and restart OpenHands,"
                 )
-            except Exception as e:  # Other errors during subprocess.run
                 print(
-                    f"INFO: An unexpected error occurred while trying to install the VS Code extension '{extension_id}' (Marketplace): {e}. "
-                    f'Please try installing it manually.'
+                    f"      or install the '{extension_id}' extension manually from the VS Code Marketplace."
                 )
+                install_command_executed = False  # 'code' command itself failed
+            except Exception as e:
+                print(
+                    f'INFO: An unexpected error occurred while trying to install the VS Code extension: {e}'
+                )
+                print(
+                    f"      Please try installing '{extension_id}' manually from the VS Code Marketplace."
+                )
+                install_command_executed = False
+
+        # Final messages based on whether any command was run
+        if not install_command_executed and not installation_successful_message_shown:
+            # This case means 'code' was not found, and no prior success.
+            pass  # The FileNotFoundError message above is sufficient.
+        elif install_command_executed and not installation_successful_message_shown:
+            # Means 'code' ran but didn't result in a success message (e.g. user cancelled, other error)
+            # The messages printed during the marketplace attempt should cover this.
+            pass
+
+        try:
+            flag_file.touch()  # Mark that an attempt (successful or not) was made
+        except OSError as e:
+            logger.warning(f'Could not create VS Code extension attempt flag file: {e}')
 
         # Always mark attempt as done, regardless of success/failure of install attempts
         try:
