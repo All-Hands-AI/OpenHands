@@ -3,6 +3,7 @@ from typing import Iterable
 from urllib.parse import urlencode
 
 import httpx  # type: ignore
+from fastapi import status
 
 from openhands.events.event import Event
 from openhands.events.event_filter import EventFilter
@@ -42,6 +43,9 @@ class NestedEventStore(EventStoreABC):
             if self.session_api_key:
                 headers['X-Session-API-Key'] = self.session_api_key
             response = httpx.get(url, headers=headers)
+            if response.status_code == status.HTTP_404_NOT_FOUND:
+                # Follow pattern of event store not throwing errors on not found
+                return
             result_set = response.json()
             for result in result_set['events']:
                 event = event_from_dict(result)
