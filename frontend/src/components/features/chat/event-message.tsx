@@ -46,9 +46,11 @@ export function EventMessage({
 
   const { data: config } = useConfig();
 
-  // Use our query hook to check if feedback exists
-  const { data: feedbackExists = false, isLoading: isCheckingFeedback } =
-    useFeedbackExists(isFinishAction(event) ? event.id : undefined);
+  // Use our query hook to check if feedback exists and get rating/reason
+  const {
+    data: feedbackData = { exists: false },
+    isLoading: isCheckingFeedback,
+  } = useFeedbackExists(isFinishAction(event) ? event.id : undefined);
 
   if (isErrorObservation(event)) {
     return (
@@ -82,7 +84,12 @@ export function EventMessage({
       <>
         <ChatMessage type="agent" message={getEventContent(event).details} />
         {showLikertScale && (
-          <LikertScale eventId={event.id} initiallySubmitted={feedbackExists} />
+          <LikertScale
+            eventId={event.id}
+            initiallySubmitted={feedbackData.exists}
+            initialRating={feedbackData.rating}
+            initialReason={feedbackData.reason}
+          />
         )}
       </>
     );
