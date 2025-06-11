@@ -99,9 +99,11 @@ class BudgetControlFlag(ControlFlag[float]):
         as the budget is updated externally.
         """
         if self.reached_limit():
+            current_str = f'{self.current_value:.2f}'
+            max_str = f'{self.max_value:.2f}'
             raise RuntimeError(
                 f'Agent reached maximum budget for conversation.'
-                f'Current budget: {self.current_value}, max budget: {self.max_value}'
+                f'Current budget: {current_str}, max budget: {max_str}'
             )
 
 

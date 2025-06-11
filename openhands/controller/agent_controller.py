@@ -451,6 +451,8 @@ class AgentController:
             log_level, str(observation_to_print), extra={'msg_type': 'OBSERVATION'}
         )
 
+        # FIX ME: it seems like observations don't carry llm_metrics anymore; rather the LLM class aggregates cost
+        # We should remove this
         if observation.llm_metrics is not None:
             self.state_tracker.merge_metrics(observation.llm_metrics)
 
@@ -755,6 +757,13 @@ class AgentController:
             f'LEVEL {self.state.delegate_level} LOCAL STEP {self.state.get_local_step()} GLOBAL STEP {self.state.iteration_flag.current_value}',
             extra={'msg_type': 'STEP'},
         )
+
+        # Ensure budget control flag is synchronized with the latest metrics.
+        # In the future, we should centralized the use of one LLM object per conversation.
+        # This will help us unify the cost for auto generating titles, running the condensor, etc.
+        # Before many microservices will touh the same llm cost field, we should sync with the budget flag for the controller
+        # and check that we haven't exceeded budget BEFORE executing an agent step.
+        self.state_tracker.sync_budget_flag_with_metrics()
 
         if self._is_stuck():
             await self._react_to_exception(

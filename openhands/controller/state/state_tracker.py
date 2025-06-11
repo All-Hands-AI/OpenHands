@@ -240,6 +240,9 @@ class StateTracker:
             self.state.budget_flag.next()
 
 
+    def sync_budget_flag_with_metrics(self):
+        if self.state.budget_flag:
+            self.state.budget_flag.current_value = self.state.metrics.accumulated_cost
 
     def merge_metrics(self, metrics: Metrics):
         self.state.metrics.merge(metrics)
