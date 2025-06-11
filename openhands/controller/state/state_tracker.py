@@ -227,7 +227,7 @@ class StateTracker:
             self.state.budget_flag.expand(headless_mode)
 
     def get_metrics_snapshot(self):
-        return self.state.metrics.snapshot()
+        return self.state.metrics.copy()
 
     def save_state(self):
         if self.sid and self.file_store:

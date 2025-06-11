@@ -205,15 +205,6 @@ class Metrics:
         """Create a deep copy of the Metrics object."""
         return copy.deepcopy(self)
 
-    def snapshot(self) -> 'Metrics':
-        """Create a snapshot of the current metrics state.
-
-        Returns:
-            A deep copy of the current metrics object that can be used as a baseline
-            for calculating differences later.
-        """
-        return self.copy()
-
     def diff(self, baseline: 'Metrics') -> 'Metrics':
         """Calculate the difference between current metrics and a baseline.
 

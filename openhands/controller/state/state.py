@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+from enum import Enum
 import os
 import pickle
 from dataclasses import dataclass, field
@@ -29,6 +30,17 @@ RESUMABLE_STATES = [
     AgentState.AWAITING_USER_INPUT,
     AgentState.FINISHED,
 ]
+
+# NOTE: this is deprecated
+class TrafficControlState(str, Enum):
+    # default state, no rate limiting
+    NORMAL = 'normal'
+
+    # task paused due to traffic control
+    THROTTLING = 'throttling'
+
+    # traffic control is temporarily paused
+    PAUSED = 'paused'
 
 
 @dataclass
@@ -94,6 +106,16 @@ class State:
     extra_data: dict[str, Any] = field(default_factory=dict)
     last_error: str = ''
 
+
+    # NOTE: deprecated args, kept here temporarily for backwards compatability
+    # Will be remove in 30 days
+    iteration: int = 0
+    local_iteration: int = 0
+    max_iterations: int = 100
+    traffic_control_state: TrafficControlState = TrafficControlState.NORMAL
+    local_metrics: Metrics = field(default_factory=Metrics)
+    delegates: dict[tuple[int, int], tuple[str, str]] = field(default_factory=dict)
+
     def save_to_session(
         self, sid: str, file_store: FileStore, user_id: str | None
     ) -> None:
@@ -124,13 +146,13 @@ class State:
         Restores the state from the previously saved session.
         """
 
-        loaded_state: Any
+        state: State
         try:
             encoded = file_store.read(
                 get_conversation_agent_state_filename(sid, user_id)
             )
             pickled = base64.b64decode(encoded)
-            loaded_state = pickle.loads(pickled)
+            state = pickle.loads(pickled)
         except FileNotFoundError:
             # if user_id is provided, we are in a saas/remote use case
             # and we need to check if the state is in the old directory.
@@ -138,7 +160,7 @@ class State:
                 filename = get_conversation_agent_state_filename(sid)
                 encoded = file_store.read(filename)
                 pickled = base64.b64decode(encoded)
-                loaded_state = pickle.loads(pickled)
+                state = pickle.loads(pickled)
             else:
                 raise FileNotFoundError(
                     f'Could not restore state from session file for sid: {sid}'
@@ -146,31 +168,6 @@ class State:
         except Exception as e:
             logger.debug(f'Could not restore state from session: {e}')
             raise e
-
-        # Handle backward compatibility with older state format
-        if hasattr(loaded_state, 'iteration') and hasattr(
-            loaded_state, 'max_iterations'
-        ):
-            # This is an older version of the state (pre-IterationControlFlag)
-            logger.debug(f'Converting older state format for session {sid}')
-
-            # Create a new state with the current format
-            state = State(session_id=getattr(loaded_state, 'session_id', sid))
-
-            # Copy all attributes from the old state
-            for key, value in loaded_state.__dict__.items():
-                if key not in ['iteration', 'max_iterations']:
-                    setattr(state, key, value)
-
-            # Convert iteration and max_iterations to IterationControlFlag
-            state.iteration_flag = IterationControlFlag(
-                initial_value=loaded_state.max_iterations,
-                current_value=loaded_state.iteration,
-                max_value=loaded_state.max_iterations,
-            )
-        else:
-            # This is already a current State object
-            state = loaded_state
 
         # update state
         if state.agent_state in RESUMABLE_STATES:
