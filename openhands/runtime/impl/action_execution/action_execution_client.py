@@ -418,7 +418,7 @@ class ActionExecutionClient(Runtime):
                 'POST',
                 f'{self.action_execution_server_url}/update_mcp_server',
                 json=stdio_tools,
-                timeout=60,
+                timeout=180,
             )
             result = response.json()
             if response.status_code != 200:
