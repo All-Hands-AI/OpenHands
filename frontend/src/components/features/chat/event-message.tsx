@@ -18,6 +18,8 @@ import { MCPObservationContent } from "./mcp-observation-content";
 import { getObservationResult } from "./event-content-helpers/get-observation-result";
 import { getEventContent } from "./event-content-helpers/get-event-content";
 import { GenericEventMessage } from "./generic-event-message";
+import { FileList } from "../files/file-list";
+import { parseMessageFromEvent } from "./event-content-helpers/parse-message-from-event";
 
 const hasThoughtProperty = (
   obj: Record<string, unknown>,
@@ -62,11 +64,15 @@ export function EventMessage({
   }
 
   if (isUserMessage(event) || isAssistantMessage(event)) {
-    const message = isUserMessage(event) ? event.args.content : event.message;
+    const message = parseMessageFromEvent(event);
+
     return (
       <ChatMessage type={event.source} message={message}>
         {event.args.image_urls && event.args.image_urls.length > 0 && (
           <ImageCarousel size="small" images={event.args.image_urls} />
+        )}
+        {event.args.file_urls && event.args.file_urls.length > 0 && (
+          <FileList files={event.args.file_urls} />
         )}
         {shouldShowConfirmationButtons && <ConfirmationButtons />}
       </ChatMessage>

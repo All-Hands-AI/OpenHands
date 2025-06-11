@@ -14,7 +14,11 @@ export function FileList({ files, onRemove }: FileListProps) {
       className={cn("flex flex-col gap-y-1.5 justify-start")}
     >
       {files.map((f, index) => (
-        <FileItem key={index} filename={f} onRemove={() => onRemove?.(index)} />
+        <FileItem
+          key={index}
+          filename={f}
+          onRemove={onRemove ? () => onRemove?.(index) : undefined}
+        />
       ))}
     </div>
   );
