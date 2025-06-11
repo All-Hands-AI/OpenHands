@@ -1,5 +1,3 @@
-import base64
-import pickle
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -9,7 +7,6 @@ from openhands.controller.agent_controller import AgentController
 from openhands.controller.state.state import State
 from openhands.core.config import LLMConfig, OpenHandsConfig
 from openhands.core.config.agent_config import AgentConfig
-from openhands.core.schema import AgentState
 from openhands.events import EventStream, EventStreamSubscriber
 from openhands.llm import LLM
 from openhands.llm.metrics import Metrics

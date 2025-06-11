@@ -208,8 +208,6 @@ class State:
         # Check if we're restoring from an older version (before control flags)
         is_old_version = 'iteration' in state
 
-        print('is_old_version', is_old_version)
-
         # Convert old iteration tracking to new iteration_flag if needed
         if is_old_version:
             # Create iteration_flag from old values
