@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import base64
-from enum import Enum
 import os
 import pickle
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Any
 
 import openhands
@@ -30,6 +30,7 @@ RESUMABLE_STATES = [
     AgentState.AWAITING_USER_INPUT,
     AgentState.FINISHED,
 ]
+
 
 # NOTE: this is deprecated
 class TrafficControlState(str, Enum):
@@ -106,7 +107,6 @@ class State:
     extra_data: dict[str, Any] = field(default_factory=dict)
     last_error: str = ''
 
-
     # NOTE: deprecated args, kept here temporarily for backwards compatability
     # Will be remove in 30 days
     iteration: int = 0
@@ -177,6 +177,10 @@ class State:
 
         # first state after restore
         state.agent_state = AgentState.LOADING
+
+        # We don't need to clean up deprecated fields here
+        # They will be handled by __getstate__ when the state is saved again
+
         return state
 
     def __getstate__(self) -> dict:
@@ -189,14 +193,58 @@ class State:
         state.pop('_history_checksum', None)
         state.pop('_view', None)
 
+        # Remove deprecated fields before pickling
+        state.pop('iteration', None)
+        state.pop('local_iteration', None)
+        state.pop('max_iterations', None)
+        state.pop('traffic_control_state', None)
+        state.pop('local_metrics', None)
+        state.pop('delegates', None)
+
         return state
 
     def __setstate__(self, state: dict) -> None:
+        # Update the state first
         self.__dict__.update(state)
+
+        # Check if we're restoring from an older version (before control flags)
+        is_old_version = hasattr(self, 'iteration') and (
+            not hasattr(self, 'iteration_flag')
+            or self.iteration_flag.current_value == 0
+        )
+
+        # Convert old iteration tracking to new iteration_flag if needed
+        if is_old_version:
+            from openhands.controller.state.control_flags import IterationControlFlag
+
+            # Create iteration_flag from old values
+            max_iterations = getattr(self, 'max_iterations', 100)
+            current_iteration = getattr(self, 'iteration', 0)
+
+            # Replace the existing iteration_flag or create a new one
+            self.iteration_flag = IterationControlFlag(
+                initial_value=max_iterations,
+                current_value=current_iteration,
+                max_value=max_iterations,
+            )
+
+            # We keep the deprecated fields for backward compatibility
+            # They will be removed by __getstate__ when the state is saved again
 
         # make sure we always have the attribute history
         if not hasattr(self, 'history'):
             self.history = []
+
+        # Ensure we have default values for new fields if they're missing
+        if not hasattr(self, 'iteration_flag'):
+            from openhands.controller.state.control_flags import IterationControlFlag
+
+            self.iteration_flag = IterationControlFlag(
+                initial_value=100, current_value=0, max_value=100
+            )
+
+        if not hasattr(self, 'budget_flag'):
+            self.budget_flag = None
 
     def get_current_user_intent(self) -> tuple[str | None, list[str] | None]:
         """Returns the latest user message and image(if provided) that appears after a FinishAction, or the first (the task) if nothing was finished yet."""
