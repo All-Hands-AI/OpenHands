@@ -1,6 +1,6 @@
 ---
 title: Getting Started
-description: Getting started with running OpenHands locally.
+description: Getting started with running OpenHands on your own.
 ---
 
 ## Recommended Methods for Running Openhands on Your Local System
@@ -62,17 +62,17 @@ A system with a modern processor and a minimum of **4GB RAM** is recommended to 
 ### Start the App
 
 ```bash
-docker pull docker.all-hands.dev/all-hands-ai/runtime:0.40-nikolaik
+docker pull docker.all-hands.dev/all-hands-ai/runtime:0.42-nikolaik
 
 docker run -it --rm --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.40-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.42-nikolaik \
     -e LOG_ALL_EVENTS=true \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v ~/.openhands-state:/.openhands-state \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app \
-    docker.all-hands.dev/all-hands-ai/openhands:0.40
+    docker.all-hands.dev/all-hands-ai/openhands:0.42
 ```
 
 You'll find OpenHands running at http://localhost:3000!
@@ -117,9 +117,23 @@ OpenHands requires an API key to access most language models. Here's how to get 
 
 </Accordion>
 
+<Accordion title="Local LLM (e.g. LM Studio, llama.cpp, Ollama)">
+
+If your local LLM server isn’t behind an authentication proxy, you can enter any value as the API key (e.g. `local-key`, `test123`) — it won’t be used.
+
+</Accordion>
+
 </AccordionGroup>
 
 Consider setting usage limits to control costs.
+
+#### Using a Local LLM
+
+<Note>
+Effective use of local models for agent tasks requires capable hardware, along with models specifically tuned for instruction-following and agent-style behavior.
+</Note>
+
+To run OpenHands with a locally hosted language model instead of a cloud provider, see the [Local LLMs guide](/usage/llms/local-llms) for setup instructions.
 
 #### Setting Up Search Engine
 
@@ -131,7 +145,6 @@ To enable search functionality in OpenHands:
 2. Enter the Tavily API key in the Settings page under `LLM` tab > `Search API Key (Tavily)`
 
 For more details, see the [Search Engine Setup](/usage/search-engine-setup) guide.
-
 
 Now you're ready to [get started with OpenHands](/usage/getting-started).
 

@@ -35,6 +35,7 @@ from openhands.runtime.impl.docker.docker_runtime import (
     VSCODE_PORT_RANGE,
 )
 from openhands.runtime.plugins import PluginRequirement
+from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.command import get_action_execution_server_startup_command
 from openhands.utils.async_utils import call_sync_from_async
@@ -206,7 +207,7 @@ class LocalRuntime(ActionExecutionClient):
 
     async def connect(self) -> None:
         """Start the action_execution_server on the local machine or connect to an existing one."""
-        self.send_status_message('STATUS$STARTING_RUNTIME')
+        self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
 
         # Check if there's already a server running for this session ID
         if self.sid in _RUNNING_SERVERS:
@@ -307,8 +308,10 @@ class LocalRuntime(ActionExecutionClient):
             env['PATH'] = f'{python_bin_path}{os.pathsep}{env.get("PATH", "")}'
             logger.debug(f'Updated PATH for subprocesses: {env["PATH"]}')
 
-            # Check dependencies using the derived env_root_path
-            check_dependencies(code_repo_path, env_root_path)
+            # Check dependencies using the derived env_root_path if not skipped
+            if os.getenv('SKIP_DEPENDENCY_CHECK', '') != '1':
+                check_dependencies(code_repo_path, env_root_path)
+
             self.server_process = subprocess.Popen(  # noqa: S603
                 cmd,
                 stdout=subprocess.PIPE,
@@ -381,7 +384,7 @@ class LocalRuntime(ActionExecutionClient):
             )
 
         self.log('info', f'Waiting for server to become ready at {self.api_url}...')
-        self.send_status_message('STATUS$WAITING_FOR_CLIENT')
+        self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
 
         await call_sync_from_async(self._wait_until_alive)
 
@@ -393,7 +396,7 @@ class LocalRuntime(ActionExecutionClient):
             f'Server initialized with plugins: {[plugin.name for plugin in self.plugins]}',
         )
         if not self.attach_to_existing:
-            self.send_status_message(' ')
+            self.set_runtime_status(RuntimeStatus.READY)
         self._runtime_initialized = True
 
     def _find_available_port(
@@ -407,7 +410,7 @@ class LocalRuntime(ActionExecutionClient):
 
     @tenacity.retry(
         wait=tenacity.wait_fixed(2),
-        stop=tenacity.stop_after_attempt(10) | stop_if_should_exit(),
+        stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),
         before_sleep=lambda retry_state: logger.debug(
             f'Waiting for server to be ready... (attempt {retry_state.attempt_number})'
         ),

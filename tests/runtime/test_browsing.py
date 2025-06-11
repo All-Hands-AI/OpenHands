@@ -45,7 +45,7 @@ def test_simple_browse(temp_dir, runtime_cls, run_as_openhands):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
-    action_browse = BrowseURLAction(url='http://localhost:8000')
+    action_browse = BrowseURLAction(url='http://localhost:8000', return_axtree=False)
     logger.info(action_browse, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action_browse)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -116,7 +116,9 @@ def test_read_pdf_browse(temp_dir, runtime_cls, run_as_openhands):
 
         # Browse to the PDF file
         pdf_url = f'{server_url}/view?path=/workspace/test_document.pdf'
-        action_browse = BrowseInteractiveAction(browser_actions=f'goto("{pdf_url}")')
+        action_browse = BrowseInteractiveAction(
+            browser_actions=f'goto("{pdf_url}")', return_axtree=False
+        )
         logger.info(action_browse, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action_browse)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -185,7 +187,9 @@ def test_read_png_browse(temp_dir, runtime_cls, run_as_openhands):
 
         # Browse to the PNG file
         png_url = f'{server_url}/view?path=/workspace/test_image.png'
-        action_browse = BrowseInteractiveAction(browser_actions=f'goto("{png_url}")')
+        action_browse = BrowseInteractiveAction(
+            browser_actions=f'goto("{png_url}")', return_axtree=False
+        )
         logger.info(action_browse, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action_browse)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
