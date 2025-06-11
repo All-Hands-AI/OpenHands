@@ -21,7 +21,11 @@ export function MicroagentsModal({
     {},
   );
 
-  const { microagents, isLoading, isError } = useConversationMicroagents({
+  const {
+    data: microagents,
+    isLoading,
+    isError,
+  } = useConversationMicroagents({
     conversationId,
     enabled: true,
   });
