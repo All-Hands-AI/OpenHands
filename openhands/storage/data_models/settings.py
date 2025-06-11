@@ -42,6 +42,8 @@ class Settings(BaseModel):
     search_api_key: SecretStr | None = None
     email: str | None = None
     email_verified: bool | None = None
+    workspace_base: str | None = None
+    sandbox_volumes: str | None = None
 
     model_config = {
         'validate_assignment': True,
@@ -131,5 +133,7 @@ class Settings(BaseModel):
             remote_runtime_resource_factor=app_config.sandbox.remote_runtime_resource_factor,
             mcp_config=mcp_config,
             search_api_key=app_config.search_api_key,
+            workspace_base=app_config.workspace_base,
+            sandbox_volumes=app_config.sandbox.volumes,
         )
         return settings

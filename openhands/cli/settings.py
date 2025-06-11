@@ -1,3 +1,5 @@
+import os
+
 from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.completion import FuzzyWordCompleter
 from prompt_toolkit.formatted_text import HTML
@@ -70,6 +72,17 @@ def display_settings(config: OpenHandsConfig) -> None:
                 '   Memory Condensation',
                 'Enabled' if config.enable_default_condenser else 'Disabled',
             ),
+        ]
+    )
+
+    # Workspace settings
+    workspace_base = config.workspace_base or os.getcwd()
+    volumes = config.sandbox.volumes or 'Not Set'
+
+    labels_and_values.extend(
+        [
+            ('   Workspace Base', workspace_base),
+            ('   Volumes', volumes),
         ]
     )
 
@@ -301,6 +314,141 @@ async def modify_llm_settings_basic(
     settings.enable_default_condenser = True
 
     await settings_store.store(settings)
+
+
+async def modify_workspace_settings(
+    config: OpenHandsConfig, settings_store: FileSettingsStore
+) -> None:
+    """Configure workspace settings via CLI."""
+    session = PromptSession(key_bindings=kb_cancel())
+
+    # Display current workspace settings
+    workspace_base = config.workspace_base or os.getcwd()
+    volumes = config.sandbox.volumes or 'Not Set'
+
+    print_formatted_text(
+        HTML(f'\n<grey>Current workspace base: </grey><green>{workspace_base}</green>')
+    )
+    print_formatted_text(
+        HTML(f'<grey>Current volumes: </grey><green>{volumes}</green>')
+    )
+
+    try:
+        # Ask if user wants to change workspace base
+        change_workspace = (
+            cli_confirm(
+                'Do you want to change the workspace base directory?',
+                ['Yes, change', 'No, keep current'],
+            )
+            == 0
+        )
+
+        if change_workspace:
+            new_workspace = await get_validated_input(
+                session,
+                '(Step 1/2) Enter new workspace base directory (CTRL-c to cancel): ',
+                error_message='Workspace base directory cannot be empty',
+            )
+
+            # Validate that the directory exists
+            if not os.path.isdir(new_workspace):
+                print_formatted_text(
+                    HTML(
+                        f'<grey>Warning: Directory {new_workspace} does not exist. It will be created when needed.</grey>'
+                    )
+                )
+
+            config.workspace_base = new_workspace
+
+        # Ask if user wants to configure volumes
+        configure_volumes = (
+            cli_confirm(
+                'Do you want to configure volume mounts?',
+                ['Yes, configure', 'No, skip'],
+            )
+            == 0
+        )
+
+        if configure_volumes:
+            print_formatted_text(
+                HTML(
+                    '<grey>Volume format: host_path:container_path[:mode], e.g., /my/host/dir:/workspace:rw</grey>\n'
+                    '<grey>Multiple volumes can be separated by commas, e.g., /path1:/workspace/path1,/path2:/workspace/path2:ro</grey>'
+                )
+            )
+
+            new_volumes = await get_validated_input(
+                session,
+                '(Step 2/2) Enter volume mounts (CTRL-c to cancel): ',
+                error_message='Invalid volume format',
+            )
+
+            # Basic validation of volume format
+            volumes_valid = True
+            for volume in new_volumes.split(','):
+                parts = volume.split(':')
+                if len(parts) < 2 or len(parts) > 3:
+                    volumes_valid = False
+                    break
+
+            if not volumes_valid:
+                print_formatted_text(
+                    HTML(
+                        '<grey>Warning: Volume format appears invalid. Please check the format.</grey>'
+                    )
+                )
+
+                # Ask for confirmation to proceed anyway
+                proceed_anyway = (
+                    cli_confirm(
+                        'Do you want to proceed with this volume configuration anyway?',
+                        ['Yes, proceed', 'No, discard'],
+                    )
+                    == 0
+                )
+
+                if not proceed_anyway:
+                    return
+
+            config.sandbox.volumes = new_volumes
+
+        # Save settings if changes were made
+        if change_workspace or configure_volumes:
+            save_settings = save_settings_confirmation()
+
+            if save_settings:
+                settings = await settings_store.load()
+                if not settings:
+                    settings = Settings()
+
+                # Update workspace settings
+                settings.workspace_base = config.workspace_base
+                settings.sandbox_volumes = config.sandbox.volumes
+
+                # Update sandbox settings in the config
+                if hasattr(settings, 'sandbox_base_container_image'):
+                    settings.sandbox_base_container_image = (
+                        config.sandbox.base_container_image
+                    )
+
+                if hasattr(settings, 'sandbox_runtime_container_image'):
+                    settings.sandbox_runtime_container_image = (
+                        config.sandbox.runtime_container_image
+                    )
+
+                # Store the settings
+                await settings_store.store(settings)
+
+                # Inform the user about environment variable alternative
+                print_formatted_text(
+                    HTML(
+                        '\n<grey>Note: You can also set volumes using the SANDBOX_VOLUMES environment variable:</grey>\n'
+                        f'<grey>export SANDBOX_VOLUMES="{config.sandbox.volumes}"</grey>'
+                    )
+                )
+
+    except (UserCancelledError, KeyboardInterrupt, EOFError):
+        return  # Return on exception
 
 
 async def modify_llm_settings_advanced(

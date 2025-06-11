@@ -9,6 +9,7 @@ from openhands.cli.settings import (
     display_settings,
     modify_llm_settings_advanced,
     modify_llm_settings_basic,
+    modify_workspace_settings,
 )
 from openhands.cli.tui import (
     COLOR_GREY,
@@ -175,6 +176,7 @@ async def handle_settings_command(
         [
             'Basic',
             'Advanced',
+            'Workspace',
             'Go back',
         ],
     )
@@ -183,6 +185,8 @@ async def handle_settings_command(
         await modify_llm_settings_basic(config, settings_store)
     elif modify_settings == 1:
         await modify_llm_settings_advanced(config, settings_store)
+    elif modify_settings == 2:
+        await modify_workspace_settings(config, settings_store)
 
 
 # FIXME: Currently there's an issue with the actual 'resume' behavior.
