@@ -143,19 +143,23 @@ class OpenHands {
    * Check if feedback exists for a specific conversation and event
    * @param conversationId The conversation ID
    * @param eventId The event ID to check
-   * @returns Whether feedback exists for this conversation and event
+   * @returns Feedback data including existence, rating, and reason
    */
   static async checkFeedbackExists(
     conversationId: string,
     eventId: number,
-  ): Promise<boolean> {
+  ): Promise<{ exists: boolean; rating?: number; reason?: string }> {
     try {
       const url = `/feedback/conversation/${conversationId}/${eventId}`;
-      const { data } = await openHands.get<{ exists: boolean }>(url);
-      return data.exists;
+      const { data } = await openHands.get<{
+        exists: boolean;
+        rating?: number;
+        reason?: string;
+      }>(url);
+      return data;
     } catch (error) {
       // Error checking if feedback exists
-      return false;
+      return { exists: false };
     }
   }
 

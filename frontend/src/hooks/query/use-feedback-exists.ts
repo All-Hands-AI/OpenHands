@@ -2,13 +2,19 @@ import { useQuery } from "@tanstack/react-query";
 import OpenHands from "#/api/open-hands";
 import { useConversationId } from "#/hooks/use-conversation-id";
 
+export interface FeedbackData {
+  exists: boolean;
+  rating?: number;
+  reason?: string;
+}
+
 export const useFeedbackExists = (eventId?: number) => {
   const { conversationId } = useConversationId();
 
-  return useQuery({
+  return useQuery<FeedbackData>({
     queryKey: ["feedback", "exists", conversationId, eventId],
     queryFn: () => {
-      if (!eventId) return Promise.resolve(false);
+      if (!eventId) return Promise.resolve({ exists: false });
       return OpenHands.checkFeedbackExists(conversationId, eventId);
     },
     enabled: !!eventId,
