@@ -875,7 +875,7 @@ async def test_context_window_exceeded_error_handling(
     # handles the truncation correctly.
     final_state = await asyncio.wait_for(
         run_controller(
-            config=OpenHandsConfig(iteration_delta=max_iterations),
+            config=OpenHandsConfig(max_iterations=max_iterations),
             initial_user_action=MessageAction(content='INITIAL'),
             runtime=mock_runtime,
             sid='test',
@@ -1015,7 +1015,7 @@ async def test_run_controller_with_context_window_exceeded_with_truncation(
     try:
         state = await asyncio.wait_for(
             run_controller(
-                config=OpenHandsConfig(iteration_delta=5),
+                config=OpenHandsConfig(max_iterations=5),
                 initial_user_action=MessageAction(content='INITIAL'),
                 runtime=mock_runtime,
                 sid='test',
@@ -1035,11 +1035,11 @@ async def test_run_controller_with_context_window_exceeded_with_truncation(
 
     # Hitting the iteration limit indicates the controller is failing for the
     # expected reason
-    assert state.iteration == 5
+    assert state.iteration_flag.current_value == 5
     assert state.agent_state == AgentState.ERROR
     assert (
         state.last_error
-        == 'RuntimeError: Agent reached maximum iteration in headless mode. Current iteration: 5, max iteration: 5'
+        == 'RuntimeError: Agent reached maximum iteration. Current iteration: 5, max iteration: 5'
     )
 
     # Check that the context window exceeded error was raised during the run
@@ -1091,7 +1091,7 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
     try:
         state = await asyncio.wait_for(
             run_controller(
-                config=OpenHandsConfig(iteration_delta=3),
+                config=OpenHandsConfig(max_iterations=3),
                 initial_user_action=MessageAction(content='INITIAL'),
                 runtime=mock_runtime,
                 sid='test',
@@ -1183,10 +1183,13 @@ async def test_action_metrics_copy(mock_agent):
     file_store = InMemoryFileStore({})
     event_stream = EventStream(sid='test', file_store=file_store)
 
-    # Create agent with metrics
-    mock_agent.llm = MagicMock(spec=LLM)
     metrics = Metrics(model_name='test-model')
     metrics.accumulated_cost = 0.05
+
+    initial_state = State(metrics=metrics, budget_flag=None)
+
+    # Create agent with metrics
+    mock_agent.llm = MagicMock(spec=LLM)
 
     # Add multiple token usages - we should get the last one in the action
     usage1 = TokenUsage(
@@ -1244,6 +1247,7 @@ async def test_action_metrics_copy(mock_agent):
         sid='test',
         confirmation_mode=False,
         headless_mode=True,
+        initial_state=initial_state,
     )
 
     # Execute one step
@@ -1310,7 +1314,7 @@ async def test_condenser_metrics_included(mock_agent, test_event_stream):
         cache_write_tokens=10,
         response_id='agent-accumulated',
     )
-    mock_agent.llm.metrics = agent_metrics
+    # mock_agent.llm.metrics = agent_metrics
     mock_agent.name = 'TestAgent'
 
     # Create condenser with its own metrics
@@ -1353,6 +1357,7 @@ async def test_condenser_metrics_included(mock_agent, test_event_stream):
         sid='test',
         confirmation_mode=False,
         headless_mode=True,
+        initial_state=State(metrics=agent_metrics, budget_flag=None),
     )
 
     # Execute one step
