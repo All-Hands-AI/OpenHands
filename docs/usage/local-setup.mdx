@@ -117,9 +117,23 @@ OpenHands requires an API key to access most language models. Here's how to get 
 
 </Accordion>
 
+<Accordion title="Local LLM (e.g. LM Studio, llama.cpp, Ollama)">
+
+If your local LLM server isn’t behind an authentication proxy, you can enter any value as the API key (e.g. `local-key`, `test123`) — it won’t be used.
+
+</Accordion>
+
 </AccordionGroup>
 
 Consider setting usage limits to control costs.
+
+#### Using a Local LLM
+
+<Note>
+Effective use of local models for agent tasks requires capable hardware, along with models specifically tuned for instruction-following and agent-style behavior.
+</Note>
+
+To run OpenHands with a locally hosted language model instead of a cloud provider, see the [Local LLMs guide](/usage/llms/local-llms) for setup instructions.
 
 #### Setting Up Search Engine
 
