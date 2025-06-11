@@ -393,7 +393,9 @@ def attempt_vscode_extension_install():
                     )
                     install_command_executed = True
                     if process.returncode == 0:
-                        print('INFO: VS Code extension installation command sent successfully.')
+                        print(
+                            'INFO: VS Code extension installation command sent successfully.'
+                        )
                         installation_successful_message_shown = True
                     else:
                         logger.warning(
@@ -415,17 +417,23 @@ def attempt_vscode_extension_install():
                 )
                 install_command_executed = True
                 if process.returncode == 0:
-                    print('INFO: VS Code extension installation command sent successfully.')
+                    print(
+                        'INFO: VS Code extension installation command sent successfully.'
+                    )
                     installation_successful_message_shown = True
                 else:
                     # This is a common failure point if 'code' is fine but install fails (e.g. user cancels prompt in VSCode)
-                    print('INFO: VS Code extension installation command might have failed.')
+                    print(
+                        'INFO: VS Code extension installation command might have failed.'
+                    )
                     logger.warning(
                         f"Marketplace installation for '{extension_id}' failed. RC: {process.returncode}, STDOUT: {process.stdout.strip()}, STDERR: {process.stderr.strip()}"
                     )
 
             except FileNotFoundError:
-                print("INFO: 'code' command not found. Please ensure VS Code is installed and the 'code' command is in your PATH.")
+                print(
+                    "INFO: 'code' command not found. Please ensure VS Code is installed and the 'code' command is in your PATH."
+                )
                 install_command_executed = False  # 'code' command itself failed
             except Exception as e:
                 print(
