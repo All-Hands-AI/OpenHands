@@ -194,7 +194,9 @@ export function ConversationCard({
           </div>
 
           <div className="flex items-center">
-            <ConversationStateIndicator conversationStatus={conversationStatus} />
+            <ConversationStateIndicator
+              conversationStatus={conversationStatus}
+            />
             {hasContextMenu && (
               <div className="pl-2">
                 <EllipsisButton

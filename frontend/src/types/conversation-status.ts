@@ -1,5 +1,1 @@
-
-export type ConversationStatus =
-  | "STARTING"
-  | "RUNNING"
-  | "STOPPED";
+export type ConversationStatus = "STARTING" | "RUNNING" | "STOPPED";
