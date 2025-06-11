@@ -12,27 +12,28 @@ for scripting.
 ### Running with Python
 
 1. Install OpenHands using pip:
-
 ```bash
 pip install openhands-ai
 ```
 
-2. Set your model, API key, and other preferences using environment variables or with the [`config.toml`](https://github.com/All-Hands-AI/OpenHands/blob/main/config.template.toml) file.
-3. Launch an interactive OpenHands conversation from the command line:
+2. Set the `SANDBOX_VOLUMES` environment variable to specify the directory you want OpenHands to access
+([See using SANDBOX_VOLUMES for more info](../runtimes/docker#using-sandbox_volumes)).
 
+3. Launch an interactive OpenHands conversation from the command line:
 ```bash
 openhands
 ```
 
-This command opens an interactive prompt where you can type tasks or commands and get responses from OpenHands.
+<Note>
+If you have cloned the repository, you can also run the CLI directly using Poetry:
 
-#### For Developers
-
-If you have cloned the repository, you can run the CLI directly using Poetry:
-
-```bash
 poetry run python -m openhands.cli.main
-```
+</Note>
+
+The first time you run the CLI, it will take you through configuring the required LLM
+settings. These will be saved for future sessions.
+
+The trajectory of the sessions will be saved in `~/.openhands/file_store/sessions`.
 
 ### Running with Docker
 
@@ -59,9 +60,11 @@ docker run -it \
     python -m openhands.cli.main --override-cli-mode true
 ```
 
-This launches the CLI in Docker, allowing you to interact with OpenHands as described above.
+This launches the CLI in Docker, allowing you to interact with OpenHands.
 
 The `-e SANDBOX_USER_ID=$(id -u)` ensures files created by the agent in your workspace have the correct permissions.
+
+The trajectory of the sessions will be saved in `~/.openhands-state/sessions`.
 
 ## Interactive CLI Overview
 
