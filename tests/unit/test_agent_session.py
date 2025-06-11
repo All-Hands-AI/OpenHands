@@ -228,3 +228,91 @@ async def test_agent_session_start_with_restored_state(mock_agent):
         assert session.controller.state.iteration_flag.max_value == 5
         assert session.controller.state.start_id == 0
         assert session.controller.state.end_id == -1
+
+
+@pytest.mark.asyncio
+async def test_metrics_centralization_and_sharing(mock_agent):
+    """Test that metrics are centralized and shared between controller and agent."""
+
+    # Setup
+    file_store = InMemoryFileStore({})
+    session = AgentSession(
+        sid='test-session',
+        file_store=file_store,
+    )
+
+    # Create a mock runtime and set it up
+    mock_runtime = MagicMock(spec=ActionExecutionClient)
+
+    # Mock the runtime creation to set up the runtime attribute
+    async def mock_create_runtime(*args, **kwargs):
+        session.runtime = mock_runtime
+        return True
+
+    session._create_runtime = AsyncMock(side_effect=mock_create_runtime)
+
+    # Create a mock EventStream with no events
+    mock_event_stream = MagicMock(spec=EventStream)
+    mock_event_stream.get_events.return_value = []
+    mock_event_stream.subscribe = MagicMock()
+    mock_event_stream.get_latest_event_id.return_value = 0
+
+    # Inject the mock event stream into the session
+    session.event_stream = mock_event_stream
+
+    # Create a real Memory instance with the mock event stream
+    memory = Memory(event_stream=mock_event_stream, sid='test-session')
+    memory.microagents_dir = 'test-dir'
+
+    # Patch necessary components
+    with (
+        patch(
+            'openhands.server.session.agent_session.EventStream',
+            return_value=mock_event_stream,
+        ),
+        patch(
+            'openhands.controller.state.state.State.restore_from_session',
+            side_effect=Exception('No state found'),
+        ),
+        patch('openhands.server.session.agent_session.Memory', return_value=memory),
+    ):
+        await session.start(
+            runtime_name='test-runtime',
+            config=OpenHandsConfig(),
+            agent=mock_agent,
+            max_iterations=10,
+        )
+
+        # Verify that the agent's LLM metrics and controller's state metrics are the same object
+        assert session.controller.agent.llm.metrics is session.controller.state.metrics
+
+        # Add some metrics to the agent's LLM
+        test_cost = 0.05
+        session.controller.agent.llm.metrics.add_cost(test_cost)
+
+        # Verify that the cost is reflected in the controller's state metrics
+        assert session.controller.state.metrics.accumulated_cost == test_cost
+
+        # Create a test metrics object to simulate an observation with metrics
+        test_observation_metrics = Metrics()
+        test_observation_metrics.add_cost(0.1)
+
+        # Get the current accumulated cost before merging
+        current_cost = session.controller.state.metrics.accumulated_cost
+
+        # Simulate merging metrics from an observation
+        session.controller.state_tracker.merge_metrics(test_observation_metrics)
+
+        # Verify that the merged metrics are reflected in both agent and controller
+        assert session.controller.state.metrics.accumulated_cost == current_cost + 0.1
+        assert (
+            session.controller.agent.llm.metrics.accumulated_cost == current_cost + 0.1
+        )
+
+        # Reset the agent and verify that metrics are not reset
+        session.controller.agent.reset()
+
+        # Metrics should still be the same after reset
+        assert session.controller.state.metrics.accumulated_cost == test_cost + 0.1
+        assert session.controller.agent.llm.metrics.accumulated_cost == test_cost + 0.1
+        assert session.controller.agent.llm.metrics is session.controller.state.metrics
