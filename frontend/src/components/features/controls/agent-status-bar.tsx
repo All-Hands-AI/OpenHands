@@ -1,112 +1,20 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { I18nKey } from "#/i18n/declaration";
 import { showErrorToast } from "#/utils/error-handler";
 import { RootState } from "#/store";
 import { AgentState } from "#/types/agent-state";
-import {
-  AGENT_STATUS_MAP,
-  IndicatorColor,
-} from "../../agent-status-map.constant";
-import { useWsClient, WebSocketStatus } from "#/context/ws-client-provider";
+import { useWsClient } from "#/context/ws-client-provider";
 import { useNotification } from "#/hooks/useNotification";
 import { browserTab } from "#/utils/browser-tab";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
-import { ConversationStatus } from "#/types/conversation-status";
-import { RuntimeStatus } from "#/types/runtime-status";
-import { StatusMessage } from "#/types/message";
+import { getIndicatorColor, getStatusCode } from "#/utils/status";
 
 const notificationStates = [
   AgentState.AWAITING_USER_INPUT,
   AgentState.FINISHED,
   AgentState.AWAITING_USER_CONFIRMATION,
 ];
-
-function getIndicatorColor(
-  webSocketStatus: WebSocketStatus,
-  conversationStatus: ConversationStatus | null,
-  runtimeStatus: RuntimeStatus | null,
-  agentState: AgentState | null,
-) {
-  if (
-    webSocketStatus === "DISCONNECTED" ||
-    conversationStatus === "STOPPED" ||
-    runtimeStatus === "STATUS$STOPPED" ||
-    agentState === AgentState.STOPPED
-  ) {
-    return IndicatorColor.RED;
-  }
-  // Display a yellow working icon while the runtime is starting
-  if (
-    conversationStatus === "STARTING" ||
-    !["STATUS$READY", null].includes(runtimeStatus) ||
-    [AgentState.PAUSED, AgentState.REJECTED, AgentState.RATE_LIMITED].includes(
-      agentState as AgentState,
-    )
-  ) {
-    return IndicatorColor.YELLOW;
-  }
-
-  if ([AgentState.LOADING].includes(agentState as AgentState)) {
-    return IndicatorColor.DARK_ORANGE;
-  }
-
-  if (
-    [AgentState.AWAITING_USER_CONFIRMATION].includes(agentState as AgentState)
-  ) {
-    return IndicatorColor.ORANGE;
-  }
-
-  if (agentState === AgentState.AWAITING_USER_INPUT) {
-    return IndicatorColor.BLUE;
-  }
-
-  // All other agent states are green
-  return IndicatorColor.GREEN;
-}
-
-function getStatusCode(
-  statusMessage: StatusMessage,
-  webSocketStatus: WebSocketStatus,
-  conversationStatus: ConversationStatus | null,
-  runtimeStatus: RuntimeStatus | null,
-  agentState: AgentState | null,
-) {
-  if (conversationStatus === "STOPPED" || runtimeStatus === "STATUS$STOPPED") {
-    return I18nKey.CHAT_INTERFACE$STOPPED;
-  }
-  if (runtimeStatus === "STATUS$BUILDING_RUNTIME") {
-    return I18nKey.STATUS$BUILDING_RUNTIME;
-  }
-  if (runtimeStatus === "STATUS$STARTING_RUNTIME") {
-    return I18nKey.STATUS$STARTING_RUNTIME;
-  }
-  if (webSocketStatus === "DISCONNECTED") {
-    return I18nKey.CHAT_INTERFACE$DISCONNECTED;
-  }
-  if (webSocketStatus === "CONNECTING") {
-    return I18nKey.CHAT_INTERFACE$CONNECTING;
-  }
-
-  if (
-    agentState === AgentState.LOADING &&
-    statusMessage?.id &&
-    statusMessage.id !== "STATUS$READY"
-  ) {
-    return statusMessage.id;
-  }
-
-  if (agentState) {
-    return AGENT_STATUS_MAP[agentState];
-  }
-
-  if (runtimeStatus && runtimeStatus !== "STATUS$READY" && !agentState) {
-    return runtimeStatus;
-  }
-
-  return "STATUS$ERROR"; // illegal state
-}
 
 export function AgentStatusBar() {
   const { t, i18n } = useTranslation();
