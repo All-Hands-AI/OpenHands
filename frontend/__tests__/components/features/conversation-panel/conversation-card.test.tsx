@@ -478,7 +478,7 @@ describe("ConversationCard", () => {
           title="Conversation 1"
           selectedRepository={null}
           lastUpdatedAt="2021-10-01T12:00:00Z"
-          status="RUNNING"
+          conversationStatus="RUNNING"
         />,
       );
 
