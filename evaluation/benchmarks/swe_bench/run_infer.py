@@ -27,6 +27,7 @@ from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
     assert_and_raise,
+    check_maximum_retries_exceeded,
     codeact_user_response,
     get_default_sandbox_config_for_eval,
     get_metrics,
@@ -973,3 +974,6 @@ if __name__ == '__main__':
         logger.info(
             f'Done! Total {len(added_instance_ids)} instances added to {output_file}'
         )
+
+        # Check if any instances reached maximum retries
+        check_maximum_retries_exceeded(metadata.eval_output_dir)
