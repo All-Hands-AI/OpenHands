@@ -270,8 +270,8 @@ class Session:
                 isinstance(event, AgentStateChangedObservation)
                 and event.agent_state == AgentState.ERROR
             ):
-                self.logger.info(
-                    'Agent status error',
+                self.logger.error(
+                    f'Agent status error: {event.reason}',
                     extra={'signal': 'agent_status_error'},
                 )
         elif isinstance(event, ErrorObservation):
@@ -329,8 +329,8 @@ class Session:
             controller = self.agent_session.controller
             if controller is not None and not agent_session.is_closed():
                 await controller.set_agent_state_to(AgentState.ERROR)
-            self.logger.info(
-                'Agent status error',
+            self.logger.error(
+                f'Agent status error: {message}',
                 extra={'signal': 'agent_status_error'},
             )
         await self.send(
