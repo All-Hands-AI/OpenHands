@@ -62,7 +62,7 @@ class OpenHandsConfig(BaseModel):
     sandbox: SandboxConfig = Field(default_factory=SandboxConfig)
     security: SecurityConfig = Field(default_factory=SecurityConfig)
     extended: ExtendedConfig = Field(default_factory=lambda: ExtendedConfig({}))
-    runtime: str = Field(default='docker')
+    runtime: str = Field(default='local')
     file_store: str = Field(default='local')
     file_store_path: str = Field(default='~/.openhands/file_store')
     file_store_web_hook_url: str | None = Field(default=None)

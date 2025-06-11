@@ -129,6 +129,10 @@ class RemoteRuntime(ActionExecutionClient):
 
     def _start_or_attach_to_runtime(self) -> None:
         self.log('info', 'Starting or attaching to runtime')
+        
+        # First check if the remote runtime API is available
+        self._check_runtime_api_availability()
+        
         existing_runtime = self._check_existing_runtime()
         if existing_runtime:
             self.log('info', f'Using existing runtime with ID: {self.runtime_id}')
@@ -167,6 +171,40 @@ class RemoteRuntime(ActionExecutionClient):
             self.log('info', 'Runtime is ready.')
         self.send_status_message(' ')
 
+    def _raise_runtime_unavailable_error(self, original_error: Exception) -> None:
+        """Raise a standardized runtime unavailable error with helpful guidance."""
+        raise AgentRuntimeUnavailableError(
+            f'Remote runtime API is not available at {self.config.sandbox.remote_runtime_api_url}. '
+            f'Please check if the remote runtime service is running and accessible. '
+            f'For Railway or cloud deployments, consider using "local" runtime instead of "remote". '
+            f'Set RUNTIME=local environment variable or runtime="local" in config.toml.'
+        ) from original_error
+
+    def _check_runtime_api_availability(self) -> None:
+        """Check if the remote runtime API is available before attempting to use it."""
+        self.log('info', f'Checking remote runtime API availability at {self.config.sandbox.remote_runtime_api_url}')
+        try:
+            # Try to make a simple health check request to the API
+            response = self._send_runtime_api_request(
+                'GET',
+                f'{self.config.sandbox.remote_runtime_api_url}/health',
+            )
+            self.log('info', 'Remote runtime API is available')
+        except httpx.ConnectError as e:
+            self.log(
+                'error',
+                f'Remote runtime API is not available at {self.config.sandbox.remote_runtime_api_url}. '
+                f'Please ensure the remote runtime service is running and accessible. Error: {e}'
+            )
+            self._raise_runtime_unavailable_error(e)
+        except httpx.HTTPError as e:
+            # If we get an HTTP error (like 404), the service is running but may not have a health endpoint
+            # This is acceptable - we just want to check connectivity
+            if e.response.status_code == 404:
+                self.log('info', 'Remote runtime API is available (health endpoint not found, but service is reachable)')
+            else:
+                self.log('warning', f'Remote runtime API returned HTTP error {e.response.status_code}, but service is reachable')
+
     def _check_existing_runtime(self) -> bool:
         self.log('info', f'Checking for existing runtime with session ID: {self.sid}')
         try:
@@ -179,6 +217,13 @@ class RemoteRuntime(ActionExecutionClient):
             self.log('info', f'Found runtime with status: {status}')
             if status == 'running' or status == 'paused':
                 self._parse_runtime_response(response)
+        except httpx.ConnectError as e:
+            self.log(
+                'error',
+                f'Failed to connect to remote runtime API at {self.config.sandbox.remote_runtime_api_url}. '
+                f'Please ensure the remote runtime service is running and accessible. Error: {e}'
+            )
+            self._raise_runtime_unavailable_error(e)
         except httpx.HTTPError as e:
             if e.response.status_code == 404:
                 self.log(
@@ -293,6 +338,13 @@ class RemoteRuntime(ActionExecutionClient):
                 'debug',
                 f'Runtime started. URL: {self.runtime_url}',
             )
+        except httpx.ConnectError as e:
+            self.log(
+                'error',
+                f'Failed to connect to remote runtime API at {self.config.sandbox.remote_runtime_api_url}. '
+                f'Please ensure the remote runtime service is running and accessible. Error: {e}'
+            )
+            self._raise_runtime_unavailable_error(e)
         except httpx.HTTPError as e:
             self.log('error', f'Unable to start runtime: {str(e)}')
             raise AgentRuntimeUnavailableError() from e
@@ -318,6 +370,13 @@ class RemoteRuntime(ActionExecutionClient):
                 'info',
                 f'Resume API call successful with status code: {response.status_code}',
             )
+        except httpx.ConnectError as e:
+            self.log(
+                'error',
+                f'Failed to connect to remote runtime API at {self.config.sandbox.remote_runtime_api_url}. '
+                f'Please ensure the remote runtime service is running and accessible. Error: {e}'
+            )
+            self._raise_runtime_unavailable_error(e)
         except Exception as e:
             self.log('error', f'Failed to call /resume API: {e}', exc_info=True)
             raise
@@ -502,6 +561,13 @@ class RemoteRuntime(ActionExecutionClient):
         try:
             kwargs['timeout'] = self.config.sandbox.remote_runtime_api_timeout
             return send_request(self.session, method, url, **kwargs)
+        except httpx.ConnectError as e:
+            self.log(
+                'error',
+                f'Failed to connect to remote runtime API at {url}. '
+                f'Please ensure the remote runtime service is running and accessible. Error: {e}'
+            )
+            raise
         except httpx.TimeoutException:
             self.log(
                 'error',

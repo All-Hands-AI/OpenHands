@@ -79,7 +79,7 @@
 #run_as_openhands = true
 
 # Runtime environment
-#runtime = "docker"
+#runtime = "local"
 
 # Name of the default agent
 #default_agent = "CodeActAgent"

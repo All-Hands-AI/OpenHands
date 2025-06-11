@@ -13,7 +13,7 @@ from openhands.core.config.condenser_config import (
     LLMSummarizingCondenserConfig,
 )
 from openhands.core.config.mcp_config import MCPConfig, OpenHandsMCPConfigImpl
-from openhands.core.exceptions import MicroagentValidationError
+from openhands.core.exceptions import AgentRuntimeUnavailableError, MicroagentValidationError
 from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema import AgentState
 from openhands.events.action import MessageAction, NullAction
@@ -183,9 +183,27 @@ class Session:
             custom_secrets = settings.custom_secrets
             conversation_instructions = settings.conversation_instructions
 
+        # Check if remote runtime is configured but not available, fallback to local
+        runtime_name = self.config.runtime
+        if runtime_name == 'remote':
+            try:
+                # Quick check if remote runtime API is available
+                import httpx
+                response = httpx.get(
+                    f"{self.config.sandbox.remote_runtime_api_url}/health",
+                    timeout=5
+                )
+                self.logger.info(f"Remote runtime API is available at {self.config.sandbox.remote_runtime_api_url}")
+            except Exception as e:
+                self.logger.warning(
+                    f"Remote runtime API is not available at {self.config.sandbox.remote_runtime_api_url}. "
+                    f"Falling back to local runtime. Error: {e}"
+                )
+                runtime_name = 'local'
+
         try:
             await self.agent_session.start(
-                runtime_name=self.config.runtime,
+                runtime_name=runtime_name,
                 config=self.config,
                 agent=agent,
                 max_iterations=max_iterations,
@@ -216,6 +234,11 @@ class Session:
             else:
                 # For other ValueErrors, just show the error class
                 await self.send_error('Failed to create agent session: ValueError')
+            return
+        except AgentRuntimeUnavailableError as e:
+            self.logger.exception(f'Runtime unavailable: {e}')
+            # For runtime unavailable errors, provide the full error message as it contains helpful information
+            await self.send_error(f'Runtime unavailable: {str(e)}')
             return
         except Exception as e:
             self.logger.exception(f'Error creating agent_session: {e}')

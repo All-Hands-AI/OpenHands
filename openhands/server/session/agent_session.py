@@ -321,6 +321,7 @@ class AgentSession:
         self.logger.debug(f'Initializing runtime `{runtime_name}` now...')
         runtime_cls = get_runtime_cls(runtime_name)
         if runtime_cls == RemoteRuntime:
+            self.logger.info(f'Using remote runtime with API URL: {config.sandbox.remote_runtime_api_url}')
             # If provider tokens is passed in custom secrets, then remove provider from provider tokens
             # We prioritize provider tokens set in custom secrets
             provider_tokens_without_gitlab = (
