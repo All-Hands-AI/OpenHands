@@ -1,4 +1,5 @@
-import { ProjectStatus } from "#/components/features/conversation-panel/conversation-state-indicator";
+import { ConversationStatus } from "#/types/conversation-status";
+import { RuntimeStatus } from "#/types/runtime-status";
 
 export interface ErrorResponse {
   error: string;
@@ -80,7 +81,8 @@ export interface Conversation {
   git_provider: string | null;
   last_updated_at: string;
   created_at: string;
-  status: ProjectStatus;
+  status: ConversationStatus;
+  runtime_status: RuntimeStatus | null;
   trigger?: ConversationTrigger;
   url: string | null;
   session_api_key: string | null;
@@ -101,4 +103,25 @@ export interface GitChange {
 export interface GitChangeDiff {
   modified: string;
   original: string;
+}
+
+export interface InputMetadata {
+  name: string;
+  description: string;
+}
+
+export interface Microagent {
+  name: string;
+  type: "repo" | "knowledge";
+  content: string;
+  triggers: string[];
+}
+
+export interface GetMicroagentsResponse {
+  microagents: Microagent[];
+}
+
+export interface GetMicroagentPromptResponse {
+  status: string;
+  prompt: string;
 }
