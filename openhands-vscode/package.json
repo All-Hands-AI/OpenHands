@@ -4,6 +4,11 @@
   "description": "Integrates OpenHands with VS Code for easy conversation starting and context passing.",
   "version": "0.0.1",
   "publisher": "openhands",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/all-hands-ai/OpenHands.git"
+  },
   "engines": {
     "vscode": "^1.80.0"
   },
@@ -63,7 +68,8 @@
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "test": "npm run compile && node ./out/test/runTest.js"
+    "test": "npm run compile && node ./out/test/runTest.js",
+    "package-vsix": "npm run compile && vsce package --no-dependencies"
   },
   "devDependencies": {
     "@types/vscode": "^1.80.0",
@@ -72,6 +78,7 @@
     "mocha": "^10.4.0",
     "@vscode/test-electron": "^2.3.9",
     "@types/node": "^20.12.12",
-    "@types/glob": "^8.1.0"
+    "@types/glob": "^8.1.0",
+    "@vscode/vsce": "^2.23.0"
   }
 }
