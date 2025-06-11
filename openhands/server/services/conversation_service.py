@@ -109,7 +109,7 @@ async def create_new_conversation(
                 selected_repository=selected_repository,
                 selected_branch=selected_branch,
                 git_provider=git_provider,
-                llm_model=settings.llm_model,
+                llm_model=conversation_init_data.llm_model,
             )
         )
 

@@ -54,25 +54,25 @@ Check [the installation guide](/usage/local-setup) to make sure you have all the
 export LMSTUDIO_MODEL_NAME="imported-models/uncategorized/devstralq4_k_m.gguf" # <- Replace this with the model name you copied from LMStudio
 export LMSTUDIO_URL="http://host.docker.internal:1234"  # <- Replace this with the port from LMStudio
 
-docker pull docker.all-hands.dev/all-hands-ai/runtime:0.41-nikolaik
+docker pull docker.all-hands.dev/all-hands-ai/runtime:0.42-nikolaik
 
 mkdir -p ~/.openhands-state && echo '{"language":"en","agent":"CodeActAgent","max_iterations":null,"security_analyzer":null,"confirmation_mode":false,"llm_model":"lm_studio/'$LMSTUDIO_MODEL_NAME'","llm_api_key":"dummy","llm_base_url":"'$LMSTUDIO_URL/v1'","remote_runtime_resource_factor":null,"github_token":null,"enable_default_condenser":true,"user_consents_to_analytics":true}' > ~/.openhands-state/settings.json
 
 docker run -it --rm --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.41-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.42-nikolaik \
     -e LOG_ALL_EVENTS=true \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v ~/.openhands-state:/.openhands-state \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app \
-    docker.all-hands.dev/all-hands-ai/openhands:0.41
+    docker.all-hands.dev/all-hands-ai/openhands:0.42
 ```
 
 Once your server is running -- you can visit `http://localhost:3000` in your browser to use OpenHands with local Devstral model:
 ```
 Digest: sha256:e72f9baecb458aedb9afc2cd5bc935118d1868719e55d50da73190d3a85c674f
-Status: Image is up to date for docker.all-hands.dev/all-hands-ai/openhands:0.41
+Status: Image is up to date for docker.all-hands.dev/all-hands-ai/openhands:0.42
 Starting OpenHands...
 Running OpenHands as root
 14:22:13 - openhands:INFO: server_config.py:50 - Using config class None
