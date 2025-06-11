@@ -86,11 +86,10 @@ export function LikertScale({
 
     setSelectedRating(rating);
 
-    // Only show reasons if rating is 3 or less
-    const shouldShowReasons = rating <= 3;
-    setShowReasons(shouldShowReasons);
-
-    if (shouldShowReasons) {
+    // Only show reasons if rating is 3 or less (1, 2, or 3 stars)
+    // For ratings > 3 (4 or 5 stars), submit immediately without showing reasons
+    if (rating <= 3) {
+      setShowReasons(true);
       setCountdown(Math.ceil(AUTO_SUBMIT_TIMEOUT / 1000));
 
       // Set a timeout to auto-submit if no reason is selected
@@ -100,7 +99,8 @@ export function LikertScale({
 
       setReasonTimeout(timeout);
     } else {
-      // For ratings > 3, submit immediately without showing reasons
+      // For ratings > 3 (4 or 5 stars), submit immediately without showing reasons
+      setShowReasons(false);
       submitFeedback(rating);
     }
   };
