@@ -11,6 +11,7 @@ from openhands.events.observation.delegate import AgentDelegateObservation
 from openhands.events.observation.empty import NullObservation
 from openhands.events.serialization.event import event_to_trajectory
 from openhands.events.stream import EventStream
+from openhands.llm.metrics import Metrics
 from openhands.storage.files import FileStore
 
 
@@ -240,3 +241,7 @@ class StateTracker:
 
 
 
+    def merge_metrics(self, metrics: Metrics):
+        self.state.metrics.merge(metrics)
+        if self.state.budget_flag:
+            self.state.budget_flag.current_value = self.state.metrics.accumulated_cost

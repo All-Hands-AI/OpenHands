@@ -25,7 +25,7 @@ from litellm.exceptions import (  # noqa
 from openhands.controller.agent import Agent
 from openhands.controller.replay import ReplayManager
 from openhands.controller.state.state import State
-from openhands.controller.state.state_manager import StateTracker
+from openhands.controller.state.state_tracker import StateTracker
 from openhands.controller.stuck import StuckDetector
 from openhands.core.config import AgentConfig, LLMConfig
 from openhands.core.exceptions import (
@@ -152,7 +152,7 @@ class AgentController:
                 EventStreamSubscriber.AGENT_CONTROLLER, self.on_event, self.id
             )
 
-        self.state_manager = StateTracker(sid, file_store, user_id)
+        self.state_tracker = StateTracker(sid, file_store, user_id)
 
         # state from the previous session, state from a parent agent, or a fresh state
         self.set_initial_state(
@@ -162,7 +162,7 @@ class AgentController:
             confirmation_mode=confirmation_mode,
         )
 
-        self.state = self.state_manager.state  # TODO: share between manager and controller for backward compatability; we should ideally move all state related logic to the state manager
+        self.state = self.state_tracker.state  # TODO: share between manager and controller for backward compatability; we should ideally move all state related logic to the state manager
 
         self.agent_to_llm_config = agent_to_llm_config if agent_to_llm_config else {}
         self.agent_configs = agent_configs if agent_configs else {}
@@ -213,7 +213,7 @@ class AgentController:
         if set_stop_state:
             await self.set_agent_state_to(AgentState.STOPPED)
 
-        self.state_manager.close(self.event_stream)
+        self.state_tracker.close(self.event_stream)
 
         # unsubscribe from the event stream
         # only the root parent controller subscribes to the event stream
@@ -385,7 +385,7 @@ class AgentController:
         if hasattr(event, 'hidden') and event.hidden:
             return
 
-        self.state_manager.add_history(event)
+        self.state_tracker.add_history(event)
 
         if isinstance(event, Action):
             await self._handle_action(event)
@@ -451,7 +451,7 @@ class AgentController:
         )
 
         if observation.llm_metrics is not None:
-            self.agent.llm.metrics.merge(observation.llm_metrics)
+            self.state_tracker.merge_metrics(observation.llm_metrics)
 
         # this happens for runnable actions and microagent actions
         if self._pending_action and self._pending_action.id == observation.cause:
@@ -562,7 +562,7 @@ class AgentController:
             self.state.agent_state == AgentState.ERROR
             and new_state == AgentState.RUNNING
         ):
-            self.state_manager.maybe_expand_control_flags(self.headless_mode)
+            self.state_tracker.maybe_expand_control_flags(self.headless_mode)
 
         if self._pending_action is not None and (
             new_state in (AgentState.USER_CONFIRMED, AgentState.USER_REJECTED)
@@ -635,7 +635,7 @@ class AgentController:
             metrics=self.state.metrics,
             # start on top of the stream
             start_id=self.event_stream.get_latest_event_id() + 1,
-            parent_metrics_snapshot=self.state_manager.get_metrics_snapshot(),
+            parent_metrics_snapshot=self.state_tracker.get_metrics_snapshot(),
             parent_iteration=self.state.iteration_flag.current_value,
         )
         self.log(
@@ -762,7 +762,7 @@ class AgentController:
             return
 
         try:
-            self.state_manager.run_control_flags()
+            self.state_tracker.run_control_flags()
         except Exception as e:
             logger.warning('Control flag limits hit')
             await self._react_to_exception(e)
@@ -911,7 +911,7 @@ class AgentController:
         max_budget_per_task: float | None,
         confirmation_mode: bool = False,
     ):
-        self.state_manager.set_initial_state(
+        self.state_tracker.set_initial_state(
             self.id,
             self.agent,
             state,
@@ -920,14 +920,14 @@ class AgentController:
             confirmation_mode,
         )
         # Always load from the event stream to avoid losing history
-        self.state_manager._init_history(
+        self.state_tracker._init_history(
             self.event_stream,
         )
 
     def get_trajectory(self, include_screenshots: bool = False) -> list[dict]:
         # state history could be partially hidden/truncated before controller is closed
         assert self._closed
-        return self.state_manager.get_trajectory(include_screenshots)
+        return self.state_tracker.get_trajectory(include_screenshots)
 
     def _handle_long_context_error(self) -> None:
         # When context window is exceeded, keep roughly half of agent interactions
@@ -1227,4 +1227,4 @@ class AgentController:
         return self._cached_first_user_message
 
     def save_state(self):
-        self.state_manager.save_state()
+        self.state_tracker.save_state()
