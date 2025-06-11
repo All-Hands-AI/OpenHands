@@ -211,3 +211,141 @@ def test_read_png_browse(temp_dir, runtime_cls, run_as_openhands):
         assert '.png' in obs.content
     finally:
         _close_test_runtime(runtime)
+
+
+@pytest.mark.skipif(
+    os.environ.get('TEST_RUNTIME') == 'cli',
+    reason='CLIRuntime does not support browsing actions',
+)
+def test_download_file(temp_dir, runtime_cls, run_as_openhands):
+    """Test downloading a file using the browser."""
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    try:
+        # Create a test file to download
+        test_file_content = 'This is a test file for download'
+        test_file_name = 'test_download.txt'
+        test_file_path = os.path.join(temp_dir, test_file_name)
+
+        with open(test_file_path, 'w') as f:
+            f.write(test_file_content)
+
+        # Copy the file to the sandbox
+        sandbox_dir = config.workspace_mount_path_in_sandbox
+        runtime.copy_to(test_file_path, sandbox_dir)
+
+        # Create a simple HTML page with a download link
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Download Test</title>
+        </head>
+        <body>
+            <h1>Download Test Page</h1>
+            <p>Click the link below to download the test file:</p>
+            <a href="/workspace/{test_file_name}" download="{test_file_name}" id="download-link">Download Test File</a>
+        </body>
+        </html>
+        """
+
+        html_file_path = os.path.join(temp_dir, 'download_test.html')
+        with open(html_file_path, 'w') as f:
+            f.write(html_content)
+
+        # Copy the HTML file to the sandbox
+        runtime.copy_to(html_file_path, sandbox_dir)
+
+        # Verify the files exist in the sandbox
+        action_cmd = CmdRunAction(command='ls -alh')
+        logger.info(action_cmd, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action_cmd)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert isinstance(obs, CmdOutputObservation)
+        assert obs.exit_code == 0
+        assert test_file_name in obs.content
+        assert 'download_test.html' in obs.content
+
+        # Ensure downloads directory exists
+        action_cmd = CmdRunAction(command='mkdir -p /workspace/downloads')
+        logger.info(action_cmd, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action_cmd)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert obs.exit_code == 0
+
+        # Start HTTP server
+        action_cmd = CmdRunAction(
+            command='python3 -m http.server 8000 > server.log 2>&1 &'
+        )
+        logger.info(action_cmd, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action_cmd)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert isinstance(obs, CmdOutputObservation)
+        assert obs.exit_code == 0
+
+        # Wait for server to start
+        action_cmd = CmdRunAction(command='sleep 2')
+        logger.info(action_cmd, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action_cmd)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+        # Browse to the HTML page
+        action_browse = BrowseURLAction(url='http://localhost:8000/download_test.html')
+        logger.info(action_browse, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action_browse)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+        # Verify the browser observation
+        assert isinstance(obs, BrowserOutputObservation)
+        assert 'http://localhost:8000/download_test.html' in obs.url
+        assert not obs.error
+        assert 'Download Test Page' in obs.content
+
+        # Click the download link
+        action_browse = BrowseInteractiveAction(
+            browser_actions='click("download-link")'
+        )
+        logger.info(action_browse, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action_browse)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+        # Verify the browser observation after clicking
+        assert isinstance(obs, BrowserOutputObservation)
+        assert not obs.error
+        assert '[Action executed successfully.]' in str(obs)
+
+        # Wait for download to complete
+        action_cmd = CmdRunAction(command='sleep 3')
+        logger.info(action_cmd, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action_cmd)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+        # Check if the file was downloaded
+        action_cmd = CmdRunAction(command='ls -la /workspace/downloads/')
+        logger.info(action_cmd, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action_cmd)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert isinstance(obs, CmdOutputObservation)
+        assert obs.exit_code == 0
+        assert test_file_name in obs.content
+
+        # Verify the content of the downloaded file
+        action_cmd = CmdRunAction(command=f'cat /workspace/downloads/{test_file_name}')
+        logger.info(action_cmd, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action_cmd)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert isinstance(obs, CmdOutputObservation)
+        assert obs.exit_code == 0
+        assert test_file_content in obs.content
+
+        # Clean up
+        action_cmd = CmdRunAction(command='pkill -f "python3 -m http.server" || true')
+        logger.info(action_cmd, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action_cmd)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+        action_cmd = CmdRunAction(command='rm -f server.log')
+        logger.info(action_cmd, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action_cmd)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    finally:
+        _close_test_runtime(runtime)
