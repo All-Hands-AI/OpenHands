@@ -104,7 +104,6 @@ class VSCodePlugin(Plugin):
 
         # Create the .vscode directory in the workspace if it doesn't exist
         workspace_dir = Path(os.getenv('WORKSPACE_BASE', '/workspace'))
-        # DO NOT USE /workspace as the base directory!!!
         vscode_dir = workspace_dir / '.vscode'
         vscode_dir.mkdir(parents=True, exist_ok=True)
 
