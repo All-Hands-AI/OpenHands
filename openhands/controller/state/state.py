@@ -23,6 +23,7 @@ from openhands.llm.metrics import Metrics
 from openhands.memory.view import View
 from openhands.storage.files import FileStore
 from openhands.storage.locations import get_conversation_agent_state_filename
+from openhands.controller.state.control_flags import IterationControlFlag
 
 RESUMABLE_STATES = [
     AgentState.RUNNING,
@@ -109,12 +110,12 @@ class State:
 
     # NOTE: deprecated args, kept here temporarily for backwards compatability
     # Will be remove in 30 days
-    iteration: int = 0
-    local_iteration: int = 0
-    max_iterations: int = 100
-    traffic_control_state: TrafficControlState = TrafficControlState.NORMAL
-    local_metrics: Metrics = field(default_factory=Metrics)
-    delegates: dict[tuple[int, int], tuple[str, str]] = field(default_factory=dict)
+    iteration: int | None = None
+    local_iteration: int | None = None
+    max_iterations: int | None = None
+    traffic_control_state: TrafficControlState | None = None
+    local_metrics: Metrics | None = None
+    delegates: dict[tuple[int, int], tuple[str, str]] | None = None
 
     def save_to_session(
         self, sid: str, file_store: FileStore, user_id: str | None
@@ -205,14 +206,12 @@ class State:
 
     def __setstate__(self, state: dict) -> None:
         # Check if we're restoring from an older version (before control flags)
-        is_old_version = 'iteration' in state and (
-            'iteration_flag' not in state or state.get('iteration', 0) > 0
-        )
+        is_old_version = 'iteration' in state
+
+        print('is_old_version', is_old_version)
 
         # Convert old iteration tracking to new iteration_flag if needed
         if is_old_version:
-            from openhands.controller.state.control_flags import IterationControlFlag
-
             # Create iteration_flag from old values
             max_iterations = state.get('max_iterations', 100)
             current_iteration = state.get('iteration', 0)
@@ -236,8 +235,6 @@ class State:
 
         # Ensure we have default values for new fields if they're missing
         if not hasattr(self, 'iteration_flag'):
-            from openhands.controller.state.control_flags import IterationControlFlag
-
             self.iteration_flag = IterationControlFlag(
                 initial_value=100, current_value=0, max_value=100
             )

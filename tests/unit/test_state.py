@@ -1,3 +1,4 @@
+from unittest.mock import patch
 from openhands.controller.state.state import State, TrafficControlState
 from openhands.core.schema import AgentState
 from openhands.events.event import Event
@@ -63,49 +64,28 @@ def test_state_view_cache_not_serialized():
 def test_restore_older_state_version():
     """Test that we can restore from an older state version (before control flags)."""
     # Create a dictionary that mimics the old state format (before control flags)
-    old_state_dict = {
-        'session_id': 'test_old_session',
-        'iteration': 42,
-        'local_iteration': 10,
-        'max_iterations': 100,
-        'agent_state': AgentState.RUNNING,
-        'traffic_control_state': TrafficControlState.NORMAL,
-        'metrics': Metrics(),
-        'local_metrics': Metrics(),
-        'delegates': {},
-        'confirmation_mode': False,
-        'history': [],
-        'inputs': {},
-        'outputs': {},
-        'delegate_level': 0,
-        'start_id': -1,
-        'end_id': -1,
-        'extra_data': {},
-        'last_error': '',
-    }
+    state = State(
+        session_id='test_old_session',
+        iteration=42,
+        local_iteration=42,
+        max_iterations=100,
+        agent_state=AgentState.RUNNING,
+        traffic_control_state=TrafficControlState.NORMAL,
+        metrics=Metrics(),
+        confirmation_mode=False
+    )
 
-    # Create a new state and manually apply the old state dictionary
-    # This simulates what happens when pickle loads an old state
-    state = State()
-    state.__dict__.update(old_state_dict)
+    def no_op_getstate(self):
+        return self.__dict__
 
-    # Now manually call __setstate__ to test the conversion logic
-    # This is what pickle would do internally
-    state.__setstate__(old_state_dict)
-
-    # Verify that the iteration_flag was properly initialized from the old values
-    assert (
-        state.iteration_flag.current_value == 42
-    )  # Should match the old iteration value
-    assert (
-        state.iteration_flag.max_value == 100
-    )  # Should match the old max_iterations value
-
-    # Create a store for later use
     store = InMemoryFileStore()
 
-    # Save the state to the file store
-    state.save_to_session('test_old_session', store, None)
+    with patch.object(State, '__getstate__', no_op_getstate):
+        state.save_to_session('test_old_session', store, None)
+
+
+
+
 
     # Now restore it
     restored_state = State.restore_from_session('test_old_session', store, None)
