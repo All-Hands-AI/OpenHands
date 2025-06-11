@@ -102,10 +102,9 @@ OpenHands automatically exports a `GITLAB_TOKEN` to the shell environment if pro
    - Click `Save Changes` to apply the changes.
 
    3. **(Optional): Restrict agent permissions**
-   - Create another PAT using Step 1 and exclude `api` scope 
-   - In the Settings page, navigate to the `Secrets` tab.
-   - Create a new secret `GITLAB_TOKEN` and paste your lower scope token.
-   - The OpenHands system will use the higher scope token, and the agent will use the lower scope token
+   - Create another PAT using Step 1 and exclude `api` scope .
+   - In the Settings page, in the `Secrets` tab, create a new secret `GITLAB_TOKEN` and paste your lower scope token.
+   - OpenHands will use the higher scope token, and the agent will use the lower scope token
 </Accordion>
 
 <Accordion title="Troubleshooting">
