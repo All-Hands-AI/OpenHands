@@ -623,7 +623,12 @@ class AgentController:
         agent_cls: type[Agent] = Agent.get_cls(action.agent)
         agent_config = self.agent_configs.get(action.agent, self.agent.config)
         llm_config = self.agent_to_llm_config.get(action.agent, self.agent.llm.config)
-        llm = LLM(config=llm_config, retry_listener=self.agent.llm.retry_listener)
+        # Make sure metrics are shared between parent and child for global accumulation
+        llm = LLM(
+            config=llm_config,
+            retry_listener=self.agent.llm.retry_listener,
+            metrics=self.state.metrics,
+        )
         delegate_agent = agent_cls(llm=llm, config=agent_config)
 
         # Take a snapshot of the current metrics before starting the delegate

@@ -441,6 +441,11 @@ async def test_max_iterations_extension(mock_agent, mock_event_stream):
 
 @pytest.mark.asyncio
 async def test_step_max_budget(mock_agent, mock_event_stream):
+    # Metrics are always synced with budget flag before
+    metrics = Metrics()
+    metrics.accumulated_cost = 10.1
+    budget_flag = BudgetControlFlag(initial_value=10, current_value=10.1, max_value=10)
+
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
@@ -449,9 +454,9 @@ async def test_step_max_budget(mock_agent, mock_event_stream):
         sid='test',
         confirmation_mode=False,
         headless_mode=False,
+        initial_state=State(budget_flag=budget_flag, metrics=metrics),
     )
     controller.state.agent_state = AgentState.RUNNING
-    controller.state.budget_flag.current_value = 10.1
     await controller._step()
     assert controller.state.agent_state == AgentState.ERROR
     await controller.close()
@@ -459,6 +464,11 @@ async def test_step_max_budget(mock_agent, mock_event_stream):
 
 @pytest.mark.asyncio
 async def test_step_max_budget_headless(mock_agent, mock_event_stream):
+    # Metrics are always synced with budget flag before
+    metrics = Metrics()
+    metrics.accumulated_cost = 10.1
+    budget_flag = BudgetControlFlag(initial_value=10, current_value=10.1, max_value=10)
+
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
@@ -467,9 +477,9 @@ async def test_step_max_budget_headless(mock_agent, mock_event_stream):
         sid='test',
         confirmation_mode=False,
         headless_mode=True,
+        initial_state=State(budget_flag=budget_flag, metrics=metrics),
     )
     controller.state.agent_state = AgentState.RUNNING
-    controller.state.budget_flag.current_value = 10.1
     await controller._step()
     assert controller.state.agent_state == AgentState.ERROR
     await controller.close()
