@@ -4,8 +4,8 @@ import os
 from pathlib import Path
 from typing import Any
 
-from PIL import Image
 from browsergym.utils.obs import flatten_axtree_to_str
+from PIL import Image
 
 from openhands.core.exceptions import BrowserUnavailableException
 from openhands.core.schema import ActionType
@@ -14,6 +14,7 @@ from openhands.events.observation import BrowserOutputObservation
 from openhands.runtime.browser.base64 import png_base64_url_to_image
 from openhands.runtime.browser.browser_env import BrowserEnv
 from openhands.utils.async_utils import call_sync_from_async
+
 
 def get_axtree_str(
     axtree_object: dict[str, Any],
@@ -28,6 +29,7 @@ def get_axtree_str(
         filter_visible_only=filter_visible_only,
     )
     return str(cur_axtree_txt)
+
 
 def get_agent_obs_text(obs: BrowserOutputObservation) -> str:
     """Get a concise text that will be shown to the agent."""
@@ -55,7 +57,9 @@ def get_agent_obs_text(obs: BrowserOutputObservation) -> str:
             # of the web page to the agent for simplicity.
             # FIXME: handle the case when the web page is too large
             cur_axtree_txt = get_axtree_str(
-                obs.axtree_object, obs.extra_element_properties, filter_visible_only=False
+                obs.axtree_object,
+                obs.extra_element_properties,
+                filter_visible_only=False,
             )
             text += (
                 f'============== BEGIN accessibility tree ==============\n'
@@ -178,8 +182,8 @@ async def browse(
         # Process the content first using the axtree_object
         observation.content = get_agent_obs_text(observation)
 
+        # If return_axtree is False, remove the axtree_object to save space
         if not action.return_axtree:
-            # Then remove the axtree_object to save space
             observation.dom_object = {}
             observation.axtree_object = {}
             observation.extra_element_properties = {}
@@ -200,11 +204,11 @@ async def browse(
             trigger_by_action=action.action,
         )
 
-        if not action.return_axtree:
-            try:
-                observation.content = get_agent_obs_text(observation)
-            except Exception:
-                # If get_agent_obs_text fails, keep the original error message
-                pass
+        # Process the content using get_agent_obs_text regardless of return_axtree value
+        try:
+            observation.content = get_agent_obs_text(observation)
+        except Exception:
+            # If get_agent_obs_text fails, keep the original error message
+            pass
 
         return observation
