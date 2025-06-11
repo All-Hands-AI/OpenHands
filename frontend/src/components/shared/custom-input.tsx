@@ -36,7 +36,7 @@ export function CustomInput({
         required={required}
         defaultValue={defaultValue}
         type={type}
-        className="bg-[#27272A] text-xs py-[10px] px-3 rounded"
+        className="bg-[#27272A] text-xs py-[10px] px-3 rounded-sm"
       />
     </label>
   );
