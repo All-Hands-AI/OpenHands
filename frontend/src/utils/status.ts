@@ -55,12 +55,13 @@ export function getIndicatorColor(
   if (
     conversationStatus === "STARTING" ||
     !["STATUS$READY", null].includes(runtimeStatus) ||
-    [
-      AgentState.LOADING,
-      AgentState.PAUSED,
-      AgentState.REJECTED,
-      AgentState.RATE_LIMITED,
-    ].includes(agentState as AgentState)
+    (agentState != null &&
+      [
+        AgentState.LOADING,
+        AgentState.PAUSED,
+        AgentState.REJECTED,
+        AgentState.RATE_LIMITED,
+      ].includes(agentState))
   ) {
     return IndicatorColor.YELLOW;
   }
