@@ -66,13 +66,15 @@ class IterationControlFlag(ControlFlag[int]):
 
     def next(self):
         if self.reached_limit():
-            RuntimeError(
+            raise RuntimeError(
                 f'Agent reached maximum iteration.'
                 f'Current iteration: {self.current_value}, max iteration: {self.max_value}'
             )
 
         # Increment the current value
         self.current_value += 1
+
+
 
 @dataclass
 class BudgetControlFlag(ControlFlag[float]):
@@ -95,7 +97,7 @@ class BudgetControlFlag(ControlFlag[float]):
         as the budget is updated externally.
         """
         if self.reached_limit():
-            RuntimeError(
+            raise RuntimeError(
                 f'Agent reached maximum budget for conversation.'
                 f'Current budget: {self.current_value}, max budget: {self.max_value}'
             )

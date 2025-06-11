@@ -66,8 +66,8 @@ class StateTracker:
                 session_id=id.removesuffix('-delegate'),
                 inputs={},
                 iteration_flag=IterationControlFlag(initial_value=max_iterations, current_value=0, max_value= max_iterations),
-                budget_flag=None if not max_budget_per_task else BudgetControlFlag(initial_value=max_budget_per_task, current_value=0, max_value=max_budget_per_task),                confirmation_mode=confirmation_mode,
-
+                budget_flag=None if not max_budget_per_task else BudgetControlFlag(initial_value=max_budget_per_task, current_value=0, max_value=max_budget_per_task),
+                confirmation_mode=confirmation_mode
             )
             self.state.start_id = 0
 
@@ -237,7 +237,6 @@ class StateTracker:
         self.state.iteration_flag.next()
         if self.state.budget_flag:
             self.state.budget_flag.next()
-
 
 
 

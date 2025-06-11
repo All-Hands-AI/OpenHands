@@ -243,6 +243,7 @@ class AgentController:
     ) -> None:
         """React to an exception by setting the agent state to error and sending a status message."""
         # Store the error reason before setting the agent state
+        print(str(e))
         self.state.last_error = f'{type(e).__name__}: {str(e)}'
 
         if self.status_callback is not None:

@@ -65,7 +65,7 @@ class State:
     """
 
     session_id: str = ''
-    iteration_flag: IterationControlFlag = IterationControlFlag(0,0,0)
+    iteration_flag: IterationControlFlag = field(default_factory=lambda: IterationControlFlag(initial_value=100, current_value=0, max_value=100))
     budget_flag: BudgetControlFlag | None = None
     confirmation_mode: bool = False
     history: list[Event] = field(default_factory=list)
