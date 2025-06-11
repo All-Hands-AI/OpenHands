@@ -1,3 +1,4 @@
+import os
 import uuid
 from typing import Any
 
@@ -86,6 +87,7 @@ async def create_new_conversation(
         conversation_id = uuid.uuid4().hex
 
     if not await conversation_store.exists(conversation_id):
+
         logger.info(
             f'New conversation ID: {conversation_id}',
             extra={'user_id': user_id, 'session_id': conversation_id},

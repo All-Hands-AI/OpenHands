@@ -2,7 +2,7 @@ from unittest import mock
 
 import pytest
 
-from openhands.core.config import OpenHandsConfig, SandboxConfig
+from openhands.core.config import SandboxConfig,OpenHandsConfig
 from openhands.events.action import CmdRunAction
 from openhands.resolver.issue_resolver import IssueResolver
 
@@ -36,8 +36,7 @@ def test_setup_sandbox_config_default():
         )
 
         assert_sandbox_config(
-            openhands_config.sandbox,
-            runtime_container_image='ghcr.io/all-hands-ai/runtime:mock-nikolaik',
+            openhands_config.sandbox, runtime_container_image='ghcr.io/all-hands-ai/runtime:mock-nikolaik'
         )
 
 
@@ -69,9 +68,7 @@ def test_setup_sandbox_config_base_only():
     )
 
     assert_sandbox_config(
-        openhands_config.sandbox,
-        base_container_image=base_image,
-        runtime_container_image=None,
+        openhands_config.sandbox, base_container_image=base_image, runtime_container_image=None
     )
 
 
@@ -87,9 +84,7 @@ def test_setup_sandbox_config_runtime_only():
         is_experimental=False,
     )
 
-    assert_sandbox_config(
-        openhands_config.sandbox, runtime_container_image=runtime_image
-    )
+    assert_sandbox_config(openhands_config.sandbox, runtime_container_image=runtime_image)
 
 
 def test_setup_sandbox_config_experimental():
@@ -122,9 +117,7 @@ def test_setup_sandbox_config_gitlab_ci(mock_get_unique_uid, mock_getuid):
                 is_experimental=False,
             )
 
-            assert_sandbox_config(
-                openhands_config.sandbox, local_runtime_url='http://localhost'
-            )
+            assert_sandbox_config(openhands_config.sandbox, local_runtime_url='http://localhost')
 
 
 @mock.patch('openhands.resolver.issue_resolver.os.getuid', return_value=1000)
@@ -141,9 +134,7 @@ def test_setup_sandbox_config_gitlab_ci_non_root(mock_getuid):
                 is_experimental=False,
             )
 
-            assert_sandbox_config(
-                openhands_config.sandbox, local_runtime_url='http://localhost'
-            )
+            assert_sandbox_config(openhands_config.sandbox, local_runtime_url='http://localhost')
 
 
 @mock.patch('openhands.events.observation.CmdOutputObservation')

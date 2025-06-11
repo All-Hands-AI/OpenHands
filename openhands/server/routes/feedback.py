@@ -8,9 +8,7 @@ from openhands.server.data_models.feedback import FeedbackDataModel, store_feedb
 from openhands.server.dependencies import get_dependencies
 from openhands.utils.async_utils import call_sync_from_async
 
-app = APIRouter(
-    prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies()
-)
+app = APIRouter(prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies())
 
 
 @app.post('/submit-feedback')
