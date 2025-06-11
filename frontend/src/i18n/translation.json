@@ -3968,13 +3968,52 @@
         "uk": "Налаштування оновлено"
     },
     "CHAT_INTERFACE$DISCONNECTED": {
-        "en": "Disconnected"
+        "en": "Disconnected",
+        "ja": "切断されました",
+        "zh-CN": "已断开连接",
+        "zh-TW": "已斷開連接",
+        "ko-KR": "연결 끊김",
+        "no": "Frakoblet",
+        "it": "Disconnesso",
+        "pt": "Desconectado",
+        "es": "Desconectado",
+        "ar": "تم قطع الاتصال",
+        "fr": "Déconnecté",
+        "tr": "Bağlantı kesildi",
+        "de": "Getrennt",
+        "uk": "Від'єднано"
     },
     "CHAT_INTERFACE$CONNECTING": {
-        "en": "Connecting"
+        "en": "Connecting",
+        "ja": "接続中",
+        "zh-CN": "正在连接",
+        "zh-TW": "正在連接",
+        "ko-KR": "연결 중",
+        "no": "Kobler til",
+        "it": "Connessione in corso",
+        "pt": "Conectando",
+        "es": "Conectando",
+        "ar": "جاري الاتصال",
+        "fr": "Connexion en cours",
+        "tr": "Bağlanıyor",
+        "de": "Verbindung wird hergestellt",
+        "uk": "З'єднання"
     },
     "CHAT_INTERFACE$STOPPED": {
-        "en": "Stopped"
+        "en": "Stopped",
+        "ja": "停止しました",
+        "zh-CN": "已停止",
+        "zh-TW": "已停止",
+        "ko-KR": "중지됨",
+        "no": "Stoppet",
+        "it": "Fermato",
+        "pt": "Parado",
+        "es": "Detenido",
+        "ar": "توقف",
+        "fr": "Arrêté",
+        "tr": "Durduruldu",
+        "de": "Angehalten",
+        "uk": "Зупинено"
     },
     "CHAT_INTERFACE$INITIALIZING_AGENT_LOADING_MESSAGE": {
         "en": "Starting up!",
@@ -7337,7 +7376,20 @@
         "uk": "Надіслати"
     },
     "STATUS$BUILDING_RUNTIME": {
-        "en": "Building Runtime..."
+        "en": "Building Runtime...",
+        "ja": "ランタイムを構築中...",
+        "zh-CN": "正在构建运行时...",
+        "zh-TW": "正在構建運行時...",
+        "ko-KR": "런타임 구축 중...",
+        "no": "Bygger kjøretidsmiljø...",
+        "it": "Costruzione del runtime in corso...",
+        "pt": "Construindo ambiente de execução...",
+        "es": "Construyendo entorno de ejecución...",
+        "ar": "جاري بناء بيئة التشغيل...",
+        "fr": "Construction de l'environnement d'exécution...",
+        "tr": "Çalışma ortamı oluşturuluyor...",
+        "de": "Laufzeitumgebung wird erstellt...",
+        "uk": "Створення середовища виконання..."
     },
     "SUGGESTIONS$WHAT_TO_BUILD": {
         "en": "What do you want to build?",
