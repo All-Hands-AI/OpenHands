@@ -42,7 +42,7 @@
             ]
           },
           {
-            "group": "Running OpenHands Locally",
+            "group": "Running OpenHands on Your Own",
             "pages": [
               "usage/local-setup",
               "usage/how-to/gui-mode",
