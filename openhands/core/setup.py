@@ -214,6 +214,7 @@ def create_controller(
         headless_mode=headless_mode,
         confirmation_mode=config.security.confirmation_mode,
         replay_events=replay_events,
+        telemetry_config=config.telemetry,
     )
     return (controller, initial_state)
 

@@ -9,7 +9,7 @@ from openhands.controller import AgentController
 from openhands.controller.agent import Agent
 from openhands.controller.replay import ReplayManager
 from openhands.controller.state.state import State
-from openhands.core.config import AgentConfig, LLMConfig, OpenHandsConfig
+from openhands.core.config import AgentConfig, LLMConfig, OpenHandsConfig, TelemetryConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema.agent import AgentState
@@ -179,6 +179,7 @@ class AgentSession:
                     max_budget_per_task=max_budget_per_task,
                     agent_to_llm_config=agent_to_llm_config,
                     agent_configs=agent_configs,
+                    telemetry_config=config.telemetry_config,
                 )
 
             if not self._closed:
@@ -394,6 +395,7 @@ class AgentSession:
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
+        telemetry_config: TelemetryConfig | None = None,
         replay_events: list[Event] | None = None,
     ) -> AgentController:
         """Creates an AgentController instance
@@ -433,6 +435,7 @@ class AgentSession:
             max_budget_per_task=max_budget_per_task,
             agent_to_llm_config=agent_to_llm_config,
             agent_configs=agent_configs,
+            telemetry_config=telemetry_config,
             confirmation_mode=confirmation_mode,
             headless_mode=False,
             status_callback=self._status_callback,

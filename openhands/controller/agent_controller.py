@@ -22,12 +22,13 @@ from litellm.exceptions import (  # noqa
     ServiceUnavailableError,
     Timeout,
 )
+from opentelemetry.trace import use_span
 
 from openhands.controller.agent import Agent
 from openhands.controller.replay import ReplayManager
 from openhands.controller.state.state import State, TrafficControlState
 from openhands.controller.stuck import StuckDetector
-from openhands.core.config import AgentConfig, LLMConfig
+from openhands.core.config import AgentConfig, LLMConfig, TelemetryConfig
 from openhands.core.exceptions import (
     AgentStuckInLoopError,
     FunctionCallNotExistsError,
@@ -40,6 +41,7 @@ from openhands.core.exceptions import (
 from openhands.core.logger import LOG_ALL_EVENTS
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import AgentState
+from openhands.core.telemetry import TelemetryManager
 from openhands.events import (
     EventSource,
     EventStream,
@@ -95,6 +97,7 @@ class AgentController:
     _pending_action_info: tuple[Action, float] | None = None  # (action, timestamp)
     _closed: bool = False
     _cached_first_user_message: MessageAction | None = None
+    telemetry_config: TelemetryConfig | None = None
 
     def __init__(
         self,
@@ -111,6 +114,7 @@ class AgentController:
         headless_mode: bool = True,
         status_callback: Callable | None = None,
         replay_events: list[Event] | None = None,
+        telemetry_config: TelemetryConfig | None = None,
     ):
         """Initializes a new instance of the AgentController class.
 
@@ -156,6 +160,12 @@ class AgentController:
             ),
             exclude_hidden=True,
         )
+
+        # track the agent loop and LLM requests using telemetry
+        if telemetry_config is None:
+            telemetry_config = TelemetryConfig()
+        self.telemetry_manager = TelemetryManager(telemetry_config)
+        self.agent.llm.inject_telemetry(self.telemetry_manager)
 
         # state from the previous session, state from a parent agent, or a fresh state
         self.set_initial_state(
@@ -312,7 +322,11 @@ class AgentController:
 
     async def _step_with_exception_handling(self) -> None:
         try:
-            await self._step()
+            if self.state.current_conversation_span:
+                with use_span(self.state.current_conversation_span):
+                    await self._step()
+            else:
+                await self._step()
         except Exception as e:
             self.log(
                 'error',
@@ -438,6 +452,57 @@ class AgentController:
 
     async def _handle_action(self, action: Action) -> None:
         """Handles an Action from the agent or delegate."""
+        # handle new User Input
+        if isinstance(action, MessageAction) and action.source == EventSource.USER:
+            if self.state.current_conversation_span:
+                self.state.current_conversation_span.end()
+            topic = action.message.strip()[:50] + '...'
+            self.state.current_conversation_span = self.telemetry_manager.start_span(
+                f'[Conversation][{topic}]',
+                parent_span=self.state.global_conversation_span,
+            )
+
+        if (
+            not isinstance(action, ChangeAgentStateAction)
+            and self.state.current_conversation_span
+        ):
+            if action.id not in self.state.action_observation_span:
+                msg = (
+                    action.message.strip()[:50] + '...'
+                    if action.message
+                    else str(action).strip()[:50] + '...'
+                )
+
+                topic = ''
+                if isinstance(action, MessageAction):
+                    if action.source == EventSource.USER:
+                        topic = 'User Input'
+                    elif action.source == EventSource.AGENT:
+                        topic = 'Agent Output'
+                if not topic:
+                    topic = type(action).__name__
+                self.state.action_observation_span[action.id] = (
+                    self.telemetry_manager.start_span(
+                        f'[{topic}][{self.state.local_iteration}][{msg}]',
+                        parent_span=self.state.current_conversation_span,
+                    )
+                )
+            with use_span(self.state.action_observation_span[action.id]):
+                action_id = action.id
+                action_type = type(action).__name__
+                action_content = str(action)
+                attributes = {
+                    'event': 'agent_action',
+                    'agent.action.id': action_id,
+                    'agent.action.type': action_type,
+                    'agent.action.content': action_content[
+                        :1000
+                    ],  # Truncate long content
+                    'agent.action.timestamp': time.time(),
+                }
+
+                self.telemetry_manager.log_span(f'Handle {action_type}', attributes)
+
         if isinstance(action, ChangeAgentStateAction):
             await self.set_agent_state_to(action.agent_state)  # type: ignore
         elif isinstance(action, MessageAction):
@@ -474,6 +539,28 @@ class AgentController:
             observation_to_print.content = truncate_content(
                 observation_to_print.content, self.agent.llm.config.max_message_chars
             )
+
+        # Trace agent observation caused by action
+        if (
+            observation.cause is not None
+            and observation.cause in self.state.action_observation_span
+        ):
+            with use_span(
+                self.state.action_observation_span[observation.cause], end_on_exit=True
+            ):
+                observation_id = getattr(observation, 'id', 'unknown')
+                observation_type = type(observation).__name__
+                attributes = {
+                    'event': 'agent_observation',
+                    'agent.observation.id': observation_id,
+                    'agent.observation.type': observation_type,
+                    'agent.observation.content': observation_to_print.content,
+                    'agent.observation.timestamp': time.time(),
+                }
+                self.telemetry_manager.log_span(
+                    f'Handle {observation_type}', attributes
+                )
+
         # Use info level if LOG_ALL_EVENTS is set
         log_level = 'info' if os.getenv('LOG_ALL_EVENTS') in ('true', '1') else 'debug'
         self.log(
@@ -698,6 +785,11 @@ class AgentController:
             metrics=self.state.metrics,
             # start on top of the stream
             start_id=self.event_stream.get_latest_event_id() + 1,
+            # global tracer span
+            global_conversation_span=self.telemetry_manager.start_span(
+                f'[Agent {delegate_agent.name} Run][{self.id}-delegate]',
+                parent_span=self.state.current_conversation_span,
+            ),
         )
         self.log(
             'debug',
@@ -716,6 +808,7 @@ class AgentController:
             initial_state=state,
             is_delegate=True,
             headless_mode=self.headless_mode,
+            telemetry_config=self.telemetry_config,
         )
 
     def end_delegate(self) -> None:
@@ -1035,6 +1128,9 @@ class AgentController:
                 inputs={},
                 max_iterations=max_iterations,
                 confirmation_mode=confirmation_mode,
+                global_conversation_span=self.telemetry_manager.start_span(
+                    f'[Agent {self.agent.name} Run][{self.id}]'
+                ),
             )
             self.state.start_id = 0
 
@@ -1044,6 +1140,11 @@ class AgentController:
             )
         else:
             self.state = state
+
+            if self.state.global_conversation_span is None:
+                self.state.global_conversation_span = self.telemetry_manager.start_span(
+                    f'[Agent {self.agent.name} Run][{self.id}]'
+                )
 
             if self.state.start_id <= -1:
                 self.state.start_id = 0

@@ -10,6 +10,7 @@ from typing import Any
 import openhands
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import AgentState
+from opentelemetry.trace import Span
 from openhands.events.action import (
     MessageAction,
 )
@@ -103,6 +104,13 @@ class State:
     # evaluation tasks to store extra data needed to track the progress/state of the task.
     extra_data: dict[str, Any] = field(default_factory=dict)
     last_error: str = ''
+
+    # global conversation span
+    global_conversation_span: Span | None = None
+    # current conversation span
+    current_conversation_span: Span | None = None
+    # action-observation pair span
+    action_observation_span: dict[int, Span] = field(default_factory=dict)
 
     def save_to_session(
         self, sid: str, file_store: FileStore, user_id: str | None

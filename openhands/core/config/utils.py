@@ -30,6 +30,7 @@ from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
+from openhands.core.config.telemetry_config import TelemetryConfig
 from openhands.storage import get_file_store
 from openhands.storage.files import FileStore
 from openhands.utils.import_utils import get_impl
@@ -228,6 +229,21 @@ def load_from_toml(cfg: OpenHandsConfig, toml_file: str = 'config.toml') -> None
             # Re-raise ValueError from MCPConfig.from_toml_section
             raise ValueError('Error in MCP sections in config.toml')
 
+    # Process telemetry sections if present
+    if 'telemetry' in toml_config:
+        try:
+            telemetry_mapping = TelemetryConfig.from_toml_section(toml_config['telemetry'])
+            # We only use the base telemetry config for now
+            if 'telemetry' in telemetry_mapping:
+                cfg.telemetry_config = telemetry_mapping['telemetry']
+        except (TypeError, KeyError, ValidationError) as e:
+            logger.openhands_logger.warning(
+                f'Cannot parse telemetry config from toml, values have not been applied.\nError: {e}'
+            )
+        except ValueError:
+            # Re-raise ValueError from MCPConfig.from_toml_section
+            raise ValueError('Error in telemetry sections in config.toml')
+
     # Process condenser section if present
     if 'condenser' in toml_config:
         try:
@@ -286,6 +302,7 @@ def load_from_toml(cfg: OpenHandsConfig, toml_file: str = 'config.toml') -> None
         'sandbox',
         'condenser',
         'mcp',
+        'telemetry',
     }
     for key in toml_config:
         if key.lower() not in known_sections:
