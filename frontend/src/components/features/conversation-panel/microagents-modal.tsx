@@ -68,10 +68,7 @@ export function MicroagentsModal({
                 const isExpanded = expandedAgents[agent.name] || false;
 
                 return (
-                  <div
-                    key={agent.name}
-                    className="rounded-md overflow-hidden"
-                  >
+                  <div key={agent.name} className="rounded-md overflow-hidden">
                     <button
                       type="button"
                       onClick={() => toggleAgent(agent.name)}
