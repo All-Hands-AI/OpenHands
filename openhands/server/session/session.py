@@ -156,7 +156,7 @@ class Session:
                 condensers=[
                     BrowserOutputCondenserConfig(attention_window=2),
                     LLMSummarizingCondenserConfig(
-                        llm_config=llm.config, keep_first=4, max_size=140
+                        llm_config=llm.config, keep_first=4, max_size=120
                     ),
                 ]
             )
