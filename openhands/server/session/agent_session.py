@@ -198,23 +198,22 @@ class AgentSession:
             self._starting = False
             success = finished and runtime_connected
             duration = (time.time() - started_at)
+
+            log_metadata = {
+                'signal': 'agent_session_start',
+                'success': success,
+                'duration': duration,
+                'has_replay': replay_json is not None
+            }
             if success:
                 self.logger.info(
                     f'Agent session start succeeded in {duration}s',
-                    extra={
-                        'signal': 'agent_session_start',
-                        'success': success,
-                        'duration': duration,
-                    },
+                    extra=log_metadata
                 )
             else:
                 self.logger.error(
                     f'Agent session start failed in {duration}s',
-                    extra={
-                        'signal': 'agent_session_start',
-                        'success': success,
-                        'duration': duration,
-                    }
+                    extra=log_metadata
                 )
 
     async def close(self) -> None:
