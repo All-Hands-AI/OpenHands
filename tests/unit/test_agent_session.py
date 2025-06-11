@@ -131,7 +131,7 @@ async def test_agent_session_start_with_no_state(mock_agent):
         # Verify set_initial_state was called once with None as state
         assert session.controller.set_initial_state_call_count == 1
         assert session.controller.test_initial_state is None
-        assert session.controller.state.max_iterations == 10
+        assert session.controller.state.iteration_flag.max_value == 10
         assert session.controller.agent.name == 'test-agent'
         assert session.controller.state.start_id == 0
         assert session.controller.state.end_id == -1
@@ -171,7 +171,11 @@ async def test_agent_session_start_with_restored_state(mock_agent):
     mock_restored_state = MagicMock(spec=State)
     mock_restored_state.start_id = -1
     mock_restored_state.end_id = -1
-    mock_restored_state.max_iterations = 5
+    # Use iteration_flag instead of max_iterations
+    mock_restored_state.iteration_flag = MagicMock()
+    mock_restored_state.iteration_flag.max_value = 5
+    # Add metrics attribute
+    mock_restored_state.metrics = MagicMock(spec=Metrics)
 
     # Create a spy on set_initial_state by subclassing AgentController
     class SpyAgentController(AgentController):
@@ -219,6 +223,6 @@ async def test_agent_session_start_with_restored_state(mock_agent):
         )
         assert session.controller.test_initial_state is mock_restored_state
         assert session.controller.state is mock_restored_state
-        assert session.controller.state.max_iterations == 5
+        assert session.controller.state.iteration_flag.max_value == 5
         assert session.controller.state.start_id == 0
         assert session.controller.state.end_id == -1
