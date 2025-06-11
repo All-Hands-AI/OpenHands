@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import Depends, HTTPException, Request, status
 
 from openhands.core.logger import openhands_logger as logger
@@ -16,6 +18,15 @@ async def get_conversation_store(request: Request) -> ConversationStore | None:
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
     request.state.conversation_store = conversation_store
     return conversation_store
+
+
+async def generate_unique_conversation_id(
+    conversation_store: ConversationStore,
+) -> str:
+    conversation_id = uuid.uuid4().hex
+    while await conversation_store.exists(conversation_id):
+        conversation_id = uuid.uuid4().hex
+    return conversation_id
 
 
 async def get_conversation(
