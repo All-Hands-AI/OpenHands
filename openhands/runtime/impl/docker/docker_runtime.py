@@ -110,8 +110,7 @@ class DockerRuntime(ActionExecutionClient):
             )
 
         self.docker_client: docker.DockerClient = self._init_docker_client()
-        # self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
-        self.api_url = f'http://localhost:{self._container_port}'
+        self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
 
         self.base_container_image = self.config.sandbox.base_container_image
         self.runtime_container_image = self.config.sandbox.runtime_container_image
@@ -144,7 +143,8 @@ class DockerRuntime(ActionExecutionClient):
 
     @property
     def action_execution_server_url(self) -> str:
-        return self.api_url
+        return f'http://localhost:{self._container_port}'
+        # return self.api_url
 
     async def connect(self) -> None:
         self.send_status_message('STATUS$STARTING_RUNTIME')
