@@ -12,7 +12,7 @@ export function Thumbnail({ src, size = "small" }: ThumbnailProps) {
       alt=""
       src={src}
       className={cn(
-        "rounded object-cover",
+        "rounded-sm object-cover",
         size === "small" && "w-[62px] h-[62px]",
         size === "large" && "w-[100px] h-[100px]",
       )}

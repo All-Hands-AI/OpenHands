@@ -16,11 +16,12 @@ from openhands.runtime import get_runtime_cls
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.monitoring import MonitoringListener
-from openhands.server.session.agent_session import WAIT_TIME_BEFORE_CLOSE
+from openhands.server.session.agent_session import AgentSession, WAIT_TIME_BEFORE_CLOSE
 from openhands.server.session.conversation import ServerConversation
 from openhands.server.session.session import ROOM_KEY, Session
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
+from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync, wait_all
@@ -115,7 +116,7 @@ class StandaloneConversationManager(ConversationManager):
             end_time = time.time()
             logger.info(
                 f'ServerConversation {c.sid} connected in {end_time - start_time} seconds',
-                extra={'session_id': sid}
+                extra={'session_id': sid},
             )
             self._active_conversations[sid] = (c, 1)
             return c
@@ -359,6 +360,20 @@ class StandaloneConversationManager(ConversationManager):
         if session:
             await self._close_session(sid)
 
+    def get_agent_session(self, sid: str) -> AgentSession | None:
+        """Get the agent session for a given session ID.
+
+        Args:
+            sid: The session ID.
+
+        Returns:
+            The agent session, or None if not found.
+        """
+        session = self._local_agent_loops_by_sid.get(sid)
+        if session:
+            return session.agent_session
+        return None
+
     async def _close_session(self, sid: str):
         logger.info(f'_close_session:{sid}', extra={'session_id': sid})
 
@@ -495,10 +510,19 @@ class StandaloneConversationManager(ConversationManager):
             url=self._get_conversation_url(session.sid),
             session_api_key=None,
             event_store=session.agent_session.event_stream,
+            status=_get_status_from_session(session),
+            runtime_status=getattr(session.agent_session.runtime, 'runtime_status', None),
         )
 
     def _get_conversation_url(self, conversation_id: str):
         return f'/api/conversations/{conversation_id}'
+
+
+def _get_status_from_session(session: Session) -> ConversationStatus:
+    agent_session = session.agent_session
+    if agent_session.runtime and agent_session.runtime.runtime_initialized:
+        return ConversationStatus.RUNNING
+    return ConversationStatus.STARTING
 
 
 def _last_updated_at_key(conversation: ConversationMetadata) -> float:

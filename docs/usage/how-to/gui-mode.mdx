@@ -132,6 +132,20 @@ toggle `Advanced` options to access additional settings.
 For an overview of the key features available inside a conversation, please refer to the [Key Features](/usage/key-features)
 section of the documentation.
 
+### Status Indicator
+
+The status indicator located in the bottom left of the screen will cycle through a number of states as a new conversation
+is loaded. Typically these include:
+
+* `Disconnected` : The frontend is not connected to any conversation
+* `Connecting` : The frontend is connecting a websocket to a conversation.
+* `Building Runtime...` : The server is building a runtime. This is typically in development mode only while building a docker image.
+* `Starting Runtime...` : The server is starting a new runtime instance - probably a new docker container or remote runtime.
+* `Initializing Agent...` : The server is starting the agent loop. (This step does not appear at present with Nested runtimes)
+* `Setting up workspace...` : Usually this means a `git clone ...` operation.
+* `Setting up git hooks` : Setting up the git pre commit hooks for the workspace.
+* `Agent is awaiting user input...` : Ready to go!
+
 ## Tips for Effective Use
 
 - Be specific in your requests to get the most accurate and helpful responses, as described in the [prompting best practices](../prompting/prompting-best-practices).

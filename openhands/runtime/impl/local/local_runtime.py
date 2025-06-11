@@ -35,6 +35,7 @@ from openhands.runtime.impl.docker.docker_runtime import (
     VSCODE_PORT_RANGE,
 )
 from openhands.runtime.plugins import PluginRequirement
+from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.command import get_action_execution_server_startup_command
 from openhands.utils.async_utils import call_sync_from_async
@@ -209,7 +210,7 @@ class LocalRuntime(ActionExecutionClient):
 
     async def connect(self) -> None:
         """Start the action_execution_server on the local machine or connect to an existing one."""
-        self.send_status_message('STATUS$STARTING_RUNTIME')
+        self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
 
         # Get environment variables for warm server configuration
         initial_num_warm_servers = int(os.getenv('INITIAL_NUM_WARM_SERVERS', '0'))
@@ -354,7 +355,7 @@ class LocalRuntime(ActionExecutionClient):
                 )
 
         self.log('info', f'Waiting for server to become ready at {self.api_url}...')
-        self.send_status_message('STATUS$WAITING_FOR_CLIENT')
+        self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
 
         await call_sync_from_async(self._wait_until_alive)
 
@@ -374,7 +375,7 @@ class LocalRuntime(ActionExecutionClient):
             f'Server initialized with plugins: {[plugin.name for plugin in self.plugins]}',
         )
         if not self.attach_to_existing:
-            self.send_status_message(' ')
+            self.set_runtime_status(RuntimeStatus.READY)
         self._runtime_initialized = True
 
         # Check if we need to create more warm servers after connecting

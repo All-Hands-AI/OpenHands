@@ -16,7 +16,7 @@ export function ErrorToast({ id, error }: ErrorToastProps) {
       <button
         type="button"
         onClick={() => toast.dismiss(id)}
-        className="bg-neutral-500 px-1 rounded h-full"
+        className="bg-neutral-500 px-1 rounded-sm h-full"
       >
         {t(I18nKey.ERROR_TOAST$CLOSE_BUTTON_LABEL)}
       </button>
