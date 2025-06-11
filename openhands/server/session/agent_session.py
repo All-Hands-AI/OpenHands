@@ -125,7 +125,6 @@ class AgentSession:
         custom_secrets_handler = UserSecrets(
             custom_secrets=custom_secrets if custom_secrets else {}
         )
-
         try:
             self._create_security_analyzer(config.security.security_analyzer)
             runtime_connected = await self._create_runtime(
@@ -198,14 +197,25 @@ class AgentSession:
         finally:
             self._starting = False
             success = finished and runtime_connected
-            self.logger.info(
-                'Agent session start',
-                extra={
-                    'signal': 'agent_session_start',
-                    'success': success,
-                    'duration': (time.time() - started_at),
-                },
-            )
+            duration = (time.time() - started_at)
+            if success:
+                self.logger.info(
+                    f'Agent session start succeeded in {duration}s',
+                    extra={
+                        'signal': 'agent_session_start',
+                        'success': success,
+                        'duration': duration,
+                    },
+                )
+            else:
+                self.logger.error(
+                    f'Agent session start failed in {duration}s',
+                    extra={
+                        'signal': 'agent_session_start',
+                        'success': success,
+                        'duration': duration,
+                    }
+                )
 
     async def close(self) -> None:
         """Closes the Agent session"""
