@@ -718,10 +718,10 @@ def convert_non_fncall_messages_to_fncall_messages(
                     (
                         (_match, item)
                         for item in content
-                        if item.get("type") == "text"
+                        if item.get('type') == 'text'
                         and (
                             _match := re.search(
-                                TOOL_RESULT_REGEX_PATTERN, item["text"], re.DOTALL
+                                TOOL_RESULT_REGEX_PATTERN, item['text'], re.DOTALL
                             )
                         )
                         and item
@@ -752,12 +752,12 @@ def convert_non_fncall_messages_to_fncall_messages(
                 # Convert to tool message format
                 converted_messages.append(
                     {
-                        "role": "tool",
-                        "name": tool_name,
-                        "content": content
+                        'role': 'tool',
+                        'name': tool_name,
+                        'content': content
                         if isinstance(content, list)
                         else tool_result,
-                        "tool_call_id": f"toolu_{tool_call_counter - 1:02d}",  # Use last generated ID
+                        'tool_call_id': f'toolu_{tool_call_counter - 1:02d}',  # Use last generated ID
                     }
                 )
             else:
