@@ -34,7 +34,8 @@
                 "group": "Integrations",
                 "pages": [
                   "usage/cloud/github-installation",
-                  "usage/cloud/gitlab-installation"
+                  "usage/cloud/gitlab-installation",
+                  "usage/cloud/slack-installation"
                 ]
               },
               "usage/cloud/cloud-ui",

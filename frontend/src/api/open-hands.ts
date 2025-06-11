@@ -11,6 +11,7 @@ import {
   GetTrajectoryResponse,
   GitChangeDiff,
   GitChange,
+  GetMicroagentsResponse,
   GetMicroagentPromptResponse,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
@@ -445,6 +446,21 @@ class OpenHands {
       `/api/user/repository/branches?repository=${encodeURIComponent(repository)}`,
     );
 
+    return data;
+  }
+
+  /**
+   * Get the available microagents associated with a conversation
+   * @param conversationId The ID of the conversation
+   * @returns The available microagents associated with the conversation
+   */
+  static async getMicroagents(
+    conversationId: string,
+  ): Promise<GetMicroagentsResponse> {
+    const url = `${this.getConversationUrl(conversationId)}/microagents`;
+    const { data } = await openHands.get<GetMicroagentsResponse>(url, {
+      headers: this.getConversationHeaders(),
+    });
     return data;
   }
 

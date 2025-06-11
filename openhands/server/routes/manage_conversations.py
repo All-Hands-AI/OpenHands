@@ -379,16 +379,11 @@ async def _get_conversation_info(
             selected_repository=conversation.selected_repository,
             selected_branch=conversation.selected_branch,
             git_provider=conversation.git_provider,
-            status=(
-                agent_loop_info.status
-                if agent_loop_info
-                else ConversationStatus.STOPPED
-            ),
+            status=getattr(agent_loop_info, 'status', ConversationStatus.STOPPED),
+            runtime_status=getattr(agent_loop_info, 'runtime_status', None),
             num_connections=num_connections,
             url=agent_loop_info.url if agent_loop_info else None,
-            session_api_key=agent_loop_info.session_api_key
-            if agent_loop_info
-            else None,
+            session_api_key=getattr(agent_loop_info, 'session_api_key', None),
         )
     except Exception as e:
         logger.error(
