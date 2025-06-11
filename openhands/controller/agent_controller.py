@@ -451,8 +451,8 @@ class AgentController:
             log_level, str(observation_to_print), extra={'msg_type': 'OBSERVATION'}
         )
 
-        # FIX ME: it seems like observations don't carry llm_metrics anymore; rather the LLM class aggregates cost
-        # We should remove this
+        # TODO: these metrics come from the draft editor, and they get accumulated into controller's state metrics and the agent's llm metrics
+        # In the future, we should simplfy share the LLM between the draft editor and agent llm, instead of doing this syncing
         if observation.llm_metrics is not None:
             self.state_tracker.merge_metrics(observation.llm_metrics)
 
