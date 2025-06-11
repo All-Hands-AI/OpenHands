@@ -322,52 +322,12 @@ class ActionExecutor:
                 IPythonRunCellAction(code=f'import os; os.chdir(r"{cwd}")')
             )
             
-            # Setup workspace venv info in Jupyter if available
-            workspace_venv_path = os.environ.get('WORKSPACE_VENV_PATH')
-            workspace_python = os.environ.get('WORKSPACE_PYTHON')
-            if workspace_venv_path and workspace_python:
-                venv_setup_code = f'''
-import os
-import sys
-# Set workspace venv environment variables
-os.environ['WORKSPACE_VENV_PATH'] = r"{workspace_venv_path}"
-os.environ['WORKSPACE_PYTHON'] = r"{workspace_python}"
-print(f"Workspace virtual environment available at: {workspace_venv_path}")
-print(f"Workspace Python: {workspace_python}")
-print(f"Current Python: {{sys.executable}}")
-'''
-                await self.run_ipython(IPythonRunCellAction(code=venv_setup_code))
 
     async def _init_bash_commands(self):
         INIT_COMMANDS = []
         is_local_runtime = os.environ.get('LOCAL_RUNTIME_MODE') == '1'
         is_windows = sys.platform == 'win32'
 
-        # Setup workspace virtual environment if available
-        workspace_venv_path = os.environ.get('WORKSPACE_VENV_PATH')
-        workspace_python = os.environ.get('WORKSPACE_PYTHON')
-        
-        if workspace_venv_path and workspace_python:
-            if is_windows:
-                # Windows commands to setup venv
-                INIT_COMMANDS.append(f'$env:WORKSPACE_VENV_PATH = "{workspace_venv_path}"')
-                INIT_COMMANDS.append(f'$env:WORKSPACE_PYTHON = "{workspace_python}"')
-                venv_bin_path = os.path.join(workspace_venv_path, 'Scripts')
-                INIT_COMMANDS.append(f'$env:PATH = "{venv_bin_path};" + $env:PATH')
-                # Create alias to activate the workspace venv
-                activate_script = os.path.join(venv_bin_path, 'Activate.ps1')
-                INIT_COMMANDS.append(f'function activate-workspace {{ & "{activate_script}" }}')
-            else:
-                # Linux/macOS commands to setup venv
-                INIT_COMMANDS.append(f'export WORKSPACE_VENV_PATH="{workspace_venv_path}"')
-                INIT_COMMANDS.append(f'export WORKSPACE_PYTHON="{workspace_python}"')
-                venv_bin_path = os.path.join(workspace_venv_path, 'bin')
-                INIT_COMMANDS.append(f'export PATH="{venv_bin_path}:$PATH"')
-                # Create alias to activate the workspace venv
-                activate_script = os.path.join(venv_bin_path, 'activate')
-                INIT_COMMANDS.append(f'alias activate-workspace="source {activate_script}"')
-                # Auto-activate the venv
-                INIT_COMMANDS.append(f'source {activate_script}')
 
         # Determine git config commands based on platform and runtime mode
         if is_local_runtime:
