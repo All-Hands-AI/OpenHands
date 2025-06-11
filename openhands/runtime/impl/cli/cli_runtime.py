@@ -49,6 +49,7 @@ from openhands.events.observation import (
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
+from openhands.runtime.runtime_status import RuntimeStatus
 
 
 class CLIRuntime(Runtime):
@@ -126,7 +127,7 @@ class CLIRuntime(Runtime):
 
     async def connect(self) -> None:
         """Initialize the runtime connection."""
-        self.send_status_message('STATUS$STARTING_RUNTIME')
+        self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
 
         # Ensure workspace directory exists
         os.makedirs(self._workspace_path, exist_ok=True)
@@ -138,7 +139,7 @@ class CLIRuntime(Runtime):
             await asyncio.to_thread(self.setup_initial_env)
 
         self._runtime_initialized = True
-        self.send_status_message('STATUS$CONTAINER_STARTED')
+        self.set_runtime_status(RuntimeStatus.RUNTIME_STARTED)
         logger.info(f'CLIRuntime initialized with workspace at {self._workspace_path}')
 
     def add_env_vars(self, env_vars: dict[str, Any]) -> None:
