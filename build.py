@@ -62,7 +62,6 @@ def build(setup_kwargs):
     print("--- Custom Poetry build script (build.py) finished ---")
 
 if __name__ == "__main__":
-    # This allows running the script directly for testing, if needed.
     print("Running build.py directly for testing VS Code extension packaging...")
     build_vscode_extension()
     print("Direct execution of build.py finished.")
