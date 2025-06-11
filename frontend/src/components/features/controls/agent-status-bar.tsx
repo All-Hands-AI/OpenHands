@@ -15,6 +15,7 @@ import { browserTab } from "#/utils/browser-tab";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { ConversationStatus } from "#/types/conversation-status";
 import { RuntimeStatus } from "#/types/runtime-status";
+import { StatusMessage } from "#/types/message";
 
 const notificationStates = [
   AgentState.AWAITING_USER_INPUT,
@@ -66,6 +67,7 @@ function getIndicatorColor(
 }
 
 function getStatusCode(
+  statusMessage: StatusMessage,
   webSocketStatus: WebSocketStatus,
   conversationStatus: ConversationStatus | null,
   runtimeStatus: RuntimeStatus | null,
@@ -79,6 +81,16 @@ function getStatusCode(
   }
   if (conversationStatus === "STOPPED" || runtimeStatus === "STATUS$STOPPED") {
     return I18nKey.CHAT_INTERFACE$STOPPED;
+  }
+  if (runtimeStatus === "STATUS$BUILDING_RUNTIME") {
+    return I18nKey.STATUS$BUILDING_RUNTIME;
+  }
+  if (runtimeStatus === "STATUS$STARTING_RUNTIME") {
+    return I18nKey.STATUS$STARTING_RUNTIME;
+  }
+
+  if (statusMessage?.id && statusMessage.id !== "STATUS$READY") {
+    return statusMessage.id;
   }
 
   if (agentState) {
@@ -105,6 +117,7 @@ export function AgentStatusBar() {
     curAgentState,
   );
   const statusCode = getStatusCode(
+    curStatusMessage,
     webSocketStatus,
     conversation?.status || null,
     conversation?.runtime_status || null,
