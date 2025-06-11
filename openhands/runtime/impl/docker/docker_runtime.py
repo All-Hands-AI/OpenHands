@@ -143,9 +143,9 @@ class DockerRuntime(ActionExecutionClient):
 
     @property
     def action_execution_server_url(self) -> str:
-        return f'http://127.0.0.1:{self._container_port}'
+        # return f'http://127.0.0.1:{self._container_port}'
         # return f'http://localhost:{self._container_port}'
-        # return self.api_url
+        return self.api_url
 
     async def connect(self) -> None:
         self.send_status_message('STATUS$STARTING_RUNTIME')
