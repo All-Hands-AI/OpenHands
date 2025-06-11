@@ -35,18 +35,19 @@
     "test:extension": "node ./out/test/runTest.js"
   },
   "dependencies": {
+    "@openhands/types": "file:../../../../../packages/types",
     "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
-    "@types/node": "^20.14.2",
+    "@types/node": "^20.19.0",
     "@types/vscode": "^1.96.0",
     "@typescript-eslint/eslint-plugin": "^8.3.0",
     "@typescript-eslint/parser": "^8.3.0",
+    "@vscode/test-electron": "^2.4.1",
     "eslint": "^9.9.1",
-    "typescript": "^5.8.3",
-    "vsce": "^2.15.0",
     "mocha": "^10.7.3",
-    "@vscode/test-electron": "^2.4.1"
+    "typescript": "^5.8.3",
+    "vsce": "^2.15.0"
   },
   "license": "MIT",
   "publisher": "OpenHands"
