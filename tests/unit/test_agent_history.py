@@ -99,13 +99,17 @@ def controller_fixture():
     # Ensure get_latest_event_id returns an integer
     mock_event_stream.get_latest_event_id.return_value = -1
 
+    # Create a state with iteration_flag.max_value set to 10
+    state = State(inputs={}, session_id='test_sid')
+    state.iteration_flag.max_value = 10
+
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        max_iterations=10,
+        iteration_delta=1,  # Add the required iteration_delta parameter
         sid='test_sid',
+        initial_state=state,
     )
-    controller.state = State(session_id='test_sid')
 
     # Mock _first_user_message directly on the instance
     mock_first_user_message = MagicMock(spec=MessageAction)
