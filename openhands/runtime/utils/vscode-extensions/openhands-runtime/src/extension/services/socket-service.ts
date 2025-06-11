@@ -1,23 +1,11 @@
 import { io, Socket } from 'socket.io-client';
-
-interface OpenHandsEvent {
-    id: string;
-    action?: string;
-    args?: any;
-    observation?: string;
-    content?: string;
-    extras?: any;
-    message?: string;
-    source?: string;
-    cause?: string;
-    timestamp?: string;
-}
+import { OpenHandsParsedEvent } from '@openhands/types';
 
 export class SocketService {
     private socket: Socket | null = null;
     private serverUrl: string;
     private conversationId: string | null = null;
-    private eventListeners: Array<(event: OpenHandsEvent) => void> = [];
+    private eventListeners: Array<(event: OpenHandsParsedEvent) => void> = [];
 
     constructor(serverUrl: string) {
         this.serverUrl = serverUrl;
@@ -54,7 +42,7 @@ export class SocketService {
                 console.log('Connected to OpenHands backend via Socket.IO');
             });
 
-            this.socket.on('oh_event', (event: OpenHandsEvent) => {
+            this.socket.on('oh_event', (event: OpenHandsParsedEvent) => {
                 console.log('Received event:', event);
                 this.eventListeners.forEach(listener => listener(event));
             });
@@ -84,11 +72,11 @@ export class SocketService {
         }
     }
 
-    onEvent(listener: (event: OpenHandsEvent) => void): void {
+    onEvent(listener: (event: OpenHandsParsedEvent) => void): void {
         this.eventListeners.push(listener);
     }
 
-    sendEvent(event: OpenHandsEvent): void {
+    sendEvent(event: OpenHandsParsedEvent): void {
         if (this.socket && this.socket.connected) {
             this.socket.emit('oh_event', event);
             console.log('Sent event:', event);

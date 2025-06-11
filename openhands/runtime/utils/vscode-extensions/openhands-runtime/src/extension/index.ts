@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { SocketService } from './services/socket-service';
 import { VSCodeRuntimeActionHandler } from './services/vscodeRuntimeActionHandler';
+import { OpenHandsActionEvent, OpenHandsObservationEvent, OpenHandsEventType, isOpenHandsAction } from '@openhands/types';
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('OpenHands VSCode Runtime extension is now active.');
@@ -17,7 +18,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Start the socket connection and set up action handling
     socketService.connect().then(() => {
         socketService.onEvent((event) => {
-            if (event.action && event.args?.execution_target === 'vscode_runtime') {
+            if (isOpenHandsAction(event)) {
                 actionHandler.handleAction(event);
             }
         });

@@ -1,26 +1,16 @@
 {
   "compilerOptions": {
-    "target": "es2022",
-    "lib": ["es2022"],
+    "target": "ES2020",
     "module": "commonjs",
-    "moduleResolution": "node",
+    "lib": ["ES2020"],
+    "outDir": "./dist",
+    "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "outDir": "./out",
-    "rootDir": "./src",
-    "baseUrl": ".",
-    "types": ["node", "vscode"],
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+    "types": ["node"]
   },
-  "include": [
-    "src/extension/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ]
+  "include": ["src/extension/**/*"],
+  "exclude": ["node_modules"]
 }
