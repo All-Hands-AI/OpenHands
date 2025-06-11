@@ -189,6 +189,7 @@ class BashSession:
         self.work_dir = work_dir
         self.username = username
         self._initialized = False
+        self._closed = False
         self.max_memory_mb = max_memory_mb
 
     def initialize(self) -> None:
