@@ -768,6 +768,7 @@ async def test_context_window_exceeded_error_handling(
             match self.condenser.condense(state.view):
                 case View() as view:
                     self.views.append(view)
+
                 case Condensation(action=action):
                     return action
 
@@ -801,7 +802,7 @@ async def test_context_window_exceeded_error_handling(
                 content='Test microagent content',
                 recall_type=RecallType.KNOWLEDGE,
             )
-            microagent_obs._cause = event.id
+            microagent_obs._cause = event.id  # type: ignore
             test_event_stream.add_event(microagent_obs, EventSource.ENVIRONMENT)
 
     test_event_stream.subscribe(
@@ -829,7 +830,7 @@ async def test_context_window_exceeded_error_handling(
     # Check that the context window exception was thrown and the controller
     # called the agent's `step` function the right number of times.
     assert step_state.has_errored
-    assert len(step_state.views) == max_iterations
+    assert len(step_state.views) == max_iterations - 1
     print('step_state.views: ', step_state.views)
 
     # Look at pre/post-step views. Normally, these should always increase in
@@ -854,7 +855,7 @@ async def test_context_window_exceeded_error_handling(
             assert len(first_view) < len(second_view)
 
     # The final state's history should contain:
-    # - max_iterations number of message actions,
+    # - (max_iterations - 1) number of message actions (one iteration taken up with the condensation request)
     # - 1 recall actions,
     # - 1 recall observations,
     # - 1 condensation action.
@@ -862,7 +863,7 @@ async def test_context_window_exceeded_error_handling(
         len(
             [event for event in final_state.history if isinstance(event, MessageAction)]
         )
-        == max_iterations
+        == max_iterations - 1
     )
     assert (
         len(
@@ -873,7 +874,7 @@ async def test_context_window_exceeded_error_handling(
                 and event.source == EventSource.AGENT
             ]
         )
-        == max_iterations - 1
+        == max_iterations - 2
     )
     assert (
         len([event for event in final_state.history if isinstance(event, RecallAction)])
@@ -1546,6 +1547,8 @@ async def test_openrouter_context_window_exceeded_error(
             self.condenser = ConversationWindowCondenser()
 
         def step(self, state: State):
+            print('STEPPING')
+            print(state.view)
             match self.condenser.condense(state.view):
                 case View() as view:
                     self.views.append(view)
@@ -1557,8 +1560,10 @@ async def test_openrouter_context_window_exceeded_error(
             # only throw it once.
             if self.index < error_after or self.has_errored:
                 self.index += 1
+                print('RETURNING MESSAGE')
                 return MessageAction(content=f'Test message {self.index}')
 
+            print('THROWING THE ERROR')
             # Create a BadRequestError with the OpenRouter context window exceeded message pattern
             error = BadRequestError(
                 message='litellm.BadRequestError: OpenrouterException - This endpoint\'s maximum context length is 40960 tokens. However, you requested about 42988 tokens (38892 of text input, 4096 in the output). Please reduce the length of either one, or use the "middle-out" transform to compress your prompt automatically.',
