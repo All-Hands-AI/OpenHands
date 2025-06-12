@@ -4,11 +4,11 @@ from pydantic import (
     BaseModel,
 )
 
+
 class POSTUploadFilesModel(BaseModel):
     """
     Upload files response model
     """
-    file_urls: list[str]
-    skipped_files: list[str]
 
-
+    uploaded_files: list[str]
+    skipped_files: list[dict[str, str]]
