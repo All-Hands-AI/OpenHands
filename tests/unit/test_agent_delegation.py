@@ -75,16 +75,6 @@ def mock_child_agent():
     system_message._source = EventSource.AGENT
     system_message._id = -1  # Set invalid ID to avoid the ID check
     agent.get_system_message.return_value = system_message
-
-    step_count = 0
-
-    def agent_step_fn(state):
-        print(f'agent_step_fn received state: {state}')
-        nonlocal step_count
-        step_count += 1
-        return CmdRunAction(command=f'ls {step_count}')
-
-    agent.step = agent_step_fn
     return agent
 
 
@@ -98,6 +88,16 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
     """
     # Mock the agent class resolution so that AgentController can instantiate mock_child_agent
     Agent.get_cls = Mock(return_value=lambda llm, config: mock_child_agent)
+
+    step_count = 0
+
+    def agent_step_fn(state):
+        print(f'agent_step_fn received state: {state}')
+        nonlocal step_count
+        step_count += 1
+        return CmdRunAction(command=f'ls {step_count}')
+
+    mock_child_agent.step = agent_step_fn
 
     parent_metrics = Metrics()
     parent_metrics.accumulated_cost = 2
@@ -266,7 +266,7 @@ async def test_delegate_step_different_states(
             asyncio.set_event_loop(loop_in_thread)
             msg_action = MessageAction(content='Test message')
             msg_action._source = EventSource.USER
-            await controller.on_event(msg_action)
+            controller.on_event(msg_action)
         finally:
             loop_in_thread.close()
 
@@ -274,6 +274,9 @@ async def test_delegate_step_different_states(
     with ThreadPoolExecutor() as executor:
         future = loop.run_in_executor(executor, call_on_event_with_new_loop)
         await future
+
+    # Give time for the event loop to process events
+    await asyncio.sleep(0.5)
 
     if delegate_state == AgentState.RUNNING:
         assert controller.delegate is not None
