@@ -1,7 +1,7 @@
 import os
+import typing
 from functools import lru_cache
 from typing import Callable
-import typing
 from uuid import UUID
 
 import docker
@@ -245,10 +245,10 @@ class DockerRuntime(ActionExecutionClient):
                         'mode': mount_mode,
                     }
                     logger.debug(
-                        f'Mount dir (sandbox.volumes): {host_path} to {container_path} with mode: {mount_mode}'
+                        f'Mount dir: {host_path} to {container_path} with mode: {mount_mode}'
                     )
 
-        # Legacy mounting with workspace_* parameters
+        # Legacy mounting with workspace_* parameters (deprecated)
         elif (
             self.config.workspace_mount_path is not None
             and self.config.workspace_mount_path_in_sandbox is not None
@@ -261,7 +261,11 @@ class DockerRuntime(ActionExecutionClient):
                 'mode': mount_mode,
             }
             logger.debug(
-                f'Mount dir (legacy): {self.config.workspace_mount_path} with mode: {mount_mode}'
+                f'Mount dir (using deprecated workspace_* variables): {self.config.workspace_mount_path} with mode: {mount_mode}'
+            )
+            logger.debug(
+                'DEPRECATED: The workspace_* variables are deprecated and will be removed in a future version. '
+                "Please use sandbox.volumes instead, e.g. 'SANDBOX_VOLUMES=/my/host/dir:/workspace:rw'"
             )
 
         return volumes
@@ -283,7 +287,9 @@ class DockerRuntime(ActionExecutionClient):
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
 
         use_host_network = self.config.sandbox.use_host_network
-        network_mode: typing.Literal['host'] | None = 'host' if use_host_network else None
+        network_mode: typing.Literal['host'] | None = (
+            'host' if use_host_network else None
+        )
 
         # Initialize port mappings
         port_mapping: dict[str, list[dict[str, str]]] | None = None
@@ -356,7 +362,7 @@ class DockerRuntime(ActionExecutionClient):
 
         try:
             if self.runtime_container_image is None:
-                raise ValueError("Runtime container image is not set")
+                raise ValueError('Runtime container image is not set')
             self.container = self.docker_client.containers.run(
                 self.runtime_container_image,
                 command=command,

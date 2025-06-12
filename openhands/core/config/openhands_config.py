@@ -76,10 +76,27 @@ class OpenHandsConfig(BaseModel):
     )
 
     # Deprecated parameters - will be removed in a future version
-    workspace_base: str | None = Field(default=None, deprecated=True)
-    workspace_mount_path: str | None = Field(default=None, deprecated=True)
-    workspace_mount_path_in_sandbox: str = Field(default='/workspace', deprecated=True)
-    workspace_mount_rewrite: str | None = Field(default=None, deprecated=True)
+    # Use sandbox.volumes instead, e.g. '/host/path:/workspace:rw'
+    workspace_base: str | None = Field(
+        default=None,
+        deprecated=True,
+        description="DEPRECATED: Use sandbox.volumes instead, e.g. '/host/path:/workspace:rw'",
+    )
+    workspace_mount_path: str | None = Field(
+        default=None,
+        deprecated=True,
+        description="DEPRECATED: Use sandbox.volumes instead, e.g. '/host/path:/workspace:rw'",
+    )
+    workspace_mount_path_in_sandbox: str = Field(
+        default='/workspace',
+        deprecated=True,
+        description="DEPRECATED: Use sandbox.volumes instead, e.g. '/host/path:/workspace:rw'",
+    )
+    workspace_mount_rewrite: str | None = Field(
+        default=None,
+        deprecated=True,
+        description="DEPRECATED: Use sandbox.volumes instead, e.g. '/host/path:/workspace:rw'",
+    )
     # End of deprecated parameters
 
     cache_dir: str = Field(default='/tmp/cache')

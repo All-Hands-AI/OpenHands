@@ -85,7 +85,7 @@ class SandboxConfig(BaseModel):
     vscode_port: int | None = Field(default=None)
     volumes: str | None = Field(
         default=None,
-        description="Volume mounts in the format 'host_path:container_path[:mode]', e.g. '/my/host/dir:/workspace:rw'. Multiple mounts can be specified using commas, e.g. '/path1:/workspace/path1,/path2:/workspace/path2:ro'",
+        description="Volume mounts in the format 'host_path:container_path[:mode]', e.g. '/my/host/dir:/workspace:rw'. Multiple mounts can be specified using commas, e.g. '/path1:/workspace/path1,/path2:/workspace/path2:ro'. This replaces the deprecated workspace_base, workspace_mount_path, workspace_mount_path_in_sandbox, and workspace_mount_rewrite variables.",
     )
 
     model_config = {'extra': 'forbid'}
