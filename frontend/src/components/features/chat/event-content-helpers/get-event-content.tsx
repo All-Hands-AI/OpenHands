@@ -1,7 +1,7 @@
 import { Trans } from "react-i18next";
-import { OpenHandsAction } from "#/types/core/actions";
-import { isOpenHandsAction, isOpenHandsObservation } from "#/types/core/guards";
-import { OpenHandsObservation } from "#/types/core/observations";
+import { isOpenHandsAction, isOpenHandsObservation } from "@openhands/types";
+import type { OpenHandsAction } from "@openhands/types";
+import type { OpenHandsObservation } from "@openhands/types";
 import { MonoComponent } from "../mono-component";
 import { PathComponent } from "../path-component";
 import { getActionContent } from "./get-action-content";

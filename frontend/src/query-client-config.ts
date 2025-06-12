@@ -24,12 +24,13 @@ export const queryClient = new QueryClient({
       if (!query.meta?.disableToast) {
         const errorMessage = retrieveAxiosErrorMessage(error);
 
-        if (!shownErrors.has(errorMessage || "")) {
-          displayErrorToast(errorMessage || i18next.t(I18nKey.ERROR$GENERIC));
-          shownErrors.add(errorMessage);
+        const message = errorMessage || "";
+        if (!shownErrors.has(message)) {
+          displayErrorToast(message || i18next.t(I18nKey.ERROR$GENERIC));
+          shownErrors.add(message);
 
           setTimeout(() => {
-            shownErrors.delete(errorMessage);
+            shownErrors.delete(message);
           }, 3000);
         }
       }

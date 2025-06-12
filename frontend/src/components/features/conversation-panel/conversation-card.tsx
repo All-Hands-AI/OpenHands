@@ -2,6 +2,8 @@ import React from "react";
 import { useSelector } from "react-redux";
 import posthog from "posthog-js";
 import { useTranslation } from "react-i18next";
+import { isSystemMessage } from "@openhands/types";
+import type { SystemMessageAction } from "@openhands/types";
 import { formatTimeDelta } from "#/utils/format-time-delta";
 import { ConversationRepoLink } from "./conversation-repo-link";
 import { ConversationStateIndicator } from "./conversation-state-indicator";
@@ -16,7 +18,6 @@ import { I18nKey } from "#/i18n/declaration";
 import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
 import OpenHands from "#/api/open-hands";
 import { useWsClient } from "#/context/ws-client-provider";
-import { isSystemMessage } from "#/types/core/guards";
 import { ConversationStatus } from "#/types/conversation-status";
 
 interface ConversationCardProps {
@@ -62,7 +63,7 @@ export function ConversationCard({
     React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
-  const systemMessage = parsedEvents.find(isSystemMessage);
+  const systemMessage = parsedEvents.find(isSystemMessage) as SystemMessageAction | undefined;
 
   // Subscribe to metrics data from Redux store
   const metrics = useSelector((state: RootState) => state.metrics);

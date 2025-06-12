@@ -38,13 +38,13 @@ function GitChanges() {
   const runtimeIsActive = !RUNTIME_INACTIVE_STATES.includes(curAgentState);
 
   const isNotGitRepoError =
-    error && GIT_REPO_ERROR_PATTERN.test(retrieveAxiosErrorMessage(error));
+    error && GIT_REPO_ERROR_PATTERN.test(retrieveAxiosErrorMessage(error) || "");
 
   React.useEffect(() => {
     if (!runtimeIsActive) {
       setStatusMessage([I18nKey.DIFF_VIEWER$WAITING_FOR_RUNTIME]);
     } else if (error) {
-      const errorMessage = retrieveAxiosErrorMessage(error);
+      const errorMessage = retrieveAxiosErrorMessage(error) || "";
       if (GIT_REPO_ERROR_PATTERN.test(errorMessage)) {
         setStatusMessage([
           I18nKey.DIFF_VIEWER$NOT_A_GIT_REPO,
