@@ -124,10 +124,7 @@ OpenHands automatically exports a `GITLAB_TOKEN` to the shell environment if pro
 
 #### Secrets Management
 
-OpenHands provides a secrets manager that allows you to securely store and manage sensitive information that can be accessed by the agent during runtime. These secrets are automatically exported as environment variables in the agent's runtime environment.
-
-<AccordionGroup>
-<Accordion title="Managing Custom Secrets">
+OpenHands provides a secrets manager that allows you to securely store and manage sensitive information that can be accessed by the agent during runtime, such as API keys. These secrets are automatically exported as environment variables in the agent's runtime environment.
 
 1. **Accessing the Secrets Manager**:
    - In the Settings page, navigate to the `Secrets` tab.
@@ -154,37 +151,6 @@ OpenHands provides a secrets manager that allows you to securely store and manag
    - All custom secrets are automatically exported as environment variables in the agent's runtime environment.
    - You can access them in your code using standard environment variable access methods (e.g., `os.environ['SECRET_NAME']` in Python).
    - Example: If you create a secret named `OPENAI_API_KEY`, you can access it in your code as `process.env.OPENAI_API_KEY` in JavaScript or `os.environ['OPENAI_API_KEY']` in Python.
-
-</Accordion>
-
-<Accordion title="Security Considerations">
-
-- **Secret Storage**: Secrets are stored securely and are never exposed in the UI after creation.
-- **Environment Variables**: Secrets are automatically exported as environment variables in the agent's runtime environment.
-- **Masking in Logs**: Secret values are automatically masked in logs and conversation history to prevent accidental exposure.
-- **Access Control**: Only the user who created the secrets can access them.
-- **Best Practices**:
-  - Use descriptive names that clearly indicate the purpose of the secret.
-  - Regularly rotate sensitive credentials like API keys.
-  - Only store information that is actually sensitive as secrets.
-  - Consider using lower-privileged API keys when possible.
-
-</Accordion>
-
-<Accordion title="Use Cases">
-
-Common use cases for the secrets manager include:
-
-1. **API Keys**: Store API keys for various services (OpenAI, GitHub, AWS, etc.).
-2. **Access Tokens**: Store access tokens for authentication with external services.
-3. **Database Credentials**: Store database connection strings or credentials.
-4. **Environment-Specific Configuration**: Store environment-specific configuration values.
-5. **Restricted Agent Access**: Create a lower-privileged token for the agent while keeping a higher-privileged token for the application (as shown in the GitLab setup example).
-
-Example: You can create a secret named `OPENAI_API_KEY` with your OpenAI API key as the value. The agent can then use this key to make API calls to OpenAI without having the key hardcoded in your code.
-
-</Accordion>
-</AccordionGroup>
 
 #### Advanced Settings
 
