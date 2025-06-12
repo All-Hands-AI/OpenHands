@@ -16,6 +16,7 @@ services:
       - WORKSPACE_MOUNT_PATH=${WORKSPACE_BASE:-$PWD/workspace}
     ports:
       - "3000:3000"
+    network_mode: host
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
