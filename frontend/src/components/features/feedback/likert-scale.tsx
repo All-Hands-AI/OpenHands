@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { cn } from "#/utils/utils";
 import i18n from "#/i18n";
 import { useSubmitConversationFeedback } from "#/hooks/mutation/use-submit-conversation-feedback";
+import { ScrollContext } from "#/context/scroll-context";
 
 // Global timeout duration in milliseconds
 const AUTO_SUBMIT_TIMEOUT = 10000;
@@ -38,6 +39,12 @@ export function LikertScale({
   );
   const [isSubmitted, setIsSubmitted] = useState(initiallySubmitted);
   const [countdown, setCountdown] = useState<number>(0);
+
+  // Get scroll context
+  const scrollContext = useContext(ScrollContext);
+
+  // If scrollContext is undefined, we're not inside a ScrollProvider
+  const scrollToBottom = scrollContext?.scrollDomToBottom;
 
   // Use our mutation hook
   const { mutate: submitConversationFeedback } =
@@ -98,6 +105,14 @@ export function LikertScale({
       }, AUTO_SUBMIT_TIMEOUT);
 
       setReasonTimeout(timeout);
+
+      // Scroll to bottom to show the reasons
+      if (scrollToBottom) {
+        // Small delay to ensure the reasons are fully rendered
+        setTimeout(() => {
+          scrollToBottom();
+        }, 100);
+      }
     } else {
       // For ratings > 3 (4 or 5 stars), submit immediately without showing reasons
       setShowReasons(false);
@@ -134,6 +149,26 @@ export function LikertScale({
     },
     [reasonTimeout],
   );
+
+  // Scroll to bottom when component mounts
+  useEffect(() => {
+    if (scrollToBottom && !isSubmitted) {
+      // Small delay to ensure the component is fully rendered
+      setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+    }
+  }, [scrollToBottom, isSubmitted]);
+
+  // Scroll to bottom when reasons are shown
+  useEffect(() => {
+    if (scrollToBottom && showReasons) {
+      // Small delay to ensure the reasons are fully rendered
+      setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+    }
+  }, [scrollToBottom, showReasons]);
 
   // Helper function to get button class based on state
   const getButtonClass = (rating: number) => {
