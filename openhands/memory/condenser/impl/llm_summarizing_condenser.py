@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from openhands.core.config.condenser_config import LLMSummarizingCondenserConfig
 from openhands.core.message import Message, TextContent
-from openhands.events.action.agent import CondensationAction, CondensationRequestAction
+from openhands.events.action.agent import CondensationAction
 from openhands.events.observation.agent import AgentCondensationObservation
 from openhands.events.serialization.event import truncate_content
 from openhands.llm import LLM
@@ -150,9 +150,6 @@ CURRENT_STATE: Last flip: Heads, Haiku count: 15/20"""
         )
 
     def should_condense(self, view: View) -> bool:
-        if isinstance(view[-1], CondensationRequestAction):
-            # If the last event is a condensation request, we should condense
-            return True
         return len(view) > self.max_size
 
     @classmethod
