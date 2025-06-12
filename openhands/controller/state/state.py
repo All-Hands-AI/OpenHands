@@ -282,6 +282,11 @@ class State:
 
         return self.iteration_flag.current_value - self.parent_iteration
 
+    def get_local_metrics(self):
+        if not self.parent_metrics_snapshot:
+            return self.metrics
+        return self.metrics.diff(self.parent_metrics_snapshot)
+
     @property
     def view(self) -> View:
         # Compute a simple checksum from the history to see if we can re-use any

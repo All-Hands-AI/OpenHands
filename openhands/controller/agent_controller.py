@@ -683,11 +683,8 @@ class AgentController:
         )
 
         # Calculate delegate-specific metrics before closing the delegate
-        metrics_snapshot = self.delegate.state.parent_metrics_snapshot
-        if metrics_snapshot:
-            # Calculate the difference between current metrics and the snapshot
-            delegate_metrics = self.state.metrics.diff(metrics_snapshot)
-            logger.info(f'Local metrics for delegate: {delegate_metrics}')
+        delegate_metrics = self.state.get_local_metrics()
+        logger.info(f'Local metrics for delegate: {delegate_metrics}')
 
         # close the delegate controller before adding new events
         asyncio.get_event_loop().run_until_complete(self.delegate.close())
