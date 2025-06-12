@@ -1,5 +1,9 @@
 import pytest
-from openhands.controller.state.control_flags import BudgetControlFlag, IterationControlFlag
+
+from openhands.controller.state.control_flags import (
+    BudgetControlFlag,
+    IterationControlFlag,
+)
 
 
 def test_iteration_control_flag_reaches_limit_and_increases():
@@ -43,16 +47,17 @@ def test_iteration_control_flag_step_behavior():
     assert flag.reached_limit()
 
     # Stepping again should raise error
-    with pytest.raises(RuntimeError, match="Agent reached maximum iteration"):
+    with pytest.raises(RuntimeError, match='Agent reached maximum iteration'):
         flag.step()
-
 
 
 # ----- BudgetControlFlag Tests -----
 
 
 def test_budget_control_flag_reaches_limit_and_increases():
-    flag = BudgetControlFlag(limit_increase_amount=10.0, current_value=50.0, max_value=50.0)
+    flag = BudgetControlFlag(
+        limit_increase_amount=10.0, current_value=50.0, max_value=50.0
+    )
 
     # Should be at limit
     assert flag.reached_limit() is True
@@ -67,8 +72,11 @@ def test_budget_control_flag_reaches_limit_and_increases():
     flag.current_value = 55.0
     assert flag.reached_limit() is False
 
+
 def test_budget_control_flag_does_not_increase_if_not_hit_limit():
-    flag = BudgetControlFlag(limit_increase_amount=10.0, current_value=40.0, max_value=50.0)
+    flag = BudgetControlFlag(
+        limit_increase_amount=10.0, current_value=40.0, max_value=50.0
+    )
 
     # Not at limit yet
     assert flag.reached_limit() is False
@@ -79,8 +87,11 @@ def test_budget_control_flag_does_not_increase_if_not_hit_limit():
     flag.increase_limit(headless_mode=False)
     assert flag.max_value == old_max_value
 
+
 def test_budget_control_flag_does_not_increase_in_headless():
-    flag = BudgetControlFlag(limit_increase_amount=10.0, current_value=50.0, max_value=50.0)
+    flag = BudgetControlFlag(
+        limit_increase_amount=10.0, current_value=50.0, max_value=50.0
+    )
 
     assert flag.reached_limit() is True
     assert flag._hit_limit is True
@@ -89,11 +100,14 @@ def test_budget_control_flag_does_not_increase_in_headless():
     flag.increase_limit(headless_mode=True)
     assert flag.max_value == 60.0
 
+
 def test_budget_control_flag_step_raises_on_limit():
-    flag = BudgetControlFlag(limit_increase_amount=5.0, current_value=55.0, max_value=50.0)
+    flag = BudgetControlFlag(
+        limit_increase_amount=5.0, current_value=55.0, max_value=50.0
+    )
 
     # Should raise RuntimeError
-    with pytest.raises(RuntimeError, match="Agent reached maximum budget"):
+    with pytest.raises(RuntimeError, match='Agent reached maximum budget'):
         flag.step()
 
     # After increasing limit, step should not raise
@@ -102,9 +116,10 @@ def test_budget_control_flag_step_raises_on_limit():
     flag.step()  # Should not raise
 
 
-
 def test_budget_control_flag_hit_limit_resets_after_increase():
-    flag = BudgetControlFlag(limit_increase_amount=10.0, current_value=50.0, max_value=50.0)
+    flag = BudgetControlFlag(
+        limit_increase_amount=10.0, current_value=50.0, max_value=50.0
+    )
 
     # Initially should hit limit
     assert flag.reached_limit() is True
