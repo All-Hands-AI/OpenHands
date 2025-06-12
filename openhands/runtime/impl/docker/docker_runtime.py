@@ -477,6 +477,27 @@ class DockerRuntime(ActionExecutionClient):
         # If no port is found after max_attempts, return the last tried port
         return port
 
+    def convert_port_to_string(port: int) -> str:
+        """
+        Convert an integer port into a base-26 string using lowercase letters.
+        This mimics the Bash function behavior in the sidecar.sh script.
+
+        For example, given port 47007, this function will compute a corresponding
+        alphabetic representation and return a string starting with "openhands-code-".
+
+        Note: This conversion uses a simple modulus operation without the typical
+        adjustment (i.e. no subtracting 1) seen in usual base conversions.
+        """
+        chars = "abcdefghijklmnopqrstuvwxyz"
+        result = ""
+
+        while port > 0:
+            remainder = port % 26
+            result = chars[remainder] + result
+            port //= 26
+
+        return result
+
     @property
     def vscode_url(self) -> str | None:
         token = super().get_vscode_token()
@@ -490,7 +511,8 @@ class DockerRuntime(ActionExecutionClient):
         if not domain:
             return f'http://localhost:{self._vscode_port}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
 
-        vscode_url = f'http://openhands-code-{self._vscode_port}.{domain}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        dynamic_portname = self.convert_port_to_string(self._vscode_port)
+        vscode_url = f'http://openhands-code-{dynamic_portname}.{domain}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
         return vscode_url
 
     @property
