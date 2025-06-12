@@ -1,5 +1,4 @@
 import asyncio
-import copy
 from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import AsyncMock, MagicMock, Mock
 from uuid import uuid4
@@ -8,6 +7,7 @@ import pytest
 
 from openhands.controller.agent import Agent
 from openhands.controller.agent_controller import AgentController
+from openhands.controller.state.control_flags import IterationControlFlag
 from openhands.controller.state.state import State
 from openhands.core.config import LLMConfig
 from openhands.core.config.agent_config import AgentConfig
@@ -339,9 +339,6 @@ async def test_delegate_metrics_snapshot():
     """
     Test that we can compute local metrics and iterations for delegates using snapshots.
     """
-    # Create a simple test to verify metrics snapshots
-    from openhands.controller.state.control_flags import IterationControlFlag
-    from openhands.llm.metrics import Metrics
 
     # Create parent metrics with initial cost
     parent_metrics = Metrics()
@@ -424,39 +421,3 @@ async def test_delegate_metrics_snapshot():
     # Verify token usage was also propagated
     parent_token_usages = parent_metrics_after.token_usages
     assert any(usage.response_id == token_id for usage in parent_token_usages)
-
-
-@pytest.mark.asyncio
-async def test_agent_reset_preserves_metrics():
-    """
-    Test that when an agent is reset, the metrics are preserved and not reset.
-    This is important for delegation where we want to maintain accumulated metrics.
-    """
-    # Create a simple test to verify agent reset behavior
-    from openhands.controller.state.control_flags import BudgetControlFlag
-    from openhands.llm.metrics import Metrics
-
-    # Create a mock agent
-    agent = MagicMock(spec=Agent)
-    agent.name = 'TestAgent'
-    agent.llm = MagicMock()
-    agent.llm.metrics = Metrics()
-
-    # Add some metrics to the agent's LLM
-    test_cost = 0.5
-    agent.llm.metrics.add_cost(test_cost)
-
-    # Create a budget flag for tracking
-    budget_flag = BudgetControlFlag(
-        initial_value=10.0, current_value=test_cost, max_value=10.0
-    )
-
-    # Take a snapshot of metrics before reset
-    metrics_before = copy.deepcopy(agent.llm.metrics)
-
-    # Reset the agent
-    agent.reset()
-
-    # Verify that metrics are preserved after reset
-    assert agent.llm.metrics.accumulated_cost == metrics_before.accumulated_cost
-    assert budget_flag.current_value == test_cost
