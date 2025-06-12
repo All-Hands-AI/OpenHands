@@ -105,9 +105,11 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
     parent_state = State(
         inputs={},
         metrics=parent_metrics,
-        budget_flag=BudgetControlFlag(current_value=2, initial_value=10, max_value=10),
+        budget_flag=BudgetControlFlag(
+            current_value=2, increase_amount=10, max_value=10
+        ),
         iteration_flag=IterationControlFlag(
-            current_value=1, initial_value=10, max_value=10
+            current_value=1, increase_amount=10, max_value=10
         ),
     )
 
@@ -178,7 +180,7 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
 
     # Take four delegate steps; mock cost per step
     for i in range(4):
-        delegate_controller.state.iteration_flag.next()
+        delegate_controller.state.iteration_flag.step()
         delegate_controller.agent.step(delegate_controller.state)
         delegate_controller.agent.llm.metrics.add_cost(1.0)
 
@@ -307,9 +309,11 @@ async def test_delegate_hits_global_limits(
     parent_state = State(
         inputs={},
         metrics=parent_metrics,
-        budget_flag=BudgetControlFlag(current_value=2, initial_value=10, max_value=10),
+        budget_flag=BudgetControlFlag(
+            current_value=2, increase_amount=10, max_value=10
+        ),
         iteration_flag=IterationControlFlag(
-            current_value=2, initial_value=3, max_value=3
+            current_value=2, increase_amount=3, max_value=3
         ),
     )
 

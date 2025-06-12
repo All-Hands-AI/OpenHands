@@ -164,7 +164,7 @@ def test_add_turns_left_reminder(prompt_dir):
     # Create a State object with specific iteration values
     state = State(
         iteration_flag=IterationControlFlag(
-            current_value=3, max_value=10, initial_value=10
+            current_value=3, max_value=10, increase_amount=10
         )
     )
 

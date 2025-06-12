@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
 from typing import Generic, TypeVar
 
 T = TypeVar(
@@ -14,7 +13,7 @@ T = TypeVar(
 class ControlFlag(Generic[T]):
     """Base class for control flags that manage limits and state transitions."""
 
-    initial_value: T
+    increase_amount: T
     current_value: T
     max_value: T
     headless_mode: bool = False
@@ -28,26 +27,18 @@ class ControlFlag(Generic[T]):
         """
         raise NotImplementedError
 
-    def expand(self, headless_mode: bool) -> None:
+    def increase_limit(self, headless_mode: bool) -> None:
         """Expand the limit when needed."""
         raise NotImplementedError
 
 
-    def next(self):
+    def step(self):
         """Determine the next state based on the current state and mode.
 
         Returns:
             ControlFlagState: The next state.
         """
         raise NotImplementedError
-
-    def update(self, value: T) -> None:
-        """Update the current value.
-
-        Args:
-            value: The new value.
-        """
-        self.current_value = value
 
 
 @dataclass
@@ -59,12 +50,12 @@ class IterationControlFlag(ControlFlag[int]):
         self._hit_limit = self.current_value >= self.max_value
         return self._hit_limit
 
-    def expand(self, headless_mode: bool) -> None:
+    def increase_limit(self, headless_mode: bool) -> None:
         """Expand the iteration limit by adding the initial value."""
         if not headless_mode and self._hit_limit:
-            self.max_value += self.initial_value
+            self.max_value += self.increase_amount
 
-    def next(self):
+    def step(self):
         if self.reached_limit():
             raise RuntimeError(
                 f'Agent reached maximum iteration. '
@@ -87,12 +78,12 @@ class BudgetControlFlag(ControlFlag[float]):
         self._hit_limit = self.current_value > self.max_value
         return self._hit_limit
 
-    def expand(self, headless_mode) -> None:
+    def increase_limit(self, headless_mode) -> None:
         """Expand the budget limit by adding the initial value to the current value."""
         if self._hit_limit:
-            self.max_value = self.current_value + self.initial_value
+            self.max_value = self.current_value + self.increase_amount
 
-    def next(self):
+    def step(self):
         """Check if we've reached the limit and update state accordingly.
 
         Note: Unlike IterationControlFlag, this doesn't increment the value

@@ -66,8 +66,8 @@ class StateTracker:
             self.state = State(
                 session_id=id.removesuffix('-delegate'),
                 inputs={},
-                iteration_flag=IterationControlFlag(initial_value=max_iterations, current_value=0, max_value= max_iterations),
-                budget_flag=None if not max_budget_per_task else BudgetControlFlag(initial_value=max_budget_per_task, current_value=0, max_value=max_budget_per_task),
+                iteration_flag=IterationControlFlag(increase_amount=max_iterations, current_value=0, max_value= max_iterations),
+                budget_flag=None if not max_budget_per_task else BudgetControlFlag(increase_amount=max_budget_per_task, current_value=0, max_value=max_budget_per_task),
                 confirmation_mode=confirmation_mode
             )
             self.state.start_id = 0
@@ -219,13 +219,13 @@ class StateTracker:
             for event in self.state.history
         ]
 
-    def maybe_expand_control_flags(
+    def maybe_increase_control_flags_limits(
         self, headless_mode: bool
     ):
         # Iteration and budget extensions are independent of each other
-        self.state.iteration_flag.expand(headless_mode)
+        self.state.iteration_flag.increase_limit(headless_mode)
         if self.state.budget_flag:
-            self.state.budget_flag.expand(headless_mode)
+            self.state.budget_flag.increase_limit(headless_mode)
 
     def get_metrics_snapshot(self):
         return self.state.metrics.copy()
@@ -236,9 +236,9 @@ class StateTracker:
 
 
     def run_control_flags(self):
-        self.state.iteration_flag.next()
+        self.state.iteration_flag.step()
         if self.state.budget_flag:
-            self.state.budget_flag.next()
+            self.state.budget_flag.step()
 
 
     def sync_budget_flag_with_metrics(self):

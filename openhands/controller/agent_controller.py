@@ -572,7 +572,7 @@ class AgentController:
             self.state.agent_state == AgentState.ERROR
             and new_state == AgentState.RUNNING
         ):
-            self.state_tracker.maybe_expand_control_flags(self.headless_mode)
+            self.state_tracker.maybe_increase_control_flags_limits(self.headless_mode)
 
         if self._pending_action is not None and (
             new_state in (AgentState.USER_CONFIRMED, AgentState.USER_REJECTED)

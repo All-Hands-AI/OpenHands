@@ -381,7 +381,6 @@ async def test_run_controller_stop_with_stuck(
 @pytest.mark.asyncio
 async def test_max_iterations_extension(mock_agent, mock_event_stream):
     # Test with headless_mode=False - should extend max_iterations
-    # initial_state = State(iteration_flag=IterationControlFlag(initial_value=10, current_value=10, max_value=10))
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
@@ -389,7 +388,6 @@ async def test_max_iterations_extension(mock_agent, mock_event_stream):
         sid='test',
         confirmation_mode=False,
         headless_mode=False,
-        # initial_state=initial_state,
     )
     controller.state.agent_state = AgentState.RUNNING
     controller.state.iteration_flag.current_value = 10
@@ -444,7 +442,9 @@ async def test_step_max_budget(mock_agent, mock_event_stream):
     # Metrics are always synced with budget flag before
     metrics = Metrics()
     metrics.accumulated_cost = 10.1
-    budget_flag = BudgetControlFlag(initial_value=10, current_value=10.1, max_value=10)
+    budget_flag = BudgetControlFlag(
+        increaes_amount=10, current_value=10.1, max_value=10
+    )
 
     controller = AgentController(
         agent=mock_agent,
@@ -467,7 +467,9 @@ async def test_step_max_budget_headless(mock_agent, mock_event_stream):
     # Metrics are always synced with budget flag before
     metrics = Metrics()
     metrics.accumulated_cost = 10.1
-    budget_flag = BudgetControlFlag(initial_value=10, current_value=10.1, max_value=10)
+    budget_flag = BudgetControlFlag(
+        increase_amount=10, current_value=10.1, max_value=10
+    )
 
     controller = AgentController(
         agent=mock_agent,
@@ -502,7 +504,7 @@ async def test_budget_reset_on_continue(mock_agent, mock_event_stream):
     initial_state = State(
         metrics=metrics,
         budget_flag=BudgetControlFlag(
-            initial_value=initial_budget, current_value=6.0, max_value=initial_budget
+            increase_amount=initial_budget, current_value=6.0, max_value=initial_budget
         ),
     )
 
