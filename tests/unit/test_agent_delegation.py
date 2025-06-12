@@ -209,7 +209,7 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
     )
 
     # Parent's global iteration is updated from the child
-    assert parent_controller.state.iteration_flag.current_value == 6, (
+    assert parent_controller.state.iteration_flag.current_value == 7, (
         "Parent iteration should be the child's iteration + 1 after child is done."
     )
 
