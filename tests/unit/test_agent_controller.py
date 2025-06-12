@@ -30,7 +30,12 @@ from openhands.events.observation.empty import NullObservation
 from openhands.events.serialization import event_to_dict
 from openhands.llm import LLM
 from openhands.llm.metrics import Metrics, TokenUsage
+from openhands.memory.condenser.condenser import Condensation
+from openhands.memory.condenser.impl.conversation_window_condenser import (
+    ConversationWindowCondenser,
+)
 from openhands.memory.memory import Memory
+from openhands.memory.view import View
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
@@ -757,9 +762,14 @@ async def test_context_window_exceeded_error_handling(
             self.has_errored = False
             self.index = 0
             self.views = []
+            self.condenser = ConversationWindowCondenser()
 
         def step(self, state: State):
-            self.views.append(state.view)
+            match self.condenser.condense(state.view):
+                case View() as view:
+                    self.views.append(view)
+                case Condensation(action=action):
+                    return action
 
             # Wait until the right step to throw the error, and make sure we
             # only throw it once.
@@ -909,8 +919,14 @@ async def test_run_controller_with_context_window_exceeded_with_truncation(
     class StepState:
         def __init__(self):
             self.has_errored = False
+            self.condenser = ConversationWindowCondenser()
 
         def step(self, state: State):
+            match self.condenser.condense(state.view):
+                case Condensation(action=action):
+                    return action
+                case _:
+                    pass
             # If the state has more than one message and we haven't errored yet,
             # throw the context window exceeded error
             if len(state.history) > 5 and not self.has_errored:
