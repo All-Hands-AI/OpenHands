@@ -45,6 +45,12 @@ class LLMConfig(BaseModel):
         native_tool_calling: Whether to use native tool calling if supported by the model. Can be True, False, or not set.
         reasoning_effort: The effort to put into reasoning. This is a string that can be one of 'low', 'medium', 'high', or 'none'. Exclusive for o1 models.
         seed: The seed to use for the LLM.
+        enable_fallback: Whether to enable automatic fallback to alternative models on failure.
+        fallback_models: List of fallback model names to try in order.
+        fallback_api_keys: Dictionary mapping model names to their API keys.
+        fallback_base_urls: Dictionary mapping model names to their base URLs.
+        auto_fallback_on_error: Whether to automatically fallback on API errors.
+        fallback_max_retries: Maximum number of fallback attempts per model.
     """
 
     model: str = Field(default='claude-sonnet-4-20250514')
@@ -86,6 +92,14 @@ class LLMConfig(BaseModel):
     native_tool_calling: bool | None = Field(default=None)
     reasoning_effort: str | None = Field(default='high')
     seed: int | None = Field(default=None)
+
+    # Fallback configuration
+    enable_fallback: bool = Field(default=False)
+    fallback_models: list[str] = Field(default_factory=list)
+    fallback_api_keys: dict[str, str] = Field(default_factory=dict)
+    fallback_base_urls: dict[str, str] = Field(default_factory=dict)
+    auto_fallback_on_error: bool = Field(default=True)
+    fallback_max_retries: int = Field(default=2)
 
     model_config = {'extra': 'forbid'}
 

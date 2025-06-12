@@ -1,0 +1,44 @@
+[core]
+workspace_base = "/tmp/openhands_workspace"
+persist_sandbox = false
+run_as_openhands = true
+runtime = "eventstream"
+max_iterations = 100
+max_budget_per_task = 10.0
+enable_auto_lint = true
+
+[llm]
+model = "deepseek-r1-0528"
+api_key = "demo-key-for-testing"
+base_url = "https://api.deepseek.com"
+api_version = ""
+embedding_model = ""
+embedding_base_url = ""
+embedding_api_key = ""
+num_retries = 8
+retry_wait_time = 120
+retry_multiplier = 2
+timeout = 600
+temperature = 0.7
+top_p = 0.9
+max_tokens = 4096
+
+[sandbox]
+runtime_container_image = "openhands:latest"
+user_id = 1000
+use_host_network = false
+timeout = 120
+api_key = ""
+remote_runtime_api_url = ""
+keep_runtime_alive = false
+runtime_startup_timeout = 600
+
+[security]
+confirmation_mode = false
+security_analyzer = ""
+enable_security_analyzer = false
+
+[ui]
+default_agent = "CodeActAgent"
+default_language = "en"
+enable_analytics = false

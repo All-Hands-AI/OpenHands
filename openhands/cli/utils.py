@@ -102,6 +102,8 @@ def extract_model_and_provider(model: str) -> ModelInfo:
             return ModelInfo(provider='openai', model=split[0], separator='/')
         if split[0] in VERIFIED_ANTHROPIC_MODELS:
             return ModelInfo(provider='anthropic', model=split[0], separator='/')
+        if split[0] in VERIFIED_DEEPSEEK_MODELS:
+            return ModelInfo(provider='deepseek', model=split[0], separator='/')
         # return as model only
         return ModelInfo(provider='', model=model, separator='')
 
@@ -169,6 +171,11 @@ VERIFIED_ANTHROPIC_MODELS = [
     'claude-3-7-sonnet-20250219',
     'claude-sonnet-4-20250514',
     'claude-opus-4-20250514',
+]
+
+VERIFIED_DEEPSEEK_MODELS = [
+    'deepseek-chat',
+    'deepseek-r1-0528',
 ]
 
 
