@@ -32,6 +32,7 @@ from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
+from openhands.runtime.prebuilt_runtime_manager import get_runtime_manager
 
 ROOM_KEY = 'room:{sid}'
 
@@ -74,6 +75,14 @@ class Session:
         self.config = deepcopy(config)
         self.loop = asyncio.get_event_loop()
         self.user_id = user_id
+        
+        # Initialize pre-built runtime manager for instant availability
+        self.runtime_manager = get_runtime_manager(self.config)
+        if self.runtime_manager.is_prebuilt:
+            self.logger.info("Pre-built runtime detected - ensuring instant availability")
+            # Start warmup if not already done
+            if not self.runtime_manager.is_ready():
+                self.runtime_manager.start_background_warmup()
 
     async def close(self) -> None:
         if self.sio:

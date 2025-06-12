@@ -1,6 +1,16 @@
 # OpenHands Railway Deployment Guide
 
-This guide explains how to deploy OpenHands to Railway.com with Docker-in-Docker (DinD) support.
+This guide explains how to deploy OpenHands to Railway.com with pre-built runtime for instant availability.
+
+## 🚀 New: Pre-built Runtime System
+
+This deployment now includes a pre-built runtime system that ensures instant availability when users start conversations. No more connection delays or runtime startup issues!
+
+### Key Features:
+- **Instant Session Creation**: Runtime is pre-built and ready
+- **No Docker Required**: Uses optimized local runtime
+- **Automatic Fallback**: Falls back gracefully if remote runtime unavailable
+- **Enhanced Error Handling**: Clear guidance for Railway deployments
 
 ## Prerequisites
 

@@ -98,11 +98,17 @@ RUN $VIRTUAL_ENV/bin/python openhands/core/download.py # No-op to download asset
 # openhands:openhands -> openhands:app
 RUN find /app \! -group app -exec chgrp app {} + 2>/dev/null || true
 
+# Copy and run the runtime setup script
+COPY --chown=openhands:app --chmod=770 ./scripts/railway-setup.sh ./scripts/railway-setup.sh
+
 # Copy frontend build
 COPY --chown=openhands:app --chmod=770 --from=frontend-builder /app/build ./frontend/build
 
-# Switch back to root for final setup
+# Switch back to root for runtime setup
 USER root
+
+# Run the runtime setup script to pre-build and configure the runtime
+RUN bash /app/scripts/railway-setup.sh
 
 # Set up proper permissions
 RUN chmod 755 /var/log
@@ -119,5 +125,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 
 WORKDIR /app
 
-# Run OpenHands directly without supervisor
-CMD ["bash", "-c", "uvicorn openhands.server.listen:app --host 0.0.0.0 --port ${PORT:-3000}"]
+# Run OpenHands with pre-built runtime
+CMD ["/app/.openhands-runtime/start-runtime.sh", "uvicorn", "openhands.server.listen:app", "--host", "0.0.0.0", "--port", "${PORT:-3000}"]
