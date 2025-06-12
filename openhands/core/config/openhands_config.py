@@ -54,6 +54,8 @@ class OpenHandsConfig(BaseModel):
             input is read line by line. When enabled, input continues until /exit command.
         mcp_host: Host for OpenHands' default MCP server
         mcp: MCP configuration settings.
+        exit_on_finish: Whether to exit immediately after the agent finishes the task without waiting for user input
+        conversation_max_age_seconds: Maximum age of conversation in seconds
     """
 
     llms: dict[str, LLMConfig] = Field(default_factory=dict)
@@ -100,6 +102,7 @@ class OpenHandsConfig(BaseModel):
     daytona_api_url: str = Field(default='https://app.daytona.io/api')
     daytona_target: str = Field(default='eu')
     cli_multiline_input: bool = Field(default=False)
+    exit_on_finish: bool = Field(default=False, description='Exit immediately after the agent finishes the task without waiting for user input')
     conversation_max_age_seconds: int = Field(default=864000)  # 10 days in seconds
     enable_default_condenser: bool = Field(default=True)
     max_concurrent_conversations: int = Field(
