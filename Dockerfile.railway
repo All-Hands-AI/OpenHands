@@ -126,4 +126,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 WORKDIR /app
 
 # Run OpenHands with pre-built runtime
-CMD ["/app/.openhands-runtime/start-runtime.sh", "uvicorn", "openhands.server.listen:app", "--host", "0.0.0.0", "--port", "${PORT:-3000}"]
+CMD ["/app/.openhands-runtime/start-runtime.sh"]

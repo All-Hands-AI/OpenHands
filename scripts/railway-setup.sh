@@ -248,8 +248,14 @@ echo "📍 Workspace: /app/workspace"
 echo "🐍 Python: $(which python)"
 echo "🔧 Runtime: local (pre-built)"
 
-# Start the main application
-exec "$@"
+# If arguments are provided, execute them, otherwise start uvicorn
+if [ $# -gt 0 ]; then
+    echo "🚀 Starting: $@"
+    exec "$@"
+else
+    echo "🚀 Starting uvicorn server..."
+    exec uvicorn openhands.server.listen:app --host 0.0.0.0 --port ${PORT:-3000}
+fi
 EOF
 
 chmod +x /app/.openhands-runtime/start-runtime.sh
