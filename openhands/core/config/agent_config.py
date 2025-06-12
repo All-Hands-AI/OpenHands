@@ -28,6 +28,8 @@ class AgentConfig(BaseModel):
     """Whether to enable think tool"""
     enable_finish: bool = Field(default=True)
     """Whether to enable finish tool"""
+    enable_condensation_request: bool = Field(default=True)
+    """Whether to enable condensation request tool"""
     enable_prompt_extensions: bool = Field(default=True)
     """Whether to enable prompt extensions"""
     enable_mcp: bool = Field(default=True)
