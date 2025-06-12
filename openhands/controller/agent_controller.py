@@ -364,10 +364,17 @@ class AgentController:
         # If we have a delegate that is not finished or errored, forward events to it
         if self.delegate is not None:
             delegate_state = self.delegate.get_agent_state()
-            if delegate_state not in (
-                AgentState.FINISHED,
-                AgentState.ERROR,
-                AgentState.REJECTED,
+            if (
+                delegate_state
+                not in (
+                    AgentState.FINISHED,
+                    AgentState.ERROR,
+                    AgentState.REJECTED,
+                )
+                or 'RuntimeError: Agent reached maximum iteration.'
+                in self.delegate.state.last_error
+                or 'RuntimeError:Agent reached maximum budget for conversation'
+                in self.delegate.state.last_error
             ):
                 # Forward the event to delegate and skip parent processing
                 asyncio.get_event_loop().run_until_complete(
