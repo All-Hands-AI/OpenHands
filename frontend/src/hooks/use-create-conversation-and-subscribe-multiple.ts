@@ -16,7 +16,7 @@ export const useCreateConversationAndSubscribeMultiple = () => {
     subscribeToConversation,
     unsubscribeFromConversation,
     isSubscribedToConversation,
-    activeConversationIds
+    activeConversationIds,
   } = useConversationSubscriptions();
 
   const createConversationAndSubscribe = React.useCallback(
@@ -71,7 +71,7 @@ export const useCreateConversationAndSubscribeMultiple = () => {
         },
       );
     },
-    [createConversation, subscribeToConversation, providers]
+    [createConversation, subscribeToConversation, providers],
   );
 
   return {
@@ -79,6 +79,6 @@ export const useCreateConversationAndSubscribeMultiple = () => {
     unsubscribeFromConversation,
     isSubscribedToConversation,
     activeConversationIds,
-    isPending
+    isPending,
   };
 };

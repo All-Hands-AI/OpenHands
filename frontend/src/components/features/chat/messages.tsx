@@ -11,7 +11,7 @@ import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
 import { LaunchMicroagentModal } from "./microagent/launch-microagent-modal";
 import { useUserConversation } from "#/hooks/query/use-user-conversation";
 import { useConversationId } from "#/hooks/use-conversation-id";
-import { useCreateConversationAndSubscribe } from "#/hooks/use-create-conversation-and-subscribe";
+import { useCreateConversationAndSubscribeMultiple } from "#/hooks/use-create-conversation-and-subscribe-multiple";
 
 interface MessagesProps {
   messages: (OpenHandsAction | OpenHandsObservation)[];
@@ -22,7 +22,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(
   ({ messages, isAwaitingUserConfirmation }) => {
     const { t } = useTranslation();
     const { createConversationAndSubscribe, isPending } =
-      useCreateConversationAndSubscribe();
+      useCreateConversationAndSubscribeMultiple();
     const { getOptimisticUserMessage } = useOptimisticUserMessage();
     const { conversationId } = useConversationId();
     const { data: conversation } = useUserConversation(conversationId);

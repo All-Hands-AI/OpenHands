@@ -1,8 +1,18 @@
-import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
 import { io, Socket } from "socket.io-client";
 import { createChatMessage } from "#/services/chat-service";
 import { OpenHandsParsedEvent } from "#/types/core";
-import { isOpenHandsEvent, isAgentStateChangeObservation } from "#/types/core/guards";
+import {
+  isOpenHandsEvent,
+  isAgentStateChangeObservation,
+} from "#/types/core/guards";
 import { AgentState } from "#/types/agent-state";
 import {
   renderConversationErroredToast,
@@ -30,17 +40,18 @@ interface ConversationSubscriptionsContextType {
   getEventsForConversation: (conversationId: string) => OpenHandsParsedEvent[];
 }
 
-const ConversationSubscriptionsContext = createContext<ConversationSubscriptionsContextType>({
-  activeConversationIds: [],
-  subscribeToConversation: () => {
-    throw new Error("ConversationSubscriptionsProvider not initialized");
-  },
-  unsubscribeFromConversation: () => {
-    throw new Error("ConversationSubscriptionsProvider not initialized");
-  },
-  isSubscribedToConversation: () => false,
-  getEventsForConversation: () => [],
-});
+const ConversationSubscriptionsContext =
+  createContext<ConversationSubscriptionsContextType>({
+    activeConversationIds: [],
+    subscribeToConversation: () => {
+      throw new Error("ConversationSubscriptionsProvider not initialized");
+    },
+    unsubscribeFromConversation: () => {
+      throw new Error("ConversationSubscriptionsProvider not initialized");
+    },
+    isSubscribedToConversation: () => false,
+    getEventsForConversation: () => [],
+  });
 
 const isErrorEvent = (
   event: unknown,
@@ -52,28 +63,34 @@ const isErrorEvent = (
   "message" in event &&
   typeof event.message === "string";
 
-const isAgentStatusError = (
-  event: unknown,
-): event is OpenHandsParsedEvent =>
+const isAgentStatusError = (event: unknown): event is OpenHandsParsedEvent =>
   isOpenHandsEvent(event) &&
   isAgentStateChangeObservation(event) &&
   event.extras.agent_state === AgentState.ERROR;
 
-export function ConversationSubscriptionsProvider({ children }: React.PropsWithChildren) {
-  const [activeConversationIds, setActiveConversationIds] = useState<string[]>([]);
-  const [conversationSockets, setConversationSockets] = useState<Record<string, ConversationSocket>>({});
+export function ConversationSubscriptionsProvider({
+  children,
+}: React.PropsWithChildren) {
+  const [activeConversationIds, setActiveConversationIds] = useState<string[]>(
+    [],
+  );
+  const [conversationSockets, setConversationSockets] = useState<
+    Record<string, ConversationSocket>
+  >({});
   const eventHandlersRef = useRef<Record<string, (event: unknown) => void>>({});
 
   // Cleanup function to remove all subscriptions when component unmounts
-  useEffect(() => {
-    return () => {
+  useEffect(
+    () => () => {
+      console.warn("EFFECT DISCONNECT");
       Object.values(conversationSockets).forEach((socketData) => {
         if (socketData.socket) {
           socketData.socket.disconnect();
         }
       });
-    };
-  }, [conversationSockets]);
+    },
+    [conversationSockets],
+  );
 
   const subscribeToConversation = useCallback(
     (options: {
@@ -83,7 +100,8 @@ export function ConversationSubscriptionsProvider({ children }: React.PropsWithC
       baseUrl: string;
       onEvent?: (event: unknown, conversationId: string) => void;
     }) => {
-      const { conversationId, sessionApiKey, providersSet, baseUrl, onEvent } = options;
+      const { conversationId, sessionApiKey, providersSet, baseUrl, onEvent } =
+        options;
 
       // If already subscribed, don't create a new subscription
       if (conversationSockets[conversationId]) {
@@ -113,7 +131,7 @@ export function ConversationSubscriptionsProvider({ children }: React.PropsWithC
         // Handle error events
         if (isErrorEvent(event) || isAgentStatusError(event)) {
           renderConversationErroredToast(
-            isErrorEvent(event) ? event.message : event.extras.reason || "Unknown error",
+            isErrorEvent(event) ? event.message : "Unknown error",
             () => {
               // Reconnect logic
               if (conversationSockets[conversationId]?.socket) {
@@ -123,9 +141,12 @@ export function ConversationSubscriptionsProvider({ children }: React.PropsWithC
                 );
                 renderConversationCreatedToast(conversationId);
               }
-            }
+            },
           );
-        } else if (isOpenHandsEvent(event) && isAgentStateChangeObservation(event)) {
+        } else if (
+          isOpenHandsEvent(event) &&
+          isAgentStateChangeObservation(event)
+        ) {
           if (event.extras.agent_state === AgentState.FINISHED) {
             renderConversationFinishedToast(conversationId);
           }
@@ -182,17 +203,18 @@ export function ConversationSubscriptionsProvider({ children }: React.PropsWithC
 
       // Add to active conversation IDs
       setActiveConversationIds((prev) =>
-        prev.includes(conversationId) ? prev : [...prev, conversationId]
+        prev.includes(conversationId) ? prev : [...prev, conversationId],
       );
     },
-    [conversationSockets]
+    [conversationSockets],
   );
 
   const unsubscribeFromConversation = useCallback(
     (conversationId: string) => {
+      console.warn(`Unsubscribing from conversation ${conversationId}`);
       if (conversationSockets[conversationId]) {
         // Remove event listeners
-        const socket = conversationSockets[conversationId].socket;
+        const { socket } = conversationSockets[conversationId];
         const handler = eventHandlersRef.current[conversationId];
 
         if (socket && handler) {
@@ -209,37 +231,43 @@ export function ConversationSubscriptionsProvider({ children }: React.PropsWithC
 
         // Remove from active IDs
         setActiveConversationIds((prev) =>
-          prev.filter(id => id !== conversationId)
+          prev.filter((id) => id !== conversationId),
         );
 
         // Clean up event handler reference
         delete eventHandlersRef.current[conversationId];
       }
     },
-    [conversationSockets]
+    [conversationSockets],
   );
 
   const isSubscribedToConversation = useCallback(
-    (conversationId: string) => {
-      return !!conversationSockets[conversationId];
-    },
-    [conversationSockets]
+    (conversationId: string) => !!conversationSockets[conversationId],
+    [conversationSockets],
   );
 
   const getEventsForConversation = useCallback(
-    (conversationId: string) => {
-      return conversationSockets[conversationId]?.events || [];
-    },
-    [conversationSockets]
+    (conversationId: string) =>
+      conversationSockets[conversationId]?.events || [],
+    [conversationSockets],
   );
 
-  const value = {
-    activeConversationIds,
-    subscribeToConversation,
-    unsubscribeFromConversation,
-    isSubscribedToConversation,
-    getEventsForConversation,
-  };
+  const value = React.useMemo(
+    () => ({
+      activeConversationIds,
+      subscribeToConversation,
+      unsubscribeFromConversation,
+      isSubscribedToConversation,
+      getEventsForConversation,
+    }),
+    [
+      activeConversationIds,
+      subscribeToConversation,
+      unsubscribeFromConversation,
+      isSubscribedToConversation,
+      getEventsForConversation,
+    ],
+  );
 
   return (
     <ConversationSubscriptionsContext.Provider value={value}>
