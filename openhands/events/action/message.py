@@ -34,6 +34,9 @@ class MessageAction(Action):
         if self.image_urls:
             for url in self.image_urls:
                 ret += f'\nIMAGE_URL: {url}'
+        if self.file_urls:
+            for url in self.file_urls:
+                ret += f'\nFILE_URL: {url}'
         return ret
 
 
