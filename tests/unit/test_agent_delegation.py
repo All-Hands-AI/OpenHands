@@ -106,10 +106,10 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
         inputs={},
         metrics=parent_metrics,
         budget_flag=BudgetControlFlag(
-            current_value=2, increase_amount=10, max_value=10
+            current_value=2, limit_increase_amount=10, max_value=10
         ),
         iteration_flag=IterationControlFlag(
-            current_value=1, increase_amount=10, max_value=10
+            current_value=1, limit_increase_amount=10, max_value=10
         ),
     )
 
@@ -310,10 +310,10 @@ async def test_delegate_hits_global_limits(
         inputs={},
         metrics=parent_metrics,
         budget_flag=BudgetControlFlag(
-            current_value=2, increase_amount=10, max_value=10
+            current_value=2, limit_increase_amount=10, max_value=10
         ),
         iteration_flag=IterationControlFlag(
-            current_value=2, increase_amount=3, max_value=3
+            current_value=2, limit_increase_amount=3, max_value=3
         ),
     )
 

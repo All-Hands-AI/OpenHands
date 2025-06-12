@@ -81,7 +81,7 @@ class State:
     session_id: str = ''
     iteration_flag: IterationControlFlag = field(
         default_factory=lambda: IterationControlFlag(
-            increase_amount=100, current_value=0, max_value=100
+            limit_increase_amount=100, current_value=0, max_value=100
         )
     )
     budget_flag: BudgetControlFlag | None = None
@@ -215,7 +215,7 @@ class State:
 
             # Add the iteration_flag to the state
             state['iteration_flag'] = IterationControlFlag(
-                increase_amount=max_iterations,
+                limit_increase_amount=max_iterations,
                 current_value=current_iteration,
                 max_value=max_iterations,
             )
@@ -233,7 +233,7 @@ class State:
         # Ensure we have default values for new fields if they're missing
         if not hasattr(self, 'iteration_flag'):
             self.iteration_flag = IterationControlFlag(
-                increase_amount=100, current_value=0, max_value=100
+                limit_increase_amount=100, current_value=0, max_value=100
             )
 
         if not hasattr(self, 'budget_flag'):

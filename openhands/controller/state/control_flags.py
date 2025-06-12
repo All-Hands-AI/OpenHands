@@ -13,7 +13,7 @@ T = TypeVar(
 class ControlFlag(Generic[T]):
     """Base class for control flags that manage limits and state transitions."""
 
-    increase_amount: T
+    limit_increase_amount: T
     current_value: T
     max_value: T
     headless_mode: bool = False
@@ -53,7 +53,7 @@ class IterationControlFlag(ControlFlag[int]):
     def increase_limit(self, headless_mode: bool) -> None:
         """Expand the iteration limit by adding the initial value."""
         if not headless_mode and self._hit_limit:
-            self.max_value += self.increase_amount
+            self.max_value += self.limit_increase_amount
 
     def step(self):
         if self.reached_limit():
@@ -81,7 +81,7 @@ class BudgetControlFlag(ControlFlag[float]):
     def increase_limit(self, headless_mode) -> None:
         """Expand the budget limit by adding the initial value to the current value."""
         if self._hit_limit:
-            self.max_value = self.current_value + self.increase_amount
+            self.max_value = self.current_value + self.limit_increase_amount
 
     def step(self):
         """Check if we've reached the limit and update state accordingly.

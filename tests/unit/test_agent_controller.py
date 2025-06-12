@@ -468,7 +468,7 @@ async def test_step_max_budget_headless(mock_agent, mock_event_stream):
     metrics = Metrics()
     metrics.accumulated_cost = 10.1
     budget_flag = BudgetControlFlag(
-        increase_amount=10, current_value=10.1, max_value=10
+        limit_increase_amount=10, current_value=10.1, max_value=10
     )
 
     controller = AgentController(
@@ -504,7 +504,9 @@ async def test_budget_reset_on_continue(mock_agent, mock_event_stream):
     initial_state = State(
         metrics=metrics,
         budget_flag=BudgetControlFlag(
-            increase_amount=initial_budget, current_value=6.0, max_value=initial_budget
+            limit_increase_amount=initial_budget,
+            current_value=6.0,
+            max_value=initial_budget,
         ),
     )
 
