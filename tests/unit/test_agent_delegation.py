@@ -7,6 +7,10 @@ import pytest
 
 from openhands.controller.agent import Agent
 from openhands.controller.agent_controller import AgentController
+from openhands.controller.state.control_flags import (
+    BudgetControlFlag,
+    IterationControlFlag,
+)
 from openhands.controller.state.state import State
 from openhands.core.config import LLMConfig
 from openhands.core.config.agent_config import AgentConfig
@@ -18,6 +22,7 @@ from openhands.events.action import (
     MessageAction,
 )
 from openhands.events.action.agent import RecallAction
+from openhands.events.action.commands import CmdRunAction
 from openhands.events.action.message import SystemMessageAction
 from openhands.events.event import Event, RecallType
 from openhands.events.observation.agent import RecallObservation
@@ -66,30 +71,46 @@ def mock_child_agent():
     agent.llm.retry_listener = None  # Add retry_listener attribute
     agent.config = AgentConfig()
 
-    # Add a proper system message mock
-    from openhands.events.action.message import SystemMessageAction
-
     system_message = SystemMessageAction(content='Test system message')
     system_message._source = EventSource.AGENT
     system_message._id = -1  # Set invalid ID to avoid the ID check
     agent.get_system_message.return_value = system_message
 
+    step_count = 0
+
+    def agent_step_fn(state):
+        print(f'agent_step_fn received state: {state}')
+        nonlocal step_count
+        step_count += 1
+        return CmdRunAction(command=f'ls {step_count}')
+
+    agent.step = agent_step_fn
     return agent
 
 
 @pytest.mark.asyncio
 async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_stream):
     """
-    Test that when the parent agent delegates to a child, the parent's delegate
-    is set, and once the child finishes, the parent is cleaned up properly.
+    Test that when the parent agent delegates to a child
+     1. the parent's delegate is set, and once the child finishes, the parent is cleaned up properly.
+     2. metrics are accumulated globally (delegate is adding to the parents metrics)
+     3. local metrics for the delegate are still accessible
     """
     # Mock the agent class resolution so that AgentController can instantiate mock_child_agent
     Agent.get_cls = Mock(return_value=lambda llm, config: mock_child_agent)
 
+    parent_metrics = Metrics()
+    parent_metrics.accumulated_cost = 2
     # Create parent controller
-    parent_state = State(inputs={})
-    # Set the iteration flag's max_value to 10 (equivalent to the old max_iterations)
-    parent_state.iteration_flag.max_value = 10
+    parent_state = State(
+        inputs={},
+        metrics=parent_metrics,
+        budget_flag=BudgetControlFlag(current_value=2, initial_value=10, max_value=10),
+        iteration_flag=IterationControlFlag(
+            current_value=1, initial_value=10, max_value=10
+        ),
+    )
+
     parent_controller = AgentController(
         agent=mock_parent_agent,
         event_stream=mock_event_stream,
@@ -148,17 +169,33 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
     )
 
     # The parent's iteration should have incremented
-    assert parent_controller.state.iteration_flag.current_value == 1, (
+    assert parent_controller.state.iteration_flag.current_value == 2, (
         'Parent iteration should be incremented after step.'
     )
 
     # Now simulate that the child increments local iteration and finishes its subtask
     delegate_controller = parent_controller.delegate
-    delegate_controller.state.iteration_flag.current_value = 5  # child had some steps
+
+    # Take four delegate steps; mock cost per step
+    for i in range(4):
+        delegate_controller.state.iteration_flag.next()
+        delegate_controller.agent.step(delegate_controller.state)
+        delegate_controller.agent.llm.metrics.add_cost(1.0)
 
     assert (
         delegate_controller.state.get_local_step() == 4
     )  # verify local metrics are accessible via snapshot
+
+    assert (
+        delegate_controller.state.metrics.accumulated_cost
+        == 6  # Make sure delegate tracks global cost
+    )
+
+    assert (
+        delegate_controller.state.get_local_metrics().accumulated_cost
+        == 4  # Delegate spent one dollar per step
+    )
+
     delegate_controller.state.outputs = {'delegate_result': 'done'}
 
     # The child is done, so we simulate it finishing:

@@ -632,7 +632,7 @@ class AgentController:
         delegate_agent = agent_cls(llm=llm, config=agent_config)
 
         # Take a snapshot of the current metrics before starting the delegate
-
+        print('childn state', self.state)
         state = State(
             session_id=self.id.removesuffix('-delegate'),
             inputs=action.inputs or {},
