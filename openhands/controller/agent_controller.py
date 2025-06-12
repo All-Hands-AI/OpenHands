@@ -59,7 +59,11 @@ from openhands.events.action import (
     NullAction,
     SystemMessageAction,
 )
-from openhands.events.action.agent import CondensationAction, RecallAction
+from openhands.events.action.agent import (
+    CondensationAction,
+    CondensationRequestAction,
+    RecallAction,
+)
 from openhands.events.event import Event
 from openhands.events.event_filter import EventFilter
 from openhands.events.observation import (
@@ -865,7 +869,9 @@ class AgentController:
                     or isinstance(e, ContextWindowExceededError)
                 ):
                     if self.agent.config.enable_history_truncation:
-                        self._handle_long_context_error()
+                        self.event_stream.add_event(
+                            CondensationRequestAction(), EventSource.AGENT
+                        )
                         return
                     else:
                         raise LLMContextWindowExceedError()
