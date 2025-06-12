@@ -218,6 +218,64 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
 
 
 @pytest.mark.asyncio
+async def test_delegate_max_iteration_error_and_continue():
+    """
+    Test that when a delegate agent hits the max_iteration for the IterationControlFlag:
+    1. It throws an error when trying to exceed the maximum iteration limit
+    2. The user continuing will extend the max_iteration limit, allowing further iterations
+    3. After reaching the new limit, it will throw an error again
+
+    This test verifies the behavior of the IterationControlFlag when it reaches its limit
+    and when that limit is extended, simulating what happens when a user continues after
+    hitting the iteration limit.
+    """
+    # Create an IterationControlFlag with a low max value
+    iteration_flag = IterationControlFlag(current_value=0, initial_value=5, max_value=5)
+
+    # Increment until we reach the max value
+    for _ in range(5):
+        iteration_flag.next()
+
+    # Verify we've reached the max value
+    assert iteration_flag.current_value == 5
+
+    # Attempting to increment beyond max should raise an exception
+    try:
+        iteration_flag.next()
+        raise AssertionError('Should have raised an exception due to max iteration')
+    except Exception as e:
+        assert 'maximum iteration' in str(e).lower(), (
+            f'Expected max iteration error, got: {str(e)}'
+        )
+
+    # Simulate a user continuing by extending the max iteration
+    # Increase the max_value (this is what would happen when user continues)
+    iteration_flag.max_value += 5
+
+    # Verify the max value was increased
+    assert iteration_flag.max_value == 10
+
+    # Now we should be able to continue without error
+    iteration_flag.next()
+    assert iteration_flag.current_value == 6
+
+    # We can continue incrementing up to the new max
+    for _ in range(4):
+        iteration_flag.next()
+
+    assert iteration_flag.current_value == 10
+
+    # And we'll hit the limit again if we try to go further
+    try:
+        iteration_flag.next()
+        raise AssertionError('Should have raised an exception due to max iteration')
+    except Exception as e:
+        assert 'maximum iteration' in str(e).lower(), (
+            f'Expected max iteration error, got: {str(e)}'
+        )
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     'delegate_state',
     [
