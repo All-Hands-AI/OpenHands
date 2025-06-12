@@ -457,11 +457,13 @@ def test_process_events_with_file_read_observation(conversation_memory):
 
 
 def test_process_events_with_browser_output_observation(conversation_memory):
+    formatted_content = '[Current URL: http://example.com]\n\n============== BEGIN webpage content ==============\nPage loaded\n============== END webpage content =============='
+
     obs = BrowserOutputObservation(
         url='http://example.com',
         trigger_by_action='browse',
         screenshot='',
-        content='Page loaded',
+        content=formatted_content,
         error=False,
     )
 

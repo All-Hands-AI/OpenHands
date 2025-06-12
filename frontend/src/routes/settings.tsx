@@ -15,6 +15,7 @@ function SettingsScreen() {
   const isSaas = config?.APP_MODE === "saas";
 
   const saasNavItems = [
+    { to: "/settings/user", text: t("SETTINGS$NAV_USER") },
     { to: "/settings/git", text: t("SETTINGS$NAV_GIT") },
     { to: "/settings/app", text: t("SETTINGS$NAV_APPLICATION") },
     { to: "/settings/billing", text: t("SETTINGS$NAV_CREDITS") },
@@ -33,10 +34,11 @@ function SettingsScreen() {
   React.useEffect(() => {
     if (isSaas) {
       if (pathname === "/settings") {
-        navigate("/settings/git");
+        navigate("/settings/user");
       }
     } else {
       const noEnteringPaths = [
+        "/settings/user",
         "/settings/billing",
         "/settings/credits",
         "/settings/api-keys",

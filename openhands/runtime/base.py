@@ -64,6 +64,7 @@ from openhands.runtime.plugins import (
     PluginRequirement,
     VSCodeRequirement,
 )
+from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.runtime.utils.edit import FileEditRuntimeMixin
 from openhands.runtime.utils.git_handler import CommandResult, GitHandler
 from openhands.utils.async_utils import (
@@ -71,16 +72,6 @@ from openhands.utils.async_utils import (
     call_async_from_sync,
     call_sync_from_async,
 )
-
-STATUS_MESSAGES = {
-    'STATUS$STARTING_RUNTIME': 'Starting runtime...',
-    'STATUS$STARTING_CONTAINER': 'Starting container...',
-    'STATUS$PREPARING_CONTAINER': 'Preparing container...',
-    'STATUS$CONTAINER_STARTED': 'Container started.',
-    'STATUS$WAITING_FOR_CLIENT': 'Waiting for client...',
-    'STATUS$SETTING_UP_WORKSPACE': 'Setting up workspace...',
-    'STATUS$SETTING_UP_GIT_HOOKS': 'Setting up git hooks...',
-}
 
 
 def _default_env_vars(sandbox_config: SandboxConfig) -> dict[str, str]:
@@ -95,10 +86,33 @@ def _default_env_vars(sandbox_config: SandboxConfig) -> dict[str, str]:
 
 
 class Runtime(FileEditRuntimeMixin):
-    """The runtime is how the agent interacts with the external environment.
-    This includes a bash sandbox, a browser, and filesystem interactions.
+    """Abstract base class for agent runtime environments.
 
-    sid is the session id, which is used to identify the current user session.
+    This is an extension point in OpenHands that allows applications to customize how
+    agents interact with the external environment. The runtime provides a sandbox with:
+    - Bash shell access
+    - Browser interaction
+    - Filesystem operations
+    - Git operations
+    - Environment variable management
+
+    Applications can substitute their own implementation by:
+    1. Creating a class that inherits from Runtime
+    2. Implementing all required methods
+    3. Setting the runtime name in configuration or using get_runtime_cls()
+
+    The class is instantiated via get_impl() in get_runtime_cls().
+
+    Built-in implementations include:
+    - DockerRuntime: Containerized environment using Docker
+    - E2BRuntime: Secure sandbox using E2B
+    - RemoteRuntime: Remote execution environment
+    - ModalRuntime: Scalable cloud environment using Modal
+    - LocalRuntime: Local execution for development
+    - DaytonaRuntime: Cloud development environment using Daytona
+
+    Args:
+        sid: Session ID that uniquely identifies the current user session
     """
 
     sid: str
@@ -106,6 +120,7 @@ class Runtime(FileEditRuntimeMixin):
     initial_env_vars: dict[str, str]
     attach_to_existing: bool
     status_callback: Callable[[str, str, str], None] | None
+    runtime_status: RuntimeStatus | None
     _runtime_initialized: bool = False
 
     def __init__(
@@ -169,6 +184,7 @@ class Runtime(FileEditRuntimeMixin):
 
         self.user_id = user_id
         self.git_provider_tokens = git_provider_tokens
+        self.runtime_status = None
 
     @property
     def runtime_initialized(self) -> bool:
@@ -197,11 +213,12 @@ class Runtime(FileEditRuntimeMixin):
         message = f'[runtime {self.sid}] {message}'
         getattr(logger, level)(message, stacklevel=2)
 
-    def send_status_message(self, message_id: str):
+    def set_runtime_status(self, runtime_status: RuntimeStatus):
         """Sends a status message if the callback function was provided."""
+        self.runtime_status = runtime_status
         if self.status_callback:
-            msg = STATUS_MESSAGES.get(message_id, '')
-            self.status_callback('info', message_id, msg)
+            msg_id: str = runtime_status.value  # type: ignore
+            self.status_callback('info', msg_id, runtime_status.message)
 
     def send_error_message(self, message_id: str, message: str):
         if self.status_callback:
@@ -491,7 +508,7 @@ class Runtime(FileEditRuntimeMixin):
                     'No repository selected. Initializing a new git repository in the workspace.'
                 )
                 action = CmdRunAction(
-                    command='git init',
+                    command=f'git init && git config --global --add safe.directory {self.workspace_root}'
                 )
                 self.run_action(action)
             else:
@@ -1042,6 +1059,9 @@ fi
         obs = self.run(CmdRunAction(command=command, is_static=True, cwd=cwd))
         exit_code = 0
         content = ''
+
+        if isinstance(obs, ErrorObservation):
+            exit_code = -1
 
         if hasattr(obs, 'exit_code'):
             exit_code = obs.exit_code

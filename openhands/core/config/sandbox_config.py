@@ -74,7 +74,10 @@ class SandboxConfig(BaseModel):
     runtime_startup_env_vars: dict[str, str] = Field(default_factory=dict)
     browsergym_eval_env: str | None = Field(default=None)
     platform: str | None = Field(default=None)
-    close_delay: int = Field(default=15)
+    close_delay: int = Field(
+        default=3600,
+        description='The delay in seconds before closing the sandbox after the agent is done.',
+    )
     remote_runtime_resource_factor: int = Field(default=1)
     enable_gpu: bool = Field(default=False)
     docker_runtime_kwargs: dict | None = Field(default=None)
