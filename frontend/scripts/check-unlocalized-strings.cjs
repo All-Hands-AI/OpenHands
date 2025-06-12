@@ -118,6 +118,9 @@ const EXCLUDED_TECHNICAL_STRINGS = [
   "search-api-key-input", // Input name for search API key
   "noopener,noreferrer", // Options for window.open
   ".openhands/microagents/", // Path to microagents directory
+  "STATUS$READY",
+  "STATUS$STOPPED",
+  "STATUS$ERROR",
 ];
 
 function isExcludedTechnicalString(str) {
