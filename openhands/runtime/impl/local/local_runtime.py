@@ -319,9 +319,10 @@ class LocalRuntime(ActionExecutionClient):
             # If no warm server is available, start a new one
             if not warm_server_available:
                 # Create a new server
-                server_info, api_url = self._create_server(
+                server_info, api_url = _create_server(
+                    config=self.config,
+                    plugins=self.plugins,
                     workspace_prefix=self.sid,
-                    is_warm_server=False,
                 )
 
                 # Set instance variables
@@ -380,7 +381,7 @@ class LocalRuntime(ActionExecutionClient):
                 f'Creating {num_to_create} additional warm servers to reach desired count',
             )
             for _ in range(num_to_create):
-                self._create_warm_server_in_background()
+                _create_warm_server_in_background(self.config, self.plugins)
 
     @classmethod
     def setup(cls, config: OpenHandsConfig):
@@ -393,9 +394,9 @@ class LocalRuntime(ActionExecutionClient):
         initial_num_warm_servers = int(os.getenv('INITIAL_NUM_WARM_SERVERS', '0'))
         # Initialize warm servers if needed
         if initial_num_warm_servers > 0 and len(_WARM_SERVERS) == 0:
-            runtime = LocalRuntime(config, EventStream('not-used', InMemoryFileStore()))
+            plugins = _get_plugins(config)
             for _ in range(initial_num_warm_servers):
-                runtime._create_warm_server_in_background()
+                _create_warm_server_in_background(config, plugins)
 
     @tenacity.retry(
         wait=tenacity.wait_fixed(2),
@@ -458,7 +459,7 @@ class LocalRuntime(ActionExecutionClient):
                         'info',
                         f'Creating a new warm server to maintain desired count of {desired_num_warm_servers}',
                     )
-                    self._create_warm_server_in_background()
+                    _create_warm_server_in_background(self.config, self.plugins)
 
                 return observation_from_dict(response.json())
             except httpx.NetworkError:
@@ -599,21 +600,9 @@ def _python_bin_path():
     return python_bin_path
 
 
-def _find_available_port(
-    self, port_range: tuple[int, int], max_attempts: int = 5
-) -> int:
-    port = port_range[1]
-    for _ in range(max_attempts):
-        port = find_available_tcp_port(port_range[0], port_range[1])
-        return port
-    return port
-
-
 def _create_server(
     config: OpenHandsConfig,
     plugins: list[PluginRequirement],
-    override_user_id: int | None,
-    override_username: str | None,
     workspace_prefix: str,
 ) -> tuple[ActionExecutionServerInfo, str]:
     logger.info(f'Creating a server')
@@ -625,21 +614,24 @@ def _create_server(
     workspace_mount_path = temp_workspace
 
     # Find available ports
-    execution_server_port = _find_available_port(EXECUTION_SERVER_PORT_RANGE)
+    execution_server_port = find_available_tcp_port(*EXECUTION_SERVER_PORT_RANGE)
     vscode_port = int(
         os.getenv('VSCODE_PORT')
-        or str(_find_available_port(VSCODE_PORT_RANGE))
+        or str(find_available_tcp_port(*VSCODE_PORT_RANGE))
     )
     app_ports = [
         int(
             os.getenv('APP_PORT_1')
-            or str(_find_available_port(APP_PORT_RANGE_1))
+            or str(find_available_tcp_port(*APP_PORT_RANGE_1))
         ),
         int(
             os.getenv('APP_PORT_2')
-            or str(_find_available_port(APP_PORT_RANGE_2))
+            or str(find_available_tcp_port(*APP_PORT_RANGE_2))
         ),
     ]
+
+    # Get user info
+    user_id, username = get_user_info()
 
     # Start the server process
     cmd = get_action_execution_server_startup_command(
@@ -647,8 +639,8 @@ def _create_server(
         plugins=plugins,
         app_config=config,
         python_prefix=['poetry', 'run'],
-        override_user_id=override_user_id,
-        override_username=override_username,
+        override_user_id=user_id,
+        override_username=username
     )
 
     logger.debug(f'Starting server with command: {cmd}')
@@ -732,17 +724,12 @@ def _create_server(
 def _create_warm_server(
     config: OpenHandsConfig,
     plugins: list[PluginRequirement],
-    override_user_id: int | None,
-    override_username: str | None,
-    workspace_prefix: str,
 ) -> None:
     """Create a warm server in the background."""
     try:
         server_info, api_url = _create_server(
             config=config,
             plugins=plugins,
-            override_user_id=override_user_id,
-            override_username=override_username,
             workspace_prefix='warm',
         )
 
@@ -795,10 +782,19 @@ def _create_warm_server(
 def _create_warm_server_in_background(
     config: OpenHandsConfig,
     plugins: list[PluginRequirement],
-    override_user_id: int | None,
-    override_username: str | None,
-    workspace_prefix: str,
 ) -> None:
     """Start a new thread to create a warm server."""
-    thread = threading.Thread(target=_create_warm_server, daemon=True)
+    thread = threading.Thread(target=_create_warm_server, daemon=True, args=(config, plugins))
     thread.start()
+
+
+def _get_plugins(config: OpenHandsConfig) -> list[PluginRequirement]:
+    from openhands.controller.agent import Agent
+    from openhands.llm.llm import LLM
+    agent_config = config.get_agent_config(config.default_agent)
+    llm = LLM(
+        config=config.get_llm_config_from_agent(config.default_agent),
+    )
+    agent = Agent.get_cls(config.default_agent)(llm, agent_config)
+    plugins = agent.sandbox_plugins
+    return plugins
