@@ -28,6 +28,7 @@ import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
 import { useWSErrorMessage } from "#/hooks/use-ws-error-message";
 import { ErrorMessageBanner } from "./error-message-banner";
 import { shouldRenderEvent } from "./event-content-helpers/should-render-event";
+import { ConversationSubscriptionsProvider } from "#/context/conversation-subscriptions-provider";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -38,7 +39,7 @@ function getEntryPoint(
   return "direct";
 }
 
-export function ChatInterface() {
+export function ChatInterfaceContent() {
   const { getErrorMessage } = useWSErrorMessage();
   const { send, isLoadingMessages, parsedEvents } = useWsClient();
   const { setOptimisticUserMessage, getOptimisticUserMessage } =
@@ -201,5 +202,13 @@ export function ChatInterface() {
         polarity={feedbackPolarity}
       />
     </div>
+  );
+}
+
+export function ChatInterface() {
+  return (
+    <ConversationSubscriptionsProvider>
+      <ChatInterfaceContent />
+    </ConversationSubscriptionsProvider>
   );
 }
