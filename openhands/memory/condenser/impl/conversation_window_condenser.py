@@ -106,18 +106,28 @@ class ConversationWindowCondenser(RollingCondenser):
         
         # 3. Handle dangling observations at the start of the slice
         # Find the first non-observation event in the slice
-        first_valid_event_index = slice_start_index
-        for i in range(slice_start_index, total_events):
-            if not isinstance(events[i], Observation):
-                first_valid_event_index = i
+        recent_events_slice = events[slice_start_index:]
+        first_valid_event_index_in_slice = 0
+        for i, event in enumerate(recent_events_slice):
+            if not isinstance(event, Observation):
+                first_valid_event_index_in_slice = i
                 break
         else:
-            # All events from slice_start_index onwards are observations
-            first_valid_event_index = total_events
+            # All events in the slice are observations
+            first_valid_event_index_in_slice = len(recent_events_slice)
         
-        if first_valid_event_index > slice_start_index:
+        # Check if all events in the recent slice are dangling observations
+        if first_valid_event_index_in_slice == len(recent_events_slice):
+            logger.warning(
+                'All recent events are dangling observations, which we truncate. This means the agent has only the essential first events. This should not happen.'
+            )
+        
+        # Calculate the actual index in the full events list
+        first_valid_event_index = slice_start_index + first_valid_event_index_in_slice
+        
+        if first_valid_event_index_in_slice > 0:
             logger.debug(
-                f'Removed {first_valid_event_index - slice_start_index} dangling observation(s) '
+                f'Removed {first_valid_event_index_in_slice} dangling observation(s) '
                 f'from the start of recent event slice.'
             )
         
