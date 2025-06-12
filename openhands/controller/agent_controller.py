@@ -369,6 +369,8 @@ class AgentController:
                 return True
             if isinstance(event, CondensationAction):
                 return True
+            if isinstance(event, CondensationRequestAction):
+                return True
             return False
         if isinstance(event, Observation):
             if (
