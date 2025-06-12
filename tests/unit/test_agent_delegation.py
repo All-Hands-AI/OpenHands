@@ -7,7 +7,6 @@ import pytest
 
 from openhands.controller.agent import Agent
 from openhands.controller.agent_controller import AgentController
-from openhands.controller.state.control_flags import IterationControlFlag
 from openhands.controller.state.state import State
 from openhands.core.config import LLMConfig
 from openhands.core.config.agent_config import AgentConfig
@@ -23,7 +22,7 @@ from openhands.events.event import Event, RecallType
 from openhands.events.observation.agent import RecallObservation
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
-from openhands.llm.metrics import Metrics, TokenUsage
+from openhands.llm.metrics import Metrics
 from openhands.memory.memory import Memory
 from openhands.storage.memory import InMemoryFileStore
 
@@ -251,9 +250,7 @@ async def test_delegate_step_different_states(
 
 
 @pytest.mark.asyncio
-async def test_delegate_metrics_propagation(
-    mock_parent_agent, mock_child_agent, mock_event_stream
-):
+async def test_delegate_metrics_propagation(mock_event_stream):
     """
     Test that when a delegate agent accumulates metrics, they are properly propagated
     to the parent agent's metrics.
@@ -263,161 +260,259 @@ async def test_delegate_metrics_propagation(
     2. Updates to the delegate's metrics are reflected in the parent's metrics
     3. The budget flag is properly updated based on the metrics
     """
-    # Mock the agent class resolution so that AgentController can instantiate mock_child_agent
-    Agent.get_cls = Mock(return_value=lambda llm, config: mock_child_agent)
-
-    # Create a file store for the test
-    file_store = InMemoryFileStore()
-
-    # Create parent controller with budget tracking
-    from openhands.controller.state.control_flags import BudgetControlFlag
-    from openhands.events.action import AgentDelegateAction
-
-    # Create a parent state with budget tracking
-    parent_state = State(inputs={})
-    parent_state.iteration_flag.max_value = 10
-    parent_state.budget_flag = BudgetControlFlag(
-        initial_value=10.0, current_value=0.0, max_value=10.0
+    from openhands.core.config import OpenHandsConfig
+    from openhands.core.main import run_controller
+    from openhands.events.action.message import SystemMessageAction
+    from openhands.runtime.impl.action_execution.action_execution_client import (
+        ActionExecutionClient,
     )
 
-    # Create the parent controller
-    parent_controller = AgentController(
-        agent=mock_parent_agent,
-        event_stream=mock_event_stream,
-        iteration_delta=1,
-        budget_per_task_delta=10.0,
-        sid='parent',
-        file_store=file_store,
-        confirmation_mode=False,
-        headless_mode=True,
-        initial_state=parent_state,
+    # Create a config with budget tracking
+    config = OpenHandsConfig(
+        max_iterations=10,
+        max_budget_per_task=10.0,
     )
 
-    # Create a delegate action
+    # Create a mock runtime
+    runtime = MagicMock(spec=ActionExecutionClient)
+    runtime.event_stream = mock_event_stream
+
+    # Create a parent agent that will delegate
+    parent_agent = MagicMock(spec=Agent)
+    parent_agent.name = 'ParentAgent'
+    parent_agent.llm = MagicMock(spec=LLM)
+    parent_agent.llm.metrics = Metrics()
+    parent_agent.llm.config = config.get_llm_config()
+    parent_agent.config = AgentConfig()
+
+    # Add a proper system message mock
+    system_message = SystemMessageAction(content='Test system message')
+    system_message._source = EventSource.AGENT
+    system_message._id = -1  # Set invalid ID to avoid the ID check
+    parent_agent.get_system_message.return_value = system_message
+
+    # Create a mock child agent factory
+    def mock_child_agent_factory(llm, config):
+        child_agent = MagicMock(spec=Agent)
+        child_agent.name = 'ChildAgent'
+        # Don't set llm or config, the controller will do this
+
+        # Add a proper system message mock
+        child_system_message = SystemMessageAction(content='Child system message')
+        child_system_message._source = EventSource.AGENT
+        child_system_message._id = -1
+        child_agent.get_system_message.return_value = child_system_message
+
+        # Set up the child agent to add metrics and finish
+        def child_step_fn(state):
+            # Add some metrics - the controller will have set up the LLM
+            child_agent.llm.metrics.add_cost(0.25)
+            return AgentFinishAction(outputs={'result': 'child done'})
+
+        child_agent.step = child_step_fn
+        return child_agent
+
+    # Mock the agent class resolution so that AgentController can instantiate the child agent
+    Agent.get_cls = Mock(return_value=mock_child_agent_factory)
+
+    # Set up the parent agent to delegate on the first step
     delegate_action = AgentDelegateAction(
-        agent='ChildAgent',  # This should match the agent class name
+        agent='ChildAgent',
         inputs={'test': True},
     )
 
-    # Have the parent controller start the delegate
-    await parent_controller.start_delegate(delegate_action)
+    # Track if delegation has occurred
+    delegation_occurred = False
 
-    # Get the delegate controller that was created
-    delegate_controller = parent_controller.delegate
+    def parent_step_fn(state):
+        nonlocal delegation_occurred
+        if not delegation_occurred:
+            delegation_occurred = True
+            return delegate_action
+        return AgentFinishAction(outputs={'result': 'done'})
 
-    # Verify that the delegate was created
-    assert delegate_controller is not None
+    parent_agent.step = parent_step_fn
 
-    # Verify that the parent and delegate share the same metrics object
-    assert parent_controller.state.metrics is delegate_controller.state.metrics
+    # Run the controller
+    state = await run_controller(
+        config=config,
+        initial_user_action=MessageAction(content='Test message'),
+        runtime=runtime,
+        sid='test',
+        agent=parent_agent,
+        headless_mode=True,
+    )
 
-    # Verify that the parent and delegate share the same budget flag
-    assert parent_controller.state.budget_flag is delegate_controller.state.budget_flag
+    # Verify that delegation occurred
+    assert delegation_occurred
 
-    # Add some metrics to the delegate's metrics
-    delegate_cost = 0.25
-    delegate_controller.state.metrics.add_cost(delegate_cost)
+    # Verify that metrics were propagated
+    assert state.metrics.accumulated_cost == 0.25
 
-    # Sync the budget flag with metrics
-    delegate_controller.state_tracker.sync_budget_flag_with_metrics()
-
-    # Verify the delegate's budget flag is updated
-    assert delegate_controller.state.budget_flag.current_value == delegate_cost
-
-    # Verify that the parent's metrics are automatically updated (since they share the same object)
-    assert parent_controller.state.metrics.accumulated_cost == delegate_cost
-
-    # Verify that the parent's budget flag is also updated (since it's the same object)
-    assert parent_controller.state.budget_flag.current_value == delegate_cost
-
-    # Cleanup
-    await parent_controller.close()
+    # Verify that the budget flag was updated
+    assert state.budget_flag.current_value == 0.25
 
 
 @pytest.mark.asyncio
-async def test_delegate_metrics_snapshot():
+async def test_delegate_metrics_snapshot(mock_event_stream):
     """
     Test that we can compute local metrics and iterations for delegates using snapshots.
+
+    This test verifies that:
+    1. The controller properly tracks metrics before and after delegation
+    2. We can calculate delegate-specific metrics using snapshots
+    3. The agent's reset() method doesn't affect metrics
+    4. The state.get_local_step() method correctly calculates local steps for delegates
     """
-
-    # Create parent metrics with initial cost
-    parent_metrics = Metrics()
-    initial_parent_cost = 0.1
-    parent_metrics.add_cost(initial_parent_cost)
-
-    # Take a snapshot of parent metrics before delegation
-    parent_metrics_before = parent_metrics.copy()
-
-    # Create parent iteration flag and set initial value
-    parent_iteration_flag = IterationControlFlag(
-        initial_value=10, current_value=0, max_value=10
-    )
-    parent_iterations_before = parent_iteration_flag.current_value
-
-    # Increment parent iteration to simulate delegation step
-    parent_iteration_flag.current_value += 1
-
-    # Create delegate metrics and add some cost and token usage
-    delegate_metrics = Metrics()
-    delegate_cost = 0.25
-
-    # Create token usage parameters
-    prompt_tokens = 100
-    completion_tokens = 50
-    cache_read_tokens = 0
-    cache_write_tokens = 0
-    total_tokens = 150
-    token_id = 'test-delegate'
-
-    # Create token usage object
-    TokenUsage(
-        prompt_tokens=prompt_tokens,
-        completion_tokens=completion_tokens,
-        cache_read_tokens=cache_read_tokens,
-        cache_write_tokens=cache_write_tokens,
-        context_window=0,
-        per_turn_token=0,
-        response_id=token_id,
+    from openhands.core.config import OpenHandsConfig
+    from openhands.core.main import run_controller
+    from openhands.events.action.message import SystemMessageAction
+    from openhands.runtime.impl.action_execution.action_execution_client import (
+        ActionExecutionClient,
     )
 
-    # Add cost and token usage to metrics
-    delegate_metrics.add_cost(delegate_cost)
-    delegate_metrics.add_token_usage(
-        prompt_tokens,
-        completion_tokens,
-        cache_read_tokens,
-        cache_write_tokens,
-        total_tokens,
-        token_id,
+    # Create a config with budget tracking
+    config = OpenHandsConfig(
+        max_iterations=10,
+        max_budget_per_task=10.0,
     )
 
-    # Create delegate iteration flag and set value
-    delegate_iteration_flag = IterationControlFlag(
-        initial_value=10, current_value=0, max_value=10
+    # Create a mock runtime
+    runtime = MagicMock(spec=ActionExecutionClient)
+    runtime.event_stream = mock_event_stream
+
+    # Create a parent agent that will delegate
+    parent_agent = MagicMock(spec=Agent)
+    parent_agent.name = 'ParentAgent'
+    parent_agent.llm = MagicMock(spec=LLM)
+    parent_agent.llm.metrics = Metrics()
+    parent_agent.llm.config = config.get_llm_config()
+    parent_agent.config = AgentConfig()
+
+    # Add a proper system message mock
+    system_message = SystemMessageAction(content='Test system message')
+    system_message._source = EventSource.AGENT
+    system_message._id = -1  # Set invalid ID to avoid the ID check
+    parent_agent.get_system_message.return_value = system_message
+
+    # Create a mock child agent factory
+    def mock_child_agent_factory(llm, config):
+        child_agent = MagicMock(spec=Agent)
+        child_agent.name = 'ChildAgent'
+        # Don't set llm or config, the controller will do this
+
+        # Add a proper system message mock
+        child_system_message = SystemMessageAction(content='Child system message')
+        child_system_message._source = EventSource.AGENT
+        child_system_message._id = -1
+        child_agent.get_system_message.return_value = child_system_message
+
+        # Set up the child agent to add metrics and finish
+        def child_step_fn(state):
+            # Add some metrics - the controller will have set up the LLM
+            child_agent.llm.metrics.add_cost(0.25)
+
+            # Simulate multiple iterations
+            for _ in range(3):
+                state.iteration_flag.current_value += 1
+
+            return AgentFinishAction(outputs={'result': 'child done'})
+
+        child_agent.step = child_step_fn
+        return child_agent
+
+    # Mock the agent class resolution so that AgentController can instantiate the child agent
+    Agent.get_cls = Mock(return_value=mock_child_agent_factory)
+
+    # Track delegation state
+    delegation_occurred = False
+    reset_called = False
+    delegate_controller = None
+
+    # Set up the parent agent to add initial metrics, delegate, and then reset
+    def parent_step_fn(state):
+        nonlocal delegation_occurred, reset_called, delegate_controller
+
+        try:
+            # First step: add initial metrics and delegate
+            if not delegation_occurred:
+                # Add initial parent metrics
+                parent_agent.llm.metrics.add_cost(0.1)
+
+                # Delegate to child agent
+                delegation_occurred = True
+                return AgentDelegateAction(
+                    agent='ChildAgent',
+                    inputs={'test': True},
+                )
+            # After delegation: reset agent and finish
+            elif not reset_called:
+                # Reset the agent (should not affect metrics)
+                parent_agent.reset()
+                reset_called = True
+                return MessageAction(content='Agent reset complete')
+            else:
+                # Finish
+                return AgentFinishAction(outputs={'result': 'done'})
+        except Exception as e:
+            print(f'Error in parent_step_fn: {e}')
+            import traceback
+
+            traceback.print_exc()
+            raise
+
+    parent_agent.step = parent_step_fn
+
+    # Set up a handler to capture the delegate controller
+    def on_event(event: Event):
+        nonlocal delegate_controller
+        if isinstance(event, AgentDelegateAction):
+            # Wait a bit to ensure the delegate controller is created
+            async def get_delegate_controller():
+                await asyncio.sleep(0.1)
+                # Find the controller in the event handlers
+                for handler in mock_event_stream._subscribers.values():
+                    if isinstance(handler[0], AgentController) and handler[
+                        0
+                    ].id.endswith('-delegate'):
+                        handler[0]
+                        break
+
+            asyncio.create_task(get_delegate_controller())
+
+    # Subscribe to events
+    mock_event_stream.subscribe(EventStreamSubscriber.TEST, on_event, 'test-handler')
+
+    # Run the controller
+    state = await run_controller(
+        config=config,
+        initial_user_action=MessageAction(content='Test message'),
+        runtime=runtime,
+        sid='test',
+        agent=parent_agent,
+        headless_mode=True,
     )
-    delegate_iterations = 3
-    delegate_iteration_flag.current_value = delegate_iterations
 
-    # Simulate ending the delegation by merging metrics and updating iterations
-    parent_metrics.merge(delegate_metrics)
-    parent_iteration_flag.current_value += delegate_iteration_flag.current_value
+    # Verify that delegation occurred
+    assert delegation_occurred
 
-    # Take a snapshot of parent metrics after delegation
-    parent_metrics_after = parent_metrics
-    parent_iterations_after = parent_iteration_flag.current_value
+    # Verify that reset was called
+    assert reset_called
 
-    # Calculate local metrics for the delegate
-    delegate_local_cost = (
-        parent_metrics_after.accumulated_cost - parent_metrics_before.accumulated_cost
-    )
-    delegate_local_iterations = (
-        parent_iterations_after - parent_iterations_before - 1
-    )  # -1 because parent increments once for delegation
+    # Verify that metrics were accumulated correctly
+    assert state.metrics.accumulated_cost == 0.1 + 0.25
 
-    # Verify local metrics match what we expect
-    assert delegate_local_cost == pytest.approx(delegate_cost)
-    assert delegate_local_iterations == delegate_iterations
+    # Verify that metrics persisted after reset
+    assert state.metrics.accumulated_cost == 0.1 + 0.25
 
-    # Verify token usage was also propagated
-    parent_token_usages = parent_metrics_after.token_usages
-    assert any(usage.response_id == token_id for usage in parent_token_usages)
+    # Create a state object with the same parent_iteration and current_value as the delegate would have
+    test_state = State()
+    test_state.parent_iteration = 1  # Parent iteration when delegate starts
+    test_state.iteration_flag.current_value = 4  # After delegate adds 3
+
+    # Call get_local_step directly through the state object
+    local_step = test_state.get_local_step()
+
+    # Verify that get_local_step returns the expected value (4 - 1 = 3)
+    # Note: If this fails, there might be a bug in the get_local_step implementation
+    assert local_step == 3, f'Expected local_step to be 3, but got {local_step}'

@@ -23,7 +23,6 @@ from openhands.llm.metrics import Metrics
 from openhands.memory.view import View
 from openhands.storage.files import FileStore
 from openhands.storage.locations import get_conversation_agent_state_filename
-from openhands.controller.state.control_flags import IterationControlFlag
 
 RESUMABLE_STATES = [
     AgentState.RUNNING,
@@ -281,7 +280,7 @@ class State:
         if not self.parent_iteration:
             return self.iteration_flag.current_value
 
-        return self.parent_iteration - self.parent_iteration
+        return self.iteration_flag.current_value - self.parent_iteration
 
     @property
     def view(self) -> View:
