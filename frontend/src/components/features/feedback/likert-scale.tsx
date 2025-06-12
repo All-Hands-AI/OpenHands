@@ -45,6 +45,7 @@ export function LikertScale({
 
   // If scrollContext is undefined, we're not inside a ScrollProvider
   const scrollToBottom = scrollContext?.scrollDomToBottom;
+  const autoScroll = scrollContext?.autoScroll;
 
   // Use our mutation hook
   const { mutate: submitConversationFeedback } =
@@ -106,8 +107,8 @@ export function LikertScale({
 
       setReasonTimeout(timeout);
 
-      // Scroll to bottom to show the reasons
-      if (scrollToBottom) {
+      // Only scroll to bottom if the user is already at the bottom (autoScroll is true)
+      if (scrollToBottom && autoScroll) {
         // Small delay to ensure the reasons are fully rendered
         setTimeout(() => {
           scrollToBottom();
@@ -150,25 +151,25 @@ export function LikertScale({
     [reasonTimeout],
   );
 
-  // Scroll to bottom when component mounts
+  // Scroll to bottom when component mounts, but only if user is already at the bottom
   useEffect(() => {
-    if (scrollToBottom && !isSubmitted) {
+    if (scrollToBottom && autoScroll && !isSubmitted) {
       // Small delay to ensure the component is fully rendered
       setTimeout(() => {
         scrollToBottom();
       }, 100);
     }
-  }, [scrollToBottom, isSubmitted]);
+  }, [scrollToBottom, autoScroll, isSubmitted]);
 
-  // Scroll to bottom when reasons are shown
+  // Scroll to bottom when reasons are shown, but only if user is already at the bottom
   useEffect(() => {
-    if (scrollToBottom && showReasons) {
+    if (scrollToBottom && autoScroll && showReasons) {
       // Small delay to ensure the reasons are fully rendered
       setTimeout(() => {
         scrollToBottom();
       }, 100);
     }
-  }, [scrollToBottom, showReasons]);
+  }, [scrollToBottom, autoScroll, showReasons]);
 
   // Helper function to get button class based on state
   const getButtonClass = (rating: number) => {
