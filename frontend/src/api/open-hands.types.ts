@@ -9,7 +9,6 @@ export interface SaveFileSuccessResponse {
 }
 
 export interface FileUploadSuccessResponse {
-  message: string;
   uploaded_files: string[];
   skipped_files: { name: string; reason: string }[];
 }

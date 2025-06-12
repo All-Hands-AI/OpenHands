@@ -14,6 +14,7 @@ const TOAST_OPTIONS: ToastOptions = {
 };
 
 export const displayErrorToast = (error: string) => {
+  console.log("error", error);
   toast.error(error, TOAST_OPTIONS);
 };
 

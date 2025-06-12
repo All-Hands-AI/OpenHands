@@ -29,6 +29,7 @@ import { useWSErrorMessage } from "#/hooks/use-ws-error-message";
 import { ErrorMessageBanner } from "./error-message-banner";
 import { shouldRenderEvent } from "./event-content-helpers/should-render-event";
 import { useUploadFiles } from "#/hooks/mutation/use-upload-files";
+import { FileUploadSuccessResponse } from "#/api/open-hands.types";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -93,17 +94,21 @@ export function ChatInterface() {
 
     const timestamp = new Date().toISOString();
 
-    const fileUrls =
+    const {
+      skipped_files: skippedFiles,
+      uploaded_files: uploadedFiles,
+    }: FileUploadSuccessResponse =
       files.length > 0
         ? await uploadFiles({ conversationId: params.conversationId!, files })
-        : [];
+        : { skipped_files: [], uploaded_files: [] };
 
-    const filePrompt = `${t("CHAT_INTERFACE$AUGMENTED_PROMPT_FILES_TITLE")}: ${fileUrls.join("\n\n")}`;
+    skippedFiles.forEach((f) => displayErrorToast(f.reason));
 
+    const filePrompt = `${t("CHAT_INTERFACE$AUGMENTED_PROMPT_FILES_TITLE")}: ${uploadedFiles.join("\n\n")}`;
     const prompt =
-      fileUrls.length > 0 ? `${content}\n\n${filePrompt}` : content;
+      uploadedFiles.length > 0 ? `${content}\n\n${filePrompt}` : content;
 
-    send(createChatMessage(prompt, imageUrls, fileUrls, timestamp));
+    send(createChatMessage(prompt, imageUrls, uploadedFiles, timestamp));
     setOptimisticUserMessage(content);
     setMessageToSend(null);
   };
