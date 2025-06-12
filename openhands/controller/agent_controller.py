@@ -452,7 +452,7 @@ class AgentController:
         )
 
         # TODO: these metrics come from the draft editor, and they get accumulated into controller's state metrics and the agent's llm metrics
-        # In the future, we should simplfy share the LLM between the draft editor and agent llm, instead of doing this syncing
+        # In the future, we should have a more principled way to sharing metrics across all LLM instances for a given conversation
         if observation.llm_metrics is not None:
             self.state_tracker.merge_metrics(observation.llm_metrics)
 
