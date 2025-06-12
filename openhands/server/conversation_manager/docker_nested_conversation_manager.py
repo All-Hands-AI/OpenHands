@@ -489,6 +489,7 @@ class DockerNestedConversationManager(ConversationManager):
         env_vars['WORKSPACE_BASE'] = '/workspace'
         env_vars['SANDBOX_CLOSE_DELAY'] = '0'
         env_vars['SKIP_DEPENDENCY_CHECK'] = '1'
+        env_vars['INITIAL_NUM_WARM_SERVERS'] = '1'
 
         # Set up mounted volume for conversation directory within workspace
         # TODO: Check if we are using the standard event store and file store
