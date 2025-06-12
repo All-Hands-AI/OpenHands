@@ -458,9 +458,6 @@ class TestHandleSettingsCommand:
         sandbox_mock.volumes = '/test:/container:rw'
         config.sandbox = sandbox_mock
 
-        # Set workspace_base
-        config.workspace_base = '/test/workspace'
-
         # Mock user selecting "Go back"
         mock_cli_confirm.return_value = 2
 

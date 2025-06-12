@@ -1,5 +1,3 @@
-import os
-
 from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.completion import FuzzyWordCompleter
 from prompt_toolkit.formatted_text import HTML
@@ -75,13 +73,11 @@ def display_settings(config: OpenHandsConfig) -> None:
         ]
     )
 
-    # Workspace settings
-    workspace_base = config.workspace_base or os.getcwd()
+    # Sandbox settings
     volumes = config.sandbox.volumes or 'Not Set'
 
     labels_and_values.extend(
         [
-            ('   Workspace Base', workspace_base),
             ('   Volumes', volumes),
         ]
     )
@@ -319,47 +315,17 @@ async def modify_llm_settings_basic(
 async def modify_workspace_settings(
     config: OpenHandsConfig, settings_store: FileSettingsStore
 ) -> None:
-    """Configure workspace settings via CLI."""
+    """Configure sandbox volume settings via CLI."""
     session = PromptSession(key_bindings=kb_cancel())
 
-    # Display current workspace settings
-    workspace_base = config.workspace_base or os.getcwd()
+    # Display current volume settings
     volumes = config.sandbox.volumes or 'Not Set'
 
-    print_formatted_text(
-        HTML(f'\n<grey>Current workspace base: </grey><green>{workspace_base}</green>')
-    )
     print_formatted_text(
         HTML(f'<grey>Current volumes: </grey><green>{volumes}</green>')
     )
 
     try:
-        # Ask if user wants to change workspace base
-        change_workspace = (
-            cli_confirm(
-                'Do you want to change the workspace base directory?',
-                ['Yes, change', 'No, keep current'],
-            )
-            == 0
-        )
-
-        if change_workspace:
-            new_workspace = await get_validated_input(
-                session,
-                '(Step 1/2) Enter new workspace base directory (CTRL-c to cancel): ',
-                error_message='Workspace base directory cannot be empty',
-            )
-
-            # Validate that the directory exists
-            if not os.path.isdir(new_workspace):
-                print_formatted_text(
-                    HTML(
-                        f'<grey>Warning: Directory {new_workspace} does not exist. It will be created when needed.</grey>'
-                    )
-                )
-
-            config.workspace_base = new_workspace
-
         # Ask if user wants to configure volumes
         configure_volumes = (
             cli_confirm(
@@ -379,7 +345,7 @@ async def modify_workspace_settings(
 
             new_volumes = await get_validated_input(
                 session,
-                '(Step 2/2) Enter volume mounts (CTRL-c to cancel): ',
+                'Enter volume mounts (CTRL-c to cancel): ',
                 error_message='Invalid volume format',
             )
 
@@ -412,8 +378,7 @@ async def modify_workspace_settings(
 
             config.sandbox.volumes = new_volumes
 
-        # Save settings if changes were made
-        if change_workspace or configure_volumes:
+            # Save settings if changes were made
             save_settings = save_settings_confirmation()
 
             if save_settings:
@@ -421,8 +386,7 @@ async def modify_workspace_settings(
                 if not settings:
                     settings = Settings()
 
-                # Update workspace settings
-                settings.workspace_base = config.workspace_base
+                # Update sandbox volume settings
                 settings.sandbox_volumes = config.sandbox.volumes
 
                 # Update sandbox settings in the config

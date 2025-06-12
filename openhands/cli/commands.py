@@ -176,7 +176,7 @@ async def handle_settings_command(
         [
             'Basic',
             'Advanced',
-            'Workspace',
+            'Sandbox Volumes',
             'Go back',
         ],
     )

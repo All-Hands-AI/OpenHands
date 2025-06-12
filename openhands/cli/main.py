@@ -392,9 +392,7 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
             settings.confirmation_mode if settings.confirmation_mode else False
         )
 
-        # Load workspace settings if available
-        if settings.workspace_base and not args.workspace_base:
-            config.workspace_base = settings.workspace_base
+        # Load sandbox volume settings if available
         if settings.sandbox_volumes and not config.sandbox.volumes:
             config.sandbox.volumes = settings.sandbox_volumes
 
