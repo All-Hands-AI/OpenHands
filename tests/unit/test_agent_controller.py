@@ -1543,9 +1543,15 @@ async def test_openrouter_context_window_exceeded_error(
             self.has_errored = False
             self.index = 0
             self.views = []
+            self.condenser = ConversationWindowCondenser()
 
         def step(self, state: State):
-            self.views.append(state.view)
+            match self.condenser.condense(state.view):
+                case View() as view:
+                    self.views.append(view)
+                case Condensation(action=action):
+                    self.views.append(state.view)
+                    return action
 
             # Wait until the right step to throw the error, and make sure we
             # only throw it once.
