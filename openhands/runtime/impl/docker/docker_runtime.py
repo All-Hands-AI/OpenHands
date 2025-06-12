@@ -509,7 +509,7 @@ class DockerRuntime(ActionExecutionClient):
             return f'http://localhost:{self._vscode_port}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
 
         dynamic_portname = self.convert_port_to_string()
-        vscode_url = f'http://openhands-code-{dynamic_portname}.{domain}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        vscode_url = f'https://openhands-code-{dynamic_portname}.{domain}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
         return vscode_url
 
     @property
