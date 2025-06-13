@@ -1,5 +1,6 @@
 from openhands.core.config import LLMConfig
 from openhands.integrations.provider import ProviderType
+from openhands.resolver.interfaces.bitbucket import BitbucketIssueHandler
 from openhands.resolver.interfaces.github import GithubIssueHandler, GithubPRHandler
 from openhands.resolver.interfaces.gitlab import GitlabIssueHandler, GitlabPRHandler
 from openhands.resolver.interfaces.issue_definitions import (
@@ -42,7 +43,7 @@ class IssueHandlerFactory:
                     ),
                     self.llm_config,
                 )
-            else:  # platform == Platform.GITLAB
+            elif self.platform == ProviderType.GITLAB:
                 return ServiceContextIssue(
                     GitlabIssueHandler(
                         self.owner,
@@ -53,6 +54,19 @@ class IssueHandlerFactory:
                     ),
                     self.llm_config,
                 )
+            elif self.platform == ProviderType.BITBUCKET:
+                return ServiceContextIssue(
+                    BitbucketIssueHandler(
+                        self.owner,
+                        self.repo,
+                        self.token,
+                        self.username,
+                        self.base_domain,
+                    ),
+                    self.llm_config,
+                )
+            else:
+                raise ValueError(f'Unsupported platform: {self.platform}')
         elif self.issue_type == 'pr':
             if self.platform == ProviderType.GITHUB:
                 return ServiceContextPR(
@@ -65,7 +79,7 @@ class IssueHandlerFactory:
                     ),
                     self.llm_config,
                 )
-            else:  # platform == Platform.GITLAB
+            elif self.platform == ProviderType.GITLAB:
                 return ServiceContextPR(
                     GitlabPRHandler(
                         self.owner,
@@ -76,5 +90,18 @@ class IssueHandlerFactory:
                     ),
                     self.llm_config,
                 )
+            elif self.platform == ProviderType.BITBUCKET:
+                return ServiceContextPR(
+                    BitbucketIssueHandler(  # Using BitbucketIssueHandler for PRs as well
+                        self.owner,
+                        self.repo,
+                        self.token,
+                        self.username,
+                        self.base_domain,
+                    ),
+                    self.llm_config,
+                )
+            else:
+                raise ValueError(f'Unsupported platform: {self.platform}')
         else:
             raise ValueError(f'Invalid issue type: {self.issue_type}')

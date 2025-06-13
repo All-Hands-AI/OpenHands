@@ -235,3 +235,49 @@ class BitbucketService(BaseGitService, GitService):
             )
 
         return branches
+
+    async def create_pr(
+        self,
+        repo_name: str,
+        source_branch: str,
+        target_branch: str,
+        title: str,
+        body: str | None = None,
+    ) -> str:
+        """
+        Creates a pull request in Bitbucket
+
+        Args:
+            repo_name: The repository name in the format "workspace/repo"
+            source_branch: The source branch name
+            target_branch: The target branch name
+            title: The title of the pull request
+            body: The description of the pull request
+
+        Returns:
+            The URL of the created pull request
+        """
+        # Extract owner and repo from the repository string (e.g., "owner/repo")
+        parts = repo_name.split('/')
+        if len(parts) < 2:
+            raise ValueError(f'Invalid repository name: {repo_name}')
+
+        owner = parts[-2]
+        repo = parts[-1]
+
+        url = f'{self.BASE_URL}/repositories/{owner}/{repo}/pullrequests'
+
+        payload = {
+            'title': title,
+            'description': body or '',
+            'source': {'branch': {'name': source_branch}},
+            'destination': {'branch': {'name': target_branch}},
+            'close_source_branch': False,
+        }
+
+        data, _ = await self._make_request(
+            url=url, params=payload, method=RequestMethod.POST
+        )
+
+        # Return the URL to the pull request
+        return data.get('links', {}).get('html', {}).get('href', '')
