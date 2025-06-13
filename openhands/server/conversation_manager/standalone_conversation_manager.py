@@ -131,21 +131,6 @@ class StandaloneConversationManager(ConversationManager):
         )
         await self.sio.enter_room(connection_id, ROOM_KEY.format(sid=sid))
         self._local_connection_id_to_session_id[connection_id] = sid
-        conversation_store = await self._get_conversation_store(user_id)
-        try:
-            await conversation_store.get_metadata(sid)
-        except FileNotFoundError:
-            logger.info(
-                f'Creating new conversation metadata for {sid}', extra={'session_id': sid}
-            )
-            await conversation_store.save_metadata(
-                ConversationMetadata(
-                    conversation_id=sid,
-                    user_id=user_id,
-                    title=get_default_conversation_title(sid),
-                    last_updated_at=datetime.now(timezone.utc),
-                )
-            )
         agent_loop_info = await self.maybe_start_agent_loop(sid, settings, user_id)
         return agent_loop_info
 
