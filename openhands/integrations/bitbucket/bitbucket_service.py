@@ -123,9 +123,21 @@ class BitbucketService(BaseGitService, GitService):
         """Get the authenticated user's information"""
         url = f'{self.BASE_URL}/user'
         data, _ = await self._make_request(url)
+        
+        # Convert account_id to an integer if possible, or use a default value
+        account_id = data.get('account_id', '0')
+        try:
+            # Try to extract a numeric part from the account_id string
+            # For example, from "712020:d41205d7-cb10-4142-bdd0-9778094e4710"
+            # we would extract 712020
+            numeric_part = account_id.split(':')[0]
+            id_value = int(numeric_part)
+        except (ValueError, IndexError):
+            # If conversion fails, use a default value
+            id_value = 0
 
         return User(
-            id=data.get('account_id', 0),
+            id=id_value,
             login=data.get('username', ''),
             avatar_url=data.get('links', {}).get('avatar', {}).get('href', ''),
             name=data.get('display_name'),
