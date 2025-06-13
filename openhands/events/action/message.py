@@ -9,6 +9,7 @@ from openhands.events.action.action import Action, ActionSecurityRisk
 @dataclass
 class MessageAction(Action):
     content: str
+    file_urls: list[str] | None = None
     image_urls: list[str] | None = None
     wait_for_response: bool = False
     action: str = ActionType.MESSAGE
@@ -33,6 +34,9 @@ class MessageAction(Action):
         if self.image_urls:
             for url in self.image_urls:
                 ret += f'\nIMAGE_URL: {url}'
+        if self.file_urls:
+            for url in self.file_urls:
+                ret += f'\nFILE_URL: {url}'
         return ret
 
 

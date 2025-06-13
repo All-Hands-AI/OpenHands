@@ -15,7 +15,12 @@ export function ImagePreview({
   return (
     <div data-testid="image-preview" className="relative w-fit shrink-0">
       <Thumbnail src={src} size={size} />
-      {onRemove && <RemoveButton onClick={onRemove} />}
+      {onRemove && (
+        <RemoveButton
+          onClick={onRemove}
+          className="absolute right-[3px] top-[3px]"
+        />
+      )}
     </div>
   );
 }
