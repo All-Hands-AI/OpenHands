@@ -16,6 +16,10 @@ description: When using a Local LLM, OpenHands may have limited functionality. I
 
 We recommend using [LMStudio](https://lmstudio.ai/) for serving these models locally.
 
+<Note>
+**Important**: Devstral models use Jinja templates for system prompts, which are not supported by Ollama. If you want to use Devstral, you must use LM Studio, vLLM, SGLang, or another compatible server that supports Jinja templates. Using Devstral with Ollama will result in poor performance as the system prompt will not be properly applied.
+</Note>
+
 1. Download [LM Studio](https://lmstudio.ai/) and install it
 
 2. Download the model:
@@ -158,3 +162,7 @@ Once OpenHands is running, you'll need to set the following in the OpenHands UI 
 - `Custom Model` to `openai/<served-model-name>` (e.g. `openai/openhands-lm-32b-v0.1`)
 - `Base URL` to `http://host.docker.internal:8000`
 - `API key` to the same string you set when serving the model (e.g. `mykey`)
+
+<Note>
+**API Key for Local LLMs**: When using local LLM servers (including Ollama, LM Studio, vLLM, etc.), you can enter any value as the API key if your server doesn't require authentication. The OpenHands UI requires an API key to be entered, but for local servers without authentication, you can use any placeholder value like `local-key`, `test123`, or `dummy`.
+</Note>
