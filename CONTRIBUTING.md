@@ -13,7 +13,7 @@ To understand the codebase, please refer to the README in each module:
 
 ## Setting up Your Development Environment
 
-We have a separate doc [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md) that tells you how to set up a development workflow.
+We have a separate doc [DEVELOPMENT.md](https://github.com/All-Hands-AI/OpenHands/blob/main/DEVELOPMENT.md) that tells you how to set up a development workflow.
 
 ## How Can I Contribute?
 

@@ -23,7 +23,7 @@ Build and run in Docker ...
 root@93fc0005fcd2:/app#
 ```
 
-You may now proceed with the normal [build and run](../../Development.md) workflow as if you were on the host.
+You may now proceed with the normal [build and run](../../DEVELOPMENT.md) workflow as if you were on the host.
 
 ## Make changes
 
