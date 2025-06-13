@@ -1,11 +1,11 @@
 import os
 import subprocess
 import tempfile
+from unittest.mock import ANY
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.integrations.service_types import ProviderType
 from openhands.resolver.interfaces.issue import Issue
-from openhands.resolver.send_pull_request import make_commit, send_pull_request_legacy
+from openhands.resolver.send_pull_request import make_commit, send_pull_request
 
 
 def test_commit_message_with_quotes():
@@ -156,11 +156,16 @@ def test_pr_title_with_quotes(monkeypatch):
         # Try to send a PR - this will fail if the title is incorrectly escaped
         logger.info('Sending PR...')
 
-        send_pull_request_legacy(
-            issue=issue,
+        send_pull_request(
+            provider='github',
+            owner=issue.owner,
+            repo=issue.repo,
+            title=f'Fix issue #{issue.number}: {issue.title}',
+            body=ANY,
+            head='',
+            base='',
             token='dummy-token',
             username='test-user',
-            platform=ProviderType.GITHUB,
             patch_dir=temp_dir,
             pr_type='ready',
         )

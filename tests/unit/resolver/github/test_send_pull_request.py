@@ -16,7 +16,7 @@ from openhands.resolver.send_pull_request import (
     main,
     make_commit,
     process_single_issue,
-    send_pull_request_legacy,
+    send_pull_request,
     update_existing_pull_request,
 )
 
@@ -348,7 +348,7 @@ def test_update_existing_pull_request(
 @patch('subprocess.run')
 @patch('httpx.post')
 @patch('httpx.get')
-def test_send_pull_request_legacy(
+def test_send_pull_request(
     mock_get,
     mock_post,
     mock_run,
@@ -384,11 +384,16 @@ def test_send_pull_request_legacy(
     ]
 
     # Call the function
-    result = send_pull_request_legacy(
-        issue=mock_issue,
+    result = send_pull_request(
+        provider='github',
+        owner=mock_issue.owner,
+        repo=mock_issue.repo,
+        title=f'Fix issue #{mock_issue.number}: {mock_issue.title}',
+        body=ANY,
+        head='',
+        base='',
         token='test-token',
         username='test-user',
-        platform=ProviderType.GITHUB,
         patch_dir=repo_path,
         pr_type=pr_type,
         target_branch=target_branch,
@@ -474,11 +479,16 @@ def test_send_pull_request_with_reviewer(
     ]
 
     # Call the function with reviewer
-    result = send_pull_request_legacy(
-        issue=mock_issue,
+    result = send_pull_request(
+        provider='github',
+        owner=mock_issue.owner,
+        repo=mock_issue.repo,
+        title=f'Fix issue #{mock_issue.number}: {mock_issue.title}',
+        body=ANY,
+        head='',
+        base='',
         token='test-token',
         username='test-user',
-        platform=ProviderType.GITHUB,
         patch_dir=repo_path,
         pr_type='ready',
         reviewer=reviewer,
@@ -532,11 +542,16 @@ def test_send_pull_request_target_branch_with_fork(
     ]
 
     # Call the function with fork_owner and target_branch
-    send_pull_request_legacy(
-        issue=mock_issue,
+    send_pull_request(
+        provider='github',
+        owner=mock_issue.owner,
+        repo=mock_issue.repo,
+        title=f'Fix issue #{mock_issue.number}: {mock_issue.title}',
+        body=ANY,
+        head='',
+        base='',
         token='test-token',
         username='test-user',
-        platform=ProviderType.GITHUB,
         patch_dir=repo_path,
         pr_type='ready',
         fork_owner=fork_owner,
@@ -596,11 +611,16 @@ def test_send_pull_request_target_branch_with_additional_message(
     ]
 
     # Call the function with target_branch and additional_message
-    send_pull_request_legacy(
-        issue=mock_issue,
+    send_pull_request(
+        provider='github',
+        owner=mock_issue.owner,
+        repo=mock_issue.repo,
+        title=f'Fix issue #{mock_issue.number}: {mock_issue.title}',
+        body=ANY,
+        head='',
+        base='',
         token='test-token',
         username='test-user',
-        platform=ProviderType.GITHUB,
         patch_dir=repo_path,
         pr_type='ready',
         target_branch=target_branch,
@@ -635,11 +655,16 @@ def test_send_pull_request_invalid_target_branch(
     with pytest.raises(
         ValueError, match='Target branch nonexistent-branch does not exist'
     ):
-        send_pull_request_legacy(
-            issue=mock_issue,
+        send_pull_request(
+            provider='github',
+            owner=mock_issue.owner,
+            repo=mock_issue.repo,
+            title=f'Fix issue #{mock_issue.number}: {mock_issue.title}',
+            body=ANY,
+            head='',
+            base='',
             token='test-token',
             username='test-user',
-            platform=ProviderType.GITHUB,
             patch_dir=repo_path,
             pr_type='ready',
             target_branch='nonexistent-branch',
@@ -670,11 +695,16 @@ def test_send_pull_request_git_push_failure(
     with pytest.raises(
         RuntimeError, match='Failed to push changes to the remote repository'
     ):
-        send_pull_request_legacy(
-            issue=mock_issue,
+        send_pull_request(
+            provider='github',
+            owner=mock_issue.owner,
+            repo=mock_issue.repo,
+            title=f'Fix issue #{mock_issue.number}: {mock_issue.title}',
+            body=ANY,
+            head='',
+            base='',
             token='test-token',
             username='test-user',
-            platform=ProviderType.GITHUB,
             patch_dir=repo_path,
             pr_type='ready',
         )
@@ -730,11 +760,16 @@ def test_send_pull_request_permission_error(
     with pytest.raises(
         RuntimeError, match='Failed to create pull request due to missing permissions.'
     ):
-        send_pull_request_legacy(
-            issue=mock_issue,
+        send_pull_request(
+            provider='github',
+            owner=mock_issue.owner,
+            repo=mock_issue.repo,
+            title=f'Fix issue #{mock_issue.number}: {mock_issue.title}',
+            body=ANY,
+            head='',
+            base='',
             token='test-token',
             username='test-user',
-            platform=ProviderType.GITHUB,
             patch_dir=repo_path,
             pr_type='ready',
         )
@@ -890,7 +925,7 @@ def test_process_single_pr_update(
 
 @patch('openhands.resolver.send_pull_request.initialize_repo')
 @patch('openhands.resolver.send_pull_request.apply_patch')
-@patch('openhands.resolver.send_pull_request.send_pull_request_legacy')
+@patch('openhands.resolver.send_pull_request.send_pull_request')
 @patch('openhands.resolver.send_pull_request.make_commit')
 def test_process_single_issue(
     mock_make_commit,
@@ -972,7 +1007,7 @@ def test_process_single_issue(
 
 @patch('openhands.resolver.send_pull_request.initialize_repo')
 @patch('openhands.resolver.send_pull_request.apply_patch')
-@patch('openhands.resolver.send_pull_request.send_pull_request_legacy')
+@patch('openhands.resolver.send_pull_request.send_pull_request')
 @patch('openhands.resolver.send_pull_request.make_commit')
 def test_process_single_issue_unsuccessful(
     mock_make_commit,
@@ -1050,11 +1085,16 @@ def test_send_pull_request_branch_naming(
     ]
 
     # Call the function
-    result = send_pull_request_legacy(
-        issue=mock_issue,
+    result = send_pull_request(
+        provider='github',
+        owner=mock_issue.owner,
+        repo=mock_issue.repo,
+        title=f'Fix issue #{mock_issue.number}: {mock_issue.title}',
+        body=ANY,
+        head='',
+        base='',
         token='test-token',
         username='test-user',
-        platform=ProviderType.GITHUB,
         patch_dir=repo_path,
         pr_type='branch',
     )
