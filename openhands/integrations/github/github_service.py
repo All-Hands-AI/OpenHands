@@ -39,6 +39,7 @@ class GitHubService(BaseGitService, GitService):
 
     The class is instantiated via get_impl() in openhands.server.shared.py.
     """
+
     BASE_URL = 'https://api.github.com'
     token: SecretStr = SecretStr('')
     refresh = False
@@ -60,6 +61,9 @@ class GitHubService(BaseGitService, GitService):
 
         if base_domain and base_domain != 'github.com':
             self.BASE_URL = f'https://{base_domain}/api/v3'
+            logger.info(f'Using custom GitHub base URL: {self.BASE_URL}')
+        else:
+            logger.info(f'Using default GitHub base URL: {self.BASE_URL}')
 
         self.external_auth_id = external_auth_id
         self.external_auth_token = external_auth_token
@@ -143,8 +147,26 @@ class GitHubService(BaseGitService, GitService):
     async def verify_access(self) -> bool:
         """Verify if the token is valid by making a simple request."""
         url = f'{self.BASE_URL}'
-        await self._make_request(url)
-        return True
+        logger.info(f'Verifying GitHub access with URL: {url}')
+        try:
+            await self._make_request(url)
+            logger.info(f'Successfully verified GitHub access to {url}')
+            return True
+        except httpx.HTTPStatusError as e:
+            logger.warning(
+                f'HTTP status error verifying GitHub access to {url}: {e.response.status_code} - {e.response.reason_phrase}'
+            )
+            if hasattr(e.response, 'text'):
+                logger.warning(f'Response content: {e.response.text}')
+            raise
+        except httpx.HTTPError as e:
+            logger.warning(
+                f'HTTP error verifying GitHub access to {url}: {type(e).__name__} - {str(e)}'
+            )
+            raise
+        except Exception as e:
+            logger.warning(f'Failed to verify GitHub access to {url}: {e}')
+            raise
 
     async def _fetch_paginated_repos(
         self, url: str, params: dict, max_repos: int, extract_key: str | None = None
