@@ -6,7 +6,7 @@ import re
 from ruamel.yaml import YAML
 from openhands.core.logger import openhands_logger as logger
 
-evaluation_path = "evaluation/benchmarks/"  
+evaluation_path = "evaluation/benchmarks/"
 
 def check_config_vbackup(path):
     vbackup = os.path.join(path, "config_vbackup.toml")
@@ -130,4 +130,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

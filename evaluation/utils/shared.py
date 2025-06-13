@@ -7,12 +7,12 @@ import signal
 import subprocess
 import time
 import traceback
-import toml
 from contextlib import contextmanager
 from inspect import signature
 from typing import Any, Awaitable, Callable, TextIO
 
 import pandas as pd
+import toml
 from pydantic import BaseModel
 from tqdm import tqdm
 
@@ -688,7 +688,10 @@ def get_default_sandbox_config_for_eval() -> SandboxConfig:
         remote_runtime_class='sysbox',
     )
 
-def filter_dataset(dataset: pd.DataFrame, filter_column: str, run_infer_path) -> pd.DataFrame:
+
+def filter_dataset(
+    dataset: pd.DataFrame, filter_column: str, run_infer_path
+) -> pd.DataFrame:
     file_path = os.path.join(run_infer_path, 'config.toml')
     if os.path.exists(file_path):
         with open(file_path, 'r') as file:
