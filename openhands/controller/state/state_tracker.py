@@ -266,6 +266,17 @@ class StateTracker:
             self.state.budget_flag.current_value = self.state.metrics.accumulated_cost
 
     def merge_metrics(self, metrics: Metrics):
+        """
+            Merges metrics with the state metrics
+
+            NOTE: this should be refactored in the future. We should have services (draft llm, title autocomplete, condenser, etc)
+            use their own LLMs, but the metrics object should be shared. This way we have one source of truth for accumulated costs from
+            all services
+
+            This would prevent having fragmented stores for metrics, and we don't have the burden of deciding where and how to store them
+            if we decide introduce more specialized services that require llm completions
+
+        """
         self.state.metrics.merge(metrics)
         if self.state.budget_flag:
             self.state.budget_flag.current_value = self.state.metrics.accumulated_cost
