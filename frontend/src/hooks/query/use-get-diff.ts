@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import OpenHands from "#/api/open-hands";
 import { GitChangeStatus } from "#/api/open-hands.types";
-import { useConversation } from "#/context/conversation-context";
+import { useConversationId } from "#/hooks/use-conversation-id";
 
 type UseGetDiffConfig = {
   filePath: string;
@@ -10,7 +10,7 @@ type UseGetDiffConfig = {
 };
 
 export const useGitDiff = (config: UseGetDiffConfig) => {
-  const { conversationId } = useConversation();
+  const { conversationId } = useConversationId();
 
   return useQuery({
     queryKey: ["file_diff", conversationId, config.filePath, config.type],

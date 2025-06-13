@@ -467,7 +467,7 @@ def update_existing_pull_request(
                 comment_id = issue.thread_ids[count]
                 handler.reply_to_comment(issue.number, comment_id, reply_comment)
         except (json.JSONDecodeError, TypeError):
-            msg = f'Error occured when replying to threads; success explanations {additional_message}'
+            msg = f'Error occurred when replying to threads; success explanations {additional_message}'
             handler.send_comment_msg(issue.number, msg)
 
     return pr_url

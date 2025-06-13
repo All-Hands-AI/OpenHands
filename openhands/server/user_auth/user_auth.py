@@ -21,13 +21,26 @@ class AuthType(Enum):
 
 
 class UserAuth(ABC):
-    """Extensible class encapsulating user Authentication"""
+    """Abstract base class for user authentication.
+
+    This is an extension point in OpenHands that allows applications to provide their own
+    authentication mechanisms. Applications can substitute their own implementation by:
+    1. Creating a class that inherits from UserAuth
+    2. Implementing all required methods
+    3. Setting server_config.user_auth_class to the fully qualified name of the class
+
+    The class is instantiated via get_impl() in openhands.server.shared.py.
+    """
 
     _settings: Settings | None
 
     @abstractmethod
     async def get_user_id(self) -> str | None:
         """Get the unique identifier for the current user"""
+
+    @abstractmethod
+    async def get_user_email(self) -> str | None:
+        """Get the email for the current user"""
 
     @abstractmethod
     async def get_access_token(self) -> SecretStr | None:
@@ -38,7 +51,7 @@ class UserAuth(ABC):
         """Get the provider tokens for the current user."""
 
     @abstractmethod
-    async def get_user_settings_store(self) -> SettingsStore | None:
+    async def get_user_settings_store(self) -> SettingsStore:
         """Get the settings store for the current user."""
 
     async def get_user_settings(self) -> Settings | None:
@@ -47,8 +60,6 @@ class UserAuth(ABC):
         if settings:
             return settings
         settings_store = await self.get_user_settings_store()
-        if settings_store is None:
-            return None
         settings = await settings_store.load()
         self._settings = settings
         return settings
@@ -71,11 +82,13 @@ class UserAuth(ABC):
 
 
 async def get_user_auth(request: Request) -> UserAuth:
-    user_auth = getattr(request.state, 'user_auth', None)
+    user_auth: UserAuth | None = getattr(request.state, 'user_auth', None)
     if user_auth:
         return user_auth
     impl_name = server_config.user_auth_class
     impl = get_impl(UserAuth, impl_name)
     user_auth = await impl.get_instance(request)
+    if user_auth is None:
+        raise ValueError('Failed to get user auth instance')
     request.state.user_auth = user_auth
     return user_auth

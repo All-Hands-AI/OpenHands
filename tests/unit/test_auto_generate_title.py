@@ -5,8 +5,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from openhands.core.config.app_config import AppConfig
 from openhands.core.config.llm_config import LLMConfig
+from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.events.action import MessageAction
 from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
@@ -190,7 +190,6 @@ async def test_update_conversation_with_title():
     # Create test conversation
     conversation_id = 'test-conversation'
     user_id = 'test-user'
-    github_user_id = 'test-github-user'
 
     # Create test settings
     settings = Settings(
@@ -208,7 +207,7 @@ async def test_update_conversation_with_title():
     # Create the conversation manager
     manager = StandaloneConversationManager(
         sio=sio,
-        config=AppConfig(),
+        config=OpenHandsConfig(),
         file_store=file_store,
         server_config=server_config,
         monitoring_listener=MonitoringListener(),
@@ -223,9 +222,7 @@ async def test_update_conversation_with_title():
         AsyncMock(return_value='Generated Title'),
     ):
         # Call the method
-        await manager._update_conversation_for_event(
-            user_id, github_user_id, conversation_id, settings
-        )
+        await manager._update_conversation_for_event(user_id, conversation_id, settings)
 
         # Verify the title was updated
         assert mock_metadata.title == 'Generated Title'

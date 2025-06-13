@@ -4,19 +4,20 @@ import posthog from "posthog-js";
 import { useTranslation } from "react-i18next";
 import { formatTimeDelta } from "#/utils/format-time-delta";
 import { ConversationRepoLink } from "./conversation-repo-link";
-import {
-  ProjectStatus,
-  ConversationStateIndicator,
-} from "./conversation-state-indicator";
+import { ConversationStateIndicator } from "./conversation-state-indicator";
 import { EllipsisButton } from "./ellipsis-button";
 import { ConversationCardContextMenu } from "./conversation-card-context-menu";
 import { SystemMessageModal } from "./system-message-modal";
+import { MicroagentsModal } from "./microagents-modal";
 import { cn } from "#/utils/utils";
 import { BaseModal } from "../../shared/modals/base-modal/base-modal";
 import { RootState } from "#/store";
 import { I18nKey } from "#/i18n/declaration";
-import { selectSystemMessage } from "#/state/chat-slice";
 import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
+import OpenHands from "#/api/open-hands";
+import { useWsClient } from "#/context/ws-client-provider";
+import { isSystemMessage } from "#/types/core/guards";
+import { ConversationStatus } from "#/types/conversation-status";
 
 interface ConversationCardProps {
   onClick?: () => void;
@@ -28,7 +29,7 @@ interface ConversationCardProps {
   selectedRepository: string | null;
   lastUpdatedAt: string; // ISO 8601
   createdAt?: string; // ISO 8601
-  status?: ProjectStatus;
+  conversationStatus?: ConversationStatus;
   variant?: "compact" | "default";
   conversationId?: string; // Optional conversation ID for VS Code URL
 }
@@ -47,20 +48,24 @@ export function ConversationCard({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   lastUpdatedAt,
   createdAt,
-  status = "STOPPED",
+  conversationStatus = "STOPPED",
   variant = "default",
   conversationId,
 }: ConversationCardProps) {
   const { t } = useTranslation();
+  const { parsedEvents } = useWsClient();
   const [contextMenuVisible, setContextMenuVisible] = React.useState(false);
   const [titleMode, setTitleMode] = React.useState<"view" | "edit">("view");
   const [metricsModalVisible, setMetricsModalVisible] = React.useState(false);
   const [systemModalVisible, setSystemModalVisible] = React.useState(false);
+  const [microagentsModalVisible, setMicroagentsModalVisible] =
+    React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
+
+  const systemMessage = parsedEvents.find(isSystemMessage);
 
   // Subscribe to metrics data from Redux store
   const metrics = useSelector((state: RootState) => state.metrics);
-  const systemMessage = useSelector(selectSystemMessage);
 
   const handleBlur = () => {
     if (inputRef.current?.value) {
@@ -112,11 +117,7 @@ export function ConversationCard({
     // Fetch the VS Code URL from the API
     if (conversationId) {
       try {
-        const response = await fetch(
-          `/api/conversations/${conversationId}/vscode-url`,
-        );
-        const data = await response.json();
-
+        const data = await OpenHands.getVSCodeUrl(conversationId);
         if (data.vscode_url) {
           const transformedUrl = transformVSCodeUrl(data.vscode_url);
           if (transformedUrl) {
@@ -140,6 +141,13 @@ export function ConversationCard({
   const handleShowAgentTools = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     setSystemModalVisible(true);
+  };
+
+  const handleShowMicroagents = (
+    event: React.MouseEvent<HTMLButtonElement>,
+  ) => {
+    event.stopPropagation();
+    setMicroagentsModalVisible(true);
   };
 
   React.useEffect(() => {
@@ -196,7 +204,9 @@ export function ConversationCard({
           </div>
 
           <div className="flex items-center">
-            <ConversationStateIndicator status={status} />
+            <ConversationStateIndicator
+              conversationStatus={conversationStatus}
+            />
             {hasContextMenu && (
               <div className="pl-2">
                 <EllipsisButton
@@ -223,6 +233,11 @@ export function ConversationCard({
                   onShowAgentTools={
                     showOptions && systemMessage
                       ? handleShowAgentTools
+                      : undefined
+                  }
+                  onShowMicroagents={
+                    showOptions && conversationId
+                      ? handleShowMicroagents
                       : undefined
                   }
                   position={variant === "compact" ? "top" : "bottom"}
@@ -365,8 +380,15 @@ export function ConversationCard({
       <SystemMessageModal
         isOpen={systemModalVisible}
         onClose={() => setSystemModalVisible(false)}
-        systemMessage={systemMessage}
+        systemMessage={systemMessage ? systemMessage.args : null}
       />
+
+      {microagentsModalVisible && (
+        <MicroagentsModal
+          onClose={() => setMicroagentsModalVisible(false)}
+          conversationId={conversationId}
+        />
+      )}
     </>
   );
 }

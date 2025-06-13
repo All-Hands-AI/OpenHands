@@ -28,10 +28,10 @@ export function HomeHeader() {
           testId="header-launch-button"
           variant="primary"
           type="button"
-          onClick={() => createConversation({ conversation_trigger: "gui" })}
+          onClick={() => createConversation({})}
           isDisabled={isCreatingConversation}
         >
-          {!isCreatingConversation && "Launch from Scratch"}
+          {!isCreatingConversation && t("HOME$LAUNCH_FROM_SCRATCH")}
           {isCreatingConversation && t("HOME$LOADING")}
         </BrandButton>
       </div>
@@ -43,12 +43,12 @@ export function HomeHeader() {
         <p className="text-sm">
           {t("HOME$NOT_SURE_HOW_TO_START")}{" "}
           <a
-            href="https://docs.all-hands.dev/modules/usage/getting-started"
+            href="https://docs.all-hands.dev/usage/getting-started"
             target="_blank"
             rel="noopener noreferrer"
             className="underline underline-offset-2"
           >
-            Read this
+            {t("HOME$READ_THIS")}
           </a>
         </p>
       </div>

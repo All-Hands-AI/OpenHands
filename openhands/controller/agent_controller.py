@@ -5,7 +5,7 @@ import copy
 import os
 import time
 import traceback
-from typing import Callable, ClassVar
+from typing import Callable
 
 import litellm  # noqa
 from litellm.exceptions import (  # noqa
@@ -61,6 +61,7 @@ from openhands.events.action import (
 )
 from openhands.events.action.agent import CondensationAction, RecallAction
 from openhands.events.event import Event
+from openhands.events.event_filter import EventFilter
 from openhands.events.observation import (
     AgentDelegateObservation,
     AgentStateChangedObservation,
@@ -71,6 +72,7 @@ from openhands.events.observation import (
 from openhands.events.serialization.event import event_to_trajectory, truncate_content
 from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics, TokenUsage
+from openhands.memory.view import View
 
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (
@@ -93,12 +95,6 @@ class AgentController:
     delegate: 'AgentController | None' = None
     _pending_action_info: tuple[Action, float] | None = None  # (action, timestamp)
     _closed: bool = False
-    filter_out: ClassVar[tuple[type[Event], ...]] = (
-        NullAction,
-        NullObservation,
-        ChangeAgentStateAction,
-        AgentStateChangedObservation,
-    )
     _cached_first_user_message: MessageAction | None = None
 
     def __init__(
@@ -150,6 +146,18 @@ class AgentController:
                 EventStreamSubscriber.AGENT_CONTROLLER, self.on_event, self.id
             )
 
+        # filter out events that are not relevant to the agent
+        # so they will not be included in the agent history
+        self.agent_history_filter = EventFilter(
+            exclude_types=(
+                NullAction,
+                NullObservation,
+                ChangeAgentStateAction,
+                AgentStateChangedObservation,
+            ),
+            exclude_hidden=True,
+        )
+
         # state from the previous session, state from a parent agent, or a fresh state
         self.set_initial_state(
             state=initial_state,
@@ -189,10 +197,14 @@ class AgentController:
         # Add the system message to the event stream
         # This should be done for all agents, including delegates
         system_message = self.agent.get_system_message()
-        logger.debug(f'System message got from agent: {system_message}')
-        if system_message:
+        if system_message and system_message.content:
+            preview = (
+                system_message.content[:50] + '...'
+                if len(system_message.content) > 50
+                else system_message.content
+            )
+            logger.debug(f'System message: {preview}')
             self.event_stream.add_event(system_message, EventSource.AGENT)
-            logger.info(f'System message added to event stream: {system_message}')
 
     async def close(self, set_stop_state: bool = True) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
@@ -215,12 +227,11 @@ class AgentController:
             else self.event_stream.get_latest_event_id()
         )
         self.state.history = list(
-            self.event_stream.get_events(
+            self.event_stream.search_events(
                 start_id=start_id,
                 end_id=end_id,
                 reverse=False,
-                filter_out_type=self.filter_out,
-                filter_hidden=True,
+                filter=self.agent_history_filter,
             )
         )
 
@@ -401,11 +412,8 @@ class AgentController:
         if hasattr(event, 'hidden') and event.hidden:
             return
 
-        # Give others a little chance
-        await asyncio.sleep(0.01)
-
         # if the event is not filtered out, add it to the history
-        if not any(isinstance(event, filter_type) for filter_type in self.filter_out):
+        if self.agent_history_filter.include(event):
             self.state.history.append(event)
 
         if isinstance(event, Action):
@@ -772,7 +780,7 @@ class AgentController:
         """Executes a single step of the parent or delegate agent. Detects stuck agents and limits on the number of iterations and the task budget."""
         if self.get_agent_state() != AgentState.RUNNING:
             self.log(
-                'info',
+                'debug',
                 f'Agent not stepping because state is {self.get_agent_state()} (not RUNNING)',
                 extra={'msg_type': 'STEP_BLOCKED_STATE'},
             )
@@ -782,7 +790,7 @@ class AgentController:
             action_id = getattr(self._pending_action, 'id', 'unknown')
             action_type = type(self._pending_action).__name__
             self.log(
-                'info',
+                'debug',
                 f'Agent not stepping because of pending action: {action_type} (id={action_id})',
                 extra={'msg_type': 'STEP_BLOCKED_PENDING_ACTION'},
             )
@@ -1090,12 +1098,11 @@ class AgentController:
 
         # Get rest of history
         events_to_add = list(
-            self.event_stream.get_events(
+            self.event_stream.search_events(
                 start_id=start_id,
                 end_id=end_id,
                 reverse=False,
-                filter_out_type=self.filter_out,
-                filter_hidden=True,
+                filter=self.agent_history_filter,
             )
         )
         events.extend(events_to_add)
@@ -1155,7 +1162,8 @@ class AgentController:
 
     def _handle_long_context_error(self) -> None:
         # When context window is exceeded, keep roughly half of agent interactions
-        kept_events = self._apply_conversation_window()
+        current_view = View.from_events(self.state.history)
+        kept_events = self._apply_conversation_window(current_view.events)
         kept_event_ids = {e.id for e in kept_events}
 
         self.log(
@@ -1192,7 +1200,7 @@ class AgentController:
             EventSource.AGENT,
         )
 
-    def _apply_conversation_window(self) -> list[Event]:
+    def _apply_conversation_window(self, history: list[Event]) -> list[Event]:
         """Cuts history roughly in half when context window is exceeded.
 
         It preserves action-observation pairs and ensures that the system message,
@@ -1211,11 +1219,9 @@ class AgentController:
         Returns:
             Filtered list of events keeping newest half while preserving pairs and essential initial events.
         """
-        if not self.state.history:
+        # Handle empty history
+        if not history:
             return []
-
-        history = self.state.history
-
         # 1. Identify essential initial events
         system_message: SystemMessageAction | None = None
         first_user_msg: MessageAction | None = None
@@ -1232,50 +1238,59 @@ class AgentController:
             and system_message.id == history[0].id
         )
 
-        # Find First User Message, which MUST exist
-        first_user_msg = self._first_user_message()
+        # Find First User Message in the history, which MUST exist
+        first_user_msg = self._first_user_message(history)
         if first_user_msg is None:
-            raise RuntimeError('No first user message found in the event stream.')
+            # If not found in history, try the event stream
+            first_user_msg = self._first_user_message()
+            if first_user_msg is None:
+                raise RuntimeError('No first user message found in the event stream.')
+            self.log(
+                'warning',
+                'First user message not found in history. Using cached version from event stream.',
+            )
 
+        # Find the first user message index in the history
         first_user_msg_index = -1
         for i, event in enumerate(history):
             if isinstance(event, MessageAction) and event.source == EventSource.USER:
-                first_user_msg = event
                 first_user_msg_index = i
                 break
 
         # Find Recall Action and Observation related to the First User Message
-        if first_user_msg is not None and first_user_msg_index != -1:
-            # Look for RecallAction after the first user message
-            for i in range(first_user_msg_index + 1, len(history)):
-                event = history[i]
-                if (
-                    isinstance(event, RecallAction)
-                    and event.query == first_user_msg.content
-                ):
-                    # Found RecallAction, now look for its Observation
-                    recall_action = event
-                    for j in range(i + 1, len(history)):
-                        obs_event = history[j]
-                        # Check for Observation caused by this RecallAction
-                        if (
-                            isinstance(obs_event, Observation)
-                            and obs_event.cause == recall_action.id
-                        ):
-                            recall_observation = obs_event
-                            break  # Found the observation, stop inner loop
-                    break  # Found the recall action (and maybe obs), stop outer loop
+        # Look for RecallAction after the first user message
+        for i in range(first_user_msg_index + 1, len(history)):
+            event = history[i]
+            if (
+                isinstance(event, RecallAction)
+                and event.query == first_user_msg.content
+            ):
+                # Found RecallAction, now look for its Observation
+                recall_action = event
+                for j in range(i + 1, len(history)):
+                    obs_event = history[j]
+                    # Check for Observation caused by this RecallAction
+                    if (
+                        isinstance(obs_event, Observation)
+                        and obs_event.cause == recall_action.id
+                    ):
+                        recall_observation = obs_event
+                        break  # Found the observation, stop inner loop
+                break  # Found the recall action (and maybe obs), stop outer loop
 
         essential_events: list[Event] = []
         if system_message:
             essential_events.append(system_message)
-        if first_user_msg:
+        # Only include first user message if history is not empty
+        if history:
             essential_events.append(first_user_msg)
-        # Also keep the RecallAction that triggered the essential RecallObservation
-        if recall_action:
-            essential_events.append(recall_action)
-        if recall_observation:
-            essential_events.append(recall_observation)
+            # Include recall action and observation if both exist
+            if recall_action and recall_observation:
+                essential_events.append(recall_action)
+                essential_events.append(recall_observation)
+            # Include recall action without observation for backward compatibility
+            elif recall_action:
+                essential_events.append(recall_action)
 
         # 2. Determine the slice of recent events to potentially keep
         num_non_essential_events = len(history) - len(essential_events)
@@ -1424,15 +1439,32 @@ class AgentController:
                 return result
         return False
 
-    def _first_user_message(self) -> MessageAction | None:
+    def _first_user_message(
+        self, events: list[Event] | None = None
+    ) -> MessageAction | None:
         """Get the first user message for this agent.
 
         For regular agents, this is the first user message from the beginning (start_id=0).
         For delegate agents, this is the first user message after the delegate's start_id.
 
+        Args:
+            events: Optional list of events to search through. If None, uses the event stream.
+
         Returns:
             MessageAction | None: The first user message, or None if no user message found
         """
+        # If events list is provided, search through it
+        if events is not None:
+            return next(
+                (
+                    e
+                    for e in events
+                    if isinstance(e, MessageAction) and e.source == EventSource.USER
+                ),
+                None,
+            )
+
+        # Otherwise, use the original event stream logic with caching
         # Return cached message if any
         if self._cached_first_user_message is not None:
             return self._cached_first_user_message

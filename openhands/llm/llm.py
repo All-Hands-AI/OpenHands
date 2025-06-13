@@ -50,11 +50,14 @@ LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (
 CACHE_PROMPT_SUPPORTED_MODELS = [
     'claude-3-7-sonnet-20250219',
     'claude-sonnet-3-7-latest',
+    'claude-3.7-sonnet',
     'claude-3-5-sonnet-20241022',
     'claude-3-5-sonnet-20240620',
     'claude-3-5-haiku-20241022',
     'claude-3-haiku-20240307',
     'claude-3-opus-20240229',
+    'claude-sonnet-4-20250514',
+    'claude-opus-4-20250514',
 ]
 
 # function calling supporting models
@@ -66,6 +69,8 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'claude-3-5-sonnet-20241022',
     'claude-3.5-haiku',
     'claude-3-5-haiku-20241022',
+    'claude-sonnet-4-20250514',
+    'claude-opus-4-20250514',
     'gpt-4o-mini',
     'gpt-4o',
     'o1-2024-12-17',
@@ -158,6 +163,11 @@ class LLM(RetryMixin, DebugMixin):
             'temperature': self.config.temperature,
             'max_completion_tokens': self.config.max_output_tokens,
         }
+        if self.config.top_k is not None:
+            # openai doesn't expose top_k
+            # litellm will handle it a bit differently than the openai-compatible params
+            kwargs['top_k'] = self.config.top_k
+
         if (
             self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS
             or self.config.model.split('/')[-1] in REASONING_EFFORT_SUPPORTED_MODELS
@@ -229,12 +239,17 @@ class LLM(RetryMixin, DebugMixin):
             mock_fncall_tools = None
             # if the agent or caller has defined tools, and we mock via prompting, convert the messages
             if mock_function_calling and 'tools' in kwargs:
+                add_in_context_learning_example = True
+                if (
+                    'openhands-lm' in self.config.model
+                    or 'devstral' in self.config.model
+                ):
+                    add_in_context_learning_example = False
+
                 messages = convert_fncall_messages_to_non_fncall_messages(
                     messages,
                     kwargs['tools'],
-                    add_in_context_learning_example=bool(
-                        'openhands-lm' not in self.config.model
-                    ),
+                    add_in_context_learning_example=add_in_context_learning_example,
                 )
                 kwargs['messages'] = messages
 
@@ -273,9 +288,6 @@ class LLM(RetryMixin, DebugMixin):
             # Record start time for latency measurement
             start_time = time.time()
             # we don't support streaming here, thus we get a ModelResponse
-            logger.debug(
-                f'LLM: calling litellm completion with model: {self.config.model}, base_url: {self.config.base_url}, args: {args}, kwargs: {kwargs}'
-            )
             resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
 
             # Calculate and record latency
@@ -438,7 +450,9 @@ class LLM(RetryMixin, DebugMixin):
                 pass
         from openhands.io import json
 
-        logger.debug(f'Model info: {json.dumps(self.model_info, indent=2)}')
+        logger.debug(
+            f'Model info: {json.dumps({"model": self.config.model, "base_url": self.config.base_url}, indent=2)}'
+        )
 
         if self.config.model.startswith('huggingface'):
             # HF doesn't support the OpenAI default value for top_p (1)
@@ -473,7 +487,10 @@ class LLM(RetryMixin, DebugMixin):
                     self.model_info['max_tokens'], int
                 ):
                     self.config.max_output_tokens = self.model_info['max_tokens']
-            if 'claude-3-7-sonnet' in self.config.model:
+            if any(
+                model in self.config.model
+                for model in ['claude-3-7-sonnet', 'claude-3.7-sonnet']
+            ):
                 self.config.max_output_tokens = 64000  # litellm set max to 128k, but that requires a header to be set
 
         # Initialize function calling capability
@@ -487,13 +504,8 @@ class LLM(RetryMixin, DebugMixin):
         # Handle native_tool_calling user-defined configuration
         if self.config.native_tool_calling is None:
             self._function_calling_active = model_name_supported
-        elif self.config.native_tool_calling is False:
-            self._function_calling_active = False
         else:
-            # try to enable native tool calling if supported by the model
-            self._function_calling_active = litellm.supports_function_calling(
-                model=self.config.model
-            )
+            self._function_calling_active = self.config.native_tool_calling
 
     def vision_is_active(self) -> bool:
         with warnings.catch_warnings():

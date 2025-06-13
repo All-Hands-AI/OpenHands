@@ -17,7 +17,6 @@ from openhands.agenthub.codeact_agent.function_calling import (
 from openhands.agenthub.codeact_agent.tools import (
     FinishTool,
     ThinkTool,
-    WebReadTool,
 )
 from openhands.agenthub.readonly_agent.tools import (
     GlobTool,
@@ -33,7 +32,6 @@ from openhands.events.action import (
     Action,
     AgentFinishAction,
     AgentThinkAction,
-    BrowseURLAction,
     CmdRunAction,
     FileReadAction,
     MCPAction,
@@ -46,6 +44,9 @@ from openhands.events.tool import ToolCallMetadata
 def grep_to_cmdrun(
     pattern: str, path: str | None = None, include: str | None = None
 ) -> str:
+    # NOTE: This function currently relies on `rg` (ripgrep).
+    # `rg` may not be installed when using CLIRuntime or LocalRuntime.
+    # TODO: Implement a fallback to `grep` if `rg` is not available.
     """Convert grep tool arguments to a shell command string.
 
     Args:
@@ -76,6 +77,9 @@ def grep_to_cmdrun(
 
 
 def glob_to_cmdrun(pattern: str, path: str = '.') -> str:
+    # NOTE: This function currently relies on `rg` (ripgrep).
+    # `rg` may not be installed when using CLIRuntime or LocalRuntime
+    # TODO: Implement a fallback to `find` if `rg` is not available.
     """Convert glob tool arguments to a shell command string.
 
     Args:
@@ -192,16 +196,6 @@ def response_to_actions(
                 action = CmdRunAction(command=glob_cmd, is_input=False)
 
             # ================================================
-            # WebReadTool (simplified browsing)
-            # ================================================
-            elif tool_call.function.name == WebReadTool['function']['name']:
-                if 'url' not in arguments:
-                    raise FunctionCallValidationError(
-                        f'Missing required argument "url" in tool call {tool_call.function.name}'
-                    )
-                action = BrowseURLAction(url=arguments['url'])
-
-            # ================================================
             # MCPAction (MCP)
             # ================================================
             elif mcp_tool_names and tool_call.function.name in mcp_tool_names:
@@ -249,7 +243,6 @@ def get_tools() -> list[ChatCompletionToolParam]:
     return [
         ThinkTool,
         FinishTool,
-        WebReadTool,
         GrepTool,
         GlobTool,
         ViewTool,

@@ -1,10 +1,17 @@
-from openhands.core.config.app_config import AppConfig
+from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.events.event import Event
 
 
 class MonitoringListener:
-    """
-    Allow tracking of application activity for monitoring purposes.
+    """Abstract base class for monitoring application activity.
+
+    This is an extension point in OpenHands that allows applications to customize how
+    application activity is monitored. Applications can substitute their own implementation by:
+    1. Creating a class that inherits from MonitoringListener
+    2. Implementing desired methods (all methods have default no-op implementations)
+    3. Setting server_config.monitoring_listener_class to the fully qualified name of the class
+
+    The class is instantiated via get_impl() in openhands.server.shared.py.
 
     Implementations should be non-disruptive, do not raise or block to perform I/O.
     """
@@ -33,6 +40,6 @@ class MonitoringListener:
     @classmethod
     def get_instance(
         cls,
-        config: AppConfig,
+        config: OpenHandsConfig,
     ) -> 'MonitoringListener':
         return cls()

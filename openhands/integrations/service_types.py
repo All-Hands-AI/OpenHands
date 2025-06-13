@@ -167,11 +167,11 @@ class BaseGitService(ABC):
             return RateLimitError('GitHub API rate limit exceeded')
 
         logger.warning(f'Status error on {self.provider} API: {e}')
-        return UnknownException('Unknown error')
+        return UnknownException(f'Unknown error: {e}')
 
     def handle_http_error(self, e: HTTPError) -> UnknownException:
         logger.warning(f'HTTP error on {self.provider} API: {type(e).__name__} : {e}')
-        return UnknownException(f'HTTP error {type(e).__name__}')
+        return UnknownException(f'HTTP error {type(e).__name__} : {e}')
 
 
 class GitService(Protocol):
@@ -184,6 +184,7 @@ class GitService(Protocol):
         external_auth_id: str | None = None,
         external_auth_token: SecretStr | None = None,
         external_token_manager: bool = False,
+        base_domain: str | None = None,
     ) -> None:
         """Initialize the service with authentication details"""
         ...

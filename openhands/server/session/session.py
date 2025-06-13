@@ -6,12 +6,14 @@ from logging import LoggerAdapter
 import socketio
 
 from openhands.controller.agent import Agent
-from openhands.core.config import AppConfig, MCPConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.config.condenser_config import (
     BrowserOutputCondenserConfig,
     CondenserPipelineConfig,
     LLMSummarizingCondenserConfig,
 )
+from openhands.core.config.mcp_config import MCPConfig, OpenHandsMCPConfigImpl
+from openhands.core.exceptions import MicroagentValidationError
 from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema import AgentState
 from openhands.events.action import MessageAction, NullAction
@@ -41,7 +43,7 @@ class Session:
     is_alive: bool = True
     agent_session: AgentSession
     loop: asyncio.AbstractEventLoop
-    config: AppConfig
+    config: OpenHandsConfig
     file_store: FileStore
     user_id: str | None
     logger: LoggerAdapter
@@ -49,7 +51,7 @@ class Session:
     def __init__(
         self,
         sid: str,
-        config: AppConfig,
+        config: OpenHandsConfig,
         file_store: FileStore,
         sio: socketio.AsyncServer | None,
         user_id: str | None = None,
@@ -114,7 +116,6 @@ class Session:
             or settings.sandbox_runtime_container_image
             else self.config.sandbox.runtime_container_image
         )
-        self.config.mcp = settings.mcp_config or MCPConfig()
         max_iterations = settings.max_iterations or self.config.max_iterations
 
         # This is a shallow copy of the default LLM config, so changes here will
@@ -124,6 +125,21 @@ class Session:
         default_llm_config.model = settings.llm_model or ''
         default_llm_config.api_key = settings.llm_api_key
         default_llm_config.base_url = settings.llm_base_url
+        self.config.search_api_key = settings.search_api_key
+
+        # NOTE: this need to happen AFTER the config is updated with the search_api_key
+        self.config.mcp = settings.mcp_config or MCPConfig(
+            sse_servers=[], stdio_servers=[]
+        )
+        # Add OpenHands' MCP server by default
+        openhands_mcp_server, openhands_mcp_stdio_servers = (
+            OpenHandsMCPConfigImpl.create_default_mcp_server_config(
+                self.config.mcp_host, self.config, self.user_id
+            )
+        )
+        if openhands_mcp_server:
+            self.config.mcp.shttp_servers.append(openhands_mcp_server)
+        self.config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
 
         # TODO: override other LLM config & agent config groups (#2075)
 
@@ -140,23 +156,32 @@ class Session:
                 condensers=[
                     BrowserOutputCondenserConfig(attention_window=2),
                     LLMSummarizingCondenserConfig(
-                        llm_config=llm.config, keep_first=4, max_size=80
+                        llm_config=llm.config, keep_first=4, max_size=120
                     ),
                 ]
             )
 
-            self.logger.info(f'Enabling default condenser: {default_condenser_config}')
+            self.logger.info(
+                f'Enabling pipeline condenser with:'
+                f' browser_output_masking(attention_window=2), '
+                f' llm(model="{llm.config.model}", '
+                f' base_url="{llm.config.base_url}", '
+                f' keep_first=4, max_size=80)'
+            )
             agent_config.condenser = default_condenser_config
-
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
 
         git_provider_tokens = None
         selected_repository = None
         selected_branch = None
+        custom_secrets = None
+        conversation_instructions = None
         if isinstance(settings, ConversationInitData):
             git_provider_tokens = settings.git_provider_tokens
             selected_repository = settings.selected_repository
             selected_branch = settings.selected_branch
+            custom_secrets = settings.custom_secrets
+            conversation_instructions = settings.conversation_instructions
 
         try:
             await self.agent_session.start(
@@ -168,21 +193,40 @@ class Session:
                 agent_to_llm_config=self.config.get_agent_to_llm_config_map(),
                 agent_configs=self.config.get_agent_configs(),
                 git_provider_tokens=git_provider_tokens,
+                custom_secrets=custom_secrets,
                 selected_repository=selected_repository,
                 selected_branch=selected_branch,
                 initial_message=initial_message,
+                conversation_instructions=conversation_instructions,
                 replay_json=replay_json,
             )
+        except MicroagentValidationError as e:
+            self.logger.exception(f'Error creating agent_session: {e}')
+            # For microagent validation errors, provide more helpful information
+            await self.send_error(f'Failed to create agent session: {str(e)}')
+            return
+        except ValueError as e:
+            self.logger.exception(f'Error creating agent_session: {e}')
+            error_message = str(e)
+            # For ValueError related to microagents, provide more helpful information
+            if 'microagent' in error_message.lower():
+                await self.send_error(
+                    f'Failed to create agent session: {error_message}'
+                )
+            else:
+                # For other ValueErrors, just show the error class
+                await self.send_error('Failed to create agent session: ValueError')
+            return
         except Exception as e:
             self.logger.exception(f'Error creating agent_session: {e}')
-            err_class = e.__class__.__name__
-            await self.send_error(f'Failed to create agent session: {err_class}')
+            # For other errors, just show the error class to avoid exposing sensitive information
+            await self.send_error(
+                f'Failed to create agent session: {e.__class__.__name__}'
+            )
             return
 
     def _create_llm(self, agent_cls: str | None) -> LLM:
-        """
-        Initialize LLM, extracted for testing.
-        """
+        """Initialize LLM, extracted for testing."""
         agent_name = agent_cls if agent_cls is not None else 'agent'
         return LLM(
             config=self.config.get_llm_config_from_agent(agent_name),
@@ -226,8 +270,8 @@ class Session:
                 isinstance(event, AgentStateChangedObservation)
                 and event.agent_state == AgentState.ERROR
             ):
-                self.logger.info(
-                    'Agent status error',
+                self.logger.error(
+                    f'Agent status error: {event.reason}',
                     extra={'signal': 'agent_status_error'},
                 )
         elif isinstance(event, ErrorObservation):
@@ -285,8 +329,8 @@ class Session:
             controller = self.agent_session.controller
             if controller is not None and not agent_session.is_closed():
                 await controller.set_agent_state_to(AgentState.ERROR)
-            self.logger.info(
-                'Agent status error',
+            self.logger.error(
+                f'Agent status error: {message}',
                 extra={'signal': 'agent_status_error'},
             )
         await self.send(

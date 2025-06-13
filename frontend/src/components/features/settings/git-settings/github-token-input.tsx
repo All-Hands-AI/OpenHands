@@ -29,7 +29,7 @@ export function GitHubTokenInput({
         onChange={onChange}
         label={t(I18nKey.GITHUB$TOKEN_LABEL)}
         type="password"
-        className="w-[680px]"
+        className="w-full max-w-[680px]"
         placeholder={isGitHubTokenSet ? "<hidden>" : ""}
         startContent={
           isGitHubTokenSet && (
@@ -47,14 +47,13 @@ export function GitHubTokenInput({
         testId="github-host-input"
         label={t(I18nKey.GITHUB$HOST_LABEL)}
         type="text"
-        className="w-[680px]"
+        className="w-full max-w-[680px]"
         placeholder="github.com"
         defaultValue={githubHostSet || undefined}
         startContent={
-          githubHostSet && githubHostSet.trim() !== "" ? (
+          githubHostSet &&
+          githubHostSet.trim() !== "" && (
             <KeyStatusIcon testId="gh-set-host-indicator" isSet />
-          ) : (
-            <KeyStatusIcon testId="gh-set-host-indicator" isSet={false} />
           )
         }
       />

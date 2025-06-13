@@ -8,6 +8,7 @@ from conftest import _close_test_runtime, _load_runtime
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import FileEditAction, FileWriteAction
 from openhands.runtime.action_execution_server import _execute_file_editor
+from openhands.runtime.impl.cli.cli_runtime import CLIRuntime
 
 
 def test_view_file(temp_dir, runtime_cls, run_as_openhands):
@@ -353,10 +354,19 @@ def test_str_replace_with_empty_old_str(temp_dir, runtime_cls, run_as_openhands)
         )
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert (
-            'No replacement was performed. Multiple occurrences of old_str `` in lines [1, 2, 3, 4]. Please ensure it is unique.'
-            in obs.content
-        )
+        if isinstance(runtime, CLIRuntime):
+            # CLIRuntime with a 3-line file without a trailing newline reports 3 occurrences for an empty old_str
+            assert (
+                'No replacement was performed. Multiple occurrences of old_str `` in lines [1, 2, 3]. Please ensure it is unique.'
+                in obs.content
+            )
+        else:
+            # Other runtimes might behave differently (e.g., implicitly add a newline, leading to 4 matches)
+            # TODO: Why do they have 4 lines?
+            assert (
+                'No replacement was performed. Multiple occurrences of old_str `` in lines [1, 2, 3, 4]. Please ensure it is unique.'
+                in obs.content
+            )
     finally:
         _close_test_runtime(runtime)
 
@@ -437,7 +447,7 @@ def test_insert_invalid_line(temp_dir, runtime_cls, run_as_openhands):
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert 'Invalid `insert_line` parameter' in obs.content
-        assert 'It should be within the range of lines of the file' in obs.content
+        assert 'It should be within the range of allowed values' in obs.content
     finally:
         _close_test_runtime(runtime)
 

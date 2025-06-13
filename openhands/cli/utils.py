@@ -78,8 +78,7 @@ class ModelInfo(BaseModel):
 
 
 def extract_model_and_provider(model: str) -> ModelInfo:
-    """
-    Extract provider and model information from a model identifier.
+    """Extract provider and model information from a model identifier.
 
     Args:
         model: The model identifier string
@@ -114,8 +113,7 @@ def extract_model_and_provider(model: str) -> ModelInfo:
 def organize_models_and_providers(
     models: list[str],
 ) -> dict[str, 'ProviderInfo']:
-    """
-    Organize a list of model identifiers by provider.
+    """Organize a list of model identifiers by provider.
 
     Args:
         models: List of model identifiers
@@ -169,6 +167,8 @@ VERIFIED_ANTHROPIC_MODELS = [
     'claude-3-opus-20240229',
     'claude-3-sonnet-20240229',
     'claude-3-7-sonnet-20250219',
+    'claude-sonnet-4-20250514',
+    'claude-opus-4-20250514',
 ]
 
 
@@ -188,7 +188,7 @@ class ProviderInfo(BaseModel):
             return self.models
         raise KeyError(f'ProviderInfo has no key {key}')
 
-    def get(self, key: str, default=None) -> str | list[str] | None:
+    def get(self, key: str, default: None = None) -> str | list[str] | None:
         """Dictionary-like get method with default value."""
         try:
             return self[key]

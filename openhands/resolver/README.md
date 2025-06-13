@@ -40,7 +40,7 @@ Follow these steps to use this workflow in your own repository:
 
    Note: You can set these secrets at the organization level to use across multiple repositories.
 
-6. Set up any [custom configurations required](https://docs.all-hands.dev/modules/usage/how-to/github-action#custom-configurations)
+6. Set up any [custom configurations required](https://docs.all-hands.dev/usage/how-to/github-action#custom-configurations)
 
 7. Usage:
    There are two ways to trigger the OpenHands agent:
@@ -109,7 +109,7 @@ export GIT_USERNAME="your-gitlab-username"  # Optional, defaults to token owner
 
 # LLM configuration
 
-export LLM_MODEL="anthropic/claude-3-5-sonnet-20241022"  # Recommended
+export LLM_MODEL="anthropic/claude-sonnet-4-20250514"  # Recommended
 export LLM_API_KEY="your-llm-api-key"
 export LLM_BASE_URL="your-api-url"  # Optional, for API proxies
 ```
