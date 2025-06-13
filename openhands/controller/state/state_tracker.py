@@ -77,9 +77,6 @@ class StateTracker:
             )
         else:
             self.state = state
-
-            print('restored budget cap', state.budget_flag)
-
             if self.state.start_id <= -1:
                 self.state.start_id = 0
 

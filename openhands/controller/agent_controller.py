@@ -135,8 +135,6 @@ class AgentController:
             replay_events: A list of logs to replay.
         """
 
-        print('current delta', budget_per_task_delta)
-
         self.id = sid or event_stream.sid
         self.user_id = user_id
         self.file_store = file_store
@@ -244,7 +242,6 @@ class AgentController:
     ) -> None:
         """React to an exception by setting the agent state to error and sending a status message."""
         # Store the error reason before setting the agent state
-        print(str(e))
         self.state.last_error = f'{type(e).__name__}: {str(e)}'
 
         if self.status_callback is not None:
@@ -639,7 +636,6 @@ class AgentController:
         delegate_agent = agent_cls(llm=llm, config=agent_config)
 
         # Take a snapshot of the current metrics before starting the delegate
-        print('childn state', self.state)
         state = State(
             session_id=self.id.removesuffix('-delegate'),
             inputs=action.inputs or {},

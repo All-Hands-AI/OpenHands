@@ -92,7 +92,6 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
     step_count = 0
 
     def agent_step_fn(state):
-        print(f'agent_step_fn received state: {state}')
         nonlocal step_count
         step_count += 1
         return CmdRunAction(command=f'ls {step_count}')

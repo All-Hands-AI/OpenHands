@@ -802,7 +802,6 @@ async def test_run_controller_max_iterations_has_metrics(
         == 'RuntimeError: Agent reached maximum iteration. Current iteration: 3, max iteration: 3'
     )
 
-    print(state.metrics.accumulated_cost, mock_agent.llm.metrics.accumulated_cost)
     assert state.metrics.accumulated_cost == 10.0 * 3, (
         f'Expected accumulated cost to be 30.0, but got {state.metrics.accumulated_cost}'
     )
