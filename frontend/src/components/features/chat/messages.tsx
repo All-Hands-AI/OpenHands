@@ -1,60 +1,82 @@
 import React from "react";
-import { OpenHandsAction } from "#/types/core/actions";
-import { OpenHandsObservation } from "#/types/core/observations";
-import { isOpenHandsAction, isOpenHandsObservation } from "#/types/core/guards";
-import { EventMessage } from "./event-message";
-import { ChatMessage } from "./chat-message";
-import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
+import type { Message } from "#/message";
+import { ChatMessage } from "#/components/features/chat/chat-message";
+import { ConfirmationButtons } from "#/components/shared/buttons/confirmation-buttons";
+import { ImageCarousel } from "../images/image-carousel";
+import { ExpandableMessage } from "./expandable-message";
+import { useUserConversation } from "#/hooks/query/use-user-conversation";
+import { useConversationId } from "#/hooks/use-conversation-id";
+import { I18nKey } from "#/i18n/declaration";
 
 interface MessagesProps {
-  messages: (OpenHandsAction | OpenHandsObservation)[];
+  messages: Message[];
   isAwaitingUserConfirmation: boolean;
 }
 
 export const Messages: React.FC<MessagesProps> = React.memo(
   ({ messages, isAwaitingUserConfirmation }) => {
-    const { getOptimisticUserMessage } = useOptimisticUserMessage();
+    const { conversationId } = useConversationId();
+    const { data: conversation } = useUserConversation(conversationId || null);
 
-    const optimisticUserMessage = getOptimisticUserMessage();
+    // Check if conversation metadata has trigger=resolver
+    const isResolverTrigger = conversation?.trigger === "resolver";
 
-    const actionHasObservationPair = React.useCallback(
-      (event: OpenHandsAction | OpenHandsObservation): boolean => {
-        if (isOpenHandsAction(event)) {
-          return !!messages.some(
-            (msg) => isOpenHandsObservation(msg) && msg.cause === event.id,
-          );
-        }
+    return messages.map((message, index) => {
+      const shouldShowConfirmationButtons =
+        messages.length - 1 === index &&
+        message.sender === "assistant" &&
+        isAwaitingUserConfirmation;
 
-        return false;
-      },
-      [messages],
-    );
+      const isFirstUserMessageWithResolverTrigger =
+        index === 0 && message.sender === "user" && isResolverTrigger;
 
-    return (
-      <>
-        {messages.map((message, index) => (
-          <EventMessage
-            key={index}
-            event={message}
-            hasObservationPair={actionHasObservationPair(message)}
-            isAwaitingUserConfirmation={isAwaitingUserConfirmation}
-            isLastMessage={messages.length - 1 === index}
-          />
-        ))}
+      // Special case: First user message with resolver trigger
+      if (isFirstUserMessageWithResolverTrigger) {
+        return (
+          <div key={index}>
+            <ExpandableMessage
+              type="action"
+              message={message.content}
+              id={I18nKey.CHAT$RESOLVER_INSTRUCTIONS}
+            />
+            {message.imageUrls && message.imageUrls.length > 0 && (
+              <ImageCarousel size="small" images={message.imageUrls} />
+            )}
+          </div>
+        );
+      }
 
-        {optimisticUserMessage && (
-          <ChatMessage type="user" message={optimisticUserMessage} />
-        )}
-      </>
-    );
-  },
-  (prevProps, nextProps) => {
-    // Prevent re-renders if messages are the same length
-    if (prevProps.messages.length !== nextProps.messages.length) {
-      return false;
-    }
+      if (message.type === "error" || message.type === "action") {
+        return (
+          <div key={index}>
+            <ExpandableMessage
+              type={message.type}
+              id={message.translationID}
+              message={message.content}
+              success={message.success}
+              observation={message.observation}
+              action={message.action}
+            />
+            {shouldShowConfirmationButtons && <ConfirmationButtons />}
+          </div>
+        );
+      }
 
-    return true;
+      return (
+        <ChatMessage
+          key={index}
+          type={message.sender}
+          message={message.content}
+          messageId={message.eventID}
+          feedback={message.feedback}
+        >
+          {message.imageUrls && message.imageUrls.length > 0 && (
+            <ImageCarousel size="small" images={message.imageUrls} />
+          )}
+          {shouldShowConfirmationButtons && <ConfirmationButtons />}
+        </ChatMessage>
+      );
+    });
   },
 );
 

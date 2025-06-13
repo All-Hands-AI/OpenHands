@@ -18,6 +18,7 @@ import { ol, ul } from "../markdown/list";
 import { paragraph } from "../markdown/paragraph";
 import { MonoComponent } from "./mono-component";
 import { PathComponent } from "./path-component";
+import { FinishActionRating } from "./finish-action-rating";
 
 const trimText = (text: string, maxLength: number): string => {
   if (!text) return "";
@@ -203,6 +204,11 @@ export function ExpandableMessage({
             >
               {details}
             </Markdown>
+
+            {/* Show rating component for finish actions in SAAS mode */}
+            {action?.payload.action === "finish" && (
+              <FinishActionRating messageId={action.payload.id} />
+            )}
           </div>
         )}
       </div>
