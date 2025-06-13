@@ -892,9 +892,11 @@ def test_process_single_pr_update(
 
 @patch('openhands.resolver.send_pull_request.initialize_repo')
 @patch('openhands.resolver.send_pull_request.apply_patch')
-@patch('openhands.resolver.send_pull_request.send_pull_request')
+@patch('openhands.resolver.send_pull_request.send_pull_request_legacy')
 @patch('openhands.resolver.send_pull_request.make_commit')
+@patch('httpx.get')
 def test_process_single_issue(
+    mock_httpx_get,
     mock_make_commit,
     mock_send_pull_request,
     mock_apply_patch,
@@ -927,6 +929,20 @@ def test_process_single_issue(
         result_explanation='Test success 1',
         error=None,
     )
+
+    # Mock httpx.get to return a successful response with default branch
+    class MockResponse:
+        def __init__(self, status_code=200, json_data=None):
+            self.status_code = status_code
+            self.json_data = json_data or {}
+        
+        def json(self):
+            return self.json_data
+        
+        def raise_for_status(self):
+            pass
+    
+    mock_httpx_get.return_value = MockResponse(json_data={"default_branch": "main"})
 
     # Mock return value
     mock_send_pull_request.return_value = (
