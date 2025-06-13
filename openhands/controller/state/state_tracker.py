@@ -16,7 +16,15 @@ from openhands.storage.files import FileStore
 
 
 class StateTracker:
-    """ """
+    """Manages and synchronizes the state of an agent throughout its lifecycle.
+
+    It is responsible for:
+    1. Maintaining agent state persistence across sessions
+    2. Managing agent history by filtering and tracking relevant events (previously done in the agent controller)
+    3. Synchronizing metrics between the controller and LLM components
+    4. Updating control flags for budget and iteration limits
+
+    """
 
     def __init__(
         self, sid: str | None, file_store: FileStore | None, user_id: str | None
@@ -36,9 +44,6 @@ class StateTracker:
             ),
             exclude_hidden=True,
         )
-
-    def sync_agent_metrics_with_controller_metrics(self, agent: Agent):
-        agent.llm.metrics = self.state.metrics
 
     def set_initial_state(
         self,
@@ -220,25 +225,43 @@ class StateTracker:
         self, headless_mode: bool
     ):
         # Iteration and budget extensions are independent of each other
+        # An error will be thrown if any one of the control flags have reached or exceeded its limit
         self.state.iteration_flag.increase_limit(headless_mode)
         if self.state.budget_flag:
             self.state.budget_flag.increase_limit(headless_mode)
 
     def get_metrics_snapshot(self):
+        """
+        Deep copy of metrics
+        This serves as a snapshot for the parent's metrics at the time a delegate is created
+        It will be stored and used to compute local metrics for the delegate
+        (since delegates now accumulate metrics from where its parent left off)
+        """
+
         return self.state.metrics.copy()
 
     def save_state(self):
+        """
+        Save's current state to persistent store
+        """
         if self.sid and self.file_store:
             self.state.save_to_session(self.sid, self.file_store, self.user_id)
 
 
     def run_control_flags(self):
+        """
+        Performs one step of the control flags
+        """
         self.state.iteration_flag.step()
         if self.state.budget_flag:
             self.state.budget_flag.step()
 
 
     def sync_budget_flag_with_metrics(self):
+        """
+            Ensures that budget flag is up to date with accumulated costs from llm completions
+            Budget flag will monitor for when budget is exceeded
+        """
         if self.state.budget_flag:
             self.state.budget_flag.current_value = self.state.metrics.accumulated_cost
 
