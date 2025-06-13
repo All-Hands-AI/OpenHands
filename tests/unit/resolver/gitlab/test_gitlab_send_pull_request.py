@@ -836,14 +836,14 @@ def test_process_single_issue(
         def __init__(self, status_code=200, json_data=None):
             self.status_code = status_code
             self.json_data = json_data or {}
-        
+
         def json(self):
             return self.json_data
-        
+
         def raise_for_status(self):
             pass
-    
-    mock_httpx_get.return_value = MockResponse(json_data={"default_branch": "main"})
+
+    mock_httpx_get.return_value = MockResponse(json_data={'default_branch': 'main'})
 
     # Mock return value
     mock_send_pull_request.return_value = (
