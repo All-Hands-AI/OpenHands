@@ -47,16 +47,7 @@ def create_mock_response(function_name: str, arguments: dict) -> ModelResponse:
 
 def test_execute_bash_valid():
     """Test execute_bash with valid arguments."""
-    response = create_mock_response(
-        'execute_bash', {'command': 'ls', 'is_input': 'false'}
-    )
-    actions = response_to_actions(response)
-    assert len(actions) == 1
-    assert isinstance(actions[0], CmdRunAction)
-    assert actions[0].command == 'ls'
-    assert actions[0].is_input is False
-
-    # Test with timeout parameter
+    # Test with required timeout parameter
     with patch.object(CmdRunAction, 'set_hard_timeout') as mock_set_hard_timeout:
         response_with_timeout = create_mock_response(
             'execute_bash', {'command': 'ls', 'is_input': 'false', 'timeout': 30}
@@ -74,10 +65,22 @@ def test_execute_bash_valid():
 
 def test_execute_bash_missing_command():
     """Test execute_bash with missing command argument."""
-    response = create_mock_response('execute_bash', {'is_input': 'false'})
+    response = create_mock_response(
+        'execute_bash', {'is_input': 'false', 'timeout': 10}
+    )
     with pytest.raises(FunctionCallValidationError) as exc_info:
         response_to_actions(response)
     assert 'Missing required argument "command"' in str(exc_info.value)
+
+
+def test_execute_bash_missing_timeout():
+    """Test execute_bash with missing timeout argument."""
+    response = create_mock_response(
+        'execute_bash', {'command': 'ls', 'is_input': 'false'}
+    )
+    with pytest.raises(FunctionCallValidationError) as exc_info:
+        response_to_actions(response)
+    assert 'Missing required argument "timeout"' in str(exc_info.value)
 
 
 def test_execute_ipython_cell_valid():

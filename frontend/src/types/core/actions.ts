@@ -23,6 +23,7 @@ export interface CommandAction extends OpenHandsActionEvent<"run"> {
   source: "agent" | "user";
   args: {
     command: string;
+    timeout: number;
     security_risk: ActionSecurityRisk;
     confirmation_state: "confirmed" | "rejected" | "awaiting_confirmation";
     thought: string;
