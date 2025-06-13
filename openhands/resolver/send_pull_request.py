@@ -66,10 +66,10 @@ def send_pull_request(
     """
     # For Bitbucket, use the direct create_pr method
     if provider.lower() == 'bitbucket':
-        handler = BitbucketIssueHandler(
+        bitbucket_handler = BitbucketIssueHandler(
             owner, repo, token, username, base_domain or 'bitbucket.org'
         )
-        return handler.create_pr(title=title, body=body, head=head, base=base)
+        return bitbucket_handler.create_pr(title=title, body=body, head=head, base=base)
 
     # For GitHub and GitLab, use the same approach with different provider types
     elif provider.lower() in ['github', 'gitlab']:
@@ -100,27 +100,36 @@ def send_pull_request(
 
         # Import the appropriate handler
         from openhands.resolver.interfaces.issue import IssueHandlerInterface
-        
+
+        # Create the appropriate handler based on platform type
         if platform == ProviderType.GITHUB:
             from openhands.resolver.interfaces.github import GithubIssueHandler
-            handler: IssueHandlerInterface = GithubIssueHandler(owner, repo, token, username, base_domain)
+
+            github_handler = GithubIssueHandler(
+                owner, repo, token, username, base_domain
+            )
+            issue_handler: IssueHandlerInterface = github_handler
         else:  # platform == ProviderType.GITLAB
             from openhands.resolver.interfaces.gitlab import GitlabIssueHandler
-            handler: IssueHandlerInterface = GitlabIssueHandler(owner, repo, token, username, base_domain)
+
+            gitlab_handler = GitlabIssueHandler(
+                owner, repo, token, username, base_domain
+            )
+            issue_handler: IssueHandlerInterface = gitlab_handler
 
         # Create a new branch with a unique name
         base_branch_name = f'openhands-fix-issue-{issue.number}'
-        branch_name = handler.get_branch_name(base_branch_name=base_branch_name)
+        branch_name = issue_handler.get_branch_name(base_branch_name=base_branch_name)
 
         # Get the default branch or use specified target branch
         logger.info('Getting base branch...')
         if base:
             base_branch = base
-            exists = handler.branch_exists(branch_name=base)
+            exists = issue_handler.branch_exists(branch_name=base)
             if not exists:
                 raise ValueError(f'Target branch {base} does not exist')
         else:
-            base_branch = handler.get_default_branch_name()
+            base_branch = issue_handler.get_default_branch_name()
         logger.info(f'Base branch: {base_branch}')
 
         # Create and checkout the new branch
@@ -138,10 +147,10 @@ def send_pull_request(
 
         # Determine the repository to push to (original or fork)
         push_owner = fork_owner if fork_owner else owner
-        handler.set_owner(push_owner)
+        issue_handler.set_owner(push_owner)
 
         logger.info('Pushing changes...')
-        push_url = handler.get_clone_url()
+        push_url = issue_handler.get_clone_url()
         result = subprocess.run(
             ['git', '-C', patch_dir, 'push', push_url, branch_name],
             capture_output=True,
@@ -166,7 +175,7 @@ def send_pull_request(
         # If we are not sending a PR, we can finish early and return the
         # URL for the user to open a PR manually
         if pr_type == 'branch':
-            url = handler.get_compare_url(branch_name)
+            url = issue_handler.get_compare_url(branch_name)
         else:
             # Prepare the PR for the API
             data = {
@@ -181,13 +190,13 @@ def send_pull_request(
                 'draft': pr_type == 'draft',
             }
 
-            pr_data = handler.create_pull_request(data)
+            pr_data = issue_handler.create_pull_request(data)
             url = pr_data['html_url']
 
             # Request review if a reviewer was specified
             if reviewer and pr_type != 'branch':
                 number = pr_data['number']
-                handler.request_reviewers(reviewer, number)
+                issue_handler.request_reviewers(reviewer, number)
 
         logger.info(
             f'{pr_type} created: {url}\n\n--- Title: {title}\n\n--- Body:\n{pr_body}'
