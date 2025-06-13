@@ -179,6 +179,21 @@ async def run_session(
 
     async def on_event_async(event: Event) -> None:
         nonlocal reload_microagents, is_paused, always_confirm_mode
+
+        # Handle exit_on_finish logic before displaying the event
+        if isinstance(event, AgentStateChangedObservation):
+            # Handle exit_on_finish for AWAITING_USER_INPUT before displaying the event
+            if (event.agent_state == AgentState.AWAITING_USER_INPUT and
+                config.exit_on_finish):
+                event_stream.add_event(
+                    ChangeAgentStateAction(AgentState.STOPPED),
+                    EventSource.USER,
+                )
+                # Don't display the "waiting for input" message, just update metrics and return
+                update_usage_metrics(event, usage_metrics)
+                return
+
+        # Display event and update metrics for all other cases
         display_event(event, config)
         update_usage_metrics(event, usage_metrics)
 
@@ -420,7 +435,6 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
         config.runtime = 'cli'
         if not config.workspace_base:
             config.workspace_base = os.getcwd()
-        config.security.confirmation_mode = True
 
     # TODO: Set working directory from config or use current working directory?
     current_dir = config.workspace_base

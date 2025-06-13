@@ -744,6 +744,12 @@ def get_parser() -> argparse.ArgumentParser:
         type=bool,
         default=False,
     )
+    parser.add_argument(
+        '--exit-on-finish',
+        help='Exit immediately after the agent finishes the task without waiting for user input',
+        action='store_true',
+        default=False,
+    )
     return parser
 
 
@@ -834,5 +840,9 @@ def setup_config_from_args(args: argparse.Namespace) -> OpenHandsConfig:
     # Read selected repository in config for use by CLI and main.py
     if args.selected_repo is not None:
         config.sandbox.selected_repo = args.selected_repo
+
+    # Set exit_on_finish flag if provided
+    if hasattr(args, 'exit_on_finish') and args.exit_on_finish:
+        config.exit_on_finish = args.exit_on_finish
 
     return config
