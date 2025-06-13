@@ -63,10 +63,12 @@ function GitSettingsScreen() {
 
     const githubToken = formData.get("github-token-input")?.toString() || "";
     const gitlabToken = formData.get("gitlab-token-input")?.toString() || "";
-    const bitbucketToken = formData.get("bitbucket-token-input")?.toString() || "";
+    const bitbucketToken =
+      formData.get("bitbucket-token-input")?.toString() || "";
     const githubHost = formData.get("github-host-input")?.toString() || "";
     const gitlabHost = formData.get("gitlab-host-input")?.toString() || "";
-    const bitbucketHost = formData.get("bitbucket-host-input")?.toString() || "";
+    const bitbucketHost =
+      formData.get("bitbucket-host-input")?.toString() || "";
 
     saveGitProviders(
       {
@@ -171,7 +173,9 @@ function GitSettingsScreen() {
               name="disconnect-tokens-button"
               type="submit"
               variant="secondary"
-              isDisabled={!isGitHubTokenSet && !isGitLabTokenSet && !isBitbucketTokenSet}
+              isDisabled={
+                !isGitHubTokenSet && !isGitLabTokenSet && !isBitbucketTokenSet
+              }
             >
               Disconnect Tokens
             </BrandButton>
