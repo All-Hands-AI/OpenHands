@@ -70,13 +70,25 @@ function GitSettingsScreen() {
     const bitbucketHost =
       formData.get("bitbucket-host-input")?.toString() || "";
 
+    // Create providers object with only non-empty tokens
+    const providers: Record<string, { token: string; host: string }> = {};
+
+    // Only include tokens that have been modified or have values
+    if (githubTokenInputHasValue || githubHostInputHasValue) {
+      providers.github = { token: githubToken, host: githubHost };
+    }
+
+    if (gitlabTokenInputHasValue || gitlabHostInputHasValue) {
+      providers.gitlab = { token: gitlabToken, host: gitlabHost };
+    }
+
+    if (bitbucketTokenInputHasValue || bitbucketHostInputHasValue) {
+      providers.bitbucket = { token: bitbucketToken, host: bitbucketHost };
+    }
+
     saveGitProviders(
       {
-        providers: {
-          github: { token: githubToken, host: githubHost },
-          gitlab: { token: gitlabToken, host: gitlabHost },
-          bitbucket: { token: bitbucketToken, host: bitbucketHost },
-        },
+        providers,
       },
       {
         onSuccess: () => {
