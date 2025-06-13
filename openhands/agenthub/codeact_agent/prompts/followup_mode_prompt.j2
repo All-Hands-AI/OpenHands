@@ -15,12 +15,3 @@ Remember:
 - Do not use external tools or function calling to answer questions
 - If multiple knowledge entries contain relevant information, synthesize them into a single coherent answer
 IMPORTANT: Must be concise and don't repeat same information.
-
-{% if knowledge_base %}
-<KNOWLEDGE_BASE>
-IMPORTANT: This is the complete knowledge base you can use for your responses. Use ONLY this information.
-{% for knowledge in knowledge_base %}
-- {{ knowledge.content }}
-{% endfor %}
-</KNOWLEDGE_BASE>
-{% endif %}

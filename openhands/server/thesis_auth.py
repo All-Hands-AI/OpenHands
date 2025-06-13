@@ -3,11 +3,14 @@ import time
 from enum import Enum, IntEnum
 
 import httpx
+from dotenv import load_dotenv
 from fastapi import HTTPException, status
 from pydantic import BaseModel
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.research import ResearchMode
+
+load_dotenv()
 
 
 class UserStatus(IntEnum):

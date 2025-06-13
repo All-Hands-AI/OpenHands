@@ -2,6 +2,7 @@ import json
 import os
 from collections import deque
 from copy import deepcopy
+from datetime import datetime
 from typing import override
 
 from httpx import request
@@ -21,7 +22,7 @@ from openhands.events.action import (
     AgentFinishAction,
 )
 from openhands.events.event import Event
-from openhands.llm.llm import LLM
+from openhands.llm.llm import LLM, check_tools
 from openhands.memory.condenser import Condenser
 from openhands.memory.condenser.condenser import Condensation, View
 from openhands.memory.conversation_memory import ConversationMemory
@@ -174,6 +175,14 @@ class CodeActAgent(Agent):
             selected_tools.extend(unique_search_tools)
 
         logger.debug(f'Selected tools: {selected_tools}')
+        # NOTE:only for anthropic model, we need to set the cache_control for the tool list
+        if 'claude' in self.llm.config.model and len(selected_tools) > 0:
+            # Remove any existing cache_control first
+            for tool in selected_tools:
+                if 'cache_control' in tool:
+                    del tool['cache_control']
+            # Add cache_control to last element so it is persistent
+            selected_tools[-1]['cache_control'] = {'type': 'ephemeral'}
         return selected_tools
 
     def step(self, state: State) -> Action:
@@ -223,13 +232,51 @@ class CodeActAgent(Agent):
         )
 
         messages = self._get_messages(condensed_history, research_mode=research_mode)
-
+        formatted_messages = self.llm.format_messages_for_llm(messages)
+        convert_knowledge_to_list = [
+            self.knowledge_base[k] for k in self.knowledge_base
+        ]
+        # NOTE: This is user's dynamic knowledge base. Do not cache this message, as it will be updated frequently.
+        # NOTE: Only cache static large knowledge base that is uploaded by the user (changed rarely).
+        if len(convert_knowledge_to_list) > 0:
+            formatted_messages.append(
+                {
+                    'role': 'assistant',
+                    'content': [
+                        {
+                            'type': 'text',
+                            'text': "User's Knowledge base is in <knowledge_base></knowledge_base> tag\n",
+                        },
+                        {
+                            'type': 'text',
+                            'text': f'<knowledge_base>{json.dumps(convert_knowledge_to_list)}</knowledge_base>',
+                        },
+                        {
+                            'type': 'text',
+                            'text': "Use it for user info's reference if needed.",
+                        },
+                    ],
+                }
+            )
+        current_date = datetime.now().strftime('%Y-%m-%d')
+        formatted_messages.append(
+            {
+                'role': 'assistant',
+                'content': [
+                    {
+                        'type': 'text',
+                        'text': f'Current date is {current_date}. Ignore anything that contradicts this.',
+                    },
+                ],
+            }
+        )
         params: dict = {
-            'messages': self.llm.format_messages_for_llm(messages),
+            'messages': formatted_messages,
         }
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
         # if chat mode, we need to use the search tools
         params['tools'] = self._select_tools_based_on_mode(research_mode)
+        params['tools'] = check_tools(params['tools'], self.llm.config)
         logger.debug(f'Messages: {messages}')
         last_message = messages[-1]
         response = None
@@ -328,9 +375,6 @@ class CodeActAgent(Agent):
         agent_infos = (
             self.a2a_manager.list_remote_agents() if self.a2a_manager else None
         )
-        convert_knowledge_to_list = [
-            self.knowledge_base[k] for k in self.knowledge_base
-        ]
 
         # Use ConversationMemory to process initial messages
         # switch mode and initial messages
@@ -338,12 +382,10 @@ class CodeActAgent(Agent):
         messages = self.conversation_memory.process_initial_messages(
             with_caching=self.llm.is_caching_prompt_active(),
             agent_infos=agent_infos,
-            knowledge_base=convert_knowledge_to_list,
         )
         if research_mode == ResearchMode.FOLLOW_UP:
             messages = self.conversation_memory.process_initial_followup_message(
                 with_caching=self.llm.is_caching_prompt_active(),
-                knowledge_base=convert_knowledge_to_list,
             )
         elif research_mode is None or research_mode == ResearchMode.CHAT:
             messages = self.conversation_memory.process_initial_chatmode_message(
@@ -355,7 +397,6 @@ class CodeActAgent(Agent):
                     }
                     for tool in self.search_tools
                 ],
-                knowledge_base=convert_knowledge_to_list,
             )
         # Use ConversationMemory to process events
         messages = self.conversation_memory.process_events(

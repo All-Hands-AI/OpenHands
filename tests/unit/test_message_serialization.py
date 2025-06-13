@@ -168,3 +168,42 @@ def test_message_tool_response_serialization():
     assert serialized['tool_call_id'] == 'call_123'
     assert 'name' in serialized
     assert serialized['name'] == 'test_function'
+
+
+def test_message_serialization_with_prompt_caching_tool():
+    """Test that tool messages get proper cache control when prompt caching is enabled."""
+    # Create a message with tool response
+    message = Message(
+        role='tool',
+        content=[TextContent(text='Function result', cache_prompt=True)],
+        tool_call_id='call_123',
+        name='test_function',
+        cache_enabled=True,
+    )
+
+    # Serialize the message
+    serialized = message.model_dump()
+
+    # Check that cache control is properly set for tool messages
+    assert 'cache_control' in serialized
+    assert serialized['cache_control'] == {'type': 'ephemeral'}
+
+
+def test_message_serialization_with_prompt_caching_non_tool():
+    """Test that non-tool messages get proper cache control when prompt caching is enabled."""
+    # Create a message with text content
+    message = Message(
+        role='user',
+        content=[TextContent(text='Test message', cache_prompt=True)],
+        cache_enabled=True,
+    )
+
+    # Serialize the message
+    serialized = message.model_dump()
+
+    # Check that cache control is properly set for non-tool messages
+    assert 'content' in serialized
+    assert isinstance(serialized['content'], list)
+    assert len(serialized['content']) == 1
+    assert 'cache_control' in serialized['content'][-1]
+    assert serialized['content'][-1]['cache_control'] == {'type': 'ephemeral'}

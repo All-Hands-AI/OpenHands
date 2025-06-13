@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Generator
 
 from litellm import ModelResponse
@@ -137,8 +136,11 @@ class ConversationMemory:
                     messages_to_add.append(pending_message)
                     # -- 2. Add the tool calls **results***
                     for tool_call in pending_message.tool_calls:
-                        messages_to_add.append(tool_call_id_to_message[tool_call.id])
-                        tool_call_id_to_message.pop(tool_call.id)
+                        if tool_call.id in tool_call_id_to_message:
+                            messages_to_add.append(
+                                tool_call_id_to_message[tool_call.id]
+                            )
+                            tool_call_id_to_message.pop(tool_call.id)
                     _response_ids_to_remove.append(response_id)
             # Cleanup the processed pending tool messages
             for response_id in _response_ids_to_remove:
@@ -158,7 +160,6 @@ class ConversationMemory:
                     TextContent(
                         text=self.prompt_manager.get_followup_mode_message(
                             **kwargs,
-                            CURRENT_DATE=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                         ),
                         cache_prompt=with_caching,
                     )
@@ -176,7 +177,6 @@ class ConversationMemory:
                     TextContent(
                         text=self.prompt_manager.get_chat_mode_message(
                             **kwargs,
-                            CURRENT_DATE=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                         ),
                         cache_prompt=with_caching,
                     )
@@ -188,22 +188,21 @@ class ConversationMemory:
         self,
         with_caching: bool = False,
         agent_infos: list | None = None,
-        knowledge_base: list[dict] | None = None,
     ) -> list[Message]:
         """Create the initial messages for the conversation."""
+        system_messages = [
+            TextContent(
+                text=self.prompt_manager.get_system_message(
+                    agent_infos=agent_infos,
+                ),
+                cache_prompt=with_caching,
+            )
+        ]
+
         return [
             Message(
                 role='system',
-                content=[
-                    TextContent(
-                        text=self.prompt_manager.get_system_message(
-                            agent_infos=agent_infos,
-                            CURRENT_DATE=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                            knowledge_base=knowledge_base,
-                        ),
-                        cache_prompt=with_caching,
-                    )
-                ],
+                content=system_messages,
             )
         ]
 

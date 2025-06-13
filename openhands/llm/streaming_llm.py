@@ -5,7 +5,10 @@ from typing import Any, Callable
 from openhands.core.exceptions import UserCancelledError
 from openhands.core.logger import openhands_logger as logger
 from openhands.llm.async_llm import LLM_RETRY_EXCEPTIONS, AsyncLLM
-from openhands.llm.llm import REASONING_EFFORT_SUPPORTED_MODELS
+from openhands.llm.llm import (
+    MODELS_USING_MAX_COMPLETION_TOKENS,
+    REASONING_EFFORT_SUPPORTED_MODELS,
+)
 
 
 class StreamingLLM(AsyncLLM):
@@ -23,7 +26,12 @@ class StreamingLLM(AsyncLLM):
             base_url=self.config.base_url,
             api_version=self.config.api_version,
             custom_llm_provider=self.config.custom_llm_provider,
-            max_tokens=self.config.max_output_tokens,
+            max_tokens=self.config.max_output_tokens
+            if self.config.model not in MODELS_USING_MAX_COMPLETION_TOKENS
+            else None,
+            max_completion_tokens=self.config.max_output_tokens
+            if self.config.model in MODELS_USING_MAX_COMPLETION_TOKENS
+            else None,
             timeout=self.config.timeout,
             temperature=self.config.temperature,
             top_p=self.config.top_p,

@@ -2,12 +2,7 @@ import base64
 import os
 
 import aiofiles  # type: ignore
-from fastapi import (
-    APIRouter,
-    HTTPException,
-    Request,
-    status,
-)
+from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import FileResponse, JSONResponse
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
@@ -17,13 +12,8 @@ from starlette.background import BackgroundTask
 from openhands.core.config import load_app_config
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
-from openhands.events.action import (
-    FileReadAction,
-)
-from openhands.events.observation import (
-    ErrorObservation,
-    FileReadObservation,
-)
+from openhands.events.action import FileReadAction
+from openhands.events.observation import ErrorObservation, FileReadObservation
 from openhands.runtime.base import Runtime
 from openhands.server.file_config import (
     FILES_TO_IGNORE,

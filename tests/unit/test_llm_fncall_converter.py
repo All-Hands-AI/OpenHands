@@ -684,3 +684,53 @@ def test_convert_from_multiple_tool_calls_no_tool_calls():
         input_messages
     )
     assert result == input_messages
+
+
+def test_convert_fncall_messages_with_cache_control():
+    """Test that cache_control is properly handled in tool messages."""
+    # Prepare test data
+    messages = [
+        {
+            'role': 'tool',
+            'name': 'test_tool',
+            'content': [{'type': 'text', 'text': 'test content'}],
+            'cache_control': {'type': 'ephemeral'},
+        }
+    ]
+
+    # Call the function
+    result = convert_fncall_messages_to_non_fncall_messages(messages, [])
+
+    # Verify the result
+    assert len(result) == 1
+    assert result[0]['role'] == 'user'
+    assert 'cache_control' in result[0]['content'][-1]
+    assert result[0]['content'][-1]['cache_control'] == {'type': 'ephemeral'}
+    assert (
+        result[0]['content'][0]['text']
+        == 'EXECUTION RESULT of [test_tool]:\ntest content'
+    )
+
+
+def test_convert_fncall_messages_without_cache_control():
+    """Test that tool messages without cache_control work as expected."""
+    # Prepare test data
+    messages = [
+        {
+            'role': 'tool',
+            'name': 'test_tool',
+            'content': [{'type': 'text', 'text': 'test content'}],
+        }
+    ]
+
+    # Call the function
+    result = convert_fncall_messages_to_non_fncall_messages(messages, [])
+
+    # Verify the result
+    assert len(result) == 1
+    assert result[0]['role'] == 'user'
+    assert 'cache_control' not in result[0]['content'][-1]
+    assert (
+        result[0]['content'][0]['text']
+        == 'EXECUTION RESULT of [test_tool]:\ntest content'
+    )

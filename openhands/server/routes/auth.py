@@ -2,10 +2,13 @@ import os
 from typing import Optional
 
 import httpx
+from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from openhands.core.logger import openhands_logger as logger
+
+load_dotenv()
 
 app = APIRouter(prefix='/api/auth')
 

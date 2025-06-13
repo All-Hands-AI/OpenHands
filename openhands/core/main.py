@@ -1,8 +1,9 @@
-import asyncio
 import json
 import os
 from pathlib import Path
 from typing import Callable, Protocol
+
+import uvloop
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.controller.agent import Agent
@@ -292,7 +293,7 @@ if __name__ == '__main__':
     session_name = args.name
     sid = generate_sid(config, session_name)
 
-    asyncio.run(
+    uvloop.run(
         run_controller(
             config=config,
             initial_user_action=initial_user_action,

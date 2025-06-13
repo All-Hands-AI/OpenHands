@@ -1,3 +1,4 @@
+import asyncio
 import json
 import re
 from typing import Any, Optional
@@ -54,21 +55,20 @@ async def create_mcp_clients(
     sid: Optional[str] = None,
     mnemonic: Optional[str] = None,
 ) -> list[MCPClient]:
-    mcp_clients: list[MCPClient] = []
     # Initialize SSE connections
-    for name, mcp_config in dict_mcp_config.items():
+    async def connect_client(name: str, mcp_config: MCPConfig) -> Optional[MCPClient]:
         logger.info(
             f'Initializing MCP {name} agent for {mcp_config.url} with {mcp_config.mode} connection...'
         )
         # check if the name in a search engine config
         if f'search_engine_{name}' in dict_mcp_config:
-            continue
+            return None
+
         client = MCPClient(name=name)
         try:
             await client.connect_sse(mcp_config.url, sid, mnemonic)
-            # Only add the client to the list after a successful connection
-            mcp_clients.append(client)
             logger.info(f'Connected to MCP server {mcp_config.url} via SSE')
+            return client
         except Exception as e:
             logger.error(f'Failed to connect to {mcp_config.url}: {str(e)}')
             try:
@@ -77,6 +77,23 @@ async def create_mcp_clients(
                 logger.error(
                     f'Error during disconnect after failed connection: {str(disconnect_error)}'
                 )
+            return None
+
+    # Create tasks for all clients
+    tasks = [
+        connect_client(name, mcp_config) for name, mcp_config in dict_mcp_config.items()
+    ]
+
+    # Run all connection attempts concurrently, ignoring exceptions
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    # Filter out exceptions and None results
+    mcp_clients: list[MCPClient] = [
+        r
+        for r in results
+        if not isinstance(r, Exception)
+        and not isinstance(r, BaseException)
+        and r is not None
+    ]
 
     return mcp_clients
 
@@ -109,11 +126,13 @@ async def fetch_mcp_tools_from_config(
         mcp_tools = convert_mcp_clients_to_tools(mcp_clients)
 
         # Always disconnect clients to clean up resources
-        for mcp_client in mcp_clients:
-            try:
-                await mcp_client.disconnect()
-            except Exception as disconnect_error:
-                logger.error(f'Error disconnecting MCP client: {str(disconnect_error)}')
+        disconnect_tasks = [mcp_client.disconnect() for mcp_client in mcp_clients]
+        results = await asyncio.gather(*disconnect_tasks, return_exceptions=True)
+
+        # Log any errors that occurred during disconnection
+        for result in results:
+            if isinstance(result, Exception):
+                logger.error(f'Error disconnecting MCP client: {str(result)}')
     except Exception as e:
         logger.error(f'Error fetching MCP tools: {str(e)}')
         return []

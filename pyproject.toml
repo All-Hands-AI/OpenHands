@@ -90,6 +90,7 @@ traceloop-sdk = "0.24.0"
 PyYAML = "^6.0.1"
 mem0ai = "0.1.98"
 psycopg2-binary = "2.9.10"
+uvloop = "0.21.0"
 
 json-schema-to-pydantic = "0.2.3"
 autogen_core = { git = "https://github.com/oraichain/autogen.git", subdirectory = "python/packages/autogen-core" }

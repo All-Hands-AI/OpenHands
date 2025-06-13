@@ -8,6 +8,7 @@ from typing import List, Optional
 from uuid import uuid4
 
 import toml
+import uvloop
 from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.application import Application
 from prompt_toolkit.completion import Completer, Completion
@@ -59,6 +60,9 @@ from openhands.llm.metrics import Metrics
 from openhands.mcp import fetch_mcp_tools_from_config
 from openhands.mcp.utils import fetch_search_tools_from_config
 from openhands.microagent.microagent import BaseMicroagent
+
+# Set uvloop policy in each process
+uvloop.install()
 
 # Color and styling constants
 COLOR_GOLD = '#FFD700'

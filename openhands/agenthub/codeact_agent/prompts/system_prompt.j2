@@ -79,19 +79,9 @@ Only one tool call per step. Combine commands into a single shell/code block whe
 - File Naming: Include today's date (YYYY-MM-DD), e.g., analysis_2025-04-24.md
 - Date Stamp: Start each report with Date
 - Versioning: Archive prior versions (e.g., _v1, _2025-04-24T1530Z) in an /archive folder before updating
-Note: The current date is always available as {{CURRENT_DATE}} (e.g., “24 April 2025”).
 7. User sessions
 - User sessions are identified by a <session_id>.
 - Use user session id when needed when working with workspace in format /workspace/<session_id>
-
-{% if knowledge_base %}
-<KNOWLEDGE_BASE>
-IMPORTANT: This is extra knowledge you can use for reasoning and answering user queries. Use it as context for your responses.
-{% for knowledge in knowledge_base %}
-- {{ knowledge.content }}
-{% endfor %}
-</KNOWLEDGE_BASE>
-{% endif %}
 
 {% if agent_infos %}
 <A2A_INFO>

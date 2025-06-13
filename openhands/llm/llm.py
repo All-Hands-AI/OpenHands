@@ -56,6 +56,7 @@ CACHE_PROMPT_SUPPORTED_MODELS = [
     'claude-3-5-haiku-20241022',
     'claude-3-haiku-20240307',
     'claude-3-opus-20240229',
+    'us.anthropic.claude-3-7-sonnet-20250219-v1:0',
 ]
 
 # function calling supporting models
@@ -72,6 +73,7 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'o3-mini-2025-01-31',
     'o3-mini',
     'gemini-2.5-pro',
+    'gemini-2.5-pro-preview-05-06',
     'Llama-4-Maverick-17B-128E-Instruct-FP8',
     'Qwen3-235B-A22B-fp8-tput',
     'grok-3-mini',
@@ -90,9 +92,14 @@ MODELS_WITHOUT_STOP_WORDS = [
     'o1-preview',
     'o1',
     'o1-2024-12-17',
+    'o4-mini',
 ]
 
 FORMATTED_MODELS = ['llama-4-maverick-17b-128e-instruct']
+
+MODELS_USING_MAX_COMPLETION_TOKENS = ['o4-mini']
+
+MODELS_WITH_TEMPERATURE_DEFAULT_AS_1 = ['o4-mini']
 
 
 class LLM(RetryMixin, DebugMixin):
@@ -176,6 +183,18 @@ class LLM(RetryMixin, DebugMixin):
         if self.config.model.startswith('azure'):
             kwargs['max_tokens'] = self.config.max_output_tokens
             kwargs.pop('max_completion_tokens')
+
+        if self.config.model in MODELS_USING_MAX_COMPLETION_TOKENS:
+            kwargs['max_completion_tokens'] = self.config.max_output_tokens
+            kwargs.pop('max_tokens')
+
+        if self.config.model in MODELS_WITH_TEMPERATURE_DEFAULT_AS_1:
+            kwargs['temperature'] = 1
+
+        if self.config.model.startswith('bedrock/converse'):
+            kwargs['aws_access_key_id'] = os.getenv('AWS_ACCESS_KEY_ID')
+            kwargs['aws_secret_access_key'] = os.getenv('AWS_SECRET_ACCESS_KEY')
+            kwargs['aws_region_name'] = os.getenv('AWS_REGION_NAME')
 
         self._completion = partial(
             litellm_completion,
@@ -801,7 +820,10 @@ class LLM(RetryMixin, DebugMixin):
                 message.force_string_serializer = True
 
         # let pydantic handle the serialization
-        return [message.model_dump() for message in messages]
+        formatted_messages = [message.model_dump() for message in messages]
+        if 'gemini' in self.config.model.lower():
+            formatted_messages = transform_messages_for_gemini(formatted_messages)
+        return formatted_messages
 
 
 def transform_messages_for_llama(messages):
@@ -840,3 +862,61 @@ def transform_messages_for_llama(messages):
         transformed_messages.append(transformed_msg)
 
     return transformed_messages
+
+
+def transform_messages_for_gemini(messages):
+    """
+    Transform messages with structured content (e.g., [{'type': 'text', 'text': '...'}])
+    to a format compatible with Gemini models, where content is a plain string.
+    """
+    for message in messages:
+        if message['role'] and message['role'] == 'tool':
+            message['role'] = 'function'
+            if (
+                message['content']
+                and isinstance(message['content'], list)
+                and len(message['content']) > 0
+                and isinstance(message['content'][0], dict)
+                and 'text' in message['content'][0]
+            ):
+                message['content'] = message['content'][0]['text']
+            else:
+                logger.warning(
+                    f'content format in message not matched for gemini: {message["content"]}'
+                )
+
+    return messages
+
+
+def check_tools(tools: list, llm_config: LLMConfig) -> list:
+    """Checks and modifies tools for compatibility with the current LLM."""
+    # Special handling for Gemini models which don't support default fields and have limited format support
+    if 'gemini' in llm_config.model.lower():
+        logger.info(
+            f'Removing default fields and unsupported formats from tools for Gemini model {llm_config.model} '
+            "since Gemini models have limited format support (only 'enum' and 'date-time' for STRING types)."
+        )
+        # prevent mutation of input tools
+        checked_tools = copy.deepcopy(tools)
+        # Strip off default fields and unsupported formats that cause errors with gemini-preview
+        for tool in checked_tools:
+            if 'function' in tool and 'parameters' in tool['function']:
+                if 'properties' in tool['function']['parameters']:
+                    for prop_name, prop in tool['function']['parameters'][
+                        'properties'
+                    ].items():
+                        # Remove default fields
+                        if 'default' in prop:
+                            del prop['default']
+
+                        # Remove format fields for STRING type parameters if the format is unsupported
+                        # Gemini only supports 'enum' and 'date-time' formats for STRING type
+                        if prop.get('type') == 'string' and 'format' in prop:
+                            supported_formats = ['enum', 'date-time']
+                            if prop['format'] not in supported_formats:
+                                logger.info(
+                                    f'Removing unsupported format "{prop["format"]}" for STRING parameter "{prop_name}"'
+                                )
+                                del prop['format']
+        return checked_tools
+    return tools

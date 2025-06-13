@@ -62,7 +62,14 @@ async def rag_job(request: Request):
 async def delete_thread(request: Request, conversation_id: str):
     payload = await request.json()
     print(payload)
-    return {'msg': 'success'}
+    return {'msg': 'success', 'status_code': 200}
+
+
+@app.post('/api/subcription/check-pricing')
+async def check_pricing(request: Request):
+    payload = await request.json()
+    print(payload)
+    return {'msg': 'success', 'status_code': 200, 'data': {'success': True}}
 
 
 if __name__ == '__main__':

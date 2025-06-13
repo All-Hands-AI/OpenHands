@@ -1532,7 +1532,7 @@ class AgentController:
 
         accumulated_usage = self.agent.llm.metrics.accumulated_token_usage
         self.log(
-            'debug',
+            'info',
             f'Action metrics - accumulated_cost: {metrics.accumulated_cost}, '
             f'latest tokens (prompt/completion/cache_read/cache_write): '
             f'{latest_usage.prompt_tokens if latest_usage else 0}/'

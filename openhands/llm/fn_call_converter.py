@@ -471,6 +471,12 @@ def convert_fncall_messages_to_non_fncall_messages(
                 raise FunctionCallConversionError(
                     f'Unexpected content type {type(content)}. Expected str or list. Content: {content}'
                 )
+            if (
+                'cache_control' in message
+                and isinstance(content, list)
+                and len(content) > 0
+            ):
+                content[-1]['cache_control'] = {'type': 'ephemeral'}
             converted_messages.append({'role': 'user', 'content': content})
         else:
             raise FunctionCallConversionError(
