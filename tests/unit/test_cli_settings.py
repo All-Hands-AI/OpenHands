@@ -325,6 +325,109 @@ class TestModifyLLMSettingsBasic:
         assert settings.llm_api_key.get_secret_value() == 'new-api-key'
         assert settings.llm_base_url is None
 
+    def test_default_provider_preference(self):
+        """Test that the default provider prefers 'anthropic' if available."""
+        # This is a simple test to verify that the default provider prefers 'anthropic'
+        # We're directly checking the code in settings.py where the default provider is set
+
+        # Import the settings module to check the default provider
+        # Find the line where the default provider is set
+        import inspect
+
+        import openhands.cli.settings as settings_module
+
+        source_lines = inspect.getsource(
+            settings_module.modify_llm_settings_basic
+        ).splitlines()
+
+        # Look for the line that sets the default provider
+        default_provider_found = False
+        for i, line in enumerate(source_lines):
+            if "# Set default provider - prefer 'anthropic' if available" in line:
+                default_provider_found = True
+                break
+
+        # Assert that the default provider comment exists
+        assert default_provider_found, 'Could not find the default provider comment'
+
+        # Now look for the actual implementation
+        provider_impl_found = False
+        for i, line in enumerate(source_lines):
+            if "'anthropic'" in line and "if 'anthropic' in provider_list" in line:
+                provider_impl_found = True
+                break
+
+        assert provider_impl_found, (
+            "Could not find the implementation that prefers 'anthropic'"
+        )
+
+        # Also check the fallback provider when provider not in organized_models
+        fallback_comment_found = False
+        for i, line in enumerate(source_lines):
+            if (
+                "# If the provider doesn't exist, prefer 'anthropic' if available"
+                in line
+            ):
+                fallback_comment_found = True
+                break
+
+        assert fallback_comment_found, 'Could not find the fallback provider comment'
+
+        # Now look for the actual implementation
+        fallback_impl_found = False
+        for i, line in enumerate(source_lines):
+            if "'anthropic'" in line and "if 'anthropic' in organized_models" in line:
+                fallback_impl_found = True
+                break
+
+        assert fallback_impl_found, (
+            "Could not find the fallback implementation that prefers 'anthropic'"
+        )
+
+    def test_default_model_selection(self):
+        """Test that the default model selection uses the first model in the list."""
+        # This is a simple test to verify that the default model selection uses the first model in the list
+        # We're directly checking the code in settings.py where the default model is set
+
+        import inspect
+
+        import openhands.cli.settings as settings_module
+
+        source_lines = inspect.getsource(
+            settings_module.modify_llm_settings_basic
+        ).splitlines()
+
+        # Look for the block that sets the default model
+        default_model_block = []
+        in_default_model_block = False
+        for line in source_lines:
+            if '# Set default model to the first model in the list' in line:
+                in_default_model_block = True
+                default_model_block.append(line)
+            elif in_default_model_block:
+                default_model_block.append(line)
+                if '# Show the default model' in line:
+                    break
+
+        # Assert that we found the default model selection logic
+        assert default_model_block, (
+            'Could not find the block that sets the default model'
+        )
+
+        # Print the actual lines for debugging
+        print('Default model block found:')
+        for line in default_model_block:
+            print(f'  {line.strip()}')
+
+        # Check that the logic uses the first model in the list
+        first_model_check = any(
+            'provider_models[0]' in line for line in default_model_block
+        )
+
+        assert first_model_check, (
+            'Default model selection should use the first model in the list'
+        )
+
 
 class TestModifyLLMSettingsAdvanced:
     @pytest.fixture

@@ -19,6 +19,12 @@ appropriate repository and branch you'd like OpenHands to work on. Then click on
 
 ![Connect Repo](/static/img/connect-repo.png)
 
+## Using Tokens with Reduced Scopes
+
+OpenHands requests an API-scoped token during OAuth authentication. By default, this token is provided to the agent.
+To restrict the agent's permissions, you can define a custom secret `GITLAB_TOKEN`, which will override the default token assigned to the agent.
+While the high-permission API token is still requested and used for other components of the application (e.g. opening merge requests), the agent will not have access to it.
+
 ## Next Steps
 
 - [Learn about the Cloud UI](/usage/cloud/cloud-ui).
