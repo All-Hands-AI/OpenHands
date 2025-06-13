@@ -87,7 +87,7 @@ docker run -it --rm --pull=always \
 
 访问[运行OpenHands](https://docs.all-hands.dev/usage/installation)获取更多信息和设置说明。
 
-如果您想修改OpenHands源代码，请查看[Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md)。
+如果您想修改OpenHands源代码，请查看[DEVELOPMENT.md](https://github.com/All-Hands-AI/OpenHands/blob/main/DEVELOPMENT.md)。
 
 遇到问题？[故障排除指南](https://docs.all-hands.dev/usage/troubleshooting)可以提供帮助。
 

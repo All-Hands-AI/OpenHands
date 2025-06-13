@@ -6,7 +6,7 @@ This folder contains code and resources to run experiments and evaluations.
 
 ### Setup
 
-Before starting evaluation, follow the instructions [here](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md) to setup your local development environment and LLM.
+Before starting evaluation, follow the instructions [here](https://github.com/All-Hands-AI/OpenHands/blob/main/DEVELOPMENT.md) to setup your local development environment and LLM.
 
 Once you are done with setup, you can follow the benchmark-specific instructions in each subdirectory of the [evaluation directory](#supported-benchmarks).
 Generally these will involve running `run_infer.py` to perform inference with the agents.

@@ -48,7 +48,7 @@ This will start the application in development mode. Open [http://localhost:3001
 
 **NOTE: The backend is _partially_ mocked using `msw`. Therefore, some features may not work as they would with the actual backend.**
 
-See the [Development.md](../Development.md) for extra tips on how to run in development mode.
+See the [DEVELOPMENT.md](../DEVELOPMENT.md) for extra tips on how to run in development mode.
 
 ### Running the Application with the Actual Backend (Production Mode)
 
