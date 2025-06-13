@@ -123,7 +123,7 @@ class AgentSession:
         runtime_connected = False
         restored_state = False
         custom_secrets_handler = UserSecrets(
-            custom_secrets=custom_secrets if custom_secrets else {}
+            custom_secrets=custom_secrets if custom_secrets else {}  # type: ignore[arg-type]
         )
         try:
             self._create_security_analyzer(config.security.security_analyzer)
@@ -325,7 +325,7 @@ class AgentSession:
         if self.runtime is not None:
             raise RuntimeError('Runtime already created')
 
-        custom_secrets_handler = UserSecrets(custom_secrets=custom_secrets or {})
+        custom_secrets_handler = UserSecrets(custom_secrets=custom_secrets or {})  # type: ignore[arg-type]
         env_vars = custom_secrets_handler.get_env_vars()
 
         self.logger.debug(f'Initializing runtime `{runtime_name}` now...')

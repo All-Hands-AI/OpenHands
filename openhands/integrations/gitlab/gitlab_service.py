@@ -65,7 +65,9 @@ class GitLabService(BaseGitService, GitService):
         Retrieve the GitLab Token to construct the headers
         """
         if not self.token:
-            self.token = await self.get_latest_token()
+            latest_token = await self.get_latest_token()
+            if latest_token:
+                self.token = latest_token
 
         return {
             'Authorization': f'Bearer {self.token.get_secret_value()}',
@@ -189,7 +191,7 @@ class GitLabService(BaseGitService, GitService):
             name=response.get('name'),
             email=response.get('email'),
             company=response.get('organization'),
-            login=response.get('username'),
+            login=response.get('username'),  # type: ignore[call-arg]
         )
 
     async def search_repositories(
@@ -258,8 +260,8 @@ class GitLabService(BaseGitService, GitService):
         all_repos = all_repos[:MAX_REPOS]
         return [
             Repository(
-                id=repo.get('id'),
-                full_name=repo.get('path_with_namespace'),
+                id=repo.get('id'),  # type: ignore[arg-type]
+                full_name=repo.get('path_with_namespace'),  # type: ignore[arg-type]
                 stargazers_count=repo.get('star_count'),
                 git_provider=ProviderType.GITLAB,
                 is_public=repo.get('visibility') == 'public',
