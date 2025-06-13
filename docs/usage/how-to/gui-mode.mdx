@@ -1,14 +1,13 @@
 ---
-title: GUI Mode
-description: OpenHands provides a Graphical User Interface (GUI) mode for interacting with the AI assistant.
+title: GUI
+description: High level overview of the Graphical User Interface (GUI) in OpenHands.
 ---
 
-## Installation and Setup
+## Prerequisites
 
-1. Follow the installation instructions to install OpenHands.
-2. After running the command, access OpenHands at [http://localhost:3000](http://localhost:3000).
+- [OpenHands is running](/usage/local-setup)
 
-## Interacting with the GUI
+## Overview
 
 ### Initial Setup
 
@@ -19,16 +18,23 @@ description: OpenHands provides a Graphical User Interface (GUI) mode for intera
 3. Enter the corresponding `API Key` for your chosen provider.
 4. Click `Save Changes` to apply the settings.
 
-### Version Control Tokens
+### Settings
 
-OpenHands supports multiple version control providers. You can configure tokens for multiple providers simultaneously.
+You can use the Settings page at any time to:
 
-#### GitHub Token Setup
+- Setup the LLM provider and model for OpenHands.
+- [Setup the search engine](/usage/search-engine-setup).
+- [Configure MCP servers](/usage/mcp).
+- [Connect to GitHub](/usage/how-to/gui-mode#github-setup) and [connect to GitLab](/usage/how-to/gui-mode#gitlab-setup)
+- Set application settings like your preferred language, notifications and other preferences.
+- Generate custom secrets.
+
+#### GitHub Setup
 
 OpenHands automatically exports a `GITHUB_TOKEN` to the shell environment if provided:
 
-<details>
-  <summary>Setting Up a GitHub Token</summary>
+<AccordionGroup>
+<Accordion title="Setting Up a GitHub Token">
 
   1. **Generate a Personal Access Token (PAT)**:
    - On GitHub, go to Settings > Developer Settings > Personal Access Tokens > Tokens (classic).
@@ -37,16 +43,11 @@ OpenHands automatically exports a `GITHUB_TOKEN` to the shell environment if pro
      - `repo` (Full control of private repositories)
    - **Fine-Grained Tokens**
      - All Repositories (You can select specific repositories, but this will impact what returns in repo search)
-     - Minimal Permissions ( Select `Meta Data = Read-only` read for search, `Pull Requests = Read and Write` and `Content = Read and Write` for branch creation)
+     - Minimal Permissions (Select `Meta Data = Read-only` read for search, `Pull Requests = Read and Write` and `Content = Read and Write` for branch creation)
   2. **Enter Token in OpenHands**:
-   - Click the Settings button (gear icon).
-   - Navigate to the `Git` tab.
+   - In the Settings page, navigate to the `Git` tab.
    - Paste your token in the `GitHub Token` field.
    - Click `Save Changes` to apply the changes.
-</details>
-
-<details>
-  <summary>Organizational Token Policies</summary>
 
   If you're working with organizational repositories, additional setup may be required:
 
@@ -59,15 +60,12 @@ OpenHands automatically exports a `GITHUB_TOKEN` to the shell environment if pro
    - Look for the organization under `Organization access`.
    - If required, click `Enable SSO` next to your organization.
    - Complete the SSO authorization process.
-</details>
+</Accordion>
 
-<details>
-  <summary>Troubleshooting</summary>
-
+<Accordion title="Troubleshooting">
   Common issues and solutions:
 
   - **Token Not Recognized**:
-     - Ensure the token is properly saved in settings.
      - Check that the token hasn't expired.
      - Verify the token has the required scopes.
      - Try regenerating the token.
@@ -81,15 +79,15 @@ OpenHands automatically exports a `GITHUB_TOKEN` to the shell environment if pro
      - The app will show a green checkmark if the token is valid.
      - Try accessing a repository to confirm permissions.
      - Check the browser console for any error messages.
-</details>
+</Accordion>
+</AccordionGroup>
 
-#### GitLab Token Setup
+#### GitLab Setup
 
 OpenHands automatically exports a `GITLAB_TOKEN` to the shell environment if provided:
 
-<details>
-  <summary>Setting Up a GitLab Token</summary>
-
+<AccordionGroup>
+<Accordion title="Setting Up a GitLab Token">
   1. **Generate a Personal Access Token (PAT)**:
    - On GitLab, go to User Settings > Access Tokens.
    - Create a new token with the following scopes:
@@ -99,15 +97,17 @@ OpenHands automatically exports a `GITLAB_TOKEN` to the shell environment if pro
      - `write_repository` (Write repository)
    - Set an expiration date or leave it blank for a non-expiring token.
   2. **Enter Token in OpenHands**:
-   - Click the Settings button (gear icon).
-   - Navigate to the `Git` tab.
+   - In the Settings page, navigate to the `Git` tab.
    - Paste your token in the `GitLab Token` field.
    - Click `Save Changes` to apply the changes.
-</details>
 
-<details>
-  <summary>Troubleshooting</summary>
+  3. **(Optional): Restrict agent permissions**
+   - Create another PAT using Step 1 and exclude `api` scope .
+   - In the Settings page, in the `Secrets` tab, create a new secret `GITLAB_TOKEN` and paste your lower scope token.
+   - OpenHands will use the higher scope token, and the agent will use the lower scope token
+</Accordion>
 
+<Accordion title="Troubleshooting">
   Common issues and solutions:
 
   - **Token Not Recognized**:
@@ -119,25 +119,44 @@ OpenHands automatically exports a `GITLAB_TOKEN` to the shell environment if pro
      - Verify project access permissions.
      - Check if the token has the necessary scopes.
      - For group/organization repositories, ensure you have proper access.
-</details>
+</Accordion>
+</AccordionGroup>
 
-### Advanced Settings
+#### Advanced Settings
 
-1. Inside the Settings page, under the `LLM` tab, toggle `Advanced` options to access additional settings.
-2. Use the `Custom Model` text box to manually enter a model if it's not in the list.
-3. Specify a `Base URL` if required by your LLM provider.
+The `Advanced` settings allows configuration of additional LLM settings. Inside the Settings page, under the `LLM` tab,
+toggle `Advanced` options to access additional settings.
 
-### Interacting with the AI
+- Custom Model: Use the `Custom Model` text box to manually enter a model. Make sure to use the correct prefix based on litellm docs.
+- Base URL: Specify a `Base URL` if required by your LLM provider.
+- Memory Condensation: The memory condenser manages the LLM's context by ensuring only the most important and relevant information is presented.
+- Confirmation Mode: Enabling this mode will cause OpenHands to confirm an action with the user before performing it.
 
-1. Type your prompt in the input box.
-2. Click the send button or press Enter to submit your message.
-3. The AI will process your input and provide a response in the chat window.
-4. You can continue the conversation by asking follow-up questions or providing additional information.
+### Key Features
+
+For an overview of the key features available inside a conversation, please refer to the [Key Features](/usage/key-features)
+section of the documentation.
+
+### Status Indicator
+
+The status indicator located in the bottom left of the screen will cycle through a number of states as a new conversation
+is loaded. Typically these include:
+
+* `Disconnected` : The frontend is not connected to any conversation
+* `Connecting` : The frontend is connecting a websocket to a conversation.
+* `Building Runtime...` : The server is building a runtime. This is typically in development mode only while building a docker image.
+* `Starting Runtime...` : The server is starting a new runtime instance - probably a new docker container or remote runtime.
+* `Initializing Agent...` : The server is starting the agent loop. (This step does not appear at present with Nested runtimes)
+* `Setting up workspace...` : Usually this means a `git clone ...` operation.
+* `Setting up git hooks` : Setting up the git pre commit hooks for the workspace.
+* `Agent is awaiting user input...` : Ready to go!
 
 ## Tips for Effective Use
 
 - Be specific in your requests to get the most accurate and helpful responses, as described in the [prompting best practices](../prompting/prompting-best-practices).
 - Use one of the recommended models, as described in the [LLMs section](usage/llms/llms.md).
 
-Remember, the GUI mode of OpenHands is designed to make your interaction with the AI assistant as smooth and intuitive
-as possible. Don't hesitate to explore its features to maximize your productivity.
+## Other Ways to Run Openhands
+- [Run OpenHands in a scriptable headless mode.](/usage/how-to/headless-mode)
+- [Run OpenHands with a friendly CLI.](/usage/how-to/cli-mode)
+- [Run OpenHands on GitHub issues with a GitHub action.](/usage/how-to/github-action)

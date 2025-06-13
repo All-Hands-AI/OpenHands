@@ -24,6 +24,7 @@ from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
 from openhands.runtime.plugins import PluginRequirement
+from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.runtime.utils.command import (
     DEFAULT_MAIN_MODULE,
     get_action_execution_server_startup_command,
@@ -139,7 +140,7 @@ class RemoteRuntime(ActionExecutionClient):
             )
         else:
             self.log('info', 'No existing runtime found, starting a new one')
-            self.send_status_message('STATUS$STARTING_CONTAINER')
+            self.set_runtime_status(RuntimeStatus.BUILDING_RUNTIME)
             if self.config.sandbox.runtime_container_image is None:
                 self.log(
                     'info',
@@ -159,13 +160,13 @@ class RemoteRuntime(ActionExecutionClient):
         assert self.runtime_url is not None, (
             'Runtime URL is not set. This should never happen.'
         )
-        self.send_status_message('STATUS$WAITING_FOR_CLIENT')
+        self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
         if not self.attach_to_existing:
             self.log('info', 'Waiting for runtime to be alive...')
         self._wait_until_alive()
         if not self.attach_to_existing:
             self.log('info', 'Runtime is ready.')
-        self.send_status_message(' ')
+        self.set_runtime_status(RuntimeStatus.READY)
 
     def _check_existing_runtime(self) -> bool:
         self.log('info', f'Checking for existing runtime with session ID: {self.sid}')
@@ -307,7 +308,7 @@ class RemoteRuntime(ActionExecutionClient):
         4. Update env vars
         """
         self.log('info', f'Attempting to resume runtime with ID: {self.runtime_id}')
-        self.send_status_message('STATUS$STARTING_RUNTIME')
+        self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
         try:
             response = self._send_runtime_api_request(
                 'POST',
