@@ -184,7 +184,7 @@ export function ChatInterface() {
 
         <div className="flex flex-col gap-[6px] px-4 pb-4">
           <div className="flex justify-between relative">
-            {config?.APP_MODE === "saas" && (
+            {config?.APP_MODE !== "saas" && (
               <TrajectoryActions
                 onPositiveFeedback={() =>
                   onClickShareFeedbackActionButton("positive")
@@ -218,7 +218,7 @@ export function ChatInterface() {
           />
         </div>
 
-        {config?.APP_MODE === "saas" && (
+        {config?.APP_MODE !== "saas" && (
           <FeedbackModal
             isOpen={feedbackModalIsOpen}
             onClose={() => setFeedbackModalIsOpen(false)}
