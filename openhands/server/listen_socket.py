@@ -68,6 +68,8 @@ async def setup_init_convo_settings(
     session_init_args = {**settings.__dict__, **session_init_args}
 
     git_provider_tokens = create_provider_tokens_object(providers_set)
+    logger.info(f'Git provider scaffold: {git_provider_tokens}')
+
     if server_config.app_mode != AppMode.SAAS and user_secrets:
         git_provider_tokens = user_secrets.provider_tokens
 
@@ -105,6 +107,8 @@ async def connect(connection_id: str, environ: dict) -> None:
             providers_list.extend(item.split(',') if isinstance(item, str) else [])
         providers_list = [p for p in providers_list if p]
         providers_set = [ProviderType(p) for p in providers_list]
+
+        logger.info(f'restrating session with providers: {providers_set}')
 
         if not conversation_id:
             logger.error('No conversation_id in query params')
