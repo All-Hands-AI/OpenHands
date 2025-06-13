@@ -92,11 +92,10 @@ async def test_get_issue(mock_client, bitbucket_handler):
     # We don't test for html_url, state, user, or assignees as they're not part of the Issue model
 
 
-@pytest.mark.asyncio
-@patch('httpx.AsyncClient')
-async def test_create_pr(mock_client, bitbucket_handler):
+@patch('httpx.post')
+def test_create_pr(mock_post, bitbucket_handler):
     mock_response = MagicMock()
-    mock_response.raise_for_status = AsyncMock()
+    mock_response.raise_for_status.return_value = None
     mock_response.json.return_value = {
         'links': {
             'html': {
@@ -104,12 +103,9 @@ async def test_create_pr(mock_client, bitbucket_handler):
             }
         },
     }
+    mock_post.return_value = mock_response
 
-    mock_client_instance = AsyncMock()
-    mock_client_instance.post.return_value = mock_response
-    mock_client.return_value.__aenter__.return_value = mock_client_instance
-
-    pr_url = await bitbucket_handler.create_pr(
+    pr_url = bitbucket_handler.create_pr(
         title='Test PR',
         body='Test PR Body',
         head='feature-branch',
@@ -126,7 +122,7 @@ async def test_create_pr(mock_client, bitbucket_handler):
         'close_source_branch': False,
     }
 
-    mock_client_instance.post.assert_called_once_with(
+    mock_post.assert_called_once_with(
         'https://api.bitbucket.org/2.0/repositories/test-workspace/test-repo/pullrequests',
         headers=bitbucket_handler.headers,
         json=expected_payload,

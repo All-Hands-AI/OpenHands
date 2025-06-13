@@ -108,7 +108,7 @@ class BitbucketIssueHandler(IssueHandlerInterface):
 
         return issue
 
-    async def create_pr(
+    def create_pr(
         self,
         title: str,
         body: str,
@@ -136,10 +136,9 @@ class BitbucketIssueHandler(IssueHandlerInterface):
             'close_source_branch': False,
         }
 
-        async with httpx.AsyncClient() as client:
-            response = await client.post(url, headers=self.headers, json=payload)
-            response.raise_for_status()
-            data = response.json()
+        response = httpx.post(url, headers=self.headers, json=payload)
+        response.raise_for_status()
+        data = response.json()
 
         return data.get('links', {}).get('html', {}).get('href', '')
 
@@ -486,7 +485,7 @@ class BitbucketIssueHandler(IssueHandlerInterface):
         response = httpx.post(url, headers=self.headers, json=payload)
         response.raise_for_status()
 
-    async def get_issue_references(self, body: str) -> list[int]:
+    def get_issue_references(self, body: str) -> list[int]:
         """Extract issue references from a string.
 
         Args:
