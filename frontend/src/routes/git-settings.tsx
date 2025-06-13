@@ -127,7 +127,7 @@ function GitSettingsScreen() {
                 setGithubTokenInputHasValue(!!value);
               }}
               onGitHubHostChange={(value) => {
-                setGitlabHostInputHasValue(!!value);
+                setGithubHostInputHasValue(!!value);
               }}
               githubHostSet={existingGithubHost}
             />

@@ -246,9 +246,21 @@ describe("Form submission", () => {
       gitlab: { token: "", host: "" },
       bitbucket: { token: "", host: "" },
     });
+  });
 
-    saveProvidersSpy.mockClear();
+  it("should save both GitHub and GitLab tokens", async () => {
+    const saveProvidersSpy = vi.spyOn(SecretsService, "addGitProvider");
+    saveProvidersSpy.mockImplementation(() => Promise.resolve());
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
+
+    renderGitSettingsScreen();
+
+    const githubInput = await screen.findByTestId("github-token-input");
     const gitlabInput = await screen.findByTestId("gitlab-token-input");
+    const submit = await screen.findByTestId("submit-button");
+
+    await userEvent.type(githubInput, "test-token");
     await userEvent.type(gitlabInput, "test-token");
     await userEvent.click(submit);
 
