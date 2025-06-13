@@ -29,6 +29,7 @@ import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
 import { useWSErrorMessage } from "#/hooks/use-ws-error-message";
 import { ErrorMessageBanner } from "./error-message-banner";
 import { shouldRenderEvent } from "./event-content-helpers/should-render-event";
+import { useConfig } from "#/hooks/query/use-config";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -54,6 +55,7 @@ export function ChatInterface() {
     setAutoScroll,
     setHitBottom,
   } = useScrollToBottom(scrollRef);
+  const { data: config } = useConfig();
 
   const { curAgentState } = useSelector((state: RootState) => state.agent);
 
@@ -182,15 +184,17 @@ export function ChatInterface() {
 
         <div className="flex flex-col gap-[6px] px-4 pb-4">
           <div className="flex justify-between relative">
-            <TrajectoryActions
-              onPositiveFeedback={() =>
-                onClickShareFeedbackActionButton("positive")
-              }
-              onNegativeFeedback={() =>
-                onClickShareFeedbackActionButton("negative")
-              }
-              onExportTrajectory={() => onClickExportTrajectoryButton()}
-            />
+            {config?.APP_MODE === "saas" && (
+              <TrajectoryActions
+                onPositiveFeedback={() =>
+                  onClickShareFeedbackActionButton("positive")
+                }
+                onNegativeFeedback={() =>
+                  onClickShareFeedbackActionButton("negative")
+                }
+                onExportTrajectory={() => onClickExportTrajectoryButton()}
+              />
+            )}
 
             <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0">
               {curAgentState === AgentState.RUNNING && <TypingIndicator />}
@@ -214,11 +218,13 @@ export function ChatInterface() {
           />
         </div>
 
-        <FeedbackModal
-          isOpen={feedbackModalIsOpen}
-          onClose={() => setFeedbackModalIsOpen(false)}
-          polarity={feedbackPolarity}
-        />
+        {config?.APP_MODE === "saas" && (
+          <FeedbackModal
+            isOpen={feedbackModalIsOpen}
+            onClose={() => setFeedbackModalIsOpen(false)}
+            polarity={feedbackPolarity}
+          />
+        )}
       </div>
     </ScrollProvider>
   );
