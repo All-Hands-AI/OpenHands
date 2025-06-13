@@ -101,7 +101,6 @@ class DockerRuntime(ActionExecutionClient):
         self._host_port = -1
         self._container_port = -1
         self._vscode_port = -1
-        self._shak_vscode_port_str: str | None = None
         self._app_ports: list[int] = []
 
         if os.environ.get('DOCKER_HOST_ADDR'):
@@ -282,15 +281,12 @@ class DockerRuntime(ActionExecutionClient):
             or self._find_available_port(VSCODE_PORT_RANGE)
         )
 
-        shak_vscode_port_str = self.convert_port_to_string()
-        # Construct dynamic workspace path by appending _shak_vscode_port_str to the base workspace path
-        shak_dynamic_workspace_mount_path_in_sandbox = f"{self.config.workspace_mount_path_in_sandbox}/workspace_{shak_vscode_port_str}"
+        # Shakudo: Set the workspace mount path to a dynamic path based on the VSCode port
+        # This allows multiple workspaces to be mounted without conflicts
+        # This is necessary so that each workspace can have its own unique mount path
+        shak_vscode_port_str = self.shak_convert_port_to_string()
         shak_dynamic_workspace_mount_path = f"{self.config.workspace_mount_path}/workspace_{shak_vscode_port_str}"
-
-        # Update the config directly so that when it is passed to get_action_execution_server_startup_command,
-        # the new workspace_mount_path_in_sandbox is used.
         self.config.workspace_mount_path = shak_dynamic_workspace_mount_path
-        # self.config.workspace_mount_path_in_sandbox = shak_dynamic_workspace_mount_path_in_sandbox
 
         self._app_ports = [
             self._find_available_port(APP_PORT_RANGE_1),
@@ -471,6 +467,10 @@ class DockerRuntime(ActionExecutionClient):
             CONTAINER_NAME_PREFIX if rm_all_containers else self.container_name
         )
         stop_all_containers(close_prefix)
+
+        # Shakudo: This is a workaround to ensure the host workspace directory is cleaned up
+        # after the container is stopped. This is necessary because the container
+        # might have created files in the host workspace directory that need to be cleaned up.
         host_workspace = self.config.workspace_mount_path
         try:
             shutil.rmtree(host_workspace)
@@ -497,9 +497,9 @@ class DockerRuntime(ActionExecutionClient):
         # If no port is found after max_attempts, return the last tried port
         return port
 
-    def convert_port_to_string(self) -> str:
+    def shak_convert_port_to_string(self) -> str:
         """
-        Convert self._vscode_port (an integer) into a base-26 string using lowercase letters.
+        Shakudo: Convert self._vscode_port (an integer) into a base-26 string using lowercase letters.
         This mimics the Bash function behavior from the sidecar.sh script.
         The conversion uses a modulus operation without the typical adjustment (i.e. no subtracting 1)
         seen in conventional base conversions.
@@ -518,20 +518,18 @@ class DockerRuntime(ActionExecutionClient):
     @property
     def vscode_url(self) -> str | None:
         token = super().get_vscode_token()
-        domain = os.getenv("DOMAIN", None)
+        shak_domain = os.getenv("DOMAIN", None)
 
-        self.log('info', f'Shabbir: Domain: {domain} | Token: {token}')
+        self.log('info', f'Shakudo: Domain: {shak_domain}')
         if not token:
             return None
 
-        # return f'http://localhost:{self._vscode_port}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
-        if not domain:
+        if not shak_domain:
             return f'http://localhost:{self._vscode_port}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
 
-        port_str = self.convert_port_to_string()
-        # folder = f'{self.config.workspace_mount_path_in_sandbox}/workspace_{port_str}'
-        vscode_url = f'https://openhands-code-{port_str}.{domain}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
-        return vscode_url
+        shak_port_str = self.shak_convert_port_to_string()
+        shak_vscode_url = f'https://openhands-code-{shak_port_str}.{shak_domain}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        return shak_vscode_url
 
     @property
     def web_hosts(self) -> dict[str, int]:

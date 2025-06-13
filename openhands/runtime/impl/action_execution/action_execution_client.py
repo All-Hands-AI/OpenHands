@@ -127,7 +127,7 @@ class ActionExecutionClient(Runtime):
     def check_if_alive(self) -> None:
         self.log(
             'info',
-            f'Shabbir - Check Alive URL: {self.action_execution_server_url}/alive',
+            f'Shakudo - Check Alive URL: {self.action_execution_server_url}/alive',
         )
         response = self._send_action_server_request(
             'GET',
@@ -405,14 +405,6 @@ class ActionExecutionClient(Runtime):
             self.log(
                 'debug',
                 f'Updating MCP server with {len(new_servers)} new stdio servers (total: {len(combined_servers)})',
-            )
-            self.log(
-                'info',
-                f'Shabbir->Updating MCP server with {len(new_servers)} new stdio servers (total: {len(combined_servers)})',
-            )
-            self.log(
-                'info',
-                f'Shabbir->{self.action_execution_server_url}/update_mcp_server',
             )
             response = self._send_action_server_request(
                 'POST',
