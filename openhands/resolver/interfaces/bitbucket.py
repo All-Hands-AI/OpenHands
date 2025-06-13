@@ -43,10 +43,20 @@ class BitbucketIssueHandler(IssueHandlerInterface):
         self.owner = owner
 
     def get_headers(self) -> dict[str, str]:
-        return {
-            'Authorization': f'Bearer {self.token}',
-            'Accept': 'application/json',
-        }
+        # Check if the token contains a colon, which indicates it's in username:password format
+        if ':' in self.token:
+            import base64
+
+            auth_str = base64.b64encode(self.token.encode()).decode()
+            return {
+                'Authorization': f'Basic {auth_str}',
+                'Accept': 'application/json',
+            }
+        else:
+            return {
+                'Authorization': f'Bearer {self.token}',
+                'Accept': 'application/json',
+            }
 
     def get_base_url(self) -> str:
         """Get the base URL for the Bitbucket API."""

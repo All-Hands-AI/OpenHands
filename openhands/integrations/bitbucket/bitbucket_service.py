@@ -86,10 +86,24 @@ class BitbucketService(BaseGitService, GitService):
             RateLimitError: If the rate limit is exceeded
             UnknownException: For other errors
         """
-        headers = {
-            'Authorization': f'Bearer {self.token.get_secret_value()}',
-            'Accept': 'application/json',
-        }
+        # Bitbucket Cloud API supports both Bearer token and Basic auth
+        # For app passwords, we need to use Basic auth with the format username:app_password
+        token_value = self.token.get_secret_value()
+
+        # Check if the token contains a colon, which indicates it's in username:password format
+        if ':' in token_value:
+            import base64
+
+            auth_str = base64.b64encode(token_value.encode()).decode()
+            headers = {
+                'Authorization': f'Basic {auth_str}',
+                'Accept': 'application/json',
+            }
+        else:
+            headers = {
+                'Authorization': f'Bearer {token_value}',
+                'Accept': 'application/json',
+            }
 
         try:
             async with httpx.AsyncClient() as client:
