@@ -36,6 +36,11 @@ async def send_pull_request(
     token: str,
     username: str | None = None,
     base_domain: str | None = None,
+    pr_type: str = 'ready',
+    fork_owner: str | None = None,
+    additional_message: str | None = None,
+    reviewer: str | None = None,
+    patch_dir: str | None = None,
 ) -> str:
     """Send a pull request to a repository.
 
@@ -50,23 +55,60 @@ async def send_pull_request(
         token: The token to use for authentication
         username: The username to use for authentication (optional)
         base_domain: The base domain for the git server (optional)
+        pr_type: The type: branch (no PR created), draft or ready (regular PR created) (optional)
+        fork_owner: The owner of the fork to push changes to (if different from the original repo owner) (optional)
+        additional_message: The additional messages to post as a comment on the PR in json list format (optional)
+        reviewer: The username of the reviewer to assign (optional)
+        patch_dir: The directory containing the patches to apply (required for GitHub and GitLab) (optional)
 
     Returns:
         The URL of the created pull request
     """
-    # Only Bitbucket is supported for now with the async create_pr method
+    # For Bitbucket, use the async create_pr method
     if provider.lower() == 'bitbucket':
         handler = BitbucketIssueHandler(
             owner, repo, token, username, base_domain or 'bitbucket.org'
         )
         return await handler.create_pr(title=title, body=body, head=head, base=base)
-    else:
-        # For GitHub and GitLab, we'll need to implement this differently
-        # or use the existing create_pull_request method
-        raise ValueError(
-            f'Direct PR creation via send_pull_request is not supported for {provider}. '
-            f'Use send_pull_request_legacy instead.'
+
+    # For GitHub and GitLab, use the legacy approach
+    elif provider.lower() in ['github', 'gitlab']:
+        if patch_dir is None:
+            raise ValueError(f'patch_dir is required for {provider} provider')
+
+        # Create a mock Issue object for compatibility with send_pull_request_legacy
+        from openhands.integrations.service_types import ProviderType
+        from openhands.resolver.resolver_output import Issue
+
+        issue = Issue(
+            number=0,  # This is a placeholder, not used for direct PR creation
+            title=title,
+            owner=owner,
+            repo=repo,
+            body=body,
         )
+
+        platform = (
+            ProviderType.GITHUB if provider.lower() == 'github' else ProviderType.GITLAB
+        )
+
+        # Call the synchronous function
+        return send_pull_request_legacy(
+            issue=issue,
+            token=token,
+            username=username,
+            platform=platform,
+            patch_dir=patch_dir,
+            pr_type=pr_type,
+            fork_owner=fork_owner,
+            additional_message=additional_message,
+            target_branch=base,
+            reviewer=reviewer,
+            pr_title=title,
+            base_domain=base_domain,
+        )
+    else:
+        raise ValueError(f'Unsupported provider: {provider}')
 
 
 def apply_patch(repo_dir: str, patch: str) -> None:
@@ -281,6 +323,9 @@ def send_pull_request_legacy(
     base_domain: str | None = None,
 ) -> str:
     """Send a pull request to a GitHub or Gitlab repository.
+
+    Note:
+        This function is deprecated. Use `send_pull_request` instead.
 
     Args:
         issue: The issue to send the pull request for
