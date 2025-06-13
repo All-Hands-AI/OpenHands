@@ -101,3 +101,15 @@ async def test_validate_provider_token_with_empty_tokens():
         
         # Result should be None for empty tokens
         assert result is None
+        
+        # Test with a whitespace-only token
+        token = SecretStr("   ")
+        result = await validate_provider_token(token)
+        
+        # Verify that services were NOT tried for whitespace tokens
+        mock_github_service.assert_not_called()
+        mock_gitlab_service.assert_not_called()
+        mock_bitbucket_service.assert_not_called()
+        
+        # Result should be None for whitespace tokens
+        assert result is None
