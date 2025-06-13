@@ -5,13 +5,16 @@ import { SuggestionItem } from "#/components/features/suggestions/suggestion-ite
 import { I18nKey } from "#/i18n/declaration";
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
+import { AgentState } from "#/types/agent-state";
 
 interface ActionSuggestionsProps {
   onSuggestionsClick: (value: string) => void;
+  agentState: AgentState;
 }
 
 export function ActionSuggestions({
   onSuggestionsClick,
+  agentState,
 }: ActionSuggestionsProps) {
   const { t } = useTranslation();
   const { providers } = useUserProviders();
@@ -38,46 +41,65 @@ export function ActionSuggestions({
 
   return (
     <div className="flex flex-col gap-2 mb-2">
-      {providersAreSet && conversation?.selected_repository && (
+      {/* Show Continue button when rate limited */}
+      {agentState === AgentState.RATE_LIMITED && (
         <div className="flex flex-row gap-2 justify-center w-full">
-          {!hasPullRequest ? (
-            <>
-              <SuggestionItem
-                suggestion={{
-                  label: t(I18nKey.ACTION$PUSH_TO_BRANCH),
-                  value: terms.pushToBranch,
-                }}
-                onClick={(value) => {
-                  posthog.capture("push_to_branch_button_clicked");
-                  onSuggestionsClick(value);
-                }}
-              />
-              <SuggestionItem
-                suggestion={{
-                  label: t(I18nKey.ACTION$PUSH_CREATE_PR),
-                  value: terms.createPR,
-                }}
-                onClick={(value) => {
-                  posthog.capture("create_pr_button_clicked");
-                  onSuggestionsClick(value);
-                  setHasPullRequest(true);
-                }}
-              />
-            </>
-          ) : (
-            <SuggestionItem
-              suggestion={{
-                label: t(I18nKey.ACTION$PUSH_CHANGES_TO_PR),
-                value: terms.pushToPR,
-              }}
-              onClick={(value) => {
-                posthog.capture("push_to_pr_button_clicked");
-                onSuggestionsClick(value);
-              }}
-            />
-          )}
+          <SuggestionItem
+            suggestion={{
+              label: t(I18nKey.ACTION$CONTINUE),
+              value: "continue",
+            }}
+            onClick={(value) => {
+              posthog.capture("continue_button_clicked");
+              onSuggestionsClick(value);
+            }}
+          />
         </div>
       )}
+
+      {/* Show git-related buttons when waiting for user input and providers are set */}
+      {agentState !== AgentState.RATE_LIMITED &&
+        providersAreSet &&
+        conversation?.selected_repository && (
+          <div className="flex flex-row gap-2 justify-center w-full">
+            {!hasPullRequest ? (
+              <>
+                <SuggestionItem
+                  suggestion={{
+                    label: t(I18nKey.ACTION$PUSH_TO_BRANCH),
+                    value: terms.pushToBranch,
+                  }}
+                  onClick={(value) => {
+                    posthog.capture("push_to_branch_button_clicked");
+                    onSuggestionsClick(value);
+                  }}
+                />
+                <SuggestionItem
+                  suggestion={{
+                    label: t(I18nKey.ACTION$PUSH_CREATE_PR),
+                    value: terms.createPR,
+                  }}
+                  onClick={(value) => {
+                    posthog.capture("create_pr_button_clicked");
+                    onSuggestionsClick(value);
+                    setHasPullRequest(true);
+                  }}
+                />
+              </>
+            ) : (
+              <SuggestionItem
+                suggestion={{
+                  label: t(I18nKey.ACTION$PUSH_CHANGES_TO_PR),
+                  value: terms.pushToPR,
+                }}
+                onClick={(value) => {
+                  posthog.capture("push_to_pr_button_clicked");
+                  onSuggestionsClick(value);
+                }}
+              />
+            )}
+          </div>
+        )}
     </div>
   );
 }
