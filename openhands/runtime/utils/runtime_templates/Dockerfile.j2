@@ -22,7 +22,7 @@ RUN apt-get update && \
         libgl1-mesa-glx \
         {% endif -%}
         libasound2-plugins libatomic1 && \
-    {%- if 'ubuntu' in base_image -%}
+    {% if 'ubuntu' in base_image or 'mswebench' in base_image -%}
     curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     TZ=Etc/UTC DEBIAN_FRONTEND=noninteractive \
         apt-get install -y --no-install-recommends nodejs python3.12 python-is-python3 python3-pip python3.12-venv && \
@@ -31,7 +31,7 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-{% if 'ubuntu' in base_image %}
+{% if 'ubuntu' in base_image or 'mswebench' in base_image -%}
 RUN ln -s "$(dirname $(which node))/corepack" /usr/local/bin/corepack && \
     npm install -g corepack && corepack enable yarn && \
     curl -fsSL --compressed https://install.python-poetry.org | python -
@@ -119,6 +119,12 @@ RUN /openhands/micromamba/bin/micromamba run -n openhands poetry install --only 
 RUN apt-get update && \
     /openhands/micromamba/bin/micromamba run -n openhands poetry run pip install playwright && \
     /openhands/micromamba/bin/micromamba run -n openhands poetry run playwright install --with-deps chromium
+
+{%- if 'mswebench' in base_image -%}
+RUN npm install -g @puppeteer/browsers && \
+    npx @puppeteer/browsers install chrome-headless-shell@1169 && \
+    cp ~/.cache/ms-playwright/chromium_headless_shell-1169 ~/.cache/ms-playwright/chromium_headless_shell-1161
+{% endif -%}
 
 # Set environment variables and permissions
 RUN /openhands/micromamba/bin/micromamba run -n openhands poetry run python -c "import sys; print('OH_INTERPRETER_PATH=' + sys.executable)" >> /etc/environment && \
