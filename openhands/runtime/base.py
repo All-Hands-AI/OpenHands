@@ -441,9 +441,7 @@ class Runtime(FileEditRuntimeMixin):
                 'info', 'STATUS$SETTING_UP_WORKSPACE', 'Setting up workspace...'
             )
 
-        # Extract the repository name from the repository path
-        repo_parts = selected_repository.split('/')
-        dir_name = repo_parts[-1]
+        dir_name = selected_repository.split('/')[-1]
 
         # Generate a random branch name to avoid conflicts
         random_str = ''.join(
@@ -452,17 +450,6 @@ class Runtime(FileEditRuntimeMixin):
         openhands_workspace_branch = f'openhands-workspace-{random_str}'
 
         # Clone repository command
-        # For Bitbucket repositories, explicitly specify the directory name to avoid
-        # the default behavior of using the org_repo format
-
-        # If this is a Bitbucket repository and we have a token, set up environment variables for authentication
-        if (
-            repository.git_provider == ProviderType.BITBUCKET
-            and self.git_provider_tokens
-            and ProviderType.BITBUCKET in self.git_provider_tokens
-        ):
-            self._setup_bitbucket_auth_env_vars()
-
         clone_command = f'git clone {remote_repo_url} {dir_name}'
 
         # Checkout to appropriate branch
@@ -643,34 +630,6 @@ fi
             shutil.rmtree(microagent_folder)
 
         return loaded_microagents
-
-    def _setup_bitbucket_auth_env_vars(self) -> None:
-        """Set up environment variables for Bitbucket authentication.
-
-        This method sets the GIT_USERNAME and GIT_PASSWORD environment variables
-        based on the Bitbucket token format.
-        """
-        if (
-            not self.git_provider_tokens
-            or ProviderType.BITBUCKET not in self.git_provider_tokens
-        ):
-            return
-
-        token = self.git_provider_tokens[ProviderType.BITBUCKET].token
-        if not token:
-            return
-
-        # Set up environment variables for git authentication
-        token_value = token.get_secret_value()
-        if ':' in token_value:
-            # Token is in username:password format
-            username, password = token_value.split(':', 1)
-            self.add_env_vars({'GIT_USERNAME': username, 'GIT_PASSWORD': password})
-        else:
-            # Use x-token-auth as the username
-            self.add_env_vars(
-                {'GIT_USERNAME': 'x-token-auth', 'GIT_PASSWORD': token_value}
-            )
 
     def _get_authenticated_git_url(self, repo_path: str) -> str:
         """Get an authenticated git URL for a repository.

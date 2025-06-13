@@ -302,68 +302,6 @@ class TestBitbucketProviderDomain(unittest.TestCase):
         action = args[0]
         self.assertIn('bitbucket.org', action.command)
 
-    @patch('openhands.runtime.base.ProviderHandler')
-    @patch.object(Runtime, 'run_action')
-    @patch.object(Runtime, 'add_env_vars')
-    async def test_bitbucket_clone_directory_name(
-        self, mock_add_env_vars, mock_run_action, mock_provider_handler
-    ):
-        """Test that Bitbucket repositories are cloned into the correct directory name."""
-        # Mock the provider handler to return a repository with Bitbucket as the provider
-        mock_repository = Repository(
-            id=1,
-            full_name='workspace/repo',
-            git_provider=ProviderType.BITBUCKET,
-            is_public=True,
-        )
-
-        mock_provider_instance = MagicMock()
-        mock_provider_instance.verify_repo_provider.return_value = mock_repository
-        mock_provider_handler.return_value = mock_provider_instance
-
-        # Create a minimal runtime instance
-        runtime = Runtime(config=MagicMock(), event_stream=MagicMock(), sid='test_sid')
-
-        # Mock the workspace_root property to avoid AttributeError
-        runtime.workspace_root = '/workspace'
-
-        # Mock the _get_authenticated_git_url method to return a URL
-        runtime._get_authenticated_git_url = MagicMock(
-            return_value='https://bitbucket.org/workspace/repo.git'
-        )
-
-        # Set up git provider tokens
-        runtime.git_provider_tokens = {
-            ProviderType.BITBUCKET: ProviderToken(
-                token=SecretStr('username:app_password'), host='bitbucket.org'
-            )
-        }
-
-        # Call clone_or_init_repo with a Bitbucket repository
-        await runtime.clone_or_init_repo(
-            git_provider_tokens=runtime.git_provider_tokens,
-            selected_repository='workspace/repo',
-            selected_branch=None,
-        )
-
-        # Verify that run_action was called at least once (for git clone)
-        self.assertTrue(mock_run_action.called)
-
-        # Verify that add_env_vars was called with the correct environment variables
-        mock_add_env_vars.assert_called_with(
-            {'GIT_USERNAME': 'username', 'GIT_PASSWORD': 'app_password'}
-        )
-
-        # Extract the command from the first call to run_action
-        args, _ = mock_run_action.call_args
-        action = args[0]
-
-        # Verify that the clone command uses the correct directory name (repo)
-        # and not the org_repo format
-        self.assertEqual(
-            action.command, 'git clone https://bitbucket.org/workspace/repo.git repo'
-        )
-
 
 # Provider Token Validation Tests
 @pytest.mark.asyncio
