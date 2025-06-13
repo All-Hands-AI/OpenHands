@@ -280,14 +280,14 @@ class DockerRuntime(ActionExecutionClient):
             self.config.sandbox.vscode_port
             or self._find_available_port(VSCODE_PORT_RANGE)
         )
-        self._shak_vscode_port_str = self.convert_port_to_string()
 
+        shak_vscode_port_str = self.convert_port_to_string()
         # Construct dynamic workspace path by appending _shak_vscode_port_str to the base workspace path
-        shak_dynamic_workspace_path = f"{self.config.workspace_mount_path_in_sandbox}/{self._shak_vscode_port_str}"
+        shak_dynamic_workspace_path = f"{self.config.workspace_mount_path_in_sandbox}/workspace_{shak_vscode_port_str}"
 
         # Update the config directly so that when it is passed to get_action_execution_server_startup_command,
         # the new workspace_mount_path_in_sandbox is used.
-        # self.config.workspace_mount_path_in_sandbox = shak_dynamic_workspace_path
+        self.config.workspace_mount_path_in_sandbox = shak_dynamic_workspace_path
 
         self._app_ports = [
             self._find_available_port(APP_PORT_RANGE_1),
@@ -519,7 +519,9 @@ class DockerRuntime(ActionExecutionClient):
         if not domain:
             return f'http://localhost:{self._vscode_port}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
 
-        vscode_url = f'https://openhands-code-{self.convert_port_to_string()}.{domain}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        port_str = self.convert_port_to_string()
+        folder = f'{self.config.workspace_mount_path_in_sandbox}/workspace_{port_str}'
+        vscode_url = f'https://openhands-code-{port_str}.{domain}/?tkn={token}&folder={folder}'
         return vscode_url
 
     @property
