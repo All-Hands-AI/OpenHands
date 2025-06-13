@@ -59,7 +59,7 @@ class BitbucketService(BaseGitService, GitService):
         return 'Bitbucket'
 
     async def get_latest_token(self) -> SecretStr | None:
-        """Get latest working token of the user"""
+        """Get latest working token of the user."""
         if self.external_token_manager and self.external_auth_id:
             # This would be implemented by a custom token manager
             return None
@@ -120,7 +120,7 @@ class BitbucketService(BaseGitService, GitService):
             raise UnknownException(f'Unknown error: {e}')
 
     async def get_user(self) -> User:
-        """Get the authenticated user's information"""
+        """Get the authenticated user's information."""
         url = f'{self.BASE_URL}/user'
         data, _ = await self._make_request(url)
         
@@ -151,7 +151,7 @@ class BitbucketService(BaseGitService, GitService):
         sort: str,
         order: str,
     ) -> list[Repository]:
-        """Search for repositories"""
+        """Search for repositories."""
         # Bitbucket doesn't have a dedicated search endpoint like GitHub
         # We'll use the repositories endpoint and filter client-side
         url = f'{self.BASE_URL}/repositories'
@@ -180,7 +180,7 @@ class BitbucketService(BaseGitService, GitService):
         return repositories
 
     async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
-        """Get repositories for the authenticated user"""
+        """Get repositories for the authenticated user."""
         url = f'{self.BASE_URL}/repositories'
         params = {
             'role': 'member',
@@ -207,7 +207,7 @@ class BitbucketService(BaseGitService, GitService):
         return repositories
 
     async def get_suggested_tasks(self) -> list[SuggestedTask]:
-        """Get suggested tasks for the authenticated user across all repositories"""
+        """Get suggested tasks for the authenticated user across all repositories."""
         # This would require multiple API calls to get PRs with conflicts, failing checks, etc.
         # For now, we'll return an empty list
         return []
@@ -215,7 +215,7 @@ class BitbucketService(BaseGitService, GitService):
     async def get_repository_details_from_repo_name(
         self, repository: str
     ) -> Repository:
-        """Gets all repository details from repository name"""
+        """Gets all repository details from repository name."""
         # Extract owner and repo from the repository string (e.g., "owner/repo")
         parts = repository.split('/')
         if len(parts) < 2:
@@ -237,7 +237,7 @@ class BitbucketService(BaseGitService, GitService):
         )
 
     async def get_branches(self, repository: str) -> list[Branch]:
-        """Get branches for a repository"""
+        """Get branches for a repository."""
         # Extract owner and repo from the repository string (e.g., "owner/repo")
         parts = repository.split('/')
         if len(parts) < 2:
@@ -270,8 +270,7 @@ class BitbucketService(BaseGitService, GitService):
         title: str,
         body: str | None = None,
     ) -> str:
-        """
-        Creates a pull request in Bitbucket
+        """Creates a pull request in Bitbucket.
 
         Args:
             repo_name: The repository name in the format "workspace/repo"
