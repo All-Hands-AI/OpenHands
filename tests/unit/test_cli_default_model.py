@@ -22,12 +22,12 @@ async def test_anthropic_default_model_is_best_verified(
     """Test that the default model for anthropic is the best verified model."""
     # Setup mocks
     mock_get_models.return_value = [
-        'anthropic/claude-2',
         'anthropic/claude-sonnet-4-20250514',
+        'anthropic/claude-2',
     ]
     mock_organize.return_value = {
         'anthropic': {
-            'models': ['claude-2', 'claude-sonnet-4-20250514'],
+            'models': ['claude-sonnet-4-20250514', 'claude-2'],
             'separator': '/',
         },
     }
@@ -59,8 +59,8 @@ async def test_anthropic_default_model_is_best_verified(
 
     # Check that the default model displayed is the best verified model
     best_verified_model = VERIFIED_ANTHROPIC_MODELS[
-        -1
-    ]  # Last model in the list is the best
+        0
+    ]  # First model in the list is the best
     default_model_displayed = False
 
     for call in mock_print.call_args_list:
