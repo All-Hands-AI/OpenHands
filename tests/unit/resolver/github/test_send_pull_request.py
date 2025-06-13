@@ -16,8 +16,10 @@ from openhands.resolver.send_pull_request import (
     main,
     make_commit,
     process_single_issue,
-    send_pull_request_legacy as send_pull_request,
     update_existing_pull_request,
+)
+from openhands.resolver.send_pull_request import (
+    send_pull_request_legacy as send_pull_request,
 )
 
 
