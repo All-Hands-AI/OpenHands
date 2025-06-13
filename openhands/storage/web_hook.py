@@ -1,6 +1,7 @@
 import httpx
 import tenacity
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import EXECUTOR
 
@@ -102,6 +103,7 @@ class WebHookFileStore(FileStore):
             httpx.HTTPStatusError: If the webhook request fails
         """
         base_url = self.base_url + path
+        logger.info(f'web_hook_on_write:{base_url}')
         response = self.client.post(base_url, content=contents)
         response.raise_for_status()
 
