@@ -96,8 +96,10 @@ async def create_new_conversation(
             extra={'user_id': user_id, 'session_id': conversation_id},
         )
 
-        conversation_init_data = ExperimentManagerImpl.run_conversation_variant_test(user_id, conversation_id, conversation_init_data)
+        print('before', conversation_init_data.llm_model)
+        conversation_init_data: ConversationInitData = ExperimentManagerImpl.run_conversation_variant_test(user_id, conversation_id, conversation_init_data)
         conversation_title = get_default_conversation_title(conversation_id)
+        print('after', conversation_init_data.llm_model)
 
         logger.info(f'Saving metadata for conversation {conversation_id}')
         await conversation_store.save_metadata(
