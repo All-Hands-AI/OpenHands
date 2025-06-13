@@ -286,17 +286,11 @@ def send_pull_request(
             None,
         )
     elif platform == ProviderType.BITBUCKET:
-        # For Bitbucket, use the direct create_pr method
-        bitbucket_handler = BitbucketIssueHandler(
-            issue.owner, issue.repo, token, username, base_domain
-        )
-
-        # For Bitbucket, we need to determine the head and base branches
-        head_branch = issue.head_branch or ''
-        base_branch = target_branch or ''
-
-        return bitbucket_handler.create_pr(
-            title=final_pr_title, body=pr_body, head=head_branch, base=base_branch
+        handler = ServiceContextIssue(
+            BitbucketIssueHandler(
+                issue.owner, issue.repo, token, username, base_domain
+            ),
+            None,
         )
     else:
         raise ValueError(f'Unsupported platform: {platform}')
