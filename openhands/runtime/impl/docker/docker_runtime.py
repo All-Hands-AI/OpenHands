@@ -100,6 +100,7 @@ class DockerRuntime(ActionExecutionClient):
         self._host_port = -1
         self._container_port = -1
         self._vscode_port = -1
+        self._shak_vscode_port_str: str | None = None
         self._app_ports: list[int] = []
 
         if os.environ.get('DOCKER_HOST_ADDR'):
@@ -279,6 +280,8 @@ class DockerRuntime(ActionExecutionClient):
             self.config.sandbox.vscode_port
             or self._find_available_port(VSCODE_PORT_RANGE)
         )
+        self._shak_vscode_port_str = self.convert_port_to_string()
+
         self._app_ports = [
             self._find_available_port(APP_PORT_RANGE_1),
             self._find_available_port(APP_PORT_RANGE_2),
@@ -509,8 +512,7 @@ class DockerRuntime(ActionExecutionClient):
         if not domain:
             return f'http://localhost:{self._vscode_port}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
 
-        dynamic_portname = self.convert_port_to_string()
-        vscode_url = f'https://openhands-code-{dynamic_portname}.{domain}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        vscode_url = f'https://openhands-code-{self._shak_vscode_port_str}.{domain}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
         return vscode_url
 
     @property
