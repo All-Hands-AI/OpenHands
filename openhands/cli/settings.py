@@ -217,8 +217,8 @@ async def modify_llm_settings_basic(
 
         # Set default model to the best verified model for the provider
         if provider == 'anthropic' and VERIFIED_ANTHROPIC_MODELS:
-            # Use the last model in the VERIFIED_ANTHROPIC_MODELS list as it's the best/newest
-            default_model = VERIFIED_ANTHROPIC_MODELS[-1]
+            # Use the first model in the VERIFIED_ANTHROPIC_MODELS list as it's the best/newest
+            default_model = VERIFIED_ANTHROPIC_MODELS[0]
         elif provider == 'openai' and VERIFIED_OPENAI_MODELS:
             # Use the first model in the VERIFIED_OPENAI_MODELS list as it's the best/newest
             default_model = VERIFIED_OPENAI_MODELS[0]
