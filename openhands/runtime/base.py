@@ -441,7 +441,9 @@ class Runtime(FileEditRuntimeMixin):
                 'info', 'STATUS$SETTING_UP_WORKSPACE', 'Setting up workspace...'
             )
 
-        dir_name = selected_repository.split('/')[-1]
+        # Extract the repository name from the repository path
+        repo_parts = selected_repository.split('/')
+        dir_name = repo_parts[-1]
 
         # Generate a random branch name to avoid conflicts
         random_str = ''.join(
@@ -450,6 +452,8 @@ class Runtime(FileEditRuntimeMixin):
         openhands_workspace_branch = f'openhands-workspace-{random_str}'
 
         # Clone repository command
+        # For Bitbucket repositories, explicitly specify the directory name to avoid
+        # the default behavior of using the org_repo format
         clone_command = f'git clone {remote_repo_url} {dir_name}'
 
         # Checkout to appropriate branch
