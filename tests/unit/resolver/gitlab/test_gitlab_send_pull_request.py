@@ -389,15 +389,10 @@ def test_send_pull_request(
 
     # Call the function
     result = send_pull_request(
-        provider='gitlab',
-        owner=mock_issue.owner,
-        repo=mock_issue.repo,
-        title=f'Fix issue #{mock_issue.number}: {mock_issue.title}',
-        body=ANY,
-        head='',
-        base='',
+        issue=mock_issue,
         token='test-token',
         username='test-user',
+        platform=ProviderType.GITLAB,
         patch_dir=repo_path,
         pr_type=pr_type,
         target_branch=target_branch,
@@ -501,15 +496,10 @@ def test_send_pull_request_with_reviewer(
 
     # Call the function with reviewer
     result = send_pull_request(
-        provider='gitlab',
-        owner=mock_issue.owner,
-        repo=mock_issue.repo,
-        title=f'Fix issue #{mock_issue.number}: {mock_issue.title}',
-        body=ANY,
-        head='',
-        base='',
+        issue=mock_issue,
         token='test-token',
         username='test-user',
+        platform=ProviderType.GITLAB,
         patch_dir=repo_path,
         pr_type='ready',
         reviewer=reviewer,
@@ -554,15 +544,10 @@ def test_send_pull_request_invalid_target_branch(
         ValueError, match='Target branch nonexistent-branch does not exist'
     ):
         send_pull_request(
-            provider='gitlab',
-            owner=mock_issue.owner,
-            repo=mock_issue.repo,
-            title=f'Fix issue #{mock_issue.number}: {mock_issue.title}',
-            body=ANY,
-            head='',
-            base='',
+            issue=mock_issue,
             token='test-token',
             username='test-user',
+            platform=ProviderType.GITLAB,
             patch_dir=repo_path,
             pr_type='ready',
             target_branch='nonexistent-branch',
@@ -594,15 +579,10 @@ def test_send_pull_request_git_push_failure(
         RuntimeError, match='Failed to push changes to the remote repository'
     ):
         send_pull_request(
-            provider='gitlab',
-            owner=mock_issue.owner,
-            repo=mock_issue.repo,
-            title=f'Fix issue #{mock_issue.number}: {mock_issue.title}',
-            body=ANY,
-            head='',
-            base='',
+            issue=mock_issue,
             token='test-token',
             username='test-user',
+            platform=ProviderType.GITLAB,
             patch_dir=repo_path,
             pr_type='ready',
         )
@@ -659,15 +639,10 @@ def test_send_pull_request_permission_error(
         RuntimeError, match='Failed to create pull request due to missing permissions.'
     ):
         send_pull_request(
-            provider='gitlab',
-            owner=mock_issue.owner,
-            repo=mock_issue.repo,
-            title=f'Fix issue #{mock_issue.number}: {mock_issue.title}',
-            body=ANY,
-            head='',
-            base='',
+            issue=mock_issue,
             token='test-token',
             username='test-user',
+            platform=ProviderType.GITLAB,
             patch_dir=repo_path,
             pr_type='ready',
         )
@@ -978,15 +953,10 @@ def test_send_pull_request_branch_naming(
 
     # Call the function
     result = send_pull_request(
-        provider='gitlab',
-        owner=mock_issue.owner,
-        repo=mock_issue.repo,
-        title=f'Fix issue #{mock_issue.number}: {mock_issue.title}',
-        body=ANY,
-        head='',
-        base='',
+        issue=mock_issue,
         token='test-token',
         username='test-user',
+        platform=ProviderType.GITLAB,
         patch_dir=repo_path,
         pr_type='branch',
     )

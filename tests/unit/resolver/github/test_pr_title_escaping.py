@@ -154,9 +154,9 @@ def test_pr_title_with_quotes(monkeypatch):
 
         # Try to send a PR - this will fail if the title is incorrectly escaped
         print('Sending PR...')
-        from openhands.resolver.send_pull_request import send_pull_request_legacy
+        from openhands.resolver.send_pull_request import send_pull_request
 
-        send_pull_request_legacy(
+        send_pull_request(
             issue=issue,
             token='dummy-token',
             username='test-user',
