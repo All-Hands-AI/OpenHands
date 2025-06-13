@@ -32,7 +32,7 @@ def mock_event_stream():
     """Creates an event stream in memory."""
     sid = f'test-{uuid4()}'
     file_store = InMemoryFileStore({})
-    return EventStream(sid=sid, file_store=file_store)
+    return EventStream(sid=sid, file_store=file_store, max_delay_time=0)
 
 
 @pytest.fixture

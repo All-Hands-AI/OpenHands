@@ -1,6 +1,7 @@
 import asyncio
 import queue
 import threading
+import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from enum import Enum
@@ -54,7 +55,13 @@ class EventStream(EventStore):
     _thread_loops: dict[str, dict[str, asyncio.AbstractEventLoop]]
     _write_page_cache: list[dict]
 
-    def __init__(self, sid: str, file_store: FileStore, user_id: str | None = None):
+    def __init__(
+        self,
+        sid: str,
+        file_store: FileStore,
+        user_id: str | None = None,
+        max_delay_time: float = 0.5,
+    ):
         super().__init__(sid, file_store, user_id)
         self._stop_flag = threading.Event()
         self._queue: queue.Queue[Event] = queue.Queue()
@@ -68,6 +75,7 @@ class EventStream(EventStore):
         self._lock = threading.Lock()
         self.secrets = {}
         self._write_page_cache = []
+        self.max_delay_time = max_delay_time
 
     def _init_thread_loop(self, subscriber_id: str, callback_id: str) -> None:
         loop = asyncio.new_event_loop()
@@ -230,6 +238,10 @@ class EventStream(EventStore):
             try:
                 event = self._queue.get(timeout=0.1)
             except queue.Empty:
+                if self.max_delay_time > 0:
+                    # IMPORTANT: This is workaround when mutilple event stream active in the same time. Do not remove this.
+                    # More Info: https://www.notion.so/oraichain/20251206-Server-ch-m-sau-m-t-kho-ng-th-i-gian-ch-y-210248af329080b2b48dccca24cb91f1
+                    time.sleep(self.max_delay_time)  # noqa
                 continue
 
             # pass each event to each callback in order
