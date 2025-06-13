@@ -232,6 +232,36 @@ def test_send_pull_request_bitbucket(
 class TestBitbucketProviderDomain(unittest.TestCase):
     """Test that Bitbucket provider domain is properly handled in Runtime.clone_or_init_repo."""
 
+    @patch('openhands.runtime.base.Runtime.__abstractmethods__', set())
+    def test_get_authenticated_git_url_bitbucket(self, *args):
+        """Test that _get_authenticated_git_url correctly handles Bitbucket repositories."""
+        # Create a minimal runtime instance with abstract methods patched
+        runtime = Runtime(config=MagicMock(), event_stream=MagicMock(), sid='test_sid')
+
+        # Test with no token
+        url = runtime._get_authenticated_git_url('bitbucket.org/workspace/repo')
+        self.assertEqual(url, 'https://bitbucket.org/workspace/repo.git')
+
+        # Test with username:password format token
+        runtime.git_provider_tokens = {
+            ProviderType.BITBUCKET: ProviderToken(
+                token=SecretStr('username:app_password'), host='bitbucket.org'
+            )
+        }
+        url = runtime._get_authenticated_git_url('bitbucket.org/workspace/repo')
+        # With our new approach, we don't embed credentials in the URL for Bitbucket
+        self.assertEqual(url, 'https://bitbucket.org/workspace/repo.git')
+
+        # Test with simple token format
+        runtime.git_provider_tokens = {
+            ProviderType.BITBUCKET: ProviderToken(
+                token=SecretStr('simple_token'), host='bitbucket.org'
+            )
+        }
+        url = runtime._get_authenticated_git_url('bitbucket.org/workspace/repo')
+        # With our new approach, we don't embed credentials in the URL for Bitbucket
+        self.assertEqual(url, 'https://bitbucket.org/workspace/repo.git')
+
     @patch('openhands.runtime.base.ProviderHandler')
     @patch.object(Runtime, 'run_action')
     async def test_bitbucket_provider_domain(
@@ -274,15 +304,16 @@ class TestBitbucketProviderDomain(unittest.TestCase):
 
     @patch('openhands.runtime.base.ProviderHandler')
     @patch.object(Runtime, 'run_action')
+    @patch.object(Runtime, 'add_env_vars')
     async def test_bitbucket_clone_directory_name(
-        self, mock_run_action, mock_provider_handler
+        self, mock_add_env_vars, mock_run_action, mock_provider_handler
     ):
         """Test that Bitbucket repositories are cloned into the correct directory name."""
         # Mock the provider handler to return a repository with Bitbucket as the provider
         mock_repository = Repository(
             id=1,
             full_name='workspace/repo',
-            git_provider=ServiceProviderType.BITBUCKET,
+            git_provider=ProviderType.BITBUCKET,
             is_public=True,
         )
 
@@ -301,15 +332,27 @@ class TestBitbucketProviderDomain(unittest.TestCase):
             return_value='https://bitbucket.org/workspace/repo.git'
         )
 
+        # Set up git provider tokens
+        runtime.git_provider_tokens = {
+            ProviderType.BITBUCKET: ProviderToken(
+                token=SecretStr('username:app_password'), host='bitbucket.org'
+            )
+        }
+
         # Call clone_or_init_repo with a Bitbucket repository
         await runtime.clone_or_init_repo(
-            git_provider_tokens=None,
+            git_provider_tokens=runtime.git_provider_tokens,
             selected_repository='workspace/repo',
             selected_branch=None,
         )
 
         # Verify that run_action was called at least once (for git clone)
         self.assertTrue(mock_run_action.called)
+
+        # Verify that add_env_vars was called with the correct environment variables
+        mock_add_env_vars.assert_called_with(
+            {'GIT_USERNAME': 'username', 'GIT_PASSWORD': 'app_password'}
+        )
 
         # Extract the command from the first call to run_action
         args, _ = mock_run_action.call_args

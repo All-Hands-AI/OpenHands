@@ -454,6 +454,15 @@ class Runtime(FileEditRuntimeMixin):
         # Clone repository command
         # For Bitbucket repositories, explicitly specify the directory name to avoid
         # the default behavior of using the org_repo format
+
+        # If this is a Bitbucket repository and we have a token, set up environment variables for authentication
+        if (
+            repository.git_provider == ProviderType.BITBUCKET
+            and self.git_provider_tokens
+            and ProviderType.BITBUCKET in self.git_provider_tokens
+        ):
+            self._setup_bitbucket_auth_env_vars()
+
         clone_command = f'git clone {remote_repo_url} {dir_name}'
 
         # Checkout to appropriate branch
@@ -635,6 +644,34 @@ fi
 
         return loaded_microagents
 
+    def _setup_bitbucket_auth_env_vars(self) -> None:
+        """Set up environment variables for Bitbucket authentication.
+
+        This method sets the GIT_USERNAME and GIT_PASSWORD environment variables
+        based on the Bitbucket token format.
+        """
+        if (
+            not self.git_provider_tokens
+            or ProviderType.BITBUCKET not in self.git_provider_tokens
+        ):
+            return
+
+        token = self.git_provider_tokens[ProviderType.BITBUCKET].token
+        if not token:
+            return
+
+        # Set up environment variables for git authentication
+        token_value = token.get_secret_value()
+        if ':' in token_value:
+            # Token is in username:password format
+            username, password = token_value.split(':', 1)
+            self.add_env_vars({'GIT_USERNAME': username, 'GIT_PASSWORD': password})
+        else:
+            # Use x-token-auth as the username
+            self.add_env_vars(
+                {'GIT_USERNAME': 'x-token-auth', 'GIT_PASSWORD': token_value}
+            )
+
     def _get_authenticated_git_url(self, repo_path: str) -> str:
         """Get an authenticated git URL for a repository.
 
@@ -652,6 +689,8 @@ fi
             provider = ProviderType.GITHUB
         elif 'gitlab.com' in repo_path:
             provider = ProviderType.GITLAB
+        elif 'bitbucket.org' in repo_path:
+            provider = ProviderType.BITBUCKET
 
         # Add authentication if available
         if (
@@ -663,6 +702,12 @@ fi
             if git_token:
                 if provider == ProviderType.GITLAB:
                     remote_url = f'https://oauth2:{git_token.get_secret_value()}@{repo_path.replace("gitlab.com/", "")}.git'
+                elif provider == ProviderType.BITBUCKET:
+                    # For Bitbucket, we'll use a different approach
+                    # Instead of embedding the token in the URL, we'll use the regular URL
+                    # and let git handle authentication through environment variables
+                    # This avoids issues with special characters in the token
+                    remote_url = f'https://bitbucket.org/{repo_path.replace("bitbucket.org/", "")}.git'
                 else:
                     remote_url = f'https://{git_token.get_secret_value()}@{repo_path.replace("github.com/", "")}.git'
 
