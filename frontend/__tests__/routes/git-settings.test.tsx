@@ -229,7 +229,7 @@ describe("Content", () => {
 describe("Form submission", () => {
   it("should save the GitHub token", async () => {
     const saveProvidersSpy = vi.spyOn(SecretsService, "addGitProvider");
-    saveProvidersSpy.mockImplementation(() => Promise.resolve());
+    saveProvidersSpy.mockImplementation(() => Promise.resolve(true));
     const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
     getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
 
@@ -250,7 +250,7 @@ describe("Form submission", () => {
 
   it("should save both GitHub and GitLab tokens", async () => {
     const saveProvidersSpy = vi.spyOn(SecretsService, "addGitProvider");
-    saveProvidersSpy.mockImplementation(() => Promise.resolve());
+    saveProvidersSpy.mockImplementation(() => Promise.resolve(true));
     const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
     getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
 
