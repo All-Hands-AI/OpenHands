@@ -3,6 +3,7 @@ from functools import lru_cache
 from typing import Callable
 import typing
 from uuid import UUID
+import shutil
 
 import os
 import docker
@@ -470,6 +471,12 @@ class DockerRuntime(ActionExecutionClient):
             CONTAINER_NAME_PREFIX if rm_all_containers else self.container_name
         )
         stop_all_containers(close_prefix)
+        host_workspace = self.config.workspace_mount_path
+        try:
+            shutil.rmtree(host_workspace)
+            self.log("info", f"Deleted host workspace directory: {host_workspace}")
+        except Exception as e:
+            self.log("error", f"Error deleting host workspace directory {host_workspace}: {e}")
 
     def _is_port_in_use_docker(self, port: int) -> bool:
         containers = self.docker_client.containers.list()
