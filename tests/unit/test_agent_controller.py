@@ -443,7 +443,7 @@ async def test_step_max_budget(mock_agent, mock_event_stream):
     metrics = Metrics()
     metrics.accumulated_cost = 10.1
     budget_flag = BudgetControlFlag(
-        increaes_amount=10, current_value=10.1, max_value=10
+        limit_increase_amount=10, current_value=10.1, max_value=10
     )
 
     controller = AgentController(
