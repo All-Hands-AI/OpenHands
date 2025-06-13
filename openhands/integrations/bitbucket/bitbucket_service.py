@@ -123,7 +123,7 @@ class BitbucketService(BaseGitService, GitService):
         """Get the authenticated user's information."""
         url = f'{self.BASE_URL}/user'
         data, _ = await self._make_request(url)
-        
+
         # Convert account_id to an integer if possible, or use a default value
         account_id = data.get('account_id', '0')
         try:
@@ -181,28 +181,84 @@ class BitbucketService(BaseGitService, GitService):
 
     async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
         """Get repositories for the authenticated user."""
+        repositories = []
+
+        # First, try to get repositories with 'contributor' role
         url = f'{self.BASE_URL}/repositories'
         params = {
-            'role': 'member',
+            'role': 'contributor',  # 'member' is not a valid role for Bitbucket API
             'pagelen': 100,
             'sort': sort,
         }
 
-        data, headers = await self._make_request(url, params)
+        try:
+            data, headers = await self._make_request(url, params)
 
-        repositories = []
-        for repo in data.get('values', []):
-            repositories.append(
-                Repository(
-                    id=repo.get('uuid', ''),
-                    full_name=f'{repo.get("workspace", {}).get("slug", "")}/{repo.get("slug", "")}',
-                    git_provider=ProviderType.BITBUCKET,
-                    is_public=repo.get('is_private', True) is False,
-                    stargazers_count=None,  # Bitbucket doesn't have stars
-                    link_header=headers.get('Link', ''),
-                    pushed_at=repo.get('updated_on'),
+            for repo in data.get('values', []):
+                # Convert UUID to an integer hash for compatibility with Repository model
+                uuid = repo.get('uuid', '')
+                # Remove curly braces if present and use hash of the UUID string as the ID
+                if uuid.startswith('{') and uuid.endswith('}'):
+                    uuid = uuid[1:-1]
+                id_value = hash(uuid) % (2**31)  # Ensure it's a positive 32-bit integer
+
+                repositories.append(
+                    Repository(
+                        id=id_value,
+                        full_name=f'{repo.get("workspace", {}).get("slug", "")}/{repo.get("slug", "")}',
+                        git_provider=ProviderType.BITBUCKET,
+                        is_public=repo.get('is_private', True) is False,
+                        stargazers_count=None,  # Bitbucket doesn't have stars
+                        link_header=headers.get('Link', ''),
+                        pushed_at=repo.get('updated_on'),
+                    )
                 )
-            )
+        except Exception as e:
+            # If the first approach fails, try getting workspaces and then repositories for each workspace
+            try:
+                # Get user's workspaces
+                workspaces_url = f'{self.BASE_URL}/workspaces'
+                workspaces_data, _ = await self._make_request(workspaces_url)
+
+                for workspace in workspaces_data.get('values', []):
+                    workspace_slug = workspace.get('slug')
+                    if not workspace_slug:
+                        continue
+
+                    # Get repositories for this workspace
+                    workspace_repos_url = (
+                        f'{self.BASE_URL}/repositories/{workspace_slug}'
+                    )
+                    repos_data, headers = await self._make_request(workspace_repos_url)
+
+                    for repo in repos_data.get('values', []):
+                        # Convert UUID to an integer hash for compatibility with Repository model
+                        uuid = repo.get('uuid', '')
+                        # Remove curly braces if present and use hash of the UUID string as the ID
+                        if uuid.startswith('{') and uuid.endswith('}'):
+                            uuid = uuid[1:-1]
+                        id_value = hash(uuid) % (
+                            2**31
+                        )  # Ensure it's a positive 32-bit integer
+
+                        repositories.append(
+                            Repository(
+                                id=id_value,
+                                full_name=f'{repo.get("workspace", {}).get("slug", "")}/{repo.get("slug", "")}',
+                                git_provider=ProviderType.BITBUCKET,
+                                is_public=repo.get('is_private', True) is False,
+                                stargazers_count=None,  # Bitbucket doesn't have stars
+                                link_header=headers.get('Link', ''),
+                                pushed_at=repo.get('updated_on'),
+                            )
+                        )
+            except Exception as nested_e:
+                # If both approaches fail, log the error and return an empty list
+                from openhands.core.logger import openhands_logger as logger
+
+                logger.warning(
+                    f'Failed to get repositories from Bitbucket: {e}, then: {nested_e}'
+                )
 
         return repositories
 
@@ -227,8 +283,15 @@ class BitbucketService(BaseGitService, GitService):
         url = f'{self.BASE_URL}/repositories/{owner}/{repo}'
         data, _ = await self._make_request(url)
 
+        # Convert UUID to an integer hash for compatibility with Repository model
+        uuid = data.get('uuid', '')
+        # Remove curly braces if present and use hash of the UUID string as the ID
+        if uuid.startswith('{') and uuid.endswith('}'):
+            uuid = uuid[1:-1]
+        id_value = hash(uuid) % (2**31)  # Ensure it's a positive 32-bit integer
+
         return Repository(
-            id=data.get('uuid', ''),
+            id=id_value,
             full_name=f'{data.get("workspace", {}).get("slug", "")}/{data.get("slug", "")}',
             git_provider=ProviderType.BITBUCKET,
             is_public=data.get('is_private', True) is False,
