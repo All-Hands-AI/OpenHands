@@ -26,6 +26,10 @@ async def validate_provider_token(
         'bitbucket' if it's a Bitbucket token
         None if the token is invalid for all services
     """
+    # Skip validation for empty tokens
+    if not token or not token.get_secret_value():
+        return None
+        
     # Try GitHub first
     try:
         github_service = GitHubService(token=token, base_domain=base_domain)
