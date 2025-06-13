@@ -3,6 +3,7 @@ import traceback
 from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.integrations.bitbucket.bitbucket_service import BitbucketService
 from openhands.integrations.github.github_service import GitHubService
 from openhands.integrations.gitlab.gitlab_service import GitLabService
 from openhands.integrations.provider import ProviderType
@@ -12,16 +13,18 @@ async def validate_provider_token(
     token: SecretStr, base_domain: str | None = None
 ) -> ProviderType | None:
     """
-    Determine whether a token is for GitHub or GitLab by attempting to get user info
-    from both services.
+    Determine whether a token is for GitHub, GitLab, or Bitbucket by attempting to get user info
+    from the services.
 
     Args:
         token: The token to check
+        base_domain: Optional base domain for the service
 
     Returns:
         'github' if it's a GitHub token
         'gitlab' if it's a GitLab token
-        None if the token is invalid for both services
+        'bitbucket' if it's a Bitbucket token
+        None if the token is invalid for all services
     """
     # Try GitHub first
     try:
@@ -41,6 +44,16 @@ async def validate_provider_token(
     except Exception as e:
         logger.debug(
             f'Failed to validate GitLab token: {e} \n {traceback.format_exc()}'
+        )
+
+    # Try Bitbucket last
+    try:
+        bitbucket_service = BitbucketService(token=token, base_domain=base_domain)
+        await bitbucket_service.get_user()
+        return ProviderType.BITBUCKET
+    except Exception as e:
+        logger.debug(
+            f'Failed to validate Bitbucket token: {e} \n {traceback.format_exc()}'
         )
 
     return None
