@@ -283,11 +283,13 @@ class DockerRuntime(ActionExecutionClient):
 
         shak_vscode_port_str = self.convert_port_to_string()
         # Construct dynamic workspace path by appending _shak_vscode_port_str to the base workspace path
-        shak_dynamic_workspace_path = f"{self.config.workspace_mount_path_in_sandbox}/workspace_{shak_vscode_port_str}"
+        shak_dynamic_workspace_mount_path_in_sandbox = f"{self.config.workspace_mount_path_in_sandbox}/workspace_{shak_vscode_port_str}"
+        shak_dynamic_workspace_mount_path = f"{self.config.workspace_mount_path}/workspace_{shak_vscode_port_str}"
 
         # Update the config directly so that when it is passed to get_action_execution_server_startup_command,
         # the new workspace_mount_path_in_sandbox is used.
-        self.config.workspace_mount_path_in_sandbox = shak_dynamic_workspace_path
+        self.config.workspace_mount_path = shak_dynamic_workspace_mount_path
+        self.config.workspace_mount_path_in_sandbox = shak_dynamic_workspace_mount_path_in_sandbox
 
         self._app_ports = [
             self._find_available_port(APP_PORT_RANGE_1),
