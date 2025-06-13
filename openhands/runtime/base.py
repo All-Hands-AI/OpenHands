@@ -411,6 +411,7 @@ class Runtime(FileEditRuntimeMixin):
         provider_domains = {
             ProviderType.GITHUB: 'github.com',
             ProviderType.GITLAB: 'gitlab.com',
+            ProviderType.BITBUCKET: 'bitbucket.org',
         }
 
         domain = provider_domains[provider]
