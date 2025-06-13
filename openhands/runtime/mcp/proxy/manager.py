@@ -36,7 +36,6 @@ class MCPProxyManager:
         Initialize the MCP Proxy Manager.
 
         Args:
-            name: Name of the proxy server
             auth_enabled: Whether authentication is enabled
             api_key: API key for authentication (required if auth_enabled is True)
             logger_level: Logging level for the FastMCP logger
@@ -59,7 +58,7 @@ class MCPProxyManager:
         """
         if len(self.config['mcpServers']) == 0:
             logger.info(
-                f"No MCP servers configured for FastMCP Proxy, skipping initialization."
+                'No MCP servers configured for FastMCP Proxy, skipping initialization.'
             )
             return None
 
@@ -70,7 +69,7 @@ class MCPProxyManager:
             api_key=self.api_key,
         )
 
-        logger.info(f"FastMCP Proxy initialized successfully")
+        logger.info('FastMCP Proxy initialized successfully')
 
     async def mount_to_app(
         self, app: FastAPI, allow_origins: Optional[list[str]] = None
@@ -83,9 +82,7 @@ class MCPProxyManager:
             allow_origins: List of allowed origins for CORS
         """
         if len(self.config['mcpServers']) == 0:
-            logger.info(
-                f"No MCP servers configured for FastMCP Proxy, skipping mount."
-            )
+            logger.info('No MCP servers configured for FastMCP Proxy, skipping mount.')
             return
 
         if not self.proxy:
@@ -101,8 +98,7 @@ class MCPProxyManager:
             app.routes.remove('/mcp')
 
         app.mount('/', mcp_app)
-        logger.info(f"Mounted FastMCP Proxy app at /mcp")
-
+        logger.info('Mounted FastMCP Proxy app at /mcp')
 
     async def update_and_remount(
         self,
@@ -119,13 +115,10 @@ class MCPProxyManager:
 
         Args:
             app: FastAPI application to mount to
-            tools: List of tool configurations
+            stdio_servers: List of stdio server configurations
             allow_origins: List of allowed origins for CORS
         """
-        tools = {
-            t.name: t.model_dump()
-            for t in stdio_servers
-        }
+        tools = {t.name: t.model_dump() for t in stdio_servers}
         self.config['mcpServers'] = tools
 
         del self.proxy
