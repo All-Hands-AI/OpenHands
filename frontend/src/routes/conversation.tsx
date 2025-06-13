@@ -37,6 +37,7 @@ import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
 import OpenHands from "#/api/open-hands";
 import { TabContent } from "#/components/layout/tab-content";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
+import { ChatInputProvider } from "#/components/features/chat/chat-input";
 
 function AppContent() {
   useConversationConfig();
@@ -215,7 +216,11 @@ function AppContent() {
 }
 
 function App() {
-  return <AppContent />;
+  return (
+    <ChatInputProvider>
+      <AppContent />
+    </ChatInputProvider>
+  );
 }
 
 export default App;
