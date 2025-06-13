@@ -140,7 +140,7 @@ class ProviderHandler:
             # Skip providers with empty tokens
             if not token.token or not token.token.get_secret_value():
                 continue
-                
+
             try:
                 service = self._get_service(provider)
                 return await service.get_user()
@@ -166,7 +166,7 @@ class ProviderHandler:
             # Skip providers with empty tokens
             if not token.token or not token.token.get_secret_value():
                 continue
-                
+
             try:
                 service = self._get_service(provider)
                 service_repos = await service.get_repositories(sort, app_mode)
@@ -186,7 +186,7 @@ class ProviderHandler:
             # Skip providers with empty tokens
             if not token.token or not token.token.get_secret_value():
                 continue
-                
+
             try:
                 service = self._get_service(provider)
                 service_repos = await service.get_suggested_tasks()
@@ -209,7 +209,7 @@ class ProviderHandler:
             # Skip providers with empty tokens
             if not token.token or not token.token.get_secret_value():
                 continue
-                
+
             try:
                 service = self._get_service(provider)
                 service_repos = await service.search_repositories(
@@ -348,7 +348,9 @@ class ProviderHandler:
             if token and token.token and token.token.get_secret_value():
                 try:
                     service = self._get_service(specified_provider)
-                    return await service.get_repository_details_from_repo_name(repository)
+                    return await service.get_repository_details_from_repo_name(
+                        repository
+                    )
                 except Exception:
                     pass
 
@@ -357,7 +359,7 @@ class ProviderHandler:
             # Skip providers with empty tokens
             if not token.token or not token.token.get_secret_value():
                 continue
-                
+
             try:
                 service = self._get_service(provider)
                 return await service.get_repository_details_from_repo_name(repository)
@@ -399,7 +401,7 @@ class ProviderHandler:
             # Skip providers with empty tokens
             if not token.token or not token.token.get_secret_value():
                 continue
-                
+
             try:
                 service = self._get_service(provider)
                 branches = await service.get_branches(repository)

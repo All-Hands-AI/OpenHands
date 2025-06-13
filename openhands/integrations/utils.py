@@ -1,5 +1,3 @@
-import traceback
-
 from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
@@ -29,35 +27,36 @@ async def validate_provider_token(
     # Skip validation for empty tokens
     if token is None or not token.get_secret_value().strip():
         return None
-        
+
     # Try GitHub first
+    github_error = None
     try:
         github_service = GitHubService(token=token, base_domain=base_domain)
         await github_service.verify_access()
         return ProviderType.GITHUB
     except Exception as e:
-        logger.debug(
-            f'Failed to validate Github token: {e} \n {traceback.format_exc()}'
-        )
+        github_error = e
 
     # Try GitLab next
+    gitlab_error = None
     try:
         gitlab_service = GitLabService(token=token, base_domain=base_domain)
         await gitlab_service.get_user()
         return ProviderType.GITLAB
     except Exception as e:
-        logger.debug(
-            f'Failed to validate GitLab token: {e} \n {traceback.format_exc()}'
-        )
+        gitlab_error = e
 
     # Try Bitbucket last
+    bitbucket_error = None
     try:
         bitbucket_service = BitbucketService(token=token, base_domain=base_domain)
         await bitbucket_service.get_user()
         return ProviderType.BITBUCKET
     except Exception as e:
-        logger.debug(
-            f'Failed to validate Bitbucket token: {e} \n {traceback.format_exc()}'
-        )
+        bitbucket_error = e
+
+    logger.debug(
+        f'Failed to validate token: {github_error} \n {gitlab_error} \n {bitbucket_error}'
+    )
 
     return None
