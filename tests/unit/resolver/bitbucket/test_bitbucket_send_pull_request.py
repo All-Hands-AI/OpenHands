@@ -7,14 +7,14 @@ from openhands.resolver.send_pull_request import send_pull_request
 
 
 @pytest.mark.asyncio
-@patch('openhands.resolver.send_pull_request.get_issue_handler')
-async def test_send_pull_request_bitbucket(mock_get_issue_handler):
-    # Mock the BitbucketIssueHandler
-    mock_handler = MagicMock(spec=BitbucketIssueHandler)
-    mock_handler.create_pr = AsyncMock(
+@patch('openhands.resolver.send_pull_request.BitbucketIssueHandler')
+async def test_send_pull_request_bitbucket(mock_bitbucket_handler):
+    # Mock the BitbucketIssueHandler instance
+    mock_instance = MagicMock(spec=BitbucketIssueHandler)
+    mock_instance.create_pr = AsyncMock(
         return_value='https://bitbucket.org/test-workspace/test-repo/pull-requests/123'
     )
-    mock_get_issue_handler.return_value = mock_handler
+    mock_bitbucket_handler.return_value = mock_instance
 
     # Call send_pull_request
     result = await send_pull_request(
@@ -32,17 +32,16 @@ async def test_send_pull_request_bitbucket(mock_get_issue_handler):
     assert result == 'https://bitbucket.org/test-workspace/test-repo/pull-requests/123'
 
     # Verify the handler was created correctly
-    mock_get_issue_handler.assert_called_once_with(
-        'bitbucket',
+    mock_bitbucket_handler.assert_called_once_with(
         'test-workspace',
         'test-repo',
         'test-token',
         None,
-        None,
+        'bitbucket.org',
     )
 
     # Verify create_pr was called correctly
-    mock_handler.create_pr.assert_called_once_with(
+    mock_instance.create_pr.assert_called_once_with(
         title='Test PR',
         body='Test PR Body',
         head='feature-branch',

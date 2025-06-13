@@ -89,6 +89,9 @@ describe("Content", () => {
     await screen.findByTestId("gitlab-token-input");
     await screen.findByTestId("gitlab-token-help-anchor");
 
+    await screen.findByTestId("bitbucket-token-input");
+    await screen.findByTestId("bitbucket-token-help-anchor");
+
     getConfigSpy.mockResolvedValue(VALID_SAAS_CONFIG);
     queryClient.invalidateQueries();
     rerender();
@@ -106,6 +109,13 @@ describe("Content", () => {
       ).not.toBeInTheDocument();
       expect(
         screen.queryByTestId("gitlab-token-help-anchor"),
+      ).not.toBeInTheDocument();
+
+      expect(
+        screen.queryByTestId("bitbucket-token-input"),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId("bitbucket-token-help-anchor"),
       ).not.toBeInTheDocument();
     });
   });
@@ -268,6 +278,27 @@ describe("Form submission", () => {
       github: { token: "test-token", host: "" },
       gitlab: { token: "test-token", host: "" },
       bitbucket: { token: "", host: "" },
+    });
+  });
+
+  it("should save the Bitbucket token", async () => {
+    const saveProvidersSpy = vi.spyOn(SecretsService, "addGitProvider");
+    saveProvidersSpy.mockImplementation(() => Promise.resolve(true));
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
+
+    renderGitSettingsScreen();
+
+    const bitbucketInput = await screen.findByTestId("bitbucket-token-input");
+    const submit = await screen.findByTestId("submit-button");
+
+    await userEvent.type(bitbucketInput, "test-token");
+    await userEvent.click(submit);
+
+    expect(saveProvidersSpy).toHaveBeenCalledWith({
+      github: { token: "", host: "" },
+      gitlab: { token: "", host: "" },
+      bitbucket: { token: "test-token", host: "" },
     });
   });
 

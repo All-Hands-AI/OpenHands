@@ -17,10 +17,8 @@ from openhands.resolver.send_pull_request import (
     main,
     make_commit,
     process_single_issue,
+    send_pull_request_legacy,
     update_existing_pull_request,
-)
-from openhands.resolver.send_pull_request import (
-    send_pull_request_legacy as send_pull_request,
 )
 
 
@@ -352,7 +350,7 @@ def test_update_existing_pull_request(
 @patch('subprocess.run')
 @patch('httpx.post')
 @patch('httpx.get')
-def test_send_pull_request(
+def test_send_pull_request_legacy(
     mock_get,
     mock_post,
     mock_run,
@@ -390,7 +388,7 @@ def test_send_pull_request(
     ]
 
     # Call the function
-    result = send_pull_request(
+    result = send_pull_request_legacy(
         issue=mock_issue,
         token='test-token',
         username='test-user',
@@ -497,7 +495,7 @@ def test_send_pull_request_with_reviewer(
     ]
 
     # Call the function with reviewer
-    result = send_pull_request(
+    result = send_pull_request_legacy(
         issue=mock_issue,
         token='test-token',
         username='test-user',
@@ -545,7 +543,7 @@ def test_send_pull_request_invalid_target_branch(
     with pytest.raises(
         ValueError, match='Target branch nonexistent-branch does not exist'
     ):
-        send_pull_request(
+        send_pull_request_legacy(
             issue=mock_issue,
             token='test-token',
             username='test-user',
@@ -580,7 +578,7 @@ def test_send_pull_request_git_push_failure(
     with pytest.raises(
         RuntimeError, match='Failed to push changes to the remote repository'
     ):
-        send_pull_request(
+        send_pull_request_legacy(
             issue=mock_issue,
             token='test-token',
             username='test-user',
@@ -640,7 +638,7 @@ def test_send_pull_request_permission_error(
     with pytest.raises(
         RuntimeError, match='Failed to create pull request due to missing permissions.'
     ):
-        send_pull_request(
+        send_pull_request_legacy(
             issue=mock_issue,
             token='test-token',
             username='test-user',
@@ -795,9 +793,7 @@ def test_process_single_pr_update(
 @patch('openhands.resolver.send_pull_request.apply_patch')
 @patch('openhands.resolver.send_pull_request.send_pull_request_legacy')
 @patch('openhands.resolver.send_pull_request.make_commit')
-@patch('httpx.get')
 def test_process_single_issue(
-    mock_httpx_get,
     mock_make_commit,
     mock_send_pull_request,
     mock_apply_patch,
@@ -830,20 +826,6 @@ def test_process_single_issue(
         result_explanation='Test success 1',
         error=None,
     )
-
-    # Mock httpx.get to return a successful response with default branch
-    class MockResponse:
-        def __init__(self, status_code=200, json_data=None):
-            self.status_code = status_code
-            self.json_data = json_data or {}
-
-        def json(self):
-            return self.json_data
-
-        def raise_for_status(self):
-            pass
-
-    mock_httpx_get.return_value = MockResponse(json_data={'default_branch': 'main'})
 
     # Mock return value
     mock_send_pull_request.return_value = (
@@ -891,7 +873,7 @@ def test_process_single_issue(
 
 @patch('openhands.resolver.send_pull_request.initialize_repo')
 @patch('openhands.resolver.send_pull_request.apply_patch')
-@patch('openhands.resolver.send_pull_request.send_pull_request')
+@patch('openhands.resolver.send_pull_request.send_pull_request_legacy')
 @patch('openhands.resolver.send_pull_request.make_commit')
 def test_process_single_issue_unsuccessful(
     mock_make_commit,
@@ -970,7 +952,7 @@ def test_send_pull_request_branch_naming(
     ]
 
     # Call the function
-    result = send_pull_request(
+    result = send_pull_request_legacy(
         issue=mock_issue,
         token='test-token',
         username='test-user',

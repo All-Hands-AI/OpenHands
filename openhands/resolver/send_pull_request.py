@@ -25,49 +25,6 @@ from openhands.resolver.utils import identify_token
 from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
 
 
-def get_issue_handler(
-    provider: str,
-    owner: str,
-    repo: str,
-    token: str,
-    username: str | None = None,
-    base_domain: str | None = None,
-):
-    """Get the appropriate issue handler for the given provider.
-
-    Args:
-        provider: The provider (github, gitlab, bitbucket)
-        owner: The owner of the repository
-        repo: The name of the repository
-        token: The token to use for authentication
-        username: The username to use for authentication (optional)
-        base_domain: The base domain for the git server (optional)
-
-    Returns:
-        The appropriate issue handler
-    """
-    if provider.lower() == 'github':
-        from openhands.resolver.interfaces.github import GithubIssueHandler
-
-        return GithubIssueHandler(
-            owner, repo, token, username, base_domain or 'github.com'
-        )
-    elif provider.lower() == 'gitlab':
-        from openhands.resolver.interfaces.gitlab import GitlabIssueHandler
-
-        return GitlabIssueHandler(
-            owner, repo, token, username, base_domain or 'gitlab.com'
-        )
-    elif provider.lower() == 'bitbucket':
-        from openhands.resolver.interfaces.bitbucket import BitbucketIssueHandler
-
-        return BitbucketIssueHandler(
-            owner, repo, token, username, base_domain or 'bitbucket.org'
-        )
-    else:
-        raise ValueError(f'Unsupported provider: {provider}')
-
-
 async def send_pull_request(
     provider: str,
     owner: str,
@@ -97,8 +54,19 @@ async def send_pull_request(
     Returns:
         The URL of the created pull request
     """
-    handler = get_issue_handler(provider, owner, repo, token, username, base_domain)
-    return await handler.create_pr(title=title, body=body, head=head, base=base)
+    # Only Bitbucket is supported for now with the async create_pr method
+    if provider.lower() == 'bitbucket':
+        handler = BitbucketIssueHandler(
+            owner, repo, token, username, base_domain or 'bitbucket.org'
+        )
+        return await handler.create_pr(title=title, body=body, head=head, base=base)
+    else:
+        # For GitHub and GitLab, we'll need to implement this differently
+        # or use the existing create_pull_request method
+        raise ValueError(
+            f'Direct PR creation via send_pull_request is not supported for {provider}. '
+            f'Use send_pull_request_legacy instead.'
+        )
 
 
 def apply_patch(repo_dir: str, patch: str) -> None:
@@ -333,14 +301,7 @@ def send_pull_request_legacy(
 
     # Determine default base_domain based on platform
     if base_domain is None:
-        if platform == ProviderType.GITHUB:
-            base_domain = 'github.com'
-        elif platform == ProviderType.GITLAB:
-            base_domain = 'gitlab.com'
-        elif platform == ProviderType.BITBUCKET:
-            base_domain = 'bitbucket.org'
-        else:
-            raise ValueError(f'Unsupported platform: {platform}')
+        base_domain = 'github.com' if platform == ProviderType.GITHUB else 'gitlab.com'
 
     handler = None
     if platform == ProviderType.GITHUB:
@@ -348,20 +309,11 @@ def send_pull_request_legacy(
             GithubIssueHandler(issue.owner, issue.repo, token, username, base_domain),
             None,
         )
-    elif platform == ProviderType.GITLAB:
+    else:  # platform == Platform.GITLAB
         handler = ServiceContextIssue(
             GitlabIssueHandler(issue.owner, issue.repo, token, username, base_domain),
             None,
         )
-    elif platform == ProviderType.BITBUCKET:
-        handler = ServiceContextIssue(
-            BitbucketIssueHandler(
-                issue.owner, issue.repo, token, username, base_domain
-            ),
-            None,
-        )
-    else:
-        raise ValueError(f'Unsupported platform: {platform}')
 
     # Create a new branch with a unique name
     base_branch_name = f'openhands-fix-issue-{issue.number}'
@@ -429,33 +381,18 @@ def send_pull_request_legacy(
     if pr_type == 'branch':
         url = handler.get_compare_url(branch_name)
     else:
-        # Prepare the PR data based on the platform
-        if platform == ProviderType.GITHUB:
-            data = {
-                'title': final_pr_title,
-                'body': pr_body,
-                'head': head_branch,
-                'base': base_branch,
-                'draft': pr_type == 'draft',
-            }
-        elif platform == ProviderType.GITLAB:
-            data = {
-                'title': final_pr_title,
-                'description': pr_body,
-                'source_branch': head_branch,
-                'target_branch': base_branch,
-                'draft': pr_type == 'draft',
-            }
-        elif platform == ProviderType.BITBUCKET:
-            data = {
-                'title': final_pr_title,
-                'description': pr_body,
-                'source_branch': head_branch,
-                'target_branch': base_branch,
-                # Bitbucket doesn't support draft PRs in the same way
-            }
-        else:
-            raise ValueError(f'Unsupported platform: {platform}')
+        # Prepare the PR for the GitHub API
+        data = {
+            'title': final_pr_title,
+            ('body' if platform == ProviderType.GITHUB else 'description'): pr_body,
+            (
+                'head' if platform == ProviderType.GITHUB else 'source_branch'
+            ): head_branch,
+            (
+                'base' if platform == ProviderType.GITHUB else 'target_branch'
+            ): base_branch,
+            'draft': pr_type == 'draft',
+        }
 
         pr_data = handler.create_pull_request(data)
         url = pr_data['html_url']
@@ -500,14 +437,7 @@ def update_existing_pull_request(
 
     # Determine default base_domain based on platform
     if base_domain is None:
-        if platform == ProviderType.GITHUB:
-            base_domain = 'github.com'
-        elif platform == ProviderType.GITLAB:
-            base_domain = 'gitlab.com'
-        elif platform == ProviderType.BITBUCKET:
-            base_domain = 'bitbucket.org'
-        else:
-            raise ValueError(f'Unsupported platform: {platform}')
+        base_domain = 'github.com' if platform == ProviderType.GITHUB else 'gitlab.com'
 
     handler = None
     if platform == ProviderType.GITHUB:
@@ -515,20 +445,11 @@ def update_existing_pull_request(
             GithubIssueHandler(issue.owner, issue.repo, token, username, base_domain),
             llm_config,
         )
-    elif platform == ProviderType.GITLAB:
+    else:  # platform == Platform.GITLAB
         handler = ServiceContextIssue(
             GitlabIssueHandler(issue.owner, issue.repo, token, username, base_domain),
             llm_config,
         )
-    elif platform == ProviderType.BITBUCKET:
-        handler = ServiceContextIssue(
-            BitbucketIssueHandler(
-                issue.owner, issue.repo, token, username, base_domain
-            ),
-            llm_config,
-        )
-    else:
-        raise ValueError(f'Unsupported platform: {platform}')
 
     branch_name = issue.head_branch
 
@@ -614,14 +535,7 @@ def process_single_issue(
 ) -> None:
     # Determine default base_domain based on platform
     if base_domain is None:
-        if platform == ProviderType.GITHUB:
-            base_domain = 'github.com'
-        elif platform == ProviderType.GITLAB:
-            base_domain = 'gitlab.com'
-        elif platform == ProviderType.BITBUCKET:
-            base_domain = 'bitbucket.org'
-        else:
-            raise ValueError(f'Unsupported platform: {platform}')
+        base_domain = 'github.com' if platform == ProviderType.GITHUB else 'gitlab.com'
     if not resolver_output.success and not send_on_failure:
         logger.info(
             f'Issue {resolver_output.issue.number} was not successfully resolved. Skipping PR creation.'
