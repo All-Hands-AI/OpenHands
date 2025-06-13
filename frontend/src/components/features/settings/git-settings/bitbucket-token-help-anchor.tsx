@@ -10,7 +10,7 @@ export function BitbucketTokenHelpAnchor() {
           <a
             key="bitbucket-token-help-anchor-link"
             aria-label="Bitbucket token help link"
-            href="https://bitbucket.org/account/settings/app-passwords/new"
+            href="https://bitbucket.org/account/settings/app-passwords/new?scopes=repository:write,pullrequest:write,issue:write"
             target="_blank"
             className="underline underline-offset-2"
             rel="noopener noreferrer"
@@ -18,7 +18,7 @@ export function BitbucketTokenHelpAnchor() {
           <a
             key="bitbucket-token-help-anchor-link-2"
             aria-label="Bitbucket token see more link"
-            href="https://support.atlassian.com/bitbucket-cloud/docs/using-api-tokens/"
+            href="https://support.atlassian.com/bitbucket-cloud/docs/app-passwords/"
             target="_blank"
             className="underline underline-offset-2"
             rel="noopener noreferrer"
