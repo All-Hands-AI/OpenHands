@@ -1,8 +1,4 @@
 ---
-name: github
-type: knowledge
-version: 1.0.0
-agent: CodeActAgent
 triggers:
 - github
 - git

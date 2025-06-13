@@ -1,8 +1,4 @@
 ---
-name: kubernetes
-type: knowledge
-version: 1.0.0
-agent: CodeActAgent
 triggers:
 - kubernetes
 - k8s

@@ -1,12 +1,8 @@
 ---
- name: swift-linux
- type: knowledge
- agent: CodeActAgent
- version: 1.0.0
- triggers:
- - swift-linux
- - swift-debian
- - swift-installation
+triggers:
+- swift-linux
+- swift-debian
+- swift-installation
 ---
 
 # Swift Installation Guide for Debian Linux
