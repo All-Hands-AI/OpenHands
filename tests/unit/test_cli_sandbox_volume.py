@@ -1,25 +1,98 @@
-"""Test for CLI sandbox volume settings persistence.
+"""Tests for CLI sandbox volume settings.
 
-This test verifies that sandbox volume settings are properly saved to disk
-and loaded when starting a new CLI session, ensuring that the setting persists
-across sessions just like other settings such as LLM model and API key.
+This module contains tests for the sandbox volume settings functionality in the CLI,
+including both the UI interaction and the persistence of settings across sessions.
 """
 
 import json
 import os
 import tempfile
-from unittest.mock import patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from openhands.cli.settings import modify_workspace_settings
 from openhands.core.config import OpenHandsConfig
 from openhands.storage import get_file_store
+from openhands.storage.data_models.settings import Settings
 from openhands.storage.settings.file_settings_store import FileSettingsStore
 
 
 class TestSandboxVolume:
-    """Test class for sandbox volume persistence in CLI."""
+    """Test class for sandbox volume settings in CLI."""
+
+    @pytest.fixture
+    def mock_settings_store(self):
+        """Create a mock settings store."""
+        store = MagicMock(spec=FileSettingsStore)
+        store.load = AsyncMock(return_value=Settings())
+        store.store = AsyncMock()
+        return store
+
+    @pytest.fixture
+    def config(self):
+        """Create a config for testing."""
+        config = OpenHandsConfig()
+        config.sandbox.volumes = '/host:/container:rw'
+        return config
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.settings.PromptSession')
+    @patch('openhands.cli.settings.cli_confirm')
+    @patch('openhands.cli.settings.print_formatted_text')
+    @patch('openhands.cli.settings.get_validated_input')
+    @patch('openhands.cli.settings.save_settings_confirmation')
+    async def test_modify_workspace_settings_no_changes(
+        self,
+        mock_save_confirmation,
+        mock_get_input,
+        mock_print,
+        mock_confirm,
+        mock_session,
+        config,
+        mock_settings_store,
+    ):
+        """Test modify_workspace_settings with no changes."""
+        # Mock user choosing not to change volumes
+        mock_confirm.side_effect = [1]  # No for volumes
+
+        await modify_workspace_settings(config, mock_settings_store)
+
+        # Verify the settings store was not called to store settings
+        mock_settings_store.store.assert_not_called()
+        # Verify the config was not changed
+        assert config.sandbox.volumes == '/host:/container:rw'
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.settings.PromptSession')
+    @patch('openhands.cli.settings.cli_confirm')
+    @patch('openhands.cli.settings.print_formatted_text')
+    @patch('openhands.cli.settings.get_validated_input')
+    @patch('openhands.cli.settings.save_settings_confirmation')
+    async def test_modify_workspace_settings_change_volumes(
+        self,
+        mock_save_confirmation,
+        mock_get_input,
+        mock_print,
+        mock_confirm,
+        mock_session,
+        config,
+        mock_settings_store,
+    ):
+        """Test modify_workspace_settings with volumes change."""
+        # Mock user choosing to change volumes
+        mock_confirm.side_effect = [0]  # Yes for volumes
+        # Mock user input for new volumes
+        mock_get_input.return_value = '/new/host:/new/container:ro'
+        # Mock user confirming to save settings
+        mock_save_confirmation.return_value = True
+
+        await modify_workspace_settings(config, mock_settings_store)
+
+        # Verify the settings store was called to store settings
+        mock_settings_store.store.assert_called_once()
+        # Verify the config was changed
+        assert config.sandbox.volumes == '/new/host:/new/container:ro'
 
     @pytest.mark.asyncio
     async def test_sandbox_volume_persistence(self):
