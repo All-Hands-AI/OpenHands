@@ -305,15 +305,17 @@ describe("Form submission", () => {
     renderGitSettingsScreen();
 
     const azureDevOpsInput = await screen.findByTestId("azure-devops-token-input");
+    const azureDevOpsHostInput = await screen.findByTestId("azure-devops-host-input");
     const submit = await screen.findByTestId("submit-button");
 
     await userEvent.type(azureDevOpsInput, "test-token");
+    await userEvent.type(azureDevOpsHostInput, "https://dev.azure.com/test-org");
     await userEvent.click(submit);
 
     expect(saveProvidersSpy).toHaveBeenCalledWith({
       github: { token: "", host: "" },
       gitlab: { token: "", host: "" },
-      azure_devops: { token: "test-token", host: "" },
+      azure_devops: { token: "test-token", host: "https://dev.azure.com/test-org" },
     });
   });
 
