@@ -66,6 +66,11 @@ vi.mock("#/hooks/use-debounce", () => ({
   useDebounce: (value: string) => value,
 }));
 
+vi.mock("react-router", async (importActual) => ({
+  ...(await importActual()),
+  useNavigate: vi.fn(),
+}));
+
 const mockOnRepoSelection = vi.fn();
 const renderForm = () =>
   render(<RepositorySelectionForm onRepoSelection={mockOnRepoSelection} />, {

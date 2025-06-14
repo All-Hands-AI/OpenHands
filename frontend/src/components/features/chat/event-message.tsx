@@ -1,3 +1,4 @@
+import React from "react";
 import { ConfirmationButtons } from "#/components/shared/buttons/confirmation-buttons";
 import { OpenHandsAction } from "#/types/core/actions";
 import {
@@ -28,6 +29,10 @@ interface EventMessageProps {
   hasObservationPair: boolean;
   isAwaitingUserConfirmation: boolean;
   isLastMessage: boolean;
+  actions?: Array<{
+    icon: React.ReactNode;
+    onClick: () => void;
+  }>;
 }
 
 export function EventMessage({
@@ -35,6 +40,7 @@ export function EventMessage({
   hasObservationPair,
   isAwaitingUserConfirmation,
   isLastMessage,
+  actions,
 }: EventMessageProps) {
   const shouldShowConfirmationButtons =
     isLastMessage && event.source === "agent" && isAwaitingUserConfirmation;
@@ -66,6 +72,7 @@ export function EventMessage({
       <ChatMessage
         type={event.source}
         message={isUserMessage(event) ? event.args.content : event.message}
+        actions={actions}
       >
         {event.args.image_urls && event.args.image_urls.length > 0 && (
           <ImageCarousel size="small" images={event.args.image_urls} />

@@ -15,6 +15,16 @@ import {
 } from "./observations";
 import { StatusUpdate } from "./variances";
 
+export const isOpenHandsEvent = (
+  event: unknown,
+): event is OpenHandsParsedEvent =>
+  typeof event === "object" &&
+  event !== null &&
+  "id" in event &&
+  "source" in event &&
+  "message" in event &&
+  "timestamp" in event;
+
 export const isOpenHandsAction = (
   event: OpenHandsParsedEvent,
 ): event is OpenHandsAction => "action" in event;
@@ -76,7 +86,9 @@ export const isMcpObservation = (
 ): event is MCPObservation =>
   isOpenHandsObservation(event) && event.observation === "mcp";
 
-export const isStatusUpdate = (
-  event: OpenHandsParsedEvent,
-): event is StatusUpdate =>
-  "status_update" in event && "type" in event && "id" in event;
+export const isStatusUpdate = (event: unknown): event is StatusUpdate =>
+  typeof event === "object" &&
+  event !== null &&
+  "status_update" in event &&
+  "type" in event &&
+  "id" in event;
