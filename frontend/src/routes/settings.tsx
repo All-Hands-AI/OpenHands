@@ -15,25 +15,30 @@ function SettingsScreen() {
   const isSaas = config?.APP_MODE === "saas";
 
   const saasNavItems = [
+    { to: "/settings/user", text: t("SETTINGS$NAV_USER") },
     { to: "/settings/git", text: t("SETTINGS$NAV_GIT") },
     { to: "/settings/app", text: t("SETTINGS$NAV_APPLICATION") },
     { to: "/settings/billing", text: t("SETTINGS$NAV_CREDITS") },
+    { to: "/settings/secrets", text: t("SETTINGS$NAV_SECRETS") },
     { to: "/settings/api-keys", text: t("SETTINGS$NAV_API_KEYS") },
   ];
 
   const ossNavItems = [
     { to: "/settings", text: t("SETTINGS$NAV_LLM") },
+    { to: "/settings/mcp", text: t("SETTINGS$NAV_MCP") },
     { to: "/settings/git", text: t("SETTINGS$NAV_GIT") },
     { to: "/settings/app", text: t("SETTINGS$NAV_APPLICATION") },
+    { to: "/settings/secrets", text: t("SETTINGS$NAV_SECRETS") },
   ];
 
   React.useEffect(() => {
     if (isSaas) {
       if (pathname === "/settings") {
-        navigate("/settings/git");
+        navigate("/settings/user");
       }
     } else {
       const noEnteringPaths = [
+        "/settings/user",
         "/settings/billing",
         "/settings/credits",
         "/settings/api-keys",
@@ -58,7 +63,7 @@ function SettingsScreen() {
 
       <nav
         data-testid="settings-navbar"
-        className="flex items-end gap-12 px-9 border-b border-tertiary"
+        className="flex items-end gap-6 px-9 border-b border-tertiary"
       >
         {navItems.map(({ to, text }) => (
           <NavLink
@@ -67,12 +72,12 @@ function SettingsScreen() {
             to={to}
             className={({ isActive }) =>
               cn(
-                "border-b-2 border-transparent py-2.5",
+                "border-b-2 border-transparent py-2.5 px-4 min-w-[40px] flex items-center justify-center",
                 isActive && "border-primary",
               )
             }
           >
-            <ul className="text-[#F9FBFE] text-sm">{text}</ul>
+            <span className="text-[#F9FBFE] text-sm">{text}</span>
           </NavLink>
         ))}
       </nav>

@@ -5,13 +5,15 @@ import pytest
 from openhands.controller.agent import Agent
 from openhands.controller.agent_controller import AgentController
 from openhands.controller.state.state import State
-from openhands.core.config import AppConfig, LLMConfig
+from openhands.core.config import LLMConfig, OpenHandsConfig
 from openhands.core.config.agent_config import AgentConfig
 from openhands.events import EventStream, EventStreamSubscriber
 from openhands.llm import LLM
 from openhands.llm.metrics import Metrics
 from openhands.memory.memory import Memory
-from openhands.runtime.base import Runtime
+from openhands.runtime.impl.action_execution.action_execution_client import (
+    ActionExecutionClient,
+)
 from openhands.server.session.agent_session import AgentSession
 from openhands.storage.memory import InMemoryFileStore
 
@@ -33,6 +35,7 @@ def mock_agent():
 
     # Configure the agent config
     agent_config.disabled_microagents = []
+    agent_config.enable_mcp = True
 
     # Set up the chain of mocks
     llm.metrics = metrics
@@ -58,7 +61,7 @@ async def test_agent_session_start_with_no_state(mock_agent):
     )
 
     # Create a mock runtime and set it up
-    mock_runtime = MagicMock(spec=Runtime)
+    mock_runtime = MagicMock(spec=ActionExecutionClient)
 
     # Mock the runtime creation to set up the runtime attribute
     async def mock_create_runtime(*args, **kwargs):
@@ -91,18 +94,23 @@ async def test_agent_session_start_with_no_state(mock_agent):
     memory.microagents_dir = 'test-dir'
 
     # Patch AgentController and State.restore_from_session to fail; patch Memory in AgentSession
-    with patch(
-        'openhands.server.session.agent_session.AgentController', SpyAgentController
-    ), patch(
-        'openhands.server.session.agent_session.EventStream',
-        return_value=mock_event_stream,
-    ), patch(
-        'openhands.controller.state.state.State.restore_from_session',
-        side_effect=Exception('No state found'),
-    ), patch('openhands.server.session.agent_session.Memory', return_value=memory):
+    with (
+        patch(
+            'openhands.server.session.agent_session.AgentController', SpyAgentController
+        ),
+        patch(
+            'openhands.server.session.agent_session.EventStream',
+            return_value=mock_event_stream,
+        ),
+        patch(
+            'openhands.controller.state.state.State.restore_from_session',
+            side_effect=Exception('No state found'),
+        ),
+        patch('openhands.server.session.agent_session.Memory', return_value=memory),
+    ):
         await session.start(
             runtime_name='test-runtime',
-            config=AppConfig(),
+            config=OpenHandsConfig(),
             agent=mock_agent,
             max_iterations=10,
         )
@@ -141,7 +149,7 @@ async def test_agent_session_start_with_restored_state(mock_agent):
     )
 
     # Create a mock runtime and set it up
-    mock_runtime = MagicMock(spec=Runtime)
+    mock_runtime = MagicMock(spec=ActionExecutionClient)
 
     # Mock the runtime creation to set up the runtime attribute
     async def mock_create_runtime(*args, **kwargs):
@@ -179,18 +187,23 @@ async def test_agent_session_start_with_restored_state(mock_agent):
     mock_memory = MagicMock(spec=Memory)
 
     # Patch AgentController and State.restore_from_session to succeed, patch Memory in AgentSession
-    with patch(
-        'openhands.server.session.agent_session.AgentController', SpyAgentController
-    ), patch(
-        'openhands.server.session.agent_session.EventStream',
-        return_value=mock_event_stream,
-    ), patch(
-        'openhands.controller.state.state.State.restore_from_session',
-        return_value=mock_restored_state,
-    ), patch('openhands.server.session.agent_session.Memory', mock_memory):
+    with (
+        patch(
+            'openhands.server.session.agent_session.AgentController', SpyAgentController
+        ),
+        patch(
+            'openhands.server.session.agent_session.EventStream',
+            return_value=mock_event_stream,
+        ),
+        patch(
+            'openhands.controller.state.state.State.restore_from_session',
+            return_value=mock_restored_state,
+        ),
+        patch('openhands.server.session.agent_session.Memory', mock_memory),
+    ):
         await session.start(
             runtime_name='test-runtime',
-            config=AppConfig(),
+            config=OpenHandsConfig(),
             agent=mock_agent,
             max_iterations=10,
         )

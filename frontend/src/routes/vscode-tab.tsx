@@ -1,46 +1,43 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { useConversation } from "#/context/conversation-context";
 import { I18nKey } from "#/i18n/declaration";
 import { RootState } from "#/store";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
+import { useVSCodeUrl } from "#/hooks/query/use-vscode-url";
+import { VSCODE_IN_NEW_TAB } from "#/utils/feature-flags";
 
 function VSCodeTab() {
   const { t } = useTranslation();
-  const { conversationId } = useConversation();
-  const [vsCodeUrl, setVsCodeUrl] = React.useState<string | null>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
+  const { data, isLoading, error } = useVSCodeUrl();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const isRuntimeInactive = RUNTIME_INACTIVE_STATES.includes(curAgentState);
+  const iframeRef = React.useRef<HTMLIFrameElement>(null);
+  const [isCrossProtocol, setIsCrossProtocol] = useState(false);
+  const [iframeError, setIframeError] = useState<string | null>(null);
 
-  React.useEffect(() => {
-    async function fetchVSCodeUrl() {
-      if (!conversationId || isRuntimeInactive) return;
-
+  useEffect(() => {
+    if (data?.url) {
       try {
-        setIsLoading(true);
-        const response = await fetch(
-          `/api/conversations/${conversationId}/vscode-url`,
-        );
-        const data = await response.json();
+        const iframeProtocol = new URL(data.url).protocol;
+        const currentProtocol = window.location.protocol;
 
-        if (data.vscode_url) {
-          setVsCodeUrl(data.vscode_url);
-        } else {
-          setError(t(I18nKey.VSCODE$URL_NOT_AVAILABLE));
-        }
-      } catch (err) {
-        setError(t(I18nKey.VSCODE$FETCH_ERROR));
-        // Error is handled by setting the error state
-      } finally {
-        setIsLoading(false);
+        // Check if the iframe URL has a different protocol than the current page
+        setIsCrossProtocol(
+          VSCODE_IN_NEW_TAB() || iframeProtocol !== currentProtocol,
+        );
+      } catch (e) {
+        // Silently handle URL parsing errors
+        setIframeError(t("VSCODE$URL_PARSE_ERROR"));
       }
     }
+  }, [data?.url]);
 
-    fetchVSCodeUrl();
-  }, [conversationId, isRuntimeInactive, t]);
+  const handleOpenInNewTab = () => {
+    if (data?.url) {
+      window.open(data.url, "_blank", "noopener,noreferrer");
+    }
+  };
 
   if (isRuntimeInactive) {
     return (
@@ -58,24 +55,48 @@ function VSCodeTab() {
     );
   }
 
-  if (error || !vsCodeUrl) {
+  if (error || (data && data.error) || !data?.url || iframeError) {
     return (
       <div className="w-full h-full flex items-center text-center justify-center text-2xl text-tertiary-light">
-        {error || t(I18nKey.VSCODE$URL_NOT_AVAILABLE)}
+        {iframeError ||
+          data?.error ||
+          String(error) ||
+          t(I18nKey.VSCODE$URL_NOT_AVAILABLE)}
       </div>
     );
   }
 
+  // If cross-origin, show a button to open in new tab
+  if (isCrossProtocol) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center gap-4">
+        <div className="text-xl text-tertiary-light text-center max-w-md">
+          {t("VSCODE$CROSS_ORIGIN_WARNING")}
+        </div>
+        <button
+          type="button"
+          onClick={handleOpenInNewTab}
+          className="px-4 py-2 bg-primary text-white rounded-sm hover:bg-primary-dark transition-colors"
+        >
+          {t("VSCODE$OPEN_IN_NEW_TAB")}
+        </button>
+      </div>
+    );
+  }
+
+  // If same origin, use the iframe
   return (
     <div className="h-full w-full">
       <iframe
+        ref={iframeRef}
         title={t(I18nKey.VSCODE$TITLE)}
-        src={vsCodeUrl}
+        src={data.url}
         className="w-full h-full border-0"
-        allow={t(I18nKey.VSCODE$IFRAME_PERMISSIONS)}
+        allow="clipboard-read; clipboard-write"
       />
     </div>
   );
 }
 
+// Export the VSCodeTab directly since we're using the provider at a higher level
 export default VSCodeTab;

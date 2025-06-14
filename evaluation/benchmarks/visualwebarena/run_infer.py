@@ -20,7 +20,7 @@ from evaluation.utils.shared import (
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
-    AppConfig,
+    OpenHandsConfig,
     get_llm_config_arg,
     parse_arguments,
 )
@@ -48,7 +48,7 @@ AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
 def get_config(
     metadata: EvalMetadata,
     env_id: str,
-) -> AppConfig:
+) -> OpenHandsConfig:
     base_url = os.environ.get('VISUALWEBARENA_BASE_URL', None)
     openai_api_key = os.environ.get('OPENAI_API_KEY', None)
     openai_base_url = os.environ.get('OPENAI_BASE_URL', None)
@@ -72,7 +72,7 @@ def get_config(
         'VWA_WIKIPEDIA': f'{base_url}:8888',
         'VWA_HOMEPAGE': f'{base_url}:4399',
     }
-    config = AppConfig(
+    config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         runtime='docker',
@@ -100,7 +100,7 @@ def initialize_runtime(
 
     This function is called before the runtime is used to run the agent.
     """
-    logger.info(f"{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} BEGIN Runtime Initialization Fn {"-" * 50}')
     obs: CmdOutputObservation
 
     # Set instance id
@@ -116,7 +116,7 @@ def initialize_runtime(
     goal_image_urls = []
     if hasattr(obs, 'goal_image_urls'):
         goal_image_urls = obs.goal_image_urls
-    logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} END Runtime Initialization Fn {"-" * 50}')
     return goal, goal_image_urls
 
 
@@ -129,7 +129,7 @@ def complete_runtime(
     If you need to do something in the sandbox to get the correctness metric after
     the agent has run, modify this function.
     """
-    logger.info(f"{'-' * 50} BEGIN Runtime Completion Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} BEGIN Runtime Completion Fn {"-" * 50}')
     obs: CmdOutputObservation
 
     action = BrowseInteractiveAction(browser_actions=BROWSER_EVAL_GET_REWARDS_ACTION)
@@ -137,7 +137,7 @@ def complete_runtime(
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
-    logger.info(f"{'-' * 50} END Runtime Completion Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} END Runtime Completion Fn {"-" * 50}')
     return {
         'rewards': json.loads(obs.content),
     }

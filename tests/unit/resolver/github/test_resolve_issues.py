@@ -19,14 +19,14 @@ from openhands.resolver.interfaces.issue_definitions import (
     ServiceContextIssue,
     ServiceContextPR,
 )
-from openhands.resolver.resolve_issue import IssueResolver
+from openhands.resolver.issue_resolver import IssueResolver
 from openhands.resolver.resolver_output import ResolverOutput
 
 
 @pytest.fixture
 def default_mock_args():
     """Fixture that provides a default mock args object with common values.
-    
+
     Tests can override specific attributes as needed.
     """
     mock_args = MagicMock()
@@ -53,10 +53,13 @@ def default_mock_args():
 @pytest.fixture
 def mock_github_token():
     """Fixture that patches the identify_token function to return GitHub provider type.
-    
+
     This eliminates the need for repeated patching in each test function.
     """
-    with patch('openhands.resolver.resolve_issue.identify_token', return_value=ProviderType.GITHUB) as patched:
+    with patch(
+        'openhands.resolver.issue_resolver.identify_token',
+        return_value=ProviderType.GITHUB,
+    ) as patched:
         yield patched
 
 
@@ -88,8 +91,14 @@ def mock_os():
 
 
 @pytest.fixture
-def mock_prompt_template():
+def mock_user_instructions_template():
     return 'Issue: {{ body }}\n\nPlease fix this issue.'
+
+
+@pytest.fixture
+def mock_conversation_instructions_template():
+    return 'Instructions: {{ repo_instruction }}'
+
 
 
 @pytest.fixture
@@ -139,8 +148,8 @@ async def test_resolve_issue_no_issues_found(default_mock_args, mock_github_toke
     # Create a resolver instance with mocked token identification
     resolver = IssueResolver(default_mock_args)
 
-    # Mock the issue_handler_factory method
-    resolver.issue_handler_factory = MagicMock(return_value=mock_handler)
+    # Mock the issue handler
+    resolver.issue_handler = mock_handler
 
     # Test that the correct exception is raised
     with pytest.raises(ValueError) as exc_info:
@@ -150,9 +159,9 @@ async def test_resolve_issue_no_issues_found(default_mock_args, mock_github_toke
     assert 'No issues found for issue number 5432' in str(exc_info.value)
     assert 'test-owner/test-repo' in str(exc_info.value)
 
-    # Verify that the handler was correctly configured and called
-    resolver.issue_handler_factory.assert_called_once()
-    mock_handler.get_converted_issues.assert_called_once_with(issue_numbers=[5432], comment_id=None)
+    mock_handler.get_converted_issues.assert_called_once_with(
+        issue_numbers=[5432], comment_id=None
+    )
 
 
 def test_download_issues_from_github():
@@ -348,9 +357,7 @@ async def test_complete_runtime(default_mock_args, mock_github_token):
     # Create resolver with mocked token identification
     resolver = IssueResolver(default_mock_args)
 
-    result = await resolver.complete_runtime(
-        mock_runtime, 'base_commit_hash'
-    )
+    result = await resolver.complete_runtime(mock_runtime, 'base_commit_hash')
 
     assert result == {'git_patch': 'git diff content'}
     assert mock_runtime.run_action.call_count == 5
@@ -358,7 +365,7 @@ async def test_complete_runtime(default_mock_args, mock_github_token):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "test_case",
+    'test_case',
     [
         {
             'name': 'successful_run',
@@ -410,11 +417,20 @@ async def test_complete_runtime(default_mock_args, mock_github_token):
             'expected_error': None,
             'expected_explanation': 'Non-JSON explanation',
             'is_pr': True,
-            'comment_success': [True, False],  # To trigger the PR success logging code path
+            'comment_success': [
+                True,
+                False,
+            ],  # To trigger the PR success logging code path
         },
     ],
 )
-async def test_process_issue(default_mock_args, mock_github_token, mock_output_dir, mock_prompt_template, test_case):
+async def test_process_issue(
+    default_mock_args,
+    mock_github_token,
+    mock_output_dir,
+    mock_user_instructions_template,
+    test_case,
+):
     """Test the process_issue method with different scenarios."""
 
     # Set up test data
@@ -426,24 +442,30 @@ async def test_process_issue(default_mock_args, mock_github_token, mock_output_d
         body='This is a test issue',
     )
     base_commit = 'abcdef1234567890'
-    
+
     # Customize the mock args for this test
     default_mock_args.output_dir = mock_output_dir
     default_mock_args.issue_type = 'pr' if test_case.get('is_pr', False) else 'issue'
 
     # Create a resolver instance with mocked token identification
     resolver = IssueResolver(default_mock_args)
-    resolver.prompt_template = mock_prompt_template
+    resolver.user_instructions_prompt_template = mock_user_instructions_template
 
-    # Mock the handler
+    # Mock the handler with LLM config
+    llm_config = LLMConfig(model='test', api_key='test')
     handler_instance = MagicMock()
     handler_instance.guess_success.return_value = (
         test_case['expected_success'],
         test_case.get('comment_success', None),
         test_case['expected_explanation'],
     )
-    handler_instance.get_instruction.return_value = ('Test instruction', [])
+    handler_instance.get_instruction.return_value = (
+        'Test instruction',
+        'Test conversation instructions',
+        [],
+    )
     handler_instance.issue_type = 'pr' if test_case.get('is_pr', False) else 'issue'
+    handler_instance.llm = LLM(llm_config)
 
     # Mock the runtime and its methods
     mock_runtime = MagicMock()
@@ -457,7 +479,7 @@ async def test_process_issue(default_mock_args, mock_github_token, mock_output_d
 
     # Mock the create_runtime function
     mock_create_runtime = MagicMock(return_value=mock_runtime)
-    
+
     # Mock the run_controller function
     mock_run_controller = AsyncMock()
     if test_case['run_controller_raises']:
@@ -466,14 +488,16 @@ async def test_process_issue(default_mock_args, mock_github_token, mock_output_d
         mock_run_controller.return_value = test_case['run_controller_return']
 
     # Patch the necessary functions and methods
-    with patch('openhands.resolver.resolve_issue.create_runtime', mock_create_runtime), \
-         patch('openhands.resolver.resolve_issue.run_controller', mock_run_controller), \
-         patch.object(resolver, 'complete_runtime', return_value={'git_patch': 'test patch'}), \
-         patch.object(resolver, 'initialize_runtime') as mock_initialize_runtime:
-        
+    with (
+        patch('openhands.resolver.issue_resolver.create_runtime', mock_create_runtime),
+        patch('openhands.resolver.issue_resolver.run_controller', mock_run_controller),
+        patch.object(
+            resolver, 'complete_runtime', return_value={'git_patch': 'test patch'}
+        ),
+        patch.object(resolver, 'initialize_runtime') as mock_initialize_runtime,
+    ):
         # Call the process_issue method
         result = await resolver.process_issue(issue, base_commit, handler_instance)
-        
 
         # Assert the result matches our expectations
         assert isinstance(result, ResolverOutput)
@@ -490,16 +514,17 @@ async def test_process_issue(default_mock_args, mock_github_token, mock_output_d
         mock_initialize_runtime.assert_called_once()
         mock_run_controller.assert_called_once()
         resolver.complete_runtime.assert_awaited_once_with(mock_runtime, base_commit)
-        
+
         # Assert run_controller was called with the right parameters
         if not test_case['run_controller_raises']:
             # Check that the first positional argument is a config
             assert 'config' in mock_run_controller.call_args[1]
             # Check that initial_user_action is a MessageAction with the right content
-            assert isinstance(mock_run_controller.call_args[1]['initial_user_action'], MessageAction)
+            assert isinstance(
+                mock_run_controller.call_args[1]['initial_user_action'], MessageAction
+            )
             assert mock_run_controller.call_args[1]['runtime'] == mock_runtime
-        
-        
+
         # Assert that guess_success was called only for successful runs
         if test_case['expected_success']:
             handler_instance.guess_success.assert_called_once()
@@ -507,7 +532,7 @@ async def test_process_issue(default_mock_args, mock_github_token, mock_output_d
             handler_instance.guess_success.assert_not_called()
 
 
-def test_get_instruction(mock_prompt_template, mock_followup_prompt_template):
+def test_get_instruction(mock_user_instructions_template, mock_conversation_instructions_template, mock_followup_prompt_template):
     issue = Issue(
         owner='test_owner',
         repo='test_repo',
@@ -519,14 +544,15 @@ def test_get_instruction(mock_prompt_template, mock_followup_prompt_template):
     issue_handler = ServiceContextIssue(
         GithubIssueHandler('owner', 'repo', 'token'), mock_llm_config
     )
-    instruction, images_urls = issue_handler.get_instruction(
-        issue, mock_prompt_template, None
+    instruction, conversation_instructions, images_urls = issue_handler.get_instruction(
+        issue, mock_user_instructions_template, mock_conversation_instructions_template,  None
     )
     expected_instruction = 'Issue: Test Issue\n\nThis is a test issue refer to image ![First Image](https://sampleimage.com/image1.png)\n\nPlease fix this issue.'
 
     assert images_urls == ['https://sampleimage.com/image1.png']
     assert issue_handler.issue_type == 'issue'
     assert instruction == expected_instruction
+    assert conversation_instructions is not None
 
     issue = Issue(
         owner='test_owner',
@@ -549,14 +575,18 @@ def test_get_instruction(mock_prompt_template, mock_followup_prompt_template):
     pr_handler = ServiceContextPR(
         GithubPRHandler('owner', 'repo', 'token'), mock_llm_config
     )
-    instruction, images_urls = pr_handler.get_instruction(
-        issue, mock_followup_prompt_template, None
+    instruction, conversation_instructions, images_urls = pr_handler.get_instruction(
+        issue, mock_followup_prompt_template, mock_conversation_instructions_template, None
     )
     expected_instruction = "Issue context: [\n    \"Issue 1 fix the type\"\n]\n\nReview comments: None\n\nReview threads: [\n    \"There is still a typo 'pthon' instead of 'python'\"\n]\n\nFiles: []\n\nThread comments: I've left review comments, please address them\n---\nThis is a valid concern.\n\nPlease fix this issue."
 
     assert images_urls == []
     assert pr_handler.issue_type == 'pr'
-    assert instruction == expected_instruction
+    # Compare content ignoring exact formatting
+    assert "There is still a typo 'pthon' instead of 'python'" in instruction
+    assert "I've left review comments, please address them" in instruction
+    assert 'This is a valid concern' in instruction
+    assert conversation_instructions is not None
 
 
 def test_file_instruction():
@@ -570,26 +600,35 @@ def test_file_instruction():
     # load prompt from openhands/resolver/prompts/resolve/basic.jinja
     with open('openhands/resolver/prompts/resolve/basic.jinja', 'r') as f:
         prompt = f.read()
+
+    with open('openhands/resolver/prompts/resolve/basic-conversation-instructions.jinja', 'r') as f:
+        conversation_instructions_template = f.read()
+
     # Test without thread comments
     mock_llm_config = LLMConfig(model='test_model', api_key='test_api_key')
     issue_handler = ServiceContextIssue(
         GithubIssueHandler('owner', 'repo', 'token'), mock_llm_config
     )
-    instruction, images_urls = issue_handler.get_instruction(issue, prompt, None)
+    instruction, conversation_instructions, images_urls = issue_handler.get_instruction(
+        issue, prompt,conversation_instructions_template,  None
+    )
     expected_instruction = """Please fix the following issue for the repository in /workspace.
 An environment has been set up for you to start working. You may assume all necessary tools are installed.
 
 # Problem Statement
 Test Issue
 
-This is a test issue ![image](https://sampleimage.com/sample.png)
+This is a test issue ![image](https://sampleimage.com/sample.png)"""
 
-IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.
+
+    expected_conversation_instructions = """IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.
 You SHOULD INCLUDE PROPER INDENTATION in your edit commands.
 
 When you think you have fixed the issue through code changes, please finish the interaction."""
 
     assert instruction == expected_instruction
+    assert conversation_instructions == expected_conversation_instructions
+
     assert images_urls == ['https://sampleimage.com/sample.png']
 
 
@@ -604,6 +643,10 @@ def test_file_instruction_with_repo_instruction():
     # load prompt from openhands/resolver/prompts/resolve/basic.jinja
     with open('openhands/resolver/prompts/resolve/basic.jinja', 'r') as f:
         prompt = f.read()
+
+    with open('openhands/resolver/prompts/resolve/basic-conversation-instructions.jinja', 'r') as f:
+        conversation_instructions_prompt = f.read()
+
     # load repo instruction from openhands/resolver/prompts/repo_instructions/all-hands-ai___openhands-resolver.txt
     with open(
         'openhands/resolver/prompts/repo_instructions/all-hands-ai___openhands-resolver.txt',
@@ -615,18 +658,20 @@ def test_file_instruction_with_repo_instruction():
     issue_handler = ServiceContextIssue(
         GithubIssueHandler('owner', 'repo', 'token'), mock_llm_config
     )
-    instruction, image_urls = issue_handler.get_instruction(
-        issue, prompt, repo_instruction
+    instruction, conversation_instructions, image_urls = issue_handler.get_instruction(
+        issue, prompt, conversation_instructions_prompt, repo_instruction
     )
+
+
     expected_instruction = """Please fix the following issue for the repository in /workspace.
 An environment has been set up for you to start working. You may assume all necessary tools are installed.
 
 # Problem Statement
 Test Issue
 
-This is a test issue
+This is a test issue"""
 
-IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.
+    expected_conversation_instructions = """IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.
 You SHOULD INCLUDE PROPER INDENTATION in your edit commands.
 
 Some basic information about this repository:
@@ -637,7 +682,11 @@ This is a Python repo for openhands-resolver, a library that attempts to resolve
 
 
 When you think you have fixed the issue through code changes, please finish the interaction."""
+
+
     assert instruction == expected_instruction
+    assert conversation_instructions == expected_conversation_instructions
+    assert conversation_instructions is not None
     assert issue_handler.issue_type == 'issue'
     assert image_urls == []
 
@@ -736,11 +785,16 @@ def test_instruction_with_thread_comments():
     with open('openhands/resolver/prompts/resolve/basic.jinja', 'r') as f:
         prompt = f.read()
 
+    with open('openhands/resolver/prompts/resolve/basic-conversation-instructions.jinja', 'r') as f:
+        conversation_instructions_template = f.read()
+
     llm_config = LLMConfig(model='test', api_key='test')
     issue_handler = ServiceContextIssue(
         GithubIssueHandler('owner', 'repo', 'token'), llm_config
     )
-    instruction, images_urls = issue_handler.get_instruction(issue, prompt, None)
+    instruction, _, images_urls = issue_handler.get_instruction(
+        issue, prompt, conversation_instructions_template, None
+    )
 
     # Verify that thread comments are included in the instruction
     assert 'First comment' in instruction

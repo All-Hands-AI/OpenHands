@@ -1,4 +1,5 @@
 import os
+from typing import Any
 
 from fastapi import (
     APIRouter,
@@ -22,27 +23,35 @@ from openhands.events.observation import (
     FileReadObservation,
 )
 from openhands.runtime.base import Runtime
-from openhands.server.data_models.conversation_info import ConversationInfo
+from openhands.server.dependencies import get_dependencies
 from openhands.server.file_config import (
     FILES_TO_IGNORE,
 )
 from openhands.server.shared import (
     ConversationStoreImpl,
     config,
-    conversation_manager,
 )
 from openhands.server.user_auth import get_user_id
-from openhands.server.utils import get_conversation_store
+from openhands.server.utils import get_conversation, get_conversation_store
 from openhands.storage.conversation.conversation_store import ConversationStore
-from openhands.storage.data_models.conversation_metadata import ConversationMetadata
-from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.utils.async_utils import call_sync_from_async
+from openhands.server.session.conversation import ServerConversation
 
-app = APIRouter(prefix='/api/conversations/{conversation_id}')
+app = APIRouter(prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies())
 
 
-@app.get('/list-files')
-async def list_files(request: Request, path: str | None = None):
+@app.get(
+    '/list-files',
+    response_model=list[str],
+    responses={
+        404: {'description': 'Runtime not initialized', 'model': dict},
+        500: {'description': 'Error listing or filtering files', 'model': dict},
+    },
+)
+async def list_files(
+    conversation: ServerConversation = Depends(get_conversation),
+    path: str | None = None
+) -> list[str] | JSONResponse:
     """List files in the specified path.
 
     This function retrieves a list of files from the agent's runtime file store,
@@ -63,13 +72,13 @@ async def list_files(request: Request, path: str | None = None):
     Raises:
         HTTPException: If there's an error listing the files.
     """
-    if not request.state.conversation.runtime:
+    if not conversation.runtime:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content={'error': 'Runtime not yet initialized'},
         )
 
-    runtime: Runtime = request.state.conversation.runtime
+    runtime: Runtime = conversation.runtime
     try:
         file_list = await call_sync_from_async(runtime.list_files, path)
     except AgentRuntimeUnavailableError as e:
@@ -83,7 +92,7 @@ async def list_files(request: Request, path: str | None = None):
 
     file_list = [f for f in file_list if f not in FILES_TO_IGNORE]
 
-    async def filter_for_gitignore(file_list, base_path):
+    async def filter_for_gitignore(file_list: list[str], base_path: str) -> list[str]:
         gitignore_path = os.path.join(base_path, '.gitignore')
         try:
             read_action = FileReadAction(gitignore_path)
@@ -109,8 +118,21 @@ async def list_files(request: Request, path: str | None = None):
     return file_list
 
 
-@app.get('/select-file')
-async def select_file(file: str, request: Request):
+# NOTE: We use response_model=None for endpoints that can return multiple response types
+# (like FileResponse | JSONResponse). This is because FastAPI's response_model expects a
+# Pydantic model, but Starlette response classes like FileResponse are not Pydantic models.
+# Instead, we document the possible responses using the 'responses' parameter and maintain
+# proper type annotations for mypy.
+@app.get(
+    '/select-file',
+    response_model=None,
+    responses={
+        200: {'description': 'File content returned as JSON', 'model': dict[str, str]},
+        500: {'description': 'Error opening file', 'model': dict},
+        415: {'description': 'Unsupported media type', 'model': dict},
+    },
+)
+async def select_file(file: str, conversation: ServerConversation = Depends(get_conversation)) -> FileResponse | JSONResponse:
     """Retrieve the content of a specified file.
 
     To select a file:
@@ -129,7 +151,7 @@ async def select_file(file: str, request: Request):
     Raises:
         HTTPException: If there's an error opening the file.
     """
-    runtime: Runtime = request.state.conversation.runtime
+    runtime: Runtime = conversation.runtime
 
     file = os.path.join(runtime.config.workspace_mount_path_in_sandbox, file)
     read_action = FileReadAction(file)
@@ -144,7 +166,7 @@ async def select_file(file: str, request: Request):
 
     if isinstance(observation, FileReadObservation):
         content = observation.content
-        return {'code': content}
+        return JSONResponse(content={'code': content})
     elif isinstance(observation, ErrorObservation):
         logger.error(f'Error opening file {file}: {observation}')
 
@@ -158,13 +180,26 @@ async def select_file(file: str, request: Request):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={'error': f'Error opening file: {observation}'},
         )
+    else:
+        # Handle unexpected observation types
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': f'Unexpected observation type: {type(observation)}'},
+        )
 
 
-@app.get('/zip-directory')
-def zip_current_workspace(request: Request):
+@app.get(
+    '/zip-directory',
+    response_model=None,
+    responses={
+        200: {'description': 'Zipped workspace returned as FileResponse'},
+        500: {'description': 'Error zipping workspace', 'model': dict},
+    },
+)
+def zip_current_workspace(conversation: ServerConversation = Depends(get_conversation)) -> FileResponse | JSONResponse:
     try:
         logger.debug('Zipping workspace')
-        runtime: Runtime = request.state.conversation.runtime
+        runtime: Runtime = conversation.runtime
         path = runtime.config.workspace_mount_path_in_sandbox
         try:
             zip_file_path = runtime.copy_from(path)
@@ -188,21 +223,24 @@ def zip_current_workspace(request: Request):
         )
 
 
-@app.get('/git/changes')
+@app.get(
+    '/git/changes',
+    response_model=list[dict[str, str]],
+    responses={
+        404: {'description': 'Not a git repository', 'model': dict},
+        500: {'description': 'Error getting changes', 'model': dict},
+    },
+)
 async def git_changes(
-    request: Request,
-    conversation_id: str,
+    conversation: ServerConversation = Depends(get_conversation),
+    conversation_store: ConversationStore = Depends(get_conversation_store),
     user_id: str = Depends(get_user_id),
-):
-    runtime: Runtime = request.state.conversation.runtime
-    conversation_store = await ConversationStoreImpl.get_instance(
-        config,
-        user_id,
-    )
+) -> list[dict[str, str]] | JSONResponse:
+    runtime: Runtime = conversation.runtime
 
     cwd = await get_cwd(
         conversation_store,
-        conversation_id,
+        conversation.sid,
         runtime.config.workspace_mount_path_in_sandbox,
     )
     logger.info(f'Getting git changes in {cwd}')
@@ -229,18 +267,21 @@ async def git_changes(
         )
 
 
-@app.get('/git/diff')
+@app.get(
+    '/git/diff',
+    response_model=dict[str, Any],
+    responses={500: {'description': 'Error getting diff', 'model': dict}},
+)
 async def git_diff(
-    request: Request,
     path: str,
-    conversation_id: str,
-    conversation_store=Depends(get_conversation_store),
-):
-    runtime: Runtime = request.state.conversation.runtime
+    conversation_store: Any = Depends(get_conversation_store),
+    conversation: ServerConversation = Depends(get_conversation),
+) -> dict[str, Any] | JSONResponse:
+    runtime: Runtime = conversation.runtime
 
     cwd = await get_cwd(
         conversation_store,
-        conversation_id,
+        conversation.sid,
         runtime.config.workspace_mount_path_in_sandbox,
     )
 
@@ -259,40 +300,11 @@ async def get_cwd(
     conversation_store: ConversationStore,
     conversation_id: str,
     workspace_mount_path_in_sandbox: str,
-):
+) -> str:
     metadata = await conversation_store.get_metadata(conversation_id)
-    is_running = await conversation_manager.is_agent_loop_running(conversation_id)
-    conversation_info = await _get_conversation_info(metadata, is_running)
-
     cwd = workspace_mount_path_in_sandbox
-    if conversation_info and conversation_info.selected_repository:
-        repo_dir = conversation_info.selected_repository.split('/')[-1]
+    if metadata and metadata.selected_repository:
+        repo_dir = metadata.selected_repository.split('/')[-1]
         cwd = os.path.join(cwd, repo_dir)
 
     return cwd
-
-
-async def _get_conversation_info(
-    conversation: ConversationMetadata,
-    is_running: bool,
-) -> ConversationInfo | None:
-    try:
-        title = conversation.title
-        if not title:
-            title = f'Conversation {conversation.conversation_id[:5]}'
-        return ConversationInfo(
-            conversation_id=conversation.conversation_id,
-            title=title,
-            last_updated_at=conversation.last_updated_at,
-            created_at=conversation.created_at,
-            selected_repository=conversation.selected_repository,
-            status=ConversationStatus.RUNNING
-            if is_running
-            else ConversationStatus.STOPPED,
-        )
-    except Exception as e:
-        logger.error(
-            f'Error loading conversation {conversation.conversation_id}: {str(e)}',
-            extra={'session_id': conversation.conversation_id},
-        )
-        return None

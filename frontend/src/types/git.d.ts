@@ -15,6 +15,13 @@ interface GitUser {
   email: string | null;
 }
 
+interface Branch {
+  name: string;
+  commit_sha: string;
+  protected: boolean;
+  last_push_date?: string;
+}
+
 interface GitRepository {
   id: number;
   full_name: string;

@@ -1,12 +1,13 @@
 """Replay tests"""
 
 import asyncio
+from pathlib import Path
 
 from conftest import _close_test_runtime, _load_runtime
 
 from openhands.controller.state.state import State
-from openhands.core.config.app_config import AppConfig
 from openhands.core.config.config_utils import OH_DEFAULT_AGENT
+from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.main import run_controller
 from openhands.core.schema.agent import AgentState
 from openhands.events.action.empty import NullAction
@@ -16,13 +17,15 @@ from openhands.events.observation.commands import CmdOutputObservation
 
 
 def _get_config(trajectory_name: str, agent: str = OH_DEFAULT_AGENT):
-    return AppConfig(
+    return OpenHandsConfig(
         default_agent=agent,
         run_as_openhands=False,
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,
-        replay_trajectory_path=f'./tests/runtime/trajs/{trajectory_name}.json',
+        replay_trajectory_path=str(
+            (Path(__file__).parent / 'trajs' / f'{trajectory_name}.json').resolve()
+        ),
     )
 
 
@@ -32,7 +35,10 @@ def test_simple_replay(temp_dir, runtime_cls, run_as_openhands):
     (creating a simple 2048 game), using the default agent
     """
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
-    config.replay_trajectory_path = './tests/runtime/trajs/basic.json'
+    config.replay_trajectory_path = str(
+        (Path(__file__).parent / 'trajs' / 'basic.json').resolve()
+    )
+    config.security.confirmation_mode = False
 
     state: State | None = asyncio.run(
         run_controller(
@@ -61,6 +67,7 @@ def test_simple_gui_replay(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
 
     config = _get_config('basic_gui_mode')
+    config.security.confirmation_mode = False
 
     state: State | None = asyncio.run(
         run_controller(
@@ -87,7 +94,10 @@ def test_replay_wrong_initial_state(temp_dir, runtime_cls, run_as_openhands):
     meaningless.
     """
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
-    config.replay_trajectory_path = './tests/runtime/trajs/wrong_initial_state.json'
+    config.replay_trajectory_path = str(
+        (Path(__file__).parent / 'trajs' / 'wrong_initial_state.json').resolve()
+    )
+    config.security.confirmation_mode = False
 
     state: State | None = asyncio.run(
         run_controller(
@@ -121,6 +131,7 @@ def test_replay_basic_interactions(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
 
     config = _get_config('basic_interactions')
+    config.security.confirmation_mode = False
 
     state: State | None = asyncio.run(
         run_controller(

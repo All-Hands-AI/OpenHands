@@ -6,7 +6,7 @@ import uuid
 from enum import Enum
 from typing import Any
 
-import bashlex  # type: ignore
+import bashlex
 import libtmux
 
 from openhands.core.logger import openhands_logger as logger
@@ -17,6 +17,7 @@ from openhands.events.observation.commands import (
     CmdOutputMetadata,
     CmdOutputObservation,
 )
+from openhands.runtime.utils.bash_constants import TIMEOUT_MESSAGE_TEMPLATE
 from openhands.utils.shutdown_listener import should_continue
 
 
@@ -25,7 +26,13 @@ def split_bash_commands(commands: str) -> list[str]:
         return ['']
     try:
         parsed = bashlex.parse(commands)
-    except (bashlex.errors.ParsingError, NotImplementedError, TypeError):
+    except (
+        bashlex.errors.ParsingError,
+        NotImplementedError,
+        TypeError,
+        AttributeError,
+    ):
+        # Added AttributeError to catch 'str' object has no attribute 'kind' error (issue #8369)
         logger.debug(
             f'Failed to parse bash commands\n'
             f'[input]: {commands}\n'
@@ -373,9 +380,7 @@ class BashSession:
         metadata = CmdOutputMetadata()  # No metadata available
         metadata.suffix = (
             f'\n[The command has no new output after {self.NO_CHANGE_TIMEOUT_SECONDS} seconds. '
-            "You may wait longer to see additional output by sending empty command '', "
-            'send other commands to interact with the current process, '
-            'or send keys to interrupt/kill the command.]'
+            f'{TIMEOUT_MESSAGE_TEMPLATE}]'
         )
         command_output = self._get_command_output(
             command,
@@ -408,9 +413,7 @@ class BashSession:
         metadata = CmdOutputMetadata()  # No metadata available
         metadata.suffix = (
             f'\n[The command timed out after {timeout} seconds. '
-            "You may wait longer to see additional output by sending empty command '', "
-            'send other commands to interact with the current process, '
-            'or send keys to interrupt/kill the command.]'
+            f'{TIMEOUT_MESSAGE_TEMPLATE}]'
         )
         command_output = self._get_command_output(
             command,
@@ -501,9 +504,9 @@ class BashSession:
         if len(splited_commands) > 1:
             return ErrorObservation(
                 content=(
-                    f"ERROR: Cannot execute multiple commands at once.\n"
-                    f"Please run each command separately OR chain them into a single command via && or ;\n"
-                    f"Provided commands:\n{'\n'.join(f'({i + 1}) {cmd}' for i, cmd in enumerate(splited_commands))}"
+                    f'ERROR: Cannot execute multiple commands at once.\n'
+                    f'Please run each command separately OR chain them into a single command via && or ;\n'
+                    f'Provided commands:\n{"\n".join(f"({i + 1}) {cmd}" for i, cmd in enumerate(splited_commands))}'
                 )
             )
 
@@ -591,8 +594,8 @@ class BashSession:
             logger.debug(
                 f'PANE CONTENT GOT after {time.time() - _start_time:.2f} seconds'
             )
-            logger.debug(f"BEGIN OF PANE CONTENT: {cur_pane_output.split('\n')[:10]}")
-            logger.debug(f"END OF PANE CONTENT: {cur_pane_output.split('\n')[-10:]}")
+            logger.debug(f'BEGIN OF PANE CONTENT: {cur_pane_output.split("\n")[:10]}')
+            logger.debug(f'END OF PANE CONTENT: {cur_pane_output.split("\n")[-10:]}')
             ps1_matches = CmdOutputMetadata.matches_ps1_metadata(cur_pane_output)
             current_ps1_count = len(ps1_matches)
 

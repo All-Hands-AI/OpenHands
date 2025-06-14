@@ -1,13 +1,14 @@
 import json
 import logging
 import os
-from typing import Callable
+from typing import Any, Callable
 from urllib.parse import urlparse
 
 import httpx
 import tenacity
+from tenacity import RetryCallState
 
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.exceptions import (
     AgentRuntimeDisconnectedError,
     AgentRuntimeError,
@@ -23,7 +24,11 @@ from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
 from openhands.runtime.plugins import PluginRequirement
-from openhands.runtime.utils.command import get_action_execution_server_startup_command
+from openhands.runtime.runtime_status import RuntimeStatus
+from openhands.runtime.utils.command import (
+    DEFAULT_MAIN_MODULE,
+    get_action_execution_server_startup_command,
+)
 from openhands.runtime.utils.request import send_request
 from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.async_utils import call_sync_from_async
@@ -37,20 +42,25 @@ class RemoteRuntime(ActionExecutionClient):
     runtime_id: str | None = None
     runtime_url: str | None = None
     _runtime_initialized: bool = False
+    runtime_builder: RemoteRuntimeBuilder
+    container_image: str
+    available_hosts: dict[str, int]
+    main_module: str
 
     def __init__(
         self,
-        config: AppConfig,
+        config: OpenHandsConfig,
         event_stream: EventStream,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
-        status_callback: Callable | None = None,
+        status_callback: Callable[..., None] | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = True,
         user_id: str | None = None,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
-    ):
+        main_module: str = DEFAULT_MAIN_MODULE,
+    ) -> None:
         super().__init__(
             config,
             event_stream,
@@ -81,6 +91,7 @@ class RemoteRuntime(ActionExecutionClient):
             )
 
         assert self.config.sandbox.remote_runtime_class in (None, 'sysbox', 'gvisor')
+        self.main_module = main_module
 
         self.runtime_builder = RemoteRuntimeBuilder(
             self.config.sandbox.remote_runtime_api_url,
@@ -88,35 +99,48 @@ class RemoteRuntime(ActionExecutionClient):
             self.session,
         )
         self.available_hosts: dict[str, int] = {}
+        self._session_api_key: str | None = None
 
-    def log(self, level: str, message: str) -> None:
-        message = f'[runtime session_id={self.sid} runtime_id={self.runtime_id or "unknown"}] {message}'
-        getattr(logger, level)(message, stacklevel=2)
+    def log(self, level: str, message: str, exc_info: bool | None = None) -> None:
+        getattr(logger, level)(
+            message,
+            stacklevel=2,
+            exc_info=exc_info,
+            extra={
+                'session_id': self.sid,
+                'runtime_id': self.runtime_id,
+            },
+        )
 
     @property
-    def action_execution_server_url(self):
+    def action_execution_server_url(self) -> str:
+        if self.runtime_url is None:
+            raise NotImplementedError('Runtime URL is not initialized')
         return self.runtime_url
 
-    async def connect(self):
+    async def connect(self) -> None:
         try:
             await call_sync_from_async(self._start_or_attach_to_runtime)
         except Exception:
             self.close()
-            self.log('error', 'Runtime failed to start')
+            self.log('error', 'Runtime failed to start', exc_info=True)
             raise
         await call_sync_from_async(self.setup_initial_env)
         self._runtime_initialized = True
 
-    def _start_or_attach_to_runtime(self):
+    def _start_or_attach_to_runtime(self) -> None:
+        self.log('info', 'Starting or attaching to runtime')
         existing_runtime = self._check_existing_runtime()
         if existing_runtime:
-            self.log('debug', f'Using existing runtime with ID: {self.runtime_id}')
+            self.log('info', f'Using existing runtime with ID: {self.runtime_id}')
         elif self.attach_to_existing:
+            self.log('info', f'Failed to find existing runtime for SID: {self.sid}')
             raise AgentRuntimeNotFoundError(
                 f'Could not find existing runtime for SID: {self.sid}'
             )
         else:
-            self.send_status_message('STATUS$STARTING_CONTAINER')
+            self.log('info', 'No existing runtime found, starting a new one')
+            self.set_runtime_status(RuntimeStatus.BUILDING_RUNTIME)
             if self.config.sandbox.runtime_container_image is None:
                 self.log(
                     'info',
@@ -130,21 +154,22 @@ class RemoteRuntime(ActionExecutionClient):
                 )
                 self.container_image = self.config.sandbox.runtime_container_image
             self._start_runtime()
-        assert (
-            self.runtime_id is not None
-        ), 'Runtime ID is not set. This should never happen.'
-        assert (
-            self.runtime_url is not None
-        ), 'Runtime URL is not set. This should never happen.'
-        self.send_status_message('STATUS$WAITING_FOR_CLIENT')
+        assert self.runtime_id is not None, (
+            'Runtime ID is not set. This should never happen.'
+        )
+        assert self.runtime_url is not None, (
+            'Runtime URL is not set. This should never happen.'
+        )
+        self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
         if not self.attach_to_existing:
             self.log('info', 'Waiting for runtime to be alive...')
         self._wait_until_alive()
         if not self.attach_to_existing:
             self.log('info', 'Runtime is ready.')
-        self.send_status_message(' ')
+        self.set_runtime_status(RuntimeStatus.READY)
 
     def _check_existing_runtime(self) -> bool:
+        self.log('info', f'Checking for existing runtime with session ID: {self.sid}')
         try:
             response = self._send_runtime_api_request(
                 'GET',
@@ -152,12 +177,16 @@ class RemoteRuntime(ActionExecutionClient):
             )
             data = response.json()
             status = data.get('status')
+            self.log('info', f'Found runtime with status: {status}')
             if status == 'running' or status == 'paused':
                 self._parse_runtime_response(response)
         except httpx.HTTPError as e:
             if e.response.status_code == 404:
+                self.log(
+                    'info', f'No existing runtime found for session ID: {self.sid}'
+                )
                 return False
-            self.log('debug', f'Error while looking for remote runtime: {e}')
+            self.log('error', f'Error while looking for remote runtime: {e}')
             raise
         except json.decoder.JSONDecodeError as e:
             self.log(
@@ -167,19 +196,30 @@ class RemoteRuntime(ActionExecutionClient):
             raise
 
         if status == 'running':
+            self.log('info', 'Found existing runtime in running state')
             return True
         elif status == 'stopped':
-            self.log('debug', 'Found existing remote runtime, but it is stopped')
+            self.log('info', 'Found existing runtime, but it is stopped')
             return False
         elif status == 'paused':
-            self.log('debug', 'Found existing remote runtime, but it is paused')
-            self._resume_runtime()
-            return True
+            self.log(
+                'info', 'Found existing runtime in paused state, attempting to resume'
+            )
+            try:
+                self._resume_runtime()
+                self.log('info', 'Successfully resumed paused runtime')
+                return True
+            except Exception as e:
+                self.log(
+                    'error', f'Failed to resume paused runtime: {e}', exc_info=True
+                )
+                # Return false to indicate we couldn't use the existing runtime
+                return False
         else:
             self.log('error', f'Invalid response from runtime API: {data}')
             return False
 
-    def _build_runtime(self):
+    def _build_runtime(self) -> None:
         self.log('debug', f'Building RemoteRuntime config:\n{self.config}')
         response = self._send_runtime_api_request(
             'GET',
@@ -223,18 +263,14 @@ class RemoteRuntime(ActionExecutionClient):
                 f'Container image {self.container_image} does not exist'
             )
 
-    def _start_runtime(self):
+    def _start_runtime(self) -> None:
         # Prepare the request body for the /start endpoint
-        command = get_action_execution_server_startup_command(
-            server_port=self.port,
-            plugins=self.plugins,
-            app_config=self.config,
-        )
-        environment = {}
+        command = self.get_action_execution_server_startup_command()
+        environment: dict[str, str] = {}
         if self.config.debug or os.environ.get('DEBUG', 'false').lower() == 'true':
             environment['DEBUG'] = 'true'
         environment.update(self.config.sandbox.runtime_startup_env_vars)
-        start_request = {
+        start_request: dict[str, Any] = {
             'image': self.container_image,
             'command': command,
             'working_dir': '/openhands/code/',
@@ -262,24 +298,59 @@ class RemoteRuntime(ActionExecutionClient):
             self.log('error', f'Unable to start runtime: {str(e)}')
             raise AgentRuntimeUnavailableError() from e
 
-    def _resume_runtime(self):
-        """
+    def _resume_runtime(self) -> None:
+        """Resume a stopped runtime.
+
+        Steps:
         1. Show status update that runtime is being started.
         2. Send the runtime API a /resume request
         3. Poll for the runtime to be ready
         4. Update env vars
         """
-        self.send_status_message('STATUS$STARTING_RUNTIME')
-        self._send_runtime_api_request(
-            'POST',
-            f'{self.config.sandbox.remote_runtime_api_url}/resume',
-            json={'runtime_id': self.runtime_id},
-        )
-        self._wait_until_alive()
-        self.setup_initial_env()
-        self.log('debug', 'Runtime resumed.')
+        self.log('info', f'Attempting to resume runtime with ID: {self.runtime_id}')
+        self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
+        try:
+            response = self._send_runtime_api_request(
+                'POST',
+                f'{self.config.sandbox.remote_runtime_api_url}/resume',
+                json={'runtime_id': self.runtime_id},
+            )
+            self.log(
+                'info',
+                f'Resume API call successful with status code: {response.status_code}',
+            )
+        except Exception as e:
+            self.log('error', f'Failed to call /resume API: {e}', exc_info=True)
+            raise
 
-    def _parse_runtime_response(self, response: httpx.Response):
+        self.log(
+            'info', 'Runtime resume API call completed, waiting for it to be alive...'
+        )
+        try:
+            self._wait_until_alive()
+            self.log('info', 'Runtime is now alive after resume')
+        except Exception as e:
+            self.log(
+                'error',
+                f'Runtime failed to become alive after resume: {e}',
+                exc_info=True,
+            )
+            raise
+
+        try:
+            self.setup_initial_env()
+            self.log('info', 'Successfully set up initial environment after resume')
+        except Exception as e:
+            self.log(
+                'error',
+                f'Failed to set up initial environment after resume: {e}',
+                exc_info=True,
+            )
+            raise
+
+        self.log('info', 'Runtime successfully resumed and alive.')
+
+    def _parse_runtime_response(self, response: httpx.Response) -> None:
         start_response = response.json()
         self.runtime_id = start_response['runtime_id']
         self.runtime_url = start_response['url']
@@ -289,6 +360,15 @@ class RemoteRuntime(ActionExecutionClient):
             self.session.headers.update(
                 {'X-Session-API-Key': start_response['session_api_key']}
             )
+            self._session_api_key = start_response['session_api_key']
+            self.log(
+                'debug',
+                f'Session API key setted',
+            )
+
+    @property
+    def session_api_key(self) -> str | None:
+        return self._session_api_key
 
     @property
     def vscode_url(self) -> str | None:
@@ -310,7 +390,7 @@ class RemoteRuntime(ActionExecutionClient):
     def web_hosts(self) -> dict[str, int]:
         return self.available_hosts
 
-    def _wait_until_alive(self):
+    def _wait_until_alive(self) -> None:
         retry_decorator = tenacity.retry(
             stop=tenacity.stop_after_delay(
                 self.config.sandbox.remote_runtime_init_timeout
@@ -321,9 +401,9 @@ class RemoteRuntime(ActionExecutionClient):
             retry=tenacity.retry_if_exception_type(AgentRuntimeNotReadyError),
             wait=tenacity.wait_fixed(2),
         )
-        return retry_decorator(self._wait_until_alive_impl)()
+        retry_decorator(self._wait_until_alive_impl)()
 
-    def _wait_until_alive_impl(self):
+    def _wait_until_alive_impl(self) -> None:
         self.log('debug', f'Waiting for runtime to be alive at url: {self.runtime_url}')
         runtime_info_response = self._send_runtime_api_request(
             'GET',
@@ -384,7 +464,7 @@ class RemoteRuntime(ActionExecutionClient):
         )
         raise AgentRuntimeNotReadyError()
 
-    def close(self):
+    def close(self) -> None:
         if self.attach_to_existing:
             super().close()
             return
@@ -397,7 +477,7 @@ class RemoteRuntime(ActionExecutionClient):
                             f'{self.config.sandbox.remote_runtime_api_url}/pause',
                             json={'runtime_id': self.runtime_id},
                         )
-                        self.log('debug', 'Runtime paused.')
+                        self.log('info', 'Runtime paused.')
                 except Exception as e:
                     self.log('error', f'Unable to pause runtime: {str(e)}')
                     raise e
@@ -410,14 +490,16 @@ class RemoteRuntime(ActionExecutionClient):
                     f'{self.config.sandbox.remote_runtime_api_url}/stop',
                     json={'runtime_id': self.runtime_id},
                 )
-                self.log('debug', 'Runtime stopped.')
+                self.log('info', 'Runtime stopped.')
         except Exception as e:
             self.log('error', f'Unable to stop runtime: {str(e)}')
             raise e
         finally:
             super().close()
 
-    def _send_runtime_api_request(self, method, url, **kwargs):
+    def _send_runtime_api_request(
+        self, method: str, url: str, **kwargs: Any
+    ) -> httpx.Response:
         try:
             kwargs['timeout'] = self.config.sandbox.remote_runtime_api_timeout
             return send_request(self.session, method, url, **kwargs)
@@ -428,7 +510,9 @@ class RemoteRuntime(ActionExecutionClient):
             )
             raise
 
-    def _send_action_server_request(self, method, url, **kwargs):
+    def _send_action_server_request(
+        self, method: str, url: str, **kwargs: Any
+    ) -> httpx.Response:
         if not self.config.sandbox.remote_runtime_enable_retries:
             return self._send_action_server_request_impl(method, url, **kwargs)
 
@@ -444,7 +528,9 @@ class RemoteRuntime(ActionExecutionClient):
             method, url, **kwargs
         )
 
-    def _send_action_server_request_impl(self, method, url, **kwargs):
+    def _send_action_server_request_impl(
+        self, method: str, url: str, **kwargs: Any
+    ) -> httpx.Response:
         try:
             return super()._send_action_server_request(method, url, **kwargs)
         except httpx.TimeoutException:
@@ -455,7 +541,7 @@ class RemoteRuntime(ActionExecutionClient):
             raise
 
         except httpx.HTTPError as e:
-            if e.response.status_code in (404, 502, 504):
+            if hasattr(e, 'response') and e.response.status_code in (404, 502, 504):
                 if e.response.status_code == 404:
                     raise AgentRuntimeDisconnectedError(
                         f'Runtime is not responding. This may be temporary, please try again. Original error: {e}'
@@ -464,17 +550,47 @@ class RemoteRuntime(ActionExecutionClient):
                     raise AgentRuntimeDisconnectedError(
                         f'Runtime is temporarily unavailable. This may be due to a restart or network issue, please try again. Original error: {e}'
                     ) from e
-            elif e.response.status_code == 503:
+            elif hasattr(e, 'response') and e.response.status_code == 503:
                 if self.config.sandbox.keep_runtime_alive:
-                    self.log('warning', 'Runtime appears to be paused. Resuming...')
-                    self._resume_runtime()
-                    return super()._send_action_server_request(method, url, **kwargs)
+                    self.log(
+                        'info',
+                        f'Runtime appears to be paused (503 response). Runtime ID: {self.runtime_id}, URL: {url}',
+                    )
+                    try:
+                        self._resume_runtime()
+                        self.log(
+                            'info', 'Successfully resumed runtime after 503 response'
+                        )
+                        return super()._send_action_server_request(
+                            method, url, **kwargs
+                        )
+                    except Exception as resume_error:
+                        self.log(
+                            'error',
+                            f'Failed to resume runtime after 503 response: {resume_error}',
+                            exc_info=True,
+                        )
+                        raise AgentRuntimeDisconnectedError(
+                            f'Runtime is paused and could not be resumed. Original error: {e}, Resume error: {resume_error}'
+                        ) from resume_error
                 else:
+                    self.log(
+                        'info',
+                        'Runtime appears to be paused (503 response) but keep_runtime_alive is False',
+                    )
                     raise AgentRuntimeDisconnectedError(
                         f'Runtime is temporarily unavailable. This may be due to a restart or network issue, please try again. Original error: {e}'
                     ) from e
             else:
                 raise e
 
-    def _stop_if_closed(self, retry_state: tenacity.RetryCallState) -> bool:
+    def _stop_if_closed(self, retry_state: RetryCallState) -> bool:
         return self._runtime_closed
+
+    def get_action_execution_server_startup_command(self):
+        return get_action_execution_server_startup_command(
+            server_port=self.port,
+            plugins=self.plugins,
+            app_config=self.config,
+            main_module=self.main_module,
+        )

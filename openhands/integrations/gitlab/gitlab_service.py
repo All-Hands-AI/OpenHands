@@ -6,6 +6,7 @@ from pydantic import SecretStr
 
 from openhands.integrations.service_types import (
     BaseGitService,
+    Branch,
     GitService,
     ProviderType,
     Repository,
@@ -20,6 +21,17 @@ from openhands.utils.import_utils import get_impl
 
 
 class GitLabService(BaseGitService, GitService):
+    """Default implementation of GitService for GitLab integration.
+
+    TODO: This doesn't seem a good candidate for the get_impl() pattern. What are the abstract methods we should actually separate and implement here?
+    This is an extension point in OpenHands that allows applications to customize GitLab
+    integration behavior. Applications can substitute their own implementation by:
+    1. Creating a class that inherits from GitService
+    2. Implementing all required methods
+    3. Setting server_config.gitlab_service_class to the fully qualified name of the class
+
+    The class is instantiated via get_impl() in openhands.server.shared.py.
+    """
     BASE_URL = 'https://gitlab.com/api/v4'
     GRAPHQL_URL = 'https://gitlab.com/api/graphql'
     token: SecretStr = SecretStr('')
@@ -131,7 +143,7 @@ class GitLabService(BaseGitService, GitService):
 
                 payload = {
                     'query': query,
-                    'variables': variables,
+                    'variables': variables if variables is not None else {},
                 }
 
                 response = await client.post(
@@ -166,10 +178,14 @@ class GitLabService(BaseGitService, GitService):
         url = f'{self.BASE_URL}/user'
         response, _ = await self._make_request(url)
 
+        # Use a default avatar URL if not provided
+        # In some self-hosted GitLab instances, the avatar_url field may be returned as None.
+        avatar_url = response.get('avatar_url') or ''
+
         return User(
             id=response.get('id'),
             username=response.get('username'),
-            avatar_url=response.get('avatar_url'),
+            avatar_url=avatar_url,
             name=response.get('name'),
             email=response.get('email'),
             company=response.get('organization'),
@@ -195,6 +211,7 @@ class GitLabService(BaseGitService, GitService):
                 full_name=repo.get('path_with_namespace'),
                 stargazers_count=repo.get('star_count'),
                 git_provider=ProviderType.GITLAB,
+                is_public=True,
             )
             for repo in response
         ]
@@ -381,6 +398,110 @@ class GitLabService(BaseGitService, GitService):
             return tasks
         except Exception:
             return []
+
+    async def get_repository_details_from_repo_name(
+        self, repository: str
+    ) -> Repository:
+        encoded_name = repository.replace('/', '%2F')
+
+        url = f'{self.BASE_URL}/projects/{encoded_name}'
+        repo, _ = await self._make_request(url)
+
+        return Repository(
+            id=repo.get('id'),
+            full_name=repo.get('path_with_namespace'),
+            stargazers_count=repo.get('star_count'),
+            git_provider=ProviderType.GITLAB,
+            is_public=repo.get('visibility') == 'public',
+        )
+
+    async def get_branches(self, repository: str) -> list[Branch]:
+        """Get branches for a repository"""
+        encoded_name = repository.replace('/', '%2F')
+        url = f'{self.BASE_URL}/projects/{encoded_name}/repository/branches'
+
+        # Set maximum branches to fetch (10 pages with 100 per page)
+        MAX_BRANCHES = 1000
+        PER_PAGE = 100
+
+        all_branches: list[Branch] = []
+        page = 1
+
+        # Fetch up to 10 pages of branches
+        while page <= 10 and len(all_branches) < MAX_BRANCHES:
+            params = {'per_page': str(PER_PAGE), 'page': str(page)}
+            response, headers = await self._make_request(url, params)
+
+            if not response:  # No more branches
+                break
+
+            for branch_data in response:
+                branch = Branch(
+                    name=branch_data.get('name'),
+                    commit_sha=branch_data.get('commit', {}).get('id', ''),
+                    protected=branch_data.get('protected', False),
+                    last_push_date=branch_data.get('commit', {}).get('committed_date'),
+                )
+                all_branches.append(branch)
+
+            page += 1
+
+            # Check if we've reached the last page
+            link_header = headers.get('Link', '')
+            if 'rel="next"' not in link_header:
+                break
+
+        return all_branches
+
+    async def create_mr(
+        self,
+        id: int | str,
+        source_branch: str,
+        target_branch: str,
+        title: str,
+        description: str | None = None,
+    ) -> str:
+        """
+        Creates a merge request in GitLab
+
+        Args:
+            id: The ID or URL-encoded path of the project
+            source_branch: The name of the branch where your changes are implemented
+            target_branch: The name of the branch you want the changes merged into
+            title: The title of the merge request (optional, defaults to a generic title)
+            description: The description of the merge request (optional)
+
+        Returns:
+            - MR URL when successful
+            - Error message when unsuccessful
+        """
+
+        # Convert string ID to URL-encoded path if needed
+        project_id = str(id).replace('/', '%2F') if isinstance(id, str) else id
+        url = f'{self.BASE_URL}/projects/{project_id}/merge_requests'
+
+        # Set default description if none provided
+        if not description:
+            description = (
+                f'Merging changes from {source_branch} into {target_branch}'
+            )
+
+        # Prepare the request payload
+        payload = {
+            'source_branch': source_branch,
+            'target_branch': target_branch,
+            'title': title,
+            'description': description,
+        }
+
+        # Make the POST request to create the MR
+        response, _ = await self._make_request(
+            url=url, params=payload, method=RequestMethod.POST
+        )
+
+
+        return response['web_url']
+
 
 
 gitlab_service_cls = os.environ.get(

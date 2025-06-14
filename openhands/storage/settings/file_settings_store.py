@@ -3,9 +3,9 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
-from openhands.core.config.app_config import AppConfig
-from openhands.storage.data_models.settings import Settings
+from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.storage import get_file_store
+from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
 from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.async_utils import call_sync_from_async
@@ -31,7 +31,12 @@ class FileSettingsStore(SettingsStore):
 
     @classmethod
     async def get_instance(
-        cls, config: AppConfig, user_id: str | None
+        cls, config: OpenHandsConfig, user_id: str | None
     ) -> FileSettingsStore:
-        file_store = get_file_store(config.file_store, config.file_store_path)
+        file_store = file_store = get_file_store(
+            config.file_store,
+            config.file_store_path,
+            config.file_store_web_hook_url,
+            config.file_store_web_hook_headers
+        )
         return FileSettingsStore(file_store)

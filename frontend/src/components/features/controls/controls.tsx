@@ -1,11 +1,9 @@
-import { useParams } from "react-router";
 import React from "react";
 import { AgentControlBar } from "./agent-control-bar";
 import { AgentStatusBar } from "./agent-status-bar";
 import { SecurityLock } from "./security-lock";
-import { useUserConversation } from "#/hooks/query/use-user-conversation";
+import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { ConversationCard } from "../conversation-panel/conversation-card";
-import { useAutoTitle } from "#/hooks/use-auto-title";
 
 interface ControlsProps {
   setSecurityOpen: (isOpen: boolean) => void;
@@ -13,14 +11,10 @@ interface ControlsProps {
 }
 
 export function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
-  const params = useParams();
-  const { data: conversation } = useUserConversation(
-    params.conversationId ?? null,
-  );
-  useAutoTitle();
+  const { data: conversation } = useActiveConversation();
 
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex flex-col gap-2 md:items-center md:justify-between md:flex-row">
       <div className="flex items-center gap-2">
         <AgentControlBar />
         <AgentStatusBar />
@@ -36,7 +30,7 @@ export function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
         title={conversation?.title ?? ""}
         lastUpdatedAt={conversation?.created_at ?? ""}
         selectedRepository={conversation?.selected_repository ?? null}
-        status={conversation?.status}
+        conversationStatus={conversation?.status}
         conversationId={conversation?.conversation_id}
       />
     </div>

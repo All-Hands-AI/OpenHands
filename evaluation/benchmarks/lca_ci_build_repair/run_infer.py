@@ -29,10 +29,10 @@ from evaluation.utils.shared import (
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
-    AppConfig,
+    OpenHandsConfig,
     get_llm_config_arg,
     get_parser,
-    load_app_config,
+    load_openhands_config,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
@@ -44,10 +44,10 @@ from openhands.utils.async_utils import call_async_from_sync
 
 def get_config(
     metadata: EvalMetadata,
-) -> AppConfig:
+) -> OpenHandsConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = 'python:3.12-bookworm'
-    config = AppConfig(
+    config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         runtime='docker',
@@ -63,7 +63,7 @@ def get_config(
     return config
 
 
-config = load_app_config()
+config = load_openhands_config()
 
 
 def load_bench_config():
@@ -95,7 +95,7 @@ def initialize_runtime(
 
     This function is called before the runtime is used to run the agent.
     """
-    logger.info(f"{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} BEGIN Runtime Initialization Fn {"-" * 50}')
     obs: CmdOutputObservation
 
     lca_path = bench_config['LCA_PATH']
@@ -177,7 +177,7 @@ def initialize_runtime(
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
 
-    logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} END Runtime Initialization Fn {"-" * 50}')
 
 
 def complete_runtime(
@@ -190,7 +190,7 @@ def complete_runtime(
     If you need to do something in the sandbox to get the correctness metric after
     the agent has run, modify this function.
     """
-    logger.info(f"{'-' * 50} BEGIN Runtime Completion Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} BEGIN Runtime Completion Fn {"-" * 50}')
     obs: CmdOutputObservation
 
     model_name = bench_config['model_name']
@@ -227,7 +227,7 @@ def complete_runtime(
     obs = runtime.run_action(action)
     result = json.loads(obs.content)
 
-    logger.info(f"{'-' * 50} END Runtime Completion Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} END Runtime Completion Fn {"-" * 50}')
 
     return result
 
@@ -313,7 +313,7 @@ Phase 7. VERIFICATION: Test your implementation thoroughly.
      7.2.3 The functions you changed
    7.4 If any tests fail, revise your implementation until all tests pass
 
-Phase 8. REVIEW: Carefully re-read the problem description and compare your changes with the base commit {instance["sha_fail"]}.
+Phase 8. REVIEW: Carefully re-read the problem description and compare your changes with the base commit {instance['sha_fail']}.
    8.1 Ensure you've fully addressed all requirements.
 
 Once all phases are done, announce: 'Agent Task Complete'.

@@ -19,7 +19,7 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
-from openhands.events.action.mcp import McpAction
+from openhands.events.action.mcp import MCPAction
 from openhands.events.action.message import SystemMessageAction
 from openhands.events.event import Event, RecallType
 from openhands.events.observation import (
@@ -41,7 +41,12 @@ from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content
-from openhands.utils.prompt import PromptManager, RepositoryInfo, RuntimeInfo
+from openhands.utils.prompt import (
+    ConversationInstructions,
+    PromptManager,
+    RepositoryInfo,
+    RuntimeInfo,
+)
 
 
 class ConversationMemory:
@@ -184,7 +189,7 @@ class ConversationMemory:
                 - BrowseInteractiveAction: For browsing the web
                 - AgentFinishAction: For ending the interaction
                 - MessageAction: For sending messages
-                - McpAction: For interacting with the MCP server
+                - MCPAction: For interacting with the MCP server
             pending_tool_call_action_messages: Dictionary mapping response IDs to their corresponding messages.
                 Used in function calling mode to track tool calls that are waiting for their results.
 
@@ -210,7 +215,7 @@ class ConversationMemory:
                 FileReadAction,
                 BrowseInteractiveAction,
                 BrowseURLAction,
-                McpAction,
+                MCPAction,
             ),
         ) or (isinstance(action, CmdRunAction) and action.source == 'agent'):
             tool_metadata = action.tool_call_metadata
@@ -360,7 +365,7 @@ class ConversationMemory:
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IPythonRunCellObservation):
             text = obs.content
-            # replace base64 images with a placeholder
+            # Clean up any remaining base64 images in text content
             splitted = text.split('\n')
             for i, line in enumerate(splitted):
                 if '![image](data:image/png;base64,' in line:
@@ -369,7 +374,15 @@ class ConversationMemory:
                     )
             text = '\n'.join(splitted)
             text = truncate_content(text, max_message_chars)
-            message = Message(role='user', content=[TextContent(text=text)])
+
+            # Create message content with text
+            content = [TextContent(text=text)]
+
+            # Add image URLs if available and vision is active
+            if vision_is_active and obs.image_urls:
+                content.append(ImageContent(image_urls=obs.image_urls))
+
+            message = Message(role='user', content=content)
         elif isinstance(obs, FileEditObservation):
             text = truncate_content(str(obs), max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
@@ -378,7 +391,7 @@ class ConversationMemory:
                 role='user', content=[TextContent(text=obs.content)]
             )  # Content is already truncated by openhands-aci
         elif isinstance(obs, BrowserOutputObservation):
-            text = obs.get_agent_obs_text()
+            text = obs.content
             if (
                 obs.trigger_by_action == ActionType.BROWSE_INTERACTIVE
                 and enable_som_visual_browsing
@@ -412,7 +425,7 @@ class ConversationMemory:
                 logger.debug('Vision disabled for browsing, showing text')
         elif isinstance(obs, AgentDelegateObservation):
             text = truncate_content(
-                obs.outputs['content'] if 'content' in obs.outputs else '',
+                obs.outputs.get('content', obs.content),
                 max_message_chars,
             )
             message = Message(role='user', content=[TextContent(text=text)])
@@ -451,9 +464,20 @@ class ConversationMemory:
                         available_hosts=obs.runtime_hosts,
                         additional_agent_instructions=obs.additional_agent_instructions,
                         date=date,
+                        custom_secrets_descriptions=obs.custom_secrets_descriptions,
                     )
                 else:
-                    runtime_info = RuntimeInfo(date=date)
+                    runtime_info = RuntimeInfo(
+                        date=date,
+                        custom_secrets_descriptions=obs.custom_secrets_descriptions,
+                    )
+
+                conversation_instructions = None
+
+                if obs.conversation_instructions:
+                    conversation_instructions = ConversationInstructions(
+                        content=obs.conversation_instructions
+                    )
 
                 repo_instructions = (
                     obs.repo_instructions if obs.repo_instructions else ''
@@ -464,10 +488,10 @@ class ConversationMemory:
                     repo_info.repo_name or repo_info.repo_directory
                 )
                 has_runtime_info = runtime_info is not None and (
-                    runtime_info.available_hosts
-                    or runtime_info.additional_agent_instructions
+                    runtime_info.date or runtime_info.custom_secrets_descriptions
                 )
                 has_repo_instructions = bool(repo_instructions.strip())
+                has_conversation_instructions = conversation_instructions is not None
 
                 # Filter and process microagent knowledge
                 filtered_agents = []
@@ -485,11 +509,17 @@ class ConversationMemory:
                 message_content = []
 
                 # Build the workspace context information
-                if has_repo_info or has_runtime_info or has_repo_instructions:
+                if (
+                    has_repo_info
+                    or has_runtime_info
+                    or has_repo_instructions
+                    or has_conversation_instructions
+                ):
                     formatted_workspace_text = (
                         self.prompt_manager.build_workspace_context(
                             repository_info=repo_info,
                             runtime_info=runtime_info,
+                            conversation_instructions=conversation_instructions,
                             repo_instructions=repo_instructions,
                         )
                     )

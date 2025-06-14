@@ -1,5 +1,8 @@
 """Tests for the command helper functions in function_calling.py."""
 
+import os
+
+import pytest
 from conftest import (
     _close_test_runtime,
     _load_runtime,
@@ -12,6 +15,15 @@ from openhands.agenthub.readonly_agent.function_calling import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction
 from openhands.events.observation import CmdOutputObservation, ErrorObservation
+
+# Skip all tests in this file if running with CLIRuntime,
+# as they depend on `rg` (ripgrep) which is not guaranteed to be available.
+# The underlying ReadOnlyAgent tools (GrepTool, GlobTool) also currently depend on `rg`.
+# TODO: implement a fallback version of these tools that uses `find` and `grep`.
+pytestmark = pytest.mark.skipif(
+    os.environ.get('TEST_RUNTIME') == 'cli',
+    reason="CLIRuntime: ReadOnlyAgent's GrepTool/GlobTool tests require `rg` (ripgrep), which may not be installed.",
+)
 
 
 def _run_cmd_action(runtime, custom_command: str):
@@ -168,9 +180,9 @@ def test_grep_to_cmdrun_paths_with_spaces(runtime_cls, run_as_openhands, temp_di
 
             obs = _run_cmd_action(runtime, cmd)
             assert obs.exit_code == 0, f'Grep command failed for path: {path}'
-            assert (
-                'function' in obs.content
-            ), f'Expected pattern not found in output for path: {path}'
+            assert 'function' in obs.content, (
+                f'Expected pattern not found in output for path: {path}'
+            )
 
             # Verify the actual file was found
             if path == 'src/my project':

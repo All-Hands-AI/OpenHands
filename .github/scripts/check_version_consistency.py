@@ -2,10 +2,9 @@
 import os
 import re
 import sys
-from typing import Set, Tuple
 
 
-def find_version_references(directory: str) -> Tuple[Set[str], Set[str]]:
+def find_version_references(directory: str) -> tuple[set[str], set[str]]:
     openhands_versions = set()
     runtime_versions = set()
 
