@@ -36,7 +36,6 @@ class MCPProxyManager:
         Initialize the MCP Proxy Manager.
 
         Args:
-            name: Name of the proxy server
             auth_enabled: Whether authentication is enabled
             api_key: API key for authentication (required if auth_enabled is True)
             logger_level: Logging level for the FastMCP logger
@@ -116,7 +115,7 @@ class MCPProxyManager:
 
         Args:
             app: FastAPI application to mount to
-            tools: List of tool configurations
+            stdio_servers: List of stdio server configurations
             allow_origins: List of allowed origins for CORS
         """
         tools = {t.name: t.model_dump() for t in stdio_servers}
