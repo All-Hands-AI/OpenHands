@@ -73,6 +73,15 @@ def display_settings(config: OpenHandsConfig) -> None:
         ]
     )
 
+    # Sandbox settings
+    volumes = config.sandbox.volumes or 'Not Set'
+
+    labels_and_values.extend(
+        [
+            ('   Volumes', volumes),
+        ]
+    )
+
     # Calculate max widths for alignment
     # Ensure values are strings for len() calculation
     str_labels_and_values = [(label, str(value)) for label, value in labels_and_values]
@@ -305,6 +314,109 @@ async def modify_llm_settings_basic(
     settings.enable_default_condenser = True
 
     await settings_store.store(settings)
+
+
+async def modify_workspace_settings(
+    config: OpenHandsConfig, settings_store: FileSettingsStore
+) -> None:
+    """Configure sandbox volume settings via CLI."""
+    session = PromptSession(key_bindings=kb_cancel())
+
+    # Display current volume settings
+    volumes = config.sandbox.volumes or 'Not Set'
+
+    print_formatted_text(
+        HTML(f'<grey>Current volumes: </grey><green>{volumes}</green>')
+    )
+
+    try:
+        # Ask if user wants to configure volumes
+        configure_volumes = (
+            cli_confirm(
+                'Do you want to configure volume mounts?',
+                ['Yes, configure', 'No, skip'],
+            )
+            == 0
+        )
+
+        if configure_volumes:
+            print_formatted_text(
+                HTML(
+                    '<grey>Volume format: host_path:container_path[:mode], e.g., /my/host/dir:/workspace:rw</grey>\n'
+                    '<grey>Multiple volumes can be separated by commas, e.g., /path1:/workspace/path1,/path2:/workspace/path2:ro</grey>'
+                )
+            )
+
+            new_volumes = await get_validated_input(
+                session,
+                'Enter volume mounts (CTRL-c to cancel): ',
+                error_message='Invalid volume format',
+            )
+
+            # Basic validation of volume format
+            volumes_valid = True
+            for volume in new_volumes.split(','):
+                parts = volume.split(':')
+                if len(parts) < 2 or len(parts) > 3:
+                    volumes_valid = False
+                    break
+
+            if not volumes_valid:
+                print_formatted_text(
+                    HTML(
+                        '<grey>Warning: Volume format appears invalid. Please check the format.</grey>'
+                    )
+                )
+
+                # Ask for confirmation to proceed anyway
+                proceed_anyway = (
+                    cli_confirm(
+                        'Do you want to proceed with this volume configuration anyway?',
+                        ['Yes, proceed', 'No, discard'],
+                    )
+                    == 0
+                )
+
+                if not proceed_anyway:
+                    return
+
+            config.sandbox.volumes = new_volumes
+
+            # Save settings if changes were made
+            save_settings = save_settings_confirmation()
+
+            if save_settings:
+                settings = await settings_store.load()
+                if not settings:
+                    settings = Settings()
+
+                # Update sandbox volume settings
+                settings.sandbox_volumes = config.sandbox.volumes
+
+                # Update sandbox settings in the config
+                if hasattr(settings, 'sandbox_base_container_image'):
+                    settings.sandbox_base_container_image = (
+                        config.sandbox.base_container_image
+                    )
+
+                if hasattr(settings, 'sandbox_runtime_container_image'):
+                    settings.sandbox_runtime_container_image = (
+                        config.sandbox.runtime_container_image
+                    )
+
+                # Store the settings
+                await settings_store.store(settings)
+
+                # Inform the user about environment variable alternative
+                print_formatted_text(
+                    HTML(
+                        '\n<grey>Note: You can also set volumes using the SANDBOX_VOLUMES environment variable:</grey>\n'
+                        f'<grey>export SANDBOX_VOLUMES="{config.sandbox.volumes}"</grey>'
+                    )
+                )
+
+    except (UserCancelledError, KeyboardInterrupt, EOFError):
+        return  # Return on exception
 
 
 async def modify_llm_settings_advanced(
