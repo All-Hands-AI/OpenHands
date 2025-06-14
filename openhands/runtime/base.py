@@ -430,19 +430,25 @@ class Runtime(FileEditRuntimeMixin):
                     # Azure DevOps URL format: https://token@dev.azure.com/organization/project/_git/repository
                     # Extract organization from domain if it's a full URL
                     if domain.startswith('https://dev.azure.com/'):
-                        org_name = domain.replace('https://dev.azure.com/', '').rstrip('/')
+                        org_name = domain.replace('https://dev.azure.com/', '').rstrip(
+                            '/'
+                        )
                         base_domain = 'dev.azure.com'
                     else:
                         # If domain is just the host, we need to get organization from the token host
                         token_host = git_provider_tokens[provider].host
-                        if token_host and token_host.startswith('https://dev.azure.com/'):
-                            org_name = token_host.replace('https://dev.azure.com/', '').rstrip('/')
+                        if token_host and token_host.startswith(
+                            'https://dev.azure.com/'
+                        ):
+                            org_name = token_host.replace(
+                                'https://dev.azure.com/', ''
+                            ).rstrip('/')
                             base_domain = 'dev.azure.com'
                         else:
                             # Fallback: assume domain contains the organization
                             org_name = domain.replace('dev.azure.com', '').strip('/')
                             base_domain = 'dev.azure.com'
-                    
+
                     # Parse project/repo from selected_repository
                     repo_parts = selected_repository.split('/')
                     if len(repo_parts) == 2:
