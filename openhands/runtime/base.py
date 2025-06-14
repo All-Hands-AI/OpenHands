@@ -489,8 +489,7 @@ class Runtime(FileEditRuntimeMixin):
     @property
     def workspace_root(self) -> Path:
         """Return the workspace root path."""
-        # Default workspace path is /workspace
-        return Path('/workspace')
+        return Path(self.config.workspace_mount_path_in_sandbox)
 
     def maybe_setup_git_hooks(self):
         """Set up git hooks if .openhands/pre-commit.sh exists in the workspace or repository."""
