@@ -11,17 +11,17 @@ from openhands.server.types import AppMode
 
 
 class ProviderType(Enum):
-    GITHUB = "github"
-    GITLAB = "gitlab"
-    AZURE_DEVOPS = "azure_devops"
+    GITHUB = 'github'
+    GITLAB = 'gitlab'
+    AZURE_DEVOPS = 'azure_devops'
 
 
 class TaskType(str, Enum):
-    MERGE_CONFLICTS = "MERGE_CONFLICTS"
-    FAILING_CHECKS = "FAILING_CHECKS"
-    UNRESOLVED_COMMENTS = "UNRESOLVED_COMMENTS"
-    OPEN_ISSUE = "OPEN_ISSUE"
-    OPEN_PR = "OPEN_PR"
+    MERGE_CONFLICTS = 'MERGE_CONFLICTS'
+    FAILING_CHECKS = 'FAILING_CHECKS'
+    UNRESOLVED_COMMENTS = 'UNRESOLVED_COMMENTS'
+    OPEN_ISSUE = 'OPEN_ISSUE'
+    OPEN_PR = 'OPEN_PR'
 
 
 class SuggestedTask(BaseModel):
@@ -34,39 +34,39 @@ class SuggestedTask(BaseModel):
     def get_provider_terms(self) -> dict:
         if self.git_provider == ProviderType.GITLAB:
             return {
-                "requestType": "Merge Request",
-                "requestTypeShort": "MR",
-                "apiName": "GitLab API",
-                "tokenEnvVar": "GITLAB_TOKEN",
-                "ciSystem": "CI pipelines",
-                "ciProvider": "GitLab",
-                "requestVerb": "merge request",
+                'requestType': 'Merge Request',
+                'requestTypeShort': 'MR',
+                'apiName': 'GitLab API',
+                'tokenEnvVar': 'GITLAB_TOKEN',
+                'ciSystem': 'CI pipelines',
+                'ciProvider': 'GitLab',
+                'requestVerb': 'merge request',
             }
         elif self.git_provider == ProviderType.GITHUB:
             return {
-                "requestType": "Pull Request",
-                "requestTypeShort": "PR",
-                "apiName": "GitHub API",
-                "tokenEnvVar": "GITHUB_TOKEN",
-                "ciSystem": "GitHub Actions",
-                "ciProvider": "GitHub",
-                "requestVerb": "pull request",
+                'requestType': 'Pull Request',
+                'requestTypeShort': 'PR',
+                'apiName': 'GitHub API',
+                'tokenEnvVar': 'GITHUB_TOKEN',
+                'ciSystem': 'GitHub Actions',
+                'ciProvider': 'GitHub',
+                'requestVerb': 'pull request',
             }
         elif self.git_provider == ProviderType.AZURE_DEVOPS:
             return {
-                "requestType": "Pull Request",
-                "requestTypeShort": "PR",
-                "apiName": "Azure DevOps API",
-                "tokenEnvVar": "AZURE_DEVOPS_TOKEN",
-                "ciSystem": "Azure Pipelines",
-                "ciProvider": "Azure DevOps",
-                "requestVerb": "pull request",
-                "work item": "work item",
-                "repository": "repository",
-                "pull request": "pull request",
+                'requestType': 'Pull Request',
+                'requestTypeShort': 'PR',
+                'apiName': 'Azure DevOps API',
+                'tokenEnvVar': 'AZURE_DEVOPS_TOKEN',
+                'ciSystem': 'Azure Pipelines',
+                'ciProvider': 'Azure DevOps',
+                'requestVerb': 'pull request',
+                'work item': 'work item',
+                'repository': 'repository',
+                'pull request': 'pull request',
             }
 
-        raise ValueError(f"Provider {self.git_provider} for suggested task prompts")
+        raise ValueError(f'Provider {self.git_provider} for suggested task prompts')
 
     def get_prompt_for_task(
         self,
@@ -76,20 +76,20 @@ class SuggestedTask(BaseModel):
         repo = self.repo
 
         env = Environment(
-            loader=FileSystemLoader("openhands/integrations/templates/suggested_task")
+            loader=FileSystemLoader('openhands/integrations/templates/suggested_task')
         )
 
         template = None
         if task_type == TaskType.MERGE_CONFLICTS:
-            template = env.get_template("merge_conflict_prompt.j2")
+            template = env.get_template('merge_conflict_prompt.j2')
         elif task_type == TaskType.FAILING_CHECKS:
-            template = env.get_template("failing_checks_prompt.j2")
+            template = env.get_template('failing_checks_prompt.j2')
         elif task_type == TaskType.UNRESOLVED_COMMENTS:
-            template = env.get_template("unresolved_comments_prompt.j2")
+            template = env.get_template('unresolved_comments_prompt.j2')
         elif task_type == TaskType.OPEN_ISSUE:
-            template = env.get_template("open_issue_prompt.j2")
+            template = env.get_template('open_issue_prompt.j2')
         else:
-            raise ValueError(f"Unsupported task type: {task_type}")
+            raise ValueError(f'Unsupported task type: {task_type}')
 
         terms = self.get_provider_terms()
 
@@ -143,14 +143,14 @@ class RateLimitError(ValueError):
 
 
 class RequestMethod(Enum):
-    POST = "post"
-    GET = "get"
+    POST = 'post'
+    GET = 'get'
 
 
 class BaseGitService(ABC):
     @property
     def provider(self) -> str:
-        raise NotImplementedError("Subclasses must implement the provider property")
+        raise NotImplementedError('Subclasses must implement the provider property')
 
     # Method used to satisfy mypy for abstract class definition
     @abstractmethod
@@ -177,17 +177,17 @@ class BaseGitService(ABC):
         self, e: HTTPStatusError
     ) -> AuthenticationError | RateLimitError | UnknownException:
         if e.response.status_code == 401:
-            return AuthenticationError(f"Invalid {self.provider} token")
+            return AuthenticationError(f'Invalid {self.provider} token')
         elif e.response.status_code == 429:
-            logger.warning(f"Rate limit exceeded on {self.provider} API: {e}")
-            return RateLimitError("GitHub API rate limit exceeded")
+            logger.warning(f'Rate limit exceeded on {self.provider} API: {e}')
+            return RateLimitError('GitHub API rate limit exceeded')
 
-        logger.warning(f"Status error on {self.provider} API: {e}")
-        return UnknownException(f"Unknown error: {e}")
+        logger.warning(f'Status error on {self.provider} API: {e}')
+        return UnknownException(f'Unknown error: {e}')
 
     def handle_http_error(self, e: HTTPError) -> UnknownException:
-        logger.warning(f"HTTP error on {self.provider} API: {type(e).__name__} : {e}")
-        return UnknownException(f"HTTP error {type(e).__name__} : {e}")
+        logger.warning(f'HTTP error on {self.provider} API: {type(e).__name__} : {e}')
+        return UnknownException(f'HTTP error {type(e).__name__} : {e}')
 
 
 class GitService(Protocol):

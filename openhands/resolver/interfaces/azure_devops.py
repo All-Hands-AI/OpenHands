@@ -20,7 +20,7 @@ class AzureDevOpsIssueHandler(IssueHandlerInterface):
         repo: str,
         token: str,
         username: str | None = None,
-        base_domain: str = "dev.azure.com",
+        base_domain: str = 'dev.azure.com',
     ):
         """Initialize an Azure DevOps issue handler.
 
@@ -38,10 +38,10 @@ class AzureDevOpsIssueHandler(IssueHandlerInterface):
         self.base_domain = base_domain
 
         # Parse the repository name (expected format: project/repo)
-        parts = repo.split("/")
+        parts = repo.split('/')
         if len(parts) != 2:
             raise ValueError(
-                f"Invalid repository name format: {repo}. Expected format: project/repo"
+                f'Invalid repository name format: {repo}. Expected format: project/repo'
             )
 
         self.project_name, self.repo_name = parts
@@ -52,7 +52,7 @@ class AzureDevOpsIssueHandler(IssueHandlerInterface):
         self.headers = self.get_headers()
 
         # Set up API base URL
-        self.api_base_url = f"https://{self.base_domain}/{self.owner}/_apis"
+        self.api_base_url = f'https://{self.base_domain}/{self.owner}/_apis'
 
     def set_owner(self, owner: str) -> None:
         self.owner = owner
@@ -60,11 +60,11 @@ class AzureDevOpsIssueHandler(IssueHandlerInterface):
     def get_headers(self) -> dict[str, str]:
         # Azure DevOps uses Basic authentication with PAT
         # Username can be empty, password is the PAT
-        credentials = base64.b64encode(f":{self.token}".encode()).decode()
+        credentials = base64.b64encode(f':{self.token}'.encode()).decode()
         return {
-            "Authorization": f"Basic {credentials}",
-            "Accept": "application/json",
-            "Content-Type": "application/json",
+            'Authorization': f'Basic {credentials}',
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
         }
 
     async def _make_api_request(
@@ -86,11 +86,11 @@ class AzureDevOpsIssueHandler(IssueHandlerInterface):
                         url, headers=self.headers, params=params, json=json_data
                     )
                 else:
-                    raise ValueError(f"Unsupported HTTP method: {method}")
+                    raise ValueError(f'Unsupported HTTP method: {method}')
 
                 if response.status_code >= 400:
                     logger.error(
-                        f"Azure DevOps API error: {response.status_code} - {response.text}"
+                        f'Azure DevOps API error: {response.status_code} - {response.text}'
                     )
                     return None
 
@@ -100,32 +100,32 @@ class AzureDevOpsIssueHandler(IssueHandlerInterface):
                     return response.text
 
         except httpx.RequestError as e:
-            logger.error(f"Request error: {e}")
+            logger.error(f'Request error: {e}')
             return None
         except Exception as e:
-            logger.error(f"Unexpected error: {e}")
+            logger.error(f'Unexpected error: {e}')
             return None
 
     def get_base_url(self) -> str:
-        return f"https://{self.base_domain}/{self.owner}/{self.project_name}/_apis/git/repositories/{self.repo_name}"
+        return f'https://{self.base_domain}/{self.owner}/{self.project_name}/_apis/git/repositories/{self.repo_name}'
 
     def get_authorize_url(self) -> str:
-        return f"https://{self.username}:{self.token}@{self.base_domain}/"
+        return f'https://{self.username}:{self.token}@{self.base_domain}/'
 
     def get_branch_url(self, branch_name: str) -> str:
-        return self.get_base_url() + f"/refs?filter=heads/{branch_name}"
+        return self.get_base_url() + f'/refs?filter=heads/{branch_name}'
 
     def get_download_url(self) -> str:
-        return f"https://{self.base_domain}/{self.owner}/{self.project_name}/_apis/wit/workitems"
+        return f'https://{self.base_domain}/{self.owner}/{self.project_name}/_apis/wit/workitems'
 
     def get_clone_url(self) -> str:
-        return f"https://{self.username}:{self.token}@{self.base_domain}/{self.owner}/{self.project_name}/_git/{self.repo_name}"
+        return f'https://{self.username}:{self.token}@{self.base_domain}/{self.owner}/{self.project_name}/_git/{self.repo_name}'
 
     def get_graphql_url(self) -> str:
-        return f"https://{self.base_domain}/{self.owner}/_apis/graphql"
+        return f'https://{self.base_domain}/{self.owner}/_apis/graphql'
 
     def get_compare_url(self, branch_name: str) -> str:
-        return f"https://{self.base_domain}/{self.owner}/{self.project_name}/_git/{self.repo_name}/branchCompare?baseVersion=GC{self.get_default_branch_name()}&targetVersion=GC{branch_name}"
+        return f'https://{self.base_domain}/{self.owner}/{self.project_name}/_git/{self.repo_name}/branchCompare?baseVersion=GC{self.get_default_branch_name()}&targetVersion=GC{branch_name}'
 
     def get_converted_issues(
         self, issue_numbers: list[int] | None = None, comment_id: int | None = None
@@ -140,43 +140,43 @@ class AzureDevOpsIssueHandler(IssueHandlerInterface):
             List of Azure DevOps issues.
         """
         if not issue_numbers:
-            raise ValueError("Unspecified issue number")
+            raise ValueError('Unspecified issue number')
 
         all_issues = self.download_issues()
-        logger.info(f"Limiting resolving to issues {issue_numbers}.")
-        all_issues = [issue for issue in all_issues if issue["id"] in issue_numbers]
+        logger.info(f'Limiting resolving to issues {issue_numbers}.')
+        all_issues = [issue for issue in all_issues if issue['id'] in issue_numbers]
 
         if len(issue_numbers) == 1 and not all_issues:
-            raise ValueError(f"Issue {issue_numbers[0]} not found")
+            raise ValueError(f'Issue {issue_numbers[0]} not found')
 
         converted_issues = []
         for issue in all_issues:
             # Check for required fields (id and title)
             if any(
                 [
-                    issue.get("fields", {}).get(key) is None
-                    for key in ["System.Id", "System.Title"]
+                    issue.get('fields', {}).get(key) is None
+                    for key in ['System.Id', 'System.Title']
                 ]
             ):
-                logger.warning(f"Skipping issue {issue} as it is missing id or title.")
+                logger.warning(f'Skipping issue {issue} as it is missing id or title.')
                 continue
 
             # Handle empty body by using empty string
-            description = issue.get("fields", {}).get("System.Description", "")
+            description = issue.get('fields', {}).get('System.Description', '')
             if description is None:
-                description = ""
+                description = ''
 
             # Get issue thread comments
             thread_comments = self.get_issue_comments(
-                issue["id"], comment_id=comment_id
+                issue['id'], comment_id=comment_id
             )
 
             # Convert empty lists to None for optional fields
             issue_details = Issue(
                 owner=self.owner,
                 repo=self.repo,
-                number=issue["id"],
-                title=issue["fields"]["System.Title"],
+                number=issue['id'],
+                title=issue['fields']['System.Title'],
                 body=description,
                 thread_comments=thread_comments,
                 review_comments=None,  # Initialize review comments as None for regular issues
@@ -193,11 +193,11 @@ class AzureDevOpsIssueHandler(IssueHandlerInterface):
     async def _download_issues_async(self) -> list[Any]:
         """Download issues from Azure DevOps asynchronously."""
         # Use WIQL to query for open bugs
-        wiql_url = f"{self.api_base_url}/wit/wiql"
-        wiql_params = {"api-version": "7.1-preview.2"}
+        wiql_url = f'{self.api_base_url}/wit/wiql'
+        wiql_params = {'api-version': '7.1-preview.2'}
 
         wiql_query = {
-            "query": f"""
+            'query': f"""
                 select [System.Id],
                     [System.WorkItemType],
                     [System.Title],
@@ -223,18 +223,18 @@ class AzureDevOpsIssueHandler(IssueHandlerInterface):
         if not wiql_data or not isinstance(wiql_data, dict):
             return []
 
-        work_items = wiql_data.get("workItems", [])
+        work_items = wiql_data.get('workItems', [])
 
         # Get full work item details
         all_issues = []
         for work_item in work_items:
-            work_item_id = work_item.get("id")
+            work_item_id = work_item.get('id')
             if not work_item_id:
                 continue
 
             # Get work item details
-            work_item_url = f"{self.api_base_url}/wit/workitems/{work_item_id}"
-            work_item_params = {"api-version": "7.1-preview.3"}
+            work_item_url = f'{self.api_base_url}/wit/workitems/{work_item_id}'
+            work_item_params = {'api-version': '7.1-preview.3'}
 
             work_item_data = await self._make_api_request(
                 work_item_url, params=work_item_params
@@ -243,8 +243,8 @@ class AzureDevOpsIssueHandler(IssueHandlerInterface):
             if work_item_data and isinstance(work_item_data, dict):
                 # Convert the work item to a dictionary format similar to GitHub/GitLab
                 issue = {
-                    "id": work_item_data.get("id"),
-                    "fields": work_item_data.get("fields", {}),
+                    'id': work_item_data.get('id'),
+                    'fields': work_item_data.get('fields', {}),
                 }
                 all_issues.append(issue)
 
@@ -261,8 +261,8 @@ class AzureDevOpsIssueHandler(IssueHandlerInterface):
     ) -> list[str] | None:
         """Download comments for a specific issue from Azure DevOps asynchronously."""
         # Get the comments for the work item
-        comments_url = f"{self.api_base_url}/wit/workItems/{issue_number}/comments"
-        comments_params = {"api-version": "7.1-preview.3"}
+        comments_url = f'{self.api_base_url}/wit/workItems/{issue_number}/comments'
+        comments_params = {'api-version': '7.1-preview.3'}
 
         comments_data = await self._make_api_request(
             comments_url, params=comments_params
@@ -271,16 +271,16 @@ class AzureDevOpsIssueHandler(IssueHandlerInterface):
         if not comments_data or not isinstance(comments_data, dict):
             return None
 
-        comments = comments_data.get("comments", [])
+        comments = comments_data.get('comments', [])
 
         all_comments = []
         if comments:
             if comment_id:
                 matching_comment = next(
                     (
-                        comment.get("text", "")
+                        comment.get('text', '')
                         for comment in comments
-                        if comment.get("id") == comment_id
+                        if comment.get('id') == comment_id
                     ),
                     None,
                 )
@@ -288,9 +288,9 @@ class AzureDevOpsIssueHandler(IssueHandlerInterface):
                     return [matching_comment]
             else:
                 all_comments = [
-                    comment.get("text", "")
+                    comment.get('text', '')
                     for comment in comments
-                    if comment.get("text")
+                    if comment.get('text')
                 ]
 
         return all_comments if all_comments else None
@@ -301,43 +301,43 @@ class AzureDevOpsIssueHandler(IssueHandlerInterface):
 
     async def _branch_exists_async(self, branch_name: str) -> bool:
         """Check if a branch exists asynchronously."""
-        logger.info(f"Checking if branch {branch_name} exists...")
+        logger.info(f'Checking if branch {branch_name} exists...')
 
         try:
             # First, get the repository ID
-            repos_url = f"{self.api_base_url}/git/repositories"
+            repos_url = f'{self.api_base_url}/git/repositories'
             repos_params = {
-                "api-version": "7.1-preview.1",
-                "project": self.project_name,
+                'api-version': '7.1-preview.1',
+                'project': self.project_name,
             }
 
             repos_data = await self._make_api_request(repos_url, params=repos_params)
 
             if not repos_data or not isinstance(repos_data, dict):
-                logger.warning(f"Repository not found: {self.repo_name}")
+                logger.warning(f'Repository not found: {self.repo_name}')
                 return False
 
-            repositories = repos_data.get("value", [])
+            repositories = repos_data.get('value', [])
             repo = next(
                 (
                     r
                     for r in repositories
-                    if r.get("name", "").lower() == self.repo_name.lower()
+                    if r.get('name', '').lower() == self.repo_name.lower()
                 ),
                 None,
             )
 
             if not repo:
-                logger.warning(f"Repository not found: {self.repo_name}")
+                logger.warning(f'Repository not found: {self.repo_name}')
                 return False
 
-            repo_id = repo.get("id")
+            repo_id = repo.get('id')
 
             # Get the branches (refs) for the repository
-            refs_url = f"{self.api_base_url}/git/repositories/{repo_id}/refs"
+            refs_url = f'{self.api_base_url}/git/repositories/{repo_id}/refs'
             refs_params = {
-                "api-version": "7.1-preview.1",
-                "filter": f"heads/{branch_name}",
+                'api-version': '7.1-preview.1',
+                'filter': f'heads/{branch_name}',
             }
 
             refs_data = await self._make_api_request(refs_url, params=refs_params)
@@ -345,13 +345,13 @@ class AzureDevOpsIssueHandler(IssueHandlerInterface):
             if not refs_data or not isinstance(refs_data, dict):
                 return False
 
-            refs = refs_data.get("value", [])
+            refs = refs_data.get('value', [])
             exists = len(refs) > 0
 
-            logger.info(f"Branch {branch_name} exists: {exists}")
+            logger.info(f'Branch {branch_name} exists: {exists}')
             return exists
         except Exception as e:
-            logger.warning(f"Error checking if branch exists: {e}")
+            logger.warning(f'Error checking if branch exists: {e}')
             return False
 
     def get_branch_name(self, base_branch_name: str) -> str:
@@ -359,7 +359,7 @@ class AzureDevOpsIssueHandler(IssueHandlerInterface):
         attempt = 1
         while self.branch_exists(branch_name):
             attempt += 1
-            branch_name = f"{base_branch_name}-try{attempt}"
+            branch_name = f'{base_branch_name}-try{attempt}'
         return branch_name
 
     def reply_to_comment(self, pr_number: int, comment_id: str, reply: str) -> None:
@@ -372,41 +372,41 @@ class AzureDevOpsIssueHandler(IssueHandlerInterface):
         """Reply to a comment on a pull request asynchronously."""
         try:
             # First, get the repository ID
-            repos_url = f"{self.api_base_url}/git/repositories"
+            repos_url = f'{self.api_base_url}/git/repositories'
             repos_params = {
-                "api-version": "7.1-preview.1",
-                "project": self.project_name,
+                'api-version': '7.1-preview.1',
+                'project': self.project_name,
             }
 
             repos_data = await self._make_api_request(repos_url, params=repos_params)
 
             if not repos_data or not isinstance(repos_data, dict):
-                logger.warning(f"Repository not found: {self.repo_name}")
+                logger.warning(f'Repository not found: {self.repo_name}')
                 return
 
-            repositories = repos_data.get("value", [])
+            repositories = repos_data.get('value', [])
             repo = next(
                 (
                     r
                     for r in repositories
-                    if r.get("name", "").lower() == self.repo_name.lower()
+                    if r.get('name', '').lower() == self.repo_name.lower()
                 ),
                 None,
             )
 
             if not repo:
-                logger.warning(f"Repository not found: {self.repo_name}")
+                logger.warning(f'Repository not found: {self.repo_name}')
                 return
 
-            repo_id = repo.get("id")
+            repo_id = repo.get('id')
 
             # Create a comment reply
-            comment_reply = f"Openhands fix success summary\n\n\n{reply}"
+            comment_reply = f'Openhands fix success summary\n\n\n{reply}'
 
             # Add the comment to the thread
-            comment_url = f"{self.api_base_url}/git/repositories/{repo_id}/pullRequests/{pr_number}/threads/{comment_id}/comments"
-            comment_params = {"api-version": "7.1-preview.1"}
-            comment_data = {"content": comment_reply}
+            comment_url = f'{self.api_base_url}/git/repositories/{repo_id}/pullRequests/{pr_number}/threads/{comment_id}/comments'
+            comment_params = {'api-version': '7.1-preview.1'}
+            comment_data = {'content': comment_reply}
 
             await self._make_api_request(
                 comment_url,
@@ -415,10 +415,10 @@ class AzureDevOpsIssueHandler(IssueHandlerInterface):
                 json_data=comment_data,
             )
         except Exception as e:
-            logger.warning(f"Error replying to comment: {e}")
+            logger.warning(f'Error replying to comment: {e}')
 
     def get_pull_url(self, pr_number: int) -> str:
-        return f"https://{self.base_domain}/{self.owner}/{self.project_name}/_git/{self.repo_name}/pullrequest/{pr_number}"
+        return f'https://{self.base_domain}/{self.owner}/{self.project_name}/_git/{self.repo_name}/pullrequest/{pr_number}'
 
     def get_default_branch_name(self) -> str:
         """Get the default branch name."""
@@ -428,38 +428,38 @@ class AzureDevOpsIssueHandler(IssueHandlerInterface):
         """Get the default branch name asynchronously."""
         try:
             # First, get the repository
-            repos_url = f"{self.api_base_url}/git/repositories"
+            repos_url = f'{self.api_base_url}/git/repositories'
             repos_params = {
-                "api-version": "7.1-preview.1",
-                "project": self.project_name,
+                'api-version': '7.1-preview.1',
+                'project': self.project_name,
             }
 
             repos_data = await self._make_api_request(repos_url, params=repos_params)
 
             if not repos_data or not isinstance(repos_data, dict):
-                logger.warning(f"Repository not found: {self.repo_name}")
-                return "main"  # Default to 'main' if repository not found
+                logger.warning(f'Repository not found: {self.repo_name}')
+                return 'main'  # Default to 'main' if repository not found
 
-            repositories = repos_data.get("value", [])
+            repositories = repos_data.get('value', [])
             repo = next(
                 (
                     r
                     for r in repositories
-                    if r.get("name", "").lower() == self.repo_name.lower()
+                    if r.get('name', '').lower() == self.repo_name.lower()
                 ),
                 None,
             )
 
             if not repo:
-                logger.warning(f"Repository not found: {self.repo_name}")
-                return "main"  # Default to 'main' if repository not found
+                logger.warning(f'Repository not found: {self.repo_name}')
+                return 'main'  # Default to 'main' if repository not found
 
             # Get the default branch
-            default_branch = repo.get("defaultBranch", "refs/heads/main")
-            return default_branch.replace("refs/heads/", "")
+            default_branch = repo.get('defaultBranch', 'refs/heads/main')
+            return default_branch.replace('refs/heads/', '')
         except Exception as e:
-            logger.warning(f"Error getting default branch: {e}")
-            return "main"  # Default to 'main' if an error occurs
+            logger.warning(f'Error getting default branch: {e}')
+            return 'main'  # Default to 'main' if an error occurs
 
     def create_pull_request(self, data: dict[str, Any] | None = None) -> dict[str, Any]:
         """Create a pull request."""
@@ -474,69 +474,69 @@ class AzureDevOpsIssueHandler(IssueHandlerInterface):
 
         try:
             # First, get the repository ID
-            repos_url = f"{self.api_base_url}/git/repositories"
+            repos_url = f'{self.api_base_url}/git/repositories'
             repos_params = {
-                "api-version": "7.1-preview.1",
-                "project": self.project_name,
+                'api-version': '7.1-preview.1',
+                'project': self.project_name,
             }
 
             repos_data = await self._make_api_request(repos_url, params=repos_params)
 
             if not repos_data or not isinstance(repos_data, dict):
-                raise RuntimeError(f"Repository not found: {self.repo_name}")
+                raise RuntimeError(f'Repository not found: {self.repo_name}')
 
-            repositories = repos_data.get("value", [])
+            repositories = repos_data.get('value', [])
             repo = next(
                 (
                     r
                     for r in repositories
-                    if r.get("name", "").lower() == self.repo_name.lower()
+                    if r.get('name', '').lower() == self.repo_name.lower()
                 ),
                 None,
             )
 
             if not repo:
-                raise RuntimeError(f"Repository not found: {self.repo_name}")
+                raise RuntimeError(f'Repository not found: {self.repo_name}')
 
-            repo_id = repo.get("id")
+            repo_id = repo.get('id')
 
             # Create the pull request
             pr_data = {
-                "sourceRefName": f"refs/heads/{data.get('head', '')}",
-                "targetRefName": f"refs/heads/{data.get('base', '')}",
-                "title": data.get("title", ""),
-                "description": data.get("body", ""),
+                'sourceRefName': f'refs/heads/{data.get("head", "")}',
+                'targetRefName': f'refs/heads/{data.get("base", "")}',
+                'title': data.get('title', ''),
+                'description': data.get('body', ''),
             }
 
-            pr_url = f"{self.api_base_url}/git/repositories/{repo_id}/pullrequests"
-            pr_params = {"api-version": "7.1-preview.1"}
+            pr_url = f'{self.api_base_url}/git/repositories/{repo_id}/pullrequests'
+            pr_params = {'api-version': '7.1-preview.1'}
 
             created_pr = await self._make_api_request(
                 pr_url, method=RequestMethod.POST, params=pr_params, json_data=pr_data
             )
 
             if not created_pr or not isinstance(created_pr, dict):
-                raise RuntimeError("Failed to create pull request")
+                raise RuntimeError('Failed to create pull request')
 
             # Convert to a format similar to GitHub/GitLab
-            pr_id = created_pr.get("pullRequestId")
+            pr_id = created_pr.get('pullRequestId')
             if pr_id is None:
-                raise RuntimeError("Pull request ID not found in response")
+                raise RuntimeError('Pull request ID not found in response')
 
             pr_result = {
-                "id": pr_id,
-                "number": pr_id,
-                "html_url": self.get_pull_url(pr_id),
+                'id': pr_id,
+                'number': pr_id,
+                'html_url': self.get_pull_url(pr_id),
             }
 
             return pr_result
         except Exception as e:
-            if "403" in str(e):
+            if '403' in str(e):
                 raise RuntimeError(
-                    "Failed to create pull request due to missing permissions. "
-                    "Make sure that the provided token has push permissions for the repository."
+                    'Failed to create pull request due to missing permissions. '
+                    'Make sure that the provided token has push permissions for the repository.'
                 )
-            raise RuntimeError(f"Failed to create pull request: {e}")
+            raise RuntimeError(f'Failed to create pull request: {e}')
 
     def request_reviewers(self, reviewer: str, pr_number: int) -> None:
         """Request reviewers for a pull request."""
@@ -548,45 +548,45 @@ class AzureDevOpsIssueHandler(IssueHandlerInterface):
         # Instead, we'll add a comment mentioning the reviewer
         try:
             # First, get the repository ID
-            repos_url = f"{self.api_base_url}/git/repositories"
+            repos_url = f'{self.api_base_url}/git/repositories'
             repos_params = {
-                "api-version": "7.1-preview.1",
-                "project": self.project_name,
+                'api-version': '7.1-preview.1',
+                'project': self.project_name,
             }
 
             repos_data = await self._make_api_request(repos_url, params=repos_params)
 
             if not repos_data or not isinstance(repos_data, dict):
-                logger.warning(f"Repository not found: {self.repo_name}")
+                logger.warning(f'Repository not found: {self.repo_name}')
                 return
 
-            repositories = repos_data.get("value", [])
+            repositories = repos_data.get('value', [])
             repo = next(
                 (
                     r
                     for r in repositories
-                    if r.get("name", "").lower() == self.repo_name.lower()
+                    if r.get('name', '').lower() == self.repo_name.lower()
                 ),
                 None,
             )
 
             if not repo:
-                logger.warning(f"Repository not found: {self.repo_name}")
+                logger.warning(f'Repository not found: {self.repo_name}')
                 return
 
-            repo_id = repo.get("id")
+            repo_id = repo.get('id')
 
             # Create a comment mentioning the reviewer
-            comment = f"@{reviewer} Please review this pull request."
+            comment = f'@{reviewer} Please review this pull request.'
 
             # Add the comment to the pull request
             thread_data = {
-                "comments": [{"content": comment}],
-                "status": "active",
+                'comments': [{'content': comment}],
+                'status': 'active',
             }
 
-            thread_url = f"{self.api_base_url}/git/repositories/{repo_id}/pullRequests/{pr_number}/threads"
-            thread_params = {"api-version": "7.1-preview.1"}
+            thread_url = f'{self.api_base_url}/git/repositories/{repo_id}/pullRequests/{pr_number}/threads'
+            thread_params = {'api-version': '7.1-preview.1'}
 
             await self._make_api_request(
                 thread_url,
@@ -595,7 +595,7 @@ class AzureDevOpsIssueHandler(IssueHandlerInterface):
                 json_data=thread_data,
             )
         except Exception as e:
-            logger.warning(f"Failed to request review from {reviewer}: {e}")
+            logger.warning(f'Failed to request review from {reviewer}: {e}')
 
     def send_comment_msg(self, issue_number: int, msg: str) -> None:
         """Send a comment message to an Azure DevOps issue or pull request."""
@@ -605,9 +605,9 @@ class AzureDevOpsIssueHandler(IssueHandlerInterface):
         """Send a comment message to an Azure DevOps issue or pull request asynchronously."""
         try:
             # Add the comment to the work item
-            comment_url = f"{self.api_base_url}/wit/workItems/{issue_number}/comments"
-            comment_params = {"api-version": "7.1-preview.3"}
-            comment_data = {"text": msg}
+            comment_url = f'{self.api_base_url}/wit/workItems/{issue_number}/comments'
+            comment_params = {'api-version': '7.1-preview.3'}
+            comment_data = {'text': msg}
 
             await self._make_api_request(
                 comment_url,
@@ -615,9 +615,9 @@ class AzureDevOpsIssueHandler(IssueHandlerInterface):
                 params=comment_params,
                 json_data=comment_data,
             )
-            logger.info(f"Comment added to the issue: {msg}")
+            logger.info(f'Comment added to the issue: {msg}')
         except Exception as e:
-            logger.error(f"Failed to post comment: {e}")
+            logger.error(f'Failed to post comment: {e}')
 
     def get_context_from_external_issues_references(
         self,
@@ -632,18 +632,18 @@ class AzureDevOpsIssueHandler(IssueHandlerInterface):
         # This method can remain largely the same as it doesn't use Azure DevOps SDK
         context_items = []
         if closing_issues:
-            context_items.append(f"Closing issues: {', '.join(closing_issues)}")
+            context_items.append(f'Closing issues: {", ".join(closing_issues)}')
         if closing_issue_numbers:
             context_items.append(
-                f"Closing issue numbers: {', '.join(map(str, closing_issue_numbers))}"
+                f'Closing issue numbers: {", ".join(map(str, closing_issue_numbers))}'
             )
         if issue_body:
-            context_items.append(f"Issue body: {issue_body}")
+            context_items.append(f'Issue body: {issue_body}')
         if review_comments:
             context_items.extend(review_comments)
         if review_threads:
             for thread in review_threads:
-                context_items.append(f"Review thread: {thread.comment}")
+                context_items.append(f'Review thread: {thread.comment}')
         if thread_comments:
             context_items.extend(thread_comments)
         return context_items
@@ -658,7 +658,7 @@ class AzureDevOpsPRHandler(AzureDevOpsIssueHandler):
         repo: str,
         token: str,
         username: str | None = None,
-        base_domain: str = "dev.azure.com",
+        base_domain: str = 'dev.azure.com',
     ):
         """Initialize an Azure DevOps PR handler.
 
@@ -679,39 +679,39 @@ class AzureDevOpsPRHandler(AzureDevOpsIssueHandler):
         """Download pull requests from Azure DevOps asynchronously."""
         try:
             # First, get the repository ID
-            repos_url = f"{self.api_base_url}/git/repositories"
+            repos_url = f'{self.api_base_url}/git/repositories'
             repos_params = {
-                "api-version": "7.1-preview.1",
-                "project": self.project_name,
+                'api-version': '7.1-preview.1',
+                'project': self.project_name,
             }
 
             repos_data = await self._make_api_request(repos_url, params=repos_params)
 
             if not repos_data or not isinstance(repos_data, dict):
-                logger.warning(f"Repository not found: {self.repo_name}")
+                logger.warning(f'Repository not found: {self.repo_name}')
                 return []
 
-            repositories = repos_data.get("value", [])
+            repositories = repos_data.get('value', [])
             repo = next(
                 (
                     r
                     for r in repositories
-                    if r.get("name", "").lower() == self.repo_name.lower()
+                    if r.get('name', '').lower() == self.repo_name.lower()
                 ),
                 None,
             )
 
             if not repo:
-                logger.warning(f"Repository not found: {self.repo_name}")
+                logger.warning(f'Repository not found: {self.repo_name}')
                 return []
 
-            repo_id = repo.get("id")
+            repo_id = repo.get('id')
 
             # Get all active pull requests for the repository
-            prs_url = f"{self.api_base_url}/git/repositories/{repo_id}/pullrequests"
+            prs_url = f'{self.api_base_url}/git/repositories/{repo_id}/pullrequests'
             prs_params = {
-                "api-version": "7.1-preview.1",
-                "searchCriteria.status": "active",
+                'api-version': '7.1-preview.1',
+                'searchCriteria.status': 'active',
             }
 
             prs_data = await self._make_api_request(prs_url, params=prs_params)
@@ -719,28 +719,28 @@ class AzureDevOpsPRHandler(AzureDevOpsIssueHandler):
             if not prs_data or not isinstance(prs_data, dict):
                 return []
 
-            pull_requests = prs_data.get("value", [])
+            pull_requests = prs_data.get('value', [])
 
             # Convert pull requests to the issue format
             all_issues = []
             for pr in pull_requests:
                 # Convert the PR to a dictionary format similar to issues
                 issue = {
-                    "id": pr.get("pullRequestId"),
-                    "fields": {
-                        "System.Id": pr.get("pullRequestId"),
-                        "System.Title": pr.get("title", ""),
-                        "System.Description": pr.get("description", ""),
+                    'id': pr.get('pullRequestId'),
+                    'fields': {
+                        'System.Id': pr.get('pullRequestId'),
+                        'System.Title': pr.get('title', ''),
+                        'System.Description': pr.get('description', ''),
                     },
-                    "source_branch": pr.get("sourceRefName", ""),
-                    "repository": repo,
+                    'source_branch': pr.get('sourceRefName', ''),
+                    'repository': repo,
                 }
                 all_issues.append(issue)
 
             return all_issues
 
         except Exception as e:
-            logger.warning(f"Error downloading pull requests: {e}")
+            logger.warning(f'Error downloading pull requests: {e}')
             return []
 
     def get_converted_issues(
@@ -756,14 +756,14 @@ class AzureDevOpsPRHandler(AzureDevOpsIssueHandler):
             List of Azure DevOps pull requests as Issue objects.
         """
         if not issue_numbers:
-            raise ValueError("Unspecified issue number")
+            raise ValueError('Unspecified issue number')
 
         all_issues = self.download_issues()
-        logger.info(f"Limiting resolving to issues {issue_numbers}.")
-        all_issues = [issue for issue in all_issues if issue["id"] in issue_numbers]
+        logger.info(f'Limiting resolving to issues {issue_numbers}.')
+        all_issues = [issue for issue in all_issues if issue['id'] in issue_numbers]
 
         if len(issue_numbers) == 1 and not all_issues:
-            raise ValueError(f"Issue {issue_numbers[0]} not found")
+            raise ValueError(f'Issue {issue_numbers[0]} not found')
 
         converted_issues = []
         for issue in all_issues:
@@ -774,16 +774,16 @@ class AzureDevOpsPRHandler(AzureDevOpsIssueHandler):
                 review_bodies,
                 review_threads,
                 thread_ids,
-            ) = self.download_pr_metadata(issue["id"], comment_id)
+            ) = self.download_pr_metadata(issue['id'], comment_id)
 
             # Create the Issue object
             converted_issue = Issue(
-                number=issue["id"],
-                title=issue["fields"]["System.Title"],
-                body=issue["fields"]["System.Description"],
+                number=issue['id'],
+                title=issue['fields']['System.Title'],
+                body=issue['fields']['System.Description'],
                 owner=self.owner,
-                repo=f"{self.project_name}/{self.repo_name}",
-                head_branch=issue["source_branch"].replace("refs/heads/", ""),
+                repo=f'{self.project_name}/{self.repo_name}',
+                head_branch=issue['source_branch'].replace('refs/heads/', ''),
                 closing_issues=closing_issues,
                 closing_issue_numbers=closing_issue_numbers,
                 review_bodies=review_bodies,
@@ -819,47 +819,47 @@ class AzureDevOpsPRHandler(AzureDevOpsIssueHandler):
         """
         try:
             # First, get the repository ID
-            repos_url = f"{self.api_base_url}/git/repositories"
+            repos_url = f'{self.api_base_url}/git/repositories'
             repos_params = {
-                "api-version": "7.1-preview.1",
-                "project": self.project_name,
+                'api-version': '7.1-preview.1',
+                'project': self.project_name,
             }
 
             repos_data = await self._make_api_request(repos_url, params=repos_params)
 
             if not repos_data or not isinstance(repos_data, dict):
-                logger.warning(f"Repository not found: {self.repo_name}")
+                logger.warning(f'Repository not found: {self.repo_name}')
                 return [], [], None, [], []
 
-            repositories = repos_data.get("value", [])
+            repositories = repos_data.get('value', [])
             repo = next(
                 (
                     r
                     for r in repositories
-                    if r.get("name", "").lower() == self.repo_name.lower()
+                    if r.get('name', '').lower() == self.repo_name.lower()
                 ),
                 None,
             )
 
             if not repo:
-                logger.warning(f"Repository not found: {self.repo_name}")
+                logger.warning(f'Repository not found: {self.repo_name}')
                 return [], [], None, [], []
 
-            repo_id = repo.get("id")
+            repo_id = repo.get('id')
 
             # Get the pull request details
-            pr_url = f"{self.api_base_url}/git/repositories/{repo_id}/pullRequests/{pull_number}"
-            pr_params = {"api-version": "7.1-preview.1"}
+            pr_url = f'{self.api_base_url}/git/repositories/{repo_id}/pullRequests/{pull_number}'
+            pr_params = {'api-version': '7.1-preview.1'}
 
             pr_data = await self._make_api_request(pr_url, params=pr_params)
 
             if not pr_data:
-                logger.warning(f"Pull request {pull_number} not found")
+                logger.warning(f'Pull request {pull_number} not found')
                 return [], [], None, [], []
 
             # Get threads (comments) for the pull request
-            threads_url = f"{self.api_base_url}/git/repositories/{repo_id}/pullRequests/{pull_number}/threads"
-            threads_params = {"api-version": "7.1-preview.1"}
+            threads_url = f'{self.api_base_url}/git/repositories/{repo_id}/pullRequests/{pull_number}/threads'
+            threads_params = {'api-version': '7.1-preview.1'}
 
             threads_data = await self._make_api_request(
                 threads_url, params=threads_params
@@ -870,17 +870,17 @@ class AzureDevOpsPRHandler(AzureDevOpsIssueHandler):
             review_bodies = []
 
             if threads_data and isinstance(threads_data, dict):
-                threads = threads_data.get("value", [])
+                threads = threads_data.get('value', [])
 
                 for thread in threads:
-                    thread_id = str(thread.get("id", ""))
+                    thread_id = str(thread.get('id', ''))
                     thread_ids.append(thread_id)
 
-                    comments = thread.get("comments", [])
+                    comments = thread.get('comments', [])
                     if comments:
                         # Get the first comment as the main review body
                         first_comment = comments[0]
-                        content = first_comment.get("content", "")
+                        content = first_comment.get('content', '')
                         if content:
                             review_bodies.append(content)
 
@@ -892,8 +892,8 @@ class AzureDevOpsPRHandler(AzureDevOpsIssueHandler):
                             start_line=None,
                             original_line=None,
                             original_start_line=None,
-                            diff_hunk="",  # Would need additional API call to get diff
-                            path="",  # Would need additional API call to get file path
+                            diff_hunk='',  # Would need additional API call to get diff
+                            path='',  # Would need additional API call to get file path
                         )
                         review_threads.append(review_thread)
 
@@ -911,5 +911,5 @@ class AzureDevOpsPRHandler(AzureDevOpsIssueHandler):
             )
 
         except Exception as e:
-            logger.warning(f"Error downloading PR metadata: {e}")
+            logger.warning(f'Error downloading PR metadata: {e}')
             return [], [], None, [], []
