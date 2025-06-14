@@ -126,6 +126,9 @@ export function ChatInterface() {
     curAgentState === AgentState.AWAITING_USER_INPUT ||
     curAgentState === AgentState.FINISHED;
 
+  const shouldShowActionSuggestions =
+    isWaitingForUserInput || curAgentState === AgentState.RATE_LIMITED;
+
   return (
     <div className="h-full flex flex-col justify-between">
       {events.length === 0 && !optimisticUserMessage && (
@@ -152,11 +155,12 @@ export function ChatInterface() {
           />
         )}
 
-        {isWaitingForUserInput &&
+        {shouldShowActionSuggestions &&
           events.length > 0 &&
           !optimisticUserMessage && (
             <ActionSuggestions
               onSuggestionsClick={(value) => handleSendMessage(value, [])}
+              agentState={curAgentState}
             />
           )}
       </div>
