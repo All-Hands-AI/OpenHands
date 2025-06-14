@@ -45,6 +45,7 @@ docker run -it \
     docker.all-hands.dev/all-hands-ai/openhands:0.43 \
     python -m openhands.core.main -t "write a bash script that prints hi"
 ```
+> **Note**: If you used OpenHands before version 0.44, you may want to run `mv ~/.openhands-state ~/.openhands` to migrate your conversation history to the new location.
 
 The `-e SANDBOX_USER_ID=$(id -u)` is passed to the Docker command to ensure the sandbox user matches the host user’s
 permissions. This prevents the agent from creating root-owned files in the mounted workspace.

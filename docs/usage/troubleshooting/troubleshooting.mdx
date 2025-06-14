@@ -63,6 +63,9 @@ To fix this:
        --name openhands-app \
        docker.all-hands.dev/all-hands-ai/openhands:latest
    ```
+
+   > **Note**: If you used OpenHands before version 0.44, you may want to run `mv ~/.openhands-state ~/.openhands` to migrate your conversation history to the new location.
+
 2. Make sure to expose the same port with `-p 41234:41234` in your Docker command.
 3. If running with the development workflow, you can set this in your `config.toml` file:
    ```toml

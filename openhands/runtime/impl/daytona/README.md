@@ -95,6 +95,8 @@ docker run -it --rm --pull=always \
     docker.all-hands.dev/all-hands-ai/openhands:${OPENHANDS_VERSION}
 ```
 
+> **Note**: If you used OpenHands before version 0.44, you may want to run `mv ~/.openhands-state ~/.openhands` to migrate your conversation history to the new location.
+
 #### Windows:
 ```powershell
 docker run -it --rm --pull=always `
@@ -107,6 +109,8 @@ docker run -it --rm --pull=always `
     --name openhands-app `
     docker.all-hands.dev/all-hands-ai/openhands:${env:OPENHANDS_VERSION}
 ```
+
+> **Note**: If you used OpenHands before version 0.44, you may want to run `mv ~/.openhands-state ~/.openhands` to migrate your conversation history to the new location.
 
 > **Tip:** If you don't want your sandboxes to default to the EU region, you can set the `DAYTONA_TARGET` environment variable to `us`
 

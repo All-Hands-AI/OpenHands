@@ -60,6 +60,8 @@ docker run -it \
     python -m openhands.cli.main --override-cli-mode true
 ```
 
+> **Note**: If you used OpenHands before version 0.44, you may want to run `mv ~/.openhands-state ~/.openhands` to migrate your conversation history to the new location.
+
 This launches the CLI in Docker, allowing you to interact with OpenHands as described above.
 
 The `-e SANDBOX_USER_ID=$(id -u)` ensures files created by the agent in your workspace have the correct permissions.
