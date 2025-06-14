@@ -25,8 +25,8 @@ def llm_config():
 
 
 @pytest.fixture
-def factory_params(llm_config, request):
-    params = {
+def factory_params(llm_config):
+    return {
         'owner': 'test-owner',
         'repo': 'test-repo',
         'token': 'test-token',
@@ -34,14 +34,6 @@ def factory_params(llm_config, request):
         'base_domain': 'github.com',
         'llm_config': llm_config,
     }
-
-    # For Azure DevOps tests, use the correct repository format (project/repo)
-    marker = request.node.get_closest_marker('azure_devops')
-    if marker:
-        params['repo'] = 'test-project/test-repo'
-        params['base_domain'] = 'dev.azure.com'
-
-    return params
 
 
 test_cases = [
@@ -66,9 +58,13 @@ def test_handler_creation(
     expected_handler_type: type,
     request,
 ):
-    # Mark Azure DevOps tests
+    # Adjust parameters for Azure DevOps tests
     if platform == ProviderType.AZURE_DEVOPS:
         request.node.add_marker(pytest.mark.azure_devops)
+        factory_params = factory_params.copy()
+        factory_params['repo'] = 'test-project/test-repo'
+        factory_params['base_domain'] = 'dev.azure.com'
+    
     factory = IssueHandlerFactory(
         **factory_params, platform=platform, issue_type=issue_type
     )

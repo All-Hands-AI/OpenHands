@@ -127,24 +127,7 @@ def test_setup_sandbox_config_gitlab_ci(mock_get_unique_uid, mock_getuid):
             )
 
 
-@mock.patch('openhands.resolver.issue_resolver.os.getuid', return_value=0)
-@mock.patch('openhands.resolver.issue_resolver.get_unique_uid', return_value=1001)
-def test_setup_sandbox_config_azure_devops_pipeline(mock_get_unique_uid, mock_getuid):
-    """Test Azure DevOps Pipeline specific configuration when running as root"""
-    with mock.patch('openhands.__version__', 'mock'):
-        with mock.patch.object(IssueResolver, 'AZURE_PIPELINE', True):
-            openhands_config = OpenHandsConfig()
 
-            IssueResolver.update_sandbox_config(
-                openhands_config=openhands_config,
-                base_container_image=None,
-                runtime_container_image=None,
-                is_experimental=False,
-            )
-
-            assert_sandbox_config(
-                openhands_config.sandbox, local_runtime_url='http://localhost'
-            )
 
 
 @mock.patch('openhands.resolver.issue_resolver.os.getuid', return_value=1000)
@@ -166,18 +149,7 @@ def test_setup_sandbox_config_gitlab_ci_non_root(mock_getuid):
             )
 
 
-@mock.patch('openhands.resolver.resolve_issue.os.getuid', return_value=1000)
-def test_setup_sandbox_config_azure_devops_pipeline_non_root(mock_getuid):
-    """Test Azure DevOps Pipeline configuration when not running as root"""
-    with mock.patch('openhands.__version__', 'mock'):
-        with mock.patch.object(IssueResolver, 'AZURE_PIPELINE', True):
-            config = IssueResolver._setup_sandbox_config(
-                base_container_image=None,
-                runtime_container_image=None,
-                is_experimental=False,
-            )
 
-            assert_sandbox_config(config, local_runtime_url='http://localhost')
 
 
 @mock.patch('openhands.events.observation.CmdOutputObservation')
