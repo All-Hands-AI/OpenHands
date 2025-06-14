@@ -291,7 +291,9 @@ class IssueResolver:
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
             raise RuntimeError(f'Failed to change directory to /workspace.\n{obs}')
 
-        if (self.platform == ProviderType.GITLAB and self.GITLAB_CI) or (self.platform == ProviderType.AZURE_DEVOPS and self.AZURE_DEVOPS_CI):
+        if (self.platform == ProviderType.GITLAB and self.GITLAB_CI) or (
+            self.platform == ProviderType.AZURE_DEVOPS and self.AZURE_DEVOPS_CI
+        ):
             action = CmdRunAction(command='sudo chown -R 1001:0 /workspace/*')
             logger.info(action, extra={'msg_type': 'ACTION'})
             obs = runtime.run_action(action)
@@ -353,7 +355,9 @@ class IssueResolver:
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
             raise RuntimeError(f'Failed to set git config. Observation: {obs}')
 
-        if (self.platform == ProviderType.GITLAB and self.GITLAB_CI) or (self.platform == ProviderType.AZURE_DEVOPS and self.AZURE_DEVOPS_CI):
+        if (self.platform == ProviderType.GITLAB and self.GITLAB_CI) or (
+            self.platform == ProviderType.AZURE_DEVOPS and self.AZURE_DEVOPS_CI
+        ):
             action = CmdRunAction(command='sudo git add -A')
         else:
             action = CmdRunAction(command='git add -A')
