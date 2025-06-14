@@ -124,9 +124,7 @@ def test_setup_sandbox_config_gitlab_ci(mock_get_unique_uid, mock_getuid):
             )
 
             assert_sandbox_config(
-                openhands_config.sandbox,
-                local_runtime_url='http://localhost',
-                enable_auto_lint=True,
+                openhands_config.sandbox, local_runtime_url='http://localhost'
             )
 
 
@@ -145,9 +143,7 @@ def test_setup_sandbox_config_gitlab_ci_non_root(mock_getuid):
             )
 
             assert_sandbox_config(
-                openhands_config.sandbox,
-                local_runtime_url='http://localhost',
-                enable_auto_lint=True,
+                openhands_config.sandbox, local_runtime_url='http://localhost'
             )
 
 
