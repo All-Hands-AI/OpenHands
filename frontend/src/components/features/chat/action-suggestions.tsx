@@ -19,7 +19,8 @@ export function ActionSuggestions({
   const [hasPullRequest, setHasPullRequest] = React.useState(false);
 
   const providersAreSet = providers.length > 0;
-  const isGitLab = providers.includes("gitlab");
+  // Use the git_provider from the conversation metadata instead of just checking if gitlab is connected
+  const isGitLab = conversation?.git_provider === "gitlab";
 
   const pr = isGitLab ? "merge request" : "pull request";
   const prShort = isGitLab ? "MR" : "PR";
