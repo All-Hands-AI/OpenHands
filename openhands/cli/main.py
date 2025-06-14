@@ -1,6 +1,9 @@
 import asyncio
+import importlib.resources
 import logging
 import os
+import pathlib
+import subprocess
 import sys
 
 from prompt_toolkit import print_formatted_text
@@ -347,6 +350,115 @@ async def run_setup_flow(config: OpenHandsConfig, settings_store: FileSettingsSt
     await modify_llm_settings_basic(config, settings_store)
 
 
+def attempt_vscode_extension_install():
+    """
+    Checks if running in VS Code and attempts to install the OpenHands companion extension.
+    This is a best-effort, one-time attempt.
+    """
+    if os.environ.get('TERM_PROGRAM') == 'vscode':
+        flag_dir = pathlib.Path.home() / '.openhands'
+        flag_file = flag_dir / '.vscode_extension_install_attempted'
+
+        try:
+            flag_dir.mkdir(parents=True, exist_ok=True)
+            if flag_file.exists():
+                return  # Already attempted
+        except OSError as e:
+            logger.warning(
+                f'Could not create or check VS Code extension flag directory: {e}'
+            )
+            return  # Don't proceed if we can't manage the flag
+
+        print('INFO: Setting up OpenHands VS Code integration...')
+        extension_id = 'openhands.openhands-vscode'
+        vsix_filename = 'openhands-vscode-0.0.1.vsix'
+        install_command_executed = False
+        installation_successful_message_shown = False
+
+        # Attempt 1: Install from bundled .vsix
+        try:
+            with importlib.resources.as_file(
+                importlib.resources.files('openhands').joinpath(
+                    'resources', vsix_filename
+                )
+            ) as vsix_path:
+                if vsix_path.exists():
+                    # print(f"DEBUG: Found bundled .vsix at '{vsix_path}'. Attempting install...") # Optional debug
+                    process = subprocess.run(
+                        ['code', '--install-extension', str(vsix_path), '--force'],
+                        capture_output=True,
+                        text=True,
+                        check=False,
+                    )
+                    install_command_executed = True
+                    if process.returncode == 0:
+                        print(
+                            'INFO: VS Code extension installation command sent successfully.'
+                        )
+                        installation_successful_message_shown = True
+                    else:
+                        logger.warning(
+                            f'Bundled .vsix installation failed. RC: {process.returncode}, STDOUT: {process.stdout.strip()}, STDERR: {process.stderr.strip()}'
+                        )
+        except (FileNotFoundError, TypeError, Exception) as e:
+            logger.info(
+                f"Could not locate/process bundled .vsix ('{vsix_filename}'): {e}. Proceeding to Marketplace attempt."
+            )
+
+        # Attempt 2: Install from Marketplace (if bundled failed or wasn't found)
+        if not installation_successful_message_shown:
+            try:
+                process = subprocess.run(
+                    ['code', '--install-extension', extension_id, '--force'],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                install_command_executed = True
+                if process.returncode == 0:
+                    print(
+                        'INFO: VS Code extension installation command sent successfully.'
+                    )
+                    installation_successful_message_shown = True
+                else:
+                    # This is a common failure point if 'code' is fine but install fails (e.g. user cancels prompt in VSCode)
+                    print(
+                        'INFO: VS Code extension installation command might have failed.'
+                    )
+                    logger.warning(
+                        f"Marketplace installation for '{extension_id}' failed. RC: {process.returncode}, STDOUT: {process.stdout.strip()}, STDERR: {process.stderr.strip()}"
+                    )
+
+            except FileNotFoundError:
+                print(
+                    "INFO: 'code' command not found. Please ensure VS Code is installed and the 'code' command is in your PATH."
+                )
+                install_command_executed = False  # 'code' command itself failed
+            except Exception as e:
+                print(
+                    f'INFO: An unexpected error occurred while trying to install the VS Code extension: {e}'
+                )
+                print(
+                    f"      Please try installing '{extension_id}' manually from the VS Code Marketplace."
+                )
+                install_command_executed = False
+
+        # Final messages based on whether any command was run
+        if not install_command_executed and not installation_successful_message_shown:
+            # This case means 'code' was not found, and no prior success.
+            pass  # The FileNotFoundError message above is sufficient.
+        elif install_command_executed and not installation_successful_message_shown:
+            # Means 'code' ran but didn't result in a success message (e.g. user cancelled, other error)
+            # The messages printed during the marketplace attempt should cover this.
+            pass
+
+        # Always mark attempt as done, regardless of success/failure of install attempts
+        try:
+            flag_file.touch()  # Mark that an attempt (successful or not) was made
+        except OSError as e:
+            logger.warning(f'Could not create VS Code extension attempt flag file: {e}')
+
+
 async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
     """Runs the agent in CLI mode."""
     args = parse_arguments()
@@ -355,6 +467,9 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
 
     # Load config from toml and override with command line arguments
     config: OpenHandsConfig = setup_config_from_args(args)
+
+    # Attempt to install VS Code extension if applicable (one-time attempt)
+    attempt_vscode_extension_install()
 
     # Load settings from Settings Store
     # TODO: Make this generic?
