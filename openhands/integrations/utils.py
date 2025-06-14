@@ -25,7 +25,7 @@ async def validate_provider_token(
         None if the token is invalid for all services
     """
     # Skip validation for empty tokens
-    if token is None or not token.get_secret_value().strip():
+    if token is None:
         return None
 
     # Try GitHub first
