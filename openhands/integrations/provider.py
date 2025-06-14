@@ -14,9 +14,25 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import Action
 from openhands.events.action.commands import CmdRunAction
 from openhands.events.stream import EventStream
-from openhands.integrations.azure_devops.azure_devops_service import (
-    AzureDevOpsServiceImpl,
-)
+
+# Import Azure DevOps service conditionally
+try:
+    from openhands.integrations.azure_devops.azure_devops_service import (
+        AzureDevOpsServiceImpl,
+    )
+
+    AZURE_DEVOPS_AVAILABLE = True
+except ImportError:
+    # Create a placeholder class when Azure DevOps is not available
+    class AzureDevOpsServiceImpl:  # type: ignore
+        def __init__(self, *args, **kwargs):
+            raise ImportError(
+                "Azure DevOps integration requires the 'azure-devops' package. "
+                'Install it with: pip install azure-devops'
+            )
+
+    AZURE_DEVOPS_AVAILABLE = False
+
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.service_types import (

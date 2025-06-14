@@ -6,8 +6,23 @@ from __future__ import annotations
 
 from typing import Any
 
-from azure.devops.connection import Connection
-from msrest.authentication import BasicAuthentication
+# Import Azure DevOps packages conditionally to handle environments where they're not installed
+try:
+    from azure.devops.connection import Connection
+    from msrest.authentication import BasicAuthentication
+
+    AZURE_DEVOPS_AVAILABLE = True
+except ImportError:
+    # Create mock classes for environments without azure-devops package
+    class Connection:  # type: ignore
+        def __init__(self, *args, **kwargs):
+            pass
+
+    class BasicAuthentication:  # type: ignore
+        def __init__(self, *args, **kwargs):
+            pass
+
+    AZURE_DEVOPS_AVAILABLE = False
 
 # Import models conditionally to handle different versions of the azure-devops package
 try:
@@ -58,6 +73,12 @@ class AzureDevOpsServiceImpl(BaseGitService):
             external_token_manager: Whether to use external token manager (not used for Azure DevOps)
             organization_url: The Azure DevOps organization URL (e.g., https://dev.azure.com/organization)
         """
+        if not AZURE_DEVOPS_AVAILABLE:
+            raise ImportError(
+                "Azure DevOps integration requires the 'azure-devops' package. "
+                'Install it with: pip install azure-devops'
+            )
+
         self.user_id = user_id
         self.token = token
         self.external_auth_id = external_auth_id
