@@ -1,6 +1,10 @@
 from inspect import signature
 
-from openhands.runtime.plugins.agent_skills import file_ops, file_reader
+from openhands.runtime.plugins.agent_skills import (
+    a2a_client,
+    file_ops,
+    file_reader,
+)
 from openhands.runtime.plugins.agent_skills.utils.dependency import import_functions
 
 import_functions(
@@ -9,8 +13,13 @@ import_functions(
 import_functions(
     module=file_reader, function_names=file_reader.__all__, target_globals=globals()
 )
+import_functions(
+    module=a2a_client,
+    function_names=a2a_client.__all__,
+    target_globals=globals(),
+)
 
-__all__ = file_ops.__all__ + file_reader.__all__
+__all__ = file_ops.__all__ + file_reader.__all__ + a2a_client.__all__
 
 try:
     from openhands.runtime.plugins.agent_skills import repo_ops
