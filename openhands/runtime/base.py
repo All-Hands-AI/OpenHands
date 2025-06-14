@@ -427,11 +427,38 @@ class Runtime(FileEditRuntimeMixin):
                 if provider == ProviderType.GITLAB:
                     remote_repo_url = f'https://oauth2:{git_token.get_secret_value()}@{domain}/{selected_repository}.git'
                 elif provider == ProviderType.AZURE_DEVOPS:
-                    remote_repo_url = f'https://{git_token.get_secret_value()}@{domain}/{selected_repository}.git'
+                    # Azure DevOps URL format: https://token@dev.azure.com/organization/project/_git/repository
+                    # Extract organization from domain if it's a full URL
+                    if domain.startswith('https://dev.azure.com/'):
+                        org_name = domain.replace('https://dev.azure.com/', '').rstrip('/')
+                        base_domain = 'dev.azure.com'
+                    else:
+                        # If domain is just the host, we need to get organization from the token host
+                        token_host = git_provider_tokens[provider].host
+                        if token_host and token_host.startswith('https://dev.azure.com/'):
+                            org_name = token_host.replace('https://dev.azure.com/', '').rstrip('/')
+                            base_domain = 'dev.azure.com'
+                        else:
+                            # Fallback: assume domain contains the organization
+                            org_name = domain.replace('dev.azure.com', '').strip('/')
+                            base_domain = 'dev.azure.com'
+                    
+                    # Parse project/repo from selected_repository
+                    repo_parts = selected_repository.split('/')
+                    if len(repo_parts) == 2:
+                        project_name, repo_name = repo_parts
+                        remote_repo_url = f'https://{git_token.get_secret_value()}@{base_domain}/{org_name}/{project_name}/_git/{repo_name}'
+                    else:
+                        # Fallback to original format if parsing fails
+                        remote_repo_url = f'https://{git_token.get_secret_value()}@{domain}/{selected_repository}.git'
                 else:
                     remote_repo_url = f'https://{git_token.get_secret_value()}@{domain}/{selected_repository}.git'
             else:
-                remote_repo_url = f'https://{domain}/{selected_repository}.git'
+                if provider == ProviderType.AZURE_DEVOPS:
+                    # Public Azure DevOps repos (rare, but handle gracefully)
+                    remote_repo_url = f'https://{domain}/{selected_repository}.git'
+                else:
+                    remote_repo_url = f'https://{domain}/{selected_repository}.git'
         else:
             remote_repo_url = f'https://{domain}/{selected_repository}.git'
 
