@@ -1,9 +1,9 @@
-import traceback
-
 from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.integrations.azure_devops.azure_devops_service import AzureDevOpsServiceImpl
+from openhands.integrations.azure_devops.azure_devops_service import (
+    AzureDevOpsServiceImpl,
+)
 from openhands.integrations.github.github_service import GitHubService
 from openhands.integrations.gitlab.gitlab_service import GitLabService
 from openhands.integrations.provider import ProviderType
@@ -50,7 +50,7 @@ async def validate_provider_token(
     # Try Azure DevOps last
     azure_devops_error = None
     try:
-        azure_devops_service = AzureDevOpsServiceImpl(token=token, base_domain=base_domain)
+        azure_devops_service = AzureDevOpsServiceImpl(token=token)
         await azure_devops_service.get_user()
         return ProviderType.AZURE_DEVOPS
     except Exception as e:
