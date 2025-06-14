@@ -138,10 +138,7 @@ class ProviderHandler:
     async def get_user(self) -> User:
         """Get user information from the first available provider"""
         for provider in self.provider_tokens:
-            token = self.provider_tokens[provider]
-            # Skip providers with empty tokens
-            if not token.token or not token.token.get_secret_value():
-                continue
+            self.provider_tokens[provider]
 
             try:
                 service = self._get_service(provider)
@@ -164,10 +161,7 @@ class ProviderHandler:
 
         all_repos: list[Repository] = []
         for provider in self.provider_tokens:
-            token = self.provider_tokens[provider]
-            # Skip providers with empty tokens
-            if not token.token or not token.token.get_secret_value():
-                continue
+            self.provider_tokens[provider]
 
             try:
                 service = self._get_service(provider)

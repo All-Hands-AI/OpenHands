@@ -1,9 +1,10 @@
-import os
+import base64
 from typing import Any
 
 import httpx
 from pydantic import SecretStr
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.service_types import (
     BaseGitService,
     Branch,
@@ -51,8 +52,8 @@ class BitbucketService(BaseGitService, GitService):
 
         if token:
             self.token = token
-        elif os.environ.get('BITBUCKET_TOKEN'):
-            self.token = SecretStr(os.environ.get('BITBUCKET_TOKEN', ''))
+        if base_domain:
+            self.BASE_URL = f'https://api.{base_domain}/2.0'
 
     @property
     def provider(self) -> str:
@@ -64,6 +65,26 @@ class BitbucketService(BaseGitService, GitService):
             # This would be implemented by a custom token manager
             return None
         return self.token
+
+    def _has_token_expired(self, status_code: int) -> bool:
+        return status_code == 401
+
+    async def _get_bitbucket_headers(self) -> dict[str, str]:
+        """Get headers for Bitbucket API requests."""
+        token_value = self.token.get_secret_value()
+
+        # Check if the token contains a colon, which indicates it's in username:password format
+        if ':' in token_value:
+            auth_str = base64.b64encode(token_value.encode()).decode()
+            return {
+                'Authorization': f'Basic {auth_str}',
+                'Accept': 'application/json',
+            }
+        else:
+            return {
+                'Authorization': f'Bearer {token_value}',
+                'Accept': 'application/json',
+            }
 
     async def _make_request(
         self,
@@ -86,30 +107,22 @@ class BitbucketService(BaseGitService, GitService):
             RateLimitError: If the rate limit is exceeded
             UnknownException: For other errors
         """
-        # Bitbucket Cloud API supports both Bearer token and Basic auth
-        # For app passwords, we need to use Basic auth with the format username:app_password
-        token_value = self.token.get_secret_value()
-
-        # Check if the token contains a colon, which indicates it's in username:password format
-        if ':' in token_value:
-            import base64
-
-            auth_str = base64.b64encode(token_value.encode()).decode()
-            headers = {
-                'Authorization': f'Basic {auth_str}',
-                'Accept': 'application/json',
-            }
-        else:
-            headers = {
-                'Authorization': f'Bearer {token_value}',
-                'Accept': 'application/json',
-            }
-
         try:
             async with httpx.AsyncClient() as client:
+                bitbucket_headers = await self._get_bitbucket_headers()
                 response = await self.execute_request(
-                    client, url, headers, params, method
+                    client, url, bitbucket_headers, params, method
                 )
+                if self.refresh and self._has_token_expired(response.status_code):
+                    await self.get_latest_token()
+                    bitbucket_headers = await self._get_bitbucket_headers()
+                    response = await self.execute_request(
+                        client=client,
+                        url=url,
+                        headers=bitbucket_headers,
+                        params=params,
+                        method=method,
+                    )
                 response.raise_for_status()
                 return response.json(), dict(response.headers)
         except httpx.HTTPStatusError as e:
@@ -254,8 +267,6 @@ class BitbucketService(BaseGitService, GitService):
                         )
             except Exception as nested_e:
                 # If both approaches fail, log the error and return an empty list
-                from openhands.core.logger import openhands_logger as logger
-
                 logger.warning(
                     f'Failed to get repositories from Bitbucket: {e}, then: {nested_e}'
                 )
@@ -332,6 +343,7 @@ class BitbucketService(BaseGitService, GitService):
         target_branch: str,
         title: str,
         body: str | None = None,
+        draft: bool = False,
     ) -> str:
         """Creates a pull request in Bitbucket.
 
@@ -341,6 +353,7 @@ class BitbucketService(BaseGitService, GitService):
             target_branch: The target branch name
             title: The title of the pull request
             body: The description of the pull request
+            draft: Whether to create a draft pull request (not supported by Bitbucket)
 
         Returns:
             The URL of the created pull request

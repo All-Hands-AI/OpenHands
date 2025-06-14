@@ -124,7 +124,9 @@ def test_setup_sandbox_config_gitlab_ci(mock_get_unique_uid, mock_getuid):
             )
 
             assert_sandbox_config(
-                openhands_config.sandbox, local_runtime_url='http://localhost', enable_auto_lint=True
+                openhands_config.sandbox,
+                local_runtime_url='http://localhost',
+                enable_auto_lint=True,
             )
 
 
@@ -142,13 +144,11 @@ def test_setup_sandbox_config_gitlab_ci_non_root(mock_getuid):
                 is_experimental=False,
             )
 
-<<<<<<< HEAD
-            assert_sandbox_config(openhands_config.sandbox, local_runtime_url='http://localhost', enable_auto_lint=True)
-=======
             assert_sandbox_config(
-                openhands_config.sandbox, local_runtime_url='http://localhost'
+                openhands_config.sandbox,
+                local_runtime_url='http://localhost',
+                enable_auto_lint=True,
             )
->>>>>>> 0c307ea12e9979a2958f674645b2e3c3b95dd295
 
 
 @mock.patch('openhands.events.observation.CmdOutputObservation')

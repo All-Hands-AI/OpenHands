@@ -1,0 +1,3186 @@
+diff --git a/frontend/__tests__/routes/git-settings.test.tsx b/frontend/__tests__/routes/git-settings.test.tsx
+index 0297a2d3c9dd..638988c84d04 100644
+--- a/frontend/__tests__/routes/git-settings.test.tsx
++++ b/frontend/__tests__/routes/git-settings.test.tsx
+@@ -89,6 +89,9 @@ describe("Content", () => {
+     await screen.findByTestId("gitlab-token-input");
+     await screen.findByTestId("gitlab-token-help-anchor");
+
++    await screen.findByTestId("bitbucket-token-input");
++    await screen.findByTestId("bitbucket-token-help-anchor");
++
+     getConfigSpy.mockResolvedValue(VALID_SAAS_CONFIG);
+     queryClient.invalidateQueries();
+     rerender();
+@@ -107,6 +110,13 @@ describe("Content", () => {
+       expect(
+         screen.queryByTestId("gitlab-token-help-anchor"),
+       ).not.toBeInTheDocument();
++
++      expect(
++        screen.queryByTestId("bitbucket-token-input"),
++      ).not.toBeInTheDocument();
++      expect(
++        screen.queryByTestId("bitbucket-token-help-anchor"),
++      ).not.toBeInTheDocument();
+     });
+   });
+
+@@ -229,6 +239,7 @@ describe("Content", () => {
+ describe("Form submission", () => {
+   it("should save the GitHub token", async () => {
+     const saveProvidersSpy = vi.spyOn(SecretsService, "addGitProvider");
++    saveProvidersSpy.mockImplementation(() => Promise.resolve(true));
+     const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+     getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
+
+@@ -243,15 +254,49 @@ describe("Form submission", () => {
+     expect(saveProvidersSpy).toHaveBeenCalledWith({
+       github: { token: "test-token", host: "" },
+       gitlab: { token: "", host: "" },
++      bitbucket: { token: "", host: "" },
+     });
++  });
++
++  it("should save GitLab tokens", async () => {
++    const saveProvidersSpy = vi.spyOn(SecretsService, "addGitProvider");
++    saveProvidersSpy.mockImplementation(() => Promise.resolve(true));
++    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
++    getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
++
++    renderGitSettingsScreen();
+
+     const gitlabInput = await screen.findByTestId("gitlab-token-input");
++    const submit = await screen.findByTestId("submit-button");
++
+     await userEvent.type(gitlabInput, "test-token");
+     await userEvent.click(submit);
+
+     expect(saveProvidersSpy).toHaveBeenCalledWith({
+-      github: { token: "test-token", host: "" },
++      github: { token: "", host: "" },
++      gitlab: { token: "test-token", host: "" },
++      bitbucket: { token: "", host: "" },
++    });
++  });
++
++  it("should save the Bitbucket token", async () => {
++    const saveProvidersSpy = vi.spyOn(SecretsService, "addGitProvider");
++    saveProvidersSpy.mockImplementation(() => Promise.resolve(true));
++    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
++    getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
++
++    renderGitSettingsScreen();
++
++    const bitbucketInput = await screen.findByTestId("bitbucket-token-input");
++    const submit = await screen.findByTestId("submit-button");
++
++    await userEvent.type(bitbucketInput, "test-token");
++    await userEvent.click(submit);
++
++    expect(saveProvidersSpy).toHaveBeenCalledWith({
++      github: { token: "", host: "" },
+       gitlab: { token: "", host: "" },
++      bitbucket: { token: "test-token", host: "" },
+     });
+   });
+
+diff --git a/frontend/src/assets/branding/bitbucket-logo.svg b/frontend/src/assets/branding/bitbucket-logo.svg
+new file mode 100644
+index 000000000000..326ab8064250
+--- /dev/null
++++ b/frontend/src/assets/branding/bitbucket-logo.svg
+@@ -0,0 +1 @@
++<svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><title>Bitbucket</title><path d="M.778 1.213a.768.768 0 00-.768.892l3.263 19.81c.084.5.515.868 1.022.873H19.95a.772.772 0 00.77-.646l3.27-20.03a.768.768 0 00-.768-.891zM14.52 15.53H9.522L8.17 8.466h7.561z"/></svg>
+diff --git a/frontend/src/components/features/chat/action-suggestions.tsx b/frontend/src/components/features/chat/action-suggestions.tsx
+index 4bf65c9f95b6..263c6023bc6c 100644
+--- a/frontend/src/components/features/chat/action-suggestions.tsx
++++ b/frontend/src/components/features/chat/action-suggestions.tsx
+@@ -20,19 +20,22 @@ export function ActionSuggestions({
+
+   const providersAreSet = providers.length > 0;
+   const isGitLab = providers.includes("gitlab");
++  const isBitbucket = providers.includes("bitbucket");
+
+   const pr = isGitLab ? "merge request" : "pull request";
+   const prShort = isGitLab ? "MR" : "PR";
+
++  const getProviderName = () => {
++    if (isGitLab) return "GitLab";
++    if (isBitbucket) return "Bitbucket";
++    return "GitHub";
++  };
++
+   const terms = {
+     pr,
+     prShort,
+-    pushToBranch: `Please push the changes to a remote branch on ${
+-      isGitLab ? "GitLab" : "GitHub"
+-    }, but do NOT create a ${pr}. Please use the exact SAME branch name as the one you are currently on.`,
+-    createPR: `Please push the changes to ${
+-      isGitLab ? "GitLab" : "GitHub"
+-    } and open a ${pr}. Please create a meaningful branch name that describes the changes. If a ${pr} template exists in the repository, please follow it when creating the ${prShort} description.`,
++    pushToBranch: `Please push the changes to a remote branch on ${getProviderName()}, but do NOT create a ${pr}. Please use the exact SAME branch name as the one you are currently on.`,
++    createPR: `Please push the changes to ${getProviderName()} and open a ${pr}. Please create a meaningful branch name that describes the changes. If a ${pr} template exists in the repository, please follow it when creating the ${prShort} description.`,
+     pushToPR: `Please push the latest changes to the existing ${pr}.`,
+   };
+
+diff --git a/frontend/src/components/features/home/tasks/task-card.tsx b/frontend/src/components/features/home/tasks/task-card.tsx
+index 7b53e03b5167..1958f0055200 100644
+--- a/frontend/src/components/features/home/tasks/task-card.tsx
++++ b/frontend/src/components/features/home/tasks/task-card.tsx
+@@ -54,6 +54,10 @@ export function TaskCard({ task }: TaskCardProps) {
+     const issueType =
+       task.task_type === "OPEN_ISSUE" ? "issues" : "merge_requests";
+     href = `https://gitlab.com/${task.repo}/-/${issueType}/${task.issue_number}`;
++  } else if (task.git_provider === "bitbucket") {
++    const issueType =
++      task.task_type === "OPEN_ISSUE" ? "issues" : "pull-requests";
++    href = `https://bitbucket.org/${task.repo}/${issueType}/${task.issue_number}`;
+   } else {
+     const hrefType = task.task_type === "OPEN_ISSUE" ? "issues" : "pull";
+     href = `https://github.com/${task.repo}/${hrefType}/${task.issue_number}`;
+diff --git a/frontend/src/components/features/settings/git-settings/bitbucket-token-help-anchor.tsx b/frontend/src/components/features/settings/git-settings/bitbucket-token-help-anchor.tsx
+new file mode 100644
+index 000000000000..17b193fa7f1f
+--- /dev/null
++++ b/frontend/src/components/features/settings/git-settings/bitbucket-token-help-anchor.tsx
+@@ -0,0 +1,30 @@
++import { Trans } from "react-i18next";
++import { I18nKey } from "#/i18n/declaration";
++
++export function BitbucketTokenHelpAnchor() {
++  return (
++    <p data-testid="bitbucket-token-help-anchor" className="text-xs">
++      <Trans
++        i18nKey={I18nKey.BITBUCKET$TOKEN_HELP_TEXT}
++        components={[
++          <a
++            key="bitbucket-token-help-anchor-link"
++            aria-label="Bitbucket token help link"
++            href="https://bitbucket.org/account/settings/app-passwords/new?scopes=repository:write,pullrequest:write,issue:write"
++            target="_blank"
++            className="underline underline-offset-2"
++            rel="noopener noreferrer"
++          />,
++          <a
++            key="bitbucket-token-help-anchor-link-2"
++            aria-label="Bitbucket token see more link"
++            href="https://support.atlassian.com/bitbucket-cloud/docs/app-passwords/"
++            target="_blank"
++            className="underline underline-offset-2"
++            rel="noopener noreferrer"
++          />,
++        ]}
++      />
++    </p>
++  );
++}
+diff --git a/frontend/src/components/features/settings/git-settings/bitbucket-token-input.tsx b/frontend/src/components/features/settings/git-settings/bitbucket-token-input.tsx
+new file mode 100644
+index 000000000000..99e27d325f23
+--- /dev/null
++++ b/frontend/src/components/features/settings/git-settings/bitbucket-token-input.tsx
+@@ -0,0 +1,64 @@
++import { useTranslation } from "react-i18next";
++import { I18nKey } from "#/i18n/declaration";
++import { SettingsInput } from "../settings-input";
++import { BitbucketTokenHelpAnchor } from "./bitbucket-token-help-anchor";
++import { KeyStatusIcon } from "../key-status-icon";
++
++interface BitbucketTokenInputProps {
++  onChange: (value: string) => void;
++  onBitbucketHostChange: (value: string) => void;
++  isBitbucketTokenSet: boolean;
++  name: string;
++  bitbucketHostSet: string | null | undefined;
++}
++
++export function BitbucketTokenInput({
++  onChange,
++  onBitbucketHostChange,
++  isBitbucketTokenSet,
++  name,
++  bitbucketHostSet,
++}: BitbucketTokenInputProps) {
++  const { t } = useTranslation();
++
++  return (
++    <div className="flex flex-col gap-6">
++      <SettingsInput
++        testId={name}
++        name={name}
++        onChange={onChange}
++        label={t(I18nKey.BITBUCKET$TOKEN_LABEL)}
++        type="password"
++        className="w-full max-w-[680px]"
++        placeholder={isBitbucketTokenSet ? "<hidden>" : "username:app_password"}
++        startContent={
++          isBitbucketTokenSet && (
++            <KeyStatusIcon
++              testId="bb-set-token-indicator"
++              isSet={isBitbucketTokenSet}
++            />
++          )
++        }
++      />
++
++      <SettingsInput
++        onChange={onBitbucketHostChange || (() => {})}
++        name="bitbucket-host-input"
++        testId="bitbucket-host-input"
++        label={t(I18nKey.BITBUCKET$HOST_LABEL)}
++        type="text"
++        className="w-full max-w-[680px]"
++        placeholder="bitbucket.org"
++        defaultValue={bitbucketHostSet || undefined}
++        startContent={
++          bitbucketHostSet &&
++          bitbucketHostSet.trim() !== "" && (
++            <KeyStatusIcon testId="bb-set-host-indicator" isSet />
++          )
++        }
++      />
++
++      <BitbucketTokenHelpAnchor />
++    </div>
++  );
++}
+diff --git a/frontend/src/components/features/waitlist/auth-modal.tsx b/frontend/src/components/features/waitlist/auth-modal.tsx
+index 3fbafea011c2..2bba95560b18 100644
+--- a/frontend/src/components/features/waitlist/auth-modal.tsx
++++ b/frontend/src/components/features/waitlist/auth-modal.tsx
+@@ -7,6 +7,7 @@ import { ModalBody } from "#/components/shared/modals/modal-body";
+ import { BrandButton } from "../settings/brand-button";
+ import GitHubLogo from "#/assets/branding/github-logo.svg?react";
+ import GitLabLogo from "#/assets/branding/gitlab-logo.svg?react";
++import BitbucketLogo from "#/assets/branding/bitbucket-logo.svg?react";
+ import { useAuthUrl } from "#/hooks/use-auth-url";
+ import { GetConfigResponse } from "#/api/open-hands.types";
+
+@@ -23,6 +24,11 @@ export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
+     identityProvider: "gitlab",
+   });
+
++  const bitbucketAuthUrl = useAuthUrl({
++    appMode: appMode || null,
++    identityProvider: "bitbucket",
++  });
++
+   const handleGitHubAuth = () => {
+     if (githubAuthUrl) {
+       // Always start the OIDC flow, let the backend handle TOS check
+@@ -37,6 +43,13 @@ export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
+     }
+   };
+
++  const handleBitbucketAuth = () => {
++    if (bitbucketAuthUrl) {
++      // Always start the OIDC flow, let the backend handle TOS check
++      window.location.href = bitbucketAuthUrl;
++    }
++  };
++
+   return (
+     <ModalBackdrop>
+       <ModalBody className="border border-tertiary">
+@@ -67,6 +80,16 @@ export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
+           >
+             {t(I18nKey.GITLAB$CONNECT_TO_GITLAB)}
+           </BrandButton>
++
++          <BrandButton
++            type="button"
++            variant="primary"
++            onClick={handleBitbucketAuth}
++            className="w-full"
++            startContent={<BitbucketLogo width={20} height={20} />}
++          >
++            {t(I18nKey.BITBUCKET$CONNECT_TO_BITBUCKET)}
++          </BrandButton>
+         </div>
+       </ModalBody>
+     </ModalBackdrop>
+diff --git a/frontend/src/hooks/use-auto-login.ts b/frontend/src/hooks/use-auto-login.ts
+index 5a579e581bde..2dfab7fd1f3c 100644
+--- a/frontend/src/hooks/use-auto-login.ts
++++ b/frontend/src/hooks/use-auto-login.ts
+@@ -15,7 +15,7 @@ export const useAutoLogin = () => {
+   // Get the stored login method
+   const loginMethod = getLoginMethod();
+
+-  // Get the auth URLs for both providers
++  // Get the auth URLs for all providers
+   const githubAuthUrl = useAuthUrl({
+     appMode: config?.APP_MODE || null,
+     identityProvider: "github",
+@@ -26,6 +26,11 @@ export const useAutoLogin = () => {
+     identityProvider: "gitlab",
+   });
+
++  const bitbucketAuthUrl = useAuthUrl({
++    appMode: config?.APP_MODE || null,
++    identityProvider: "bitbucket",
++  });
++
+   useEffect(() => {
+     // Only auto-login in SAAS mode
+     if (config?.APP_MODE !== "saas") {
+@@ -48,8 +53,14 @@ export const useAutoLogin = () => {
+     }
+
+     // Get the appropriate auth URL based on the stored login method
+-    const authUrl =
+-      loginMethod === LoginMethod.GITHUB ? githubAuthUrl : gitlabAuthUrl;
++    let authUrl: string | null = null;
++    if (loginMethod === LoginMethod.GITHUB) {
++      authUrl = githubAuthUrl;
++    } else if (loginMethod === LoginMethod.GITLAB) {
++      authUrl = gitlabAuthUrl;
++    } else if (loginMethod === LoginMethod.BITBUCKET) {
++      authUrl = bitbucketAuthUrl;
++    }
+
+     // If we have an auth URL, redirect to it
+     if (authUrl) {
+@@ -68,5 +79,6 @@ export const useAutoLogin = () => {
+     loginMethod,
+     githubAuthUrl,
+     gitlabAuthUrl,
++    bitbucketAuthUrl,
+   ]);
+ };
+diff --git a/frontend/src/i18n/declaration.ts b/frontend/src/i18n/declaration.ts
+index 8694683f1d3a..d8c6dc5c8762 100644
+--- a/frontend/src/i18n/declaration.ts
++++ b/frontend/src/i18n/declaration.ts
+@@ -508,6 +508,7 @@ export enum I18nKey {
+   SETTINGS_FORM$BASE_URL = "SETTINGS_FORM$BASE_URL",
+   GITHUB$CONNECT_TO_GITHUB = "GITHUB$CONNECT_TO_GITHUB",
+   GITLAB$CONNECT_TO_GITLAB = "GITLAB$CONNECT_TO_GITLAB",
++  BITBUCKET$CONNECT_TO_BITBUCKET = "BITBUCKET$CONNECT_TO_BITBUCKET",
+   AUTH$SIGN_IN_WITH_IDENTITY_PROVIDER = "AUTH$SIGN_IN_WITH_IDENTITY_PROVIDER",
+   WAITLIST$JOIN_WAITLIST = "WAITLIST$JOIN_WAITLIST",
+   ACCOUNT_SETTINGS$ADDITIONAL_SETTINGS = "ACCOUNT_SETTINGS$ADDITIONAL_SETTINGS",
+@@ -524,6 +525,12 @@ export enum I18nKey {
+   GITLAB$TOKEN_HELP_TEXT = "GITLAB$TOKEN_HELP_TEXT",
+   GITLAB$TOKEN_LINK_TEXT = "GITLAB$TOKEN_LINK_TEXT",
+   GITLAB$INSTRUCTIONS_LINK_TEXT = "GITLAB$INSTRUCTIONS_LINK_TEXT",
++  BITBUCKET$TOKEN_LABEL = "BITBUCKET$TOKEN_LABEL",
++  BITBUCKET$HOST_LABEL = "BITBUCKET$HOST_LABEL",
++  BITBUCKET$GET_TOKEN = "BITBUCKET$GET_TOKEN",
++  BITBUCKET$TOKEN_HELP_TEXT = "BITBUCKET$TOKEN_HELP_TEXT",
++  BITBUCKET$TOKEN_LINK_TEXT = "BITBUCKET$TOKEN_LINK_TEXT",
++  BITBUCKET$INSTRUCTIONS_LINK_TEXT = "BITBUCKET$INSTRUCTIONS_LINK_TEXT",
+   GITLAB$OR_SEE = "GITLAB$OR_SEE",
+   COMMON$DOCUMENTATION = "COMMON$DOCUMENTATION",
+   AGENT_ERROR$ERROR_ACTION_NOT_EXECUTED = "AGENT_ERROR$ERROR_ACTION_NOT_EXECUTED",
+diff --git a/frontend/src/i18n/translation.json b/frontend/src/i18n/translation.json
+index a240e8323758..d2abc5b71ebe 100644
+--- a/frontend/src/i18n/translation.json
++++ b/frontend/src/i18n/translation.json
+@@ -816,20 +816,20 @@
+         "uk": "{\n  \"sse_servers\": [],\n  \"stdio_servers\": []\n}"
+     },
+     "HOME$CONNECT_PROVIDER_MESSAGE": {
+-        "en": "To get started with suggested tasks, please connect your GitHub or GitLab account.",
+-        "ja": "提案されたタスクを始めるには、GitHubまたはGitLabアカウントを接続してください。",
+-        "zh-CN": "要开始使用建议的任务，请连接您的GitHub或GitLab账户。",
+-        "zh-TW": "要開始使用建議的任務，請連接您的GitHub或GitLab帳戶。",
+-        "ko-KR": "제안된 작업을 시작하려면 GitHub 또는 GitLab 계정을 연결하세요.",
+-        "no": "For å komme i gang med foreslåtte oppgaver, vennligst koble til GitHub eller GitLab-kontoen din.",
+-        "it": "Per iniziare con le attività suggerite, collega il tuo account GitHub o GitLab.",
+-        "pt": "Para começar com tarefas sugeridas, conecte sua conta GitHub ou GitLab.",
+-        "es": "Para comenzar con las tareas sugeridas, conecte su cuenta de GitHub o GitLab.",
+-        "ar": "للبدء بالمهام المقترحة، يرجى ربط حساب GitHub أو GitLab الخاص بك.",
+-        "fr": "Pour commencer avec les tâches suggérées, veuillez connecter votre compte GitHub ou GitLab.",
+-        "tr": "Önerilen görevlerle başlamak için lütfen GitHub veya GitLab hesabınızı bağlayın.",
+-        "de": "Um mit vorgeschlagenen Aufgaben zu beginnen, verbinden Sie bitte Ihr GitHub- oder GitLab-Konto.",
+-        "uk": "Щоб розпочати роботу з запропонованими завданнями, підключіть свій обліковий запис GitHub або GitLab."
++        "en": "To get started with suggested tasks, please connect your GitHub, GitLab, or Bitbucket account.",
++        "ja": "提案されたタスクを始めるには、GitHub、GitLab、またはBitbucketアカウントを接続してください。",
++        "zh-CN": "要开始使用建议的任务，请连接您的GitHub、GitLab或Bitbucket账户。",
++        "zh-TW": "要開始使用建議的任務，請連接您的GitHub、GitLab或Bitbucket帳戶。",
++        "ko-KR": "제안된 작업을 시작하려면 GitHub, GitLab 또는 Bitbucket 계정을 연결하세요.",
++        "no": "For å komme i gang med foreslåtte oppgaver, vennligst koble til GitHub, GitLab eller Bitbucket-kontoen din.",
++        "it": "Per iniziare con le attività suggerite, collega il tuo account GitHub, GitLab o Bitbucket.",
++        "pt": "Para começar com tarefas sugeridas, conecte sua conta GitHub, GitLab ou Bitbucket.",
++        "es": "Para comenzar con las tareas sugeridas, conecte su cuenta de GitHub, GitLab o Bitbucket.",
++        "ar": "للبدء بالمهام المقترحة، يرجى ربط حساب GitHub أو GitLab أو Bitbucket الخاص بك.",
++        "fr": "Pour commencer avec les tâches suggérées, veuillez connecter votre compte GitHub, GitLab ou Bitbucket.",
++        "tr": "Önerilen görevlerle başlamak için lütfen GitHub, GitLab veya Bitbucket hesabınızı bağlayın.",
++        "de": "Um mit vorgeschlagenen Aufgaben zu beginnen, verbinden Sie bitte Ihr GitHub-, GitLab- oder Bitbucket-Konto.",
++        "uk": "Щоб розпочати роботу з запропонованими завданнями, підключіть свій обліковий запис GitHub, GitLab або Bitbucket."
+     },
+     "HOME$LETS_START_BUILDING": {
+         "en": "Let's Start Building!",
+@@ -8127,6 +8127,22 @@
+         "tr": "GitLab'a bağlan",
+         "uk": "Увійти за допомогою GitLab"
+     },
++    "BITBUCKET$CONNECT_TO_BITBUCKET": {
++        "en": "Log in with Bitbucket",
++        "ja": "Bitbucketに接続",
++        "zh-CN": "连接到Bitbucket",
++        "zh-TW": "連接到Bitbucket",
++        "ko-KR": "Bitbucket에 연결",
++        "de": "Mit Bitbucket verbinden",
++        "no": "Koble til Bitbucket",
++        "it": "Connetti a Bitbucket",
++        "pt": "Conectar ao Bitbucket",
++        "es": "Conectar a Bitbucket",
++        "ar": "الاتصال بـ Bitbucket",
++        "fr": "Se connecter à Bitbucket",
++        "tr": "Bitbucket'a bağlan",
++        "uk": "Увійти за допомогою Bitbucket"
++    },
+     "AUTH$SIGN_IN_WITH_IDENTITY_PROVIDER": {
+         "en": "Log in to OpenHands",
+         "ja": "IDプロバイダーでサインイン",
+@@ -8383,6 +8399,102 @@
+         "de": "klicken Sie hier für Anweisungen",
+         "uk": "натисніть тут, щоб отримати інструкції"
+     },
++    "BITBUCKET$TOKEN_LABEL": {
++        "en": "Bitbucket Token",
++        "ja": "Bitbucketトークン",
++        "zh-CN": "Bitbucket令牌",
++        "zh-TW": "Bitbucket權杖",
++        "ko-KR": "Bitbucket 토큰",
++        "no": "Bitbucket-token",
++        "it": "Token Bitbucket",
++        "pt": "Token do Bitbucket",
++        "es": "Token de Bitbucket",
++        "ar": "رمز Bitbucket",
++        "fr": "Jeton Bitbucket",
++        "tr": "Bitbucket Token",
++        "de": "Bitbucket-Token",
++        "uk": "Токен Bitbucket"
++    },
++    "BITBUCKET$HOST_LABEL": {
++        "en": "Bitbucket Host",
++        "ja": "Bitbucketホスト",
++        "zh-CN": "Bitbucket主机",
++        "zh-TW": "Bitbucket主機",
++        "ko-KR": "Bitbucket 호스트",
++        "no": "Bitbucket-vert",
++        "it": "Host Bitbucket",
++        "pt": "Host do Bitbucket",
++        "es": "Host de Bitbucket",
++        "ar": "مضيف Bitbucket",
++        "fr": "Hôte Bitbucket",
++        "tr": "Bitbucket Sunucu",
++        "de": "Bitbucket-Host",
++        "uk": "Хост Bitbucket"
++    },
++    "BITBUCKET$GET_TOKEN": {
++        "en": "Get a Bitbucket token",
++        "ja": "Bitbucketトークンを取得",
++        "zh-CN": "获取Bitbucket令牌",
++        "zh-TW": "獲取Bitbucket權杖",
++        "ko-KR": "Bitbucket 토큰 받기",
++        "no": "Få et Bitbucket-token",
++        "it": "Ottieni un token Bitbucket",
++        "pt": "Obter um token do Bitbucket",
++        "es": "Obtener un token de Bitbucket",
++        "ar": "الحصول على رمز Bitbucket",
++        "fr": "Obtenir un jeton Bitbucket",
++        "tr": "Bitbucket token al",
++        "de": "Bitbucket-Token erhalten",
++        "uk": "Отримати токен Bitbucket"
++    },
++    "BITBUCKET$TOKEN_HELP_TEXT": {
++        "en": "Get your <0>Bitbucket app password</0> or <1>click here for instructions</1>. Enter it in the format 'username:app_password'.",
++        "ja": "<0>Bitbucketアプリパスワード</0>を取得するか、<1>手順についてはここをクリック</1>。'ユーザー名:アプリパスワード'の形式で入力してください。",
++        "zh-CN": "获取您的<0>Bitbucket应用密码</0>或<1>点击此处获取说明</1>。请以'用户名:应用密码'的格式输入。",
++        "zh-TW": "取得您的<0>Bitbucket應用密碼</0>或<1>點擊此處獲取說明</1>。請以'用戶名:應用密碼'的格式輸入。",
++        "ko-KR": "<0>Bitbucket 앱 비밀번호</0>를 받거나 <1>지침을 보려면 여기를 클릭</1>하세요. '사용자 이름:앱 비밀번호' 형식으로 입력하세요.",
++        "no": "Få ditt <0>Bitbucket app-passord</0> eller <1>klikk her for instruksjoner</1>. Skriv det inn i formatet 'brukernavn:app-passord'.",
++        "it": "Ottieni la tua <0>password dell'app Bitbucket</0> o <1>clicca qui per istruzioni</1>. Inseriscila nel formato 'nome utente:password dell'app'.",
++        "pt": "Obtenha sua <0>senha de aplicativo do Bitbucket</0> ou <1>clique aqui para instruções</1>. Digite-a no formato 'nome de usuário:senha do aplicativo'.",
++        "es": "Obtenga su <0>contraseña de aplicación de Bitbucket</0> o <1>haga clic aquí para obtener instrucciones</1>. Ingrésela en el formato 'nombre de usuario:contraseña de aplicación'.",
++        "ar": "احصل على <0>كلمة مرور تطبيق Bitbucket</0> الخاصة بك أو <1>انقر هنا للحصول على تعليمات</1>. أدخلها بتنسيق 'اسم المستخدم:كلمة مرور التطبيق'.",
++        "fr": "Obtenez votre <0>mot de passe d'application Bitbucket</0> ou <1>cliquez ici pour les instructions</1>. Saisissez-le au format 'nom d'utilisateur:mot de passe d'application'.",
++        "tr": "<0>Bitbucket uygulama şifrenizi</0> alın veya <1>talimatlar için buraya tıklayın</1>. 'kullanıcı adı:uygulama şifresi' formatında girin.",
++        "de": "Holen Sie sich Ihr <0>Bitbucket App-Passwort</0> oder <1>klicken Sie hier für Anweisungen</1>. Geben Sie es im Format 'Benutzername:App-Passwort' ein.",
++        "uk": "Отримайте свій <0>пароль додатка Bitbucket</0> або <1>натисніть тут, щоб отримати інструкції</1>. Введіть його у форматі 'ім'я користувача:пароль додатка'."
++    },
++    "BITBUCKET$TOKEN_LINK_TEXT": {
++        "en": "Bitbucket app password",
++        "ja": "Bitbucketアプリパスワード",
++        "zh-CN": "Bitbucket应用密码",
++        "zh-TW": "Bitbucket應用密碼",
++        "ko-KR": "Bitbucket 앱 비밀번호",
++        "no": "Bitbucket app-passord",
++        "it": "password dell'app Bitbucket",
++        "pt": "senha de aplicativo do Bitbucket",
++        "es": "contraseña de aplicación de Bitbucket",
++        "ar": "كلمة مرور تطبيق Bitbucket",
++        "fr": "mot de passe d'application Bitbucket",
++        "tr": "Bitbucket uygulama şifresi",
++        "de": "Bitbucket App-Passwort",
++        "uk": "пароль додатка Bitbucket"
++    },
++    "BITBUCKET$INSTRUCTIONS_LINK_TEXT": {
++        "en": "click here for instructions",
++        "ja": "手順についてはここをクリック",
++        "zh-CN": "点击此处获取说明",
++        "zh-TW": "點擊此處獲取說明",
++        "ko-KR": "지침을 보려면 여기를 클릭",
++        "no": "klikk her for instruksjoner",
++        "it": "clicca qui per istruzioni",
++        "pt": "clique aqui para instruções",
++        "es": "haga clic aquí para obtener instrucciones",
++        "ar": "انقر هنا للحصول على تعليمات",
++        "fr": "cliquez ici pour les instructions",
++        "tr": "talimatlar için buraya tıklayın",
++        "de": "klicken Sie hier für Anweisungen",
++        "uk": "натисніть тут, щоб отримати інструкції"
++    },
+     "GITLAB$OR_SEE": {
+         "en": "or see the",
+         "ja": "または参照",
+diff --git a/frontend/src/routes/git-settings.tsx b/frontend/src/routes/git-settings.tsx
+index 89f01758b8d8..2961e8f0e56a 100644
+--- a/frontend/src/routes/git-settings.tsx
++++ b/frontend/src/routes/git-settings.tsx
+@@ -6,6 +6,7 @@ import { BrandButton } from "#/components/features/settings/brand-button";
+ import { useLogout } from "#/hooks/mutation/use-logout";
+ import { GitHubTokenInput } from "#/components/features/settings/git-settings/github-token-input";
+ import { GitLabTokenInput } from "#/components/features/settings/git-settings/gitlab-token-input";
++import { BitbucketTokenInput } from "#/components/features/settings/git-settings/bitbucket-token-input";
+ import { ConfigureGitHubRepositoriesAnchor } from "#/components/features/settings/git-settings/configure-github-repositories-anchor";
+ import { I18nKey } from "#/i18n/declaration";
+ import {
+@@ -32,18 +33,24 @@ function GitSettingsScreen() {
+     React.useState(false);
+   const [gitlabTokenInputHasValue, setGitlabTokenInputHasValue] =
+     React.useState(false);
++  const [bitbucketTokenInputHasValue, setBitbucketTokenInputHasValue] =
++    React.useState(false);
+
+   const [githubHostInputHasValue, setGithubHostInputHasValue] =
+     React.useState(false);
+   const [gitlabHostInputHasValue, setGitlabHostInputHasValue] =
+     React.useState(false);
++  const [bitbucketHostInputHasValue, setBitbucketHostInputHasValue] =
++    React.useState(false);
+
+   const existingGithubHost = settings?.PROVIDER_TOKENS_SET.github;
+   const existingGitlabHost = settings?.PROVIDER_TOKENS_SET.gitlab;
++  const existingBitbucketHost = settings?.PROVIDER_TOKENS_SET.bitbucket;
+
+   const isSaas = config?.APP_MODE === "saas";
+   const isGitHubTokenSet = providers.includes("github");
+   const isGitLabTokenSet = providers.includes("gitlab");
++  const isBitbucketTokenSet = providers.includes("bitbucket");
+
+   const formAction = async (formData: FormData) => {
+     const disconnectButtonClicked =
+@@ -56,15 +63,23 @@ function GitSettingsScreen() {
+
+     const githubToken = formData.get("github-token-input")?.toString() || "";
+     const gitlabToken = formData.get("gitlab-token-input")?.toString() || "";
++    const bitbucketToken =
++      formData.get("bitbucket-token-input")?.toString() || "";
+     const githubHost = formData.get("github-host-input")?.toString() || "";
+     const gitlabHost = formData.get("gitlab-host-input")?.toString() || "";
++    const bitbucketHost =
++      formData.get("bitbucket-host-input")?.toString() || "";
++
++    // Create providers object with all tokens
++    const providerTokens: Record<string, { token: string; host: string }> = {
++      github: { token: githubToken, host: githubHost },
++      gitlab: { token: gitlabToken, host: gitlabHost },
++      bitbucket: { token: bitbucketToken, host: bitbucketHost },
++    };
+
+     saveGitProviders(
+       {
+-        providers: {
+-          github: { token: githubToken, host: githubHost },
+-          gitlab: { token: gitlabToken, host: gitlabHost },
+-        },
++        providers: providerTokens,
+       },
+       {
+         onSuccess: () => {
+@@ -77,8 +92,10 @@ function GitSettingsScreen() {
+         onSettled: () => {
+           setGithubTokenInputHasValue(false);
+           setGitlabTokenInputHasValue(false);
++          setBitbucketTokenInputHasValue(false);
+           setGithubHostInputHasValue(false);
+           setGitlabHostInputHasValue(false);
++          setBitbucketHostInputHasValue(false);
+         },
+       },
+     );
+@@ -87,8 +104,10 @@ function GitSettingsScreen() {
+   const formIsClean =
+     !githubTokenInputHasValue &&
+     !gitlabTokenInputHasValue &&
++    !bitbucketTokenInputHasValue &&
+     !githubHostInputHasValue &&
+-    !gitlabHostInputHasValue;
++    !gitlabHostInputHasValue &&
++    !bitbucketHostInputHasValue;
+   const shouldRenderExternalConfigureButtons = isSaas && config.APP_SLUG;
+
+   return (
+@@ -111,7 +130,7 @@ function GitSettingsScreen() {
+                 setGithubTokenInputHasValue(!!value);
+               }}
+               onGitHubHostChange={(value) => {
+-                setGitlabHostInputHasValue(!!value);
++                setGithubHostInputHasValue(!!value);
+               }}
+               githubHostSet={existingGithubHost}
+             />
+@@ -130,6 +149,20 @@ function GitSettingsScreen() {
+               gitlabHostSet={existingGitlabHost}
+             />
+           )}
++
++          {!isSaas && (
++            <BitbucketTokenInput
++              name="bitbucket-token-input"
++              isBitbucketTokenSet={isBitbucketTokenSet}
++              onChange={(value) => {
++                setBitbucketTokenInputHasValue(!!value);
++              }}
++              onBitbucketHostChange={(value) => {
++                setBitbucketHostInputHasValue(!!value);
++              }}
++              bitbucketHostSet={existingBitbucketHost}
++            />
++          )}
+         </div>
+       )}
+
+@@ -143,7 +176,9 @@ function GitSettingsScreen() {
+               name="disconnect-tokens-button"
+               type="submit"
+               variant="secondary"
+-              isDisabled={!isGitHubTokenSet && !isGitLabTokenSet}
++              isDisabled={
++                !isGitHubTokenSet && !isGitLabTokenSet && !isBitbucketTokenSet
++              }
+             >
+               Disconnect Tokens
+             </BrandButton>
+diff --git a/frontend/src/types/settings.ts b/frontend/src/types/settings.ts
+index d4d458e39944..8390d66ff92b 100644
+--- a/frontend/src/types/settings.ts
++++ b/frontend/src/types/settings.ts
+@@ -1,6 +1,7 @@
+ export const ProviderOptions = {
+   github: "github",
+   gitlab: "gitlab",
++  bitbucket: "bitbucket",
+ } as const;
+
+ export type Provider = keyof typeof ProviderOptions;
+diff --git a/frontend/src/utils/generate-auth-url.ts b/frontend/src/utils/generate-auth-url.ts
+index 9e8d9a267bb9..d34007983207 100644
+--- a/frontend/src/utils/generate-auth-url.ts
++++ b/frontend/src/utils/generate-auth-url.ts
+@@ -1,6 +1,6 @@
+ /**
+  * Generates a URL to redirect to for OAuth authentication
+- * @param identityProvider The identity provider to use (e.g., "github", "gitlab")
++ * @param identityProvider The identity provider to use (e.g., "github", "gitlab", "bitbucket")
+  * @param requestUrl The URL of the request
+  * @returns The URL to redirect to for OAuth
+  */
+diff --git a/frontend/src/utils/local-storage.ts b/frontend/src/utils/local-storage.ts
+index b5ad0dfc58d5..d6ab3e29d235 100644
+--- a/frontend/src/utils/local-storage.ts
++++ b/frontend/src/utils/local-storage.ts
+@@ -7,11 +7,12 @@ export const LOCAL_STORAGE_KEYS = {
+ export enum LoginMethod {
+   GITHUB = "github",
+   GITLAB = "gitlab",
++  BITBUCKET = "bitbucket",
+ }
+
+ /**
+  * Set the login method in local storage
+- * @param method The login method (github or gitlab)
++ * @param method The login method (github, gitlab, or bitbucket)
+  */
+ export const setLoginMethod = (method: LoginMethod): void => {
+   localStorage.setItem(LOCAL_STORAGE_KEYS.LOGIN_METHOD, method);
+diff --git a/microagents/bitbucket.md b/microagents/bitbucket.md
+new file mode 100644
+index 000000000000..3e94bc719ed7
+--- /dev/null
++++ b/microagents/bitbucket.md
+@@ -0,0 +1,34 @@
++---
++name: bitbucket
++type: knowledge
++version: 1.0.0
++agent: CodeActAgent
++triggers:
++- bitbucket
++---
++
++You have access to an environment variable, `BITBUCKET_TOKEN`, which allows you to interact with
++the Bitbucket API.
++
++<IMPORTANT>
++You can use `curl` with the `BITBUCKET_TOKEN` to interact with Bitbucket's API.
++ALWAYS use the Bitbucket API for operations instead of a web browser.
++ALWAYS use the `create_bitbucket_pr` tool to open a pull request
++</IMPORTANT>
++
++If you encounter authentication issues when pushing to Bitbucket (such as password prompts or permission errors), the old token may have expired. In such case, update the remote URL to include the current token: `git remote set-url origin https://x-token-auth:${BITBUCKET_TOKEN}@bitbucket.org/username/repo.git`
++
++Here are some instructions for pushing, but ONLY do this if the user asks you to:
++* NEVER push directly to the `main` or `master` branch
++* Git config (username and email) is pre-set. Do not modify.
++* You may already be on a branch starting with `openhands-workspace`. Create a new branch with a better name before pushing.
++* Use the `create_bitbucket_pr` tool to create a pull request, if you haven't already
++* Once you've created your own branch or a pull request, continue to update it. Do NOT create a new one unless you are explicitly asked to. Update the PR title and description as necessary, but don't change the branch name.
++* Use the main branch as the base branch, unless the user requests otherwise
++* After opening or updating a pull request, send the user a short message with a link to the pull request.
++* Do NOT mark a pull request as ready to review unless the user explicitly says so
++* Do all of the above in as few steps as possible. E.g. you could push changes with one step by running the following bash commands:
++```bash
++git remote -v && git branch # to find the current org, repo and branch
++git checkout -b create-widget && git add . && git commit -m "Create widget" && git push -u origin create-widget
++```
+diff --git a/openhands/core/setup.py b/openhands/core/setup.py
+index 8a7793a7d7b9..a2bce6e50859 100644
+--- a/openhands/core/setup.py
++++ b/openhands/core/setup.py
+@@ -107,6 +107,10 @@ def initialize_repository_for_runtime(
+         gitlab_token = SecretStr(os.environ['GITLAB_TOKEN'])
+         provider_tokens[ProviderType.GITLAB] = ProviderToken(token=gitlab_token)
+
++    if 'BITBUCKET_TOKEN' in os.environ:
++        bitbucket_token = SecretStr(os.environ['BITBUCKET_TOKEN'])
++        provider_tokens[ProviderType.BITBUCKET] = ProviderToken(token=bitbucket_token)
++
+     secret_store = (
+         UserSecrets(provider_tokens=provider_tokens) if provider_tokens else None
+     )
+diff --git a/openhands/integrations/bitbucket/__init__.py b/openhands/integrations/bitbucket/__init__.py
+new file mode 100644
+index 000000000000..e69de29bb2d1
+diff --git a/openhands/integrations/bitbucket/bitbucket_service.py b/openhands/integrations/bitbucket/bitbucket_service.py
+new file mode 100644
+index 000000000000..fdeda25b772a
+--- /dev/null
++++ b/openhands/integrations/bitbucket/bitbucket_service.py
+@@ -0,0 +1,371 @@
++import os
++from typing import Any
++
++import httpx
++from pydantic import SecretStr
++
++from openhands.integrations.service_types import (
++    BaseGitService,
++    Branch,
++    GitService,
++    ProviderType,
++    Repository,
++    RequestMethod,
++    SuggestedTask,
++    UnknownException,
++    User,
++)
++from openhands.server.types import AppMode
++
++
++class BitbucketService(BaseGitService, GitService):
++    """Default implementation of GitService for Bitbucket integration.
++
++    This is an extension point in OpenHands that allows applications to customize Bitbucket
++    integration behavior. Applications can substitute their own implementation by:
++    1. Creating a class that inherits from GitService
++    2. Implementing all required methods
++    3. Setting server_config.bitbucket_service_class to the fully qualified name of the class
++
++    The class is instantiated via get_impl() in openhands.server.shared.py.
++    """
++
++    BASE_URL = 'https://api.bitbucket.org/2.0'
++    token: SecretStr = SecretStr('')
++    refresh = False
++
++    def __init__(
++        self,
++        user_id: str | None = None,
++        external_auth_id: str | None = None,
++        external_auth_token: SecretStr | None = None,
++        token: SecretStr | None = None,
++        external_token_manager: bool = False,
++        base_domain: str | None = None,
++    ):
++        self.user_id = user_id
++        self.external_token_manager = external_token_manager
++        self.external_auth_id = external_auth_id
++        self.external_auth_token = external_auth_token
++        self.base_domain = base_domain or 'bitbucket.org'
++
++        if token:
++            self.token = token
++        elif os.environ.get('BITBUCKET_TOKEN'):
++            self.token = SecretStr(os.environ.get('BITBUCKET_TOKEN', ''))
++
++    @property
++    def provider(self) -> str:
++        return 'Bitbucket'
++
++    async def get_latest_token(self) -> SecretStr | None:
++        """Get latest working token of the user."""
++        if self.external_token_manager and self.external_auth_id:
++            # This would be implemented by a custom token manager
++            return None
++        return self.token
++
++    async def _make_request(
++        self,
++        url: str,
++        params: dict | None = None,
++        method: RequestMethod = RequestMethod.GET,
++    ) -> tuple[Any, dict]:
++        """Make a request to the Bitbucket API.
++
++        Args:
++            url: The URL to request
++            params: Optional parameters for the request
++            method: The HTTP method to use
++
++        Returns:
++            A tuple of (response_data, response_headers)
++
++        Raises:
++            AuthenticationError: If the token is invalid
++            RateLimitError: If the rate limit is exceeded
++            UnknownException: For other errors
++        """
++        # Bitbucket Cloud API supports both Bearer token and Basic auth
++        # For app passwords, we need to use Basic auth with the format username:app_password
++        token_value = self.token.get_secret_value()
++
++        # Check if the token contains a colon, which indicates it's in username:password format
++        if ':' in token_value:
++            import base64
++
++            auth_str = base64.b64encode(token_value.encode()).decode()
++            headers = {
++                'Authorization': f'Basic {auth_str}',
++                'Accept': 'application/json',
++            }
++        else:
++            headers = {
++                'Authorization': f'Bearer {token_value}',
++                'Accept': 'application/json',
++            }
++
++        try:
++            async with httpx.AsyncClient() as client:
++                response = await self.execute_request(
++                    client, url, headers, params, method
++                )
++                response.raise_for_status()
++                return response.json(), dict(response.headers)
++        except httpx.HTTPStatusError as e:
++            raise self.handle_http_status_error(e)
++        except httpx.HTTPError as e:
++            raise self.handle_http_error(e)
++        except Exception as e:
++            raise UnknownException(f'Unknown error: {e}')
++
++    async def get_user(self) -> User:
++        """Get the authenticated user's information."""
++        url = f'{self.BASE_URL}/user'
++        data, _ = await self._make_request(url)
++
++        # Convert account_id to an integer if possible, or use a default value
++        account_id = data.get('account_id', '0')
++        try:
++            # Try to extract a numeric part from the account_id string
++            # For example, from "712020:d41205d7-cb10-4142-bdd0-9778094e4710"
++            # we would extract 712020
++            numeric_part = account_id.split(':')[0]
++            id_value = int(numeric_part)
++        except (ValueError, IndexError):
++            # If conversion fails, use a default value
++            id_value = 0
++
++        return User(
++            id=id_value,
++            login=data.get('username', ''),
++            avatar_url=data.get('links', {}).get('avatar', {}).get('href', ''),
++            name=data.get('display_name'),
++            email=None,  # Bitbucket API doesn't return email in this endpoint
++        )
++
++    async def search_repositories(
++        self,
++        query: str,
++        per_page: int,
++        sort: str,
++        order: str,
++    ) -> list[Repository]:
++        """Search for repositories."""
++        # Bitbucket doesn't have a dedicated search endpoint like GitHub
++        # We'll use the repositories endpoint and filter client-side
++        url = f'{self.BASE_URL}/repositories'
++        params = {
++            'q': query,
++            'pagelen': per_page,
++            'sort': sort,
++        }
++
++        data, headers = await self._make_request(url, params)
++
++        repositories = []
++        for repo in data.get('values', []):
++            repositories.append(
++                Repository(
++                    id=repo.get('uuid', ''),
++                    full_name=f'{repo.get("workspace", {}).get("slug", "")}/{repo.get("slug", "")}',
++                    git_provider=ProviderType.BITBUCKET,
++                    is_public=repo.get('is_private', True) is False,
++                    stargazers_count=None,  # Bitbucket doesn't have stars
++                    link_header=headers.get('Link', ''),
++                    pushed_at=repo.get('updated_on'),
++                )
++            )
++
++        return repositories
++
++    async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
++        """Get repositories for the authenticated user."""
++        repositories = []
++
++        # First, try to get repositories with 'contributor' role
++        url = f'{self.BASE_URL}/repositories'
++        params = {
++            'role': 'contributor',  # 'member' is not a valid role for Bitbucket API
++            'pagelen': 100,
++            'sort': sort,
++        }
++
++        try:
++            data, headers = await self._make_request(url, params)
++
++            for repo in data.get('values', []):
++                # Convert UUID to an integer hash for compatibility with Repository model
++                uuid = repo.get('uuid', '')
++                # Remove curly braces if present and use hash of the UUID string as the ID
++                if uuid.startswith('{') and uuid.endswith('}'):
++                    uuid = uuid[1:-1]
++                id_value = hash(uuid) % (2**31)  # Ensure it's a positive 32-bit integer
++
++                repositories.append(
++                    Repository(
++                        id=id_value,
++                        full_name=f'{repo.get("workspace", {}).get("slug", "")}/{repo.get("slug", "")}',
++                        git_provider=ProviderType.BITBUCKET,
++                        is_public=repo.get('is_private', True) is False,
++                        stargazers_count=None,  # Bitbucket doesn't have stars
++                        link_header=headers.get('Link', ''),
++                        pushed_at=repo.get('updated_on'),
++                    )
++                )
++        except Exception as e:
++            # If the first approach fails, try getting workspaces and then repositories for each workspace
++            try:
++                # Get user's workspaces
++                workspaces_url = f'{self.BASE_URL}/workspaces'
++                workspaces_data, _ = await self._make_request(workspaces_url)
++
++                for workspace in workspaces_data.get('values', []):
++                    workspace_slug = workspace.get('slug')
++                    if not workspace_slug:
++                        continue
++
++                    # Get repositories for this workspace
++                    workspace_repos_url = (
++                        f'{self.BASE_URL}/repositories/{workspace_slug}'
++                    )
++                    repos_data, headers = await self._make_request(workspace_repos_url)
++
++                    for repo in repos_data.get('values', []):
++                        # Convert UUID to an integer hash for compatibility with Repository model
++                        uuid = repo.get('uuid', '')
++                        # Remove curly braces if present and use hash of the UUID string as the ID
++                        if uuid.startswith('{') and uuid.endswith('}'):
++                            uuid = uuid[1:-1]
++                        id_value = hash(uuid) % (
++                            2**31
++                        )  # Ensure it's a positive 32-bit integer
++
++                        repositories.append(
++                            Repository(
++                                id=id_value,
++                                full_name=f'{repo.get("workspace", {}).get("slug", "")}/{repo.get("slug", "")}',
++                                git_provider=ProviderType.BITBUCKET,
++                                is_public=repo.get('is_private', True) is False,
++                                stargazers_count=None,  # Bitbucket doesn't have stars
++                                link_header=headers.get('Link', ''),
++                                pushed_at=repo.get('updated_on'),
++                            )
++                        )
++            except Exception as nested_e:
++                # If both approaches fail, log the error and return an empty list
++                from openhands.core.logger import openhands_logger as logger
++
++                logger.warning(
++                    f'Failed to get repositories from Bitbucket: {e}, then: {nested_e}'
++                )
++
++        return repositories
++
++    async def get_suggested_tasks(self) -> list[SuggestedTask]:
++        """Get suggested tasks for the authenticated user across all repositories."""
++        # This would require multiple API calls to get PRs with conflicts, failing checks, etc.
++        # For now, we'll return an empty list
++        return []
++
++    async def get_repository_details_from_repo_name(
++        self, repository: str
++    ) -> Repository:
++        """Gets all repository details from repository name."""
++        # Extract owner and repo from the repository string (e.g., "owner/repo")
++        parts = repository.split('/')
++        if len(parts) < 2:
++            raise ValueError(f'Invalid repository name: {repository}')
++
++        owner = parts[-2]
++        repo = parts[-1]
++
++        url = f'{self.BASE_URL}/repositories/{owner}/{repo}'
++        data, _ = await self._make_request(url)
++
++        # Convert UUID to an integer hash for compatibility with Repository model
++        uuid = data.get('uuid', '')
++        # Remove curly braces if present and use hash of the UUID string as the ID
++        if uuid.startswith('{') and uuid.endswith('}'):
++            uuid = uuid[1:-1]
++        id_value = hash(uuid) % (2**31)  # Ensure it's a positive 32-bit integer
++
++        return Repository(
++            id=id_value,
++            full_name=f'{data.get("workspace", {}).get("slug", "")}/{data.get("slug", "")}',
++            git_provider=ProviderType.BITBUCKET,
++            is_public=data.get('is_private', True) is False,
++            stargazers_count=None,  # Bitbucket doesn't have stars
++            pushed_at=data.get('updated_on'),
++        )
++
++    async def get_branches(self, repository: str) -> list[Branch]:
++        """Get branches for a repository."""
++        # Extract owner and repo from the repository string (e.g., "owner/repo")
++        parts = repository.split('/')
++        if len(parts) < 2:
++            raise ValueError(f'Invalid repository name: {repository}')
++
++        owner = parts[-2]
++        repo = parts[-1]
++
++        url = f'{self.BASE_URL}/repositories/{owner}/{repo}/refs/branches'
++        data, _ = await self._make_request(url)
++
++        branches = []
++        for branch in data.get('values', []):
++            branches.append(
++                Branch(
++                    name=branch.get('name', ''),
++                    commit_sha=branch.get('target', {}).get('hash', ''),
++                    protected=False,  # Bitbucket doesn't expose this in the API
++                    last_push_date=branch.get('target', {}).get('date', None),
++                )
++            )
++
++        return branches
++
++    async def create_pr(
++        self,
++        repo_name: str,
++        source_branch: str,
++        target_branch: str,
++        title: str,
++        body: str | None = None,
++    ) -> str:
++        """Creates a pull request in Bitbucket.
++
++        Args:
++            repo_name: The repository name in the format "workspace/repo"
++            source_branch: The source branch name
++            target_branch: The target branch name
++            title: The title of the pull request
++            body: The description of the pull request
++
++        Returns:
++            The URL of the created pull request
++        """
++        # Extract owner and repo from the repository string (e.g., "owner/repo")
++        parts = repo_name.split('/')
++        if len(parts) < 2:
++            raise ValueError(f'Invalid repository name: {repo_name}')
++
++        owner = parts[-2]
++        repo = parts[-1]
++
++        url = f'{self.BASE_URL}/repositories/{owner}/{repo}/pullrequests'
++
++        payload = {
++            'title': title,
++            'description': body or '',
++            'source': {'branch': {'name': source_branch}},
++            'destination': {'branch': {'name': target_branch}},
++            'close_source_branch': False,
++        }
++
++        data, _ = await self._make_request(
++            url=url, params=payload, method=RequestMethod.POST
++        )
++
++        # Return the URL to the pull request
++        return data.get('links', {}).get('html', {}).get('href', '')
+diff --git a/openhands/integrations/provider.py b/openhands/integrations/provider.py
+index 6e607305266c..d2ddd582e595 100644
+--- a/openhands/integrations/provider.py
++++ b/openhands/integrations/provider.py
+@@ -14,6 +14,7 @@
+ from openhands.events.action.action import Action
+ from openhands.events.action.commands import CmdRunAction
+ from openhands.events.stream import EventStream
++from openhands.integrations.bitbucket.bitbucket_service import BitbucketService
+ from openhands.integrations.github.github_service import GithubServiceImpl
+ from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
+ from openhands.integrations.service_types import (
+@@ -108,6 +109,7 @@ def __init__(
+         self.service_class_map: dict[ProviderType, type[GitService]] = {
+             ProviderType.GITHUB: GithubServiceImpl,
+             ProviderType.GITLAB: GitLabServiceImpl,
++            ProviderType.BITBUCKET: BitbucketService,
+         }
+
+         self.external_auth_id = external_auth_id
+@@ -136,6 +138,11 @@ def _get_service(self, provider: ProviderType) -> GitService:
+     async def get_user(self) -> User:
+         """Get user information from the first available provider"""
+         for provider in self.provider_tokens:
++            token = self.provider_tokens[provider]
++            # Skip providers with empty tokens
++            if not token.token or not token.token.get_secret_value():
++                continue
++
+             try:
+                 service = self._get_service(provider)
+                 return await service.get_user()
+@@ -157,6 +164,11 @@ async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repositor
+
+         all_repos: list[Repository] = []
+         for provider in self.provider_tokens:
++            token = self.provider_tokens[provider]
++            # Skip providers with empty tokens
++            if not token.token or not token.token.get_secret_value():
++                continue
++
+             try:
+                 service = self._get_service(provider)
+                 service_repos = await service.get_repositories(sort, app_mode)
+@@ -172,6 +184,11 @@ async def get_suggested_tasks(self) -> list[SuggestedTask]:
+         """
+         tasks: list[SuggestedTask] = []
+         for provider in self.provider_tokens:
++            token = self.provider_tokens[provider]
++            # Skip providers with empty tokens
++            if not token.token or not token.token.get_secret_value():
++                continue
++
+             try:
+                 service = self._get_service(provider)
+                 service_repos = await service.get_suggested_tasks()
+@@ -190,6 +207,11 @@ async def search_repositories(
+     ) -> list[Repository]:
+         all_repos: list[Repository] = []
+         for provider in self.provider_tokens:
++            token = self.provider_tokens[provider]
++            # Skip providers with empty tokens
++            if not token.token or not token.token.get_secret_value():
++                continue
++
+             try:
+                 service = self._get_service(provider)
+                 service_repos = await service.search_repositories(
+@@ -323,13 +345,23 @@ async def verify_repo_provider(
+         self, repository: str, specified_provider: ProviderType | None = None
+     ):
+         if specified_provider:
+-            try:
+-                service = self._get_service(specified_provider)
+-                return await service.get_repository_details_from_repo_name(repository)
+-            except Exception:
+-                pass
++            token = self.provider_tokens.get(specified_provider)
++            # Skip if token is empty
++            if token and token.token and token.token.get_secret_value():
++                try:
++                    service = self._get_service(specified_provider)
++                    return await service.get_repository_details_from_repo_name(
++                        repository
++                    )
++                except Exception:
++                    pass
+
+         for provider in self.provider_tokens:
++            token = self.provider_tokens[provider]
++            # Skip providers with empty tokens
++            if not token.token or not token.token.get_secret_value():
++                continue
++
+             try:
+                 service = self._get_service(provider)
+                 return await service.get_repository_details_from_repo_name(repository)
+@@ -354,16 +386,24 @@ async def get_branches(
+         all_branches: list[Branch] = []
+
+         if specified_provider:
+-            try:
+-                service = self._get_service(specified_provider)
+-                branches = await service.get_branches(repository)
+-                return branches
+-            except Exception as e:
+-                logger.warning(
+-                    f'Error fetching branches from {specified_provider}: {e}'
+-                )
++            token = self.provider_tokens.get(specified_provider)
++            # Skip if token is empty
++            if token and token.token and token.token.get_secret_value():
++                try:
++                    service = self._get_service(specified_provider)
++                    branches = await service.get_branches(repository)
++                    return branches
++                except Exception as e:
++                    logger.warning(
++                        f'Error fetching branches from {specified_provider}: {e}'
++                    )
+
+         for provider in self.provider_tokens:
++            token = self.provider_tokens[provider]
++            # Skip providers with empty tokens
++            if not token.token or not token.token.get_secret_value():
++                continue
++
+             try:
+                 service = self._get_service(provider)
+                 branches = await service.get_branches(repository)
+diff --git a/openhands/integrations/service_types.py b/openhands/integrations/service_types.py
+index 11ed113eb349..cc32e105ba75 100644
+--- a/openhands/integrations/service_types.py
++++ b/openhands/integrations/service_types.py
+@@ -13,6 +13,7 @@
+ class ProviderType(Enum):
+     GITHUB = 'github'
+     GITLAB = 'gitlab'
++    BITBUCKET = 'bitbucket'
+
+
+ class TaskType(str, Enum):
+@@ -51,6 +52,16 @@ def get_provider_terms(self) -> dict:
+                 'ciProvider': 'GitHub',
+                 'requestVerb': 'pull request',
+             }
++        elif self.git_provider == ProviderType.BITBUCKET:
++            return {
++                'requestType': 'Pull Request',
++                'requestTypeShort': 'PR',
++                'apiName': 'Bitbucket API',
++                'tokenEnvVar': 'BITBUCKET_TOKEN',
++                'ciSystem': 'Bitbucket Pipelines',
++                'ciProvider': 'Bitbucket',
++                'requestVerb': 'pull request',
++            }
+
+         raise ValueError(f'Provider {self.git_provider} for suggested task prompts')
+
+diff --git a/openhands/integrations/utils.py b/openhands/integrations/utils.py
+index 16f26acd050b..1e7e9128c15a 100644
+--- a/openhands/integrations/utils.py
++++ b/openhands/integrations/utils.py
+@@ -1,8 +1,7 @@
+-import traceback
+-
+ from pydantic import SecretStr
+
+ from openhands.core.logger import openhands_logger as logger
++from openhands.integrations.bitbucket.bitbucket_service import BitbucketService
+ from openhands.integrations.github.github_service import GitHubService
+ from openhands.integrations.gitlab.gitlab_service import GitLabService
+ from openhands.integrations.provider import ProviderType
+@@ -12,35 +11,52 @@ async def validate_provider_token(
+     token: SecretStr, base_domain: str | None = None
+ ) -> ProviderType | None:
+     """
+-    Determine whether a token is for GitHub or GitLab by attempting to get user info
+-    from both services.
++    Determine whether a token is for GitHub, GitLab, or Bitbucket by attempting to get user info
++    from the services.
+
+     Args:
+         token: The token to check
++        base_domain: Optional base domain for the service
+
+     Returns:
+         'github' if it's a GitHub token
+         'gitlab' if it's a GitLab token
+-        None if the token is invalid for both services
++        'bitbucket' if it's a Bitbucket token
++        None if the token is invalid for all services
+     """
++    # Skip validation for empty tokens
++    if token is None or not token.get_secret_value().strip():
++        return None
++
+     # Try GitHub first
++    github_error = None
+     try:
+         github_service = GitHubService(token=token, base_domain=base_domain)
+         await github_service.verify_access()
+         return ProviderType.GITHUB
+     except Exception as e:
+-        logger.debug(
+-            f'Failed to validate Github token: {e} \n {traceback.format_exc()}'
+-        )
++        github_error = e
+
+     # Try GitLab next
++    gitlab_error = None
+     try:
+         gitlab_service = GitLabService(token=token, base_domain=base_domain)
+         await gitlab_service.get_user()
+         return ProviderType.GITLAB
+     except Exception as e:
+-        logger.debug(
+-            f'Failed to validate GitLab token: {e} \n {traceback.format_exc()}'
+-        )
++        gitlab_error = e
++
++    # Try Bitbucket last
++    bitbucket_error = None
++    try:
++        bitbucket_service = BitbucketService(token=token, base_domain=base_domain)
++        await bitbucket_service.get_user()
++        return ProviderType.BITBUCKET
++    except Exception as e:
++        bitbucket_error = e
++
++    logger.debug(
++        f'Failed to validate token: {github_error} \n {gitlab_error} \n {bitbucket_error}'
++    )
+
+     return None
+diff --git a/openhands/resolver/README.md b/openhands/resolver/README.md
+index 1e7612c61ced..abf352db9c62 100644
+--- a/openhands/resolver/README.md
++++ b/openhands/resolver/README.md
+@@ -1,9 +1,9 @@
+-# OpenHands Github & Gitlab Issue Resolver 🙌
++# OpenHands GitHub, GitLab & Bitbucket Issue Resolver 🙌
+
+-Need help resolving a GitHub issue but don't have the time to do it yourself? Let an AI agent help you out!
++Need help resolving a GitHub, GitLab, or Bitbucket issue but don't have the time to do it yourself? Let an AI agent help you out!
+
+ This tool allows you to use open-source AI agents based on [OpenHands](https://github.com/all-hands-ai/openhands)
+-to attempt to resolve GitHub issues automatically. While it can handle multiple issues, it's primarily designed
++to attempt to resolve GitHub, GitLab, and Bitbucket issues automatically. While it can handle multiple issues, it's primarily designed
+ to help you resolve one issue at a time with high quality.
+
+ Getting started is simple - just follow the instructions below.
+@@ -74,8 +74,8 @@ If you prefer to run the resolver programmatically instead of using GitHub Actio
+ pip install openhands-ai
+ ```
+
+-2. Create a GitHub or GitLab access token:
+-   - Create a GitHub acces token
++2. Create a GitHub, GitLab, or Bitbucket access token:
++   - Create a GitHub access token
+       - Visit [GitHub's token settings](https://github.com/settings/personal-access-tokens/new)
+       - Create a fine-grained token with these scopes:
+       - "Content"
+@@ -84,7 +84,7 @@ pip install openhands-ai
+       - "Workflows"
+       - If you don't have push access to the target repo, you can fork it first
+
+-   - Create a GitLab acces token
++   - Create a GitLab access token
+       - Visit [GitLab's token settings](https://gitlab.com/-/user_settings/personal_access_tokens)
+       - Create a fine-grained token with these scopes:
+       - 'api'
+@@ -93,6 +93,16 @@ pip install openhands-ai
+       - 'read_repository'
+       - 'write_repository'
+
++   - Create a Bitbucket access token
++      - Visit [Bitbucket's app passwords settings](https://bitbucket.org/account/settings/app-passwords/)
++      - Create an app password with these scopes:
++      - 'Repositories: Read'
++      - 'Repositories: Write'
++      - 'Pull requests: Read'
++      - 'Pull requests: Write'
++      - 'Issues: Read'
++      - 'Issues: Write'
++
+ 3. Set up environment variables:
+
+ ```bash
+@@ -107,6 +117,11 @@ export GIT_USERNAME="your-github-username"  # Optional, defaults to token owner
+ export GITLAB_TOKEN="your-gitlab-token"
+ export GIT_USERNAME="your-gitlab-username"  # Optional, defaults to token owner
+
++# Bitbucket credentials if you're using Bitbucket repo
++
++export BITBUCKET_TOKEN="your-bitbucket-token"
++export GIT_USERNAME="your-bitbucket-username"  # Optional, defaults to token owner
++
+ # LLM configuration
+
+ export LLM_MODEL="anthropic/claude-sonnet-4-20250514"  # Recommended
+@@ -172,13 +187,13 @@ There are three ways you can upload:
+ 3. `ready` - create a non-draft PR that's ready for review
+
+ ```bash
+-python -m openhands.resolver.send_pull_request --issue-number ISSUE_NUMBER --username YOUR_GITHUB_OR_GITLAB_USERNAME --pr-type draft
++python -m openhands.resolver.send_pull_request --issue-number ISSUE_NUMBER --username YOUR_GITHUB_GITLAB_OR_BITBUCKET_USERNAME --pr-type draft
+ ```
+
+ If you want to upload to a fork, you can do so by specifying the `fork-owner`:
+
+ ```bash
+-python -m openhands.resolver.send_pull_request --issue-number ISSUE_NUMBER --username YOUR_GITHUB_OR_GITLAB_USERNAME --pr-type draft --fork-owner YOUR_GITHUB_OR_GITLAB_USERNAME
++python -m openhands.resolver.send_pull_request --issue-number ISSUE_NUMBER --username YOUR_GITHUB_GITLAB_OR_BITBUCKET_USERNAME --pr-type draft --fork-owner YOUR_GITHUB_GITLAB_OR_BITBUCKET_USERNAME
+ ```
+
+ ## Providing Custom Instructions
+@@ -187,5 +202,5 @@ You can customize how the AI agent approaches issue resolution by adding a repos
+
+ ## Troubleshooting
+
+-If you have any issues, please open an issue on this github or gitlab repo, we're happy to help!
++If you have any issues, please open an issue on this GitHub, GitLab, or Bitbucket repo, we're happy to help!
+ Alternatively, you can [email us](mailto:contact@all-hands.dev) or join the OpenHands Slack workspace (see [the README](/README.md) for an invite link).
+diff --git a/openhands/resolver/interfaces/bitbucket.py b/openhands/resolver/interfaces/bitbucket.py
+new file mode 100644
+index 000000000000..e152c13f5512
+--- /dev/null
++++ b/openhands/resolver/interfaces/bitbucket.py
+@@ -0,0 +1,520 @@
++from typing import Any
++
++import httpx
++
++from openhands.core.logger import openhands_logger as logger
++from openhands.resolver.interfaces.issue import (
++    Issue,
++    IssueHandlerInterface,
++    ReviewThread,
++)
++from openhands.resolver.utils import extract_issue_references
++
++
++class BitbucketIssueHandler(IssueHandlerInterface):
++    def __init__(
++        self,
++        owner: str,
++        repo: str,
++        token: str,
++        username: str | None = None,
++        base_domain: str = 'bitbucket.org',
++    ):
++        """Initialize a Bitbucket issue handler.
++
++        Args:
++            owner: The workspace of the repository
++            repo: The name of the repository
++            token: The Bitbucket API token
++            username: Optional Bitbucket username
++            base_domain: The domain for Bitbucket Server (default: "bitbucket.org")
++        """
++        self.owner = owner
++        self.repo = repo
++        self.token = token
++        self.username = username
++        self.base_domain = base_domain
++        self.base_url = self.get_base_url()
++        self.download_url = self.get_download_url()
++        self.clone_url = self.get_clone_url()
++        self.headers = self.get_headers()
++
++    def set_owner(self, owner: str) -> None:
++        self.owner = owner
++
++    def get_headers(self) -> dict[str, str]:
++        # Check if the token contains a colon, which indicates it's in username:password format
++        if ':' in self.token:
++            import base64
++
++            auth_str = base64.b64encode(self.token.encode()).decode()
++            return {
++                'Authorization': f'Basic {auth_str}',
++                'Accept': 'application/json',
++            }
++        else:
++            return {
++                'Authorization': f'Bearer {self.token}',
++                'Accept': 'application/json',
++            }
++
++    def get_base_url(self) -> str:
++        """Get the base URL for the Bitbucket API."""
++        return f'https://api.{self.base_domain}/2.0'
++
++    def get_download_url(self) -> str:
++        """Get the download URL for the repository."""
++        return f'https://{self.base_domain}/{self.owner}/{self.repo}/get/master.zip'
++
++    def get_clone_url(self) -> str:
++        """Get the clone URL for the repository."""
++        return f'https://{self.base_domain}/{self.owner}/{self.repo}.git'
++
++    def get_repo_url(self) -> str:
++        """Get the URL for the repository."""
++        return f'https://{self.base_domain}/{self.owner}/{self.repo}'
++
++    def get_issue_url(self, issue_number: int) -> str:
++        """Get the URL for an issue."""
++        return f'{self.get_repo_url()}/issues/{issue_number}'
++
++    def get_pr_url(self, pr_number: int) -> str:
++        """Get the URL for a pull request."""
++        return f'{self.get_repo_url()}/pull-requests/{pr_number}'
++
++    async def get_issue(self, issue_number: int) -> Issue:
++        """Get an issue from Bitbucket.
++
++        Args:
++            issue_number: The issue number
++
++        Returns:
++            An Issue object
++        """
++        url = f'{self.base_url}/repositories/{self.owner}/{self.repo}/issues/{issue_number}'
++        async with httpx.AsyncClient() as client:
++            response = await client.get(url, headers=self.headers)
++            response.raise_for_status()
++            data = response.json()
++
++        # Create a basic Issue object with required fields
++        issue = Issue(
++            owner=self.owner,
++            repo=self.repo,
++            number=data.get('id'),
++            title=data.get('title', ''),
++            body=data.get('content', {}).get('raw', ''),
++        )
++
++        return issue
++
++    def create_pr(
++        self,
++        title: str,
++        body: str,
++        head: str,
++        base: str,
++    ) -> str:
++        """Create a pull request.
++
++        Args:
++            title: The title of the pull request
++            body: The body of the pull request
++            head: The head branch
++            base: The base branch
++
++        Returns:
++            The URL of the created pull request
++        """
++        url = f'{self.base_url}/repositories/{self.owner}/{self.repo}/pullrequests'
++
++        payload = {
++            'title': title,
++            'description': body,
++            'source': {'branch': {'name': head}},
++            'destination': {'branch': {'name': base}},
++            'close_source_branch': False,
++        }
++
++        response = httpx.post(url, headers=self.headers, json=payload)
++        response.raise_for_status()
++        data = response.json()
++
++        return data.get('links', {}).get('html', {}).get('href', '')
++
++    def download_issues(self) -> list[Any]:
++        """Download all issues from the repository.
++
++        Returns:
++            A list of issues
++        """
++        logger.warning('BitbucketIssueHandler.download_issues not implemented')
++        return []
++
++    def get_issue_comments(
++        self, issue_number: int, comment_id: int | None = None
++    ) -> list[str] | None:
++        """Get comments for an issue.
++
++        Args:
++            issue_number: The issue number
++            comment_id: The comment ID (optional)
++
++        Returns:
++            A list of comments
++        """
++        logger.warning('BitbucketIssueHandler.get_issue_comments not implemented')
++        return []
++
++    def get_branch_url(self, branch_name: str) -> str:
++        """Get the URL for a branch.
++
++        Args:
++            branch_name: The branch name
++
++        Returns:
++            The URL for the branch
++        """
++        return (
++            f'https://{self.base_domain}/{self.owner}/{self.repo}/branch/{branch_name}'
++        )
++
++    def get_compare_url(self, branch_name: str) -> str:
++        """Get the URL for comparing branches.
++
++        Args:
++            branch_name: The branch name
++
++        Returns:
++            The URL for comparing branches
++        """
++        return f'https://{self.base_domain}/{self.owner}/{self.repo}/compare/master...{branch_name}'
++
++    def get_authorize_url(self) -> str:
++        """Get the URL for authorization.
++
++        Returns:
++            The URL for authorization
++        """
++        return f'https://oauth2:{self.token}@{self.base_domain}/'
++
++    def get_pull_url(self, pr_number: int) -> str:
++        """Get the URL for a pull request.
++
++        Args:
++            pr_number: The pull request number
++
++        Returns:
++            The URL for the pull request
++        """
++        return f'https://{self.base_domain}/{self.owner}/{self.repo}/pull-requests/{pr_number}'
++
++    def get_branch_name(self, base_branch_name: str) -> str:
++        """Get a unique branch name.
++
++        Args:
++            base_branch_name: The base branch name
++
++        Returns:
++            A unique branch name
++        """
++        return f'{base_branch_name}-{self.owner}'
++
++    def branch_exists(self, branch_name: str) -> bool:
++        """Check if a branch exists.
++
++        Args:
++            branch_name: The branch name
++
++        Returns:
++            True if the branch exists, False otherwise
++        """
++        logger.warning('BitbucketIssueHandler.branch_exists not implemented')
++        return False
++
++    def get_default_branch_name(self) -> str:
++        """Get the default branch name.
++
++        Returns:
++            The default branch name
++        """
++        return 'master'
++
++    def create_pull_request(self, data: dict[str, Any] | None = None) -> dict[str, Any]:
++        """Create a pull request.
++
++        Args:
++            data: The pull request data
++
++        Returns:
++            The created pull request
++        """
++        if data is None:
++            data = {}
++
++        title = data.get('title', '')
++        description = data.get('description', '')
++        source_branch = data.get('source_branch', '')
++        target_branch = data.get('target_branch', '')
++
++        url = f'{self.base_url}/repositories/{self.owner}/{self.repo}/pullrequests'
++
++        payload = {
++            'title': title,
++            'description': description,
++            'source': {'branch': {'name': source_branch}},
++            'destination': {'branch': {'name': target_branch}},
++            'close_source_branch': False,
++        }
++
++        response = httpx.post(url, headers=self.headers, json=payload)
++        response.raise_for_status()
++        data = response.json()
++
++        # Ensure data is not None before accessing it
++        if data is None:
++            data = {}
++
++        return {
++            'html_url': data.get('links', {}).get('html', {}).get('href', ''),
++            'number': data.get('id', 0),
++        }
++
++    def request_reviewers(self, reviewer: str, pr_number: int) -> None:
++        """Request reviewers for a pull request.
++
++        Args:
++            reviewer: The reviewer
++            pr_number: The pull request number
++        """
++        logger.warning('BitbucketIssueHandler.request_reviewers not implemented')
++
++    def send_comment_msg(self, issue_number: int, msg: str) -> None:
++        """Send a comment to an issue.
++
++        Args:
++            issue_number: The issue number
++            msg: The message
++        """
++        url = f'{self.base_url}/repositories/{self.owner}/{self.repo}/pullrequests/{issue_number}/comments'
++
++        payload = {'content': {'raw': msg}}
++
++        response = httpx.post(url, headers=self.headers, json=payload)
++        response.raise_for_status()
++
++    def get_issue_thread_comments(self, issue_number: int) -> list[str]:
++        """Get thread comments for an issue.
++
++        Args:
++            issue_number: The issue number
++
++        Returns:
++            A list of thread comments
++        """
++        logger.warning(
++            'BitbucketIssueHandler.get_issue_thread_comments not implemented'
++        )
++        return []
++
++    def get_issue_review_comments(self, issue_number: int) -> list[str]:
++        """Get review comments for an issue.
++
++        Args:
++            issue_number: The issue number
++
++        Returns:
++            A list of review comments
++        """
++        logger.warning(
++            'BitbucketIssueHandler.get_issue_review_comments not implemented'
++        )
++        return []
++
++    def get_issue_review_threads(self, issue_number: int) -> list[ReviewThread]:
++        """Get review threads for an issue.
++
++        Args:
++            issue_number: The issue number
++
++        Returns:
++            A list of review threads
++        """
++        logger.warning('BitbucketIssueHandler.get_issue_review_threads not implemented')
++        return []
++
++    def get_context_from_external_issues_references(
++        self,
++        closing_issues: list[str],
++        closing_issue_numbers: list[int],
++        issue_body: str,
++        review_comments: list[str] | None,
++        review_threads: list[ReviewThread],
++        thread_comments: list[str] | None,
++    ) -> list[str]:
++        """Get context from external issue references.
++
++        Args:
++            closing_issues: List of closing issue references
++            closing_issue_numbers: List of closing issue numbers
++            issue_body: The issue body
++            review_comments: List of review comments
++            review_threads: List of review threads
++            thread_comments: List of thread comments
++
++        Returns:
++            Context from external issue references
++        """
++        new_issue_references = []
++
++        if issue_body:
++            new_issue_references.extend(extract_issue_references(issue_body))
++
++        if review_comments:
++            for comment in review_comments:
++                new_issue_references.extend(extract_issue_references(comment))
++
++        if review_threads:
++            for review_thread in review_threads:
++                new_issue_references.extend(
++                    extract_issue_references(review_thread.comment)
++                )
++
++        if thread_comments:
++            for thread_comment in thread_comments:
++                new_issue_references.extend(extract_issue_references(thread_comment))
++
++        non_duplicate_references = set(new_issue_references)
++        unique_issue_references = non_duplicate_references.difference(
++            closing_issue_numbers
++        )
++
++        for issue_number in unique_issue_references:
++            try:
++                url = f'{self.base_url}/repositories/{self.owner}/{self.repo}/issues/{issue_number}'
++                response = httpx.get(url, headers=self.headers)
++                response.raise_for_status()
++                issue_data = response.json()
++                issue_body = issue_data.get('content', {}).get('raw', '')
++                if issue_body:
++                    closing_issues.append(issue_body)
++            except httpx.HTTPError as e:
++                logger.warning(f'Failed to fetch issue {issue_number}: {str(e)}')
++
++        return closing_issues
++
++    def get_converted_issues(
++        self, issue_numbers: list[int] | None = None, comment_id: int | None = None
++    ) -> list[Issue]:
++        """Get converted issues.
++
++        Args:
++            issue_numbers: List of issue numbers
++            comment_id: The comment ID
++
++        Returns:
++            A list of converted issues
++        """
++        if not issue_numbers:
++            raise ValueError('Unspecified issue numbers')
++
++        all_issues = self.download_issues()
++        logger.info(f'Limiting resolving to issues {issue_numbers}.')
++        all_issues = [issue for issue in all_issues if issue.get('id') in issue_numbers]
++
++        converted_issues = []
++        for issue in all_issues:
++            # For PRs, body can be None
++            if any([issue.get(key) is None for key in ['id', 'title']]):
++                logger.warning(f'Skipping #{issue} as it is missing id or title.')
++                continue
++
++            # Handle None body for PRs
++            body = (
++                issue.get('content', {}).get('raw', '')
++                if issue.get('content') is not None
++                else ''
++            )
++
++            # Placeholder for PR metadata
++            closing_issues: list[str] = []
++            review_comments: list[str] = []
++            review_threads: list[ReviewThread] = []
++            thread_ids: list[str] = []
++            head_branch = issue.get('source', {}).get('branch', {}).get('name', '')
++            thread_comments: list[str] = []
++
++            issue_details = Issue(
++                owner=self.owner,
++                repo=self.repo,
++                number=issue['id'],
++                title=issue['title'],
++                body=body,
++                closing_issues=closing_issues,
++                review_comments=review_comments,
++                review_threads=review_threads,
++                thread_ids=thread_ids,
++                head_branch=head_branch,
++                thread_comments=thread_comments,
++            )
++
++            converted_issues.append(issue_details)
++
++        return converted_issues
++
++    def get_graphql_url(self) -> str:
++        """Get the GraphQL URL.
++
++        Returns:
++            The GraphQL URL
++        """
++        return f'https://api.{self.base_domain}/graphql'
++
++    def reply_to_comment(self, pr_number: int, comment_id: str, reply: str) -> None:
++        """Reply to a comment.
++
++        Args:
++            pr_number: The pull request number
++            comment_id: The comment ID
++            reply: The reply message
++        """
++        url = f'{self.base_url}/repositories/{self.owner}/{self.repo}/pullrequests/{pr_number}/comments/{comment_id}'
++
++        payload = {'content': {'raw': reply}}
++
++        response = httpx.post(url, headers=self.headers, json=payload)
++        response.raise_for_status()
++
++    def get_issue_references(self, body: str) -> list[int]:
++        """Extract issue references from a string.
++
++        Args:
++            body: The string to extract issue references from
++
++        Returns:
++            A list of issue numbers
++        """
++        return extract_issue_references(body)
++
++
++class BitbucketPRHandler(BitbucketIssueHandler):
++    """Handler for Bitbucket pull requests, extending the issue handler."""
++
++    def __init__(
++        self,
++        owner: str,
++        repo: str,
++        token: str,
++        username: str | None = None,
++        base_domain: str = 'bitbucket.org',
++    ):
++        """Initialize a Bitbucket PR handler.
++
++        Args:
++            owner: The workspace of the repository
++            repo: The name of the repository
++            token: The Bitbucket API token
++            username: Optional Bitbucket username
++            base_domain: The domain for Bitbucket Server (default: "bitbucket.org")
++        """
++        super().__init__(owner, repo, token, username, base_domain)
+diff --git a/openhands/resolver/interfaces/issue.py b/openhands/resolver/interfaces/issue.py
+index ffd6a204ca7a..e293d9095050 100644
+--- a/openhands/resolver/interfaces/issue.py
++++ b/openhands/resolver/interfaces/issue.py
+@@ -121,5 +121,5 @@ def get_context_from_external_issues_references(
+     def get_converted_issues(
+         self, issue_numbers: list[int] | None = None, comment_id: int | None = None
+     ) -> list[Issue]:
+-        """Download issues from Gitlab."""
++        """Download issues from the git provider (GitHub, GitLab, or Bitbucket)."""
+         pass
+diff --git a/openhands/resolver/issue_handler_factory.py b/openhands/resolver/issue_handler_factory.py
+index 482e8a6ab7e7..528644ed2184 100644
+--- a/openhands/resolver/issue_handler_factory.py
++++ b/openhands/resolver/issue_handler_factory.py
+@@ -1,5 +1,9 @@
+ from openhands.core.config import LLMConfig
+ from openhands.integrations.provider import ProviderType
++from openhands.resolver.interfaces.bitbucket import (
++    BitbucketIssueHandler,
++    BitbucketPRHandler,
++)
+ from openhands.resolver.interfaces.github import GithubIssueHandler, GithubPRHandler
+ from openhands.resolver.interfaces.gitlab import GitlabIssueHandler, GitlabPRHandler
+ from openhands.resolver.interfaces.issue_definitions import (
+@@ -42,7 +46,7 @@ def create(self) -> ServiceContextIssue | ServiceContextPR:
+                     ),
+                     self.llm_config,
+                 )
+-            else:  # platform == Platform.GITLAB
++            elif self.platform == ProviderType.GITLAB:
+                 return ServiceContextIssue(
+                     GitlabIssueHandler(
+                         self.owner,
+@@ -53,6 +57,19 @@ def create(self) -> ServiceContextIssue | ServiceContextPR:
+                     ),
+                     self.llm_config,
+                 )
++            elif self.platform == ProviderType.BITBUCKET:
++                return ServiceContextIssue(
++                    BitbucketIssueHandler(
++                        self.owner,
++                        self.repo,
++                        self.token,
++                        self.username,
++                        self.base_domain,
++                    ),
++                    self.llm_config,
++                )
++            else:
++                raise ValueError(f'Unsupported platform: {self.platform}')
+         elif self.issue_type == 'pr':
+             if self.platform == ProviderType.GITHUB:
+                 return ServiceContextPR(
+@@ -65,7 +82,7 @@ def create(self) -> ServiceContextIssue | ServiceContextPR:
+                     ),
+                     self.llm_config,
+                 )
+-            else:  # platform == Platform.GITLAB
++            elif self.platform == ProviderType.GITLAB:
+                 return ServiceContextPR(
+                     GitlabPRHandler(
+                         self.owner,
+@@ -76,5 +93,18 @@ def create(self) -> ServiceContextIssue | ServiceContextPR:
+                     ),
+                     self.llm_config,
+                 )
++            elif self.platform == ProviderType.BITBUCKET:
++                return ServiceContextPR(
++                    BitbucketPRHandler(
++                        self.owner,
++                        self.repo,
++                        self.token,
++                        self.username,
++                        self.base_domain,
++                    ),
++                    self.llm_config,
++                )
++            else:
++                raise ValueError(f'Unsupported platform: {self.platform}')
+         else:
+             raise ValueError(f'Invalid issue type: {self.issue_type}')
+diff --git a/openhands/resolver/issue_resolver.py b/openhands/resolver/issue_resolver.py
+index e391f3fab5d3..8e3a7e63e140 100644
+--- a/openhands/resolver/issue_resolver.py
++++ b/openhands/resolver/issue_resolver.py
+@@ -50,6 +50,7 @@
+
+ class IssueResolver:
+     GITLAB_CI = os.getenv('GITLAB_CI') == 'true'
++    BITBUCKET_CI = os.getenv('BITBUCKET_BUILD_NUMBER') is not None
+
+     def __init__(self, args: Namespace) -> None:
+         """Initialize the IssueResolver with the given parameters.
+@@ -76,7 +77,12 @@ def __init__(self, args: Namespace) -> None:
+             raise ValueError('Invalid repository format. Expected owner/repo')
+         owner, repo = parts
+
+-        token = args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
++        token = (
++            args.token
++            or os.getenv('GITHUB_TOKEN')
++            or os.getenv('GITLAB_TOKEN')
++            or os.getenv('BITBUCKET_TOKEN')
++        )
+         username = args.username if args.username else os.getenv('GIT_USERNAME')
+         if not username:
+             raise ValueError('Username is required.')
+@@ -120,7 +126,11 @@ def __init__(self, args: Namespace) -> None:
+         base_domain = args.base_domain
+         if base_domain is None:
+             base_domain = (
+-                'github.com' if platform == ProviderType.GITHUB else 'gitlab.com'
++                'github.com'
++                if platform == ProviderType.GITHUB
++                else 'gitlab.com'
++                if platform == ProviderType.GITLAB
++                else 'bitbucket.org'
+             )
+
+         self.output_dir = args.output_dir
+diff --git a/openhands/resolver/resolve_issue.py b/openhands/resolver/resolve_issue.py
+index 3c0ec744b941..f9d3cf8ae954 100644
+--- a/openhands/resolver/resolve_issue.py
++++ b/openhands/resolver/resolve_issue.py
+@@ -116,7 +116,7 @@ def int_or_none(value: str) -> int | None:
+         '--base-domain',
+         type=str,
+         default=None,
+-        help='Base domain for the git server (defaults to "github.com" for GitHub and "gitlab.com" for GitLab)',
++        help='Base domain for the git server (defaults to "github.com" for GitHub, "gitlab.com" for GitLab, and "bitbucket.org" for Bitbucket)',
+     )
+
+     my_args = parser.parse_args()
+diff --git a/openhands/resolver/send_pull_request.py b/openhands/resolver/send_pull_request.py
+index 5d13aa149818..b8196f8c8031 100644
+--- a/openhands/resolver/send_pull_request.py
++++ b/openhands/resolver/send_pull_request.py
+@@ -11,6 +11,7 @@
+ from openhands.core.logger import openhands_logger as logger
+ from openhands.integrations.service_types import ProviderType
+ from openhands.llm.llm import LLM
++from openhands.resolver.interfaces.bitbucket import BitbucketIssueHandler
+ from openhands.resolver.interfaces.github import GithubIssueHandler
+ from openhands.resolver.interfaces.gitlab import GitlabIssueHandler
+ from openhands.resolver.interfaces.issue import Issue
+@@ -235,40 +236,55 @@ def send_pull_request(
+     pr_title: str | None = None,
+     base_domain: str | None = None,
+ ) -> str:
+-    """Send a pull request to a GitHub or Gitlab repository.
++    """Send a pull request to a GitHub, GitLab, or Bitbucket repository.
+
+     Args:
+         issue: The issue to send the pull request for
+-        token: The GitHub or Gitlab token to use for authentication
+-        username: The GitHub or Gitlab username, if provided
++        token: The token to use for authentication
++        username: The username, if provided
+         platform: The platform of the repository.
+         patch_dir: The directory containing the patches to apply
+         pr_type: The type: branch (no PR created), draft or ready (regular PR created)
+         fork_owner: The owner of the fork to push changes to (if different from the original repo owner)
+         additional_message: The additional messages to post as a comment on the PR in json list format
+         target_branch: The target branch to create the pull request against (defaults to repository default branch)
+-        reviewer: The GitHub or Gitlab username of the reviewer to assign
++        reviewer: The username of the reviewer to assign
+         pr_title: Custom title for the pull request (optional)
+-        base_domain: The base domain for the git server (defaults to "github.com" for GitHub and "gitlab.com" for GitLab)
++        base_domain: The base domain for the git server (defaults to "github.com" for GitHub, "gitlab.com" for GitLab, and "bitbucket.org" for Bitbucket)
+     """
+     if pr_type not in ['branch', 'draft', 'ready']:
+         raise ValueError(f'Invalid pr_type: {pr_type}')
+
+     # Determine default base_domain based on platform
+     if base_domain is None:
+-        base_domain = 'github.com' if platform == ProviderType.GITHUB else 'gitlab.com'
+-
++        if platform == ProviderType.GITHUB:
++            base_domain = 'github.com'
++        elif platform == ProviderType.GITLAB:
++            base_domain = 'gitlab.com'
++        else:  # platform == ProviderType.BITBUCKET
++            base_domain = 'bitbucket.org'
++
++    # Create the appropriate handler based on platform
+     handler = None
+     if platform == ProviderType.GITHUB:
+         handler = ServiceContextIssue(
+             GithubIssueHandler(issue.owner, issue.repo, token, username, base_domain),
+             None,
+         )
+-    else:  # platform == Platform.GITLAB
++    elif platform == ProviderType.GITLAB:
+         handler = ServiceContextIssue(
+             GitlabIssueHandler(issue.owner, issue.repo, token, username, base_domain),
+             None,
+         )
++    elif platform == ProviderType.BITBUCKET:
++        handler = ServiceContextIssue(
++            BitbucketIssueHandler(
++                issue.owner, issue.repo, token, username, base_domain
++            ),
++            None,
++        )
++    else:
++        raise ValueError(f'Unsupported platform: {platform}')
+
+     # Create a new branch with a unique name
+     base_branch_name = f'openhands-fix-issue-{issue.number}'
+diff --git a/openhands/resolver/utils.py b/openhands/resolver/utils.py
+index 4a1ccd7780a8..4af40be24a74 100644
+--- a/openhands/resolver/utils.py
++++ b/openhands/resolver/utils.py
+@@ -17,7 +17,7 @@
+
+ async def identify_token(token: str, base_domain: str | None) -> ProviderType:
+     """
+-    Identifies whether a token belongs to GitHub or GitLab.
++    Identifies whether a token belongs to GitHub, GitLab, or Bitbucket.
+     Parameters:
+         token (str): The personal access token to check.
+         base_domain (str): Custom base domain for provider (e.g GitHub Enterprise)
+diff --git a/openhands/runtime/base.py b/openhands/runtime/base.py
+index 658c76c6523d..bb20445fb686 100644
+--- a/openhands/runtime/base.py
++++ b/openhands/runtime/base.py
+@@ -7,6 +7,7 @@
+ import shutil
+ import string
+ import tempfile
++import urllib.parse
+ from abc import abstractmethod
+ from pathlib import Path
+ from types import MappingProxyType
+@@ -366,6 +367,47 @@ async def _handle_action(self, event: Action) -> None:
+             return
+         self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
+
++    async def _get_bitbucket_username(
++        self, token_value: str, domain: str
++    ) -> str | None:
++        """Get Bitbucket username from API using email:app_password token.
++
++        Args:
++            token_value: The token in format "email:app_password"
++            domain: The Bitbucket domain (e.g., "bitbucket.org")
++
++        Returns:
++            The Bitbucket username or None if failed
++        """
++        try:
++            # Parse email and app password from token
++            if ':' not in token_value:
++                logger.warning('Bitbucket token does not contain colon separator')
++                return None
++
++            email, app_password = token_value.split(':', 1)
++
++            # Make API call to get user info
++            api_url = f'https://api.{domain}/2.0/user'
++            async with httpx.AsyncClient() as client:
++                response = await client.get(
++                    api_url, auth=(email, app_password), timeout=10.0
++                )
++                response.raise_for_status()
++                user_data = response.json()
++                username = user_data.get('username')
++
++                if username:
++                    logger.debug(f'Retrieved Bitbucket username: {username}')
++                    return username
++                else:
++                    logger.warning('No username found in Bitbucket API response')
++                    return None
++
++        except Exception as e:
++            logger.warning(f'Failed to get Bitbucket username via API: {e}')
++            return None
++
+     async def clone_or_init_repo(
+         self,
+         git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
+@@ -411,6 +453,7 @@ async def clone_or_init_repo(
+         provider_domains = {
+             ProviderType.GITHUB: 'github.com',
+             ProviderType.GITLAB: 'gitlab.com',
++            ProviderType.BITBUCKET: 'bitbucket.org',
+         }
+
+         domain = provider_domains[provider]
+@@ -423,10 +466,38 @@ async def clone_or_init_repo(
+         if git_provider_tokens and provider in git_provider_tokens:
+             git_token = git_provider_tokens[provider].token
+             if git_token:
++                token_value = git_token.get_secret_value()
+                 if provider == ProviderType.GITLAB:
+-                    remote_repo_url = f'https://oauth2:{git_token.get_secret_value()}@{domain}/{selected_repository}.git'
++                    remote_repo_url = f'https://oauth2:{token_value}@{domain}/{selected_repository}.git'
++                elif provider == ProviderType.BITBUCKET:
++                    # For Bitbucket, handle email:app_password format specially
++                    if ':' in token_value:
++                        # Get the Bitbucket username via API
++                        bitbucket_username = await self._get_bitbucket_username(
++                            token_value, domain
++                        )
++                        if bitbucket_username:
++                            # Extract app password from token
++                            _, app_password = token_value.split(':', 1)
++                            remote_repo_url = f'https://{bitbucket_username}:{app_password}@{domain}/{selected_repository}.git'
++                        else:
++                            # Fallback to public URL if username retrieval fails
++                            logger.warning(
++                                'Failed to get Bitbucket username, falling back to public clone'
++                            )
++                            remote_repo_url = (
++                                f'https://{domain}/{selected_repository}.git'
++                            )
++                    else:
++                        # Token doesn't contain colon, use as-is (shouldn't happen for Bitbucket app passwords)
++                        remote_repo_url = (
++                            f'https://{token_value}@{domain}/{selected_repository}.git'
++                        )
+                 else:
+-                    remote_repo_url = f'https://{git_token.get_secret_value()}@{domain}/{selected_repository}.git'
++                    # GitHub
++                    remote_repo_url = (
++                        f'https://{token_value}@{domain}/{selected_repository}.git'
++                    )
+             else:
+                 remote_repo_url = f'https://{domain}/{selected_repository}.git'
+         else:
+@@ -647,6 +718,8 @@ def _get_authenticated_git_url(self, repo_path: str) -> str:
+             provider = ProviderType.GITHUB
+         elif 'gitlab.com' in repo_path:
+             provider = ProviderType.GITLAB
++        elif 'bitbucket.org' in repo_path:
++            provider = ProviderType.BITBUCKET
+
+         # Add authentication if available
+         if (
+@@ -657,9 +730,27 @@ def _get_authenticated_git_url(self, repo_path: str) -> str:
+             git_token = self.git_provider_tokens[provider].token
+             if git_token:
+                 if provider == ProviderType.GITLAB:
+-                    remote_url = f'https://oauth2:{git_token.get_secret_value()}@{repo_path.replace("gitlab.com/", "")}.git'
++                    # GitLab uses oauth2 prefix with URL-encoded token
++                    token = git_token.get_secret_value()
++                    remote_url = f'https://oauth2:{token}@{repo_path.replace("gitlab.com/", "")}.git'
++                elif provider == ProviderType.BITBUCKET:
++                    # Bitbucket tokens are in email:password format, need to encode separately
++                    token_value = git_token.get_secret_value()
++                    if ':' in token_value:
++                        email, password = token_value.split(':', 1)
++                        encoded_email = urllib.parse.quote(email, safe='')
++                        encoded_password = urllib.parse.quote(password, safe='')
++                        remote_url = f'https://{encoded_email}:{encoded_password}@{repo_path.replace("bitbucket.org/", "")}.git'
++                    else:
++                        # Fallback for non-standard token format
++                        encoded_token = urllib.parse.quote(token_value, safe='')
++                        remote_url = f'https://{encoded_token}@{repo_path.replace("bitbucket.org/", "")}.git'
+                 else:
+-                    remote_url = f'https://{git_token.get_secret_value()}@{repo_path.replace("github.com/", "")}.git'
++                    # GitHub and other providers use token as username
++                    token = git_token.get_secret_value()
++                    remote_url = (
++                        f'https://{token}@{repo_path.replace("github.com/", "")}.git'
++                    )
+
+         return remote_url
+
+diff --git a/openhands/server/routes/mcp.py b/openhands/server/routes/mcp.py
+index 606a3c7d48a8..ee4dba2d859c 100644
+--- a/openhands/server/routes/mcp.py
++++ b/openhands/server/routes/mcp.py
+@@ -8,6 +8,7 @@
+ from pydantic import Field
+
+ from openhands.core.logger import openhands_logger as logger
++from openhands.integrations.bitbucket.bitbucket_service import BitbucketService
+ from openhands.integrations.github.github_service import GithubServiceImpl
+ from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
+ from openhands.integrations.provider import ProviderToken
+@@ -206,3 +207,71 @@ async def create_mr(
+         raise ToolError(str(error))
+
+     return response
++
++
++@mcp_server.tool()
++async def create_bitbucket_pr(
++    repo_name: Annotated[
++        str, Field(description='Bitbucket repository (workspace/repo_slug)')
++    ],
++    source_branch: Annotated[str, Field(description='Source branch on repo')],
++    target_branch: Annotated[str, Field(description='Target branch on repo')],
++    title: Annotated[
++        str,
++        Field(
++            description='PR Title. Start title with `DRAFT:` or `WIP:` if applicable.'
++        ),
++    ],
++    description: Annotated[str | None, Field(description='PR description')],
++) -> str:
++    """Open a PR in Bitbucket"""
++
++    logger.info('Calling OpenHands MCP create_bitbucket_pr')
++
++    request = get_http_request()
++    headers = request.headers
++    conversation_id = headers.get('X-OpenHands-ServerConversation-ID', None)
++
++    provider_tokens = await get_provider_tokens(request)
++    access_token = await get_access_token(request)
++    user_id = await get_user_id(request)
++
++    bitbucket_token = (
++        provider_tokens.get(ProviderType.BITBUCKET, ProviderToken())
++        if provider_tokens
++        else ProviderToken()
++    )
++
++    bitbucket_service = BitbucketService(
++        user_id=bitbucket_token.user_id,
++        external_auth_id=user_id,
++        external_auth_token=access_token,
++        token=bitbucket_token.token,
++        base_domain=bitbucket_token.host,
++    )
++
++    try:
++        description = await get_convo_link(
++            bitbucket_service, conversation_id, description or ''
++        )
++    except Exception as e:
++        logger.warning(f'Failed to append convo link: {e}')
++
++    try:
++        response = await bitbucket_service.create_pr(
++            repo_name=repo_name,
++            source_branch=source_branch,
++            target_branch=target_branch,
++            title=title,
++            body=description,
++        )
++
++        if conversation_id and user_id:
++            await save_pr_metadata(user_id, conversation_id, response)
++
++    except Exception as e:
++        error = f'Error creating pull request: {e}'
++        logger.error(error)
++        raise ToolError(str(error))
++
++    return response
+diff --git a/openhands/server/routes/secrets.py b/openhands/server/routes/secrets.py
+index 99823e3d96db..ad65301d6915 100644
+--- a/openhands/server/routes/secrets.py
++++ b/openhands/server/routes/secrets.py
+@@ -75,7 +75,8 @@ async def check_provider_tokens(
+     if incoming_provider_tokens.provider_tokens:
+         # Determine whether tokens are valid
+         for token_type, token_value in incoming_provider_tokens.provider_tokens.items():
+-            if token_value.token:
++            # Only validate if token is not empty
++            if token_value.token and token_value.token.get_secret_value():
+                 confirmed_token_type = await validate_provider_token(
+                     token_value.token, token_value.host
+                 )  # FE always sends latest host
+@@ -90,6 +91,7 @@ async def check_provider_tokens(
+                 existing_token
+                 and (existing_token.host != token_value.host)
+                 and existing_token.token
++                and existing_token.token.get_secret_value()
+             ):
+                 confirmed_token_type = await validate_provider_token(
+                     existing_token.token, token_value.host
+@@ -129,10 +131,23 @@ async def store_provider_tokens(
+
+             # Merge incoming settings store with the existing one
+             for provider, token_value in list(provider_info.provider_tokens.items()):
+-                if provider in existing_providers and not token_value.token:
++                # If token is empty, keep the existing token if available
++                if provider in existing_providers and (
++                    not token_value.token or not token_value.token.get_secret_value()
++                ):
+                     existing_token = user_secrets.provider_tokens.get(provider)
+-                    if existing_token and existing_token.token:
++                    if (
++                        existing_token
++                        and existing_token.token
++                        and existing_token.token.get_secret_value()
++                    ):
+                         provider_info.provider_tokens[provider] = existing_token
++                    # If both new and existing tokens are empty, skip this provider
++                    elif (
++                        not token_value.token
++                        or not token_value.token.get_secret_value()
++                    ):
++                        continue
+
+                 provider_info.provider_tokens[provider] = provider_info.provider_tokens[
+                     provider
+diff --git a/openhands/server/session/agent_session.py b/openhands/server/session/agent_session.py
+index 2441e77c5dc9..ed5223641652 100644
+--- a/openhands/server/session/agent_session.py
++++ b/openhands/server/session/agent_session.py
+@@ -331,7 +331,7 @@ async def _create_runtime(
+         if runtime_cls == RemoteRuntime:
+             # If provider tokens is passed in custom secrets, then remove provider from provider tokens
+             # We prioritize provider tokens set in custom secrets
+-            provider_tokens_without_gitlab = (
++            provider_tokens_without_gitlab_bitbucket = (
+                 self.override_provider_tokens_with_custom_secret(
+                     git_provider_tokens, custom_secrets
+                 )
+@@ -345,7 +345,7 @@ async def _create_runtime(
+                 status_callback=self._status_callback,
+                 headless_mode=False,
+                 attach_to_existing=False,
+-                git_provider_tokens=provider_tokens_without_gitlab,
++                git_provider_tokens=provider_tokens_without_gitlab_bitbucket,
+                 env_vars=env_vars,
+                 user_id=self.user_id,
+             )
+diff --git a/openhands/utils/import_utils.py b/openhands/utils/import_utils.py
+index 61be22115c4b..49b17d9d2a97 100644
+--- a/openhands/utils/import_utils.py
++++ b/openhands/utils/import_utils.py
+@@ -58,7 +58,7 @@ def get_impl(cls: type[T], impl_name: str | None) -> type[T]:
+     Common Use Cases:
+         - Server components (ConversationManager, UserAuth, etc.)
+         - Storage implementations (ConversationStore, SettingsStore, etc.)
+-        - Service integrations (GitHub, GitLab services)
++        - Service integrations (GitHub, GitLab, Bitbucket services)
+
+     The implementation is cached to avoid repeated imports of the same class.
+     """
+diff --git a/tests/unit/resolver/test_resolve_issue.py b/tests/unit/resolver/test_resolve_issue.py
+index d11c35128811..283c1d11da31 100644
+--- a/tests/unit/resolver/test_resolve_issue.py
++++ b/tests/unit/resolver/test_resolve_issue.py
+@@ -12,12 +12,13 @@ def assert_sandbox_config(
+     base_container_image=SandboxConfig.model_fields['base_container_image'].default,
+     runtime_container_image='ghcr.io/all-hands-ai/runtime:mock-nikolaik',  # Default to mock version
+     local_runtime_url=SandboxConfig.model_fields['local_runtime_url'].default,
++    enable_auto_lint=False,
+ ):
+     """Helper function to assert the properties of the SandboxConfig object."""
+     assert isinstance(config, SandboxConfig)
+     assert config.base_container_image == base_container_image
+     assert config.runtime_container_image == runtime_container_image
+-    assert config.enable_auto_lint is False
++    assert config.enable_auto_lint is enable_auto_lint
+     assert config.use_host_network is False
+     assert config.timeout == 300
+     assert config.local_runtime_url == local_runtime_url
+@@ -123,7 +124,7 @@ def test_setup_sandbox_config_gitlab_ci(mock_get_unique_uid, mock_getuid):
+             )
+
+             assert_sandbox_config(
+-                openhands_config.sandbox, local_runtime_url='http://localhost'
++                openhands_config.sandbox, local_runtime_url='http://localhost', enable_auto_lint=True
+             )
+
+
+@@ -141,9 +142,13 @@ def test_setup_sandbox_config_gitlab_ci_non_root(mock_getuid):
+                 is_experimental=False,
+             )
+
++<<<<<<< HEAD
++            assert_sandbox_config(openhands_config.sandbox, local_runtime_url='http://localhost', enable_auto_lint=True)
++=======
+             assert_sandbox_config(
+                 openhands_config.sandbox, local_runtime_url='http://localhost'
+             )
++>>>>>>> 0c307ea12e9979a2958f674645b2e3c3b95dd295
+
+
+ @mock.patch('openhands.events.observation.CmdOutputObservation')
+diff --git a/tests/unit/test_bitbucket.py b/tests/unit/test_bitbucket.py
+new file mode 100644
+index 000000000000..a3ca3abcae9f
+--- /dev/null
++++ b/tests/unit/test_bitbucket.py
+@@ -0,0 +1,602 @@
++"""Tests for Bitbucket integration."""
++
++import os
++import unittest
++from unittest.mock import AsyncMock, MagicMock, patch
++
++import pytest
++from pydantic import SecretStr
++
++from openhands.integrations.provider import ProviderToken, ProviderType
++from openhands.integrations.service_types import ProviderType as ServiceProviderType
++from openhands.integrations.service_types import Repository
++from openhands.integrations.utils import validate_provider_token
++from openhands.resolver.interfaces.bitbucket import BitbucketIssueHandler
++from openhands.resolver.interfaces.issue import Issue
++from openhands.resolver.interfaces.issue_definitions import ServiceContextIssue
++from openhands.resolver.send_pull_request import send_pull_request
++from openhands.runtime.base import Runtime
++from openhands.server.routes.secrets import check_provider_tokens
++from openhands.server.settings import POSTProviderModel
++
++
++# BitbucketIssueHandler Tests
++@pytest.fixture
++def bitbucket_handler():
++    return BitbucketIssueHandler(
++        owner='test-workspace',
++        repo='test-repo',
++        token='test-token',
++        username='test-user',
++    )
++
++
++def test_init():
++    handler = BitbucketIssueHandler(
++        owner='test-workspace',
++        repo='test-repo',
++        token='test-token',
++        username='test-user',
++    )
++
++    assert handler.owner == 'test-workspace'
++    assert handler.repo == 'test-repo'
++    assert handler.token == 'test-token'
++    assert handler.username == 'test-user'
++    assert handler.base_domain == 'bitbucket.org'
++    assert handler.base_url == 'https://api.bitbucket.org/2.0'
++    assert (
++        handler.download_url
++        == 'https://bitbucket.org/test-workspace/test-repo/get/master.zip'
++    )
++    assert handler.clone_url == 'https://bitbucket.org/test-workspace/test-repo.git'
++    assert handler.headers == {
++        'Authorization': 'Bearer test-token',
++        'Accept': 'application/json',
++    }
++
++
++def test_get_repo_url(bitbucket_handler):
++    assert (
++        bitbucket_handler.get_repo_url()
++        == 'https://bitbucket.org/test-workspace/test-repo'
++    )
++
++
++def test_get_issue_url(bitbucket_handler):
++    assert (
++        bitbucket_handler.get_issue_url(123)
++        == 'https://bitbucket.org/test-workspace/test-repo/issues/123'
++    )
++
++
++def test_get_pr_url(bitbucket_handler):
++    assert (
++        bitbucket_handler.get_pr_url(123)
++        == 'https://bitbucket.org/test-workspace/test-repo/pull-requests/123'
++    )
++
++
++@pytest.mark.asyncio
++@patch('httpx.AsyncClient')
++async def test_get_issue(mock_client, bitbucket_handler):
++    mock_response = MagicMock()
++    mock_response.raise_for_status = AsyncMock()
++    mock_response.json.return_value = {
++        'id': 123,
++        'title': 'Test Issue',
++        'content': {'raw': 'Test Issue Body'},
++        'links': {
++            'html': {
++                'href': 'https://bitbucket.org/test-workspace/test-repo/issues/123'
++            }
++        },
++        'state': 'open',
++        'reporter': {'display_name': 'Test User'},
++        'assignee': [{'display_name': 'Assignee User'}],
++    }
++
++    mock_client_instance = AsyncMock()
++    mock_client_instance.get.return_value = mock_response
++    mock_client.return_value.__aenter__.return_value = mock_client_instance
++
++    issue = await bitbucket_handler.get_issue(123)
++
++    assert issue.number == 123
++    assert issue.title == 'Test Issue'
++    assert issue.body == 'Test Issue Body'
++    # We don't test for html_url, state, user, or assignees as they're not part of the Issue model
++
++
++@patch('httpx.post')
++def test_create_pr(mock_post, bitbucket_handler):
++    mock_response = MagicMock()
++    mock_response.raise_for_status.return_value = None
++    mock_response.json.return_value = {
++        'links': {
++            'html': {
++                'href': 'https://bitbucket.org/test-workspace/test-repo/pull-requests/123'
++            }
++        },
++    }
++    mock_post.return_value = mock_response
++
++    pr_url = bitbucket_handler.create_pr(
++        title='Test PR',
++        body='Test PR Body',
++        head='feature-branch',
++        base='main',
++    )
++
++    assert pr_url == 'https://bitbucket.org/test-workspace/test-repo/pull-requests/123'
++
++    expected_payload = {
++        'title': 'Test PR',
++        'description': 'Test PR Body',
++        'source': {'branch': {'name': 'feature-branch'}},
++        'destination': {'branch': {'name': 'main'}},
++        'close_source_branch': False,
++    }
++
++    mock_post.assert_called_once_with(
++        'https://api.bitbucket.org/2.0/repositories/test-workspace/test-repo/pullrequests',
++        headers=bitbucket_handler.headers,
++        json=expected_payload,
++    )
++
++
++# Bitbucket Send Pull Request Tests
++@patch('openhands.resolver.send_pull_request.ServiceContextIssue')
++@patch('openhands.resolver.send_pull_request.BitbucketIssueHandler')
++@patch('subprocess.run')
++def test_send_pull_request_bitbucket(
++    mock_run, mock_bitbucket_handler, mock_service_context
++):
++    # Mock subprocess.run to avoid actual git operations
++    mock_run.return_value = MagicMock(returncode=0)
++
++    # Mock the BitbucketIssueHandler instance
++    mock_instance = MagicMock(spec=BitbucketIssueHandler)
++    mock_bitbucket_handler.return_value = mock_instance
++
++    # Mock the ServiceContextIssue instance
++    mock_service = MagicMock(spec=ServiceContextIssue)
++    mock_service.get_branch_name.return_value = 'openhands-fix-123'
++    mock_service.branch_exists.return_value = True
++    mock_service.get_default_branch_name.return_value = 'main'
++    mock_service.get_clone_url.return_value = (
++        'https://bitbucket.org/test-workspace/test-repo.git'
++    )
++    mock_service.create_pull_request.return_value = {
++        'html_url': 'https://bitbucket.org/test-workspace/test-repo/pull-requests/123'
++    }
++    # Add _strategy attribute to mock
++    mock_strategy = MagicMock()
++    mock_service._strategy = mock_strategy
++    mock_service_context.return_value = mock_service
++
++    # Create a mock Issue
++    mock_issue = Issue(
++        number=123,
++        title='Test Issue',
++        owner='test-workspace',
++        repo='test-repo',
++        body='Test body',
++        created_at='2023-01-01T00:00:00Z',
++        updated_at='2023-01-01T00:00:00Z',
++        closed_at=None,
++        head_branch='feature-branch',
++        thread_ids=None,
++    )
++
++    # Call send_pull_request
++    result = send_pull_request(
++        issue=mock_issue,
++        token='test-token',
++        username=None,
++        platform=ServiceProviderType.BITBUCKET,
++        patch_dir='/tmp',  # Use /tmp instead of /tmp/repo to avoid directory not found error
++        pr_type='ready',
++        pr_title='Test PR',
++        target_branch='main',
++    )
++
++    # Verify the result
++    assert result == 'https://bitbucket.org/test-workspace/test-repo/pull-requests/123'
++
++    # Verify the handler was created correctly
++    mock_bitbucket_handler.assert_called_once_with(
++        'test-workspace',
++        'test-repo',
++        'test-token',
++        None,
++        'bitbucket.org',
++    )
++
++    # Verify ServiceContextIssue was created correctly
++    mock_service_context.assert_called_once()
++
++    # Verify create_pull_request was called with the correct data
++    expected_body = 'This pull request fixes #123.\n\nAutomatic fix generated by [OpenHands](https://github.com/All-Hands-AI/OpenHands/) 🙌'
++    mock_service.create_pull_request.assert_called_once_with(
++        {
++            'title': 'Test PR',
++            'description': expected_body,
++            'source_branch': 'openhands-fix-123',
++            'target_branch': 'main',
++            'draft': False,
++        }
++    )
++
++
++# Bitbucket Provider Domain Tests
++class TestBitbucketProviderDomain(unittest.TestCase):
++    """Test that Bitbucket provider domain is properly handled in Runtime.clone_or_init_repo."""
++
++    @patch('openhands.runtime.base.Runtime.__abstractmethods__', set())
++    @patch(
++        'openhands.runtime.utils.edit.FileEditRuntimeMixin.__init__', return_value=None
++    )
++    def test_get_authenticated_git_url_bitbucket(self, mock_file_edit_init, *args):
++        """Test that _get_authenticated_git_url correctly handles Bitbucket repositories with URL encoding."""
++        # Create a minimal runtime instance with abstract methods patched
++        config = MagicMock()
++        config.get_llm_config.return_value.model = 'test_model'
++        runtime = Runtime(config=config, event_stream=MagicMock(), sid='test_sid')
++
++        # Test with no token
++        url = runtime._get_authenticated_git_url('bitbucket.org/workspace/repo')
++        self.assertEqual(url, 'https://bitbucket.org/workspace/repo.git')
++
++        # Test with username:password format token
++        runtime.git_provider_tokens = {
++            ProviderType.BITBUCKET: ProviderToken(
++                token=SecretStr('username:app_password'), host='bitbucket.org'
++            )
++        }
++        url = runtime._get_authenticated_git_url('bitbucket.org/workspace/repo')
++        # Bitbucket tokens are parsed and encoded separately as username:password
++        self.assertEqual(url, 'https://username:app_password@workspace/repo.git')
++
++        # Test with email:password format token (more realistic)
++        runtime.git_provider_tokens = {
++            ProviderType.BITBUCKET: ProviderToken(
++                token=SecretStr('user@example.com:app_password'), host='bitbucket.org'
++            )
++        }
++        url = runtime._get_authenticated_git_url('bitbucket.org/workspace/repo')
++        # Email addresses get URL encoded
++        self.assertEqual(
++            url, 'https://user%40example.com:app_password@workspace/repo.git'
++        )
++
++        # Test with simple token format (fallback)
++        runtime.git_provider_tokens = {
++            ProviderType.BITBUCKET: ProviderToken(
++                token=SecretStr('simple_token'), host='bitbucket.org'
++            )
++        }
++        url = runtime._get_authenticated_git_url('bitbucket.org/workspace/repo')
++        # Simple tokens use fallback encoding
++        self.assertEqual(url, 'https://simple_token@workspace/repo.git')
++
++    @patch('openhands.runtime.base.ProviderHandler')
++    @patch.object(Runtime, 'run_action')
++    async def test_bitbucket_provider_domain(
++        self, mock_run_action, mock_provider_handler
++    ):
++        # Mock the provider handler to return a repository with Bitbucket as the provider
++        mock_repository = Repository(
++            id=1,
++            full_name='test/repo',
++            git_provider=ServiceProviderType.BITBUCKET,
++            is_public=True,
++        )
++
++        mock_provider_instance = MagicMock()
++        mock_provider_instance.verify_repo_provider.return_value = mock_repository
++        mock_provider_handler.return_value = mock_provider_instance
++
++        # Create a minimal runtime instance
++        runtime = Runtime(config=MagicMock(), event_stream=MagicMock(), sid='test_sid')
++
++        # Mock the workspace_root property to avoid AttributeError
++        runtime.workspace_root = '/workspace'
++
++        # Call clone_or_init_repo with a Bitbucket repository
++        # This should now succeed with our fix
++        await runtime.clone_or_init_repo(
++            git_provider_tokens=None,
++            selected_repository='test/repo',
++            selected_branch=None,
++        )
++
++        # Verify that run_action was called at least once (for git clone)
++        self.assertTrue(mock_run_action.called)
++
++        # Verify that the domain used was 'bitbucket.org'
++        # Extract the command from the first call to run_action
++        args, _ = mock_run_action.call_args
++        action = args[0]
++        self.assertIn('bitbucket.org', action.command)
++
++
++# Provider Token Validation Tests
++@pytest.mark.asyncio
++async def test_validate_provider_token_with_bitbucket_token():
++    """
++    Test that validate_provider_token correctly identifies a Bitbucket token
++    and doesn't try to validate it as GitHub or GitLab.
++    """
++    # Mock the service classes to avoid actual API calls
++    with (
++        patch('openhands.integrations.utils.GitHubService') as mock_github_service,
++        patch('openhands.integrations.utils.GitLabService') as mock_gitlab_service,
++        patch(
++            'openhands.integrations.utils.BitbucketService'
++        ) as mock_bitbucket_service,
++    ):
++        # Set up the mocks
++        github_instance = AsyncMock()
++        github_instance.verify_access.side_effect = Exception('Invalid GitHub token')
++        mock_github_service.return_value = github_instance
++
++        gitlab_instance = AsyncMock()
++        gitlab_instance.get_user.side_effect = Exception('Invalid GitLab token')
++        mock_gitlab_service.return_value = gitlab_instance
++
++        bitbucket_instance = AsyncMock()
++        bitbucket_instance.get_user.return_value = {'username': 'test_user'}
++        mock_bitbucket_service.return_value = bitbucket_instance
++
++        # Test with a Bitbucket token
++        token = SecretStr('username:app_password')
++        result = await validate_provider_token(token)
++
++        # Verify that all services were tried
++        mock_github_service.assert_called_once()
++        mock_gitlab_service.assert_called_once()
++        mock_bitbucket_service.assert_called_once()
++
++        # Verify that the token was identified as a Bitbucket token
++        assert result == ProviderType.BITBUCKET
++
++
++@pytest.mark.asyncio
++async def test_check_provider_tokens_with_only_bitbucket():
++    """
++    Test that check_provider_tokens doesn't try to validate GitHub or GitLab tokens
++    when only a Bitbucket token is provided.
++    """
++    # Create a mock validate_provider_token function
++    mock_validate = AsyncMock()
++    mock_validate.return_value = ProviderType.BITBUCKET
++
++    # Create provider tokens with only Bitbucket
++    provider_tokens = {
++        ProviderType.BITBUCKET: ProviderToken(
++            token=SecretStr('username:app_password'), host='bitbucket.org'
++        ),
++        ProviderType.GITHUB: ProviderToken(token=SecretStr(''), host='github.com'),
++        ProviderType.GITLAB: ProviderToken(token=SecretStr(''), host='gitlab.com'),
++    }
++
++    # Create the POST model
++    post_model = POSTProviderModel(provider_tokens=provider_tokens)
++
++    # Call check_provider_tokens with the patched validate_provider_token
++    with patch(
++        'openhands.server.routes.secrets.validate_provider_token', mock_validate
++    ):
++        result = await check_provider_tokens(post_model, None)
++
++        # Verify that validate_provider_token was called only once (for Bitbucket)
++        assert mock_validate.call_count == 1
++
++        # Verify that the token passed to validate_provider_token was the Bitbucket token
++        args, kwargs = mock_validate.call_args
++        assert args[0].get_secret_value() == 'username:app_password'
++
++        # Verify that no error message was returned
++        assert result == ''
++
++
++@pytest.mark.asyncio
++async def test_validate_provider_token_with_empty_tokens():
++    """
++    Test that validate_provider_token is not called for empty tokens.
++    """
++    # Create a mock for each service
++    with (
++        patch('openhands.integrations.utils.GitHubService') as mock_github_service,
++        patch('openhands.integrations.utils.GitLabService') as mock_gitlab_service,
++        patch(
++            'openhands.integrations.utils.BitbucketService'
++        ) as mock_bitbucket_service,
++    ):
++        # Test with an empty token
++        token = SecretStr('')
++        result = await validate_provider_token(token)
++
++        # Verify that services were NOT tried (this is the fix)
++        mock_github_service.assert_not_called()
++        mock_gitlab_service.assert_not_called()
++        mock_bitbucket_service.assert_not_called()
++
++        # Result should be None for empty tokens
++        assert result is None
++
++        # Test with a whitespace-only token
++        token = SecretStr('   ')
++        result = await validate_provider_token(token)
++
++        # Verify that services were NOT tried for whitespace tokens
++        mock_github_service.assert_not_called()
++        mock_gitlab_service.assert_not_called()
++        mock_bitbucket_service.assert_not_called()
++
++        # Result should be None for whitespace tokens
++        assert result is None
++
++
++# Setup.py Bitbucket Token Tests
++@patch('openhands.core.setup.call_async_from_sync')
++@patch('openhands.core.setup.get_file_store')
++@patch('openhands.core.setup.EventStream')
++def test_initialize_repository_for_runtime_with_bitbucket_token(
++    mock_event_stream, mock_get_file_store, mock_call_async_from_sync
++):
++    """Test that initialize_repository_for_runtime properly handles BITBUCKET_TOKEN."""
++    from openhands.core.setup import initialize_repository_for_runtime
++    from openhands.integrations.provider import ProviderType
++
++    # Mock runtime
++    mock_runtime = MagicMock()
++    mock_runtime.clone_or_init_repo = AsyncMock(return_value='test-repo')
++    mock_runtime.maybe_run_setup_script = MagicMock()
++    mock_runtime.maybe_setup_git_hooks = MagicMock()
++
++    # Mock call_async_from_sync to return the expected result
++    mock_call_async_from_sync.return_value = 'test-repo'
++
++    # Set up environment with BITBUCKET_TOKEN
++    with patch.dict(os.environ, {'BITBUCKET_TOKEN': 'username:app_password'}):
++        result = initialize_repository_for_runtime(
++            runtime=mock_runtime, selected_repository='all-hands-ai/test-repo'
++        )
++
++    # Verify the result
++    assert result == 'test-repo'
++
++    # Verify that call_async_from_sync was called with the correct arguments
++    mock_call_async_from_sync.assert_called_once()
++    args, kwargs = mock_call_async_from_sync.call_args
++
++    # Check that the function called was clone_or_init_repo
++    assert args[0] == mock_runtime.clone_or_init_repo
++
++    # Check that provider tokens were passed correctly
++    provider_tokens = args[2]  # Third argument is immutable_provider_tokens
++    assert provider_tokens is not None
++    assert ProviderType.BITBUCKET in provider_tokens
++    assert (
++        provider_tokens[ProviderType.BITBUCKET].token.get_secret_value()
++        == 'username:app_password'
++    )
++
++    # Check that the repository was passed correctly
++    assert args[3] == 'all-hands-ai/test-repo'  # selected_repository
++    assert args[4] is None  # selected_branch
++
++
++@patch('openhands.core.setup.call_async_from_sync')
++@patch('openhands.core.setup.get_file_store')
++@patch('openhands.core.setup.EventStream')
++def test_initialize_repository_for_runtime_with_multiple_tokens(
++    mock_event_stream, mock_get_file_store, mock_call_async_from_sync
++):
++    """Test that initialize_repository_for_runtime handles multiple provider tokens including Bitbucket."""
++    from openhands.core.setup import initialize_repository_for_runtime
++    from openhands.integrations.provider import ProviderType
++
++    # Mock runtime
++    mock_runtime = MagicMock()
++    mock_runtime.clone_or_init_repo = AsyncMock(return_value='test-repo')
++    mock_runtime.maybe_run_setup_script = MagicMock()
++    mock_runtime.maybe_setup_git_hooks = MagicMock()
++
++    # Mock call_async_from_sync to return the expected result
++    mock_call_async_from_sync.return_value = 'test-repo'
++
++    # Set up environment with multiple tokens
++    with patch.dict(
++        os.environ,
++        {
++            'GITHUB_TOKEN': 'github_token_123',
++            'GITLAB_TOKEN': 'gitlab_token_456',
++            'BITBUCKET_TOKEN': 'username:bitbucket_app_password',
++        },
++    ):
++        result = initialize_repository_for_runtime(
++            runtime=mock_runtime, selected_repository='all-hands-ai/test-repo'
++        )
++
++    # Verify the result
++    assert result == 'test-repo'
++
++    # Verify that call_async_from_sync was called
++    mock_call_async_from_sync.assert_called_once()
++    args, kwargs = mock_call_async_from_sync.call_args
++
++    # Check that provider tokens were passed correctly
++    provider_tokens = args[2]  # Third argument is immutable_provider_tokens
++    assert provider_tokens is not None
++
++    # Verify all three provider types are present
++    assert ProviderType.GITHUB in provider_tokens
++    assert ProviderType.GITLAB in provider_tokens
++    assert ProviderType.BITBUCKET in provider_tokens
++
++    # Verify token values
++    assert (
++        provider_tokens[ProviderType.GITHUB].token.get_secret_value()
++        == 'github_token_123'
++    )
++    assert (
++        provider_tokens[ProviderType.GITLAB].token.get_secret_value()
++        == 'gitlab_token_456'
++    )
++    assert (
++        provider_tokens[ProviderType.BITBUCKET].token.get_secret_value()
++        == 'username:bitbucket_app_password'
++    )
++
++
++@patch('openhands.core.setup.call_async_from_sync')
++@patch('openhands.core.setup.get_file_store')
++@patch('openhands.core.setup.EventStream')
++def test_initialize_repository_for_runtime_without_bitbucket_token(
++    mock_event_stream, mock_get_file_store, mock_call_async_from_sync
++):
++    """Test that initialize_repository_for_runtime works without BITBUCKET_TOKEN."""
++    from openhands.core.setup import initialize_repository_for_runtime
++    from openhands.integrations.provider import ProviderType
++
++    # Mock runtime
++    mock_runtime = MagicMock()
++    mock_runtime.clone_or_init_repo = AsyncMock(return_value='test-repo')
++    mock_runtime.maybe_run_setup_script = MagicMock()
++    mock_runtime.maybe_setup_git_hooks = MagicMock()
++
++    # Mock call_async_from_sync to return the expected result
++    mock_call_async_from_sync.return_value = 'test-repo'
++
++    # Set up environment without BITBUCKET_TOKEN but with other tokens
++    with patch.dict(
++        os.environ,
++        {'GITHUB_TOKEN': 'github_token_123', 'GITLAB_TOKEN': 'gitlab_token_456'},
++        clear=False,
++    ):
++        # Ensure BITBUCKET_TOKEN is not in environment
++        if 'BITBUCKET_TOKEN' in os.environ:
++            del os.environ['BITBUCKET_TOKEN']
++
++        result = initialize_repository_for_runtime(
++            runtime=mock_runtime, selected_repository='all-hands-ai/test-repo'
++        )
++
++    # Verify the result
++    assert result == 'test-repo'
++
++    # Verify that call_async_from_sync was called
++    mock_call_async_from_sync.assert_called_once()
++    args, kwargs = mock_call_async_from_sync.call_args
++
++    # Check that provider tokens were passed correctly
++    provider_tokens = args[2]  # Third argument is immutable_provider_tokens
++    assert provider_tokens is not None
++
++    # Verify only GitHub and GitLab are present, not Bitbucket
++    assert ProviderType.GITHUB in provider_tokens
++    assert ProviderType.GITLAB in provider_tokens
++    assert ProviderType.BITBUCKET not in provider_tokens
