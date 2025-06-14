@@ -5,7 +5,6 @@ from fastapi import (
     APIRouter,
     Depends,
     HTTPException,
-    Request,
     status,
 )
 from fastapi.responses import FileResponse, JSONResponse
@@ -27,17 +26,15 @@ from openhands.server.dependencies import get_dependencies
 from openhands.server.file_config import (
     FILES_TO_IGNORE,
 )
-from openhands.server.shared import (
-    ConversationStoreImpl,
-    config,
-)
+from openhands.server.session.conversation import ServerConversation
 from openhands.server.user_auth import get_user_id
 from openhands.server.utils import get_conversation, get_conversation_store
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.utils.async_utils import call_sync_from_async
-from openhands.server.session.conversation import ServerConversation
 
-app = APIRouter(prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies())
+app = APIRouter(
+    prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies()
+)
 
 
 @app.get(
@@ -50,7 +47,7 @@ app = APIRouter(prefix='/api/conversations/{conversation_id}', dependencies=get_
 )
 async def list_files(
     conversation: ServerConversation = Depends(get_conversation),
-    path: str | None = None
+    path: str | None = None,
 ) -> list[str] | JSONResponse:
     """List files in the specified path.
 
@@ -132,7 +129,9 @@ async def list_files(
         415: {'description': 'Unsupported media type', 'model': dict},
     },
 )
-async def select_file(file: str, conversation: ServerConversation = Depends(get_conversation)) -> FileResponse | JSONResponse:
+async def select_file(
+    file: str, conversation: ServerConversation = Depends(get_conversation)
+) -> FileResponse | JSONResponse:
     """Retrieve the content of a specified file.
 
     To select a file:
@@ -153,7 +152,9 @@ async def select_file(file: str, conversation: ServerConversation = Depends(get_
     """
     runtime: Runtime = conversation.runtime
 
-    file = os.path.join(runtime.config.workspace_mount_path_in_sandbox, file)
+    # Use the file path as-is since it should be absolute inside the runtime
+    if not file.startswith('/'):
+        file = os.path.join('/workspace', file)
     read_action = FileReadAction(file)
     try:
         observation = await call_sync_from_async(runtime.run_action, read_action)
@@ -196,11 +197,13 @@ async def select_file(file: str, conversation: ServerConversation = Depends(get_
         500: {'description': 'Error zipping workspace', 'model': dict},
     },
 )
-def zip_current_workspace(conversation: ServerConversation = Depends(get_conversation)) -> FileResponse | JSONResponse:
+def zip_current_workspace(
+    conversation: ServerConversation = Depends(get_conversation),
+) -> FileResponse | JSONResponse:
     try:
         logger.debug('Zipping workspace')
         runtime: Runtime = conversation.runtime
-        path = runtime.config.workspace_mount_path_in_sandbox
+        path = '/workspace'
         try:
             zip_file_path = runtime.copy_from(path)
         except AgentRuntimeUnavailableError as e:
@@ -241,7 +244,7 @@ async def git_changes(
     cwd = await get_cwd(
         conversation_store,
         conversation.sid,
-        runtime.config.workspace_mount_path_in_sandbox,
+        '/workspace',
     )
     logger.info(f'Getting git changes in {cwd}')
 
@@ -282,7 +285,7 @@ async def git_diff(
     cwd = await get_cwd(
         conversation_store,
         conversation.sid,
-        runtime.config.workspace_mount_path_in_sandbox,
+        '/workspace',
     )
 
     try:
@@ -299,10 +302,10 @@ async def git_diff(
 async def get_cwd(
     conversation_store: ConversationStore,
     conversation_id: str,
-    workspace_mount_path_in_sandbox: str,
+    workspace_path: str,
 ) -> str:
     metadata = await conversation_store.get_metadata(conversation_id)
-    cwd = workspace_mount_path_in_sandbox
+    cwd = workspace_path
     if metadata and metadata.selected_repository:
         repo_dir = metadata.selected_repository.split('/')[-1]
         cwd = os.path.join(cwd, repo_dir)

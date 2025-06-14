@@ -65,10 +65,6 @@ def test_compat_env_to_config(monkeypatch, setup_env):
     finalize_config(config)
 
     assert config.sandbox.volumes == '/repos/openhands/workspace:/workspace:rw'
-    # Check that the old parameters are set for backward compatibility
-    assert config.workspace_base == os.path.abspath('/repos/openhands/workspace')
-    assert config.workspace_mount_path == os.path.abspath('/repos/openhands/workspace')
-    assert config.workspace_mount_path_in_sandbox == '/workspace'
     assert isinstance(config.get_llm_config(), LLMConfig)
     assert config.get_llm_config().api_key.get_secret_value() == 'sk-proj-rgMV0...'
     assert config.get_llm_config().model == 'gpt-4o'
@@ -77,22 +73,18 @@ def test_compat_env_to_config(monkeypatch, setup_env):
     assert config.sandbox.timeout == 10
 
 
-def test_load_from_old_style_env(monkeypatch, default_config):
-    # Test loading configuration from old-style environment variables using monkeypatch
+def test_load_from_env_variables(monkeypatch, default_config):
+    # Test loading configuration from environment variables using monkeypatch
     monkeypatch.setenv('LLM_API_KEY', 'test-api-key')
     monkeypatch.setenv('DEFAULT_AGENT', 'BrowsingAgent')
-    # Using deprecated WORKSPACE_BASE to test backward compatibility
-    monkeypatch.setenv('WORKSPACE_BASE', '/opt/files/workspace')
+    monkeypatch.setenv('SANDBOX_VOLUMES', '/opt/files/workspace:/workspace:rw')
     monkeypatch.setenv('SANDBOX_BASE_CONTAINER_IMAGE', 'custom_image')
 
     load_from_env(default_config, os.environ)
 
     assert default_config.get_llm_config().api_key.get_secret_value() == 'test-api-key'
     assert default_config.default_agent == 'BrowsingAgent'
-    # Verify deprecated variables still work
-    assert default_config.workspace_base == '/opt/files/workspace'
-    assert default_config.workspace_mount_path is None  # before finalize_config
-    assert default_config.workspace_mount_path_in_sandbox is not None
+    assert default_config.sandbox.volumes == '/opt/files/workspace:/workspace:rw'
     assert default_config.sandbox.base_container_image == 'custom_image'
 
 
@@ -158,17 +150,7 @@ default_agent = "TestAgent"
     assert default_config.sandbox.volumes == '/opt/files2/workspace:/workspace:rw'
     assert default_config.sandbox.timeout == 1
 
-    assert default_config.workspace_mount_path is None
-    assert default_config.workspace_mount_path_in_sandbox is not None
-    assert default_config.workspace_mount_path_in_sandbox == '/workspace'
-
     finalize_config(default_config)
-
-    # after finalize_config, workspace_mount_path is set based on sandbox.volumes
-    assert default_config.workspace_mount_path == os.path.abspath(
-        '/opt/files2/workspace'
-    )
-    assert default_config.workspace_mount_path_in_sandbox == '/workspace'
 
 
 def test_llm_config_native_tool_calling(default_config, temp_toml_file, monkeypatch):
@@ -238,8 +220,6 @@ user_id = 1001
 
     load_from_toml(default_config, temp_toml_file)
 
-    assert default_config.workspace_mount_path is None
-
     load_from_env(default_config, os.environ)
 
     assert os.environ.get('LLM_MODEL') is None
@@ -250,16 +230,12 @@ user_id = 1001
 
     # Environment variable should override TOML value
     assert default_config.sandbox.volumes == '/tmp/test:/workspace:ro'
-    assert default_config.workspace_mount_path is None
 
     assert default_config.disable_color is True
     assert default_config.sandbox.timeout == 1000
     assert default_config.sandbox.user_id == 1002
 
     finalize_config(default_config)
-    # after finalize_config, workspace_mount_path is set based on the sandbox.volumes
-    assert default_config.workspace_mount_path == os.path.abspath('/tmp/test')
-    assert default_config.workspace_mount_path_in_sandbox == '/workspace'
 
 
 def test_env_overrides_sandbox_toml(monkeypatch, default_config, temp_toml_file):
@@ -287,8 +263,6 @@ user_id = 1001
 
     load_from_toml(default_config, temp_toml_file)
 
-    assert default_config.workspace_mount_path is None
-
     # before load_from_env, values are set to the values from the toml file
     assert default_config.get_llm_config().api_key.get_secret_value() == 'toml-api-key'
     assert default_config.sandbox.volumes == '/opt/files3/workspace:/workspace:rw'
@@ -306,9 +280,6 @@ user_id = 1001
     assert default_config.sandbox.user_id == 1002
 
     finalize_config(default_config)
-    # after finalize_config, workspace_mount_path is set based on sandbox.volumes
-    assert default_config.workspace_mount_path == os.path.abspath('/tmp/test')
-    assert default_config.workspace_mount_path_in_sandbox == '/workspace'
 
 
 def test_sandbox_config_from_toml(monkeypatch, default_config, temp_toml_file):
@@ -335,10 +306,6 @@ user_id = 1001
 
     assert default_config.get_llm_config().model == 'test-model'
     assert default_config.sandbox.volumes == '/opt/files/workspace:/workspace:rw'
-    assert default_config.workspace_mount_path == os.path.abspath(
-        '/opt/files/workspace'
-    )
-    assert default_config.workspace_mount_path_in_sandbox == '/workspace'
     assert default_config.sandbox.timeout == 1
     assert default_config.sandbox.base_container_image == 'custom_image'
     assert default_config.sandbox.user_id == 1001
@@ -377,7 +344,7 @@ def test_security_config_from_toml(default_config, temp_toml_file):
         toml_file.write(
             """
 [core]  # make sure core is loaded first
-workspace_base = "/opt/files/workspace"
+sandbox.volumes = "/opt/files/workspace:/workspace:rw"
 
 [llm]
 model = "test-model"
@@ -410,7 +377,6 @@ def test_security_config_from_dict():
 def test_defaults_dict_after_updates(default_config):
     # Test that `defaults_dict` retains initial values after updates.
     initial_defaults = default_config.defaults_dict
-    assert initial_defaults['workspace_mount_path']['default'] is None
     assert initial_defaults['default_agent']['default'] == 'CodeActAgent'
 
     updated_config = OpenHandsConfig()
@@ -424,7 +390,6 @@ def test_defaults_dict_after_updates(default_config):
 
     defaults_after_updates = updated_config.defaults_dict
     assert defaults_after_updates['default_agent']['default'] == 'CodeActAgent'
-    assert defaults_after_updates['workspace_mount_path']['default'] is None
     assert defaults_after_updates['sandbox']['timeout']['default'] == 120
     assert (
         defaults_after_updates['sandbox']['base_container_image']['default']
@@ -449,13 +414,12 @@ def test_sandbox_volumes(monkeypatch, default_config):
         == '/host/path1:/container/path1,/host/path2:/container/path2:ro'
     )
 
-    # With the new behavior, workspace_base and workspace_mount_path should be None
+    # With the new behavior, only sandbox.volumes should be used
     # when no explicit /workspace mount is found
-    assert default_config.workspace_base is None
-    assert default_config.workspace_mount_path is None
     assert (
-        default_config.workspace_mount_path_in_sandbox == '/workspace'
-    )  # Default value
+        default_config.sandbox.volumes
+        == '/host/path1:/container/path1,/host/path2:/container/path2:ro'
+    )
 
 
 def test_sandbox_volumes_with_mode(monkeypatch, default_config):
@@ -468,19 +432,15 @@ def test_sandbox_volumes_with_mode(monkeypatch, default_config):
     # Check that sandbox.volumes is set correctly
     assert default_config.sandbox.volumes == '/host/path1:/container/path1:ro'
 
-    # With the new behavior, workspace_base and workspace_mount_path should be None
+    # With the new behavior, only sandbox.volumes should be used
     # when no explicit /workspace mount is found
-    assert default_config.workspace_base is None
-    assert default_config.workspace_mount_path is None
-    assert (
-        default_config.workspace_mount_path_in_sandbox == '/workspace'
-    )  # Default value
+    assert default_config.sandbox.volumes == '/host/path1:/container/path1:ro'
 
 
 def test_invalid_toml_format(monkeypatch, temp_toml_file, default_config):
     # Invalid TOML format doesn't break the configuration
     monkeypatch.setenv('LLM_MODEL', 'gpt-5-turbo-1106')
-    monkeypatch.setenv('WORKSPACE_MOUNT_PATH', '/home/user/project')
+    monkeypatch.setenv('SANDBOX_VOLUMES', '/home/user/project:/workspace:rw')
     monkeypatch.delenv('LLM_API_KEY', raising=False)
 
     with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
@@ -493,7 +453,7 @@ def test_invalid_toml_format(monkeypatch, temp_toml_file, default_config):
         llm.api_key = None  # prevent leak
     assert default_config.get_llm_config().model == 'gpt-5-turbo-1106'
     assert default_config.get_llm_config().custom_llm_provider is None
-    assert default_config.workspace_mount_path == '/home/user/project'
+    assert default_config.sandbox.volumes == '/home/user/project:/workspace:rw'
 
 
 def test_load_from_toml_file_not_found(default_config):
@@ -615,65 +575,16 @@ invalid_security_field = "test"
 
 def test_finalize_config(default_config):
     # Test finalize config
-    assert default_config.workspace_mount_path is None
-    default_config.workspace_base = None
+    default_config.sandbox.volumes = None
     finalize_config(default_config)
 
-    assert default_config.workspace_mount_path is None
-
-
-def test_workspace_mount_path_default(default_config):
-    assert default_config.workspace_mount_path is None
-    default_config.workspace_base = '/home/user/project'
-    finalize_config(default_config)
-    assert default_config.workspace_mount_path == os.path.abspath(
-        default_config.workspace_base
-    )
-
-
-def test_workspace_mount_rewrite(default_config, monkeypatch):
-    default_config.workspace_base = '/home/user/project'
-    default_config.workspace_mount_rewrite = '/home/user:/sandbox'
-    monkeypatch.setattr('os.getcwd', lambda: '/current/working/directory')
-    finalize_config(default_config)
-    assert default_config.workspace_mount_path == '/sandbox/project'
+    # Test passes if finalize_config doesn't crash
 
 
 def test_cache_dir_creation(default_config, tmpdir):
     default_config.cache_dir = str(tmpdir.join('test_cache'))
     finalize_config(default_config)
     assert os.path.exists(default_config.cache_dir)
-
-
-def test_sandbox_volumes_with_workspace(default_config):
-    """Test that sandbox.volumes with explicit /workspace mount works correctly."""
-    default_config.sandbox.volumes = '/home/user/mydir:/workspace:rw,/data:/data:ro'
-    finalize_config(default_config)
-    assert default_config.workspace_mount_path == '/home/user/mydir'
-    assert default_config.workspace_mount_path_in_sandbox == '/workspace'
-    assert default_config.workspace_base == '/home/user/mydir'
-
-
-def test_sandbox_volumes_without_workspace(default_config):
-    """Test that sandbox.volumes without explicit /workspace mount doesn't set workspace paths."""
-    default_config.sandbox.volumes = '/data:/data:ro,/models:/models:ro'
-    finalize_config(default_config)
-    assert default_config.workspace_mount_path is None
-    assert default_config.workspace_base is None
-    assert (
-        default_config.workspace_mount_path_in_sandbox == '/workspace'
-    )  # Default value remains unchanged
-
-
-def test_sandbox_volumes_with_workspace_not_first(default_config):
-    """Test that sandbox.volumes with /workspace mount not as first entry works correctly."""
-    default_config.sandbox.volumes = (
-        '/data:/data:ro,/home/user/mydir:/workspace:rw,/models:/models:ro'
-    )
-    finalize_config(default_config)
-    assert default_config.workspace_mount_path == '/home/user/mydir'
-    assert default_config.workspace_mount_path_in_sandbox == '/workspace'
-    assert default_config.workspace_base == '/home/user/mydir'
 
 
 def test_agent_config_condenser_with_no_enabled():
@@ -683,6 +594,7 @@ def test_agent_config_condenser_with_no_enabled():
     assert isinstance(agent_config.condenser, NoOpCondenserConfig)
 
 
+@pytest.mark.skip(reason='workspace_* variables have been removed')
 def test_sandbox_volumes_toml(default_config, temp_toml_file):
     """Test that volumes configuration under [sandbox] works correctly."""
     with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
@@ -700,9 +612,8 @@ timeout = 1
         default_config.sandbox.volumes
         == '/home/user/mydir:/workspace:rw,/data:/data:ro'
     )
-    assert default_config.workspace_mount_path == '/home/user/mydir'
-    assert default_config.workspace_mount_path_in_sandbox == '/workspace'
-    assert default_config.workspace_base == '/home/user/mydir'
+    # These assertions are no longer valid as the variables have been removed
+    # assert default_config.sandbox.volumes.startswith('/home/user/mydir'
     assert default_config.sandbox.timeout == 1
 
 

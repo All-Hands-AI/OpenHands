@@ -15,7 +15,7 @@ def test_view_file(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create test file
-        test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
+        test_file = os.path.join('/workspace', 'test.txt')
         action = FileWriteAction(
             content='This is a test file.\nThis file is for testing purposes.',
             path=test_file,
@@ -41,7 +41,7 @@ def test_view_directory(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create test file
-        test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
+        test_file = os.path.join('/workspace', 'test.txt')
         action = FileWriteAction(
             content='This is a test file.\nThis file is for testing purposes.',
             path=test_file,
@@ -51,15 +51,15 @@ def test_view_directory(temp_dir, runtime_cls, run_as_openhands):
         # Test view command
         action = FileEditAction(
             command='view',
-            path=config.workspace_mount_path_in_sandbox,
+            path='/workspace',
         )
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert (
             obs.content
-            == f"""Here's the files and directories up to 2 levels deep in {config.workspace_mount_path_in_sandbox}, excluding hidden items:
-{config.workspace_mount_path_in_sandbox}/
-{config.workspace_mount_path_in_sandbox}/test.txt"""
+            == f"""Here's the files and directories up to 2 levels deep in {'/workspace'}, excluding hidden items:
+{'/workspace'}/
+{'/workspace'}/test.txt"""
         )
 
     finally:
@@ -69,7 +69,7 @@ def test_view_directory(temp_dir, runtime_cls, run_as_openhands):
 def test_create_file(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
-        new_file = os.path.join(config.workspace_mount_path_in_sandbox, 'new_file.txt')
+        new_file = os.path.join('/workspace', 'new_file.txt')
         action = FileEditAction(
             command='create',
             path=new_file,
@@ -95,7 +95,7 @@ def test_create_file(temp_dir, runtime_cls, run_as_openhands):
 def test_create_file_with_empty_content(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
-        new_file = os.path.join(config.workspace_mount_path_in_sandbox, 'new_file.txt')
+        new_file = os.path.join('/workspace', 'new_file.txt')
         action = FileEditAction(
             command='create',
             path=new_file,
@@ -121,9 +121,7 @@ def test_create_file_with_empty_content(temp_dir, runtime_cls, run_as_openhands)
 def test_create_with_none_file_text(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
-        new_file = os.path.join(
-            config.workspace_mount_path_in_sandbox, 'none_content.txt'
-        )
+        new_file = os.path.join('/workspace', 'none_content.txt')
         action = FileEditAction(
             command='create',
             path=new_file,
@@ -143,7 +141,7 @@ def test_str_replace(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create test file
-        test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
+        test_file = os.path.join('/workspace', 'test.txt')
         action = FileWriteAction(
             content='This is a test file.\nThis file is for testing purposes.',
             path=test_file,
@@ -175,7 +173,7 @@ def test_str_replace(temp_dir, runtime_cls, run_as_openhands):
 def test_str_replace_multi_line(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
-        test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
+        test_file = os.path.join('/workspace', 'test.txt')
         action = FileWriteAction(
             content='This is a test file.\nThis file is for testing purposes.',
             path=test_file,
@@ -202,7 +200,7 @@ def test_str_replace_multi_line(temp_dir, runtime_cls, run_as_openhands):
 def test_str_replace_multi_line_with_tabs(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
-        test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
+        test_file = os.path.join('/workspace', 'test.txt')
         action = FileEditAction(
             command='create',
             path=test_file,
@@ -236,7 +234,7 @@ def test_str_replace_error_multiple_occurrences(
 ):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
-        test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
+        test_file = os.path.join('/workspace', 'test.txt')
         action = FileWriteAction(
             content='This is a test file.\nThis file is for testing purposes.',
             path=test_file,
@@ -259,7 +257,7 @@ def test_str_replace_error_multiple_multiline_occurrences(
 ):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
-        test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
+        test_file = os.path.join('/workspace', 'test.txt')
         # Create a file with two identical multi-line blocks
         multi_block = """def example():
         print("Hello")
@@ -290,7 +288,7 @@ def test_str_replace_error_multiple_multiline_occurrences(
 def test_str_replace_nonexistent_string(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
-        test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
+        test_file = os.path.join('/workspace', 'test.txt')
         action = FileWriteAction(
             content='Line 1\nLine 2',
             path=test_file,
@@ -316,7 +314,7 @@ def test_str_replace_nonexistent_string(temp_dir, runtime_cls, run_as_openhands)
 def test_str_replace_with_empty_new_str(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
-        test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
+        test_file = os.path.join('/workspace', 'test.txt')
         action = FileWriteAction(
             content='Line 1\nLine to remove\nLine 3',
             path=test_file,
@@ -340,7 +338,7 @@ def test_str_replace_with_empty_new_str(temp_dir, runtime_cls, run_as_openhands)
 def test_str_replace_with_empty_old_str(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
-        test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
+        test_file = os.path.join('/workspace', 'test.txt')
         action = FileWriteAction(
             content='Line 1\nLine 2\nLine 3',
             path=test_file,
@@ -374,7 +372,7 @@ def test_str_replace_with_empty_old_str(temp_dir, runtime_cls, run_as_openhands)
 def test_str_replace_with_none_old_str(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
-        test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
+        test_file = os.path.join('/workspace', 'test.txt')
         action = FileWriteAction(
             content='Line 1\nLine 2\nLine 3',
             path=test_file,
@@ -398,7 +396,7 @@ def test_insert(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create test file
-        test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
+        test_file = os.path.join('/workspace', 'test.txt')
         action = FileWriteAction(
             content='Line 1\nLine 2',
             path=test_file,
@@ -432,7 +430,7 @@ def test_insert(temp_dir, runtime_cls, run_as_openhands):
 def test_insert_invalid_line(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
-        test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
+        test_file = os.path.join('/workspace', 'test.txt')
         action = FileWriteAction(
             content='Line 1\nLine 2',
             path=test_file,
@@ -455,7 +453,7 @@ def test_insert_invalid_line(temp_dir, runtime_cls, run_as_openhands):
 def test_insert_with_empty_string(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
-        test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
+        test_file = os.path.join('/workspace', 'test.txt')
         action = FileWriteAction(
             content='Line 1\nLine 2',
             path=test_file,
@@ -479,7 +477,7 @@ def test_insert_with_empty_string(temp_dir, runtime_cls, run_as_openhands):
 def test_insert_with_none_new_str(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
-        test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
+        test_file = os.path.join('/workspace', 'test.txt')
         action = FileWriteAction(
             content='Line 1\nLine 2',
             path=test_file,
@@ -504,7 +502,7 @@ def test_undo_edit(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create test file
-        test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
+        test_file = os.path.join('/workspace', 'test.txt')
         action = FileWriteAction(
             content='This is a test file.',
             path=test_file,
@@ -548,9 +546,7 @@ def test_undo_edit(temp_dir, runtime_cls, run_as_openhands):
 def test_validate_path_invalid(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
-        invalid_file = os.path.join(
-            config.workspace_mount_path_in_sandbox, 'nonexistent.txt'
-        )
+        invalid_file = os.path.join('/workspace', 'nonexistent.txt')
         action = FileEditAction(
             command='view',
             path=invalid_file,
@@ -566,7 +562,7 @@ def test_validate_path_invalid(temp_dir, runtime_cls, run_as_openhands):
 def test_create_existing_file_error(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
-        test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
+        test_file = os.path.join('/workspace', 'test.txt')
         action = FileWriteAction(
             content='Line 1\nLine 2',
             path=test_file,
@@ -587,7 +583,7 @@ def test_create_existing_file_error(temp_dir, runtime_cls, run_as_openhands):
 def test_str_replace_missing_old_str(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
-        test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
+        test_file = os.path.join('/workspace', 'test.txt')
         action = FileWriteAction(
             content='Line 1\nLine 2',
             path=test_file,
@@ -612,7 +608,7 @@ def test_str_replace_missing_old_str(temp_dir, runtime_cls, run_as_openhands):
 def test_str_replace_new_str_and_old_str_same(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
-        test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
+        test_file = os.path.join('/workspace', 'test.txt')
         action = FileWriteAction(
             content='Line 1\nLine 2',
             path=test_file,
@@ -637,7 +633,7 @@ def test_str_replace_new_str_and_old_str_same(temp_dir, runtime_cls, run_as_open
 def test_insert_missing_line_param(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
-        test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
+        test_file = os.path.join('/workspace', 'test.txt')
         action = FileWriteAction(
             content='Line 1\nLine 2',
             path=test_file,
@@ -658,7 +654,7 @@ def test_insert_missing_line_param(temp_dir, runtime_cls, run_as_openhands):
 def test_undo_edit_no_history_error(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
-        empty_file = os.path.join(config.workspace_mount_path_in_sandbox, 'empty.txt')
+        empty_file = os.path.join('/workspace', 'empty.txt')
         action = FileWriteAction(
             content='',
             path=empty_file,
@@ -680,9 +676,7 @@ def test_view_large_file_with_truncation(temp_dir, runtime_cls, run_as_openhands
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create a large file to trigger truncation
-        large_file = os.path.join(
-            config.workspace_mount_path_in_sandbox, 'large_test.txt'
-        )
+        large_file = os.path.join('/workspace', 'large_test.txt')
         large_content = 'Line 1\n' * 16000  # 16000 lines should trigger truncation
         action = FileWriteAction(
             content=large_content,

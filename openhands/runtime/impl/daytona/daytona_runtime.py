@@ -58,8 +58,8 @@ class DaytonaRuntime(ActionExecutionClient):
         )
         self.daytona = Daytona(daytona_config)
 
-        # workspace_base cannot be used because we can't bind mount into a workspace.
-        if self.config.workspace_base is not None:
+        # Workspace mounting is not supported in the Daytona runtime.
+        if self.config.sandbox.volumes:
             self.log(
                 'warning',
                 'Workspace mounting is not supported in the Daytona runtime.',
@@ -143,8 +143,7 @@ class DaytonaRuntime(ActionExecutionClient):
             override_username='openhands',
         )
         start_command_str: str = (
-            f'mkdir -p {self.config.workspace_mount_path_in_sandbox} && cd /openhands/code && '
-            + ' '.join(start_command)
+            'mkdir -p /workspace && cd /openhands/code && ' + ' '.join(start_command)
         )
 
         self.log(
@@ -262,7 +261,7 @@ class DaytonaRuntime(ActionExecutionClient):
             return None
         self._vscode_url = (
             self._construct_api_url(self._vscode_port)
-            + f'/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+            + f'/?tkn={token}&folder=/workspace'
         )
 
         self.log(

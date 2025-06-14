@@ -89,7 +89,7 @@ def test_app_config_extended_from_toml(tmp_path: os.PathLike) -> None:
     # Create a temporary TOML file with multiple sections including [extended]
     config_content = """
 [core]
-workspace_base = "/tmp/workspace"
+sandbox.volumes = "/tmp/workspace:/workspace:rw"
 
 [llm]
 model = "test-model"
@@ -125,7 +125,7 @@ def test_app_config_extended_default(tmp_path: os.PathLike) -> None:
     """
     config_content = """
 [core]
-workspace_base = "/tmp/workspace"
+sandbox.volumes = "/tmp/workspace:/workspace:rw"
 
 [llm]
 model = "test-model"
@@ -152,7 +152,7 @@ def test_app_config_extended_random_keys(tmp_path: os.PathLike) -> None:
     """
     config_content = """
 [core]
-workspace_base = "/tmp/workspace"
+sandbox.volumes = "/tmp/workspace:/workspace:rw"
 
 [extended]
 random_key = "random_value"

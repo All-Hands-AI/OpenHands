@@ -106,9 +106,7 @@ class RunloopRuntime(ActionExecutionClient):
             launch_parameters=LaunchParameters(
                 available_ports=[self._sandbox_port, self._vscode_port],
                 resource_size_request='LARGE',
-                launch_commands=[
-                    f'mkdir -p {self.config.workspace_mount_path_in_sandbox}'
-                ],
+                launch_commands=['mkdir -p /workspace'],
             ),
             metadata={'container-name': self.container_name},
         )
@@ -182,7 +180,7 @@ class RunloopRuntime(ActionExecutionClient):
                 id=self.devbox.id,
                 port=self._vscode_port,
             ).url
-            + f'/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+            + f'/?tkn={token}&folder=/workspace'
         )
 
         self.log(

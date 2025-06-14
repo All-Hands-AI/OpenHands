@@ -418,15 +418,24 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
 
     if not should_override_cli_defaults:
         config.runtime = 'cli'
-        if not config.workspace_base:
-            config.workspace_base = os.getcwd()
+
+        # Ensure sandbox.volumes is set
+        if not config.sandbox.volumes:
+            config.sandbox.volumes = os.getcwd()
         config.security.confirmation_mode = True
 
     # TODO: Set working directory from config or use current working directory?
-    current_dir = config.workspace_base
+    # Use sandbox.volumes to determine the working directory
+    current_dir = os.getcwd()
+    if config.sandbox.volumes:
+        # Extract the host path from sandbox.volumes if it's in the format host:container:mode
+        if isinstance(config.sandbox.volumes, str) and ':' in config.sandbox.volumes:
+            current_dir = config.sandbox.volumes.split(':')[0]
+        else:
+            current_dir = config.sandbox.volumes
 
     if not current_dir:
-        raise ValueError('Workspace base directory not specified')
+        raise ValueError('Workspace directory not specified')
 
     if not check_folder_security_agreement(config, current_dir):
         # User rejected, exit application

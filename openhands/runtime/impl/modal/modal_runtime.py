@@ -69,13 +69,6 @@ class ModalRuntime(ActionExecutionClient):
             'openhands', create_if_missing=True, client=self.modal_client
         )
 
-        # workspace_base cannot be used because we can't bind mount into a sandbox.
-        if self.config.workspace_base is not None:
-            self.log(
-                'warning',
-                'Setting workspace_base is not supported in the modal runtime.',
-            )
-
         # This value is arbitrary as it's private to the container
         self.container_port = 3000
         self._vscode_port = 4445
@@ -124,7 +117,7 @@ class ModalRuntime(ActionExecutionClient):
             self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
             await call_sync_from_async(
                 self._init_sandbox,
-                sandbox_workspace_dir=self.config.workspace_mount_path_in_sandbox,
+                sandbox_workspace_dir='/workspace',
                 plugins=self.plugins,
             )
 
@@ -270,10 +263,7 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
 
         tunnel = self.sandbox.tunnels()[self._vscode_port]
         tunnel_url = tunnel.url
-        self._vscode_url = (
-            tunnel_url
-            + f'/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
-        )
+        self._vscode_url = tunnel_url + f'/?tkn={token}&folder=/workspace'
 
         self.log(
             'debug',

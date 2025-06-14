@@ -1,7 +1,7 @@
 import os
+import typing
 from functools import lru_cache
 from typing import Callable
-import typing
 from uuid import UUID
 
 import docker
@@ -248,22 +248,6 @@ class DockerRuntime(ActionExecutionClient):
                         f'Mount dir (sandbox.volumes): {host_path} to {container_path} with mode: {mount_mode}'
                     )
 
-        # Legacy mounting with workspace_* parameters
-        elif (
-            self.config.workspace_mount_path is not None
-            and self.config.workspace_mount_path_in_sandbox is not None
-        ):
-            mount_mode = 'rw'  # Default mode
-
-            # e.g. result would be: {"/home/user/openhands/workspace": {'bind': "/workspace", 'mode': 'rw'}}
-            volumes[self.config.workspace_mount_path] = {
-                'bind': self.config.workspace_mount_path_in_sandbox,
-                'mode': mount_mode,
-            }
-            logger.debug(
-                f'Mount dir (legacy): {self.config.workspace_mount_path} with mode: {mount_mode}'
-            )
-
         return volumes
 
     def init_container(self) -> None:
@@ -283,7 +267,9 @@ class DockerRuntime(ActionExecutionClient):
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
 
         use_host_network = self.config.sandbox.use_host_network
-        network_mode: typing.Literal['host'] | None = 'host' if use_host_network else None
+        network_mode: typing.Literal['host'] | None = (
+            'host' if use_host_network else None
+        )
 
         # Initialize port mappings
         port_mapping: dict[str, list[dict[str, str]]] | None = None
@@ -336,8 +322,6 @@ class DockerRuntime(ActionExecutionClient):
         # also update with runtime_startup_env_vars
         environment.update(self.config.sandbox.runtime_startup_env_vars)
 
-        self.log('debug', f'Workspace Base: {self.config.workspace_base}')
-
         # Process volumes for mounting
         volumes = self._process_volumes()
 
@@ -349,14 +333,14 @@ class DockerRuntime(ActionExecutionClient):
             volumes = {}  # Empty dict instead of None to satisfy mypy
         self.log(
             'debug',
-            f'Sandbox workspace: {self.config.workspace_mount_path_in_sandbox}',
+            'Sandbox workspace: /workspace',
         )
 
         command = self.get_action_execution_server_startup_command()
 
         try:
             if self.runtime_container_image is None:
-                raise ValueError("Runtime container image is not set")
+                raise ValueError('Runtime container image is not set')
             self.container = self.docker_client.containers.run(
                 self.runtime_container_image,
                 command=command,
@@ -481,7 +465,9 @@ class DockerRuntime(ActionExecutionClient):
         if not token:
             return None
 
-        vscode_url = f'http://localhost:{self._vscode_port}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        vscode_url = (
+            f'http://localhost:{self._vscode_port}/?tkn={token}&folder=/workspace'
+        )
         return vscode_url
 
     @property

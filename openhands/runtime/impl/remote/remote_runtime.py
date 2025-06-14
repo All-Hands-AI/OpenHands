@@ -80,11 +80,6 @@ class RemoteRuntime(ActionExecutionClient):
             )
         self.session.headers.update({'X-API-Key': self.config.sandbox.api_key})
 
-        if self.config.workspace_base is not None:
-            self.log(
-                'debug',
-                'Setting workspace_base is not supported in the remote runtime.',
-            )
         if self.config.sandbox.remote_runtime_api_url is None:
             raise ValueError(
                 'remote_runtime_api_url is required in the remote runtime.'
@@ -363,7 +358,7 @@ class RemoteRuntime(ActionExecutionClient):
             self._session_api_key = start_response['session_api_key']
             self.log(
                 'debug',
-                f'Session API key setted',
+                'Session API key setted',
             )
 
     @property
@@ -379,7 +374,7 @@ class RemoteRuntime(ActionExecutionClient):
         assert isinstance(_parsed_url.scheme, str) and isinstance(
             _parsed_url.netloc, str
         )
-        vscode_url = f'{_parsed_url.scheme}://vscode-{_parsed_url.netloc}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        vscode_url = f'{_parsed_url.scheme}://vscode-{_parsed_url.netloc}/?tkn={token}&folder=/workspace'
         self.log(
             'debug',
             f'VSCode URL: {vscode_url}',

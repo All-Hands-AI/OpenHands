@@ -242,10 +242,10 @@ async def test_clone_or_init_repo_no_repo_with_user_id(temp_dir):
 
 
 @pytest.mark.asyncio
-async def test_clone_or_init_repo_no_repo_no_user_id_no_workspace_base(temp_dir):
-    """Test that git init is run when no repository is selected, no user_id, and no workspace_base"""
+async def test_clone_or_init_repo_no_repo_no_user_id_no_volumes(temp_dir):
+    """Test that git init is run when no repository is selected, no user_id, and no sandbox volumes"""
     config = OpenHandsConfig()
-    config.workspace_base = None  # Ensure workspace_base is not set
+    config.sandbox.volumes = None  # Ensure sandbox.volumes is not set
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
     runtime = TestRuntime(
@@ -266,10 +266,10 @@ async def test_clone_or_init_repo_no_repo_no_user_id_no_workspace_base(temp_dir)
 
 
 @pytest.mark.asyncio
-async def test_clone_or_init_repo_no_repo_no_user_id_with_workspace_base(temp_dir):
-    """Test that git init is not run when no repository is selected, no user_id, but workspace_base is set"""
+async def test_clone_or_init_repo_no_repo_no_user_id_with_volumes(temp_dir):
+    """Test that git init is not run when no repository is selected, no user_id, but sandbox.volumes is set"""
     config = OpenHandsConfig()
-    config.workspace_base = '/some/path'  # Set workspace_base
+    config.sandbox.volumes = '/some/path:/workspace:rw'
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
     runtime = TestRuntime(

@@ -1,20 +1,23 @@
 """
 code migration
 """
+
 import copy
+import gc
 import json
 import os
-from vllm import LLM, SamplingParams
-import tiktoken
 import time
-import gc
-import torch
 from multiprocessing import Process
+
+import tiktoken
+import torch
+from vllm import LLM, SamplingParams
 
 # os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
 
+
 def truncate_text(text, max_tokens):
-    encoding = tiktoken.get_encoding("cl100k_base")
+    encoding = tiktoken.get_encoding('cl100k_base')
     disallowed_special = ()
 
     tokens = encoding.encode(text, disallowed_special=disallowed_special)
@@ -27,7 +30,9 @@ def truncate_text(text, max_tokens):
 
     return truncated_text
 
+
 model_list = ['/data2/base models/starcoder2-15b', '/data2/base models/CodeGemma-7B']
+
 
 def run_inference(model_name, origin_data_list):
     temp_data_list = copy.deepcopy(origin_data_list)
@@ -42,7 +47,12 @@ def run_inference(model_name, origin_data_list):
         test_list.append(instruction)
 
     sampling_params = SamplingParams(n=6, temperature=0.8, top_p=0.95, max_tokens=512)
-    llm = LLM(model=model_name, tensor_parallel_size=4, gpu_memory_utilization=0.6, swap_space=40)
+    llm = LLM(
+        model=model_name,
+        tensor_parallel_size=4,
+        gpu_memory_utilization=0.6,
+        swap_space=40,
+    )
 
     outputs = llm.generate(test_list, sampling_params)
     for output in outputs:
@@ -55,7 +65,9 @@ def run_inference(model_name, origin_data_list):
 
         temp_data_list[requests_id]['model_output'] = str(temp_ans_list)
 
-    save_folder_path = os.path.join('../data/result_data/code_migration', model_name.split('/')[-1])
+    save_folder_path = os.path.join(
+        '../data/result_data/code_migration', model_name.split('/')[-1]
+    )
     if not os.path.exists(save_folder_path):
         os.makedirs(save_folder_path)
 
@@ -78,9 +90,9 @@ def bulid_prompt(description, old_version, old_code, new_version) -> str:
     :return:
     """
     prompt = f"""
-    You are now a professional Python programming engineer. I will provide you with a code snippet and a description of its functionality, 
-    including the dependencies and versions used in the code. Then, I will provide the same dependencies but with a specified new version. 
-    Your task is to refactor the code using the methods provided by the specified new version and return the refactored code. 
+    You are now a professional Python programming engineer. I will provide you with a code snippet and a description of its functionality,
+    including the dependencies and versions used in the code. Then, I will provide the same dependencies but with a specified new version.
+    Your task is to refactor the code using the methods provided by the specified new version and return the refactored code.
     Please note that you only need to return the refactored code and enclose it with <start> and <end>:
     ###Functionality description of the code
     {description}
@@ -98,7 +110,7 @@ def bulid_prompt(description, old_version, old_code, new_version) -> str:
 
 json_path = '../data/test_data/VersiCode_migration.json'
 
-with open(json_path, 'r', encoding='utf-8')as fr:
+with open(json_path, 'r', encoding='utf-8') as fr:
     lodict = json.load(fr)
 
 origin_data_list = lodict
@@ -108,4 +120,3 @@ for model_name in model_list:
     process.start()
     process.join()
     time.sleep(120)
-

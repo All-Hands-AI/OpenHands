@@ -87,9 +87,6 @@ def get_config(metadata: EvalMetadata, instance: pd.Series) -> OpenHandsConfig:
         run_as_openhands=False,
         runtime=os.environ.get('RUNTIME', 'docker'),
         sandbox=sandbox_config,
-        # do not mount workspace
-        workspace_base=None,
-        workspace_mount_path=None,
     )
     return config
 

@@ -116,7 +116,7 @@ def mock_config():
     config = MagicMock()
     config.runtime = 'local'
     config.cli_multiline_input = False
-    config.workspace_base = '/test/dir'
+    config.sandbox.volumes = '/test/dir'
 
     # Mock search_api_key with get_secret_value method
     search_api_key_mock = MagicMock()
@@ -351,7 +351,7 @@ async def test_main_without_task(
 
     # Mock config
     mock_config = MagicMock()
-    mock_config.workspace_base = '/test/dir'
+    mock_config.sandbox.volumes = '/test/dir'
     mock_config.cli_multiline_input = False
     mock_setup_config.return_value = mock_config
 
@@ -433,7 +433,7 @@ async def test_main_with_task(
 
     # Mock config
     mock_config = MagicMock()
-    mock_config.workspace_base = '/test/dir'
+    mock_config.sandbox.volumes = '/test/dir'
     mock_config.cli_multiline_input = False
     mock_setup_config.return_value = mock_config
 
@@ -529,7 +529,7 @@ async def test_main_with_session_name_passes_name_to_run_session(
 
     # Mock config
     mock_config = MagicMock()
-    mock_config.workspace_base = '/test/dir'
+    mock_config.sandbox.volumes = '/test/dir'
     mock_config.cli_multiline_input = False
     mock_setup_config.return_value = mock_config
 
@@ -702,7 +702,7 @@ async def test_main_security_check_fails(
 
     # Mock config
     mock_config = MagicMock()
-    mock_config.workspace_base = '/test/dir'
+    mock_config.sandbox.volumes = '/test/dir'
     mock_setup_config.return_value = mock_config
 
     # Mock settings store
@@ -774,7 +774,7 @@ async def test_config_loading_order(
 
     # Mock config with mock methods to track changes
     mock_config = MagicMock()
-    mock_config.workspace_base = '/test/dir'
+    mock_config.sandbox.volumes = '/test/dir'
     mock_config.cli_multiline_input = False
     mock_config.get_llm_config = MagicMock(return_value=MagicMock())
     mock_config.set_llm_config = MagicMock()

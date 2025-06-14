@@ -70,9 +70,6 @@ def get_config(
         max_budget_per_task=4,
         max_iterations=metadata.max_iterations,
         sandbox=sandbox_config,
-        # do not mount workspace
-        workspace_base=None,
-        workspace_mount_path=None,
     )
     config.set_llm_config(
         update_llm_config_for_completions_logging(
