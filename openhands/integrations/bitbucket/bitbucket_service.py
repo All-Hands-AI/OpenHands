@@ -64,9 +64,7 @@ class BitbucketService(BaseGitService, GitService):
     async def get_latest_token(self) -> SecretStr | None:
         """Get latest working token of the user."""
         return self.token
-    
-    def _has_token_expired(self, status_code: int) -> bool:
-        return status_code == 401
+
     def _has_token_expired(self, status_code: int) -> bool:
         return status_code == 401
 
