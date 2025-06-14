@@ -1,10 +1,17 @@
 import { Settings } from "#/types/settings";
+import { getProviderKey } from "#/utils/map-provider";
 
 const extractBasicFormData = (formData: FormData) => {
-  const provider = formData.get("llm-provider-input")?.toString();
+  const providerDisplayName = formData.get("llm-provider-input")?.toString();
   const model = formData.get("llm-model-input")?.toString();
 
-  const LLM_MODEL = `${provider}/${model}`.toLowerCase();
+  // Convert display name to provider key
+  const provider = providerDisplayName
+    ? getProviderKey(providerDisplayName)
+    : undefined;
+
+  const LLM_MODEL =
+    provider && model ? `${provider}/${model}`.toLowerCase() : undefined;
   const LLM_API_KEY = formData.get("llm-api-key-input")?.toString();
   const AGENT = formData.get("agent")?.toString();
   const LANGUAGE = formData.get("language")?.toString();

@@ -12,6 +12,8 @@ vi.mock("react-i18next", () => ({
         LLM$MODEL: "LLM Model",
         LLM$SELECT_PROVIDER_PLACEHOLDER: "Select a provider",
         LLM$SELECT_MODEL_PLACEHOLDER: "Select a model",
+        MODEL_SELECTOR$VERIFIED: "Verified",
+        MODEL_SELECTOR$OTHERS: "Others",
       };
       return translations[key] || key;
     },
@@ -36,6 +38,10 @@ describe("ModelSelector", () => {
       separator: ".",
       models: ["command-r-v1:0"],
     },
+    mistral: {
+      separator: "/",
+      models: ["devstral-small-2505", "mistral-7b"],
+    },
   };
 
   it("should display the provider selector", async () => {
@@ -51,6 +57,7 @@ describe("ModelSelector", () => {
     expect(screen.getByText("Azure")).toBeInTheDocument();
     expect(screen.getByText("VertexAI")).toBeInTheDocument();
     expect(screen.getByText("cohere")).toBeInTheDocument();
+    expect(screen.getByText("Mistral AI")).toBeInTheDocument();
   });
 
   it("should disable the model selector if the provider is not selected", async () => {
@@ -132,5 +139,25 @@ describe("ModelSelector", () => {
 
     expect(screen.getByLabelText("LLM Provider")).toHaveValue("Azure");
     expect(screen.getByLabelText("LLM Model")).toHaveValue("ada");
+  });
+
+  it("should construct correct model names for mistral provider", async () => {
+    const mockOnChange = vi.fn();
+    const user = userEvent.setup();
+    render(<ModelSelector models={models} onChange={mockOnChange} />);
+
+    const providerSelector = screen.getByLabelText("LLM Provider");
+    const modelSelector = screen.getByLabelText("LLM Model");
+
+    // Select Mistral AI provider
+    await user.click(providerSelector);
+    await user.click(screen.getByText("Mistral AI"));
+
+    // Select a model
+    await user.click(modelSelector);
+    await user.click(screen.getByText("devstral-small-2505"));
+
+    // Verify the correct model format is passed to onChange
+    expect(mockOnChange).toHaveBeenCalledWith("mistral/devstral-small-2505");
   });
 });
