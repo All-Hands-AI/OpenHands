@@ -63,10 +63,12 @@ function GitSettingsScreen() {
 
     const githubToken = formData.get("github-token-input")?.toString() || "";
     const gitlabToken = formData.get("gitlab-token-input")?.toString() || "";
-    const azureDevOpsToken = formData.get("azure-devops-token-input")?.toString() || "";
+    const azureDevOpsToken =
+      formData.get("azure-devops-token-input")?.toString() || "";
     const githubHost = formData.get("github-host-input")?.toString() || "";
     const gitlabHost = formData.get("gitlab-host-input")?.toString() || "";
-    const azureDevOpsHost = formData.get("azure-devops-host-input")?.toString() || "";
+    const azureDevOpsHost =
+      formData.get("azure-devops-host-input")?.toString() || "";
 
     saveGitProviders(
       {
@@ -125,7 +127,7 @@ function GitSettingsScreen() {
                 setGithubTokenInputHasValue(!!value);
               }}
               onGitHubHostChange={(value) => {
-                setGitlabHostInputHasValue(!!value);
+                setGithubHostInputHasValue(!!value);
               }}
               githubHostSet={existingGithubHost}
             />
@@ -171,7 +173,9 @@ function GitSettingsScreen() {
               name="disconnect-tokens-button"
               type="submit"
               variant="secondary"
-              isDisabled={!isGitHubTokenSet && !isGitLabTokenSet && !isAzureDevOpsTokenSet}
+              isDisabled={
+                !isGitHubTokenSet && !isGitLabTokenSet && !isAzureDevOpsTokenSet
+              }
             >
               Disconnect Tokens
             </BrandButton>

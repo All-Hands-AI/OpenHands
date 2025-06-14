@@ -15,7 +15,7 @@ export const useAutoLogin = () => {
   // Get the stored login method
   const loginMethod = getLoginMethod();
 
-  // Get the auth URLs for both providers
+  // Get the auth URLs for all providers
   const githubAuthUrl = useAuthUrl({
     appMode: config?.APP_MODE || null,
     identityProvider: "github",
@@ -24,6 +24,11 @@ export const useAutoLogin = () => {
   const gitlabAuthUrl = useAuthUrl({
     appMode: config?.APP_MODE || null,
     identityProvider: "gitlab",
+  });
+
+  const azureDevOpsAuthUrl = useAuthUrl({
+    appMode: config?.APP_MODE || null,
+    identityProvider: "azure_devops",
   });
 
   useEffect(() => {
@@ -48,8 +53,14 @@ export const useAutoLogin = () => {
     }
 
     // Get the appropriate auth URL based on the stored login method
-    const authUrl =
-      loginMethod === LoginMethod.GITHUB ? githubAuthUrl : gitlabAuthUrl;
+    let authUrl: string | null = null;
+    if (loginMethod === LoginMethod.GITHUB) {
+      authUrl = githubAuthUrl;
+    } else if (loginMethod === LoginMethod.GITLAB) {
+      authUrl = gitlabAuthUrl;
+    } else if (loginMethod === LoginMethod.AZURE_DEVOPS) {
+      authUrl = azureDevOpsAuthUrl;
+    }
 
     // If we have an auth URL, redirect to it
     if (authUrl) {
@@ -68,5 +79,6 @@ export const useAutoLogin = () => {
     loginMethod,
     githubAuthUrl,
     gitlabAuthUrl,
+    azureDevOpsAuthUrl,
   ]);
 };

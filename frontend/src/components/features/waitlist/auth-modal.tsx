@@ -88,7 +88,8 @@ export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
             className="w-full"
             startContent={<AzureDevOpsLogo width={20} height={20} />}
           >
-            {t(I18nKey.AZURE_DEVOPS$CONNECT_TO_AZURE_DEVOPS) || "Connect to Azure DevOps"}
+            {t(I18nKey.AZURE_DEVOPS$CONNECT_TO_AZURE_DEVOPS) ||
+              "Connect to Azure DevOps"}
           </BrandButton>
         </div>
       </ModalBody>

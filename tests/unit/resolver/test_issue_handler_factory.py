@@ -34,13 +34,13 @@ def factory_params(llm_config, request):
         'base_domain': 'github.com',
         'llm_config': llm_config,
     }
-    
+
     # For Azure DevOps tests, use the correct repository format (project/repo)
-    marker = request.node.get_closest_marker("azure_devops")
+    marker = request.node.get_closest_marker('azure_devops')
     if marker:
         params['repo'] = 'test-project/test-repo'
         params['base_domain'] = 'dev.azure.com'
-    
+
     return params
 
 

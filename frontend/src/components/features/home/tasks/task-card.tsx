@@ -57,7 +57,7 @@ export function TaskCard({ task }: TaskCardProps) {
   } else if (task.git_provider === "azure_devops") {
     // Azure DevOps URLs format: https://dev.azure.com/{organization}/{project}/_workitems/edit/{id}
     // For pull requests: https://dev.azure.com/{organization}/{project}/_git/{repository}/pullrequest/{id}
-    const [project, repository] = task.repo.split('/');
+    const [project, repository] = task.repo.split("/");
     if (task.task_type === "OPEN_ISSUE") {
       href = `https://dev.azure.com/${project}/_workitems/edit/${task.issue_number}`;
     } else {

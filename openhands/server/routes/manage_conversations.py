@@ -1,6 +1,6 @@
 import itertools
-import re
 import os
+import re
 import uuid
 from datetime import datetime, timezone
 
@@ -9,19 +9,18 @@ from fastapi.responses import JSONResponse
 from jinja2 import Environment, FileSystemLoader
 from pydantic import BaseModel, Field
 
-from openhands.events.event_filter import EventFilter
-from openhands.events.stream import EventStream
+from openhands.core.config.llm_config import LLMConfig
+from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     ChangeAgentStateAction,
     NullAction,
 )
+from openhands.events.event_filter import EventFilter
 from openhands.events.observation import (
-    NullObservation,
     AgentStateChangedObservation,
+    NullObservation,
 )
-
-from openhands.core.config.llm_config import LLMConfig
-from openhands.core.logger import openhands_logger as logger
+from openhands.events.stream import EventStream
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
     ProviderHandler,
@@ -38,10 +37,9 @@ from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
 )
-from openhands.server.services.conversation_service import create_new_conversation
-from openhands.server.session.conversation import ServerConversation
 from openhands.server.dependencies import get_dependencies
 from openhands.server.services.conversation_service import create_new_conversation
+from openhands.server.session.conversation import ServerConversation
 from openhands.server.shared import (
     ConversationStoreImpl,
     config,
@@ -53,11 +51,12 @@ from openhands.server.user_auth import (
     get_provider_tokens,
     get_user_id,
     get_user_secrets,
-    get_user_settings_store,
     get_user_settings,
+    get_user_settings_store,
 )
 from openhands.server.user_auth.user_auth import AuthType
-from openhands.server.utils import get_conversation_store, get_conversation as get_conversation_object
+from openhands.server.utils import get_conversation as get_conversation_object
+from openhands.server.utils import get_conversation_store
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import (
     ConversationMetadata,
@@ -295,7 +294,7 @@ async def delete_conversation(
 async def get_prompt(
     event_id: int,
     user_settings: SettingsStore = Depends(get_user_settings_store),
-    conversation: ServerConversation | None = Depends(get_conversation_object)
+    conversation: ServerConversation | None = Depends(get_conversation_object),
 ):
     if conversation is None:
         return JSONResponse(
@@ -409,7 +408,6 @@ async def start_conversation(
     logger.info(f'Starting conversation: {conversation_id}')
 
     try:
-
         # Check that the conversation exists
         try:
             await conversation_store.get_metadata(conversation_id)
@@ -463,10 +461,17 @@ async def stop_conversation(
 
     try:
         # Check if the conversation is running
-        agent_loop_info = await conversation_manager.get_agent_loop_info(user_id=user_id, filter_to_sids={conversation_id})
-        conversation_status = agent_loop_info[0].status if agent_loop_info else ConversationStatus.STOPPED
+        agent_loop_info = await conversation_manager.get_agent_loop_info(
+            user_id=user_id, filter_to_sids={conversation_id}
+        )
+        conversation_status = (
+            agent_loop_info[0].status if agent_loop_info else ConversationStatus.STOPPED
+        )
 
-        if conversation_status not in (ConversationStatus.STARTING, ConversationStatus.RUNNING):
+        if conversation_status not in (
+            ConversationStatus.STARTING,
+            ConversationStatus.RUNNING,
+        ):
             return ConversationResponse(
                 status='ok',
                 conversation_id=conversation_id,
@@ -505,9 +510,13 @@ def _get_contextual_events(event_stream: EventStream, event_id: int) -> str:
 
     agent_event_filter = EventFilter(
         exclude_hidden=True,
-        exclude_types=(NullAction, NullObservation, ChangeAgentStateAction, AgentStateChangedObservation
+        exclude_types=(
+            NullAction,
+            NullObservation,
+            ChangeAgentStateAction,
+            AgentStateChangedObservation,
         ),
-    ) # the types of events that can be in an agent's history
+    )  # the types of events that can be in an agent's history
 
     # from event_id - context_size to event_id..
     context_before = event_stream.search_events(

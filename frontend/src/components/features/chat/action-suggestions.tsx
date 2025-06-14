@@ -23,7 +23,9 @@ export function ActionSuggestions({
   const isAzureDevOps = providers.includes("azure_devops");
 
   // Determine the correct terminology based on the provider
-  let pr, prShort, providerName;
+  let pr;
+  let prShort;
+  let providerName;
   if (isGitLab) {
     pr = "merge request";
     prShort = "MR";
