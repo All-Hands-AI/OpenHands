@@ -152,11 +152,7 @@
       {
         "tab": "Success Stories",
         "pages": [
-          "success-stories/index",
-          "success-stories/twitter-showcases",
-          "success-stories/slack-stories",
-          "success-stories/blog-posts",
-          "success-stories/github-cases"
+          "success-stories/index"
         ]
       },
       {
