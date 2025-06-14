@@ -87,7 +87,7 @@ async def create_pr(
     target_branch: Annotated[str, Field(description='Target branch on repo')],
     title: Annotated[str, Field(description='PR Title')],
     body: Annotated[str | None, Field(description='PR body')],
-    draft: Annotated[bool, Field(description='Whether PR opened is a draft')] = True
+    draft: Annotated[bool, Field(description='Whether PR opened is a draft')] = True,
 ) -> str:
     """Open a PR in GitHub"""
 
@@ -127,7 +127,7 @@ async def create_pr(
             target_branch=target_branch,
             title=title,
             body=body,
-            draft=draft
+            draft=draft,
         )
 
         if conversation_id:
@@ -148,7 +148,12 @@ async def create_mr(
     ],
     source_branch: Annotated[str, Field(description='Source branch on repo')],
     target_branch: Annotated[str, Field(description='Target branch on repo')],
-    title: Annotated[str, Field(description='MR Title. Start title with `DRAFT:` or `WIP:` if applicable.')],
+    title: Annotated[
+        str,
+        Field(
+            description='MR Title. Start title with `DRAFT:` or `WIP:` if applicable.'
+        ),
+    ],
     description: Annotated[str | None, Field(description='MR description')],
 ) -> str:
     """Open a MR in GitLab"""
