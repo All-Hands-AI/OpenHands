@@ -12,12 +12,6 @@ export function RepoProviderLinks() {
       <a href={githubHref} target="_blank" rel="noopener noreferrer">
         Add GitHub repos
       </a>
-      <a href="/git-settings" rel="noopener noreferrer">
-        Add GitLab repos
-      </a>
-      <a href="/git-settings" rel="noopener noreferrer">
-        Add Bitbucket repos
-      </a>
     </div>
   );
 }
