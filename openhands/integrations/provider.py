@@ -138,8 +138,6 @@ class ProviderHandler:
     async def get_user(self) -> User:
         """Get user information from the first available provider"""
         for provider in self.provider_tokens:
-            self.provider_tokens[provider]
-
             try:
                 service = self._get_service(provider)
                 return await service.get_user()
@@ -161,8 +159,6 @@ class ProviderHandler:
 
         all_repos: list[Repository] = []
         for provider in self.provider_tokens:
-            self.provider_tokens[provider]
-
             try:
                 service = self._get_service(provider)
                 service_repos = await service.get_repositories(sort, app_mode)

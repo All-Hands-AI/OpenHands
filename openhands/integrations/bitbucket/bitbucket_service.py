@@ -62,7 +62,6 @@ class BitbucketService(BaseGitService, GitService):
     async def get_latest_token(self) -> SecretStr | None:
         """Get latest working token of the user."""
         if self.external_token_manager and self.external_auth_id:
-            # This would be implemented by a custom token manager
             return None
         return self.token
 
