@@ -411,6 +411,7 @@ class Runtime(FileEditRuntimeMixin):
         provider_domains = {
             ProviderType.GITHUB: 'github.com',
             ProviderType.GITLAB: 'gitlab.com',
+            ProviderType.AZURE_DEVOPS: 'dev.azure.com',
         }
 
         domain = provider_domains[provider]
@@ -425,6 +426,8 @@ class Runtime(FileEditRuntimeMixin):
             if git_token:
                 if provider == ProviderType.GITLAB:
                     remote_repo_url = f'https://oauth2:{git_token.get_secret_value()}@{domain}/{selected_repository}.git'
+                elif provider == ProviderType.AZURE_DEVOPS:
+                    remote_repo_url = f'https://{git_token.get_secret_value()}@{domain}/{selected_repository}.git'
                 else:
                     remote_repo_url = f'https://{git_token.get_secret_value()}@{domain}/{selected_repository}.git'
             else:
@@ -647,6 +650,8 @@ fi
             provider = ProviderType.GITHUB
         elif 'gitlab.com' in repo_path:
             provider = ProviderType.GITLAB
+        elif 'dev.azure.com' in repo_path:
+            provider = ProviderType.AZURE_DEVOPS
 
         # Add authentication if available
         if (
@@ -658,6 +663,8 @@ fi
             if git_token:
                 if provider == ProviderType.GITLAB:
                     remote_url = f'https://oauth2:{git_token.get_secret_value()}@{repo_path.replace("gitlab.com/", "")}.git'
+                elif provider == ProviderType.AZURE_DEVOPS:
+                    remote_url = f'https://{git_token.get_secret_value()}@{repo_path.replace("dev.azure.com/", "")}.git'
                 else:
                     remote_url = f'https://{git_token.get_secret_value()}@{repo_path.replace("github.com/", "")}.git'
 
