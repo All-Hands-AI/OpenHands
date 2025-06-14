@@ -694,10 +694,10 @@ fi
         # Determine the provider and domain
         provider_domains = {
             ProviderType.GITHUB: 'github.com',
-            ProviderType.GITLAB: 'gitlab.com', 
+            ProviderType.GITLAB: 'gitlab.com',
             ProviderType.AZURE_DEVOPS: 'dev.azure.com',
         }
-        
+
         # First, try to extract domain from repository name if it includes one
         if len(repo_parts) > 2:
             domain = repo_parts[0]
@@ -705,7 +705,7 @@ fi
             # Repository name doesn't include domain (e.g., "org/repo")
             # Try to determine provider from available tokens
             domain = 'github.com'  # Default fallback
-            
+
             if self.git_provider_tokens:
                 # If we only have one provider token, use that
                 if len(self.git_provider_tokens) == 1:
@@ -715,7 +715,7 @@ fi
                     # Multiple providers - would need additional logic to determine which one
                     # For now, default to GitHub
                     pass
-        
+
         org_name = repo_parts[-2]
 
         # Construct the org-level .openhands repo path

@@ -73,12 +73,12 @@ function GitSettingsScreen() {
     // Validate Azure DevOps token and host dependency
     const hasAzureDevOpsToken = azureDevOpsToken.trim() !== "";
     const hasAzureDevOpsHost = azureDevOpsHost.trim() !== "";
-    
+
     if (hasAzureDevOpsToken && !hasAzureDevOpsHost) {
       displayErrorToast(t(I18nKey.AZURE_DEVOPS$HOST_REQUIRED_ERROR));
       return;
     }
-    
+
     if (hasAzureDevOpsHost && !hasAzureDevOpsToken) {
       displayErrorToast(t(I18nKey.AZURE_DEVOPS$TOKEN_REQUIRED_ERROR));
       return;

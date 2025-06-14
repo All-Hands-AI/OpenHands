@@ -34,7 +34,7 @@ class AzureDevOpsServiceImpl(BaseGitService):
         external_auth_id: str | None = None,
         external_auth_token: SecretStr | None = None,
         external_token_manager: bool = False,
-        organization_url: str | None = None,
+        base_domain: str | None = None,
     ):
         """Initialize the Azure DevOps service.
 
@@ -44,14 +44,14 @@ class AzureDevOpsServiceImpl(BaseGitService):
             external_auth_id: External auth ID (not used for Azure DevOps)
             external_auth_token: External auth token (not used for Azure DevOps)
             external_token_manager: Whether to use external token manager (not used for Azure DevOps)
-            organization_url: The Azure DevOps organization URL (e.g., https://dev.azure.com/organization)
+            base_domain: The Azure DevOps organization URL (e.g., https://dev.azure.com/organization)
         """
         self.user_id = user_id
         self.token = token
         self.external_auth_id = external_auth_id
         self.external_auth_token = external_auth_token
         self.external_token_manager = external_token_manager
-        self.organization_url = organization_url or 'https://dev.azure.com'
+        self.organization_url = base_domain or 'https://dev.azure.com'
 
         # Extract organization name from URL for API calls
         if self.organization_url.startswith('https://dev.azure.com/'):
@@ -206,7 +206,7 @@ class AzureDevOpsServiceImpl(BaseGitService):
             # Try to get user profile from Azure DevOps
             # For organization-scoped tokens, we'll use the projects API to verify authentication
             # since the global profile API requires "All accessible organizations" scope
-            
+
             # Fallback: Try to get projects to verify authentication
             projects_url = f'{self.base_url}/projects'
             projects_params = {'api-version': '7.1-preview.4'}
@@ -224,14 +224,18 @@ class AzureDevOpsServiceImpl(BaseGitService):
                     connection_data, _ = await self._make_request(
                         connection_url, params=connection_params
                     )
-                    
+
                     if connection_data and isinstance(connection_data, dict):
                         auth_user = connection_data.get('authenticatedUser', {})
                         return User(
                             id=auth_user.get('id', 0),
-                            login=auth_user.get('uniqueName', self.user_id or 'azure_devops_user'),
+                            login=auth_user.get(
+                                'uniqueName', self.user_id or 'azure_devops_user'
+                            ),
                             avatar_url=auth_user.get('imageUrl', ''),
-                            name=auth_user.get('displayName', self.user_id or 'Azure DevOps User'),
+                            name=auth_user.get(
+                                'displayName', self.user_id or 'Azure DevOps User'
+                            ),
                             email=auth_user.get('uniqueName'),
                             company=None,
                         )
@@ -247,7 +251,7 @@ class AzureDevOpsServiceImpl(BaseGitService):
                     email=None,
                     company=None,
                 )
-            
+
             # If projects API also fails, try the old profile approach as last resort
             profile_url = f'{self.base_url}/profile/profiles/me'
             profile_params = {'api-version': '7.1-preview.3'}
@@ -280,6 +284,9 @@ class AzureDevOpsServiceImpl(BaseGitService):
             logger.error(f'Error getting Azure DevOps user: {e}')
             raise AuthenticationError(f'Failed to authenticate with Azure DevOps: {e}')
 
+        # This should never be reached, but added for mypy
+        raise AuthenticationError('Failed to authenticate with Azure DevOps')
+
     async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
         """Get repositories for the authenticated user.
 
@@ -307,7 +314,7 @@ class AzureDevOpsServiceImpl(BaseGitService):
             for repo in repositories:
                 project_name = repo.get('project', {}).get('name', 'Unknown')
                 repo_name = repo.get('name', 'Unknown')
-                
+
                 result.append(
                     Repository(
                         id=repo.get('id', ''),
