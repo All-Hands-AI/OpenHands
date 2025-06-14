@@ -11,14 +11,25 @@ description: Common questions about OpenHands and their answers
 
 ### It's doing stuff without asking, is that safe?
 
-**Yes, it's safe!** OpenHands runs all code in a secure, isolated Docker container (called a "sandbox") that is completely separate from your host system. This means:
+**Generally yes, but with important considerations.** OpenHands runs all code in a secure, isolated Docker container (called a "sandbox") that is separate from your host system. However, the safety depends on your configuration:
 
-- **No access to your host system**: The agent cannot access files, programs, or data outside the container
-- **Isolated environment**: Any code execution happens only within the container
-- **Resource control**: The container has limited resources and cannot affect your host machine's performance
-- **Easy cleanup**: You can stop or delete the container at any time without affecting your system
+**What's protected:**
+- Your host system files and programs (unless you mount them)
+- Host system resources and performance
+- Other containers and processes
 
-The sandbox architecture is specifically designed to allow AI agents to work autonomously while keeping your system secure. Learn more about how this works in our [Runtime Architecture documentation](/usage/architecture/runtime).
+**Potential risks to consider:**
+- The agent can access the internet from within the container
+- If you provide credentials (API keys, tokens), the agent can use them
+- Mounted files and directories can be modified or deleted
+- Network requests can be made to external services
+
+**Security features:**
+- Built-in security analyzer to detect potentially risky actions
+- Configurable confirmation mode for sensitive operations
+- Hardened Docker configurations for production use
+
+For detailed security information, see our [Runtime Architecture](/usage/architecture/runtime), [Security Configuration](/usage/configuration-options#security-configuration), and [Hardened Docker Installation](/usage/runtimes/docker#hardened-docker-installation) documentation.
 
 ## File Storage and Access
 
@@ -62,43 +73,11 @@ For detailed instructions, see our [Docker Runtime documentation](/usage/runtime
 
 OpenHands comes with a basic runtime environment that includes Python and Node.js, but you may need additional development tools for your specific projects.
 
-**Option 1: Use an existing image with your tools**
-- Many pre-built Docker images include common development tools
-- You can specify a different base image when starting OpenHands
+You have two main options:
+- **Use an existing Docker image** that already includes your required tools
+- **Create a custom Docker image** with the exact tools you need
 
-**Option 2: Create a custom Docker image**
-- Build your own Docker image with the exact tools you need
-- This is the most flexible approach for complex requirements
-
-**Example: Adding Ruby to your environment**
-
-Create a `Dockerfile`:
-```dockerfile
-FROM nikolaik/python-nodejs:python3.12-nodejs22
-
-# Install Ruby
-RUN apt-get update && apt-get install -y ruby
-```
-
-Build and use your custom image:
-```bash
-docker build -t my-custom-runtime .
-
-# Use your custom image
-docker run -it --rm \
-    -e SANDBOX_BASE_CONTAINER_IMAGE=my-custom-runtime \
-    # ... other options
-```
-
-**Common development tools you might want to add:**
-- Programming languages (Ruby, Go, Rust, Java, etc.)
-- Build tools (Make, CMake, Maven, Gradle)
-- Version control tools (Git is included by default)
-- Database clients
-- Cloud CLI tools (AWS CLI, gcloud, etc.)
-- Docker-in-Docker (for projects that need to build containers)
-
-For step-by-step instructions on creating custom environments, see our [Custom Sandbox Guide](/usage/how-to/custom-sandbox-guide).
+For detailed instructions on setting up custom development environments, including examples for different programming languages and tools, see our [Custom Sandbox Guide](/usage/how-to/custom-sandbox-guide).
 
 ## Getting Started
 
