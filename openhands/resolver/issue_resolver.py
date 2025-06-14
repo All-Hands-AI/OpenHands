@@ -50,6 +50,7 @@ AGENT_CLASS = 'CodeActAgent'
 
 class IssueResolver:
     GITLAB_CI = os.getenv('GITLAB_CI') == 'true'
+    BITBUCKET_CI = os.getenv('BITBUCKET_BUILD_NUMBER') is not None
 
     def __init__(self, args: Namespace) -> None:
         """Initialize the IssueResolver with the given parameters.
@@ -76,7 +77,12 @@ class IssueResolver:
             raise ValueError('Invalid repository format. Expected owner/repo')
         owner, repo = parts
 
-        token = args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
+        token = (
+            args.token
+            or os.getenv('GITHUB_TOKEN')
+            or os.getenv('GITLAB_TOKEN')
+            or os.getenv('BITBUCKET_TOKEN')
+        )
         username = args.username if args.username else os.getenv('GIT_USERNAME')
         if not username:
             raise ValueError('Username is required.')
@@ -120,7 +126,11 @@ class IssueResolver:
         base_domain = args.base_domain
         if base_domain is None:
             base_domain = (
-                'github.com' if platform == ProviderType.GITHUB else 'gitlab.com'
+                'github.com'
+                if platform == ProviderType.GITHUB
+                else 'gitlab.com'
+                if platform == ProviderType.GITLAB
+                else 'bitbucket.org'
             )
 
         self.output_dir = args.output_dir
@@ -233,6 +243,18 @@ class IssueResolver:
 
         # Configure sandbox for GitLab CI environment
         if cls.GITLAB_CI:
+            sandbox_config.update(
+                {
+                    'use_host_network': False,
+                    'enable_auto_lint': True,
+                    'runtime_startup_env_vars': {
+                        'GITLAB_CI': 'true',
+                    },
+                }
+            )
+
+        # Configure sandbox for Bitbucket CI environment
+        if cls.BITBUCKET_CI:
             sandbox_config.local_runtime_url = os.getenv(
                 'LOCAL_RUNTIME_URL', 'http://localhost'
             )
@@ -274,6 +296,12 @@ class IssueResolver:
             raise RuntimeError(f'Failed to change directory to /workspace.\n{obs}')
 
         if self.platform == ProviderType.GITLAB and self.GITLAB_CI:
+            action = CmdRunAction(command='sudo chown -R 1001:0 /workspace/*')
+            logger.info(action, extra={'msg_type': 'ACTION'})
+            obs = runtime.run_action(action)
+            logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+        if self.platform == ProviderType.BITBUCKET and self.BITBUCKET_CI:
             action = CmdRunAction(command='sudo chown -R 1001:0 /workspace/*')
             logger.info(action, extra={'msg_type': 'ACTION'})
             obs = runtime.run_action(action)
@@ -335,7 +363,9 @@ class IssueResolver:
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
             raise RuntimeError(f'Failed to set git config. Observation: {obs}')
 
-        if self.platform == ProviderType.GITLAB and self.GITLAB_CI:
+        if (self.platform == ProviderType.GITLAB and self.GITLAB_CI) or (
+            self.platform == ProviderType.BITBUCKET and self.BITBUCKET_CI
+        ):
             action = CmdRunAction(command='sudo git add -A')
         else:
             action = CmdRunAction(command='git add -A')
