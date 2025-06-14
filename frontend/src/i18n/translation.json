@@ -8191,6 +8191,38 @@
         "de": "Geben Sie Ihre Organisations-URL ein (z.B. dev.azure.com/your-org). Dies ist erforderlich, da Azure DevOps-Token organisationsbezogen sind.",
         "uk": "Введіть URL вашої організації (наприклад: dev.azure.com/your-org). Це обов'язково, оскільки токени Azure DevOps обмежені організацією."
     },
+    "AZURE_DEVOPS$HOST_REQUIRED_ERROR": {
+        "en": "Organization URL is required when Azure DevOps token is provided.",
+        "ja": "Azure DevOpsトークンが提供されている場合、組織URLが必要です。",
+        "zh-CN": "提供Azure DevOps令牌时需要组织URL。",
+        "zh-TW": "提供Azure DevOps權杖時需要組織URL。",
+        "ko-KR": "Azure DevOps 토큰이 제공될 때 조직 URL이 필요합니다.",
+        "no": "Organisasjons-URL kreves når Azure DevOps-token er oppgitt.",
+        "it": "L'URL dell'organizzazione è richiesto quando viene fornito il token Azure DevOps.",
+        "pt": "A URL da organização é necessária quando o token do Azure DevOps é fornecido.",
+        "es": "Se requiere la URL de la organización cuando se proporciona el token de Azure DevOps.",
+        "ar": "رابط المنظمة مطلوب عند توفير رمز Azure DevOps.",
+        "fr": "L'URL d'organisation est requise lorsque le jeton Azure DevOps est fourni.",
+        "tr": "Azure DevOps jetonu sağlandığında organizasyon URL'si gereklidir.",
+        "de": "Organisations-URL ist erforderlich, wenn Azure DevOps-Token bereitgestellt wird.",
+        "uk": "URL організації потрібен, коли надається токен Azure DevOps."
+    },
+    "AZURE_DEVOPS$TOKEN_REQUIRED_ERROR": {
+        "en": "Azure DevOps token is required when organization URL is provided.",
+        "ja": "組織URLが提供されている場合、Azure DevOpsトークンが必要です。",
+        "zh-CN": "提供组织URL时需要Azure DevOps令牌。",
+        "zh-TW": "提供組織URL時需要Azure DevOps權杖。",
+        "ko-KR": "조직 URL이 제공될 때 Azure DevOps 토큰이 필요합니다.",
+        "no": "Azure DevOps-token kreves når organisasjons-URL er oppgitt.",
+        "it": "Il token Azure DevOps è richiesto quando viene fornito l'URL dell'organizzazione.",
+        "pt": "O token do Azure DevOps é necessário quando a URL da organização é fornecida.",
+        "es": "Se requiere el token de Azure DevOps cuando se proporciona la URL de la organización.",
+        "ar": "رمز Azure DevOps مطلوب عند توفير رابط المنظمة.",
+        "fr": "Le jeton Azure DevOps est requis lorsque l'URL d'organisation est fournie.",
+        "tr": "Organizasyon URL'si sağlandığında Azure DevOps jetonu gereklidir.",
+        "de": "Azure DevOps-Token ist erforderlich, wenn Organisations-URL bereitgestellt wird.",
+        "uk": "Токен Azure DevOps потрібен, коли надається URL організації."
+    },
     "AZURE_DEVOPS$GET_TOKEN": {
         "en": "Get an Azure DevOps token",
         "ja": "Azure DevOpsトークンを取得",
