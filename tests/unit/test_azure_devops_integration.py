@@ -1,5 +1,4 @@
 import unittest
-from unittest.mock import patch
 
 from pydantic import SecretStr
 
@@ -33,8 +32,7 @@ class TestAzureDevOpsIntegration(unittest.TestCase):
         self.assertIn('pull request', terms)
         self.assertIn('repository', terms)
 
-    @patch('openhands.integrations.azure_devops.azure_devops_service.Connection')
-    def test_azure_devops_service_impl_init(self, mock_connection):
+    def test_azure_devops_service_impl_init(self):
         """Test AzureDevOpsServiceImpl initialization."""
         # Arrange
         user_id = 'test-user'
@@ -48,8 +46,7 @@ class TestAzureDevOpsIntegration(unittest.TestCase):
         self.assertEqual(service.token, token)
         self.assertEqual(service.provider, ProviderType.AZURE_DEVOPS.value)
 
-    @patch('openhands.resolver.interfaces.azure_devops.Connection')
-    def test_azure_devops_issue_handler_init(self, mock_connection):
+    def test_azure_devops_issue_handler_init(self):
         """Test AzureDevOpsIssueHandler initialization."""
         # Arrange
         owner = 'test-org'
@@ -68,8 +65,7 @@ class TestAzureDevOpsIntegration(unittest.TestCase):
         self.assertEqual(handler.project_name, 'test-project')
         self.assertEqual(handler.repo_name, 'test-repo')
 
-    @patch('openhands.resolver.interfaces.azure_devops.Connection')
-    def test_azure_devops_pr_handler_init(self, mock_connection):
+    def test_azure_devops_pr_handler_init(self):
         """Test AzureDevOpsPRHandler initialization."""
         # Arrange
         owner = 'test-org'
@@ -88,8 +84,7 @@ class TestAzureDevOpsIntegration(unittest.TestCase):
         self.assertEqual(handler.project_name, 'test-project')
         self.assertEqual(handler.repo_name, 'test-repo')
 
-    @patch('openhands.resolver.interfaces.azure_devops.Connection')
-    def test_azure_devops_issue_handler_get_base_url(self, mock_connection):
+    def test_azure_devops_issue_handler_get_base_url(self):
         """Test AzureDevOpsIssueHandler.get_base_url()."""
         # Arrange
         owner = 'test-org'
@@ -105,8 +100,7 @@ class TestAzureDevOpsIntegration(unittest.TestCase):
         expected_url = 'https://dev.azure.com/test-org/test-project/_apis/git/repositories/test-repo'
         self.assertEqual(base_url, expected_url)
 
-    @patch('openhands.resolver.interfaces.azure_devops.Connection')
-    def test_azure_devops_issue_handler_get_clone_url(self, mock_connection):
+    def test_azure_devops_issue_handler_get_clone_url(self):
         """Test AzureDevOpsIssueHandler.get_clone_url()."""
         # Arrange
         owner = 'test-org'
