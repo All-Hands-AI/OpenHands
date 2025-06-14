@@ -442,6 +442,8 @@ class StandaloneConversationManager(ConversationManager):
     ):
         conversation_store = await self._get_conversation_store(user_id)
         conversation = await conversation_store.get_metadata(conversation_id)
+
+        print('update check convo metadata', conversation.llm_model)
         conversation.last_updated_at = datetime.now(timezone.utc)
 
         # Update cost/token metrics if event has llm_metrics
