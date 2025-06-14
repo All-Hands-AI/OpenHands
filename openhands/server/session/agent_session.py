@@ -197,23 +197,21 @@ class AgentSession:
         finally:
             self._starting = False
             success = finished and runtime_connected
-            duration = (time.time() - started_at)
+            duration = time.time() - started_at
 
             log_metadata = {
                 'signal': 'agent_session_start',
                 'success': success,
                 'duration': duration,
-                'restored_state': restored_state
+                'restored_state': restored_state,
             }
             if success:
                 self.logger.info(
-                    f'Agent session start succeeded in {duration}s',
-                    extra=log_metadata
+                    f'Agent session start succeeded in {duration}s', extra=log_metadata
                 )
             else:
                 self.logger.error(
-                    f'Agent session start failed in {duration}s',
-                    extra=log_metadata
+                    f'Agent session start failed in {duration}s', extra=log_metadata
                 )
 
     async def close(self) -> None:
@@ -333,7 +331,7 @@ class AgentSession:
         if runtime_cls == RemoteRuntime:
             # If provider tokens is passed in custom secrets, then remove provider from provider tokens
             # We prioritize provider tokens set in custom secrets
-            provider_tokens_without_gitlab = (
+            provider_tokens_without_gitlab_bitbucket = (
                 self.override_provider_tokens_with_custom_secret(
                     git_provider_tokens, custom_secrets
                 )
@@ -347,7 +345,7 @@ class AgentSession:
                 status_callback=self._status_callback,
                 headless_mode=False,
                 attach_to_existing=False,
-                git_provider_tokens=provider_tokens_without_gitlab,
+                git_provider_tokens=provider_tokens_without_gitlab_bitbucket,
                 env_vars=env_vars,
                 user_id=self.user_id,
             )
