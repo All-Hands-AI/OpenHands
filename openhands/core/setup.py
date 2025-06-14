@@ -107,6 +107,10 @@ def initialize_repository_for_runtime(
         gitlab_token = SecretStr(os.environ['GITLAB_TOKEN'])
         provider_tokens[ProviderType.GITLAB] = ProviderToken(token=gitlab_token)
 
+    if 'AZURE_DEVOPS_TOKEN' in os.environ:
+        azure_devops_token = SecretStr(os.environ['AZURE_DEVOPS_TOKEN'])
+        provider_tokens[ProviderType.AZURE_DEVOPS] = ProviderToken(token=azure_devops_token)
+
     secret_store = (
         UserSecrets(provider_tokens=provider_tokens) if provider_tokens else None
     )
