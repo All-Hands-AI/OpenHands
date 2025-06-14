@@ -22,6 +22,7 @@ export function handleActionMessage(message: ActionMessage) {
   if (message.llm_metrics) {
     const metrics = {
       cost: message.llm_metrics?.accumulated_cost ?? null,
+      max_budget_per_task: message.llm_metrics?.max_budget_per_task ?? null,
       usage: message.llm_metrics?.accumulated_token_usage ?? null,
     };
     store.dispatch(setMetrics(metrics));

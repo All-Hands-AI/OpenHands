@@ -456,7 +456,7 @@ async def test_step_max_budget(mock_agent, mock_event_stream):
         headless_mode=False,
     )
     controller.state.agent_state = AgentState.RUNNING
-    controller.state.metrics.accumulated_cost = 10.1
+    controller.agent.llm.metrics.accumulated_cost = 10.1
     assert controller.state.traffic_control_state == TrafficControlState.NORMAL
     await controller._step()
     assert controller.state.traffic_control_state == TrafficControlState.THROTTLING
@@ -476,7 +476,7 @@ async def test_step_max_budget_headless(mock_agent, mock_event_stream):
         headless_mode=True,
     )
     controller.state.agent_state = AgentState.RUNNING
-    controller.state.metrics.accumulated_cost = 10.1
+    controller.agent.llm.metrics.accumulated_cost = 10.1
     assert controller.state.traffic_control_state == TrafficControlState.NORMAL
     await controller._step()
     assert controller.state.traffic_control_state == TrafficControlState.THROTTLING

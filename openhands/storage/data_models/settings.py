@@ -40,6 +40,7 @@ class Settings(BaseModel):
     sandbox_runtime_container_image: str | None = None
     mcp_config: MCPConfig | None = None
     search_api_key: SecretStr | None = None
+    max_budget_per_task: float | None = None
     email: str | None = None
     email_verified: bool | None = None
 
@@ -131,5 +132,6 @@ class Settings(BaseModel):
             remote_runtime_resource_factor=app_config.sandbox.remote_runtime_resource_factor,
             mcp_config=mcp_config,
             search_api_key=app_config.search_api_key,
+            max_budget_per_task=app_config.max_budget_per_task,
         )
         return settings
