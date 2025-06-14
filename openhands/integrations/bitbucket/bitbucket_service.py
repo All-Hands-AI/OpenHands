@@ -362,7 +362,7 @@ class BitbucketService(BaseGitService, GitService):
             target_branch: The target branch name
             title: The title of the pull request
             body: The description of the pull request
-            draft: Whether to create a draft pull request (not supported by Bitbucket)
+            draft: Whether to create a draft pull request
 
         Returns:
             The URL of the created pull request
@@ -383,14 +383,8 @@ class BitbucketService(BaseGitService, GitService):
             'source': {'branch': {'name': source_branch}},
             'destination': {'branch': {'name': target_branch}},
             'close_source_branch': False,
+            'draft': draft,
         }
-
-        # Note: Bitbucket does not support draft pull requests
-        # The draft parameter is ignored for compatibility with other providers
-        if draft:
-            logger.warning(
-                'Draft pull requests are not supported by Bitbucket. Creating regular pull request.'
-            )
 
         data, _ = await self._make_request(
             url=url, params=payload, method=RequestMethod.POST
