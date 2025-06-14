@@ -127,5 +127,5 @@ class PromptManager:
             None,
         )
         if latest_user_message:
-            reminder_text = f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
+            reminder_text = f'\n\nENVIRONMENT REMINDER: You have {state.iteration_flag.max_value - state.iteration_flag.current_value} turns left to complete the task. When finished reply with <finish></finish>.'
             latest_user_message.content.append(TextContent(text=reminder_text))

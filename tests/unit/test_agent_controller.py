@@ -11,7 +11,10 @@ from litellm import (
 
 from openhands.controller.agent import Agent
 from openhands.controller.agent_controller import AgentController
-from openhands.controller.state.state import State, TrafficControlState
+from openhands.controller.state.control_flags import (
+    BudgetControlFlag,
+)
+from openhands.controller.state.state import State
 from openhands.core.config import OpenHandsConfig
 from openhands.core.config.agent_config import AgentConfig
 from openhands.core.main import run_controller
@@ -128,7 +131,7 @@ async def test_set_agent_state(mock_agent, mock_event_stream):
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        max_iterations=10,
+        iteration_delta=10,
         sid='test',
         confirmation_mode=False,
         headless_mode=True,
@@ -146,7 +149,7 @@ async def test_on_event_message_action(mock_agent, mock_event_stream):
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        max_iterations=10,
+        iteration_delta=10,
         sid='test',
         confirmation_mode=False,
         headless_mode=True,
@@ -163,7 +166,7 @@ async def test_on_event_change_agent_state_action(mock_agent, mock_event_stream)
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        max_iterations=10,
+        iteration_delta=10,
         sid='test',
         confirmation_mode=False,
         headless_mode=True,
@@ -181,7 +184,7 @@ async def test_react_to_exception(mock_agent, mock_event_stream, mock_status_cal
         agent=mock_agent,
         event_stream=mock_event_stream,
         status_callback=mock_status_callback,
-        max_iterations=10,
+        iteration_delta=10,
         sid='test',
         confirmation_mode=False,
         headless_mode=True,
@@ -201,7 +204,7 @@ async def test_react_to_content_policy_violation(
         agent=mock_agent,
         event_stream=mock_event_stream,
         status_callback=mock_status_callback,
-        max_iterations=10,
+        iteration_delta=10,
         sid='test',
         confirmation_mode=False,
         headless_mode=True,
@@ -287,7 +290,7 @@ async def test_run_controller_with_fatal_error(
     )
     assert len(error_observations) == 1
     error_observation = error_observations[0]
-    assert state.iteration == 3
+    assert state.iteration_flag.current_value == 3
     assert state.agent_state == AgentState.ERROR
     assert state.last_error == 'AgentStuckInLoopError: Agent got stuck in a loop'
     assert (
@@ -351,7 +354,7 @@ async def test_run_controller_stop_with_stuck(
     for i, event in enumerate(events):
         print(f'event {i}: {event_to_dict(event)}')
 
-    assert state.iteration == 3
+    assert state.iteration_flag.current_value == 3
     assert len(events) == 12
     # check the eventstream have 4 pairs of repeated actions and observations
     # With the refactored system message handling, we need to adjust the range
@@ -378,24 +381,19 @@ async def test_run_controller_stop_with_stuck(
 @pytest.mark.asyncio
 async def test_max_iterations_extension(mock_agent, mock_event_stream):
     # Test with headless_mode=False - should extend max_iterations
-    initial_state = State(max_iterations=10)
-
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        max_iterations=10,
+        iteration_delta=10,
         sid='test',
         confirmation_mode=False,
         headless_mode=False,
-        initial_state=initial_state,
     )
     controller.state.agent_state = AgentState.RUNNING
-    controller.state.iteration = 10
-    assert controller.state.traffic_control_state == TrafficControlState.NORMAL
+    controller.state.iteration_flag.current_value = 10
 
     # Trigger throttling by calling _step() when we hit max_iterations
     await controller._step()
-    assert controller.state.traffic_control_state == TrafficControlState.THROTTLING
     assert controller.state.agent_state == AgentState.ERROR
 
     # Simulate a new user message
@@ -405,28 +403,24 @@ async def test_max_iterations_extension(mock_agent, mock_event_stream):
 
     # Max iterations should be extended to current iteration + initial max_iterations
     assert (
-        controller.state.max_iterations == 20
+        controller.state.iteration_flag.max_value == 20
     )  # Current iteration (10 initial because _step() should not have been executed) + initial max_iterations (10)
-    assert controller.state.traffic_control_state == TrafficControlState.NORMAL
     assert controller.state.agent_state == AgentState.RUNNING
 
     # Close the controller to clean up
     await controller.close()
 
     # Test with headless_mode=True - should NOT extend max_iterations
-    initial_state = State(max_iterations=10)
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        max_iterations=10,
+        iteration_delta=10,
         sid='test',
         confirmation_mode=False,
         headless_mode=True,
-        initial_state=initial_state,
     )
     controller.state.agent_state = AgentState.RUNNING
-    controller.state.iteration = 10
-    assert controller.state.traffic_control_state == TrafficControlState.NORMAL
+    controller.state.iteration_flag.current_value = 10
 
     # Simulate a new user message
     message_action = MessageAction(content='Test message')
@@ -434,54 +428,133 @@ async def test_max_iterations_extension(mock_agent, mock_event_stream):
     await send_event_to_controller(controller, message_action)
 
     # Max iterations should NOT be extended in headless mode
-    assert controller.state.max_iterations == 10  # Original value unchanged
+    assert controller.state.iteration_flag.max_value == 10  # Original value unchanged
 
     # Trigger throttling by calling _step() when we hit max_iterations
     await controller._step()
 
-    assert controller.state.traffic_control_state == TrafficControlState.THROTTLING
     assert controller.state.agent_state == AgentState.ERROR
     await controller.close()
 
 
 @pytest.mark.asyncio
 async def test_step_max_budget(mock_agent, mock_event_stream):
+    # Metrics are always synced with budget flag before
+    metrics = Metrics()
+    metrics.accumulated_cost = 10.1
+    budget_flag = BudgetControlFlag(
+        limit_increase_amount=10, current_value=10.1, max_value=10
+    )
+
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        max_iterations=10,
-        max_budget_per_task=10,
+        iteration_delta=10,
+        budget_per_task_delta=10,
         sid='test',
         confirmation_mode=False,
         headless_mode=False,
+        initial_state=State(budget_flag=budget_flag, metrics=metrics),
     )
     controller.state.agent_state = AgentState.RUNNING
-    controller.state.metrics.accumulated_cost = 10.1
-    assert controller.state.traffic_control_state == TrafficControlState.NORMAL
     await controller._step()
-    assert controller.state.traffic_control_state == TrafficControlState.THROTTLING
     assert controller.state.agent_state == AgentState.ERROR
     await controller.close()
 
 
 @pytest.mark.asyncio
 async def test_step_max_budget_headless(mock_agent, mock_event_stream):
+    # Metrics are always synced with budget flag before
+    metrics = Metrics()
+    metrics.accumulated_cost = 10.1
+    budget_flag = BudgetControlFlag(
+        limit_increase_amount=10, current_value=10.1, max_value=10
+    )
+
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        max_iterations=10,
-        max_budget_per_task=10,
+        iteration_delta=10,
+        budget_per_task_delta=10,
         sid='test',
         confirmation_mode=False,
         headless_mode=True,
+        initial_state=State(budget_flag=budget_flag, metrics=metrics),
     )
     controller.state.agent_state = AgentState.RUNNING
-    controller.state.metrics.accumulated_cost = 10.1
-    assert controller.state.traffic_control_state == TrafficControlState.NORMAL
     await controller._step()
-    assert controller.state.traffic_control_state == TrafficControlState.THROTTLING
-    # In headless mode, throttling results in an error
     assert controller.state.agent_state == AgentState.ERROR
+    await controller.close()
+
+
+@pytest.mark.asyncio
+async def test_budget_reset_on_continue(mock_agent, mock_event_stream):
+    """Test that when a user continues after hitting the budget limit:
+    1. Error is thrown when budget cap is exceeded
+    2. LLM budget does not reset when user continues
+    3. Budget is extended by adding the initial budget cap to the current accumulated cost
+    """
+
+    # Create a real Metrics instance shared between controller state and llm
+    metrics = Metrics()
+    metrics.accumulated_cost = 6.0
+
+    initial_budget = 5.0
+
+    initial_state = State(
+        metrics=metrics,
+        budget_flag=BudgetControlFlag(
+            limit_increase_amount=initial_budget,
+            current_value=6.0,
+            max_value=initial_budget,
+        ),
+    )
+
+    # Create controller with budget cap
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=mock_event_stream,
+        iteration_delta=10,
+        budget_per_task_delta=initial_budget,
+        sid='test',
+        confirmation_mode=False,
+        headless_mode=False,
+        initial_state=initial_state,
+    )
+
+    # Set up initial state
+    controller.state.agent_state = AgentState.RUNNING
+
+    # Set up metrics to simulate having spent more than the budget
+    assert controller.state.budget_flag.current_value == 6.0
+    assert controller.agent.llm.metrics.accumulated_cost == 6.0
+
+    # Trigger budget limit
+    await controller._step()
+
+    # Verify budget limit was hit and error was thrown
+    assert controller.state.agent_state == AgentState.ERROR
+    assert 'budget' in controller.state.last_error.lower()
+
+    # Now set the agent state to RUNNING (simulating user clicking "continue")
+    await controller.set_agent_state_to(AgentState.RUNNING)
+
+    # Now simulate user sending a message
+    message_action = MessageAction(content='Please continue')
+    message_action._source = EventSource.USER
+    await controller._on_event(message_action)
+
+    # Verify budget cap was extended by adding initial budget to current accumulated cost
+    # accumulated cost (6.0) + initial budget (5.0) = 11.0
+    assert controller.state.budget_flag.max_value == 11.0
+
+    # Verify LLM metrics were NOT reset - they should still be 6.0
+    assert controller.agent.llm.metrics.accumulated_cost == 6.0
+
+    # The controller state metrics are same as llm metrics
+    assert controller.state.metrics.accumulated_cost == 6.0
+
+    # Verify traffic control state was reset
     await controller.close()
 
 
@@ -491,7 +564,7 @@ async def test_reset_with_pending_action_no_observation(mock_agent, mock_event_s
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        max_iterations=10,
+        iteration_delta=10,
         sid='test',
         confirmation_mode=False,
         headless_mode=True,
@@ -540,7 +613,7 @@ async def test_reset_with_pending_action_existing_observation(
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        max_iterations=10,
+        iteration_delta=10,
         sid='test',
         confirmation_mode=False,
         headless_mode=True,
@@ -582,7 +655,7 @@ async def test_reset_without_pending_action(mock_agent, mock_event_stream):
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        max_iterations=10,
+        iteration_delta=10,
         sid='test',
         confirmation_mode=False,
         headless_mode=True,
@@ -613,7 +686,7 @@ async def test_reset_with_pending_action_no_metadata(
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        max_iterations=10,
+        iteration_delta=10,
         sid='test',
         confirmation_mode=False,
         headless_mode=True,
@@ -662,6 +735,8 @@ async def test_run_controller_max_iterations_has_metrics(
     mock_agent.llm.metrics = Metrics()
     mock_agent.llm.config = config.get_llm_config()
 
+    step_count = 0
+
     def agent_step_fn(state):
         print(f'agent_step_fn received state: {state}')
         # Mock the cost of the LLM
@@ -669,7 +744,9 @@ async def test_run_controller_max_iterations_has_metrics(
         print(
             f'mock_agent.llm.metrics.accumulated_cost: {mock_agent.llm.metrics.accumulated_cost}'
         )
-        return CmdRunAction(command='ls')
+        nonlocal step_count
+        step_count += 1
+        return CmdRunAction(command=f'ls {step_count}')
 
     mock_agent.step = agent_step_fn
 
@@ -706,11 +783,13 @@ async def test_run_controller_max_iterations_has_metrics(
         fake_user_response_fn=lambda _: 'repeat',
         memory=mock_memory,
     )
-    assert state.iteration == 3
+
+    state.metrics = mock_agent.llm.metrics
+    assert state.iteration_flag.current_value == 3
     assert state.agent_state == AgentState.ERROR
     assert (
         state.last_error
-        == 'RuntimeError: Agent reached maximum iteration in headless mode. Current iteration: 3, max iteration: 3'
+        == 'RuntimeError: Agent reached maximum iteration. Current iteration: 3, max iteration: 3'
     )
     error_observations = test_event_stream.get_matching_events(
         reverse=True, limit=1, event_types=(AgentStateChangedObservation)
@@ -720,7 +799,7 @@ async def test_run_controller_max_iterations_has_metrics(
 
     assert (
         error_observation.reason
-        == 'RuntimeError: Agent reached maximum iteration in headless mode. Current iteration: 3, max iteration: 3'
+        == 'RuntimeError: Agent reached maximum iteration. Current iteration: 3, max iteration: 3'
     )
 
     assert state.metrics.accumulated_cost == 10.0 * 3, (
@@ -734,12 +813,19 @@ async def test_notify_on_llm_retry(mock_agent, mock_event_stream, mock_status_ca
         agent=mock_agent,
         event_stream=mock_event_stream,
         status_callback=mock_status_callback,
-        max_iterations=10,
+        iteration_delta=10,
         sid='test',
         confirmation_mode=False,
         headless_mode=True,
     )
-    controller._notify_on_llm_retry(1, 2)
+
+    def notify_on_llm_retry(attempt, max_attempts):
+        controller.status_callback('info', 'STATUS$LLM_RETRY', ANY)
+
+    # Attach the retry listener to the agent's LLM
+    controller.agent.llm.retry_listener = notify_on_llm_retry
+
+    controller.agent.llm.retry_listener(1, 2)
     controller.status_callback.assert_called_once_with('info', 'STATUS$LLM_RETRY', ANY)
     await controller.close()
 
@@ -965,11 +1051,11 @@ async def test_run_controller_with_context_window_exceeded_with_truncation(
 
     # Hitting the iteration limit indicates the controller is failing for the
     # expected reason
-    assert state.iteration == 5
+    assert state.iteration_flag.current_value == 5
     assert state.agent_state == AgentState.ERROR
     assert (
         state.last_error
-        == 'RuntimeError: Agent reached maximum iteration in headless mode. Current iteration: 5, max iteration: 5'
+        == 'RuntimeError: Agent reached maximum iteration. Current iteration: 5, max iteration: 5'
     )
 
     # Check that the context window exceeded error was raised during the run
@@ -1042,7 +1128,7 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
     # Hitting the iteration limit indicates the controller is failing for the
     # expected reason
     # With the refactored system message handling, the iteration count is different
-    assert state.iteration == 1
+    assert state.iteration_flag.current_value == 1
     assert state.agent_state == AgentState.ERROR
     assert (
         state.last_error
@@ -1102,7 +1188,7 @@ async def test_run_controller_with_memory_error(test_event_stream, mock_agent):
             memory=memory,
         )
 
-    assert state.iteration == 0
+    assert state.iteration_flag.current_value == 0
     assert state.agent_state == AgentState.ERROR
     assert state.last_error == 'Error: RuntimeError'
 
@@ -1113,10 +1199,13 @@ async def test_action_metrics_copy(mock_agent):
     file_store = InMemoryFileStore({})
     event_stream = EventStream(sid='test', file_store=file_store)
 
-    # Create agent with metrics
-    mock_agent.llm = MagicMock(spec=LLM)
     metrics = Metrics(model_name='test-model')
     metrics.accumulated_cost = 0.05
+
+    initial_state = State(metrics=metrics, budget_flag=None)
+
+    # Create agent with metrics
+    mock_agent.llm = MagicMock(spec=LLM)
 
     # Add multiple token usages - we should get the last one in the action
     usage1 = TokenUsage(
@@ -1170,10 +1259,11 @@ async def test_action_metrics_copy(mock_agent):
     controller = AgentController(
         agent=mock_agent,
         event_stream=event_stream,
-        max_iterations=10,
+        iteration_delta=10,
         sid='test',
         confirmation_mode=False,
         headless_mode=True,
+        initial_state=initial_state,
     )
 
     # Execute one step
@@ -1240,7 +1330,7 @@ async def test_condenser_metrics_included(mock_agent, test_event_stream):
         cache_write_tokens=10,
         response_id='agent-accumulated',
     )
-    mock_agent.llm.metrics = agent_metrics
+    # mock_agent.llm.metrics = agent_metrics
     mock_agent.name = 'TestAgent'
 
     # Create condenser with its own metrics
@@ -1279,10 +1369,11 @@ async def test_condenser_metrics_included(mock_agent, test_event_stream):
     controller = AgentController(
         agent=mock_agent,
         event_stream=test_event_stream,
-        max_iterations=10,
+        iteration_delta=10,
         sid='test',
         confirmation_mode=False,
         headless_mode=True,
+        initial_state=State(metrics=agent_metrics, budget_flag=None),
     )
 
     # Execute one step
@@ -1337,7 +1428,7 @@ async def test_first_user_message_with_identical_content(test_event_stream, mock
     controller = AgentController(
         agent=mock_agent,
         event_stream=test_event_stream,
-        max_iterations=10,
+        iteration_delta=10,
         sid='test',
         confirmation_mode=False,
         headless_mode=True,
@@ -1409,7 +1500,7 @@ async def test_agent_controller_processes_null_observation_with_cause():
     controller = AgentController(
         agent=mock_agent,
         event_stream=event_stream,
-        max_iterations=10,
+        iteration_delta=10,
         sid='test-session',
     )
 
@@ -1480,7 +1571,7 @@ def test_agent_controller_should_step_with_null_observation_cause_zero(mock_agen
     controller = AgentController(
         agent=mock_agent,
         event_stream=event_stream,
-        max_iterations=10,
+        iteration_delta=10,
         sid='test-session',
     )
 
@@ -1501,7 +1592,7 @@ def test_agent_controller_should_step_with_null_observation_cause_zero(mock_agen
 def test_system_message_in_event_stream(mock_agent, test_event_stream):
     """Test that SystemMessageAction is added to event stream in AgentController."""
     _ = AgentController(
-        agent=mock_agent, event_stream=test_event_stream, max_iterations=10
+        agent=mock_agent, event_stream=test_event_stream, iteration_delta=10
     )
 
     # Get events from the event stream
@@ -1553,7 +1644,7 @@ async def test_openrouter_context_window_exceeded_error(
     controller = AgentController(
         agent=mock_agent,
         event_stream=test_event_stream,
-        max_iterations=max_iterations,
+        iteration_delta=max_iterations,
         sid='test',
         confirmation_mode=False,
         headless_mode=True,
