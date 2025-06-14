@@ -391,7 +391,10 @@ class TestModifyLLMSettingsBasic:
         default_model_block = []
         in_default_model_block = False
         for line in source_lines:
-            if '# Set default model to the first model in the list' in line:
+            if (
+                '# Set default model to the best verified model for the provider'
+                in line
+            ):
                 in_default_model_block = True
                 default_model_block.append(line)
             elif in_default_model_block:

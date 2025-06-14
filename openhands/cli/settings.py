@@ -215,10 +215,18 @@ async def modify_llm_settings_basic(
             ]
             provider_models = VERIFIED_ANTHROPIC_MODELS + provider_models
 
-        # Set default model to the first model in the list (which will be a verified model if available)
-        default_model = (
-            provider_models[0] if provider_models else 'claude-sonnet-4-20250514'
-        )
+        # Set default model to the best verified model for the provider
+        if provider == 'anthropic' and VERIFIED_ANTHROPIC_MODELS:
+            # Use the first model in the VERIFIED_ANTHROPIC_MODELS list as it's the best/newest
+            default_model = VERIFIED_ANTHROPIC_MODELS[0]
+        elif provider == 'openai' and VERIFIED_OPENAI_MODELS:
+            # Use the first model in the VERIFIED_OPENAI_MODELS list as it's the best/newest
+            default_model = VERIFIED_OPENAI_MODELS[0]
+        else:
+            # For other providers, use the first model in the list
+            default_model = (
+                provider_models[0] if provider_models else 'claude-sonnet-4-20250514'
+            )
 
         # Show the default model but allow changing it
         print_formatted_text(
