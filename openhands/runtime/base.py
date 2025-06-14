@@ -494,7 +494,7 @@ class Runtime(FileEditRuntimeMixin):
                             f'https://{token_value}@{domain}/{selected_repository}.git'
                         )
                 else:
-                    # GitHub and other providers
+                    # GitHub
                     remote_repo_url = (
                         f'https://{token_value}@{domain}/{selected_repository}.git'
                     )
