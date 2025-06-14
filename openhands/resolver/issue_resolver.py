@@ -297,12 +297,6 @@ class IssueResolver:
             obs = runtime.run_action(action)
             logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
-        if self.platform == ProviderType.BITBUCKET and self.BITBUCKET_CI:
-            action = CmdRunAction(command='sudo chown -R 1001:0 /workspace/*')
-            logger.info(action, extra={'msg_type': 'ACTION'})
-            obs = runtime.run_action(action)
-            logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-
         action = CmdRunAction(command='git config --global core.pager ""')
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
@@ -359,9 +353,7 @@ class IssueResolver:
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
             raise RuntimeError(f'Failed to set git config. Observation: {obs}')
 
-        if (self.platform == ProviderType.GITLAB and self.GITLAB_CI) or (
-            self.platform == ProviderType.BITBUCKET and self.BITBUCKET_CI
-        ):
+        if self.platform == ProviderType.GITLAB and self.GITLAB_CI:
             action = CmdRunAction(command='sudo git add -A')
         else:
             action = CmdRunAction(command='git add -A')

@@ -731,10 +731,8 @@ fi
             if git_token:
                 if provider == ProviderType.GITLAB:
                     # GitLab uses oauth2 prefix with URL-encoded token
-                    encoded_token = urllib.parse.quote(
-                        git_token.get_secret_value(), safe=''
-                    )
-                    remote_url = f'https://oauth2:{encoded_token}@{repo_path.replace("gitlab.com/", "")}.git'
+                    token = git_token.get_secret_value()
+                    remote_url = f'https://oauth2:{token}@{repo_path.replace("gitlab.com/", "")}.git'
                 elif provider == ProviderType.BITBUCKET:
                     # Bitbucket tokens are in email:password format, need to encode separately
                     token_value = git_token.get_secret_value()
@@ -749,10 +747,10 @@ fi
                         remote_url = f'https://{encoded_token}@{repo_path.replace("bitbucket.org/", "")}.git'
                 else:
                     # GitHub and other providers use token as username
-                    encoded_token = urllib.parse.quote(
-                        git_token.get_secret_value(), safe=''
+                    token = git_token.get_secret_value()
+                    remote_url = (
+                        f'https://{token}@{repo_path.replace("github.com/", "")}.git'
                     )
-                    remote_url = f'https://{encoded_token}@{repo_path.replace("github.com/", "")}.git'
 
         return remote_url
 
