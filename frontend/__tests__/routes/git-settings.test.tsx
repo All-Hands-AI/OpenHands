@@ -110,6 +110,13 @@ describe("Content", () => {
       expect(
         screen.queryByTestId("gitlab-token-help-anchor"),
       ).not.toBeInTheDocument();
+
+      expect(
+        screen.queryByTestId("azure-devops-token-input"),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId("azure-devops-token-help-anchor"),
+      ).not.toBeInTheDocument();
     });
   });
 
