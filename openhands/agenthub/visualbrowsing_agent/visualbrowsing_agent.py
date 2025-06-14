@@ -208,7 +208,9 @@ Note:
             # for visualwebarena, webarena and miniwob++ eval, we need to retrieve the initial observation already in browser env
             # initialize and retrieve the first observation by issuing an noop OP
             # For non-benchmark browsing, the browser env starts with a blank page, and the agent is expected to first navigate to desired websites
-            return BrowseInteractiveAction(browser_actions='noop(1000)', return_axtree=True)
+            return BrowseInteractiveAction(
+                browser_actions='noop(1000)', return_axtree=True
+            )
 
         for event in state.view:
             if isinstance(event, BrowseInteractiveAction):

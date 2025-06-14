@@ -127,9 +127,6 @@ def test_setup_sandbox_config_gitlab_ci(mock_get_unique_uid, mock_getuid):
             )
 
 
-
-
-
 @mock.patch('openhands.resolver.issue_resolver.os.getuid', return_value=1000)
 def test_setup_sandbox_config_gitlab_ci_non_root(mock_getuid):
     """Test GitLab CI configuration when not running as root"""
@@ -147,9 +144,6 @@ def test_setup_sandbox_config_gitlab_ci_non_root(mock_getuid):
             assert_sandbox_config(
                 openhands_config.sandbox, local_runtime_url='http://localhost'
             )
-
-
-
 
 
 @mock.patch('openhands.events.observation.CmdOutputObservation')
