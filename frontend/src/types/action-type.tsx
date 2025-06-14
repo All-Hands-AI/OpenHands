@@ -42,6 +42,9 @@ enum ActionType {
   // Changes the state of the agent, e.g. to paused or running
   CHANGE_AGENT_STATE = "change_agent_state",
 
+  // User feedback on messages or the entire trajectory
+  USER_FEEDBACK = "user_feedback",
+
   // Interact with the MCP server.
   MCP = "call_tool_mcp",
 }
