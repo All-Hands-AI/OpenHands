@@ -208,9 +208,7 @@ async def test_run_session_without_initial_action(
     mock_display_runtime_init.assert_called_once_with('local')
     mock_display_animation.assert_called_once()
     mock_create_agent.assert_called_once_with(mock_config)
-    mock_add_mcp_tools.assert_called_once_with(
-        mock_agent, mock_runtime, mock_memory, mock_config
-    )
+    mock_add_mcp_tools.assert_called_once_with(mock_agent, mock_runtime, mock_memory)
     mock_create_runtime.assert_called_once()
     mock_create_controller.assert_called_once()
     mock_create_memory.assert_called_once()
