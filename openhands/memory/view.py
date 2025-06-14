@@ -50,6 +50,8 @@ class View(BaseModel):
         for event in events:
             if isinstance(event, CondensationAction):
                 forgotten_event_ids.update(event.forgotten)
+                # Make sure we also forget the condensation action itself
+                forgotten_event_ids.add(event.id)
 
         kept_events = [event for event in events if event.id not in forgotten_event_ids]
 

@@ -12,4 +12,5 @@
 		"ghcr.io/devcontainers/features/node:1": {},
 	},
 	"postCreateCommand": ".devcontainer/setup.sh",
+	"runArgs": ["--network=host"],
 }

@@ -341,10 +341,7 @@ describe("Settings 404", () => {
 
     renderHomeScreen();
 
-    // small hack to wait for the modal to not appear
-    await expect(
-      screen.findByTestId("ai-config-modal", {}, { timeout: 1000 }),
-    ).rejects.toThrow();
+    expect(screen.queryByTestId("ai-config-modal")).not.toBeInTheDocument();
   });
 });
 
