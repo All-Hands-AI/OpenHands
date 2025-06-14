@@ -130,14 +130,26 @@ class ProviderHandler:
         """Helper method to instantiate a service for a given provider"""
         token = self.provider_tokens[provider]
         service_class = self.service_class_map[provider]
-        return service_class(
-            user_id=token.user_id,
-            external_auth_id=self.external_auth_id,
-            external_auth_token=self.external_auth_token,
-            token=token.token,
-            external_token_manager=self.external_token_manager,
-            base_domain=token.host,
-        )
+        
+        # Azure DevOps uses organization_url instead of base_domain
+        if provider == ProviderType.AZURE_DEVOPS:
+            return service_class(
+                user_id=token.user_id,
+                external_auth_id=self.external_auth_id,
+                external_auth_token=self.external_auth_token,
+                token=token.token,
+                external_token_manager=self.external_token_manager,
+                organization_url=token.host,
+            )
+        else:
+            return service_class(
+                user_id=token.user_id,
+                external_auth_id=self.external_auth_id,
+                external_auth_token=self.external_auth_token,
+                token=token.token,
+                external_token_manager=self.external_token_manager,
+                base_domain=token.host,
+            )
 
     async def get_user(self) -> User:
         """Get user information from the first available provider"""
