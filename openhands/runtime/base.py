@@ -680,7 +680,7 @@ fi
         the microagents from the ./microagents/ folder.
 
         Args:
-            selected_repository: The repository path (e.g., "github.com/acme-co/api")
+            selected_repository: The repository path (e.g., "github.com/acme-co/api" or "acme-co/api")
 
         Returns:
             A list of loaded microagents from the org/user level repository
@@ -691,14 +691,35 @@ fi
         if len(repo_parts) < 2:
             return loaded_microagents
 
-        # Extract the domain and org/user name
-        domain = repo_parts[0] if len(repo_parts) > 2 else 'github.com'
+        # Determine the provider and domain
+        provider_domains = {
+            ProviderType.GITHUB: 'github.com',
+            ProviderType.GITLAB: 'gitlab.com', 
+            ProviderType.AZURE_DEVOPS: 'dev.azure.com',
+        }
+        
+        # First, try to extract domain from repository name if it includes one
+        if len(repo_parts) > 2:
+            domain = repo_parts[0]
+        else:
+            # Repository name doesn't include domain (e.g., "org/repo")
+            # Try to determine provider from available tokens
+            domain = 'github.com'  # Default fallback
+            
+            if self.git_provider_tokens:
+                # If we only have one provider token, use that
+                if len(self.git_provider_tokens) == 1:
+                    provider = next(iter(self.git_provider_tokens))
+                    domain = provider_domains.get(provider, 'github.com')
+                else:
+                    # Multiple providers - would need additional logic to determine which one
+                    # For now, default to GitHub
+                    pass
+        
         org_name = repo_parts[-2]
 
         # Construct the org-level .openhands repo path
         org_openhands_repo = f'{domain}/{org_name}/.openhands'
-        if domain not in org_openhands_repo:
-            org_openhands_repo = f'github.com/{org_openhands_repo}'
 
         self.log(
             'info',
