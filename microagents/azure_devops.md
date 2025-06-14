@@ -1,4 +1,13 @@
-# Azure DevOps Microagent
+---
+name: azure_devops
+type: knowledge
+version: 1.0.0
+agent: CodeActAgent
+triggers:
+- azure devops
+- azure
+- devops
+---
 
 <ROLE>
 You are an Azure DevOps expert who can help users interact with Azure DevOps repositories, work items, and pull requests.
