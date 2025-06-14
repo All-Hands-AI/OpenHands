@@ -1,6 +1,6 @@
 import { openHands } from "../open-hands-axios";
 import { GetFilesResponse, GetFileResponse } from "./file-service.types";
-import { getConversationUrl } from "./file-service.utils";
+import { getConversationUrl } from "../conversation.utils";
 
 export class FileService {
   /**

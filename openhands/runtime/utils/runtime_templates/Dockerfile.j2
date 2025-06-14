@@ -34,9 +34,13 @@ RUN apt-get update && \
 {% if 'ubuntu' in base_image %}
 RUN ln -s "$(dirname $(which node))/corepack" /usr/local/bin/corepack && \
     npm install -g corepack && corepack enable yarn && \
-    curl -fsSL --compressed https://install.python-poetry.org | python - && \
-    curl -LsSf https://astral.sh/uv/install.sh | sh
+    curl -fsSL --compressed https://install.python-poetry.org | python -
 {% endif %}
+
+# Install uv (required by MCP)
+RUN curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="/openhands/bin" sh
+# Add /openhands/bin to PATH
+ENV PATH="/openhands/bin:${PATH}"
 
 # Remove UID 1000 named pn or ubuntu, so the 'openhands' user can be created from ubuntu hosts
 RUN (if getent passwd 1000 | grep -q pn; then userdel pn; fi) && \
@@ -155,9 +159,6 @@ RUN \
 
 COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
 
-COPY ./code/openhands/runtime/plugins/vscode/settings.json /workspace/.vscode/settings.json
-RUN chmod -R a+rwx /workspace/.vscode/settings.json
-
 {{ install_dependencies() }}
 
 # ================================================================
@@ -170,9 +171,6 @@ RUN chmod -R a+rwx /workspace/.vscode/settings.json
 # ================================================================
 RUN if [ -d /openhands/code/openhands ]; then rm -rf /openhands/code/openhands; fi
 COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
-
-COPY ./code/openhands/runtime/plugins/vscode/settings.json /workspace/.vscode/settings.json
-RUN chmod -R a+rwx /workspace/.vscode/settings.json
 
 COPY ./code/openhands /openhands/code/openhands
 RUN chmod a+rwx /openhands/code/openhands/__init__.py

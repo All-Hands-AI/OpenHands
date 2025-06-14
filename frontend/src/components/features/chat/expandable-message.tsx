@@ -15,6 +15,7 @@ import { OpenHandsObservation } from "#/types/core/observations";
 import { cn } from "#/utils/utils";
 import { code } from "../markdown/code";
 import { ol, ul } from "../markdown/list";
+import { paragraph } from "../markdown/paragraph";
 import { MonoComponent } from "./mono-component";
 import { PathComponent } from "./path-component";
 
@@ -113,7 +114,7 @@ export function ExpandableMessage({
             {t(I18nKey.STATUS$ERROR_LLM_OUT_OF_CREDITS)}
           </div>
           <Link
-            className="mt-2 mb-2 w-full h-10 rounded flex items-center justify-center gap-2 bg-primary text-[#0D0F11]"
+            className="mt-2 mb-2 w-full h-10 rounded-sm flex items-center justify-center gap-2 bg-primary text-[#0D0F11]"
             to="/settings/billing"
           >
             {t(I18nKey.BILLING$CLICK_TO_TOP_UP)}
@@ -196,6 +197,7 @@ export function ExpandableMessage({
                 code,
                 ul,
                 ol,
+                p: paragraph,
               }}
               remarkPlugins={[remarkGfm]}
             >

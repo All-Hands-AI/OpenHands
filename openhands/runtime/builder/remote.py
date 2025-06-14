@@ -99,8 +99,8 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
             logger.info(f'Build status: {status}')
 
             if status == 'SUCCESS':
-                logger.debug(f"Successfully built {status_data['image']}")
-                return status_data['image']
+                logger.debug(f'Successfully built {status_data["image"]}')
+                return str(status_data['image'])
             elif status in [
                 'FAILURE',
                 'INTERNAL_ERROR',
@@ -139,11 +139,11 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
 
         if result['exists']:
             logger.debug(
-                f"Image {image_name} exists. "
-                f"Uploaded at: {result['image']['upload_time']}, "
-                f"Size: {result['image']['image_size_bytes'] / 1024 / 1024:.2f} MB"
+                f'Image {image_name} exists. '
+                f'Uploaded at: {result["image"]["upload_time"]}, '
+                f'Size: {result["image"]["image_size_bytes"] / 1024 / 1024:.2f} MB'
             )
         else:
             logger.debug(f'Image {image_name} does not exist.')
 
-        return result['exists']
+        return bool(result['exists'])

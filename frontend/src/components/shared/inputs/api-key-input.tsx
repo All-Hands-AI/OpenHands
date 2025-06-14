@@ -39,7 +39,7 @@ export function APIKeyInput({ isDisabled, isSet }: APIKeyInputProps) {
       <p className="text-sm text-[#A3A3A3]">
         {t(I18nKey.API$DONT_KNOW_KEY)}{" "}
         <a
-          href="https://docs.all-hands.dev/modules/usage/llms"
+          href="https://docs.all-hands.dev/usage/llms"
           rel="noreferrer noopener"
           target="_blank"
           className="underline underline-offset-2"

@@ -7,16 +7,16 @@ from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message, TextContent
-from openhands.events.action import Action
+from openhands.events.action import Action, MessageAction
 from openhands.events.event import Event
-from openhands.memory.conversation_memory import ConversationMemory
 from openhands.llm.llm import LLM
+from openhands.memory.conversation_memory import ConversationMemory
+from openhands.microagent.prompt_manager import PromptManager
 from openhands.runtime.plugins import (
     AgentSkillsRequirement,
     JupyterRequirement,
     PluginRequirement,
 )
-from openhands.utils.prompt import PromptManager
 
 
 class ProxyAgent(Agent):
@@ -40,12 +40,14 @@ class ProxyAgent(Agent):
         # Function calling mode
         self.tools = proxy_function_calling.get_tools()
 
-        self.prompt_manager = PromptManager(
+        self._prompt_manager = PromptManager(
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
         )
 
         # Create a ConversationMemory instance
-        self.conversation_memory = ConversationMemory(self.config, self.prompt_manager)
+        # _prompt_manager is guaranteed to be set at this point
+        assert self._prompt_manager is not None
+        self.conversation_memory = ConversationMemory(self.config, self._prompt_manager)
 
         agent_list_path = os.path.join(os.path.dirname(__file__), 'agent_list.json')
         if not os.path.exists(agent_list_path):
@@ -57,7 +59,8 @@ class ProxyAgent(Agent):
 
     def step(self, state: State) -> Action:
         # Prepare the message to send to the LLM
-        messages = self._get_messages(state.history)
+        initial_user_message = self._get_initial_user_message(state.history)
+        messages = self._get_messages(state.history, initial_user_message)
 
         params: dict = {
             'messages': self.llm.format_messages_for_llm(messages),
@@ -71,13 +74,31 @@ class ProxyAgent(Agent):
         action = proxy_function_calling.response_to_action(response)
         return action
 
-    def _get_messages(self, events: list[Event]) -> list[Message]:
+    def _get_initial_user_message(self, history: list[Event]) -> MessageAction:
+        """Finds the initial user message action from the full history."""
+        initial_user_message: MessageAction | None = None
+        for event in history:
+            if isinstance(event, MessageAction) and event.source == 'user':
+                initial_user_message = event
+                break
+
+        if initial_user_message is None:
+            # This should not happen in a valid conversation
+            raise ValueError(
+                'Initial user message not found in history. Please report this issue.'
+            )
+        return initial_user_message
+
+    def _get_messages(
+        self, events: list[Event], initial_user_message: MessageAction
+    ) -> list[Message]:
         if not self.prompt_manager:
             raise Exception('Prompt Manager not instantiated.')
-        
+
         # Use ConversationMemory to process events (including SystemMessageAction)
         messages = self.conversation_memory.process_events(
             condensed_history=events,
+            initial_user_action=initial_user_message,
             max_message_chars=self.llm.config.max_message_chars,
             vision_is_active=self.llm.vision_is_active(),
         )
@@ -86,9 +107,10 @@ class ProxyAgent(Agent):
             role='system',
             content=[
                 TextContent(
-                        text='Available agents are the following:' + json.dumps(self.agent_list)
-                    )
-            ]
+                    text='Available agents are the following:'
+                    + json.dumps(self.agent_list)
+                )
+            ],
         )
         if len(messages) > 1:
             messages.insert(1, agent_list_message)
@@ -99,7 +121,6 @@ class ProxyAgent(Agent):
             self.conversation_memory.apply_prompt_caching(messages)
 
         return messages
-
 
     def reset(self) -> None:
         super().reset()

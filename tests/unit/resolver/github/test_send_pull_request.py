@@ -13,8 +13,8 @@ from openhands.resolver.send_pull_request import (
     apply_patch,
     initialize_repo,
     load_single_resolver_output,
+    main,
     make_commit,
-    process_all_successful_issues,
     process_single_issue,
     send_pull_request,
     update_existing_pull_request,
@@ -142,9 +142,9 @@ index 9daeafb..b02def2 100644
     with open(dos_file, 'rb') as f:
         dos_content = f.read()
 
-    assert (
-        b'\r\n' not in unix_content
-    ), 'Unix-style line endings were changed to DOS-style'
+    assert b'\r\n' not in unix_content, (
+        'Unix-style line endings were changed to DOS-style'
+    )
     assert b'\r\n' in dos_content, 'DOS-style line endings were changed to Unix-style'
 
     # Check if content was updated correctly
@@ -1028,131 +1028,6 @@ def test_process_single_issue_unsuccessful(
     mock_send_pull_request.assert_not_called()
 
 
-@patch('openhands.resolver.send_pull_request.load_all_resolver_outputs')
-@patch('openhands.resolver.send_pull_request.process_single_issue')
-def test_process_all_successful_issues(
-    mock_process_single_issue, mock_load_all_resolver_outputs, mock_llm_config
-):
-    # Create ResolverOutput objects with properly initialized GithubIssue instances
-    resolver_output_1 = ResolverOutput(
-        issue=Issue(
-            owner='test-owner',
-            repo='test-repo',
-            number=1,
-            title='Issue 1',
-            body='Body 1',
-        ),
-        issue_type='issue',
-        instruction='Test instruction 1',
-        base_commit='def456',
-        git_patch='Test patch 1',
-        history=[],
-        metrics={},
-        success=True,
-        comment_success=None,
-        result_explanation='Test success 1',
-        error=None,
-    )
-
-    resolver_output_2 = ResolverOutput(
-        issue=Issue(
-            owner='test-owner',
-            repo='test-repo',
-            number=2,
-            title='Issue 2',
-            body='Body 2',
-        ),
-        issue_type='issue',
-        instruction='Test instruction 2',
-        base_commit='ghi789',
-        git_patch='Test patch 2',
-        history=[],
-        metrics={},
-        success=False,
-        comment_success=None,
-        result_explanation='',
-        error='Test error 2',
-    )
-
-    resolver_output_3 = ResolverOutput(
-        issue=Issue(
-            owner='test-owner',
-            repo='test-repo',
-            number=3,
-            title='Issue 3',
-            body='Body 3',
-        ),
-        issue_type='issue',
-        instruction='Test instruction 3',
-        base_commit='jkl012',
-        git_patch='Test patch 3',
-        history=[],
-        metrics={},
-        success=True,
-        comment_success=None,
-        result_explanation='Test success 3',
-        error=None,
-    )
-
-    mock_load_all_resolver_outputs.return_value = [
-        resolver_output_1,
-        resolver_output_2,
-        resolver_output_3,
-    ]
-
-    # Call the function
-    process_all_successful_issues(
-        'output_dir',
-        'token',
-        'username',
-        ProviderType.GITHUB,
-        'draft',
-        mock_llm_config,  # llm_config
-        None,  # fork_owner
-    )
-
-    # Assert that process_single_issue was called for successful issues only
-    assert mock_process_single_issue.call_count == 2
-
-    # Check that the function was called with the correct arguments for successful issues
-    mock_process_single_issue.assert_has_calls(
-        [
-            call(
-                'output_dir',
-                resolver_output_1,
-                'token',
-                'username',
-                ProviderType.GITHUB,
-                'draft',
-                mock_llm_config,
-                None,
-                False,
-                None,
-                None,
-                None,
-                'github.com',
-            ),
-            call(
-                'output_dir',
-                resolver_output_3,
-                'token',
-                'username',
-                ProviderType.GITHUB,
-                'draft',
-                mock_llm_config,
-                None,
-                False,
-                None,
-                None,
-                None,
-                'github.com',
-            ),
-        ]
-    )
-
-    # Add more assertions as needed to verify the behavior of the function
-
-
 @patch('httpx.get')
 @patch('subprocess.run')
 def test_send_pull_request_branch_naming(
@@ -1217,7 +1092,6 @@ def test_send_pull_request_branch_naming(
 
 
 @patch('openhands.resolver.send_pull_request.argparse.ArgumentParser')
-@patch('openhands.resolver.send_pull_request.process_all_successful_issues')
 @patch('openhands.resolver.send_pull_request.process_single_issue')
 @patch('openhands.resolver.send_pull_request.load_single_resolver_output')
 @patch('openhands.resolver.send_pull_request.identify_token')
@@ -1229,11 +1103,8 @@ def test_main(
     mock_identify_token,
     mock_load_single_resolver_output,
     mock_process_single_issue,
-    mock_process_all_successful_issues,
     mock_parser,
 ):
-    from openhands.resolver.send_pull_request import main
-
     # Setup mock parser
     mock_args = MagicMock()
     mock_args.token = None
@@ -1299,20 +1170,6 @@ def test_main(
     mock_getenv.assert_any_call('GITHUB_TOKEN')
     mock_path_exists.assert_called_with('/mock/output')
     mock_load_single_resolver_output.assert_called_with('/mock/output/output.jsonl', 42)
-
-    # Test for 'all_successful' issue number
-    mock_args.issue_number = 'all_successful'
-    main()
-    mock_process_all_successful_issues.assert_called_with(
-        '/mock/output',
-        'mock_token',
-        'mock_username',
-        ProviderType.GITHUB,
-        'draft',
-        llm_config,
-        None,
-        ANY,
-    )
 
     # Test for invalid issue number
     mock_args.issue_number = 'invalid'

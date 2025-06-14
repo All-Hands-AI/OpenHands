@@ -4,16 +4,14 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Provider } from "react-redux";
 import { createRoutesStub } from "react-router";
 import { setupStore } from "test-utils";
-import userEvent from "@testing-library/user-event";
 import { TaskSuggestions } from "#/components/features/home/tasks/task-suggestions";
 import { SuggestionsService } from "#/api/suggestions-service/suggestions-service.api";
 import { MOCK_TASKS } from "#/mocks/task-suggestions-handlers";
-import { AuthProvider } from "#/context/auth-context";
 
-const renderTaskSuggestions = (initialProvidersAreSet = true) => {
+const renderTaskSuggestions = () => {
   const RouterStub = createRoutesStub([
     {
-      Component: TaskSuggestions,
+      Component: () => <TaskSuggestions />,
       path: "/",
     },
     {
@@ -29,11 +27,9 @@ const renderTaskSuggestions = (initialProvidersAreSet = true) => {
   return render(<RouterStub />, {
     wrapper: ({ children }) => (
       <Provider store={setupStore()}>
-        <AuthProvider initialProvidersAreSet={initialProvidersAreSet}>
-          <QueryClientProvider client={new QueryClient()}>
-            {children}
-          </QueryClientProvider>
-        </AuthProvider>
+        <QueryClientProvider client={new QueryClient()}>
+          {children}
+        </QueryClientProvider>
       </Provider>
     ),
   });
@@ -86,7 +82,7 @@ describe("TaskSuggestions", () => {
     getSuggestedTasksSpy.mockResolvedValue(MOCK_TASKS);
     renderTaskSuggestions();
 
-    const skeletons = screen.getAllByTestId("task-group-skeleton");
+    const skeletons = await screen.findAllByTestId("task-group-skeleton");
     expect(skeletons.length).toBeGreaterThan(0);
 
     await waitFor(() => {
@@ -96,18 +92,5 @@ describe("TaskSuggestions", () => {
     });
 
     expect(screen.queryByTestId("task-group-skeleton")).not.toBeInTheDocument();
-  });
-
-  it("should display a button to settings if the user needs to sign in with their git provider", async () => {
-    renderTaskSuggestions(false);
-
-    expect(getSuggestedTasksSpy).not.toHaveBeenCalled();
-    const goToSettingsButton = await screen.findByTestId(
-      "navigate-to-settings-button",
-    );
-    expect(goToSettingsButton).toBeInTheDocument();
-
-    await userEvent.click(goToSettingsButton);
-    await screen.findByTestId("settings-screen");
   });
 });

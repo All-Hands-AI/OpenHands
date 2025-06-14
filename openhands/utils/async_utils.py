@@ -1,7 +1,7 @@
 import asyncio
 from concurrent import futures
 from concurrent.futures import ThreadPoolExecutor
-from typing import Callable, Coroutine, Iterable, List
+from typing import Callable, Coroutine, Iterable
 
 GENERAL_TIMEOUT: int = 15
 EXECUTOR = ThreadPoolExecutor()
@@ -64,7 +64,7 @@ async def call_coro_in_bg_thread(
 
 async def wait_all(
     iterable: Iterable[Coroutine], timeout: int = GENERAL_TIMEOUT
-) -> List:
+) -> list:
     """
     Shorthand for waiting for all the coroutines in the iterable given in parallel. Creates
     a task for each coroutine.

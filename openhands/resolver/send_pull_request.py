@@ -16,7 +16,6 @@ from openhands.resolver.interfaces.gitlab import GitlabIssueHandler
 from openhands.resolver.interfaces.issue import Issue
 from openhands.resolver.interfaces.issue_definitions import ServiceContextIssue
 from openhands.resolver.io_utils import (
-    load_all_resolver_outputs,
     load_single_resolver_output,
 )
 from openhands.resolver.patching import apply_diff, parse_patch
@@ -468,7 +467,7 @@ def update_existing_pull_request(
                 comment_id = issue.thread_ids[count]
                 handler.reply_to_comment(issue.number, comment_id, reply_comment)
         except (json.JSONDecodeError, TypeError):
-            msg = f'Error occured when replying to threads; success explanations {additional_message}'
+            msg = f'Error occurred when replying to threads; success explanations {additional_message}'
             handler.send_comment_msg(issue.number, msg)
 
     return pr_url
@@ -547,40 +546,6 @@ def process_single_issue(
             pr_title=pr_title,
             base_domain=base_domain,
         )
-
-
-def process_all_successful_issues(
-    output_dir: str,
-    token: str,
-    username: str,
-    platform: ProviderType,
-    pr_type: str,
-    llm_config: LLMConfig,
-    fork_owner: str | None,
-    base_domain: str | None = None,
-) -> None:
-    # Determine default base_domain based on platform
-    if base_domain is None:
-        base_domain = 'github.com' if platform == ProviderType.GITHUB else 'gitlab.com'
-    output_path = os.path.join(output_dir, 'output.jsonl')
-    for resolver_output in load_all_resolver_outputs(output_path):
-        if resolver_output.success:
-            logger.info(f'Processing issue {resolver_output.issue.number}')
-            process_single_issue(
-                output_dir,
-                resolver_output,
-                token,
-                username,
-                platform,
-                pr_type,
-                llm_config,
-                fork_owner,
-                False,
-                None,
-                None,
-                None,
-                base_domain,
-            )
 
 
 def main() -> None:
@@ -703,42 +668,28 @@ def main() -> None:
     if not os.path.exists(my_args.output_dir):
         raise ValueError(f'Output directory {my_args.output_dir} does not exist.')
 
-    if my_args.issue_number == 'all_successful':
-        if not username:
-            raise ValueError('username is required.')
-        process_all_successful_issues(
-            my_args.output_dir,
-            token,
-            username,
-            platform,
-            my_args.pr_type,
-            llm_config,
-            my_args.fork_owner,
-            my_args.base_domain,
-        )
-    else:
-        if not my_args.issue_number.isdigit():
-            raise ValueError(f'Issue number {my_args.issue_number} is not a number.')
-        issue_number = int(my_args.issue_number)
-        output_path = os.path.join(my_args.output_dir, 'output.jsonl')
-        resolver_output = load_single_resolver_output(output_path, issue_number)
-        if not username:
-            raise ValueError('username is required.')
-        process_single_issue(
-            my_args.output_dir,
-            resolver_output,
-            token,
-            username,
-            platform,
-            my_args.pr_type,
-            llm_config,
-            my_args.fork_owner,
-            my_args.send_on_failure,
-            my_args.target_branch,
-            my_args.reviewer,
-            my_args.pr_title,
-            my_args.base_domain,
-        )
+    if not my_args.issue_number.isdigit():
+        raise ValueError(f'Issue number {my_args.issue_number} is not a number.')
+    issue_number = int(my_args.issue_number)
+    output_path = os.path.join(my_args.output_dir, 'output.jsonl')
+    resolver_output = load_single_resolver_output(output_path, issue_number)
+    if not username:
+        raise ValueError('username is required.')
+    process_single_issue(
+        my_args.output_dir,
+        resolver_output,
+        token,
+        username,
+        platform,
+        my_args.pr_type,
+        llm_config,
+        my_args.fork_owner,
+        my_args.send_on_failure,
+        my_args.target_branch,
+        my_args.reviewer,
+        my_args.pr_title,
+        my_args.base_domain,
+    )
 
 
 if __name__ == '__main__':

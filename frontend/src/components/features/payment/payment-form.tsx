@@ -9,6 +9,7 @@ import { BrandButton } from "../settings/brand-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { amountIsValid } from "#/utils/amount-is-valid";
 import { I18nKey } from "#/i18n/declaration";
+import { PoweredByStripeTag } from "./powered-by-stripe-tag";
 
 export function PaymentForm() {
   const { t } = useTranslation();
@@ -40,19 +41,15 @@ export function PaymentForm() {
       data-testid="billing-settings"
       className="flex flex-col gap-6 px-11 py-9"
     >
-      <h2 className="text-[28px] leading-8 tracking-[-0.02em] font-bold">
-        {t(I18nKey.PAYMENT$MANAGE_CREDITS)}
-      </h2>
-
       <div
         className={cn(
-          "flex items-center justify-between w-[680px] bg-[#7F7445] rounded px-3 py-2",
+          "flex items-center justify-between w-[680px] bg-[#7F7445] rounded-sm px-3 py-2",
           "text-[28px] leading-8 -tracking-[0.02em] font-bold",
         )}
       >
         <div className="flex items-center gap-2">
           <MoneyIcon width={22} height={14} />
-          <span>Balance</span>
+          <span>{t(I18nKey.PAYMENT$MANAGE_CREDITS)}</span>
         </div>
         {!isLoading && (
           <span data-testid="user-balance">${Number(balance).toFixed(2)}</span>
@@ -83,6 +80,7 @@ export function PaymentForm() {
             {t(I18nKey.PAYMENT$ADD_CREDIT)}
           </BrandButton>
           {isPending && <LoadingSpinner size="small" />}
+          <PoweredByStripeTag />
         </div>
       </div>
     </form>

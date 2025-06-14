@@ -2,6 +2,7 @@ export type OpenHandsEventType =
   | "message"
   | "system"
   | "agent_state_changed"
+  | "change_agent_state"
   | "run"
   | "read"
   | "write"
@@ -14,11 +15,16 @@ export type OpenHandsEventType =
   | "think"
   | "finish"
   | "error"
-  | "recall";
+  | "recall"
+  | "mcp"
+  | "call_tool_mcp"
+  | "user_rejected";
+
+export type OpenHandsSourceType = "agent" | "user" | "environment";
 
 interface OpenHandsBaseEvent {
   id: number;
-  source: "agent" | "user";
+  source: OpenHandsSourceType;
   message: string;
   timestamp: string; // ISO 8601
 }

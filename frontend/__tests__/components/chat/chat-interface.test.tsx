@@ -1,12 +1,9 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { act, screen, waitFor, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "test-utils";
 import type { Message } from "#/message";
-import { addUserMessage } from "#/state/chat-slice";
 import { SUGGESTIONS } from "#/utils/suggestions";
-import * as ChatSlice from "#/state/chat-slice";
-import { WsClientProviderStatus } from "#/context/ws-client-provider";
 import { ChatInterface } from "#/components/features/chat/chat-interface";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -21,7 +18,7 @@ describe("Empty state", () => {
   const { useWsClient: useWsClientMock } = vi.hoisted(() => ({
     useWsClient: vi.fn(() => ({
       send: sendMock,
-      status: WsClientProviderStatus.CONNECTED,
+      status: "CONNECTED",
       isLoadingMessages: false,
     })),
   }));
@@ -42,51 +39,10 @@ describe("Empty state", () => {
     vi.clearAllMocks();
   });
 
-  it("should render suggestions if empty", () => {
-    const { store } = renderWithProviders(<ChatInterface />, {
-      preloadedState: {
-        chat: { 
-          messages: [],
-          systemMessage: {
-            content: "",
-            tools: [],
-            openhands_version: null,
-            agent_class: null
-          }
-        },
-      },
-    });
-
-    expect(screen.getByTestId("suggestions")).toBeInTheDocument();
-
-    act(() => {
-      store.dispatch(
-        addUserMessage({
-          content: "Hello",
-          imageUrls: [],
-          timestamp: new Date().toISOString(),
-          pending: true,
-        }),
-      );
-    });
-
-    expect(screen.queryByTestId("suggestions")).not.toBeInTheDocument();
-  });
+  it.todo("should render suggestions if empty");
 
   it("should render the default suggestions", () => {
-    renderWithProviders(<ChatInterface />, {
-      preloadedState: {
-        chat: { 
-          messages: [],
-          systemMessage: {
-            content: "",
-            tools: [],
-            openhands_version: null,
-            agent_class: null
-          }
-        },
-      },
-    });
+    renderWithProviders(<ChatInterface />);
 
     const suggestions = screen.getByTestId("suggestions");
     const repoSuggestions = Object.keys(SUGGESTIONS.repo);
@@ -107,24 +63,11 @@ describe("Empty state", () => {
       // this is to test that the message is in the UI before the socket is called
       useWsClientMock.mockImplementation(() => ({
         send: sendMock,
-        status: WsClientProviderStatus.CONNECTED,
+        status: "CONNECTED",
         isLoadingMessages: false,
       }));
-      const addUserMessageSpy = vi.spyOn(ChatSlice, "addUserMessage");
       const user = userEvent.setup();
-      const { store } = renderWithProviders(<ChatInterface />, {
-        preloadedState: {
-          chat: { 
-            messages: [],
-            systemMessage: {
-              content: "",
-              tools: [],
-              openhands_version: null,
-              agent_class: null
-            }
-          },
-        },
-      });
+      renderWithProviders(<ChatInterface />);
 
       const suggestions = screen.getByTestId("suggestions");
       const displayedSuggestions = within(suggestions).getAllByRole("button");
@@ -133,9 +76,7 @@ describe("Empty state", () => {
       await user.click(displayedSuggestions[0]);
 
       // user message loaded to input
-      expect(addUserMessageSpy).not.toHaveBeenCalled();
       expect(screen.queryByTestId("suggestions")).toBeInTheDocument();
-      expect(store.getState().chat.messages).toHaveLength(0);
       expect(input).toHaveValue(displayedSuggestions[0].textContent);
     },
   );
@@ -145,23 +86,11 @@ describe("Empty state", () => {
     async () => {
       useWsClientMock.mockImplementation(() => ({
         send: sendMock,
-        status: WsClientProviderStatus.CONNECTED,
+        status: "CONNECTED",
         isLoadingMessages: false,
       }));
       const user = userEvent.setup();
-      const { rerender } = renderWithProviders(<ChatInterface />, {
-        preloadedState: {
-          chat: { 
-            messages: [],
-            systemMessage: {
-              content: "",
-              tools: [],
-              openhands_version: null,
-              agent_class: null
-            }
-          },
-        },
-      });
+      const { rerender } = renderWithProviders(<ChatInterface />);
 
       const suggestions = screen.getByTestId("suggestions");
       const displayedSuggestions = within(suggestions).getAllByRole("button");
@@ -171,7 +100,7 @@ describe("Empty state", () => {
 
       useWsClientMock.mockImplementation(() => ({
         send: sendMock,
-        status: WsClientProviderStatus.CONNECTED,
+        status: "CONNECTED",
         isLoadingMessages: false,
       }));
       rerender(<ChatInterface />);

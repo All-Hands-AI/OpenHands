@@ -6,9 +6,11 @@ import { cn } from "#/utils/utils";
 import { ul, ol } from "../markdown/list";
 import { CopyToClipboardButton } from "#/components/shared/buttons/copy-to-clipboard-button";
 import { anchor } from "../markdown/anchor";
+import { OpenHandsSourceType } from "#/types/core/base";
+import { paragraph } from "../markdown/paragraph";
 
 interface ChatMessageProps {
-  type: "user" | "assistant";
+  type: OpenHandsSourceType;
   message: string;
 }
 
@@ -48,7 +50,7 @@ export function ChatMessage({
         "rounded-xl relative",
         "flex flex-col gap-2",
         type === "user" && " max-w-[305px] p-4 bg-tertiary self-end",
-        type === "assistant" && "mt-6 max-w-full bg-transparent",
+        type === "agent" && "mt-6 max-w-full bg-transparent",
       )}
     >
       <CopyToClipboardButton
@@ -64,6 +66,7 @@ export function ChatMessage({
             ul,
             ol,
             a: anchor,
+            p: paragraph,
           }}
           remarkPlugins={[remarkGfm]}
         >

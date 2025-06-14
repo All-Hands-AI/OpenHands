@@ -37,6 +37,7 @@ def mock_state() -> State:
 
     return state
 
+
 def test_get_tools():
     tools = get_tools()
 
@@ -65,9 +66,12 @@ def test_delegate_local_tool():
 def test_delegate_remote_tool():
     assert DelegateRemoteTool['type'] == 'function'
     assert DelegateRemoteTool['function']['name'] == 'delegate_remote'
-    assert list(
-        DelegateRemoteTool['function']['parameters']['properties'].keys()
-    ) == ['url', 'task', 'session_id', 'task_id']
+    assert list(DelegateRemoteTool['function']['parameters']['properties'].keys()) == [
+        'url',
+        'task',
+        'session_id',
+        'task_id',
+    ]
     assert DelegateRemoteTool['function']['parameters']['required'] == [
         'url',
         'task',

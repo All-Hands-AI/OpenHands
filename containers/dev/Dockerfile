@@ -61,8 +61,8 @@ RUN add-apt-repository ppa:deadsnakes/ppa \
     && apt-get install -y python3.12 python3.12-venv python3.12-dev python3-pip \
     && ln -s /usr/bin/python3.12 /usr/bin/python
 
-# NodeJS >= 18.17.1
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+# NodeJS >= 22.x
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y nodejs
 
 # Poetry >= 1.8
@@ -108,7 +108,7 @@ WORKDIR /app
 
 # cache build dependencies
 RUN \
-  --mount=type=bind,source=./,target=/app/ \
+  --mount=type=bind,source=./,target=/app/,rw \
   <<EOF
 #!/bin/bash
 make -s clean
