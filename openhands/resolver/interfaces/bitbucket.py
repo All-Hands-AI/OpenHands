@@ -495,3 +495,26 @@ class BitbucketIssueHandler(IssueHandlerInterface):
             A list of issue numbers
         """
         return extract_issue_references(body)
+
+
+class BitbucketPRHandler(BitbucketIssueHandler):
+    """Handler for Bitbucket pull requests, extending the issue handler."""
+
+    def __init__(
+        self,
+        owner: str,
+        repo: str,
+        token: str,
+        username: str | None = None,
+        base_domain: str = 'bitbucket.org',
+    ):
+        """Initialize a Bitbucket PR handler.
+
+        Args:
+            owner: The workspace of the repository
+            repo: The name of the repository
+            token: The Bitbucket API token
+            username: Optional Bitbucket username
+            base_domain: The domain for Bitbucket Server (default: "bitbucket.org")
+        """
+        super().__init__(owner, repo, token, username, base_domain)

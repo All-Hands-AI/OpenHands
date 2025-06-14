@@ -1,6 +1,9 @@
 from openhands.core.config import LLMConfig
 from openhands.integrations.provider import ProviderType
-from openhands.resolver.interfaces.bitbucket import BitbucketIssueHandler
+from openhands.resolver.interfaces.bitbucket import (
+    BitbucketIssueHandler,
+    BitbucketPRHandler,
+)
 from openhands.resolver.interfaces.github import GithubIssueHandler, GithubPRHandler
 from openhands.resolver.interfaces.gitlab import GitlabIssueHandler, GitlabPRHandler
 from openhands.resolver.interfaces.issue_definitions import (
@@ -92,7 +95,7 @@ class IssueHandlerFactory:
                 )
             elif self.platform == ProviderType.BITBUCKET:
                 return ServiceContextPR(
-                    BitbucketIssueHandler(  # Using BitbucketIssueHandler for PRs as well
+                    BitbucketPRHandler(
                         self.owner,
                         self.repo,
                         self.token,

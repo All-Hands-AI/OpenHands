@@ -8127,6 +8127,22 @@
         "tr": "GitLab'a bağlan",
         "uk": "Увійти за допомогою GitLab"
     },
+    "BITBUCKET$CONNECT_TO_BITBUCKET": {
+        "en": "Log in with Bitbucket",
+        "ja": "Bitbucketに接続",
+        "zh-CN": "连接到Bitbucket",
+        "zh-TW": "連接到Bitbucket",
+        "ko-KR": "Bitbucket에 연결",
+        "de": "Mit Bitbucket verbinden",
+        "no": "Koble til Bitbucket",
+        "it": "Connetti a Bitbucket",
+        "pt": "Conectar ao Bitbucket",
+        "es": "Conectar a Bitbucket",
+        "ar": "الاتصال بـ Bitbucket",
+        "fr": "Se connecter à Bitbucket",
+        "tr": "Bitbucket'a bağlan",
+        "uk": "Увійти за допомогою Bitbucket"
+    },
     "AUTH$SIGN_IN_WITH_IDENTITY_PROVIDER": {
         "en": "Log in to OpenHands",
         "ja": "IDプロバイダーでサインイン",
