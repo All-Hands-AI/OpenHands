@@ -470,7 +470,6 @@ class GitLabService(BaseGitService, GitService):
             target_branch: The name of the branch you want the changes merged into
             title: The title of the merge request (optional, defaults to a generic title)
             description: The description of the merge request (optional)
-            draft: Whether to create the MR as a draft (optional, defaults to False)
 
         Returns:
             - MR URL when successful
