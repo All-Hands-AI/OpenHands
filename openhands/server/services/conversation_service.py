@@ -1,3 +1,4 @@
+import os
 import uuid
 from typing import Any
 
@@ -79,6 +80,7 @@ async def create_new_conversation(
     session_init_args['conversation_instructions'] = conversation_instructions
     conversation_init_data = ConversationInitData(**session_init_args)
 
+
     logger.info('Loading conversation store')
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
     logger.info('ServerConversation store loaded')
@@ -88,14 +90,13 @@ async def create_new_conversation(
         conversation_id = uuid.uuid4().hex
 
     if not await conversation_store.exists(conversation_id):
+
         logger.info(
             f'New conversation ID: {conversation_id}',
             extra={'user_id': user_id, 'session_id': conversation_id},
         )
 
-        conversation_init_data = ExperimentManagerImpl.run_conversation_variant_test(
-            user_id, conversation_id, conversation_init_data
-        )
+        conversation_init_data = ExperimentManagerImpl.run_conversation_variant_test(user_id, conversation_id, conversation_init_data)
         conversation_title = get_default_conversation_title(conversation_id)
 
         logger.info(f'Saving metadata for conversation {conversation_id}')

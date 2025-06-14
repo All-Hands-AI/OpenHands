@@ -210,7 +210,6 @@ def test_expose_env_vars():
         {
             ProviderType.GITHUB: ProviderToken(token=SecretStr('test_token')),
             ProviderType.GITLAB: ProviderToken(token=SecretStr('gitlab_token')),
-            ProviderType.AZURE_DEVOPS: ProviderToken(token=SecretStr('azure_token')),
         }
     )
     handler = ProviderHandler(provider_tokens=tokens)
@@ -219,13 +218,11 @@ def test_expose_env_vars():
     env_secrets = {
         ProviderType.GITHUB: SecretStr('gh_token'),
         ProviderType.GITLAB: SecretStr('gl_token'),
-        ProviderType.AZURE_DEVOPS: SecretStr('ado_token'),
     }
     exposed = handler.expose_env_vars(env_secrets)
 
     assert exposed['github_token'] == 'gh_token'
     assert exposed['gitlab_token'] == 'gl_token'
-    assert exposed['azure_devops_token'] == 'ado_token'
 
 
 @pytest.mark.asyncio
@@ -235,7 +232,6 @@ async def test_get_env_vars():
         {
             ProviderType.GITHUB: ProviderToken(token=SecretStr('test_token')),
             ProviderType.GITLAB: ProviderToken(token=SecretStr('gitlab_token')),
-            ProviderType.AZURE_DEVOPS: ProviderToken(token=SecretStr('azure_token')),
         }
     )
     handler = ProviderHandler(provider_tokens=tokens)
@@ -246,7 +242,6 @@ async def test_get_env_vars():
     assert isinstance(env_vars[ProviderType.GITHUB], SecretStr)
     assert env_vars[ProviderType.GITHUB].get_secret_value() == 'test_token'
     assert env_vars[ProviderType.GITLAB].get_secret_value() == 'gitlab_token'
-    assert env_vars[ProviderType.AZURE_DEVOPS].get_secret_value() == 'azure_token'
 
     # Test getting specific providers
     env_vars = await handler.get_env_vars(
@@ -255,14 +250,12 @@ async def test_get_env_vars():
     assert len(env_vars) == 1
     assert ProviderType.GITHUB in env_vars
     assert ProviderType.GITLAB not in env_vars
-    assert ProviderType.AZURE_DEVOPS not in env_vars
 
     # Test exposed secrets
     exposed_vars = await handler.get_env_vars(expose_secrets=True)
     assert isinstance(exposed_vars, dict)
     assert exposed_vars['github_token'] == 'test_token'
     assert exposed_vars['gitlab_token'] == 'gitlab_token'
-    assert exposed_vars['azure_devops_token'] == 'azure_token'
 
     # Test empty tokens
     empty_handler = ProviderHandler(provider_tokens=MappingProxyType({}))
@@ -291,7 +284,6 @@ async def test_set_event_stream_secrets(event_stream):
         {
             ProviderType.GITHUB: ProviderToken(token=SecretStr('test_token')),
             ProviderType.GITLAB: ProviderToken(token=SecretStr('gitlab_token')),
-            ProviderType.AZURE_DEVOPS: ProviderToken(token=SecretStr('azure_token')),
         }
     )
     handler = ProviderHandler(provider_tokens=tokens)
@@ -300,13 +292,11 @@ async def test_set_event_stream_secrets(event_stream):
     env_vars = {
         ProviderType.GITHUB: SecretStr('new_token'),
         ProviderType.GITLAB: SecretStr('new_gitlab_token'),
-        ProviderType.AZURE_DEVOPS: SecretStr('new_azure_token'),
     }
     await handler.set_event_stream_secrets(event_stream, env_vars)
     assert event_stream.secrets == {
         'github_token': 'new_token',
         'gitlab_token': 'new_gitlab_token',
-        'azure_devops_token': 'new_azure_token',
     }
 
     # Test without env_vars (using existing tokens)
@@ -314,7 +304,6 @@ async def test_set_event_stream_secrets(event_stream):
     assert event_stream.secrets == {
         'github_token': 'test_token',
         'gitlab_token': 'gitlab_token',
-        'azure_devops_token': 'azure_token',
     }
 
 
@@ -334,22 +323,6 @@ def test_check_cmd_action_for_provider_token_ref():
     assert ProviderType.GITLAB in providers
     assert len(providers) == 2
 
-    # Test command with Azure DevOps token
-    cmd = CmdRunAction(command='echo $AZURE_DEVOPS_TOKEN')
-    providers = ProviderHandler.check_cmd_action_for_provider_token_ref(cmd)
-    assert ProviderType.AZURE_DEVOPS in providers
-    assert len(providers) == 1
-
-    # Test command with all tokens
-    cmd = CmdRunAction(
-        command='echo $GITHUB_TOKEN && echo $GITLAB_TOKEN && echo $AZURE_DEVOPS_TOKEN'
-    )
-    providers = ProviderHandler.check_cmd_action_for_provider_token_ref(cmd)
-    assert ProviderType.GITHUB in providers
-    assert ProviderType.GITLAB in providers
-    assert ProviderType.AZURE_DEVOPS in providers
-    assert len(providers) == 3
-
     # Test command without tokens
     cmd = CmdRunAction(command='echo "Hello"')
     providers = ProviderHandler.check_cmd_action_for_provider_token_ref(cmd)
@@ -367,7 +340,3 @@ def test_get_provider_env_key():
     """Test provider environment key generation"""
     assert ProviderHandler.get_provider_env_key(ProviderType.GITHUB) == 'github_token'
     assert ProviderHandler.get_provider_env_key(ProviderType.GITLAB) == 'gitlab_token'
-    assert (
-        ProviderHandler.get_provider_env_key(ProviderType.AZURE_DEVOPS)
-        == 'azure_devops_token'
-    )

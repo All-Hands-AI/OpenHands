@@ -18,21 +18,11 @@ const MOCK_TASK_1: SuggestedTask = {
   git_provider: "github",
 };
 
-const MOCK_TASK_2: SuggestedTask = {
-  issue_number: 456,
-  repo: "repo5",
-  title: "Azure DevOps Task",
-  task_type: "FEATURE_REQUEST",
-  git_provider: "azure_devops",
-};
-
 const MOCK_RESPOSITORIES: GitRepository[] = [
   { id: 1, full_name: "repo1", git_provider: "github", is_public: true },
   { id: 2, full_name: "repo2", git_provider: "github", is_public: true },
   { id: 3, full_name: "repo3", git_provider: "gitlab", is_public: true },
   { id: 4, full_name: "repo4", git_provider: "gitlab", is_public: true },
-  { id: 5, full_name: "repo5", git_provider: "azure_devops", is_public: true },
-  { id: 6, full_name: "repo6", git_provider: "azure_devops", is_public: true },
 ];
 
 const renderTaskCard = (task = MOCK_TASK_1) => {
@@ -86,7 +76,7 @@ describe("TaskCard", () => {
       retrieveUserGitRepositoriesSpy.mockResolvedValue(MOCK_RESPOSITORIES);
     });
 
-    it("should call create conversation with suggest task trigger and selected suggested task for GitHub", async () => {
+    it("should call create conversation with suggest task trigger and selected suggested task", async () => {
       const createConversationSpy = vi.spyOn(OpenHands, "createConversation");
 
       renderTaskCard(MOCK_TASK_1);
@@ -101,25 +91,6 @@ describe("TaskCard", () => {
         [],
         undefined,
         MOCK_TASK_1,
-        undefined,
-      );
-    });
-
-    it("should call create conversation with suggest task trigger and selected suggested task for Azure DevOps", async () => {
-      const createConversationSpy = vi.spyOn(OpenHands, "createConversation");
-
-      renderTaskCard(MOCK_TASK_2);
-
-      const launchButton = screen.getByTestId("task-launch-button");
-      await userEvent.click(launchButton);
-
-      expect(createConversationSpy).toHaveBeenCalledWith(
-        MOCK_RESPOSITORIES[4].full_name,
-        MOCK_RESPOSITORIES[4].git_provider,
-        undefined,
-        [],
-        undefined,
-        MOCK_TASK_2,
         undefined,
       );
     });

@@ -866,7 +866,7 @@
                   "git_provider": {
                     "type": "string",
                     "nullable": true,
-                    "description": "The Git provider (e.g., github, gitlab, or azure_devops). If omitted, all configured providers are checked for the repository."
+                    "description": "The Git provider (e.g., github or gitlab). If omitted, all configured providers are checked for the repository."
                   },
                   "selected_branch": {
                     "type": "string",

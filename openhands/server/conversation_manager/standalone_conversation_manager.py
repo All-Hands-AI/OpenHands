@@ -15,7 +15,7 @@ from openhands.events.stream import EventStreamSubscriber, session_exists
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.monitoring import MonitoringListener
-from openhands.server.session.agent_session import WAIT_TIME_BEFORE_CLOSE, AgentSession
+from openhands.server.session.agent_session import AgentSession, WAIT_TIME_BEFORE_CLOSE
 from openhands.server.session.conversation import ServerConversation
 from openhands.server.session.session import ROOM_KEY, Session
 from openhands.storage.conversation.conversation_store import ConversationStore
@@ -508,9 +508,7 @@ class StandaloneConversationManager(ConversationManager):
             session_api_key=None,
             event_store=session.agent_session.event_stream,
             status=_get_status_from_session(session),
-            runtime_status=getattr(
-                session.agent_session.runtime, 'runtime_status', None
-            ),
+            runtime_status=getattr(session.agent_session.runtime, 'runtime_status', None),
         )
 
     def _get_conversation_url(self, conversation_id: str):

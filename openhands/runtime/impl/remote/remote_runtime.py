@@ -363,7 +363,7 @@ class RemoteRuntime(ActionExecutionClient):
             self._session_api_key = start_response['session_api_key']
             self.log(
                 'debug',
-                'Session API key setted',
+                f'Session API key setted',
             )
 
     @property

@@ -52,35 +52,9 @@ Frontend:
   - Mutation hooks should follow the pattern use[Action] (e.g., `useDeleteConversation`)
   - Architecture rule: UI components → TanStack Query hooks → Data Access Layer (`frontend/src/api`) → API endpoints
 
-## Pull Request Templates
+## Template for Github Pull Request
 
-### GitHub Pull Request Template
-
-If you are starting a pull request (PR) on GitHub, please follow the template in `.github/pull_request_template.md`.
-
-### Azure DevOps Pull Request Template
-
-If you are starting a pull request in Azure DevOps, please include the following information:
-
-```markdown
-## Description
-[Provide a brief description of the changes made in this PR]
-
-## Related Work Items
-[Link to related work items using #ID format, e.g., Fixes #123]
-
-## Testing
-[Describe the testing performed to verify the changes]
-
-## Checklist
-- [ ] Code builds clean without any errors or warnings
-- [ ] Tests have been added/updated and all tests pass
-- [ ] Documentation has been updated if necessary
-- [ ] Pre-commit hooks have been run successfully
-
-## Additional Notes
-[Any additional information that might be helpful for reviewers]
-```
+If you are starting a pull request (PR), please follow the template in `.github/pull_request_template.md`.
 
 ## Implementation Details
 

@@ -53,7 +53,7 @@ def load_server_config() -> ServerConfig:
     logger.info(f'Using config class {config_cls}')
 
     server_config_cls = get_impl(ServerConfig, config_cls)
-    server_config: ServerConfig = server_config_cls()
+    server_config : ServerConfig = server_config_cls()
     server_config.verify_config()
 
     return server_config

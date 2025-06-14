@@ -5,6 +5,7 @@ from fastapi import (
     APIRouter,
     Depends,
     HTTPException,
+    Request,
     status,
 )
 from fastapi.responses import FileResponse, JSONResponse
@@ -26,15 +27,17 @@ from openhands.server.dependencies import get_dependencies
 from openhands.server.file_config import (
     FILES_TO_IGNORE,
 )
-from openhands.server.session.conversation import ServerConversation
+from openhands.server.shared import (
+    ConversationStoreImpl,
+    config,
+)
 from openhands.server.user_auth import get_user_id
 from openhands.server.utils import get_conversation, get_conversation_store
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.utils.async_utils import call_sync_from_async
+from openhands.server.session.conversation import ServerConversation
 
-app = APIRouter(
-    prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies()
-)
+app = APIRouter(prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies())
 
 
 @app.get(
@@ -47,7 +50,7 @@ app = APIRouter(
 )
 async def list_files(
     conversation: ServerConversation = Depends(get_conversation),
-    path: str | None = None,
+    path: str | None = None
 ) -> list[str] | JSONResponse:
     """List files in the specified path.
 
@@ -129,9 +132,7 @@ async def list_files(
         415: {'description': 'Unsupported media type', 'model': dict},
     },
 )
-async def select_file(
-    file: str, conversation: ServerConversation = Depends(get_conversation)
-) -> FileResponse | JSONResponse:
+async def select_file(file: str, conversation: ServerConversation = Depends(get_conversation)) -> FileResponse | JSONResponse:
     """Retrieve the content of a specified file.
 
     To select a file:
@@ -195,9 +196,7 @@ async def select_file(
         500: {'description': 'Error zipping workspace', 'model': dict},
     },
 )
-def zip_current_workspace(
-    conversation: ServerConversation = Depends(get_conversation),
-) -> FileResponse | JSONResponse:
+def zip_current_workspace(conversation: ServerConversation = Depends(get_conversation)) -> FileResponse | JSONResponse:
     try:
         logger.debug('Zipping workspace')
         runtime: Runtime = conversation.runtime

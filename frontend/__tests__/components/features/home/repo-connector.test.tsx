@@ -61,12 +61,6 @@ const MOCK_RESPOSITORIES: GitRepository[] = [
     git_provider: "github",
     is_public: true,
   },
-  {
-    id: 3,
-    full_name: "MyProject/MyRepository",
-    git_provider: "azure_devops",
-    is_public: true,
-  },
 ];
 
 beforeEach(() => {
@@ -76,7 +70,6 @@ beforeEach(() => {
     provider_tokens_set: {
       github: "some-token",
       gitlab: null,
-      azure_devops: null,
     },
   });
 });
@@ -126,7 +119,7 @@ describe("RepoConnector", () => {
     expect(launchButton).toBeEnabled();
   });
 
-  it("should render the 'add git repos' links if saas mode", async () => {
+  it("should render the 'add git(hub|lab) repos' links if saas mode", async () => {
     const getConfiSpy = vi.spyOn(OpenHands, "getConfig");
     // @ts-expect-error - only return the APP_MODE
     getConfiSpy.mockResolvedValue({
@@ -136,10 +129,9 @@ describe("RepoConnector", () => {
     renderRepoConnector();
 
     await screen.findByText("Add GitHub repos");
-    // Note: The actual UI might show "Add Azure DevOps repos" if implemented
   });
 
-  it("should not render the 'add git repos' links if oss mode", async () => {
+  it("should not render the 'add git(hub|lab) repos' links if oss mode", async () => {
     const getConfiSpy = vi.spyOn(OpenHands, "getConfig");
     // @ts-expect-error - only return the APP_MODE
     getConfiSpy.mockResolvedValue({
@@ -150,10 +142,9 @@ describe("RepoConnector", () => {
 
     expect(screen.queryByText("Add GitHub repos")).not.toBeInTheDocument();
     expect(screen.queryByText("Add GitLab repos")).not.toBeInTheDocument();
-    expect(screen.queryByText("Add Azure DevOps repos")).not.toBeInTheDocument();
   });
 
-  it("should create a conversation and redirect with the selected GitHub repo when pressing the launch button", async () => {
+  it("should create a conversation and redirect with the selected repo when pressing the launch button", async () => {
     const createConversationSpy = vi.spyOn(OpenHands, "createConversation");
     const retrieveUserGitRepositoriesSpy = vi.spyOn(
       OpenHands,
@@ -184,45 +175,6 @@ describe("RepoConnector", () => {
     expect(createConversationSpy).toHaveBeenCalledExactlyOnceWith(
       "rbren/polaris",
       "github",
-      undefined,
-      [],
-      undefined,
-      undefined,
-      undefined,
-    );
-  });
-
-  it("should create a conversation and redirect with the selected Azure DevOps repo when pressing the launch button", async () => {
-    const createConversationSpy = vi.spyOn(OpenHands, "createConversation");
-    const retrieveUserGitRepositoriesSpy = vi.spyOn(
-      OpenHands,
-      "retrieveUserGitRepositories",
-    );
-    retrieveUserGitRepositoriesSpy.mockResolvedValue(MOCK_RESPOSITORIES);
-
-    renderRepoConnector();
-
-    const repoConnector = screen.getByTestId("repo-connector");
-    const launchButton =
-      await within(repoConnector).findByTestId("repo-launch-button");
-    await userEvent.click(launchButton);
-
-    // repo not selected yet
-    expect(createConversationSpy).not.toHaveBeenCalled();
-
-    // select a repository from the dropdown
-    const dropdown = await waitFor(() =>
-      within(repoConnector).getByTestId("repo-dropdown"),
-    );
-    await userEvent.click(dropdown);
-
-    const repoOption = screen.getByText("MyProject/MyRepository");
-    await userEvent.click(repoOption);
-    await userEvent.click(launchButton);
-
-    expect(createConversationSpy).toHaveBeenCalledExactlyOnceWith(
-      "MyProject/MyRepository",
-      "azure_devops",
       undefined,
       [],
       undefined,

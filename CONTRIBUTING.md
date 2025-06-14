@@ -62,23 +62,8 @@ At the moment, we have two kinds of tests: [`unit`](./tests/unit) and [`integrat
 
 ## Sending Pull Requests to OpenHands
 
-### GitHub
-
 You'll need to fork our repository to send us a Pull Request. You can learn more
 about how to fork a GitHub repo and open a PR with your changes in [this article](https://medium.com/swlh/forks-and-pull-requests-how-to-contribute-to-github-repos-8843fac34ce8).
-
-### Azure DevOps
-
-If you're using Azure DevOps, you can contribute by:
-
-1. Creating a fork of the repository in your Azure DevOps organization
-2. Cloning your fork locally
-3. Creating a new branch for your changes
-4. Making your changes and committing them
-5. Pushing your branch to your fork
-6. Creating a pull request from your fork to the main repository
-
-For more details on working with forks in Azure DevOps, see the [official documentation](https://learn.microsoft.com/en-us/azure/devops/repos/git/forks).
 
 ### Pull Request title
 As described [here](https://github.com/commitizen/conventional-commit-types/blob/master/index.json), a valid PR title should begin with one of the following prefixes:
@@ -112,23 +97,9 @@ please include a short message that we can add to our changelog.
 
 ### Opening Issues
 
-#### GitHub Issues
-
-If you notice any bugs or have any feature requests please open them via the [GitHub issues page](https://github.com/All-Hands-AI/OpenHands/issues). We will triage based on how critical the bug is or how potentially useful the improvement is, discuss, and implement the ones that the community has interest/effort for.
+If you notice any bugs or have any feature requests please open them via the [issues page](https://github.com/All-Hands-AI/OpenHands/issues). We will triage based on how critical the bug is or how potentially useful the improvement is, discuss, and implement the ones that the community has interest/effort for.
 
 Further, if you see an issue you like, please leave a "thumbs-up" or a comment, which will help us prioritize.
-
-#### Azure DevOps Work Items
-
-If you're using Azure DevOps, you can create work items in your organization's project:
-
-1. Navigate to the Boards section of your Azure DevOps project
-2. Create a new work item (Bug, User Story, or Task)
-3. Provide a clear title and detailed description
-4. Add any relevant attachments or screenshots
-5. Assign appropriate tags and area paths
-
-When creating work items related to OpenHands, please include "OpenHands" in the title or description to help with filtering and organization.
 
 ### Making Pull Requests
 

@@ -1,4 +1,4 @@
-TASK_INSTRUECTION = """
+TASK_INSTRUECTION="""
 Given the following GitHub problem description, your objective is to localize the specific files, classes or functions, and lines of code that need modification or contain key information to resolve the issue.
 
 Follow these steps to localize the issue:

@@ -43,7 +43,7 @@ from openhands.core.config import (
     AgentConfig,
     OpenHandsConfig,
     get_llm_config_arg,
-    get_parser,
+    get_parser
 )
 from openhands.core.config.condenser_config import NoOpCondenserConfig
 from openhands.core.config.utils import get_condenser_config_arg
@@ -92,12 +92,10 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageActio
         elif 'gpt-4.1' in llm_model:
             template_name = 'swe_gpt4.j2'
         else:
-            template_name = (
-                'swe_default.j2'  # Default for 'swe' mode (regular swe-bench)
-            )
+            template_name = 'swe_default.j2'  # Default for 'swe' mode (regular swe-bench)
     else:
         # Fallback or error handling if mode is unexpected
-        logger.error(f'Unexpected evaluation mode: {mode}. Falling back to default.')
+        logger.error(f"Unexpected evaluation mode: {mode}. Falling back to default.")
         template_name = 'swe_default.j2'
 
     # Set up Jinja2 environment
@@ -119,7 +117,7 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageActio
             f'The following command can be used to run the tests: `{list(MAP_REPO_TO_TEST_FRAMEWORK_VERBOSE[instance.repo].values())[0]}`. Make sure they fail in the expected way.\n'
         )
     else:
-        context['test_instructions'] = ''  # Ensure it's defined for other modes
+        context['test_instructions'] = '' # Ensure it's defined for other modes
 
     # Render the instruction
     instruction = template.render(context)

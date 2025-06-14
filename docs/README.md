@@ -4,7 +4,7 @@
 npm install -g mint
 ```
 
-or
+or 
 
 ```
 yarn global add mint

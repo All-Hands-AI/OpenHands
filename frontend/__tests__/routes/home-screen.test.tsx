@@ -56,12 +56,6 @@ const MOCK_RESPOSITORIES: GitRepository[] = [
     git_provider: "github",
     is_public: true,
   },
-  {
-    id: 3,
-    full_name: "MyProject/MyRepository",
-    git_provider: "azure_devops",
-    is_public: false,
-  },
 ];
 
 describe("HomeScreen", () => {
@@ -72,7 +66,6 @@ describe("HomeScreen", () => {
       provider_tokens_set: {
         github: null,
         gitlab: null,
-        azure_devops: null,
       },
     });
   });

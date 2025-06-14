@@ -54,7 +54,6 @@ class MCPStdioServerConfig(BaseModel):
             and set(self.env.items()) == set(other.env.items())
         )
 
-
 class MCPSHTTPServerConfig(BaseModel):
     url: str
     api_key: str | None = None
