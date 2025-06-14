@@ -89,7 +89,7 @@ docker run -it --rm --pull=always \
     -e LOG_ALL_EVENTS=true \
     -e RUNTIME=daytona \
     -e DAYTONA_API_KEY=${DAYTONA_API_KEY} \
-    -v ~/.openhands-state:/.openhands-state \
+    -v ~/.openhands:/.openhands \
     -p 3000:3000 \
     --name openhands-app \
     docker.all-hands.dev/all-hands-ai/openhands:${OPENHANDS_VERSION}
@@ -102,7 +102,7 @@ docker run -it --rm --pull=always `
     -e LOG_ALL_EVENTS=true `
     -e RUNTIME=daytona `
     -e DAYTONA_API_KEY=${env:DAYTONA_API_KEY} `
-    -v ~/.openhands-state:/.openhands-state `
+    -v ~/.openhands:/.openhands `
     -p 3000:3000 `
     --name openhands-app `
     docker.all-hands.dev/all-hands-ai/openhands:${env:OPENHANDS_VERSION}
