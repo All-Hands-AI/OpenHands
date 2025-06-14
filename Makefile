@@ -272,9 +272,12 @@ setup-config:
 setup-config-prompts:
 	@echo "[core]" > $(CONFIG_FILE).tmp
 
+	@echo "" >> $(CONFIG_FILE).tmp
+
+	@echo "[sandbox]" >> $(CONFIG_FILE).tmp
 	@read -p "Enter your workspace directory (as absolute path) [default: $(DEFAULT_WORKSPACE_DIR)]: " workspace_dir; \
 	 workspace_dir=$${workspace_dir:-$(DEFAULT_WORKSPACE_DIR)}; \
-	 echo "workspace_base=\"$$workspace_dir\"" >> $(CONFIG_FILE).tmp
+	 echo "volumes=\"$$workspace_dir:/workspace:rw\"" >> $(CONFIG_FILE).tmp
 
 	@echo "" >> $(CONFIG_FILE).tmp
 
@@ -292,7 +295,9 @@ setup-config-prompts:
 setup-config-basic:
 	@printf '%s\n' \
 	'[core]' \
-	'workspace_base="./workspace"' \
+	'' \
+	'[sandbox]' \
+	'volumes="./workspace:/workspace:rw"' \
 	> config.toml
 	@echo "$(GREEN)config.toml created.$(RESET)"
 

@@ -146,9 +146,6 @@ def get_config(
             keep_runtime_alive=False,
             remote_runtime_init_timeout=3600,
         ),
-        # do not mount workspace
-        workspace_base=None,
-        workspace_mount_path=None,
     )
     config.set_llm_config(
         update_llm_config_for_completions_logging(

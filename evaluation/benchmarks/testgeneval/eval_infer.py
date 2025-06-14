@@ -70,8 +70,6 @@ def get_config(instance: pd.Series) -> OpenHandsConfig:
                 'SANDBOX_REMOTE_RUNTIME_API_URL', 'http://localhost:8000'
             ),
         ),
-        workspace_base=None,
-        workspace_mount_path=None,
     )
 
 

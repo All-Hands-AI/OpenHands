@@ -50,9 +50,6 @@ def get_config(
         runtime=os.environ.get('RUNTIME', 'docker'),
         max_iterations=metadata.max_iterations,
         sandbox=sandbox_config,
-        # do not mount workspace
-        workspace_base=None,
-        workspace_mount_path=None,
         # debug
         debug=True,
     )

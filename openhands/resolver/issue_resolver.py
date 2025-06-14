@@ -179,9 +179,8 @@ class IssueResolver:
         config.max_budget_per_task = 4
         config.max_iterations = max_iterations
 
-        # do not mount workspace
-        config.workspace_base = workspace_base
-        config.workspace_mount_path = workspace_base
+        # Set up workspace mount
+        config.sandbox.volumes = f'{workspace_base}:/workspace:rw'
         config.agents = {'CodeActAgent': AgentConfig(disabled_microagents=['github'])}
 
         cls.update_sandbox_config(

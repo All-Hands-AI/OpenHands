@@ -37,7 +37,12 @@ def _get_runtime_sid(runtime: Runtime) -> str:
 
 
 def _get_host_folder(runtime: Runtime) -> str:
-    return runtime.config.workspace_mount_path
+    # Extract host path from sandbox.volumes if available
+    if runtime.config.sandbox.volumes:
+        parts = runtime.config.sandbox.volumes.split(':')
+        if len(parts) >= 2:
+            return parts[0]
+    return test_mount_path or ''
 
 
 def _remove_folder(folder: str) -> bool:
@@ -233,23 +238,19 @@ def _load_runtime(
     # Folder where all tests create their own folder
     global test_mount_path
     if use_workspace:
-        test_mount_path = os.path.join(config.workspace_base, 'rt')
+        test_mount_path = os.path.join(project_dir, 'rt')
     elif temp_dir is not None:
         test_mount_path = temp_dir
     else:
         test_mount_path = None
-    config.workspace_base = test_mount_path
-    config.workspace_mount_path = test_mount_path
 
-    # Mounting folder specific for this test inside the sandbox
-    config.workspace_mount_path_in_sandbox = f'{sandbox_test_folder}'
+    # Set up sandbox volumes for workspace mounting
+    if test_mount_path:
+        config.sandbox.volumes = f'{test_mount_path}:{sandbox_test_folder}:rw'
+
     print('\nPaths used:')
     print(f'use_host_network: {config.sandbox.use_host_network}')
-    print(f'workspace_base: {config.workspace_base}')
-    print(f'workspace_mount_path: {config.workspace_mount_path}')
-    print(
-        f'workspace_mount_path_in_sandbox: {config.workspace_mount_path_in_sandbox}\n'
-    )
+    print(f'sandbox.volumes: {config.sandbox.volumes}')
 
     config.sandbox.browsergym_eval_env = browsergym_eval_env
     config.sandbox.enable_auto_lint = enable_auto_lint
@@ -278,14 +279,10 @@ def _load_runtime(
         plugins=plugins,
     )
 
-    # For CLIRuntime, the tests' assertions should be based on the physical workspace path,
-    # not the logical "/workspace". So, we adjust config.workspace_mount_path_in_sandbox
+    # For CLIRuntime, we need to ensure the sandbox.volumes is properly set
     # to reflect the actual physical path used by CLIRuntime's OHEditor.
     if isinstance(runtime, CLIRuntime):
-        config.workspace_mount_path_in_sandbox = str(runtime.workspace_root)
-        logger.info(
-            f'Adjusted workspace_mount_path_in_sandbox for CLIRuntime to: {config.workspace_mount_path_in_sandbox}'
-        )
+        logger.info(f'Using CLIRuntime with workspace root: {runtime.workspace_root}')
 
     call_async_from_sync(runtime.connect)
     time.sleep(2)

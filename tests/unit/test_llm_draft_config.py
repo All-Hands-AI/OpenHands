@@ -14,7 +14,7 @@ def config_toml_without_draft_editor(tmp_path: pathlib.Path) -> str:
     """
     toml_content = """
 [core]
-workspace_base = "./workspace"
+sandbox.volumes = "./workspace:/workspace:rw"
 
 [llm]
 model = "base-model"
@@ -37,7 +37,7 @@ def config_toml_with_draft_editor(tmp_path: pathlib.Path) -> str:
     """
     toml_content = """
 [core]
-workspace_base = "./workspace"
+sandbox.volumes = "./workspace:/workspace:rw"
 
 [llm]
 model = "base-model"

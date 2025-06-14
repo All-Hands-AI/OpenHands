@@ -94,7 +94,7 @@ def test_read_pdf_browse(temp_dir, runtime_cls, run_as_openhands):
         c.save()
 
         # Copy the PDF to the sandbox
-        sandbox_dir = config.workspace_mount_path_in_sandbox
+        sandbox_dir = '/workspace'
         runtime.copy_to(pdf_path, sandbox_dir)
 
         # Start HTTP server
@@ -165,7 +165,7 @@ def test_read_png_browse(temp_dir, runtime_cls, run_as_openhands):
         img.save(png_path)
 
         # Copy the PNG to the sandbox
-        sandbox_dir = config.workspace_mount_path_in_sandbox
+        sandbox_dir = '/workspace'
         runtime.copy_to(png_path, sandbox_dir)
 
         # Verify the file exists in the sandbox

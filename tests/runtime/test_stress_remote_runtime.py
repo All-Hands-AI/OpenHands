@@ -76,10 +76,8 @@ def get_config() -> OpenHandsConfig:
             ),
             keep_runtime_alive=False,
             remote_runtime_resource_factor=1,
+            volumes=None,  # do not mount workspace
         ),
-        # do not mount workspace
-        workspace_base=None,
-        workspace_mount_path=None,
     )
     agent_config = AgentConfig(
         enable_jupyter=False,

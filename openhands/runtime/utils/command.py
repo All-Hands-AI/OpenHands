@@ -50,7 +50,7 @@ def get_action_execution_server_startup_command(
         main_module,
         str(server_port),
         '--working-dir',
-        app_config.workspace_mount_path_in_sandbox,
+        '/workspace',  # Default workspace path
         *plugin_args,
         '--username',
         username,

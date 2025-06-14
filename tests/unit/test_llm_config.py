@@ -20,7 +20,7 @@ def generic_llm_toml(tmp_path: pathlib.Path) -> str:
     """
     toml_content = """
 [core]
-workspace_base = "./workspace"
+sandbox.volumes = "./workspace:/workspace:rw"
 
 [llm]
 model = "base-model"
@@ -86,7 +86,7 @@ def test_load_from_toml_llm_custom_overrides_all(
     """Test that a custom LLM can fully override all attributes from the generic [llm] section."""
     toml_content = """
 [core]
-workspace_base = "./workspace"
+sandbox.volumes = "./workspace:/workspace:rw"
 
 [llm]
 model = "base-model"
@@ -160,7 +160,7 @@ def test_load_from_toml_llm_missing_generic(
     """
     toml_content = """
 [core]
-workspace_base = "./workspace"
+sandbox.volumes = "./workspace:/workspace:rw"
 
 [llm.custom_only]
 model = "custom-only-model"
@@ -186,7 +186,7 @@ def test_load_from_toml_llm_invalid_config(
     """
     toml_content = """
 [core]
-workspace_base = "./workspace"
+sandbox.volumes = "./workspace:/workspace:rw"
 
 [llm]
 model = "base-model"
@@ -220,7 +220,7 @@ def test_azure_model_api_version(
     """Test that Azure models get the correct API version by default."""
     toml_content = """
 [core]
-workspace_base = "./workspace"
+sandbox.volumes = "./workspace:/workspace:rw"
 
 [llm]
 model = "azure/o3-mini"
@@ -239,7 +239,7 @@ api_key = "test-api-key"
     # Test that non-Azure models don't get default API version
     toml_content = """
 [core]
-workspace_base = "./workspace"
+sandbox.volumes = "./workspace:/workspace:rw"
 
 [llm]
 model = "anthropic/claude-3-sonnet"

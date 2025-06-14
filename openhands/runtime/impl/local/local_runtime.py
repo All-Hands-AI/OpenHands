@@ -220,9 +220,8 @@ class LocalRuntime(ActionExecutionClient):
             self._vscode_port = server_info.vscode_port
             self._app_ports = server_info.app_ports
             self._temp_workspace = server_info.temp_workspace
-            self.config.workspace_mount_path_in_sandbox = (
-                server_info.workspace_mount_path
-            )
+            # Store the workspace mount path from server info
+            self._workspace_mount_path = server_info.workspace_mount_path
             self.api_url = (
                 f'{self.config.sandbox.local_runtime_url}:{self._execution_server_port}'
             )
@@ -233,28 +232,36 @@ class LocalRuntime(ActionExecutionClient):
                 f'No existing server found for session {self.sid}'
             )
         else:
-            # Set up workspace directory
-            if self.config.workspace_base is not None:
+            # Set up workspace directory based on sandbox.volumes
+            workspace_path = None
+            if self.config.sandbox.volumes:
+                # Parse sandbox.volumes to find workspace mount
+                mounts = self.config.sandbox.volumes.split(',')
+                for mount in mounts:
+                    parts = mount.split(':')
+                    if len(parts) >= 2 and parts[1] == '/workspace':
+                        workspace_path = parts[0]
+                        break
+
+            if workspace_path:
                 logger.warning(
-                    f'Workspace base path is set to {self.config.workspace_base}. '
+                    f'Workspace path is set to {workspace_path}. '
                     'It will be used as the path for the agent to run in. '
                     'Be careful, the agent can EDIT files in this directory!'
                 )
-                self.config.workspace_mount_path_in_sandbox = self.config.workspace_base
+                self._workspace_mount_path = workspace_path
                 self._temp_workspace = None
             else:
                 # A temporary directory is created for the agent to run in
                 logger.warning(
-                    'Workspace base path is NOT set. Agent will run in a temporary directory.'
+                    'Workspace path is NOT set. Agent will run in a temporary directory.'
                 )
                 self._temp_workspace = tempfile.mkdtemp(
                     prefix=f'openhands_workspace_{self.sid}',
                 )
-                self.config.workspace_mount_path_in_sandbox = self._temp_workspace
+                self._workspace_mount_path = self._temp_workspace
 
-            logger.info(
-                f'Using workspace directory: {self.config.workspace_mount_path_in_sandbox}'
-            )
+            logger.info(f'Using workspace directory: {self._workspace_mount_path}')
 
             # Start a new server
             self._execution_server_port = self._find_available_port(
@@ -380,7 +387,7 @@ class LocalRuntime(ActionExecutionClient):
                 log_thread=self._log_thread,
                 log_thread_exit_event=self._log_thread_exit_event,
                 temp_workspace=self._temp_workspace,
-                workspace_mount_path=self.config.workspace_mount_path_in_sandbox,
+                workspace_mount_path=self._workspace_mount_path,
             )
 
         self.log('info', f'Waiting for server to become ready at {self.api_url}...')
@@ -551,7 +558,7 @@ class LocalRuntime(ActionExecutionClient):
             # Similar to remote runtime...
             parsed_url = urlparse(runtime_url)
             vscode_url = f'{parsed_url.scheme}://vscode-{parsed_url.netloc}'
-        return f'{vscode_url}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        return f'{vscode_url}/?tkn={token}&folder=/workspace'
 
     @property
     def web_hosts(self) -> dict[str, int]:

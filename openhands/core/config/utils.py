@@ -305,42 +305,9 @@ def get_or_create_jwt_secret(file_store: FileStore) -> str:
 def finalize_config(cfg: OpenHandsConfig) -> None:
     """More tweaks to the config after it's been loaded."""
     # Handle the sandbox.volumes parameter
-    if cfg.workspace_base is not None or cfg.workspace_mount_path is not None:
-        logger.openhands_logger.warning(
-            'DEPRECATED: The WORKSPACE_BASE and WORKSPACE_MOUNT_PATH environment variables are deprecated. '
-            "Please use RUNTIME_MOUNT instead, e.g. 'RUNTIME_MOUNT=/my/host/dir:/workspace:rw'"
-        )
     if cfg.sandbox.volumes is not None:
         # Split by commas to handle multiple mounts
         mounts = cfg.sandbox.volumes.split(',')
-
-        # Check if any mount explicitly targets /workspace
-        workspace_mount_found = False
-        for mount in mounts:
-            parts = mount.split(':')
-            if len(parts) >= 2 and parts[1] == '/workspace':
-                workspace_mount_found = True
-                host_path = os.path.abspath(parts[0])
-
-                # Set the workspace_mount_path and workspace_mount_path_in_sandbox
-                cfg.workspace_mount_path = host_path
-                cfg.workspace_mount_path_in_sandbox = '/workspace'
-
-                # Also set workspace_base
-                cfg.workspace_base = host_path
-                break
-
-        # If no explicit /workspace mount was found, don't set any workspace mount
-        # This allows users to mount volumes without affecting the workspace
-        if not workspace_mount_found:
-            logger.openhands_logger.debug(
-                'No explicit /workspace mount found in SANDBOX_VOLUMES. '
-                'Using default workspace path in sandbox.'
-            )
-            # Ensure workspace_mount_path and workspace_base are None to avoid
-            # unintended mounting behavior
-            cfg.workspace_mount_path = None
-            cfg.workspace_base = None
 
         # Validate all mounts
         for mount in mounts:
@@ -350,18 +317,6 @@ def finalize_config(cfg: OpenHandsConfig) -> None:
                     f'Invalid mount format in sandbox.volumes: {mount}. '
                     f"Expected format: 'host_path:container_path[:mode]', e.g. '/my/host/dir:/workspace:rw'"
                 )
-
-    # Handle the deprecated workspace_* parameters
-    elif cfg.workspace_base is not None or cfg.workspace_mount_path is not None:
-        if cfg.workspace_base is not None:
-            cfg.workspace_base = os.path.abspath(cfg.workspace_base)
-            if cfg.workspace_mount_path is None:
-                cfg.workspace_mount_path = cfg.workspace_base
-
-        if cfg.workspace_mount_rewrite:
-            base = cfg.workspace_base or os.getcwd()
-            parts = cfg.workspace_mount_rewrite.split(':')
-            cfg.workspace_mount_path = base.replace(parts[0], parts[1])
 
     # make sure log_completions_folder is an absolute path
     for llm in cfg.llms.values():

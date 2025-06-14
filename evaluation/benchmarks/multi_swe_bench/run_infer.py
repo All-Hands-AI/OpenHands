@@ -346,9 +346,6 @@ def get_config(
         max_iterations=metadata.max_iterations,
         runtime=os.environ.get('RUNTIME', 'docker'),
         sandbox=sandbox_config,
-        # do not mount workspace
-        workspace_base=None,
-        workspace_mount_path=None,
     )
     config.set_llm_config(
         update_llm_config_for_completions_logging(

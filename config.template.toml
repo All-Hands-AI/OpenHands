@@ -23,8 +23,7 @@
 # Daytona Target
 #daytona_target = ""
 
-# Base path for the workspace
-#workspace_base = "./workspace"
+
 
 # Cache directory path
 #cache_dir = "/tmp/cache"
@@ -66,14 +65,7 @@
 # Maximum number of iterations
 #max_iterations = 250
 
-# Path to mount the workspace in the sandbox
-#workspace_mount_path_in_sandbox = "/workspace"
 
-# Path to mount the workspace
-#workspace_mount_path = ""
-
-# Path to rewrite the workspace mount path to
-#workspace_mount_rewrite = ""
 
 # Run as openhands
 #run_as_openhands = true

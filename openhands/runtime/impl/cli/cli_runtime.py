@@ -96,23 +96,30 @@ class CLIRuntime(Runtime):
             git_provider_tokens,
         )
 
-        # Set up workspace
-        if self.config.workspace_base is not None:
+        # Set up workspace directory based on sandbox.volumes
+        workspace_path = None
+        if self.config.sandbox.volumes:
+            # Parse sandbox.volumes to find workspace mount
+            mounts = self.config.sandbox.volumes.split(',')
+            for mount in mounts:
+                parts = mount.split(':')
+                if len(parts) >= 2 and parts[1] == '/workspace':
+                    workspace_path = parts[0]
+                    break
+
+        if workspace_path:
             logger.warning(
-                f'Workspace base path is set to {self.config.workspace_base}. '
+                f'Workspace path is set to {workspace_path}. '
                 'It will be used as the path for the agent to run in. '
                 'Be careful, the agent can EDIT files in this directory!'
             )
-            self._workspace_path = self.config.workspace_base
+            self._workspace_path = workspace_path
         else:
             # Create a temporary directory for the workspace
             self._workspace_path = tempfile.mkdtemp(
                 prefix=f'openhands_workspace_{sid}_'
             )
             logger.info(f'Created temporary workspace at {self._workspace_path}')
-
-        # Runtime tests rely on this being set correctly.
-        self.config.workspace_mount_path_in_sandbox = self._workspace_path
 
         # Initialize runtime state
         self._runtime_initialized = False

@@ -485,7 +485,7 @@ class DockerNestedConversationManager(ConversationManager):
         env_vars['SESSION_API_KEY'] = self._get_session_api_key_for_conversation(sid)
         # We need to be able to specify the nested conversation id within the nested runtime
         env_vars['ALLOW_SET_CONVERSATION_ID'] = '1'
-        env_vars['WORKSPACE_BASE'] = '/workspace'
+        env_vars['SANDBOX_VOLUMES'] = '/workspace:/workspace:rw'
         env_vars['SANDBOX_CLOSE_DELAY'] = '0'
         env_vars['SKIP_DEPENDENCY_CHECK'] = '1'
 

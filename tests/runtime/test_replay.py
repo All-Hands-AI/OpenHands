@@ -21,8 +21,7 @@ def _get_config(trajectory_name: str, agent: str = OH_DEFAULT_AGENT):
         default_agent=agent,
         run_as_openhands=False,
         # do not mount workspace
-        workspace_base=None,
-        workspace_mount_path=None,
+        sandbox={'volumes': None},
         replay_trajectory_path=str(
             (Path(__file__).parent / 'trajs' / f'{trajectory_name}.json').resolve()
         ),
