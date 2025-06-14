@@ -48,7 +48,7 @@ export function AzureDevOpsTokenInput({
         label={t(I18nKey.AZURE_DEVOPS$HOST_LABEL)}
         type="text"
         className="w-[680px]"
-        placeholder="dev.azure.com"
+        placeholder="https://dev.azure.com/{your-org-name}"
         defaultValue={azureDevOpsHostSet || undefined}
         startContent={
           azureDevOpsHostSet &&
