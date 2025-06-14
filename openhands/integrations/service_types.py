@@ -97,7 +97,9 @@ class SuggestedTask(BaseModel):
 
 
 class User(BaseModel):
-    id: int
+    id: (
+        int | str
+    )  # Support both integer IDs (GitHub/GitLab) and string UUIDs (Azure DevOps)
     login: str
     avatar_url: str
     company: str | None = None
