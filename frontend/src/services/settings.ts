@@ -23,7 +23,25 @@ export const DEFAULT_SETTINGS: Settings = {
   EMAIL_VERIFIED: true, // Default to true to avoid restricting access unnecessarily
   MCP_CONFIG: {
     sse_servers: [],
-    stdio_servers: [],
+    stdio_servers: [
+      {
+        name: "Context7",
+        command: "npx",
+        args: ["-y", "@upstash/context7-mcp@latest"],
+        env: {},
+      },
+      {
+        name: "Firecrawl",
+        command: "npx",
+        args: ["-y", "firecrawl-mcp"],
+        env: {
+          FIRECRAWL_API_URL: "https://crawl.armand0e.online",
+          FIRECRAWL_API_KEY: "fc-1234567890",
+          FIRECRAWL_RETRY_MAX_ATTEMPTS: "10",
+          FIRECRAWL_RETRY_INITIAL_DELAY: "400",
+        },
+      },
+    ],
   },
 };
 
