@@ -7,6 +7,7 @@ import random
 import shutil
 import string
 import tempfile
+import urllib.parse
 from abc import abstractmethod
 from pathlib import Path
 from types import MappingProxyType
@@ -728,16 +729,18 @@ fi
         ):
             git_token = self.git_provider_tokens[provider].token
             if git_token:
+                # URL encode the token to handle special characters (e.g., colons in Bitbucket tokens)
+                encoded_token = urllib.parse.quote(
+                    git_token.get_secret_value(), safe=''
+                )
+
                 if provider == ProviderType.GITLAB:
-                    remote_url = f'https://oauth2:{git_token.get_secret_value()}@{repo_path.replace("gitlab.com/", "")}.git'
+                    remote_url = f'https://oauth2:{encoded_token}@{repo_path.replace("gitlab.com/", "")}.git'
                 elif provider == ProviderType.BITBUCKET:
-                    # For Bitbucket, we'll use a different approach
-                    # Instead of embedding the token in the URL, we'll use the regular URL
-                    # and let git handle authentication through environment variables
-                    # This avoids issues with special characters in the token
-                    remote_url = f'https://bitbucket.org/{repo_path.replace("bitbucket.org/", "")}.git'
+                    # Use URL-encoded token to handle email:app_password format
+                    remote_url = f'https://{encoded_token}@{repo_path.replace("bitbucket.org/", "")}.git'
                 else:
-                    remote_url = f'https://{git_token.get_secret_value()}@{repo_path.replace("github.com/", "")}.git'
+                    remote_url = f'https://{encoded_token}@{repo_path.replace("github.com/", "")}.git'
 
         return remote_url
 

@@ -235,7 +235,7 @@ class TestBitbucketProviderDomain(unittest.TestCase):
 
     @patch('openhands.runtime.base.Runtime.__abstractmethods__', set())
     def test_get_authenticated_git_url_bitbucket(self, *args):
-        """Test that _get_authenticated_git_url correctly handles Bitbucket repositories."""
+        """Test that _get_authenticated_git_url correctly handles Bitbucket repositories with URL encoding."""
         # Create a minimal runtime instance with abstract methods patched
         runtime = Runtime(config=MagicMock(), event_stream=MagicMock(), sid='test_sid')
 
@@ -250,8 +250,8 @@ class TestBitbucketProviderDomain(unittest.TestCase):
             )
         }
         url = runtime._get_authenticated_git_url('bitbucket.org/workspace/repo')
-        # With our new approach, we don't embed credentials in the URL for Bitbucket
-        self.assertEqual(url, 'https://bitbucket.org/workspace/repo.git')
+        # With URL encoding, we can now safely embed credentials for Bitbucket
+        self.assertEqual(url, 'https://username%3Aapp_password@workspace/repo.git')
 
         # Test with simple token format
         runtime.git_provider_tokens = {
@@ -260,8 +260,8 @@ class TestBitbucketProviderDomain(unittest.TestCase):
             )
         }
         url = runtime._get_authenticated_git_url('bitbucket.org/workspace/repo')
-        # With our new approach, we don't embed credentials in the URL for Bitbucket
-        self.assertEqual(url, 'https://bitbucket.org/workspace/repo.git')
+        # Simple tokens work the same way
+        self.assertEqual(url, 'https://simple_token@workspace/repo.git')
 
     @patch('openhands.runtime.base.ProviderHandler')
     @patch.object(Runtime, 'run_action')
