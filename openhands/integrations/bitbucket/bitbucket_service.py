@@ -61,8 +61,6 @@ class BitbucketService(BaseGitService, GitService):
 
     async def get_latest_token(self) -> SecretStr | None:
         """Get latest working token of the user."""
-        if self.external_token_manager and self.external_auth_id:
-            return None
         return self.token
 
     def _has_token_expired(self, status_code: int) -> bool:
@@ -374,6 +372,13 @@ class BitbucketService(BaseGitService, GitService):
             'destination': {'branch': {'name': target_branch}},
             'close_source_branch': False,
         }
+
+        # Note: Bitbucket does not support draft pull requests
+        # The draft parameter is ignored for compatibility with other providers
+        if draft:
+            logger.warning(
+                'Draft pull requests are not supported by Bitbucket. Creating regular pull request.'
+            )
 
         data, _ = await self._make_request(
             url=url, params=payload, method=RequestMethod.POST
