@@ -10,112 +10,3878 @@ Discover how developers and teams are using OpenHands to automate their software
 
 <CardGroup cols={1}>
   <Card
-    title="Quick Bug Fix Success"
-    icon="twitter"
-    href="https://twitter.com/example"
+    title="Pull Request: All-Hands-AI/OpenHands#3379"
+    href="https://github.com/All-Hands-AI/OpenHands/pull/3379"
+    icon="github"
     horizontal
   >
-    **@developer123** on Twitter: "Just used @OpenHandsAI to fix a tricky bug in my React app. What would have taken me hours of debugging was solved in minutes! 🚀 #OpenHands #Frontend"
+    **@Graham Neubig**: "Hi all! Here’s a channel where we can post PRs that were written by OpenHands. Here are some of mine to start out
 
-    *Category: Frontend Development*
-  </Card>
-
-  <Card
-    title="Database Migration Success"
-    icon="slack"
-    horizontal
-  >
-    **@db_admin** in Slack: "OpenHands helped me migrate a complex MySQL database to PostgreSQL. It handled all the syntax differences and even optimized some queries along the way. Saved me days of work! 🙌"
-
-    *Category: Infrastructure Management*
-  </Card>
-
-  <Card
-    title="API Integration Made Easy"
-    icon="slack"
-    horizontal
-  >
-    **@api_enthusiast** in Slack: "I was struggling with integrating a third-party API that had terrible documentation. OpenHands read through their docs, figured out the authentication flow, and built a complete integration with error handling."
+- Writing tests: e.g. for our [memory condenser](https://github.com/All-Hands-AI/OpenHands/pull/3379) or [agent controller](https://github.com/All-Hands-AI/OpenHands/pull/3357)
+- Data analysis: e.g. for [analyzing the number of commits](https://youtu.be/eUn94vTXD5s) to OpenHands by week
+- Writing de-novo projects: e.g. writing this [PR viewer app](https://github.com/neubig/pr-viewer/commit/3ee726aa3c0fd88beba659e533fb863bccf2dcb4)
+- Making improvements to existing apps: e.g. [adding a toggle to have dark mode](https://github.com/neubig/pr-viewer/pull/7) or [fixing pagination in API calls](https://github.com/neubig/pr-viewer/pull/4) in the app I just shared"
 
     *Category: Backend Development*
+    *Posted: 2024-09-03 14:35:05*
   </Card>
 
   <Card
-    title="Documentation Generation"
-    icon="twitter"
-    href="https://twitter.com/example"
+    title="Last week I used OpenHands to quickly get a GitHub action up..."
+    icon="slack"
     horizontal
   >
-    **@docs_lover** on Twitter: "OpenHands just generated comprehensive documentation for my entire Python project. The quality is impressive and it even included proper examples! 📚 #Documentation"
+    **@Robert Brennan**: "Last week I used OpenHands to quickly get a GitHub action up and running for deploying helm charts! Was nice to be able to iterate directly in the OH UI instead of copy/pasting in and out of Claude/GPT.
+
+I didn't try to have it watch the GH Action run in the browser, and respond to failures--that would have made it even better"
+
+    *Category: Frontend Development*
+    *Posted: 2024-09-03 15:04:10*
+  </Card>
+
+  <Card
+    title="This one is also an impressive use case of OpenHands from An..."
+    icon="slack"
+    horizontal
+  >
+    **@Hoang Tran**: "This one is also an impressive use case of OpenHands from Andrew Ng:
+[https://t.co/DBIauwXCQv](https://t.co/DBIauwXCQv)
+
+(I actually tried to reproduce the game and ran it locally back then as I was really impressed by his long prompt
+)"
+
+    *Category: Game Development*
+    *Posted: 2024-09-03 16:05:38*
+  </Card>
+
+  <Card
+    title="Pull Request: All-Hands-AI/OpenHands#3576"
+    href="https://github.com/All-Hands-AI/OpenHands/pull/3576"
+    icon="github"
+    horizontal
+  >
+    **@Hoang Tran**: "Another use case: generate README for a file/folder by
+@U076E8NPEQ3
+:
+[https://github.com/All-Hands-AI/OpenHands/pull/3576](https://github.com/All-Hands-AI/OpenHands/pull/3576)"
 
     *Category: Documentation*
+    *Posted: 2024-09-09 14:41:55*
   </Card>
 
   <Card
-    title="Performance Optimization PR"
-    icon="github"
-    href="https://github.com/example/repo/pull/123"
+    title="Wanted to start using Mozilla's SOPS project to manage secre..."
+    icon="slack"
     horizontal
   >
-    **Repository**: `example/web-app` • **Impact**: 40% faster page load times
+    **@Robert Brennan**: "Wanted to start using Mozilla's SOPS project to manage secrets in IAC, but am not super familiar with it. OpenHands crushed it!
 
-    OpenHands identified performance bottlenecks in a React application and submitted a comprehensive PR with optimizations, including code splitting, lazy loading, and bundle size reduction.
+Prompts:"
+
+    *Category: General Development*
+    *Posted: 2024-09-09 18:19:47*
+  </Card>
+
+  <Card
+    title="Used OpenHands today to take a repo for a Flask server and"
+    icon="slack"
+    horizontal
+  >
+    **@Robert Brennan**: "Used OpenHands today to take a repo for a Flask server and:
+
+- add a dockerfile
+- add a GitHub action that pushes to a GHCR repo
+- creates a tag for every branch
+- creates version tags
+- add a helm chart for running the server
+- including an optional postgres dependency
+
+Took maybe 45 minutes, instead of like half a day wrestling with Claude chat and a terminal"
+
+    *Category: Backend Development*
+    *Posted: 2024-09-17 14:53:31*
+  </Card>
+
+  <Card
+    title="still had to do some manual poking in my terminal e"
+    icon="slack"
+    horizontal
+  >
+    **@Robert Brennan**: "still had to do some manual poking in my terminal e.g. to build the docker file and deploy into a KIND cluster"
 
     *Category: Frontend Development*
+    *Posted: 2024-09-17 14:53:58*
   </Card>
 
   <Card
-    title="DevOps Pipeline Automation"
+    title="Docker-in-OpenHands is still a bit of a struggle"
     icon="slack"
     horizontal
   >
-    **@devops_guru** in Slack: "OpenHands automated our entire CI/CD pipeline setup. It configured GitHub Actions, set up proper testing stages, and even added deployment strategies. Our deployment time went from 2 hours to 15 minutes!"
+    **@Robert Brennan**: "Docker-in-OpenHands is still a bit of a struggle"
 
     *Category: Infrastructure Management*
+    *Posted: 2024-09-17 14:54:14*
   </Card>
 
   <Card
-    title="Test Coverage Boost"
+    title="First time I've seen OpenHands add debug statements to under..."
     icon="slack"
     horizontal
   >
-    **@testing_guru** in Slack: "OpenHands took our test coverage from 40% to 85% in one afternoon. It wrote unit tests, integration tests, and even caught some edge cases I missed. Our CI/CD pipeline has never been happier! ✅"
+    **@U06QFDJ1QQ2**: "First time I've seen OpenHands add debug statements to understand what's happening in the code. Pretty cool to see!
+
+Completely fixed the problem"
+
+    *Category: General Development*
+    *Posted: 2024-09-22 15:44:58*
+  </Card>
+
+  <Card
+    title="Another one: was banging my head against my desk trying to f..."
+    icon="slack"
+    horizontal
+  >
+    **@Robert Brennan**: "Another one: was banging my head against my desk trying to figure out an issue with GitHub workflows. While waiting for my latest round of debug statements to kick off, I asked OpenHands to do something entirely different.
+
+It immediately says: "sure, but I noticed a bug with your workflow and I'm going to fix it first". Solved my original problem perfectly"
 
     *Category: Testing*
+    *Posted: 2024-09-23 16:25:09*
   </Card>
 
   <Card
-    title="Learning New Framework"
-    icon="twitter"
-    href="https://twitter.com/example"
-    horizontal
-  >
-    **@learner_dev** on Twitter: "Used OpenHands to help me learn Vue.js by building a sample app. It explained concepts as it coded and answered all my questions. Best coding tutor ever! 🎓 #Learning #VueJS"
-
-    *Category: Frontend Development*
-  </Card>
-
-  <Card
-    title="Security Vulnerability Fix"
-    icon="github"
-    href="https://github.com/example/repo/pull/456"
-    horizontal
-  >
-    **Repository**: `example/api-server` • **Impact**: Critical security patch
-
-    Automated detection and fix of a SQL injection vulnerability, including comprehensive tests and documentation updates to prevent similar issues.
-
-    *Category: Security*
-  </Card>
-
-  <Card
-    title="Microservices Migration"
+    title="That reminds me of the news where GPT-4o recently seemed to ..."
     icon="slack"
     horizontal
   >
-    **@architect** in Slack: "OpenHands helped us break down our monolith into microservices. It analyzed our codebase, identified service boundaries, and even generated the initial service templates with proper communication patterns."
+    **@tobitege**: "That reminds me of the news where GPT-4o recently seemed to have started talking on user's phones, asking how their day was going - WITHOUT the user initiating the talk"
+
+    *Category: General Development*
+    *Posted: 2024-09-23 17:02:02*
+  </Card>
+
+  <Card
+    title="Pull Request: All-Hands-AI/OpenHands#4038"
+    href="https://github.com/All-Hands-AI/OpenHands/pull/4038"
+    icon="github"
+    horizontal
+  >
+    **@Robert Brennan**: "This one was huge. I identified a bug in OpenHands and diagnosed the problem, but was dreading having to read through a bunch of existing logic to figure out how to solve it.
+
+I wrote a very specific prompt describing the issue:
+
+OpenHands fixed it in one shot!
+[https://github.com/All-Hands-AI/OpenHands/pull/4038](https://github.com/All-Hands-AI/OpenHands/pull/4038)"
+
+    *Category: Machine Learning*
+    *Posted: 2024-09-24 18:58:25*
+  </Card>
+
+  <Card
+    title="Pull Request: All-Hands-AI/OpenHands#4084"
+    href="https://github.com/All-Hands-AI/OpenHands/pull/4084"
+    icon="github"
+    horizontal
+  >
+    **@Robert Brennan**: "10:30AM: man I have a meeting in 30m, I really don't have time to pick up an engineering task
+
+10:35AM: maybe I can just give it to OpenHands?
+
+10:42AM:
+[PR opened](https://github.com/All-Hands-AI/OpenHands/pull/4084/files)"
+
+    *Category: Machine Learning*
+    *Posted: 2024-09-27 14:44:21*
+  </Card>
+
+  <Card
+    title="I wanted to have an example flask app that accessed a databa..."
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "I wanted to have an example flask app that accessed a database, and OpenHands created it with only two prompts
+
+[https://www.all-hands.dev/share?share_id=2f5e3a35b8f1955927f2d8e7196a7947c8989d7f72eb7789756c2a3cfb82f4a1](https://www.all-hands.dev/share?share_id=2f5e3a35b8f1955927f2d8e7196a7947c8989d7f72eb7789756c2a3cfb82f4a1)
+
+I also learned about the
+Faker
+ library which is pretty awesome, seems great for tests:
+[https://pypi.org/project/Faker/](https://pypi.org/project/Faker/)"
+
+    *Category: Backend Development*
+    *Posted: 2024-10-17 20:54:33*
+  </Card>
+
+  <Card
+    title="OpenHands helping me do statistical analysis of the SWE-Benc..."
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "OpenHands helping me do statistical analysis of the SWE-Bench verified dataset to calculate inter-annotator agreement:
+
+[https://www.all-hands.dev/share?share_id=e779a431e130b100b8979a9e66a8411e7dc248be48618863713f72f9720ef6ef](https://www.all-hands.dev/share?share_id=e779a431e130b100b8979a9e66a8411e7dc248be48618863713f72f9720ef6ef)
+
+Prompt:"
+
+    *Category: General Development*
+    *Posted: 2024-10-24 12:52:43*
+  </Card>
+
+  <Card
+    title="Wrote a draft blog post in Google Docs, and was dreading con..."
+    icon="slack"
+    horizontal
+  >
+    **@Robert Brennan**: "Wrote a draft blog post in Google Docs, and was dreading converting it to markdown, moving all the images into an assets directory, etc.
+@U06PEF04LEQ
+ had the brilliant idea of just downloading as HTML and asking OpenHands to do the conversion! Flawless"
+
+    *Category: Documentation*
+    *Posted: 2024-10-24 16:08:17*
+  </Card>
+
+  <Card
+    title="Pull Request: All-Hands-AI/OpenHands#4608"
+    href="https://github.com/All-Hands-AI/OpenHands/pull/4608"
+    icon="github"
+    horizontal
+  >
+    **@U06QFDJ1QQ2**: "[https://github.com/All-Hands-AI/OpenHands/pull/4608](https://github.com/All-Hands-AI/OpenHands/pull/4608)"
+
+    *Category: Machine Learning*
+    *Posted: 2024-10-29 16:17:23*
+  </Card>
+
+  <Card
+    title="Reminder that you can redirect OpenHands if it's struggling!"
+    icon="slack"
+    horizontal
+  >
+    **@U06QFDJ1QQ2**: "Reminder that you can redirect OpenHands if it's struggling!"
+
+    *Category: General Development*
+    *Posted: 2024-10-31 17:11:52*
+  </Card>
+
+  <Card
+    title="[openhands-agent](https://github"
+    icon="slack"
+    horizontal
+  >
+    **@U06PEF04LEQ**: "[openhands-agent](https://github.com/openhands-agent)
+ is heating up, 13 contributions yesterday"
+
+    *Category: General Development*
+    *Posted: 2024-10-31 18:39:19*
+  </Card>
+
+  <Card
+    title="Pull Request: All-Hands-AI/openhands-resolver#223"
+    href="https://github.com/All-Hands-AI/openhands-resolver/pull/223"
+    icon="github"
+    horizontal
+  >
+    **@Graham Neubig**: "OpenHands not only did a major refactor with a single prompt, but it also decided to re-write my README.md to make it clearer
+
+[https://github.com/All-Hands-AI/openhands-resolver/pull/223](https://github.com/All-Hands-AI/openhands-resolver/pull/223)"
+
+    *Category: Documentation*
+    *Posted: 2024-11-01 00:45:20*
+  </Card>
+
+  <Card
+    title="seems like openhands could be a"
+    icon="code"
+    horizontal
+  >
+    **@Rohit Malhotra**: "seems like openhands could be a
+
+content editor
+
+ for folks using github as their CMS"
+
+    *Category: General Development*
+    *Posted: 2024-11-01 00:56:21*
+  </Card>
+
+  <Card
+    title="Yeah, actually we’re already kinda doing that"
+    icon="brain"
+    horizontal
+  >
+    **@Graham Neubig**: "Yeah, actually we’re already kinda doing that
+
+[https://openhands-ai.slack.com/archives/C07KHERRM2S/p1729786097647939](https://openhands-ai.slack.com/archives/C07KHERRM2S/p1729786097647939)"
+
+    *Category: Machine Learning*
+    *Posted: 2024-11-01 01:03:13*
+  </Card>
+
+  <Card
+    title="This morning my scanner scanned some pages in the wrong orde..."
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "This morning my scanner scanned some pages in the wrong order (scanned 1,3,5,7,9,8,6,4,2) so I just asked OpenHands to reorder them in the right order"
+
+    *Category: General Development*
+    *Posted: 2024-11-04 16:06:53*
+  </Card>
+
+  <Card
+    title="Pull Request: All-Hands-AI/OpenHands#4832"
+    href="https://github.com/All-Hands-AI/OpenHands/pull/4832"
+    icon="github"
+    horizontal
+  >
+    **@Graham Neubig**: "Perfect-looking fix of a real frontend bug on the openhands repo:
+[https://github.com/All-Hands-AI/OpenHands/pull/4832](https://github.com/All-Hands-AI/OpenHands/pull/4832)
+
+Note that I didn’t specify which file to fix or anything."
+
+    *Category: Frontend Development*
+    *Posted: 2024-11-07 18:20:37*
+  </Card>
+
+  <Card
+    title="Hello Graham, the log for this simple fix shows a big issue:..."
+    icon="slack"
+    horizontal
+  >
+    **@tobitege**: "Hello Graham, the log for this simple fix shows a big issue: frontend tests cause thousands of lines of unnecessary output, that all get passed to the LLM?
+Is there a less verbose test mode possible?"
+
+    *Category: Frontend Development*
+    *Posted: 2024-11-07 19:38:57*
+  </Card>
+
+  <Card
+    title="Good question, maybe we could open an issue for that (and fi..."
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "Good question, maybe we could open an issue for that (and fix it with OpenHands, of course!)"
+
+    *Category: General Development*
+    *Posted: 2024-11-07 19:42:08*
+  </Card>
+
+  <Card
+    title="I asked OpenHands to implement a missing functionality in ex..."
+    icon="slack"
+    horizontal
+  >
+    **@Hoang Tran**: "I asked OpenHands to implement a missing functionality in existing code. Perfection, zero notes:
+[https://www.all-hands.dev/share?share_id=f11bfe709d50fde267594779202ca1c6548e24215595192584631871be6d91da](https://www.all-hands.dev/share?share_id=f11bfe709d50fde267594779202ca1c6548e24215595192584631871be6d91da)"
+
+    *Category: General Development*
+    *Posted: 2024-11-09 04:56:43*
+  </Card>
+
+  <Card
+    title="Though seems like my token appeared in the trajectory when p..."
+    icon="slack"
+    horizontal
+  >
+    **@Hoang Tran**: "Though seems like my token appeared in the trajectory when pushing to github"
+
+    *Category: General Development*
+    *Posted: 2024-11-09 04:58:01*
+  </Card>
+
+  <Card
+    title="this share view is interesting"
+    icon="slack"
+    horizontal
+  >
+    **@Luiz Marques**: "this share view is interesting. How do you achieve that?"
+
+    *Category: Backend Development*
+    *Posted: 2024-11-09 14:13:15*
+  </Card>
+
+  <Card
+    title="You can use the"
+    icon="slack"
+    horizontal
+  >
+    **@Hoang Tran**: "You can use the "like/dislike" button right above the chatbox to share it"
+
+    *Category: General Development*
+    *Posted: 2024-11-09 14:40:32*
+  </Card>
+
+  <Card
+    title="Hey"
+    icon="code"
+    horizontal
+  >
+    **@Graham Neubig**: "Hey
+@U06QFDJ1QQ2
+, you asked whether OpenHands would be able to debug issues with github actions. It seems like it should be able to pretty straightforwardly through the UI, here’s a prompt I provided:
+
+Maybe this should be another workflow that we could add to our library of workflows?"
+
+    *Category: Frontend Development*
+    *Posted: 2024-11-11 13:19:23*
+  </Card>
+
+  <Card
+    title="Pull Request: neubig/pr-viewer#10"
+    href="https://github.com/neubig/pr-viewer/pull/10"
+    icon="github"
+    horizontal
+  >
+    **@Graham Neubig**: "Resulting PR:
+[https://github.com/neubig/pr-viewer/pull/10](https://github.com/neubig/pr-viewer/pull/10)"
+
+    *Category: General Development*
+    *Posted: 2024-11-11 13:26:53*
+  </Card>
+
+  <Card
+    title="Trajectory"
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "Trajectory:
+[https://www.all-hands.dev/share?share_id=02a2222a42b2e745ad61e5b7d5e63edcd6943ab48380b8909739e2fc8abd9cda](https://www.all-hands.dev/share?share_id=02a2222a42b2e745ad61e5b7d5e63edcd6943ab48380b8909739e2fc8abd9cda)"
+
+    *Category: General Development*
+    *Posted: 2024-11-11 13:27:32*
+  </Card>
+
+  <Card
+    title=":mechanical_arm::muscle: :mechanical_arm"
+    icon="slack"
+    horizontal
+  >
+    **@U07SY5XHQJY**: ":mechanical_arm::muscle: :mechanical_arm:"
+
+    *Category: General Development*
+    *Posted: 2024-11-16 23:20:52*
+  </Card>
+
+  <Card
+    title="Hey"
+    icon="gamepad"
+    horizontal
+  >
+    **@U07SY5XHQJY**: "Hey
+@U06PEF04LEQ
+ this was an awesome talk, wana add all of our company logos (from people in this chat) and we can give you good customer quotes?! somewhere in the first 3 slides or something? I attached ours. Or maybe on the
+[https://www.all-hands.dev/](https://www.all-hands.dev/)
+ maybe like between the 'join the community' and 'choose your engine' sections? I could get all my big tech friends to all give quotes and then you could throw every s&p 500 company on there too. I'm the biggest fan!"
+
+    *Category: Game Development*
+    *Posted: 2024-11-17 22:06:49*
+  </Card>
+
+  <Card
+    title="I haven't written a"
+    icon="code"
+    horizontal
+  >
+    **@U07SY5XHQJY**: "I haven't written a
+single
+ line of code in the last 2 days, knocked off 3 features and about 10 bugs off the list
+. I code from the github PR ui now"
+
+    *Category: Frontend Development*
+    *Posted: 2024-11-17 22:13:58*
+  </Card>
+
+  <Card
+    title="catching up to me"
+    icon="slack"
+    horizontal
+  >
+    **@U07SY5XHQJY**: "catching up to me"
+
+    *Category: General Development*
+    *Posted: 2024-11-19 23:31:05*
+  </Card>
+
+  <Card
+    title="Amazing"
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "Amazing"
+
+    *Category: General Development*
+    *Posted: 2024-11-20 00:24:05*
+  </Card>
+
+  <Card
+    title="what are you using for those metrics? pluralsight?"
+    icon="slack"
+    horizontal
+  >
+    **@Luiz Marques**: "what are you using for those metrics? pluralsight?"
+
+    *Category: General Development*
+    *Posted: 2024-11-21 12:03:28*
+  </Card>
+
+  <Card
+    title="these are just on the github website by default"
+    icon="slack"
+    horizontal
+  >
+    **@Raymond Xu**: "these are just on the github website by default"
+
+    *Category: General Development*
+    *Posted: 2024-11-21 17:34:33*
+  </Card>
+
+  <Card
+    title="ah, ofc, thats a public repo"
+    icon="slack"
+    horizontal
+  >
+    **@Luiz Marques**: "ah, ofc, thats a public repo
+ nice"
+
+    *Category: General Development*
+    *Posted: 2024-11-21 17:37:57*
+  </Card>
+
+  <Card
+    title="It's not a public repo"
+    icon="slack"
+    horizontal
+  >
+    **@Raymond Xu**: "It's not a public repo"
+
+    *Category: General Development*
+    *Posted: 2024-11-21 17:39:54*
+  </Card>
+
+  <Card
+    title="Impressed by the fraction of my token use which is a cache-h..."
+    icon="slack"
+    horizontal
+  >
+    **@U07SY5XHQJY**: "Impressed by the fraction of my token use which is a cache-hit"
+
+    *Category: General Development*
+    *Posted: 2024-11-21 22:05:00*
+  </Card>
+
+  <Card
+    title="This is from ~500 resolver jobs"
+    icon="slack"
+    horizontal
+  >
+    **@Raymond Xu**: "This is from ~500 resolver jobs"
+
+    *Category: General Development*
+    *Posted: 2024-11-21 22:05:38*
+  </Card>
+
+  <Card
+    title="DON'T GIVE UP HOPE: task solved after 2 hours"
+    icon="check-circle"
+    horizontal
+  >
+    **@U07SY5XHQJY**: "DON'T GIVE UP HOPE: task solved after 2 hours
+
+Edit: turns out instead of running
+bun test <specific_file>
+ it was running
+bun test
+ which was all of my integration tests which takes about a couple minutes per run"
+
+    *Category: Testing*
+    *Posted: 2024-11-23 01:19:33*
+  </Card>
+
+  <Card
+    title="Pull Request: All-Hands-AI/OpenHands#5284"
+    href="https://github.com/All-Hands-AI/OpenHands/pull/5284"
+    icon="github"
+    horizontal
+  >
+    **@Xingyao Wang**: "@U06PYTVAES1
+ has been asking OpenHands to work in this PR
+[https://github.com/All-Hands-AI/OpenHands/pull/5284](https://github.com/All-Hands-AI/OpenHands/pull/5284)
+.. and it seems (maybe in the near future) OpenHands is able to complete the job without the developer ever opens up an IDE"
+
+    *Category: Machine Learning*
+    *Posted: 2024-11-30 16:38:52*
+  </Card>
+
+  <Card
+    title="In terms of a success story, over the weekend I have been us..."
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "In terms of a success story, over the weekend I have been using OpenHands to do a variety of serious and not-so-serious things, and I’ve realized it’s really great at polishing PRs so they pass github actions if any workflows are failing. Here is my prompt:
+
+In addition, if I’m doing this specifically for the OpenHands, I sometimes add:
+
+This is super-helpful, because we all know that fixing all the little things that cause CI to fail is a pain."
 
     *Category: Infrastructure Management*
+    *Posted: 2024-12-02 13:37:10*
+  </Card>
+
+  <Card
+    title="Used Openhands as a pair programmer to do heavy lifting for ..."
+    icon="slack"
+    horizontal
+  >
+    **@Rohit Malhotra**: "Used Openhands as a pair programmer to do heavy lifting for a creative/interactive design project in p5js
+
+I usually take around 2 days for high fidelity interactions (planning strategy + writing code + circling back w designer), did this in around 5hrs instead with the designer watching curiously the entire time
+
+[https://x.com/rohit_malh5/status/1863995531657425225](https://x.com/rohit_malh5/status/1863995531657425225)"
+
+    *Category: Machine Learning*
+    *Posted: 2024-12-03 18:19:55*
+  </Card>
+
+  <Card
+    title="I just got OpenHands to solve a really tricky debugging prob..."
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "I just got OpenHands to solve a really tricky debugging problem where a cache file was written to the wrong place. It took me 4 tries or so, and finally I got a magic prompt:"
+
+    *Category: General Development*
+    *Posted: 2024-12-03 23:35:26*
+  </Card>
+
+  <Card
+    title="i've thought it would be interesting to have this automatica..."
+    icon="slack"
+    horizontal
+  >
+    **@Josh Valdez**: "i've thought it would be interesting to have this automatically be a feature of an AI SWE. where you set some sort of parameter for branching and it explores different solutions and comes back to you with the best"
+
+    *Category: Backend Development*
+    *Posted: 2024-12-03 23:59:22*
+  </Card>
+
+  <Card
+    title="Yeah, I think this is reasonable! The only thing is that I t..."
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "Yeah, I think this is reasonable! The only thing is that I think that this behavior is super-useful when debugging, but when you know what to do next already maybe it’d be less useful."
+
+    *Category: General Development*
+    *Posted: 2024-12-04 01:59:57*
+  </Card>
+
+  <Card
+    title="I’m pretty excited about this one"
+    icon="slack"
+    horizontal
+  >
+    **@U06PEF04LEQ**: "I’m pretty excited about this one.
+
+I wanted a page where we could monitor the activity of
+[openhands-agent](https://github.com/openhands-agent)
+, so I asked OpenHands to make one (incrementally of course):
+[https://openhands-agent-monitor.vercel.app/](https://openhands-agent-monitor.vercel.app/)
+
+100% of the code in this app was written by OpenHands, I didn’t write a single line. The only thing I did manually was set up the vercel deployment configuration.
+
+I finally finished and couldn’t help but share, but I’ll be writing something more detailed up and open-sourcing the code tomorrow
+
+And if there’s anything you’d like to see, OpenHands takes feature requests"
+
+    *Category: Infrastructure Management*
+    *Posted: 2024-12-04 02:10:00*
+  </Card>
+
+  <Card
+    title="Pull Request: All-Hands-AI/OpenHands#5371"
+    href="https://github.com/All-Hands-AI/OpenHands/pull/5371"
+    icon="github"
+    horizontal
+  >
+    **@Rohit Malhotra**: "[https://github.com/All-Hands-AI/OpenHands/pull/5371](https://github.com/All-Hands-AI/OpenHands/pull/5371)
+
+This is a long running PR, but in there somewhere I was facing circular import errors
+
+The error logs were super long and I realllyyy didn't feel like tackling it myself; Openhands managed to fix for me"
+
+    *Category: Machine Learning*
+    *Posted: 2024-12-06 18:33:55*
+  </Card>
+
+  <Card
+    title="Hello"
+    icon="server"
+    horizontal
+  >
+    **@Youssef Tourki**: "Hello
+@U07SY5XHQJY
+  I'm intrested in your thoughts about heavily relying on Anthropic.
+
+Is there a open LLM alternative that we can run locally and that has decent coding skills ? I feel we are too dependent on Anthropic and once OH or other tools becomes more popular, Anthropic prices might go up, or rate limits go down"
+
+    *Category: Backend Development*
+    *Posted: 2024-12-06 20:50:49*
+  </Card>
+
+  <Card
+    title="Not sure, havent tried anything besides gpt4o claude 3"
+    icon="slack"
+    horizontal
+  >
+    **@Raymond Xu**: "Not sure, havent tried anything besides gpt4o claude 3.5 sonnet and llama3.1 405b"
+
+    *Category: General Development*
+    *Posted: 2024-12-06 20:58:40*
+  </Card>
+
+  <Card
+    title="thanks for the feedback"
+    icon="slack"
+    horizontal
+  >
+    **@Youssef Tourki**: "thanks for the feedback"
+
+    *Category: General Development*
+    *Posted: 2024-12-06 21:01:37*
+  </Card>
+
+  <Card
+    title="Successfully used Openhands to write a test function and doc..."
+    icon="slack"
+    horizontal
+  >
+    **@Xuhui Zhou**: "Successfully used Openhands to write a test function and doc for a new feature in Sotopia! (I might miss something, but it could be super cool to see Openhands editing the code live/streaming)"
+
+    *Category: Testing*
+    *Posted: 2024-12-08 22:45:00*
+  </Card>
+
+  <Card
+    title="Repository: All-Hands-AI/OpenHands"
+    href="https://github.com/All-Hands-AI/OpenHands"
+    icon="github"
+    horizontal
+  >
+    **@Graham Neubig**: "Thanks Xuhui, that’s awesome!
+
+Maybe these issues are similar to what you’re thinking about?
+[https://github.com/All-Hands-AI/OpenHands/issues/4506](https://github.com/All-Hands-AI/OpenHands/issues/4506)
+
+[https://github.com/All-Hands-AI/OpenHands/issues/5336](https://github.com/All-Hands-AI/OpenHands/issues/5336)
+
+If so if you give it a thumbs up that’ll help us up the priority"
+
+    *Category: Frontend Development*
+    *Posted: 2024-12-09 04:25:51*
+  </Card>
+
+  <Card
+    title="Yeah, those sound about right!"
+    icon="slack"
+    horizontal
+  >
+    **@Xuhui Zhou**: "Yeah, those sound about right!"
+
+    *Category: General Development*
+    *Posted: 2024-12-09 17:58:27*
+  </Card>
+
+  <Card
+    title="Pull Request: All-Hands-AI/OpenHands#5483"
+    href="https://github.com/All-Hands-AI/OpenHands/pull/5483"
+    icon="github"
+    horizontal
+  >
+    **@U06PEF04LEQ**: "This is a pretty substantial fix across many places in the codebase to add success indicators to the frontend:
+
+[https://github.com/All-Hands-AI/OpenHands/pull/5483](https://github.com/All-Hands-AI/OpenHands/pull/5483)"
+
+    *Category: Frontend Development*
+    *Posted: 2024-12-09 22:55:43*
+  </Card>
+
+  <Card
+    title="Pull Request: linkedin/Liger-Kernel#467"
+    href="https://github.com/linkedin/Liger-Kernel/pull/467"
+    icon="github"
+    horizontal
+  >
+    **@Xingyao Wang**: "OpenHands agent contribute its first PR in Liger Kernel lol
+
+[https://twitter.com/hsu_byron/status/1866957897122582724](https://twitter.com/hsu_byron/status/1866957897122582724)
+
+[https://github.com/linkedin/Liger-Kernel/pull/467](https://github.com/linkedin/Liger-Kernel/pull/467)
+
+[https://twitter.com/xingyaow_/status/1866932528021479576](https://twitter.com/xingyaow_/status/1866932528021479576)"
+
+    *Category: General Development*
+    *Posted: 2024-12-11 21:31:54*
+  </Card>
+
+  <Card
+    title="The biggest contributor to OpenHands over the past month is,..."
+    icon="slack"
+    horizontal
+  >
+    **@U06PEF04LEQ**: "The biggest contributor to OpenHands over the past month is, OpenHands
+
+[https://x.com/gneubig/status/1867358018419257685](https://x.com/gneubig/status/1867358018419257685)
+
+(and then
+@U06UC65QTJA
+
+)"
+
+    *Category: General Development*
+    *Posted: 2024-12-13 00:03:38*
+  </Card>
+
+  <Card
+    title="I'm not sure"
+    icon="server"
+    horizontal
+  >
+    **@Engel Nyst**: "I'm not sure
+what
+ other changes
+ we made
+ to browsing lately - except for the new
+ Xingyao's
+ action - but it works great! These days the agent went on to browse github (when I forgot to remind it to use the API), even browse github to see litellm code, when it did not realize it had it locally
+ , it also went to browse the anthropic site for documentation - great -, fallback to google when it didn't find something - great! It all just worked."
+
+    *Category: Backend Development*
+    *Posted: 2024-12-15 20:41:47*
+  </Card>
+
+  <Card
+    title="Yeah, I agree! It’s due to Xingyao’s markdown browsing commi..."
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "Yeah, I agree! It’s due to Xingyao’s markdown browsing commit"
+
+    *Category: General Development*
+    *Posted: 2024-12-15 20:45:32*
+  </Card>
+
+  <Card
+    title="Pull Request: All-Hands-AI/OpenHands#5724"
+    href="https://github.com/All-Hands-AI/OpenHands/pull/5724"
+    icon="github"
+    horizontal
+  >
+    **@Rohit Malhotra**: "[https://github.com/All-Hands-AI/OpenHands/pull/5724](https://github.com/All-Hands-AI/OpenHands/pull/5724)
+
+Using Openhands from my phone is another kinda of fun; it does the work while I spend time scrolling X
+
+Wanted to fix a code readability issues and it did a great job!"
+
+    *Category: Machine Learning*
+    *Posted: 2024-12-21 00:47:18*
+  </Card>
+
+  <Card
+    title="Imagine when we have a OpenHands PR"
+    icon="slack"
+    horizontal
+  >
+    **@U06QJHRBLQG**: "Imagine when we have a OpenHands PR
+"Sent from my iPhone""
+
+    *Category: General Development*
+    *Posted: 2024-12-21 05:31:41*
+  </Card>
+
+  <Card
+    title="That would be awesome!"
+    icon="slack"
+    horizontal
+  >
+    **@Rohit Malhotra**: "That would be awesome!"
+
+    *Category: General Development*
+    *Posted: 2024-12-21 05:48:15*
+  </Card>
+
+  <Card
+    title="Phone is next level! When the resolver was first integrated,..."
+    icon="slack"
+    horizontal
+  >
+    **@U06PYTVAES1**: "Phone is next level! When the resolver was first integrated, I spent the weekend on iPad, picking up new or old PRs and issues: "is this prompt clear, okay. GO!""
+
+    *Category: General Development*
+    *Posted: 2024-12-21 15:54:39*
+  </Card>
+
+  <Card
+    title="Yeah, honestly pretty amazing way to kill time when travelin..."
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "Yeah, honestly pretty amazing way to kill time when traveling etc"
+
+    *Category: General Development*
+    *Posted: 2024-12-21 16:02:47*
+  </Card>
+
+  <Card
+    title="Much better than scrolling through social media"
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "Much better than scrolling through social media"
+
+    *Category: General Development*
+    *Posted: 2024-12-21 16:02:56*
+  </Card>
+
+  <Card
+    title="New here, so forgive me for the naive question - how are you..."
+    icon="slack"
+    horizontal
+  >
+    **@Mark Watson**: "New here, so forgive me for the naive question - how are you using it from your phone? Hosting it on a cloud provider and accessing it via public IP/URL?"
+
+    *Category: Machine Learning*
+    *Posted: 2025-01-04 21:29:29*
+  </Card>
+
+  <Card
+    title="We have a beta version of the official hosted app at"
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "We have a beta version of the official hosted app at
+[https://app.all-hands.dev](https://app.all-hands.dev)
+ . It’ll be in general access Soon (tm), but feel free to DM me with your github username if you’d like early access"
+
+    *Category: General Development*
+    *Posted: 2025-01-04 22:03:08*
+  </Card>
+
+  <Card
+    title="[https://x"
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "[https://x.com/vikhyatk/status/1875554343795224861](https://x.com/vikhyatk/status/1875554343795224861)"
+
+    *Category: General Development*
+    *Posted: 2025-01-05 00:05:37*
+  </Card>
+
+  <Card
+    title="[https://x"
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "[https://x.com/vikhyatk/status/1875764689407455357](https://x.com/vikhyatk/status/1875764689407455357)"
+
+    *Category: General Development*
+    *Posted: 2025-01-05 09:36:36*
+  </Card>
+
+  <Card
+    title="[https://x"
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "[https://x.com/drivelinekyle/status/1876086531066306604](https://x.com/drivelinekyle/status/1876086531066306604)"
+
+    *Category: General Development*
+    *Posted: 2025-01-06 02:44:02*
+  </Card>
+
+  <Card
+    title="Repository: All-Hands-AI/OpenHands"
+    href="https://github.com/All-Hands-AI/OpenHands"
+    icon="github"
+    horizontal
+  >
+    **@Xingyao Wang**: "this really why i love the generality of code as action -- OpenHands can summarize comments & create an issue via Github API for you given context (I don't enjoy writing long issues w/ enough context info!)
+
+[https://github.com/All-Hands-AI/OpenHands/issues/6083](https://github.com/All-Hands-AI/OpenHands/issues/6083)
+
+[https://www.all-hands.dev/share?share_id=0f65c0bc7325913f80a72ba8560c497cdc4522a6158756c1ffeb40d2c3e0454e](https://www.all-hands.dev/share?share_id=0f65c0bc7325913f80a72ba8560c497cdc4522a6158756c1ffeb40d2c3e0454e)"
+
+    *Category: Backend Development*
+    *Posted: 2025-01-06 15:44:43*
+  </Card>
+
+  <Card
+    title="Our technical project manager in the team built this game ov..."
+    icon="slack"
+    horizontal
+  >
+    **@Morgan McGuire**: "Our technical project manager in the team built this game over the weekend when trialling OpenHands. She has decent python skills but no frontend skills. (borks after about 10s as adding music and sounds over the weekend broke something lol). Still an amazing example of what good agents can unlock
+
+[https://agata-mlynarczyk.github.io/coffee-run/](https://agata-mlynarczyk.github.io/coffee-run/)"
+
+    *Category: Frontend Development*
+    *Posted: 2025-01-06 17:02:10*
+  </Card>
+
+  <Card
+    title="I only see a white screen with music playing"
+    icon="slack"
+    horizontal
+  >
+    **@Mamoodi**: "I only see a white screen with music playing. Would be interested to see what was built.
+I built a simple version of google's dinosaur game some time ago and had a lot of fun."
+
+    *Category: Frontend Development*
+    *Posted: 2025-01-06 17:22:45*
+  </Card>
+
+  <Card
+    title="ah, this is what it should look like"
+    icon="slack"
+    horizontal
+  >
+    **@U07QXMD4006**: "ah, this is what it should look like"
+
+    *Category: General Development*
+    *Posted: 2025-01-06 17:29:03*
+  </Card>
+
+  <Card
+    title="No crashes on my end, although the music stops when I lose"
+    icon="slack"
+    horizontal
+  >
+    **@Calvin Smith**: "No crashes on my end, although the music stops when I lose. Very cool, thanks for sharing!
+
+@U0733742FR8
+ it's flappy bird but you're avoiding office supplies and I'm just as bad at is as I am at flappy bird"
+
+    *Category: General Development*
+    *Posted: 2025-01-06 17:29:23*
+  </Card>
+
+  <Card
+    title="This is very interesting! Wondering where this pulled the re..."
+    icon="slack"
+    horizontal
+  >
+    **@Pratik Satija**: "This is very interesting! Wondering where this pulled the relevant information from?"
+
+    *Category: Backend Development*
+    *Posted: 2025-01-06 21:38:09*
+  </Card>
+
+  <Card
+    title="when you login with OpenHands, your Github App token is give..."
+    icon="slack"
+    horizontal
+  >
+    **@Xingyao Wang**: "when you login with OpenHands, your Github App token is given to OpenHands as an env var -- OpenHands basically use that env var to call Github API and grab these info"
+
+    *Category: Backend Development*
+    *Posted: 2025-01-06 21:45:58*
+  </Card>
+
+  <Card
+    title="[https://openhands-ai"
+    icon="slack"
+    horizontal
+  >
+    **@Xingyao Wang**: "[https://openhands-ai.slack.com/archives/C06PB3T5ZK6/p1736201316662589](https://openhands-ai.slack.com/archives/C06PB3T5ZK6/p1736201316662589)"
+
+    *Category: Machine Learning*
+    *Posted: 2025-01-06 22:09:14*
+  </Card>
+
+  <Card
+    title="Hah, nice! R"
+    icon="slack"
+    horizontal
+  >
+    **@Engel Nyst**: "Hah, nice! R
+ecently I've seen an experiment like: telling the LLM to "write better code"
+after it was done,
+results in it trying indeed and the first 3 attempts seemed better -ish. It was just a couple of tasks, so
+totally anecdotical
+, but"
+
+    *Category: General Development*
+    *Posted: 2025-01-06 23:25:35*
+  </Card>
+
+  <Card
+    title="Pull Request: All-Hands-AI/OpenHands#6070"
+    href="https://github.com/All-Hands-AI/OpenHands/pull/6070"
+    icon="github"
+    horizontal
+  >
+    **@Graham Neubig**: "I used OpenHands to localize OpenHands into 10 languages:
+
+- Tweet with examples of the frontend: [https://x.com/gneubig/status/1876610681283469721](https://x.com/gneubig/status/1876610681283469721)
+- PR (still polishing a little bit): [https://github.com/All-Hands-AI/OpenHands/pull/6070](https://github.com/All-Hands-AI/OpenHands/pull/6070)"
+
+    *Category: Frontend Development*
+    *Posted: 2025-01-07 12:45:09*
+  </Card>
+
+  <Card
+    title="Oh wow, this is super cool!"
+    icon="slack"
+    horizontal
+  >
+    **@Alejandro Cuadron**: "Oh wow, this is super cool!"
+
+    *Category: General Development*
+    *Posted: 2025-01-07 12:48:54*
+  </Card>
+
+  <Card
+    title="OpenHands is featured in the new Weights and Biases evaluati..."
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "OpenHands is featured in the new Weights and Biases evaluation course, where I use OpenHands to do a machine learning experiment and log it to their new LLM evaluation platform Weave
+
+[https://wandb.ai/site/courses/evals/?utm_source=twitter&utm_medium=social&utm_campaign=course_evals](https://wandb.ai/site/courses/evals/?utm_source=twitter&utm_medium=social&utm_campaign=course_evals)"
+
+    *Category: Machine Learning*
+    *Posted: 2025-01-07 23:00:38*
+  </Card>
+
+  <Card
+    title="Is that not a Weights & Biases success story"
+    icon="slack"
+    horizontal
+  >
+    **@vvr**: "Is that not a Weights & Biases success story
+ ?"
+
+    *Category: General Development*
+    *Posted: 2025-01-08 18:28:59*
+  </Card>
+
+  <Card
+    title="Worked flawlessly for me, found out that the small objects w..."
+    icon="slack"
+    horizontal
+  >
+    **@Stephan Psaras**: "Worked flawlessly for me, found out that the small objects were power ups by luck (was so glad I didn’t end up losing when colliding with it). Actually awesome"
+
+    *Category: General Development*
+    *Posted: 2025-01-09 13:58:34*
+  </Card>
+
+  <Card
+    title="Here’s a fun one, I got OpenHands to make me a figure for my..."
+    icon="slack"
+    horizontal
+  >
+    **@U06PEF04LEQ**: "Here’s a fun one, I got OpenHands to make me a figure for my next blog post.
+
+Here’s the original prompt, then I asked it to do some corrections:"
+
+    *Category: General Development*
+    *Posted: 2025-01-13 19:23:25*
+  </Card>
+
+  <Card
+    title="Oh this is awesome! Is there a tool for font awesome or did ..."
+    icon="slack"
+    horizontal
+  >
+    **@Mason Grimshaw**: "Oh this is awesome! Is there a tool for font awesome or did it do it through the browser somehow?"
+
+    *Category: General Development*
+    *Posted: 2025-01-13 20:11:26*
+  </Card>
+
+  <Card
+    title="I think it downloaded the code for fonts-awesome, but it mig..."
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "I think it downloaded the code for fonts-awesome, but it might’ve used the browser (I didn’t check carefully)"
+
+    *Category: General Development*
+    *Posted: 2025-01-13 20:50:00*
+  </Card>
+
+  <Card
+    title="Very cool"
+    icon="slack"
+    horizontal
+  >
+    **@Mason Grimshaw**: "Very cool. Thank you!"
+
+    *Category: General Development*
+    *Posted: 2025-01-13 20:54:13*
+  </Card>
+
+  <Card
+    title="Would it be too hard to use"
+    icon="server"
+    horizontal
+  >
+    **@Regis**: "Would it be too hard to use
+openhands
+ generically? As in for non code stuff? I feel that it would be too bad to make some stuff for me… like ask it to restart some servers or stuff like that.
+ (If not, I am unaware of tools that are better fit for this usecasw and would love recomendations)"
+
+    *Category: Backend Development*
+    *Posted: 2025-01-13 23:05:05*
+  </Card>
+
+  <Card
+    title="I use OpenHands w/ Claude for many things! The key is that i..."
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "I use OpenHands w/ Claude for many things! The key is that it’ll often be bad at first but you can always follow up and ask it to fix the things that went wrong.
+
+We also use OpenHands to write deployment code at All Hands, usually by writing Terraform code. I talk about it a bit in my upcoming blog post which should be out very soon"
+
+    *Category: Infrastructure Management*
+    *Posted: 2025-01-13 23:07:09*
+  </Card>
+
+  <Card
+    title="For spinning up servers, it works fine (I asked it to bring ..."
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "For spinning up servers, it works fine (I asked it to bring up a GPU machine for me on Amazon yesterday), but I wouldn’t let it get near our prod servers"
+
+    *Category: Backend Development*
+    *Posted: 2025-01-13 23:07:53*
+  </Card>
+
+  <Card
+    title="Here’s a nice example of something that would have been a pa..."
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "Here’s a nice example of something that would have been a pain for me to write, but OpenHands did really well. My test suite was a bit bloated and taking a long time. So I just asked:
+
+OpenHands did this perfectly, and then I could ask it to optimize the slow and high-memory tests, so now I have a snappy test suite."
+
+    *Category: Frontend Development*
+    *Posted: 2025-01-29 13:47:08*
+  </Card>
+
+  <Card
+    title="[https://x"
+    icon="slack"
+    horizontal
+  >
+    **@Xingyao Wang**: "[https://x.com/vikhyatk/status/1885474393679421597?s=46&t=Q2g-0_u5hZ-A9dIgRluqRA](https://x.com/vikhyatk/status/1885474393679421597?s=46&t=Q2g-0_u5hZ-A9dIgRluqRA)"
+
+    *Category: General Development*
+    *Posted: 2025-02-02 03:30:01*
+  </Card>
+
+  <Card
+    title="[https://x"
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "[https://x.com/gneubig/status/1886423692789551444](https://x.com/gneubig/status/1886423692789551444)"
+
+    *Category: General Development*
+    *Posted: 2025-02-03 14:37:31*
+  </Card>
+
+  <Card
+    title="Pull Request: All-Hands-AI/OpenHands#6620"
+    href="https://github.com/All-Hands-AI/OpenHands/pull/6620"
+    icon="github"
+    horizontal
+  >
+    **@Graham Neubig**: "I’m a fan of this one: OpenHands used a Python memory profile to identify a memory leak in OpenHands:
+[https://github.com/All-Hands-AI/OpenHands/pull/6620](https://github.com/All-Hands-AI/OpenHands/pull/6620)
+
+I know how to use Python memory profilers, but I always find actually using them a pain, so this is pretty cool for me."
+
+    *Category: Machine Learning*
+    *Posted: 2025-02-05 17:18:16*
+  </Card>
+
+  <Card
+    title="This was quite fun and funny"
+    icon="code"
+    horizontal
+  >
+    **@Rohit Malhotra**: "This was quite fun and funny
+
+I wanted to read a PDF and answer some questions about it; Openhands was struggling to use the browser tool when trying to fetch the PDF
+
+So instead I asked it use python to download the PDF, extract the text, and then answer the questions; worked like a charm!
+
+[https://www.all-hands.dev/share?share_id=1e920ab7092535be5e42df50388425817594c0d925656e9f715273c14e55bf3e](https://www.all-hands.dev/share?share_id=1e920ab7092535be5e42df50388425817594c0d925656e9f715273c14e55bf3e)"
+
+    *Category: Frontend Development*
+    *Posted: 2025-02-06 04:24:39*
+  </Card>
+
+  <Card
+    title="Is it me or do folks also get fewer successes when openhands..."
+    icon="slack"
+    horizontal
+  >
+    **@U087J9SEKJ6**: "Is it me or do folks also get fewer successes when openhands is trying to use the browser? To the extend that I now want to disable the browser-use feature completely. For example, it is much easier for openhands to create a PR using GitHub API than the browser, but somehow openhands keeps trying to use browser first when
+gh
+ is not installed."
+
+    *Category: Backend Development*
+    *Posted: 2025-02-07 20:26:39*
+  </Card>
+
+  <Card
+    title="I sometimes make sure to tell the agent to use GitHub API, p..."
+    icon="slack"
+    horizontal
+  >
+    **@Engel Nyst**: "I sometimes make sure to tell the agent to use GitHub API, plainly, because yes it sometimes does that for some reason. I think you could try to use .openhands/microagents/repo.md to inform it?"
+
+    *Category: Backend Development*
+    *Posted: 2025-02-07 20:36:03*
+  </Card>
+
+  <Card
+    title="Repository: All-Hands-AI/OpenHands"
+    href="https://github.com/All-Hands-AI/OpenHands"
+    icon="github"
+    horizontal
+  >
+    **@Kevin Chen**: "Yes, I do that too (tell the agent to use GitHub API explicitly).
+
+Ah, I didn't add any github specific hints to the repo-level microagent because I thought this github microagent is loaded & enabled by default?
+[https://github.com/All-Hands-AI/OpenHands/blob/main/microagents/knowledge/github.md](https://github.com/All-Hands-AI/OpenHands/blob/main/microagents/knowledge/github.md)"
+
+    *Category: Backend Development*
+    *Posted: 2025-02-07 20:50:20*
+  </Card>
+
+  <Card
+    title="It's loaded and enabled, but it's not sent in the prompt unl..."
+    icon="slack"
+    horizontal
+  >
+    **@Engel Nyst**: "It's loaded and enabled, but it's not sent in the prompt unless and until the user says "github""
+
+    *Category: General Development*
+    *Posted: 2025-02-07 20:51:03*
+  </Card>
+
+  <Card
+    title="Or"
+    icon="slack"
+    horizontal
+  >
+    **@Engel Nyst**: "Or "git" ^^ - that is, those triggers"
+
+    *Category: General Development*
+    *Posted: 2025-02-07 20:53:32*
+  </Card>
+
+  <Card
+    title="Run into this issue again"
+    icon="slack"
+    horizontal
+  >
+    **@U087J9SEKJ6**: "Run into this issue again:
+[https://www.all-hands.dev/share?share_id=883b5c047dcbb2df36e1b1c65f7676f25c282bf28a1bc6c896e5f69b2cfc1f56](https://www.all-hands.dev/share?share_id=883b5c047dcbb2df36e1b1c65f7676f25c282bf28a1bc6c896e5f69b2cfc1f56)
+
+I did mention GitHub in my prompt (screenshot 1), but openhands still tries the browser first (screenshot 2), and I have to tell openhands to use the GitHub API after it fails to use the browser to submit a PR.
+Happy to create a github issue if this is useful to the team."
+
+    *Category: Backend Development*
+    *Posted: 2025-02-07 22:15:01*
+  </Card>
+
+  <Card
+    title="Yes please do open an issue! The agent does have a tendency ..."
+    icon="slack"
+    horizontal
+  >
+    **@Rohit Malhotra**: "Yes please do open an issue! The agent does have a tendency to do this sometimes, so its worth investing further"
+
+    *Category: General Development*
+    *Posted: 2025-02-07 22:21:26*
+  </Card>
+
+  <Card
+    title="Repository: All-Hands-AI/OpenHands"
+    href="https://github.com/All-Hands-AI/OpenHands"
+    icon="github"
+    horizontal
+  >
+    **@Kevin Chen**: "done!
+[https://github.com/All-Hands-AI/OpenHands/issues/6655](https://github.com/All-Hands-AI/OpenHands/issues/6655)"
+
+    *Category: Machine Learning*
+    *Posted: 2025-02-07 22:30:40*
+  </Card>
+
+  <Card
+    title="I was having problems where I wrote a python utility for mem..."
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "I was having problems where I wrote a python utility for memory accounting, and the results were not matching top.
+
+What would an absolutely bonkers developer do? Yes, download the ancient c source code for top, read through it, and fix the Python implementation so it matched. And yes, that’s what OpenHands did, in about 5 minutes."
+
+    *Category: General Development*
+    *Posted: 2025-02-13 03:58:29*
+  </Card>
+
+  <Card
+    title="I was on my way to my boarding gate for a vacation"
+    icon="slack"
+    horizontal
+  >
+    **@U06QJHRBLQG**: "I was on my way to my boarding gate for a vacation
+.. but I couldn’t help thinking about edge cases and bugs - and I just “text” openhands to ask it do the job on my phone"
+
+    *Category: General Development*
+    *Posted: 2025-02-19 13:15:54*
+  </Card>
+
+  <Card
+    title="OMG - how do I get this??"
+    icon="slack"
+    horizontal
+  >
+    **@Ken**: "OMG - how do I get this??"
+
+    *Category: General Development*
+    *Posted: 2025-02-19 14:05:52*
+  </Card>
+
+  <Card
+    title="happy to get you onto OpenHands Cloud if you share your gith..."
+    icon="slack"
+    horizontal
+  >
+    **@Robert Brennan**: "happy to get you onto OpenHands Cloud if you share your github username!"
+
+    *Category: General Development*
+    *Posted: 2025-02-19 15:50:05*
+  </Card>
+
+  <Card
+    title="[app"
+    icon="slack"
+    horizontal
+  >
+    **@Robert Brennan**: "[app.all-hands.dev](http://app.all-hands.dev)"
+
+    *Category: General Development*
+    *Posted: 2025-02-19 15:54:35*
+  </Card>
+
+  <Card
+    title="still very much in beta but we're getting closer to a stable..."
+    icon="slack"
+    horizontal
+  >
+    **@Robert Brennan**: "still very much in beta but we're getting closer to a stable release"
+
+    *Category: General Development*
+    *Posted: 2025-02-19 15:54:44*
+  </Card>
+
+  <Card
+    title="Hey can you please get me in too?"
+    icon="slack"
+    horizontal
+  >
+    **@Tawsif Kamal**: "Hey can you please get me in too?"
+
+    *Category: General Development*
+    *Posted: 2025-02-19 18:22:02*
+  </Card>
+
+  <Card
+    title="tawsifkamal is my github username"
+    icon="slack"
+    horizontal
+  >
+    **@Tawsif Kamal**: "tawsifkamal is my github username"
+
+    *Category: General Development*
+    *Posted: 2025-02-19 18:22:11*
+  </Card>
+
+  <Card
+    title="been actively developing with openhands"
+    icon="slack"
+    horizontal
+  >
+    **@Tawsif Kamal**: "been actively developing with openhands"
+
+    *Category: General Development*
+    *Posted: 2025-02-19 18:22:16*
+  </Card>
+
+  <Card
+    title="Hey! Could I get in as well? I've recently joined and I'm ex..."
+    icon="slack"
+    horizontal
+  >
+    **@Ariel Marti**: "Hey! Could I get in as well? I've recently joined and I'm exploring and analyzing it and tbh loving it so far!
+my username is: 4riel"
+
+    *Category: General Development*
+    *Posted: 2025-02-20 04:33:22*
+  </Card>
+
+  <Card
+    title="Can I also be added please? My gh username"
+    icon="code"
+    horizontal
+  >
+    **@Aneesh Bose**: "Can I also be added please? My gh username
+is
+
+aneeshbose"
+
+    *Category: General Development*
+    *Posted: 2025-02-20 05:24:00*
+  </Card>
+
+  <Card
+    title="Literally getting things done on the cloud"
+    icon="slack"
+    horizontal
+  >
+    **@Boxuan Li**: "Literally getting things done on the cloud"
+
+    *Category: General Development*
+    *Posted: 2025-02-20 07:56:11*
+  </Card>
+
+  <Card
+    title="Openhands overtook me this week"
+    icon="slack"
+    horizontal
+  >
+    **@U07UXTNBCTV**: "Openhands overtook me this week... I'm slightly sad, the end of an era... but the start of a new one!"
+
+    *Category: General Development*
+    *Posted: 2025-02-20 16:43:30*
+  </Card>
+
+  <Card
+    title="Would love to get in too! Gh: satijapratik"
+    icon="slack"
+    horizontal
+  >
+    **@Pratik Satija**: "Would love to get in too! Gh: satijapratik"
+
+    *Category: General Development*
+    *Posted: 2025-02-20 16:51:43*
+  </Card>
+
+  <Card
+    title="Is there still any quota left? I would like to get the cloud..."
+    icon="slack"
+    horizontal
+  >
+    **@Bob**: "Is there still any quota left? I would like to get the cloud as well"
+
+    *Category: General Development*
+    *Posted: 2025-02-20 17:03:04*
+  </Card>
+
+  <Card
+    title="go ahead and send me your github handle"
+    icon="slack"
+    horizontal
+  >
+    **@Robert Brennan**: "go ahead and send me your github handle"
+
+    *Category: General Development*
+    *Posted: 2025-02-20 17:09:00*
+  </Card>
+
+  <Card
+    title="Nice work! How many vacation days do you have? Can OpenHands..."
+    icon="slack"
+    horizontal
+  >
+    **@Bob**: "Nice work! How many vacation days do you have? Can OpenHands agent cover for you in the meantime? Just curious."
+
+    *Category: General Development*
+    *Posted: 2025-02-20 17:10:14*
+  </Card>
+
+  <Card
+    title="Repository: BluMintInc/eslint-custom-rules)"
+    icon="github"
+    href="https://github.com/BluMintInc/eslint-custom-rules)
+ with little to no manual intervention. At our company, we don’t think people use ESLint rules enough to automate the code review process, so we emphasize using ESLint rules to detect and autocorrect likely bugs, sub-optimally performant code, and sub-optimally extensible code. This has largely freed up our team from having to repeat many nitpicky PR review comments over and over, and increased the efficacy of agents like Cursor Composer that support linting.
+
+OpenHands seems to be particularly good at writing ESLint Rules. We think it’s because each ESLint rule is only a couple hundred lines of code, ESLint rules are probably plentiful in the training data of these LLMs, and OpenHands’ success criteria is very well defined: OpenHands can easily test an ESLint rule for correctness with a Jest test suite. Our guess is that other tasks that meet these three criteria are probably well suited for OpenHands too.
+
+Big thanks to everyone involved!"
+    horizontal
+  >
+    **@Joe O**: "OpenHands has written over 50 ESLint rules in the past 3 months for our custom
+[ESLint plugin repo](https://github.com/BluMintInc/eslint-custom-rules)
+ with little to no manual intervention. At our company, we don’t think people use ESLint rules enough to automate the code review process, so we emphasize using ESLint rules to detect and autocorrect likely bugs, sub-optimally performant code, and sub-optimally extensible code. This has largely freed up our team from having to repeat many nitpicky PR review comments over and over, and increased the efficacy of agents like Cursor Composer that support linting.
+
+OpenHands seems to be particularly good at writing ESLint Rules. We think it’s because each ESLint rule is only a couple hundred lines of code, ESLint rules are probably plentiful in the training data of these LLMs, and OpenHands’ success criteria is very well defined: OpenHands can easily test an ESLint rule for correctness with a Jest test suite. Our guess is that other tasks that meet these three criteria are probably well suited for OpenHands too.
+
+Big thanks to everyone involved!"
+
+    *Category: Frontend Development*
+    *Posted: 2025-02-21 21:20:45*
+  </Card>
+
+  <Card
+    title="@U06QFDJ1QQ2"
+    icon="slack"
+    horizontal
+  >
+    **@Duy Phung**: "@U06QFDJ1QQ2
+ can you also add me please? My handle: PhungVanDuy"
+
+    *Category: General Development*
+    *Posted: 2025-02-22 00:19:37*
+  </Card>
+
+  <Card
+    title="this is more of a mixed bag but i think it's interesting and..."
+    icon="slack"
+    horizontal
+  >
+    **@Josh Valdez**: "this is more of a mixed bag but i think it's interesting and i wanted to share. i attempted to get OpenHands to one shot run tests for the repositories that make up SWE Bench. i forked
+main
+ for the repos and asked OpenHands with the following prompt to run the tests:
+run the tests for this repository. figure out how to run the tests and once you've run them, ensure that they have passed
+
+in some cases it was able to run the tests in one go. these tended to be repos that were pretty self contained.
+flask
+ intuitively makes sense. it's a straightforward web server.
+
+one amusing thing i noticed was that OpenHands would attempt to test the source code by instead
+pip install
+ing the library in test and would in some cases report the tests successfully running, instead of building from source and testing that. likely some of these cases could be fixed with a more thorough initial prompt.
+
+here are the results.
+ indicates that OpenHands reported success but that it may have taken a shortcut to get there:
+
+- scikit-learn - single shot run tests failed
+- flask - single shot run tests succeeded
+- pandas - single shot run tests failed
+- pytorch - single shot run tests failed
+- matplotlib -
+- spaCy -
+- black -
+- pytest -
+- fastapi -
+- transformers -
+- django -
+- numpy -"
+
+    *Category: Frontend Development*
+    *Posted: 2025-02-22 01:59:40*
+  </Card>
+
+  <Card
+    title="Hey Josh, thanks so much for sharing, this is really interes..."
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "Hey Josh, thanks so much for sharing, this is really interesting!
+
+What if you change the prompt to:"
+
+    *Category: Backend Development*
+    *Posted: 2025-02-22 02:16:46*
+  </Card>
+
+  <Card
+    title="oh interesting, i didn't realize that was the common directo..."
+    icon="slack"
+    horizontal
+  >
+    **@Josh Valdez**: "oh interesting, i didn't realize that was the common directory for Github Actions files. i will update the prompt and give that a try and report back!"
+
+    *Category: Backend Development*
+    *Posted: 2025-02-22 02:25:07*
+  </Card>
+
+  <Card
+    title="cool, interested in the results!"
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "cool, interested in the results!"
+
+    *Category: Backend Development*
+    *Posted: 2025-02-22 02:34:40*
+  </Card>
+
+  <Card
+    title="this is neat! this would be a cool mini-benchmark for OH"
+    icon="slack"
+    horizontal
+  >
+    **@Robert Brennan**: "this is neat! this would be a cool mini-benchmark for OH"
+
+    *Category: General Development*
+    *Posted: 2025-02-22 18:06:40*
+  </Card>
+
+  <Card
+    title="yeah my goal is actually to put together a more comprehensiv..."
+    icon="slack"
+    horizontal
+  >
+    **@Josh Valdez**: "yeah my goal is actually to put together a more comprehensive benchmark for builds, tentatively titling it "Build Bench""
+
+    *Category: Frontend Development*
+    *Posted: 2025-02-22 21:28:58*
+  </Card>
+
+  <Card
+    title="lol, I kinda get to decide how many vacation days i have"
+    icon="slack"
+    horizontal
+  >
+    **@Xingyao Wang**: "lol, I kinda get to decide how many vacation days i have
+.
+
+Haha i guess a lot of my tasks are a bit misc that OpenHands probably won't cover it yet until it has full access to my slack"
+
+    *Category: General Development*
+    *Posted: 2025-02-24 15:44:11*
+  </Card>
+
+  <Card
+    title="h*ck yeah I love this"
+    icon="slack"
+    horizontal
+  >
+    **@U06QFDJ1QQ2**: "h*ck yeah I love this"
+
+    *Category: General Development*
+    *Posted: 2025-02-25 18:05:02*
+  </Card>
+
+  <Card
+    title="Are you sure you don't have to ask your manager about your v..."
+    icon="slack"
+    horizontal
+  >
+    **@Bob**: "Are you sure you don't have to ask your manager about your vacation days? just kidding aha"
+
+    *Category: General Development*
+    *Posted: 2025-02-25 18:10:54*
+  </Card>
+
+  <Card
+    title="OpenHands successfully coordinating changes across two diffe..."
+    icon="slack"
+    horizontal
+  >
+    **@U06QFDJ1QQ2**: "OpenHands successfully coordinating changes across two different repos"
+
+    *Category: General Development*
+    *Posted: 2025-02-25 19:21:32*
+  </Card>
+
+  <Card
+    title="Pull Request: All-Hands-AI/OpenHands#6530"
+    href="https://github.com/All-Hands-AI/OpenHands/pull/6530"
+    icon="github"
+    horizontal
+  >
+    **@Xingyao Wang**: "OpenHands is now my go-to-place to complaint about frontend
+
+- It adds sound and browser tab notification when it is pending user response (merged in main already!)
+- It also adds a memory monitor as a github plugin into the VSCode inside OH runtime
+
+And ever since switching to sonnet 3.7, i find myself spending 80% of communication "feature", rather than help it spot issue and fix bug
+
+[https://github.com/All-Hands-AI/OpenHands/pull/6530](https://github.com/All-Hands-AI/OpenHands/pull/6530)
+
+[https://openhands-ai.slack.com/archives/C08D8FJ5771/p1740688300950389](https://openhands-ai.slack.com/archives/C08D8FJ5771/p1740688300950389)"
+
+    *Category: Frontend Development*
+    *Posted: 2025-02-27 20:48:50*
+  </Card>
+
+  <Card
+    title="This kind of blew my mind"
+    icon="code"
+    horizontal
+  >
+    **@Robert Brennan**: "This kind of blew my mind:
+
+- Asked OH to fix a problem on repo A
+- OH realizes, no, the problem is in dependency repo B
+- clones repo B, fixes the problem, and opens a PR on repo B"
+
+    *Category: General Development*
+    *Posted: 2025-02-27 21:15:08*
+  </Card>
+
+  <Card
+    title="Perfect description of the change too"
+    icon="slack"
+    horizontal
+  >
+    **@U06QFDJ1QQ2**: "Perfect description of the change too"
+
+    *Category: General Development*
+    *Posted: 2025-02-27 21:15:48*
+  </Card>
+
+  <Card
+    title="Wow this really sounds awesome!"
+    icon="slack"
+    horizontal
+  >
+    **@Engel Nyst**: "Wow this really sounds awesome!"
+
+    *Category: General Development*
+    *Posted: 2025-02-27 21:18:11*
+  </Card>
+
+  <Card
+    title="It is cool but it can also be dangerous, we have had a few o..."
+    icon="slack"
+    horizontal
+  >
+    **@Regis**: "It is cool but it can also be dangerous, we have had a few occasions where we thought that it was going to act on repos outside of our org. and we were afraid of it leaking sensitive data.
+
+As a prevention we added a git pre-commit mechanism that verifies if it is committing to an authorized repo."
+
+    *Category: Machine Learning*
+    *Posted: 2025-02-27 21:33:20*
+  </Card>
+
+  <Card
+    title="(I also took the opportunity and added gitleaks to the pre-c..."
+    icon="slack"
+    horizontal
+  >
+    **@Regis**: "(I also took the opportunity and added gitleaks to the pre-commit)"
+
+    *Category: Game Development*
+    *Posted: 2025-02-27 21:34:08*
+  </Card>
+
+  <Card
+    title="that's a really good point!"
+    icon="slack"
+    horizontal
+  >
+    **@Robert Brennan**: "that's a really good point!"
+
+    *Category: General Development*
+    *Posted: 2025-02-27 21:42:11*
+  </Card>
+
+  <Card
+    title="OpenHands running its (probably the first) postgres migratio..."
+    icon="slack"
+    horizontal
+  >
+    **@Xingyao Wang**: "OpenHands running its (probably the first) postgres migration using a postgres database started by itself via "docker-in-runtime"!
+
+[https://openhands-ai.slack.com/archives/C07S376KASK/p1740699969743629](https://openhands-ai.slack.com/archives/C07S376KASK/p1740699969743629)"
+
+    *Category: Backend Development*
+    *Posted: 2025-02-27 23:47:23*
+  </Card>
+
+  <Card
+    title="Man, OpenHands is just plain awesome"
+    icon="slack"
+    horizontal
+  >
+    **@Alejandro Cuadron**: "Man, OpenHands is just plain awesome. I wish we had this tech years ago!"
+
+    *Category: Machine Learning*
+    *Posted: 2025-02-28 04:40:44*
+  </Card>
+
+  <Card
+    title="IAM permissions are the worst nightmare to navigate through ..."
+    icon="slack"
+    horizontal
+  >
+    **@U06QJHRBLQG**: "IAM permissions are the worst nightmare to navigate through but OpenHands come to the rescue"
+
+    *Category: General Development*
+    *Posted: 2025-02-28 15:52:58*
+  </Card>
+
+  <Card
+    title="it most of these repos have"
+    icon="slack"
+    horizontal
+  >
+    **@Josh Valdez**: "it most of these repos have
+.github/workflows/
+ files. i tested
+matplotlib
+ with the prompt mentioning to check the
+.github/workflows
+ directory and the tests were run!"
+
+    *Category: Testing*
+    *Posted: 2025-02-28 23:58:28*
+  </Card>
+
+  <Card
+    title="it choked on"
+    icon="code"
+    horizontal
+  >
+    **@Josh Valdez**: "it choked on
+numpy
+ but i realized i was using
+o3-mini
+. switching to
+claude-3.7
+ now"
+
+    *Category: General Development*
+    *Posted: 2025-03-01 00:40:45*
+  </Card>
+
+  <Card
+    title="I set off openhands on a branch to fix tests"
+    icon="slack"
+    horizontal
+  >
+    **@Engel Nyst**: "I set off openhands on a branch to fix tests. Tests were hanging, not failing plainly, and we had a race condition over the weekend which was solved, but the tests were still hanging in the same point.
+
+So the human was like "it must be that we didn't actually solve it yet" but I prompted without mentioning that.
+
+And then the agent got it. It just got it. Alone, it went off and read code and went back and read code, over 200 steps! And then it got it. Clear as day, time saver for sure."
+
+    *Category: Testing*
+    *Posted: 2025-03-03 19:04:44*
+  </Card>
+
+  <Card
+    title="the ability to research the problem by navigating commits is..."
+    icon="slack"
+    horizontal
+  >
+    **@Robert Brennan**: "the ability to research the problem by navigating commits is super helpful"
+
+    *Category: General Development*
+    *Posted: 2025-03-03 20:19:41*
+  </Card>
+
+  <Card
+    title="Any chance you could add me too it still possible?"
+    icon="code"
+    horizontal
+  >
+    **@Axel Molist Cordina**: "Any chance you could add me too it still possible?
+GitHub:
+amolist"
+
+    *Category: General Development*
+    *Posted: 2025-03-06 06:30:16*
+  </Card>
+
+  <Card
+    title="Interesting story, I asked OpenHands to start an app on port..."
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "Interesting story, I asked OpenHands to start an app on port 12000, it showed up on the app pane. I started using the app, and then it crashed… But because it crashed in OpenHands, OpenHands immediately saw the error message and started fixing the problem without me having to do anything. It was already fixing the problem before I even realized what was going wrong"
+
+    *Category: Backend Development*
+    *Posted: 2025-03-07 13:53:14*
+  </Card>
+
+  <Card
+    title="Github: jack47, thanks"
+    icon="slack"
+    horizontal
+  >
+    **@Jack Chen**: "Github: jack47, thanks"
+
+    *Category: General Development*
+    *Posted: 2025-03-08 08:29:06*
+  </Card>
+
+  <Card
+    title="Repository: vinisdl/open-hands-azure-devops-microagents](https"
+    href="https://github.com/vinisdl/open-hands-azure-devops-microagents](https:"
+    icon="github"
+    horizontal
+  >
+    **@Marco Dall'Alba**: "Hello, I am starting to use OpenHands with two teams to analyze the impact it can have. We are currently in the implementation phase, and for this, I created a microagent (
+[https://github.com/vinisdl/open-hands-azure-devops-microagents](https://github.com/vinisdl/open-hands-azure-devops-microagents)
+) since we use Azure DevOps for clone repos and open PR.
+In the coming months, I will share the results and feedbacks.
+Thank you for this wonderful tool!"
+
+    *Category: Infrastructure Management*
+    *Posted: 2025-03-13 15:12:34*
+  </Card>
+
+  <Card
+    title="Great, if you have any question/consultation please ask us!"
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "Great, if you have any question/consultation please ask us!"
+
+    *Category: General Development*
+    *Posted: 2025-03-13 15:14:10*
+  </Card>
+
+  <Card
+    title="As the manager of a Platform/Enablement team I'll be very in..."
+    icon="slack"
+    horizontal
+  >
+    **@Ken**: "As the manager of a Platform/Enablement team I'll be very interested in your findings"
+
+    *Category: Backend Development*
+    *Posted: 2025-03-13 15:28:40*
+  </Card>
+
+  <Card
+    title="Created my paper website with the help of Openhands"
+    icon="slack"
+    horizontal
+  >
+    **@Yiqing Xie**: "Created my paper website with the help of Openhands:
+[https://repost-code-gen.github.io/](https://repost-code-gen.github.io/)
+!
+
+I gave it the draft of the content and a reference html page. Openhand generated the
+index.html
+ file."
+
+    *Category: Machine Learning*
+    *Posted: 2025-03-13 18:05:57*
+  </Card>
+
+  <Card
+    title="I interacted with it to adjust some formatting, but the firs..."
+    icon="slack"
+    horizontal
+  >
+    **@U089LSTE6SH**: "I interacted with it to adjust some formatting, but the first version of the website also doesn't look that bad."
+
+    *Category: General Development*
+    *Posted: 2025-03-13 18:07:45*
+  </Card>
+
+  <Card
+    title="I got OpenHands to run an evaluation of OpenHands for me"
+    icon="slack"
+    horizontal
+  >
+    **@U06PEF04LEQ**: "I got OpenHands to run an evaluation of OpenHands for me"
+
+    *Category: General Development*
+    *Posted: 2025-03-17 16:55:05*
+  </Card>
+
+  <Card
+    title="OpenHands taking the words out of my mouth"
+    icon="slack"
+    horizontal
+  >
+    **@U06QFDJ1QQ2**: "OpenHands taking the words out of my mouth"
+
+    *Category: General Development*
+    *Posted: 2025-03-19 19:18:28*
+  </Card>
+
+  <Card
+    title="Pull Request: All-Hands-AI/trajectory-visualizer#10"
+    href="https://github.com/All-Hands-AI/trajectory-visualizer/pull/10"
+    icon="github"
+    horizontal
+  >
+    **@U06QJHRBLQG**: "Wow.. OpenHands really nailed this one for me. It is a 40+ files frontend changes that:
+
+- migrate the trajectory visualizer from ShareOpenHands to our open-source trajectory visualizer
+- allow direct upload evaluation output and visualize them
+- allow us to sort instances based on certain features (e.g., cost, resolve status, length)
+- allow us to show custom stuff in the JSON
+All these happen without me looking at the actual code
+ (I guess now it might be a bit painful to review it
+ - but i still can't help asking it to add more features)
+
+(and the App tab is working for this one
+ )
+
+[https://github.com/All-Hands-AI/trajectory-visualizer/pull/10](https://github.com/All-Hands-AI/trajectory-visualizer/pull/10)"
+
+    *Category: Frontend Development*
+    *Posted: 2025-03-19 19:26:01*
+  </Card>
+
+  <Card
+    title="amazing, i thought openhands might be able to do this but gl..."
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "amazing, i thought openhands might be able to do this but glad it actually was able to"
+
+    *Category: General Development*
+    *Posted: 2025-03-19 19:28:49*
+  </Card>
+
+  <Card
+    title="can we ask OpenHands to review the PR too?"
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "can we ask OpenHands to review the PR too?"
+
+    *Category: General Development*
+    *Posted: 2025-03-19 19:29:00*
+  </Card>
+
+  <Card
+    title="yeah! i do plan to ask openhands to review it"
+    icon="slack"
+    horizontal
+  >
+    **@Xingyao Wang**: "yeah! i do plan to ask openhands to review it"
+
+    *Category: General Development*
+    *Posted: 2025-03-19 19:29:27*
+  </Card>
+
+  <Card
+    title="I’ll also take a human look"
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "I’ll also take a human look"
+
+    *Category: General Development*
+    *Posted: 2025-03-19 19:29:48*
+  </Card>
+
+  <Card
+    title="yeah it was much more smooth than i originally imagine it"
+    icon="slack"
+    horizontal
+  >
+    **@Xingyao Wang**: "yeah it was much more smooth than i originally imagine it. All the mistake it made along the way was it didn't understand my "underspecified human intention""
+
+    *Category: General Development*
+    *Posted: 2025-03-19 19:30:23*
+  </Card>
+
+  <Card
+    title="wow, and it also added a diff view for FileEditObservation"
+    icon="slack"
+    horizontal
+  >
+    **@U06QJHRBLQG**: "wow, and it also added a diff view for FileEditObservation
+ We should probably do this within OpenHands application as well"
+
+    *Category: General Development*
+    *Posted: 2025-03-19 19:41:43*
+  </Card>
+
+  <Card
+    title="Wow, this looks awesomely useful!"
+    icon="slack"
+    horizontal
+  >
+    **@Engel Nyst**: "Wow, this looks awesomely useful!"
+
+    *Category: General Development*
+    *Posted: 2025-03-19 20:30:01*
+  </Card>
+
+  <Card
+    title="This is kinda silly, but I needed a black 16:9 image to add ..."
+    icon="slack"
+    horizontal
+  >
+    **@U06PEF04LEQ**: "This is kinda silly, but I needed a black 16:9 image to add to a video. I could create one and it would take 5 minutes, but I asked OpenHands and it took 15 seconds. I love these various little time savings."
+
+    *Category: General Development*
+    *Posted: 2025-03-21 15:02:35*
+  </Card>
+
+  <Card
+    title="I connected the wrong repo, and was very pleased to see Open..."
+    icon="slack"
+    horizontal
+  >
+    **@U06QFDJ1QQ2**: "I connected the wrong repo, and was very pleased to see OpenHands properly give up rather than plodding forward with some nonsense"
+
+    *Category: General Development*
+    *Posted: 2025-03-21 16:06:28*
+  </Card>
+
+  <Card
+    title="OpenHands is also super helpful for me to figure out OOM iss..."
+    icon="slack"
+    horizontal
+  >
+    **@U06QJHRBLQG**: "OpenHands is also super helpful for me to figure out OOM issues from vLLM
+
+This issue has bugged me for a while, but I'm too unfamiliar with the vllm codebase and don't really have the patience to go through the code myself -- so I have to live with the pod dying every 15 the minutes, getting restarted, and die again.
+
+I thought maybe i could throw the stack traces and have OpenHands help me figure out stuff -- and it gave me a usable solution in two minutes, and it actually worked!"
+
+    *Category: Backend Development*
+    *Posted: 2025-03-22 18:38:14*
+  </Card>
+
+  <Card
+    title="OpenHands can even edit my paper and help rephrase it to fit..."
+    icon="slack"
+    horizontal
+  >
+    **@Xingyao Wang**: "OpenHands can even edit my paper and help rephrase it to fit it into 9 page limit
+
+this is a huge time saver..
+
+Again, another case of using openhands-cloud on the cloud
+
+[https://x.com/xingyaow_/status/1903881952429797425](https://x.com/xingyaow_/status/1903881952429797425)"
+
+    *Category: Machine Learning*
+    *Posted: 2025-03-23 18:51:50*
+  </Card>
+
+  <Card
+    title="[https://x"
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "[https://x.com/gneubig/status/1903882550260466173](https://x.com/gneubig/status/1903882550260466173)"
+
+    *Category: General Development*
+    *Posted: 2025-03-23 18:53:32*
+  </Card>
+
+  <Card
+    title="Had OH Cloud install a PHP app I developed 11 years ago with..."
+    icon="slack"
+    horizontal
+  >
+    **@Joe Pelletier**: "Had OH Cloud install a PHP app I developed 11 years ago with a fresh MySQL database and phpMyAdmin. It also helped me upgrade jquery to the latest version
+ . All very smooth."
+
+    *Category: Backend Development*
+    *Posted: 2025-03-26 19:19:35*
+  </Card>
+
+  <Card
+    title="Pull Request: All-Hands-AI/OpenHands#7334"
+    href="https://github.com/All-Hands-AI/OpenHands/pull/7334"
+    icon="github"
+    horizontal
+  >
+    **@Xingyao Wang**: "OpenHands is smart enough to figure out a python script that refactor the code
+
+[https://github.com/All-Hands-AI/OpenHands/pull/7334/files#diff-9e440b1130ff17bd7c547ed741fdfefca40bf978ea095dd4f69d06a284d326a3](https://github.com/All-Hands-AI/OpenHands/pull/7334/files#diff-9e440b1130ff17bd7c547ed741fdfefca40bf978ea095dd4f69d06a284d326a3)"
+
+    *Category: Machine Learning*
+    *Posted: 2025-03-29 02:32:04*
+  </Card>
+
+  <Card
+    title="You can see my thought process in real time go from"
+    icon="slack"
+    horizontal
+  >
+    **@U06QFDJ1QQ2**: "You can see my thought process in real time go from "ugh I don't want to add this additional feature to my PR" to "oh yeah OpenHands can just do it""
+
+    *Category: General Development*
+    *Posted: 2025-04-03 21:02:07*
+  </Card>
+
+  <Card
+    title="it nailed it in one commit too!"
+    icon="slack"
+    horizontal
+  >
+    **@Robert Brennan**: "it nailed it in one commit too!"
+
+    *Category: Machine Learning*
+    *Posted: 2025-04-03 21:02:53*
+  </Card>
+
+  <Card
+    title="is there any documentation on how to use the bot?"
+    icon="slack"
+    horizontal
+  >
+    **@Marco Dall'Alba**: "is there any documentation on how to use the bot?"
+
+    *Category: Documentation*
+    *Posted: 2025-04-04 13:39:57*
+  </Card>
+
+  <Card
+    title="Just sign up for"
+    icon="slack"
+    horizontal
+  >
+    **@Robert Brennan**: "Just sign up for
+[app.all-hands.dev](http://app.all-hands.dev)
+ and you can use @openhands on any repo you connect!"
+
+    *Category: General Development*
+    *Posted: 2025-04-04 13:45:53*
+  </Card>
+
+  <Card
+    title="There's also a GitHub Action based workflow, but it's toughe..."
+    icon="slack"
+    horizontal
+  >
+    **@Robert Brennan**: "There's also a GitHub Action based workflow, but it's tougher to set up and not quite as convenient:
+[https://docs.all-hands.dev/modules/usage/how-to/github-action](https://docs.all-hands.dev/modules/usage/how-to/github-action)"
+
+    *Category: Frontend Development*
+    *Posted: 2025-04-04 13:46:33*
+  </Card>
+
+  <Card
+    title="OpenHands jumping in without being explicitly prompted is aw..."
+    icon="slack"
+    horizontal
+  >
+    **@U084ZPSE6NB**: "OpenHands jumping in without being explicitly prompted is awesome!"
+
+    *Category: General Development*
+    *Posted: 2025-04-10 23:21:46*
+  </Card>
+
+  <Card
+    title="Thanks to"
+    icon="code"
+    horizontal
+  >
+    **@U06QJHRBLQG**: "Thanks to
+@U07K0P3BDB9
+’s visual browsing -- OpenHands can actually test some simple UI by serving the website, clicking the button in the browser and looking at screenshots now
+
+Prompt is just:
+
+Eager-to-work sonnet 3.7 will test stuff for you without you asking"
+
+    *Category: Frontend Development*
+    *Posted: 2025-04-11 14:48:13*
+  </Card>
+
+  <Card
+    title="Repository: marketplace/actions"
+    href="https://github.com/marketplace/actions"
+    icon="github"
+    horizontal
+  >
+    **@Victor Zhou of Namefi.io**: "My first contribution! (hopefully you like it)
+
+Thank you everyone for all the help. I hope this will make you happy as I try to turn from an "OpenHands user" to a "OpenHands community contributor"
+
+Just created an open sourced Github Action and published on Marketplace: "
+[xinbenlv/openhands-action](https://github.com/marketplace/actions/openhands-ai-action)
+": This GitHub Action brings the power of OpenHands' AI automation directly into your GitHub workflows. Now you can execute complex tasks using natural language prompts right in your CI/CD pipelines!
+
+Check it out here:
+[https://github.com/xinbenlv/openhands-action](https://github.com/xinbenlv/openhands-action)
+
+Example usage:
+
+```yaml
+
+- name: Execute OpenHands Task
+
+  uses: xinbenlv/openhands-action@v1
+
+  with:
+
+    prompt: "Your natural language task description here"
+
+    llm_api_key: ${{ secrets.LLM_API_KEY }}
+
+```
+
+Would love to hear your thoughts and see what creative ways you'll use this in your workflows! Let me know if you have any questions or need help getting started.
+
+#OpenHands #GitHubActions"
+
+    *Category: Backend Development*
+    *Posted: 2025-04-12 02:01:53*
+  </Card>
+
+  <Card
+    title="any thoughts on how this compares to the existing GitHub Act..."
+    icon="slack"
+    horizontal
+  >
+    **@Robert Brennan**: "any thoughts on how this compares to the existing GitHub Action?
+
+[https://docs.all-hands.dev/modules/usage/how-to/github-action](https://docs.all-hands.dev/modules/usage/how-to/github-action)"
+
+    *Category: Infrastructure Management*
+    *Posted: 2025-04-14 16:28:40*
+  </Card>
+
+  <Card
+    title="It enables people to use the definition directly inside of"
+    icon="slack"
+    horizontal
+  >
+    **@Victor Zhou of Namefi.io**: "It enables people to use the definition directly inside of
+.github/workflows"
+
+    *Category: General Development*
+    *Posted: 2025-04-15 05:04:34*
+  </Card>
+
+  <Card
+    title="Repository: marketplace/actions"
+    href="https://github.com/marketplace/actions"
+    icon="github"
+    horizontal
+  >
+    **@Victor Zhou of Namefi.io**: "@U06PEF04LEQ
+ what do you think of it? if you like, we are happy to donate the project into OpenHands so instead of
+[xinbenlv/openhands-ai-action](https://github.com/marketplace/actions/openhands-ai-action)
+ on github action, it can be something like "OpenHands/action" and everyone in the community should feel free to contribute / fix / govern"
+
+    *Category: Infrastructure Management*
+    *Posted: 2025-04-15 05:06:19*
+  </Card>
+
+  <Card
+    title="ahh that seems valuable!"
+    icon="slack"
+    horizontal
+  >
+    **@Robert Brennan**: "ahh that seems valuable!"
+
+    *Category: General Development*
+    *Posted: 2025-04-16 13:27:24*
+  </Card>
+
+  <Card
+    title="@U08M6E4UH28"
+    icon="slack"
+    horizontal
+  >
+    **@Nick**: "@U08M6E4UH28
+ one thing to note is that in your examples you use v1 but `Unable to resolve action `xinbenlv/openhands-action@v1`, unable to find version `v1``"
+
+    *Category: General Development*
+    *Posted: 2025-04-16 17:29:29*
+  </Card>
+
+  <Card
+    title="@U07UXTNBCTV"
+    icon="check-circle"
+    horizontal
+  >
+    **@Victor Zhou of Namefi.io**: "@U07UXTNBCTV
+ oh hi! For now use
+xinbenlv/openhands-action@v1.0.1-rc3
+ . Let me see how do we make sure the @v1 will link to the latest version of v1 every time"
+
+    *Category: Testing*
+    *Posted: 2025-04-16 19:57:48*
+  </Card>
+
+  <Card
+    title="I love how little context I need to give OpenHands sometimes"
+    icon="slack"
+    horizontal
+  >
+    **@U06QFDJ1QQ2**: "I love how little context I need to give OpenHands sometimes"
+
+    *Category: General Development*
+    *Posted: 2025-04-17 16:05:17*
+  </Card>
+
+  <Card
+    title="I'm also interested in Azure DevOps support"
+    icon="slack"
+    horizontal
+  >
+    **@Kent Johnson**: "I'm also interested in Azure DevOps support. I'm new here, but curious how you decided to make a separate microagent vs. upstreaming first-class support like they have for GitHub/GitLab?"
+
+    *Category: Backend Development*
+    *Posted: 2025-04-28 15:43:13*
+  </Card>
+
+  <Card
+    title="Repository: All-Hands-AI/openhands-cloud"
+    href="https://github.com/All-Hands-AI/openhands-cloud"
+    icon="github"
+    horizontal
+  >
+    **@Graham Neubig**: "I think we’ll want to support this more officially through the UI!
+[https://github.com/All-Hands-AI/openhands-cloud/issues/39](https://github.com/All-Hands-AI/openhands-cloud/issues/39)
+
+But in the meantime the repo that Marco shared could be useful"
+
+    *Category: Frontend Development*
+    *Posted: 2025-04-29 01:06:39*
+  </Card>
+
+  <Card
+    title="Oh, I had missed that issue"
+    icon="slack"
+    horizontal
+  >
+    **@Kent Johnson**: "Oh, I had missed that issue. I am interesting in helping add this support!"
+
+    *Category: Backend Development*
+    *Posted: 2025-04-29 14:25:15*
+  </Card>
+
+  <Card
+    title="Oh, FYI, I just added the issue"
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "Oh, FYI, I just added the issue"
+
+    *Category: General Development*
+    *Posted: 2025-04-29 14:32:05*
+  </Card>
+
+  <Card
+    title="Ah, that makes more sense"
+    icon="slack"
+    horizontal
+  >
+    **@Kent Johnson**: "Ah, that makes more sense.
+ I was wondering how I missed it."
+
+    *Category: General Development*
+    *Posted: 2025-04-29 14:40:28*
+  </Card>
+
+  <Card
+    title="I needed to create a version of the OpenHands logo that was ..."
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "I needed to create a version of the OpenHands logo that was all white, but OpenHands was originally having trouble with png conversion from the svg file I had. So I asked it:
+
+I love that you can ask it to verify things visually, very nice if you want to check designs."
+
+    *Category: General Development*
+    *Posted: 2025-04-29 20:44:18*
+  </Card>
+
+  <Card
+    title="Count me in! Also coincidentally I struggle to do SVG to PNG..."
+    icon="slack"
+    horizontal
+  >
+    **@U08M6E4UH28**: "Count me in! Also coincidentally I struggle to do SVG to PNG today using resvg and a bunch others. No good solution! End up using playwright"
+
+    *Category: General Development*
+    *Posted: 2025-05-01 06:09:57*
+  </Card>
+
+  <Card
+    title="Oh my, this is super tricky (at least for me)"
+    icon="slack"
+    horizontal
+  >
+    **@U06QJHRBLQG**: "Oh my, this is super tricky (at least for me).
+
+We added a frontend visualization for the "Microagent activated" event a while ago, but this event never showed up correctly the first time the UI loaded. It only shows up after a page refresh.
+I scratched my head trying to figure out why for 10+ min and have no clue (because I'm unfamiliar with that part of the codebase). Then i asked OpenHands:
+
+and it comes back with a correct fix within 3 minutes...
+
+Sometimes OpenHands may feel dumb if you ask it to work on a part of the code you already know super well. But you'd be pleasantly surprised how well it can localize files on parts of repos you have no idea about"
+
+    *Category: Frontend Development*
+    *Posted: 2025-05-02 09:57:52*
+  </Card>
+
+  <Card
+    title="Yes! I do love occasionally to set it loose on some part of ..."
+    icon="slack"
+    horizontal
+  >
+    **@Engel Nyst**: "Yes! I do love occasionally to set it loose on some part of the code I don't know, and let it do its thing."
+
+    *Category: General Development*
+    *Posted: 2025-05-02 10:14:25*
+  </Card>
+
+  <Card
+    title="Just dropped from our team at Snowflake AI Research"
+    icon="slack"
+    horizontal
+  >
+    **@Gabriele Oliaro**: "Just dropped from our team at Snowflake AI Research:
+ArcticInference
+ — a vLLM plugin that supercharges the CodeAct Agent using
+[SuffixDecoding](https://arxiv.org/abs/2411.04975)
+, achieving
+1.8×–4.5× faster
+ end-to-end speeds
+ with
+no loss in quality
+!
+
+ Example: Solving SWE-Bench Verified on 4×H100 GPUs with openhands-lm-32b (37.2% resolve rate) now takes
+5.8h instead of 10.9h
+ — saving both time
+ and money
+.
+
+ Dive in:
+[https://www.snowflake.com/en/engineering-blog/fast-speculative-decoding-vllm-arctic/](https://www.snowflake.com/en/engineering-blog/fast-speculative-decoding-vllm-arctic/)"
+
+    *Category: Machine Learning*
+    *Posted: 2025-05-02 18:48:40*
+  </Card>
+
+  <Card
+    title="Just gonna say - love the microagent output as well"
+    icon="code"
+    horizontal
+  >
+    **@Brett Stewart**: "Just gonna say - love the microagent output as well
+
+Was tired of having to review logs to see if they triggered correctly"
+
+    *Category: General Development*
+    *Posted: 2025-05-02 21:37:28*
+  </Card>
+
+  <Card
+    title="Repository: xingyaoww/openhands-chrome-extension](https"
+    href="https://github.com/xingyaoww/openhands-chrome-extension](https:"
+    icon="github"
+    horizontal
+  >
+    **@U06QJHRBLQG**: "I asked OpenHands to write a Chrome extension based on our
+[OpenHands Cloud API](https://docs.all-hands.dev/modules/usage/cloud/cloud-api)
+
+
+Once installed, you can now easily launch an OpenHands cloud session from your GitHub webpage/PR
+
+[https://github.com/xingyaoww/openhands-chrome-extension](https://github.com/xingyaoww/openhands-chrome-extension)"
+
+    *Category: Backend Development*
+    *Posted: 2025-05-05 02:21:08*
+  </Card>
+
+  <Card
+    title="@U06QJHRBLQG"
+    icon="slack"
+    horizontal
+  >
+    **@U06PEF04LEQ**: "@U06QJHRBLQG
+’s chrome extension is incredible by the way. I’m already addicted to it."
+
+    *Category: General Development*
+    *Posted: 2025-05-06 21:25:03*
+  </Card>
+
+  <Card
+    title="We should add this as a conversation trigger!"
+    icon="slack"
+    horizontal
+  >
+    **@Rohit Malhotra**: "We should add this as a conversation trigger!"
+
+    *Category: General Development*
+    *Posted: 2025-05-06 21:28:29*
+  </Card>
+
+  <Card
+    title="Just installed! Super cool to see in action"
+    icon="slack"
+    horizontal
+  >
+    **@Robert Brennan**: "Just installed! Super cool to see in action"
+
+    *Category: General Development*
+    *Posted: 2025-05-06 21:33:47*
+  </Card>
+
+  <Card
+    title="Wait never mind this is technically an openhands api trigger"
+    icon="slack"
+    horizontal
+  >
+    **@Rohit Malhotra**: "Wait never mind this is technically an openhands api trigger"
+
+    *Category: Backend Development*
+    *Posted: 2025-05-06 21:38:04*
+  </Card>
+
+  <Card
+    title="true, but we could definitely mark it differently"
+    icon="slack"
+    horizontal
+  >
+    **@Robert Brennan**: "true, but we could definitely mark it differently..."
+
+    *Category: General Development*
+    *Posted: 2025-05-07 01:53:04*
+  </Card>
+
+  <Card
+    title="but then the API needs to accept a trigger enum, and anyone ..."
+    icon="slack"
+    horizontal
+  >
+    **@Robert Brennan**: "but then the API needs to accept a trigger enum, and anyone could mess with our stats"
+
+    *Category: Backend Development*
+    *Posted: 2025-05-07 01:53:18*
+  </Card>
+
+  <Card
+    title="i just gave the same medium-sized task to both OpenHands and..."
+    icon="slack"
+    horizontal
+  >
+    **@Moshe Revah**: "i just gave the same medium-sized task to both OpenHands and Devin, and OpenHands outperformed on speed & quality by a lot
+
+i'm really impressed by the rate of improvement, kudos to the team!"
+
+    *Category: General Development*
+    *Posted: 2025-05-12 20:34:48*
+  </Card>
+
+  <Card
+    title="Repository: All-Hands-AI/OpenHands"
+    href="https://github.com/All-Hands-AI/OpenHands"
+    icon="github"
+    horizontal
+  >
+    **@Peter Hamilton**: "I commented on a
+[closed issue](https://github.com/All-Hands-AI/OpenHands/issues/8239#issuecomment-2878519700)
+ last night and woke up to find the concern addressed and merged. Thanks
+@U06QJHRBLQG
+!
+
+But beyond than the prompt response, this was an awesome demonstration of the openhands resolver. I've shared each interaction with my team because it highlights how capable openhands is and how natural it can fit into our workflows."
+
+    *Category: Machine Learning*
+    *Posted: 2025-05-14 14:49:52*
+  </Card>
+
+  <Card
+    title="@U06PEF04LEQ"
+    icon="cog"
+    horizontal
+  >
+    **@Kent Johnson**: "@U06PEF04LEQ
+, I noticed you made that issues against
+openhands-cloud
+, not
+openhands
+. Was that on purpose? I would like to get Azure DevOps working in on-prem scenarios."
+
+    *Category: Infrastructure Management*
+    *Posted: 2025-05-17 22:08:16*
+  </Card>
+
+  <Card
+    title="For our integrations into GitHub and gitlab they're mostly s..."
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "For our integrations into GitHub and gitlab they're mostly supported through the cloud, but I'd be happy to chat about your specific situation if you want. We can also deploy the OpenHands cloud on prem too"
+
+    *Category: General Development*
+    *Posted: 2025-05-17 22:13:15*
+  </Card>
+
+  <Card
+    title="I could see moving to Cloud if/when I vet this out as valuab..."
+    icon="slack"
+    horizontal
+  >
+    **@Kent Johnson**: "I could see moving to Cloud if/when I vet this out as valuable to the org, but right now I'm trying to do a proof-of-concept and I only have budget for Azure OpenAI tokens"
+
+    *Category: Machine Learning*
+    *Posted: 2025-05-17 22:23:56*
+  </Card>
+
+  <Card
+    title="Does this help with the tokens?"
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "Does this help with the tokens?
+[https://docs.all-hands.dev/modules/usage/llms/azure-llms](https://docs.all-hands.dev/modules/usage/llms/azure-llms)"
+
+    *Category: Documentation*
+    *Posted: 2025-05-17 22:36:44*
+  </Card>
+
+  <Card
+    title="You'll need to provide the agent with a token to access the ..."
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "You'll need to provide the agent with a token to access the devops repos which you can do by providing a file (we'll have a secrets manager early next week too)"
+
+    *Category: Infrastructure Management*
+    *Posted: 2025-05-17 22:40:47*
+  </Card>
+
+  <Card
+    title="I had Azure OpenAI access working, though still working thro..."
+    icon="slack"
+    horizontal
+  >
+    **@Kent Johnson**: "I had Azure OpenAI access working, though still working through some issues pointing to local files:
+[https://openhands-ai.slack.com/archives/C06U8UTKSAD/p1747518563185619?thread_ts=1744310442.372669&cid=C06U8UTKSAD](https://openhands-ai.slack.com/archives/C06U8UTKSAD/p1747518563185619?thread_ts=1744310442.372669&cid=C06U8UTKSAD)"
+
+    *Category: Machine Learning*
+    *Posted: 2025-05-17 22:41:45*
+  </Card>
+
+  <Card
+    title="Ok, can't take a close look right now but I'll pin this and ..."
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "Ok, can't take a close look right now but I'll pin this and try to take a look when I have a bit more time. Sorry!"
+
+    *Category: General Development*
+    *Posted: 2025-05-17 22:43:39*
+  </Card>
+
+  <Card
+    title="@U06PEF04LEQ"
+    icon="slack"
+    horizontal
+  >
+    **@Kent Johnson**: "@U06PEF04LEQ
+, regarding "For our integrations into GitHub and gitlab they're mostly supported through the cloud", does that mean what I'm hoping to do with Azure DevOps (ADO) doesn't really fit with y'all's architecture? Tomorrow starts a 4-day hackathon at work that I was going to use to try to port OpenHands to ADO, but I would only want to do that if I could get something working without paying for Cloud. (If it works well, we might actually want to pay for Cloud eventually, but I don't want to go that route until I vet the workflows and such)."
+
+    *Category: Infrastructure Management*
+    *Posted: 2025-05-18 21:01:30*
+  </Card>
+
+  <Card
+    title="RE"
+    icon="slack"
+    horizontal
+  >
+    **@Kent Johnson**: "RE: "We can also deploy the OpenHands cloud on prem too": Is that something I can do without paying for the Cloud product (yet)?"
+
+    *Category: General Development*
+    *Posted: 2025-05-18 21:02:09*
+  </Card>
+
+  <Card
+    title="And to be clear, not trying to be cheap or skimp out on payi..."
+    icon="slack"
+    horizontal
+  >
+    **@Kent Johnson**: "And to be clear, not trying to be cheap or skimp out on paying y'all for your product. I personally would be all down for paying for a product like this if it meets our needs. I'm just trying to prototype for free (except LLM tokens) as a PoC."
+
+    *Category: General Development*
+    *Posted: 2025-05-18 21:03:15*
+  </Card>
+
+  <Card
+    title="In particular, could I host it on an internal machine and in..."
+    icon="slack"
+    horizontal
+  >
+    **@Kent Johnson**: "In particular, could I host it on an internal machine and interface with that instead of
+[app.all-hands.dev](http://app.all-hands.dev)
+? Or maybe to start, I should just make an ADO pipeline that runs it like this?
+[https://docs.all-hands.dev/modules/usage/runtimes/local](https://docs.all-hands.dev/modules/usage/runtimes/local)"
+
+    *Category: Infrastructure Management*
+    *Posted: 2025-05-18 21:26:23*
+  </Card>
+
+  <Card
+    title="Hey"
+    icon="cog"
+    horizontal
+  >
+    **@Graham Neubig**: "Hey
+@U08QCTDPNSD
+, sorry about my brief replies before, they're definitely are some integrations with GitHub and gitlab that we do in the open source as well supporting those to azure devops is definitely in line with our general plans. Let me follow up about the details!"
+
+    *Category: Infrastructure Management*
+    *Posted: 2025-05-18 21:27:13*
+  </Card>
+
+  <Card
+    title="Repository: All-Hands-AI/OpenHands"
+    href="https://github.com/All-Hands-AI/OpenHands"
+    icon="github"
+    horizontal
+  >
+    **@U06QJHRBLQG**: "["/remember"](https://github.com/All-Hands-AI/OpenHands/blob/2906a9023f6ce5e651d378153f31778360f560d3/microagents/agent_memory.md?plain=1#L7)
+ microagent is quite handy occasionally"
+
+    *Category: Frontend Development*
+    *Posted: 2025-05-22 14:27:53*
+  </Card>
+
+  <Card
+    title="This has been one of my favorite things to do lately"
+    icon="slack"
+    horizontal
+  >
+    **@U06QJHRBLQG**: "This has been one of my favorite things to do lately"
+
+    *Category: General Development*
+    *Posted: 2025-05-23 01:31:44*
+  </Card>
+
+  <Card
+    title="waat! this is great! thanks for sharing"
+    icon="slack"
+    horizontal
+  >
+    **@Sebastian**: "waat! this is great! thanks for sharing"
+
+    *Category: General Development*
+    *Posted: 2025-05-23 19:17:34*
+  </Card>
+
+  <Card
+    title="I was curious about how well the “DeepWiki” documentation li..."
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "I was curious about how well the “DeepWiki” documentation linked on our page worked, so I asked its “deep research” mode a question
+
+Then I decided to ask OpenHands the same question.
+
+DeepWiki has thought for 5 minutes and not returned an answer yet, and OpenHands has debugged the problem and updated my PR
+
+I’m thinking we just need a way to add an “Ask OpenHands” link and we can use that instead of DeepWiki."
+
+    *Category: Documentation*
+    *Posted: 2025-05-24 12:24:13*
+  </Card>
+
+  <Card
+    title="I tried both OpenAI Deep Research against a GitHub repo (the..."
+    icon="slack"
+    horizontal
+  >
+    **@Paul Cuciureanu**: "I tried both OpenAI Deep Research against a GitHub repo (their new feature) and Gemini (dumped all of openhands' code in there, it's about 500,000 tokens, so it can handle it), and IMO, Gemini reasoned slightly better, and was much faster at helping me make sense of the codebase
+
+I think "Ask OpenHands" would need to be at least as fast and accurate as Gemini for it to be worthwhile(?) Wondering what a *-bench for this use-case might be
+
+Might also be an incentive to keep the OpenHands codebase small(er)(?)
+
+I think there are 2 use-cases:
+
+- discoverability
+- targeted inquiry
+
+There's a bootstrapping challenge, with all the search/prompt paradigm, in not knowing where to begin. So laying it out all like DeepWiki does provides a kind of high-level map to begin to make sense of things.
+
+My newbie impression is that DeepWiki feels currently more credible than the user docs, re:
+[https://medium.com/mytake/the-ux-honeycomb-seven-essential-considerations-for-developers-accc372a398c](https://medium.com/mytake/the-ux-honeycomb-seven-essential-considerations-for-developers-accc372a398c)
+ - nonetheless, there are additional dimensions to consider here that would help make OpenHands feel more valuable to end-users and developers"
+
+    *Category: Frontend Development*
+    *Posted: 2025-05-24 14:21:10*
+  </Card>
+
+  <Card
+    title="Yeah, I think speed is essential for something like this"
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "Yeah, I think speed is essential for something like this. OpenHands is pretty fast, but we could make it faster by giving it access to code search"
+
+    *Category: General Development*
+    *Posted: 2025-05-24 14:49:00*
+  </Card>
+
+  <Card
+    title="Repository: mingfang/coder-templates"
+    href="https://github.com/mingfang/coder-templates"
+    icon="github"
+    horizontal
+  >
+    **@Ming Fang**: "I want to share my Coder integration with OpenHands.
+This demonstrates running
+
+- Integrating OpenHands with Coder, naturally
+- Running OpenHands inside Kubernetes and using Terraform
+- Using Docker In Docker (dind), with some minor code change
+Full disclosure I did have to fork OpenHands to make a small modification to enable dynamic routing from the Ingress Controller.
+Will be happy to submit PR if there's interest.
+Please find the Coder setup here
+[https://github.com/mingfang/coder-templates/blob/master/kubernetes/app-openhands.tf](https://github.com/mingfang/coder-templates/blob/master/kubernetes/app-openhands.tf)"
+
+    *Category: Backend Development*
+    *Posted: 2025-05-25 16:08:10*
+  </Card>
+
+  <Card
+    title="Nice! Would definitely accept a PR"
+    icon="slack"
+    horizontal
+  >
+    **@Robert Brennan**: "Nice! Would definitely accept a PR"
+
+    *Category: General Development*
+    *Posted: 2025-05-27 13:11:41*
+  </Card>
+
+  <Card
+    title="Repository: All-Hands-AI/OpenHands"
+    href="https://github.com/All-Hands-AI/OpenHands"
+    icon="github"
+    horizontal
+  >
+    **@Robert Brennan**: "I wonder if we should add coder to
+[https://github.com/All-Hands-AI/OpenHands/tree/main/openhands/runtime/impl](https://github.com/All-Hands-AI/OpenHands/tree/main/openhands/runtime/impl)"
+
+    *Category: Machine Learning*
+    *Posted: 2025-05-27 13:12:01*
+  </Card>
+
+  <Card
+    title="Yes, eventually it would be great to add a Coder workspace a..."
+    icon="slack"
+    horizontal
+  >
+    **@Ming Fang**: "Yes, eventually it would be great to add a Coder workspace as another OH Runtime option."
+
+    *Category: General Development*
+    *Posted: 2025-05-27 13:49:21*
+  </Card>
+
+  <Card
+    title="For now I was able to run the entire OH stack, using the Doc..."
+    icon="slack"
+    horizontal
+  >
+    **@Ming Fang**: "For now I was able to run the entire OH stack, using the Docker runtime, as a Coder workspace"
+
+    *Category: Infrastructure Management*
+    *Posted: 2025-05-27 13:50:56*
+  </Card>
+
+  <Card
+    title="I really don’t like trying to fix issues with AWS, especiall..."
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "I really don’t like trying to fix issues with AWS, especially security groups and other finicky things like this. But I started up an instance and wasn’t able to ssh in. So I asked OpenHands:
+
+And 2 minutes later I was able to SSH in"
+
+    *Category: Security*
+    *Posted: 2025-05-30 19:34:49*
+  </Card>
+
+  <Card
+    title="Devstral is amazing! It refactored a SaaS solution I'm worki..."
+    icon="slack"
+    horizontal
+  >
+    **@Ken**: "Devstral is amazing! It refactored a SaaS solution I'm working on including a backend (Django) and frontend (React). It even suggested changes that I didn't even think about. Thanks so much!!"
+
+    *Category: Frontend Development*
+    *Posted: 2025-06-01 15:11:11*
+  </Card>
+
+  <Card
+    title="Are you super lazy and can't even be bothered to write a"
+    icon="slack"
+    horizontal
+  >
+    **@Ian Walker**: "Are you super lazy and can't even be bothered to write a
+repo.md
+ ? Join the club! Then get OpenHands to do it for you:"
+
+    *Category: General Development*
+    *Posted: 2025-06-02 12:51:44*
+  </Card>
+
+  <Card
+    title="Repository: All-Hands-AI/OpenHands"
+    href="https://github.com/All-Hands-AI/OpenHands"
+    icon="github"
+    horizontal
+  >
+    **@Xingyao Wang**: "You might also find these useful
+
+- [https://github.com/All-Hands-AI/OpenHands/blob/main/microagents/agent_memory.md](https://github.com/All-Hands-AI/OpenHands/blob/main/microagents/agent_memory.md)
+- [https://github.com/All-Hands-AI/OpenHands/blob/main/microagents/add_agent.md](https://github.com/All-Hands-AI/OpenHands/blob/main/microagents/add_agent.md)"
+
+    *Category: Machine Learning*
+    *Posted: 2025-06-02 14:06:47*
+  </Card>
+
+  <Card
+    title="I asked OpenHands to make an animated gif of swe-bench verif..."
+    icon="slack"
+    horizontal
+  >
+    **@U06PEF04LEQ**: "I asked OpenHands to make an animated gif of swe-bench verified scores over time. It took a bit of prompting but ended up looking pretty nice I think"
+
+    *Category: General Development*
+    *Posted: 2025-06-02 15:01:08*
+  </Card>
+
+  <Card
+    title="[https://x"
+    icon="slack"
+    horizontal
+  >
+    **@Rohit Malhotra**: "[https://x.com/rohit_malh5/status/1929559656621297752](https://x.com/rohit_malh5/status/1929559656621297752)
+
+Used OpenHands to build a speculative museum experience; barely wrote any code myself was purely vibe coding"
+
+    *Category: Frontend Development*
+    *Posted: 2025-06-02 15:31:43*
+  </Card>
+
+  <Card
+    title="starting triggers with a / escape has blown my tiny mind! :D"
+    icon="slack"
+    horizontal
+  >
+    **@Ian Walker**: "starting triggers with a / escape has blown my tiny mind! :D"
+
+    *Category: General Development*
+    *Posted: 2025-06-03 06:51:55*
+  </Card>
+
+  <Card
+    title="@U08U2LCBR60"
+    icon="code"
+    horizontal
+  >
+    **@Sebastian**: "@U08U2LCBR60
+ can you elaborate plz
+
+where do you type
+/
+ ?"
+
+    *Category: General Development*
+    *Posted: 2025-06-03 18:59:06*
+  </Card>
+
+  <Card
+    title="@U08H1TMHDM5"
+    icon="slack"
+    horizontal
+  >
+    **@Brett Stewart**: "@U08H1TMHDM5
+ It's just a way to create a standard prefix for triggers - just type it in your conversation e.g.
+/remember"
+
+    *Category: General Development*
+    *Posted: 2025-06-03 19:12:44*
+  </Card>
+
+  <Card
+    title="Used OpenHands to launch the queries from the Console using ..."
+    icon="slack"
+    horizontal
+  >
+    **@U08UU1KD38D**: "Used OpenHands to launch the queries from the Console using REST API.
+
+Outcome:
+Basically, an agent that is running using API. Everything is hosted locally.
+
+Changes required to make that possible:
+Adjusting a couple of files e.g. fixing some bugs that crashed the runtime.
+Adjusting timeout to cleanup the 'unresponsive' (e.g. without WebSocket connection) containers.
+
+Please refer to
+CHANGES.md
+ if you want to reproduce the same behavior.
+
+This is mostly undocumented, and some bugs are hidden, because I don't think someone uses
+/api/conversations
+  locally.
+
+OpenHands devs, if you read this, could you please take a look at CHANGES.md and ask Claude/Gemini to fix a couple of issues that are explained in the doc?
+
+Example Query:"
+
+    *Category: Frontend Development*
+    *Posted: 2025-06-03 23:49:39*
+  </Card>
+
+  <Card
+    title="Nice! Will happily accept PRs that address some of these pro..."
+    icon="slack"
+    horizontal
+  >
+    **@Robert Brennan**: "Nice! Will happily accept PRs that address some of these problems"
+
+    *Category: General Development*
+    *Posted: 2025-06-04 00:03:41*
+  </Card>
+
+  <Card
+    title="Or barring that, GitHub issues that describe them"
+    icon="slack"
+    horizontal
+  >
+    **@Robert Brennan**: "Or barring that, GitHub issues that describe them"
+
+    *Category: General Development*
+    *Posted: 2025-06-04 00:03:52*
+  </Card>
+
+  <Card
+    title="Pull Request: All-Hands-AI/OpenHands#8889"
+    href="https://github.com/All-Hands-AI/OpenHands/pull/8889"
+    icon="github"
+    horizontal
+  >
+    **@Anton**: "Thanks! It took me some days to figure out how the the full flow works
+
+OpenHands: Increase sandbox close delay in sandbox_config.py to 3600 seconds
+(may leave it as is to 15 seconds, but please make it configurable via env)
+
+[https://github.com/All-Hands-AI/OpenHands/pull/8889](https://github.com/All-Hands-AI/OpenHands/pull/8889)
+
+mcpm.sh: has to implement fixes too
+
+- [https://github.com/pathintegral-institute/mcpm.sh/pull/162](https://github.com/pathintegral-institute/mcpm.sh/pull/162)
+- [https://github.com/pathintegral-institute/mcpm.sh/pull/163](https://github.com/pathintegral-institute/mcpm.sh/pull/163)
+- [https://github.com/pathintegral-institute/mcpm.sh/pull/164](https://github.com/pathintegral-institute/mcpm.sh/pull/164)
+the fixes should improve stability regarding
+[https://github.com/All-Hands-AI/OpenHands/issues/8859](https://github.com/All-Hands-AI/OpenHands/issues/8859)"
+
+    *Category: Machine Learning*
+    *Posted: 2025-06-04 16:21:28*
+  </Card>
+
+  <Card
+    title="took sometime but i was able to move from filestore to postg..."
+    icon="slack"
+    horizontal
+  >
+    **@U08SL46JASD**: "took sometime but i was able to move from filestore to postgresql. lemme of if theres interest i can create PR. its not super clean implementation tho."
+
+    *Category: Backend Development*
+    *Posted: 2025-06-05 17:29:18*
+  </Card>
+
+  <Card
+    title="next step is to move session to redis"
+    icon="slack"
+    horizontal
+  >
+    **@Jwalit Patel**: "next step is to move session to redis.."
+
+    *Category: General Development*
+    *Posted: 2025-06-05 17:30:13*
+  </Card>
+
+  <Card
+    title="what justifies these changes though? I suspect speed/latency..."
+    icon="slack"
+    horizontal
+  >
+    **@Paul Cuciureanu**: "what justifies these changes though? I suspect speed/latency/reliability/composability?"
+
+    *Category: General Development*
+    *Posted: 2025-06-05 17:35:49*
+  </Card>
+
+  <Card
+    title="Yes correct"
+    icon="slack"
+    horizontal
+  >
+    **@Jwalit Patel**: "Yes correct.. more for enterprise readiness.."
+
+    *Category: General Development*
+    *Posted: 2025-06-05 17:54:42*
+  </Card>
+
+  <Card
+    title="I finally started to see OpenHands"
+    icon="code"
+    horizontal
+  >
+    **@U06QJHRBLQG**: "I finally started to see OpenHands
+iteratively
+ building Docker images in OH Cloud"
+
+    *Category: Frontend Development*
+    *Posted: 2025-06-05 17:55:24*
+  </Card>
+
+  <Card
+    title="what orchestrator are you targeting? compose, k8s?"
+    icon="slack"
+    horizontal
+  >
+    **@Paul Cuciureanu**: "what orchestrator are you targeting? compose, k8s?"
+
+    *Category: General Development*
+    *Posted: 2025-06-05 17:57:07*
+  </Card>
+
+  <Card
+    title="Pull Request: All-Hands-AI/OpenHands#8814"
+    href="https://github.com/All-Hands-AI/OpenHands/pull/8814"
+    icon="github"
+    horizontal
+  >
+    **@Paul Cuciureanu**: "saw this?
+[https://github.com/All-Hands-AI/OpenHands/pull/8814](https://github.com/All-Hands-AI/OpenHands/pull/8814)"
+
+    *Category: Machine Learning*
+    *Posted: 2025-06-05 18:05:27*
+  </Card>
+
+  <Card
+    title="yes lol already tried on kind cluster"
+    icon="slack"
+    horizontal
+  >
+    **@Jwalit Patel**: "yes lol already tried on kind cluster.. need sometime to test helm chart"
+
+    *Category: Infrastructure Management*
+    *Posted: 2025-06-05 18:14:25*
+  </Card>
+
+  <Card
+    title="Repository: All-Hands-AI/OpenHands"
+    href="https://github.com/All-Hands-AI/OpenHands"
+    icon="github"
+    horizontal
+  >
+    **@Joe Pelletier**: "I created a "code review" microagent that responds to a
+/codereview
+ trigger keyword. I've tried it on a couple PRs in GitHub and it generally provides very detailed feedback -- that's the success story
+
+Unfortunately, the GitHub Resolver forces a summarization before creating a comment on the GitHub PR, which dilutes away all of the detailed feedback. So the user needs to click into the conversation to actually see what the agent provided as code review feedback
+. Created
+[#8926](https://github.com/All-Hands-AI/OpenHands/issues/8926)
+ for this."
+
+    *Category: Machine Learning*
+    *Posted: 2025-06-05 18:55:25*
+  </Card>
+
+  <Card
+    title="Prompt"
+    icon="slack"
+    horizontal
+  >
+    **@Joe Pelletier**: "Prompt"
+
+    *Category: General Development*
+    *Posted: 2025-06-05 18:56:12*
+  </Card>
+
+  <Card
+    title="Awesome, thank you for looking into this! Maybe we could tak..."
+    icon="slack"
+    horizontal
+  >
+    **@Engel Nyst**: "Awesome, thank you for looking into this! Maybe we could take it in the project, if you could make a PR?"
+
+    *Category: General Development*
+    *Posted: 2025-06-05 19:23:31*
+  </Card>
+
+  <Card
+    title="I asked OpenHands to update my personal website for the"
+    icon="slack"
+    horizontal
+  >
+    **@Xingyao Wang**: "I asked OpenHands to update my personal website for the "OpenHands Versa" paper. It is an extremely trivial task: You just need to browse to arxiv, copy the author names, format them for BibTeX, and then modify the
+papers.bib
+ file. But now I'm getting way too lazy to even open my IDE and actually do this one-file change!
+
+[https://x.com/xingyaow_/status/1930796287919542410](https://x.com/xingyaow_/status/1930796287919542410)"
+
+    *Category: General Development*
+    *Posted: 2025-06-06 01:21:45*
+  </Card>
+
+  <Card
+    title="Big congratulations to the new Tavily adapter"
+    icon="slack"
+    horizontal
+  >
+    **@Ian Walker**: "Big congratulations to the new Tavily adapter...OpenHands and I have been beavering away at a Lightstreamer client library for most of this week but were getting a persistent (and unhelpful) "unexpected error" from the server.
+
+Coming back to the problem today, after trying several unsuccessful fixes prompted by me, OH decided all by itself to search the web, and found the cause of the problem (of course it was simply CRLF line endings...). I was on the verge of giving up - good thing OH has more stamina than me!"
+
+    *Category: Backend Development*
+    *Posted: 2025-06-06 13:08:28*
+  </Card>
+
+  <Card
+    title="Oh, that’s amazing, perfect use case!"
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "Oh, that’s amazing, perfect use case!"
+
+    *Category: General Development*
+    *Posted: 2025-06-06 13:27:13*
+  </Card>
+
+  <Card
+    title="Here's the relevant bit of the conversation, so you can be p..."
+    icon="slack"
+    horizontal
+  >
+    **@Ian Walker**: "Here's the relevant bit of the conversation, so you can be proud parents!"
+
+    *Category: General Development*
+    *Posted: 2025-06-06 13:46:50*
+  </Card>
+
+  <Card
+    title=":proud-parent-face"
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: ":proud-parent-face:"
+
+    *Category: General Development*
+    *Posted: 2025-06-06 14:31:36*
+  </Card>
+
+  <Card
+    title="Bonus round - it built a little TUI charting app with a sing..."
+    icon="slack"
+    horizontal
+  >
+    **@U08U2LCBR60**: "Bonus round - it built a little TUI charting app with a single prompt, costing exactly $0.99"
+
+    *Category: Frontend Development*
+    *Posted: 2025-06-06 19:46:23*
+  </Card>
+
+  <Card
+    title="Yes sorry for the delay"
+    icon="slack"
+    horizontal
+  >
+    **@Joe Pelletier**: "Yes sorry for the delay. Will make a PR next week!"
+
+    *Category: General Development*
+    *Posted: 2025-06-06 22:09:29*
+  </Card>
+
+  <Card
+    title="@U08PZAFMQSH"
+    icon="slack"
+    horizontal
+  >
+    **@Sebastian**: "@U08PZAFMQSH
+ you mean to actually name your microagent keyword with a leading
+/
+?
+Cause I don't see any fancy UI showing up with suggested microagents when I press
+/
+."
+
+    *Category: Frontend Development*
+    *Posted: 2025-06-06 23:12:17*
+  </Card>
+
+  <Card
+    title="No"
+    icon="slack"
+    horizontal
+  >
+    **@Brett Stewart**: "No.
+It’s
+ just in your trigger section
+
+AKAIK there
+isn’t
+ a UI element like that"
+
+    *Category: Frontend Development*
+    *Posted: 2025-06-07 04:21:17*
+  </Card>
+
+  <Card
+    title="@U06QFDJ1QQ2"
+    icon="code"
+    horizontal
+  >
+    **@Xingyao Wang**: "@U06QFDJ1QQ2
+ and I wanted such a feature for a while
+ At least for showing the microagents.. But haven't got time to actually implement it"
+
+    *Category: General Development*
+    *Posted: 2025-06-07 15:22:42*
+  </Card>
+
+  <Card
+    title="Yea, I like that idea - would be nice for testing as well - ..."
+    icon="slack"
+    horizontal
+  >
+    **@Brett Stewart**: "Yea, I like that idea - would be nice for testing as well - being able to tell if the organizational microagents got pulled in correctly"
+
+    *Category: Testing*
+    *Posted: 2025-06-07 21:06:24*
+  </Card>
+
+  <Card
+    title="Pull Request: All-Hands-AI/OpenHands#8139"
+    href="https://github.com/All-Hands-AI/OpenHands/pull/8139"
+    icon="github"
+    horizontal
+  >
+    **@Xingyao Wang**: "I once tried to prompt OH to write one in this PR
+ But my frontend skill is not sufficient to actually guide it to finish that (eg what framework/architecture to use)
+Probably a future PR
+
+[https://github.com/All-Hands-AI/OpenHands/pull/8139](https://github.com/All-Hands-AI/OpenHands/pull/8139)"
+
+    *Category: Frontend Development*
+    *Posted: 2025-06-07 21:38:39*
+  </Card>
+
+  <Card
+    title="Very simple example, but baby steps"
+    icon="slack"
+    horizontal
+  >
+    **@U08U69PV2LR**: "Very simple example, but baby steps....
+I am a professor of architecture and urban design. We built, me and some students, an interactive map prototype to help visitors and new students to find important places in the campus. Considering that we lack a lot of knowledge in programming, that was really nice to build and a smooth process.
+We first created the main components with all-hands and then adjusted some details locally. Definitely, saved us a lot of time and money.
+That's a prototype but we will have all the info by tuesday.
+
+[https://buriti-emau.github.io/Mapa-UFU/](https://buriti-emau.github.io/Mapa-UFU/)
+
+Now testing some automated commits."
+
+    *Category: Frontend Development*
+    *Posted: 2025-06-08 18:22:54*
+  </Card>
+
+  <Card
+    title="This is awesome, really exciting!"
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "This is awesome, really exciting!"
+
+    *Category: General Development*
+    *Posted: 2025-06-08 18:33:22*
+  </Card>
+
+  <Card
+    title="Very cool"
+    icon="slack"
+    horizontal
+  >
+    **@Ken**: "Very cool. On mobile the markers don't stay anchored to the location when moving around the page. They snap back when movement stops, though. Another OH fix is due"
+
+    *Category: Mobile Development*
+    *Posted: 2025-06-08 18:38:37*
+  </Card>
+
+  <Card
+    title="Thanks!!"
+    icon="code"
+    horizontal
+  >
+    **@Rodrigo Argenton Freire (ODLab)**: "Thanks!!
+That is also happening on the Desktop
+@U089DJN4XDJ
+. Let's see how OH fix it!"
+
+    *Category: General Development*
+    *Posted: 2025-06-08 19:11:09*
+  </Card>
+
+  <Card
+    title="Great work"
+    icon="code"
+    horizontal
+  >
+    **@Pratul Gupta**: "Great work
+@U08U69PV2LR
+. While the anchoring needs updates, I find the current physics of their snapping oddly satisfying.
+."
+
+    *Category: General Development*
+    *Posted: 2025-06-08 19:22:53*
+  </Card>
+
+  <Card
+    title="haha! Thanks"
+    icon="slack"
+    horizontal
+  >
+    **@Rodrigo Argenton Freire (ODLab)**: "haha! Thanks
+@U08N0RQ52SK"
+
+    *Category: General Development*
+    *Posted: 2025-06-08 19:57:58*
+  </Card>
+
+  <Card
+    title="I see you got this merged in"
+    icon="code"
+    horizontal
+  >
+    **@Brett Stewart**: "I see you got this merged in
+@U06QJHRBLQG
+;)"
+
+    *Category: General Development*
+    *Posted: 2025-06-09 15:11:42*
+  </Card>
+
+  <Card
+    title="Pull Request: All-Hands-AI/OpenHands#8984"
+    href="https://github.com/All-Hands-AI/OpenHands/pull/8984"
+    icon="github"
+    horizontal
+  >
+    **@Xingyao Wang**: "@U08PZAFMQSH
+ i gave us try to implement so much thing in one PR
+
+Gonna do it one PR at a time
+ Got OH working on this one so we have an
+/microagent
+ API working
+
+[https://github.com/All-Hands-AI/OpenHands/pull/8984](https://github.com/All-Hands-AI/OpenHands/pull/8984)"
+
+    *Category: Backend Development*
+    *Posted: 2025-06-09 15:12:49*
+  </Card>
+
+  <Card
+    title="the next PR is gonna be FE only to implement that"
+    icon="slack"
+    horizontal
+  >
+    **@Xingyao Wang**: "the next PR is gonna be FE only to implement that "/" command!"
+
+    *Category: General Development*
+    *Posted: 2025-06-09 15:13:00*
+  </Card>
+
+  <Card
+    title="Will this also pull in the organizational microagents? (I as..."
+    icon="slack"
+    horizontal
+  >
+    **@Brett Stewart**: "Will this also pull in the organizational microagents? (I assume so since all microagents are on init, yea?)"
+
+    *Category: General Development*
+    *Posted: 2025-06-09 15:15:58*
+  </Card>
+
+  <Card
+    title="This is going to be awesome"
+    icon="slack"
+    horizontal
+  >
+    **@Brett Stewart**: "This is going to be awesome"
+
+    *Category: General Development*
+    *Posted: 2025-06-09 15:16:34*
+  </Card>
+
+  <Card
+    title="as long as org microagents are loaded in"
+    icon="slack"
+    horizontal
+  >
+    **@Xingyao Wang**: "as long as org microagents are loaded in "memory" (i assume they will, otherwise they won't be triggered by agents)"
+
+    *Category: General Development*
+    *Posted: 2025-06-09 15:16:58*
+  </Card>
+
+  <Card
+    title="Pull Request: All-Hands-AI/OpenHands#8402"
+    href="https://github.com/All-Hands-AI/OpenHands/pull/8402"
+    icon="github"
+    horizontal
+  >
+    **@Brett Stewart**: "Yea, I believe it does - they were implemented via
+[https://github.com/All-Hands-AI/OpenHands/pull/8402/files](https://github.com/All-Hands-AI/OpenHands/pull/8402/files)"
+
+    *Category: Machine Learning*
+    *Posted: 2025-06-09 15:20:15*
+  </Card>
+
+  <Card
+    title="This saved me some clicks in the github interface"
+    icon="slack"
+    horizontal
+  >
+    **@Graham Neubig**: "This saved me some clicks in the github interface:"
+
+    *Category: General Development*
+    *Posted: 2025-06-09 21:34:16*
+  </Card>
+
+  <Card
+    title="Following Xingyao’s route"
+    icon="code"
+    horizontal
+  >
+    **@U08S29K0XBN**: "Following Xingyao’s route
+
+[https://x.com/nlpxuhui/status/1932195016123847127](https://x.com/nlpxuhui/status/1932195016123847127)"
+
+    *Category: Frontend Development*
+    *Posted: 2025-06-09 21:57:00*
+  </Card>
+
+  <Card
+    title="Probably a feature?"
+    icon="brain"
+    horizontal
+  >
+    **@U08QLSDAM89**: "Probably a feature?
+
+OpenHands was stuck in an edit > read > edit > read loop, and I commented within the running thread, which it listened to
+
+Was enough to bias it out of the circular thinking
+
+Whoever coded this; genius! No other AI chat user interface I've come across can do this mid-flight"
+
+    *Category: Machine Learning*
+    *Posted: 2025-06-11 02:41:57*
+  </Card>
+
+  <Card
+    title="Now, OpenHands does 100% of my infra IAM research for me"
+    icon="code"
+    horizontal
+  >
+    **@U06QJHRBLQG**: "Now, OpenHands does 100% of my infra IAM research for me
+
+Got an IAM error on GCP? Send a screenshot to OH... and it just works!!!
+
+Can't imagine going back to the early days without OH: I'd spend an entire afternoon figuring how to get IAM right"
+
+    *Category: General Development*
+    *Posted: 2025-06-11 18:09:18*
+  </Card>
+
+  <Card
+    title="Asked openhands to “show me some love” and it coded up this ..."
+    icon="slack"
+    horizontal
+  >
+    **@U06PEF04LEQ**: "Asked openhands to “show me some love” and it coded up this app for me, actually kinda genuinely feel loved
+
+[https://work-2-gpdxfetpawgedbub.prod-runtime.all-hands.dev/](https://work-2-gpdxfetpawgedbub.prod-runtime.all-hands.dev/)"
+
+    *Category: Frontend Development*
+    *Posted: 2025-06-13 20:13:02*
+  </Card>
+
+  <Card
+    title="Aww! Was it with Sonnet 4?"
+    icon="slack"
+    horizontal
+  >
+    **@Engel Nyst**: "Aww! Was it with Sonnet 4?"
+
+    *Category: General Development*
+    *Posted: 2025-06-13 20:23:21*
+  </Card>
+
+  <Card
+    title="OpenHands is developing an OpenHands"
+    icon="book"
+    horizontal
+  >
+    **@U06QJHRBLQG**: "OpenHands is developing an OpenHands
+#C07KHERRM2S
+ tab in our documentation (it actually serves the doc site and check the page using browser), probably also a success story by itself"
+
+    *Category: Documentation*
+    *Posted: 2025-06-14 15:31:52*
+  </Card>
+
+  <Card
+    title="That’s an excellent idea"
+    icon="slack"
+    horizontal
+  >
+    **@Engel Nyst**: "That’s an excellent idea."
+
+    *Category: General Development*
+    *Posted: 2025-06-14 16:21:13*
+  </Card>
+
+  <Card
+    title="is it using Linen?"
+    icon="slack"
+    horizontal
+  >
+    **@Paul Cuciureanu**: "is it using Linen?
+[https://www.pulumi.com/blog/announcing-community-slack-archive/](https://www.pulumi.com/blog/announcing-community-slack-archive/)
+
+are you guys planning on making this slack public? Might inform the next learning models generation of OpenHands details"
+
+    *Category: Machine Learning*
+    *Posted: 2025-06-14 16:58:05*
+  </Card>
+
+  <Card
+    title="ohh interesting!"
+    icon="slack"
+    horizontal
+  >
+    **@Xingyao Wang**: "ohh interesting!"
+
+    *Category: Backend Development*
+    *Posted: 2025-06-14 18:20:30*
+  </Card>
+
+  <Card
+    title="we are not using linen, i guess the idea for now is to cherr..."
+    icon="slack"
+    horizontal
+  >
+    **@Xingyao Wang**: "we are not using linen, i guess the idea for now is to cherry pick some usecases we shared in slack and copy the content to doc site"
+
+    *Category: General Development*
+    *Posted: 2025-06-14 18:23:34*
   </Card>
 </CardGroup>
 
