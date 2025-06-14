@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ActionSuggestions } from "#/components/features/chat/action-suggestions";
+import { AgentState } from "#/types/agent-state";
 import OpenHands from "#/api/open-hands";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
 
@@ -32,6 +33,7 @@ vi.mock("react-i18next", () => ({
         ACTION$PUSH_TO_BRANCH: "Push to Branch",
         ACTION$PUSH_CREATE_PR: "Push & Create PR",
         ACTION$PUSH_CHANGES_TO_PR: "Push Changes to PR",
+        ACTION$CONTINUE: "Continue",
       };
       return translations[key] || key;
     },
@@ -44,8 +46,8 @@ vi.mock("react-router", () => ({
   }),
 }));
 
-const renderActionSuggestions = () =>
-  render(<ActionSuggestions onSuggestionsClick={() => {}} />, {
+const renderActionSuggestions = (agentState = AgentState.AWAITING_USER_INPUT) =>
+  render(<ActionSuggestions onSuggestionsClick={() => {}} agentState={agentState} />, {
     wrapper: ({ children }) => (
       <QueryClientProvider client={new QueryClient()}>
         {children}
@@ -128,5 +130,24 @@ describe("ActionSuggestions", () => {
     // Verify the PR prompt mentions creating a meaningful branch name
     expect(createPRPrompt).toContain("meaningful branch name");
     expect(createPRPrompt).not.toContain("SAME branch name");
+  });
+
+  it("shows Continue button when agent is rate limited", () => {
+    renderActionSuggestions(AgentState.RATE_LIMITED);
+
+    expect(screen.getByText("Continue")).toBeInTheDocument();
+  });
+
+  it("does not show Continue button when agent is not rate limited", () => {
+    renderActionSuggestions(AgentState.AWAITING_USER_INPUT);
+
+    expect(screen.queryByText("Continue")).not.toBeInTheDocument();
+  });
+
+  it("does not show git buttons when agent is rate limited", () => {
+    renderActionSuggestions(AgentState.RATE_LIMITED);
+
+    expect(screen.queryByText("Push to Branch")).not.toBeInTheDocument();
+    expect(screen.queryByText("Push & Create PR")).not.toBeInTheDocument();
   });
 });
