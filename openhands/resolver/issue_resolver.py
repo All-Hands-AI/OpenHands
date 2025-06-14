@@ -243,15 +243,11 @@ class IssueResolver:
 
         # Configure sandbox for GitLab CI environment
         if cls.GITLAB_CI:
-            sandbox_config.update(
-                {
-                    'use_host_network': False,
-                    'enable_auto_lint': True,
-                    'runtime_startup_env_vars': {
-                        'GITLAB_CI': 'true',
-                    },
-                }
-            )
+            sandbox_config.use_host_network = False
+            sandbox_config.enable_auto_lint = True
+            sandbox_config.runtime_startup_env_vars = {
+                'GITLAB_CI': 'true',
+            }
 
         # Configure sandbox for Bitbucket CI environment
         if cls.BITBUCKET_CI:
