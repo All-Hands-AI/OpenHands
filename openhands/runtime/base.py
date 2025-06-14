@@ -729,17 +729,29 @@ fi
         ):
             git_token = self.git_provider_tokens[provider].token
             if git_token:
-                # URL encode the token to handle special characters (e.g., colons in Bitbucket tokens)
-                encoded_token = urllib.parse.quote(
-                    git_token.get_secret_value(), safe=''
-                )
-
                 if provider == ProviderType.GITLAB:
+                    # GitLab uses oauth2 prefix with URL-encoded token
+                    encoded_token = urllib.parse.quote(
+                        git_token.get_secret_value(), safe=''
+                    )
                     remote_url = f'https://oauth2:{encoded_token}@{repo_path.replace("gitlab.com/", "")}.git'
                 elif provider == ProviderType.BITBUCKET:
-                    # Use URL-encoded token to handle email:app_password format
-                    remote_url = f'https://{encoded_token}@{repo_path.replace("bitbucket.org/", "")}.git'
+                    # Bitbucket tokens are in email:password format, need to encode separately
+                    token_value = git_token.get_secret_value()
+                    if ':' in token_value:
+                        email, password = token_value.split(':', 1)
+                        encoded_email = urllib.parse.quote(email, safe='')
+                        encoded_password = urllib.parse.quote(password, safe='')
+                        remote_url = f'https://{encoded_email}:{encoded_password}@{repo_path.replace("bitbucket.org/", "")}.git'
+                    else:
+                        # Fallback for non-standard token format
+                        encoded_token = urllib.parse.quote(token_value, safe='')
+                        remote_url = f'https://{encoded_token}@{repo_path.replace("bitbucket.org/", "")}.git'
                 else:
+                    # GitHub and other providers use token as username
+                    encoded_token = urllib.parse.quote(
+                        git_token.get_secret_value(), safe=''
+                    )
                     remote_url = f'https://{encoded_token}@{repo_path.replace("github.com/", "")}.git'
 
         return remote_url
