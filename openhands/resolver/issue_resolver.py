@@ -243,14 +243,6 @@ class IssueResolver:
 
         # Configure sandbox for GitLab CI environment
         if cls.GITLAB_CI:
-            sandbox_config.use_host_network = False
-            sandbox_config.enable_auto_lint = True
-            sandbox_config.runtime_startup_env_vars = {
-                'GITLAB_CI': 'true',
-            }
-
-        # Configure sandbox for Bitbucket CI environment
-        if cls.BITBUCKET_CI:
             sandbox_config.local_runtime_url = os.getenv(
                 'LOCAL_RUNTIME_URL', 'http://localhost'
             )
