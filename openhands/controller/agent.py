@@ -37,9 +37,11 @@ class Agent(ABC):
         self,
         llm: LLM,
         config: 'AgentConfig',
+        workspace_root: str | None,  # Added workspace_root, now optional
     ):
         self.llm = llm
         self.config = config
+        self.workspace_root = workspace_root  # Store workspace_root
         self._complete = False
         self._prompt_manager: 'PromptManager' | None = None
         self.mcp_tools: dict[str, ChatCompletionToolParam] = {}
@@ -70,7 +72,9 @@ class Agent(ABC):
                 )
                 return None
 
-            system_message = self.prompt_manager.get_system_message()
+            system_message = self.prompt_manager.get_system_message(
+                workspace_root=self.workspace_root
+            )
 
             # Get tools if available
             tools = getattr(self, 'tools', None)

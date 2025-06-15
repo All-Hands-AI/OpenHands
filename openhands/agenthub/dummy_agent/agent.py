@@ -45,8 +45,8 @@ class DummyAgent(Agent):
     without making any LLM calls.
     """
 
-    def __init__(self, llm: LLM, config: AgentConfig):
-        super().__init__(llm, config)
+    def __init__(self, llm: LLM, config: AgentConfig, workspace_root: str | None):
+        super().__init__(llm, config, workspace_root=workspace_root)
         self.steps: list[ActionObs] = [
             {
                 'action': MessageAction('Time to get started!'),

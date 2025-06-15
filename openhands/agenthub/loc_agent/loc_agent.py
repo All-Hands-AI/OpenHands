@@ -18,14 +18,16 @@ class LocAgent(CodeActAgent):
         self,
         llm: LLM,
         config: AgentConfig,
+        workspace_root: str | None,
     ) -> None:
         """Initializes a new instance of the LocAgent class.
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
         - config (AgentConfig): The configuration for the agent
+        - workspace_root (str | None): The root of the workspace directory
         """
-        super().__init__(llm, config)
+        super().__init__(llm, config, workspace_root=workspace_root)
 
         self.tools = locagent_function_calling.get_tools()
         logger.debug(
