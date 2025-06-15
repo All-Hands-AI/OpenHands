@@ -79,9 +79,7 @@ class DaytonaRuntime(ActionExecutionClient):
     def _get_sandbox(self) -> Sandbox | None:
         try:
             sandbox = self.daytona.get_current_sandbox(self.sandbox_id)
-            self.log(
-                'info', f'Attached to existing sandbox with id: {self.sandbox_id}'
-            )
+            self.log('info', f'Attached to existing sandbox with id: {self.sandbox_id}')
         except Exception:
             self.log(
                 'warning',
@@ -109,16 +107,14 @@ class DaytonaRuntime(ActionExecutionClient):
             image=self.config.sandbox.runtime_container_image,
             public=True,
             env_vars=self._get_creation_env_vars(),
-            resources=SandboxResources(cpu=2, memory=4)
+            resources=SandboxResources(cpu=2, memory=4),
         )
         sandbox = self.daytona.create(sandbox_params)
         return sandbox
 
     def _construct_api_url(self, port: int) -> str:
         assert self.sandbox is not None, 'Sandbox is not initialized'
-        assert self.sandbox.instance.info is not None, (
-            'Sandbox info is not available'
-        )
+        assert self.sandbox.instance.info is not None, 'Sandbox info is not available'
         assert self.sandbox.instance.info.provider_metadata is not None, (
             'Provider metadata is not available'
         )
