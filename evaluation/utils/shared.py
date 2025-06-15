@@ -265,6 +265,7 @@ def prepare_dataset(
 
     def make_serializable(instance: pd.Series) -> dict:
         import numpy as np
+
         instance_dict = instance.to_dict()
         for k, v in instance_dict.items():
             if isinstance(v, np.ndarray):
