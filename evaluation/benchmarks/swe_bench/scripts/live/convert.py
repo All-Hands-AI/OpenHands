@@ -1,6 +1,7 @@
 import argparse
 import json
 
+
 def main(output_jsonl: str):
     with open(output_jsonl, 'r') as f:
         for line in f:
@@ -8,13 +9,16 @@ def main(output_jsonl: str):
                 output = json.loads(line)
                 pred = {
                     'instance_id': output['instance_id'],
-                    'model_name_or_path': output["metadata"]["llm_config"]["model"],
+                    'model_name_or_path': output['metadata']['llm_config']['model'],
                     'model_patch': output['test_result']['git_patch'],
                 }
             except Exception as e:
-                print(f"Error while reading output of instance {output['instance_id']}: {e}")
+                print(
+                    f'Error while reading output of instance {output["instance_id"]}: {e}'
+                )
 
             print(json.dumps(pred))
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

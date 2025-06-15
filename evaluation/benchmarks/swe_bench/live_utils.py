@@ -1,14 +1,17 @@
-from openhands.core.logger import openhands_logger as logger
-from openhands.runtime.base import Runtime
+from typing import Any
+
 import pandas as pd
+
+from evaluation.utils.shared import assert_and_raise
+from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction
 from openhands.events.observation import (
     CmdOutputObservation,
     ErrorObservation,
 )
-from evaluation.utils.shared import assert_and_raise
-from typing import Any
+from openhands.runtime.base import Runtime
 from openhands.utils.shutdown_listener import sleep_if_should_continue
+
 
 def complete_runtime(
     runtime: Runtime,
@@ -53,7 +56,7 @@ def complete_runtime(
         action = CmdRunAction(
             command=f'git diff --no-color --cached {instance["base_commit"]}',
         )
-        action.set_hard_timeout( 100 + 10 * n_retries)
+        action.set_hard_timeout(100 + 10 * n_retries)
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})

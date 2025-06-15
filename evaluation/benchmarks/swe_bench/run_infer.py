@@ -43,7 +43,7 @@ from openhands.core.config import (
     AgentConfig,
     OpenHandsConfig,
     get_llm_config_arg,
-    get_parser
+    get_parser,
 )
 from openhands.core.config.condenser_config import NoOpCondenserConfig
 from openhands.core.config.utils import get_condenser_config_arg
@@ -115,10 +115,12 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageActio
         elif 'gpt-4.1' in llm_model:
             template_name = 'swe_gpt4.j2'
         else:
-            template_name = 'swe_default.j2'  # Default for 'swe' mode (regular swe-bench)
+            template_name = (
+                'swe_default.j2'  # Default for 'swe' mode (regular swe-bench)
+            )
     else:
         # Fallback or error handling if mode is unexpected
-        logger.error(f"Unexpected evaluation mode: {mode}. Falling back to default.")
+        logger.error(f'Unexpected evaluation mode: {mode}. Falling back to default.')
         template_name = 'swe_default.j2'
 
     # Set up Jinja2 environment
@@ -140,7 +142,7 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageActio
             f'The following command can be used to run the tests: `{list(MAP_REPO_TO_TEST_FRAMEWORK_VERBOSE[instance.repo].values())[0]}`. Make sure they fail in the expected way.\n'
         )
     else:
-        context['test_instructions'] = '' # Ensure it's defined for other modes
+        context['test_instructions'] = ''  # Ensure it's defined for other modes
 
     # Render the instruction
     instruction = template.render(context)
@@ -180,7 +182,7 @@ def get_instance_docker_image(
         elif DATASET_TYPE == 'SWE-bench':
             docker_image_prefix = 'docker.io/swebench/'
         repo, name = instance_id.split('__')
-        image_name = f'{docker_image_prefix.rstrip('/')}/sweb.eval.x86_64.{repo}_1776_{name}:latest'.lower()
+        image_name = f'{docker_image_prefix.rstrip("/")}/sweb.eval.x86_64.{repo}_1776_{name}:latest'.lower()
         logger.debug(f'Using official SWE-Bench image: {image_name}')
         return image_name
     else:
@@ -646,7 +648,9 @@ def process_instance(
         # ======= THIS IS SWE-Bench specific =======
         # Get git patch
         if DATASET_TYPE == 'SWE-bench-Live':
-            from evaluation.benchmarks.swe_bench.live_utils import complete_runtime as complete_runtime_fn
+            from evaluation.benchmarks.swe_bench.live_utils import (
+                complete_runtime as complete_runtime_fn,
+            )
         else:
             complete_runtime_fn = complete_runtime
         return_val = complete_runtime_fn(runtime, instance)
