@@ -89,11 +89,13 @@ docker run -it --rm --pull=always \
     -e LOG_ALL_EVENTS=true \
     -e RUNTIME=daytona \
     -e DAYTONA_API_KEY=${DAYTONA_API_KEY} \
-    -v ~/.openhands-state:/.openhands-state \
+    -v ~/.openhands:/.openhands \
     -p 3000:3000 \
     --name openhands-app \
     docker.all-hands.dev/all-hands-ai/openhands:${OPENHANDS_VERSION}
 ```
+
+> **Note**: If you used OpenHands before version 0.44, you may want to run `mv ~/.openhands-state ~/.openhands` to migrate your conversation history to the new location.
 
 #### Windows:
 ```powershell
@@ -102,11 +104,13 @@ docker run -it --rm --pull=always `
     -e LOG_ALL_EVENTS=true `
     -e RUNTIME=daytona `
     -e DAYTONA_API_KEY=${env:DAYTONA_API_KEY} `
-    -v ~/.openhands-state:/.openhands-state `
+    -v ~/.openhands:/.openhands `
     -p 3000:3000 `
     --name openhands-app `
     docker.all-hands.dev/all-hands-ai/openhands:${env:OPENHANDS_VERSION}
 ```
+
+> **Note**: If you used OpenHands before version 0.44, you may want to run `mv ~/.openhands-state ~/.openhands` to migrate your conversation history to the new location.
 
 > **Tip:** If you don't want your sandboxes to default to the EU region, you can set the `DAYTONA_TARGET` environment variable to `us`
 
