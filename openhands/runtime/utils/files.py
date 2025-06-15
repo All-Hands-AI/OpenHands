@@ -34,11 +34,10 @@ def resolve_path(
     # (deny any .. path traversal to parent directories of the sandbox)
     abs_path_in_sandbox = path_in_sandbox.resolve()
 
-    # Default workspace path is /workspace
-    container_workspace_path = '/workspace'
-    host_workspace_path = '/tmp/workspace'  # Default fallback
-
     # Parse sandbox volumes to find the workspace mount
+    container_workspace_path = None
+    host_workspace_path = None
+    
     if sandbox_volumes:
         mounts = sandbox_volumes.split(',')
         for mount in mounts:
@@ -53,8 +52,8 @@ def resolve_path(
                     host_workspace_path = host_path
                     break
 
-    # If the path is outside any mounted volume, deny it
-    if not abs_path_in_sandbox.is_relative_to(container_workspace_path):
+    # If no sandbox volumes configured or path is outside any mounted volume, deny it
+    if not container_workspace_path or not abs_path_in_sandbox.is_relative_to(container_workspace_path):
         raise PermissionError(f'File access not permitted: {file_path}')
 
     # Get path relative to the root of the workspace inside the sandbox
