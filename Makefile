@@ -277,7 +277,9 @@ setup-config-prompts:
 	@echo "[sandbox]" >> $(CONFIG_FILE).tmp
 	@read -p "Enter your workspace directory (as absolute path) [default: $(DEFAULT_WORKSPACE_DIR)]: " workspace_dir; \
 	 workspace_dir=$${workspace_dir:-$(DEFAULT_WORKSPACE_DIR)}; \
-	 echo "volumes=\"$$workspace_dir:/workspace:rw\"" >> $(CONFIG_FILE).tmp
+	 read -p "Enter the container mount path [default: $$workspace_dir]: " container_path; \
+	 container_path=$${container_path:-$$workspace_dir}; \
+	 echo "volumes=\"$$workspace_dir:$$container_path:rw\"" >> $(CONFIG_FILE).tmp
 
 	@echo "" >> $(CONFIG_FILE).tmp
 
@@ -297,7 +299,7 @@ setup-config-basic:
 	'[core]' \
 	'' \
 	'[sandbox]' \
-	'volumes="./workspace:/workspace:rw"' \
+	'volumes="./workspace:./workspace:rw"' \
 	> config.toml
 	@echo "$(GREEN)config.toml created.$(RESET)"
 

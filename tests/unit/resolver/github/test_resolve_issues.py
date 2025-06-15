@@ -116,7 +116,9 @@ def create_cmd_output(exit_code: int, content: str, command: str):
 def test_initialize_runtime(default_mock_args, mock_github_token):
     mock_runtime = MagicMock()
     mock_runtime.run_action.side_effect = [
-        create_cmd_output(exit_code=0, content='', command='cd /workspace'),
+        create_cmd_output(
+            exit_code=0, content='', command='cd /tmp/workspace/issue_None'
+        ),
         create_cmd_output(
             exit_code=0, content='', command='git config --global core.pager ""'
         ),
@@ -128,7 +130,9 @@ def test_initialize_runtime(default_mock_args, mock_github_token):
     resolver.initialize_runtime(mock_runtime)
 
     assert mock_runtime.run_action.call_count == 2
-    mock_runtime.run_action.assert_any_call(CmdRunAction(command='cd /workspace'))
+    mock_runtime.run_action.assert_any_call(
+        CmdRunAction(command='cd /tmp/workspace/issue_None')
+    )
     mock_runtime.run_action.assert_any_call(
         CmdRunAction(command='git config --global core.pager ""')
     )
@@ -338,7 +342,9 @@ async def test_complete_runtime(default_mock_args, mock_github_token):
     """Test the complete_runtime method."""
     mock_runtime = MagicMock()
     mock_runtime.run_action.side_effect = [
-        create_cmd_output(exit_code=0, content='', command='cd /workspace'),
+        create_cmd_output(
+            exit_code=0, content='', command='cd /tmp/workspace/issue_None'
+        ),
         create_cmd_output(
             exit_code=0, content='', command='git config --global core.pager ""'
         ),
@@ -709,7 +715,11 @@ def test_guess_success():
         title='Test Issue',
         body='This is a test issue',
     )
-    mock_history = [create_cmd_output(exit_code=0, content='', command='cd /workspace')]
+    mock_history = [
+        create_cmd_output(
+            exit_code=0, content='', command='cd /tmp/workspace/issue_None'
+        )
+    ]
     mock_llm_config = LLMConfig(model='test_model', api_key='test_api_key')
 
     mock_completion_response = MagicMock()
@@ -864,7 +874,11 @@ def test_guess_success_negative_case():
         title='Test Issue',
         body='This is a test issue',
     )
-    mock_history = [create_cmd_output(exit_code=0, content='', command='cd /workspace')]
+    mock_history = [
+        create_cmd_output(
+            exit_code=0, content='', command='cd /tmp/workspace/issue_None'
+        )
+    ]
     mock_llm_config = LLMConfig(model='test_model', api_key='test_api_key')
 
     mock_completion_response = MagicMock()
@@ -899,7 +913,11 @@ def test_guess_success_invalid_output():
         title='Test Issue',
         body='This is a test issue',
     )
-    mock_history = [create_cmd_output(exit_code=0, content='', command='cd /workspace')]
+    mock_history = [
+        create_cmd_output(
+            exit_code=0, content='', command='cd /tmp/workspace/issue_None'
+        )
+    ]
     mock_llm_config = LLMConfig(model='test_model', api_key='test_api_key')
 
     mock_completion_response = MagicMock()

@@ -179,9 +179,9 @@ class IssueResolver:
         config.max_budget_per_task = 4
         config.max_iterations = max_iterations
 
-        # do not mount workspace
-        config.workspace_base = workspace_base
-        config.workspace_mount_path = workspace_base
+        # Configure workspace volume mount
+        if workspace_base:
+            config.sandbox.volumes = f'{workspace_base}:{workspace_base}:rw'
         config.agents = {'CodeActAgent': AgentConfig(disabled_microagents=['github'])}
 
         cls.update_sandbox_config(
@@ -266,15 +266,19 @@ class IssueResolver:
         logger.info('-' * 30)
         obs: Observation
 
-        action = CmdRunAction(command='cd /workspace')
+        action = CmdRunAction(command=f'cd {self.workspace_base}')
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
-            raise RuntimeError(f'Failed to change directory to /workspace.\n{obs}')
+            raise RuntimeError(
+                f'Failed to change directory to {self.workspace_base}.\n{obs}'
+            )
 
         if self.platform == ProviderType.GITLAB and self.GITLAB_CI:
-            action = CmdRunAction(command='sudo chown -R 1001:0 /workspace/*')
+            action = CmdRunAction(
+                command=f'sudo chown -R 1001:0 {self.workspace_base}/*'
+            )
             logger.info(action, extra={'msg_type': 'ACTION'})
             obs = runtime.run_action(action)
             logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -310,13 +314,13 @@ class IssueResolver:
         logger.info('-' * 30)
         obs: Observation
 
-        action = CmdRunAction(command='cd /workspace')
+        action = CmdRunAction(command=f'cd {self.workspace_base}')
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
             raise RuntimeError(
-                f'Failed to change directory to /workspace. Observation: {obs}'
+                f'Failed to change directory to {self.workspace_base}. Observation: {obs}'
             )
 
         action = CmdRunAction(command='git config --global core.pager ""')
@@ -327,7 +331,7 @@ class IssueResolver:
             raise RuntimeError(f'Failed to set git config. Observation: {obs}')
 
         action = CmdRunAction(
-            command='git config --global --add safe.directory /workspace'
+            command=f'git config --global --add safe.directory {self.workspace_base}'
         )
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
