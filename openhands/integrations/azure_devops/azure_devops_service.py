@@ -711,3 +711,91 @@ class AzureDevOpsServiceImpl(BaseGitService):
         except Exception as e:
             logger.error(f'Error getting Azure DevOps branches: {e}')
             return []
+
+    async def create_pr(
+        self,
+        repo_name: str,
+        source_branch: str,
+        target_branch: str,
+        title: str,
+        body: str | None = None,
+        draft: bool = False,
+    ) -> str:
+        """Create a pull request in Azure DevOps.
+
+        Args:
+            repo_name: The repository name (format: project/repo)
+            source_branch: The source branch name
+            target_branch: The target branch name
+            title: The pull request title
+            body: The pull request description (optional)
+            draft: Whether the pull request should be a draft (optional)
+
+        Returns:
+            The URL of the created pull request
+
+        Raises:
+            ValueError: If the repository name format is invalid
+            AuthenticationError: If authentication fails
+            UnknownException: If the API request fails
+        """
+        try:
+            # Parse the repository name (expected format: project/repo)
+            parts = repo_name.split('/')
+            if len(parts) != 2:
+                raise ValueError(
+                    f'Invalid repository name format: {repo_name}. Expected format: project/repo'
+                )
+
+            project_name, repo_name_only = parts
+
+            # Get the repository details to get the repository ID
+            repo_details = await self.get_repository_details_from_repo_name(repo_name)
+            repo_id = repo_details.id
+
+            # Prepare the pull request data
+            pr_data = {
+                'sourceRefName': f'refs/heads/{source_branch}',
+                'targetRefName': f'refs/heads/{target_branch}',
+                'title': title,
+                'description': body
+                or f'Pull request from {source_branch} to {target_branch}',
+                'isDraft': draft,
+            }
+
+            # Create the pull request
+            pr_url = f'{self.base_url}/git/repositories/{repo_id}/pullrequests'
+            pr_params = {'api-version': '7.1-preview.1'}
+
+            response_data, _ = await self._make_request(
+                url=pr_url,
+                params=pr_params,
+                method=RequestMethod.POST,
+                json_data=pr_data,
+            )
+
+            if not response_data or not isinstance(response_data, dict):
+                raise UnknownException(
+                    'Failed to create pull request: Invalid response'
+                )
+
+            # Extract the pull request URL
+            pr_id = response_data.get('pullRequestId')
+            if not pr_id:
+                raise UnknownException(
+                    'Failed to create pull request: No PR ID returned'
+                )
+
+            # Construct the web URL for the pull request
+            web_url = f'{self.organization_url}/{project_name}/_git/{repo_name_only}/pullrequest/{pr_id}'
+
+            logger.info(f'Successfully created Azure DevOps pull request: {web_url}')
+            return web_url
+
+        except ValueError:
+            raise
+        except AuthenticationError:
+            raise
+        except Exception as e:
+            logger.error(f'Error creating Azure DevOps pull request: {e}')
+            raise UnknownException(f'Failed to create pull request: {e}')
