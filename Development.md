@@ -126,21 +126,6 @@ You can use OpenHands to develop and improve OpenHands itself! This is a powerfu
    make run FRONTEND_PORT=12000 FRONTEND_HOST=0.0.0.0 BACKEND_HOST=0.0.0.0
    ```
 
-#### What You Can Do
-
-- **Code Review**: Ask OpenHands to review your changes and suggest improvements
-- **Bug Fixes**: Describe issues and let OpenHands help diagnose and fix them
-- **Feature Development**: Collaborate with OpenHands to implement new features
-- **Documentation**: Get help writing or improving documentation
-- **Testing**: Generate test cases and improve test coverage
-
-#### Tips for Success
-
-- Be specific about what you want to accomplish
-- Provide context about the codebase area you're working on
-- Use the repository's existing patterns and conventions
-- Always review AI-generated changes before committing
-
 ### 6. LLM Debugging
 
 If you encounter any issues with the Language Model (LM) or you're simply curious, export DEBUG=1 in the environment and restart the backend.
