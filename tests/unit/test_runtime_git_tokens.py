@@ -455,3 +455,59 @@ async def test_clone_or_init_repo_with_branch(temp_dir, monkeypatch):
     assert 'git checkout feature-branch' in checkout_cmd
     assert 'git checkout -b' not in checkout_cmd  # Should not create a new branch
     assert result == 'repo'
+
+
+def test_get_authenticated_git_url_github_with_token(runtime):
+    """Test _get_authenticated_git_url method for GitHub with token"""
+    # Test the method directly
+    repo_path = 'github.com/neubig/.openhands'
+    result = runtime._get_authenticated_git_url(repo_path)
+
+    # Should include the token and preserve the full domain path
+    expected = 'https://test_token@github.com/neubig/.openhands.git'
+    assert result == expected
+
+
+def test_get_authenticated_git_url_github_without_token(temp_dir):
+    """Test _get_authenticated_git_url method for GitHub without token"""
+    config = OpenHandsConfig()
+    file_store = get_file_store('local', temp_dir)
+    event_stream = EventStream('abc', file_store)
+    runtime = TestRuntime(
+        config=config,
+        event_stream=event_stream,
+        sid='test',
+        user_id='test_user',
+        git_provider_tokens=None,
+    )
+
+    repo_path = 'github.com/neubig/.openhands'
+    result = runtime._get_authenticated_git_url(repo_path)
+
+    # Should return basic HTTPS URL without token
+    expected = 'https://github.com/neubig/.openhands.git'
+    assert result == expected
+
+
+def test_get_authenticated_git_url_gitlab_with_token(temp_dir):
+    """Test _get_authenticated_git_url method for GitLab with token"""
+    config = OpenHandsConfig()
+    git_provider_tokens = MappingProxyType(
+        {ProviderType.GITLAB: ProviderToken(token=SecretStr('gitlab_token'))}
+    )
+    file_store = get_file_store('local', temp_dir)
+    event_stream = EventStream('abc', file_store)
+    runtime = TestRuntime(
+        config=config,
+        event_stream=event_stream,
+        sid='test',
+        user_id='test_user',
+        git_provider_tokens=git_provider_tokens,
+    )
+
+    repo_path = 'gitlab.com/group/.openhands'
+    result = runtime._get_authenticated_git_url(repo_path)
+
+    # Should include the oauth2 token and preserve the full domain path
+    expected = 'https://oauth2:gitlab_token@gitlab.com/group/.openhands.git'
+    assert result == expected
