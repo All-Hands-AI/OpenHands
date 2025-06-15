@@ -150,6 +150,12 @@
         ]
       },
       {
+        "tab": "Success Stories",
+        "pages": [
+          "success-stories/index"
+        ]
+      },
+      {
           "tab": "API Reference",
           "openapi": "/openapi.json"
       }
