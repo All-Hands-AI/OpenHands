@@ -80,3 +80,4 @@ def test_parse_action(
     assert action.browser_actions == expected_browser_actions
     assert action.thought == expected_thought
     assert action.browsergym_send_msg_to_user == expected_msg_content
+    assert action.return_axtree is False  # Default value should be False
