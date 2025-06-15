@@ -1,9 +1,9 @@
-# OpenHands Github & Gitlab Issue Resolver 🙌
+# OpenHands Github, Gitlab & Azure DevOps Issue Resolver 🙌
 
-Need help resolving a GitHub issue but don't have the time to do it yourself? Let an AI agent help you out!
+Need help resolving issues in GitHub, GitLab, or Azure DevOps but don't have the time to do it yourself? Let an AI agent help you out!
 
 This tool allows you to use open-source AI agents based on [OpenHands](https://github.com/all-hands-ai/openhands)
-to attempt to resolve GitHub issues automatically. While it can handle multiple issues, it's primarily designed
+to attempt to resolve issues automatically. While it can handle multiple issues, it's primarily designed
 to help you resolve one issue at a time with high quality.
 
 Getting started is simple - just follow the instructions below.
@@ -74,8 +74,8 @@ If you prefer to run the resolver programmatically instead of using GitHub Actio
 pip install openhands-ai
 ```
 
-2. Create a GitHub or GitLab access token:
-   - Create a GitHub acces token
+2. Create an access token for your platform:
+   - Create a GitHub access token
       - Visit [GitHub's token settings](https://github.com/settings/personal-access-tokens/new)
       - Create a fine-grained token with these scopes:
       - "Content"
@@ -84,7 +84,7 @@ pip install openhands-ai
       - "Workflows"
       - If you don't have push access to the target repo, you can fork it first
 
-   - Create a GitLab acces token
+   - Create a GitLab access token
       - Visit [GitLab's token settings](https://gitlab.com/-/user_settings/personal_access_tokens)
       - Create a fine-grained token with these scopes:
       - 'api'
@@ -93,19 +93,29 @@ pip install openhands-ai
       - 'read_repository'
       - 'write_repository'
 
+   - Create an Azure DevOps access token
+      - Visit [Azure DevOps Personal Access Tokens](https://dev.azure.com/your-organization/_usersSettings/tokens)
+      - Create a token with these scopes:
+      - "Code (Read & Write)"
+      - "Work Items (Read & Write)"
+      - "Pull Request Threads (Read & Write)"
+      - "Pull Request Contribute"
+
 3. Set up environment variables:
 
 ```bash
 
 # GitHub credentials
-
 export GITHUB_TOKEN="your-github-token"
 export GIT_USERNAME="your-github-username"  # Optional, defaults to token owner
 
 # GitLab credentials if you're using GitLab repo
-
 export GITLAB_TOKEN="your-gitlab-token"
 export GIT_USERNAME="your-gitlab-username"  # Optional, defaults to token owner
+
+# Azure DevOps credentials if you're using Azure DevOps repo
+export AZURE_DEVOPS_TOKEN="your-azure-devops-token"
+export GIT_USERNAME="your-azure-devops-username"  # Optional, defaults to token owner
 
 # LLM configuration
 

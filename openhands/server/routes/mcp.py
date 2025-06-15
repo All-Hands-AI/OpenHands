@@ -8,6 +8,9 @@ from fastmcp.server.dependencies import get_http_request
 from pydantic import Field
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.integrations.azure_devops.azure_devops_service import (
+    AzureDevOpsServiceImpl,
+)
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.provider import ProviderToken
@@ -203,6 +206,68 @@ async def create_mr(
 
     except Exception as e:
         error = f'Error creating merge request: {e}'
+        raise ToolError(str(error))
+
+    return response
+
+
+@mcp_server.tool()
+async def create_azure_devops_pr(
+    repo_name: Annotated[
+        str, Field(description='Azure DevOps repository ({{project}}/{{repo}})')
+    ],
+    source_branch: Annotated[str, Field(description='Source branch on repo')],
+    target_branch: Annotated[str, Field(description='Target branch on repo')],
+    title: Annotated[str, Field(description='PR Title')],
+    body: Annotated[str | None, Field(description='PR body')],
+    draft: Annotated[bool, Field(description='Whether PR opened is a draft')] = True,
+) -> str:
+    """Open a PR in Azure DevOps"""
+
+    logger.info('Calling OpenHands MCP create_azure_devops_pr')
+
+    request = get_http_request()
+    headers = request.headers
+    conversation_id = headers.get('X-OpenHands-ServerConversation-ID', None)
+
+    provider_tokens = await get_provider_tokens(request)
+    access_token = await get_access_token(request)
+    user_id = await get_user_id(request)
+
+    azure_devops_token = (
+        provider_tokens.get(ProviderType.AZURE_DEVOPS, ProviderToken())
+        if provider_tokens
+        else ProviderToken()
+    )
+
+    azure_devops_service = AzureDevOpsServiceImpl(
+        user_id=azure_devops_token.user_id,
+        external_auth_id=user_id,
+        external_auth_token=access_token,
+        token=azure_devops_token.token,
+        base_domain=azure_devops_token.host,
+    )
+
+    try:
+        body = await get_convo_link(azure_devops_service, conversation_id, body or '')
+    except Exception as e:
+        logger.warning(f'Failed to append convo link: {e}')
+
+    try:
+        response = await azure_devops_service.create_pr(
+            repo_name=repo_name,
+            source_branch=source_branch,
+            target_branch=target_branch,
+            title=title,
+            body=body,
+            draft=draft,
+        )
+
+        if conversation_id:
+            await save_pr_metadata(user_id, conversation_id, response)
+
+    except Exception as e:
+        error = f'Error creating Azure DevOps pull request: {e}'
         raise ToolError(str(error))
 
     return response
