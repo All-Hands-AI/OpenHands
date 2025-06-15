@@ -20,19 +20,22 @@ export function ActionSuggestions({
 
   const providersAreSet = providers.length > 0;
   const isGitLab = providers.includes("gitlab");
+  const isBitbucket = providers.includes("bitbucket");
 
   const pr = isGitLab ? "merge request" : "pull request";
   const prShort = isGitLab ? "MR" : "PR";
 
+  const getProviderName = () => {
+    if (isGitLab) return "GitLab";
+    if (isBitbucket) return "Bitbucket";
+    return "GitHub";
+  };
+
   const terms = {
     pr,
     prShort,
-    pushToBranch: `Please push the changes to a remote branch on ${
-      isGitLab ? "GitLab" : "GitHub"
-    }, but do NOT create a ${pr}. Please use the exact SAME branch name as the one you are currently on.`,
-    createPR: `Please push the changes to ${
-      isGitLab ? "GitLab" : "GitHub"
-    } and open a ${pr}. Please create a meaningful branch name that describes the changes. If a ${pr} template exists in the repository, please follow it when creating the ${prShort} description.`,
+    pushToBranch: `Please push the changes to a remote branch on ${getProviderName()}, but do NOT create a ${pr}. Please use the exact SAME branch name as the one you are currently on.`,
+    createPR: `Please push the changes to ${getProviderName()} and open a ${pr}. Please create a meaningful branch name that describes the changes. If a ${pr} template exists in the repository, please follow it when creating the ${prShort} description.`,
     pushToPR: `Please push the latest changes to the existing ${pr}.`,
   };
 

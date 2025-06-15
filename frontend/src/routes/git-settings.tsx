@@ -6,6 +6,7 @@ import { BrandButton } from "#/components/features/settings/brand-button";
 import { useLogout } from "#/hooks/mutation/use-logout";
 import { GitHubTokenInput } from "#/components/features/settings/git-settings/github-token-input";
 import { GitLabTokenInput } from "#/components/features/settings/git-settings/gitlab-token-input";
+import { BitbucketTokenInput } from "#/components/features/settings/git-settings/bitbucket-token-input";
 import { ConfigureGitHubRepositoriesAnchor } from "#/components/features/settings/git-settings/configure-github-repositories-anchor";
 import { I18nKey } from "#/i18n/declaration";
 import {
@@ -32,18 +33,24 @@ function GitSettingsScreen() {
     React.useState(false);
   const [gitlabTokenInputHasValue, setGitlabTokenInputHasValue] =
     React.useState(false);
+  const [bitbucketTokenInputHasValue, setBitbucketTokenInputHasValue] =
+    React.useState(false);
 
   const [githubHostInputHasValue, setGithubHostInputHasValue] =
     React.useState(false);
   const [gitlabHostInputHasValue, setGitlabHostInputHasValue] =
     React.useState(false);
+  const [bitbucketHostInputHasValue, setBitbucketHostInputHasValue] =
+    React.useState(false);
 
   const existingGithubHost = settings?.PROVIDER_TOKENS_SET.github;
   const existingGitlabHost = settings?.PROVIDER_TOKENS_SET.gitlab;
+  const existingBitbucketHost = settings?.PROVIDER_TOKENS_SET.bitbucket;
 
   const isSaas = config?.APP_MODE === "saas";
   const isGitHubTokenSet = providers.includes("github");
   const isGitLabTokenSet = providers.includes("gitlab");
+  const isBitbucketTokenSet = providers.includes("bitbucket");
 
   const formAction = async (formData: FormData) => {
     const disconnectButtonClicked =
@@ -56,15 +63,23 @@ function GitSettingsScreen() {
 
     const githubToken = formData.get("github-token-input")?.toString() || "";
     const gitlabToken = formData.get("gitlab-token-input")?.toString() || "";
+    const bitbucketToken =
+      formData.get("bitbucket-token-input")?.toString() || "";
     const githubHost = formData.get("github-host-input")?.toString() || "";
     const gitlabHost = formData.get("gitlab-host-input")?.toString() || "";
+    const bitbucketHost =
+      formData.get("bitbucket-host-input")?.toString() || "";
+
+    // Create providers object with all tokens
+    const providerTokens: Record<string, { token: string; host: string }> = {
+      github: { token: githubToken, host: githubHost },
+      gitlab: { token: gitlabToken, host: gitlabHost },
+      bitbucket: { token: bitbucketToken, host: bitbucketHost },
+    };
 
     saveGitProviders(
       {
-        providers: {
-          github: { token: githubToken, host: githubHost },
-          gitlab: { token: gitlabToken, host: gitlabHost },
-        },
+        providers: providerTokens,
       },
       {
         onSuccess: () => {
@@ -77,8 +92,10 @@ function GitSettingsScreen() {
         onSettled: () => {
           setGithubTokenInputHasValue(false);
           setGitlabTokenInputHasValue(false);
+          setBitbucketTokenInputHasValue(false);
           setGithubHostInputHasValue(false);
           setGitlabHostInputHasValue(false);
+          setBitbucketHostInputHasValue(false);
         },
       },
     );
@@ -87,8 +104,10 @@ function GitSettingsScreen() {
   const formIsClean =
     !githubTokenInputHasValue &&
     !gitlabTokenInputHasValue &&
+    !bitbucketTokenInputHasValue &&
     !githubHostInputHasValue &&
-    !gitlabHostInputHasValue;
+    !gitlabHostInputHasValue &&
+    !bitbucketHostInputHasValue;
   const shouldRenderExternalConfigureButtons = isSaas && config.APP_SLUG;
 
   return (
@@ -111,7 +130,7 @@ function GitSettingsScreen() {
                 setGithubTokenInputHasValue(!!value);
               }}
               onGitHubHostChange={(value) => {
-                setGitlabHostInputHasValue(!!value);
+                setGithubHostInputHasValue(!!value);
               }}
               githubHostSet={existingGithubHost}
             />
@@ -130,6 +149,20 @@ function GitSettingsScreen() {
               gitlabHostSet={existingGitlabHost}
             />
           )}
+
+          {!isSaas && (
+            <BitbucketTokenInput
+              name="bitbucket-token-input"
+              isBitbucketTokenSet={isBitbucketTokenSet}
+              onChange={(value) => {
+                setBitbucketTokenInputHasValue(!!value);
+              }}
+              onBitbucketHostChange={(value) => {
+                setBitbucketHostInputHasValue(!!value);
+              }}
+              bitbucketHostSet={existingBitbucketHost}
+            />
+          )}
         </div>
       )}
 
@@ -143,7 +176,9 @@ function GitSettingsScreen() {
               name="disconnect-tokens-button"
               type="submit"
               variant="secondary"
-              isDisabled={!isGitHubTokenSet && !isGitLabTokenSet}
+              isDisabled={
+                !isGitHubTokenSet && !isGitLabTokenSet && !isBitbucketTokenSet
+              }
             >
               Disconnect Tokens
             </BrandButton>
