@@ -20,7 +20,7 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Getting started",
+        "tab": "Docs",
         "pages": [
           "index",
           "usage/installation",
@@ -31,116 +31,122 @@
             "pages": [
               "usage/cloud/openhands-cloud",
               {
-                "group": "Installation",
+                "group": "Integrations",
                 "pages": [
                   "usage/cloud/github-installation",
-                  "usage/cloud/gitlab-installation"
+                  "usage/cloud/gitlab-installation",
+                  "usage/cloud/slack-installation"
                 ]
               },
               "usage/cloud/cloud-ui",
-              "usage/cloud/cloud-issue-resolver",
               "usage/cloud/cloud-api"
             ]
           },
           {
-            "group": "Usage Methods",
+            "group": "Running OpenHands on Your Own",
             "pages": [
+              "usage/local-setup",
               "usage/how-to/gui-mode",
               "usage/how-to/cli-mode",
               "usage/how-to/headless-mode",
-              "usage/how-to/github-action"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Prompting and Customization",
-        "pages": [
-          "usage/prompting/prompting-best-practices",
-          "usage/prompting/repository",
-          {
-            "group": "Microagents",
-            "pages": [
-              "usage/prompting/microagents-overview",
-              "usage/prompting/microagents-repo",
-              "usage/prompting/microagents-keyword",
-              "usage/prompting/microagents-org",
-              "usage/prompting/microagents-public"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Advanced Configuration",
-        "pages": [
-          {
-            "group": "LLM Configuration",
-            "pages": [
-              "usage/llms/llms",
+              "usage/how-to/github-action",
               {
-                "group": "Providers",
+                "group": "Advanced Configuration",
                 "pages": [
-                  "usage/llms/azure-llms",
-                  "usage/llms/google-llms",
-                  "usage/llms/groq",
-                  "usage/llms/local-llms",
-                  "usage/llms/litellm-proxy",
-                  "usage/llms/openai-llms",
-                  "usage/llms/openrouter"
+                {
+                  "group": "LLM Configuration",
+                  "pages": [
+                    "usage/llms/llms",
+                    {
+                      "group": "Providers",
+                      "pages": [
+                        "usage/llms/azure-llms",
+                        "usage/llms/google-llms",
+                        "usage/llms/groq",
+                        "usage/llms/local-llms",
+                        "usage/llms/litellm-proxy",
+                        "usage/llms/openai-llms",
+                        "usage/llms/openrouter"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "group": "Runtime Configuration",
+                  "pages": [
+                    "usage/runtimes/overview",
+                    {
+                      "group": "Providers",
+                      "pages": [
+                        "usage/runtimes/docker",
+                        "usage/runtimes/remote",
+                        "usage/runtimes/local",
+                        {
+                          "group": "Third-Party Providers",
+                          "pages": [
+                            "usage/runtimes/modal",
+                            "usage/runtimes/daytona",
+                            "usage/runtimes/runloop",
+                            "usage/runtimes/e2b"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "usage/configuration-options",
+                "usage/how-to/custom-sandbox-guide",
+                "usage/search-engine-setup",
+                "usage/mcp"
                 ]
               }
             ]
           },
           {
-            "group": "Runtime Configuration",
+            "group": "Customization",
             "pages": [
-              "usage/runtimes/overview",
+              "usage/prompting/repository",
               {
-                "group": "Providers",
+                "group": "Microagents",
                 "pages": [
-                  "usage/runtimes/docker",
-                  "usage/runtimes/remote",
-                  "usage/runtimes/local",
-                  {
-                    "group": "Third-Party Providers",
-                    "pages": [
-                      "usage/runtimes/modal",
-                      "usage/runtimes/daytona",
-                      "usage/runtimes/runloop",
-                      "usage/runtimes/e2b"
-                    ]
-                  }
+                  "usage/prompting/microagents-overview",
+                  "usage/prompting/microagents-repo",
+                  "usage/prompting/microagents-keyword",
+                  "usage/prompting/microagents-org",
+                  "usage/prompting/microagents-public"
                 ]
               }
             ]
           },
-          "usage/configuration-options",
-          "usage/how-to/custom-sandbox-guide",
-          "usage/search-engine-setup",
-          "usage/mcp"
-        ]
-      },
-      {
-        "tab": "Troubleshooting & Feedback",
-        "pages": [
-          "usage/troubleshooting/troubleshooting",
-          "usage/feedback"
-        ]
-      },
-      {
-        "tab": "For OpenHands Developers",
-        "pages": [
-          "usage/how-to/development-overview",
           {
-            "group": "Architecture",
+            "group": "Tips and Tricks",
             "pages": [
-              "usage/architecture/backend",
-              "usage/architecture/runtime"
+              "usage/prompting/prompting-best-practices"
             ]
           },
-          "usage/how-to/debugging",
-          "usage/how-to/evaluation-harness",
-          "usage/how-to/websocket-connection"
+          {
+            "group": "Troubleshooting & Feedback",
+            "pages": [
+              "usage/troubleshooting/troubleshooting",
+              "usage/feedback"
+            ]
+          },
+          {
+            "group": "OpenHands Developers",
+            "pages": [
+              "usage/how-to/development-overview",
+              {
+                "group": "Architecture",
+                "pages": [
+                  "usage/architecture/backend",
+                  "usage/architecture/runtime"
+                ]
+              },
+              "usage/how-to/debugging",
+              "usage/how-to/evaluation-harness",
+              "usage/how-to/websocket-connection"
+            ]
+          }
         ]
       },
       {

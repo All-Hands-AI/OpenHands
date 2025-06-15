@@ -25,6 +25,7 @@ import { useIsOnTosPage } from "#/hooks/use-is-on-tos-page";
 import { useAutoLogin } from "#/hooks/use-auto-login";
 import { useAuthCallback } from "#/hooks/use-auth-callback";
 import { LOCAL_STORAGE_KEYS } from "#/utils/local-storage";
+import { EmailVerificationGuard } from "#/components/features/guards/email-verification-guard";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -204,7 +205,9 @@ export default function MainApp() {
         id="root-outlet"
         className="h-[calc(100%-50px)] md:h-full w-full relative overflow-auto"
       >
-        <Outlet />
+        <EmailVerificationGuard>
+          <Outlet />
+        </EmailVerificationGuard>
       </div>
 
       {renderAuthModal && (

@@ -47,6 +47,7 @@ const SCAN_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"];
 
 // Attributes that typically don't contain user-facing text
 const NON_TEXT_ATTRIBUTES = [
+  "allow",
   "className",
   "i18nKey",
   "testId",
@@ -69,6 +70,7 @@ const NON_TEXT_ATTRIBUTES = [
   "aria-describedby",
   "aria-hidden",
   "role",
+  "sandbox",
 ];
 
 function shouldIgnorePath(filePath) {
@@ -114,6 +116,10 @@ const EXCLUDED_TECHNICAL_STRINGS = [
   "add-secret-form", // Test ID for secret form
   "edit-secret-form", // Test ID for secret form
   "search-api-key-input", // Input name for search API key
+  "noopener,noreferrer", // Options for window.open
+  "STATUS$READY",
+  "STATUS$STOPPED",
+  "STATUS$ERROR",
 ];
 
 function isExcludedTechnicalString(str) {

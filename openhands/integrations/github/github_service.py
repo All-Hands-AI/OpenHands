@@ -39,6 +39,7 @@ class GitHubService(BaseGitService, GitService):
 
     The class is instantiated via get_impl() in openhands.server.shared.py.
     """
+
     BASE_URL = 'https://api.github.com'
     token: SecretStr = SecretStr('')
     refresh = False
@@ -483,35 +484,29 @@ class GitHubService(BaseGitService, GitService):
             - PR URL when successful
             - Error message when unsuccessful
         """
-        try:
-            url = f'{self.BASE_URL}/repos/{repo_name}/pulls'
 
-            # Set default body if none provided
-            if not body:
-                body = f'Merging changes from {source_branch} into {target_branch}'
+        url = f'{self.BASE_URL}/repos/{repo_name}/pulls'
 
-            # Prepare the request payload
-            payload = {
-                'title': title,
-                'head': source_branch,
-                'base': target_branch,
-                'body': body,
-                'draft': draft,
-            }
+        # Set default body if none provided
+        if not body:
+            body = f'Merging changes from {source_branch} into {target_branch}'
 
-            # Make the POST request to create the PR
-            response, _ = await self._make_request(
-                url=url, params=payload, method=RequestMethod.POST
-            )
+        # Prepare the request payload
+        payload = {
+            'title': title,
+            'head': source_branch,
+            'base': target_branch,
+            'body': body,
+            'draft': draft,
+        }
 
-            # Return the HTML URL of the created PR
-            if 'html_url' in response:
-                return response['html_url']
-            else:
-                return f'PR created but URL not found in response: {response}'
+        # Make the POST request to create the PR
+        response, _ = await self._make_request(
+            url=url, params=payload, method=RequestMethod.POST
+        )
 
-        except Exception as e:
-            return f'Error creating pull request: {str(e)}'
+        # Return the HTML URL of the created PR
+        return response['html_url']
 
 
 github_service_cls = os.environ.get(

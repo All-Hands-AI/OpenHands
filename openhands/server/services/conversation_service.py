@@ -1,9 +1,9 @@
-import os
 import uuid
 from typing import Any
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
+from openhands.experiments.experiment_manager import ExperimentManagerImpl
 from openhands.integrations.provider import (
     CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA,
     PROVIDER_TOKEN_TYPE,
@@ -78,6 +78,7 @@ async def create_new_conversation(
     session_init_args['git_provider'] = git_provider
     session_init_args['conversation_instructions'] = conversation_instructions
     conversation_init_data = ConversationInitData(**session_init_args)
+
     logger.info('Loading conversation store')
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
     logger.info('ServerConversation store loaded')
@@ -87,12 +88,14 @@ async def create_new_conversation(
         conversation_id = uuid.uuid4().hex
 
     if not await conversation_store.exists(conversation_id):
-
         logger.info(
             f'New conversation ID: {conversation_id}',
             extra={'user_id': user_id, 'session_id': conversation_id},
         )
 
+        conversation_init_data = ExperimentManagerImpl.run_conversation_variant_test(
+            user_id, conversation_id, conversation_init_data
+        )
         conversation_title = get_default_conversation_title(conversation_id)
 
         logger.info(f'Saving metadata for conversation {conversation_id}')
@@ -105,6 +108,7 @@ async def create_new_conversation(
                 selected_repository=selected_repository,
                 selected_branch=selected_branch,
                 git_provider=git_provider,
+                llm_model=conversation_init_data.llm_model,
             )
         )
 
@@ -119,8 +123,8 @@ async def create_new_conversation(
             image_urls=image_urls or [],
         )
 
-    if attach_convo_id and conversation_instructions:
-        conversation_instructions = conversation_instructions.format(conversation_id)
+    if attach_convo_id:
+        logger.warning('Attaching convo ID is deprecated, skipping process')
 
     agent_loop_info = await conversation_manager.maybe_start_agent_loop(
         conversation_id,

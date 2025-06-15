@@ -167,6 +167,7 @@ async def test_add_to_local_event_stream():
 @pytest.mark.asyncio
 async def test_cleanup_session_connections():
     sio = get_mock_sio()
+    sio.disconnect = AsyncMock()  # Mock the disconnect method
     async with StandaloneConversationManager(
         sio, OpenHandsConfig(), InMemoryFileStore(), MonitoringListener()
     ) as conversation_manager:
@@ -181,6 +182,7 @@ async def test_cleanup_session_connections():
 
         await conversation_manager._close_session('session1')
 
+        # Check that connections were removed from the dictionary
         remaining_connections = conversation_manager._local_connection_id_to_session_id
         assert 'conn1' not in remaining_connections
         assert 'conn2' not in remaining_connections
@@ -188,3 +190,8 @@ async def test_cleanup_session_connections():
         assert 'conn4' in remaining_connections
         assert remaining_connections['conn3'] == 'session2'
         assert remaining_connections['conn4'] == 'session2'
+
+        # Check that disconnect was called for each connection
+        assert sio.disconnect.await_count == 2
+        sio.disconnect.assert_any_call('conn1')
+        sio.disconnect.assert_any_call('conn2')
