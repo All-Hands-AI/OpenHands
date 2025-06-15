@@ -169,7 +169,9 @@ class Session:
                 f' keep_first=4, max_size=80)'
             )
             agent_config.condenser = default_condenser_config
-        agent = Agent.get_cls(agent_cls)(llm, agent_config)
+        agent = Agent.get_cls(agent_cls)(
+            llm, agent_config, workspace_root=self.config.workspace_base
+        )
 
         git_provider_tokens = None
         selected_repository = None

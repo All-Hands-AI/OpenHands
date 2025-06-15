@@ -180,6 +180,7 @@ def create_agent(config: OpenHandsConfig) -> Agent:
     agent = agent_cls(
         llm=LLM(config=llm_config),
         config=agent_config,
+        workspace_root=config.workspace_base,  # Pass workspace_base
     )
 
     return agent

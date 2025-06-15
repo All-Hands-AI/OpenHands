@@ -7,6 +7,11 @@ from jinja2 import Template
 from openhands.controller.state.state import State
 from openhands.core.message import Message, TextContent
 from openhands.events.observation.agent import MicroagentKnowledge
+from openhands.utils.user_prompts import (
+    CUSTOM_SYSTEM_APPEND_FILENAME,
+    CUSTOM_TOOL_APPEND_FILENAME,
+    get_custom_prompt_addition,
+)
 
 
 @dataclass
@@ -68,8 +73,26 @@ class PromptManager:
         with open(template_path, 'r') as file:
             return Template(file.read())
 
-    def get_system_message(self) -> str:
-        return self.system_template.render().strip()
+    def get_system_message(self, workspace_root: str | None = None) -> str:
+        base_content = self.system_template.render().strip()
+
+        custom_system_addition = get_custom_prompt_addition(
+            CUSTOM_SYSTEM_APPEND_FILENAME, workspace_root
+        )
+        custom_tool_addition = get_custom_prompt_addition(
+            CUSTOM_TOOL_APPEND_FILENAME, workspace_root
+        )
+
+        final_content = base_content
+        if custom_system_addition:
+            final_content += '\n\n' + custom_system_addition
+
+        if custom_tool_addition:
+            # Add a header for clarity, and ensure separation
+            final_content += '\n\n--- Additional Instructions (User Defined) ---\n'
+            final_content += custom_tool_addition
+
+        return final_content.strip()
 
     def get_example_user_message(self) -> str:
         """This is an initial user message that can be provided to the agent

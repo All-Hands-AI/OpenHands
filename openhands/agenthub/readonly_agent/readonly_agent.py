@@ -41,19 +41,12 @@ class ReadOnlyAgent(CodeActAgent):
         self,
         llm: LLM,
         config: AgentConfig,
+        workspace_root: str | None,
     ) -> None:
-        """Initializes a new instance of the ReadOnlyAgent class.
-
-        Parameters:
-        - llm (LLM): The llm to be used by this agent
-        - config (AgentConfig): The configuration for this agent
-        """
-        # Initialize the CodeActAgent class; some of it is overridden with class methods
-        super().__init__(llm, config)
-
-        logger.debug(
-            f'TOOLS loaded for ReadOnlyAgent: {", ".join([tool.get("function").get("name") for tool in self.tools])}'
-        )
+        """Initializes a new instance of the ReadOnlyAgent class."""
+        super().__init__(llm, config, workspace_root=workspace_root)
+        # self.tools are set by the parent CodeActAgent's __init__ which calls _get_tools.
+        # This class overrides _get_tools to provide its specific read-only tools.
 
     @property
     def prompt_manager(self) -> PromptManager:

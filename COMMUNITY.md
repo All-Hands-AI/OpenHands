@@ -1,4 +1,4 @@
-# 🙌 The OpenHands Community
+remind # 🙌 The OpenHands Community
 
 The OpenHands community is built around the belief that (1) AI and AI agents are going to fundamentally change the way
 we build software, and (2) if this is true, we should do everything we can to make sure that the benefits provided by

@@ -104,13 +104,16 @@ class BrowsingAgent(Agent):
         self,
         llm: LLM,
         config: AgentConfig,
+        workspace_root: str | None,
     ) -> None:
         """Initializes a new instance of the BrowsingAgent class.
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
+        - config (AgentConfig): The configuration for this agent
+        - workspace_root (str | None): The root of the workspace directory
         """
-        super().__init__(llm, config)
+        super().__init__(llm, config, workspace_root=workspace_root)
         # define a configurable action space, with chat functionality, web navigation, and webpage grounding using accessibility tree and HTML.
         # see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/action/highlevel.py for more details
         action_subsets = ['chat', 'bid']

@@ -687,7 +687,9 @@ class AgentController:
         agent_config = self.agent_configs.get(action.agent, self.agent.config)
         llm_config = self.agent_to_llm_config.get(action.agent, self.agent.llm.config)
         llm = LLM(config=llm_config, retry_listener=self._notify_on_llm_retry)
-        delegate_agent = agent_cls(llm=llm, config=agent_config)
+        delegate_agent = agent_cls(
+            llm=llm, config=agent_config, workspace_root=self.agent.workspace_root
+        )
         state = State(
             session_id=self.id.removesuffix('-delegate'),
             inputs=action.inputs or {},

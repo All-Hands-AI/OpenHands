@@ -471,7 +471,9 @@ class DockerNestedConversationManager(ConversationManager):
         )
         llm = session._create_llm(agent_cls)
         agent_config = self.config.get_agent_config(agent_cls)
-        agent = Agent.get_cls(agent_cls)(llm, agent_config)
+        agent = Agent.get_cls(agent_cls)(
+            llm, agent_config, workspace_root=self.config.workspace_base
+        )
 
         config = self.config.model_copy(deep=True)
         env_vars = config.sandbox.runtime_startup_env_vars

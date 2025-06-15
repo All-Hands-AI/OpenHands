@@ -72,14 +72,16 @@ class CodeActAgent(Agent):
         self,
         llm: LLM,
         config: AgentConfig,
+        workspace_root: str | None,
     ) -> None:
         """Initializes a new instance of the CodeActAgent class.
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
         - config (AgentConfig): The configuration for this agent
+        - workspace_root (str | None): The root of the workspace directory
         """
-        super().__init__(llm, config)
+        super().__init__(llm, config, workspace_root=workspace_root)
         self.pending_actions: deque['Action'] = deque()
         self.reset()
         self.tools = self._get_tools()
