@@ -32,7 +32,8 @@ export function LaunchMicroagentModal({
   const { data: prompt, isLoading: promptIsLoading } =
     useMicroagentPrompt(eventId);
 
-  const { data: microagents } = useConversationMicroagents();
+  const { data: microagents, isLoading: microagentsIsLoading } =
+    useConversationMicroagents();
 
   const [triggers, setTriggers] = React.useState<string[]>([]);
 
@@ -107,6 +108,7 @@ export function LaunchMicroagentModal({
               placeholder="Select a microagent file or enter a custom value"
               required
               allowsCustomValue
+              isLoading={microagentsIsLoading}
               items={
                 microagents?.map((item) => ({
                   key: item.name,
@@ -135,7 +137,9 @@ export function LaunchMicroagentModal({
               <BrandButton
                 type="submit"
                 variant="primary"
-                isDisabled={isLoading || promptIsLoading}
+                isDisabled={
+                  isLoading || promptIsLoading || microagentsIsLoading
+                }
               >
                 Launch
               </BrandButton>

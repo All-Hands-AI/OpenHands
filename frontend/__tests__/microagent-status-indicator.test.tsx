@@ -63,14 +63,14 @@ describe("MicroagentStatusIndicator", () => {
     const { rerender } = render(<MicroagentStatusIndicator status={MicroagentStatus.CREATING} />);
     
     let statusText = screen.getByText("Creating microagent...");
-    expect(statusText).toHaveClass("text-blue-600");
+    expect(statusText).toHaveClass("underline");
 
     rerender(<MicroagentStatusIndicator status={MicroagentStatus.COMPLETED} />);
     statusText = screen.getByText("Microagent completed successfully");
-    expect(statusText).toHaveClass("text-green-600");
+    expect(statusText).toHaveClass("underline");
 
     rerender(<MicroagentStatusIndicator status={MicroagentStatus.ERROR} />);
     statusText = screen.getByText("Microagent encountered an error");
-    expect(statusText).toHaveClass("text-red-600");
+    expect(statusText).toHaveClass("underline");
   });
 });

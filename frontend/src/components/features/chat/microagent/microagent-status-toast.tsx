@@ -108,7 +108,7 @@ export const renderConversationCreatedToast = (conversationId: string) =>
     {
       ...TOAST_OPTIONS,
       id: `status-${conversationId}`,
-      duration: Infinity,
+      duration: 5000,
     },
   );
 
@@ -123,7 +123,7 @@ export const renderConversationFinishedToast = (conversationId: string) =>
     {
       ...TOAST_OPTIONS,
       id: `status-${conversationId}`,
-      duration: Infinity,
+      duration: 5000,
     },
   );
 
@@ -143,6 +143,6 @@ export const renderConversationErroredToast = (
     {
       ...TOAST_OPTIONS,
       id: `status-${conversationId}`,
-      duration: Infinity,
+      duration: 5000,
     },
   );

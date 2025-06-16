@@ -17,6 +17,8 @@ export function MicroagentStatusIndicator({
     switch (status) {
       case MicroagentStatus.CREATING:
         return t("MICROAGENT$STATUS_CREATING");
+      case MicroagentStatus.RUNNING:
+        return t("MICROAGENT$STATUS_RUNNING");
       case MicroagentStatus.COMPLETED:
         return t("MICROAGENT$STATUS_COMPLETED");
       case MicroagentStatus.ERROR:
@@ -29,6 +31,7 @@ export function MicroagentStatusIndicator({
   const getStatusIcon = () => {
     switch (status) {
       case MicroagentStatus.CREATING:
+      case MicroagentStatus.RUNNING:
         return <Spinner size="sm" />;
       case MicroagentStatus.COMPLETED:
         return <SuccessIndicator status="success" />;
