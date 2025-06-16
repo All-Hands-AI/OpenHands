@@ -120,12 +120,6 @@ RUN apt-get update && \
     /openhands/micromamba/bin/micromamba run -n openhands poetry run pip install playwright && \
     /openhands/micromamba/bin/micromamba run -n openhands poetry run playwright install --with-deps chromium
 
-{%- if 'mswebench' in base_image -%}
-RUN npm install -g @puppeteer/browsers && \
-    npx @puppeteer/browsers install chrome-headless-shell@1169 && \
-    cp ~/.cache/ms-playwright/chromium_headless_shell-1169 ~/.cache/ms-playwright/chromium_headless_shell-1161
-{% endif -%}
-
 # Set environment variables and permissions
 RUN /openhands/micromamba/bin/micromamba run -n openhands poetry run python -c "import sys; print('OH_INTERPRETER_PATH=' + sys.executable)" >> /etc/environment && \
     chmod -R g+rws /openhands/poetry && \
@@ -135,6 +129,13 @@ RUN /openhands/micromamba/bin/micromamba run -n openhands poetry run python -c "
 RUN /openhands/micromamba/bin/micromamba run -n openhands poetry cache clear --all . -n && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
     /openhands/micromamba/bin/micromamba clean --all
+
+#playwright for mswebench
+{%- if 'mswebench' in base_image -%}
+RUN npm install -g @puppeteer/browsers && \
+    npx @puppeteer/browsers install chrome-headless-shell@1169 && \
+    cp ~/.cache/ms-playwright/chromium_headless_shell-1169 ~/.cache/ms-playwright/chromium_headless_shell-1161
+{% endif -%}
 
 {% endmacro %}
 
