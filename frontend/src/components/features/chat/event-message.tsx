@@ -68,11 +68,6 @@ export function EventMessage({
     return null;
   }
 
-  // Show Likert scale for agent messages if:
-  // 1. It's in SaaS mode, AND
-  // 2. It's a finish action, AND
-  // 3. It's the last message, AND
-  // 4. We've checked if feedback exists
   const showLikertScale =
     config?.APP_MODE === "saas" &&
     isFinishAction(event) &&
