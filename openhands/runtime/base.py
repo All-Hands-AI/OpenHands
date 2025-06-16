@@ -372,9 +372,6 @@ class Runtime(FileEditRuntimeMixin):
         selected_repository: str | None,
         selected_branch: str | None,
     ) -> str:
-        # Update instance git provider tokens to ensure microagent loading uses the same tokens
-        self.git_provider_tokens = git_provider_tokens
-
         repository = None
         if selected_repository:  # Determine provider from repo name
             try:
