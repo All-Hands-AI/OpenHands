@@ -100,7 +100,7 @@ export function EventMessage({
 
   if (isUserMessage(event) || isAssistantMessage(event)) {
     return (
-      <div>
+      <div className="flex flex-col self-end">
         <ChatMessage
           type={event.source}
           message={isUserMessage(event) ? event.args.content : event.message}
@@ -122,9 +122,6 @@ export function EventMessage({
     return (
       <div>
         <ChatMessage type="agent" message={event.content} />
-        {microagentStatus && actions && (
-          <MicroagentStatusIndicator status={microagentStatus} />
-        )}
       </div>
     );
   }
@@ -138,9 +135,6 @@ export function EventMessage({
           success={getObservationResult(event)}
         />
         {shouldShowConfirmationButtons && <ConfirmationButtons />}
-        {microagentStatus && actions && (
-          <MicroagentStatusIndicator status={microagentStatus} />
-        )}
       </div>
     );
   }
@@ -162,9 +156,6 @@ export function EventMessage({
       />
 
       {shouldShowConfirmationButtons && <ConfirmationButtons />}
-      {microagentStatus && actions && (
-        <MicroagentStatusIndicator status={microagentStatus} />
-      )}
     </div>
   );
 }

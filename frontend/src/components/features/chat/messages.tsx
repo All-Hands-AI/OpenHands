@@ -154,7 +154,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(
                 ? {
                     ...statusEntry,
                     conversationId: newConversationId,
-                    status: MicroagentStatus.RUNNING,
+                    status: MicroagentStatus.CREATING,
                   }
                 : statusEntry,
             ),

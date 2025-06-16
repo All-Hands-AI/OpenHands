@@ -17,8 +17,6 @@ export function MicroagentStatusIndicator({
     switch (status) {
       case MicroagentStatus.CREATING:
         return t("MICROAGENT$STATUS_CREATING");
-      case MicroagentStatus.RUNNING:
-        return t("MICROAGENT$STATUS_RUNNING");
       case MicroagentStatus.COMPLETED:
         return t("MICROAGENT$STATUS_COMPLETED");
       case MicroagentStatus.ERROR:
@@ -31,7 +29,6 @@ export function MicroagentStatusIndicator({
   const getStatusIcon = () => {
     switch (status) {
       case MicroagentStatus.CREATING:
-      case MicroagentStatus.RUNNING:
         return <Spinner size="sm" />;
       case MicroagentStatus.COMPLETED:
         return <SuccessIndicator status="success" />;
@@ -42,26 +39,10 @@ export function MicroagentStatusIndicator({
     }
   };
 
-  const getStatusColor = () => {
-    switch (status) {
-      case MicroagentStatus.CREATING:
-      case MicroagentStatus.RUNNING:
-        return "text-blue-600";
-      case MicroagentStatus.COMPLETED:
-        return "text-green-600";
-      case MicroagentStatus.ERROR:
-        return "text-red-600";
-      default:
-        return "text-gray-600";
-    }
-  };
-
   return (
-    <div className="flex items-center gap-2 mt-2 p-2 bg-gray-50 rounded-md text-sm">
+    <div className="flex items-center gap-2 mt-2 p-2 text-sm">
       {getStatusIcon()}
-      <span className={`font-medium ${getStatusColor()}`}>
-        {getStatusText()}
-      </span>
+      <span className="underline">{getStatusText()}</span>
     </div>
   );
 }
