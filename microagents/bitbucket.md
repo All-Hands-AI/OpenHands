@@ -16,7 +16,7 @@ ALWAYS use the Bitbucket API for operations instead of a web browser.
 ALWAYS use the `create_bitbucket_pr` tool to open a pull request
 </IMPORTANT>
 
-If you encounter authentication issues when pushing to Bitbucket (such as password prompts or permission errors), the old token may have expired. In such case, update the remote URL to include the current token: `git remote set-url origin https://${BITBUCKET_TOKEN}@bitbucket.org/username/repo.git`
+If you encounter authentication issues when pushing to Bitbucket (such as password prompts or permission errors), the old token may have expired. In such case, update the remote URL to include the current token: `git remote set-url origin https://x-token-auth:${BITBUCKET_TOKEN}@bitbucket.org/username/repo.git`
 
 Here are some instructions for pushing, but ONLY do this if the user asks you to:
 * NEVER push directly to the `main` or `master` branch
