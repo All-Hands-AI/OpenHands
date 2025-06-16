@@ -7,6 +7,7 @@ import { useLogout } from "#/hooks/mutation/use-logout";
 import { GitHubTokenInput } from "#/components/features/settings/git-settings/github-token-input";
 import { GitLabTokenInput } from "#/components/features/settings/git-settings/gitlab-token-input";
 import { ConfigureGitHubRepositoriesAnchor } from "#/components/features/settings/git-settings/configure-github-repositories-anchor";
+import { InstallSlackAppAnchor } from "#/components/features/settings/git-settings/install-slack-app-anchor";
 import { I18nKey } from "#/i18n/declaration";
 import {
   displayErrorToast,
@@ -101,6 +102,10 @@ function GitSettingsScreen() {
         <div className="p-9 flex flex-col gap-12">
           {shouldRenderExternalConfigureButtons && !isLoading && (
             <ConfigureGitHubRepositoriesAnchor slug={config.APP_SLUG!} />
+          )}
+
+          {shouldRenderExternalConfigureButtons && !isLoading && (
+            <InstallSlackAppAnchor />
           )}
 
           {!isSaas && (
