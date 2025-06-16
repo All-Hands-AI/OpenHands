@@ -50,7 +50,6 @@ AGENT_CLASS = 'CodeActAgent'
 
 class IssueResolver:
     GITLAB_CI = os.getenv('GITLAB_CI') == 'true'
-    BITBUCKET_CI = os.getenv('BITBUCKET_BUILD_NUMBER') is not None
 
     def __init__(self, args: Namespace) -> None:
         """Initialize the IssueResolver with the given parameters.
