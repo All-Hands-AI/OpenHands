@@ -125,8 +125,7 @@ class BrowsingAgent(Agent):
         self.reset()
 
     def reset(self) -> None:
-        """Resets the Browsing Agent's internal state.
-        """
+        """Resets the Browsing Agent's internal state."""
         super().reset()
         # Reset agent-specific counters but not LLM metrics
         self.error_accumulator = 0

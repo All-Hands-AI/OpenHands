@@ -136,8 +136,7 @@ class CodeActAgent(Agent):
         return tools
 
     def reset(self) -> None:
-        """Resets the CodeAct Agent's internal state.
-        """
+        """Resets the CodeAct Agent's internal state."""
         super().reset()
         # Only clear pending actions, not LLM metrics
         self.pending_actions.clear()
