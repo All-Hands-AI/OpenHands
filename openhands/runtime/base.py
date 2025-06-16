@@ -664,24 +664,42 @@ fi
 
         return loaded_microagents
 
-    def _get_authenticated_git_url(self, repo_path: str) -> str:
+    def _get_authenticated_git_url(
+        self, repo_path: str, provider_type: ProviderType | None = None
+    ) -> str:
         """Get an authenticated git URL for a repository.
 
         Args:
-            repo_path: Repository path (e.g., "github.com/acme-co/api")
+            repo_path: Repository path (e.g., "github.com/acme-co/api" or "acme-co/api")
+            provider_type: Optional provider type to use when repo_path doesn't include domain
 
         Returns:
             Authenticated git URL if credentials are available, otherwise regular HTTPS URL
         """
-        remote_url = f'https://{repo_path}.git'
+        # Normalize repo_path to include domain if missing
+        normalized_repo_path = repo_path
+        if '/' in repo_path and not any(
+            domain in repo_path
+            for domain in ['github.com', 'gitlab.com', 'bitbucket.org']
+        ):
+            # If repo_path is just "owner/repo", use the provided provider_type or default to github.com
+            if provider_type == ProviderType.BITBUCKET:
+                normalized_repo_path = f'bitbucket.org/{repo_path}'
+            elif provider_type == ProviderType.GITLAB:
+                normalized_repo_path = f'gitlab.com/{repo_path}'
+            else:
+                # Default to GitHub for unknown or GitHub provider
+                normalized_repo_path = f'github.com/{repo_path}'
 
-        # Determine provider from repo path
+        remote_url = f'https://{normalized_repo_path}.git'
+
+        # Determine provider from normalized repo path
         provider = None
-        if 'github.com' in repo_path:
+        if 'github.com' in normalized_repo_path:
             provider = ProviderType.GITHUB
-        elif 'gitlab.com' in repo_path:
+        elif 'gitlab.com' in normalized_repo_path:
             provider = ProviderType.GITLAB
-        elif 'bitbucket.org' in repo_path:
+        elif 'bitbucket.org' in normalized_repo_path:
             provider = ProviderType.BITBUCKET
 
         # Add authentication if available
@@ -695,21 +713,21 @@ fi
                 token_value = git_token.get_secret_value()
                 if provider == ProviderType.GITLAB:
                     # GitLab uses oauth2 prefix with URL-encoded token
-                    remote_url = f'https://oauth2:{token_value}@{repo_path.replace("gitlab.com/", "")}.git'
+                    remote_url = f'https://oauth2:{token_value}@{normalized_repo_path.replace("gitlab.com/", "")}.git'
                 elif provider == ProviderType.BITBUCKET:
                     # Bitbucket tokens are in email:password format, need to encode separately
                     if ':' in token_value:
                         email, password = token_value.split(':', 1)
                         encoded_email = urllib.parse.quote(email, safe='')
                         encoded_password = urllib.parse.quote(password, safe='')
-                        remote_url = f'https://{encoded_email}:{encoded_password}@{repo_path.replace("bitbucket.org/", "")}.git'
+                        remote_url = f'https://{encoded_email}:{encoded_password}@{normalized_repo_path.replace("bitbucket.org/", "")}.git'
                     else:
                         # Fallback for non-standard token format
                         encoded_token = urllib.parse.quote(token_value, safe='')
-                        remote_url = f'https://{encoded_token}@{repo_path.replace("bitbucket.org/", "")}.git'
+                        remote_url = f'https://{encoded_token}@{normalized_repo_path.replace("bitbucket.org/", "")}.git'
                 else:
                     # GitHub and other providers use token as username
-                    remote_url = f'https://{token_value}@{repo_path.replace("github.com/", "")}.git'
+                    remote_url = f'https://{token_value}@{normalized_repo_path.replace("github.com/", "")}.git'
 
         return remote_url
 
@@ -723,7 +741,7 @@ fi
         the microagents from the ./microagents/ folder.
 
         Args:
-            selected_repository: The repository path (e.g., "github.com/acme-co/api")
+            selected_repository: The repository path (e.g., "github.com/acme-co/api" or "acme-co/api")
 
         Returns:
             A list of loaded microagents from the org/user level repository
@@ -734,18 +752,32 @@ fi
         if len(repo_parts) < 2:
             return loaded_microagents
 
-        # Extract the domain and org/user name
-        domain = repo_parts[0] if len(repo_parts) > 2 else 'github.com'
+        # Determine the git provider for the selected repository
+        provider_type = None
+        try:
+            if self.git_provider_tokens:
+                provider_handler = ProviderHandler(self.git_provider_tokens)
+                repository = call_async_from_sync(
+                    provider_handler.verify_repo_provider, 30.0, selected_repository
+                )
+                provider_type = repository.git_provider
+        except Exception as e:
+            self.log(
+                'debug',
+                f'Could not determine provider for {selected_repository}: {str(e)}',
+            )
+            # Fall back to GitHub as default
+            provider_type = ProviderType.GITHUB
+
+        # Extract the org/user name
         org_name = repo_parts[-2]
 
         # Construct the org-level .openhands repo path
-        org_openhands_repo = f'{domain}/{org_name}/.openhands'
-        if domain not in org_openhands_repo:
-            org_openhands_repo = f'github.com/{org_openhands_repo}'
+        org_openhands_repo = f'{org_name}/.openhands'
 
         self.log(
             'info',
-            f'Checking for org-level microagents at {org_openhands_repo}',
+            f'Checking for org-level microagents at {org_openhands_repo} (provider: {provider_type})',
         )
 
         # Try to clone the org-level .openhands repo
@@ -754,7 +786,9 @@ fi
             org_repo_dir = self.workspace_root / f'org_openhands_{org_name}'
 
             # Get authenticated URL and do a shallow clone (--depth 1) for efficiency
-            remote_url = self._get_authenticated_git_url(org_openhands_repo)
+            remote_url = self._get_authenticated_git_url(
+                org_openhands_repo, provider_type
+            )
 
             clone_cmd = f'git clone --depth 1 {remote_url} {org_repo_dir}'
 
