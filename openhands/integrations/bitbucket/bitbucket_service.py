@@ -54,8 +54,6 @@ class BitbucketService(BaseGitService, GitService):
             self.token = token
         if base_domain:
             self.BASE_URL = f'https://api.{base_domain}/2.0'
-        if base_domain:
-            self.BASE_URL = f'https://api.{base_domain}/2.0'
 
     @property
     def provider(self) -> str:
