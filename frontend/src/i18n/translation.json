@@ -80,6 +80,38 @@
         "de": "Fügen Sie einen Auslöser für den Microagent hinzu",
         "uk": "Додати тригер для мікроагента"
     },
+    "MICROAGENT$WHAT_TO_REMEMBER": {
+        "en": "What would you like your microagent to remember?",
+        "ja": "マイクロエージェントに何を覚えさせたいですか？",
+        "zh-CN": "您希望您的微代理记住什么？",
+        "zh-TW": "您希望您的微代理記住什麼？",
+        "ko-KR": "마이크로에이전트가 무엇을 기억하기를 원하시나요?",
+        "no": "Hva vil du at mikroagenten din skal huske?",
+        "it": "Cosa vorresti che il tuo microagente ricordasse?",
+        "pt": "O que você gostaria que seu microagente lembrasse?",
+        "es": "¿Qué te gustaría que tu microagente recordara?",
+        "ar": "ماذا تريد أن يتذكر وكيلك المصغر؟",
+        "fr": "Que souhaitez-vous que votre micro-agent se souvienne ?",
+        "tr": "Mikro ajanınızın neyi hatırlamasını istersiniz?",
+        "de": "Was soll sich Ihr Microagent merken?",
+        "uk": "Що ви хочете, щоб ваш мікроагент запам'ятав?"
+    },
+    "MICROAGENT$ADD_TRIGGERS": {
+        "en": "Add triggers for the microagent",
+        "ja": "マイクロエージェントのトリガーを追加",
+        "zh-CN": "为微代理添加触发器",
+        "zh-TW": "為微代理添加觸發器",
+        "ko-KR": "마이크로에이전트의 트리거 추가",
+        "no": "Legg til utløsere for mikroagenten",
+        "it": "Aggiungi trigger per il microagente",
+        "pt": "Adicionar gatilhos para o microagente",
+        "es": "Añadir disparadores para el microagente",
+        "ar": "إضافة مشغلات للوكيل المصغر",
+        "fr": "Ajouter des déclencheurs pour le micro-agent",
+        "tr": "Mikro ajan için tetikleyiciler ekleyin",
+        "de": "Auslöser für den Microagent hinzufügen",
+        "uk": "Додати тригери для мікроагента"
+    },
     "MICROAGENT$WAIT_FOR_RUNTIME": {
         "en": "Please wait for the runtime to be active.",
         "ja": "ランタイムがアクティブになるまでお待ちください。",

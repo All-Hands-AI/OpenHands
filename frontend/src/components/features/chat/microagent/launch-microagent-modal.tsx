@@ -83,7 +83,7 @@ export function LaunchMicroagentModal({
               htmlFor="query-input"
               className="flex flex-col gap-2.5 w-full text-sm"
             >
-              {t("MICROAGENT$WHAT_TO_ADD")}
+              {t("MICROAGENT$WHAT_TO_REMEMBER")}
               {promptIsLoading && <LoadingMicroagentTextarea />}
               {!promptIsLoading && (
                 <textarea
@@ -121,7 +121,16 @@ export function LaunchMicroagentModal({
               htmlFor="trigger-input"
               className="flex flex-col gap-2.5 w-full text-sm"
             >
-              {t("MICROAGENT$ADD_TRIGGER")}
+              <div className="flex items-center gap-2">
+                {t("MICROAGENT$ADD_TRIGGERS")}
+                <a
+                  href="https://docs.all-hands.dev/usage/prompting/microagents-keyword"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <FaCircleInfo className="text-primary" />
+                </a>
+              </div>
               <BadgeInput
                 name="trigger-input"
                 value={triggers}
