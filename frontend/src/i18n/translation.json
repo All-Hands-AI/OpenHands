@@ -160,22 +160,6 @@
         "de": "Microagent wird geändert...",
         "uk": "Зміна мікроагента..."
     },
-    "MICROAGENT$STATUS_RUNNING": {
-        "en": "Microagent is running...",
-        "ja": "マイクロエージェントが実行中...",
-        "zh-CN": "微代理正在运行...",
-        "zh-TW": "微代理正在運行...",
-        "ko-KR": "마이크로에이전트 실행 중...",
-        "no": "Mikroagent kjører...",
-        "it": "Microagente in esecuzione...",
-        "pt": "Microagente em execução...",
-        "es": "Microagente ejecutándose...",
-        "ar": "الوكيل المصغر قيد التشغيل...",
-        "fr": "Micro-agent en cours d'exécution...",
-        "tr": "Mikro ajan çalışıyor...",
-        "de": "Microagent läuft...",
-        "uk": "Мікроагент працює..."
-    },
     "MICROAGENT$STATUS_COMPLETED": {
         "en": "View microagent update",
         "ja": "マイクロエージェントの更新を表示",

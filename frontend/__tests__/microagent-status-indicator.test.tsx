@@ -38,12 +38,7 @@ describe("MicroagentStatusIndicator", () => {
     expect(screen.getByText("Creating microagent...")).toBeInTheDocument();
   });
 
-  it("renders running status correctly", () => {
-    render(<MicroagentStatusIndicator status={MicroagentStatus.RUNNING} />);
-    
-    expect(screen.getByTestId("spinner")).toBeInTheDocument();
-    expect(screen.getByText("Microagent is running...")).toBeInTheDocument();
-  });
+
 
   it("renders completed status correctly", () => {
     render(<MicroagentStatusIndicator status={MicroagentStatus.COMPLETED} />);
