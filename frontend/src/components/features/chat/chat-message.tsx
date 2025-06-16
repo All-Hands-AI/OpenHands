@@ -70,7 +70,7 @@ export function ChatMessage({
             key={index}
             type="button"
             onClick={action.onClick}
-            className="button-base p-1"
+            className="button-base p-1 cursor-pointer"
             aria-label={`Action ${index + 1}`}
           >
             {action.icon}

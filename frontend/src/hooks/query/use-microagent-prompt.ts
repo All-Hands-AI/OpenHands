@@ -9,5 +9,7 @@ export const useMicroagentPrompt = (eventId: number) => {
     queryKey: ["memory", "prompt", conversationId, eventId],
     queryFn: () => MemoryService.getPrompt(conversationId!, eventId),
     enabled: !!conversationId,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 15, // 15 minutes
   });
 };

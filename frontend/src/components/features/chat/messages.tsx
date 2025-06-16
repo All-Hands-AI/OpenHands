@@ -107,7 +107,6 @@ export const Messages: React.FC<MessagesProps> = React.memo(
               onClose={() => setShowLaunchMicroagentModal(false)}
               onLaunch={handleLaunchMicroagent}
               eventId={selectedEventId}
-              selectedRepo={conversation?.selected_repository?.split("/").pop()}
               isLoading={isPending}
             />,
             document.getElementById("modal-portal-exit") || document.body,

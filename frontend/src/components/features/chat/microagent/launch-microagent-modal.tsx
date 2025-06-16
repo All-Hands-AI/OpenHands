@@ -9,16 +9,15 @@ import { BadgeInput } from "#/components/shared/inputs/badge-input";
 import { cn } from "#/utils/utils";
 import CloseIcon from "#/icons/close.svg?react";
 import { useMicroagentPrompt } from "#/hooks/query/use-microagent-prompt";
-import { useGetMicroagents } from "#/hooks/query/use-get-microagents";
 import { useHandleRuntimeActive } from "#/hooks/use-handle-runtime-active";
 import { LoadingMicroagentBody } from "./loading-microagent-body";
 import { LoadingMicroagentTextarea } from "./loading-microagent-textarea";
+import { useConversationMicroagents } from "#/hooks/query/use-conversation-microagents";
 
 interface LaunchMicroagentModalProps {
   onClose: () => void;
   onLaunch: (query: string, target: string, triggers: string[]) => void;
   eventId: number;
-  selectedRepo?: string | null;
   isLoading: boolean;
 }
 
@@ -26,7 +25,6 @@ export function LaunchMicroagentModal({
   onClose,
   onLaunch,
   eventId,
-  selectedRepo,
   isLoading,
 }: LaunchMicroagentModalProps) {
   const { t } = useTranslation();
@@ -34,10 +32,7 @@ export function LaunchMicroagentModal({
   const { data: prompt, isLoading: promptIsLoading } =
     useMicroagentPrompt(eventId);
 
-  const microagentPath = selectedRepo
-    ? `${selectedRepo}/.openhands/microagents/`
-    : ".openhands/microagents/";
-  const { data: microagents } = useGetMicroagents(microagentPath);
+  const { data: microagents } = useConversationMicroagents();
 
   const [triggers, setTriggers] = React.useState<string[]>([]);
 
@@ -114,8 +109,8 @@ export function LaunchMicroagentModal({
               allowsCustomValue
               items={
                 microagents?.map((item) => ({
-                  key: item,
-                  label: item,
+                  key: item.name,
+                  label: item.name,
                 })) || []
               }
             />

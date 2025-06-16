@@ -9,13 +9,9 @@ import { useConversationMicroagents } from "#/hooks/query/use-conversation-micro
 
 interface MicroagentsModalProps {
   onClose: () => void;
-  conversationId: string | undefined;
 }
 
-export function MicroagentsModal({
-  onClose,
-  conversationId,
-}: MicroagentsModalProps) {
+export function MicroagentsModal({ onClose }: MicroagentsModalProps) {
   const { t } = useTranslation();
   const [expandedAgents, setExpandedAgents] = useState<Record<string, boolean>>(
     {},
@@ -25,10 +21,7 @@ export function MicroagentsModal({
     data: microagents,
     isLoading,
     isError,
-  } = useConversationMicroagents({
-    conversationId,
-    enabled: true,
-  });
+  } = useConversationMicroagents();
 
   const toggleAgent = (agentName: string) => {
     setExpandedAgents((prev) => ({
