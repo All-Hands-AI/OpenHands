@@ -69,6 +69,16 @@ export const Messages: React.FC<MessagesProps> = React.memo(
       [microagentStatuses],
     );
 
+    const getMicroagentConversationIdForEvent = React.useCallback(
+      (eventId: number): string | undefined => {
+        const statusEntry = microagentStatuses.find(
+          (entry) => entry.eventId === eventId,
+        );
+        return statusEntry?.conversationId || undefined;
+      },
+      [microagentStatuses],
+    );
+
     const handleMicroagentEvent = React.useCallback(
       (socketEvent: unknown, microagentConversationId: string) => {
         // Handle error events
@@ -176,6 +186,9 @@ export const Messages: React.FC<MessagesProps> = React.memo(
             isAwaitingUserConfirmation={isAwaitingUserConfirmation}
             isLastMessage={messages.length - 1 === index}
             microagentStatus={getMicroagentStatusForEvent(message.id)}
+            microagentConversationId={getMicroagentConversationIdForEvent(
+              message.id,
+            )}
             actions={[
               {
                 icon: <FaBrain className="w-[14px] h-[14px]" />,

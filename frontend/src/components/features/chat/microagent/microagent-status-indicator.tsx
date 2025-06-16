@@ -6,10 +6,12 @@ import { SuccessIndicator } from "../success-indicator";
 
 interface MicroagentStatusIndicatorProps {
   status: MicroagentStatus;
+  conversationId?: string;
 }
 
 export function MicroagentStatusIndicator({
   status,
+  conversationId,
 }: MicroagentStatusIndicatorProps) {
   const { t } = useTranslation();
 
@@ -39,10 +41,25 @@ export function MicroagentStatusIndicator({
     }
   };
 
+  const statusText = getStatusText();
+  const shouldShowAsLink =
+    status === MicroagentStatus.COMPLETED && conversationId;
+
   return (
     <div className="flex items-center gap-2 mt-2 p-2 text-sm">
       {getStatusIcon()}
-      <span className="underline">{getStatusText()}</span>
+      {shouldShowAsLink ? (
+        <a
+          href={`/conversations/${conversationId}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline"
+        >
+          {statusText}
+        </a>
+      ) : (
+        <span className="underline">{statusText}</span>
+      )}
     </div>
   );
 }

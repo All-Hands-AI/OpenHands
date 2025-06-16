@@ -32,6 +32,7 @@ interface EventMessageProps {
   isAwaitingUserConfirmation: boolean;
   isLastMessage: boolean;
   microagentStatus?: MicroagentStatus | null;
+  microagentConversationId?: string;
   actions?: Array<{
     icon: React.ReactNode;
     onClick: () => void;
@@ -44,6 +45,7 @@ export function EventMessage({
   isAwaitingUserConfirmation,
   isLastMessage,
   microagentStatus,
+  microagentConversationId,
   actions,
 }: EventMessageProps) {
   const shouldShowConfirmationButtons =
@@ -57,7 +59,10 @@ export function EventMessage({
           defaultMessage={event.message}
         />
         {microagentStatus && actions && (
-          <MicroagentStatusIndicator status={microagentStatus} />
+          <MicroagentStatusIndicator
+            status={microagentStatus}
+            conversationId={microagentConversationId}
+          />
         )}
       </div>
     );
@@ -73,13 +78,19 @@ export function EventMessage({
             actions={actions}
           />
           {microagentStatus && actions && (
-            <MicroagentStatusIndicator status={microagentStatus} />
+            <MicroagentStatusIndicator
+              status={microagentStatus}
+              conversationId={microagentConversationId}
+            />
           )}
         </div>
       );
     }
     return microagentStatus && actions ? (
-      <MicroagentStatusIndicator status={microagentStatus} />
+      <MicroagentStatusIndicator
+        status={microagentStatus}
+        conversationId={microagentConversationId}
+      />
     ) : null;
   }
 
@@ -92,7 +103,10 @@ export function EventMessage({
           actions={actions}
         />
         {microagentStatus && actions && (
-          <MicroagentStatusIndicator status={microagentStatus} />
+          <MicroagentStatusIndicator
+            status={microagentStatus}
+            conversationId={microagentConversationId}
+          />
         )}
       </div>
     );
@@ -112,7 +126,10 @@ export function EventMessage({
           {shouldShowConfirmationButtons && <ConfirmationButtons />}
         </ChatMessage>
         {microagentStatus && actions && (
-          <MicroagentStatusIndicator status={microagentStatus} />
+          <MicroagentStatusIndicator
+            status={microagentStatus}
+            conversationId={microagentConversationId}
+          />
         )}
       </div>
     );
