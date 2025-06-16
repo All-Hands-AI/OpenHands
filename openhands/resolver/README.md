@@ -187,13 +187,13 @@ There are three ways you can upload:
 3. `ready` - create a non-draft PR that's ready for review
 
 ```bash
-python -m openhands.resolver.send_pull_request --issue-number ISSUE_NUMBER --username YOUR_GITHUB_GITLAB_OR_BITBUCKET_USERNAME --pr-type draft
+python -m openhands.resolver.send_pull_request --issue-number ISSUE_NUMBER --username YOUR_GIT_USERNAME --pr-type draft
 ```
 
 If you want to upload to a fork, you can do so by specifying the `fork-owner`:
 
 ```bash
-python -m openhands.resolver.send_pull_request --issue-number ISSUE_NUMBER --username YOUR_GITHUB_GITLAB_OR_BITBUCKET_USERNAME --pr-type draft --fork-owner YOUR_GITHUB_GITLAB_OR_BITBUCKET_USERNAME
+python -m openhands.resolver.send_pull_request --issue-number ISSUE_NUMBER --username YOUR_GIT_USERNAME --pr-type draft --fork-owner YOUR_GIT_USERNAME
 ```
 
 ## Providing Custom Instructions
