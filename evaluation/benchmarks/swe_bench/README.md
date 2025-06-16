@@ -2,6 +2,8 @@
 
 This folder contains the evaluation harness that we built on top of the original [SWE-Bench benchmark](https://www.swebench.com/) ([paper](https://arxiv.org/abs/2310.06770)).
 
+**UPDATE (6/15/2025): We now support running SWE-bench-Live evaluation (see the paper [here](https://arxiv.org/abs/2505.23419))! For how to run it, checkout [this README](./SWE-bench-Live.md).**
+
 **UPDATE (5/26/2025): We now support running interactive SWE-Bench evaluation (see the paper [here](https://arxiv.org/abs/2502.13069))! For how to run it, checkout [this README](./SWE-Interact.md).**
 
 **UPDATE (4/8/2025): We now support running SWT-Bench evaluation! For more details, checkout [the corresponding section](#SWT-Bench-Evaluation).**
