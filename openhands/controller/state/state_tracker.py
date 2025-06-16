@@ -1,5 +1,8 @@
 from openhands.controller.agent import Agent
-from openhands.controller.state.control_flags import BudgetControlFlag, IterationControlFlag
+from openhands.controller.state.control_flags import (
+    BudgetControlFlag,
+    IterationControlFlag,
+)
 from openhands.controller.state.state import State
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.agent import AgentDelegateAction, ChangeAgentStateAction
@@ -71,9 +74,19 @@ class StateTracker:
             self.state = State(
                 session_id=id.removesuffix('-delegate'),
                 inputs={},
-                iteration_flag=IterationControlFlag(limit_increase_amount=max_iterations, current_value=0, max_value= max_iterations),
-                budget_flag=None if not max_budget_per_task else BudgetControlFlag(limit_increase_amount=max_budget_per_task, current_value=0, max_value=max_budget_per_task),
-                confirmation_mode=confirmation_mode
+                iteration_flag=IterationControlFlag(
+                    limit_increase_amount=max_iterations,
+                    current_value=0,
+                    max_value=max_iterations,
+                ),
+                budget_flag=None
+                if not max_budget_per_task
+                else BudgetControlFlag(
+                    limit_increase_amount=max_budget_per_task,
+                    current_value=0,
+                    max_value=max_budget_per_task,
+                ),
+                confirmation_mode=confirmation_mode,
             )
             self.state.start_id = 0
 
@@ -88,7 +101,6 @@ class StateTracker:
             logger.info(
                 f'AgentController {id} initializing history from event {self.state.start_id}',
             )
-
 
         # Share the state metrics with the agent's LLM metrics
         # This ensures that all accumulated metrics are always in sync between controller and llm
@@ -221,9 +233,7 @@ class StateTracker:
             for event in self.state.history
         ]
 
-    def maybe_increase_control_flags_limits(
-        self, headless_mode: bool
-    ):
+    def maybe_increase_control_flags_limits(self, headless_mode: bool):
         # Iteration and budget extensions are independent of each other
         # An error will be thrown if any one of the control flags have reached or exceeded its limit
         self.state.iteration_flag.increase_limit(headless_mode)
@@ -247,7 +257,6 @@ class StateTracker:
         if self.sid and self.file_store:
             self.state.save_to_session(self.sid, self.file_store, self.user_id)
 
-
     def run_control_flags(self):
         """
         Performs one step of the control flags
@@ -256,25 +265,24 @@ class StateTracker:
         if self.state.budget_flag:
             self.state.budget_flag.step()
 
-
     def sync_budget_flag_with_metrics(self):
         """
-            Ensures that budget flag is up to date with accumulated costs from llm completions
-            Budget flag will monitor for when budget is exceeded
+        Ensures that budget flag is up to date with accumulated costs from llm completions
+        Budget flag will monitor for when budget is exceeded
         """
         if self.state.budget_flag:
             self.state.budget_flag.current_value = self.state.metrics.accumulated_cost
 
     def merge_metrics(self, metrics: Metrics):
         """
-            Merges metrics with the state metrics
+        Merges metrics with the state metrics
 
-            NOTE: this should be refactored in the future. We should have services (draft llm, title autocomplete, condenser, etc)
-            use their own LLMs, but the metrics object should be shared. This way we have one source of truth for accumulated costs from
-            all services
+        NOTE: this should be refactored in the future. We should have services (draft llm, title autocomplete, condenser, etc)
+        use their own LLMs, but the metrics object should be shared. This way we have one source of truth for accumulated costs from
+        all services
 
-            This would prevent having fragmented stores for metrics, and we don't have the burden of deciding where and how to store them
-            if we decide introduce more specialized services that require llm completions
+        This would prevent having fragmented stores for metrics, and we don't have the burden of deciding where and how to store them
+        if we decide introduce more specialized services that require llm completions
 
         """
         self.state.metrics.merge(metrics)
