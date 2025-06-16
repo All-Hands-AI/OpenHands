@@ -744,6 +744,27 @@ def get_parser() -> argparse.ArgumentParser:
         type=bool,
         default=False,
     )
+
+    # LLM configuration arguments for local models
+    parser.add_argument(
+        '--llm-model',
+        help='LLM model to use (e.g., "lm_studio/devstral", "openai/gpt-4")',
+        type=str,
+        default=None,
+    )
+    parser.add_argument(
+        '--llm-base-url',
+        help='Base URL for LLM API (required for local models, e.g., "http://localhost:1234/v1")',
+        type=str,
+        default=None,
+    )
+    parser.add_argument(
+        '--llm-api-key',
+        help='API key for LLM (use "dummy" for local models)',
+        type=str,
+        default=None,
+    )
+
     return parser
 
 
@@ -819,6 +840,21 @@ def setup_config_from_args(args: argparse.Namespace) -> OpenHandsConfig:
             llm_config = config.llms[args.llm_config]
         if llm_config is None:
             raise ValueError(f'Invalid toml file, cannot read {args.llm_config}')
+        config.set_llm_config(llm_config)
+
+    # Override LLM settings with direct CLI arguments
+    if args.llm_model or args.llm_base_url or args.llm_api_key:
+        from pydantic import SecretStr
+
+        llm_config = config.get_llm_config()
+
+        if args.llm_model:
+            llm_config.model = args.llm_model
+        if args.llm_base_url:
+            llm_config.base_url = args.llm_base_url
+        if args.llm_api_key:
+            llm_config.api_key = SecretStr(args.llm_api_key)
+
         config.set_llm_config(llm_config)
 
     # Override default agent if provided
