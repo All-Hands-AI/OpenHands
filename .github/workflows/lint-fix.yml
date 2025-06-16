@@ -74,7 +74,7 @@ jobs:
       - name: Fix python lint issues
         run: |
           # Run all pre-commit hooks and continue even if they modify files (exit code 1)
-          pre-commit run --config ./dev_config/python/.pre-commit-config.yaml --files openhands/**/* evaluation/**/* tests/**/* || true
+          pre-commit run --config ./dev_config/python/.pre-commit-config.yaml --all-files || true
 
       # Commit and push changes if any
       - name: Check for changes
