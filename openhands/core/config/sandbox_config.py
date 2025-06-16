@@ -77,6 +77,10 @@ class SandboxConfig(BaseModel):
         default=3600,
         description='The delay in seconds before closing the sandbox after the agent is done.',
     )
+    container_reuse_strategy: str = Field(
+        default='pause',
+        description='Strategy for container reuse: "none" (always create new), "pause" (pause/resume containers), "keep_alive" (keep containers running)',
+    )
     remote_runtime_resource_factor: int = Field(default=1)
     enable_gpu: bool = Field(default=False)
     docker_runtime_kwargs: dict | None = Field(default=None)
@@ -115,4 +119,14 @@ class SandboxConfig(BaseModel):
     def set_default_base_image(self) -> 'SandboxConfig':
         if self.base_container_image is None:
             self.base_container_image = 'nikolaik/python-nodejs:python3.12-nodejs22'
+        return self
+
+    @model_validator(mode='after')
+    def validate_container_reuse_strategy(self) -> 'SandboxConfig':
+        valid_strategies = {'none', 'pause', 'keep_alive'}
+        if self.container_reuse_strategy not in valid_strategies:
+            raise ValueError(
+                f'Invalid container_reuse_strategy: {self.container_reuse_strategy}. '
+                f'Must be one of: {", ".join(sorted(valid_strategies))}'
+            )
         return self

@@ -82,6 +82,49 @@ any files that are mounted into its workspace.
 The `-e SANDBOX_USER_ID=$(id -u)` is passed to the Docker command to ensure the sandbox user matches the host user’s
 permissions. This prevents the agent from creating root-owned files in the mounted workspace.
 
+## Container Reuse for Faster Startup
+
+OpenHands supports container reuse strategies to significantly reduce startup time between sessions. This is especially useful when working on multiple tasks or restarting sessions frequently.
+
+### Container Reuse Strategies
+
+You can configure the container reuse strategy using the `SANDBOX_CONTAINER_REUSE_STRATEGY` environment variable:
+
+```bash
+export SANDBOX_CONTAINER_REUSE_STRATEGY=pause
+
+docker run # ...
+    -e SANDBOX_CONTAINER_REUSE_STRATEGY=$SANDBOX_CONTAINER_REUSE_STRATEGY \
+    # ...
+```
+
+Available strategies:
+
+- **`none`** - Always create new containers (slowest, most isolation)
+  - Creates a fresh container for each session
+  - Provides maximum isolation between sessions
+  - Slowest startup time but most secure
+
+- **`pause`** - Pause/unpause containers between sessions (default, good balance)
+  - Uses Docker's pause/unpause functionality
+  - Maintains container state while freeing CPU resources
+  - Good balance between speed and resource usage
+
+- **`keep_alive`** - Keep containers running and clean workspace (fastest)
+  - Keeps containers running between sessions
+  - Cleans the workspace directory for each new session
+  - Fastest startup time but uses more system resources
+
+### Performance Impact
+
+The container reuse strategies can significantly improve startup performance:
+
+- **`none`**: ~30-60 seconds startup time (baseline)
+- **`pause`**: ~5-15 seconds startup time (2-4x faster)
+- **`keep_alive`**: ~2-5 seconds startup time (6-12x faster)
+
+*Note: Actual performance improvements depend on your system specifications and container image size.*
+
 ## Hardened Docker Installation
 
 When deploying OpenHands in environments where security is a priority, you should consider implementing a hardened

@@ -147,24 +147,29 @@ class DockerRuntime(ActionExecutionClient):
 
     async def connect(self) -> None:
         self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
-        try:
-            await call_sync_from_async(self._attach_to_container)
-        except docker.errors.NotFound as e:
-            if self.attach_to_existing:
+        # Try to reuse containers based on strategy
+        container_reused = await call_sync_from_async(self._try_reuse_container)
+
+        if not container_reused:
+            try:
+                await call_sync_from_async(self._attach_to_container)
+            except docker.errors.NotFound as e:
+                if self.attach_to_existing:
+                    self.log(
+                        'warning',
+                        f'Container {self.container_name} not found.',
+                    )
+                    raise AgentRuntimeDisconnectedError from e
+                self.maybe_build_runtime_container_image()
                 self.log(
-                    'warning',
-                    f'Container {self.container_name} not found.',
+                    'info',
+                    f'Starting runtime with image: {self.runtime_container_image}',
                 )
-                raise AgentRuntimeDisconnectedError from e
-            self.maybe_build_runtime_container_image()
-            self.log(
-                'info', f'Starting runtime with image: {self.runtime_container_image}'
-            )
-            await call_sync_from_async(self.init_container)
-            self.log(
-                'info',
-                f'Container started: {self.container_name}. VSCode URL: {self.vscode_url}',
-            )
+                await call_sync_from_async(self.init_container)
+                self.log(
+                    'info',
+                    f'Container started: {self.container_name}. VSCode URL: {self.vscode_url}',
+                )
 
         if DEBUG_RUNTIME and self.container:
             self.log_streamer = LogStreamer(self.container, self.log)
@@ -505,9 +510,32 @@ class DockerRuntime(ActionExecutionClient):
         # First, ensure all environment variables are properly persisted in .bashrc
         # This is already handled by add_env_vars in base.py
 
-        # Stop the container
-        self.container.stop()
-        self.log('debug', f'Container {self.container_name} paused')
+        # Use appropriate pause method based on strategy
+        strategy = getattr(self.config.sandbox, 'container_reuse_strategy', 'pause')
+
+        if strategy == 'keep_alive':
+            # Keep container running but clean workspace
+            self._clean_workspace_for_reuse()
+            self.log(
+                'debug',
+                f'Container {self.container_name} prepared for reuse (keep-alive)',
+            )
+        elif strategy == 'pause':
+            # Use Docker pause for faster resume
+            try:
+                self.container.pause()
+                self.log(
+                    'debug', f'Container {self.container_name} paused (Docker pause)'
+                )
+            except Exception as e:
+                # Fallback to stop if pause fails
+                self.log('debug', f'Docker pause failed, falling back to stop: {e}')
+                self.container.stop()
+                self.log('debug', f'Container {self.container_name} stopped')
+        else:
+            # Default behavior - stop container
+            self.container.stop()
+            self.log('debug', f'Container {self.container_name} stopped')
 
     def resume(self) -> None:
         """Resume the runtime by starting the container.
@@ -515,12 +543,173 @@ class DockerRuntime(ActionExecutionClient):
         if not self.container:
             raise RuntimeError('Container not initialized')
 
-        # Start the container
-        self.container.start()
-        self.log('debug', f'Container {self.container_name} resumed')
+        strategy = getattr(self.config.sandbox, 'container_reuse_strategy', 'pause')
+
+        if strategy == 'keep_alive':
+            # Container should already be running, just verify it's healthy
+            if self.container.status != 'running':
+                self.container.start()
+            self.log(
+                'debug', f'Container {self.container_name} ready for reuse (keep-alive)'
+            )
+        elif strategy == 'pause':
+            # Unpause if paused, otherwise start
+            if self.container.status == 'paused':
+                self.container.unpause()
+                self.log('debug', f'Container {self.container_name} unpaused')
+            else:
+                self.container.start()
+                self.log('debug', f'Container {self.container_name} started')
+        else:
+            # Default behavior - start container
+            self.container.start()
+            self.log('debug', f'Container {self.container_name} started')
 
         # Wait for the container to be ready
         self.wait_until_alive()
+
+    def _clean_workspace_for_reuse(self) -> None:
+        """Clean the workspace directory to prepare container for reuse."""
+        try:
+            # Remove temporary files and reset workspace state
+            # This is a lightweight cleanup that preserves the environment
+            cleanup_commands = [
+                'cd /workspace && find . -name "*.tmp" -delete',
+                'cd /workspace && find . -name "*.log" -delete',
+                'cd /workspace && find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true',
+                'cd /workspace && find . -name ".pytest_cache" -type d -exec rm -rf {} + 2>/dev/null || true',
+                'history -c',  # Clear bash history
+            ]
+
+            for cmd in cleanup_commands:
+                try:
+                    if self.container:
+                        result = self.container.exec_run(cmd, workdir='/workspace')
+                        if result.exit_code != 0:
+                            self.log(
+                                'debug',
+                                f'Cleanup command failed: {cmd} (exit code: {result.exit_code})',
+                            )
+                except Exception as e:
+                    self.log('debug', f'Cleanup command error: {cmd} - {e}')
+
+            self.log('debug', 'Workspace cleaned for container reuse')
+
+        except Exception as e:
+            self.log('warning', f'Failed to clean workspace for reuse: {e}')
+
+    def _try_reuse_container(self) -> bool:
+        """Try to reuse existing containers based on the configured strategy.
+
+        Returns:
+            bool: True if a container was successfully reused, False otherwise
+        """
+        strategy = getattr(self.config.sandbox, 'container_reuse_strategy', 'pause')
+
+        if strategy == 'none':
+            return False
+
+        # Look for containers with similar configuration that can be reused
+        try:
+            # Get all containers with our prefix
+            containers = self.docker_client.containers.list(
+                all=True, filters={'name': CONTAINER_NAME_PREFIX}
+            )
+
+            for container in containers:
+                # Skip if it's the exact container we're looking for
+                if container.name == self.container_name:
+                    continue
+
+                # Check if container has compatible configuration
+                if self._is_container_reusable(container):
+                    self._reuse_existing_container(container, strategy)
+                    return True
+
+        except Exception as e:
+            self.log('debug', f'Container reuse failed: {e}')
+
+        return False
+
+    def _is_container_reusable(self, container) -> bool:
+        """Check if a container can be reused for this session.
+
+        Args:
+            container: Docker container object to check
+
+        Returns:
+            bool: True if container is suitable for reuse
+        """
+        try:
+            config = container.attrs['Config']
+
+            # Check if base image matches
+            image_name = config.get('Image', '')
+            if (
+                self.runtime_container_image
+                and self.runtime_container_image not in image_name
+            ):
+                return False
+
+            # Container should be stopped or paused for reuse
+            if container.status in ['exited', 'paused']:
+                return True
+
+        except Exception as e:
+            self.log('debug', f'Error checking container reusability: {e}')
+
+        return False
+
+    def _reuse_existing_container(self, container, strategy: str) -> None:
+        """Reuse an existing container for this session.
+
+        Args:
+            container: Docker container to reuse
+            strategy: Reuse strategy ('pause' or 'keep_alive')
+        """
+        self.log(
+            'info',
+            f'Reusing existing container {container.name} with strategy: {strategy}',
+        )
+
+        # Update container reference
+        old_name = container.name
+        new_name = self.container_name
+
+        # Rename container to match our session
+        try:
+            container.rename(new_name)
+            self.container = container
+
+            # Extract port configuration from existing container
+            config = container.attrs['Config']
+            for env_var in config['Env']:
+                if env_var.startswith('port='):
+                    self._host_port = int(env_var.split('port=')[1])
+                    self._container_port = self._host_port
+                elif env_var.startswith('VSCODE_PORT='):
+                    self._vscode_port = int(env_var.split('VSCODE_PORT=')[1])
+
+            self.api_url = (
+                f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
+            )
+
+            # Start the container if it's stopped
+            if container.status == 'exited':
+                container.start()
+            elif container.status == 'paused':
+                container.unpause()
+
+            self.log('info', f'Successfully reused container {old_name} as {new_name}')
+
+        except Exception as e:
+            self.log('error', f'Failed to reuse container {old_name}: {e}')
+            # Clean up if reuse failed
+            try:
+                container.rename(old_name)  # Restore original name
+            except Exception:
+                pass
+            raise
 
     @classmethod
     async def delete(cls, conversation_id: str) -> None:
