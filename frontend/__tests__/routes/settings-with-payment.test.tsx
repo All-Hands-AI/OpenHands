@@ -61,7 +61,7 @@ describe("Settings Billing", () => {
         },
         {
           Component: () => <div data-testid="git-settings-screen" />,
-          path: "/settings/git",
+          path: "/settings/integrations",
         },
         {
           Component: () => <div data-testid="user-settings-screen" />,

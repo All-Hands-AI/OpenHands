@@ -49,7 +49,7 @@ describe("Settings Screen", () => {
         },
         {
           Component: () => <div data-testid="git-settings-screen" />,
-          path: "/settings/git",
+          path: "/settings/integrations",
         },
         {
           Component: () => <div data-testid="application-settings-screen" />,
