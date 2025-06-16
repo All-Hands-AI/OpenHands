@@ -2719,22 +2719,6 @@
         "de": "Hier",
         "uk": "тут"
     },
-    "ANALYTICS$ENABLE": {
-        "en": "Enable analytics",
-        "ja": "アナリティクスを有効にする",
-        "zh-CN": "启用分析",
-        "zh-TW": "啟用分析功能",
-        "ko-KR": "분석 활성화",
-        "no": "Aktiver analyse",
-        "it": "Abilita analisi",
-        "pt": "Ativar análise",
-        "es": "Habilitar análisis",
-        "ar": "تمكين التحليلات",
-        "fr": "Activer les analyses",
-        "tr": "Analitiği etkinleştir",
-        "de": "Analyse aktivieren",
-        "uk": "Увімкнути аналітику"
-    },
     "GITHUB$TOKEN_INVALID": {
         "en": "Invalid GitHub token",
         "ja": "GitHubトークンが無効です",
