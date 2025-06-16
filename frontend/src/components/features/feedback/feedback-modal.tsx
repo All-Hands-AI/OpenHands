@@ -20,6 +20,7 @@ export function FeedbackModal({
   polarity,
 }: FeedbackModalProps) {
   const { t } = useTranslation();
+
   if (!isOpen) return null;
 
   return (
