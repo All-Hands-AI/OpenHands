@@ -12,6 +12,7 @@ import { OpenHandsParsedEvent } from "#/types/core";
 import {
   isOpenHandsEvent,
   isAgentStateChangeObservation,
+  isStatusUpdate,
 } from "#/types/core/guards";
 import { AgentState } from "#/types/agent-state";
 import {
@@ -80,29 +81,73 @@ export function ConversationSubscriptionsProvider({
   const eventHandlersRef = useRef<Record<string, (event: unknown) => void>>({});
 
   // Cleanup function to remove all subscriptions when component unmounts
-  useEffect(() => {
-    // This effect doesn't need to do anything on mount
-    
-    // Return cleanup function that will run when component unmounts
-    return () => {
+  useEffect(
+    () => () => {
       // Store the current sockets in a local variable to avoid closure issues
       const socketsToDisconnect = { ...conversationSockets };
-      
-      // Only log if there are actually sockets to disconnect
+
       if (Object.keys(socketsToDisconnect).length > 0) {
-        console.warn(`Cleaning up ${Object.keys(socketsToDisconnect).length} socket connections`);
+        console.warn(
+          `Cleaning up ${Object.keys(socketsToDisconnect).length} socket connections`,
+        );
       }
-      
-      // Disconnect each socket
+
       Object.values(socketsToDisconnect).forEach((socketData) => {
         if (socketData.socket) {
-          // Remove all listeners first to prevent any callbacks during disconnect
           socketData.socket.removeAllListeners();
           socketData.socket.disconnect();
         }
       });
-    };
-  }, []); // Empty dependency array means this only runs on mount/unmount
+    },
+    [],
+  );
+
+  const unsubscribeFromConversation = useCallback(
+    (conversationId: string) => {
+      console.warn(`Unsubscribing from conversation ${conversationId}`);
+
+      // Get a local reference to the socket data to avoid race conditions
+      const socketData = conversationSockets[conversationId];
+
+      if (socketData) {
+        const { socket } = socketData;
+        const handler = eventHandlersRef.current[conversationId];
+
+        if (socket) {
+          // First remove specific event handlers
+          if (handler) {
+            socket.off("oh_event", handler);
+          }
+
+          // Then remove all listeners to be safe
+          socket.removeAllListeners();
+
+          // Finally disconnect the socket
+          socket.disconnect();
+
+          console.warn(
+            `Socket for conversation ${conversationId} disconnected`,
+          );
+        }
+
+        // Update state to remove the socket
+        setConversationSockets((prev) => {
+          const newSockets = { ...prev };
+          delete newSockets[conversationId];
+          return newSockets;
+        });
+
+        // Remove from active IDs
+        setActiveConversationIds((prev) =>
+          prev.filter((id) => id !== conversationId),
+        );
+
+        // Clean up event handler reference
+        delete eventHandlersRef.current[conversationId];
+      }
+    },
+    [conversationSockets],
+  );
 
   const subscribeToConversation = useCallback(
     (options: {
@@ -135,7 +180,7 @@ export function ConversationSubscriptionsProvider({
           setConversationSockets((prev) => {
             // Make sure the conversation still exists in our state
             if (!prev[conversationId]) return prev;
-            
+
             return {
               ...prev,
               [conversationId]: {
@@ -149,6 +194,7 @@ export function ConversationSubscriptionsProvider({
         // Handle error events
         if (isErrorEvent(event) || isAgentStatusError(event)) {
           renderConversationErroredToast(
+            conversationId,
             isErrorEvent(event) ? event.message : "Unknown error",
             () => {
               // Reconnect logic - use a ref to get the latest socket
@@ -162,12 +208,17 @@ export function ConversationSubscriptionsProvider({
               }
             },
           );
+        } else if (isStatusUpdate(event)) {
+          if (event.type === "info" && event.id === "STATUS$STARTING_RUNTIME") {
+            renderConversationCreatedToast(conversationId);
+          }
         } else if (
           isOpenHandsEvent(event) &&
           isAgentStateChangeObservation(event)
         ) {
           if (event.extras.agent_state === AgentState.FINISHED) {
             renderConversationFinishedToast(conversationId);
+            unsubscribeFromConversation(conversationId);
           }
         }
       };
@@ -195,7 +246,7 @@ export function ConversationSubscriptionsProvider({
           setConversationSockets((prev) => {
             // Make sure the conversation still exists in our state
             if (!prev[conversationId]) return prev;
-            
+
             return {
               ...prev,
               [conversationId]: {
@@ -207,15 +258,21 @@ export function ConversationSubscriptionsProvider({
         });
 
         socket.on("connect_error", (error) => {
-          console.warn(`Socket for conversation ${conversationId} CONNECTION ERROR:`, error);
+          console.warn(
+            `Socket for conversation ${conversationId} CONNECTION ERROR:`,
+            error,
+          );
         });
 
         socket.on("disconnect", (reason) => {
-          console.warn(`Socket for conversation ${conversationId} DISCONNECTED! Reason:`, reason);
+          console.warn(
+            `Socket for conversation ${conversationId} DISCONNECTED! Reason:`,
+            reason,
+          );
           setConversationSockets((prev) => {
             // Make sure the conversation still exists in our state
             if (!prev[conversationId]) return prev;
-            
+
             return {
               ...prev,
               [conversationId]: {
@@ -243,55 +300,15 @@ export function ConversationSubscriptionsProvider({
           prev.includes(conversationId) ? prev : [...prev, conversationId],
         );
 
-        console.warn(`Successfully subscribed to conversation ${conversationId}`);
-      } catch (error) {
-        console.error(`Error subscribing to conversation ${conversationId}:`, error);
-        // Clean up the event handler if there was an error
-        delete eventHandlersRef.current[conversationId];
-      }
-    },
-    [conversationSockets],
-  );
-
-  const unsubscribeFromConversation = useCallback(
-    (conversationId: string) => {
-      console.warn(`Unsubscribing from conversation ${conversationId}`);
-      
-      // Get a local reference to the socket data to avoid race conditions
-      const socketData = conversationSockets[conversationId];
-      
-      if (socketData) {
-        const { socket } = socketData;
-        const handler = eventHandlersRef.current[conversationId];
-
-        if (socket) {
-          // First remove specific event handlers
-          if (handler) {
-            socket.off("oh_event", handler);
-          }
-          
-          // Then remove all listeners to be safe
-          socket.removeAllListeners();
-          
-          // Finally disconnect the socket
-          socket.disconnect();
-          
-          console.warn(`Socket for conversation ${conversationId} disconnected`);
-        }
-
-        // Update state to remove the socket
-        setConversationSockets((prev) => {
-          const newSockets = { ...prev };
-          delete newSockets[conversationId];
-          return newSockets;
-        });
-
-        // Remove from active IDs
-        setActiveConversationIds((prev) =>
-          prev.filter((id) => id !== conversationId),
+        console.warn(
+          `Successfully subscribed to conversation ${conversationId}`,
         );
-
-        // Clean up event handler reference
+      } catch (error) {
+        console.error(
+          `Error subscribing to conversation ${conversationId}:`,
+          error,
+        );
+        // Clean up the event handler if there was an error
         delete eventHandlersRef.current[conversationId];
       }
     },
