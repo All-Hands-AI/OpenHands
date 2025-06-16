@@ -14,7 +14,7 @@ export const useFeedbackExists = (eventId?: number) => {
   return useQuery<FeedbackData>({
     queryKey: ["feedback", "exists", conversationId, eventId],
     queryFn: () => {
-      if (!eventId) return Promise.resolve({ exists: false });
+      if (!eventId) return { exists: false };
       return OpenHands.checkFeedbackExists(conversationId, eventId);
     },
     enabled: !!eventId,
