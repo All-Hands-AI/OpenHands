@@ -174,11 +174,6 @@ class ProviderHandler:
         """
         tasks: list[SuggestedTask] = []
         for provider in self.provider_tokens:
-            token = self.provider_tokens[provider]
-            # Skip providers with empty tokens
-            if not token.token or not token.token.get_secret_value():
-                continue
-
             try:
                 service = self._get_service(provider)
                 service_repos = await service.get_suggested_tasks()
@@ -197,11 +192,6 @@ class ProviderHandler:
     ) -> list[Repository]:
         all_repos: list[Repository] = []
         for provider in self.provider_tokens:
-            token = self.provider_tokens[provider]
-            # Skip providers with empty tokens
-            if not token.token or not token.token.get_secret_value():
-                continue
-
             try:
                 service = self._get_service(provider)
                 service_repos = await service.search_repositories(
@@ -335,23 +325,13 @@ class ProviderHandler:
         self, repository: str, specified_provider: ProviderType | None = None
     ):
         if specified_provider:
-            token = self.provider_tokens.get(specified_provider)
-            # Skip if token is empty
-            if token and token.token and token.token.get_secret_value():
-                try:
-                    service = self._get_service(specified_provider)
-                    return await service.get_repository_details_from_repo_name(
-                        repository
-                    )
-                except Exception:
-                    pass
+            try:
+                service = self._get_service(specified_provider)
+                return await service.get_repository_details_from_repo_name(repository)
+            except Exception:
+                pass
 
         for provider in self.provider_tokens:
-            token = self.provider_tokens[provider]
-            # Skip providers with empty tokens
-            if not token.token or not token.token.get_secret_value():
-                continue
-
             try:
                 service = self._get_service(provider)
                 return await service.get_repository_details_from_repo_name(repository)
@@ -376,24 +356,16 @@ class ProviderHandler:
         all_branches: list[Branch] = []
 
         if specified_provider:
-            token = self.provider_tokens.get(specified_provider)
-            # Skip if token is empty
-            if token and token.token and token.token.get_secret_value():
-                try:
-                    service = self._get_service(specified_provider)
-                    branches = await service.get_branches(repository)
-                    return branches
-                except Exception as e:
-                    logger.warning(
-                        f'Error fetching branches from {specified_provider}: {e}'
-                    )
+            try:
+                service = self._get_service(specified_provider)
+                branches = await service.get_branches(repository)
+                return branches
+            except Exception as e:
+                logger.warning(
+                    f'Error fetching branches from {specified_provider}: {e}'
+                )
 
         for provider in self.provider_tokens:
-            token = self.provider_tokens[provider]
-            # Skip providers with empty tokens
-            if not token.token or not token.token.get_secret_value():
-                continue
-
             try:
                 service = self._get_service(provider)
                 branches = await service.get_branches(repository)
