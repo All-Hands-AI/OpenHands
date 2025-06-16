@@ -87,6 +87,7 @@ class DockerRuntime(ActionExecutionClient):
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = True,
+        user_id: str | None = None,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
         main_module: str = DEFAULT_MAIN_MODULE,
     ):
@@ -134,7 +135,7 @@ class DockerRuntime(ActionExecutionClient):
             status_callback,
             attach_to_existing,
             headless_mode,
-            None,  # user_id - not applicable for Docker runtime
+            user_id,
             git_provider_tokens,
         )
 
