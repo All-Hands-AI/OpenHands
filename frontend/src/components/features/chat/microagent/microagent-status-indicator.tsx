@@ -42,8 +42,7 @@ export function MicroagentStatusIndicator({
   };
 
   const statusText = getStatusText();
-  const shouldShowAsLink =
-    status === MicroagentStatus.COMPLETED && conversationId;
+  const shouldShowAsLink = !!conversationId;
 
   return (
     <div className="flex items-center gap-2 mt-2 p-2 text-sm">
