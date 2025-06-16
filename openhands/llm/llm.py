@@ -27,6 +27,7 @@ from openhands.core.exceptions import LLMNoResponseError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
 from openhands.llm.debug_mixin import DebugMixin
+from openhands.llm.devstral_utils import ensure_devstral_system_prompt
 from openhands.llm.fn_call_converter import (
     STOP_WORDS,
     convert_fncall_messages_to_non_fncall_messages,
@@ -232,6 +233,16 @@ class LLM(RetryMixin, DebugMixin):
             # ensure we work with a list of messages
             messages: list[dict[str, Any]] = (
                 messages_kwarg if isinstance(messages_kwarg, list) else [messages_kwarg]
+            )
+
+            # Fix Devstral system prompt issue with Ollama
+            # Ollama doesn't apply default system prompts like LMStudio does,
+            # so we need to explicitly inject the Devstral system prompt
+            messages = ensure_devstral_system_prompt(
+                self.config.model,
+                self.config.base_url,
+                self.config.custom_llm_provider,
+                messages,
             )
 
             # handle conversion of to non-function calling messages if needed
