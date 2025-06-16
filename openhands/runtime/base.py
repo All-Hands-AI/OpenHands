@@ -657,13 +657,9 @@ fi
             git_token = self.git_provider_tokens[provider].token
             if git_token:
                 if provider == ProviderType.GITLAB:
-                    remote_url = (
-                        f'https://oauth2:{git_token.get_secret_value()}@{repo_path}.git'
-                    )
+                    remote_url = f'https://oauth2:{git_token.get_secret_value()}@{repo_path.replace("gitlab.com/", "")}.git'
                 else:
-                    remote_url = (
-                        f'https://{git_token.get_secret_value()}@{repo_path}.git'
-                    )
+                    remote_url = f'https://{git_token.get_secret_value()}@{repo_path.replace("github.com/", "")}.git'
 
         return remote_url
 
