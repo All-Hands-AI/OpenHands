@@ -64,7 +64,7 @@ class SandboxConfig(BaseModel):
     enable_auto_lint: bool = Field(
         default=False
     )  # once enabled, OpenHands would lint files after editing
-    use_host_network: bool = Field(default=True)
+    use_host_network: bool = Field(default=False)
     runtime_binding_address: str = Field(default='0.0.0.0')
     runtime_extra_build_args: list[str] | None = Field(default=None)
     initialize_plugins: bool = Field(default=True)
