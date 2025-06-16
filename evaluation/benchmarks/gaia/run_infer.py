@@ -272,6 +272,8 @@ if __name__ == '__main__':
     if llm_config is None:
         raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
 
+    toml_config = OpenHandsConfig()
+    load_from_toml(toml_config)
     metadata = make_metadata(
         llm_config=llm_config,
         dataset_name='gaia',
@@ -280,7 +282,10 @@ if __name__ == '__main__':
         eval_note=args.eval_note,
         eval_output_dir=args.eval_output_dir,
         data_split=args.data_split,
-        details={'gaia-level': args.level},
+        details={
+            'gaia-level': args.level,
+            'mcp-servers': ['tavily'] if toml_config.search_api_key else [],
+        },
         agent_config=agent_config,
     )
 
