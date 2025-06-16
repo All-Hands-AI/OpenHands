@@ -305,7 +305,6 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             return ErrorObservation(error_msg)
 
         content_to_edit = '\n'.join(old_file_lines[start_idx:end_idx])
-        self.draft_editor_llm.reset()
         _edited_content = get_new_file_contents(
             self.draft_editor_llm, content_to_edit, action.content
         )
