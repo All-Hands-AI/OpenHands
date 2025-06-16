@@ -1279,21 +1279,21 @@
         "de": "Änderungen speichern",
         "uk": "Зберегти зміни"
     },
-    "SETTINGS$NAV_GIT": {
-        "en": "Git",
-        "ja": "Git",
-        "zh-CN": "Git",
-        "zh-TW": "Git",
-        "ko-KR": "Git",
-        "no": "Git",
-        "it": "Git",
-        "pt": "Git",
-        "es": "Git",
-        "ar": "Git",
-        "fr": "Git",
-        "tr": "Git",
-        "de": "Git",
-        "uk": "Git"
+    "SETTINGS$NAV_INTEGRATIONS": {
+        "en": "Integrations",
+        "ja": "統合",
+        "zh-CN": "集成",
+        "zh-TW": "整合",
+        "ko-KR": "통합",
+        "no": "Integrasjoner",
+        "it": "Integrazioni",
+        "pt": "Integrações",
+        "es": "Integraciones",
+        "ar": "التكامل",
+        "fr": "Intégrations",
+        "tr": "Entegrasyonlar",
+        "de": "Integrationen",
+        "uk": "Інтеграції"
     },
     "SETTINGS$NAV_APPLICATION": {
         "en": "Application",
@@ -2782,6 +2782,22 @@
         "tr": "GitHub depolarını yapılandır",
         "de": "GitHub-Repositories konfigurieren",
         "uk": "Налаштування репозиторіїв Github"
+    },
+    "SLACK$INSTALL_APP": {
+        "en": "Install OpenHands Slack App",
+        "ja": "OpenHands Slackアプリをインストール",
+        "zh-CN": "安装 OpenHands Slack 应用",
+        "zh-TW": "安裝 OpenHands Slack 應用程式",
+        "ko-KR": "OpenHands Slack 앱 설치",
+        "no": "Installer OpenHands Slack-app",
+        "it": "Installa l'app Slack di OpenHands",
+        "pt": "Instalar aplicativo Slack do OpenHands",
+        "es": "Instalar aplicación Slack de OpenHands",
+        "ar": "تثبيت تطبيق OpenHands Slack",
+        "fr": "Installer l'application Slack OpenHands",
+        "tr": "OpenHands Slack uygulamasını yükle",
+        "de": "OpenHands Slack-App installieren",
+        "uk": "Встановити додаток OpenHands Slack"
     },
     "COMMON$CLICK_FOR_INSTRUCTIONS": {
         "en": "Click here for instructions",
