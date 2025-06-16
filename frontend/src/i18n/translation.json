@@ -1279,7 +1279,7 @@
         "de": "Änderungen speichern",
         "uk": "Зберегти зміни"
     },
-    "SETTINGS$NAV_GIT": {
+    "SETTINGS$NAV_INTEGRATIONS": {
         "en": "Integrations",
         "ja": "統合",
         "zh-CN": "集成",
