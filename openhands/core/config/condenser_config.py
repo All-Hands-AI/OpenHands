@@ -169,6 +169,15 @@ class CondenserPipelineConfig(BaseModel):
 
     model_config = {'extra': 'forbid'}
 
+class ConversationWindowCondenserConfig(BaseModel):
+    """Configuration for ConversationWindowCondenser.
+
+    Not currently supported by the TOML or ENV_VAR configuration strategies.
+    """
+
+    type: Literal['conversation_window'] = Field('conversation_window')
+
+    model_config = {'extra': 'forbid'}
 
 # Type alias for convenience
 CondenserConfig = (
@@ -181,14 +190,14 @@ CondenserConfig = (
     | LLMAttentionCondenserConfig
     | StructuredSummaryCondenserConfig
     | CondenserPipelineConfig
+    | ConversationWindowCondenserConfig
 )
 
 
 def condenser_config_from_toml_section(
     data: dict, llm_configs: dict | None = None
 ) -> dict[str, CondenserConfig]:
-    """
-    Create a CondenserConfig instance from a toml dictionary representing the [condenser] section.
+    """Create a CondenserConfig instance from a toml dictionary representing the [condenser] section.
 
     For CondenserConfig, the handling is different since it's a union type. The type of condenser
     is determined by the 'type' field in the section.
@@ -210,7 +219,6 @@ def condenser_config_from_toml_section(
     Returns:
         dict[str, CondenserConfig]: A mapping where the key "condenser" corresponds to the configuration.
     """
-
     # Initialize the result mapping
     condenser_mapping: dict[str, CondenserConfig] = {}
 
@@ -261,8 +269,7 @@ from_toml_section = condenser_config_from_toml_section
 
 
 def create_condenser_config(condenser_type: str, data: dict) -> CondenserConfig:
-    """
-    Create a CondenserConfig instance based on the specified type.
+    """Create a CondenserConfig instance based on the specified type.
 
     Args:
         condenser_type: The type of condenser to create.
@@ -284,6 +291,8 @@ def create_condenser_config(condenser_type: str, data: dict) -> CondenserConfig:
         'amortized': AmortizedForgettingCondenserConfig,
         'llm_attention': LLMAttentionCondenserConfig,
         'structured': StructuredSummaryCondenserConfig,
+        'pipeline': CondenserPipelineConfig,
+        'conversation_window': ConversationWindowCondenserConfig,
     }
 
     if condenser_type not in condenser_classes:
