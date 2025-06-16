@@ -136,8 +136,6 @@ class BitbucketService(BaseGitService, GitService):
             raise self.handle_http_status_error(e)
         except httpx.HTTPError as e:
             raise self.handle_http_error(e)
-        except Exception as e:
-            raise UnknownException(f'Unknown error: {e}')
 
     async def get_user(self) -> User:
         """Get the authenticated user's information."""
