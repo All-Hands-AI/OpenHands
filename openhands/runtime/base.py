@@ -437,9 +437,7 @@ class Runtime(FileEditRuntimeMixin):
                             token=git_token, base_domain=domain
                         )
                         bitbucket_username = (
-                            await bitbucket_service.get_bitbucket_username(
-                                token_value, domain
-                            )
+                            await bitbucket_service.get_bitbucket_username()
                         )
                         if bitbucket_username:
                             # Extract app password from token

@@ -388,40 +388,30 @@ class BitbucketService(BaseGitService, GitService):
         # Return the URL to the pull request
         return data.get('links', {}).get('html', {}).get('href', '')
 
-    async def get_bitbucket_username(self, token_value: str, domain: str) -> str | None:
-        """Get Bitbucket username from API using email:app_password token.
-
-        Args:
-            token_value: The token in format "email:app_password"
-            domain: The Bitbucket domain (e.g., "bitbucket.org")
+    async def get_bitbucket_username(self) -> str | None:
+        """Get Bitbucket username from API using the configured token.
 
         Returns:
             The Bitbucket username or None if failed
         """
         try:
-            # Parse email and app password from token
+            # Validate that we have a token in the expected format
+            token_value = self.token.get_secret_value()
             if ':' not in token_value:
                 logger.warning('Bitbucket token does not contain colon separator')
                 return None
 
-            email, app_password = token_value.split(':', 1)
+            # Make API call to get user info using the existing _make_request method
+            url = f'{self.BASE_URL}/user'
+            data, _ = await self._make_request(url)
+            username = data.get('username')
 
-            # Make API call to get user info
-            api_url = f'https://api.{domain}/2.0/user'
-            async with httpx.AsyncClient() as client:
-                response = await client.get(
-                    api_url, auth=(email, app_password), timeout=10.0
-                )
-                response.raise_for_status()
-                user_data = response.json()
-                username = user_data.get('username')
-
-                if username:
-                    logger.debug(f'Retrieved Bitbucket username: {username}')
-                    return username
-                else:
-                    logger.warning('No username found in Bitbucket API response')
-                    return None
+            if username:
+                logger.debug(f'Retrieved Bitbucket username: {username}')
+                return username
+            else:
+                logger.warning('No username found in Bitbucket API response')
+                return None
 
         except Exception as e:
             logger.warning(f'Failed to get Bitbucket username via API: {e}')
