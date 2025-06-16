@@ -131,10 +131,9 @@ RUN /openhands/micromamba/bin/micromamba run -n openhands poetry cache clear --a
     /openhands/micromamba/bin/micromamba clean --all
 
 #playwright for mswebench
+
 {%- if 'mswebench' in base_image -%}
-RUN npm install -g @puppeteer/browsers && \
-    npx @puppeteer/browsers install chrome-headless-shell@1169 && \
-    cp ~/.cache/ms-playwright/chromium_headless_shell-1169 ~/.cache/ms-playwright/chromium_headless_shell-1161
+RUN npm install -g @puppeteer/browsers && npx @puppeteer/browsers install chrome-headless-shell@1169 && cp ~/.cache/ms-playwright/chromium_headless_shell-1169 ~/.cache/ms-playwright/chromium_headless_shell-1161
 {% endif -%}
 
 {% endmacro %}
