@@ -366,6 +366,7 @@ class AgentSession:
                 headless_mode=False,
                 attach_to_existing=False,
                 env_vars=env_vars,
+                git_provider_tokens=git_provider_tokens,
             )
 
         # FIXME: this sleep is a terrible hack.
