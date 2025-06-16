@@ -45,6 +45,7 @@ from openhands.events.observation import (
     UserRejectObservation,
 )
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
+from openhands.integrations.bitbucket.bitbucket_service import BitbucketService
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
     ProviderHandler,
@@ -367,47 +368,6 @@ class Runtime(FileEditRuntimeMixin):
             return
         self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
-    async def _get_bitbucket_username(
-        self, token_value: str, domain: str
-    ) -> str | None:
-        """Get Bitbucket username from API using email:app_password token.
-
-        Args:
-            token_value: The token in format "email:app_password"
-            domain: The Bitbucket domain (e.g., "bitbucket.org")
-
-        Returns:
-            The Bitbucket username or None if failed
-        """
-        try:
-            # Parse email and app password from token
-            if ':' not in token_value:
-                logger.warning('Bitbucket token does not contain colon separator')
-                return None
-
-            email, app_password = token_value.split(':', 1)
-
-            # Make API call to get user info
-            api_url = f'https://api.{domain}/2.0/user'
-            async with httpx.AsyncClient() as client:
-                response = await client.get(
-                    api_url, auth=(email, app_password), timeout=10.0
-                )
-                response.raise_for_status()
-                user_data = response.json()
-                username = user_data.get('username')
-
-                if username:
-                    logger.debug(f'Retrieved Bitbucket username: {username}')
-                    return username
-                else:
-                    logger.warning('No username found in Bitbucket API response')
-                    return None
-
-        except Exception as e:
-            logger.warning(f'Failed to get Bitbucket username via API: {e}')
-            return None
-
     async def clone_or_init_repo(
         self,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
@@ -473,8 +433,13 @@ class Runtime(FileEditRuntimeMixin):
                     # For Bitbucket, handle email:app_password format specially
                     if ':' in token_value:
                         # Get the Bitbucket username via API
-                        bitbucket_username = await self._get_bitbucket_username(
-                            token_value, domain
+                        bitbucket_service = BitbucketService(
+                            token=git_token, base_domain=domain
+                        )
+                        bitbucket_username = (
+                            await bitbucket_service.get_bitbucket_username(
+                                token_value, domain
+                            )
                         )
                         if bitbucket_username:
                             # Extract app password from token
