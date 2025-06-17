@@ -50,9 +50,6 @@ Learn more at [docs.all-hands.dev](https://docs.all-hands.dev), or [sign up for 
 The easiest way to get started with OpenHands is on [OpenHands Cloud](https://app.all-hands.dev),
 which comes with $50 in free credits for new users.
 
-If you're interested in self-hosting OpenHands Cloud, you can try out the
-[OpenHands Cloud Helm Chart](https://github.com/all-Hands-AI/OpenHands-cloud) free for 30 days.
-
 ## 💻 Running OpenHands Locally
 
 OpenHands can also run on your local system using Docker.
@@ -91,9 +88,9 @@ works best, but you have [many options](https://docs.all-hands.dev/usage/llms).
 > It is not appropriate for multi-tenant deployments where multiple users share the same instance. There is no built-in authentication, isolation, or scalability.
 >
 > If you're interested in running OpenHands in a multi-tenant environment, check out the source-available, commercially-licensed
-> [OpenHands Cloud Helm Chart](https://github.com/all-Hands-AI/OpenHands-cloud)!
+> [OpenHands Cloud Helm Chart](https://github.com/all-Hands-AI/OpenHands-cloud)
 
-You can also [connect OpenHands to your local filesystem](https://docs.all-hands.dev/usage/runtimes/docker#connecting-to-your-filesystem),
+You can [connect OpenHands to your local filesystem](https://docs.all-hands.dev/usage/runtimes/docker#connecting-to-your-filesystem),
 run OpenHands in a scriptable [headless mode](https://docs.all-hands.dev/usage/how-to/headless-mode),
 interact with it via a [friendly CLI](https://docs.all-hands.dev/usage/how-to/cli-mode),
 or run it on tagged issues with [a github action](https://docs.all-hands.dev/usage/how-to/github-action).
