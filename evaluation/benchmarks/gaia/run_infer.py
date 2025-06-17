@@ -101,11 +101,6 @@ def initialize_runtime(
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
-    action = CmdRunAction(command='mkdir -p /workspace/downloads')
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    assert obs.exit_code == 0
-
     if instance['file_name'] != '':
         # if this question comes with a file, we need to save it to the workspace
         assert metadata.data_split is not None

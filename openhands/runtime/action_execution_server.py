@@ -196,7 +196,7 @@ class ActionExecutor:
         self.last_execution_time = self.start_time
         self._initialized = False
         self.downloaded_files: list[str] = []
-        self.downloads_directory = '/workspace/downloads'
+        self.downloads_directory = '/workspace/.downloads'
 
         self.max_memory_gb: int | None = None
         if _override_max_memory_gb := os.environ.get('RUNTIME_MAX_MEMORY_GB', None):

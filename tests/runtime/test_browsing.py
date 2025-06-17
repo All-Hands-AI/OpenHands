@@ -270,7 +270,7 @@ def test_download_file(temp_dir, runtime_cls, run_as_openhands):
         assert 'download_test.html' in obs.content
 
         # Ensure downloads directory exists
-        action_cmd = CmdRunAction(command='mkdir -p /workspace/downloads')
+        action_cmd = CmdRunAction(command='mkdir -p /workspace/.downloads')
         logger.info(action_cmd, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action_cmd)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -324,7 +324,7 @@ def test_download_file(temp_dir, runtime_cls, run_as_openhands):
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
         # Check if the file was downloaded
-        action_cmd = CmdRunAction(command='ls -la /workspace/downloads/')
+        action_cmd = CmdRunAction(command='ls -la /workspace/.downloads/')
         logger.info(action_cmd, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action_cmd)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -333,7 +333,7 @@ def test_download_file(temp_dir, runtime_cls, run_as_openhands):
         assert test_file_name in obs.content
 
         # Verify the content of the downloaded file
-        action_cmd = CmdRunAction(command=f'cat /workspace/downloads/{test_file_name}')
+        action_cmd = CmdRunAction(command=f'cat /workspace/.downloads/{test_file_name}')
         logger.info(action_cmd, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action_cmd)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})

@@ -96,7 +96,7 @@ class BrowserEnv:
                 tags_to_mark='all',
                 timeout=100000,
                 pw_context_kwargs={'accept_downloads': True},
-                pw_chromium_kwargs={'downloads_path': '/workspace/downloads/'},
+                pw_chromium_kwargs={'downloads_path': '/workspace/.downloads/'},
             )
         obs, info = env.reset()
 
