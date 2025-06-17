@@ -39,6 +39,7 @@ class GitHubService(BaseGitService, GitService):
 
     The class is instantiated via get_impl() in openhands.server.shared.py.
     """
+
     BASE_URL = 'https://api.github.com'
     token: SecretStr = SecretStr('')
     refresh = False
@@ -506,7 +507,6 @@ class GitHubService(BaseGitService, GitService):
 
         # Return the HTML URL of the created PR
         return response['html_url']
-
 
 
 github_service_cls = os.environ.get(

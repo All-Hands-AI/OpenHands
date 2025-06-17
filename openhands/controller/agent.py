@@ -103,15 +103,9 @@ class Agent(ABC):
         pass
 
     def reset(self) -> None:
-        """Resets the agent's execution status and clears the history. This method can be used
-        to prepare the agent for restarting the instruction or cleaning up before destruction.
-
-        """
-        # TODO clear history
+        """Resets the agent's execution status."""
+        # Only reset the completion status, not the LLM metrics
         self._complete = False
-
-        if self.llm:
-            self.llm.reset()
 
     @property
     def name(self) -> str:

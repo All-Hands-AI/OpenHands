@@ -178,6 +178,7 @@ def test_browser_valid():
     assert len(actions) == 1
     assert isinstance(actions[0], BrowseInteractiveAction)
     assert actions[0].browser_actions == "click('button-1')"
+    assert actions[0].return_axtree is False  # Default value should be False
 
 
 def test_browser_missing_code():

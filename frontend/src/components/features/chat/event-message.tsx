@@ -1,3 +1,4 @@
+import React from "react";
 import { ConfirmationButtons } from "#/components/shared/buttons/confirmation-buttons";
 import { OpenHandsAction } from "#/types/core/actions";
 import {
@@ -18,6 +19,10 @@ import { MCPObservationContent } from "./mcp-observation-content";
 import { getObservationResult } from "./event-content-helpers/get-observation-result";
 import { getEventContent } from "./event-content-helpers/get-event-content";
 import { GenericEventMessage } from "./generic-event-message";
+import { LikertScale } from "../feedback/likert-scale";
+
+import { useConfig } from "#/hooks/query/use-config";
+import { useFeedbackExists } from "#/hooks/query/use-feedback-exists";
 
 const hasThoughtProperty = (
   obj: Record<string, unknown>,
@@ -39,6 +44,14 @@ export function EventMessage({
   const shouldShowConfirmationButtons =
     isLastMessage && event.source === "agent" && isAwaitingUserConfirmation;
 
+  const { data: config } = useConfig();
+
+  // Use our query hook to check if feedback exists and get rating/reason
+  const {
+    data: feedbackData = { exists: false },
+    isLoading: isCheckingFeedback,
+  } = useFeedbackExists(isFinishAction(event) ? event.id : undefined);
+
   if (isErrorObservation(event)) {
     return (
       <ErrorMessage
@@ -55,9 +68,25 @@ export function EventMessage({
     return null;
   }
 
+  const showLikertScale =
+    config?.APP_MODE === "saas" &&
+    isFinishAction(event) &&
+    isLastMessage &&
+    !isCheckingFeedback;
+
   if (isFinishAction(event)) {
     return (
-      <ChatMessage type="agent" message={getEventContent(event).details} />
+      <>
+        <ChatMessage type="agent" message={getEventContent(event).details} />
+        {showLikertScale && (
+          <LikertScale
+            eventId={event.id}
+            initiallySubmitted={feedbackData.exists}
+            initialRating={feedbackData.rating}
+            initialReason={feedbackData.reason}
+          />
+        )}
+      </>
     );
   }
 
