@@ -388,31 +388,3 @@ class BitbucketService(BaseGitService, GitService):
         # Return the URL to the pull request
         return data.get('links', {}).get('html', {}).get('href', '')
 
-    async def get_bitbucket_username(self) -> str | None:
-        """Get Bitbucket username from API using the configured token.
-
-        Returns:
-            The Bitbucket username or None if failed
-        """
-        try:
-            # Validate that we have a token in the expected format
-            token_value = self.token.get_secret_value()
-            if ':' not in token_value:
-                logger.warning('Bitbucket token does not contain colon separator')
-                return None
-
-            # Make API call to get user info using the existing _make_request method
-            url = f'{self.BASE_URL}/user'
-            data, _ = await self._make_request(url)
-            username = data.get('username')
-
-            if username:
-                logger.debug(f'Retrieved Bitbucket username: {username}')
-                return username
-            else:
-                logger.warning('No username found in Bitbucket API response')
-                return None
-
-        except Exception as e:
-            logger.warning(f'Failed to get Bitbucket username via API: {e}')
-            return None
