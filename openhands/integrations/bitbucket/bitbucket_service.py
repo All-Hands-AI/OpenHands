@@ -168,45 +168,14 @@ class BitbucketService(BaseGitService, GitService):
         # Bitbucket doesn't have a dedicated search endpoint like GitHub
         return []
 
-    async def _get_public_user_repositories(self, sort: str) -> list[Repository]:
-        """Get public repositories for the authenticated user using the repositories endpoint."""
-        repositories = []
-        url = f'{self.BASE_URL}/repositories'
-        params = {
-            'role': 'contributor',  # 'member' is not a valid role for Bitbucket API
-            'pagelen': 100,
-            'sort': sort,
-        }
+    async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
+        """Get repositories for the authenticated user using workspaces endpoint.
 
-        try:
-            data, headers = await self._make_request(url, params)
-
-            for repo in data.get('values', []):
-                # Convert UUID to an integer hash for compatibility with Repository model
-                uuid = repo.get('uuid', '')
-                # Remove curly braces if present and use hash of the UUID string as the ID
-                if uuid.startswith('{') and uuid.endswith('}'):
-                    uuid = uuid[1:-1]
-                id_value = hash(uuid) % (2**31)  # Ensure it's a positive 32-bit integer
-
-                repositories.append(
-                    Repository(
-                        id=id_value,
-                        full_name=f'{repo.get("workspace", {}).get("slug", "")}/{repo.get("slug", "")}',
-                        git_provider=ProviderType.BITBUCKET,
-                        is_public=repo.get('is_private', True) is False,
-                        stargazers_count=None,  # Bitbucket doesn't have stars
-                        link_header=headers.get('Link', ''),
-                        pushed_at=repo.get('updated_on'),
-                    )
-                )
-        except Exception as e:
-            logger.warning(f'Failed to get public repositories from Bitbucket: {e}')
-
-        return repositories
-
-    async def _get_private_user_repositories(self, sort: str) -> list[Repository]:
-        """Get private repositories for the authenticated user using workspaces endpoint."""
+        This method gets all repositories (both public and private) that the user has access to
+        by iterating through their workspaces and fetching repositories from each workspace.
+        This approach is more comprehensive and efficient than the previous implementation
+        that made separate calls for public and private repositories.
+        """
         repositories = []
 
         try:
@@ -221,7 +190,13 @@ class BitbucketService(BaseGitService, GitService):
 
                 # Get repositories for this workspace
                 workspace_repos_url = f'{self.BASE_URL}/repositories/{workspace_slug}'
-                repos_data, headers = await self._make_request(workspace_repos_url)
+                params = {
+                    'pagelen': 100,
+                    'sort': sort,
+                }
+                repos_data, headers = await self._make_request(
+                    workspace_repos_url, params
+                )
 
                 for repo in repos_data.get('values', []):
                     # Convert UUID to an integer hash for compatibility with Repository model
@@ -245,22 +220,14 @@ class BitbucketService(BaseGitService, GitService):
                         )
                     )
         except Exception as e:
-            logger.warning(f'Failed to get private repositories from Bitbucket: {e}')
+            logger.warning(f'Failed to get repositories from Bitbucket: {e}')
 
-        return repositories
+        # Deduplicate repositories based on full_name (in case a repo appears in multiple workspaces)
+        unique_repos = {}
+        for repo in repositories:
+            unique_repos[repo.full_name] = repo
 
-    async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
-        """Get repositories for the authenticated user."""
-        # Get both public and private repositories
-        public_repos = await self._get_public_user_repositories(sort)
-        private_repos = await self._get_private_user_repositories(sort)
-
-        # Combine and deduplicate repositories based on full_name
-        all_repos = {}
-        for repo in public_repos + private_repos:
-            all_repos[repo.full_name] = repo
-
-        return list(all_repos.values())
+        return list(unique_repos.values())
 
     async def get_suggested_tasks(self) -> list[SuggestedTask]:
         """Get suggested tasks for the authenticated user across all repositories."""
@@ -371,4 +338,3 @@ class BitbucketService(BaseGitService, GitService):
 
         # Return the URL to the pull request
         return data.get('links', {}).get('html', {}).get('href', '')
-
