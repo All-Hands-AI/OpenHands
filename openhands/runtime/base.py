@@ -157,9 +157,10 @@ class Runtime(FileEditRuntimeMixin):
         if env_vars is not None:
             self.initial_env_vars.update(env_vars)
 
-        logger.info(
-            f'plumbed provider token: {git_provider_tokens}\n\nuser_id: {user_id}'
-        )
+        if self.attach_to_existing:
+            logger.info(
+                f'plumbed provider token: {git_provider_tokens}\n\nuser_id: {user_id}'
+            )
         self.provider_handler = ProviderHandler(
             provider_tokens=git_provider_tokens
             or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({})),
