@@ -140,7 +140,6 @@ class RemoteRuntime(ActionExecutionClient):
             )
         else:
             self.log('info', 'No existing runtime found, starting a new one')
-            self.set_runtime_status(RuntimeStatus.BUILDING_RUNTIME)
             if self.config.sandbox.runtime_container_image is None:
                 self.log(
                     'info',
@@ -160,7 +159,6 @@ class RemoteRuntime(ActionExecutionClient):
         assert self.runtime_url is not None, (
             'Runtime URL is not set. This should never happen.'
         )
-        self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
         if not self.attach_to_existing:
             self.log('info', 'Waiting for runtime to be alive...')
         self._wait_until_alive()
@@ -221,6 +219,7 @@ class RemoteRuntime(ActionExecutionClient):
 
     def _build_runtime(self) -> None:
         self.log('debug', f'Building RemoteRuntime config:\n{self.config}')
+        self.set_runtime_status(RuntimeStatus.BUILDING_RUNTIME)
         response = self._send_runtime_api_request(
             'GET',
             f'{self.config.sandbox.remote_runtime_api_url}/registry_prefix',
@@ -265,6 +264,7 @@ class RemoteRuntime(ActionExecutionClient):
 
     def _start_runtime(self) -> None:
         # Prepare the request body for the /start endpoint
+        self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
         command = self.get_action_execution_server_startup_command()
         environment: dict[str, str] = {}
         if self.config.debug or os.environ.get('DEBUG', 'false').lower() == 'true':

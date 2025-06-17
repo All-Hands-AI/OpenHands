@@ -103,6 +103,29 @@ components or interface enhancements.
   make start-frontend
   ```
 
+### 5. Running OpenHands with OpenHands
+
+You can use OpenHands to develop and improve OpenHands itself! This is a powerful way to leverage AI assistance for contributing to the project.
+
+#### Quick Start
+
+1. **Build and run OpenHands:**
+   ```bash
+   export INSTALL_DOCKER=0
+   export RUNTIME=local
+   make build && make run
+   ```
+
+2. **Access the interface:**
+   - Local development: http://localhost:3001
+   - Remote/cloud environments: Use the appropriate external URL
+
+3. **Configure for external access (if needed):**
+   ```bash
+   # For external access (e.g., cloud environments)
+   make run FRONTEND_PORT=12000 FRONTEND_HOST=0.0.0.0 BACKEND_HOST=0.0.0.0
+   ```
+
 ### 6. LLM Debugging
 
 If you encounter any issues with the Language Model (LM) or you're simply curious, export DEBUG=1 in the environment and restart the backend.
