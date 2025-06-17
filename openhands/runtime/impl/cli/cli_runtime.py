@@ -9,6 +9,7 @@ import select
 import shutil
 import signal
 import subprocess
+import sys
 import tempfile
 import time
 import zipfile
@@ -50,6 +51,14 @@ from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.runtime_status import RuntimeStatus
+
+
+def _get_signal_constant(signal_name: str):
+    """
+    Safely get a signal constant, returning None if it doesn't exist.
+    This is needed because Windows doesn't have all POSIX signals.
+    """
+    return getattr(signal, signal_name, None)
 
 
 class CLIRuntime(Runtime):
@@ -169,25 +178,60 @@ class CLIRuntime(Runtime):
         # We don't use self.run() here because this method is called
         # during initialization before self._runtime_initialized is True.
 
-    def _safe_terminate_process(self, process_obj, signal_to_send=signal.SIGTERM):
+    def _safe_terminate_process(self, process_obj, signal_to_send=None):
         """
         Safely attempts to terminate/kill a process group or a single process.
 
         Args:
             process_obj: the subprocess.Popen object started with start_new_session=True
             signal_to_send: the signal to send to the process group or process.
+                           On Windows, this parameter is ignored and process.terminate()/kill() is used.
+                           On Unix-like systems, defaults to SIGTERM if None.
         """
         pid = getattr(process_obj, 'pid', None)
         if pid is None:
             return
 
+        # Handle Windows differently since it doesn't support POSIX signals
+        if sys.platform == 'win32':
+            try:
+                # On Windows, we use the process object methods directly
+                # signal_to_send is used to determine if we should use terminate() or kill()
+                sigkill = _get_signal_constant('SIGKILL')
+                if (
+                    signal_to_send is not None
+                    and sigkill is not None
+                    and signal_to_send == sigkill
+                ):
+                    process_obj.kill()
+                    logger.debug(
+                        f'[_safe_terminate_process] Windows: Killed process (PID: {pid}).'
+                    )
+                else:
+                    process_obj.terminate()
+                    logger.debug(
+                        f'[_safe_terminate_process] Windows: Terminated process (PID: {pid}).'
+                    )
+            except Exception as e:
+                logger.error(
+                    f'[_safe_terminate_process] Windows: Error terminating process (PID: {pid}): {e}'
+                )
+            return
+
+        # Unix-like systems: use signals
+        if signal_to_send is None:
+            signal_to_send = _get_signal_constant('SIGTERM') or signal.SIGTERM
+
+        sigkill = _get_signal_constant('SIGKILL')
         group_desc = (
             'kill process group'
-            if signal_to_send == signal.SIGKILL
+            if sigkill and signal_to_send == sigkill
             else 'terminate process group'
         )
         process_desc = (
-            'kill process' if signal_to_send == signal.SIGKILL else 'terminate process'
+            'kill process'
+            if sigkill and signal_to_send == sigkill
+            else 'terminate process'
         )
 
         try:
@@ -208,7 +252,7 @@ class CLIRuntime(Runtime):
                 f'[_safe_terminate_process] ProcessLookupError getting PGID for PID {pid} (it might have already exited): {e_pgid}. Falling back to direct kill/terminate.'
             )
             try:
-                if signal_to_send == signal.SIGKILL:
+                if sigkill and signal_to_send == sigkill:
                     process_obj.kill()
                 else:
                     process_obj.terminate()
@@ -225,7 +269,7 @@ class CLIRuntime(Runtime):
             )
             # Fallback: try to terminate/kill the main process directly.
             try:
-                if signal_to_send == signal.SIGKILL:
+                if sigkill and signal_to_send == sigkill:
                     process_obj.kill()
                 else:
                     process_obj.terminate()
@@ -283,9 +327,8 @@ class CLIRuntime(Runtime):
                             f'Command "{command}" timed out after {timeout:.1f} seconds. Terminating.'
                         )
                         # Attempt to terminate the process group (SIGTERM)
-                        self._safe_terminate_process(
-                            process, signal_to_send=signal.SIGTERM
-                        )
+                        sigterm = _get_signal_constant('SIGTERM')
+                        self._safe_terminate_process(process, signal_to_send=sigterm)
                         timed_out = True
                         break
 
@@ -325,7 +368,8 @@ class CLIRuntime(Runtime):
                 f'Outer exception in _execute_shell_command for "{command}": {e}'
             )
             if process and process.poll() is None:
-                self._safe_terminate_process(process, signal_to_send=signal.SIGKILL)
+                sigkill = _get_signal_constant('SIGKILL')
+                self._safe_terminate_process(process, signal_to_send=sigkill)
             return CmdOutputObservation(
                 command=command,
                 content=''.join(output_lines) + f'\nError during execution: {e}',
