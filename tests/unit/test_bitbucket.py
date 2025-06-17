@@ -237,48 +237,75 @@ class TestBitbucketProviderDomain(unittest.TestCase):
     @patch(
         'openhands.runtime.utils.edit.FileEditRuntimeMixin.__init__', return_value=None
     )
-    def test_get_authenticated_git_url_bitbucket(self, mock_file_edit_init, *args):
-        """Test that _get_authenticated_git_url correctly handles Bitbucket repositories with URL encoding."""
+    @patch('openhands.runtime.base.ProviderHandler')
+    @pytest.mark.asyncio
+    async def test_get_authenticated_git_url_bitbucket(
+        self, mock_provider_handler, mock_file_edit_init, *args
+    ):
+        """Test that _get_authenticated_git_url correctly handles Bitbucket repositories."""
+        # Mock the provider handler to return a repository with Bitbucket as the provider
+        mock_repository = Repository(
+            id=1,
+            full_name='workspace/repo',
+            git_provider=ServiceProviderType.BITBUCKET,
+            is_public=True,
+        )
+
+        mock_provider_instance = MagicMock()
+        mock_provider_instance.verify_repo_provider.return_value = mock_repository
+        mock_provider_handler.return_value = mock_provider_instance
+
         # Create a minimal runtime instance with abstract methods patched
         config = MagicMock()
         config.get_llm_config.return_value.model = 'test_model'
         runtime = Runtime(config=config, event_stream=MagicMock(), sid='test_sid')
 
         # Test with no token
-        url = runtime._get_authenticated_git_url('bitbucket.org/workspace/repo')
+        url = await runtime._get_authenticated_git_url('workspace/repo', None)
         self.assertEqual(url, 'https://bitbucket.org/workspace/repo.git')
 
         # Test with username:password format token
-        runtime.git_provider_tokens = {
+        git_provider_tokens = {
             ProviderType.BITBUCKET: ProviderToken(
                 token=SecretStr('username:app_password'), host='bitbucket.org'
             )
         }
-        url = runtime._get_authenticated_git_url('bitbucket.org/workspace/repo')
-        # Bitbucket tokens are parsed and encoded separately as username:password
-        self.assertEqual(url, 'https://username:app_password@workspace/repo.git')
+        url = await runtime._get_authenticated_git_url(
+            'workspace/repo', git_provider_tokens
+        )
+        # Bitbucket tokens with colon are used directly as username:password
+        self.assertEqual(
+            url, 'https://username:app_password@bitbucket.org/workspace/repo.git'
+        )
 
         # Test with email:password format token (more realistic)
-        runtime.git_provider_tokens = {
+        git_provider_tokens = {
             ProviderType.BITBUCKET: ProviderToken(
                 token=SecretStr('user@example.com:app_password'), host='bitbucket.org'
             )
         }
-        url = runtime._get_authenticated_git_url('bitbucket.org/workspace/repo')
-        # Email addresses get URL encoded
+        url = await runtime._get_authenticated_git_url(
+            'workspace/repo', git_provider_tokens
+        )
+        # Email addresses in tokens are used as-is (no URL encoding in our implementation)
         self.assertEqual(
-            url, 'https://user%40example.com:app_password@workspace/repo.git'
+            url,
+            'https://user@example.com:app_password@bitbucket.org/workspace/repo.git',
         )
 
-        # Test with simple token format (fallback)
-        runtime.git_provider_tokens = {
+        # Test with simple token format (access token)
+        git_provider_tokens = {
             ProviderType.BITBUCKET: ProviderToken(
                 token=SecretStr('simple_token'), host='bitbucket.org'
             )
         }
-        url = runtime._get_authenticated_git_url('bitbucket.org/workspace/repo')
-        # Simple tokens use fallback encoding
-        self.assertEqual(url, 'https://simple_token@workspace/repo.git')
+        url = await runtime._get_authenticated_git_url(
+            'workspace/repo', git_provider_tokens
+        )
+        # Simple tokens use x-token-auth format
+        self.assertEqual(
+            url, 'https://x-token-auth:simple_token@bitbucket.org/workspace/repo.git'
+        )
 
     @patch('openhands.runtime.base.ProviderHandler')
     @patch.object(Runtime, 'run_action')
