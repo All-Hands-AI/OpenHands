@@ -44,7 +44,6 @@ from openhands.events.observation import (
     UserRejectObservation,
 )
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
-from openhands.integrations.bitbucket.bitbucket_service import BitbucketService
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
     ProviderHandler,
@@ -618,7 +617,6 @@ fi
         provider_domains = {
             ProviderType.GITHUB: 'github.com',
             ProviderType.GITLAB: 'gitlab.com',
-            ProviderType.BITBUCKET: 'bitbucket.org',
         }
 
         domain = provider_domains[provider]
@@ -631,37 +629,10 @@ fi
         if git_provider_tokens and provider in git_provider_tokens:
             git_token = git_provider_tokens[provider].token
             if git_token:
-                token_value = git_token.get_secret_value()
                 if provider == ProviderType.GITLAB:
-                    remote_url = (
-                        f'https://oauth2:{token_value}@{domain}/{repo_name}.git'
-                    )
-                elif provider == ProviderType.BITBUCKET:
-                    # For Bitbucket, handle email:app_password format specially
-                    if ':' in token_value:
-                        # Get the Bitbucket username via API
-                        bitbucket_service = BitbucketService(
-                            token=git_token, base_domain=domain
-                        )
-                        bitbucket_username = (
-                            await bitbucket_service.get_bitbucket_username()
-                        )
-                        if bitbucket_username:
-                            # Extract app password from token
-                            _, app_password = token_value.split(':', 1)
-                            remote_url = f'https://{bitbucket_username}:{app_password}@{domain}/{repo_name}.git'
-                        else:
-                            # Fallback to public URL if username retrieval fails
-                            logger.warning(
-                                'Failed to get Bitbucket username, falling back to public clone'
-                            )
-                            remote_url = f'https://{domain}/{repo_name}.git'
-                    else:
-                        # Token doesn't contain colon, use as-is (shouldn't happen for Bitbucket app passwords)
-                        remote_url = f'https://{token_value}@{domain}/{repo_name}.git'
+                    remote_url = f'https://oauth2:{git_token.get_secret_value()}@{domain}/{repo_name}.git'
                 else:
-                    # GitHub
-                    remote_url = f'https://{token_value}@{domain}/{repo_name}.git'
+                    remote_url = f'https://{git_token.get_secret_value()}@{domain}/{repo_name}.git'
             else:
                 remote_url = f'https://{domain}/{repo_name}.git'
         else:
