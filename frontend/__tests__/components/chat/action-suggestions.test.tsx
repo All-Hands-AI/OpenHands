@@ -70,11 +70,12 @@ describe("ActionSuggestions", () => {
     });
   });
 
-  it("should render both GitHub buttons when GitHub token is set and repository is selected", async () => {
+  it("should render both GitHub buttons when GitHub token is set and repository is selected with GitHub provider", async () => {
     const getConversationSpy = vi.spyOn(OpenHands, "getConversation");
     // @ts-expect-error - only required for testing
     getConversationSpy.mockResolvedValue({
       selected_repository: "test-repo",
+      git_provider: "github"
     });
     renderActionSuggestions();
 
@@ -110,6 +111,42 @@ describe("ActionSuggestions", () => {
     renderActionSuggestions();
 
     expect(screen.queryByTestId("suggestion")).not.toBeInTheDocument();
+  });
+
+  it("should render GitLab buttons when GitLab token is set and repository is selected with GitLab provider", async () => {
+    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    getSettingsSpy.mockResolvedValue({
+      ...MOCK_DEFAULT_USER_SETTINGS,
+      provider_tokens_set: {
+        github: "some-token",
+        gitlab: "some-gitlab-token",
+      },
+    });
+    
+    const getConversationSpy = vi.spyOn(OpenHands, "getConversation");
+    // @ts-expect-error - only required for testing
+    getConversationSpy.mockResolvedValue({
+      selected_repository: "test-repo",
+      git_provider: "gitlab"
+    });
+    renderActionSuggestions();
+
+    // Find all buttons with data-testid="suggestion"
+    const buttons = await screen.findAllByTestId("suggestion");
+
+    // Check if we have at least 2 buttons
+    expect(buttons.length).toBeGreaterThanOrEqual(2);
+
+    // Check if the buttons contain the expected text for GitLab
+    const pushButton = buttons.find((button) =>
+      button.textContent?.includes("Push to Branch"),
+    );
+    const mrButton = buttons.find((button) =>
+      button.textContent?.includes("Push & Create PR"),
+    );
+
+    expect(pushButton).toBeInTheDocument();
+    expect(mrButton).toBeInTheDocument();
   });
 
   it("should have different prompts for 'Push to Branch' and 'Push & Create PR' buttons", () => {
