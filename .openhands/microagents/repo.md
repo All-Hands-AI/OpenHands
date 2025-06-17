@@ -64,6 +64,15 @@ Frontend:
   - Mutation hooks should follow the pattern use[Action] (e.g., `useDeleteConversation`)
   - Architecture rule: UI components → TanStack Query hooks → Data Access Layer (`frontend/src/api`) → API endpoints
 
+## Documentation
+
+Documentation files are located in the `docs/` directory and use `.mdx` format (Mintlify documentation format).
+
+### Documentation Format Standards:
+- Use `<Note>` tags for callouts instead of `**Note**` markdown formatting
+- Follow Mintlify documentation format conventions
+- CLI documentation is located at `docs/usage/how-to/cli-mode.mdx`
+
 ## Template for Github Pull Request
 
 If you are starting a pull request (PR), please follow the template in `.github/pull_request_template.md`.
