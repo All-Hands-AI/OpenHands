@@ -609,7 +609,7 @@ fi
             )
             repository = await provider_handler.verify_repo_provider(repo_name)
         except AuthenticationError:
-            raise Exception('Git provider authentication issue when getting remote URL')
+            raise RuntimeError('Git provider authentication issue when cloning repo')
 
         provider = repository.git_provider
         repo_name = repository.full_name
