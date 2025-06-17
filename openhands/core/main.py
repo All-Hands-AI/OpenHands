@@ -5,6 +5,8 @@ from pathlib import Path
 from typing import Callable, Protocol
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
+
+# Import warning suppression first to ensure warnings are suppressed before other imports
 import openhands.cli.suppress_warnings  # noqa: F401
 from openhands.controller.agent import Agent
 from openhands.controller.replay import ReplayManager
