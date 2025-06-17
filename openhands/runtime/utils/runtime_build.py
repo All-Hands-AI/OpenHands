@@ -270,8 +270,8 @@ def prep_build_folder(
         ),
     )
 
-    # Copy pyproject.toml and poetry.lock files
-    for file in ['pyproject.toml', 'poetry.lock']:
+    # Copy pyproject.toml and uv.lock files
+    for file in ['pyproject.toml', 'uv.lock']:
         src = Path(openhands_source_dir, file)
         if not src.exists():
             src = Path(project_root, file)
