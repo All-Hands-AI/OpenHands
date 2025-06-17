@@ -134,22 +134,23 @@ jobs:
         uses: useblacksmith/setup-python@v6
         with:
           python-version: '3.12'
-      - name: Cache Poetry dependencies
+      - name: Cache UV dependencies
         uses: useblacksmith/cache@v5
         with:
           path: |
-            ~/.cache/pypoetry
-            ~/.virtualenvs
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+            ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('**/uv.lock') }}
           # This is the one that saves the cache, the others set 'lookup-only: true'
           restore-keys: |
-            ${{ runner.os }}-poetry-
-      - name: Install poetry via pipx
-        run: pipx install poetry
-      - name: Install Python dependencies using Poetry
+            ${{ runner.os }}-uv-
+      - name: Install UV
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      - name: Install Python dependencies using UV
         run: make install-python-dependencies POETRY_GROUP=main INSTALL_PLAYWRIGHT=0
       - name: Create source distribution and Dockerfile
-        run: poetry run python3 openhands/runtime/utils/runtime_build.py --base_image ${{ matrix.base_image.image }} --build_folder containers/runtime --force_rebuild
+        run: uv run python3 openhands/runtime/utils/runtime_build.py --base_image ${{ matrix.base_image.image }} --build_folder containers/runtime --force_rebuild
       - name: Lowercase Repository Owner
         run: |
           echo REPO_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
