@@ -21,6 +21,7 @@ from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
     ProviderHandler,
 )
+from openhands.integrations.service_types import ProviderType
 from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroagent
@@ -97,6 +98,7 @@ class AgentSession:
         initial_message: MessageAction | None = None,
         conversation_instructions: str | None = None,
         replay_json: str | None = None,
+        git_provider: ProviderType | None = None,
     ) -> None:
         """Starts the Agent session
         Parameters:
@@ -122,6 +124,9 @@ class AgentSession:
         finished = False  # For monitoring
         runtime_connected = False
         restored_state = False
+
+        # Store git_provider for use in microagent loading
+        self.git_provider = git_provider
         custom_secrets_handler = UserSecrets(
             custom_secrets=custom_secrets if custom_secrets else {}
         )
@@ -475,6 +480,7 @@ class AgentSession:
             microagents: list[BaseMicroagent] = await call_sync_from_async(
                 self.runtime.get_microagents_from_selected_repo,
                 selected_repository or None,
+                self.git_provider,
             )
             memory.load_user_workspace_microagents(microagents)
 

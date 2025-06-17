@@ -49,9 +49,8 @@ from openhands.integrations.bitbucket.bitbucket_service import BitbucketService
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
     ProviderHandler,
-    ProviderType,
 )
-from openhands.integrations.service_types import AuthenticationError
+from openhands.integrations.service_types import AuthenticationError, ProviderType
 from openhands.microagent import (
     BaseMicroagent,
     load_microagents_from_dir,
@@ -732,7 +731,7 @@ fi
         return remote_url
 
     def get_microagents_from_org_or_user(
-        self, selected_repository: str
+        self, selected_repository: str, git_provider: ProviderType | None = None
     ) -> list[BaseMicroagent]:
         """Load microagents from the organization or user level .openhands repository.
 
@@ -742,6 +741,7 @@ fi
 
         Args:
             selected_repository: The repository path (e.g., "github.com/acme-co/api" or "acme-co/api")
+            git_provider: The git provider type (e.g., ProviderType.GITHUB, ProviderType.BITBUCKET)
 
         Returns:
             A list of loaded microagents from the org/user level repository
@@ -752,22 +752,23 @@ fi
         if len(repo_parts) < 2:
             return loaded_microagents
 
-        # Determine the git provider for the selected repository
-        provider_type = None
-        try:
-            if self.git_provider_tokens:
-                provider_handler = ProviderHandler(self.git_provider_tokens)
-                repository = call_async_from_sync(
-                    provider_handler.verify_repo_provider, 30.0, selected_repository
+        # Use the provided git_provider or try to determine it from the repository
+        provider_type = git_provider
+        if provider_type is None:
+            try:
+                if self.git_provider_tokens:
+                    provider_handler = ProviderHandler(self.git_provider_tokens)
+                    repository = call_async_from_sync(
+                        provider_handler.verify_repo_provider, 30.0, selected_repository
+                    )
+                    provider_type = repository.git_provider
+            except Exception as e:
+                self.log(
+                    'debug',
+                    f'Could not determine provider for {selected_repository}: {str(e)}',
                 )
-                provider_type = repository.git_provider
-        except Exception as e:
-            self.log(
-                'debug',
-                f'Could not determine provider for {selected_repository}: {str(e)}',
-            )
-            # Fall back to GitHub as default
-            provider_type = ProviderType.GITHUB
+                # Fall back to GitHub as default
+                provider_type = ProviderType.GITHUB
 
         # Extract the org/user name
         org_name = repo_parts[-2]
@@ -823,7 +824,7 @@ fi
         return loaded_microagents
 
     def get_microagents_from_selected_repo(
-        self, selected_repository: str | None
+        self, selected_repository: str | None, git_provider: ProviderType | None = None
     ) -> list[BaseMicroagent]:
         """Load microagents from the selected repository.
         If selected_repository is None, load microagents from the current workspace.
@@ -840,7 +841,9 @@ fi
         # Check for user/org level microagents if a repository is selected
         if selected_repository:
             # Load microagents from the org/user level repository
-            org_microagents = self.get_microagents_from_org_or_user(selected_repository)
+            org_microagents = self.get_microagents_from_org_or_user(
+                selected_repository, git_provider
+            )
             loaded_microagents.extend(org_microagents)
 
             # Continue with repository-specific microagents
