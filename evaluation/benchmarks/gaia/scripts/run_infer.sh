@@ -39,7 +39,7 @@ echo "LEVELS: $LEVELS"
 COMMAND="poetry run python ./evaluation/benchmarks/gaia/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
-  --max-iterations 30 \
+  --max-iterations 60 \
   --level $LEVELS \
   --data-split validation \
   --eval-num-workers $NUM_WORKERS \
