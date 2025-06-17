@@ -61,12 +61,14 @@ docker run -it \
     -e LLM_API_KEY=$LLM_API_KEY \
     -e LLM_MODEL=$LLM_MODEL \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    -v ~/.openhands-state:/.openhands-state \
+    -v ~/.openhands:/.openhands \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app-$(date +%Y%m%d%H%M%S) \
     docker.all-hands.dev/all-hands-ai/openhands:0.43 \
     python -m openhands.cli.main --override-cli-mode true
 ```
+
+> **Note**: If you used OpenHands before version 0.44, you may want to run `mv ~/.openhands-state ~/.openhands` to migrate your conversation history to the new location.
 
 This launches the CLI in Docker, allowing you to interact with OpenHands as described above.
 
