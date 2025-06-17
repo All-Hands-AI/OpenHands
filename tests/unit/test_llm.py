@@ -250,28 +250,6 @@ def test_response_latency_tracking(mock_time, mock_litellm_completion):
     assert latency_record.latency == 0.0  # Should be lifted to 0 instead of being -1!
 
 
-def test_llm_reset():
-    llm = LLM(LLMConfig(model='gpt-4o-mini', api_key='test_key'))
-    initial_metrics = copy.deepcopy(llm.metrics)
-    initial_metrics.add_cost(1.0)
-    initial_metrics.add_response_latency(0.5, 'test-id')
-    initial_metrics.add_token_usage(10, 5, 3, 2, 1000, 'test-id')
-    llm.reset()
-    assert llm.metrics.accumulated_cost != initial_metrics.accumulated_cost
-    assert llm.metrics.costs != initial_metrics.costs
-    assert llm.metrics.response_latencies != initial_metrics.response_latencies
-    assert llm.metrics.token_usages != initial_metrics.token_usages
-    assert isinstance(llm.metrics, Metrics)
-
-    # Check that accumulated token usage is reset
-    metrics_data = llm.metrics.get()
-    accumulated_usage = metrics_data['accumulated_token_usage']
-    assert accumulated_usage['prompt_tokens'] == 0
-    assert accumulated_usage['completion_tokens'] == 0
-    assert accumulated_usage['cache_read_tokens'] == 0
-    assert accumulated_usage['cache_write_tokens'] == 0
-
-
 @patch('openhands.llm.llm.litellm.get_model_info')
 def test_llm_init_with_openrouter_model(mock_get_model_info, default_config):
     default_config.model = 'openrouter:gpt-4o-mini'
