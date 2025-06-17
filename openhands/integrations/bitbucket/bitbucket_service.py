@@ -98,10 +98,6 @@ class BitbucketService(BaseGitService, GitService):
         Returns:
             A tuple of (response_data, response_headers)
 
-        Raises:
-            AuthenticationError: If the token is invalid
-            RateLimitError: If the rate limit is exceeded
-            UnknownException: For other errors
         """
         try:
             async with httpx.AsyncClient() as client:
@@ -170,33 +166,9 @@ class BitbucketService(BaseGitService, GitService):
     ) -> list[Repository]:
         """Search for repositories."""
         # Bitbucket doesn't have a dedicated search endpoint like GitHub
-        # We'll use the repositories endpoint and filter client-side
-        url = f'{self.BASE_URL}/repositories'
-        params = {
-            'q': query,
-            'pagelen': per_page,
-            'sort': sort,
-        }
+        return []
 
-        data, headers = await self._make_request(url, params)
-
-        repositories = []
-        for repo in data.get('values', []):
-            repositories.append(
-                Repository(
-                    id=repo.get('uuid', ''),
-                    full_name=f'{repo.get("workspace", {}).get("slug", "")}/{repo.get("slug", "")}',
-                    git_provider=ProviderType.BITBUCKET,
-                    is_public=repo.get('is_private', True) is False,
-                    stargazers_count=None,  # Bitbucket doesn't have stars
-                    link_header=headers.get('Link', ''),
-                    pushed_at=repo.get('updated_on'),
-                )
-            )
-
-        return repositories
-
-    async def _get_public_repositories(self, sort: str) -> list[Repository]:
+    async def _get_public_user_repositories(self, sort: str) -> list[Repository]:
         """Get public repositories for the authenticated user using the repositories endpoint."""
         repositories = []
         url = f'{self.BASE_URL}/repositories'
@@ -233,7 +205,7 @@ class BitbucketService(BaseGitService, GitService):
 
         return repositories
 
-    async def _get_private_repositories(self, sort: str) -> list[Repository]:
+    async def _get_private_user_repositories(self, sort: str) -> list[Repository]:
         """Get private repositories for the authenticated user using workspaces endpoint."""
         repositories = []
 
@@ -280,8 +252,8 @@ class BitbucketService(BaseGitService, GitService):
     async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
         """Get repositories for the authenticated user."""
         # Get both public and private repositories
-        public_repos = await self._get_public_repositories(sort)
-        private_repos = await self._get_private_repositories(sort)
+        public_repos = await self._get_public_user_repositories(sort)
+        private_repos = await self._get_private_user_repositories(sort)
 
         # Combine and deduplicate repositories based on full_name
         all_repos = {}
@@ -292,8 +264,7 @@ class BitbucketService(BaseGitService, GitService):
 
     async def get_suggested_tasks(self) -> list[SuggestedTask]:
         """Get suggested tasks for the authenticated user across all repositories."""
-        # This would require multiple API calls to get PRs with conflicts, failing checks, etc.
-        # For now, we'll return an empty list
+        # TODO: implemented suggested tasks
         return []
 
     async def get_repository_details_from_repo_name(
