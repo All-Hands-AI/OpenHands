@@ -18,14 +18,13 @@ jobs:
       - uses: useblacksmith/setup-python@v6
         with:
           python-version: 3.12
-      - name: Install Poetry
-        uses: snok/install-poetry@v1.4.1
-        with:
-          virtualenvs-in-project: true
-          virtualenvs-path: ~/.virtualenvs
-      - name: Install Poetry Dependencies
-        run: poetry install --no-interaction --no-root
-      - name: Build poetry project
+      - name: Install UV
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+      - name: Install build dependencies
+        run: |
+          source $HOME/.cargo/env
+          uv pip install --system build twine
+      - name: Build project
         run: ./build.sh
       - name: publish
-        run: poetry publish -u __token__ -p ${{ secrets.PYPI_TOKEN }}
+        run: twine upload dist/* -u __token__ -p ${{ secrets.PYPI_TOKEN }}

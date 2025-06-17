@@ -39,7 +39,7 @@ check-dependencies:
 ifeq ($(INSTALL_DOCKER),)
 	@$(MAKE) -s check-docker
 endif
-	@$(MAKE) -s check-poetry
+	@$(MAKE) -s check-uv
 	@$(MAKE) -s check-tmux
 	@echo "$(GREEN)Dependencies checked successfully.$(RESET)"
 
@@ -115,23 +115,14 @@ check-tmux:
 		echo "$(YELLOW)╚════════════════════════════════════════════════════════════════════════════╝$(RESET)"; \
 	fi
 
-check-poetry:
-	@echo "$(YELLOW)Checking Poetry installation...$(RESET)"
-	@if command -v poetry > /dev/null; then \
-		POETRY_VERSION=$(shell poetry --version 2>&1 | sed -E 's/Poetry \(version ([0-9]+\.[0-9]+\.[0-9]+)\)/\1/'); \
-		IFS='.' read -r -a POETRY_VERSION_ARRAY <<< "$$POETRY_VERSION"; \
-		if [ $${POETRY_VERSION_ARRAY[0]} -gt 1 ] || ([ $${POETRY_VERSION_ARRAY[0]} -eq 1 ] && [ $${POETRY_VERSION_ARRAY[1]} -ge 8 ]); then \
-			echo "$(BLUE)$(shell poetry --version) is already installed.$(RESET)"; \
-		else \
-			echo "$(RED)Poetry 1.8 or later is required. You can install poetry by running the following command, then adding Poetry to your PATH:"; \
-			echo "$(RED) curl -sSL https://install.python-poetry.org | python$(PYTHON_VERSION) -$(RESET)"; \
-			echo "$(RED)More detail here: https://python-poetry.org/docs/#installing-with-the-official-installer$(RESET)"; \
-			exit 1; \
-		fi; \
+check-uv:
+	@echo "$(YELLOW)Checking UV installation...$(RESET)"
+	@if command -v uv > /dev/null; then \
+		echo "$(BLUE)$(shell uv --version) is already installed.$(RESET)"; \
 	else \
-		echo "$(RED)Poetry is not installed. You can install poetry by running the following command, then adding Poetry to your PATH:"; \
-		echo "$(RED) curl -sSL https://install.python-poetry.org | python$(PYTHON_VERSION) -$(RESET)"; \
-		echo "$(RED)More detail here: https://python-poetry.org/docs/#installing-with-the-official-installer$(RESET)"; \
+		echo "$(RED)UV is not installed. You can install UV by running the following command:"; \
+		echo "$(RED) curl -LsSf https://astral.sh/uv/install.sh | sh$(RESET)"; \
+		echo "$(RED)More detail here: https://docs.astral.sh/uv/getting-started/installation/$(RESET)"; \
 		exit 1; \
 	fi
 
@@ -141,27 +132,38 @@ install-python-dependencies:
 		echo "Defaulting TZ (timezone) to UTC"; \
 		export TZ="UTC"; \
 	fi
-	poetry env use python$(PYTHON_VERSION)
+	# Create virtual environment with UV
+	uv venv --python python$(PYTHON_VERSION)
 	@if [ "$(shell uname)" = "Darwin" ]; then \
 		echo "$(BLUE)Installing chroma-hnswlib...$(RESET)"; \
 		export HNSWLIB_NO_NATIVE=1; \
-		poetry run pip install chroma-hnswlib; \
+		uv pip install chroma-hnswlib; \
 	fi
-	@if [ -n "${POETRY_GROUP}" ]; then \
-		echo "Installing only POETRY_GROUP=${POETRY_GROUP}"; \
-		poetry install --only $${POETRY_GROUP}; \
+	@if [ -n "${UV_GROUP}" ]; then \
+		echo "Installing only UV_GROUP=${UV_GROUP}"; \
+		if [ "${UV_GROUP}" = "dev" ]; then \
+			uv pip install -r requirements-dev.txt; \
+		elif [ "${UV_GROUP}" = "test" ]; then \
+			uv pip install -r requirements.txt && uv pip install -e ".[test]"; \
+		elif [ "${UV_GROUP}" = "runtime" ]; then \
+			uv pip install -r requirements.txt && uv pip install -e ".[runtime]"; \
+		elif [ "${UV_GROUP}" = "evaluation" ]; then \
+			uv pip install -r requirements.txt && uv pip install -e ".[evaluation]"; \
+		else \
+			uv pip install -r requirements.txt && uv pip install -e ".[${UV_GROUP}]"; \
+		fi; \
 	else \
-		poetry install --with dev,test,runtime; \
+		uv pip install -r requirements-dev.txt && uv pip install -e ".[test,runtime]"; \
 	fi
 	@if [ "${INSTALL_PLAYWRIGHT}" != "false" ] && [ "${INSTALL_PLAYWRIGHT}" != "0" ]; then \
 		if [ -f "/etc/manjaro-release" ]; then \
 			echo "$(BLUE)Detected Manjaro Linux. Installing Playwright dependencies...$(RESET)"; \
-			poetry run pip install playwright; \
-			poetry run playwright install chromium; \
+			uv pip install playwright; \
+			uv run playwright install chromium; \
 		else \
 			if [ ! -f cache/playwright_chromium_is_installed.txt ]; then \
 				echo "Running playwright install --with-deps chromium..."; \
-				poetry run playwright install --with-deps chromium; \
+				uv run playwright install --with-deps chromium; \
 				mkdir -p cache; \
 				touch cache/playwright_chromium_is_installed.txt; \
 			else \
@@ -184,12 +186,12 @@ install-frontend-dependencies:
 install-pre-commit-hooks:
 	@echo "$(YELLOW)Installing pre-commit hooks...$(RESET)"
 	@git config --unset-all core.hooksPath || true
-	@poetry run pre-commit install --config $(PRE_COMMIT_CONFIG_PATH)
+	@uv run pre-commit install --config $(PRE_COMMIT_CONFIG_PATH)
 	@echo "$(GREEN)Pre-commit hooks installed successfully.$(RESET)"
 
 lint-backend:
 	@echo "$(YELLOW)Running linters...$(RESET)"
-	@poetry run pre-commit run --all-files --show-diff-on-failure --config $(PRE_COMMIT_CONFIG_PATH)
+	@uv run pre-commit run --all-files --show-diff-on-failure --config $(PRE_COMMIT_CONFIG_PATH)
 
 lint-frontend:
 	@echo "$(YELLOW)Running linters for frontend...$(RESET)"
@@ -213,7 +215,7 @@ build-frontend:
 # Start backend
 start-backend:
 	@echo "$(YELLOW)Starting backend...$(RESET)"
-	@poetry run uvicorn openhands.server.listen:app --host $(BACKEND_HOST) --port $(BACKEND_PORT) --reload --reload-exclude "./workspace"
+	@uv run uvicorn openhands.server.listen:app --host $(BACKEND_HOST) --port $(BACKEND_PORT) --reload --reload-exclude "./workspace"
 
 # Start frontend
 start-frontend:
@@ -235,7 +237,7 @@ _run_setup:
 	fi
 	@mkdir -p logs
 	@echo "$(YELLOW)Starting backend server...$(RESET)"
-	@poetry run uvicorn openhands.server.listen:app --host $(BACKEND_HOST) --port $(BACKEND_PORT) &
+	@uv run uvicorn openhands.server.listen:app --host $(BACKEND_HOST) --port $(BACKEND_PORT) &
 	@echo "$(YELLOW)Waiting for the backend to start...$(RESET)"
 	@until nc -z localhost $(BACKEND_PORT); do sleep 0.1; done
 	@echo "$(GREEN)Backend started successfully.$(RESET)"

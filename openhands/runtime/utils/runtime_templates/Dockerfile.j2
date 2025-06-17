@@ -1,7 +1,7 @@
 FROM {{ base_image }}
 
 # Shared environment variables
-ENV POETRY_VIRTUALENVS_PATH=/openhands/poetry \
+ENV UV_VIRTUALENVS_PATH=/openhands/uv \
     MAMBA_ROOT_PREFIX=/openhands/micromamba \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
@@ -34,7 +34,8 @@ RUN apt-get update && \
 {% if 'ubuntu' in base_image %}
 RUN ln -s "$(dirname $(which node))/corepack" /usr/local/bin/corepack && \
     npm install -g corepack && corepack enable yarn && \
-    curl -fsSL --compressed https://install.python-poetry.org | python -
+    curl -LsSf https://astral.sh/uv/install.sh | sh && \
+    mv ~/.cargo/bin/uv /usr/local/bin/uv
 {% endif %}
 
 # Install uv (required by MCP)
@@ -50,7 +51,7 @@ RUN (if getent passwd 1000 | grep -q pn; then userdel pn; fi) && \
 # Create necessary directories
 RUN mkdir -p /openhands && \
     mkdir -p /openhands/logs && \
-    mkdir -p /openhands/poetry
+    mkdir -p /openhands/uv
 
 {% endmacro %}
 
@@ -105,29 +106,27 @@ RUN rm -rf ${OPENVSCODE_SERVER_ROOT}/extensions/{handlebars,pug,json,diff,grunt,
 # Install all dependencies
 WORKDIR /openhands/code
 
-# Configure micromamba and poetry
+# Configure micromamba and UV
 RUN /openhands/micromamba/bin/micromamba config set changeps1 False && \
-    /openhands/micromamba/bin/micromamba run -n openhands poetry config virtualenvs.path /openhands/poetry && \
-    /openhands/micromamba/bin/micromamba run -n openhands poetry env use python3.12
+    /openhands/micromamba/bin/micromamba run -n openhands uv venv /openhands/uv/openhands --python python3.12
 
 # Install project dependencies in smaller chunks
-RUN /openhands/micromamba/bin/micromamba run -n openhands poetry install --only main --no-interaction --no-root
+RUN /openhands/micromamba/bin/micromamba run -n openhands uv pip install -r requirements.txt
 
-RUN /openhands/micromamba/bin/micromamba run -n openhands poetry install --only runtime --no-interaction --no-root
+RUN /openhands/micromamba/bin/micromamba run -n openhands uv pip install -e ".[runtime]"
 
 # Install playwright and its dependencies
 RUN apt-get update && \
-    /openhands/micromamba/bin/micromamba run -n openhands poetry run pip install playwright && \
-    /openhands/micromamba/bin/micromamba run -n openhands poetry run playwright install --with-deps chromium
+    /openhands/micromamba/bin/micromamba run -n openhands uv pip install playwright && \
+    /openhands/micromamba/bin/micromamba run -n openhands /openhands/uv/openhands/bin/playwright install --with-deps chromium
 
 # Set environment variables and permissions
-RUN /openhands/micromamba/bin/micromamba run -n openhands poetry run python -c "import sys; print('OH_INTERPRETER_PATH=' + sys.executable)" >> /etc/environment && \
-    chmod -R g+rws /openhands/poetry && \
+RUN /openhands/micromamba/bin/micromamba run -n openhands /openhands/uv/openhands/bin/python -c "import sys; print('OH_INTERPRETER_PATH=' + sys.executable)" >> /etc/environment && \
+    chmod -R g+rws /openhands/uv && \
     mkdir -p /openhands/workspace && chmod -R g+rws,o+rw /openhands/workspace
 
 # Clear caches
-RUN /openhands/micromamba/bin/micromamba run -n openhands poetry cache clear --all . -n && \
-    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
+RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
     /openhands/micromamba/bin/micromamba clean --all
 
 {% endmacro %}
@@ -147,17 +146,17 @@ RUN mkdir -p /openhands/micromamba/bin && \
     /openhands/micromamba/bin/micromamba config remove channels defaults && \
     /openhands/micromamba/bin/micromamba config list
 
-# Create the openhands virtual environment and install poetry and python
+# Create the openhands virtual environment and install python
 RUN /openhands/micromamba/bin/micromamba create -n openhands -y && \
-    /openhands/micromamba/bin/micromamba install -n openhands -c conda-forge poetry python=3.12 -y
+    /openhands/micromamba/bin/micromamba install -n openhands -c conda-forge python=3.12 -y
 
-# Create a clean openhands directory including only the pyproject.toml, poetry.lock and openhands/__init__.py
+# Create a clean openhands directory including only the pyproject.toml, requirements files and openhands/__init__.py
 RUN \
     if [ -d /openhands/code ]; then rm -rf /openhands/code; fi && \
     mkdir -p /openhands/code/openhands && \
     touch /openhands/code/openhands/__init__.py
 
-COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
+COPY ./code/pyproject.toml ./code/requirements.txt ./code/requirements-dev.txt ./code/uv.lock /openhands/code/
 
 {{ install_dependencies() }}
 
@@ -170,7 +169,7 @@ COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
 # Copy Project source files
 # ================================================================
 RUN if [ -d /openhands/code/openhands ]; then rm -rf /openhands/code/openhands; fi
-COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
+COPY ./code/pyproject.toml ./code/requirements.txt ./code/requirements-dev.txt ./code/uv.lock /openhands/code/
 
 COPY ./code/openhands /openhands/code/openhands
 RUN chmod a+rwx /openhands/code/openhands/__init__.py

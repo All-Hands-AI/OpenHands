@@ -1,0 +1,27 @@
+# Development dependencies
+-r requirements.txt
+
+# Dev tools
+ruff==0.11.13
+mypy==1.16.0
+pre-commit==4.2.0
+build
+types-setuptools
+pytest>=8.4.0
+
+# Test dependencies
+pytest-cov
+pytest-asyncio
+pytest-forked
+pytest-xdist
+openai
+pandas
+reportlab
+gevent>=24.2.1,<26.0.0
+
+# Runtime dependencies
+jupyterlab
+notebook
+jupyter_kernel_gateway
+flake8
+memory-profiler>=0.61.0

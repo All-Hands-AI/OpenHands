@@ -73,27 +73,41 @@ def get_user_info() -> tuple[int, str | None]:
         return os.getuid(), username
 
 
-def check_dependencies(code_repo_path: str, poetry_venvs_path: str) -> None:
+def check_dependencies(code_repo_path: str, venv_path: str) -> None:
     ERROR_MESSAGE = 'Please follow the instructions in https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md to install OpenHands.'
     if not os.path.exists(code_repo_path):
         raise ValueError(
             f'Code repo path {code_repo_path} does not exist. ' + ERROR_MESSAGE
         )
-    if not os.path.exists(poetry_venvs_path):
+    if not os.path.exists(venv_path):
         raise ValueError(
-            f'Poetry venvs path {poetry_venvs_path} does not exist. ' + ERROR_MESSAGE
+            f'Virtual environment path {venv_path} does not exist. ' + ERROR_MESSAGE
         )
     # Check jupyter is installed
     logger.debug('Checking dependencies: Jupyter')
-    output = subprocess.check_output(
-        'poetry run jupyter --version',
-        shell=True,
-        text=True,
-        cwd=code_repo_path,
-    )
-    logger.debug(f'Jupyter output: {output}')
-    if 'jupyter' not in output.lower():
-        raise ValueError('Jupyter is not properly installed. ' + ERROR_MESSAGE)
+
+    # Try UV first, then fall back to poetry
+    jupyter_cmd = None
+    if os.path.exists(os.path.join(code_repo_path, '.venv')):
+        jupyter_cmd = 'uv run jupyter --version'
+    elif shutil.which('poetry'):
+        jupyter_cmd = 'poetry run jupyter --version'
+    else:
+        # Direct python call as fallback
+        jupyter_cmd = 'python -m jupyter --version'
+
+    try:
+        output = subprocess.check_output(
+            jupyter_cmd,
+            shell=True,
+            text=True,
+            cwd=code_repo_path,
+        )
+        logger.debug(f'Jupyter output: {output}')
+        if 'jupyter' not in output.lower():
+            raise ValueError('Jupyter is not properly installed. ' + ERROR_MESSAGE)
+    except subprocess.CalledProcessError as e:
+        raise ValueError(f'Failed to check Jupyter installation: {e}. ' + ERROR_MESSAGE)
 
     # Check libtmux is installed (skip on Windows)
 
@@ -284,19 +298,27 @@ class LocalRuntime(ActionExecutionClient):
             )
 
             # Start the server process
+            # Get the code repo path first
+            code_repo_path = os.path.dirname(os.path.dirname(openhands.__file__))
+
+            # Determine python prefix based on available tools
+            python_prefix = []
+            if os.path.exists(os.path.join(code_repo_path, '.venv')):
+                python_prefix = ['uv', 'run']
+            elif shutil.which('poetry'):
+                python_prefix = ['poetry', 'run']
+
             cmd = get_action_execution_server_startup_command(
                 server_port=self._execution_server_port,
                 plugins=self.plugins,
                 app_config=self.config,
-                python_prefix=['poetry', 'run'],
+                python_prefix=python_prefix,
                 override_user_id=self._user_id,
                 override_username=self._username,
             )
 
             self.log('debug', f'Starting server with command: {cmd}')
             env = os.environ.copy()
-            # Get the code repo path
-            code_repo_path = os.path.dirname(os.path.dirname(openhands.__file__))
             env['PYTHONPATH'] = os.pathsep.join(
                 [code_repo_path, env.get('PYTHONPATH', '')]
             )

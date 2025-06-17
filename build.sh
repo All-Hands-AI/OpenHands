@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
 set -e
 
-poetry build -v
+# Build the package using python -m build (which works with hatchling)
+python -m build -v
