@@ -411,6 +411,7 @@ class Runtime(FileEditRuntimeMixin):
         provider_domains = {
             ProviderType.GITHUB: 'github.com',
             ProviderType.GITLAB: 'gitlab.com',
+            ProviderType.AZURE_DEVOPS: 'dev.azure.com',
         }
 
         domain = provider_domains[provider]
@@ -425,10 +426,45 @@ class Runtime(FileEditRuntimeMixin):
             if git_token:
                 if provider == ProviderType.GITLAB:
                     remote_repo_url = f'https://oauth2:{git_token.get_secret_value()}@{domain}/{selected_repository}.git'
+                elif provider == ProviderType.AZURE_DEVOPS:
+                    # Azure DevOps URL format: https://token@dev.azure.com/organization/project/_git/repository
+                    # Extract organization from domain if it's a full URL
+                    if domain.startswith('https://dev.azure.com/'):
+                        org_name = domain.replace('https://dev.azure.com/', '').rstrip(
+                            '/'
+                        )
+                        base_domain = 'dev.azure.com'
+                    else:
+                        # If domain is just the host, we need to get organization from the token host
+                        token_host = git_provider_tokens[provider].host
+                        if token_host and token_host.startswith(
+                            'https://dev.azure.com/'
+                        ):
+                            org_name = token_host.replace(
+                                'https://dev.azure.com/', ''
+                            ).rstrip('/')
+                            base_domain = 'dev.azure.com'
+                        else:
+                            # Fallback: assume domain contains the organization
+                            org_name = domain.replace('dev.azure.com', '').strip('/')
+                            base_domain = 'dev.azure.com'
+
+                    # Parse project/repo from selected_repository
+                    repo_parts = selected_repository.split('/')
+                    if len(repo_parts) == 2:
+                        project_name, repo_name = repo_parts
+                        remote_repo_url = f'https://{git_token.get_secret_value()}@{base_domain}/{org_name}/{project_name}/_git/{repo_name}'
+                    else:
+                        # Fallback to original format if parsing fails
+                        remote_repo_url = f'https://{git_token.get_secret_value()}@{domain}/{selected_repository}.git'
                 else:
                     remote_repo_url = f'https://{git_token.get_secret_value()}@{domain}/{selected_repository}.git'
             else:
-                remote_repo_url = f'https://{domain}/{selected_repository}.git'
+                if provider == ProviderType.AZURE_DEVOPS:
+                    # Public Azure DevOps repos (rare, but handle gracefully)
+                    remote_repo_url = f'https://{domain}/{selected_repository}.git'
+                else:
+                    remote_repo_url = f'https://{domain}/{selected_repository}.git'
         else:
             remote_repo_url = f'https://{domain}/{selected_repository}.git'
 
@@ -647,6 +683,8 @@ fi
             provider = ProviderType.GITHUB
         elif 'gitlab.com' in repo_path:
             provider = ProviderType.GITLAB
+        elif 'dev.azure.com' in repo_path:
+            provider = ProviderType.AZURE_DEVOPS
 
         # Add authentication if available
         if (
@@ -658,6 +696,8 @@ fi
             if git_token:
                 if provider == ProviderType.GITLAB:
                     remote_url = f'https://oauth2:{git_token.get_secret_value()}@{repo_path.replace("gitlab.com/", "")}.git'
+                elif provider == ProviderType.AZURE_DEVOPS:
+                    remote_url = f'https://{git_token.get_secret_value()}@{repo_path.replace("dev.azure.com/", "")}.git'
                 else:
                     remote_url = f'https://{git_token.get_secret_value()}@{repo_path.replace("github.com/", "")}.git'
 
@@ -673,7 +713,7 @@ fi
         the microagents from the ./microagents/ folder.
 
         Args:
-            selected_repository: The repository path (e.g., "github.com/acme-co/api")
+            selected_repository: The repository path (e.g., "github.com/acme-co/api" or "acme-co/api")
 
         Returns:
             A list of loaded microagents from the org/user level repository
@@ -684,14 +724,35 @@ fi
         if len(repo_parts) < 2:
             return loaded_microagents
 
-        # Extract the domain and org/user name
-        domain = repo_parts[0] if len(repo_parts) > 2 else 'github.com'
+        # Determine the provider and domain
+        provider_domains = {
+            ProviderType.GITHUB: 'github.com',
+            ProviderType.GITLAB: 'gitlab.com',
+            ProviderType.AZURE_DEVOPS: 'dev.azure.com',
+        }
+
+        # First, try to extract domain from repository name if it includes one
+        if len(repo_parts) > 2:
+            domain = repo_parts[0]
+        else:
+            # Repository name doesn't include domain (e.g., "org/repo")
+            # Try to determine provider from available tokens
+            domain = 'github.com'  # Default fallback
+
+            if self.git_provider_tokens:
+                # If we only have one provider token, use that
+                if len(self.git_provider_tokens) == 1:
+                    provider = next(iter(self.git_provider_tokens))
+                    domain = provider_domains.get(provider, 'github.com')
+                else:
+                    # Multiple providers - would need additional logic to determine which one
+                    # For now, default to GitHub
+                    pass
+
         org_name = repo_parts[-2]
 
         # Construct the org-level .openhands repo path
         org_openhands_repo = f'{domain}/{org_name}/.openhands'
-        if domain not in org_openhands_repo:
-            org_openhands_repo = f'github.com/{org_openhands_repo}'
 
         self.log(
             'info',

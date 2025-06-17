@@ -116,7 +116,7 @@ def main() -> None:
         '--base-domain',
         type=str,
         default=None,
-        help='Base domain for the git server (defaults to "github.com" for GitHub and "gitlab.com" for GitLab)',
+        help='Base domain for the git server (defaults to "github.com" for GitHub, "gitlab.com" for GitLab, and "dev.azure.com" for Azure DevOps)',
     )
 
     my_args = parser.parse_args()

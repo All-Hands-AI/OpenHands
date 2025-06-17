@@ -75,7 +75,8 @@ async def check_provider_tokens(
     if incoming_provider_tokens.provider_tokens:
         # Determine whether tokens are valid
         for token_type, token_value in incoming_provider_tokens.provider_tokens.items():
-            if token_value.token:
+            # Only validate if token is not empty
+            if token_value.token and token_value.token.get_secret_value():
                 confirmed_token_type = await validate_provider_token(
                     token_value.token, token_value.host
                 )  # FE always sends latest host
@@ -90,6 +91,7 @@ async def check_provider_tokens(
                 existing_token
                 and (existing_token.host != token_value.host)
                 and existing_token.token
+                and existing_token.token.get_secret_value()
             ):
                 confirmed_token_type = await validate_provider_token(
                     existing_token.token, token_value.host
@@ -129,10 +131,23 @@ async def store_provider_tokens(
 
             # Merge incoming settings store with the existing one
             for provider, token_value in list(provider_info.provider_tokens.items()):
-                if provider in existing_providers and not token_value.token:
+                # If token is empty, keep the existing token if available
+                if provider in existing_providers and (
+                    not token_value.token or not token_value.token.get_secret_value()
+                ):
                     existing_token = user_secrets.provider_tokens.get(provider)
-                    if existing_token and existing_token.token:
+                    if (
+                        existing_token
+                        and existing_token.token
+                        and existing_token.token.get_secret_value()
+                    ):
                         provider_info.provider_tokens[provider] = existing_token
+                    # If both new and existing tokens are empty, skip this provider
+                    elif (
+                        not token_value.token
+                        or not token_value.token.get_secret_value()
+                    ):
+                        continue
 
                 provider_info.provider_tokens[provider] = provider_info.provider_tokens[
                     provider
