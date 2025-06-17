@@ -230,6 +230,7 @@ class CheckUserActivationMiddleware(BaseHTTPMiddleware):
             '/api/options/security-analyzers',
             '/api/options/use-cases',
             '/api/options/use-cases/conversations',
+            '/api/options/update-empty-titles',
             '/api/options/conversations',
             '/api/invitation/',
             '/api/user/status',
@@ -300,6 +301,7 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
             '/api/options/use-cases',
             '/api/options/use-cases/conversations',
             '/api/options/conversations',
+            '/api/options/update-empty-titles',
             '/api/usecases',
         ]
 

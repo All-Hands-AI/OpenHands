@@ -1,7 +1,7 @@
 import asyncio
 from datetime import datetime
 
-from sqlalchemy import desc, func, or_, select
+from sqlalchemy import and_, desc, func, or_, select
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.db import database
@@ -38,6 +38,16 @@ class ConversationModule:
         except Exception as e:
             logger.error(f'Error getting conversation by id: {str(e)}')
             return None
+
+    async def _update_title_conversation(self, conversation_id: str, title: str):
+        try:
+            await database.execute(
+                Conversation.update()
+                .where(Conversation.c.conversation_id == conversation_id)
+                .values(title=title)
+            )
+        except Exception as e:
+            logger.error(f'Error updating title conversation: {str(e)}')
 
     async def _update_research_view(self, conversation_id: str, ip_address: str = ''):
         try:
@@ -402,7 +412,11 @@ class ConversationModule:
             return []
 
     async def _get_conversation_visibility_by_user_id(
-        self, user_id: str | None, page: int = 1, limit: int = 10
+        self,
+        user_id: str | None,
+        page: int = 1,
+        limit: int = 10,
+        keyword: str | None = None,
     ):
         if not user_id:
             return []
@@ -413,6 +427,10 @@ class ConversationModule:
             base_filter = or_(
                 Conversation.c.status != 'deleted', Conversation.c.status.is_(None)
             )
+            if keyword:
+                base_filter = and_(
+                    base_filter, Conversation.c.title.ilike(f'%{keyword}%')
+                )
 
             query = (
                 Conversation.select()
@@ -437,6 +455,97 @@ class ConversationModule:
         except Exception as e:
             logger.error(f'Error getting conversation by user id: {str(e)}')
             return {'total': 0, 'items': []}
+
+    async def update_empty_conversation_titles(self, config):
+        try:
+            # Get conversations with empty or null titles
+            query = Conversation.select().where(
+                or_(
+                    Conversation.c.title.is_(None),
+                    Conversation.c.title == '',
+                    Conversation.c.title == 'Untitled Conversation',
+                )
+            )
+
+            conversations = await database.fetch_all(query)
+
+            if not conversations:
+                return {
+                    'updated': 0,
+                    'message': 'No conversations with empty titles found',
+                }
+
+            # Process all conversations concurrently using gather
+            async def process_conversation(conversation):
+                try:
+                    conversation_id = conversation.conversation_id
+                    conversation_user_id = conversation.user_id
+                    from openhands.server.shared import ConversationStoreImpl
+
+                    # Get metadata from file store
+                    conversation_store = await ConversationStoreImpl.get_instance(
+                        config, conversation_user_id, None
+                    )
+
+                    try:
+                        metadata = await conversation_store.get_metadata(
+                            conversation_id
+                        )
+                    except FileNotFoundError:
+                        metadata = None
+
+                    if metadata and metadata.title:
+                        # Use existing title from metadata
+                        await database.execute(
+                            Conversation.update()
+                            .where(Conversation.c.conversation_id == conversation_id)
+                            .values(title=metadata.title)
+                        )
+
+                    return {
+                        'success': True,
+                        'conversation_id': conversation_id,
+                        'title': metadata.title if metadata else None,
+                    }
+
+                except Exception as e:
+                    logger.error(
+                        f'Error updating title for conversation {conversation.conversation_id}: {str(e)}'
+                    )
+                    return {
+                        'success': False,
+                        'conversation_id': conversation.conversation_id,
+                        'error': str(e),
+                    }
+
+            # Process all conversations concurrently
+            results = []
+
+            for conv in conversations:
+                result = await process_conversation(conv)
+                results.append(result)
+
+            updated_count = sum(1 for result in results if result['success'])
+            errors = [
+                f"Conversation {r['conversation_id']}: {r['error']}"
+                for r in results
+                if not r['success']
+            ]
+
+            result = {
+                'updated': updated_count,
+                'total_found': len(conversations),
+                'message': f'Successfully updated {updated_count} out of {len(conversations)} conversations',
+            }
+
+            if errors:
+                result['errors'] = errors
+
+            return result
+
+        except Exception as e:
+            logger.error(f'Error in update_empty_conversation_titles: {str(e)}')
+            return {'updated': 0, 'error': str(e)}
 
 
 conversation_module = ConversationModule()
