@@ -70,8 +70,7 @@ Documentation files are located in the `docs/` directory and use `.mdx` format (
 
 ### Documentation Format Standards:
 - Use `<Note>` tags for callouts instead of `**Note**` markdown formatting
-- Follow Mintlify documentation format conventions
-- CLI documentation is located at `docs/usage/how-to/cli-mode.mdx`
+- Follow Mintlify documentation format conventions: https://mintlify.com/docs/components/callouts
 
 ## Template for Github Pull Request
 
