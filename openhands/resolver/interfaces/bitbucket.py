@@ -1,3 +1,4 @@
+import base64
 from typing import Any
 
 import httpx
@@ -9,7 +10,7 @@ from openhands.resolver.interfaces.issue import (
     ReviewThread,
 )
 from openhands.resolver.utils import extract_issue_references
-import base64
+
 
 class BitbucketIssueHandler(IssueHandlerInterface):
     def __init__(
