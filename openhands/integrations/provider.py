@@ -323,7 +323,7 @@ class ProviderHandler:
 
     async def verify_repo_provider(
         self, repository: str, specified_provider: ProviderType | None = None
-    ):
+    ) -> Repository:
         if specified_provider:
             try:
                 service = self._get_service(specified_provider)

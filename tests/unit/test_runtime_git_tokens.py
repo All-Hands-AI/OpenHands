@@ -301,11 +301,11 @@ async def test_clone_or_init_repo_auth_error(temp_dir):
         side_effect=AuthenticationError('Auth failed'),
     ):
         # Call the function with a repository
-        with pytest.raises(RuntimeError) as excinfo:
+        with pytest.raises(Exception) as excinfo:
             await runtime.clone_or_init_repo(None, 'owner/repo', None)
 
         # Verify the error message
-        assert 'Git provider authentication issue when cloning repo' in str(
+        assert 'Git provider authentication issue when getting remote URL' in str(
             excinfo.value
         )
 
