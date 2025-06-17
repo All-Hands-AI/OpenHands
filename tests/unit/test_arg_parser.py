@@ -21,6 +21,9 @@ def test_parser_default_values():
     assert args.name == ''
     assert not args.no_auto_continue
     assert args.selected_repo is None
+    assert args.llm_model is None
+    assert args.llm_base_url is None
+    assert args.llm_api_key is None
 
 
 def test_parser_custom_values():
@@ -55,6 +58,12 @@ def test_parser_custom_values():
             '--no-auto-continue',
             '--selected-repo',
             'owner/repo',
+            '--llm-model',
+            'openai/gpt-4',
+            '--llm-base-url',
+            'http://localhost:1234/v1',
+            '--llm-api-key',
+            'test-api-key',
         ]
     )
 
@@ -73,6 +82,9 @@ def test_parser_custom_values():
     assert args.no_auto_continue
     assert args.version
     assert args.selected_repo == 'owner/repo'
+    assert args.llm_model == 'openai/gpt-4'
+    assert args.llm_base_url == 'http://localhost:1234/v1'
+    assert args.llm_api_key == 'test-api-key'
 
 
 def test_parser_file_overrides_task():
@@ -138,13 +150,16 @@ def test_help_message(capsys):
         '--no-auto-continue',
         '--selected-repo SELECTED_REPO',
         '--override-cli-mode OVERRIDE_CLI_MODE',
+        '--llm-model LLM_MODEL',
+        '--llm-base-url LLM_BASE_URL',
+        '--llm-api-key LLM_API_KEY',
     ]
 
     for element in expected_elements:
         assert element in help_output, f"Expected '{element}' to be in the help message"
 
     option_count = help_output.count('  -')
-    assert option_count == 20, f'Expected 20 options, found {option_count}'
+    assert option_count == 23, f'Expected 23 options, found {option_count}'
 
 
 def test_selected_repo_format():
