@@ -451,7 +451,8 @@ class ConversationMemory:
             text = truncate_content(obs.content, max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, FileDownloadObservation):
-            message = Message(role='user', content=[TextContent(text=obs.content)])
+            text = truncate_content(obs.content, max_message_chars)
+            message = Message(role='user', content=[TextContent(text=text)])
         elif (
             isinstance(obs, RecallObservation)
             and self.agent_config.enable_prompt_extensions
