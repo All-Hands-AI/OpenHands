@@ -222,12 +222,7 @@ class BitbucketService(BaseGitService, GitService):
         except Exception as e:
             logger.warning(f'Failed to get repositories from Bitbucket: {e}')
 
-        # Deduplicate repositories based on full_name (in case a repo appears in multiple workspaces)
-        unique_repos = {}
-        for repo in repositories:
-            unique_repos[repo.full_name] = repo
-
-        return list(unique_repos.values())
+        return repositories
 
     async def get_suggested_tasks(self) -> list[SuggestedTask]:
         """Get suggested tasks for the authenticated user across all repositories."""
