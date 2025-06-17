@@ -8,6 +8,7 @@ import {
   isOpenHandsObservation,
   isOpenHandsEvent,
   isAgentStateChangeObservation,
+  isFinishAction,
 } from "#/types/core/guards";
 import { EventMessage } from "./event-message";
 import { ChatMessage } from "./chat-message";

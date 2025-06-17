@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { extractPRUrls, containsPRUrl, getFirstPRUrl } from "#/utils/parse-pr-url";
+import {
+  extractPRUrls,
+  containsPRUrl,
+  getFirstPRUrl,
+} from "#/utils/parse-pr-url";
 
 describe("parse-pr-url", () => {
   describe("extractPRUrls", () => {
@@ -115,7 +119,7 @@ describe("parse-pr-url", () => {
       const text = `
         I have successfully created a pull request with the requested changes.
         You can view the PR here: https://github.com/All-Hands-AI/OpenHands/pull/1234
-        
+
         The changes include:
         - Updated the component
         - Added tests
@@ -127,7 +131,7 @@ describe("parse-pr-url", () => {
 
     it("should handle messages with PR URLs in the middle", () => {
       const text = `
-        Task completed successfully! I've created a pull request at 
+        Task completed successfully! I've created a pull request at
         https://github.com/owner/repo/pull/567 with all the requested changes.
         Please review when you have a chance.
       `;

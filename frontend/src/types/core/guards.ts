@@ -5,6 +5,7 @@ import {
   OpenHandsAction,
   SystemMessageAction,
   CommandAction,
+  FinishAction,
 } from "./actions";
 import {
   AgentStateChangeObservation,
@@ -68,7 +69,7 @@ export const isCommandObservation = (
 
 export const isFinishAction = (
   event: OpenHandsParsedEvent,
-): event is AssistantMessageAction =>
+): event is FinishAction =>
   isOpenHandsAction(event) && event.action === "finish";
 
 export const isSystemMessage = (
