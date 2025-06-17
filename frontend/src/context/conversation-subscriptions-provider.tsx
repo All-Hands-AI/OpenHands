@@ -7,7 +7,6 @@ import React, {
   useRef,
 } from "react";
 import { io, Socket } from "socket.io-client";
-import { createChatMessage } from "#/services/chat-service";
 import { OpenHandsParsedEvent } from "#/types/core";
 import {
   isOpenHandsEvent,
@@ -195,18 +194,9 @@ export function ConversationSubscriptionsProvider({
         if (isErrorEvent(event) || isAgentStatusError(event)) {
           renderConversationErroredToast(
             conversationId,
-            isErrorEvent(event) ? event.message : "Unknown error",
-            () => {
-              // Reconnect logic - use a ref to get the latest socket
-              const currentSocket = conversationSockets[conversationId]?.socket;
-              if (currentSocket) {
-                currentSocket.emit(
-                  "oh_user_action",
-                  createChatMessage("continue", [], new Date().toISOString()),
-                );
-                renderConversationCreatedToast(conversationId);
-              }
-            },
+            isErrorEvent(event)
+              ? event.message
+              : "Unknown error, please try again",
           );
         } else if (isStatusUpdate(event)) {
           if (event.type === "info" && event.id === "STATUS$STARTING_RUNTIME") {
