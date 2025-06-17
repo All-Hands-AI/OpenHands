@@ -12,13 +12,14 @@ import { useMicroagentPrompt } from "#/hooks/query/use-microagent-prompt";
 import { useHandleRuntimeActive } from "#/hooks/use-handle-runtime-active";
 import { LoadingMicroagentBody } from "./loading-microagent-body";
 import { LoadingMicroagentTextarea } from "./loading-microagent-textarea";
-import { useConversationMicroagents } from "#/hooks/query/use-conversation-microagents";
+import { useGetMicroagents } from "#/hooks/query/use-get-microagents";
 
 interface LaunchMicroagentModalProps {
   onClose: () => void;
   onLaunch: (query: string, target: string, triggers: string[]) => void;
   eventId: number;
   isLoading: boolean;
+  selectedRepo: string;
 }
 
 export function LaunchMicroagentModal({
@@ -26,6 +27,7 @@ export function LaunchMicroagentModal({
   onLaunch,
   eventId,
   isLoading,
+  selectedRepo,
 }: LaunchMicroagentModalProps) {
   const { t } = useTranslation();
   const { runtimeActive } = useHandleRuntimeActive();
@@ -33,7 +35,7 @@ export function LaunchMicroagentModal({
     useMicroagentPrompt(eventId);
 
   const { data: microagents, isLoading: microagentsIsLoading } =
-    useConversationMicroagents();
+    useGetMicroagents(`${selectedRepo}/.openhands/microagents`);
 
   const [triggers, setTriggers] = React.useState<string[]>([]);
 
@@ -111,8 +113,8 @@ export function LaunchMicroagentModal({
               isLoading={microagentsIsLoading}
               items={
                 microagents?.map((item) => ({
-                  key: item.name,
-                  label: item.name,
+                  key: item,
+                  label: item,
                 })) || []
               }
             />

@@ -204,12 +204,16 @@ export const Messages: React.FC<MessagesProps> = React.memo(
         {optimisticUserMessage && (
           <ChatMessage type="user" message={optimisticUserMessage} />
         )}
-        {showLaunchMicroagentModal &&
+        {conversation?.selected_repository &&
+          showLaunchMicroagentModal &&
           selectedEventId &&
           createPortal(
             <LaunchMicroagentModal
               onClose={() => setShowLaunchMicroagentModal(false)}
               onLaunch={handleLaunchMicroagent}
+              selectedRepo={
+                conversation.selected_repository.split("/").pop() || ""
+              }
               eventId={selectedEventId}
               isLoading={isPending}
             />,
