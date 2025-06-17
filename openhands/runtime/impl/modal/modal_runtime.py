@@ -9,6 +9,7 @@ import tenacity
 
 from openhands.core.config import OpenHandsConfig
 from openhands.events import EventStream
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
@@ -53,6 +54,8 @@ class ModalRuntime(ActionExecutionClient):
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = True,
+        user_id: str | None = None,
+        git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
     ):
         assert config.modal_api_token_id, 'Modal API token id is required'
         assert config.modal_api_token_secret, 'Modal API token secret is required'
@@ -100,6 +103,8 @@ class ModalRuntime(ActionExecutionClient):
             status_callback,
             attach_to_existing,
             headless_mode,
+            user_id,
+            git_provider_tokens,
         )
 
     async def connect(self):
