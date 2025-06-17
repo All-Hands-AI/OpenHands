@@ -790,7 +790,9 @@ fi
                 org_openhands_repo, provider_type
             )
 
-            clone_cmd = f'git clone --depth 1 {remote_url} {org_repo_dir}'
+            clone_cmd = (
+                f'GIT_TERMINAL_PROMPT=0 git clone --depth 1 {remote_url} {org_repo_dir}'
+            )
 
             action = CmdRunAction(command=clone_cmd)
             obs = self.run_action(action)

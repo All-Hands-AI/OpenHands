@@ -210,8 +210,8 @@ def create_controller(
 
     controller = AgentController(
         agent=agent,
-        max_iterations=config.max_iterations,
-        max_budget_per_task=config.max_budget_per_task,
+        iteration_delta=config.max_iterations,
+        budget_per_task_delta=config.max_budget_per_task,
         agent_to_llm_config=config.get_agent_to_llm_config_map(),
         event_stream=event_stream,
         initial_state=initial_state,

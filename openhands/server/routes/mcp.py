@@ -28,7 +28,7 @@ mcp_server = FastMCP(
 )
 
 HOST = f'https://{os.getenv("WEB_HOST", "app.all-hands.dev").strip()}'
-CONVO_URL = HOST + '/{}'
+CONVO_URL = HOST + '/conversations/{}'
 
 
 async def get_convo_link(service: GitService, conversation_id: str, body: str) -> str:

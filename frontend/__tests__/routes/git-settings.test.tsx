@@ -35,13 +35,13 @@ const queryClient = new QueryClient();
 const GitSettingsRouterStub = createRoutesStub([
   {
     Component: GitSettingsScreen,
-    path: "/settings/github",
+    path: "/settings/integrations",
   },
 ]);
 
 const renderGitSettingsScreen = () => {
   const { rerender, ...rest } = render(
-    <GitSettingsRouterStub initialEntries={["/settings/github"]} />,
+    <GitSettingsRouterStub initialEntries={["/settings/integrations"]} />,
     {
       wrapper: ({ children }) => (
         <QueryClientProvider client={queryClient}>
@@ -54,7 +54,7 @@ const renderGitSettingsScreen = () => {
   const rerenderGitSettingsScreen = () =>
     rerender(
       <QueryClientProvider client={queryClient}>
-        <GitSettingsRouterStub initialEntries={["/settings/github"]} />
+        <GitSettingsRouterStub initialEntries={["/settings/integrations"]} />
       </QueryClientProvider>,
     );
 
