@@ -197,23 +197,21 @@ class AgentSession:
         finally:
             self._starting = False
             success = finished and runtime_connected
-            duration = (time.time() - started_at)
+            duration = time.time() - started_at
 
             log_metadata = {
                 'signal': 'agent_session_start',
                 'success': success,
                 'duration': duration,
-                'restored_state': restored_state
+                'restored_state': restored_state,
             }
             if success:
                 self.logger.info(
-                    f'Agent session start succeeded in {duration}s',
-                    extra=log_metadata
+                    f'Agent session start succeeded in {duration}s', extra=log_metadata
                 )
             else:
                 self.logger.error(
-                    f'Agent session start failed in {duration}s',
-                    extra=log_metadata
+                    f'Agent session start failed in {duration}s', extra=log_metadata
                 )
 
     async def close(self) -> None:
@@ -234,8 +232,7 @@ class AgentSession:
         if self.event_stream is not None:
             self.event_stream.close()
         if self.controller is not None:
-            end_state = self.controller.get_state()
-            end_state.save_to_session(self.sid, self.file_store, self.user_id)
+            self.controller.save_state()
             await self.controller.close()
         if self.runtime is not None:
             EXECUTOR.submit(self.runtime.close)
@@ -371,6 +368,7 @@ class AgentSession:
                 headless_mode=False,
                 attach_to_existing=False,
                 env_vars=env_vars,
+                git_provider_tokens=git_provider_tokens,
             )
 
         # FIXME: this sleep is a terrible hack.
@@ -443,10 +441,12 @@ class AgentSession:
         initial_state = self._maybe_restore_state()
         controller = AgentController(
             sid=self.sid,
+            user_id=self.user_id,
+            file_store=self.file_store,
             event_stream=self.event_stream,
             agent=agent,
-            max_iterations=int(max_iterations),
-            max_budget_per_task=max_budget_per_task,
+            iteration_delta=int(max_iterations),
+            budget_per_task_delta=max_budget_per_task,
             agent_to_llm_config=agent_to_llm_config,
             agent_configs=agent_configs,
             confirmation_mode=confirmation_mode,

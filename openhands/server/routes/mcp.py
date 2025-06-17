@@ -27,7 +27,7 @@ mcp_server = FastMCP(
 )
 
 HOST = f'https://{os.getenv("WEB_HOST", "app.all-hands.dev").strip()}'
-CONVO_URL = HOST + '/{}'
+CONVO_URL = HOST + '/conversations/{}'
 
 
 async def get_convo_link(service: GitService, conversation_id: str, body: str) -> str:
@@ -87,6 +87,7 @@ async def create_pr(
     target_branch: Annotated[str, Field(description='Target branch on repo')],
     title: Annotated[str, Field(description='PR Title')],
     body: Annotated[str | None, Field(description='PR body')],
+    draft: Annotated[bool, Field(description='Whether PR opened is a draft')] = True,
 ) -> str:
     """Open a PR in GitHub"""
 
@@ -126,6 +127,7 @@ async def create_pr(
             target_branch=target_branch,
             title=title,
             body=body,
+            draft=draft,
         )
 
         if conversation_id:
@@ -146,7 +148,12 @@ async def create_mr(
     ],
     source_branch: Annotated[str, Field(description='Source branch on repo')],
     target_branch: Annotated[str, Field(description='Target branch on repo')],
-    title: Annotated[str, Field(description='MR Title')],
+    title: Annotated[
+        str,
+        Field(
+            description='MR Title. Start title with `DRAFT:` or `WIP:` if applicable.'
+        ),
+    ],
     description: Annotated[str | None, Field(description='MR description')],
 ) -> str:
     """Open a MR in GitLab"""
