@@ -137,16 +137,6 @@ export const Messages: React.FC<MessagesProps> = React.memo(
         return;
       }
 
-      // Set initial status to creating
-      setMicroagentStatuses((prev) => [
-        ...prev.filter((status) => status.eventId !== selectedEventId),
-        {
-          eventId: selectedEventId,
-          conversationId: "", // Will be updated when conversation is created
-          status: MicroagentStatus.CREATING,
-        },
-      ]);
-
       createConversationAndSubscribe({
         query,
         conversationInstructions,
@@ -158,17 +148,14 @@ export const Messages: React.FC<MessagesProps> = React.memo(
         onSuccessCallback: (newConversationId: string) => {
           setShowLaunchMicroagentModal(false);
           // Update status with conversation ID
-          setMicroagentStatuses((prev) =>
-            prev.map((statusEntry) =>
-              statusEntry.eventId === selectedEventId
-                ? {
-                    ...statusEntry,
-                    conversationId: newConversationId,
-                    status: MicroagentStatus.CREATING,
-                  }
-                : statusEntry,
-            ),
-          );
+          setMicroagentStatuses((prev) => [
+            ...prev.filter((status) => status.eventId !== selectedEventId),
+            {
+              eventId: selectedEventId,
+              conversationId: newConversationId,
+              status: MicroagentStatus.CREATING,
+            },
+          ]);
         },
         onEventCallback: (socketEvent: unknown, newConversationId: string) => {
           handleMicroagentEvent(socketEvent, newConversationId);
