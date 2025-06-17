@@ -126,6 +126,18 @@ vllm serve all-hands/openhands-lm-32b-v0.1 \
     --enable-prefix-caching
 ```
 
+### Create an OpenAI-Compatible Endpoint with Ollama
+
+- Install Ollama following [the official documentation](https://ollama.com/download).
+- For Ollama configuration, use `ollama/<modelname>` as custom model in web. Api key also can be set to `ollama`.
+- Example launch command for Devstral LM 24B:
+
+```bash
+OLLAMA_CONTEXT_LENGTH=32768 OLLAMA_HOST=0.0.0.0:11434 OLLAMA_KEEP_ALIVE=-1 nohup ollama serve&
+#The minimum context size is ~8196, even the system prompt won't fit smaller
+ollama pull devstral:latest
+```
+
 ## Advanced: Run and Configure OpenHands
 
 ### Run OpenHands

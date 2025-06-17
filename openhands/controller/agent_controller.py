@@ -179,7 +179,7 @@ class AgentController:
         self._add_system_message()
 
     def _add_system_message(self):
-        for event in self.event_stream.get_events(start_id=self.state.start_id):
+        for event in self.event_stream.search_events(start_id=self.state.start_id):
             if isinstance(event, MessageAction) and event.source == EventSource.USER:
                 # FIXME: Remove this after 6/1/2025
                 # Do not try to add a system message if we first run into
@@ -1216,7 +1216,7 @@ class AgentController:
         )
 
     def _is_awaiting_observation(self) -> bool:
-        events = self.event_stream.get_events(reverse=True)
+        events = self.event_stream.search_events(reverse=True)
         for event in events:
             if isinstance(event, AgentStateChangedObservation):
                 result = event.agent_state == AgentState.RUNNING
@@ -1257,7 +1257,7 @@ class AgentController:
         self._cached_first_user_message = next(
             (
                 e
-                for e in self.event_stream.get_events(
+                for e in self.event_stream.search_events(
                     start_id=self.state.start_id,
                 )
                 if isinstance(e, MessageAction) and e.source == EventSource.USER

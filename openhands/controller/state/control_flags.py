@@ -8,7 +8,6 @@ T = TypeVar(
 )  # Type for the value (int for iterations, float for budget)
 
 
-
 @dataclass
 class ControlFlag(Generic[T]):
     """Base class for control flags that manage limits and state transitions."""
@@ -30,7 +29,6 @@ class ControlFlag(Generic[T]):
     def increase_limit(self, headless_mode: bool) -> None:
         """Expand the limit when needed."""
         raise NotImplementedError
-
 
     def step(self):
         """Determine the next state based on the current state and mode.
@@ -56,7 +54,6 @@ class IterationControlFlag(ControlFlag[int]):
             self.max_value += self.limit_increase_amount
             self._hit_limit = False
 
-
     def step(self):
         if self.reached_limit():
             raise RuntimeError(
@@ -66,9 +63,6 @@ class IterationControlFlag(ControlFlag[int]):
 
         # Increment the current value
         self.current_value += 1
-
-
-
 
 
 @dataclass
@@ -99,6 +93,3 @@ class BudgetControlFlag(ControlFlag[float]):
                 f'Agent reached maximum budget for conversation.'
                 f'Current budget: {current_str}, max budget: {max_str}'
             )
-
-
-

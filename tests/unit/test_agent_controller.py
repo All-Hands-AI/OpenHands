@@ -1,4 +1,5 @@
 import asyncio
+import copy
 from unittest.mock import ANY, AsyncMock, MagicMock, patch
 from uuid import uuid4
 
@@ -259,6 +260,7 @@ async def test_run_controller_with_fatal_error(
 
     test_event_stream.subscribe(EventStreamSubscriber.RUNTIME, on_event, str(uuid4()))
     runtime.event_stream = test_event_stream
+    runtime.config = copy.deepcopy(config)
 
     def on_event_memory(event: Event):
         if isinstance(event, RecallAction):
@@ -326,6 +328,7 @@ async def test_run_controller_stop_with_stuck(
 
     test_event_stream.subscribe(EventStreamSubscriber.RUNTIME, on_event, str(uuid4()))
     runtime.event_stream = test_event_stream
+    runtime.config = copy.deepcopy(config)
 
     def on_event_memory(event: Event):
         if isinstance(event, RecallAction):
@@ -762,6 +765,7 @@ async def test_run_controller_max_iterations_has_metrics(
 
     event_stream.subscribe(EventStreamSubscriber.RUNTIME, on_event, str(uuid4()))
     runtime.event_stream = event_stream
+    runtime.config = copy.deepcopy(config)
 
     def on_event_memory(event: Event):
         if isinstance(event, RecallAction):
@@ -883,7 +887,9 @@ async def test_context_window_exceeded_error_handling(
     test_event_stream.subscribe(
         EventStreamSubscriber.MEMORY, on_event_memory, str(uuid4())
     )
+    config = OpenHandsConfig(max_iterations=max_iterations)
     mock_runtime.event_stream = test_event_stream
+    mock_runtime.config = copy.deepcopy(config)
 
     # Now we can run the controller for a fixed number of steps. Since the step
     # state is set to error out before then, if this terminates and we have a
@@ -891,7 +897,7 @@ async def test_context_window_exceeded_error_handling(
     # handles the truncation correctly.
     final_state = await asyncio.wait_for(
         run_controller(
-            config=OpenHandsConfig(max_iterations=max_iterations),
+            config=config,
             initial_user_action=MessageAction(content='INITIAL'),
             runtime=mock_runtime,
             sid='test',
@@ -1027,11 +1033,13 @@ async def test_run_controller_with_context_window_exceeded_with_truncation(
         EventStreamSubscriber.MEMORY, on_event_memory, str(uuid4())
     )
     mock_runtime.event_stream = test_event_stream
+    config = OpenHandsConfig(max_iterations=5)
+    mock_runtime.config = copy.deepcopy(config)
 
     try:
         state = await asyncio.wait_for(
             run_controller(
-                config=OpenHandsConfig(max_iterations=5),
+                config=config,
                 initial_user_action=MessageAction(content='INITIAL'),
                 runtime=mock_runtime,
                 sid='test',
@@ -1104,10 +1112,12 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
         EventStreamSubscriber.MEMORY, on_event_memory, str(uuid4())
     )
     mock_runtime.event_stream = test_event_stream
+    config = OpenHandsConfig(max_iterations=3)
+    mock_runtime.config = copy.deepcopy(config)
     try:
         state = await asyncio.wait_for(
             run_controller(
-                config=OpenHandsConfig(max_iterations=3),
+                config=config,
                 initial_user_action=MessageAction(content='INITIAL'),
                 runtime=mock_runtime,
                 sid='test',
@@ -1167,6 +1177,7 @@ async def test_run_controller_with_memory_error(test_event_stream, mock_agent):
 
     runtime = MagicMock(spec=ActionExecutionClient)
     runtime.event_stream = event_stream
+    runtime.config = copy.deepcopy(config)
 
     # Create a real Memory instance
     memory = Memory(event_stream=event_stream, sid='test-memory')
