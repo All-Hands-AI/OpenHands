@@ -6,7 +6,7 @@ requires = [
 
 [tool.poetry]
 name = "openhands-ai"
-version = "0.43.0"
+version = "0.44.0"
 description = "OpenHands: Code Less, Make More"
 authors = [ "OpenHands" ]
 license = "MIT"
@@ -80,7 +80,7 @@ bashlex = "^0.18"
 # TODO: These are integrations that should probably be optional
 redis = ">=5.2,<7.0"
 minio = "^7.2.8"
-daytona-sdk = "0.20.0"
+daytona = "0.21.1"
 stripe = ">=11.5,<13.0"
 google-cloud-aiplatform = "*"
 anthropic = { extras = [ "vertex" ], version = "*" }
