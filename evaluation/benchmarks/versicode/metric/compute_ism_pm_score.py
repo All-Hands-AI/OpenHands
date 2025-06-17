@@ -4,20 +4,20 @@
 2、判断是否合法
 3、计算ISM，和PM
 """
-import json
-import tokenize
+
 import io
+import json
 import math
-import ast
-import re
 import os
+import re
+import tokenize
+
 
 def is_code_valid(code):
-
     try:
         compile(code, '<string>', 'exec')
         return True
-    except:
+    except Exception:
         return False
 
 
@@ -44,7 +44,8 @@ def longest_common_prefix_between_lists_with_elements(list1, list2):
                 max_prefix_elements = (str1, str2)
     return max_prefix_length, max_prefix_elements
 
-def get_token(ans_code:str, output_code:str):
+
+def get_token(ans_code: str, output_code: str):
     """
     对代码进行词法分析，分解成标识符，返回两个标识符列表
     :param ans_code:
@@ -55,39 +56,39 @@ def get_token(ans_code:str, output_code:str):
     ans_flag = True
     try:
         tokens_ans = tokenize.tokenize(io.BytesIO(ans_code.encode('utf-8')).readline)
-    except Exception as e:
+    except Exception:
         tokens_ans = ans_code.splitlines()
         ans_flag = False
 
     try:
-        tokens_output = tokenize.tokenize(io.BytesIO(output_code.encode('utf-8')).readline)
-    except Exception as e:
+        tokens_output = tokenize.tokenize(
+            io.BytesIO(output_code.encode('utf-8')).readline
+        )
+    except Exception:
         tokens_output = output_code.splitlines()
         output_flag = False
 
-
     identifiers_ans = []
     identifiers_output = []
-    if ans_flag == True:
+    if ans_flag:
         try:
             for token in tokens_ans:
                 if token.type == tokenize.NAME:
                     identifiers_ans.append(token.string)
-        except Exception as e:
+        except Exception:
             identifiers_ans = tokens_ans
     else:
         identifiers_ans = tokens_ans
 
-    if output_flag == True:
+    if output_flag:
         try:
             for to in tokens_output:
                 if to.type == tokenize.NAME:
                     identifiers_output.append(to.string)
-        except Exception as e:
+        except Exception:
             identifiers_output = tokens_output
     else:
         identifiers_output = tokens_output
-
 
     return identifiers_ans, identifiers_output
 
@@ -108,15 +109,14 @@ def get_token_per_line(code: str):
             for token in tokens:
                 if token.type == tokenize.NAME:
                     identifiers.append(token.string)
-        except:
+        except Exception:
             identifiers = line.split(' ')
         identifiers_per_line.append(identifiers)
 
     return identifiers_per_line
 
 
-
-def get_ISM(answer_code:str, model_output_list:list, asnwer_name:str)->list:
+def get_ISM(answer_code: str, model_output_list: list, answer_name: str) -> list:
     """
     计算ISM，返回一个有序的得分列表
     :return:
@@ -126,19 +126,23 @@ def get_ISM(answer_code:str, model_output_list:list, asnwer_name:str)->list:
         if '```python' in code:
             code = code.replace('```python', '')
             code = code.replace('```', '')
-        if not re.search(rf'\b{re.escape(asnwer_name)}\b', code) or is_code_valid(code) == False:
+        if not re.search(rf'\b{re.escape(answer_name)}\b', code) or not is_code_valid(
+            code
+        ):
             score_list.append(0)
             continue
 
-        # if asnwer_name not in code:
+        # if answer_name not in code:
         #     score_list.append(0)
         #     continue
 
         identifiers_ans, identifiers_output = get_token(answer_code, code)
-        max_len, elements = longest_common_prefix_between_lists_with_elements(identifiers_ans, identifiers_output)
+        max_len, elements = longest_common_prefix_between_lists_with_elements(
+            identifiers_ans, identifiers_output
+        )
         if max_len != 0:
             base_element_len = max(len(elements[0]), len(elements[1]))
-            temp_score = max_len/base_element_len
+            temp_score = max_len / base_element_len
             score_list.append(temp_score)
         else:
             score_list.append(0)
@@ -149,27 +153,31 @@ def get_ISM(answer_code:str, model_output_list:list, asnwer_name:str)->list:
     score_list = sorted(score_list, reverse=True)
     return score_list
 
-def get_ISM_without_verification(answer_code:str, model_output_list:list, asnwer_name:str)->list:
+
+def get_ISM_without_verification(
+    answer_code: str, model_output_list: list, answer_name: str
+) -> list:
     """
     计算ISM，返回一个有序的得分列表
     :return:
     """
     score_list = []
     for code in model_output_list:
-
-        if asnwer_name not in code:
+        if answer_name not in code:
             score_list.append(0)
             continue
 
-        # if asnwer_name not in code:
+        # if answer_name not in code:
         #     score_list.append(0)
         #     continue
 
         identifiers_ans, identifiers_output = get_token(answer_code, code)
-        max_len, elements = longest_common_prefix_between_lists_with_elements(identifiers_ans, identifiers_output)
+        max_len, elements = longest_common_prefix_between_lists_with_elements(
+            identifiers_ans, identifiers_output
+        )
         if max_len != 0:
             base_element_len = max(len(elements[0]), len(elements[1]))
-            temp_score = max_len/base_element_len
+            temp_score = max_len / base_element_len
             score_list.append(temp_score)
         else:
             score_list.append(0)
@@ -179,6 +187,7 @@ def get_ISM_without_verification(answer_code:str, model_output_list:list, asnwer
 
     score_list = sorted(score_list, reverse=True)
     return score_list
+
 
 def longest_common_prefix_with_lengths(list1, list2):
     """
@@ -206,7 +215,7 @@ def longest_common_prefix_with_lengths(list1, list2):
     return max_length, len_list1, len_list2
 
 
-def get_PM(answer_code:str, model_output_list:list, asnwer_name:str)->list:
+def get_PM(answer_code: str, model_output_list: list, answer_name: str) -> list:
     """
     计算PM，返回一个有序的得分列表
     :return:
@@ -216,23 +225,26 @@ def get_PM(answer_code:str, model_output_list:list, asnwer_name:str)->list:
         if '```python' in code:
             code = code.replace('```python', '')
             code = code.replace('```', '')
-        if not re.search(rf'\b{re.escape(asnwer_name)}\b', code) or is_code_valid(code) == False:
-
-        # if asnwer_name not in code or is_code_valid(code) == False:
+        if not re.search(rf'\b{re.escape(answer_name)}\b', code) or not is_code_valid(
+            code
+        ):
+            # if answer_name not in code or is_code_valid(code) == False:
             score_list.append(0)
             continue
 
-        # if asnwer_name not in code:
+        # if answer_name not in code:
         #     score_list.append(0)
         #     continue
 
         ans_list = get_token_per_line(answer_code)
         output_token_list = get_token_per_line(code)
-        max_len, len1, len2 = longest_common_prefix_with_lengths(ans_list, output_token_list)
+        max_len, len1, len2 = longest_common_prefix_with_lengths(
+            ans_list, output_token_list
+        )
         base_element_len = max(len1, len2)
 
         if base_element_len != 0:
-            temp_score = max_len/base_element_len
+            temp_score = max_len / base_element_len
             score_list.append(temp_score)
         else:
             score_list.append(0)
@@ -240,7 +252,8 @@ def get_PM(answer_code:str, model_output_list:list, asnwer_name:str)->list:
     score_list = sorted(score_list, reverse=True)
     return score_list
 
-def get_score(score_list:list, k):
+
+def get_score(score_list: list, k):
     """
     计算score@n,k
     :param score_list:
@@ -249,25 +262,25 @@ def get_score(score_list:list, k):
     """
     n = len(score_list)
     sum = 0
-    final = n-k+1
-    for i in range(1, final+1):
-        sum += math.comb(n-i, k-1) * score_list[i-1]
+    final = n - k + 1
+    for i in range(1, final + 1):
+        sum += math.comb(n - i, k - 1) * score_list[i - 1]
 
-    final_score = sum/math.comb(n, k)
+    final_score = sum / math.comb(n, k)
 
     return final_score
 
 
 k = 1
 task = 'block'  # block or line
-json_name = f"Versicode_{task}_completion.json"
+json_name = f'Versicode_{task}_completion.json'
 
 folder_path = f'../data/result_data/{task}_completion'
 model_list = os.listdir(folder_path)
 
 for model in model_list:
     model_json_path = os.path.join(folder_path, model, json_name)
-    with open(model_json_path, 'r', encoding='utf-8')as fr:
+    with open(model_json_path, 'r', encoding='utf-8') as fr:
         lodict = json.load(fr)
     data_dict = lodict
     data_list = data_dict
@@ -305,10 +318,9 @@ for model in model_list:
         #             print('答案如下')#新增
         #             print(model_output_list[ISM_score_list.index(s)])#新增
 
-                    # flag = int(input('输入1继续，0退出'))#新增
-                    # if flag == 1:
-                    #     continue
-
+        # flag = int(input('输入1继续，0退出'))#新增
+        # if flag == 1:
+        #     continue
 
         ISM_score = get_score(ISM_score_list, k)
         PM_score = get_score(PM_score_list, k)
@@ -318,9 +330,8 @@ for model in model_list:
         # print(f"ISM分数：{ISM_score}")
         # print(f"PM分数：{PM_score}")
 
-    print(f"{model}, {task} completion task, ISM@{k} score: {sum_ISM/data_len}")
-    print(f"{model}, {task} completion task, PM@{k} score: {sum_PM/data_len}")
-
+    print(f'{model}, {task} completion task, ISM@{k} score: {sum_ISM / data_len}')
+    print(f'{model}, {task} completion task, PM@{k} score: {sum_PM / data_len}')
 
 
 # def get_token(ans_code:str, output_code:str):

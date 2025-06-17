@@ -56,18 +56,20 @@ export LMSTUDIO_URL="http://host.docker.internal:1234"  # <- Replace this with t
 
 docker pull docker.all-hands.dev/all-hands-ai/runtime:0.43-nikolaik
 
-mkdir -p ~/.openhands-state && echo '{"language":"en","agent":"CodeActAgent","max_iterations":null,"security_analyzer":null,"confirmation_mode":false,"llm_model":"lm_studio/'$LMSTUDIO_MODEL_NAME'","llm_api_key":"dummy","llm_base_url":"'$LMSTUDIO_URL/v1'","remote_runtime_resource_factor":null,"github_token":null,"enable_default_condenser":true,"user_consents_to_analytics":true}' > ~/.openhands-state/settings.json
+mkdir -p ~/.openhands && echo '{"language":"en","agent":"CodeActAgent","max_iterations":null,"security_analyzer":null,"confirmation_mode":false,"llm_model":"lm_studio/'$LMSTUDIO_MODEL_NAME'","llm_api_key":"dummy","llm_base_url":"'$LMSTUDIO_URL/v1'","remote_runtime_resource_factor":null,"github_token":null,"enable_default_condenser":true,"user_consents_to_analytics":true}' > ~/.openhands/settings.json
 
 docker run -it --rm --pull=always \
     -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.43-nikolaik \
     -e LOG_ALL_EVENTS=true \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    -v ~/.openhands-state:/.openhands-state \
+    -v ~/.openhands:/.openhands \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app \
     docker.all-hands.dev/all-hands-ai/openhands:0.43
 ```
+
+> **Note**: If you used OpenHands before version 0.44, you may want to run `mv ~/.openhands-state ~/.openhands` to migrate your conversation history to the new location.
 
 Once your server is running -- you can visit `http://localhost:3000` in your browser to use OpenHands with local Devstral model:
 ```
@@ -124,6 +126,18 @@ vllm serve all-hands/openhands-lm-32b-v0.1 \
     --tensor-parallel-size 2 \
     --served-model-name openhands-lm-32b-v0.1
     --enable-prefix-caching
+```
+
+### Create an OpenAI-Compatible Endpoint with Ollama
+
+- Install Ollama following [the official documentation](https://ollama.com/download).
+- For Ollama configuration, use `ollama/<modelname>` as custom model in web. Api key also can be set to `ollama`.
+- Example launch command for Devstral LM 24B:
+
+```bash
+OLLAMA_CONTEXT_LENGTH=32768 OLLAMA_HOST=0.0.0.0:11434 OLLAMA_KEEP_ALIVE=-1 nohup ollama serve&
+#The minimum context size is ~8196, even the system prompt won't fit smaller
+ollama pull devstral:latest
 ```
 
 ## Advanced: Run and Configure OpenHands

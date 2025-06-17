@@ -60,11 +60,11 @@ Object.entries(translationJson).forEach(([key, translations]) => {
 if (Object.keys(missingTranslations).length > 0) {
   console.error('\x1b[31m%s\x1b[0m', 'ERROR: Missing translations detected');
   console.error(`Found ${Object.keys(missingTranslations).length} translation keys with missing languages:`);
-  
+
   Object.entries(missingTranslations).forEach(([key, langs]) => {
     console.error(`- Key "${key}" is missing translations for: ${langs.join(', ')}`);
   });
-  
+
   console.error('\nPlease add the missing translations before committing.');
 }
 
@@ -72,11 +72,11 @@ if (Object.keys(missingTranslations).length > 0) {
 if (Object.keys(extraLanguages).length > 0) {
   console.error('\x1b[31m%s\x1b[0m', 'ERROR: Extra languages detected');
   console.error(`Found ${Object.keys(extraLanguages).length} translation keys with extra languages not in AvailableLanguages:`);
-  
+
   Object.entries(extraLanguages).forEach(([key, langs]) => {
     console.error(`- Key "${key}" has translations for unsupported languages: ${langs.join(', ')}`);
   });
-  
+
   console.error('\nPlease remove the extra languages before committing.');
 }
 

@@ -3,6 +3,7 @@ import shutil
 
 import pytest
 
+from openhands.controller.state.control_flags import IterationControlFlag
 from openhands.controller.state.state import State
 from openhands.core.message import Message, TextContent
 from openhands.events.observation.agent import MicroagentKnowledge
@@ -161,9 +162,11 @@ def test_add_turns_left_reminder(prompt_dir):
     manager = PromptManager(prompt_dir=prompt_dir)
 
     # Create a State object with specific iteration values
-    state = State()
-    state.iteration = 3
-    state.max_iterations = 10
+    state = State(
+        iteration_flag=IterationControlFlag(
+            current_value=3, max_value=10, limit_increase_amount=10
+        )
+    )
 
     # Create a list of messages with a user message
     user_message = Message(role='user', content=[TextContent(text='User content')])
