@@ -16,6 +16,16 @@ from openhands.events.action import CmdRunAction
 from openhands.events.observation import CmdOutputObservation, ErrorObservation
 from openhands.runtime.impl.cli.cli_runtime import CLIRuntime
 from openhands.runtime.impl.local.local_runtime import LocalRuntime
+from openhands.runtime.utils.bash_constants import TIMEOUT_MESSAGE_TEMPLATE
+
+
+def get_timeout_suffix(timeout_seconds):
+    """Helper function to generate the expected timeout suffix."""
+    return (
+        f'[The command timed out after {timeout_seconds} seconds. '
+        f'{TIMEOUT_MESSAGE_TEMPLATE}]'
+    )
+
 
 # ============================================================================================================================
 # Bash-specific tests
@@ -56,10 +66,7 @@ def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
         if runtime_cls == CLIRuntime:
             assert '[The command timed out after 1.0 seconds.]' in obs.metadata.suffix
         else:
-            assert (
-                "[The command timed out after 1.0 seconds. You may wait longer to see additional output by sending empty command '', send other commands to interact with the current process, or send keys to interrupt/kill the command.]"
-                in obs.metadata.suffix
-            )
+            assert get_timeout_suffix(1.0) in obs.metadata.suffix
 
         action = CmdRunAction(command='C-c', is_input=True)
         action.set_hard_timeout(30)

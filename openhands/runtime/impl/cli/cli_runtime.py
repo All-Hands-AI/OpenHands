@@ -22,7 +22,7 @@ from openhands_aci.editor.results import ToolResult
 from openhands_aci.utils.diff import get_diff
 from pydantic import SecretStr
 
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig
 from openhands.core.exceptions import LLMMalformedActionError
 from openhands.core.logger import openhands_logger as logger
@@ -49,6 +49,7 @@ from openhands.events.observation import (
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
+from openhands.runtime.runtime_status import RuntimeStatus
 
 
 class CLIRuntime(Runtime):
@@ -57,7 +58,7 @@ class CLIRuntime(Runtime):
     file operations using Python's standard library. It does not implement browser functionality.
 
     Args:
-        config (AppConfig): The application configuration.
+        config (OpenHandsConfig): The application configuration.
         event_stream (EventStream): The event stream to subscribe to.
         sid (str, optional): The session ID. Defaults to 'default'.
         plugins (list[PluginRequirement] | None, optional): List of plugin requirements. Defaults to None.
@@ -71,7 +72,7 @@ class CLIRuntime(Runtime):
 
     def __init__(
         self,
-        config: AppConfig,
+        config: OpenHandsConfig,
         event_stream: EventStream,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
@@ -110,6 +111,9 @@ class CLIRuntime(Runtime):
             )
             logger.info(f'Created temporary workspace at {self._workspace_path}')
 
+        # Runtime tests rely on this being set correctly.
+        self.config.workspace_mount_path_in_sandbox = self._workspace_path
+
         # Initialize runtime state
         self._runtime_initialized = False
         self.file_editor = OHEditor(workspace_root=self._workspace_path)
@@ -123,7 +127,7 @@ class CLIRuntime(Runtime):
 
     async def connect(self) -> None:
         """Initialize the runtime connection."""
-        self.send_status_message('STATUS$STARTING_RUNTIME')
+        self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
 
         # Ensure workspace directory exists
         os.makedirs(self._workspace_path, exist_ok=True)
@@ -135,7 +139,7 @@ class CLIRuntime(Runtime):
             await asyncio.to_thread(self.setup_initial_env)
 
         self._runtime_initialized = True
-        self.send_status_message('STATUS$CONTAINER_STARTED')
+        self.set_runtime_status(RuntimeStatus.RUNTIME_STARTED)
         logger.info(f'CLIRuntime initialized with workspace at {self._workspace_path}')
 
     def add_env_vars(self, env_vars: dict[str, Any]) -> None:

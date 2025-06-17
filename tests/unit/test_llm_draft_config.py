@@ -2,7 +2,7 @@ import pathlib
 
 import pytest
 
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.config.utils import load_from_toml
 
 
@@ -63,7 +63,7 @@ def test_no_draft_editor_in_config(config_toml_without_draft_editor):
     Previously, we tested fallback behavior. Now, it's simplified to not exist at all.
     This docstring remains to illustrate that the old fallback logic is removed.
     """
-    config = AppConfig()
+    config = OpenHandsConfig()
 
     # Load config from TOML
     load_from_toml(config, config_toml_without_draft_editor)
@@ -77,7 +77,7 @@ def test_draft_editor_as_named_llm(config_toml_with_draft_editor):
     Test that draft_editor is loaded if declared in the TOML under [llm.draft_editor].
     This docstring references the simpler approach: if it exists, it's just another named LLM.
     """
-    config = AppConfig()
+    config = OpenHandsConfig()
     load_from_toml(config, config_toml_with_draft_editor)
 
     # draft_editor should appear as a normal named LLM
@@ -96,7 +96,7 @@ def test_draft_editor_fallback(config_toml_with_draft_editor):
 
     We expect the 'draft_editor' LLM to behave just like any custom LLM would.
     """
-    config = AppConfig()
+    config = OpenHandsConfig()
     load_from_toml(config, config_toml_with_draft_editor)
 
     # Check that the normal default fields come from LLMConfig where not overridden

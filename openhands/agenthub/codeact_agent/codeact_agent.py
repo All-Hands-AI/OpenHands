@@ -136,8 +136,9 @@ class CodeActAgent(Agent):
         return tools
 
     def reset(self) -> None:
-        """Resets the CodeAct Agent."""
+        """Resets the CodeAct Agent's internal state."""
         super().reset()
+        # Only clear pending actions, not LLM metrics
         self.pending_actions.clear()
 
     def step(self, state: State) -> 'Action':
@@ -266,5 +267,6 @@ class CodeActAgent(Agent):
 
     def response_to_actions(self, response: 'ModelResponse') -> list['Action']:
         return codeact_function_calling.response_to_actions(
-            response, mcp_tool_names=list(self.mcp_tools.keys()),
+            response,
+            mcp_tool_names=list(self.mcp_tools.keys()),
         )

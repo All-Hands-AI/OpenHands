@@ -6,8 +6,8 @@ from pathlib import Path
 from conftest import close_test_runtime, create_runtime_and_config
 
 from openhands.controller.state.state import State
-from openhands.core.config.app_config import AppConfig
 from openhands.core.config.config_utils import OH_DEFAULT_AGENT
+from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.main import run_controller
 from openhands.core.schema.agent import AgentState
 from openhands.events.action.empty import NullAction
@@ -17,7 +17,7 @@ from openhands.events.observation.commands import CmdOutputObservation
 
 
 def _get_config(trajectory_name: str, agent: str = OH_DEFAULT_AGENT):
-    return AppConfig(
+    return OpenHandsConfig(
         default_agent=agent,
         run_as_openhands=False,
         # do not mount workspace

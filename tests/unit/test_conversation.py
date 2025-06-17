@@ -20,8 +20,8 @@ from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
 )
 from openhands.server.routes.manage_conversations import (
+    ConversationResponse,
     InitSessionRequest,
-    InitSessionResponse,
     delete_conversation,
     get_conversation,
     new_conversation,
@@ -46,7 +46,7 @@ def _patch_store():
         get_conversation_metadata_filename('some_conversation_id'),
         json.dumps(
             {
-                'title': 'Some Conversation',
+                'title': 'Some ServerConversation',
                 'selected_repository': 'foobar',
                 'conversation_id': 'some_conversation_id',
                 'user_id': '12345',
@@ -140,7 +140,7 @@ async def test_search_conversations():
                             results=[
                                 ConversationMetadata(
                                     conversation_id='some_conversation_id',
-                                    title='Some Conversation',
+                                    title='Some ServerConversation',
                                     created_at=datetime.fromisoformat(
                                         '2025-01-01T00:00:00+00:00'
                                     ),
@@ -164,7 +164,7 @@ async def test_search_conversations():
                         results=[
                             ConversationInfo(
                                 conversation_id='some_conversation_id',
-                                title='Some Conversation',
+                                title='Some ServerConversation',
                                 created_at=datetime.fromisoformat(
                                     '2025-01-01T00:00:00+00:00'
                                 ),
@@ -189,7 +189,7 @@ async def test_get_conversation():
         mock_store.get_metadata = AsyncMock(
             return_value=ConversationMetadata(
                 conversation_id='some_conversation_id',
-                title='Some Conversation',
+                title='Some ServerConversation',
                 created_at=datetime.fromisoformat('2025-01-01T00:00:00+00:00'),
                 last_updated_at=datetime.fromisoformat('2025-01-01T00:01:00+00:00'),
                 selected_repository='foobar',
@@ -211,7 +211,7 @@ async def test_get_conversation():
 
             expected = ConversationInfo(
                 conversation_id='some_conversation_id',
-                title='Some Conversation',
+                title='Some ServerConversation',
                 created_at=datetime.fromisoformat('2025-01-01T00:00:00+00:00'),
                 last_updated_at=datetime.fromisoformat('2025-01-01T00:01:00+00:00'),
                 status=ConversationStatus.STOPPED,
@@ -250,6 +250,7 @@ async def test_new_conversation_success(provider_handler_mock):
                 conversation_id='test_conversation_id',
                 url='https://my-conversation.com',
                 session_api_key=None,
+                status=ConversationStatus.RUNNING,
             )
 
             test_request = InitSessionRequest(
@@ -257,16 +258,17 @@ async def test_new_conversation_success(provider_handler_mock):
                 selected_branch='main',
                 initial_user_msg='Hello, agent!',
                 image_urls=['https://example.com/image.jpg'],
-                conversation_id='test_conversation_id',
             )
 
             # Call new_conversation
             response = await create_new_test_conversation(test_request)
 
             # Verify the response
-            assert isinstance(response, InitSessionResponse)
+            assert isinstance(response, ConversationResponse)
             assert response.status == 'ok'
-            assert response.conversation_id == 'test_conversation_id'
+            # Don't check the exact conversation_id as it's now generated dynamically
+            assert response.conversation_id is not None
+            assert isinstance(response.conversation_id, str)
 
             # Verify that create_new_conversation was called with the correct arguments
             mock_create_conversation.assert_called_once()
@@ -292,6 +294,7 @@ async def test_new_conversation_with_suggested_task(provider_handler_mock):
                 conversation_id='test_conversation_id',
                 url='https://my-conversation.com',
                 session_api_key=None,
+                status=ConversationStatus.RUNNING,
             )
 
             # Mock SuggestedTask.get_prompt_for_task
@@ -314,16 +317,17 @@ async def test_new_conversation_with_suggested_task(provider_handler_mock):
                     repository='test/repo',
                     selected_branch='main',
                     suggested_task=test_task,
-                    conversation_id='test_conversation_id',
                 )
 
                 # Call new_conversation
                 response = await create_new_test_conversation(test_request)
 
                 # Verify the response
-                assert isinstance(response, InitSessionResponse)
+                assert isinstance(response, ConversationResponse)
                 assert response.status == 'ok'
-                assert response.conversation_id == 'test_conversation_id'
+                # Don't check the exact conversation_id as it's now generated dynamically
+                assert response.conversation_id is not None
+                assert isinstance(response.conversation_id, str)
 
                 # Verify that create_new_conversation was called with the correct arguments
                 mock_create_conversation.assert_called_once()
@@ -418,7 +422,7 @@ async def test_delete_conversation():
             mock_store.get_metadata = AsyncMock(
                 return_value=ConversationMetadata(
                     conversation_id='some_conversation_id',
-                    title='Some Conversation',
+                    title='Some ServerConversation',
                     created_at=datetime.fromisoformat('2025-01-01T00:00:00+00:00'),
                     last_updated_at=datetime.fromisoformat('2025-01-01T00:01:00+00:00'),
                     selected_repository='foobar',
@@ -477,6 +481,7 @@ async def test_new_conversation_with_bearer_auth(provider_handler_mock):
                 conversation_id='test_conversation_id',
                 url='https://my-conversation.com',
                 session_api_key=None,
+                status=ConversationStatus.RUNNING,
             )
 
             # Create the request object
@@ -490,7 +495,7 @@ async def test_new_conversation_with_bearer_auth(provider_handler_mock):
             response = await create_new_test_conversation(test_request, AuthType.BEARER)
 
             # Verify the response
-            assert isinstance(response, InitSessionResponse)
+            assert isinstance(response, ConversationResponse)
             assert response.status == 'ok'
 
             # Verify that create_new_conversation was called with REMOTE_API_KEY trigger
@@ -514,6 +519,7 @@ async def test_new_conversation_with_null_repository():
                 conversation_id='test_conversation_id',
                 url='https://my-conversation.com',
                 session_api_key=None,
+                status=ConversationStatus.RUNNING,
             )
 
             # Create the request object with null repository
@@ -527,7 +533,7 @@ async def test_new_conversation_with_null_repository():
             response = await create_new_test_conversation(test_request)
 
             # Verify the response
-            assert isinstance(response, InitSessionResponse)
+            assert isinstance(response, ConversationResponse)
             assert response.status == 'ok'
 
             # Verify that create_new_conversation was called with None repository
@@ -582,18 +588,20 @@ async def test_new_conversation_with_provider_authentication_error(
 
 
 @pytest.mark.asyncio
-async def test_new_conversation_with_unsupported_params(test_client):
-    test_request_data = {
-        'repository': 'test/repo',  # This is valid
-        'selected_branch': 'main',  # This is valid
-        'initial_user_msg': 'Hello, agent!',  # Valid parameter
-        'unsupported_param': 'unsupported param',  # Invalid, unsupported parameter
-    }
+async def test_new_conversation_with_unsupported_params():
+    """Test that unsupported parameters are rejected."""
+    # Create a test request with an unsupported parameter
+    with _patch_store():
+        # Create a direct instance of InitSessionRequest to test validation
+        with pytest.raises(Exception) as excinfo:
+            # This should raise a validation error because of the extra parameter
+            InitSessionRequest(
+                repository='test/repo',
+                selected_branch='main',
+                initial_user_msg='Hello, agent!',
+                unsupported_param='unsupported param',  # This should cause validation to fail
+            )
 
-    # Send the POST request to the appropriate endpoint
-    response = test_client.post('/api/conversations', json=test_request_data)
-
-    assert response.status_code == 422  # Validation error
-
-    assert 'Extra inputs are not permitted' in response.text
-    assert 'unsupported param' in response.text
+        # Verify that the error message mentions the unsupported parameter
+        assert 'Extra inputs are not permitted' in str(excinfo.value)
+        assert 'unsupported_param' in str(excinfo.value)

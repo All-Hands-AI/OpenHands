@@ -8,7 +8,7 @@ import time
 import pytest
 from pytest import TempPathFactory
 
-from openhands.core.config import AppConfig, MCPConfig, load_app_config
+from openhands.core.config import MCPConfig, OpenHandsConfig, load_openhands_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.action.commands import CmdRunAction
@@ -214,7 +214,7 @@ def create_runtime_and_config(
     runtime_startup_env_vars: dict[str, str] | None = None,
     docker_runtime_kwargs: dict[str, str] | None = None,
     override_mcp_config: MCPConfig | None = None,
-) -> tuple[Runtime, AppConfig]:
+) -> tuple[Runtime, OpenHandsConfig]:
     """Create a new runtime for use in tests"""
     sid = 'rt_' + str(random.randint(100000, 999999))
 
@@ -222,7 +222,7 @@ def create_runtime_and_config(
     # otherwise Jupyter will not access the proper dependencies installed by AgentSkills
     plugins = [AgentSkillsRequirement(), JupyterRequirement()]
 
-    config = load_app_config()
+    config = load_openhands_config()
     config.run_as_openhands = run_as_openhands
     config.sandbox.force_rebuild_runtime = force_rebuild_runtime
     config.sandbox.keep_runtime_alive = False
@@ -260,7 +260,12 @@ def create_runtime_and_config(
     if override_mcp_config is not None:
         config.mcp = override_mcp_config
 
-    file_store = get_file_store(config.file_store, config.file_store_path)
+    file_store = file_store = get_file_store(
+        config.file_store,
+        config.file_store_path,
+        config.file_store_web_hook_url,
+        config.file_store_web_hook_headers,
+    )
     event_stream = EventStream(sid, file_store)
 
     runtime = runtime_cls(
@@ -281,7 +286,7 @@ def create_runtime_and_config(
 
     call_async_from_sync(runtime.connect)
     time.sleep(2)
-    return runtime, config
+    return runtime, runtime.config
 
 
 @pytest.fixture(scope='module')
