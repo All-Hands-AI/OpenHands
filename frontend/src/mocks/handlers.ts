@@ -157,7 +157,7 @@ export const handlers = [
   }),
   http.get("/api/user/info", () => {
     const user: GitUser = {
-      id: 1,
+      id: "1",
       login: "octocat",
       avatar_url: "https://avatars.githubusercontent.com/u/583231?v=4",
       company: "GitHub",

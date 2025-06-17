@@ -133,7 +133,7 @@ class GitHubService(BaseGitService, GitService):
         response, _ = await self._make_request(url)
 
         return User(
-            id=response.get('id'),
+            id=str(response.get('id', '')),
             login=response.get('login'),
             avatar_url=response.get('avatar_url'),
             company=response.get('company'),

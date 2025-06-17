@@ -184,13 +184,12 @@ class GitLabService(BaseGitService, GitService):
         avatar_url = response.get('avatar_url') or ''
 
         return User(
-            id=response.get('id'),
-            username=response.get('username'),
+            id=str(response.get('id', '')),
+            login=response.get('username'),
             avatar_url=avatar_url,
             name=response.get('name'),
             email=response.get('email'),
             company=response.get('organization'),
-            login=response.get('username'),
         )
 
     async def search_repositories(

@@ -7,7 +7,7 @@ interface GitHubErrorReponse {
 }
 
 interface GitUser {
-  id: number;
+  id: string;
   login: string;
   avatar_url: string;
   company: string | null;

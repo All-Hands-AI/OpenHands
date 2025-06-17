@@ -94,7 +94,7 @@ class SuggestedTask(BaseModel):
 
 
 class User(BaseModel):
-    id: int
+    id: str
     login: str
     avatar_url: str
     company: str | None = None
