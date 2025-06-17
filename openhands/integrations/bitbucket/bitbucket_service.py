@@ -196,11 +196,9 @@ class BitbucketService(BaseGitService, GitService):
 
         return repositories
 
-    async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
-        """Get repositories for the authenticated user."""
+    async def _get_public_repositories(self, sort: str) -> list[Repository]:
+        """Get public repositories for the authenticated user using the repositories endpoint."""
         repositories = []
-
-        # First, try to get repositories with 'contributor' role
         url = f'{self.BASE_URL}/repositories'
         params = {
             'role': 'contributor',  # 'member' is not a valid role for Bitbucket API
@@ -231,51 +229,66 @@ class BitbucketService(BaseGitService, GitService):
                     )
                 )
         except Exception as e:
-            # If the first approach fails, try getting workspaces and then repositories for each workspace
-            try:
-                # Get user's workspaces
-                workspaces_url = f'{self.BASE_URL}/workspaces'
-                workspaces_data, _ = await self._make_request(workspaces_url)
-
-                for workspace in workspaces_data.get('values', []):
-                    workspace_slug = workspace.get('slug')
-                    if not workspace_slug:
-                        continue
-
-                    # Get repositories for this workspace
-                    workspace_repos_url = (
-                        f'{self.BASE_URL}/repositories/{workspace_slug}'
-                    )
-                    repos_data, headers = await self._make_request(workspace_repos_url)
-
-                    for repo in repos_data.get('values', []):
-                        # Convert UUID to an integer hash for compatibility with Repository model
-                        uuid = repo.get('uuid', '')
-                        # Remove curly braces if present and use hash of the UUID string as the ID
-                        if uuid.startswith('{') and uuid.endswith('}'):
-                            uuid = uuid[1:-1]
-                        id_value = hash(uuid) % (
-                            2**31
-                        )  # Ensure it's a positive 32-bit integer
-
-                        repositories.append(
-                            Repository(
-                                id=id_value,
-                                full_name=f'{repo.get("workspace", {}).get("slug", "")}/{repo.get("slug", "")}',
-                                git_provider=ProviderType.BITBUCKET,
-                                is_public=repo.get('is_private', True) is False,
-                                stargazers_count=None,  # Bitbucket doesn't have stars
-                                link_header=headers.get('Link', ''),
-                                pushed_at=repo.get('updated_on'),
-                            )
-                        )
-            except Exception as nested_e:
-                # If both approaches fail, log the error and return an empty list
-                logger.warning(
-                    f'Failed to get repositories from Bitbucket: {e}, then: {nested_e}'
-                )
+            logger.warning(f'Failed to get public repositories from Bitbucket: {e}')
 
         return repositories
+
+    async def _get_private_repositories(self, sort: str) -> list[Repository]:
+        """Get private repositories for the authenticated user using workspaces endpoint."""
+        repositories = []
+
+        try:
+            # Get user's workspaces
+            workspaces_url = f'{self.BASE_URL}/workspaces'
+            workspaces_data, _ = await self._make_request(workspaces_url)
+
+            for workspace in workspaces_data.get('values', []):
+                workspace_slug = workspace.get('slug')
+                if not workspace_slug:
+                    continue
+
+                # Get repositories for this workspace
+                workspace_repos_url = f'{self.BASE_URL}/repositories/{workspace_slug}'
+                repos_data, headers = await self._make_request(workspace_repos_url)
+
+                for repo in repos_data.get('values', []):
+                    # Convert UUID to an integer hash for compatibility with Repository model
+                    uuid = repo.get('uuid', '')
+                    # Remove curly braces if present and use hash of the UUID string as the ID
+                    if uuid.startswith('{') and uuid.endswith('}'):
+                        uuid = uuid[1:-1]
+                    id_value = hash(uuid) % (
+                        2**31
+                    )  # Ensure it's a positive 32-bit integer
+
+                    repositories.append(
+                        Repository(
+                            id=id_value,
+                            full_name=f'{repo.get("workspace", {}).get("slug", "")}/{repo.get("slug", "")}',
+                            git_provider=ProviderType.BITBUCKET,
+                            is_public=repo.get('is_private', True) is False,
+                            stargazers_count=None,  # Bitbucket doesn't have stars
+                            link_header=headers.get('Link', ''),
+                            pushed_at=repo.get('updated_on'),
+                        )
+                    )
+        except Exception as e:
+            logger.warning(f'Failed to get private repositories from Bitbucket: {e}')
+
+        return repositories
+
+    async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
+        """Get repositories for the authenticated user."""
+        # Get both public and private repositories
+        public_repos = await self._get_public_repositories(sort)
+        private_repos = await self._get_private_repositories(sort)
+
+        # Combine and deduplicate repositories based on full_name
+        all_repos = {}
+        for repo in public_repos + private_repos:
+            all_repos[repo.full_name] = repo
+
+        return list(all_repos.values())
 
     async def get_suggested_tasks(self) -> list[SuggestedTask]:
         """Get suggested tasks for the authenticated user across all repositories."""
