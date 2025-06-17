@@ -396,7 +396,7 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
 
     def check_retry_num(self, retry_num):
         correct_num = self.draft_editor_llm.config.correct_num
-        return correct_num > retry_num
+        return correct_num < retry_num
 
     def correct_edit(self, file_content: str, error_obs: ErrorObservation, retry_num: int = 0) -> Observation:
         from openhands.agenthub.codeact_agent.tools import LLMBasedFileEditTool
