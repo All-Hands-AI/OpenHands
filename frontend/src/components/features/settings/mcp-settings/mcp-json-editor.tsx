@@ -69,7 +69,7 @@ export function MCPJsonEditor({ mcpConfig, onChange }: MCPJsonEditorProps) {
         {t(I18nKey.SETTINGS$MCP_CONFIG_DESCRIPTION)}
       </div>
       <textarea
-        className="w-full h-64 p-2 text-sm font-mono bg-base-tertiary rounded-md focus:border-blue-500 focus:outline-none"
+        className="w-full h-64 p-2 text-sm font-mono bg-base-tertiary rounded-md focus:border-blue-500 focus:outline-hidden"
         value={configText}
         onChange={handleTextChange}
         spellCheck="false"

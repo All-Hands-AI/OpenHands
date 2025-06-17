@@ -9,6 +9,7 @@ from openhands.events.action import MessageAction
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.monitoring import MonitoringListener
+from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation import ServerConversation
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.settings import Settings
@@ -21,6 +22,24 @@ class ConversationManager(ABC):
     This class defines the interface for managing conversations, whether in standalone
     or clustered mode. It handles the lifecycle of conversations, including creation,
     attachment, detachment, and cleanup.
+
+    This is an extension point in OpenHands, that applications built on it can use to modify behavior via server configuration, without modifying its code.
+    Applications can provide their own
+    implementation by:
+    1. Creating a class that inherits from ConversationManager
+    2. Implementing all required abstract methods
+    3. Setting server_config.conversation_manager_class to the fully qualified name
+       of the implementation class
+
+    The default implementation is StandaloneConversationManager, which handles
+    conversations in a single-server deployment. Applications might want to provide
+    their own implementation for scenarios like:
+    - Clustered deployments with distributed conversation state
+    - Custom persistence or caching strategies
+    - Integration with external conversation management systems
+    - Enhanced monitoring or logging capabilities
+
+    The implementation class is instantiated via get_impl() in openhands.server.shared.py.
     """
 
     sio: socketio.AsyncServer
@@ -95,6 +114,17 @@ class ConversationManager(ABC):
     @abstractmethod
     async def close_session(self, sid: str):
         """Close a session."""
+
+    @abstractmethod
+    def get_agent_session(self, sid: str) -> AgentSession | None:
+        """Get the agent session for a given session ID.
+
+        Args:
+            sid: The session ID.
+
+        Returns:
+            The agent session, or None if not found.
+        """
 
     @abstractmethod
     async def get_agent_loop_info(

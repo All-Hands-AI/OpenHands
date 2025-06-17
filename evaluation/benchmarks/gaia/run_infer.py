@@ -1,4 +1,5 @@
 import asyncio
+import copy
 import functools
 import os
 import re
@@ -9,6 +10,7 @@ import huggingface_hub
 import pandas as pd
 from datasets import load_dataset
 from PIL import Image
+from pydantic import SecretStr
 
 from evaluation.benchmarks.gaia.scorer import question_scorer
 from evaluation.benchmarks.gaia.utils import (
@@ -31,6 +33,7 @@ from openhands.core.config import (
     OpenHandsConfig,
     get_llm_config_arg,
     get_parser,
+    load_from_toml,
 )
 from openhands.core.config.utils import get_agent_config_arg
 from openhands.core.logger import openhands_logger as logger
@@ -56,7 +59,7 @@ def get_config(
     metadata: EvalMetadata,
 ) -> OpenHandsConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
-    sandbox_config.base_container_image = 'python:3.12-bookworm'
+    sandbox_config.base_container_image = 'nikolaik/python-nodejs:python3.12-nodejs22'
     config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
@@ -74,6 +77,11 @@ def get_config(
         logger.info('Agent config not provided, using default settings')
         agent_config = config.get_agent_config(metadata.agent_class)
         agent_config.enable_prompt_extensions = False
+
+    config_copy = copy.deepcopy(config)
+    load_from_toml(config_copy)
+    if config_copy.search_api_key:
+        config.search_api_key = SecretStr(config_copy.search_api_key)
     return config
 
 
@@ -318,6 +326,8 @@ if __name__ == '__main__':
     if llm_config is None:
         raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
 
+    toml_config = OpenHandsConfig()
+    load_from_toml(toml_config)
     metadata = make_metadata(
         llm_config=llm_config,
         dataset_name='gaia',
@@ -326,7 +336,10 @@ if __name__ == '__main__':
         eval_note=args.eval_note,
         eval_output_dir=args.eval_output_dir,
         data_split=args.data_split,
-        details={'gaia-level': args.level},
+        details={
+            'gaia-level': args.level,
+            'mcp-servers': ['tavily'] if toml_config.search_api_key else [],
+        },
         agent_config=agent_config,
     )
 

@@ -65,6 +65,7 @@ describe("WsClientProvider", () => {
         last_updated_at: "2021-10-01T12:00:00Z",
         created_at: "2021-10-01T12:00:00Z",
         status: "RUNNING" as const,
+        runtime_status: "STATUS$READY",
         url: null,
         session_api_key: null,
       }}},
