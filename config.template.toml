@@ -320,6 +320,9 @@ classpath = "my_package.my_module.MyCustomAgent"
 # Enable GPU support in the runtime
 #enable_gpu = false
 
+# When there are multiple cards, you can specify the GPU by ID
+#cuda_visible_devices = ''
+
 # Additional Docker runtime kwargs
 #docker_runtime_kwargs = {}
 
