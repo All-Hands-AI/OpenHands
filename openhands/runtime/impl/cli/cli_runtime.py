@@ -50,6 +50,7 @@ from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.runtime_status import RuntimeStatus
+from openhands.runtime.utils.bash import SubprocessBashSession
 
 
 class CLIRuntime(Runtime):
@@ -118,6 +119,7 @@ class CLIRuntime(Runtime):
         self._runtime_initialized = False
         self.file_editor = OHEditor(workspace_root=self._workspace_path)
         self._shell_stream_callback: Callable[[str], None] | None = None
+        self._bash_session: SubprocessBashSession | None = None
 
         logger.warning(
             'Initializing CLIRuntime. WARNING: NO SANDBOX IS USED. '
@@ -137,6 +139,14 @@ class CLIRuntime(Runtime):
 
         if not self.attach_to_existing:
             await asyncio.to_thread(self.setup_initial_env)
+
+        # Initialize the subprocess bash session
+        self._bash_session = SubprocessBashSession(
+            work_dir=self._workspace_path,
+            username=None,  # Use current user
+            no_change_timeout_seconds=30,
+        )
+        self._bash_session.initialize()
 
         self._runtime_initialized = True
         self.set_runtime_status(RuntimeStatus.RUNTIME_STARTED)
@@ -351,36 +361,38 @@ class CLIRuntime(Runtime):
         )
 
     def run(self, action: CmdRunAction) -> Observation:
-        """Run a command using subprocess."""
+        """Run a command using the Anthropic bash session."""
         if not self._runtime_initialized:
             return ErrorObservation(
                 f'Runtime not initialized for command: {action.command}'
             )
 
-        if action.is_input:
-            logger.warning(
-                f"CLIRuntime received an action with `is_input=True` (command: '{action.command}'). "
-                'CLIRuntime currently does not support sending input or signals to active processes. '
-                'This action will be ignored and an error observation will be returned.'
-            )
-            return ErrorObservation(
-                content=f"CLIRuntime does not support interactive input from the agent (e.g., 'C-c'). The command '{action.command}' was not sent to any process.",
-                error_id='AGENT_ERROR$BAD_ACTION',
-            )
+        if not self._bash_session:
+            return ErrorObservation('Bash session not initialized')
 
         try:
+            # Set effective timeout
             effective_timeout = (
                 action.timeout
                 if action.timeout is not None
                 else self.config.sandbox.timeout
             )
 
+            # Create a new action and set the timeout
+            action_with_timeout = CmdRunAction(
+                command=action.command,
+                is_input=action.is_input,
+                blocking=action.blocking,
+            )
+            if effective_timeout is not None:
+                action_with_timeout.set_hard_timeout(effective_timeout, blocking=True)
+
             logger.debug(
                 f'Running command in CLIRuntime: "{action.command}" with effective timeout: {effective_timeout}s'
             )
-            return self._execute_shell_command(
-                action.command, timeout=effective_timeout
-            )
+
+            return self._bash_session.execute(action_with_timeout)
+
         except Exception as e:
             logger.error(
                 f'Error in CLIRuntime.run for command "{action.command}": {str(e)}'
@@ -737,6 +749,10 @@ class CLIRuntime(Runtime):
             raise RuntimeError(f'Error creating zip file: {str(e)}')
 
     def close(self) -> None:
+        """Close the runtime and clean up resources."""
+        if self._bash_session:
+            self._bash_session.close()
+            self._bash_session = None
         self._runtime_initialized = False
         super().close()
 

@@ -1,6 +1,13 @@
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.cli.cli_runtime import CLIRuntime
-from openhands.runtime.impl.daytona.daytona_runtime import DaytonaRuntime
+
+try:
+    from openhands.runtime.impl.daytona.daytona_runtime import DaytonaRuntime
+
+    _DAYTONA_AVAILABLE = True
+except ImportError:
+    _DAYTONA_AVAILABLE = False
+    DaytonaRuntime = None  # type: ignore
 from openhands.runtime.impl.docker.docker_runtime import (
     DockerRuntime,
 )
@@ -20,7 +27,7 @@ _DEFAULT_RUNTIME_CLASSES: dict[str, type[Runtime]] = {
     'modal': ModalRuntime,
     'runloop': RunloopRuntime,
     'local': LocalRuntime,
-    'daytona': DaytonaRuntime,
+    **({'daytona': DaytonaRuntime} if _DAYTONA_AVAILABLE else {}),
     'cli': CLIRuntime,
 }
 
@@ -49,7 +56,9 @@ __all__ = [
     'ModalRuntime',
     'RunloopRuntime',
     'DockerRuntime',
-    'DaytonaRuntime',
     'CLIRuntime',
     'get_runtime_cls',
 ]
+
+if _DAYTONA_AVAILABLE:
+    __all__.append('DaytonaRuntime')
