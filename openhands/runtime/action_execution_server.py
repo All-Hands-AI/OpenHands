@@ -18,6 +18,7 @@ import time
 import traceback
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Any
 from zipfile import ZipFile
 
 from binaryornot.check import is_binary
@@ -213,6 +214,94 @@ class ActionExecutor:
     def initial_cwd(self):
         return self._initial_cwd
 
+    def _extract_action_metadata(self, action: Action) -> dict[str, Any]:
+        """Extract relevant metadata from an action for logging, excluding large content."""
+        metadata: dict[str, Any] = {}
+
+        # Common metadata for all actions
+        if hasattr(action, 'timeout'):
+            metadata['timeout'] = action.timeout
+
+        # Action-specific metadata
+        if isinstance(action, (FileReadAction, FileWriteAction, FileEditAction)):
+            metadata['path'] = getattr(action, 'path', None)
+            if isinstance(action, FileReadAction):
+                metadata['start'] = getattr(action, 'start', None)
+                metadata['end'] = getattr(action, 'end', None)
+                metadata['view_range'] = getattr(action, 'view_range', None)
+            elif isinstance(action, FileWriteAction):
+                metadata['start'] = getattr(action, 'start', None)
+                metadata['end'] = getattr(action, 'end', None)
+                # Don't log content, just its length
+                content = getattr(action, 'content', '')
+                metadata['content_length'] = len(content) if content else 0
+            elif isinstance(action, FileEditAction):
+                metadata['command'] = getattr(action, 'command', None)
+                metadata['insert_line'] = getattr(action, 'insert_line', None)
+                # Don't log old_str/new_str content, just their lengths
+                old_str = getattr(action, 'old_str', '')
+                new_str = getattr(action, 'new_str', '')
+                metadata['old_str_length'] = len(old_str) if old_str else 0
+                metadata['new_str_length'] = len(new_str) if new_str else 0
+        elif isinstance(action, CmdRunAction):
+            # Log command but truncate if very long
+            command = getattr(action, 'command', '')
+            metadata['command'] = (
+                command[:200] + '...' if len(command) > 200 else command
+            )
+            metadata['blocking'] = getattr(action, 'blocking', None)
+            metadata['keep_prompt'] = getattr(action, 'keep_prompt', None)
+        elif isinstance(action, IPythonRunCellAction):
+            # Log code but truncate if very long
+            code = getattr(action, 'code', '')
+            metadata['code_length'] = len(code) if code else 0
+            metadata['code_preview'] = code[:100] + '...' if len(code) > 100 else code
+        elif isinstance(action, (BrowseURLAction, BrowseInteractiveAction)):
+            metadata['url'] = getattr(action, 'url', None)
+            if isinstance(action, BrowseInteractiveAction):
+                metadata['browser_actions'] = len(
+                    getattr(action, 'browser_actions', [])
+                )
+
+        return metadata
+
+    def _extract_observation_metadata(self, observation) -> dict[str, Any]:
+        """Extract relevant metadata from an observation for logging, excluding large content."""
+        metadata: dict[str, Any] = {}
+
+        # Common metadata
+        metadata['observation_type'] = type(observation).__name__
+
+        # Check for error conditions
+        if hasattr(observation, 'error') and observation.error:
+            metadata['has_error'] = True
+            metadata['error'] = str(observation.error)[:200]  # Truncate long errors
+        else:
+            metadata['has_error'] = False
+
+        # Observation-specific metadata
+        if hasattr(observation, 'path'):
+            metadata['path'] = observation.path
+
+        if hasattr(observation, 'exit_code'):
+            metadata['exit_code'] = observation.exit_code
+
+        if hasattr(observation, 'content'):
+            content = observation.content
+            metadata['content_length'] = len(content) if content else 0
+            # For file operations, check if content looks like it contains file data
+            if metadata['content_length'] > 0:
+                metadata['content_preview'] = (
+                    content[:100] + '...' if len(content) > 100 else content
+                )
+
+        # For file edit observations, include diff info
+        if hasattr(observation, 'diff') and observation.diff:
+            metadata['has_diff'] = True
+            metadata['diff_length'] = len(observation.diff)
+
+        return metadata
+
     async def _init_browser_async(self):
         """Initialize the browser asynchronously."""
         if sys.platform == 'win32':
@@ -377,28 +466,131 @@ class ActionExecutor:
             assert obs.exit_code == 0
         logger.debug('Bash init commands completed')
 
-    async def run_action(self, action) -> Observation:
+    async def run_action(self, action: Action) -> Observation:
         async with self.lock:
-            action_type = action.action
-            observation = await getattr(self, action_type)(action)
-            return observation
+            action_type = action.action  # type: ignore[attr-defined]
+            start_time = time.time()
+
+            # Log action execution start with metadata
+            action_metadata = self._extract_action_metadata(action)
+            logger.info(
+                f'Executing action: {action_type}',
+                extra={
+                    'action_type': action_type,
+                    'action_id': getattr(action, 'id', None),
+                    'action_metadata': action_metadata,
+                    'timestamp': start_time,
+                },
+            )
+
+            try:
+                observation = await getattr(self, action_type)(action)
+                execution_time = time.time() - start_time
+
+                # Log successful action completion with observation metadata
+                obs_metadata = self._extract_observation_metadata(observation)
+                logger.info(
+                    f'Action completed successfully: {action_type}',
+                    extra={
+                        'action_type': action_type,
+                        'action_id': getattr(action, 'id', None),
+                        'observation_type': type(observation).__name__,
+                        'execution_time_ms': round(execution_time * 1000, 2),
+                        'observation_metadata': obs_metadata,
+                        'success': True,
+                    },
+                )
+
+                return observation
+            except Exception as e:
+                execution_time = time.time() - start_time
+
+                # Log action execution failure
+                logger.error(
+                    f'Action failed: {action_type}',
+                    extra={
+                        'action_type': action_type,
+                        'action_id': getattr(action, 'id', None),
+                        'execution_time_ms': round(execution_time * 1000, 2),
+                        'error': str(e),
+                        'error_type': type(e).__name__,
+                        'success': False,
+                    },
+                    exc_info=True,
+                )
+
+                raise
 
     async def run(
         self, action: CmdRunAction
     ) -> CmdOutputObservation | ErrorObservation:
+        # Log command execution attempt
+        command_preview = (
+            action.command[:100] + '...'
+            if len(action.command) > 100
+            else action.command
+        )
+        logger.debug(
+            f'Executing command: {command_preview}',
+            extra={
+                'operation': 'cmd_run',
+                'command_length': len(action.command),
+                'blocking': action.blocking,
+                'is_static': action.is_static,
+                'cwd': action.cwd if action.is_static else None,
+            },
+        )
+
         try:
             bash_session = self.bash_session
             if action.is_static:
                 bash_session = self._create_bash_session(action.cwd)
             assert bash_session is not None
             obs = await call_sync_from_async(bash_session.execute, action)
+
+            # Log command execution result
+            logger.debug(
+                f'Command completed: {command_preview}',
+                extra={
+                    'operation': 'cmd_run',
+                    'exit_code': obs.exit_code if hasattr(obs, 'exit_code') else None,
+                    'output_length': len(obs.content)
+                    if hasattr(obs, 'content') and obs.content
+                    else 0,
+                    'success': obs.exit_code == 0
+                    if hasattr(obs, 'exit_code')
+                    else True,
+                },
+            )
+
             return obs
         except Exception as e:
-            logger.error(f'Error running command: {e}')
+            logger.error(
+                f'Error running command: {command_preview}',
+                extra={
+                    'operation': 'cmd_run',
+                    'error': str(e),
+                    'error_type': type(e).__name__,
+                },
+            )
             return ErrorObservation(str(e))
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         assert self.bash_session is not None
+
+        # Log IPython execution attempt
+        code_preview = (
+            action.code[:100] + '...' if len(action.code) > 100 else action.code
+        )
+        logger.debug(
+            f'Executing IPython code: {code_preview}',
+            extra={
+                'operation': 'ipython_run',
+                'code_length': len(action.code),
+                'include_extra': action.include_extra,
+            },
+        )
+
         if 'jupyter' in self.plugins:
             _jupyter_plugin: JupyterPlugin = self.plugins['jupyter']  # type: ignore
             # This is used to make AgentSkills in Jupyter aware of the
@@ -428,6 +620,17 @@ class ActionExecutor:
                     f'\n[Jupyter current working directory: {self.bash_session.cwd}]'
                 )
                 obs.content += f'\n[Jupyter Python interpreter: {_jupyter_plugin.python_interpreter_path}]'
+
+            # Log IPython execution result
+            logger.debug(
+                f'IPython code completed: {code_preview}',
+                extra={
+                    'operation': 'ipython_run',
+                    'output_length': len(obs.content) if obs.content else 0,
+                    'success': not hasattr(obs, 'error') or not obs.error,
+                },
+            )
+
             return obs
         else:
             raise RuntimeError(
@@ -443,8 +646,26 @@ class ActionExecutor:
     async def read(self, action: FileReadAction) -> Observation:
         assert self.bash_session is not None
 
+        # Log file read attempt
+        logger.debug(
+            f'Attempting to read file: {action.path}',
+            extra={
+                'operation': 'file_read',
+                'path': action.path,
+                'working_dir': self.bash_session.cwd,
+            },
+        )
+
         # Cannot read binary files
         if is_binary(action.path):
+            logger.warning(
+                f'Attempted to read binary file: {action.path}',
+                extra={
+                    'operation': 'file_read',
+                    'path': action.path,
+                    'error': 'binary_file',
+                },
+            )
             return ErrorObservation('ERROR_BINARY_FILE')
 
         if action.impl_source == FileReadSource.OH_ACI:
@@ -467,6 +688,14 @@ class ActionExecutor:
         filepath = self._resolve_path(action.path, working_dir)
         try:
             if filepath.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
+                logger.debug(
+                    f'Reading image file: {filepath}',
+                    extra={
+                        'operation': 'file_read',
+                        'path': filepath,
+                        'file_type': 'image',
+                    },
+                )
                 with open(filepath, 'rb') as file:
                     image_data = file.read()
                     encoded_image = base64.b64encode(image_data).decode('utf-8')
@@ -475,6 +704,15 @@ class ActionExecutor:
                         mime_type = 'image/png'  # default to PNG if mime type cannot be determined
                     encoded_image = f'data:{mime_type};base64,{encoded_image}'
 
+                logger.debug(
+                    f'Successfully read image file: {filepath}',
+                    extra={
+                        'operation': 'file_read',
+                        'path': filepath,
+                        'file_type': 'image',
+                        'size_bytes': len(image_data),
+                    },
+                )
                 return FileReadObservation(path=filepath, content=encoded_image)
             elif filepath.lower().endswith('.pdf'):
                 with open(filepath, 'rb') as file:
@@ -495,13 +733,50 @@ class ActionExecutor:
 
             with open(filepath, 'r', encoding='utf-8') as file:
                 lines = read_lines(file.readlines(), action.start, action.end)
+
+            logger.debug(
+                f'Successfully read text file: {filepath}',
+                extra={
+                    'operation': 'file_read',
+                    'path': filepath,
+                    'file_type': 'text',
+                    'lines_read': len(lines),
+                    'start_line': action.start,
+                    'end_line': action.end,
+                },
+            )
         except FileNotFoundError:
+            logger.warning(
+                f'File not found during read: {filepath}',
+                extra={
+                    'operation': 'file_read',
+                    'path': filepath,
+                    'working_dir': working_dir,
+                    'error': 'file_not_found',
+                },
+            )
             return ErrorObservation(
                 f'File not found: {filepath}. Your current working directory is {working_dir}.'
             )
         except UnicodeDecodeError:
+            logger.warning(
+                f'Unicode decode error reading file: {filepath}',
+                extra={
+                    'operation': 'file_read',
+                    'path': filepath,
+                    'error': 'unicode_decode_error',
+                },
+            )
             return ErrorObservation(f'File could not be decoded as utf-8: {filepath}.')
         except IsADirectoryError:
+            logger.warning(
+                f'Attempted to read directory as file: {filepath}',
+                extra={
+                    'operation': 'file_read',
+                    'path': filepath,
+                    'error': 'is_directory',
+                },
+            )
             return ErrorObservation(
                 f'Path is a directory: {filepath}. You can only read files'
             )
@@ -514,15 +789,53 @@ class ActionExecutor:
         working_dir = self.bash_session.cwd
         filepath = self._resolve_path(action.path, working_dir)
 
+        # Log file write attempt
+        logger.debug(
+            f'Attempting to write file: {filepath}',
+            extra={
+                'operation': 'file_write',
+                'path': filepath,
+                'working_dir': working_dir,
+                'content_length': len(action.content) if action.content else 0,
+                'start_line': action.start,
+                'end_line': action.end,
+            },
+        )
+
         insert = action.content.split('\n')
         if not os.path.exists(os.path.dirname(filepath)):
+            logger.debug(
+                f'Creating directory for file: {os.path.dirname(filepath)}',
+                extra={
+                    'operation': 'file_write',
+                    'path': filepath,
+                    'directory_created': os.path.dirname(filepath),
+                },
+            )
             os.makedirs(os.path.dirname(filepath))
 
         file_exists = os.path.exists(filepath)
         if file_exists:
             file_stat = os.stat(filepath)
+            logger.debug(
+                f'File exists, will modify: {filepath}',
+                extra={
+                    'operation': 'file_write',
+                    'path': filepath,
+                    'file_exists': True,
+                    'file_size': file_stat.st_size,
+                },
+            )
         else:
             file_stat = None
+            logger.debug(
+                f'Creating new file: {filepath}',
+                extra={
+                    'operation': 'file_write',
+                    'path': filepath,
+                    'file_exists': False,
+                },
+            )
 
         mode = 'w' if not file_exists else 'r+'
         try:
@@ -538,12 +851,36 @@ class ActionExecutor:
                 file.truncate()
 
         except FileNotFoundError:
+            logger.warning(
+                f'File not found during write: {filepath}',
+                extra={
+                    'operation': 'file_write',
+                    'path': filepath,
+                    'error': 'file_not_found',
+                },
+            )
             return ErrorObservation(f'File not found: {filepath}')
         except IsADirectoryError:
+            logger.warning(
+                f'Attempted to write to directory: {filepath}',
+                extra={
+                    'operation': 'file_write',
+                    'path': filepath,
+                    'error': 'is_directory',
+                },
+            )
             return ErrorObservation(
                 f'Path is a directory: {filepath}. You can only write to files'
             )
         except UnicodeDecodeError:
+            logger.warning(
+                f'Unicode decode error writing file: {filepath}',
+                extra={
+                    'operation': 'file_write',
+                    'path': filepath,
+                    'error': 'unicode_decode_error',
+                },
+            )
             return ErrorObservation(f'File could not be decoded as utf-8: {filepath}')
 
         # Attempt to handle file permissions
@@ -558,13 +895,48 @@ class ActionExecutor:
                 os.chmod(filepath, 0o664)
                 os.chown(filepath, self.user_id, self.user_id)
         except PermissionError as e:
+            logger.warning(
+                f'Permission error setting file permissions: {filepath}',
+                extra={
+                    'operation': 'file_write',
+                    'path': filepath,
+                    'error': 'permission_error',
+                    'error_details': str(e),
+                },
+            )
             return ErrorObservation(
                 f'File {filepath} written, but failed to change ownership and permissions: {e}'
             )
+
+        logger.debug(
+            f'Successfully wrote file: {filepath}',
+            extra={
+                'operation': 'file_write',
+                'path': filepath,
+                'lines_written': len(insert),
+                'final_size': os.path.getsize(filepath)
+                if os.path.exists(filepath)
+                else 0,
+            },
+        )
         return FileWriteObservation(content='', path=filepath)
 
     async def edit(self, action: FileEditAction) -> Observation:
         assert action.impl_source == FileEditSource.OH_ACI
+
+        # Log file edit attempt
+        logger.debug(
+            f'Attempting to edit file: {action.path}',
+            extra={
+                'operation': 'file_edit',
+                'path': action.path,
+                'command': action.command,
+                'insert_line': action.insert_line,
+                'old_str_length': len(action.old_str) if action.old_str else 0,
+                'new_str_length': len(action.new_str) if action.new_str else 0,
+            },
+        )
+
         result_str, (old_content, new_content) = _execute_file_editor(
             self.file_editor,
             command=action.command,
@@ -575,6 +947,30 @@ class ActionExecutor:
             insert_line=action.insert_line,
             enable_linting=False,
         )
+
+        # Log edit result
+        if result_str.startswith('ERROR:'):
+            logger.warning(
+                f'File edit failed: {action.path}',
+                extra={
+                    'operation': 'file_edit',
+                    'path': action.path,
+                    'command': action.command,
+                    'error': result_str[:200],  # Truncate long errors
+                },
+            )
+        else:
+            logger.debug(
+                f'Successfully edited file: {action.path}',
+                extra={
+                    'operation': 'file_edit',
+                    'path': action.path,
+                    'command': action.command,
+                    'has_diff': bool(old_content and new_content),
+                    'old_content_length': len(old_content) if old_content else 0,
+                    'new_content_length': len(new_content) if new_content else 0,
+                },
+            )
 
         return FileEditObservation(
             content=result_str,
@@ -771,15 +1167,60 @@ if __name__ == '__main__':
     @app.post('/execute_action')
     async def execute_action(action_request: ActionRequest):
         assert client is not None
+        request_start_time = time.time()
+
         try:
             action = event_from_dict(action_request.action)
             if not isinstance(action, Action):
+                logger.error(
+                    'Invalid action type received in /execute_action',
+                    extra={
+                        'action_dict': action_request.action,
+                        'error': 'Invalid action type',
+                    },
+                )
                 raise HTTPException(status_code=400, detail='Invalid action type')
+
+            # Log the HTTP request
+            logger.debug(
+                f'Received action request: {action.action}',  # type: ignore[attr-defined]
+                extra={
+                    'action_type': action.action,  # type: ignore[attr-defined]
+                    'action_id': getattr(action, 'id', None),
+                    'endpoint': '/execute_action',
+                },
+            )
+
             client.last_execution_time = time.time()
             observation = await client.run_action(action)
+
+            request_time = time.time() - request_start_time
+            logger.debug(
+                f'Action request completed: {action.action}',  # type: ignore[attr-defined]
+                extra={
+                    'action_type': action.action,  # type: ignore[attr-defined]
+                    'action_id': getattr(action, 'id', None),
+                    'endpoint': '/execute_action',
+                    'total_request_time_ms': round(request_time * 1000, 2),
+                    'observation_type': type(observation).__name__,
+                },
+            )
+
             return event_to_dict(observation)
+        except HTTPException:
+            # Re-raise HTTP exceptions without additional logging
+            raise
         except Exception as e:
-            logger.error(f'Error while running /execute_action: {str(e)}')
+            request_time = time.time() - request_start_time
+            logger.error(
+                f'Error while running /execute_action: {str(e)}',
+                extra={
+                    'endpoint': '/execute_action',
+                    'total_request_time_ms': round(request_time * 1000, 2),
+                    'error': str(e),
+                    'error_type': type(e).__name__,
+                },
+            )
             raise HTTPException(
                 status_code=500,
                 detail=traceback.format_exc(),
@@ -844,6 +1285,17 @@ if __name__ == '__main__':
     ):
         assert client is not None
 
+        logger.debug(
+            f'File upload request: {file.filename}',
+            extra={
+                'operation': 'upload_file',
+                'filename': file.filename,
+                'destination': destination,
+                'recursive': recursive,
+                'file_size': file.size if hasattr(file, 'size') else None,
+            },
+        )
+
         try:
             # Ensure the destination directory exists
             if not os.path.isabs(destination):
@@ -870,15 +1322,30 @@ if __name__ == '__main__':
                 shutil.unpack_archive(zip_path, full_dest_path)
                 os.remove(zip_path)  # Remove the zip file after extraction
 
-                logger.debug(
-                    f'Uploaded file {file.filename} and extracted to {destination}'
+                logger.info(
+                    f'Uploaded and extracted zip file: {file.filename}',
+                    extra={
+                        'operation': 'upload_file',
+                        'filename': file.filename,
+                        'destination': destination,
+                        'type': 'zip_extraction',
+                    },
                 )
             else:
                 # For single file uploads
                 file_path = os.path.join(full_dest_path, file.filename)
                 with open(file_path, 'wb') as buffer:
                     shutil.copyfileobj(file.file, buffer)
-                logger.debug(f'Uploaded file {file.filename} to {destination}')
+                logger.info(
+                    f'Uploaded single file: {file.filename}',
+                    extra={
+                        'operation': 'upload_file',
+                        'filename': file.filename,
+                        'destination': destination,
+                        'file_path': file_path,
+                        'type': 'single_file',
+                    },
+                )
 
             return JSONResponse(
                 content={
@@ -890,20 +1357,50 @@ if __name__ == '__main__':
             )
 
         except Exception as e:
+            logger.error(
+                f'File upload failed: {file.filename}',
+                extra={
+                    'operation': 'upload_file',
+                    'filename': file.filename,
+                    'destination': destination,
+                    'error': str(e),
+                    'error_type': type(e).__name__,
+                },
+            )
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.get('/download_files')
     def download_file(path: str):
-        logger.debug('Downloading files')
+        logger.debug(
+            f'File download request: {path}',
+            extra={'operation': 'download_files', 'path': path},
+        )
         try:
             if not os.path.isabs(path):
+                logger.warning(
+                    f'Download request with relative path: {path}',
+                    extra={
+                        'operation': 'download_files',
+                        'path': path,
+                        'error': 'relative_path',
+                    },
+                )
                 raise HTTPException(
                     status_code=400, detail='Path must be an absolute path'
                 )
 
             if not os.path.exists(path):
+                logger.warning(
+                    f'Download request for non-existent path: {path}',
+                    extra={
+                        'operation': 'download_files',
+                        'path': path,
+                        'error': 'file_not_found',
+                    },
+                )
                 raise HTTPException(status_code=404, detail='File not found')
 
+            file_count = 0
             with tempfile.NamedTemporaryFile(suffix='.zip', delete=False) as temp_zip:
                 with ZipFile(temp_zip, 'w') as zipf:
                     for root, _, files in os.walk(path):
@@ -912,6 +1409,18 @@ if __name__ == '__main__':
                             zipf.write(
                                 file_path, arcname=os.path.relpath(file_path, path)
                             )
+                            file_count += 1
+
+                logger.info(
+                    f'Successfully created download zip: {path}',
+                    extra={
+                        'operation': 'download_files',
+                        'path': path,
+                        'files_included': file_count,
+                        'zip_path': temp_zip.name,
+                    },
+                )
+
                 return FileResponse(
                     path=temp_zip.name,
                     media_type='application/zip',
@@ -920,6 +1429,15 @@ if __name__ == '__main__':
                 )
 
         except Exception as e:
+            logger.error(
+                f'File download failed: {path}',
+                extra={
+                    'operation': 'download_files',
+                    'path': path,
+                    'error': str(e),
+                    'error_type': type(e).__name__,
+                },
+            )
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.get('/alive')
@@ -983,6 +1501,15 @@ if __name__ == '__main__':
 
         if not os.path.exists(full_path):
             # if user just removed a folder, prevent server error 500 in UI
+            logger.debug(
+                f'Directory does not exist for listing: {full_path}',
+                extra={
+                    'operation': 'list_files',
+                    'path': path,
+                    'full_path': full_path,
+                    'exists': False,
+                },
+            )
             return JSONResponse(content=[])
 
         try:
@@ -1017,10 +1544,32 @@ if __name__ == '__main__':
 
             # Combine sorted directories and files
             sorted_entries = directories + files
+
+            logger.debug(
+                f'Successfully listed files in: {full_path}',
+                extra={
+                    'operation': 'list_files',
+                    'path': path,
+                    'full_path': full_path,
+                    'total_entries': len(sorted_entries),
+                    'directories': len(directories),
+                    'files': len(files),
+                },
+            )
+
             return JSONResponse(content=sorted_entries)
 
         except Exception as e:
-            logger.error(f'Error listing files: {e}')
+            logger.error(
+                f'Error listing files in {full_path}: {e}',
+                extra={
+                    'operation': 'list_files',
+                    'path': path,
+                    'full_path': full_path,
+                    'error': str(e),
+                    'error_type': type(e).__name__,
+                },
+            )
             return JSONResponse(content=[])
 
     logger.debug(f'Starting action execution API on port {args.port}')
