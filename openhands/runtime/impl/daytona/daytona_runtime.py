@@ -13,6 +13,7 @@ from daytona_sdk import (
 
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.events.stream import EventStream
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
@@ -42,6 +43,8 @@ class DaytonaRuntime(ActionExecutionClient):
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = True,
+        user_id: str | None = None,
+        git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
     ):
         assert config.daytona_api_key, 'Daytona API key is required'
 
@@ -74,6 +77,8 @@ class DaytonaRuntime(ActionExecutionClient):
             status_callback,
             attach_to_existing,
             headless_mode,
+            user_id,
+            git_provider_tokens,
         )
 
     def _get_workspace(self) -> Workspace | None:

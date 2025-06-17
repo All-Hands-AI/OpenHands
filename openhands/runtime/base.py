@@ -706,7 +706,9 @@ fi
             # Get authenticated URL and do a shallow clone (--depth 1) for efficiency
             remote_url = self._get_authenticated_git_url(org_openhands_repo)
 
-            clone_cmd = f'git clone --depth 1 {remote_url} {org_repo_dir}'
+            clone_cmd = (
+                f'GIT_TERMINAL_PROMPT=0 git clone --depth 1 {remote_url} {org_repo_dir}'
+            )
 
             action = CmdRunAction(command=clone_cmd)
             obs = self.run_action(action)
