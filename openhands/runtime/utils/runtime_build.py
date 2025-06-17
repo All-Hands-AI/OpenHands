@@ -305,7 +305,7 @@ def get_hash_for_lock_files(base_image: str) -> str:
     openhands_source_dir = Path(openhands.__file__).parent
     md5 = hashlib.md5()
     md5.update(base_image.encode())
-    for file in ['pyproject.toml', 'poetry.lock']:
+    for file in ['pyproject.toml', 'uv.lock']:
         src = Path(openhands_source_dir, file)
         if not src.exists():
             src = Path(openhands_source_dir.parent, file)
