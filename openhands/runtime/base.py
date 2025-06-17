@@ -634,32 +634,47 @@ fi
         """Get an authenticated git URL for a repository.
 
         Args:
-            repo_path: Repository path (e.g., "github.com/acme-co/api")
+            repo_path: Repository path (e.g., "github.com/acme-co/api" or "acme-co/api")
 
         Returns:
             Authenticated git URL if credentials are available, otherwise regular HTTPS URL
         """
-        remote_url = f'https://{repo_path}.git'
-
-        # Determine provider from repo path
-        provider = None
-        if 'github.com' in repo_path:
+        # Extract repository name without domain if domain is present
+        if repo_path.startswith('github.com/'):
+            repo_without_domain = repo_path.replace('github.com/', '')
             provider = ProviderType.GITHUB
-        elif 'gitlab.com' in repo_path:
+        elif repo_path.startswith('gitlab.com/'):
+            repo_without_domain = repo_path.replace('gitlab.com/', '')
             provider = ProviderType.GITLAB
+        else:
+            # Assume GitHub if no domain specified (following the same pattern as clone_or_init_repo)
+            repo_without_domain = repo_path
+            provider = ProviderType.GITHUB
 
-        # Add authentication if available
-        if (
-            provider
-            and self.git_provider_tokens
-            and provider in self.git_provider_tokens
-        ):
+        # Use the same provider domain mapping as clone_or_init_repo
+        provider_domains = {
+            ProviderType.GITHUB: 'github.com',
+            ProviderType.GITLAB: 'gitlab.com',
+        }
+
+        domain = provider_domains[provider]
+
+        # If git_provider_tokens is provided, use the host from the token if available
+        if self.git_provider_tokens and provider in self.git_provider_tokens:
+            domain = self.git_provider_tokens[provider].host or domain
+
+        # Try to use token if available, otherwise use public URL
+        if self.git_provider_tokens and provider in self.git_provider_tokens:
             git_token = self.git_provider_tokens[provider].token
             if git_token:
                 if provider == ProviderType.GITLAB:
-                    remote_url = f'https://oauth2:{git_token.get_secret_value()}@{repo_path.replace("gitlab.com/", "")}.git'
+                    remote_url = f'https://oauth2:{git_token.get_secret_value()}@{domain}/{repo_without_domain}.git'
                 else:
-                    remote_url = f'https://{git_token.get_secret_value()}@{repo_path.replace("github.com/", "")}.git'
+                    remote_url = f'https://{git_token.get_secret_value()}@{domain}/{repo_without_domain}.git'
+            else:
+                remote_url = f'https://{domain}/{repo_without_domain}.git'
+        else:
+            remote_url = f'https://{domain}/{repo_without_domain}.git'
 
         return remote_url
 
