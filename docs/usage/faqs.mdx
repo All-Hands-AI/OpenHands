@@ -1,11 +1,27 @@
 ---
-title: Frequently Asked Questions (FAQ)
-description: Common questions about OpenHands and their answers
+title: FAQs
+description: Frequently asked questions about OpenHands
+icon: question
 ---
 
-<div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-  <img src="/static/img/logo.png" alt="OpenHands Logo" style={{ maxWidth: '300px', height: 'auto' }} />
-</div>
+## Getting Started
+
+### I'm new to OpenHands. Where should I start?
+
+1. **Quick Start**: Use [OpenHands Cloud](/usage/cloud/openhands-cloud) to get started quickly with [GitHub](/usage/cloud/github-installation), [GitLab](/usage/cloud/gitlab-installation), and [Slack](/usage/cloud/slack-installation) integration
+2. **Local Setup**: If you prefer to run it on your own hardware, follow our [Getting Started guide](/usage/local-setup)
+3. **First steps**: Complete the [start building tutorial](/usage/getting-started) to learn the basics
+
+
+### Can I use OpenHands for production workloads?
+
+OpenHands is meant to be run by a single user on their local workstation. It is not appropriate for multi-tenant deployments where multiple users share the same instance. There is no built-in authentication, isolation, or scalability.
+
+If you're interested in running OpenHands in a multi-tenant environment, check out the source-available, commercially-licensed [OpenHands Cloud Helm Chart](https://github.com/all-Hands-AI/OpenHands-cloud)
+
+<Info>
+Using OpenHands for work? We'd love to chat! Fill out [this short form](https://docs.google.com/forms/d/e/1FAIpQLSet3VbGaz8z32gW9Wm-Grl4jpt5WgMXPgJ4EDPVmCETCBpJtQ/viewform) to join our Design Partner program, where you'll get early access to commercial features and the opportunity to provide input on our product roadmap.
+</Info>
 
 ## Safety and Security
 
@@ -14,8 +30,8 @@ description: Common questions about OpenHands and their answers
 **Generally yes, but with important considerations.** OpenHands runs all code in a secure, isolated Docker container (called a "sandbox") that is separate from your host system. However, the safety depends on your configuration:
 
 **What's protected:**
-- Your host system files and programs (unless you mount them)
-- Host system resources and performance
+- Your host system files and programs (unless you mount them using [this feature](/usage/runtimes/docker#connecting-to-your-filesystem))
+- Host system resources
 - Other containers and processes
 
 **Potential risks to consider:**
@@ -23,11 +39,6 @@ description: Common questions about OpenHands and their answers
 - If you provide credentials (API keys, tokens), the agent can use them
 - Mounted files and directories can be modified or deleted
 - Network requests can be made to external services
-
-**Security features:**
-- Built-in security analyzer to detect potentially risky actions
-- Configurable confirmation mode for sensitive operations
-- Hardened Docker configurations for production use (community contribution, not enabled by default)
 
 For detailed security information, see our [Runtime Architecture](/usage/architecture/runtime), [Security Configuration](/usage/configuration-options#security-configuration), and [Hardened Docker Installation](/usage/runtimes/docker#hardened-docker-installation) documentation.
 
@@ -39,33 +50,18 @@ Your files are stored in different locations depending on how you've configured 
 
 **Default behavior (no file mounting):**
 - Files created by the agent are stored inside the Docker container
-- These files are temporary and will be lost when the container is stopped
+- These files are temporary and will be lost when the container is removed
 - The agent works in the `/workspace` directory inside the container
 
-**When you mount your local filesystem:**
+**When you mount your local filesystem (following [this](/usage/runtimes/docker#connecting-to-your-filesystem)):**
 - Your local files are mounted into the container's `/workspace` directory
 - Changes made by the agent are reflected in your local filesystem
 - Files persist after the container is stopped
 
-**To connect your local files to OpenHands:**
+<Warning>
+Be careful when mounting your filesystem - the agent can modify or delete any files in the mounted directory.
+</Warning>
 
-1. **Using SANDBOX_VOLUMES (recommended):**
-   ```bash
-   export SANDBOX_VOLUMES=/path/to/your/code:/workspace:rw
-   ```
-
-2. **Example for different operating systems:**
-   ```bash
-   # Linux/Mac
-   export SANDBOX_VOLUMES=$HOME/my-project:/workspace:rw
-
-   # Windows with WSL
-   export SANDBOX_VOLUMES=/mnt/c/dev/my-project:/workspace:rw
-   ```
-
-**Important:** Be careful when mounting your filesystem - the agent can modify or delete any files in the mounted directory.
-
-For detailed instructions, see our [Docker Runtime documentation](/usage/runtimes/docker#connecting-to-your-filesystem).
 
 ## Development Tools and Environment
 
@@ -79,14 +75,6 @@ You have two main options:
 
 For detailed instructions on setting up custom development environments, including examples for different programming languages and tools, see our [Custom Sandbox Guide](/usage/how-to/custom-sandbox-guide).
 
-## Getting Started
-
-### I'm new to OpenHands. Where should I start?
-
-1. **Installation**: Follow our [Getting Started guide](/usage/local-setup) to install and run OpenHands
-2. **First steps**: Complete the [Getting Started tutorial](/usage/getting-started) to learn the basics
-3. **Configuration**: Set up your [LLM provider](/usage/llms/llms) and any additional tools you need
-4. **Advanced features**: Explore [key features](/usage/key-features) and [configuration options](/usage/configuration-options)
 
 ### Something's not working. Where can I get help?
 
@@ -96,15 +84,3 @@ For detailed instructions on setting up custom development environments, includi
    - [Slack community](https://join.slack.com/t/openhands-ai/shared_invite/zt-34zm4j0gj-Qz5kRHoca8DFCbqXPS~f_A)
    - [Discord server](https://discord.gg/ESHStjSjD4)
 4. **Report bugs**: If you've found a bug, please [create an issue](https://github.com/All-Hands-AI/OpenHands/issues/new) with details about your setup and the problem
-
-### Can I use OpenHands for production workloads?
-
-OpenHands is actively developed and used by many teams, but consider these factors for production use:
-
-- **Security**: Review our [security considerations](/usage/runtimes/docker#hardened-docker-installation) for production deployments
-- **Reliability**: Test thoroughly with your specific use cases
-- **Monitoring**: Implement appropriate logging and monitoring
-- **Rate limits**: Be aware of LLM provider rate limits and costs
-- **Backup**: Ensure important work is backed up and version controlled
-
-For production deployments, consider using [OpenHands Cloud](https://app.all-hands.dev) for managed infrastructure and support.
