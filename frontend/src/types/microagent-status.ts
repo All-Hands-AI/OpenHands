@@ -8,4 +8,5 @@ export interface EventMicroagentStatus {
   eventId: number;
   conversationId: string;
   status: MicroagentStatus;
+  prUrl?: string; // Optional PR URL for completed status
 }

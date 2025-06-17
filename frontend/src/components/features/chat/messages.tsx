@@ -21,6 +21,7 @@ import {
   EventMicroagentStatus,
 } from "#/types/microagent-status";
 import { AgentState } from "#/types/agent-state";
+import { getFirstPRUrl } from "#/utils/parse-pr-url";
 
 interface MessagesProps {
   messages: (OpenHandsAction | OpenHandsObservation)[];
@@ -79,6 +80,16 @@ export const Messages: React.FC<MessagesProps> = React.memo(
       [microagentStatuses],
     );
 
+    const getMicroagentPRUrlForEvent = React.useCallback(
+      (eventId: number): string | undefined => {
+        const statusEntry = microagentStatuses.find(
+          (entry) => entry.eventId === eventId,
+        );
+        return statusEntry?.prUrl || undefined;
+      },
+      [microagentStatuses],
+    );
+
     const handleMicroagentEvent = React.useCallback(
       (socketEvent: unknown, microagentConversationId: string) => {
         // Handle error events
@@ -112,6 +123,25 @@ export const Messages: React.FC<MessagesProps> = React.memo(
               prev.map((statusEntry) =>
                 statusEntry.conversationId === microagentConversationId
                   ? { ...statusEntry, status: MicroagentStatus.COMPLETED }
+                  : statusEntry,
+              ),
+            );
+          }
+        } else if (
+          isOpenHandsEvent(socketEvent) &&
+          isFinishAction(socketEvent)
+        ) {
+          // Check if the finish action contains a PR URL
+          const prUrl = getFirstPRUrl(socketEvent.args.final_thought || "");
+          if (prUrl) {
+            setMicroagentStatuses((prev) =>
+              prev.map((statusEntry) =>
+                statusEntry.conversationId === microagentConversationId
+                  ? {
+                      ...statusEntry,
+                      status: MicroagentStatus.COMPLETED,
+                      prUrl,
+                    }
                   : statusEntry,
               ),
             );
@@ -176,6 +206,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(
             microagentConversationId={getMicroagentConversationIdForEvent(
               message.id,
             )}
+            microagentPRUrl={getMicroagentPRUrlForEvent(message.id)}
             actions={[
               {
                 icon: <FaBrain className="w-[14px] h-[14px]" />,

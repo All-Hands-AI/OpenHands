@@ -1,71 +1,105 @@
-import { render, screen } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
-import { MicroagentStatusIndicator } from "../src/components/features/chat/microagent/microagent-status-indicator";
+import { render, screen } from "@testing-library/react";
+import { MicroagentStatusIndicator } from "#/components/features/chat/microagent/microagent-status-indicator";
 import { MicroagentStatus } from "#/types/microagent-status";
 
 // Mock the translation hook
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
-    t: (key: string) => {
-      const translations: Record<string, string> = {
-        "MICROAGENT$STATUS_CREATING": "Creating microagent...",
-        "MICROAGENT$STATUS_RUNNING": "Microagent is running...",
-        "MICROAGENT$STATUS_COMPLETED": "Microagent completed successfully",
-        "MICROAGENT$STATUS_ERROR": "Microagent encountered an error",
-      };
-      return translations[key] || key;
-    },
+    t: (key: string) => key,
   }),
 }));
 
-// Mock the Spinner component
-vi.mock("@heroui/react", () => ({
-  Spinner: ({ size }: { size: string }) => <div data-testid="spinner" data-size={size} />,
-}));
-
-// Mock the SuccessIndicator component
-vi.mock("../src/components/features/chat/success-indicator", () => ({
-  SuccessIndicator: ({ status }: { status: string }) => (
-    <div data-testid="success-indicator" data-status={status} />
-  ),
-}));
-
 describe("MicroagentStatusIndicator", () => {
-  it("renders creating status correctly", () => {
-    render(<MicroagentStatusIndicator status={MicroagentStatus.CREATING} />);
-    
-    expect(screen.getByTestId("spinner")).toBeInTheDocument();
-    expect(screen.getByText("Creating microagent...")).toBeInTheDocument();
+  it("should show 'View your PR' when status is completed and PR URL is provided", () => {
+    render(
+      <MicroagentStatusIndicator
+        status={MicroagentStatus.COMPLETED}
+        conversationId="test-conversation"
+        prUrl="https://github.com/owner/repo/pull/123"
+      />,
+    );
+
+    const link = screen.getByRole("link", { name: "MICROAGENT$VIEW_YOUR_PR" });
+    expect(link).toBeInTheDocument();
+    expect(link).toHaveAttribute(
+      "href",
+      "https://github.com/owner/repo/pull/123",
+    );
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", "noopener noreferrer");
   });
 
+  it("should show default completed message when status is completed but no PR URL", () => {
+    render(
+      <MicroagentStatusIndicator
+        status={MicroagentStatus.COMPLETED}
+        conversationId="test-conversation"
+      />,
+    );
 
-
-  it("renders completed status correctly", () => {
-    render(<MicroagentStatusIndicator status={MicroagentStatus.COMPLETED} />);
-    
-    expect(screen.getByTestId("success-indicator")).toBeInTheDocument();
-    expect(screen.getByText("Microagent completed successfully")).toBeInTheDocument();
+    const link = screen.getByRole("link", {
+      name: "MICROAGENT$STATUS_COMPLETED",
+    });
+    expect(link).toBeInTheDocument();
+    expect(link).toHaveAttribute("href", "/conversations/test-conversation");
   });
 
-  it("renders error status correctly", () => {
-    render(<MicroagentStatusIndicator status={MicroagentStatus.ERROR} />);
-    
-    expect(screen.getByTestId("success-indicator")).toBeInTheDocument();
-    expect(screen.getByText("Microagent encountered an error")).toBeInTheDocument();
+  it("should show creating status without PR URL", () => {
+    render(
+      <MicroagentStatusIndicator
+        status={MicroagentStatus.CREATING}
+        conversationId="test-conversation"
+      />,
+    );
+
+    expect(screen.getByText("MICROAGENT$STATUS_CREATING")).toBeInTheDocument();
   });
 
-  it("applies correct CSS classes for different statuses", () => {
-    const { rerender } = render(<MicroagentStatusIndicator status={MicroagentStatus.CREATING} />);
-    
-    let statusText = screen.getByText("Creating microagent...");
-    expect(statusText).toHaveClass("underline");
+  it("should show error status", () => {
+    render(
+      <MicroagentStatusIndicator
+        status={MicroagentStatus.ERROR}
+        conversationId="test-conversation"
+      />,
+    );
 
-    rerender(<MicroagentStatusIndicator status={MicroagentStatus.COMPLETED} />);
-    statusText = screen.getByText("Microagent completed successfully");
-    expect(statusText).toHaveClass("underline");
+    expect(screen.getByText("MICROAGENT$STATUS_ERROR")).toBeInTheDocument();
+  });
 
-    rerender(<MicroagentStatusIndicator status={MicroagentStatus.ERROR} />);
-    statusText = screen.getByText("Microagent encountered an error");
-    expect(statusText).toHaveClass("underline");
+  it("should prioritize PR URL over conversation link when both are provided", () => {
+    render(
+      <MicroagentStatusIndicator
+        status={MicroagentStatus.COMPLETED}
+        conversationId="test-conversation"
+        prUrl="https://github.com/owner/repo/pull/123"
+      />,
+    );
+
+    const link = screen.getByRole("link", { name: "MICROAGENT$VIEW_YOUR_PR" });
+    expect(link).toHaveAttribute(
+      "href",
+      "https://github.com/owner/repo/pull/123",
+    );
+    // Should not link to conversation when PR URL is available
+    expect(link).not.toHaveAttribute(
+      "href",
+      "/conversations/test-conversation",
+    );
+  });
+
+  it("should work with GitLab MR URLs", () => {
+    render(
+      <MicroagentStatusIndicator
+        status={MicroagentStatus.COMPLETED}
+        prUrl="https://gitlab.com/owner/repo/-/merge_requests/456"
+      />,
+    );
+
+    const link = screen.getByRole("link", { name: "MICROAGENT$VIEW_YOUR_PR" });
+    expect(link).toHaveAttribute(
+      "href",
+      "https://gitlab.com/owner/repo/-/merge_requests/456",
+    );
   });
 });

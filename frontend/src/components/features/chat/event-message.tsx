@@ -37,6 +37,7 @@ interface EventMessageProps {
   isLastMessage: boolean;
   microagentStatus?: MicroagentStatus | null;
   microagentConversationId?: string;
+  microagentPRUrl?: string;
   actions?: Array<{
     icon: React.ReactNode;
     onClick: () => void;
@@ -50,6 +51,7 @@ export function EventMessage({
   isLastMessage,
   microagentStatus,
   microagentConversationId,
+  microagentPRUrl,
   actions,
 }: EventMessageProps) {
   const shouldShowConfirmationButtons =
@@ -74,6 +76,7 @@ export function EventMessage({
           <MicroagentStatusIndicator
             status={microagentStatus}
             conversationId={microagentConversationId}
+            prUrl={microagentPRUrl}
           />
         )}
       </div>
@@ -93,6 +96,7 @@ export function EventMessage({
             <MicroagentStatusIndicator
               status={microagentStatus}
               conversationId={microagentConversationId}
+              prUrl={microagentPRUrl}
             />
           )}
         </div>
@@ -102,6 +106,7 @@ export function EventMessage({
       <MicroagentStatusIndicator
         status={microagentStatus}
         conversationId={microagentConversationId}
+        prUrl={microagentPRUrl}
       />
     ) : null;
   }
@@ -124,6 +129,7 @@ export function EventMessage({
           <MicroagentStatusIndicator
             status={microagentStatus}
             conversationId={microagentConversationId}
+            prUrl={microagentPRUrl}
           />
         )}
         {showLikertScale && (
@@ -155,6 +161,7 @@ export function EventMessage({
           <MicroagentStatusIndicator
             status={microagentStatus}
             conversationId={microagentConversationId}
+            prUrl={microagentPRUrl}
           />
         )}
       </div>

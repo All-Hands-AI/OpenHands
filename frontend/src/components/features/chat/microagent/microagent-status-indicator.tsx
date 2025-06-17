@@ -7,11 +7,13 @@ import { SuccessIndicator } from "../success-indicator";
 interface MicroagentStatusIndicatorProps {
   status: MicroagentStatus;
   conversationId?: string;
+  prUrl?: string;
 }
 
 export function MicroagentStatusIndicator({
   status,
   conversationId,
+  prUrl,
 }: MicroagentStatusIndicatorProps) {
   const { t } = useTranslation();
 
@@ -20,7 +22,10 @@ export function MicroagentStatusIndicator({
       case MicroagentStatus.CREATING:
         return t("MICROAGENT$STATUS_CREATING");
       case MicroagentStatus.COMPLETED:
-        return t("MICROAGENT$STATUS_COMPLETED");
+        // If there's a PR URL, show "View your PR" instead of the default completed message
+        return prUrl
+          ? t("MICROAGENT$VIEW_YOUR_PR")
+          : t("MICROAGENT$STATUS_COMPLETED");
       case MicroagentStatus.ERROR:
         return t("MICROAGENT$STATUS_ERROR");
       default:
@@ -43,11 +48,24 @@ export function MicroagentStatusIndicator({
 
   const statusText = getStatusText();
   const shouldShowAsLink = !!conversationId;
+  const shouldShowPRLink = !!prUrl;
 
-  return (
-    <div className="flex items-center gap-2 mt-2 p-2 text-sm">
-      {getStatusIcon()}
-      {shouldShowAsLink ? (
+  const renderStatusText = () => {
+    if (shouldShowPRLink) {
+      return (
+        <a
+          href={prUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline"
+        >
+          {statusText}
+        </a>
+      );
+    }
+
+    if (shouldShowAsLink) {
+      return (
         <a
           href={`/conversations/${conversationId}`}
           target="_blank"
@@ -56,9 +74,16 @@ export function MicroagentStatusIndicator({
         >
           {statusText}
         </a>
-      ) : (
-        <span className="underline">{statusText}</span>
-      )}
+      );
+    }
+
+    return <span className="underline">{statusText}</span>;
+  };
+
+  return (
+    <div className="flex items-center gap-2 mt-2 p-2 text-sm">
+      {getStatusIcon()}
+      {renderStatusText()}
     </div>
   );
 }

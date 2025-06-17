@@ -224,6 +224,22 @@
         "de": "Microagent ist auf einen Fehler gestoßen",
         "uk": "Мікроагент зіткнувся з помилкою"
     },
+    "MICROAGENT$VIEW_YOUR_PR": {
+        "en": "View your PR",
+        "ja": "PRを表示",
+        "zh-CN": "查看您的PR",
+        "zh-TW": "查看您的PR",
+        "ko-KR": "PR 보기",
+        "no": "Se din PR",
+        "it": "Visualizza la tua PR",
+        "pt": "Ver seu PR",
+        "es": "Ver tu PR",
+        "ar": "عرض طلب السحب الخاص بك",
+        "fr": "Voir votre PR",
+        "tr": "PR'ınızı görüntüleyin",
+        "de": "Ihre PR anzeigen",
+        "uk": "Переглянути ваш PR"
+    },
     "STATUS$WEBSOCKET_CLOSED": {
         "en": "The WebSocket connection was closed.",
         "ja": "WebSocket接続が閉じられました。",
