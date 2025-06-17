@@ -11,7 +11,7 @@ for scripting.
 
 ### Running with Python
 
-**Note** - OpenHands requires Python version 3.12 or higher (Python 3.14 is not currently supported)
+**Note** - OpenHands CLI requires Python 3.12 to run - If you run into issues during pip install, you can also use uv (https://docs.astral.sh/uv/) to launch OpenHands CLI in one line: `uvx --python 3.12 --from openhands-ai openhands`
 
 1. Install OpenHands using pip:
 
@@ -24,6 +24,16 @@ pip install openhands-ai
 ```bash
 openhands
 ```
+
+**Alternative: Using uvx**
+
+If you encounter issues with the pip installation or want to run OpenHands without installing it globally, you can use `uvx`:
+
+```bash
+uvx --python 3.12 --from openhands-ai openhands
+```
+
+This command will automatically handle the Python 3.12 requirement and run OpenHands directly without needing to install it in your current environment.
 
 3. Set your model, API key, and other preferences using the UI (or alternatively environment variables, below).
 
