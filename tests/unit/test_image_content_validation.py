@@ -1,10 +1,15 @@
-"""Test for ImageContent validation of empty URLs."""
+"""Test for ImageContent serialization behavior.
+
+Note: Image URL filtering now happens at the conversation memory level,
+not at the ImageContent serialization level. These tests verify that
+ImageContent correctly serializes whatever URLs it's given.
+"""
 
 from openhands.core.message import ImageContent
 
 
-def test_image_content_filters_empty_urls():
-    """Test that ImageContent filters out empty URLs during serialization."""
+def test_image_content_serializes_all_urls():
+    """Test that ImageContent serializes all URLs it's given, including empty ones."""
 
     # Create ImageContent with mixed valid and invalid URLs
     image_content = ImageContent(
@@ -19,21 +24,27 @@ def test_image_content_filters_empty_urls():
     # Serialize the content
     serialized = image_content.model_dump()
 
-    # Check that only valid URLs are included (empty and whitespace-only should be filtered out)
-    assert len(serialized) == 2, f'Expected 2 valid URLs, got {len(serialized)}'
+    # Should serialize all URLs, including empty ones (filtering happens upstream)
+    assert len(serialized) == 4, (
+        f'Expected 4 URLs (including empty), got {len(serialized)}'
+    )
 
-    for item in serialized:
+    expected_urls = [
+        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+        '',
+        '   ',
+        'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/2wBDAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwA/wA==',
+    ]
+
+    for i, item in enumerate(serialized):
         assert item['type'] == 'image_url'
         assert 'image_url' in item
         assert 'url' in item['image_url']
-        url = item['image_url']['url']
-        assert url != '', 'Empty URL should be filtered out'
-        assert url.strip() != '', 'Whitespace-only URL should be filtered out'
-        assert url.startswith('data:image/'), f'Invalid URL format: {url}'
+        assert item['image_url']['url'] == expected_urls[i]
 
 
-def test_image_content_all_empty_urls():
-    """Test that ImageContent handles the case where all URLs are empty."""
+def test_image_content_serializes_empty_urls():
+    """Test that ImageContent serializes empty URLs (filtering happens upstream)."""
 
     # Create ImageContent with only empty URLs
     image_content = ImageContent(image_urls=['', '   '])
@@ -41,8 +52,10 @@ def test_image_content_all_empty_urls():
     # Serialize the content
     serialized = image_content.model_dump()
 
-    # Should result in an empty list
-    assert len(serialized) == 0, f'Expected empty list, got {serialized}'
+    # Should serialize all URLs, even empty ones
+    assert len(serialized) == 2, f'Expected 2 URLs, got {serialized}'
+    assert serialized[0]['image_url']['url'] == ''
+    assert serialized[1]['image_url']['url'] == '   '
 
 
 def test_image_content_all_valid_urls():
