@@ -43,7 +43,9 @@ from openhands.core.exceptions import (
 )
 from openhands.core.logger import DEBUG, DEBUG_RUNTIME
 from openhands.core.logger import openhands_logger as logger
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.events import EventStream
+from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
@@ -88,6 +90,7 @@ class KubernetesRuntime(ActionExecutionClient):
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = True,
+        git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
     ):
         if not KubernetesRuntime._shutdown_listener_id:
             KubernetesRuntime._shutdown_listener_id = add_shutdown_listener(
@@ -136,6 +139,7 @@ class KubernetesRuntime(ActionExecutionClient):
             status_callback,
             attach_to_existing,
             headless_mode,
+            git_provider_tokens,
         )
 
     @staticmethod
@@ -205,7 +209,7 @@ class KubernetesRuntime(ActionExecutionClient):
         """Connect to the runtime by creating or attaching to a pod."""
         self.log('info', f'Connecting to runtime with conversation ID: {self.sid}')
         self.log('info', f'self._attach_to_existing: {self.attach_to_existing}')
-        self.send_status_message('STATUS$STARTING_RUNTIME')
+        self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
         self.log(
             'info', f'Using API URL {self.api_url}'
         )
@@ -236,8 +240,7 @@ class KubernetesRuntime(ActionExecutionClient):
 
         if not self.attach_to_existing:
             self.log('info', 'Waiting for pod to become ready ...')
-            self.send_status_message('STATUS$WAITING_FOR_CLIENT')
-
+            self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
         try:
             await call_sync_from_async(self._wait_until_ready)
         except Exception as alive_error:
@@ -261,7 +264,7 @@ class KubernetesRuntime(ActionExecutionClient):
             f'Pod initialized with plugins: {[plugin.name for plugin in self.plugins]}. VSCode URL: {self.vscode_url}',
         )
         if not self.attach_to_existing:
-            self.send_status_message(' ')
+            self.set_runtime_status(RuntimeStatus.READY)
         self._runtime_initialized = True
 
     def _attach_to_pod(self):
@@ -608,7 +611,7 @@ class KubernetesRuntime(ActionExecutionClient):
     def _init_k8s_resources(self):
         """Initialize the Kubernetes resources."""
         self.log('info', 'Preparing to start pod...')
-        self.send_status_message('STATUS$PREPARING_CONTAINER')
+        self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
 
         self.log('info', f'Runtime will be accessible at {self.api_url}')
 
