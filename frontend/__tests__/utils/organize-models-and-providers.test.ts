@@ -12,6 +12,7 @@ test("organizeModelsAndProviders", () => {
     "sagemaker/meta-textgeneration-llama-2-13b",
     "cohere.command-r-v1:0",
     "cloudflare/@cf/mistral/mistral-7b-instruct-v0.1",
+    "o4-mini",
     "gpt-4o",
     "together-ai-21.1b-41b",
     "gpt-4o-mini",
@@ -19,6 +20,8 @@ test("organizeModelsAndProviders", () => {
     "claude-3-haiku-20240307",
     "claude-2",
     "claude-2.1",
+    "devstral-small-2505",
+    "mistral/devstral-small-2505",
     "anthropic.unsafe-claude-2.1",
   ];
 
@@ -46,7 +49,7 @@ test("organizeModelsAndProviders", () => {
     },
     openai: {
       separator: "/",
-      models: ["gpt-4o", "gpt-4o-mini"],
+      models: ["o4-mini", "gpt-4o", "gpt-4o-mini"],
     },
     anthropic: {
       separator: "/",
@@ -56,6 +59,10 @@ test("organizeModelsAndProviders", () => {
         "claude-2",
         "claude-2.1",
       ],
+    },
+    mistral: {
+      separator: "/",
+      models: ["devstral-small-2505", "devstral-small-2505"],
     },
     other: {
       separator: "",
