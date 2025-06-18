@@ -39,7 +39,7 @@ class TestWarningSuppressionCLI:
         with patch('sys.stderr', captured_output):
             # Trigger httpx deprecation warning
             warnings.warn(
-                "Use 'content=<...>' to upload raw bytes/text content.",
+                "Use 'content=<...>' to upload raw bytes/text content.\n  headers, stream = encode_request(",
                 DeprecationWarning,
                 stacklevel=2,
             )
