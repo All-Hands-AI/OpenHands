@@ -56,6 +56,18 @@ class ConversationMemory:
         self.agent_config = config
         self.prompt_manager = prompt_manager
 
+    @staticmethod
+    def _is_valid_image_url(url: str | None) -> bool:
+        """Check if an image URL is valid and non-empty.
+
+        Args:
+            url: The image URL to validate
+
+        Returns:
+            True if the URL is valid, False otherwise
+        """
+        return bool(url and url.strip() and url.startswith('data:image/'))
+
     def process_events(
         self,
         condensed_history: list[Event],
@@ -380,7 +392,16 @@ class ConversationMemory:
 
             # Add image URLs if available and vision is active
             if vision_is_active and obs.image_urls:
-                content.append(ImageContent(image_urls=obs.image_urls))
+                # Filter out empty or invalid image URLs
+                valid_image_urls = [
+                    url for url in obs.image_urls if self._is_valid_image_url(url)
+                ]
+                if valid_image_urls:
+                    content.append(ImageContent(image_urls=valid_image_urls))
+                else:
+                    logger.debug(
+                        'IPython observation has image URLs but none are valid'
+                    )
 
             message = Message(role='user', content=content)
         elif isinstance(obs, FileEditObservation):
@@ -398,25 +419,33 @@ class ConversationMemory:
                 and vision_is_active
             ):
                 text += 'Image: Current webpage screenshot (Note that only visible portion of webpage is present in the screenshot. You may need to scroll to view the remaining portion of the web-page.)\n'
-                message = Message(
-                    role='user',
-                    content=[
-                        TextContent(text=text),
-                        ImageContent(
-                            image_urls=[
-                                # show set of marks if it exists
-                                # otherwise, show raw screenshot when using vision-supported model
-                                obs.set_of_marks
-                                if obs.set_of_marks is not None
-                                and len(obs.set_of_marks) > 0
-                                else obs.screenshot
-                            ]
-                        ),
-                    ],
-                )
-                logger.debug(
-                    f'Vision enabled for browsing, showing {"set of marks" if obs.set_of_marks and len(obs.set_of_marks) > 0 else "screenshot"}'
-                )
+
+                # Determine which image to use and validate it
+                image_url = None
+                if obs.set_of_marks is not None and len(obs.set_of_marks) > 0:
+                    image_url = obs.set_of_marks
+                    image_type = 'set of marks'
+                elif obs.screenshot is not None and len(obs.screenshot) > 0:
+                    image_url = obs.screenshot
+                    image_type = 'screenshot'
+
+                # Create message content with text
+                content = [TextContent(text=text)]
+
+                # Only add ImageContent if we have a valid image URL
+                if self._is_valid_image_url(image_url):
+                    content.append(ImageContent(image_urls=[image_url]))
+                    logger.debug(f'Vision enabled for browsing, showing {image_type}')
+                else:
+                    if image_url:
+                        logger.warning(
+                            f'Invalid image URL format for {image_type}: {image_url[:50]}...'
+                        )
+                    logger.debug(
+                        'Vision enabled for browsing, but no valid image available'
+                    )
+
+                message = Message(role='user', content=content)
             else:
                 message = Message(
                     role='user',
