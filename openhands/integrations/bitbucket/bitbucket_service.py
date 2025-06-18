@@ -4,7 +4,6 @@ from typing import Any
 import httpx
 from pydantic import SecretStr
 
-from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.service_types import (
     BaseGitService,
     Branch,
@@ -158,48 +157,43 @@ class BitbucketService(BaseGitService, GitService):
         """
         repositories = []
 
-        try:
-            # Get user's workspaces
-            workspaces_url = f'{self.BASE_URL}/workspaces'
-            workspaces_data, _ = await self._make_request(workspaces_url)
+        # Get user's workspaces
+        workspaces_url = f'{self.BASE_URL}/workspaces'
+        workspaces_data, _ = await self._make_request(workspaces_url)
 
-            for workspace in workspaces_data.get('values', []):
-                workspace_slug = workspace.get('slug')
-                if not workspace_slug:
-                    continue
+        for workspace in workspaces_data.get('values', []):
+            workspace_slug = workspace.get('slug')
+            if not workspace_slug:
+                continue
 
-                # Get repositories for this workspace
-                workspace_repos_url = f'{self.BASE_URL}/repositories/{workspace_slug}'
+            # Get repositories for this workspace
+            workspace_repos_url = f'{self.BASE_URL}/repositories/{workspace_slug}'
 
-                # Map sort parameter to Bitbucket API compatible values
-                bitbucket_sort = sort
-                if sort == 'pushed':
-                    # Bitbucket doesn't support 'pushed', use 'updated_on' instead
-                    bitbucket_sort = 'updated_on'
+            # Map sort parameter to Bitbucket API compatible values
+            bitbucket_sort = sort
+            if sort == 'pushed':
+                # Bitbucket doesn't support 'pushed', use 'updated_on' instead
+                bitbucket_sort = 'updated_on'
 
-                params = {
-                    'pagelen': 100,
-                    'sort': bitbucket_sort,
-                }
-                repos_data, headers = await self._make_request(
-                    workspace_repos_url, params
-                )
+            params = {
+                'pagelen': 100,
+                'sort': bitbucket_sort,
+            }
+            repos_data, headers = await self._make_request(workspace_repos_url, params)
 
-                for repo in repos_data.get('values', []):
-                    uuid = repo.get('uuid', '')
-                    repositories.append(
-                        Repository(
-                            id=uuid,
-                            full_name=f'{repo.get("workspace", {}).get("slug", "")}/{repo.get("slug", "")}',
-                            git_provider=ProviderType.BITBUCKET,
-                            is_public=repo.get('is_private', True) is False,
-                            stargazers_count=None,  # Bitbucket doesn't have stars
-                            link_header=headers.get('Link', ''),
-                            pushed_at=repo.get('updated_on'),
-                        )
+            for repo in repos_data.get('values', []):
+                uuid = repo.get('uuid', '')
+                repositories.append(
+                    Repository(
+                        id=uuid,
+                        full_name=f'{repo.get("workspace", {}).get("slug", "")}/{repo.get("slug", "")}',
+                        git_provider=ProviderType.BITBUCKET,
+                        is_public=repo.get('is_private', True) is False,
+                        stargazers_count=None,  # Bitbucket doesn't have stars
+                        link_header=headers.get('Link', ''),
+                        pushed_at=repo.get('updated_on'),
                     )
-        except Exception as e:
-            logger.warning(f'Failed to get repositories from Bitbucket: {e}')
+                )
 
         return repositories
 
