@@ -5,6 +5,7 @@ It does not implement browser functionality.
 
 import asyncio
 import os
+import re
 import select
 import shutil
 import signal
@@ -368,6 +369,17 @@ class CLIRuntime(Runtime):
                 f'Runtime not initialized for command: {action.command}'
             )
 
+        if action.is_input:
+            logger.warning(
+                f"CLIRuntime received an action with `is_input=True` (command: '{action.command}'). "
+                'CLIRuntime currently does not support sending input or signals to active processes. '
+                'This action will be ignored and an error observation will be returned.'
+            )
+            return ErrorObservation(
+                content=f"CLIRuntime does not support interactive input from the agent (e.g., 'C-c'). The command '{action.command}' was not sent to any process.",
+                error_id='AGENT_ERROR$BAD_ACTION',
+            )
+
         try:
             # Set effective timeout if not already set
             if action.timeout is None:
@@ -378,7 +390,26 @@ class CLIRuntime(Runtime):
             )
 
             # Use the bash session to execute the command
-            return self.bash_session.execute(action)
+            obs = self.bash_session.execute(action)
+
+            # For CLIRuntime, we need to adjust the timeout message format and working directory
+            if isinstance(obs, CmdOutputObservation):
+                # Fix timeout message format for CLIRuntime
+                if obs.metadata.suffix and 'timed out after' in obs.metadata.suffix:
+                    # Extract timeout duration from the suffix
+                    match = re.search(
+                        r'timed out after ([\d.]+) seconds', obs.metadata.suffix
+                    )
+                    if match:
+                        timeout_duration = match.group(1)
+                        obs.metadata.suffix = (
+                            f'[The command timed out after {timeout_duration} seconds.]'
+                        )
+
+                # Fix working directory for CLIRuntime
+                obs.metadata.working_dir = self._workspace_path
+
+            return obs
 
         except Exception as e:
             logger.error(

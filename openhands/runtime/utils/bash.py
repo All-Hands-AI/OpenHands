@@ -769,6 +769,9 @@ class SubprocessBashSession(BashSession):
             # Set effective timeout
             effective_timeout = action.timeout if action.timeout else 30.0
 
+            # Check if this is a background command (ends with &)
+            is_background = command.strip().endswith('&')
+
             # Execute the command using subprocess
             self._current_process = subprocess.Popen(
                 ['bash', '-c', escaped_command],
@@ -779,10 +782,23 @@ class SubprocessBashSession(BashSession):
             )
 
             try:
-                stdout, stderr = self._current_process.communicate(
-                    timeout=effective_timeout
-                )
-                exit_code = self._current_process.returncode
+                if is_background:
+                    # For background commands, wait a short time to see if bash exits quickly
+                    # Background commands should cause bash to return immediately with exit code 0
+                    try:
+                        stdout, stderr = self._current_process.communicate(timeout=0.5)
+                        exit_code = self._current_process.returncode
+                    except subprocess.TimeoutExpired:
+                        # If bash doesn't exit quickly, it means the command is still running
+                        # This shouldn't happen for proper background commands, but handle it
+                        self._current_process.kill()
+                        stdout, stderr = self._current_process.communicate()
+                        exit_code = 0  # Treat as successful background launch
+                else:
+                    stdout, stderr = self._current_process.communicate(
+                        timeout=effective_timeout
+                    )
+                    exit_code = self._current_process.returncode
 
                 # Check if process was interrupted (negative exit codes indicate signals)
                 if exit_code < 0:
