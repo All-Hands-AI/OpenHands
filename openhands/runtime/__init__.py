@@ -1,26 +1,18 @@
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.cli.cli_runtime import CLIRuntime
-from openhands.runtime.impl.daytona.daytona_runtime import DaytonaRuntime
 from openhands.runtime.impl.docker.docker_runtime import (
     DockerRuntime,
 )
-from openhands.runtime.impl.e2b.e2b_runtime import E2BRuntime
 from openhands.runtime.impl.local.local_runtime import LocalRuntime
-from openhands.runtime.impl.modal.modal_runtime import ModalRuntime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
-from openhands.runtime.impl.runloop.runloop_runtime import RunloopRuntime
 from openhands.utils.import_utils import get_impl
 
 # mypy: disable-error-code="type-abstract"
 _DEFAULT_RUNTIME_CLASSES: dict[str, type[Runtime]] = {
     'eventstream': DockerRuntime,
     'docker': DockerRuntime,
-    'e2b': E2BRuntime,
     'remote': RemoteRuntime,
-    'modal': ModalRuntime,
-    'runloop': RunloopRuntime,
     'local': LocalRuntime,
-    'daytona': DaytonaRuntime,
     'cli': CLIRuntime,
 }
 
@@ -44,12 +36,8 @@ def get_runtime_cls(name: str) -> type[Runtime]:
 
 __all__ = [
     'Runtime',
-    'E2BRuntime',
     'RemoteRuntime',
-    'ModalRuntime',
-    'RunloopRuntime',
     'DockerRuntime',
-    'DaytonaRuntime',
     'CLIRuntime',
     'get_runtime_cls',
 ]
