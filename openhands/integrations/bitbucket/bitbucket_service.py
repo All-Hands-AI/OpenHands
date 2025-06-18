@@ -197,18 +197,10 @@ class BitbucketService(BaseGitService, GitService):
                 )
 
                 for repo in repos_data.get('values', []):
-                    # Convert UUID to an integer hash for compatibility with Repository model
                     uuid = repo.get('uuid', '')
-                    # Remove curly braces if present and use hash of the UUID string as the ID
-                    if uuid.startswith('{') and uuid.endswith('}'):
-                        uuid = uuid[1:-1]
-                    id_value = hash(uuid) % (
-                        2**31
-                    )  # Ensure it's a positive 32-bit integer
-
                     repositories.append(
                         Repository(
-                            id=id_value,
+                            id=uuid,
                             full_name=f'{repo.get("workspace", {}).get("slug", "")}/{repo.get("slug", "")}',
                             git_provider=ProviderType.BITBUCKET,
                             is_public=repo.get('is_private', True) is False,
