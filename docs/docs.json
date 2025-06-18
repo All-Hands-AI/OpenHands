@@ -50,6 +50,7 @@
               "usage/how-to/cli-mode",
               "usage/how-to/headless-mode",
               "usage/how-to/github-action",
+              "usage/how-to/bitbucket-integration",
               {
                 "group": "Advanced Configuration",
                 "pages": [
