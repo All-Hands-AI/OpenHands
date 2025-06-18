@@ -3,9 +3,9 @@ repos:
     rev: v5.0.0
     hooks:
       - id: trailing-whitespace
-        exclude: docs/modules/python
+        exclude: docs/modules/python/openhands-ui
       - id: end-of-file-fixer
-        exclude: docs/modules/python
+        exclude: docs/modules/python/openhands-ui
       - id: check-yaml
       - id: debug-statements
 
