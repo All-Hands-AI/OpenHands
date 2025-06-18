@@ -31,7 +31,7 @@ const RouterStub = createRoutesStub([
       },
       {
         Component: () => <div data-testid="git-settings-screen" />,
-        path: "/settings/git",
+        path: "/settings/integrations",
       },
     ],
   },

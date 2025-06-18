@@ -58,6 +58,7 @@ const conversations: Conversation[] = [
     last_updated_at: new Date().toISOString(),
     created_at: new Date().toISOString(),
     status: "RUNNING",
+    runtime_status: "STATUS$READY",
     url: null,
     session_api_key: null,
   },
@@ -73,6 +74,7 @@ const conversations: Conversation[] = [
     ).toISOString(),
     created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     status: "STOPPED",
+    runtime_status: null,
     url: null,
     session_api_key: null,
   },
@@ -88,6 +90,7 @@ const conversations: Conversation[] = [
     ).toISOString(),
     created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
     status: "STOPPED",
+    runtime_status: null,
     url: null,
     session_api_key: null,
   },
@@ -138,13 +141,13 @@ export const handlers = [
   http.get("/api/user/repositories", () => {
     const data: GitRepository[] = [
       {
-        id: 1,
+        id: "1",
         full_name: "octocat/hello-world",
         git_provider: "github",
         is_public: true,
       },
       {
-        id: 2,
+        id: "2",
         full_name: "octocat/earth",
         git_provider: "github",
         is_public: true,
@@ -155,7 +158,7 @@ export const handlers = [
   }),
   http.get("/api/user/info", () => {
     const user: GitUser = {
-      id: 1,
+      id: "1",
       login: "octocat",
       avatar_url: "https://avatars.githubusercontent.com/u/583231?v=4",
       company: "GitHub",
@@ -283,6 +286,7 @@ export const handlers = [
       last_updated_at: new Date().toISOString(),
       created_at: new Date().toISOString(),
       status: "RUNNING",
+      runtime_status: "STATUS$READY",
       url: null,
       session_api_key: null,
     };

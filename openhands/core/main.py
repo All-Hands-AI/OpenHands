@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Callable, Protocol
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
+import openhands.cli.suppress_warnings  # noqa: F401
 from openhands.controller.agent import Agent
 from openhands.controller.replay import ReplayManager
 from openhands.controller.state.state import State
@@ -139,9 +140,9 @@ async def run_controller(
                 config.mcp_host, config, None
             )
         )
-        config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
+        runtime.config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
 
-        await add_mcp_tools_to_agent(agent, runtime, memory, config)
+        await add_mcp_tools_to_agent(agent, runtime, memory)
 
     replay_events: list[Event] | None = None
     if config.replay_trajectory_path:
