@@ -5,6 +5,7 @@ It does not implement browser functionality.
 
 import asyncio
 import os
+import re
 import select
 import shutil
 import signal
@@ -50,6 +51,7 @@ from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.runtime_status import RuntimeStatus
+from openhands.runtime.utils.bash import SubprocessBashSession
 
 
 class CLIRuntime(Runtime):
@@ -119,6 +121,13 @@ class CLIRuntime(Runtime):
         self.file_editor = OHEditor(workspace_root=self._workspace_path)
         self._shell_stream_callback: Callable[[str], None] | None = None
 
+        # Initialize bash session
+        self.bash_session = SubprocessBashSession(
+            work_dir=self._workspace_path,
+            username=None,
+            no_change_timeout_seconds=30,
+        )
+
         logger.warning(
             'Initializing CLIRuntime. WARNING: NO SANDBOX IS USED. '
             'This runtime executes commands directly on the local system. '
@@ -137,6 +146,9 @@ class CLIRuntime(Runtime):
 
         if not self.attach_to_existing:
             await asyncio.to_thread(self.setup_initial_env)
+
+        # Initialize bash session
+        self.bash_session.initialize()
 
         self._runtime_initialized = True
         self.set_runtime_status(RuntimeStatus.RUNTIME_STARTED)
@@ -351,7 +363,7 @@ class CLIRuntime(Runtime):
         )
 
     def run(self, action: CmdRunAction) -> Observation:
-        """Run a command using subprocess."""
+        """Run a command using the bash session."""
         if not self._runtime_initialized:
             return ErrorObservation(
                 f'Runtime not initialized for command: {action.command}'
@@ -369,18 +381,36 @@ class CLIRuntime(Runtime):
             )
 
         try:
-            effective_timeout = (
-                action.timeout
-                if action.timeout is not None
-                else self.config.sandbox.timeout
-            )
+            # Set effective timeout if not already set
+            if action.timeout is None:
+                action.set_hard_timeout(self.config.sandbox.timeout)
 
             logger.debug(
-                f'Running command in CLIRuntime: "{action.command}" with effective timeout: {effective_timeout}s'
+                f'Running command in CLIRuntime: "{action.command}" with effective timeout: {action.timeout}s'
             )
-            return self._execute_shell_command(
-                action.command, timeout=effective_timeout
-            )
+
+            # Use the bash session to execute the command
+            obs = self.bash_session.execute(action)
+
+            # For CLIRuntime, we need to adjust the timeout message format and working directory
+            if isinstance(obs, CmdOutputObservation):
+                # Fix timeout message format for CLIRuntime
+                if obs.metadata.suffix and 'timed out after' in obs.metadata.suffix:
+                    # Extract timeout duration from the suffix
+                    match = re.search(
+                        r'timed out after ([\d.]+) seconds', obs.metadata.suffix
+                    )
+                    if match:
+                        timeout_duration = match.group(1)
+                        obs.metadata.suffix = (
+                            f'[The command timed out after {timeout_duration} seconds.]'
+                        )
+
+                # Fix working directory for CLIRuntime
+                obs.metadata.working_dir = self._workspace_path
+
+            return obs
+
         except Exception as e:
             logger.error(
                 f'Error in CLIRuntime.run for command "{action.command}": {str(e)}'
@@ -737,6 +767,10 @@ class CLIRuntime(Runtime):
             raise RuntimeError(f'Error creating zip file: {str(e)}')
 
     def close(self) -> None:
+        # Clean up bash session
+        if hasattr(self, 'bash_session'):
+            self.bash_session.close()
+
         self._runtime_initialized = False
         super().close()
 
