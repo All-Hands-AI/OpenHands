@@ -137,7 +137,6 @@ class BitbucketService(BaseGitService, GitService):
         url = f'{self.BASE_URL}/user'
         data, _ = await self._make_request(url)
 
-        # Use account_id as string directly
         account_id = data.get('account_id', '')
 
         return User(
@@ -234,15 +233,9 @@ class BitbucketService(BaseGitService, GitService):
         url = f'{self.BASE_URL}/repositories/{owner}/{repo}'
         data, _ = await self._make_request(url)
 
-        # Convert UUID to an integer hash for compatibility with Repository model
         uuid = data.get('uuid', '')
-        # Remove curly braces if present and use hash of the UUID string as the ID
-        if uuid.startswith('{') and uuid.endswith('}'):
-            uuid = uuid[1:-1]
-        id_value = hash(uuid) % (2**31)  # Ensure it's a positive 32-bit integer
-
         return Repository(
-            id=id_value,
+            id=uuid,
             full_name=f'{data.get("workspace", {}).get("slug", "")}/{data.get("slug", "")}',
             git_provider=ProviderType.BITBUCKET,
             is_public=data.get('is_private', True) is False,
