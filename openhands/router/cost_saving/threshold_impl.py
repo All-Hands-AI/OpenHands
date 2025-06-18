@@ -1,5 +1,3 @@
-from tenacity import retry, stop_after_attempt, wait_random_exponential
-
 from openhands.core.config import ModelRoutingConfig
 from openhands.llm.llm import LLM
 from openhands.router.base import BaseRouter
@@ -8,25 +6,12 @@ from openhands.router.cost_saving.prompt import (
     CLASSIFIER_USER_MESSAGE,
 )
 from transformers import AutoTokenizer
-import requests
 
-API_URL = "https://blc5ptpat6uzvg.r26.modal.host/classify"
-TOKENIZER_NAME = "Qwen/Qwen2.5-Coder-1.5B-Instruct"
-MODEL_NAME = "router-1.5b-claude-4-devstral"
-tokenizer = AutoTokenizer.from_pretrained(TOKENIZER_NAME)
-
-def post_http_request(payload: dict, api_url: str) -> requests.Response:
-    """Send HTTP request to VLLM classification endpoint."""
-    headers = {
-        "Authorization": "Bearer ht-test-key",
-        "Content-Type": "application/json",
-    }
-    response = requests.post(api_url, headers=headers, json=payload)
-    return response
 
 class ThresholdBasedCostSavingRouter(BaseRouter):
-    WEAK_MODEL_CONFIG = 'weak_model'
-    CPT_THRESHOLD = 0.5546875
+    WEAK_MODEL_CONFIG_NAME = 'weak_model'
+    CPT_THRESHOLD = 0.5546875 # FIXME: maybe move to config?
+    TOKENIZER_NAME = "Qwen/Qwen2.5-Coder-1.5B-Instruct"
 
     def __init__(
         self,
@@ -38,9 +23,12 @@ class ThresholdBasedCostSavingRouter(BaseRouter):
 
         self._validate_model_routing_config(model_routing_config, routing_llms)
 
-        self.weak_llm = routing_llms[self.WEAK_MODEL_CONFIG]
+        self.weak_llm = routing_llms[self.WEAK_MODEL_CONFIG_NAME]
+        self.classifier_llm = routing_llms[model_routing_config.classifier_llm_config_name]
+        self.tokenizer = AutoTokenizer.from_pretrained(self.TOKENIZER_NAME)
+
         self.routing_history: list[int] = []
-        self.max_token_exceeded = False
+        self.max_token_exceeded = False # FIXME: handle max token exceeded case
 
     def should_route_to(self, prompt: str) -> LLM:
         if self.max_token_exceeded:
@@ -57,18 +45,20 @@ class ThresholdBasedCostSavingRouter(BaseRouter):
         self.routing_history.append(1)
         return self.weak_llm
 
-    @retry(wait=wait_random_exponential(min=1, max=20), stop=stop_after_attempt(3))
     def score_trajectory(self, trajectory, **kwargs):
         """Score the trajectory using the weak model."""
         convo = self.create_conversation_prompt(trajectory)
-        prompt = tokenizer.apply_chat_template([convo], tokenize=False, add_generation_prompt=True)[0]
+        prompt = self.tokenizer.apply_chat_template([convo], tokenize=False, add_generation_prompt=True)[0]
 
         payload = {
-            "model": MODEL_NAME,
-            "input": [prompt],
+            "input": prompt,
         }
 
-        response = post_http_request(payload=payload, api_url=API_URL)
+        response = self.classifier_llm.passthrough(
+            method='POST',
+            endpoint='classify',
+            json=payload,
+        )
         response.raise_for_status()
 
         result = response.json()
@@ -87,7 +77,7 @@ class ThresholdBasedCostSavingRouter(BaseRouter):
     def _validate_model_routing_config(
         self, model_routing_config: ModelRoutingConfig, routing_llms: dict[str, LLM]
     ):
-        if self.WEAK_MODEL_CONFIG not in routing_llms:
+        if self.WEAK_MODEL_CONFIG_NAME not in routing_llms:
             raise ValueError(
                 f'Weak LLM config {model_routing_config.reasoning_llm_config_name} not found'
             )

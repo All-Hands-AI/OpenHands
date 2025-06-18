@@ -790,3 +790,42 @@ class LLM(RetryMixin, DebugMixin):
 
         # let pydantic handle the serialization
         return [message.model_dump() for message in messages]
+
+    def passthrough(
+        self,
+        method: str,
+        endpoint: str,
+        **kwargs: Any,
+    ) -> httpx.Response:
+        """Make a passthrough request to the LLM provider with retry logic.
+
+        Args:
+            method (str): The HTTP method to use.
+            endpoint (str): The endpoint to call.
+            **kwargs: Additional keyword arguments to pass to the request.
+
+        Returns:
+            ModelResponse: The response from the LLM provider.
+        """
+
+        @self.retry_decorator(
+            num_retries=self.config.num_retries,
+            retry_exceptions=LLM_RETRY_EXCEPTIONS,
+            retry_min_wait=self.config.retry_min_wait,
+            retry_max_wait=self.config.retry_max_wait,
+            retry_multiplier=self.config.retry_multiplier,
+            retry_listener=self.retry_listener,
+        )
+        def _passthrough_with_retry():
+            return litellm.passthrough.llm_passthrough_route(
+                model=self.config.model,
+                method=method,
+                endpoint=endpoint,
+                api_base=self.config.base_url,
+                api_key=self.config.api_key.get_secret_value()
+                if self.config.api_key
+                else None,
+                **kwargs,
+            )
+
+        return _passthrough_with_retry()
