@@ -11,7 +11,11 @@ on:
       - main
     tags:
       - '*'
+    paths-ignore:
+      - 'openhands-ui/**'
   pull_request:
+    paths-ignore:
+      - 'openhands-ui/**'
   workflow_dispatch:
     inputs:
       reason:
