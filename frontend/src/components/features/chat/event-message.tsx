@@ -21,6 +21,8 @@ import { getEventContent } from "./event-content-helpers/get-event-content";
 import { GenericEventMessage } from "./generic-event-message";
 import { MicroagentStatus } from "#/types/microagent-status";
 import { MicroagentStatusIndicator } from "./microagent/microagent-status-indicator";
+import { FileList } from "../files/file-list";
+import { parseMessageFromEvent } from "./event-content-helpers/parse-message-from-event";
 import { LikertScale } from "../feedback/likert-scale";
 
 import { useConfig } from "#/hooks/query/use-config";
@@ -145,15 +147,16 @@ export function EventMessage({
   }
 
   if (isUserMessage(event) || isAssistantMessage(event)) {
+    const message = parseMessageFromEvent(event);
+
     return (
       <div className="flex flex-col self-end">
-        <ChatMessage
-          type={event.source}
-          message={isUserMessage(event) ? event.args.content : event.message}
-          actions={actions}
-        >
+        <ChatMessage type={event.source} message={message} actions={actions}>
           {event.args.image_urls && event.args.image_urls.length > 0 && (
             <ImageCarousel size="small" images={event.args.image_urls} />
+          )}
+          {event.args.file_urls && event.args.file_urls.length > 0 && (
+            <FileList files={event.args.file_urls} />
           )}
           {shouldShowConfirmationButtons && <ConfirmationButtons />}
         </ChatMessage>
