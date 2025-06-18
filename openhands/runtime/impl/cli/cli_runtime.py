@@ -119,7 +119,13 @@ class CLIRuntime(Runtime):
         self._runtime_initialized = False
         self.file_editor = OHEditor(workspace_root=self._workspace_path)
         self._shell_stream_callback: Callable[[str], None] | None = None
-        self._bash_session: SubprocessBashSession | None = None
+        
+        # Initialize bash session
+        self.bash_session = SubprocessBashSession(
+            work_dir=self._workspace_path,
+            username=None,
+            no_change_timeout_seconds=30,
+        )
 
         logger.warning(
             'Initializing CLIRuntime. WARNING: NO SANDBOX IS USED. '
@@ -140,14 +146,9 @@ class CLIRuntime(Runtime):
         if not self.attach_to_existing:
             await asyncio.to_thread(self.setup_initial_env)
 
-        # Initialize the subprocess bash session
-        self._bash_session = SubprocessBashSession(
-            work_dir=self._workspace_path,
-            username=None,  # Use current user
-            no_change_timeout_seconds=30,
-        )
-        self._bash_session.initialize()
-
+        # Initialize bash session
+        self.bash_session.initialize()
+        
         self._runtime_initialized = True
         self.set_runtime_status(RuntimeStatus.RUNTIME_STARTED)
         logger.info(f'CLIRuntime initialized with workspace at {self._workspace_path}')
@@ -361,38 +362,24 @@ class CLIRuntime(Runtime):
         )
 
     def run(self, action: CmdRunAction) -> Observation:
-        """Run a command using the Anthropic bash session."""
+        """Run a command using the bash session."""
         if not self._runtime_initialized:
             return ErrorObservation(
                 f'Runtime not initialized for command: {action.command}'
             )
 
-        if not self._bash_session:
-            return ErrorObservation('Bash session not initialized')
-
         try:
-            # Set effective timeout
-            effective_timeout = (
-                action.timeout
-                if action.timeout is not None
-                else self.config.sandbox.timeout
-            )
-
-            # Create a new action and set the timeout
-            action_with_timeout = CmdRunAction(
-                command=action.command,
-                is_input=action.is_input,
-                blocking=action.blocking,
-            )
-            if effective_timeout is not None:
-                action_with_timeout.set_hard_timeout(effective_timeout, blocking=True)
+            # Set effective timeout if not already set
+            if action.timeout is None:
+                action.set_hard_timeout(self.config.sandbox.timeout)
 
             logger.debug(
-                f'Running command in CLIRuntime: "{action.command}" with effective timeout: {effective_timeout}s'
+                f'Running command in CLIRuntime: "{action.command}" with effective timeout: {action.timeout}s'
             )
-
-            return self._bash_session.execute(action_with_timeout)
-
+            
+            # Use the bash session to execute the command
+            return self.bash_session.execute(action)
+            
         except Exception as e:
             logger.error(
                 f'Error in CLIRuntime.run for command "{action.command}": {str(e)}'
@@ -749,10 +736,10 @@ class CLIRuntime(Runtime):
             raise RuntimeError(f'Error creating zip file: {str(e)}')
 
     def close(self) -> None:
-        """Close the runtime and clean up resources."""
-        if self._bash_session:
-            self._bash_session.close()
-            self._bash_session = None
+        # Clean up bash session
+        if hasattr(self, 'bash_session'):
+            self.bash_session.close()
+        
         self._runtime_initialized = False
         super().close()
 
