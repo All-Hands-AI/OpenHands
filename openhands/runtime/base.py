@@ -617,6 +617,7 @@ fi
         provider_domains = {
             ProviderType.GITHUB: 'github.com',
             ProviderType.GITLAB: 'gitlab.com',
+            ProviderType.BITBUCKET: 'bitbucket.org',
         }
 
         domain = provider_domains[provider]
@@ -629,10 +630,22 @@ fi
         if git_provider_tokens and provider in git_provider_tokens:
             git_token = git_provider_tokens[provider].token
             if git_token:
+                token_value = git_token.get_secret_value()
                 if provider == ProviderType.GITLAB:
-                    remote_url = f'https://oauth2:{git_token.get_secret_value()}@{domain}/{repo_name}.git'
+                    remote_url = (
+                        f'https://oauth2:{token_value}@{domain}/{repo_name}.git'
+                    )
+                elif provider == ProviderType.BITBUCKET:
+                    # For Bitbucket, handle username:app_password format
+                    if ':' in token_value:
+                        # App token format: username:app_password
+                        remote_url = f'https://{token_value}@{domain}/{repo_name}.git'
+                    else:
+                        # Access token format: use x-token-auth
+                        remote_url = f'https://x-token-auth:{token_value}@{domain}/{repo_name}.git'
                 else:
-                    remote_url = f'https://{git_token.get_secret_value()}@{domain}/{repo_name}.git'
+                    # GitHub
+                    remote_url = f'https://{token_value}@{domain}/{repo_name}.git'
             else:
                 remote_url = f'https://{domain}/{repo_name}.git'
         else:
