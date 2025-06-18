@@ -64,7 +64,7 @@
 #max_budget_per_task = 0.0
 
 # Maximum number of iterations
-#max_iterations = 250
+#max_iterations = 500
 
 # Path to mount the workspace in the sandbox
 #workspace_mount_path_in_sandbox = "/workspace"
