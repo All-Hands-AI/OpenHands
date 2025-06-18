@@ -133,7 +133,7 @@ class GitHubService(BaseGitService, GitService):
         response, _ = await self._make_request(url)
 
         return User(
-            id=response.get('id'),
+            id=str(response.get('id', '')),
             login=response.get('login'),
             avatar_url=response.get('avatar_url'),
             company=response.get('company'),
@@ -229,7 +229,7 @@ class GitHubService(BaseGitService, GitService):
         # Convert to Repository objects
         return [
             Repository(
-                id=repo.get('id'),
+                id=str(repo.get('id')),
                 full_name=repo.get('full_name'),
                 stargazers_count=repo.get('stargazers_count'),
                 git_provider=ProviderType.GITHUB,
@@ -262,7 +262,7 @@ class GitHubService(BaseGitService, GitService):
 
         repos = [
             Repository(
-                id=repo.get('id'),
+                id=str(repo.get('id')),
                 full_name=repo.get('full_name'),
                 stargazers_count=repo.get('stargazers_count'),
                 git_provider=ProviderType.GITHUB,
@@ -407,7 +407,7 @@ class GitHubService(BaseGitService, GitService):
         repo, _ = await self._make_request(url)
 
         return Repository(
-            id=repo.get('id'),
+            id=str(repo.get('id')),
             full_name=repo.get('full_name'),
             stargazers_count=repo.get('stargazers_count'),
             git_provider=ProviderType.GITHUB,

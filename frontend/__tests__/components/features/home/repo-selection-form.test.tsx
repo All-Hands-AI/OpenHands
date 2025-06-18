@@ -99,13 +99,13 @@ describe("RepositorySelectionForm", () => {
   it("shows loading indicator when repositories are being fetched", () => {
     const MOCK_REPOS: GitRepository[] = [
       {
-        id: 1,
+        id: "1",
         full_name: "user/repo1",
         git_provider: "github",
         is_public: true,
       },
       {
-        id: 2,
+        id: "2",
         full_name: "user/repo2",
         git_provider: "github",
         is_public: true,
@@ -127,13 +127,13 @@ describe("RepositorySelectionForm", () => {
   it("shows dropdown when repositories are loaded", async () => {
     const MOCK_REPOS: GitRepository[] = [
       {
-        id: 1,
+        id: "1",
         full_name: "user/repo1",
         git_provider: "github",
         is_public: true,
       },
       {
-        id: 2,
+        id: "2",
         full_name: "user/repo2",
         git_provider: "github",
         is_public: true,
@@ -171,13 +171,13 @@ describe("RepositorySelectionForm", () => {
   it("should call the search repos API when searching a URL", async () => {
     const MOCK_REPOS: GitRepository[] = [
       {
-        id: 1,
+        id: "1",
         full_name: "user/repo1",
         git_provider: "github",
         is_public: true,
       },
       {
-        id: 2,
+        id: "2",
         full_name: "user/repo2",
         git_provider: "github",
         is_public: true,
@@ -186,7 +186,7 @@ describe("RepositorySelectionForm", () => {
 
     const MOCK_SEARCH_REPOS: GitRepository[] = [
       {
-        id: 3,
+        id: "3",
         full_name: "kubernetes/kubernetes",
         git_provider: "github",
         is_public: true,
@@ -233,7 +233,7 @@ describe("RepositorySelectionForm", () => {
   it("should call onRepoSelection when a searched repository is selected", async () => {
     const MOCK_SEARCH_REPOS: GitRepository[] = [
       {
-        id: 3,
+        id: "3",
         full_name: "kubernetes/kubernetes",
         git_provider: "github",
         is_public: true,
