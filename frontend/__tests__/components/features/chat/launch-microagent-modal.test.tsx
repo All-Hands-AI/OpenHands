@@ -19,16 +19,16 @@ vi.mock("#/hooks/use-handle-runtime-active", () => ({
 
 // Mock the useMicroagentPrompt hook
 vi.mock("#/hooks/query/use-microagent-prompt", () => ({
-  useMicroagentPrompt: vi.fn().mockReturnValue({ 
-    data: "Generated prompt", 
-    isLoading: false 
+  useMicroagentPrompt: vi.fn().mockReturnValue({
+    data: "Generated prompt",
+    isLoading: false
   }),
 }));
 
 // Mock the useGetMicroagents hook
 vi.mock("#/hooks/query/use-get-microagents", () => ({
-  useGetMicroagents: vi.fn().mockReturnValue({ 
-    data: ["file1", "file2"] 
+  useGetMicroagents: vi.fn().mockReturnValue({
+    data: ["file1", "file2"]
   }),
 }));
 
@@ -90,7 +90,7 @@ describe("LaunchMicroagentModal", () => {
 
   it("should display the prompt from the hook", async () => {
     renderMicroagentModal();
-    
+
     // Since we're mocking the hook, we just need to verify the UI shows the data
     const descriptionInput = screen.getByTestId("query-input");
     expect(descriptionInput).toHaveValue("Generated prompt");
@@ -98,7 +98,7 @@ describe("LaunchMicroagentModal", () => {
 
   it("should display the list of microagent files from the hook", async () => {
     renderMicroagentModal();
-    
+
     // Since we're mocking the hook, we just need to verify the UI shows the data
     const targetInput = screen.getByTestId("target-input");
     expect(targetInput).toHaveValue("");
