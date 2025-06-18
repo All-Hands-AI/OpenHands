@@ -13,6 +13,7 @@ from openhands.cli.tui import (
 )
 from openhands.cli.utils import (
     VERIFIED_ANTHROPIC_MODELS,
+    VERIFIED_MISTRAL_MODELS,
     VERIFIED_OPENAI_MODELS,
     VERIFIED_PROVIDERS,
     organize_models_and_providers,
@@ -214,6 +215,11 @@ async def modify_llm_settings_basic(
                 m for m in provider_models if m not in VERIFIED_ANTHROPIC_MODELS
             ]
             provider_models = VERIFIED_ANTHROPIC_MODELS + provider_models
+        if provider == 'mistral':
+            provider_models = [
+                m for m in provider_models if m not in VERIFIED_MISTRAL_MODELS
+            ]
+            provider_models = VERIFIED_MISTRAL_MODELS + provider_models
 
         # Set default model to the best verified model for the provider
         if provider == 'anthropic' and VERIFIED_ANTHROPIC_MODELS:
@@ -222,6 +228,9 @@ async def modify_llm_settings_basic(
         elif provider == 'openai' and VERIFIED_OPENAI_MODELS:
             # Use the first model in the VERIFIED_OPENAI_MODELS list as it's the best/newest
             default_model = VERIFIED_OPENAI_MODELS[0]
+        elif provider == 'mistral' and VERIFIED_MISTRAL_MODELS:
+            # Use the first model in the VERIFIED_MISTRAL_MODELS list as it's the best/newest
+            default_model = VERIFIED_MISTRAL_MODELS[0]
         else:
             # For other providers, use the first model in the list
             default_model = (
