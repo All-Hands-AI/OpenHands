@@ -1160,7 +1160,8 @@ class AgentController:
             metrics.accumulated_cost += condenser_metrics.accumulated_cost
 
         # Add max_budget_per_task to metrics
-        metrics.max_budget_per_task = self.max_budget_per_task
+        if self.state.budget_flag:
+            metrics.max_budget_per_task = self.state.budget_flag.max_value
 
         # Set accumulated token usage (sum of agent and condenser token usage)
         # Use a deep copy to ensure we don't modify the original object

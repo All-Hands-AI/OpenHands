@@ -460,11 +460,6 @@ async def test_step_max_budget(mock_agent, mock_event_stream):
         initial_state=State(budget_flag=budget_flag, metrics=metrics),
     )
     controller.state.agent_state = AgentState.RUNNING
-<<<<<<< HEAD
-    controller.agent.llm.metrics.accumulated_cost = 10.1
-    assert controller.state.traffic_control_state == TrafficControlState.NORMAL
-=======
->>>>>>> main
     await controller._step()
     assert controller.state.agent_state == AgentState.ERROR
     await controller.close()
@@ -490,11 +485,6 @@ async def test_step_max_budget_headless(mock_agent, mock_event_stream):
         initial_state=State(budget_flag=budget_flag, metrics=metrics),
     )
     controller.state.agent_state = AgentState.RUNNING
-<<<<<<< HEAD
-    controller.agent.llm.metrics.accumulated_cost = 10.1
-    assert controller.state.traffic_control_state == TrafficControlState.NORMAL
-=======
->>>>>>> main
     await controller._step()
     assert controller.state.agent_state == AgentState.ERROR
     await controller.close()
