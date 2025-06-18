@@ -115,16 +115,6 @@ class BitbucketService(BaseGitService, GitService):
                         params=params,
                         method=method,
                     )
-                if self.refresh and self._has_token_expired(response.status_code):
-                    await self.get_latest_token()
-                    bitbucket_headers = await self._get_bitbucket_headers()
-                    response = await self.execute_request(
-                        client=client,
-                        url=url,
-                        headers=bitbucket_headers,
-                        params=params,
-                        method=method,
-                    )
                 response.raise_for_status()
                 return response.json(), dict(response.headers)
         except httpx.HTTPStatusError as e:
