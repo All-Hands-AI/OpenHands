@@ -110,7 +110,7 @@ class Branch(BaseModel):
 
 
 class Repository(BaseModel):
-    id: int
+    id: str
     full_name: str
     git_provider: ProviderType
     is_public: bool

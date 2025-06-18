@@ -207,7 +207,7 @@ class GitLabService(BaseGitService, GitService):
         response, _ = await self._make_request(url, params)
         repos = [
             Repository(
-                id=repo.get('id'),
+                id=str(repo.get('id')),
                 full_name=repo.get('path_with_namespace'),
                 stargazers_count=repo.get('star_count'),
                 git_provider=ProviderType.GITLAB,
@@ -258,7 +258,7 @@ class GitLabService(BaseGitService, GitService):
         all_repos = all_repos[:MAX_REPOS]
         return [
             Repository(
-                id=repo.get('id'),
+                id=str(repo.get('id')),
                 full_name=repo.get('path_with_namespace'),
                 stargazers_count=repo.get('star_count'),
                 git_provider=ProviderType.GITLAB,
@@ -408,7 +408,7 @@ class GitLabService(BaseGitService, GitService):
         repo, _ = await self._make_request(url)
 
         return Repository(
-            id=repo.get('id'),
+            id=str(repo.get('id')),
             full_name=repo.get('path_with_namespace'),
             stargazers_count=repo.get('star_count'),
             git_provider=ProviderType.GITLAB,

@@ -23,7 +23,7 @@ interface Branch {
 }
 
 interface GitRepository {
-  id: number;
+  id: string;
   full_name: string;
   git_provider: Provider;
   is_public: boolean;

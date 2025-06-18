@@ -245,7 +245,7 @@ class TestBitbucketProviderDomain(unittest.TestCase):
         """Test that _get_authenticated_git_url correctly handles Bitbucket repositories."""
         # Mock the provider handler to return a repository with Bitbucket as the provider
         mock_repository = Repository(
-            id=1,
+            id='1',
             full_name='workspace/repo',
             git_provider=ServiceProviderType.BITBUCKET,
             is_public=True,
@@ -314,7 +314,7 @@ class TestBitbucketProviderDomain(unittest.TestCase):
     ):
         # Mock the provider handler to return a repository with Bitbucket as the provider
         mock_repository = Repository(
-            id=1,
+            id='1',
             full_name='test/repo',
             git_provider=ServiceProviderType.BITBUCKET,
             is_public=True,
