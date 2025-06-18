@@ -55,7 +55,12 @@ describe("Messages", () => {
     source: "agent",
     message: "Hello, Assistant!",
     timestamp: new Date().toISOString(),
-    args: { image_urls: [], thought: "", wait_for_response: false },
+    args: {
+      image_urls: [],
+      file_urls: [],
+      thought: "",
+      wait_for_response: false,
+    },
   };
 
   const userMessage: UserMessageAction = {
@@ -64,7 +69,7 @@ describe("Messages", () => {
     source: "user",
     message: "Hello, User!",
     timestamp: new Date().toISOString(),
-    args: { content: "Hello, User!", image_urls: [] },
+    args: { content: "Hello, User!", image_urls: [], file_urls: [] },
   };
 
   it("should render", () => {
