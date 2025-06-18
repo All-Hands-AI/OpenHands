@@ -112,6 +112,7 @@ def is_extension_allowed(filename: str) -> bool:
         or (file_ext == '' and '.' in ALLOWED_EXTENSIONS)
     )
 
+
 def get_unique_filename(filename: str, folder_path: str) -> str:
     """Returns unique filename on given folder_path. By checking if the given
      filename exists. If it doesn't, filename is simply returned.
@@ -130,9 +131,9 @@ def get_unique_filename(filename: str, folder_path: str) -> str:
 
     while os.path.exists(os.path.join(folder_path, filename_candidate)):
         if copy_index == 0:
-            filename_candidate = f"{name} copy{ext}"
+            filename_candidate = f'{name} copy{ext}'
         else:
-            filename_candidate = f"{name} copy({copy_index}){ext}"
+            filename_candidate = f'{name} copy({copy_index}){ext}'
         copy_index += 1
 
     return filename_candidate

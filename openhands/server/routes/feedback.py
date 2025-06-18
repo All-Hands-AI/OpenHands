@@ -6,15 +6,19 @@ from openhands.events.async_event_store_wrapper import AsyncEventStoreWrapper
 from openhands.events.serialization import event_to_dict
 from openhands.server.data_models.feedback import FeedbackDataModel, store_feedback
 from openhands.server.dependencies import get_dependencies
+from openhands.server.session.conversation import ServerConversation
 from openhands.server.utils import get_conversation
 from openhands.utils.async_utils import call_sync_from_async
-from openhands.server.session.conversation import ServerConversation
 
-app = APIRouter(prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies())
+app = APIRouter(
+    prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies()
+)
 
 
 @app.post('/submit-feedback')
-async def submit_feedback(request: Request, conversation: ServerConversation = Depends(get_conversation)) -> JSONResponse:
+async def submit_feedback(
+    request: Request, conversation: ServerConversation = Depends(get_conversation)
+) -> JSONResponse:
     """Submit user feedback.
 
     This function stores the provided feedback data.
@@ -37,9 +41,7 @@ async def submit_feedback(request: Request, conversation: ServerConversation = D
     # Assuming the storage service is already configured in the backend
     # and there is a function to handle the storage.
     body = await request.json()
-    async_store = AsyncEventStoreWrapper(
-        conversation.event_stream, filter_hidden=True
-    )
+    async_store = AsyncEventStoreWrapper(conversation.event_stream, filter_hidden=True)
     trajectory = []
     async for event in async_store:
         trajectory.append(event_to_dict(event))
