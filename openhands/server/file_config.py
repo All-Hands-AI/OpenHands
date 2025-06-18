@@ -134,6 +134,5 @@ def get_unique_filename(filename: str, folder_path: str) -> str:
         else:
             filename_candidate = f"{name} copy({copy_index}){ext}"
         copy_index += 1
-    print(filename_candidate)
 
     return filename_candidate
