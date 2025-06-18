@@ -1,4 +1,5 @@
 import base64
+import os
 from typing import Any
 
 import httpx
@@ -15,9 +16,10 @@ from openhands.integrations.service_types import (
     User,
 )
 from openhands.server.types import AppMode
+from openhands.utils.import_utils import get_impl
 
 
-class BitbucketService(BaseGitService, GitService):
+class BitBucketService(BaseGitService, GitService):
     """Default implementation of GitService for Bitbucket integration.
 
     This is an extension point in OpenHands that allows applications to customize Bitbucket
@@ -300,3 +302,10 @@ class BitbucketService(BaseGitService, GitService):
 
         # Return the URL to the pull request
         return data.get('links', {}).get('html', {}).get('href', '')
+
+
+bitbucket_service_cls = os.environ.get(
+    'OPENHANDS_GITHUB_SERVICE_CLS',
+    'openhands.integrations.bitbucket.bitbucket_service.BitBucketService',
+)
+BitBucketServiceImpl = get_impl(BitBucketService, bitbucket_service_cls)
