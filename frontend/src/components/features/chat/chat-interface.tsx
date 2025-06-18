@@ -30,7 +30,6 @@ import { useWSErrorMessage } from "#/hooks/use-ws-error-message";
 import { ErrorMessageBanner } from "./error-message-banner";
 import { shouldRenderEvent } from "./event-content-helpers/should-render-event";
 import { useUploadFiles } from "#/hooks/mutation/use-upload-files";
-import { FileUploadSuccessResponse } from "#/api/open-hands.types";
 import { useConfig } from "#/hooks/query/use-config";
 
 function getEntryPoint(
@@ -103,10 +102,7 @@ export function ChatInterface() {
 
     const timestamp = new Date().toISOString();
 
-    const {
-      skipped_files: skippedFiles,
-      uploaded_files: uploadedFiles,
-    }: FileUploadSuccessResponse =
+    const { skipped_files: skippedFiles, uploaded_files: uploadedFiles } =
       files.length > 0
         ? await uploadFiles({ conversationId: params.conversationId!, files })
         : { skipped_files: [], uploaded_files: [] };
