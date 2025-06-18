@@ -47,12 +47,6 @@ describe("extractModelAndProvider", () => {
   });
 
   it("should add provider for popular models", () => {
-    expect(extractModelAndProvider("o4-mini")).toEqual({
-      provider: "openai",
-      model: "o4-mini",
-      separator: "/",
-    });
-
     expect(extractModelAndProvider("gpt-4o-mini")).toEqual({
       provider: "openai",
       model: "gpt-4o-mini",
@@ -98,12 +92,6 @@ describe("extractModelAndProvider", () => {
     expect(extractModelAndProvider("claude-2.1")).toEqual({
       provider: "anthropic",
       model: "claude-2.1",
-      separator: "/",
-    });
-
-    expect(extractModelAndProvider("devstral-small-2505")).toEqual({
-      provider: "mistral",
-      model: "devstral-small-2505",
       separator: "/",
     });
   });

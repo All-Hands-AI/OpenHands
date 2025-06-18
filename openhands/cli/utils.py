@@ -147,6 +147,9 @@ def organize_models_and_providers(
 
 VERIFIED_PROVIDERS = ['openai', 'azure', 'anthropic', 'mistral', 'deepseek']
 
+# Providers to show in the Basic configuration (limited set for simplicity)
+BASIC_VERIFIED_PROVIDERS = ['anthropic', 'openai', 'mistral']
+
 VERIFIED_OPENAI_MODELS = [
     'o4-mini',
     'gpt-4o',

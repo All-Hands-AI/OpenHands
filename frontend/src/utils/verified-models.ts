@@ -1,11 +1,5 @@
 // Here are the list of verified models and providers that we know work well with OpenHands.
-export const VERIFIED_PROVIDERS = [
-  "openai",
-  "azure",
-  "anthropic",
-  "mistral",
-  "deepseek",
-];
+export const VERIFIED_PROVIDERS = ["openai", "azure", "anthropic", "deepseek"];
 export const VERIFIED_MODELS = [
   "o3-mini-2025-01-31",
   "o3-2025-04-16",
@@ -14,14 +8,12 @@ export const VERIFIED_MODELS = [
   "claude-3-7-sonnet-20250219",
   "claude-sonnet-4-20250514",
   "claude-opus-4-20250514",
-  "devstral-small-2505",
   "deepseek-chat",
 ];
 
 // LiteLLM does not return OpenAI models with the provider, so we list them here to set them ourselves for consistency
 // (e.g., they return `gpt-4o` instead of `openai/gpt-4o`)
 export const VERIFIED_OPENAI_MODELS = [
-  "o4-mini",
   "gpt-4o",
   "gpt-4o-mini",
   "gpt-4-turbo",
@@ -33,6 +25,7 @@ export const VERIFIED_OPENAI_MODELS = [
   "o3-2025-04-16",
   "o3-mini",
   "o3-mini-2025-01-31",
+  "o4-mini",
   "o4-mini-2025-04-16",
 ];
 
@@ -51,7 +44,3 @@ export const VERIFIED_ANTHROPIC_MODELS = [
   "claude-sonnet-4-20250514",
   "claude-opus-4-20250514",
 ];
-
-// LiteLLM does not return Mistral models with the provider, so we list them here to set them ourselves for consistency
-// (e.g., they return `devstral-small-2505` instead of `mistral/devstral-small-2505`)
-export const VERIFIED_MISTRAL_MODELS = ["devstral-small-2505"];

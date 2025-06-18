@@ -12,10 +12,10 @@ from openhands.cli.tui import (
     kb_cancel,
 )
 from openhands.cli.utils import (
+    BASIC_VERIFIED_PROVIDERS,
     VERIFIED_ANTHROPIC_MODELS,
     VERIFIED_MISTRAL_MODELS,
     VERIFIED_OPENAI_MODELS,
-    VERIFIED_PROVIDERS,
     organize_models_and_providers,
 )
 from openhands.controller.agent import Agent
@@ -152,7 +152,7 @@ async def modify_llm_settings_basic(
     organized_models = organize_models_and_providers(model_list)
 
     provider_list = list(organized_models.keys())
-    verified_providers = [p for p in VERIFIED_PROVIDERS if p in provider_list]
+    verified_providers = [p for p in BASIC_VERIFIED_PROVIDERS if p in provider_list]
     provider_list = [p for p in provider_list if p not in verified_providers]
     provider_list = verified_providers + provider_list
 
