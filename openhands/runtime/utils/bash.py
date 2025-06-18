@@ -670,12 +670,14 @@ class SubprocessBashSession(BashSession):
         username: str | None = None,
         no_change_timeout_seconds: int = 30,
         max_memory_mb: int | None = None,
+        allow_multiple_commands: bool = True,
     ):
         # Initialize parent class attributes
         self.work_dir = work_dir
         self.username = username
         self.no_change_timeout_seconds = no_change_timeout_seconds
         self.max_memory_mb = max_memory_mb
+        self.allow_multiple_commands = allow_multiple_commands
         self._initialized = False
 
         # Set initial state
@@ -748,16 +750,17 @@ class SubprocessBashSession(BashSession):
                 metadata=CmdOutputMetadata(),
             )
 
-        # Check for multiple commands (reuse original logic)
-        splited_commands = split_bash_commands(command)
-        if len(splited_commands) > 1:
-            return ErrorObservation(
-                content=(
-                    f'ERROR: Cannot execute multiple commands at once.\n'
-                    f'Please run each command separately OR chain them into a single command via && or ;\n'
-                    f'Provided commands:\n{"\n".join(f"({i + 1}) {cmd}" for i, cmd in enumerate(splited_commands))}'
+        # Check for multiple commands based on configuration
+        if not self.allow_multiple_commands:
+            splited_commands = split_bash_commands(command)
+            if len(splited_commands) > 1:
+                return ErrorObservation(
+                    content=(
+                        f'ERROR: Cannot execute multiple commands at once.\n'
+                        f'Please run each command separately OR chain them into a single command via && or ;\n'
+                        f'Provided commands:\n{"\n".join(f"({i + 1}) {cmd}" for i, cmd in enumerate(splited_commands))}'
+                    )
                 )
-            )
 
         start_time = time.time()
 
