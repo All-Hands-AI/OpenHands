@@ -396,12 +396,23 @@ class ConversationMemory:
                 valid_image_urls = [
                     url for url in obs.image_urls if self._is_valid_image_url(url)
                 ]
+                invalid_count = len(obs.image_urls) - len(valid_image_urls)
+
                 if valid_image_urls:
                     content.append(ImageContent(image_urls=valid_image_urls))
+                    if invalid_count > 0:
+                        # Add text indicating some images were filtered
+                        content[
+                            0
+                        ].text += f'\n\nNote: {invalid_count} invalid or empty image(s) were filtered from this output. The agent may need to use alternative methods to access visual information.'
                 else:
                     logger.debug(
                         'IPython observation has image URLs but none are valid'
                     )
+                    # Add text indicating all images were filtered
+                    content[
+                        0
+                    ].text += f'\n\nNote: All {len(obs.image_urls)} image(s) in this output were invalid or empty and have been filtered. The agent should use alternative methods to access visual information.'
 
             message = Message(role='user', content=content)
         elif isinstance(obs, FileEditObservation):
@@ -441,9 +452,18 @@ class ConversationMemory:
                         logger.warning(
                             f'Invalid image URL format for {image_type}: {image_url[:50]}...'
                         )
-                    logger.debug(
-                        'Vision enabled for browsing, but no valid image available'
-                    )
+                        # Add text indicating the image was filtered
+                        content[
+                            0
+                        ].text += f'\n\nNote: The {image_type} for this webpage was invalid or empty and has been filtered. The agent should use alternative methods to access visual information about the webpage.'
+                    else:
+                        logger.debug(
+                            'Vision enabled for browsing, but no valid image available'
+                        )
+                        # Add text indicating no image was available
+                        content[
+                            0
+                        ].text += '\n\nNote: No visual information (screenshot or set of marks) is available for this webpage. The agent should rely on the text content above.'
 
                 message = Message(role='user', content=content)
             else:
