@@ -9,11 +9,12 @@ import select
 import shutil
 import signal
 import subprocess
+import sys
 import tempfile
 import time
 import zipfile
 from pathlib import Path
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any, Callable
 
 from binaryornot.check import is_binary
 from openhands_aci.editor.editor import OHEditor
@@ -50,6 +51,21 @@ from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.runtime_status import RuntimeStatus
+
+if TYPE_CHECKING:
+    from openhands.runtime.utils.windows_bash import WindowsPowershellSession
+
+# Import Windows PowerShell support if on Windows
+_powershell_available = False
+if sys.platform == 'win32':
+    try:
+        from openhands.runtime.utils.windows_bash import WindowsPowershellSession
+
+        _powershell_available = True
+    except ImportError:
+        logger.warning(
+            'Failed to import WindowsPowershellSession. PowerShell support will not be available on Windows.'
+        )
 
 
 class CLIRuntime(Runtime):
@@ -119,6 +135,19 @@ class CLIRuntime(Runtime):
         self.file_editor = OHEditor(workspace_root=self._workspace_path)
         self._shell_stream_callback: Callable[[str], None] | None = None
 
+        # Initialize PowerShell session on Windows
+        self._is_windows = sys.platform == 'win32'
+        self._powershell_session: WindowsPowershellSession | None = None
+        if self._is_windows:
+            if _powershell_available:
+                logger.info(
+                    'Windows detected. PowerShell support will be used for command execution.'
+                )
+            else:
+                logger.warning(
+                    'Windows detected but PowerShell support is not available. Falling back to subprocess.'
+                )
+
         logger.warning(
             'Initializing CLIRuntime. WARNING: NO SANDBOX IS USED. '
             'This runtime executes commands directly on the local system. '
@@ -134,6 +163,21 @@ class CLIRuntime(Runtime):
 
         # Change to the workspace directory
         os.chdir(self._workspace_path)
+
+        # Initialize PowerShell session if on Windows
+        if self._is_windows and _powershell_available:
+            try:
+                self._powershell_session = WindowsPowershellSession(
+                    work_dir=self._workspace_path,
+                    username=None,  # Use current user
+                    no_change_timeout_seconds=30,
+                    max_memory_mb=None,
+                )
+                logger.info('PowerShell session initialized successfully.')
+            except Exception as e:
+                logger.error(f'Failed to initialize PowerShell session: {e}')
+                logger.warning('Falling back to subprocess for command execution.')
+                self._powershell_session = None
 
         if not self.attach_to_existing:
             await asyncio.to_thread(self.setup_initial_env)
@@ -240,6 +284,47 @@ class CLIRuntime(Runtime):
             raise
         except Exception as e:
             logger.error(f'Error: {e}')
+
+    def _execute_powershell_command(
+        self, command: str, timeout: float
+    ) -> CmdOutputObservation | ErrorObservation:
+        """
+        Execute a command using PowerShell session on Windows.
+        Args:
+            command: The command to execute
+            timeout: Timeout in seconds for the command
+        Returns:
+            CmdOutputObservation containing the complete output and exit code
+        """
+        if self._powershell_session is None:
+            return ErrorObservation(
+                content='PowerShell session is not available.',
+                error_id='POWERSHELL_SESSION_ERROR',
+            )
+
+        try:
+            # Create a CmdRunAction for the PowerShell session
+            from openhands.events.action import CmdRunAction
+
+            ps_action = CmdRunAction(command=command)
+            ps_action.set_hard_timeout(timeout)
+
+            # Execute the command using the PowerShell session
+            result = self._powershell_session.execute(ps_action)
+
+            # The PowerShell session should return a CmdOutputObservation or ErrorObservation
+            if isinstance(result, CmdOutputObservation):
+                return result
+            else:
+                # This covers ErrorObservation and any other unexpected types
+                return result
+
+        except Exception as e:
+            logger.error(f'Error executing PowerShell command "{command}": {e}')
+            return ErrorObservation(
+                content=f'Error executing PowerShell command "{command}": {str(e)}',
+                error_id='POWERSHELL_EXECUTION_ERROR',
+            )
 
     def _execute_shell_command(
         self, command: str, timeout: float
@@ -378,9 +463,16 @@ class CLIRuntime(Runtime):
             logger.debug(
                 f'Running command in CLIRuntime: "{action.command}" with effective timeout: {effective_timeout}s'
             )
-            return self._execute_shell_command(
-                action.command, timeout=effective_timeout
-            )
+
+            # Use PowerShell on Windows if available, otherwise use subprocess
+            if self._is_windows and self._powershell_session is not None:
+                return self._execute_powershell_command(
+                    action.command, timeout=effective_timeout
+                )
+            else:
+                return self._execute_shell_command(
+                    action.command, timeout=effective_timeout
+                )
         except Exception as e:
             logger.error(
                 f'Error in CLIRuntime.run for command "{action.command}": {str(e)}'
@@ -737,6 +829,16 @@ class CLIRuntime(Runtime):
             raise RuntimeError(f'Error creating zip file: {str(e)}')
 
     def close(self) -> None:
+        # Clean up PowerShell session if it exists
+        if self._powershell_session is not None:
+            try:
+                self._powershell_session.close()
+                logger.debug('PowerShell session closed successfully.')
+            except Exception as e:
+                logger.warning(f'Error closing PowerShell session: {e}')
+            finally:
+                self._powershell_session = None
+
         self._runtime_initialized = False
         super().close()
 
