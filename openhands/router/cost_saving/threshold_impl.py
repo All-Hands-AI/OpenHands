@@ -10,7 +10,7 @@ from transformers import AutoTokenizer
 
 class ThresholdBasedCostSavingRouter(BaseRouter):
     WEAK_MODEL_CONFIG_NAME = 'weak_model'
-    CPT_THRESHOLD = 0.5546875 # FIXME: maybe move to config?
+    CPT_THRESHOLD = 0.392578125 # FIXME: maybe move to config?
     TOKENIZER_NAME = "Qwen/Qwen2.5-Coder-1.5B-Instruct"
 
     def __init__(
