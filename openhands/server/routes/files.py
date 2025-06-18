@@ -1,17 +1,8 @@
 import os
 from typing import Any
 
-from fastapi import (
-    APIRouter,
-    Depends,
-    HTTPException,
-    status,
-    UploadFile
-)
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse, JSONResponse
-from openhands.events.action.files import FileWriteAction
-from openhands.server.files import POSTUploadFilesModel
-from openhands.storage.locations import get_conversation_event_filename, get_conversation_files_dir
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
 from starlette.background import BackgroundTask
@@ -21,17 +12,15 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     FileReadAction,
 )
+from openhands.events.action.files import FileWriteAction
 from openhands.events.observation import (
     ErrorObservation,
     FileReadObservation,
 )
 from openhands.runtime.base import Runtime
 from openhands.server.dependencies import get_dependencies
-from openhands.server.file_config import (
-    FILES_TO_IGNORE,
-    get_unique_filename,
-    sanitize_filename,
-)
+from openhands.server.file_config import FILES_TO_IGNORE
+from openhands.server.files import POSTUploadFilesModel
 from openhands.server.session.conversation import ServerConversation
 from openhands.server.user_auth import get_user_id
 from openhands.server.utils import get_conversation, get_conversation_store
@@ -316,6 +305,7 @@ async def get_cwd(
 
     return cwd
 
+
 @app.post('/upload-files', response_model=POSTUploadFilesModel)
 async def upload_files(
     files: list[UploadFile],
@@ -323,8 +313,7 @@ async def upload_files(
 ):
     uploaded_files = []
     skipped_files = []
-    runtime: Runtime =  conversation.runtime
-
+    runtime: Runtime = conversation.runtime
 
     for file in files:
         file_path = os.path.join(
@@ -334,20 +323,18 @@ async def upload_files(
             file_content = await file.read()
             write_action = FileWriteAction(
                 # TODO: DISCUSS UTF8 encoding here
-                path=file_path, content=file_content.decode('utf-8',  errors="replace")
+                path=file_path,
+                content=file_content.decode('utf-8', errors='replace'),
             )
             # TODO: DISCUSS file name unique issues
             await call_sync_from_async(runtime.run_action, write_action)
             uploaded_files.append(file_path)
         except Exception as e:
-            skipped_files.append({
-                'name': file.filename,
-                'reason': str(e)
-            })
-    return JSONResponse(status_code=status.HTTP_200_OK, content={
-        'uploaded_files': uploaded_files,
-        'skipped_files': skipped_files,
-    })
-
-
-
+            skipped_files.append({'name': file.filename, 'reason': str(e)})
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            'uploaded_files': uploaded_files,
+            'skipped_files': skipped_files,
+        },
+    )
