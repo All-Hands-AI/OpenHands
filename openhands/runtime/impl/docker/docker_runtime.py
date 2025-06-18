@@ -1,7 +1,7 @@
 import os
+import typing
 from functools import lru_cache
 from typing import Callable
-import typing
 from uuid import UUID
 
 import docker
@@ -17,12 +17,14 @@ from openhands.core.exceptions import (
 from openhands.core.logger import DEBUG, DEBUG_RUNTIME
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.runtime.builder import DockerRuntimeBuilder
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
 from openhands.runtime.impl.docker.containers import stop_all_containers
 from openhands.runtime.plugins import PluginRequirement
+from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.command import (
     DEFAULT_MAIN_MODULE,
@@ -85,6 +87,8 @@ class DockerRuntime(ActionExecutionClient):
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = True,
+        user_id: str | None = None,
+        git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
         main_module: str = DEFAULT_MAIN_MODULE,
     ):
         if not DockerRuntime._shutdown_listener_id:
@@ -131,6 +135,8 @@ class DockerRuntime(ActionExecutionClient):
             status_callback,
             attach_to_existing,
             headless_mode,
+            user_id,
+            git_provider_tokens,
         )
 
         # Log runtime_extra_deps after base class initialization so self.sid is available
@@ -145,7 +151,7 @@ class DockerRuntime(ActionExecutionClient):
         return self.api_url
 
     async def connect(self) -> None:
-        self.send_status_message('STATUS$STARTING_RUNTIME')
+        self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
         try:
             await call_sync_from_async(self._attach_to_container)
         except docker.errors.NotFound as e:
@@ -172,7 +178,7 @@ class DockerRuntime(ActionExecutionClient):
 
         if not self.attach_to_existing:
             self.log('info', f'Waiting for client to become ready at {self.api_url}...')
-            self.send_status_message('STATUS$WAITING_FOR_CLIENT')
+            self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
 
         await call_sync_from_async(self.wait_until_alive)
 
@@ -187,7 +193,7 @@ class DockerRuntime(ActionExecutionClient):
             f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}. VSCode URL: {self.vscode_url}',
         )
         if not self.attach_to_existing:
-            self.send_status_message(' ')
+            self.set_runtime_status(RuntimeStatus.READY)
         self._runtime_initialized = True
 
     def maybe_build_runtime_container_image(self):
@@ -196,7 +202,7 @@ class DockerRuntime(ActionExecutionClient):
                 raise ValueError(
                     'Neither runtime container image nor base container image is set'
                 )
-            self.send_status_message('STATUS$STARTING_CONTAINER')
+            self.set_runtime_status(RuntimeStatus.BUILDING_RUNTIME)
             self.runtime_container_image = build_runtime_image(
                 self.base_container_image,
                 self.runtime_builder,
@@ -267,7 +273,7 @@ class DockerRuntime(ActionExecutionClient):
 
     def init_container(self) -> None:
         self.log('debug', 'Preparing to start container...')
-        self.send_status_message('STATUS$PREPARING_CONTAINER')
+        self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
         self._host_port = self._find_available_port(EXECUTION_SERVER_PORT_RANGE)
         self._container_port = self._host_port
         # Use the configured vscode_port if provided, otherwise find an available port
@@ -282,7 +288,9 @@ class DockerRuntime(ActionExecutionClient):
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
 
         use_host_network = self.config.sandbox.use_host_network
-        network_mode: typing.Literal['host'] | None = 'host' if use_host_network else None
+        network_mode: typing.Literal['host'] | None = (
+            'host' if use_host_network else None
+        )
 
         # Initialize port mappings
         port_mapping: dict[str, list[dict[str, str]]] | None = None
@@ -355,7 +363,7 @@ class DockerRuntime(ActionExecutionClient):
 
         try:
             if self.runtime_container_image is None:
-                raise ValueError("Runtime container image is not set")
+                raise ValueError('Runtime container image is not set')
             self.container = self.docker_client.containers.run(
                 self.runtime_container_image,
                 command=command,
@@ -376,7 +384,7 @@ class DockerRuntime(ActionExecutionClient):
                 **(self.config.sandbox.docker_runtime_kwargs or {}),
             )
             self.log('debug', f'Container started. Server url: {self.api_url}')
-            self.send_status_message('STATUS$CONTAINER_STARTED')
+            self.set_runtime_status(RuntimeStatus.RUNTIME_STARTED)
         except Exception as e:
             self.log(
                 'error',

@@ -1,6 +1,7 @@
 import { openHands } from "../open-hands-axios";
 import { GetFilesResponse, GetFileResponse } from "./file-service.types";
 import { getConversationUrl } from "../conversation.utils";
+import { FileUploadSuccessResponse } from "../open-hands.types";
 
 export class FileService {
   /**
@@ -34,5 +35,32 @@ export class FileService {
     });
 
     return data.code;
+  }
+
+  /**
+   * Upload multiple files to the workspace
+   * @param conversationId ID of the conversation
+   * @param files List of files.
+   * @returns list of uploaded files, list of skipped files
+   */
+  static async uploadFiles(
+    conversationId: string,
+    files: File[],
+  ): Promise<FileUploadSuccessResponse> {
+    const formData = new FormData();
+    for (const file of files) {
+      formData.append("files", file);
+    }
+    const url = `${getConversationUrl(conversationId)}/upload-files`;
+    const response = await openHands.post<FileUploadSuccessResponse>(
+      url,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      },
+    );
+    return response.data;
   }
 }
