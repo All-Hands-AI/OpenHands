@@ -677,7 +677,7 @@ class SubprocessBashSession(BashSession):
         self.no_change_timeout_seconds = no_change_timeout_seconds
         self.max_memory_mb = max_memory_mb
         self._initialized = False
-        
+
         # Set initial state
         self.prev_status: BashCommandStatus | None = None
         self.prev_output: str = ''
@@ -687,12 +687,16 @@ class SubprocessBashSession(BashSession):
 
     def initialize(self) -> None:
         """Initialize the bash session."""
-        logger.debug(f'Initializing subprocess bash session with work dir: {self.work_dir}')
-        
+        logger.debug(
+            f'Initializing subprocess bash session with work dir: {self.work_dir}'
+        )
+
         # Set initial state
         self._initialized = True
-        
-        logger.debug(f'Subprocess bash session initialized with work dir: {self.work_dir}')
+
+        logger.debug(
+            f'Subprocess bash session initialized with work dir: {self.work_dir}'
+        )
 
     def close(self) -> None:
         """Clean up the session."""
@@ -707,7 +711,7 @@ class SubprocessBashSession(BashSession):
     def interrupt(self) -> None:
         """Interrupt the currently running command (Ctrl+C equivalent)."""
         if self._current_process and self._current_process.poll() is None:
-            logger.debug("Interrupting current command")
+            logger.debug('Interrupting current command')
             self._current_process.terminate()
             self.prev_status = BashCommandStatus.INTERRUPTED
 
@@ -717,7 +721,9 @@ class SubprocessBashSession(BashSession):
 
     def is_running(self) -> bool:
         """Check if a command is currently running."""
-        return self._current_process is not None and self._current_process.poll() is None
+        return (
+            self._current_process is not None and self._current_process.poll() is None
+        )
 
     def execute(self, action: CmdRunAction) -> CmdOutputObservation | ErrorObservation:
         """Execute a command in the bash session using subprocess."""
@@ -727,13 +733,13 @@ class SubprocessBashSession(BashSession):
             return ErrorObservation(content='Subprocess bash session not initialized')
 
         command = action.command
-        
+
         # Handle interactive input (not supported in subprocess mode)
         if action.is_input:
             return ErrorObservation(
                 content=f"Subprocess bash session does not support interactive input. The command '{command}' was not sent to any process."
             )
-        
+
         # Handle empty commands
         if command == '':
             return CmdOutputObservation(
@@ -741,7 +747,7 @@ class SubprocessBashSession(BashSession):
                 command='',
                 metadata=CmdOutputMetadata(),
             )
-        
+
         # Check for multiple commands (reuse original logic)
         splited_commands = split_bash_commands(command)
         if len(splited_commands) > 1:
@@ -752,17 +758,17 @@ class SubprocessBashSession(BashSession):
                     f'Provided commands:\n{"\n".join(f"({i + 1}) {cmd}" for i, cmd in enumerate(splited_commands))}'
                 )
             )
-        
+
         start_time = time.time()
-        
+
         try:
             # Prepare the command
             escaped_command = escape_bash_special_chars(command)
             logger.debug(f'EXECUTING COMMAND: {escaped_command!r}')
-            
+
             # Set effective timeout
             effective_timeout = action.timeout if action.timeout else 30.0
-            
+
             # Execute the command using subprocess
             self._current_process = subprocess.Popen(
                 ['bash', '-c', escaped_command],
@@ -771,22 +777,24 @@ class SubprocessBashSession(BashSession):
                 text=True,
                 cwd=self._cwd,
             )
-            
+
             try:
-                stdout, stderr = self._current_process.communicate(timeout=effective_timeout)
+                stdout, stderr = self._current_process.communicate(
+                    timeout=effective_timeout
+                )
                 exit_code = self._current_process.returncode
-                
+
                 # Check if process was interrupted (negative exit codes indicate signals)
                 if exit_code < 0:
                     self.prev_status = BashCommandStatus.INTERRUPTED
                 else:
                     self.prev_status = BashCommandStatus.COMPLETED
-                
+
                 # Combine output and error
                 combined_output = stdout
                 if stderr:
-                    combined_output += f"\n{stderr}"
-                
+                    combined_output += f'\n{stderr}'
+
                 # Update working directory if it's a cd command
                 if command.strip().startswith('cd '):
                     try:
@@ -796,7 +804,7 @@ class SubprocessBashSession(BashSession):
                             capture_output=True,
                             text=True,
                             cwd=self._cwd,
-                            timeout=5
+                            timeout=5,
                         )
                         if pwd_process.returncode == 0:
                             new_cwd = pwd_process.stdout.strip()
@@ -804,52 +812,52 @@ class SubprocessBashSession(BashSession):
                                 self._cwd = new_cwd
                     except Exception as e:
                         logger.debug(f'Failed to update working directory: {e}')
-                
+
                 # Create metadata
                 metadata = CmdOutputMetadata()
                 metadata.exit_code = exit_code
                 metadata.working_dir = self._cwd
-                
+
                 self.prev_output = ''
-                
+
                 return CmdOutputObservation(
-                    content=combined_output.rstrip() if combined_output else "",
+                    content=combined_output.rstrip() if combined_output else '',
                     command=command,
                     metadata=metadata,
                 )
-                
+
             except subprocess.TimeoutExpired:
                 # Handle timeout
                 self._current_process.kill()
                 elapsed_time = time.time() - start_time
-                
+
                 # Try to get partial output
                 try:
                     stdout, stderr = self._current_process.communicate(timeout=1.0)
                     partial_output = stdout
                     if stderr:
-                        partial_output += f"\n{stderr}"
+                        partial_output += f'\n{stderr}'
                 except subprocess.TimeoutExpired:
-                    partial_output = ""
-                
+                    partial_output = ''
+
                 metadata = CmdOutputMetadata()
                 metadata.suffix = (
                     f'\n[The command timed out after {elapsed_time:.1f} seconds. '
                     f'{TIMEOUT_MESSAGE_TEMPLATE}]'
                 )
-                
+
                 self.prev_status = BashCommandStatus.HARD_TIMEOUT
-                
+
                 return CmdOutputObservation(
-                    content=partial_output.rstrip() if partial_output else "",
+                    content=partial_output.rstrip() if partial_output else '',
                     command=command,
                     metadata=metadata,
                 )
-                
+
             finally:
                 # Clear current process reference
                 self._current_process = None
-                
+
         except Exception as e:
             logger.error(f'Error executing command "{command}": {e}')
             return ErrorObservation(
@@ -862,7 +870,7 @@ class SubprocessBashSession(BashSession):
 
     def _get_pane_content(self) -> str:
         """Get current output."""
-        return ""
+        return ''
 
     @property
     def cwd(self) -> str:

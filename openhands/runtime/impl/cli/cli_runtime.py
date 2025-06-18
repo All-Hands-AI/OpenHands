@@ -119,7 +119,7 @@ class CLIRuntime(Runtime):
         self._runtime_initialized = False
         self.file_editor = OHEditor(workspace_root=self._workspace_path)
         self._shell_stream_callback: Callable[[str], None] | None = None
-        
+
         # Initialize bash session
         self.bash_session = SubprocessBashSession(
             work_dir=self._workspace_path,
@@ -148,7 +148,7 @@ class CLIRuntime(Runtime):
 
         # Initialize bash session
         self.bash_session.initialize()
-        
+
         self._runtime_initialized = True
         self.set_runtime_status(RuntimeStatus.RUNTIME_STARTED)
         logger.info(f'CLIRuntime initialized with workspace at {self._workspace_path}')
@@ -376,10 +376,10 @@ class CLIRuntime(Runtime):
             logger.debug(
                 f'Running command in CLIRuntime: "{action.command}" with effective timeout: {action.timeout}s'
             )
-            
+
             # Use the bash session to execute the command
             return self.bash_session.execute(action)
-            
+
         except Exception as e:
             logger.error(
                 f'Error in CLIRuntime.run for command "{action.command}": {str(e)}'
@@ -739,7 +739,7 @@ class CLIRuntime(Runtime):
         # Clean up bash session
         if hasattr(self, 'bash_session'):
             self.bash_session.close()
-        
+
         self._runtime_initialized = False
         super().close()
 
