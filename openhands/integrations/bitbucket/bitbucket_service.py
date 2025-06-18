@@ -55,7 +55,7 @@ class BitbucketService(BaseGitService, GitService):
 
     @property
     def provider(self) -> str:
-        return 'Bitbucket'
+        return ProviderType.BITBUCKET.value
 
     async def get_latest_token(self) -> SecretStr | None:
         """Get latest working token of the user."""
