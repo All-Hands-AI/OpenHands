@@ -1,16 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import OpenHands from "#/api/open-hands";
+import { useConversationId } from "../use-conversation-id";
 
-interface UseConversationMicroagentsOptions {
-  conversationId: string | undefined;
-  enabled?: boolean;
-}
+export const useConversationMicroagents = () => {
+  const { conversationId } = useConversationId();
 
-export const useConversationMicroagents = ({
-  conversationId,
-  enabled = true,
-}: UseConversationMicroagentsOptions) =>
-  useQuery({
+  return useQuery({
     queryKey: ["conversation", conversationId, "microagents"],
     queryFn: async () => {
       if (!conversationId) {
@@ -19,7 +14,8 @@ export const useConversationMicroagents = ({
       const data = await OpenHands.getMicroagents(conversationId);
       return data.microagents;
     },
-    enabled: !!conversationId && enabled,
+    enabled: !!conversationId,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes
   });
+};
