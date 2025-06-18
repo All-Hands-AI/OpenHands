@@ -40,7 +40,10 @@ export const organizeModelsAndProviders = (models: string[]) => {
       return;
     }
 
-    const key = provider || "other";
+    // Normalize mistralai to mistral to prevent duplicate providers
+    const normalizedProvider = provider === "mistralai" ? "mistral" : provider;
+    const key = normalizedProvider || "other";
+
     if (!object[key]) {
       object[key] = { separator, models: [] };
     }
