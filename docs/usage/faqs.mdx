@@ -67,13 +67,12 @@ Be careful when mounting your filesystem - the agent can modify or delete any fi
 
 ### How do I get the dev tools I need?
 
-OpenHands comes with a basic runtime environment that includes Python and Node.js, but you may need additional development tools for your specific projects.
+OpenHands comes with a basic runtime environment that includes Python and Node.js.
+It also has the ability to install any tools it needs, so usually it's sufficient to ask it to set up its environment.
 
-You have two main options:
-- **Use an existing Docker image** that already includes your required tools
-- **Create a custom Docker image** with the exact tools you need
-
-For detailed instructions on setting up custom development environments, including examples for different programming languages and tools, see our [Custom Sandbox Guide](/usage/how-to/custom-sandbox-guide).
+If you would like to set things up more systematically, you can:
+- **Use setup.sh**: Add a [setup.sh file](https://docs.all-hands.dev/usage/prompting/repository#setup-script) file to your repository, which will be run every time the agent starts
+- **Use a custom sandbox**: Use a [custom docker image](/usage/how-to/custom-sandbox-guide) to initialize the sandbox
 
 
 ### Something's not working. Where can I get help?
