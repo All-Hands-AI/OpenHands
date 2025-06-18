@@ -599,8 +599,46 @@ class CLIRuntime(Runtime):
         )
 
     async def call_tool_mcp(self, action: MCPAction) -> Observation:
-        """Not implemented for CLI runtime."""
-        return ErrorObservation('MCP functionality is not implemented in CLIRuntime')
+        """Execute MCP action using direct client connections."""
+        import sys
+
+        from openhands.events.observation import ErrorObservation
+
+        # Check if we're on Windows - MCP is disabled on Windows
+        if sys.platform == 'win32':
+            logger.info('MCP functionality is disabled on Windows')
+            return ErrorObservation('MCP functionality is not available on Windows')
+
+        try:
+            # Import here to avoid circular imports
+            from openhands.mcp.utils import call_tool_mcp as call_tool_mcp_handler
+            from openhands.mcp.utils import create_mcp_clients
+
+            # Get the updated MCP config
+            updated_mcp_config = self.get_mcp_config()
+            logger.debug(
+                f'Creating MCP clients with servers: {updated_mcp_config.sse_servers}',
+            )
+
+            # Create clients for this specific operation
+            mcp_clients = await create_mcp_clients(
+                updated_mcp_config.sse_servers,
+                updated_mcp_config.shttp_servers,
+                self.sid,
+            )
+
+            if not mcp_clients:
+                return ErrorObservation(
+                    'No MCP servers available. Please configure MCP servers in your OpenHands config.'
+                )
+
+            # Call the tool and return the result
+            result = await call_tool_mcp_handler(mcp_clients, action)
+            return result
+
+        except Exception as e:
+            logger.error(f'Error executing MCP action: {e}')
+            return ErrorObservation(f'MCP action failed: {str(e)}')
 
     @property
     def workspace_root(self) -> Path:
@@ -769,8 +807,137 @@ class CLIRuntime(Runtime):
     def get_mcp_config(
         self, extra_stdio_servers: list[MCPStdioServerConfig] | None = None
     ) -> MCPConfig:
-        # TODO: Load MCP config from a local file
+        """Get MCP configuration for CLI runtime."""
+        import sys
+
+        # Check if we're on Windows - MCP is disabled on Windows
+        if sys.platform == 'win32':
+            logger.info('MCP is disabled on Windows, returning empty config')
+            return MCPConfig(sse_servers=[], stdio_servers=[])
+
+        # Start with base config from OpenHands config or load from user config
+        if hasattr(self.config, 'mcp') and self.config.mcp:
+            updated_mcp_config = self.config.mcp.model_copy()
+        else:
+            updated_mcp_config = self._load_user_mcp_config()
+
+        # Get current stdio servers
+        current_stdio_servers: list[MCPStdioServerConfig] = list(
+            updated_mcp_config.stdio_servers
+        )
+        if extra_stdio_servers:
+            current_stdio_servers.extend(extra_stdio_servers)
+
+        # Update the config with merged stdio servers
+        updated_mcp_config.stdio_servers = current_stdio_servers
+
+        logger.debug(
+            f'CLI Runtime MCP config: SSE servers: {len(updated_mcp_config.sse_servers)}, '
+            f'SHTTP servers: {len(updated_mcp_config.shttp_servers)}, '
+            f'Stdio servers: {len(updated_mcp_config.stdio_servers)}'
+        )
+
+        return updated_mcp_config
+
+    def _load_user_mcp_config(self) -> MCPConfig:
+        """Load MCP config from user's configuration files and environment variables."""
+        # 1. Check environment variables first
+        env_config = self._load_mcp_from_env()
+        if env_config:
+            logger.debug('Loaded MCP config from environment variables')
+            return env_config
+
+        # 2. Check user config file
+        user_config_path = Path.home() / '.openhands' / 'config.toml'
+        if user_config_path.exists():
+            file_config = self._load_mcp_from_file(user_config_path)
+            if file_config:
+                logger.debug(f'Loaded MCP config from {user_config_path}')
+                return file_config
+
+        # 3. Default empty config
+        logger.debug('No MCP config found, using empty config')
         return MCPConfig()
+
+    def _load_mcp_from_env(self) -> MCPConfig | None:
+        """Load MCP config from environment variables."""
+        import json
+
+        try:
+            sse_servers = []
+            shttp_servers = []
+            stdio_servers = []
+
+            # Support environment variables like:
+            # OPENHANDS_MCP_SSE_SERVERS='[{"url":"http://localhost:3000/mcp"}]'
+            # OPENHANDS_MCP_SHTTP_SERVERS='[{"url":"http://localhost:3000/mcp"}]'
+            # OPENHANDS_MCP_STDIO_SERVERS='[{"name":"figma","command":"figma-mcp"}]'
+
+            if 'OPENHANDS_MCP_SSE_SERVERS' in os.environ:
+                sse_data = json.loads(os.environ['OPENHANDS_MCP_SSE_SERVERS'])
+                from openhands.core.config.mcp_config import MCPSSEServerConfig
+
+                sse_servers = [MCPSSEServerConfig(**server) for server in sse_data]
+
+            if 'OPENHANDS_MCP_SHTTP_SERVERS' in os.environ:
+                shttp_data = json.loads(os.environ['OPENHANDS_MCP_SHTTP_SERVERS'])
+                from openhands.core.config.mcp_config import MCPSHTTPServerConfig
+
+                shttp_servers = [
+                    MCPSHTTPServerConfig(**server) for server in shttp_data
+                ]
+
+            if 'OPENHANDS_MCP_STDIO_SERVERS' in os.environ:
+                stdio_data = json.loads(os.environ['OPENHANDS_MCP_STDIO_SERVERS'])
+                stdio_servers = [
+                    MCPStdioServerConfig(**server) for server in stdio_data
+                ]
+
+            if sse_servers or shttp_servers or stdio_servers:
+                return MCPConfig(
+                    sse_servers=sse_servers,
+                    shttp_servers=shttp_servers,
+                    stdio_servers=stdio_servers,
+                )
+
+        except (json.JSONDecodeError, KeyError, TypeError) as e:
+            logger.warning(
+                f'Failed to parse MCP config from environment variables: {e}'
+            )
+
+        return None
+
+    def _load_mcp_from_file(self, config_path: Path) -> MCPConfig | None:
+        """Load MCP config from a TOML configuration file."""
+        try:
+            import tomllib as toml_lib
+        except ImportError:
+            try:
+                import tomli as toml_lib  # type: ignore
+            except ImportError:
+                logger.warning(
+                    'No TOML library available, cannot load config from file'
+                )
+                return None
+
+        try:
+            with open(config_path, 'rb') as f:
+                config_data = toml_lib.load(f)
+
+            if 'mcp' in config_data:
+                from openhands.core.config.mcp_config import MCPConfig
+
+                mcp_data = config_data['mcp']
+
+                # Use the existing MCPConfig validation and parsing
+                return MCPConfig.model_validate(mcp_data)
+
+        except (FileNotFoundError, PermissionError) as e:
+            logger.warning(f'Cannot read config file {config_path}: {e}')
+        except Exception as e:
+            logger.warning(f'Failed to parse MCP config from {config_path}: {e}')
+
+        return None
 
     def subscribe_to_shell_stream(
         self, callback: Callable[[str], None] | None = None
