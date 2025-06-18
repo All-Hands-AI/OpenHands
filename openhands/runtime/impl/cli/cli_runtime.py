@@ -908,34 +908,39 @@ class CLIRuntime(Runtime):
         return None
 
     def _load_mcp_from_file(self, config_path: Path) -> MCPConfig | None:
-        """Load MCP config from a TOML configuration file."""
+        """Load MCP config from a TOML configuration file using OpenHands pattern."""
         try:
-            import tomllib as toml_lib
+            import toml
         except ImportError:
-            try:
-                import tomli as toml_lib  # type: ignore
-            except ImportError:
-                logger.warning(
-                    'No TOML library available, cannot load config from file'
-                )
-                return None
+            logger.warning('toml library not available, cannot load config from file')
+            return None
 
         try:
-            with open(config_path, 'rb') as f:
-                config_data = toml_lib.load(f)
+            with open(config_path, 'r', encoding='utf-8') as toml_contents:
+                toml_config = toml.load(toml_contents)
+        except FileNotFoundError:
+            return None
+        except toml.TomlDecodeError as e:
+            logger.warning(f'Cannot parse config from toml file {config_path}: {e}')
+            return None
 
-            if 'mcp' in config_data:
+        # Process MCP section if present (reuse OpenHands pattern)
+        if 'mcp' in toml_config:
+            try:
+                from pydantic import ValidationError
+
                 from openhands.core.config.mcp_config import MCPConfig
 
-                mcp_data = config_data['mcp']
-
-                # Use the existing MCPConfig validation and parsing
-                return MCPConfig.model_validate(mcp_data)
-
-        except (FileNotFoundError, PermissionError) as e:
-            logger.warning(f'Cannot read config file {config_path}: {e}')
-        except Exception as e:
-            logger.warning(f'Failed to parse MCP config from {config_path}: {e}')
+                mcp_mapping = MCPConfig.from_toml_section(toml_config['mcp'])
+                # Return the base mcp config
+                if 'mcp' in mcp_mapping:
+                    return mcp_mapping['mcp']
+            except (TypeError, KeyError, ValidationError) as e:
+                logger.warning(
+                    f'Cannot parse MCP config from toml file {config_path}: {e}'
+                )
+            except ValueError as e:
+                logger.warning(f'Error in MCP section in {config_path}: {e}')
 
         return None
 
