@@ -429,6 +429,46 @@ async def test_check_provider_tokens_with_only_bitbucket():
 
 
 @pytest.mark.asyncio
+async def test_bitbucket_sort_parameter_mapping():
+    """
+    Test that the Bitbucket service correctly maps sort parameters.
+    """
+    from unittest.mock import patch
+
+    from pydantic import SecretStr
+
+    from openhands.integrations.bitbucket.bitbucket_service import BitbucketService
+    from openhands.server.types import AppMode
+
+    # Create a service instance
+    service = BitbucketService(token=SecretStr('test-token'))
+
+    # Mock the _make_request method to avoid actual API calls
+    with patch.object(service, '_make_request') as mock_request:
+        # Mock workspaces response
+        mock_request.side_effect = [
+            # First call: workspaces
+            ({'values': [{'slug': 'test-workspace', 'name': 'Test Workspace'}]}, {}),
+            # Second call: repositories with mapped sort parameter
+            ({'values': []}, {}),
+        ]
+
+        # Call get_repositories with sort='pushed'
+        await service.get_repositories('pushed', AppMode.SAAS)
+
+        # Verify that the second call used 'updated_on' instead of 'pushed'
+        assert mock_request.call_count == 2
+
+        # Check the second call (repositories call)
+        second_call_args = mock_request.call_args_list[1]
+        url, params = second_call_args[0]
+
+        # Verify the sort parameter was mapped correctly
+        assert params['sort'] == 'updated_on'
+        assert 'repositories/test-workspace' in url
+
+
+@pytest.mark.asyncio
 async def test_validate_provider_token_with_empty_tokens():
     """
     Test that validate_provider_token handles empty tokens correctly.

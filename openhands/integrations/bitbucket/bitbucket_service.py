@@ -181,9 +181,16 @@ class BitbucketService(BaseGitService, GitService):
 
                 # Get repositories for this workspace
                 workspace_repos_url = f'{self.BASE_URL}/repositories/{workspace_slug}'
+
+                # Map sort parameter to Bitbucket API compatible values
+                bitbucket_sort = sort
+                if sort == 'pushed':
+                    # Bitbucket doesn't support 'pushed', use 'updated_on' instead
+                    bitbucket_sort = 'updated_on'
+
                 params = {
                     'pagelen': 100,
-                    'sort': sort,
+                    'sort': bitbucket_sort,
                 }
                 repos_data, headers = await self._make_request(
                     workspace_repos_url, params
