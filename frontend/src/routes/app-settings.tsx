@@ -17,6 +17,7 @@ import {
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 import { AppSettingsInputsSkeleton } from "#/components/features/settings/app-settings/app-settings-inputs-skeleton";
 import { useConfig } from "#/hooks/query/use-config";
+import { parseMaxBudgetPerTask } from "#/utils/settings-utils";
 
 function AppSettingsScreen() {
   const { t } = useTranslation();
@@ -59,12 +60,7 @@ function AppSettingsScreen() {
     const maxBudgetPerTaskValue = formData
       .get("max-budget-per-task-input")
       ?.toString();
-    let maxBudgetPerTask: number | null = null;
-    if (maxBudgetPerTaskValue) {
-      const parsedValue = parseFloat(maxBudgetPerTaskValue);
-      // Ensure the value is at least 1 dollar
-      maxBudgetPerTask = parsedValue && parsedValue >= 1 ? parsedValue : null;
-    }
+    const maxBudgetPerTask = parseMaxBudgetPerTask(maxBudgetPerTaskValue || "");
 
     saveSettings(
       {
@@ -126,12 +122,7 @@ function AppSettingsScreen() {
   };
 
   const checkIfMaxBudgetPerTaskHasChanged = (value: string) => {
-    let newValue = null;
-    if (value) {
-      const parsedValue = parseFloat(value);
-      // Ensure the value is at least 1 dollar
-      newValue = parsedValue && parsedValue >= 1 ? parsedValue : null;
-    }
+    const newValue = parseMaxBudgetPerTask(value);
     const currentValue = settings?.MAX_BUDGET_PER_TASK;
     setMaxBudgetPerTaskHasChanged(newValue !== currentValue);
   };
