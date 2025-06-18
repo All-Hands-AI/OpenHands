@@ -8,11 +8,7 @@ on:
   push:
     branches:
       - main
-    paths-ignore:
-      - 'openhands-ui/**'
   pull_request:
-    paths-ignore:
-      - 'openhands-ui/**'
 
 # If triggered by a PR, it will be in the same group. However, each commit on main will be in its own unique group
 concurrency:
