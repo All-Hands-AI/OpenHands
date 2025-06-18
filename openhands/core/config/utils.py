@@ -25,9 +25,9 @@ from openhands.core.config.config_utils import (
     OH_MAX_ITERATIONS,
 )
 from openhands.core.config.extended_config import ExtendedConfig
+from openhands.core.config.kubernetes_config import KubernetesConfig
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.mcp_config import MCPConfig
-from openhands.core.config.kubernetes_config import KubernetesConfig
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
@@ -232,7 +232,9 @@ def load_from_toml(cfg: OpenHandsConfig, toml_file: str = 'config.toml') -> None
     # Process kubernetes section if present
     if 'kubernetes' in toml_config:
         try:
-            kubernetes_mapping = KubernetesConfig.from_toml_section(toml_config['kubernetes'])
+            kubernetes_mapping = KubernetesConfig.from_toml_section(
+                toml_config['kubernetes']
+            )
             if 'kubernetes' in kubernetes_mapping:
                 cfg.kubernetes = kubernetes_mapping['kubernetes']
         except (TypeError, KeyError, ValidationError) as e:
