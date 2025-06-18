@@ -59,7 +59,7 @@ function AppSettingsScreen() {
     const maxBudgetPerTaskValue = formData
       .get("max-budget-per-task-input")
       ?.toString();
-    let maxBudgetPerTask = null;
+    let maxBudgetPerTask: number | null = null;
     if (maxBudgetPerTaskValue) {
       const parsedValue = parseFloat(maxBudgetPerTaskValue);
       // Ensure the value is at least 1 dollar
