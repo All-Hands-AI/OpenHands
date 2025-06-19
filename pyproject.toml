@@ -13,10 +13,14 @@ license = "MIT"
 readme = "README.md"
 repository = "https://github.com/All-Hands-AI/OpenHands"
 packages = [
-  { include = "openhands/**/*" },
-  { include = "pyproject.toml", to = "openhands" },
-  { include = "poetry.lock", to = "openhands" },
+  { include = "openhands" }, # More standard way to include the main package
 ]
+include = [
+    "openhands/resources/*.vsix", # Include the .vsix file
+    "pyproject.toml", # If this needs to be in the package root of the sdist
+    "poetry.lock" # If this needs to be in the package root of the sdist
+]
+build = "build.py" # Specify the custom build script
 
 [tool.poetry.dependencies]
 python = "^3.12,<3.14"
