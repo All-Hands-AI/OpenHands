@@ -430,7 +430,7 @@ async def start_conversation(
 
         # Set up conversation init data with provider information
         conversation_init_data = await setup_init_convo_settings(
-            user_id, conversation_id, providers_set
+            user_id, conversation_id, providers_set.providers_set or []
         )
 
         # Start the agent loop
