@@ -298,7 +298,7 @@ class DockerRuntime(ActionExecutionClient):
         network_mode: typing.Literal['host'] | None = 'host' if use_host_network else None
 
         # Initialize port mappings
-        port_mapping: dict[str, list[dict[str, str]]] | None = {}
+        port_mapping: dict[str, list[dict[str, str]]] | None = None
         if not use_host_network:
             port_mapping = {
                 f'{self._container_port}/tcp': [
@@ -317,26 +317,18 @@ class DockerRuntime(ActionExecutionClient):
                     }
                 ]
 
-            # for port in self._app_ports:
-            #     port_mapping[f'{port}/tcp'] = [
-            #         {
-            #             'HostPort': str(port),
-            #             'HostIp': self.config.sandbox.runtime_binding_address,
-            #         }
-            #     ]
+            for port in self._app_ports:
+                port_mapping[f'{port}/tcp'] = [
+                    {
+                        'HostPort': str(port),
+                        'HostIp': self.config.sandbox.runtime_binding_address,
+                    }
+                ]
         else:
             self.log(
                 'warn',
                 'Using host network mode. If you are using MacOS, please make sure you have the latest version of Docker Desktop and enabled host network feature: https://docs.docker.com/network/drivers/host/#docker-desktop',
             )
-
-        for port in self._app_ports:
-            port_mapping[f'{port}/tcp'] = [
-                {
-                    'HostPort': str(port),
-                    'HostIp': self.config.sandbox.runtime_binding_address,
-                }
-            ]
 
         # Combine environment variables
         environment = dict(**self.initial_env_vars)
