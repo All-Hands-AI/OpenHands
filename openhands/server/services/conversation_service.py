@@ -159,8 +159,6 @@ async def setup_init_convo_settings(
 ) -> ConversationInitData:
     """Set up conversation initialization data with provider tokens.
 
-    This function replicates the logic from listen_socket.py to ensure
-    consistent conversation initialization between websocket and REST endpoints.
 
     Args:
         user_id: The user ID
