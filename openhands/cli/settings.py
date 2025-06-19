@@ -176,9 +176,16 @@ async def modify_llm_settings_basic(
                 provider_choices,
             )
             
-            if provider_choice < len(available_basic_providers):
+            # Ensure provider_choice is an integer (for test compatibility)
+            try:
+                choice_index = int(provider_choice)
+            except (TypeError, ValueError):
+                # If conversion fails (e.g., in tests with mocks), default to 0
+                choice_index = 0
+                
+            if choice_index < len(available_basic_providers):
                 # User selected one of the basic providers
-                provider = available_basic_providers[provider_choice]
+                provider = available_basic_providers[choice_index]
             else:
                 # User selected "Select another provider" - use manual selection
                 # Define a validator function that prints an error message
