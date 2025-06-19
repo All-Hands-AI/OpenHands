@@ -6,7 +6,6 @@ import {
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
-import { mapProvider } from "#/utils/map-provider";
 import { VERIFIED_MODELS, VERIFIED_PROVIDERS } from "#/utils/verified-models";
 import { extractModelAndProvider } from "#/utils/extract-model-and-provider";
 
@@ -104,7 +103,7 @@ export function ModelSelector({
                   data-testid={`provider-item-${provider}`}
                   key={provider}
                 >
-                  {mapProvider(provider)}
+                  {provider}
                 </AutocompleteItem>
               ))}
           </AutocompleteSection>
@@ -112,9 +111,7 @@ export function ModelSelector({
             {Object.keys(models)
               .filter((provider) => !VERIFIED_PROVIDERS.includes(provider))
               .map((provider) => (
-                <AutocompleteItem key={provider}>
-                  {mapProvider(provider)}
-                </AutocompleteItem>
+                <AutocompleteItem key={provider}>{provider}</AutocompleteItem>
               ))}
           </AutocompleteSection>
         </Autocomplete>
