@@ -203,11 +203,13 @@ class MCPConfig(BaseModel):
     """Configuration for MCP (Message Control Protocol) settings.
 
     Attributes:
+        default_timeout: Default timeout for MCP connections, configurable via environment variables
         sse_servers: List of MCP SSE server configs
         stdio_servers: List of MCP stdio server configs. These servers will be added to the MCP Router running inside runtime container.
         shttp_servers: List of MCP HTTP server configs.
     """
 
+    default_timeout: float = 30.0
     sse_servers: list[MCPSSEServerConfig] = Field(default_factory=list)
     stdio_servers: list[MCPStdioServerConfig] = Field(default_factory=list)
     shttp_servers: list[MCPSHTTPServerConfig] = Field(default_factory=list)

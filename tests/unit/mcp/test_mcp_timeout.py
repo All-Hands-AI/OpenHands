@@ -2,6 +2,7 @@ import asyncio
 from unittest import mock
 
 import pytest
+from fastmcp import Client
 
 from openhands.core.config.mcp_config import MCPConfig, MCPSSEServerConfig
 from openhands.mcp import MCPClient, create_mcp_clients, fetch_mcp_tools_from_config
@@ -96,3 +97,28 @@ async def test_mixed_connection_results():
         # Verify that tools were returned
         assert len(tools) > 0
         assert tools[0]['function']['name'] == 'mock_tool'
+
+
+@pytest.mark.asyncio
+async def test_connect_http_with_different_server_types(mock_client):
+	"""Test connect_http instantiates Client with correct timeout across server types."""
+
+    mock_sse_server = mock.MagicMock(spec=MCPSSEServerConfig)
+    mock_http_server = mock.MagicMock(spec=MCPSHTTPServerConfig)
+
+    for server in (mock_sse_server, mock_http_server):
+        server.url = "https://example.com"
+
+    mock_config = mock.MagicMock(spec=MCPConfig)
+    mock_config.mcp.default_timeout = timeout = 1.0
+
+    with patch('openhands.core.config.load_app_config', return_value=mock_config), \
+         patch('fastmcp.Client') as MockClient:
+
+        wrapper = MCPClient()
+
+        await wrapper.connect_http(server=mock_sse_server)
+        MockClient.assert_called_with(timeout=timeout)
+
+        await wrapper.connect_http(server=mock_http_server)
+        assert MockClient.call_args_list[-1] == mock.call(timeout=timeout)

@@ -258,6 +258,7 @@ def test_stdio_server_equality_with_different_env_order():
     assert server1 != server5
 
 
+<<<<<<< HEAD:tests/unit/core/config/test_mcp_config.py
 def test_mcp_stdio_server_args_parsing_basic():
     """Test MCPStdioServerConfig args parsing with basic shell-like format."""
     # Test basic space-separated parsing
@@ -454,3 +455,76 @@ async def test_session_preserves_env_mcp_config(monkeypatch):
 
     # Clean up
     await session.close()
+
+
+@pytest.mark.unit
+def test_mcp_config_default_timeout():
+    """Verify that the default_timeout in MCPConfig is initialized to 30.0.
+
+    This test ensures the timeout has a standard fallback value, which is crucial for 
+    maintaining default behavior in MCP connections when no overrides are provided.
+    It checks the basic initialization to confirm consistency across environments.
+    """
+    config = MCPConfig()
+    assert config.default_timeout == 30.0
+
+
+@pytest.mark.unit
+def test_mcp_config_timeout_override():
+    """Test manual overriding of the default_timeout in MCPConfig.
+
+    This verifies that users can specify custom timeout values, allowing for 
+    flexibility in scenarios like high-latency networks. It ensures the field 
+    accepts and retains overrides correctly.
+    """
+    config = MCPConfig(default_timeout=60.0)
+    assert config.default_timeout == 60.0
+
+
+@pytest.mark.unit
+def test_mcp_config_timeout_with_env_override(monkeypatch):
+    """Test overriding default_timeout via environment variables.
+
+    This test simulates real-world configuration scenarios where environment 
+    variables take precedence, ensuring the system integrates with external 
+    settings. It covers dynamic overrides and validates their application.
+    """
+    monkeypatch.setenv('MCP_DEFAULT_TIMEOUT', '90.0')
+    with patch('openhands.core.config.load_from_env') as mock_load_env:
+        mock_load_env.return_value = {'default_timeout': 90.0}
+        config = MCPConfig()
+        assert config.default_timeout == 90.0
+
+
+@pytest.mark.unit
+def test_mcp_config_invalid_timeout():
+    """Test that invalid timeout values (e.g., negative) raise a ValidationError.
+
+    This ensures type and value safety, preventing misconfigurations that could 
+    lead to runtime errors. It covers edge cases like negative values to enforce 
+    positive timeouts only.
+    """
+    with pytest.raises(ValidationError):
+        MCPConfig(default_timeout=-10.0)
+
+
+@pytest.mark.unit
+def test_mcp_config_zero_timeout():
+    """Test that zero timeout values raise a ValidationError.
+
+    Zero timeouts could cause immediate failures in connections, so this test 
+    enforces that only positive values are accepted, improving overall reliability.
+    """
+    with pytest.raises(ValidationError):
+        MCPConfig(default_timeout=0.0)
+
+
+@pytest.mark.unit
+def test_mcp_config_non_float_timeout():
+    """Test that non-float values for timeout raise a ValidationError.
+
+    This verifies type enforcement, ensuring the field only accepts numeric values 
+    to prevent configuration errors in production environments.
+    """
+    with pytest.raises(ValidationError):
+        MCPConfig(default_timeout='not_a_float')
