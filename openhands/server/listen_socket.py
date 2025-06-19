@@ -20,41 +20,16 @@ from openhands.events.observation.agent import (
 )
 from openhands.events.serialization import event_to_dict
 from openhands.integrations.service_types import ProviderType
+from openhands.server.conversation_utils.conversation_init import (
+    setup_init_convo_settings,
+)
 from openhands.server.shared import (
-    ConversationStoreImpl,
-    SettingsStoreImpl,
-    config,
     conversation_manager,
     sio,
 )
 from openhands.storage.conversation.conversation_validator import (
     create_conversation_validator,
 )
-
-
-async def verify_conversation_access(user_id: str | None, conversation_id: str) -> bool:
-    """Verify that the user has access to the conversation.
-
-    Args:
-        user_id: The user ID
-        conversation_id: The conversation ID
-
-    Returns:
-        True if user has access, False otherwise
-    """
-    try:
-        # Check if conversation exists and user has access
-        conversation_store = ConversationStoreImpl.get_instance()
-        metadata = await conversation_store.get_metadata(conversation_id)
-
-        # In multi-user mode, check if the conversation belongs to the user
-        if user_id and hasattr(metadata, 'user_id'):
-            return metadata.user_id == user_id
-
-        # In single-user mode or if no user_id, allow access
-        return True
-    except Exception:
-        return False
 
 
 @sio.event
@@ -144,27 +119,16 @@ async def connect(connection_id: str, environ: dict) -> None:
             f'Finished replaying event stream for conversation {conversation_id}'
         )
 
-        # Verify user has access to the conversation
-        has_access = await verify_conversation_access(user_id, conversation_id)
-        if not has_access:
-            raise ConnectionRefusedError('Access denied to conversation')
-
-        # Get basic settings for websocket connection
-        # The full conversation init data with providers will be set via the /start endpoint
-        settings_store = await SettingsStoreImpl.get_instance(config, user_id)
-        basic_settings = await settings_store.load()
-
-        if not basic_settings:
-            raise ConnectionRefusedError(
-                'Settings not found', {'msg_id': 'CONFIGURATION$SETTINGS_NOT_FOUND'}
-            )
+        conversation_init_data = await setup_init_convo_settings(
+            user_id, conversation_id, providers_set
+        )
 
         # Join the conversation with basic settings
         # The agent loop will be properly configured when /start endpoint is called
         agent_loop_info = await conversation_manager.join_conversation(
             conversation_id,
             connection_id,
-            basic_settings,
+            conversation_init_data,
             user_id,
         )
 

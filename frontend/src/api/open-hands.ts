@@ -293,11 +293,11 @@ class OpenHands {
 
   static async startConversation(
     conversationId: string,
-    providers?: string[],
+    providers?: Provider[],
   ): Promise<Conversation | null> {
     const { data } = await openHands.post<Conversation | null>(
       `/api/conversations/${conversationId}/start`,
-      { providers_set: providers },
+      providers ? { providers_set: providers } : {},
     );
 
     return data;
