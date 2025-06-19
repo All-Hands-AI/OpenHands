@@ -418,7 +418,9 @@ class ActionExecutor:
             obs = await call_sync_from_async(
                 bash_session.execute,
                 action,
-                stream_callback if not sys.platform == 'win32' else None,
+                None
+                if sys.platform == 'win32' or action.is_static
+                else stream_callback,
             )
             return obs
         except Exception as e:

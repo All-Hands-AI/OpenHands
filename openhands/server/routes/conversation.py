@@ -253,7 +253,7 @@ async def get_microagents(
         )
 
 @app.get('/action-execution-server-url')
-async def get_action_execution_server_url(request: Request):
+async def get_action_execution_server_url(conversation: ServerConversation = Depends(get_conversation)):
     """Get the action execution server URL.
 
     This endpoint allows getting the action execution server URL.
@@ -265,7 +265,7 @@ async def get_action_execution_server_url(request: Request):
         JSONResponse: A JSON response indicating the success of the operation.
     """
     try:
-        runtime: Runtime = request.state.conversation.runtime
+        runtime: Runtime = conversation.runtime
         logger.debug(f'Runtime type: {type(runtime)}')
         logger.debug(f'Runtime action execution server URL: {runtime.action_execution_server_url}')
         return JSONResponse(
