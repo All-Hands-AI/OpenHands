@@ -458,7 +458,9 @@ async def main_with_loop(
 
 def main():
     """Main entry point for the OpenHands CLI."""
+    print(f'DEBUG: sys.argv = {sys.argv}')
     args = parse_arguments()
+    print(f'DEBUG: parsed args.config_file = {args.config_file}')
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:

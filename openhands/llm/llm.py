@@ -288,6 +288,7 @@ class LLM(RetryMixin, DebugMixin):
             # Record start time for latency measurement
             start_time = time.time()
             # we don't support streaming here, thus we get a ModelResponse
+            logger.warning(f'LLM: {self.config.model}\n{self.config.base_url}')
             resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
 
             # Calculate and record latency
