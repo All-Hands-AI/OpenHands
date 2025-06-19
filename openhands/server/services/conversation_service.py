@@ -19,6 +19,7 @@ from openhands.server.shared import (
     SettingsStoreImpl,
     config,
     conversation_manager,
+    server_config,
 )
 from openhands.server.types import AppMode, LLMAuthenticationError, MissingSettingsError
 from openhands.storage.data_models.conversation_metadata import (
@@ -188,7 +189,7 @@ async def setup_init_convo_settings(
     git_provider_tokens = create_provider_tokens_object(providers_set)
     logger.info(f'Git provider scaffold: {git_provider_tokens}')
 
-    if config.app_mode != AppMode.SAAS and user_secrets:
+    if server_config.app_mode != AppMode.SAAS and user_secrets:
         git_provider_tokens = user_secrets.provider_tokens
 
     session_init_args['git_provider_tokens'] = git_provider_tokens
