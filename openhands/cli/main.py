@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import logging
 import os
@@ -347,9 +348,10 @@ async def run_setup_flow(config: OpenHandsConfig, settings_store: FileSettingsSt
     await modify_llm_settings_basic(config, settings_store)
 
 
-async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
+async def main_with_loop(
+    loop: asyncio.AbstractEventLoop, args: argparse.Namespace
+) -> None:
     """Runs the agent in CLI mode."""
-    args = parse_arguments()
 
     logger.setLevel(logging.WARNING)
 
@@ -454,10 +456,12 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
 
 
 def main():
+    """Main entry point for the OpenHands CLI."""
+    args = parse_arguments()
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
-        loop.run_until_complete(main_with_loop(loop))
+        loop.run_until_complete(main_with_loop(loop, args))
     except KeyboardInterrupt:
         print('Received keyboard interrupt, shutting down...')
     except ConnectionRefusedError as e:
