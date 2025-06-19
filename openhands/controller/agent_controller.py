@@ -705,11 +705,15 @@ class AgentController:
             # set pending_action while we search for information
 
             # if this is the first user message for this agent, matters for the microagent info type
-            if action.mode == ResearchMode.DEEP_RESEARCH and self.user_id:
+            if (
+                action.mode == ResearchMode.DEEP_RESEARCH
+                and self.user_id
+                and '/exit' not in action.content
+            ):
                 check_credit = await check_feature_credit(
                     self.user_id, 'deep_research', run_on_oh=True
                 )
-                logger.info(f'check_credit: {check_credit}')
+                logger.debug(f'check_credit: {check_credit}')
                 if check_credit and not check_credit.get('data'):
                     self.event_stream.add_event(
                         CreditErrorObservation(

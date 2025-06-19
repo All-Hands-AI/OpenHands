@@ -30,7 +30,6 @@ from openhands.server.shared import (
 )
 from openhands.server.thesis_auth import (
     ThesisUser,
-    UserStatus,
     get_user_detail_from_thesis_auth_server,
 )
 from openhands.storage.conversation.conversation_store import ConversationStore
@@ -143,12 +142,12 @@ async def connect(connection_id: str, environ):
             user_id = user.publicAddress
 
             # TODO: If the user is not whitelisted and the run mode is DEV, skip the check
-            if (
-                user.whitelisted != UserStatus.WHITELISTED
-                and os.getenv('RUN_MODE') != 'DEV'
-            ):
-                logger.error(f'User not activated: {user_id}')
-                raise ConnectionRefusedError('User not activated')
+            # if (
+            #     user.whitelisted != UserStatus.WHITELISTED
+            #     and os.getenv('RUN_MODE') != 'DEV'
+            # ):
+            #     logger.error(f'User not activated: {user_id}')
+            #     raise ConnectionRefusedError('User not activated')
 
             # TODO: if the user is whitelisted, check if the conversation is belong to the user
             conversation_store = await ConversationStoreImpl.get_instance(
