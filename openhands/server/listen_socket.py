@@ -56,8 +56,6 @@ async def connect(connection_id: str, environ: dict) -> None:
         providers_list = [p for p in providers_list if p]
         providers_set = [ProviderType(p) for p in providers_list]
 
-        logger.info(f'restrating session with providers: {providers_set}')
-
         if not conversation_id:
             logger.error('No conversation_id in query params')
             raise ConnectionRefusedError('No conversation_id in query params')
@@ -123,8 +121,6 @@ async def connect(connection_id: str, environ: dict) -> None:
             user_id, conversation_id, providers_set
         )
 
-        # Join the conversation with basic settings
-        # The agent loop will be properly configured when /start endpoint is called
         agent_loop_info = await conversation_manager.join_conversation(
             conversation_id,
             connection_id,

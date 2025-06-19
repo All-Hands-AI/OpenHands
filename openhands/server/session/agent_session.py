@@ -334,9 +334,6 @@ class AgentSession:
                 git_provider_tokens, custom_secrets
             )
 
-            print('provider', git_provider_tokens)
-            print('user', self.user_id)
-
             self.runtime = runtime_cls(
                 config=config,
                 event_stream=self.event_stream,

@@ -157,10 +157,6 @@ class Runtime(FileEditRuntimeMixin):
         if env_vars is not None:
             self.initial_env_vars.update(env_vars)
 
-        if self.attach_to_existing:
-            logger.info(
-                f'plumbed provider token: {git_provider_tokens}\n\nuser_id: {user_id}'
-            )
         self.provider_handler = ProviderHandler(
             provider_tokens=git_provider_tokens
             or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({})),
@@ -324,10 +320,7 @@ class Runtime(FileEditRuntimeMixin):
         )
 
         if len(env_vars) == 0:
-            logger.error('Failed to refresh')
             return
-
-        logger.info(f'refreshed envs: {env_vars}')
 
         try:
             if self.event_stream:
