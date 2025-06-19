@@ -159,26 +159,33 @@ async def modify_llm_settings_basic(
     provider_completer = FuzzyWordCompleter(provider_list)
     session = PromptSession(key_bindings=kb_cancel())
 
-    # Set default provider - prefer 'anthropic' if available, otherwise use the first provider
-    provider = 'anthropic' if 'anthropic' in provider_list else provider_list[0]
+    # Set default provider - prefer 'anthropic' if available, otherwise use first
+    provider = (
+        'anthropic' if 'anthropic' in provider_list else provider_list[0]
+    )
     model = None
     api_key = None
 
     try:
+        # Show the default provider but allow changing it
+        print_formatted_text(
+            HTML(f'\n<grey>Default provider: </grey><green>{provider}</green>')
+        )
+
         # Show basic verified providers plus "Select another provider" option
         provider_choices = verified_providers + ['Select another provider']
         provider_choice = cli_confirm(
             '(Step 1/3) Select LLM Provider:',
             provider_choices,
         )
-        
+
         # Ensure provider_choice is an integer (for test compatibility)
         try:
             choice_index = int(provider_choice)
         except (TypeError, ValueError):
             # If conversion fails (e.g., in tests with mocks), default to 0
             choice_index = 0
-            
+
         if choice_index < len(verified_providers):
             # User selected one of the basic providers
             provider = verified_providers[choice_index]
@@ -203,7 +210,8 @@ async def modify_llm_settings_basic(
 
         # Make sure the provider exists in organized_models
         if provider not in organized_models:
-            # If the provider doesn't exist, prefer 'anthropic' if available, otherwise use the first provider
+            # If the provider doesn't exist, prefer 'anthropic' if available,
+            # otherwise use the first provider
             provider = (
                 'anthropic'
                 if 'anthropic' in organized_models
