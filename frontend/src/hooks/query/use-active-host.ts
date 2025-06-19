@@ -23,6 +23,12 @@ export const useActiveHost = () => {
     },
   });
 
+  console.log(
+    "useActiveHost: %c%s",
+    "background: #444; color: #ffeb3b; font-weight: bold; padding: 2px 4px; border-radius: 4px;",
+    `Conversation ID: ${conversationId}, Hosts: ${data.hosts.join(", ")}`,
+  );
+
   const apps = useQueries({
     queries: data.hosts.map((host) => ({
       queryKey: [conversationId, "hosts", host],
@@ -41,6 +47,11 @@ export const useActiveHost = () => {
     })),
   });
 
+  console.log(
+    "useActiveHost: %c%s",
+    "background: #444; color: #ffeb3b; font-weight: bold; padding: 2px 4px; border-radius: 4px;",
+    `Apps fetched: ${apps.map((app) => app.data).join(", ")}`,
+  );
   const appsData = apps.map((app) => app.data);
 
   React.useEffect(() => {

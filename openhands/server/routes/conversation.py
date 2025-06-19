@@ -87,6 +87,8 @@ async def get_hosts(
         runtime: Runtime = conversation.runtime
         logger.debug(f'Runtime type: {type(runtime)}')
         logger.debug(f'Runtime hosts: {runtime.web_hosts}')
+        logger.info(f'Runtime type: {type(runtime)}')
+        logger.info(f'Runtime hosts: {runtime.web_hosts}')
         return JSONResponse(status_code=200, content={'hosts': runtime.web_hosts})
     except Exception as e:
         logger.error(f'Error getting runtime hosts: {e}')
