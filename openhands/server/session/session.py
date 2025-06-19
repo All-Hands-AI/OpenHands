@@ -135,7 +135,8 @@ class Session:
         self.config.search_api_key = settings.search_api_key
 
         # NOTE: this need to happen AFTER the config is updated with the search_api_key
-        # Handle MCP config priority: self.config.mcp > settings.mcp_config > empty MCPConfig
+        # Handle MCP config priority: settings.mcp_config > self.config.mcp > empty MCPConfig
+        # Settings are the source of truth since they come from the frontend UI
         config_has_mcp = (
             self.config.mcp.sse_servers
             or self.config.mcp.stdio_servers
@@ -143,16 +144,19 @@ class Session:
         )
         settings_has_mcp = settings.mcp_config is not None
 
-        if config_has_mcp and settings_has_mcp:
-            self.logger.warning(
-                'Both config.mcp and settings.mcp_config are present. '
-                'Using config.mcp and ignoring settings.mcp_config.'
-            )
-            # Keep self.config.mcp as is
-        elif settings_has_mcp:
-            # Use settings.mcp_config
+        if settings_has_mcp and settings.mcp_config is not None:
+            # Use settings.mcp_config as the source of truth
+            if config_has_mcp:
+                self.logger.info(
+                    'Both config.mcp and settings.mcp_config are present. '
+                    'Using settings.mcp_config as the source of truth.'
+                )
             self.config.mcp = settings.mcp_config
-        elif not config_has_mcp:
+        elif config_has_mcp:
+            # Fall back to config.mcp if no settings available
+            # Keep self.config.mcp as is
+            pass
+        else:
             # Neither has MCP config, use empty one
             self.config.mcp = MCPConfig(sse_servers=[], stdio_servers=[])
         # Add OpenHands' MCP server by default

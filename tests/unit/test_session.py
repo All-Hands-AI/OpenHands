@@ -75,7 +75,7 @@ async def test_notify_on_llm_retry(
 async def test_mcp_config_priority():
     """Test MCP configuration priority logic in Session.initialize_agent."""
 
-    # Test case 1: Both config.mcp and settings.mcp_config exist - config.mcp should win
+    # Test case 1: Both config.mcp and settings.mcp_config exist - settings.mcp_config should win
     config = OpenHandsConfig()
     config.mcp = MCPConfig(
         sse_servers=[MCPSSEServerConfig(url='http://config-server.com')]
@@ -103,21 +103,25 @@ async def test_mcp_config_priority():
 
             await session.initialize_agent(settings, None, None)
 
-            # Verify that config.mcp was preserved (not overwritten by settings.mcp_config)
+            # Verify that settings.mcp_config was used (settings are source of truth)
             assert len(session.config.mcp.sse_servers) >= 1
-            # The first server should be from config, not settings
-            config_server_found = any(
-                server.url == 'http://config-server.com'
-                for server in session.config.mcp.sse_servers
-            )
-            assert config_server_found, 'config.mcp server should be preserved'
-
-            # Should not contain the settings server
+            # Should contain the settings server
             settings_server_found = any(
                 server.url == 'http://settings-server.com'
                 for server in session.config.mcp.sse_servers
             )
-            assert not settings_server_found, 'settings.mcp_config should be ignored'
+            assert settings_server_found, (
+                'settings.mcp_config should be used as source of truth'
+            )
+
+            # Should not contain the config server (before OpenHands default servers are added)
+            config_server_found = any(
+                server.url == 'http://config-server.com'
+                for server in session.config.mcp.sse_servers
+            )
+            assert not config_server_found, (
+                'config.mcp should be overridden by settings'
+            )
 
     await session.close()
 
@@ -150,5 +154,38 @@ async def test_mcp_config_priority():
                 for server in session.config.mcp.sse_servers
             )
             assert settings_server_found, 'settings.mcp_config should be used'
+
+    await session.close()
+
+    # Test case 3: Only config.mcp exists (no settings) - should fall back to config
+    config = OpenHandsConfig()
+    config.mcp = MCPConfig(
+        sse_servers=[MCPSSEServerConfig(url='http://config-server.com')]
+    )
+    settings = Settings()  # No mcp_config
+
+    session = Session(
+        sid='test-sid-3',
+        file_store=InMemoryFileStore({}),
+        config=config,
+        sio=None,
+        user_id='test-user',
+    )
+
+    with patch.object(session.agent_session, 'start', new_callable=AsyncMock):
+        with patch('openhands.controller.agent.Agent.get_cls') as mock_get_cls:
+            mock_agent_cls = AsyncMock()
+            mock_get_cls.return_value = mock_agent_cls
+
+            await session.initialize_agent(settings, None, None)
+
+            # Should contain the config server (fallback when no settings)
+            config_server_found = any(
+                server.url == 'http://config-server.com'
+                for server in session.config.mcp.sse_servers
+            )
+            assert config_server_found, (
+                'config.mcp should be used as fallback when no settings'
+            )
 
     await session.close()
