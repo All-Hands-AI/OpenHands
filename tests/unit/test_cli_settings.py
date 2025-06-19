@@ -171,15 +171,16 @@ class TestModifyLLMSettingsBasic:
         session_instance = MagicMock()
         session_instance.prompt_async = AsyncMock(
             side_effect=[
-                'openai',  # Provider
-                'gpt-4',  # Model
+                'claude-3-opus',  # Model (when changing from default)
                 'new-api-key',  # API Key
             ]
         )
         mock_session.return_value = session_instance
 
-        # Mock cli_confirm to select the second option (change provider/model) for the first two calls
-        # and then select the first option (save settings) for the last call
+        # Mock cli_confirm calls:
+        # 1. Provider selection: select index 1 (anthropic)
+        # 2. Model selection: select index 1 (Select another model)
+        # 3. Save settings: select index 0 (Yes, save)
         mock_confirm.side_effect = [1, 1, 0]
 
         # Call the function
@@ -188,9 +189,8 @@ class TestModifyLLMSettingsBasic:
         # Verify LLM config was updated
         app_config.set_llm_config.assert_called_once()
         args, kwargs = app_config.set_llm_config.call_args
-        # The model name might be different based on the default model in the list
-        # Just check that it starts with 'openai/'
-        assert args[0].model.startswith('openai/')
+        # Should use anthropic provider with claude-3-opus model
+        assert args[0].model == 'anthropic/claude-3-opus'
         assert args[0].api_key.get_secret_value() == 'new-api-key'
         assert args[0].base_url is None
 
@@ -198,9 +198,7 @@ class TestModifyLLMSettingsBasic:
         settings_store.store.assert_called_once()
         args, kwargs = settings_store.store.call_args
         settings = args[0]
-        # The model name might be different based on the default model in the list
-        # Just check that it starts with openai/
-        assert settings.llm_model.startswith('openai/')
+        assert settings.llm_model == 'anthropic/claude-3-opus'
         assert settings.llm_api_key.get_secret_value() == 'new-api-key'
         assert settings.llm_base_url is None
 
