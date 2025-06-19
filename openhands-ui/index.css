@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+
+@theme {
+  --font-display: "Satoshi", "sans-serif";
+  --breakpoint-3xl: 1920px;
+  --color-avocado-100: green;
+
+}
