@@ -165,35 +165,52 @@ async def modify_llm_settings_basic(
     api_key = None
 
     try:
-        # Show the default provider but allow changing it
-        print_formatted_text(
-            HTML(f'\n<grey>Default provider: </grey><green>{provider}</green>')
-        )
-        change_provider = (
-            cli_confirm(
-                'Do you want to use a different provider?',
-                [f'Use {provider}', 'Select another provider'],
+        # Show all basic verified providers as choices
+        available_basic_providers = [p for p in BASIC_VERIFIED_PROVIDERS if p in provider_list]
+        
+        if len(available_basic_providers) > 1:
+            # Multiple providers available - let user choose
+            provider_choice = cli_confirm(
+                '(Step 1/3) Select LLM Provider:',
+                available_basic_providers,
             )
-            == 1
-        )
-
-        if change_provider:
-            # Define a validator function that prints an error message
-            def provider_validator(x):
-                is_valid = x in organized_models
-                if not is_valid:
-                    print_formatted_text(
-                        HTML('<grey>Invalid provider selected: {}</grey>'.format(x))
-                    )
-                return is_valid
-
-            provider = await get_validated_input(
-                session,
-                '(Step 1/3) Select LLM Provider (TAB for options, CTRL-c to cancel): ',
-                completer=provider_completer,
-                validator=provider_validator,
-                error_message='Invalid provider selected',
+            provider = available_basic_providers[provider_choice]
+        elif len(available_basic_providers) == 1:
+            # Only one provider available - use it
+            provider = available_basic_providers[0]
+            print_formatted_text(
+                HTML(f'\n<grey>Using provider: </grey><green>{provider}</green>')
             )
+        else:
+            # No basic providers available - fall back to manual selection
+            print_formatted_text(
+                HTML(f'\n<grey>Default provider: </grey><green>{provider}</green>')
+            )
+            change_provider = (
+                cli_confirm(
+                    'Do you want to use a different provider?',
+                    [f'Use {provider}', 'Select another provider'],
+                )
+                == 1
+            )
+
+            if change_provider:
+                # Define a validator function that prints an error message
+                def provider_validator(x):
+                    is_valid = x in organized_models
+                    if not is_valid:
+                        print_formatted_text(
+                            HTML('<grey>Invalid provider selected: {}</grey>'.format(x))
+                        )
+                    return is_valid
+
+                provider = await get_validated_input(
+                    session,
+                    '(Step 1/3) Select LLM Provider (TAB for options, CTRL-c to cancel): ',
+                    completer=provider_completer,
+                    validator=provider_validator,
+                    error_message='Invalid provider selected',
+                )
 
         # Make sure the provider exists in organized_models
         if provider not in organized_models:
