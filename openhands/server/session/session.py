@@ -149,7 +149,7 @@ class Session:
                 'Using config.mcp and ignoring settings.mcp_config.'
             )
             # Keep self.config.mcp as is
-        elif settings_has_mcp and settings.mcp_config is not None:
+        elif settings_has_mcp:
             # Use settings.mcp_config
             self.config.mcp = settings.mcp_config
         elif not config_has_mcp:
