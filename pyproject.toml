@@ -6,7 +6,7 @@ requires = [
 
 [tool.poetry]
 name = "openhands-ai"
-version = "0.43.0"
+version = "0.44.0"
 description = "OpenHands: Code Less, Make More"
 authors = [ "OpenHands" ]
 license = "MIT"
@@ -85,6 +85,8 @@ stripe = ">=11.5,<13.0"
 google-cloud-aiplatform = "*"
 anthropic = { extras = [ "vertex" ], version = "*" }
 boto3 = "*"
+kubernetes = "^33.1.0"
+pyyaml = "^6.0.2"
 
 [tool.poetry.group.dev]
 optional = true

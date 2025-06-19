@@ -16,7 +16,7 @@ def test_initialize_repository_for_runtime(temp_dir, runtime_cls, run_as_openhan
     """Test that the initialize_repository_for_runtime function works."""
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     mock_repo = Repository(
-        id=1232,
+        id='1232',
         full_name='All-Hands-AI/OpenHands',
         git_provider=ProviderType.GITHUB,
         is_public=True,

@@ -330,10 +330,8 @@ class AgentSession:
         if runtime_cls == RemoteRuntime:
             # If provider tokens is passed in custom secrets, then remove provider from provider tokens
             # We prioritize provider tokens set in custom secrets
-            provider_tokens_without_gitlab = (
-                self.override_provider_tokens_with_custom_secret(
-                    git_provider_tokens, custom_secrets
-                )
+            overrided_tokens = self.override_provider_tokens_with_custom_secret(
+                git_provider_tokens, custom_secrets
             )
 
             self.runtime = runtime_cls(
@@ -344,7 +342,7 @@ class AgentSession:
                 status_callback=self._status_callback,
                 headless_mode=False,
                 attach_to_existing=False,
-                git_provider_tokens=provider_tokens_without_gitlab,
+                git_provider_tokens=overrided_tokens,
                 env_vars=env_vars,
                 user_id=self.user_id,
             )
