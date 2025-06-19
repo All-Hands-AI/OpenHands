@@ -91,7 +91,7 @@ class OpenHandsConfig(BaseModel):
     modal_api_token_secret: SecretStr | None = Field(default=None)
     disable_color: bool = Field(default=False)
     jwt_secret: SecretStr | None = Field(default=None)
-    debug: bool = Field(default=False)
+    debug: bool = Field(default=True)
     file_uploads_max_file_size_mb: int = Field(default=0)
     file_uploads_restrict_file_types: bool = Field(default=False)
     file_uploads_allowed_extensions: list[str] = Field(default_factory=lambda: ['.*'])
