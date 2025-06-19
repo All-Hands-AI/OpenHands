@@ -32,6 +32,9 @@ from openhands.integrations.service_types import (
 )
 from openhands.llm.llm import LLM
 from openhands.runtime import get_runtime_cls
+from openhands.server.conversation_utils.conversation_init import (
+    setup_init_convo_settings,
+)
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
@@ -93,6 +96,10 @@ class ConversationResponse(BaseModel):
     conversation_id: str
     message: str | None = None
     conversation_status: ConversationStatus | None = None
+
+
+class StartConversationRequest(BaseModel):
+    providers_set: list[str] | None = None
 
 
 @app.post('/conversations')
@@ -395,6 +402,7 @@ async def _get_conversation_info(
 @app.post('/conversations/{conversation_id}/start')
 async def start_conversation(
     conversation_id: str,
+    request: StartConversationRequest,
     user_id: str = Depends(get_user_id),
     settings: Settings = Depends(get_user_settings),
     conversation_store: ConversationStore = Depends(get_conversation_store),
@@ -420,10 +428,20 @@ async def start_conversation(
                 status_code=status.HTTP_404_NOT_FOUND,
             )
 
+        # Convert providers_set to ProviderType list
+        providers_set = []
+        if request.providers_set:
+            providers_set = [ProviderType(p) for p in request.providers_set]
+
+        # Set up conversation init data with provider information
+        conversation_init_data = await setup_init_convo_settings(
+            user_id, conversation_id, providers_set
+        )
+
         # Start the agent loop
         agent_loop_info = await conversation_manager.maybe_start_agent_loop(
             sid=conversation_id,
-            settings=settings,
+            settings=conversation_init_data,
             user_id=user_id,
         )
 
