@@ -53,51 +53,51 @@
               {
                 "group": "Advanced Configuration",
                 "pages": [
-                {
-                  "group": "LLM Configuration",
-                  "pages": [
-                    "usage/llms/llms",
-                    {
-                      "group": "Providers",
-                      "pages": [
-                        "usage/llms/azure-llms",
-                        "usage/llms/google-llms",
-                        "usage/llms/groq",
-                        "usage/llms/local-llms",
-                        "usage/llms/litellm-proxy",
-                        "usage/llms/openai-llms",
-                        "usage/llms/openrouter"
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "group": "Runtime Configuration",
-                  "pages": [
-                    "usage/runtimes/overview",
-                    {
-                      "group": "Providers",
-                      "pages": [
-                        "usage/runtimes/docker",
-                        "usage/runtimes/remote",
-                        "usage/runtimes/local",
-                        {
-                          "group": "Third-Party Providers",
-                          "pages": [
-                            "usage/runtimes/modal",
-                            "usage/runtimes/daytona",
-                            "usage/runtimes/runloop",
-                            "usage/runtimes/e2b"
-                          ]
-                        }
-                      ]
-                    }
-                  ]
-                },
-                "usage/configuration-options",
-                "usage/how-to/custom-sandbox-guide",
-                "usage/search-engine-setup",
-                "usage/mcp"
+                  {
+                    "group": "LLM Configuration",
+                    "pages": [
+                      "usage/llms/llms",
+                      {
+                        "group": "Providers",
+                        "pages": [
+                          "usage/llms/azure-llms",
+                          "usage/llms/google-llms",
+                          "usage/llms/groq",
+                          "usage/llms/local-llms",
+                          "usage/llms/litellm-proxy",
+                          "usage/llms/openai-llms",
+                          "usage/llms/openrouter"
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "group": "Runtime Configuration",
+                    "pages": [
+                      "usage/runtimes/overview",
+                      {
+                        "group": "Providers",
+                        "pages": [
+                          "usage/runtimes/docker",
+                          "usage/runtimes/remote",
+                          "usage/runtimes/local",
+                          {
+                            "group": "Third-Party Providers",
+                            "pages": [
+                              "usage/runtimes/modal",
+                              "usage/runtimes/daytona",
+                              "usage/runtimes/runloop",
+                              "usage/runtimes/e2b"
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "usage/configuration-options",
+                  "usage/how-to/custom-sandbox-guide",
+                  "usage/search-engine-setup",
+                  "usage/mcp"
                 ]
               }
             ]
@@ -139,7 +139,8 @@
                 "group": "Architecture",
                 "pages": [
                   "usage/architecture/backend",
-                  "usage/architecture/runtime"
+                  "usage/architecture/runtime",
+                  "usage/how-to/file-editing"
                 ]
               },
               "usage/how-to/debugging",
@@ -150,8 +151,8 @@
         ]
       },
       {
-          "tab": "API Reference",
-          "openapi": "/openapi.json"
+        "tab": "API Reference",
+        "openapi": "/openapi.json"
       }
     ],
     "global": {
@@ -179,8 +180,7 @@
     "dark": "/logo/dark.svg"
   },
   "navbar": {
-    "links": [
-    ],
+    "links": [],
     "primary": {
       "type": "github",
       "href": "https://github.com/All-Hands-AI/OpenHands"
