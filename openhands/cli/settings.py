@@ -166,11 +166,9 @@ async def modify_llm_settings_basic(
 
     try:
         # Show basic verified providers plus "Select another provider" option
-        available_basic_providers = [p for p in BASIC_VERIFIED_PROVIDERS if p in provider_list]
-        
-        if available_basic_providers:
+        if verified_providers:
             # Create choice list with basic providers + "Select another provider"
-            provider_choices = available_basic_providers + ['Select another provider']
+            provider_choices = verified_providers + ['Select another provider']
             provider_choice = cli_confirm(
                 '(Step 1/3) Select LLM Provider:',
                 provider_choices,
@@ -183,9 +181,9 @@ async def modify_llm_settings_basic(
                 # If conversion fails (e.g., in tests with mocks), default to 0
                 choice_index = 0
                 
-            if choice_index < len(available_basic_providers):
+            if choice_index < len(verified_providers):
                 # User selected one of the basic providers
-                provider = available_basic_providers[choice_index]
+                provider = verified_providers[choice_index]
             else:
                 # User selected "Select another provider" - use manual selection
                 # Define a validator function that prints an error message
