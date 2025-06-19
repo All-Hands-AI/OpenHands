@@ -295,49 +295,55 @@ async def list_files(
             content={'error': 'Session not found'},
         )
 
-    if not session.runtime:
-        return JSONResponse(
-            status_code=404,
-            content={'error': 'Runtime not yet initialized'},
-        )
-    runtime: Runtime = session.runtime
-
     try:
-        file_list = await call_sync_from_async(runtime.list_files, path)
-    except AgentRuntimeUnavailableError as e:
-        logger.error(f'Error listing files: {e}')
-        return JSONResponse(
-            status_code=500,
-            content={'error': f'Error listing files: {e}'},
-        )
-    if path:
-        file_list = [os.path.join(path, f) for f in file_list]
-
-    file_list = [f for f in file_list if f not in FILES_TO_IGNORE]
-
-    async def filter_for_gitignore(file_list, base_path):
-        gitignore_path = os.path.join(base_path, '.gitignore')
-        try:
-            read_action = FileReadAction(gitignore_path)
-            observation = await call_sync_from_async(runtime.run_action, read_action)
-            spec = PathSpec.from_lines(
-                GitWildMatchPattern, observation.content.splitlines()
+        if not session.runtime:
+            return JSONResponse(
+                status_code=404,
+                content={'error': 'Runtime not yet initialized'},
             )
-        except Exception as e:
-            logger.warning(e)
-            return file_list
-        file_list = [entry for entry in file_list if not spec.match_file(entry)]
-        return file_list
+        runtime: Runtime = session.runtime
 
-    try:
-        file_list = await filter_for_gitignore(file_list, '')
-    except AgentRuntimeUnavailableError as e:
-        logger.error(f'Error filtering files: {e}')
-        return JSONResponse(
-            status_code=500,
-            content={'error': f'Error filtering files: {e}'},
-        )
-    return file_list
+        try:
+            file_list = await call_sync_from_async(runtime.list_files, path)
+        except AgentRuntimeUnavailableError as e:
+            logger.error(f'Error listing files: {e}')
+            return JSONResponse(
+                status_code=500,
+                content={'error': f'Error listing files: {e}'},
+            )
+        if path:
+            file_list = [os.path.join(path, f) for f in file_list]
+
+        file_list = [f for f in file_list if f not in FILES_TO_IGNORE]
+
+        async def filter_for_gitignore(file_list, base_path):
+            gitignore_path = os.path.join(base_path, '.gitignore')
+            try:
+                read_action = FileReadAction(gitignore_path)
+                observation = await call_sync_from_async(
+                    runtime.run_action, read_action
+                )
+                spec = PathSpec.from_lines(
+                    GitWildMatchPattern, observation.content.splitlines()
+                )
+            except Exception as e:
+                logger.warning(e)
+                return file_list
+            file_list = [entry for entry in file_list if not spec.match_file(entry)]
+            return file_list
+
+        try:
+            file_list = await filter_for_gitignore(file_list, '')
+        except AgentRuntimeUnavailableError as e:
+            logger.error(f'Error filtering files: {e}')
+            return JSONResponse(
+                status_code=500,
+                content={'error': f'Error filtering files: {e}'},
+            )
+        return file_list
+    finally:
+        if session:
+            await shared.conversation_manager.detach_from_conversation(session)
 
 
 @app.get('/conversations/select-file-internal/{conversation_id}')
@@ -358,53 +364,58 @@ async def select_file(
             status_code=404,
             content={'error': 'Session not found'},
         )
-    if not session.runtime:
-        return JSONResponse(
-            status_code=404,
-            content={'error': 'Runtime not yet initialized'},
-        )
-    runtime: Runtime = session.runtime
 
-    file = os.path.join(
-        runtime.config.workspace_mount_path_in_sandbox + '/' + runtime.sid, file
-    )
-    read_action = FileReadAction(file)
     try:
-        observation = await call_sync_from_async(runtime.run_action, read_action)
-    except AgentRuntimeUnavailableError as e:
-        logger.error(f'Error opening file {file}: {e}')
-        return JSONResponse(
-            status_code=500,
-            content={'error': f'Error opening file: {e}'},
+        if not session.runtime:
+            return JSONResponse(
+                status_code=404,
+                content={'error': 'Runtime not yet initialized'},
+            )
+        runtime: Runtime = session.runtime
+
+        file = os.path.join(
+            runtime.config.workspace_mount_path_in_sandbox + '/' + runtime.sid, file
         )
-
-    if isinstance(observation, FileReadObservation):
-        content = observation.content
-        return {'code': content}
-    elif isinstance(observation, ErrorObservation):
-        logger.error(f'Error opening file {file}: {observation}')
-
-        if 'ERROR_BINARY_FILE' in observation.message:
-            try:
-                async with aiofiles.open(file, 'rb') as f:
-                    binary_data = await f.read()
-                    base64_encoded = base64.b64encode(binary_data).decode('utf-8')
-                    return {'code': base64_encoded}
-            except Exception as e:
-                return JSONResponse(
-                    status_code=500,
-                    content={'error': f'Error reading binary file: {e}'},
-                )
-        else:
+        read_action = FileReadAction(file)
+        try:
+            observation = await call_sync_from_async(runtime.run_action, read_action)
+        except AgentRuntimeUnavailableError as e:
+            logger.error(f'Error opening file {file}: {e}')
             return JSONResponse(
                 status_code=500,
-                content={'error': f'Error opening file: {observation}'},
+                content={'error': f'Error opening file: {e}'},
             )
 
-    return JSONResponse(
-        status_code=500,
-        content={'error': f'Error opening file: {observation}'},
-    )
+        if isinstance(observation, FileReadObservation):
+            content = observation.content
+            return {'code': content}
+        elif isinstance(observation, ErrorObservation):
+            logger.error(f'Error opening file {file}: {observation}')
+
+            if 'ERROR_BINARY_FILE' in observation.message:
+                try:
+                    async with aiofiles.open(file, 'rb') as f:
+                        binary_data = await f.read()
+                        base64_encoded = base64.b64encode(binary_data).decode('utf-8')
+                        return {'code': base64_encoded}
+                except Exception as e:
+                    return JSONResponse(
+                        status_code=500,
+                        content={'error': f'Error reading binary file: {e}'},
+                    )
+            else:
+                return JSONResponse(
+                    status_code=500,
+                    content={'error': f'Error opening file: {observation}'},
+                )
+
+        return JSONResponse(
+            status_code=500,
+            content={'error': f'Error opening file: {observation}'},
+        )
+    finally:
+        if session:
+            await shared.conversation_manager.detach_from_conversation(session)
 
 
 @app.put('/update-empty-titles')
