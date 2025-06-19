@@ -22,7 +22,7 @@ const MOCK_GET_SECRETS_RESPONSE: GetSecretsResponse["custom_secrets"] = [
 
 const RouterStub = createRoutesStub([
   {
-    Component: Outlet,
+    Component: () => <Outlet />,
     path: "/settings",
     children: [
       {
@@ -31,7 +31,7 @@ const RouterStub = createRoutesStub([
       },
       {
         Component: () => <div data-testid="git-settings-screen" />,
-        path: "/settings/git",
+        path: "/settings/integrations",
       },
     ],
   },

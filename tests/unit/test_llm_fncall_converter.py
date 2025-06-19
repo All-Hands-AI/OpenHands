@@ -654,6 +654,72 @@ NON_FNCALL_RESPONSE_MESSAGE = {
 <parameter=view_range>[1, 10]</parameter>
 </function>""",
         ),
+        # Test case with indented code block to verify indentation is preserved
+        (
+            [
+                {
+                    'index': 1,
+                    'function': {
+                        'arguments': '{"command": "str_replace", "path": "/test/file.py", "old_str": "def example():\\n    pass", "new_str": "def example():\\n    # This is indented\\n    print(\\"hello\\")\\n    return True"}',
+                        'name': 'str_replace_editor',
+                    },
+                    'id': 'test_id',
+                    'type': 'function',
+                }
+            ],
+            """<function=str_replace_editor>
+<parameter=command>str_replace</parameter>
+<parameter=path>/test/file.py</parameter>
+<parameter=old_str>
+def example():
+    pass
+</parameter>
+<parameter=new_str>
+def example():
+    # This is indented
+    print("hello")
+    return True
+</parameter>
+</function>""",
+        ),
+        # Test case with list parameter value
+        (
+            [
+                {
+                    'index': 1,
+                    'function': {
+                        'arguments': '{"command": "test", "path": "/test/file.py", "tags": ["tag1", "tag2", "tag with spaces"]}',
+                        'name': 'test_function',
+                    },
+                    'id': 'test_id',
+                    'type': 'function',
+                }
+            ],
+            """<function=test_function>
+<parameter=command>test</parameter>
+<parameter=path>/test/file.py</parameter>
+<parameter=tags>["tag1", "tag2", "tag with spaces"]</parameter>
+</function>""",
+        ),
+        # Test case with dict parameter value
+        (
+            [
+                {
+                    'index': 1,
+                    'function': {
+                        'arguments': '{"command": "test", "path": "/test/file.py", "metadata": {"key1": "value1", "key2": 42, "nested": {"subkey": "subvalue"}}}',
+                        'name': 'test_function',
+                    },
+                    'id': 'test_id',
+                    'type': 'function',
+                }
+            ],
+            """<function=test_function>
+<parameter=command>test</parameter>
+<parameter=path>/test/file.py</parameter>
+<parameter=metadata>{"key1": "value1", "key2": 42, "nested": {"subkey": "subvalue"}}</parameter>
+</function>""",
+        ),
     ],
 )
 def test_convert_tool_call_to_string(tool_calls, expected):
@@ -944,3 +1010,81 @@ def test_convert_from_multiple_tool_calls_no_tool_calls():
         input_messages
     )
     assert result == input_messages
+
+
+def test_convert_fncall_messages_with_cache_control():
+    """Test that cache_control is properly handled in tool messages."""
+    # Prepare test data
+    messages = [
+        {
+            'role': 'tool',
+            'name': 'test_tool',
+            'content': [{'type': 'text', 'text': 'test content'}],
+            'cache_control': {'type': 'ephemeral'},
+        }
+    ]
+
+    # Call the function
+    result = convert_fncall_messages_to_non_fncall_messages(messages, [])
+
+    # Verify the result
+    assert len(result) == 1
+    assert result[0]['role'] == 'user'
+    assert 'cache_control' in result[0]['content'][-1]
+    assert result[0]['content'][-1]['cache_control'] == {'type': 'ephemeral'}
+    assert (
+        result[0]['content'][0]['text']
+        == 'EXECUTION RESULT of [test_tool]:\ntest content'
+    )
+
+
+def test_convert_fncall_messages_without_cache_control():
+    """Test that tool messages without cache_control work as expected."""
+    # Prepare test data
+    messages = [
+        {
+            'role': 'tool',
+            'name': 'test_tool',
+            'content': [{'type': 'text', 'text': 'test content'}],
+        }
+    ]
+
+    # Call the function
+    result = convert_fncall_messages_to_non_fncall_messages(messages, [])
+
+    # Verify the result
+    assert len(result) == 1
+    assert result[0]['role'] == 'user'
+    assert 'cache_control' not in result[0]['content'][-1]
+    assert (
+        result[0]['content'][0]['text']
+        == 'EXECUTION RESULT of [test_tool]:\ntest content'
+    )
+
+
+def test_convert_fncall_messages_with_image_url():
+    """Test that convert_fncall_messages_to_non_fncall_messages handles image URLs correctly."""
+    messages = [
+        {
+            'role': 'tool',
+            'name': 'browser',
+            'content': [
+                {
+                    'type': 'text',
+                    'text': 'some browser tool results',
+                },
+                {
+                    'type': 'image_url',
+                    'image_url': {'url': 'data:image/gif;base64,R0lGODlhAQABAAAAACw='},
+                },
+            ],
+        }
+    ]
+    converted_messages = convert_fncall_messages_to_non_fncall_messages(messages, [])
+    assert len(converted_messages) == 1
+    assert converted_messages[0]['role'] == 'user'
+    assert len(converted_messages[0]['content']) == len(messages[0]['content'])
+    assert (
+        next(c for c in converted_messages[0]['content'] if c['type'] == 'text')['text']
+        == f'EXECUTION RESULT of [{messages[0]["name"]}]:\n{messages[0]["content"][0]["text"]}'
+    )

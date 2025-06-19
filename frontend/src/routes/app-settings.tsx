@@ -73,6 +73,7 @@ function AppSettingsScreen() {
           setLanguageInputHasChanged(false);
           setAnalyticsSwitchHasChanged(false);
           setSoundNotificationsSwitchHasChanged(false);
+          setProactiveConversationsSwitchHasChanged(false);
         },
       },
     );
@@ -138,7 +139,7 @@ function AppSettingsScreen() {
             defaultIsToggled={!!settings.USER_CONSENTS_TO_ANALYTICS}
             onToggle={checkIfAnalyticsSwitchHasChanged}
           >
-            {t(I18nKey.ANALYTICS$ENABLE)}
+            {t(I18nKey.ANALYTICS$SEND_ANONYMOUS_DATA)}
           </SettingsSwitch>
 
           <SettingsSwitch

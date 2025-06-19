@@ -7,8 +7,8 @@ from fastapi import Request
 from pydantic import SecretStr
 
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
-from openhands.server.shared import server_config
 from openhands.server.settings import Settings
+from openhands.server.shared import server_config
 from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.secrets.secrets_store import SecretsStore
 from openhands.storage.settings.settings_store import SettingsStore
@@ -21,13 +21,26 @@ class AuthType(Enum):
 
 
 class UserAuth(ABC):
-    """Extensible class encapsulating user Authentication"""
+    """Abstract base class for user authentication.
+
+    This is an extension point in OpenHands that allows applications to provide their own
+    authentication mechanisms. Applications can substitute their own implementation by:
+    1. Creating a class that inherits from UserAuth
+    2. Implementing all required methods
+    3. Setting server_config.user_auth_class to the fully qualified name of the class
+
+    The class is instantiated via get_impl() in openhands.server.shared.py.
+    """
 
     _settings: Settings | None
 
     @abstractmethod
     async def get_user_id(self) -> str | None:
         """Get the unique identifier for the current user"""
+
+    @abstractmethod
+    async def get_user_email(self) -> str | None:
+        """Get the email for the current user"""
 
     @abstractmethod
     async def get_access_token(self) -> SecretStr | None:

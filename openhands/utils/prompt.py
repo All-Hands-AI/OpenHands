@@ -25,6 +25,20 @@ class RepositoryInfo:
     repo_directory: str | None = None
 
 
+@dataclass
+class ConversationInstructions:
+    """
+    Optional instructions the agent must follow throughout the conversation while addressing the user's initial task
+
+    Examples include
+
+        1. Resolver instructions: you're responding to GitHub issue #1234, make sure to open a PR when you are done
+        2. Slack instructions: make sure to check whether any of the context attached is relevant to the task <context_messages>
+    """
+
+    content: str = ''
+
+
 class PromptManager:
     """
     Manages prompt templates and includes information from the user's workspace micro-agents and global micro-agents.
@@ -74,6 +88,7 @@ class PromptManager:
         self,
         repository_info: RepositoryInfo | None,
         runtime_info: RuntimeInfo | None,
+        conversation_instructions: ConversationInstructions | None,
         repo_instructions: str = '',
     ) -> str:
         """Renders the additional info template with the stored repository/runtime info."""
@@ -81,6 +96,7 @@ class PromptManager:
             repository_info=repository_info,
             repository_instructions=repo_instructions,
             runtime_info=runtime_info,
+            conversation_instructions=conversation_instructions,
         ).strip()
 
     def build_microagent_info(
@@ -111,5 +127,5 @@ class PromptManager:
             None,
         )
         if latest_user_message:
-            reminder_text = f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
+            reminder_text = f'\n\nENVIRONMENT REMINDER: You have {state.iteration_flag.max_value - state.iteration_flag.current_value} turns left to complete the task. When finished reply with <finish></finish>.'
             latest_user_message.content.append(TextContent(text=reminder_text))

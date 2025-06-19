@@ -29,7 +29,6 @@ from openhands.events.action import (
     AgentFinishAction,
     AgentThinkAction,
     BrowseInteractiveAction,
-    BrowseURLAction,
     CmdRunAction,
     FileEditAction,
     FileReadAction,
@@ -142,6 +141,9 @@ def response_to_actions(
                     content=arguments['content'],
                     start=arguments.get('start', 1),
                     end=arguments.get('end', -1),
+                    impl_source=arguments.get(
+                        'impl_source', FileEditSource.LLM_BASED_EDIT
+                    ),
                 )
             elif (
                 tool_call.function.name

@@ -89,15 +89,13 @@ async def auto_generate_title(
     Returns:
         A generated title string
     """
-    logger.info(f'Auto-generating title for conversation {conversation_id}')
-
     try:
         # Create an event stream for the conversation
         event_stream = EventStream(conversation_id, file_store, user_id)
 
         # Find the first user message
         first_user_message = None
-        for event in event_stream.get_events():
+        for event in event_stream.search_events():
             if (
                 event.source == EventSource.USER
                 and isinstance(event, MessageAction)

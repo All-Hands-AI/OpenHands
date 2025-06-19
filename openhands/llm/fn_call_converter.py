@@ -22,6 +22,7 @@ from openhands.llm.tool_names import (
     BROWSER_TOOL_NAME,
     EXECUTE_BASH_TOOL_NAME,
     FINISH_TOOL_NAME,
+    LLM_BASED_EDIT_TOOL_NAME,
     STR_REPLACE_EDITOR_TOOL_NAME,
 )
 
@@ -252,6 +253,58 @@ USER: EXECUTION RESULT of [browser]:
 [Browser shows the numbers in a table format]
 """
     },
+    'edit_file': {
+        'create_file': """
+ASSISTANT: There is no `app.py` file in the current directory. Let me create a Python file `app.py`:
+<function=edit_file>
+<parameter=path>/workspace/app.py</parameter>
+<parameter=start>1</parameter>
+<parameter=end>-1</parameter>
+<parameter=content>
+from flask import Flask
+app = Flask(__name__)
+
+@app.route('/')
+def index():
+    numbers = list(range(1, 11))
+    return str(numbers)
+
+if __name__ == '__main__':
+    app.run(port=5000)
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [edit_file]:
+File created successfully at: /workspace/app.py
+""",
+        'edit_file': """
+ASSISTANT:
+Now let me display the numbers in a table format:
+<function=edit_file>
+<parameter=path>/workspace/app.py</parameter>
+<parameter=start>6</parameter>
+<parameter=end>9</parameter>
+<parameter=content>
+    numbers = list(range(1, 11))
+    return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'
+    # ... existing code ...
+if __name__ == '__main__':
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [edit_file]:
+The file /workspace/app.py has been edited. Here's the result of running `cat -n` on a snippet of /workspace/app.py:
+     3
+     4  @app.route('/')
+     5  def index():
+     6      numbers = list(range(1, 11))
+     7      return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'
+     8
+     9  if __name__ == '__main__':
+    10      app.run(port=5000)
+Review the changes and make sure they are as expected. Edit the file again if necessary.
+""",
+    },
     'finish': {
         'task_completed': """
 ASSISTANT:
@@ -279,6 +332,8 @@ def get_example_for_tools(tools: list[dict]) -> str:
                 available_tools.add('browser')
             elif name == FINISH_TOOL_NAME:
                 available_tools.add('finish')
+            elif name == LLM_BASED_EDIT_TOOL_NAME:
+                available_tools.add('edit_file')
 
     if not available_tools:
         return ''
@@ -297,6 +352,8 @@ USER: Create a list of numbers from 1 to 10, and display them in a web page at p
 
     if 'str_replace_editor' in available_tools:
         example += TOOL_EXAMPLES['str_replace_editor']['create_file']
+    elif 'edit_file' in available_tools:
+        example += TOOL_EXAMPLES['edit_file']['create_file']
 
     if 'execute_bash' in available_tools:
         example += TOOL_EXAMPLES['execute_bash']['run_server']
@@ -309,6 +366,8 @@ USER: Create a list of numbers from 1 to 10, and display them in a web page at p
 
     if 'str_replace_editor' in available_tools:
         example += TOOL_EXAMPLES['str_replace_editor']['edit_file']
+    elif 'edit_file' in available_tools:
+        example += TOOL_EXAMPLES['edit_file']['edit_file']
 
     if 'execute_bash' in available_tools:
         example += TOOL_EXAMPLES['execute_bash']['run_server_again']
@@ -367,7 +426,10 @@ def convert_tool_call_to_string(tool_call: dict) -> str:
         ret += f'<parameter={param_name}>'
         if is_multiline:
             ret += '\n'
-        ret += f'{param_value}'
+        if isinstance(param_value, list) or isinstance(param_value, dict):
+            ret += json.dumps(param_value)
+        else:
+            ret += f'{param_value}'
         if is_multiline:
             ret += '\n'
         ret += '</parameter>\n'
@@ -536,14 +598,20 @@ def convert_fncall_messages_to_non_fncall_messages(
             if isinstance(content, str):
                 content = prefix + content
             elif isinstance(content, list):
-                if content and content[-1]['type'] == 'text':
-                    content[-1]['text'] = prefix + content[-1]['text']
+                if content and (
+                    first_text_content := next(
+                        (c for c in content if c['type'] == 'text'), None
+                    )
+                ):
+                    first_text_content['text'] = prefix + first_text_content['text']
                 else:
                     content = [{'type': 'text', 'text': prefix}] + content
             else:
                 raise FunctionCallConversionError(
                     f'Unexpected content type {type(content)}. Expected str or list. Content: {content}'
                 )
+            if 'cache_control' in message:
+                content[-1]['cache_control'] = {'type': 'ephemeral'}
             converted_messages.append({'role': 'user', 'content': content})
         else:
             raise FunctionCallConversionError(
@@ -576,7 +644,7 @@ def _extract_and_validate_params(
     found_params = set()
     for param_match in param_matches:
         param_name = param_match.group(1)
-        param_value = param_match.group(2).strip()
+        param_value = param_match.group(2)
 
         # Validate parameter is allowed
         if allowed_params and param_name not in allowed_params:

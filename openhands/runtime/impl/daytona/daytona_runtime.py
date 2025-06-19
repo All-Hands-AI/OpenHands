@@ -1,39 +1,40 @@
-import json
 from typing import Callable
 
 import httpx
 import tenacity
-from daytona_sdk import (
-    CreateWorkspaceParams,
+from daytona import (
+    CreateSandboxFromSnapshotParams,
     Daytona,
     DaytonaConfig,
+    Sandbox,
     SessionExecuteRequest,
-    Workspace,
 )
 
-from openhands.core.config.app_config import AppConfig
+from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.events.stream import EventStream
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
 from openhands.runtime.plugins.requirement import PluginRequirement
+from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.runtime.utils.command import get_action_execution_server_startup_command
 from openhands.runtime.utils.request import RequestHTTPError
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
-WORKSPACE_PREFIX = 'openhands-sandbox-'
+OPENHANDS_SID_LABEL = 'OpenHands_SID'
 
 
 class DaytonaRuntime(ActionExecutionClient):
-    """The DaytonaRuntime class is a DockerRuntime that utilizes Daytona workspace as a runtime environment."""
+    """The DaytonaRuntime class is a DockerRuntime that utilizes Daytona Sandboxes as runtime environments."""
 
     _sandbox_port: int = 4444
     _vscode_port: int = 4445
 
     def __init__(
         self,
-        config: AppConfig,
+        config: OpenHandsConfig,
         event_stream: EventStream,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
@@ -41,13 +42,14 @@ class DaytonaRuntime(ActionExecutionClient):
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = True,
+        user_id: str | None = None,
+        git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
     ):
         assert config.daytona_api_key, 'Daytona API key is required'
 
         self.config = config
         self.sid = sid
-        self.workspace_id = WORKSPACE_PREFIX + sid
-        self.workspace: Workspace | None = None
+        self.sandbox: Sandbox | None = None
         self._vscode_url: str | None = None
 
         daytona_config = DaytonaConfig(
@@ -73,22 +75,28 @@ class DaytonaRuntime(ActionExecutionClient):
             status_callback,
             attach_to_existing,
             headless_mode,
+            user_id,
+            git_provider_tokens,
         )
 
-    def _get_workspace(self) -> Workspace | None:
+    def _get_sandbox(self) -> Sandbox | None:
         try:
-            workspace = self.daytona.get_current_workspace(self.workspace_id)
-            self.log(
-                'info', f'Attached to existing workspace with id: {self.workspace_id}'
-            )
+            sandboxes = self.daytona.list({OPENHANDS_SID_LABEL: self.sid})
+            if len(sandboxes) == 0:
+                return None
+            assert len(sandboxes) == 1, 'Multiple sandboxes found for SID'
+
+            sandbox = sandboxes[0]
+
+            self.log('info', f'Attached to existing sandbox with id: {self.sid}')
         except Exception:
             self.log(
                 'warning',
-                f'Failed to attach to existing workspace with id: {self.workspace_id}',
+                f'Failed to attach to existing sandbox with id: {self.sid}',
             )
-            workspace = None
+            sandbox = None
 
-        return workspace
+        return sandbox
 
     def _get_creation_env_vars(self) -> dict[str, str]:
         env_vars: dict[str, str] = {
@@ -102,37 +110,28 @@ class DaytonaRuntime(ActionExecutionClient):
 
         return env_vars
 
-    def _create_workspace(self) -> Workspace:
-        workspace_params = CreateWorkspaceParams(
-            id=self.workspace_id,
+    def _create_sandbox(self) -> Sandbox:
+        sandbox_params = CreateSandboxFromSnapshotParams(
             language='python',
-            image=self.config.sandbox.runtime_container_image,
+            snapshot=self.config.sandbox.runtime_container_image,
             public=True,
             env_vars=self._get_creation_env_vars(),
+            labels={OPENHANDS_SID_LABEL: self.sid},
         )
-        workspace = self.daytona.create(workspace_params)
-        return workspace
+        return self.daytona.create(sandbox_params)
 
     def _construct_api_url(self, port: int) -> str:
-        assert self.workspace is not None, 'Workspace is not initialized'
-        assert self.workspace.instance.info is not None, (
-            'Workspace info is not available'
-        )
-        assert self.workspace.instance.info.provider_metadata is not None, (
-            'Provider metadata is not available'
-        )
+        assert self.sandbox is not None, 'Sandbox is not initialized'
+        assert self.sandbox.runner_domain is not None, 'Runner domain is not available'
 
-        node_domain = json.loads(self.workspace.instance.info.provider_metadata)[
-            'nodeDomain'
-        ]
-        return f'https://{port}-{self.workspace.id}.{node_domain}'
+        return f'https://{port}-{self.sandbox.id}.{self.sandbox.runner_domain}'
 
     @property
     def action_execution_server_url(self) -> str:
         return self.api_url
 
     def _start_action_execution_server(self) -> None:
-        assert self.workspace is not None, 'Workspace is not initialized'
+        assert self.sandbox is not None, 'Sandbox is not initialized'
 
         start_command: list[str] = get_action_execution_server_startup_command(
             server_port=self._sandbox_port,
@@ -152,9 +151,9 @@ class DaytonaRuntime(ActionExecutionClient):
         )
 
         exec_session_id = 'action-execution-server'
-        self.workspace.process.create_session(exec_session_id)
+        self.sandbox.process.create_session(exec_session_id)
 
-        exec_command = self.workspace.process.execute_session_command(
+        exec_command = self.sandbox.process.execute_session_command(
             exec_session_id,
             SessionExecuteRequest(command=start_command_str, var_async=True),
         )
@@ -170,31 +169,31 @@ class DaytonaRuntime(ActionExecutionClient):
         super().check_if_alive()
 
     async def connect(self):
-        self.send_status_message('STATUS$STARTING_RUNTIME')
+        self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
         should_start_action_execution_server = False
 
         if self.attach_to_existing:
-            self.workspace = await call_sync_from_async(self._get_workspace)
+            self.sandbox = await call_sync_from_async(self._get_sandbox)
         else:
             should_start_action_execution_server = True
 
-        if self.workspace is None:
-            self.send_status_message('STATUS$PREPARING_CONTAINER')
-            self.workspace = await call_sync_from_async(self._create_workspace)
-            self.log('info', f'Created new workspace with id: {self.workspace_id}')
+        if self.sandbox is None:
+            self.set_runtime_status(RuntimeStatus.BUILDING_RUNTIME)
+            self.sandbox = await call_sync_from_async(self._create_sandbox)
+            self.log('info', f'Created a new sandbox with id: {self.sid}')
 
         self.api_url = self._construct_api_url(self._sandbox_port)
 
-        state = self.workspace.instance.state
+        state = self.sandbox.state
 
         if state == 'stopping':
-            self.log('info', 'Waiting for Daytona workspace to stop...')
-            await call_sync_from_async(self.workspace.wait_for_workspace_stop)
+            self.log('info', 'Waiting for the Daytona sandbox to stop...')
+            await call_sync_from_async(self.sandbox.wait_for_sandbox_stop)
             state = 'stopped'
 
         if state == 'stopped':
-            self.log('info', 'Starting Daytona workspace...')
-            await call_sync_from_async(self.workspace.start)
+            self.log('info', 'Starting the Daytona sandbox...')
+            await call_sync_from_async(self.sandbox.start)
             should_start_action_execution_server = True
 
         if should_start_action_execution_server:
@@ -205,7 +204,7 @@ class DaytonaRuntime(ActionExecutionClient):
             )
 
         self.log('info', 'Waiting for client to become ready...')
-        self.send_status_message('STATUS$WAITING_FOR_CLIENT')
+        self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
         await call_sync_from_async(self._wait_until_alive)
 
         if should_start_action_execution_server:
@@ -217,7 +216,7 @@ class DaytonaRuntime(ActionExecutionClient):
         )
 
         if should_start_action_execution_server:
-            self.send_status_message(' ')
+            self.set_runtime_status(RuntimeStatus.READY)
         self._runtime_initialized = True
 
     @tenacity.retry(
@@ -241,8 +240,8 @@ class DaytonaRuntime(ActionExecutionClient):
         if self.attach_to_existing:
             return
 
-        if self.workspace:
-            self.daytona.remove(self.workspace)
+        if self.sandbox:
+            self.sandbox.delete()
 
     @property
     def vscode_url(self) -> str | None:
@@ -254,9 +253,9 @@ class DaytonaRuntime(ActionExecutionClient):
                 'warning', 'Failed to get VSCode token while trying to get VSCode URL'
             )
             return None
-        if not self.workspace:
+        if not self.sandbox:
             self.log(
-                'warning', 'Workspace is not initialized while trying to get VSCode URL'
+                'warning', 'Sandbox is not initialized while trying to get VSCode URL'
             )
             return None
         self._vscode_url = (

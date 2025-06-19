@@ -4,7 +4,6 @@ import { StatusMessage } from "#/types/message";
 import { queryClient } from "#/query-client-config";
 import store from "#/store";
 import { setCurStatusMessage } from "#/state/status-slice";
-import { addErrorMessage } from "#/state/chat-slice";
 import { trackError } from "#/utils/error-handler";
 
 // Mock dependencies
@@ -100,9 +99,6 @@ describe("handleStatusMessage", () => {
       source: "chat",
       metadata: { msgId: "ERROR_ID" },
     });
-
-    // Verify that store.dispatch was called with addErrorMessage
-    expect(store.dispatch).toHaveBeenCalledWith(addErrorMessage(statusMessage));
 
     // Verify that queryClient.invalidateQueries was not called
     expect(queryClient.invalidateQueries).not.toHaveBeenCalled();

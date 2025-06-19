@@ -1,4 +1,4 @@
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.runtime.plugins import PluginRequirement
 
 DEFAULT_PYTHON_PREFIX = [
@@ -15,7 +15,7 @@ DEFAULT_MAIN_MODULE = 'openhands.runtime.action_execution_server'
 def get_action_execution_server_startup_command(
     server_port: int,
     plugins: list[PluginRequirement],
-    app_config: AppConfig,
+    app_config: OpenHandsConfig,
     python_prefix: list[str] = DEFAULT_PYTHON_PREFIX,
     override_user_id: int | None = None,
     override_username: str | None = None,

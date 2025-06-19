@@ -2,13 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import { openHands } from "#/api/open-hands-axios";
 import { RootState } from "#/store";
-import { useConversation } from "#/context/conversation-context";
+import { useConversationId } from "#/hooks/use-conversation-id";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 
 export const useActionExecutionServerUrl = () => {
   const { curAgentState } = useSelector((state: RootState) => state.agent);
 
-  const { conversationId } = useConversation();
+  const { conversationId } = useConversationId();
 
   const { data } = useQuery({
     queryKey: ["conversation", "action_execution_server", conversationId],

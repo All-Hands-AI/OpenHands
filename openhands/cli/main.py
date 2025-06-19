@@ -1,14 +1,19 @@
 import asyncio
 import logging
+import os
 import sys
 
+from prompt_toolkit import print_formatted_text
+from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.shortcuts import clear
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
+import openhands.cli.suppress_warnings  # noqa: F401
 from openhands.cli.commands import (
     check_folder_security_agreement,
     handle_commands,
 )
+from openhands.cli.settings import modify_llm_settings_basic
 from openhands.cli.tui import (
     UsageMetrics,
     display_agent_running_message,
@@ -21,6 +26,7 @@ from openhands.cli.tui import (
     process_agent_pause,
     read_confirmation_input,
     read_prompt_input,
+    update_streaming_output,
 )
 from openhands.cli.utils import (
     update_usage_metrics,
@@ -28,11 +34,12 @@ from openhands.cli.utils import (
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent
 from openhands.core.config import (
-    AppConfig,
+    OpenHandsConfig,
     parse_arguments,
     setup_config_from_args,
 )
 from openhands.core.config.condenser_config import NoOpCondenserConfig
+from openhands.core.config.mcp_config import OpenHandsMCPConfigImpl
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.loop import run_agent_until_done
 from openhands.core.schema import AgentState
@@ -70,42 +77,43 @@ async def cleanup_session(
     controller: AgentController,
 ) -> None:
     """Clean up all resources from the current session."""
+
+    event_stream = runtime.event_stream
+    end_state = controller.get_state()
+    end_state.save_to_session(
+        event_stream.sid,
+        event_stream.file_store,
+        event_stream.user_id,
+    )
+
     try:
-        # Cancel all running tasks except the current one
         current_task = asyncio.current_task(loop)
         pending = [task for task in asyncio.all_tasks(loop) if task is not current_task]
+
+        if pending:
+            done, pending_set = await asyncio.wait(set(pending), timeout=2.0)
+            pending = list(pending_set)
+
         for task in pending:
             task.cancel()
 
-        # Wait for all tasks to complete with a timeout
-        if pending:
-            await asyncio.wait(pending, timeout=5.0)
-
-        event_stream = runtime.event_stream
-
-        # Save the final state
-        end_state = controller.get_state()
-        end_state.save_to_session(
-            event_stream.sid,
-            event_stream.file_store,
-            event_stream.user_id,
-        )
-
-        # Reset agent, close runtime and controller
         agent.reset()
         runtime.close()
         await controller.close()
+
     except Exception as e:
         logger.error(f'Error during session cleanup: {e}')
 
 
 async def run_session(
     loop: asyncio.AbstractEventLoop,
-    config: AppConfig,
+    config: OpenHandsConfig,
     settings_store: FileSettingsStore,
     current_dir: str,
     task_content: str | None = None,
+    conversation_instructions: str | None = None,
     session_name: str | None = None,
+    skip_banner: bool = False,
 ) -> bool:
     reload_microagents = False
     new_session_requested = False
@@ -130,6 +138,12 @@ async def run_session(
         headless_mode=True,
         agent=agent,
     )
+
+    def stream_to_console(output: str) -> None:
+        # Instead of printing to stdout, pass the string to the TUI module
+        update_streaming_output(output)
+
+    runtime.subscribe_to_shell_stream(stream_to_console)
 
     controller, initial_state = create_controller(agent, runtime, config)
 
@@ -248,11 +262,21 @@ async def run_session(
         sid=sid,
         selected_repository=config.sandbox.selected_repo,
         repo_directory=repo_directory,
+        conversation_instructions=conversation_instructions,
     )
 
     # Add MCP tools to the agent
     if agent.config.enable_mcp:
-        await add_mcp_tools_to_agent(agent, runtime, memory, config.mcp)
+        # Add OpenHands' MCP server by default
+        _, openhands_mcp_stdio_servers = (
+            OpenHandsMCPConfigImpl.create_default_mcp_server_config(
+                config.mcp_host, config, None
+            )
+        )
+
+        runtime.config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
+
+        await add_mcp_tools_to_agent(agent, runtime, memory)
 
     # Clear loading animation
     is_loaded.set()
@@ -260,8 +284,9 @@ async def run_session(
     # Clear the terminal
     clear()
 
-    # Show OpenHands banner and session ID
-    display_banner(session_id=sid)
+    # Show OpenHands banner and session ID if not skipped
+    if not skip_banner:
+        display_banner(session_id=sid)
 
     welcome_message = 'What do you want to build?'  # from the application
     initial_message = ''  # from the user
@@ -306,19 +331,49 @@ async def run_session(
     return new_session_requested
 
 
-async def main(loop: asyncio.AbstractEventLoop) -> None:
+async def run_setup_flow(config: OpenHandsConfig, settings_store: FileSettingsStore):
+    """Run the setup flow to configure initial settings.
+
+    Returns:
+        bool: True if settings were successfully configured, False otherwise.
+    """
+    # Display the banner with ASCII art first
+    display_banner(session_id='setup')
+
+    print_formatted_text(
+        HTML('<grey>No settings found. Starting initial setup...</grey>\n')
+    )
+
+    # Use the existing settings modification function for basic setup
+    await modify_llm_settings_basic(config, settings_store)
+
+
+async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
     """Runs the agent in CLI mode."""
     args = parse_arguments()
 
     logger.setLevel(logging.WARNING)
 
     # Load config from toml and override with command line arguments
-    config: AppConfig = setup_config_from_args(args)
+    config: OpenHandsConfig = setup_config_from_args(args)
 
     # Load settings from Settings Store
     # TODO: Make this generic?
     settings_store = await FileSettingsStore.get_instance(config=config, user_id=None)
     settings = await settings_store.load()
+
+    # Track if we've shown the banner during setup
+    banner_shown = False
+
+    # If settings don't exist, automatically enter the setup flow
+    if not settings:
+        # Clear the terminal before showing the banner
+        clear()
+
+        await run_setup_flow(config, settings_store)
+        banner_shown = True
+
+        settings = await settings_store.load()
 
     # Use settings from settings store if available and override with command line arguments
     if settings:
@@ -354,6 +409,20 @@ async def main(loop: asyncio.AbstractEventLoop) -> None:
             config.set_agent_config(agent_config)
             config.enable_default_condenser = False
 
+    # Determine if CLI defaults should be overridden
+    val_override = args.override_cli_mode
+    should_override_cli_defaults = (
+        val_override is True
+        or (isinstance(val_override, str) and val_override.lower() in ('true', '1'))
+        or (isinstance(val_override, int) and val_override == 1)
+    )
+
+    if not should_override_cli_defaults:
+        config.runtime = 'cli'
+        if not config.workspace_base:
+            config.workspace_base = os.getcwd()
+        config.security.confirmation_mode = True
+
     # TODO: Set working directory from config or use current working directory?
     current_dir = config.workspace_base
 
@@ -375,6 +444,7 @@ async def main(loop: asyncio.AbstractEventLoop) -> None:
         current_dir,
         task_str,
         session_name=args.name,
+        skip_banner=banner_shown,
     )
 
     # If a new session was requested, run it
@@ -384,11 +454,11 @@ async def main(loop: asyncio.AbstractEventLoop) -> None:
         )
 
 
-if __name__ == '__main__':
+def main():
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
-        loop.run_until_complete(main(loop))
+        loop.run_until_complete(main_with_loop(loop))
     except KeyboardInterrupt:
         print('Received keyboard interrupt, shutting down...')
     except ConnectionRefusedError as e:
@@ -410,3 +480,7 @@ if __name__ == '__main__':
         except Exception as e:
             print(f'Error during cleanup: {e}')
             sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()

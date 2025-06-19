@@ -68,7 +68,7 @@ export function ModelSelector({
   const { t } = useTranslation();
 
   return (
-    <div className="flex w-[680px] justify-between gap-[46px]">
+    <div className="flex flex-col md:flex-row w-[full] md:w-[680px] justify-between gap-4 md:gap-[46px]">
       <fieldset className="flex flex-col gap-2.5 w-full">
         <label className="text-sm">{t(I18nKey.LLM$PROVIDER)}</label>
         <Autocomplete
@@ -92,7 +92,7 @@ export function ModelSelector({
           inputProps={{
             classNames: {
               inputWrapper:
-                "bg-tertiary border border-[#717888] h-10 w-full rounded p-2 placeholder:italic",
+                "bg-tertiary border border-[#717888] h-10 w-full rounded-sm p-2 placeholder:italic",
             },
           }}
         >
@@ -142,7 +142,7 @@ export function ModelSelector({
           inputProps={{
             classNames: {
               inputWrapper:
-                "bg-tertiary border border-[#717888] h-10 w-full rounded p-2 placeholder:italic",
+                "bg-tertiary border border-[#717888] h-10 w-full rounded-sm p-2 placeholder:italic",
             },
           }}
         >

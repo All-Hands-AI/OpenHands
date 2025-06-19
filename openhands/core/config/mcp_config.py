@@ -1,6 +1,14 @@
+import os
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from pydantic import BaseModel, Field, ValidationError, model_validator
+
+if TYPE_CHECKING:
+    from openhands.core.config.openhands_config import OpenHandsConfig
+
+from openhands.core.logger import openhands_logger as logger
+from openhands.utils.import_utils import get_impl
 
 
 class MCPSSEServerConfig(BaseModel):
@@ -30,6 +38,27 @@ class MCPStdioServerConfig(BaseModel):
     args: list[str] = Field(default_factory=list)
     env: dict[str, str] = Field(default_factory=dict)
 
+    def __eq__(self, other):
+        """Override equality operator to compare server configurations.
+
+        Two server configurations are considered equal if they have the same
+        name, command, args, and env values. The order of args is important,
+        but the order of env variables is not.
+        """
+        if not isinstance(other, MCPStdioServerConfig):
+            return False
+        return (
+            self.name == other.name
+            and self.command == other.command
+            and self.args == other.args
+            and set(self.env.items()) == set(other.env.items())
+        )
+
+
+class MCPSHTTPServerConfig(BaseModel):
+    url: str
+    api_key: str | None = None
+
 
 class MCPConfig(BaseModel):
     """Configuration for MCP (Message Control Protocol) settings.
@@ -41,11 +70,12 @@ class MCPConfig(BaseModel):
 
     sse_servers: list[MCPSSEServerConfig] = Field(default_factory=list)
     stdio_servers: list[MCPStdioServerConfig] = Field(default_factory=list)
+    shttp_servers: list[MCPSHTTPServerConfig] = Field(default_factory=list)
 
     model_config = {'extra': 'forbid'}
 
     @staticmethod
-    def _normalize_sse_servers(servers_data: list[dict | str]) -> list[dict]:
+    def _normalize_servers(servers_data: list[dict | str]) -> list[dict]:
         """Helper method to normalize SSE server configurations."""
         normalized = []
         for server in servers_data:
@@ -58,8 +88,13 @@ class MCPConfig(BaseModel):
     @model_validator(mode='before')
     def convert_string_urls(cls, data):
         """Convert string URLs to MCPSSEServerConfig objects."""
-        if isinstance(data, dict) and 'sse_servers' in data:
-            data['sse_servers'] = cls._normalize_sse_servers(data['sse_servers'])
+        if isinstance(data, dict):
+            if 'sse_servers' in data:
+                data['sse_servers'] = cls._normalize_servers(data['sse_servers'])
+
+            if 'shttp_servers' in data:
+                data['shttp_servers'] = cls._normalize_servers(data['shttp_servers'])
+
         return data
 
     def validate_servers(self) -> None:
@@ -95,7 +130,7 @@ class MCPConfig(BaseModel):
         try:
             # Convert all entries in sse_servers to MCPSSEServerConfig objects
             if 'sse_servers' in data:
-                data['sse_servers'] = cls._normalize_sse_servers(data['sse_servers'])
+                data['sse_servers'] = cls._normalize_servers(data['sse_servers'])
                 servers = []
                 for server in data['sse_servers']:
                     servers.append(MCPSSEServerConfig(**server))
@@ -107,6 +142,13 @@ class MCPConfig(BaseModel):
                 for server in data['stdio_servers']:
                     servers.append(MCPStdioServerConfig(**server))
                 data['stdio_servers'] = servers
+
+            if 'shttp_servers' in data:
+                data['shttp_servers'] = cls._normalize_servers(data['shttp_servers'])
+                servers = []
+                for server in data['shttp_servers']:
+                    servers.append(MCPSHTTPServerConfig(**server))
+                data['shttp_servers'] = servers
 
             # Create SSE config if present
             mcp_config = MCPConfig.model_validate(data)
@@ -120,3 +162,53 @@ class MCPConfig(BaseModel):
         except ValidationError as e:
             raise ValueError(f'Invalid MCP configuration: {e}')
         return mcp_mapping
+
+
+class OpenHandsMCPConfig:
+    @staticmethod
+    def add_search_engine(app_config: 'OpenHandsConfig') -> MCPStdioServerConfig | None:
+        """Add search engine to the MCP config"""
+        if (
+            app_config.search_api_key
+            and app_config.search_api_key.get_secret_value().startswith('tvly-')
+        ):
+            logger.info('Adding search engine to MCP config')
+            return MCPStdioServerConfig(
+                name='tavily',
+                command='npx',
+                args=['-y', 'tavily-mcp@0.2.1'],
+                env={'TAVILY_API_KEY': app_config.search_api_key.get_secret_value()},
+            )
+        else:
+            logger.warning('No search engine API key found, skipping search engine')
+        # Do not add search engine to MCP config in SaaS mode since it will be added by the OpenHands server
+        return None
+
+    @staticmethod
+    def create_default_mcp_server_config(
+        host: str, config: 'OpenHandsConfig', user_id: str | None = None
+    ) -> tuple[MCPSHTTPServerConfig, list[MCPStdioServerConfig]]:
+        """
+        Create a default MCP server configuration.
+
+        Args:
+            host: Host string
+            config: OpenHandsConfig
+        Returns:
+            tuple[MCPSSEServerConfig, list[MCPStdioServerConfig]]: A tuple containing the default SSE server configuration and a list of MCP stdio server configurations
+        """
+        stdio_servers = []
+        search_engine_stdio_server = OpenHandsMCPConfig.add_search_engine(config)
+        if search_engine_stdio_server:
+            stdio_servers.append(search_engine_stdio_server)
+
+        shttp_servers = MCPSHTTPServerConfig(url=f'http://{host}/mcp/mcp', api_key=None)
+        return shttp_servers, stdio_servers
+
+
+openhands_mcp_config_cls = os.environ.get(
+    'OPENHANDS_MCP_CONFIG_CLS',
+    'openhands.core.config.mcp_config.OpenHandsMCPConfig',
+)
+
+OpenHandsMCPConfigImpl = get_impl(OpenHandsMCPConfig, openhands_mcp_config_cls)

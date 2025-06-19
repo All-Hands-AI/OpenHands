@@ -4,7 +4,12 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from openhands.controller.agent import Agent
 
-from openhands.core.config.mcp_config import MCPConfig, MCPSSEServerConfig
+
+from openhands.core.config.mcp_config import (
+    MCPConfig,
+    MCPSHTTPServerConfig,
+    MCPSSEServerConfig,
+)
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.mcp import MCPAction
 from openhands.events.observation.mcp import MCPObservation
@@ -45,47 +50,73 @@ def convert_mcp_clients_to_tools(mcp_clients: list[MCPClient] | None) -> list[di
 
 async def create_mcp_clients(
     sse_servers: list[MCPSSEServerConfig],
+    shttp_servers: list[MCPSHTTPServerConfig],
+    conversation_id: str | None = None,
 ) -> list[MCPClient]:
-    mcp_clients: list[MCPClient] = []
-    # Initialize SSE connections
-    if sse_servers:
-        for server_url in sse_servers:
-            logger.info(
-                f'Initializing MCP agent for {server_url} with SSE connection...'
-            )
+    import sys
 
-            client = MCPClient()
-            try:
-                await client.connect_sse(server_url.url, api_key=server_url.api_key)
-                # Only add the client to the list after a successful connection
-                mcp_clients.append(client)
-                logger.info(f'Connected to MCP server {server_url} via SSE')
-            except Exception as e:
-                logger.error(f'Failed to connect to {server_url}: {str(e)}')
-                try:
-                    await client.disconnect()
-                except Exception as disconnect_error:
-                    logger.error(
-                        f'Error during disconnect after failed connection: {str(disconnect_error)}'
-                    )
+    # Skip MCP clients on Windows
+    if sys.platform == 'win32':
+        logger.info(
+            'MCP functionality is disabled on Windows, skipping client creation'
+        )
+        return []
+
+    servers: list[MCPSSEServerConfig | MCPSHTTPServerConfig] = sse_servers.copy()
+    servers.extend(shttp_servers.copy())
+
+    if not servers:
+        return []
+
+    mcp_clients = []
+
+    for server in servers:
+        is_shttp = isinstance(server, MCPSHTTPServerConfig)
+        connection_type = 'SHTTP' if is_shttp else 'SSE'
+        logger.info(
+            f'Initializing MCP agent for {server} with {connection_type} connection...'
+        )
+        client = MCPClient()
+
+        try:
+            await client.connect_http(server, conversation_id=conversation_id)
+
+            # Only add the client to the list after a successful connection
+            mcp_clients.append(client)
+
+        except Exception as e:
+            logger.error(f'Failed to connect to {server}: {str(e)}', exc_info=True)
 
     return mcp_clients
 
 
-async def fetch_mcp_tools_from_config(mcp_config: MCPConfig) -> list[dict]:
+async def fetch_mcp_tools_from_config(
+    mcp_config: MCPConfig, conversation_id: str | None = None
+) -> list[dict]:
     """
     Retrieves the list of MCP tools from the MCP clients.
+
+    Args:
+        mcp_config: The MCP configuration
+        conversation_id: Optional conversation ID to associate with the MCP clients
 
     Returns:
         A list of tool dictionaries. Returns an empty list if no connections could be established.
     """
+    import sys
+
+    # Skip MCP tools on Windows
+    if sys.platform == 'win32':
+        logger.info('MCP functionality is disabled on Windows, skipping tool fetching')
+        return []
+
     mcp_clients = []
     mcp_tools = []
     try:
         logger.debug(f'Creating MCP clients with config: {mcp_config}')
         # Create clients - this will fetch tools but not maintain active connections
         mcp_clients = await create_mcp_clients(
-            mcp_config.sse_servers,
+            mcp_config.sse_servers, mcp_config.shttp_servers, conversation_id
         )
 
         if not mcp_clients:
@@ -94,13 +125,6 @@ async def fetch_mcp_tools_from_config(mcp_config: MCPConfig) -> list[dict]:
 
         # Convert tools to the format expected by the agent
         mcp_tools = convert_mcp_clients_to_tools(mcp_clients)
-
-        # Always disconnect clients to clean up resources
-        for mcp_client in mcp_clients:
-            try:
-                await mcp_client.disconnect()
-            except Exception as disconnect_error:
-                logger.error(f'Error disconnecting MCP client: {str(disconnect_error)}')
 
     except Exception as e:
         logger.error(f'Error fetching MCP tools: {str(e)}')
@@ -121,6 +145,15 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
     Returns:
         The observation from the MCP server
     """
+    import sys
+
+    from openhands.events.observation import ErrorObservation
+
+    # Skip MCP tools on Windows
+    if sys.platform == 'win32':
+        logger.info('MCP functionality is disabled on Windows')
+        return ErrorObservation('MCP functionality is not available on Windows')
+
     if not mcp_clients:
         raise ValueError('No MCP clients found')
 
@@ -146,29 +179,33 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
     response = await matching_client.call_tool(action.name, action.arguments)
     logger.debug(f'MCP response: {response}')
 
-    return MCPObservation(content=json.dumps(response.model_dump(mode='json')))
+    return MCPObservation(
+        content=json.dumps(response.model_dump(mode='json')),
+        name=action.name,
+        arguments=action.arguments,
+    )
 
 
-async def add_mcp_tools_to_agent(
-    agent: 'Agent', runtime: Runtime, memory: 'Memory', mcp_config: MCPConfig
-):
+async def add_mcp_tools_to_agent(agent: 'Agent', runtime: Runtime, memory: 'Memory'):
     """
     Add MCP tools to an agent.
     """
-    from openhands.runtime.impl.action_execution.action_execution_client import (
-        ActionExecutionClient,  # inline import to avoid circular import
-    )
+    import sys
 
-    assert isinstance(runtime, ActionExecutionClient), (
-        'Runtime must be an instance of ActionExecutionClient'
-    )
+    # Skip MCP tools on Windows
+    if sys.platform == 'win32':
+        logger.info('MCP functionality is disabled on Windows, skipping MCP tools')
+        agent.set_mcp_tools([])
+        return
+
     assert runtime.runtime_initialized, (
         'Runtime must be initialized before adding MCP tools'
     )
 
+    extra_stdio_servers = []
+
     # Add microagent MCP tools if available
     microagent_mcp_configs = memory.get_microagent_mcp_tools()
-    extra_stdio_servers = []
     for mcp_config in microagent_mcp_configs:
         if mcp_config.sse_servers:
             logger.warning(
@@ -183,7 +220,7 @@ async def add_mcp_tools_to_agent(
                     logger.info(f'Added microagent stdio server: {stdio_server.name}')
 
     # Add the runtime as another MCP server
-    updated_mcp_config = runtime.get_updated_mcp_config(extra_stdio_servers)
+    updated_mcp_config = runtime.get_mcp_config(extra_stdio_servers)
 
     # Fetch the MCP tools
     mcp_tools = await fetch_mcp_tools_from_config(updated_mcp_config)
