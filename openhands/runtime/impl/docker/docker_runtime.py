@@ -411,16 +411,20 @@ class DockerRuntime(ActionExecutionClient):
             elif env_var.startswith('VSCODE_PORT='):
                 self._vscode_port = int(env_var.split('VSCODE_PORT=')[1])
 
-        self._app_ports = []
-        exposed_ports = config.get('ExposedPorts')
-        if exposed_ports:
-            for exposed_port in exposed_ports.keys():
-                exposed_port = int(exposed_port.split('/tcp')[0])
-                if (
-                    exposed_port != self._host_port
-                    and exposed_port != self._vscode_port
-                ):
-                    self._app_ports.append(exposed_port)
+        use_host_network = self.config.sandbox.use_host_network
+        if not use_host_network:
+            self._app_ports = []
+            exposed_ports = config.get('ExposedPorts')
+            if exposed_ports:
+                for exposed_port in exposed_ports.keys():
+                    exposed_port = int(exposed_port.split('/tcp')[0])
+                    if (
+                        exposed_port != self._host_port
+                        and exposed_port != self._vscode_port
+                    ):
+                        self._app_ports.append(exposed_port)
+        else:
+            self.log('info', 'Host-network mode active: Using previously determined _app_ports as source of truth')
 
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
         self.log(
