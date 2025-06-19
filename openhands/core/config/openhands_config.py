@@ -1,3 +1,4 @@
+import os
 from typing import Any, ClassVar
 
 from pydantic import BaseModel, Field, SecretStr
@@ -10,6 +11,7 @@ from openhands.core.config.config_utils import (
     model_defaults_to_dict,
 )
 from openhands.core.config.extended_config import ExtendedConfig
+from openhands.core.config.kubernetes_config import KubernetesConfig
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.config.sandbox_config import SandboxConfig
@@ -63,7 +65,7 @@ class OpenHandsConfig(BaseModel):
     extended: ExtendedConfig = Field(default_factory=lambda: ExtendedConfig({}))
     runtime: str = Field(default='docker')
     file_store: str = Field(default='local')
-    file_store_path: str = Field(default='/tmp/openhands_file_store')
+    file_store_path: str = Field(default='~/.openhands')
     file_store_web_hook_url: str | None = Field(default=None)
     file_store_web_hook_headers: dict | None = Field(default=None)
     save_trajectory_path: str | None = Field(default=None)
@@ -104,8 +106,9 @@ class OpenHandsConfig(BaseModel):
     max_concurrent_conversations: int = Field(
         default=3
     )  # Maximum number of concurrent agent loops allowed per user
-    mcp_host: str = Field(default='localhost:3000')
+    mcp_host: str = Field(default=f'localhost:{os.getenv("port", 3000)}')
     mcp: MCPConfig = Field(default_factory=MCPConfig)
+    kubernetes: KubernetesConfig = Field(default_factory=KubernetesConfig)
 
     defaults_dict: ClassVar[dict] = {}
 

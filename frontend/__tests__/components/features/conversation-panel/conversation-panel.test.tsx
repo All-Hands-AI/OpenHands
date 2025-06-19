@@ -23,6 +23,7 @@ describe("ConversationPanel", () => {
       preloadedState: {
         metrics: {
           cost: null,
+          max_budget_per_task: null,
           usage: null,
         },
       },
@@ -48,6 +49,7 @@ describe("ConversationPanel", () => {
       last_updated_at: "2021-10-01T12:00:00Z",
       created_at: "2021-10-01T12:00:00Z",
       status: "STOPPED" as const,
+      runtime_status: null,
       url: null,
       session_api_key: null,
     },
@@ -60,6 +62,7 @@ describe("ConversationPanel", () => {
       last_updated_at: "2021-10-02T12:00:00Z",
       created_at: "2021-10-02T12:00:00Z",
       status: "STOPPED" as const,
+      runtime_status: null,
       url: null,
       session_api_key: null,
     },
@@ -72,6 +75,7 @@ describe("ConversationPanel", () => {
       last_updated_at: "2021-10-03T12:00:00Z",
       created_at: "2021-10-03T12:00:00Z",
       status: "STOPPED" as const,
+      runtime_status: null,
       url: null,
       session_api_key: null,
     },
@@ -158,6 +162,7 @@ describe("ConversationPanel", () => {
         last_updated_at: "2021-10-01T12:00:00Z",
         created_at: "2021-10-01T12:00:00Z",
         status: "STOPPED" as const,
+        runtime_status: null,
         url: null,
         session_api_key: null,
       },
@@ -170,6 +175,7 @@ describe("ConversationPanel", () => {
         last_updated_at: "2021-10-02T12:00:00Z",
         created_at: "2021-10-02T12:00:00Z",
         status: "STOPPED" as const,
+        runtime_status: null,
         url: null,
         session_api_key: null,
       },
@@ -182,6 +188,7 @@ describe("ConversationPanel", () => {
         last_updated_at: "2021-10-03T12:00:00Z",
         created_at: "2021-10-03T12:00:00Z",
         status: "STOPPED" as const,
+        runtime_status: null,
         url: null,
         session_api_key: null,
       },
@@ -267,6 +274,7 @@ describe("ConversationPanel", () => {
       preloadedState: {
         metrics: {
           cost: null,
+          max_budget_per_task: null,
           usage: null,
         },
       },

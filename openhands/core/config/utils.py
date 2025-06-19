@@ -25,6 +25,7 @@ from openhands.core.config.config_utils import (
     OH_MAX_ITERATIONS,
 )
 from openhands.core.config.extended_config import ExtendedConfig
+from openhands.core.config.kubernetes_config import KubernetesConfig
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.config.openhands_config import OpenHandsConfig
@@ -228,6 +229,19 @@ def load_from_toml(cfg: OpenHandsConfig, toml_file: str = 'config.toml') -> None
             # Re-raise ValueError from MCPConfig.from_toml_section
             raise ValueError('Error in MCP sections in config.toml')
 
+    # Process kubernetes section if present
+    if 'kubernetes' in toml_config:
+        try:
+            kubernetes_mapping = KubernetesConfig.from_toml_section(
+                toml_config['kubernetes']
+            )
+            if 'kubernetes' in kubernetes_mapping:
+                cfg.kubernetes = kubernetes_mapping['kubernetes']
+        except (TypeError, KeyError, ValidationError) as e:
+            logger.openhands_logger.warning(
+                f'Cannot parse [kubernetes] config from toml, values have not been applied.\nError: {e}'
+            )
+
     # Process condenser section if present
     if 'condenser' in toml_config:
         try:
@@ -286,6 +300,7 @@ def load_from_toml(cfg: OpenHandsConfig, toml_file: str = 'config.toml') -> None
         'sandbox',
         'condenser',
         'mcp',
+        'kubernetes',
     }
     for key in toml_config:
         if key.lower() not in known_sections:

@@ -1,6 +1,7 @@
 import asyncio
 import os
 import shutil
+import sys
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
@@ -26,6 +27,15 @@ class VSCodePlugin(Plugin):
     gateway_process: asyncio.subprocess.Process
 
     async def initialize(self, username: str) -> None:
+        # Check if we're on Windows - VSCode plugin is not supported on Windows
+        if os.name == 'nt' or sys.platform == 'win32':
+            self.vscode_port = None
+            self.vscode_connection_token = None
+            logger.warning(
+                'VSCode plugin is not supported on Windows. Plugin will be disabled.'
+            )
+            return
+
         if username not in ['root', 'openhands']:
             self.vscode_port = None
             self.vscode_connection_token = None
@@ -38,9 +48,20 @@ class VSCodePlugin(Plugin):
         # Set up VSCode settings.json
         self._setup_vscode_settings()
 
-        self.vscode_port = int(os.environ['VSCODE_PORT'])
+        try:
+            self.vscode_port = int(os.environ['VSCODE_PORT'])
+        except (KeyError, ValueError):
+            logger.warning(
+                'VSCODE_PORT environment variable not set or invalid. VSCode plugin will be disabled.'
+            )
+            return
+
         self.vscode_connection_token = str(uuid.uuid4())
-        assert check_port_available(self.vscode_port)
+        if not check_port_available(self.vscode_port):
+            logger.warning(
+                f'Port {self.vscode_port} is not available. VSCode plugin will be disabled.'
+            )
+            return
         cmd = (
             f"su - {username} -s /bin/bash << 'EOF'\n"
             f'sudo chown -R {username}:{username} /openhands/.openvscode-server\n'
@@ -82,7 +103,8 @@ class VSCodePlugin(Plugin):
         settings_path = current_dir / 'settings.json'
 
         # Create the .vscode directory in the workspace if it doesn't exist
-        vscode_dir = Path('/workspace/.vscode')
+        workspace_dir = Path(os.getenv('WORKSPACE_BASE', '/workspace'))
+        vscode_dir = workspace_dir / '.vscode'
         vscode_dir.mkdir(parents=True, exist_ok=True)
 
         # Copy the settings.json file to the .vscode directory
