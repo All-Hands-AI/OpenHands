@@ -143,6 +143,11 @@ class OpenHands {
    * @returns Array of web hosts
    */
   static async getWebHosts(conversationId: string): Promise<string[]> {
+    console.log(
+      "OpenHands.getWebHosts: %c%s",
+      "background: #444; color: #ffeb3b; font-weight: bold; padding: 2px 4px; border-radius: 4px;",
+      `Fetching web hosts for conversation ID: ${conversationId}`,
+    );
     const url = `${this.getConversationUrl(conversationId)}/web-hosts`;
     const response = await openHands.get(url, {
       headers: this.getConversationHeaders(),
