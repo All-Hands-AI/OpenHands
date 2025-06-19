@@ -27,7 +27,7 @@ You can use the Settings page at any time to:
 - [Configure MCP servers](/usage/mcp).
 - [Connect to GitHub](/usage/how-to/gui-mode#github-setup) and [connect to GitLab](/usage/how-to/gui-mode#gitlab-setup)
 - Set application settings like your preferred language, notifications and other preferences.
-- Generate custom secrets.
+- [Manage custom secrets](/usage/how-to/gui-mode#secrets-management).
 
 #### GitHub Setup
 
@@ -45,7 +45,7 @@ OpenHands automatically exports a `GITHUB_TOKEN` to the shell environment if pro
      - All Repositories (You can select specific repositories, but this will impact what returns in repo search)
      - Minimal Permissions (Select `Meta Data = Read-only` read for search, `Pull Requests = Read and Write` and `Content = Read and Write` for branch creation)
   2. **Enter Token in OpenHands**:
-   - In the Settings page, navigate to the `Git` tab.
+   - In the Settings page, navigate to the `Integrations` tab.
    - Paste your token in the `GitHub Token` field.
    - Click `Save Changes` to apply the changes.
 
@@ -97,9 +97,14 @@ OpenHands automatically exports a `GITLAB_TOKEN` to the shell environment if pro
      - `write_repository` (Write repository)
    - Set an expiration date or leave it blank for a non-expiring token.
   2. **Enter Token in OpenHands**:
-   - In the Settings page, navigate to the `Git` tab.
+   - In the Settings page, navigate to the `Integrations` tab.
    - Paste your token in the `GitLab Token` field.
    - Click `Save Changes` to apply the changes.
+
+  3. **(Optional): Restrict agent permissions**
+   - Create another PAT using Step 1 and exclude `api` scope .
+   - In the Settings page, in the `Secrets` tab, create a new secret `GITLAB_TOKEN` and paste your lower scope token.
+   - OpenHands will use the higher scope token, and the agent will use the lower scope token
 </Accordion>
 
 <Accordion title="Troubleshooting">
@@ -117,6 +122,72 @@ OpenHands automatically exports a `GITLAB_TOKEN` to the shell environment if pro
 </Accordion>
 </AccordionGroup>
 
+#### BitBucket Setup (Coming soon ...)
+<AccordionGroup>
+<Accordion title="Setting Up a BitBucket Password">
+1. **Generate an App Password**:
+   - On BitBucket, go to Personal Settings > App Password.
+   - Create a new password with the following scopes:
+     - `repository: read`
+     - `repository: write`
+     - `pull requests: read`
+     - `pull requests: write`
+     - `issues: read`
+     - `issues: write`
+   - App passwords are non-expiring token. OpenHands will migrate to using API tokens in the future.
+  2. **Enter Token in OpenHands**:
+   - In the Settings page, navigate to the `Integrations` tab.
+   - Paste your token in the `BitBucket Token` field.
+   - Click `Save Changes` to apply the changes.
+</Accordion>
+
+<Accordion title="Troubleshooting">
+  Common issues and solutions:
+
+  - **Token Not Recognized**:
+     - Ensure the token is properly saved in settings.
+     - Check that the token hasn't expired.
+     - Verify the token has the required scopes.
+
+  - **Verifying Token Works**:
+     - The app will show a green checkmark if the token is valid.
+     - Try accessing a repository to confirm permissions.
+     - Check the browser console for any error messages.
+</Accordion>
+
+</AccordionGroup>
+
+
+#### Secrets Management
+
+OpenHands provides a secrets manager that allows you to securely store and manage sensitive information that can be accessed by the agent during runtime, such as API keys. These secrets are automatically exported as environment variables in the agent's runtime environment.
+
+1. **Accessing the Secrets Manager**:
+   - In the Settings page, navigate to the `Secrets` tab.
+   - You'll see a list of all your existing custom secrets (if any).
+
+2. **Adding a New Secret**:
+   - Click the `Add New Secret` button.
+   - Fill in the following fields:
+     - **Name**: A unique identifier for your secret (e.g., `AWS_ACCESS_KEY`). This will be the environment variable name.
+     - **Value**: The sensitive information you want to store.
+     - **Description** (optional): A brief description of what the secret is used for, which is also provided to the agent.
+   - Click `Add Secret` to save.
+
+3. **Editing a Secret**:
+   - Click the `Edit` button next to the secret you want to modify.
+   - You can update the name and description of the secret.
+   - Note: For security reasons, you cannot view or edit the value of an existing secret. If you need to change the value, delete the secret and create a new one.
+
+4. **Deleting a Secret**:
+   - Click the `Delete` button next to the secret you want to remove.
+   - Confirm the deletion when prompted.
+
+5. **Using Secrets in the Agent**:
+   - All custom secrets are automatically exported as environment variables in the agent's runtime environment.
+   - You can access them in your code using standard environment variable access methods (e.g., `os.environ['SECRET_NAME']` in Python).
+   - Example: If you create a secret named `OPENAI_API_KEY`, you can access it in your code as `process.env.OPENAI_API_KEY` in JavaScript or `os.environ['OPENAI_API_KEY']` in Python.
+
 #### Advanced Settings
 
 The `Advanced` settings allows configuration of additional LLM settings. Inside the Settings page, under the `LLM` tab,
@@ -132,10 +203,24 @@ toggle `Advanced` options to access additional settings.
 For an overview of the key features available inside a conversation, please refer to the [Key Features](/usage/key-features)
 section of the documentation.
 
+### Status Indicator
+
+The status indicator located in the bottom left of the screen will cycle through a number of states as a new conversation
+is loaded. Typically these include:
+
+* `Disconnected` : The frontend is not connected to any conversation
+* `Connecting` : The frontend is connecting a websocket to a conversation.
+* `Building Runtime...` : The server is building a runtime. This is typically in development mode only while building a docker image.
+* `Starting Runtime...` : The server is starting a new runtime instance - probably a new docker container or remote runtime.
+* `Initializing Agent...` : The server is starting the agent loop. (This step does not appear at present with Nested runtimes)
+* `Setting up workspace...` : Usually this means a `git clone ...` operation.
+* `Setting up git hooks` : Setting up the git pre commit hooks for the workspace.
+* `Agent is awaiting user input...` : Ready to go!
+
 ## Tips for Effective Use
 
 - Be specific in your requests to get the most accurate and helpful responses, as described in the [prompting best practices](../prompting/prompting-best-practices).
-- Use one of the recommended models, as described in the [LLMs section](usage/llms/llms.md).
+- Use one of the recommended models, as described in the [LLMs section](/usage/llms/llms).
 
 ## Other Ways to Run Openhands
 - [Run OpenHands in a scriptable headless mode.](/usage/how-to/headless-mode)

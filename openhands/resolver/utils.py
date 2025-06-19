@@ -17,7 +17,7 @@ from openhands.integrations.utils import validate_provider_token
 
 async def identify_token(token: str, base_domain: str | None) -> ProviderType:
     """
-    Identifies whether a token belongs to GitHub or GitLab.
+    Identifies whether a token belongs to GitHub, GitLab, or Bitbucket.
     Parameters:
         token (str): The personal access token to check.
         base_domain (str): Custom base domain for provider (e.g GitHub Enterprise)

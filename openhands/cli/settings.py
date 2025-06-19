@@ -158,8 +158,8 @@ async def modify_llm_settings_basic(
     provider_completer = FuzzyWordCompleter(provider_list)
     session = PromptSession(key_bindings=kb_cancel())
 
-    # Set default provider - use the first available provider from the list
-    provider = provider_list[0] if provider_list else 'openai'
+    # Set default provider - prefer 'anthropic' if available, otherwise use the first provider
+    provider = 'anthropic' if 'anthropic' in provider_list else provider_list[0]
     model = None
     api_key = None
 
@@ -196,9 +196,11 @@ async def modify_llm_settings_basic(
 
         # Make sure the provider exists in organized_models
         if provider not in organized_models:
-            # If the provider doesn't exist, use the first available provider
+            # If the provider doesn't exist, prefer 'anthropic' if available, otherwise use the first provider
             provider = (
-                next(iter(organized_models.keys())) if organized_models else 'openai'
+                'anthropic'
+                if 'anthropic' in organized_models
+                else next(iter(organized_models.keys()))
             )
 
         provider_models = organized_models[provider]['models']
@@ -213,8 +215,18 @@ async def modify_llm_settings_basic(
             ]
             provider_models = VERIFIED_ANTHROPIC_MODELS + provider_models
 
-        # Set default model to the first model in the list
-        default_model = provider_models[0] if provider_models else 'gpt-4'
+        # Set default model to the best verified model for the provider
+        if provider == 'anthropic' and VERIFIED_ANTHROPIC_MODELS:
+            # Use the first model in the VERIFIED_ANTHROPIC_MODELS list as it's the best/newest
+            default_model = VERIFIED_ANTHROPIC_MODELS[0]
+        elif provider == 'openai' and VERIFIED_OPENAI_MODELS:
+            # Use the first model in the VERIFIED_OPENAI_MODELS list as it's the best/newest
+            default_model = VERIFIED_OPENAI_MODELS[0]
+        else:
+            # For other providers, use the first model in the list
+            default_model = (
+                provider_models[0] if provider_models else 'claude-sonnet-4-20250514'
+            )
 
         # Show the default model but allow changing it
         print_formatted_text(

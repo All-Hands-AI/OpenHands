@@ -9,6 +9,7 @@ from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.shortcuts import clear
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
+import openhands.cli.suppress_warnings  # noqa: F401
 from openhands.cli.commands import (
     check_folder_security_agreement,
     handle_commands,
@@ -274,9 +275,9 @@ async def run_session(
             )
         )
 
-        config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
+        runtime.config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
 
-        await add_mcp_tools_to_agent(agent, runtime, memory, config)
+        await add_mcp_tools_to_agent(agent, runtime, memory)
 
     # Clear loading animation
     is_loaded.set()
