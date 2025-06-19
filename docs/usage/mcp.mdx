@@ -9,38 +9,86 @@ Model Context Protocol (MCP) is a mechanism that allows OpenHands to communicate
 servers can provide additional functionality to the agent, such as specialized data processing, external API access,
 or custom tools. MCP is based on the open standard defined at [modelcontextprotocol.io](https://modelcontextprotocol.io).
 
+## Recommended Approach: Use MCP/StreamableHTTP Proxies
+
+**Important**: For stdio-based MCP servers, we strongly recommend using MCP/StreamableHTTP proxy tools like [`supergateway`](https://github.com/supercorp-ai/supergateway) instead of direct stdio connections. This approach provides several advantages:
+
+- **Better reliability**: Proxies handle process lifecycle management and error recovery
+- **Improved performance**: HTTP-based communication is more efficient than stdio pipes
+- **Enhanced debugging**: Easier to monitor and troubleshoot HTTP requests
+- **Scalability**: Proxies can handle multiple concurrent requests better than stdio processes
+
+### Using SuperGateway as a Proxy
+
+[SuperGateway](https://github.com/supercorp-ai/supergateway) is a popular MCP proxy that converts stdio MCP servers to HTTP/SSE endpoints:
+
+```bash
+# Install SuperGateway
+npm install -g @supercorp-ai/supergateway
+
+# Run a proxy for an MCP server (example with filesystem server)
+supergateway --stdio "npx @modelcontextprotocol/server-filesystem /" --port 8080
+```
+
+Then configure OpenHands to use the HTTP endpoint:
+
+```toml
+[mcp]
+sse_servers = [
+    "http://localhost:8080/sse"
+]
+```
+
 ## Configuration
 
 MCP configuration can be defined in:
 * The OpenHands UI through the Settings under the `MCP` tab.
 * The `config.toml` file under the `[mcp]` section if not using the UI.
 
-### Configuration Example via config.toml
+### Configuration Examples
+
+#### Recommended: Using Proxy Servers (SSE/HTTP)
 
 ```toml
 [mcp]
-# SSE Servers - External servers that communicate via Server-Sent Events
+# SSE Servers - Recommended approach using proxy tools
 sse_servers = [
-    # Basic SSE server with just a URL
-    "http://example.com:8080/mcp",
+    # SuperGateway proxy for filesystem server
+    "http://localhost:8080/sse",
+    
+    # SuperGateway proxy for fetch server
+    "http://localhost:8081/sse",
 
-    # SSE server with API key authentication
-    {url="https://secure-example.com/mcp", api_key="your-api-key"}
+    # External MCP service with authentication
+    {url="https://api.example.com/mcp/sse", api_key="your-api-key"}
 ]
+```
 
-# Stdio Servers - Local processes that communicate via standard input/output
+Start the proxy servers separately:
+```bash
+# Terminal 1: Filesystem server proxy
+supergateway --stdio "npx @modelcontextprotocol/server-filesystem /" --port 8080
+
+# Terminal 2: Fetch server proxy  
+supergateway --stdio "uvx mcp-server-fetch" --port 8081
+```
+
+#### Alternative: Direct Stdio Servers (Not Recommended for Production)
+
+```toml
+[mcp]
+# Direct stdio servers - use only for development/testing
 stdio_servers = [
     # Basic stdio server
     {name="fetch", command="uvx", args=["mcp-server-fetch"]},
 
     # Stdio server with environment variables
     {
-        name="data-processor",
-        command="python",
-        args=["-m", "my_mcp_server"],
+        name="filesystem",
+        command="npx",
+        args=["@modelcontextprotocol/server-filesystem", "/"],
         env={
-            "DEBUG": "true",
-            "PORT": "8080"
+            "DEBUG": "true"
         }
     }
 ]
@@ -57,6 +105,8 @@ SSE servers are configured using either a string URL or an object with the follo
   - Description: The URL of the SSE server
 
 ### Stdio Servers
+
+**Note**: While stdio servers are supported, we recommend using MCP/StreamableHTTP proxies (see above) for better reliability and performance.
 
 Stdio servers are configured using an object with the following properties:
 
@@ -77,6 +127,38 @@ Stdio servers are configured using an object with the following properties:
   - Type: `dict of str to str`
   - Default: `{}`
   - Description: Environment variables to set for the server process
+
+#### When to Use Direct Stdio
+
+Direct stdio connections may still be appropriate in these scenarios:
+- **Development and testing**: Quick prototyping of MCP servers
+- **Simple, single-use tools**: Tools that don't require high reliability or concurrent access
+- **Local-only environments**: When you don't want to manage additional proxy processes
+
+For production use or complex workflows, we strongly recommend using proxy tools like SuperGateway.
+
+### Other Proxy Tools
+
+While SuperGateway is our recommended proxy, other options include:
+
+- **Custom FastAPI/Express servers**: Build your own HTTP wrapper around stdio MCP servers
+- **Docker-based proxies**: Containerized solutions for better isolation
+- **Cloud-hosted MCP services**: Third-party services that provide MCP endpoints
+
+### Troubleshooting MCP Connections
+
+#### Common Issues with Stdio Servers
+- **Process crashes**: Stdio processes may crash without proper error handling
+- **Deadlocks**: Stdio communication can deadlock under high load
+- **Resource leaks**: Zombie processes if not properly managed
+- **Debugging difficulty**: Hard to inspect stdio communication
+
+#### Benefits of Using Proxies
+- **HTTP status codes**: Clear error reporting via standard HTTP responses
+- **Request logging**: Easy to log and monitor HTTP requests
+- **Load balancing**: Can distribute requests across multiple server instances
+- **Health checks**: HTTP endpoints can provide health status
+- **CORS support**: Better integration with web-based tools
 
 ## How MCP Works
 
