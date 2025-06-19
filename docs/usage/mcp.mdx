@@ -55,7 +55,7 @@ MCP configuration can be defined in:
 sse_servers = [
     # SuperGateway proxy for filesystem server
     "http://localhost:8080/sse",
-    
+
     # SuperGateway proxy for fetch server
     "http://localhost:8081/sse",
 
@@ -69,7 +69,7 @@ Start the proxy servers separately:
 # Terminal 1: Filesystem server proxy
 supergateway --stdio "npx @modelcontextprotocol/server-filesystem /" --port 8080
 
-# Terminal 2: Fetch server proxy  
+# Terminal 2: Fetch server proxy
 supergateway --stdio "uvx mcp-server-fetch" --port 8081
 ```
 
