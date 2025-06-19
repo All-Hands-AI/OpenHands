@@ -9,6 +9,7 @@ import { EllipsisButton } from "./ellipsis-button";
 import { ConversationCardContextMenu } from "./conversation-card-context-menu";
 import { SystemMessageModal } from "./system-message-modal";
 import { MicroagentsModal } from "./microagents-modal";
+import { BudgetDisplay } from "./budget-display";
 import { cn } from "#/utils/utils";
 import { BaseModal } from "../../shared/modals/base-modal/base-modal";
 import { RootState } from "#/store";
@@ -285,7 +286,7 @@ export function ConversationCard({
             <div className="rounded-md p-3">
               <div className="grid gap-3">
                 {metrics?.cost !== null && (
-                  <div className="flex justify-between items-center border-b border-neutral-700 pb-2">
+                  <div className="flex justify-between items-center pb-2">
                     <span className="text-lg font-semibold">
                       {t(I18nKey.CONVERSATION$TOTAL_COST)}
                     </span>
@@ -294,6 +295,10 @@ export function ConversationCard({
                     </span>
                   </div>
                 )}
+                <BudgetDisplay
+                  cost={metrics?.cost ?? null}
+                  maxBudgetPerTask={metrics?.max_budget_per_task ?? null}
+                />
 
                 {metrics?.usage !== null && (
                   <>
