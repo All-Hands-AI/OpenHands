@@ -30,6 +30,7 @@ export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   enable_proactive_conversation_starters:
     DEFAULT_SETTINGS.ENABLE_PROACTIVE_CONVERSATION_STARTERS,
   user_consents_to_analytics: DEFAULT_SETTINGS.USER_CONSENTS_TO_ANALYTICS,
+  max_budget_per_task: DEFAULT_SETTINGS.MAX_BUDGET_PER_TASK,
 };
 
 const MOCK_USER_PREFERENCES: {
@@ -140,13 +141,13 @@ export const handlers = [
   http.get("/api/user/repositories", () => {
     const data: GitRepository[] = [
       {
-        id: 1,
+        id: "1",
         full_name: "octocat/hello-world",
         git_provider: "github",
         is_public: true,
       },
       {
-        id: 2,
+        id: "2",
         full_name: "octocat/earth",
         git_provider: "github",
         is_public: true,
@@ -157,7 +158,7 @@ export const handlers = [
   }),
   http.get("/api/user/info", () => {
     const user: GitUser = {
-      id: 1,
+      id: "1",
       login: "octocat",
       avatar_url: "https://avatars.githubusercontent.com/u/583231?v=4",
       company: "GitHub",
