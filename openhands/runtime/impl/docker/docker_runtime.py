@@ -505,8 +505,16 @@ class DockerRuntime(ActionExecutionClient):
         for _ in range(max_attempts):
             port = find_available_tcp_port(port_range[0], port_range[1])
             if not self._is_port_in_use_docker(port):
+                self.log(
+                    'warn',
+                    f'Shakudo: Found available port {port} in range {port_range}',
+                )
                 return port
         # If no port is found after max_attempts, return the last tried port
+        self.log(
+            'warn',
+            f'Shakudo: Selected port {port} after {max_attempts} attempts, but it may still be in use.',
+        )
         return port
 
     def shak_convert_port_to_string(self) -> str:
@@ -552,7 +560,7 @@ class DockerRuntime(ActionExecutionClient):
             hosts[f'http://{host_addr}:{port}'] = port
 
         self.log(
-            'debug',
+            'info',
             f'Web hosts: {hosts}, host_addr: {host_addr}, app_ports: {self._app_ports}',
         )
         return hosts
