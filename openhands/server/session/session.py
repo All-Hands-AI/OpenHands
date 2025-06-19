@@ -135,29 +135,10 @@ class Session:
         self.config.search_api_key = settings.search_api_key
 
         # NOTE: this need to happen AFTER the config is updated with the search_api_key
-        # Handle MCP config priority: config.toml > frontend settings > empty MCPConfig
-        # Config.toml takes priority since MCP servers are typically infrastructure-level configuration
-        config_has_mcp = (
-            self.config.mcp.sse_servers
-            or self.config.mcp.stdio_servers
-            or self.config.mcp.shttp_servers
+        # MCP config merging is handled in user_auth, so we just use what's in settings
+        self.config.mcp = settings.mcp_config or MCPConfig(
+            sse_servers=[], stdio_servers=[]
         )
-        settings_has_mcp = settings.mcp_config is not None
-
-        if config_has_mcp:
-            # Use config.mcp as the source of truth (config-first priority)
-            if settings_has_mcp:
-                self.logger.info(
-                    'Both config.mcp and settings.mcp_config are present. '
-                    'Using config.mcp as the source of truth.'
-                )
-            # Keep self.config.mcp as is
-        elif settings_has_mcp and settings.mcp_config is not None:
-            # Fall back to settings.mcp_config if no config available
-            self.config.mcp = settings.mcp_config
-        else:
-            # Neither has MCP config, use empty one
-            self.config.mcp = MCPConfig(sse_servers=[], stdio_servers=[])
         # Add OpenHands' MCP server by default
         openhands_mcp_server, openhands_mcp_stdio_servers = (
             OpenHandsMCPConfigImpl.create_default_mcp_server_config(
