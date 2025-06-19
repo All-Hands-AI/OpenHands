@@ -102,6 +102,7 @@ class DockerRuntime(ActionExecutionClient):
         self._container_port = -1
         self._vscode_port = -1
         self._app_ports: list[int] = []
+        self._app_ports_bkup: list[int] = []
 
         if os.environ.get('DOCKER_HOST_ADDR'):
             logger.info(
