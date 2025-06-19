@@ -98,7 +98,7 @@ class ConversationResponse(BaseModel):
     conversation_status: ConversationStatus | None = None
 
 
-class StartConversationRequest(BaseModel):
+class ProvidersSetModel(BaseModel):
     providers_set: list[ProviderType] | None = None
 
 
@@ -402,7 +402,7 @@ async def _get_conversation_info(
 @app.post('/conversations/{conversation_id}/start')
 async def start_conversation(
     conversation_id: str,
-    providers_set: StartConversationRequest,
+    providers_set: ProvidersSetModel,
     user_id: str = Depends(get_user_id),
     settings: Settings = Depends(get_user_settings),
     conversation_store: ConversationStore = Depends(get_conversation_store),
