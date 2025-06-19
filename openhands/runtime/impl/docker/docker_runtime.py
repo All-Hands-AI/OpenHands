@@ -292,6 +292,10 @@ class DockerRuntime(ActionExecutionClient):
             self._find_available_port(APP_PORT_RANGE_1),
             self._find_available_port(APP_PORT_RANGE_2),
         ]
+        self.log(
+            'info',
+            f'Container app_ports={self._app_ports}',
+        )
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
 
         use_host_network = self.config.sandbox.use_host_network
@@ -426,6 +430,10 @@ class DockerRuntime(ActionExecutionClient):
         else:
             self.log('info', 'Host-network mode active: Using previously determined _app_ports as source of truth')
 
+        self.log(
+            'info',
+            f'Container app ports: {self._app_ports}',
+        )
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
         self.log(
             'debug',
@@ -543,6 +551,10 @@ class DockerRuntime(ActionExecutionClient):
         for port in self._app_ports:
             hosts[f'http://{host_addr}:{port}'] = port
 
+        self.log(
+            'debug',
+            f'Web hosts: {hosts}, host_addr: {host_addr}, app_ports: {self._app_ports}',
+        )
         return hosts
 
     def pause(self) -> None:
