@@ -20,7 +20,7 @@ from openhands.events.observation.agent import (
 )
 from openhands.events.serialization import event_to_dict
 from openhands.integrations.service_types import ProviderType
-from openhands.server.conversation_utils.conversation_init import (
+from openhands.server.services.conversation_service import (
     setup_init_convo_settings,
 )
 from openhands.server.shared import (

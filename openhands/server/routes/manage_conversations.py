@@ -32,16 +32,16 @@ from openhands.integrations.service_types import (
 )
 from openhands.llm.llm import LLM
 from openhands.runtime import get_runtime_cls
-from openhands.server.conversation_utils.conversation_init import (
-    setup_init_convo_settings,
-)
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
 )
 from openhands.server.dependencies import get_dependencies
-from openhands.server.services.conversation_service import create_new_conversation
+from openhands.server.services.conversation_service import (
+    create_new_conversation,
+    setup_init_convo_settings,
+)
 from openhands.server.session.conversation import ServerConversation
 from openhands.server.shared import (
     ConversationStoreImpl,

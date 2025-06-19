@@ -6,6 +6,10 @@ import pytest
 
 from openhands.integrations.service_types import ProviderType
 from openhands.server.routes.manage_conversations import StartConversationRequest
+from openhands.server.services.conversation_service import (
+    create_provider_tokens_object,
+    setup_init_convo_settings,
+)
 
 
 class TestStartConversationEndpoint:
@@ -30,9 +34,6 @@ class TestStartConversationEndpoint:
     @pytest.mark.asyncio
     async def test_setup_init_convo_settings_import(self):
         """Test that setup_init_convo_settings can be imported and called."""
-        from openhands.server.conversation_utils.conversation_init import (
-            setup_init_convo_settings,
-        )
 
         # Mock the dependencies
         with (
@@ -78,10 +79,6 @@ class TestStartConversationEndpoint:
 
     def test_create_provider_tokens_object(self):
         """Test the create_provider_tokens_object function."""
-        from openhands.server.conversation_utils.conversation_init import (
-            create_provider_tokens_object,
-        )
-
         # Test with providers
         providers = [ProviderType.GITHUB, ProviderType.GITLAB]
         result = create_provider_tokens_object(providers)
