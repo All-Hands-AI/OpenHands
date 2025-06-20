@@ -12,6 +12,8 @@ from fastapi import (
     FastAPI,
 )
 
+# ruff: noqa: I001
+import openhands.cli.suppress_warnings  # noqa: F401
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands import __version__
 from openhands.server.routes.conversation import app as conversation_api_router

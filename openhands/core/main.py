@@ -4,6 +4,8 @@ import os
 from pathlib import Path
 from typing import Callable, Protocol
 
+# ruff: noqa: I001
+import openhands.cli.suppress_warnings  # noqa: F401
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.controller.agent import Agent
 from openhands.controller.replay import ReplayManager
