@@ -72,6 +72,14 @@ class PromptManager:
         if template_name.endswith('.j2'):
             template_name = template_name[:-3]
 
+        # Check if the system prompt file exists and provide a specific error message
+        template_path = os.path.join(self.prompt_dir, f'{template_name}.j2')
+        if not os.path.exists(template_path):
+            raise FileNotFoundError(
+                f'System prompt file "{self.system_prompt_filename}" not found at {template_path}. '
+                f'Please ensure the file exists in the prompt directory: {self.prompt_dir}'
+            )
+
         return self._load_template(template_name)
 
     def _load_template(self, template_name: str) -> Template:

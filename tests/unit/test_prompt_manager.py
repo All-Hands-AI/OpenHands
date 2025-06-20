@@ -302,6 +302,6 @@ def test_prompt_manager_custom_system_prompt_filename_not_found(prompt_dir):
     """Test that PromptManager raises an error if custom system prompt file is not found."""
     with pytest.raises(
         FileNotFoundError,
-        match=r'Prompt file .*/non_existent\.j2 not found',
+        match=r'System prompt file "non_existent\.j2" not found at .*/non_existent\.j2\. Please ensure the file exists in the prompt directory:',
     ):
         PromptManager(prompt_dir=prompt_dir, system_prompt_filename='non_existent.j2')

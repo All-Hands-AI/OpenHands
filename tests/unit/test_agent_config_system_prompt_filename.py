@@ -52,3 +52,18 @@ def test_agent_config_from_toml_section_with_system_prompt_filename():
     custom_config = agent_mapping['CustomAgent']
     assert custom_config.system_prompt_filename == 'custom_agent_prompt.j2'
     assert custom_config.enable_browsing is False
+
+
+def test_agent_config_system_prompt_filename_validation():
+    """Test that invalid filenames are handled appropriately by the system."""
+    # AgentConfig itself doesn't validate the filename existence
+    # (that's done by PromptManager when the file is actually loaded)
+    config = AgentConfig(system_prompt_filename='non_existent_file.j2')
+    assert config.system_prompt_filename == 'non_existent_file.j2'
+
+    # Test with various filename formats
+    config_no_ext = AgentConfig(system_prompt_filename='custom_prompt')
+    assert config_no_ext.system_prompt_filename == 'custom_prompt'
+
+    config_with_path = AgentConfig(system_prompt_filename='subdir/custom_prompt.j2')
+    assert config_with_path.system_prompt_filename == 'subdir/custom_prompt.j2'
