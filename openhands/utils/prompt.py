@@ -47,7 +47,6 @@ class PromptManager:
 
     Attributes:
         prompt_dir: Directory containing prompt templates.
-        system_prompt_filename: Filename of the system prompt template within prompt_dir.
     """
 
     def __init__(
@@ -56,16 +55,17 @@ class PromptManager:
         system_prompt_filename: str = 'system_prompt.j2',
     ):
         self.prompt_dir: str = prompt_dir
-        self.system_prompt_filename: str = system_prompt_filename
-        self.system_template: Template = self._load_system_template()
+        self.system_template: Template = self._load_system_template(
+            system_prompt_filename
+        )
         self.user_template: Template = self._load_template('user_prompt')
         self.additional_info_template: Template = self._load_template('additional_info')
         self.microagent_info_template: Template = self._load_template('microagent_info')
 
-    def _load_system_template(self) -> Template:
+    def _load_system_template(self, system_prompt_filename: str) -> Template:
         """Load the system prompt template using the specified filename."""
         # Remove .j2 extension if present to use with _load_template
-        template_name = self.system_prompt_filename
+        template_name = system_prompt_filename
         if template_name.endswith('.j2'):
             template_name = template_name[:-3]
 
@@ -75,7 +75,7 @@ class PromptManager:
             # Provide a more specific error message for system prompt files
             template_path = os.path.join(self.prompt_dir, f'{template_name}.j2')
             raise FileNotFoundError(
-                f'System prompt file "{self.system_prompt_filename}" not found at {template_path}. '
+                f'System prompt file "{system_prompt_filename}" not found at {template_path}. '
                 f'Please ensure the file exists in the prompt directory: {self.prompt_dir}'
             )
 
