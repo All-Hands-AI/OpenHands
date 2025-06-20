@@ -238,6 +238,20 @@ class MCPConfig(BaseModel):
 
         return data
 
+    @field_validator('default_timeout')
+    def validate_default_timeout(cls, value: float):
+        """Custom validator to ensure default_timeout is greater than zero.
+
+        Prevents invalid configurations that could lead to timeouts in MCP connections."""
+        try:
+            value = float(value)
+        except ValueError:
+            raise ValueError('default_timeout must be of type float')
+
+        if value <= 0:
+            raise ValueError('default_timeout must be greater than zero')
+        return value
+
     def validate_servers(self) -> None:
         """Validate that server URLs are valid and unique."""
         urls = [server.url for server in self.sse_servers]

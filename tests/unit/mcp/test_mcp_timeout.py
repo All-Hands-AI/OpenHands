@@ -1,10 +1,17 @@
 import asyncio
+import os
 from unittest import mock
+from unittest.mock import patch
 
 import pytest
 from fastmcp import Client
 
-from openhands.core.config.mcp_config import MCPConfig, MCPSSEServerConfig
+from openhands.core.config.mcp_config import (
+    MCPConfig,
+    MCPSHTTPServerConfig,
+    MCPSSEServerConfig,
+)
+from openhands.core.config.utils import load_openhands_config
 from openhands.mcp import MCPClient, create_mcp_clients, fetch_mcp_tools_from_config
 
 
@@ -100,25 +107,26 @@ async def test_mixed_connection_results():
 
 
 @pytest.mark.asyncio
-async def test_connect_http_with_different_server_types(mock_client):
-	"""Test connect_http instantiates Client with correct timeout across server types."""
-
+async def test_connect_http_with_different_server_types():
+    """Test connect_http instantiates Client with correct timeout across server types."""
     mock_sse_server = mock.MagicMock(spec=MCPSSEServerConfig)
     mock_http_server = mock.MagicMock(spec=MCPSHTTPServerConfig)
 
     for server in (mock_sse_server, mock_http_server):
-        server.url = "https://example.com"
+        server.url = 'https://example.com'
+        server.api_key = None
 
-    mock_config = mock.MagicMock(spec=MCPConfig)
-    mock_config.mcp.default_timeout = timeout = 1.0
-
-    with patch('openhands.core.config.load_app_config', return_value=mock_config), \
-         patch('fastmcp.Client') as MockClient:
-
+    timeout = 1.0
+    with (
+        mock.patch.dict(os.environ, {'MCP_DEFAULT_TIMEOUT': str(timeout)}),
+        patch('openhands.mcp.client.MCPClient._initialize_and_list_tools'),
+        patch('openhands.mcp.client.Client') as MockClient,
+    ):
         wrapper = MCPClient()
 
-        await wrapper.connect_http(server=mock_sse_server)
-        MockClient.assert_called_with(timeout=timeout)
-
-        await wrapper.connect_http(server=mock_http_server)
-        assert MockClient.call_args_list[-1] == mock.call(timeout=timeout)
+        for server in (mock_sse_server, mock_http_server):
+            await wrapper.connect_http(server=server)
+            assert any(
+                call.kwargs.get('timeout') == timeout
+                for call in MockClient.call_args_list
+            )
