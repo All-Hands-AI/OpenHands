@@ -26,6 +26,7 @@
           "usage/installation",
           "usage/getting-started",
           "usage/key-features",
+          "usage/faq",
           {
             "group": "OpenHands Cloud",
             "pages": [
