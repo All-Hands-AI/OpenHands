@@ -15,6 +15,13 @@ class ProviderType(Enum):
     GITLAB = 'GITLAB'
     BITBUCKET = 'BITBUCKET'
 
+    @classmethod
+    def _missing_(cls, value: object):
+        if isinstance(value, str):
+            for member in cls:
+                if member.value.lower() == value.lower():
+                    return member
+
 
 class TaskType(str, Enum):
     MERGE_CONFLICTS = 'MERGE_CONFLICTS'
