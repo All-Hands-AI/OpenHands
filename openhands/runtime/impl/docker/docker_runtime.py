@@ -562,7 +562,7 @@ class DockerRuntime(ActionExecutionClient):
         shak_vscode_url = f'https://openhands-code-{shak_port_str}.{shak_domain}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
         return shak_vscode_url
 
-    def shak_convert_any_port_to_string(port: int) -> str:
+    def shak_convert_any_port_to_string(self, port: int) -> str:
         """
         Shakudo: Convert self._vscode_port (an integer) into a base-26 string using lowercase letters.
         This mimics the Bash function behavior from the sidecar.sh script.
