@@ -183,27 +183,32 @@ def display_initial_user_prompt(prompt: str) -> None:
 def display_event(event: Event, config: OpenHandsConfig) -> None:
     global streaming_output_text_area
     with print_lock:
-        if isinstance(event, Action):
-            if hasattr(event, 'thought'):
-                display_message(event.thought)
-            if hasattr(event, 'final_thought'):
-                display_message(event.final_thought)
-        if isinstance(event, MessageAction):
-            if event.source == EventSource.AGENT:
-                display_message(event.content)
         if isinstance(event, CmdRunAction):
+            # Display thought if present
+            if hasattr(event, 'thought') and event.thought:
+                display_message(event.thought)
+            # Display the command
             display_command(event)
             if event.confirmation_state == ActionConfirmationStatus.CONFIRMED:
                 initialize_streaming_output()
-        if isinstance(event, CmdOutputObservation):
+        elif isinstance(event, MessageAction):
+            if event.source == EventSource.AGENT:
+                display_message(event.content)
+        elif isinstance(event, Action):
+            # Handle other actions that are not CmdRunAction
+            if hasattr(event, 'thought') and event.thought:
+                display_message(event.thought)
+            if hasattr(event, 'final_thought') and event.final_thought:
+                display_message(event.final_thought)
+        elif isinstance(event, CmdOutputObservation):
             display_command_output(event.content)
-        if isinstance(event, FileEditObservation):
+        elif isinstance(event, FileEditObservation):
             display_file_edit(event)
-        if isinstance(event, FileReadObservation):
+        elif isinstance(event, FileReadObservation):
             display_file_read(event)
-        if isinstance(event, AgentStateChangedObservation):
+        elif isinstance(event, AgentStateChangedObservation):
             display_agent_state_change_message(event.agent_state)
-        if isinstance(event, ErrorObservation):
+        elif isinstance(event, ErrorObservation):
             display_error(event.content)
 
 
