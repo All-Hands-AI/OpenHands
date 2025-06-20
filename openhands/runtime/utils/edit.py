@@ -351,7 +351,6 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             return ErrorObservation(error_msg)
 
         content_to_edit = '\n'.join(old_file_lines[start_idx:end_idx])
-        self.draft_editor_llm.reset()
         _edited_content = get_new_file_contents(
             self.draft_editor_llm, content_to_edit, action.content
         )
@@ -379,7 +378,7 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
                 suffix, original_file_content, updated_content, action.path, diff
             )
             if error_obs is not None:
-                # error_obs.llm_metrics = self.draft_editor_llm.metrics
+                error_obs.llm_metrics = self.draft_editor_llm.metrics
                 self.write(FileWriteAction(path=action.path, content=updated_content))
                 return self.correct_edit(file_content=updated_content, error_obs=error_obs, retry_num=retry_num)
 
@@ -428,4 +427,4 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
                     return self.llm_based_edit(action, _retry_num)
         except Exception as e:
             logger.error(f'correct lint error is failed: {e}')
-            return error_obs
+        return error_obs
