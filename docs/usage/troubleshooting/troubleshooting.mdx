@@ -31,9 +31,9 @@ On initial prompt, an error is seen with `Permission Denied` or `PermissionError
 
 **Resolution**
 
-* Check if the `~/.openhands-state` is owned by `root`. If so, you can:
-  * Change the directory's ownership: `sudo chown <user>:<user> ~/.openhands-state`.
-  * or update permissions on the directory: `sudo chmod 777 ~/.openhands-state`
+* Check if the `~/.openhands` is owned by `root`. If so, you can:
+  * Change the directory's ownership: `sudo chown <user>:<user> ~/.openhands`.
+  * or update permissions on the directory: `sudo chmod 777 ~/.openhands`
   * or delete it if you don’t need previous data. OpenHands will recreate it. You'll need to re-enter LLM settings.
 * If mounting a local directory, ensure your `WORKSPACE_BASE` has the necessary permissions for the user running
   OpenHands.
@@ -56,13 +56,16 @@ To fix this:
        -e SANDBOX_VSCODE_PORT=41234 \
        -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:latest \
        -v /var/run/docker.sock:/var/run/docker.sock \
-       -v ~/.openhands-state:/.openhands-state \
+       -v ~/.openhands:/.openhands \
        -p 3000:3000 \
        -p 41234:41234 \
        --add-host host.docker.internal:host-gateway \
        --name openhands-app \
        docker.all-hands.dev/all-hands-ai/openhands:latest
    ```
+
+   > **Note**: If you used OpenHands before version 0.44, you may want to run `mv ~/.openhands-state ~/.openhands` to migrate your conversation history to the new location.
+
 2. Make sure to expose the same port with `-p 41234:41234` in your Docker command.
 3. If running with the development workflow, you can set this in your `config.toml` file:
    ```toml

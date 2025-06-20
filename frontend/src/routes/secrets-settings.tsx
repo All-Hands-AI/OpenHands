@@ -84,7 +84,11 @@ function SecretsSettingsScreen() {
       )}
 
       {shouldRenderConnectToGitButton && (
-        <Link to="/settings/git" data-testid="connect-git-button" type="button">
+        <Link
+          to="/settings/integrations"
+          data-testid="connect-git-button"
+          type="button"
+        >
           <BrandButton type="button" variant="secondary">
             Connect a Git provider to manage secrets
           </BrandButton>

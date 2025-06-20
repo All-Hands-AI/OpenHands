@@ -1,21 +1,42 @@
 ---
-title: Slack Integration - Coming soon...
+title: Slack Integration (Beta)
 description: This guide walks you through installing the OpenHands Slack app.
 ---
 
-<Warning>This integration is not live yet, but will be available soon.</Warning>
-
 ## Prerequisites
 
-- You are a slack workspace admin
 - Access to OpenHands Cloud
 
 ## Installation Steps
 
-1. Log in to [OpenHands Cloud](https://app.all-hands.dev)
-2. Click the button below to OpenHands Slack App <a target="_blank" href="https://slack.com/oauth/v2/authorize?client_id=7477886716822.8729519890534&scope=app_mentions:read,chat:write,users:read,channels:history,groups:history,mpim:history,im:history&user_scope=channels:history,groups:history,im:history,mpim:history"><img alt="Add to Slack" height="40" width="139" src="https://platform.slack-edge.com/img/add_to_slack.png" srcSet="https://platform.slack-edge.com/img/add_to_slack.png 1x, https://platform.slack-edge.com/img/add_to_slack@2x.png 2x" /></a>
-3. In the top right corner, select the workspace to install the OpenHands Slack app.
-4. Review permissions and click allow
+<AccordionGroup>
+<Accordion title="Install Slack App (only for Slack admins/owners)">
+
+  **This step is for Slack admins/owners**
+
+  1. Make sure you have permissions to install Apps to your workspace.
+  2. Click the button below to install OpenHands Slack App <a target="_blank" href="https://slack.com/oauth/v2/authorize?client_id=7477886716822.8729519890534&scope=app_mentions:read,chat:write,users:read,channels:history,groups:history,mpim:history,im:history&user_scope=channels:history,groups:history,im:history,mpim:history"><img alt="Add to Slack" height="40" width="139" src="https://platform.slack-edge.com/img/add_to_slack.png" srcSet="https://platform.slack-edge.com/img/add_to_slack.png 1x, https://platform.slack-edge.com/img/add_to_slack@2x.png 2x" /></a>
+  3. In the top right corner, select the workspace to install the OpenHands Slack app.
+  4. Review permissions and click allow.
+
+</Accordion>
+
+<Accordion title="Authorize Slack App (for all Slack workspace members)">
+
+  **Make sure your Slack workspace admin/owner has installed OpenHands Slack App first**
+
+  Every user in the Slack workspace (including admins/owners) must link their Cloud OpenHands account to the OpenHands Slack App. To do this:
+  1. Visit [integrations settings](https://app.all-hands.dev/settings/integrations) in OpenHands Cloud.
+  2. Click the button "Install Slack App".
+  3. In the top right corner, select the workspace to install the OpenHands Slack app.
+  4. Review permissions and click allow.
+
+  Depending on the workspace settings, you may need approval from your Slack admin to authorize the Slack App.
+
+</Accordion>
+
+</AccordionGroup>
+
 
 ## Working With the Slack App
 
@@ -47,6 +68,6 @@ You can mention a repo name when starting a new conversation in the following fo
 2. "All-Hands-AI/OpenHands" (e.g `@openhands in All-Hands-AI/OpenHands ...`)
 
 The repo match is case insensitive. If a repo name match is made, it will kick off the conversation.
-If the repo name partially matches against, multiple repos, you'll be asked to select a repo from the filtered list.
+If the repo name partially matches against multiple repos, you'll be asked to select a repo from the filtered list.
 
 ![slack-pro-tip.png](/static/img/slack-pro-tip.png)
