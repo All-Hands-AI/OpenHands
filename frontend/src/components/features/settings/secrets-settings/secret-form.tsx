@@ -158,7 +158,8 @@ export function SecretForm({
             required
             className={cn(
               "resize-none",
-              "bg-tertiary border border-[#717888] rounded p-2 placeholder:italic placeholder:text-tertiary-alt",
+              "bg-tertiary border border-border rounded p-2 placeholder:italic placeholder:text-tertiary-alt",
+              "focus:outline-none focus:border-white focus:ring-1 focus:ring-white",
               "disabled:bg-[#2D2F36] disabled:border-[#2D2F36] disabled:cursor-not-allowed",
             )}
             rows={8}
@@ -177,7 +178,8 @@ export function SecretForm({
           defaultValue={secretDescription}
           className={cn(
             "resize-none",
-            "bg-tertiary border border-[#717888] rounded p-2 placeholder:italic placeholder:text-tertiary-alt",
+            "bg-tertiary border border-border rounded p-2 placeholder:italic placeholder:text-tertiary-alt",
+            "focus:outline-none focus:border-white focus:ring-1 focus:ring-white",
             "disabled:bg-[#2D2F36] disabled:border-[#2D2F36] disabled:cursor-not-allowed",
           )}
         />

@@ -7,7 +7,7 @@ interface HelpLinkProps {
 
 export function HelpLink({ testId, text, linkText, href }: HelpLinkProps) {
   return (
-    <p data-testid={testId} className="text-xs">
+    <p data-testid={testId} className="text-xs text-tertiary-alt">
       {text}{" "}
       <a
         href={href}

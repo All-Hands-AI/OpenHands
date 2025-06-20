@@ -4,7 +4,6 @@ import { ContextMenu } from "../context-menu/context-menu";
 import { ContextMenuListItem } from "../context-menu/context-menu-list-item";
 
 interface ConversationCardContextMenuProps {
-  onClose: () => void;
   onDelete?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onEdit?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onDisplayCost?: (event: React.MouseEvent<HTMLButtonElement>) => void;
@@ -14,7 +13,6 @@ interface ConversationCardContextMenuProps {
 }
 
 export function ConversationCardContextMenu({
-  onClose,
   onDelete,
   onEdit,
   onDisplayCost,
@@ -22,7 +20,9 @@ export function ConversationCardContextMenu({
   onDownloadViaVSCode,
   position = "bottom",
 }: ConversationCardContextMenuProps) {
-  const ref = useClickOutsideElement<HTMLUListElement>(onClose);
+  const ref = useClickOutsideElement<HTMLUListElement>(() => {
+    // No-op since we're using hover state
+  });
 
   return (
     <ContextMenu

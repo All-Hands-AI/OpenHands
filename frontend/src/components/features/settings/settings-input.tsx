@@ -44,7 +44,7 @@ export function SettingsInput({
     <label className={cn("flex flex-col gap-2.5 w-fit", className)}>
       <div className="flex items-center gap-2">
         {startContent}
-        <span className="text-sm">{label}</span>
+        <span className="text-sm text-content">{label}</span>
         {showOptionalTag && <OptionalTag />}
       </div>
       <input
@@ -62,7 +62,7 @@ export function SettingsInput({
         required={required}
         pattern={pattern}
         className={cn(
-          "bg-tertiary border border-[#717888] h-10 w-full rounded p-2 placeholder:italic placeholder:text-tertiary-alt",
+          "bg-tertiary border border-border h-10 w-full rounded p-2 placeholder:italic placeholder:text-tertiary-alt focus:outline-none focus:text-content focus:border-white focus:ring-1 focus:ring-white",
           "disabled:bg-[#2D2F36] disabled:border-[#2D2F36] disabled:cursor-not-allowed",
         )}
       />

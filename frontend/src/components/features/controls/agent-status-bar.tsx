@@ -106,7 +106,7 @@ export function AgentStatusBar() {
 
   return (
     <div className="flex flex-col items-center">
-      <div className="flex items-center bg-base-secondary px-2 py-1 text-gray-400 rounded-[100px] text-sm gap-[6px]">
+      <div className="flex items-center px-2 py-1 text-gray-400 rounded-[100px] text-sm gap-[6px]">
         <div
           className={`w-2 h-2 rounded-full animate-pulse ${indicatorColor}`}
         />

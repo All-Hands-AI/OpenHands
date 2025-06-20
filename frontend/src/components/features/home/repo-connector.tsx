@@ -18,18 +18,13 @@ export function RepoConnector({ onRepoSelection }: RepoConnectorProps) {
   const providersAreSet = providers.length > 0;
 
   return (
-    <section
-      data-testid="repo-connector"
-      className="w-full flex flex-col gap-6"
-    >
-      <h2 className="heading">{t("HOME$CONNECT_TO_REPOSITORY")}</h2>
-
+    <div className="flex flex-col gap-4">
       {!providersAreSet && <ConnectToProviderMessage />}
       {providersAreSet && (
         <RepositorySelectionForm onRepoSelection={onRepoSelection} />
       )}
 
       {isSaaS && providersAreSet && <RepoProviderLinks />}
-    </section>
+    </div>
   );
 }

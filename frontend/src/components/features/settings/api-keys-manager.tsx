@@ -63,7 +63,7 @@ export function ApiKeysManager() {
           </BrandButton>
         </div>
 
-        <p className="text-sm text-gray-300">
+        <p className="text-sm text-content-secondary">
           <Trans
             i18nKey={I18nKey.SETTINGS$API_KEYS_DESCRIPTION}
             components={{

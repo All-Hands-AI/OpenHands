@@ -65,7 +65,7 @@ export function MCPJsonEditor({ mcpConfig, onChange }: MCPJsonEditorProps) {
 
   return (
     <div>
-      <div className="mb-2 text-sm text-gray-400">
+      <div className="mb-2 text-sm text-content-secondary">
         {t(I18nKey.SETTINGS$MCP_CONFIG_DESCRIPTION)}
       </div>
       <textarea
@@ -79,7 +79,7 @@ export function MCPJsonEditor({ mcpConfig, onChange }: MCPJsonEditorProps) {
           <strong>{t(I18nKey.SETTINGS$MCP_CONFIG_ERROR)}</strong> {error}
         </div>
       )}
-      <div className="mt-2 text-sm text-gray-400">
+      <div className="mt-2 text-sm text-content-secondary">
         <strong>{t(I18nKey.SETTINGS$MCP_CONFIG_EXAMPLE)}</strong>{" "}
         <code>
           {

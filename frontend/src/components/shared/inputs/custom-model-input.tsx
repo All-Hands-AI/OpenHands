@@ -3,8 +3,8 @@ import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 
 interface CustomModelInputProps {
-  isDisabled: boolean;
-  defaultValue: string;
+  isDisabled?: boolean;
+  defaultValue?: string;
 }
 
 export function CustomModelInput({
@@ -17,7 +17,7 @@ export function CustomModelInput({
     <fieldset className="flex flex-col gap-2">
       <label
         htmlFor="custom-model"
-        className="font-[500] text-[#A3A3A3] text-xs"
+        className="font-[500] text-content-secondary text-xs"
       >
         {t(I18nKey.SETTINGS_FORM$CUSTOM_MODEL_LABEL)}
       </label>

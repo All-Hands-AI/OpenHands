@@ -16,10 +16,10 @@ export function ConfirmationModal({
     <ModalBackdrop onClose={onCancel}>
       <div
         data-testid="confirmation-modal"
-        className="bg-base-secondary p-4 rounded-xl flex flex-col gap-4 border border-tertiary"
+        className="border border-tertiary p-4 rounded-xl flex flex-col gap-4"
       >
         <p>{text}</p>
-        <div className="w-full flex gap-2">
+        <div className="w-full flex gap-2 justify-start">
           <BrandButton
             testId="cancel-button"
             type="button"

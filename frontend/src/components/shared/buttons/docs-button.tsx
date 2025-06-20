@@ -11,7 +11,7 @@ export function DocsButton() {
       ariaLabel={t(I18nKey.SIDEBAR$DOCS)}
       href="https://docs.all-hands.dev"
     >
-      <DocsIcon width={28} height={28} className="text-[#9099AC]" />
+      <DocsIcon width={24} height={24} className="text-[#9099AC]" />
     </TooltipButton>
   );
 }

@@ -7,25 +7,22 @@ import { cn } from "#/utils/utils";
 
 interface ConversationPanelButtonProps {
   isOpen: boolean;
-  onClick: () => void;
 }
 
 export function ConversationPanelButton({
   isOpen,
-  onClick,
 }: ConversationPanelButtonProps) {
   const { t } = useTranslation();
 
   return (
     <TooltipButton
       testId="toggle-conversation-panel"
-      tooltip={t(I18nKey.SIDEBAR$CONVERSATIONS)}
+      tooltip=""
       ariaLabel={t(I18nKey.SIDEBAR$CONVERSATIONS)}
-      onClick={onClick}
     >
       <FaListUl
-        size={22}
-        className={cn(isOpen ? "text-white" : "text-[#9099AC]")}
+        size={20}
+        className={cn(isOpen ? "text-content" : "text-[#9099AC]")}
       />
     </TooltipButton>
   );

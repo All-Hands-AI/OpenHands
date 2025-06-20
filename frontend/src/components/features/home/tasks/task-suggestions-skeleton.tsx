@@ -10,7 +10,7 @@ const getRandomNumber = (from = 3, to = 5) =>
 
 function TaskCardSkeleton() {
   return (
-    <li className="py-3 border-b border-[#717888] flex items-center pr-6">
+    <li className="py-3 border-b border-border flex items-center pr-6">
       <div className="h-5 w-8 skeleton" />
 
       <div className="w-full pl-8">
@@ -30,7 +30,7 @@ interface TaskGroupSkeletonProps {
 function TaskGroupSkeleton({ items = 3 }: TaskGroupSkeletonProps) {
   return (
     <div data-testid="task-group-skeleton">
-      <div className="py-3 border-b border-[#717888]">
+      <div className="py-3 border-b border-border">
         <div className="h-6 w-40 skeleton" />
       </div>
 

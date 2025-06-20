@@ -32,7 +32,7 @@ function SSEServerDisplay({ server }: SSEServerDisplayProps) {
         {server.url}
       </div>
       {server.api_key && (
-        <div className="text-sm text-gray-500">
+        <div className="text-sm text-content-secondary">
           <span className="font-medium">
             {t(I18nKey.SETTINGS$MCP_API_KEY)}:
           </span>{" "}
@@ -56,18 +56,18 @@ function StdioServerDisplay({ server }: StdioServerDisplayProps) {
         <span className="font-medium">{t(I18nKey.SETTINGS$MCP_NAME)}:</span>{" "}
         {server.name}
       </div>
-      <div className="text-sm text-gray-500">
+      <div className="text-sm text-content-secondary">
         <span className="font-medium">{t(I18nKey.SETTINGS$MCP_COMMAND)}:</span>{" "}
         {server.command}
       </div>
       {server.args && server.args.length > 0 && (
-        <div className="text-sm text-gray-500">
+        <div className="text-sm text-content-secondary">
           <span className="font-medium">{t(I18nKey.SETTINGS$MCP_ARGS)}:</span>{" "}
           {server.args.join(" ")}
         </div>
       )}
       {server.env && Object.keys(server.env).length > 0 && (
-        <div className="text-sm text-gray-500">
+        <div className="text-sm text-content-secondary">
           <span className="font-medium">{t(I18nKey.SETTINGS$MCP_ENV)}:</span>{" "}
           {Object.entries(server.env)
             .map(([key, value]) => `${key}=${value}`)
@@ -89,11 +89,11 @@ export function MCPConfigViewer({ mcpConfig }: MCPConfigViewerProps) {
   }
 
   return (
-    <div className="mt-4 border border-base-tertiary rounded-md p-3">
+    <div className="mt-4 border border-border rounded-md p-3">
       <div className="flex justify-between items-center mb-3">
-        <h3 className="text-sm font-medium">
+        <h2 className="text-lg font-semibold text-tertiary-alt">
           {t(I18nKey.SETTINGS$MCP_CONFIGURATION)}
-        </h3>
+        </h2>
         <a
           href="https://docs.all-hands.dev/usage/mcp"
           target="_blank"
@@ -109,12 +109,12 @@ export function MCPConfigViewer({ mcpConfig }: MCPConfigViewerProps) {
         <div className="flex flex-col gap-4">
           {mcpConfig.sse_servers.length > 0 && (
             <div className="mb-3">
-              <h4 className="text-sm font-medium mb-1">
+              <h3 className="text-base font-medium text-tertiary-alt">
                 {t(I18nKey.SETTINGS$MCP_SSE_SERVERS)}{" "}
-                <span className="text-gray-500">
+                <span className="text-content-secondary">
                   ({mcpConfig.sse_servers.length})
                 </span>
-              </h4>
+              </h3>
               {mcpConfig.sse_servers.map((server, index) => (
                 <SSEServerDisplay key={`sse-${index}`} server={server} />
               ))}
@@ -123,12 +123,12 @@ export function MCPConfigViewer({ mcpConfig }: MCPConfigViewerProps) {
 
           {mcpConfig.stdio_servers.length > 0 && (
             <div>
-              <h4 className="text-sm font-medium mb-1">
+              <h3 className="text-base font-medium text-tertiary-alt">
                 {t(I18nKey.SETTINGS$MCP_STDIO_SERVERS)}{" "}
-                <span className="text-gray-500">
+                <span className="text-content-secondary">
                   ({mcpConfig.stdio_servers.length})
                 </span>
-              </h4>
+              </h3>
               {mcpConfig.stdio_servers.map((server, index) => (
                 <StdioServerDisplay key={`stdio-${index}`} server={server} />
               ))}

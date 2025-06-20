@@ -16,11 +16,8 @@ export function TaskSuggestions({ filterFor }: TaskSuggestionsProps) {
   const hasSuggestedTasks = suggestedTasks && suggestedTasks.length > 0;
 
   return (
-    <section
-      data-testid="task-suggestions"
-      className={cn("flex flex-col w-full", !hasSuggestedTasks && "gap-6")}
-    >
-      <h2 className="heading">Suggested Tasks</h2>
+    <div className="flex flex-col gap-4">
+      <h2 className="heading text-lg">Suggested Tasks</h2>
 
       <div className="flex flex-col gap-6">
         {isLoading && <TaskSuggestionsSkeleton />}
@@ -33,6 +30,6 @@ export function TaskSuggestions({ filterFor }: TaskSuggestionsProps) {
           />
         ))}
       </div>
-    </section>
+    </div>
   );
 }

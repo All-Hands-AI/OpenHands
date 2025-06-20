@@ -2,8 +2,73 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Theme-aware CSS custom properties */
+:root {
+  /* Light theme colors - better contrast with darker text */
+  --color-base: #ffffff;
+  --color-base-secondary: #f8f9fa;
+  --color-base-tertiary: #e9ecef;
+  --color-base-primary: #ffffff;
+  --color-content: #000000;
+  --color-content-secondary: #1a202c;
+  --color-content-2: #2a2a2a;
+  --color-tertiary: #adb5bd;
+  --color-tertiary-light: #ced4da;
+  --color-neutral-600: #495057;
+  --color-neutral-700: #343a40;
+  --color-neutral-800: #212529;
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --color-gray-100: #f8f9fa;
+  --color-gray-200: #e9ecef;
+  --color-gray-300: #dee2e6;
+  --color-gray-400: #ced4da;
+  --color-gray-500: #adb5bd;
+  --color-gray-600: #6c757d;
+  --color-gray-700: #495057;
+  --color-gray-800: #343a40;
+  --color-gray-900: #212529;
+  /* Border colors for light theme - darker for better consistency */
+  --color-border: #495057;
+  --color-border-hover: #343a40;
+  /* Input background color for light theme */
+  --color-input: #f8f9fa;
+}
+
+.dark {
+  /* Dark theme colors */
+  --color-base: #0D0F11;
+  --color-base-secondary: #24272E;
+  --color-base-tertiary: #454545;
+  --color-base-primary: #1a1d21;
+  --color-content: #ECEDEE;
+  --color-content-secondary: #B7BDC2;
+  --color-content-2: #F9FBFE;
+  --color-tertiary: #454545;
+  --color-tertiary-light: #B7BDC2;
+  --color-neutral-600: #B7BDC2;
+  --color-neutral-700: #9099AC;
+  --color-neutral-800: #ECEDEE;
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --color-gray-100: #24272E;
+  --color-gray-200: #454545;
+  --color-gray-300: #6c757d;
+  --color-gray-400: #9099AC;
+  --color-gray-500: #B7BDC2;
+  --color-gray-600: #ECEDEE;
+  --color-gray-700: #F9FBFE;
+  --color-gray-800: #ffffff;
+  --color-gray-900: #ffffff;
+  /* Border colors for dark theme */
+  --color-border: #454545;
+  --color-border-hover: #6c757d;
+  /* Input background color for dark theme */
+  --color-input: #27272A;
+}
+
 .button-base {
-  @apply bg-tertiary border border-neutral-600 rounded;
+  @apply bg-gray-600 text-white border border-gray-500 rounded hover:bg-gray-700 transition-colors duration-150 px-6 py-2;
 }
 
 .skeleton {
@@ -16,4 +81,56 @@
 
 .heading {
   @apply text-[28px] leading-8 -tracking-[0.02em] font-bold text-content-2;
+}
+
+@keyframes logo-jump {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.animate-logo-jump {
+  animation: logo-jump 0.3s ease-in-out;
+}
+
+@keyframes wave {
+  0% {
+    transform: rotate(0deg);
+  }
+  10% {
+    transform: rotate(14deg);
+  }
+  20% {
+    transform: rotate(-8deg);
+  }
+  30% {
+    transform: rotate(14deg);
+  }
+  40% {
+    transform: rotate(-4deg);
+  }
+  50% {
+    transform: rotate(10deg);
+  }
+  60% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+.animate-wave {
+  animation: wave 2.5s ease-in-out infinite;
+  transform-origin: 70% 70%;
+}
+
+.w-fit.p-2.text-sm.rounded.disabled\:opacity-30.disabled\:cursor-not-allowed.hover\:opacity-80.transition-colors.duration-150.bg-white.text-black.hover\:bg-gray-100 {
+  @apply px-6;
 }

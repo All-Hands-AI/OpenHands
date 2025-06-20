@@ -75,6 +75,11 @@ function SecretsSettingsScreen() {
       data-testid="secrets-settings-screen"
       className="px-11 py-9 flex flex-col gap-5"
     >
+      <div className="mb-4">
+        <h2 className="text-2xl font-semibold text-content mb-2">Secrets Management</h2>
+        <p className="text-sm text-content-secondary">Manage your environment variables and sensitive configuration data.</p>
+      </div>
+
       {isLoadingSecrets && view === "list" && (
         <ul>
           <SecretListItemSkeleton />
@@ -92,7 +97,7 @@ function SecretsSettingsScreen() {
       )}
 
       {secrets?.length === 0 && view === "list" && (
-        <p data-testid="no-secrets-message">{t("SECRETS$NO_SECRETS_FOUND")}</p>
+        <p data-testid="no-secrets-message" className="text-tertiary-alt">{t("SECRETS$NO_SECRETS_FOUND")}</p>
       )}
 
       {view === "list" && (

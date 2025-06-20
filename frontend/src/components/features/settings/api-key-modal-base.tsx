@@ -21,7 +21,7 @@ export function ApiKeyModalBase({
   return (
     <ModalBackdrop>
       <div
-        className="bg-base-secondary p-6 rounded-xl flex flex-col gap-4 border border-tertiary"
+        className="border border-tertiary p-6 rounded-xl flex flex-col gap-4"
         style={{ width }}
       >
         <h3 className="text-xl font-bold">{title}</h3>

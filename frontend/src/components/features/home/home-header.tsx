@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation";
 import { BrandButton } from "../settings/brand-button";
-import AllHandsLogo from "#/assets/branding/all-hands-logo-spark.svg?react";
+import { WavingHand } from "#/components/shared/icons/waving-hand";
 
 export function HomeHeader() {
   const {
@@ -19,24 +19,14 @@ export function HomeHeader() {
     isPending || isSuccess || isCreatingConversationElsewhere;
 
   return (
-    <header className="flex flex-col gap-5">
-      <AllHandsLogo />
+    <header className="flex flex-col gap-5 items-center text-center">
+      <WavingHand width={80} height={80} />
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-center">
         <h1 className="heading">{t("HOME$LETS_START_BUILDING")}</h1>
-        <BrandButton
-          testId="header-launch-button"
-          variant="primary"
-          type="button"
-          onClick={() => createConversation({})}
-          isDisabled={isCreatingConversation}
-        >
-          {!isCreatingConversation && t("HOME$LAUNCH_FROM_SCRATCH")}
-          {isCreatingConversation && t("HOME$LOADING")}
-        </BrandButton>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col items-center gap-2">
         <p className="text-sm max-w-[424px]">
           {t("HOME$OPENHANDS_DESCRIPTION")}
         </p>

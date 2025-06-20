@@ -250,7 +250,7 @@ function SecurityInvariant() {
 
   return (
     <div className="flex flex-1 w-full h-full">
-      <div className="w-60 bg-base-secondary border-r border-r-neutral-600 p-4 flex-shrink-0">
+      <div className="w-60 border-r border-r-neutral-600 p-4 flex-shrink-0">
         <div className="text-center mb-2">
           <InvariantLogoIcon className="mx-auto mb-1" />
           <b>{t(I18nKey.INVARIANT$INVARIANT_ANALYZER_LABEL)}</b>

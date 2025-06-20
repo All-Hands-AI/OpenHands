@@ -18,8 +18,8 @@ export function EditorActionButton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "text-sm py-0.5 rounded w-20",
-        "hover:bg-tertiary disabled:opacity-50 disabled:cursor-not-allowed",
+        "text-sm py-0.5 rounded w-20 text-content",
+        "hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150",
         className,
       )}
     >

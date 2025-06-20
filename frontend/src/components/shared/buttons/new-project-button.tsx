@@ -13,7 +13,7 @@ export function NewProjectButton() {
       navLinkTo="/"
       testId="new-project-button"
     >
-      <PlusIcon width={28} height={28} />
+      <PlusIcon width={24} height={24} />
     </TooltipButton>
   );
 }

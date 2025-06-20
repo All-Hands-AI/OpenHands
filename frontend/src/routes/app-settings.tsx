@@ -8,6 +8,7 @@ import { BrandButton } from "#/components/features/settings/brand-button";
 import { SettingsSwitch } from "#/components/features/settings/settings-switch";
 import { I18nKey } from "#/i18n/declaration";
 import { LanguageInput } from "#/components/features/settings/app-settings/language-input";
+import { ThemeToggle } from "#/components/features/settings/app-settings/theme-toggle";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 import {
   displayErrorToast,
@@ -127,6 +128,11 @@ function AppSettingsScreen() {
       {shouldBeLoading && <AppSettingsInputsSkeleton />}
       {!shouldBeLoading && (
         <div className="p-9 flex flex-col gap-6">
+          <div className="mb-4">
+            <h2 className="text-2xl font-semibold text-content mb-2">Application Settings</h2>
+            <p className="text-sm text-content-secondary">Configure your application preferences and notifications.</p>
+          </div>
+
           <LanguageInput
             name="language-input"
             defaultKey={settings.LANGUAGE}
@@ -151,6 +157,8 @@ function AppSettingsScreen() {
             {t(I18nKey.SETTINGS$SOUND_NOTIFICATIONS)}
           </SettingsSwitch>
 
+          <ThemeToggle />
+
           {config?.APP_MODE === "saas" && (
             <SettingsSwitch
               testId="enable-proactive-conversations-switch"
@@ -166,7 +174,7 @@ function AppSettingsScreen() {
         </div>
       )}
 
-      <div className="flex gap-6 p-6 justify-end border-t border-t-tertiary">
+      <div className="flex gap-6 p-6 justify-start">
         <BrandButton
           testId="submit-button"
           variant="primary"

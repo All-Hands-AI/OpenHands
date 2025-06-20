@@ -23,9 +23,11 @@ export function ModalBackdrop({ children, onClose }: ModalBackdropProps) {
     <div className="fixed inset-0 flex items-center justify-center z-20">
       <div
         onClick={handleClick}
-        className="fixed inset-0 bg-black bg-opacity-80"
+        className="fixed inset-0 bg-black/20 backdrop-blur-sm animate-in fade-in duration-200"
       />
-      <div className="relative">{children}</div>
+      <div className="relative animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out">
+        {children}
+      </div>
     </div>
   );
 }

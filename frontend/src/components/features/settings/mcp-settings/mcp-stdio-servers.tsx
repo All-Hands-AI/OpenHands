@@ -12,9 +12,12 @@ export function MCPStdioServers({ servers }: MCPStdioServersProps) {
 
   return (
     <div>
+      <h3 className="text-base font-medium text-tertiary-alt">
+        {t(I18nKey.SETTINGS$MCP_STDIO_SERVERS)}
+      </h3>
       <h4 className="text-sm font-medium mb-2">
         {t(I18nKey.SETTINGS$MCP_STDIO_SERVERS)}{" "}
-        <span className="text-gray-500">({servers.length})</span>
+        <span className="text-content-secondary">({servers.length})</span>
       </h4>
       {servers.map((server, index) => (
         <div
@@ -25,14 +28,14 @@ export function MCPStdioServers({ servers }: MCPStdioServersProps) {
             <span className="font-medium">{t(I18nKey.SETTINGS$MCP_NAME)}:</span>{" "}
             {server.name}
           </div>
-          <div className="mt-1 text-sm text-gray-500">
+          <div className="mt-1 text-sm text-content-secondary">
             <span className="font-medium">
               {t(I18nKey.SETTINGS$MCP_COMMAND)}:
             </span>{" "}
             <code className="font-mono">{server.command}</code>
           </div>
           {server.args && server.args.length > 0 && (
-            <div className="mt-1 text-sm text-gray-500">
+            <div className="mt-1 text-sm text-content-secondary">
               <span className="font-medium">
                 {t(I18nKey.SETTINGS$MCP_ARGS)}:
               </span>{" "}
@@ -40,7 +43,7 @@ export function MCPStdioServers({ servers }: MCPStdioServersProps) {
             </div>
           )}
           {server.env && Object.keys(server.env).length > 0 && (
-            <div className="mt-1 text-sm text-gray-500">
+            <div className="mt-1 text-sm text-content-secondary">
               <span className="font-medium">
                 {t(I18nKey.SETTINGS$MCP_ENV)}:
               </span>{" "}

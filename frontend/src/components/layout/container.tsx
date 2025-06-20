@@ -1,5 +1,5 @@
-import clsx from "clsx";
 import React from "react";
+import { cn } from "#/utils/utils";
 import { NavTab } from "./nav-tab";
 
 interface ContainerProps {
@@ -13,7 +13,7 @@ interface ContainerProps {
     rightContent?: React.ReactNode;
   }[];
   children: React.ReactNode;
-  className?: React.HTMLAttributes<HTMLDivElement>["className"];
+  className?: string;
 }
 
 export function Container({
@@ -24,8 +24,8 @@ export function Container({
 }: ContainerProps) {
   return (
     <div
-      className={clsx(
-        "bg-base-secondary border border-neutral-600 rounded-xl flex flex-col h-full",
+      className={cn(
+        "border border-border rounded-xl flex flex-col h-full",
         className,
       )}
     >
@@ -47,7 +47,7 @@ export function Container({
         </div>
       )}
       {!labels && label && (
-        <div className="px-2 h-[36px] border-b border-neutral-600 text-xs flex items-center">
+        <div className="px-2 h-[36px] border-b border-border text-xs flex items-center">
           {label}
         </div>
       )}

@@ -58,7 +58,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
     <div
       ref={ref}
       data-testid="conversation-panel"
-      className="w-[350px] h-full border border-neutral-700 bg-base-secondary rounded-xl overflow-y-auto absolute"
+      className="w-[350px] h-full border border-neutral-700 rounded-xl overflow-y-auto absolute bg-base-primary z-[9999]"
     >
       {isFetching && (
         <div className="w-full h-full absolute flex justify-center items-center">
@@ -71,7 +71,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
         </div>
       )}
       {conversations?.length === 0 && (
-        <div className="flex flex-col items-center justify-center h-full">
+        <div className="flex flex-col items-center justify-center h-full bg-base-primary">
           <p className="text-neutral-400">
             {t(I18nKey.CONVERSATION$NO_CONVERSATIONS)}
           </p>

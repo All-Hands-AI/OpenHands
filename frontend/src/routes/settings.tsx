@@ -5,6 +5,7 @@ import SettingsIcon from "#/icons/settings.svg?react";
 import { cn } from "#/utils/utils";
 import { useConfig } from "#/hooks/query/use-config";
 import { I18nKey } from "#/i18n/declaration";
+import { FiGitBranch, FiSettings, FiCreditCard, FiShield, FiKey, FiCpu, FiDatabase } from "react-icons/fi";
 
 function SettingsScreen() {
   const { t } = useTranslation();
@@ -15,19 +16,19 @@ function SettingsScreen() {
   const isSaas = config?.APP_MODE === "saas";
 
   const saasNavItems = [
-    { to: "/settings/git", text: t("SETTINGS$NAV_GIT") },
-    { to: "/settings/app", text: t("SETTINGS$NAV_APPLICATION") },
-    { to: "/settings/billing", text: t("SETTINGS$NAV_CREDITS") },
-    { to: "/settings/secrets", text: t("SETTINGS$NAV_SECRETS") },
-    { to: "/settings/api-keys", text: t("SETTINGS$NAV_API_KEYS") },
+    { to: "/settings/git", text: t("SETTINGS$NAV_GIT"), icon: FiGitBranch },
+    { to: "/settings/app", text: t("SETTINGS$NAV_APPLICATION"), icon: FiSettings },
+    { to: "/settings/billing", text: t("SETTINGS$NAV_CREDITS"), icon: FiCreditCard },
+    { to: "/settings/secrets", text: t("SETTINGS$NAV_SECRETS"), icon: FiShield },
+    { to: "/settings/api-keys", text: t("SETTINGS$NAV_API_KEYS"), icon: FiKey },
   ];
 
   const ossNavItems = [
-    { to: "/settings", text: t("SETTINGS$NAV_LLM") },
-    { to: "/settings/mcp", text: t("SETTINGS$NAV_MCP") },
-    { to: "/settings/git", text: t("SETTINGS$NAV_GIT") },
-    { to: "/settings/app", text: t("SETTINGS$NAV_APPLICATION") },
-    { to: "/settings/secrets", text: t("SETTINGS$NAV_SECRETS") },
+    { to: "/settings", text: t("SETTINGS$NAV_LLM"), icon: FiCpu },
+    { to: "/settings/mcp", text: t("SETTINGS$NAV_MCP"), icon: FiDatabase },
+    { to: "/settings/git", text: t("SETTINGS$NAV_GIT"), icon: FiGitBranch },
+    { to: "/settings/app", text: t("SETTINGS$NAV_APPLICATION"), icon: FiSettings },
+    { to: "/settings/secrets", text: t("SETTINGS$NAV_SECRETS"), icon: FiShield },
   ];
 
   React.useEffect(() => {
@@ -50,40 +51,47 @@ function SettingsScreen() {
   const navItems = isSaas ? saasNavItems : ossNavItems;
 
   return (
-    <main
-      data-testid="settings-screen"
-      className="bg-base-secondary border border-tertiary h-full rounded-xl flex flex-col"
+    <div
+      className="h-full rounded-xl flex"
+      data-testid="settings-container"
     >
-      <header className="px-3 py-1.5 border-b border-b-tertiary flex items-center gap-2">
-        <SettingsIcon width={16} height={16} />
-        <h1 className="text-sm leading-6">{t(I18nKey.SETTINGS$TITLE)}</h1>
-      </header>
+      {/* Left Sidebar Navigation */}
+      <div className="w-64 p-6">
+        <header className="flex items-center gap-2 mb-6">
+          <SettingsIcon width={16} height={16} className="text-[#F3CE49]" />
+          <h1 className="text-sm leading-6 text-content font-semibold">{t(I18nKey.SETTINGS$TITLE)}</h1>
+        </header>
 
-      <nav
-        data-testid="settings-navbar"
-        className="flex items-end gap-6 px-9 border-b border-tertiary"
-      >
-        {navItems.map(({ to, text }) => (
-          <NavLink
-            end
-            key={to}
-            to={to}
-            className={({ isActive }) =>
-              cn(
-                "border-b-2 border-transparent py-2.5 px-4 min-w-[40px] flex items-center justify-center",
-                isActive && "border-primary",
-              )
-            }
-          >
-            <span className="text-[#F9FBFE] text-sm">{text}</span>
-          </NavLink>
-        ))}
-      </nav>
+        <nav
+          data-testid="settings-navbar"
+          className="flex flex-col gap-1"
+        >
+          {navItems.map(({ to, text, icon: Icon }) => (
+            <NavLink
+              end
+              key={to}
+              to={to}
+              className={({ isActive }) =>
+                cn(
+                  "flex items-center gap-3 text-content-secondary text-sm py-2 px-1 rounded transition-colors",
+                  isActive
+                    ? "bg-tertiary text-content"
+                    : "hover:bg-tertiary hover:text-content"
+                )
+              }
+            >
+              <Icon className="w-4 h-4" />
+              {text}
+            </NavLink>
+          ))}
+        </nav>
+      </div>
 
-      <div className="flex flex-col grow overflow-auto">
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col overflow-auto">
         <Outlet />
       </div>
-    </main>
+    </div>
   );
 }
 

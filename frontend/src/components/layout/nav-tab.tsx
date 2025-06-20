@@ -26,7 +26,7 @@ export function NavTab({
       key={to}
       to={to}
       className={cn(
-        "px-2 border-b border-r border-neutral-600 bg-base-secondary flex-1",
+        "px-2 border-b border-r border-border flex-1",
         "first-of-type:rounded-tl-xl last-of-type:rounded-tr-xl last-of-type:border-r-0",
         "flex items-center gap-2 h-full min-h-[36px]",
       )}

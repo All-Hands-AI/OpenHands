@@ -6,7 +6,7 @@ interface CustomInputProps {
   label: string;
   required?: boolean;
   defaultValue?: string;
-  type?: "text" | "password";
+  type?: string;
 }
 
 export function CustomInput({
@@ -20,11 +20,11 @@ export function CustomInput({
 
   return (
     <label htmlFor={name} className="flex flex-col gap-2">
-      <span className="text-[11px] leading-4 tracking-[0.5px] font-[500] text-[#A3A3A3]">
+      <span className="text-[11px] leading-4 tracking-[0.5px] font-[500] text-content-secondary">
         {label}
         {required && <span className="text-[#FF4D4F]">*</span>}
         {!required && (
-          <span className="text-[#A3A3A3]">
+          <span className="text-content-secondary">
             {" "}
             {t(I18nKey.CUSTOM_INPUT$OPTIONAL_LABEL)}
           </span>

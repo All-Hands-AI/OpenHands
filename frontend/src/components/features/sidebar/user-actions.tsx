@@ -1,6 +1,6 @@
 import React from "react";
 import { UserAvatar } from "./user-avatar";
-import { AccountSettingsContextMenu } from "../context-menu/account-settings-context-menu";
+import { UserSettingsPopover } from "./user-settings-popover";
 
 interface UserActionsProps {
   onLogout: () => void;
@@ -9,36 +9,56 @@ interface UserActionsProps {
 }
 
 export function UserActions({ onLogout, user, isLoading }: UserActionsProps) {
-  const [accountContextMenuIsVisible, setAccountContextMenuIsVisible] =
-    React.useState(false);
+  const [isPopoverVisible, setIsPopoverVisible] = React.useState(false);
+  const closeTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
-  const toggleAccountMenu = () => {
-    setAccountContextMenuIsVisible((prev) => !prev);
+  const handleMouseEnter = () => {
+    // Clear any pending close timeout
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
+    setIsPopoverVisible(true);
   };
 
-  const closeAccountMenu = () => {
-    setAccountContextMenuIsVisible(false);
+  const handleMouseLeave = () => {
+    // Set a delay before closing to allow mouse to move to popover
+    closeTimeoutRef.current = setTimeout(() => {
+      setIsPopoverVisible(false);
+    }, 150); // 150ms delay is standard practice
   };
 
   const handleLogout = () => {
     onLogout();
-    closeAccountMenu();
+    setIsPopoverVisible(false);
   };
 
+  // Cleanup timeout on unmount
+  React.useEffect(() => {
+    return () => {
+      if (closeTimeoutRef.current) {
+        clearTimeout(closeTimeoutRef.current);
+      }
+    };
+  }, []);
+
   return (
-    <div data-testid="user-actions" className="w-8 h-8 relative">
+    <div
+      data-testid="user-actions"
+      className="w-8 h-8 relative"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
       <UserAvatar
         avatarUrl={user?.avatar_url}
-        onClick={toggleAccountMenu}
+        onClick={() => {}} // No click handler needed for hover
         isLoading={isLoading}
       />
 
-      {accountContextMenuIsVisible && (
-        <AccountSettingsContextMenu
-          onLogout={handleLogout}
-          onClose={closeAccountMenu}
-        />
-      )}
+      <UserSettingsPopover
+        isVisible={isPopoverVisible}
+        onLogout={handleLogout}
+      />
     </div>
   );
 }

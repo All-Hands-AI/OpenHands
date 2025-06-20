@@ -2,8 +2,8 @@ import React from "react";
 import { useLocation } from "react-router";
 import { useGitUser } from "#/hooks/query/use-git-user";
 import { UserActions } from "./user-actions";
-import { AllHandsLogoButton } from "#/components/shared/buttons/all-hands-logo-button";
-import { DocsButton } from "#/components/shared/buttons/docs-button";
+import { LogoPopoverButton } from "#/components/shared/buttons/logo-popover-button";
+// import { DocsButton } from "#/components/shared/buttons/docs-button";
 import { NewProjectButton } from "#/components/shared/buttons/new-project-button";
 import { SettingsButton } from "#/components/shared/buttons/settings-button";
 import { ConversationPanelButton } from "#/components/shared/buttons/conversation-panel-button";
@@ -64,21 +64,27 @@ export function Sidebar() {
   return (
     <>
       <aside className="h-[40px] md:h-auto px-1 flex flex-row md:flex-col gap-1">
-        <nav className="flex flex-row md:flex-col items-center justify-between w-full h-auto md:w-auto md:h-full">
+        <nav
+          className="flex flex-row md:flex-col items-center justify-between w-full h-auto md:w-auto md:h-full"
+        >
           <div className="flex flex-row md:flex-col items-center gap-[26px]">
             <div className="flex items-center justify-center">
-              <AllHandsLogoButton />
+              <LogoPopoverButton />
             </div>
             <NewProjectButton />
-            <ConversationPanelButton
-              isOpen={conversationPanelIsOpen}
-              onClick={() => setConversationPanelIsOpen((prev) => !prev)}
-            />
+            <div
+              onMouseEnter={() => setConversationPanelIsOpen(true)}
+              onMouseLeave={() => setConversationPanelIsOpen(false)}
+            >
+              <ConversationPanelButton
+                isOpen={conversationPanelIsOpen}
+              />
+            </div>
           </div>
 
           <div className="flex flex-row md:flex-col md:items-center gap-[26px] md:mb-4">
-            <DocsButton />
-            <SettingsButton />
+            {/* <DocsButton /> */}
+            {/* <SettingsButton /> */}
             <UserActions
               user={
                 user.data ? { avatar_url: user.data.avatar_url } : undefined
@@ -90,7 +96,11 @@ export function Sidebar() {
         </nav>
 
         {conversationPanelIsOpen && (
-          <ConversationPanelWrapper isOpen={conversationPanelIsOpen}>
+          <ConversationPanelWrapper
+            isOpen={conversationPanelIsOpen}
+            onMouseEnter={() => setConversationPanelIsOpen(true)}
+            onMouseLeave={() => setConversationPanelIsOpen(false)}
+          >
             <ConversationPanel
               onClose={() => setConversationPanelIsOpen(false)}
             />

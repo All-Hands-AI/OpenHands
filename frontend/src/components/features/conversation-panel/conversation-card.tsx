@@ -55,10 +55,10 @@ export function ConversationCard({
 }: ConversationCardProps) {
   const { t } = useTranslation();
   const { parsedEvents } = useWsClient();
-  const [contextMenuVisible, setContextMenuVisible] = React.useState(false);
   const [titleMode, setTitleMode] = React.useState<"view" | "edit">("view");
   const [metricsModalVisible, setMetricsModalVisible] = React.useState(false);
   const [systemModalVisible, setSystemModalVisible] = React.useState(false);
+  const [isHovering, setIsHovering] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const systemMessage = parsedEvents.find(isSystemMessage);
@@ -96,14 +96,12 @@ export function ConversationCard({
     event.preventDefault();
     event.stopPropagation();
     onDelete?.();
-    setContextMenuVisible(false);
   };
 
   const handleEdit = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     event.stopPropagation();
     setTitleMode("edit");
-    setContextMenuVisible(false);
   };
 
   const handleDownloadViaVSCode = async (
@@ -128,8 +126,6 @@ export function ConversationCard({
         // Failed to fetch VS Code URL
       }
     }
-
-    setContextMenuVisible(false);
   };
 
   const handleDisplayCost = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -161,8 +157,10 @@ export function ConversationCard({
       <div
         data-testid="conversation-card"
         onClick={onClick}
+        onMouseEnter={() => setIsHovering(true)}
+        onMouseLeave={() => setIsHovering(false)}
         className={cn(
-          "h-[100px] w-full px-[18px] py-4 border-b border-neutral-600 cursor-pointer",
+          "h-[100px] w-full px-[18px] py-4 border-b border-border cursor-pointer",
           variant === "compact" &&
             "md:w-fit h-auto rounded-xl border border-[#525252]",
         )}
@@ -203,15 +201,14 @@ export function ConversationCard({
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
-                    setContextMenuVisible((prev) => !prev);
+                    // Remove click handler - now controlled by hover
                   }}
                 />
               </div>
             )}
             <div className="relative">
-              {contextMenuVisible && (
+              {isHovering && (
                 <ConversationCardContextMenu
-                  onClose={() => setContextMenuVisible(false)}
                   onDelete={onDelete && handleDelete}
                   onEdit={onChangeTitle && handleEdit}
                   onDownloadViaVSCode={

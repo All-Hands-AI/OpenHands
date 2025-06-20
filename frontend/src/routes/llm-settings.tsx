@@ -261,6 +261,11 @@ function LlmSettingsScreen() {
         className="flex flex-col h-full justify-between"
       >
         <div className="p-9 flex flex-col gap-6">
+          <div className="mb-4">
+            <h2 className="text-2xl font-semibold text-content mb-2">LLM Settings</h2>
+            <p className="text-sm text-content-secondary">Configure your language model and AI provider settings.</p>
+          </div>
+
           <SettingsSwitch
             testId="advanced-settings-switch"
             defaultIsToggled={view === "advanced"}
@@ -480,7 +485,7 @@ function LlmSettingsScreen() {
           )}
         </div>
 
-        <div className="flex gap-6 p-6 justify-end border-t border-t-tertiary">
+        <div className="flex gap-6 p-6 justify-start">
           <BrandButton
             testId="submit-button"
             type="submit"

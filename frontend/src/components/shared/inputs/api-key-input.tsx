@@ -4,8 +4,8 @@ import { FaCheckCircle, FaExclamationCircle } from "react-icons/fa";
 import { I18nKey } from "#/i18n/declaration";
 
 interface APIKeyInputProps {
-  isDisabled: boolean;
-  isSet: boolean;
+  isDisabled?: boolean;
+  isSet?: boolean;
 }
 
 export function APIKeyInput({ isDisabled, isSet }: APIKeyInputProps) {
@@ -16,7 +16,7 @@ export function APIKeyInput({ isDisabled, isSet }: APIKeyInputProps) {
       <Tooltip content={isSet ? "API Key is set" : "API Key is not set"}>
         <label
           htmlFor="api-key"
-          className="font-[500] text-[#A3A3A3] text-xs flex items-center gap-1 self-start"
+          className="font-[500] text-content-secondary text-xs flex items-center gap-1 self-start"
         >
           {isSet && <FaCheckCircle className="text-[#00D1B2] inline-block" />}
           {!isSet && (
@@ -36,7 +36,7 @@ export function APIKeyInput({ isDisabled, isSet }: APIKeyInputProps) {
           inputWrapper: "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
         }}
       />
-      <p className="text-sm text-[#A3A3A3]">
+      <span className="text-xs text-tertiary-alt">
         {t(I18nKey.API$DONT_KNOW_KEY)}{" "}
         <a
           href="https://docs.all-hands.dev/usage/llms"
@@ -46,7 +46,7 @@ export function APIKeyInput({ isDisabled, isSet }: APIKeyInputProps) {
         >
           {t(I18nKey.COMMON$CLICK_FOR_INSTRUCTIONS)}
         </a>
-      </p>
+      </span>
     </fieldset>
   );
 }

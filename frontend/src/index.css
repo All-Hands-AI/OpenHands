@@ -63,3 +63,29 @@ code {
   scroll-behavior: smooth;
   scroll-timeline: 100ms;
 }
+
+/* Minimalist scrollbar: no track, thumb only on hover */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+:hover::-webkit-scrollbar-thumb,
+:focus::-webkit-scrollbar-thumb,
+:active::-webkit-scrollbar-thumb {
+  background: #555;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+*:hover, *:focus, *:active {
+  scrollbar-color: #555 transparent;
+}

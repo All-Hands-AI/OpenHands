@@ -69,9 +69,9 @@ export function TaskForm({ ref }: TaskFormProps) {
         />
         <div
           className={cn(
-            "border border-neutral-600 px-4 rounded-lg text-[17px] leading-5 w-full transition-colors duration-200",
+            "border border-border px-4 rounded-lg text-[17px] leading-5 w-full transition-colors duration-200",
             inputIsFocused ? "bg-neutral-600" : "bg-tertiary",
-            "hover:border-neutral-500 focus-within:border-neutral-500",
+            "hover:border-border-hover focus-within:border-border-hover",
           )}
         >
           {isPending ? (

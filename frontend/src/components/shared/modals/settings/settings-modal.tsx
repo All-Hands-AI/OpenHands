@@ -19,10 +19,7 @@ export function SettingsModal({ onClose, settings }: SettingsModalProps) {
 
   return (
     <ModalBackdrop>
-      <div
-        data-testid="ai-config-modal"
-        className="bg-base-secondary min-w-[384px] m-4 p-6 rounded-xl flex flex-col gap-2 border border-tertiary"
-      >
+      <div className="min-w-[384px] m-4 p-6 rounded-xl flex flex-col gap-2 border border-tertiary">
         {aiConfigOptions.error && (
           <p className="text-danger text-xs">{aiConfigOptions.error.message}</p>
         )}
@@ -35,7 +32,7 @@ export function SettingsModal({ onClose, settings }: SettingsModalProps) {
           <Link
             data-testid="advanced-settings-link"
             to="/settings"
-            className="underline underline-offset-2 text-white"
+            className="underline underline-offset-2 text-content"
           >
             {t(I18nKey.SETTINGS$SEE_ADVANCED_SETTINGS)}
           </Link>

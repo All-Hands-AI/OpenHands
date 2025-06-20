@@ -53,7 +53,7 @@ export function TooltipButton({
         className={({ isActive }) =>
           cn(
             "hover:opacity-80",
-            isActive ? "text-white" : "text-[#9099AC]",
+            isActive ? "text-content" : "text-[#9099AC]",
             className,
           )
         }
@@ -81,8 +81,14 @@ export function TooltipButton({
   }
 
   return (
-    <Tooltip content={tooltip} closeDelay={100} placement="right">
-      {content}
-    </Tooltip>
+    <>
+      {tooltip ? (
+        <Tooltip content={tooltip} closeDelay={100} placement="right">
+          {content}
+        </Tooltip>
+      ) : (
+        content
+      )}
+    </>
   );
 }

@@ -15,9 +15,9 @@ export function StopButton({ isDisabled, onClick }: StopButtonProps) {
       disabled={isDisabled}
       onClick={onClick}
       type="button"
-      className="border border-white rounded-lg w-6 h-6 hover:bg-neutral-500 focus:bg-neutral-500 flex items-center justify-center"
+      className="bg-white text-black rounded-lg w-6 h-6 hover:bg-gray-100 focus:bg-gray-100 flex items-center justify-center transition-colors duration-150"
     >
-      <div className="w-[10px] h-[10px] bg-white" />
+      <div className="w-[10px] h-[10px] bg-black" />
     </button>
   );
 }

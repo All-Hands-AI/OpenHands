@@ -18,7 +18,7 @@ export function SettingsButton({ onClick }: SettingsButtonProps) {
       onClick={onClick}
       navLinkTo="/settings"
     >
-      <SettingsIcon width={28} height={28} />
+      <SettingsIcon width={24} height={24} />
     </TooltipButton>
   );
 }

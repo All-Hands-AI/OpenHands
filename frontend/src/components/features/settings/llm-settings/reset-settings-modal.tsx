@@ -12,7 +12,7 @@ export function ResetSettingsModal({ onReset }: ResetSettingsModalProps) {
 
   return (
     <ModalBackdrop>
-      <div className="bg-base-secondary p-4 rounded-xl flex flex-col gap-4 border border-tertiary">
+      <div className="border border-tertiary p-4 rounded-xl flex flex-col gap-4">
         <p>{t(I18nKey.SETTINGS$RESET_CONFIRMATION)}</p>
         <div className="w-full flex gap-2" data-testid="reset-settings-modal">
           <BrandButton

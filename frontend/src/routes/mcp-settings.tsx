@@ -62,10 +62,15 @@ function MCPSettingsScreen() {
       className="flex flex-col h-full justify-between"
     >
       <div className="p-9 flex flex-col gap-12">
+        <div className="mb-4">
+          <h2 className="text-2xl font-semibold text-content mb-2">MCP Settings</h2>
+          <p className="text-sm text-content-secondary">Configure Model Context Protocol servers and connections.</p>
+        </div>
+
         <MCPConfigEditor mcpConfig={mcpConfig} onChange={handleConfigChange} />
       </div>
 
-      <div className="flex gap-6 p-6 justify-end border-t border-t-tertiary">
+      <div className="flex gap-6 p-6 justify-end">
         <BrandButton
           testId="submit-button"
           type="submit"

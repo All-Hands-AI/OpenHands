@@ -99,6 +99,11 @@ function GitSettingsScreen() {
     >
       {!isLoading && (
         <div className="p-9 flex flex-col gap-12">
+          <div className="mb-4">
+            <h2 className="text-2xl font-semibold text-content mb-2">Git Settings</h2>
+            <p className="text-sm text-content-secondary">Configure your Git provider connections and repository access.</p>
+          </div>
+
           {shouldRenderExternalConfigureButtons && !isLoading && (
             <ConfigureGitHubRepositoriesAnchor slug={config.APP_SLUG!} />
           )}
@@ -135,7 +140,7 @@ function GitSettingsScreen() {
 
       {isLoading && <GitSettingInputsSkeleton />}
 
-      <div className="flex gap-6 p-6 justify-end border-t border-t-tertiary">
+      <div className="flex gap-6 p-6 justify-start">
         {!shouldRenderExternalConfigureButtons && (
           <>
             <BrandButton

@@ -3,7 +3,7 @@ import toast, { ToastOptions } from "react-hot-toast";
 
 const TOAST_STYLE: CSSProperties = {
   background: "#454545",
-  border: "1px solid #717888",
+  border: "1px solid #525252",
   color: "#fff",
   borderRadius: "4px",
 };

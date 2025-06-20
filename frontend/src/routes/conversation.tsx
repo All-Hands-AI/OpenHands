@@ -96,7 +96,7 @@ function AppContent() {
 
     if (width <= 640) {
       return (
-        <div className="rounded-xl overflow-hidden border border-neutral-600 w-full bg-base-secondary">
+        <div className="rounded-xl overflow-hidden border border-neutral-600 w-full">
           <ChatInterface />
         </div>
       );
@@ -106,7 +106,7 @@ function AppContent() {
         orientation={Orientation.HORIZONTAL}
         className="grow h-full min-h-0 min-w-0"
         initialSize={500}
-        firstClassName="rounded-xl overflow-hidden border border-neutral-600 bg-base-secondary"
+        firstClassName="rounded-xl overflow-hidden border border-neutral-600"
         secondClassName="flex flex-col overflow-hidden"
         firstChild={<ChatInterface />}
         secondChild={

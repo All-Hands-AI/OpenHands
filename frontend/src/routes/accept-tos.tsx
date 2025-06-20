@@ -55,7 +55,7 @@ export default function AcceptTOS() {
 
   return (
     <div className="flex flex-col items-center justify-center h-full">
-      <div className="border border-tertiary p-8 rounded-lg max-w-md w-full flex flex-col gap-6 items-center bg-base-secondary">
+      <div className="border border-tertiary p-8 rounded-lg max-w-md w-full flex flex-col gap-6 items-center">
         <AllHandsLogo width={68} height={46} />
 
         <div className="flex flex-col gap-2 w-full items-center text-center">

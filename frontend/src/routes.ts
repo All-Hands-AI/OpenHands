@@ -8,6 +8,7 @@ import {
 export default [
   layout("routes/root-layout.tsx", [
     index("routes/home.tsx"),
+    route("components", "routes/components.tsx"),
     route("accept-tos", "routes/accept-tos.tsx"),
     route("settings", "routes/settings.tsx", [
       index("routes/llm-settings.tsx"),
@@ -26,5 +27,6 @@ export default [
       route("terminal", "routes/terminal-tab.tsx"),
       route("vscode", "routes/vscode-tab.tsx"),
     ]),
+    route("new-project", "routes/new-project.tsx"),
   ]),
 ] satisfies RouteConfig;
