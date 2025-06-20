@@ -50,19 +50,6 @@ def suppress_cli_warnings():
     )
 
 
-    
-    # Debug: Add a custom warning handler to track when httpx warnings occur
-    import sys
-    original_showwarning = warnings.showwarning
-    
-    def debug_warning_handler(message, category, filename, lineno, file=None, line=None):
-        if 'content=' in str(message) and 'httpx' in filename:
-            print(f"[DEBUG] HTTPX WARNING DETECTED: {message}", file=sys.stderr)
-            print(f"[DEBUG] Location: {filename}:{lineno}", file=sys.stderr)
-            print(f"[DEBUG] This warning should be suppressed!", file=sys.stderr)
-        return original_showwarning(message, category, filename, lineno, file, line)
-    
-    warnings.showwarning = debug_warning_handler
 
     # Suppress general deprecation warnings from dependencies during CLI usage
     # This catches the "Call to deprecated method get_events" warning
