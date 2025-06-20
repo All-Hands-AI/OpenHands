@@ -95,7 +95,7 @@ class CodeActAgent(Agent):
         if self._prompt_manager is None:
             self._prompt_manager = PromptManager(
                 prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
-                system_prompt_path=self.config.system_prompt_path,
+                system_prompt_filename=self.config.system_prompt_filename,
             )
 
         return self._prompt_manager

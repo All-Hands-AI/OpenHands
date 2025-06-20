@@ -47,34 +47,32 @@ class PromptManager:
 
     Attributes:
         prompt_dir: Directory containing prompt templates.
-        system_prompt_path: Optional custom path to system prompt template file.
+        system_prompt_filename: Filename of the system prompt template within prompt_dir.
     """
 
     def __init__(
         self,
         prompt_dir: str,
-        system_prompt_path: str | None = None,
+        system_prompt_filename: str = 'system_prompt.j2',
     ):
         self.prompt_dir: str = prompt_dir
-        self.system_prompt_path: str | None = system_prompt_path
+        self.system_prompt_filename: str = system_prompt_filename
         self.system_template: Template = self._load_system_template()
         self.user_template: Template = self._load_template('user_prompt')
         self.additional_info_template: Template = self._load_template('additional_info')
         self.microagent_info_template: Template = self._load_template('microagent_info')
 
     def _load_system_template(self) -> Template:
-        """Load the system prompt template, using custom path if provided."""
-        if self.system_prompt_path:
-            # Use custom system prompt path
-            if not os.path.exists(self.system_prompt_path):
-                raise FileNotFoundError(
-                    f'Custom system prompt file {self.system_prompt_path} not found'
-                )
-            with open(self.system_prompt_path, 'r') as file:
-                return Template(file.read())
-        else:
-            # Use default system prompt from prompt_dir
-            return self._load_template('system_prompt')
+        """Load the system prompt template using the specified filename."""
+        if self.prompt_dir is None:
+            raise ValueError('Prompt directory is not set')
+
+        # Remove .j2 extension if present to use with _load_template
+        template_name = self.system_prompt_filename
+        if template_name.endswith('.j2'):
+            template_name = template_name[:-3]
+
+        return self._load_template(template_name)
 
     def _load_template(self, template_name: str) -> Template:
         if self.prompt_dir is None:

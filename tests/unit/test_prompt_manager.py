@@ -271,39 +271,37 @@ def test_prompt_manager_initialization_error():
         PromptManager(None)
 
 
-def test_prompt_manager_custom_system_prompt_path(prompt_dir):
-    """Test that PromptManager can use a custom system prompt path."""
+def test_prompt_manager_custom_system_prompt_filename(prompt_dir):
+    """Test that PromptManager can use a custom system prompt filename."""
     # Create a custom system prompt file
-    custom_prompt_path = os.path.join(prompt_dir, 'custom_system.j2')
-    with open(custom_prompt_path, 'w') as f:
+    with open(os.path.join(prompt_dir, 'custom_system.j2'), 'w') as f:
         f.write('Custom system prompt: {{ custom_var }}')
 
     # Create default system prompt
     with open(os.path.join(prompt_dir, 'system_prompt.j2'), 'w') as f:
         f.write('Default system prompt')
 
-    # Test with custom system prompt path
+    # Test with custom system prompt filename
     manager = PromptManager(
-        prompt_dir=prompt_dir, system_prompt_path=custom_prompt_path
+        prompt_dir=prompt_dir, system_prompt_filename='custom_system.j2'
     )
     system_msg = manager.get_system_message()
     assert 'Custom system prompt:' in system_msg
 
-    # Test without custom system prompt path (should use default)
+    # Test without custom system prompt filename (should use default)
     manager_default = PromptManager(prompt_dir=prompt_dir)
     default_msg = manager_default.get_system_message()
     assert 'Default system prompt' in default_msg
 
     # Clean up
-    os.remove(custom_prompt_path)
+    os.remove(os.path.join(prompt_dir, 'custom_system.j2'))
     os.remove(os.path.join(prompt_dir, 'system_prompt.j2'))
 
 
-def test_prompt_manager_custom_system_prompt_path_not_found(prompt_dir):
+def test_prompt_manager_custom_system_prompt_filename_not_found(prompt_dir):
     """Test that PromptManager raises an error if custom system prompt file is not found."""
-    non_existent_path = os.path.join(prompt_dir, 'non_existent.j2')
     with pytest.raises(
         FileNotFoundError,
-        match=f'Custom system prompt file {non_existent_path} not found',
+        match=r'Prompt file .*/non_existent\.j2 not found',
     ):
-        PromptManager(prompt_dir=prompt_dir, system_prompt_path=non_existent_path)
+        PromptManager(prompt_dir=prompt_dir, system_prompt_filename='non_existent.j2')
