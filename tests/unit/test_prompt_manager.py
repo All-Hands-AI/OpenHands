@@ -269,3 +269,41 @@ def test_prompt_manager_initialization_error():
     """Test that PromptManager raises an error if the prompt directory is not set."""
     with pytest.raises(ValueError, match='Prompt directory is not set'):
         PromptManager(None)
+
+
+def test_prompt_manager_custom_system_prompt_path(prompt_dir):
+    """Test that PromptManager can use a custom system prompt path."""
+    # Create a custom system prompt file
+    custom_prompt_path = os.path.join(prompt_dir, 'custom_system.j2')
+    with open(custom_prompt_path, 'w') as f:
+        f.write('Custom system prompt: {{ custom_var }}')
+
+    # Create default system prompt
+    with open(os.path.join(prompt_dir, 'system_prompt.j2'), 'w') as f:
+        f.write('Default system prompt')
+
+    # Test with custom system prompt path
+    manager = PromptManager(
+        prompt_dir=prompt_dir, system_prompt_path=custom_prompt_path
+    )
+    system_msg = manager.get_system_message()
+    assert 'Custom system prompt:' in system_msg
+
+    # Test without custom system prompt path (should use default)
+    manager_default = PromptManager(prompt_dir=prompt_dir)
+    default_msg = manager_default.get_system_message()
+    assert 'Default system prompt' in default_msg
+
+    # Clean up
+    os.remove(custom_prompt_path)
+    os.remove(os.path.join(prompt_dir, 'system_prompt.j2'))
+
+
+def test_prompt_manager_custom_system_prompt_path_not_found(prompt_dir):
+    """Test that PromptManager raises an error if custom system prompt file is not found."""
+    non_existent_path = os.path.join(prompt_dir, 'non_existent.j2')
+    with pytest.raises(
+        FileNotFoundError,
+        match=f'Custom system prompt file {non_existent_path} not found',
+    ):
+        PromptManager(prompt_dir=prompt_dir, system_prompt_path=non_existent_path)

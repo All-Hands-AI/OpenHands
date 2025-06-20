@@ -12,6 +12,8 @@ class AgentConfig(BaseModel):
     """The name of the llm config to use. If specified, this will override global llm config."""
     classpath: str | None = Field(default=None)
     """The classpath of the agent to use. To be used for custom agents that are not defined in the openhands.agenthub package."""
+    system_prompt_path: str | None = Field(default=None)
+    """Path to a custom system prompt template file. If not specified, uses the default system prompt for the agent."""
     enable_browsing: bool = Field(default=True)
     """Whether to enable browsing tool.
     Note: If using CLIRuntime, browsing is not implemented and should be disabled."""
