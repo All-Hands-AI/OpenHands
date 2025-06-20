@@ -67,6 +67,7 @@ poetry = "^2.1.2"
 anyio = "4.9.0"
 pythonnet = "*"
 fastmcp = "^2.5.2"
+a2a-sdk = "^0.2.4"
 python-frontmatter = "^1.1.0"
 # TODO: Should these go into the runtime group?
 ipywidgets = "^8.1.5"

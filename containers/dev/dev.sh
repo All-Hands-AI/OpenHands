@@ -30,6 +30,7 @@ cd "$OPENHANDS_WORKSPACE/containers/dev/" || exit 1
 
 ##
 export BACKEND_HOST="0.0.0.0"
+export BACKEND_PORT="3000"
 #
 export SANDBOX_USER_ID=$(id -u)
 export WORKSPACE_BASE=${WORKSPACE_BASE:-$OPENHANDS_WORKSPACE/workspace}

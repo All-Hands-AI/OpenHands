@@ -9,6 +9,7 @@ services:
     container_name: openhands-dev
     environment:
       - BACKEND_HOST=${BACKEND_HOST:-"0.0.0.0"}
+      - BACKEND_PORT=${BACKEND_PORT:-"3000"}
       - SANDBOX_API_HOSTNAME=host.docker.internal
       - DOCKER_HOST_ADDR=host.docker.internal
       #
