@@ -11,9 +11,9 @@ from openhands.server.types import AppMode
 
 
 class ProviderType(Enum):
-    GITHUB = 'github'
-    GITLAB = 'gitlab'
-    BITBUCKET = 'bitbucket'
+    GITHUB = 'GITHUB'
+    GITLAB = 'GITLAB'
+    BITBUCKET = 'BITBUCKET'
 
 
 class TaskType(str, Enum):
