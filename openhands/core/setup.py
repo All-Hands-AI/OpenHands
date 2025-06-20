@@ -6,7 +6,6 @@ from typing import Callable
 from pydantic import SecretStr
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
-import openhands.cli.suppress_warnings  # noqa: F401
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State

@@ -1,5 +1,7 @@
 from dotenv import load_dotenv
 
+import openhands.cli.suppress_warnings  # noqa: F401
+
 load_dotenv()
 
 
