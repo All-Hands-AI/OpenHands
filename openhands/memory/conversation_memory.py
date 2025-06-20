@@ -66,7 +66,7 @@ class ConversationMemory:
         Returns:
             True if the URL is valid, False otherwise
         """
-        return bool(url and url.strip() and url.startswith('data:image/'))
+        return bool(url and url.strip())
 
     def process_events(
         self,
