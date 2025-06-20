@@ -4,6 +4,7 @@ from typing import Callable
 import typing
 from uuid import UUID
 import shutil
+import secrets
 
 import os
 import docker
@@ -102,6 +103,7 @@ class DockerRuntime(ActionExecutionClient):
         self._container_port = -1
         self._vscode_port = -1
         self._app_ports: list[int] = []
+        self._shak_app_secrets: list[int] = []
 
         if os.environ.get('DOCKER_HOST_ADDR'):
             logger.info(
@@ -268,6 +270,16 @@ class DockerRuntime(ActionExecutionClient):
 
         return volumes
 
+    def _shak_gen_secret(self) -> str:
+        """Shakudo: Generate a random secret string for use in the runtime.
+
+        Returns:
+            str: A random secret string.
+        """
+        secret = secrets.token_urlsafe(16)
+        self.log('warn', f'Shakudo: shak_gen_secret: Generated secret: {secret}')
+        return secret
+
     def init_container(self) -> None:
         self.log('debug', 'Preparing to start container...')
         self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
@@ -290,9 +302,17 @@ class DockerRuntime(ActionExecutionClient):
             self._find_available_port(APP_PORT_RANGE_1),
             self._find_available_port(APP_PORT_RANGE_2),
         ]
+        self._shak_app_secrets = [
+            self._shak_gen_secret(),
+            self._shak_gen_secret(),
+        ]
         self.log(
             'info',
             f'Shakudo init_container: Container app_ports={self._app_ports}',
+        )
+        self.log(
+            'info',
+            f'Shakudo init_container: Container secrets={self._shak_app_secrets}',
         )
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
 
@@ -342,6 +362,8 @@ class DockerRuntime(ActionExecutionClient):
                 'VSCODE_PORT': str(self._vscode_port),
                 'APP_PORT_1': str(self._app_ports[0]),
                 'APP_PORT_2': str(self._app_ports[1]),
+                'SHAK_APP_PORT_1_SECRET': self._shak_app_secrets[0],
+                'SHAK_APP_PORT_2_SECRET': self._shak_app_secrets[1],
                 'PIP_BREAK_SYSTEM_PACKAGES': '1',
             }
         )
@@ -427,18 +449,22 @@ class DockerRuntime(ActionExecutionClient):
                         self._app_ports.append(exposed_port)
         else:
             self.log('warn', 'Shakudo: _attach_to_container: Host-network mode active: Using previously determined _app_ports as source of truth')
-            self._app_ports = []
+            self._shak_app_secrets = []
+
             for env_var in config['Env']:
                 self.log('warn', f'Shakudo: _attach_to_container: Env var: {env_var}')
-                if env_var.startswith('APP_PORT_'):
-                    port = int(env_var.split('=')[1])
-                    if port not in self._app_ports:
-                        self._app_ports.append(port)
-            self._app_ports.sort()
+                if env_var.startswith('SHAK_APP_PORT_'):
+                    secret = env_var.split('=')[1]
+                    if secret not in self._shak_app_secrets:
+                        self._shak_app_secrets.append(secret)
 
         self.log(
             'info',
             f'Shakudo: _attach_to_container: Container app ports: {self._app_ports}',
+        )
+        self.log(
+            'info',
+            f'Shakudo: _attach_to_container: Container secrets: {self._shak_app_secrets}',
         )
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
         self.log(
@@ -557,23 +583,6 @@ class DockerRuntime(ActionExecutionClient):
         shak_vscode_url = f'https://openhands-code-{shak_port_str}.{shak_domain}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
         return shak_vscode_url
 
-    def shak_convert_any_port_to_string(self, port: int) -> str:
-        """
-        Shakudo: Convert self._vscode_port (an integer) into a base-26 string using lowercase letters.
-        This mimics the Bash function behavior from the sidecar.sh script.
-        The conversion uses a modulus operation without the typical adjustment (i.e. no subtracting 1)
-        seen in conventional base conversions.
-        """
-        chars = "abcdefghijklmnopqrstuvwxyz"
-        result = ""
-
-        while port > 0:
-            remainder = port % 26
-            result = chars[remainder] + result
-            port //= 26
-
-        return result
-
     @property
     def web_hosts(self) -> dict[str, int]:
         hosts: dict[str, int] = {}
@@ -581,9 +590,8 @@ class DockerRuntime(ActionExecutionClient):
 
         if shak_domain:
             # Shakudo: Use the domain for web hosts
-            for port in self._app_ports:
-                shak_port_str = self.shak_convert_any_port_to_string(port)
-                hosts[f'https://openhands-app-{shak_port_str}.{shak_domain}'] = port
+            for idx, secret in enumerate(self._shak_app_secrets):
+                hosts[f'https://openhands-app-{secret}.{shak_domain}'] = idx
         else:
             host_addr = os.environ.get('DOCKER_HOST_ADDR', 'localhost')
             for port in self._app_ports:
