@@ -431,9 +431,15 @@ class DockerRuntime(ActionExecutionClient):
                         self._app_ports.append(exposed_port)
         else:
             self.log('warn', 'Shakudo: _attach_to_container: Host-network mode active: Using previously determined _app_ports as source of truth')
+            self._app_ports = []
             for env_var in config['Env']:
                 self.log('warn', f'Shakudo: _attach_to_container: Env var: {env_var}')
-
+                if env_var.startswith('APP_PORT_'):
+                    port = int(env_var.split('=')[1])
+                    if port not in self._app_ports:
+                        self._app_ports.append(port)
+            self._app_ports.sort()
+            self._app_ports_bkup = self._app_ports.copy()
 
         self.log(
             'info',
@@ -556,17 +562,41 @@ class DockerRuntime(ActionExecutionClient):
         shak_vscode_url = f'https://openhands-code-{shak_port_str}.{shak_domain}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
         return shak_vscode_url
 
+    def shak_convert_any_port_to_string(port: int) -> str:
+        """
+        Shakudo: Convert self._vscode_port (an integer) into a base-26 string using lowercase letters.
+        This mimics the Bash function behavior from the sidecar.sh script.
+        The conversion uses a modulus operation without the typical adjustment (i.e. no subtracting 1)
+        seen in conventional base conversions.
+        """
+        chars = "abcdefghijklmnopqrstuvwxyz"
+        result = ""
+
+        while port > 0:
+            remainder = port % 26
+            result = chars[remainder] + result
+            port //= 26
+
+        return result
+
     @property
     def web_hosts(self) -> dict[str, int]:
         hosts: dict[str, int] = {}
+        shak_domain = os.getenv("DOMAIN", None)
 
-        host_addr = os.environ.get('DOCKER_HOST_ADDR', 'localhost')
-        for port in self._app_ports:
-            hosts[f'http://{host_addr}:{port}'] = port
+        if shak_domain:
+            # Shakudo: Use the domain for web hosts
+            for port in self._app_ports:
+                shak_port_str = self.shak_convert_any_port_to_string(port)
+                hosts[f'https://openhands-app-{shak_port_str}.{shak_domain}'] = port
+        else:
+            host_addr = os.environ.get('DOCKER_HOST_ADDR', 'localhost')
+            for port in self._app_ports:
+                hosts[f'http://{host_addr}:{port}'] = port
 
         self.log(
             'warn',
-            f'Shakudo: Web hosts: {hosts}, host_addr: {host_addr}, app_ports: {self._app_ports}',
+            f'Shakudo: Web hosts: {hosts}, app_ports: {self._app_ports}',
         )
         self.log(
             'warn',
