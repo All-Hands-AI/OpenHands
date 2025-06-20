@@ -8,7 +8,9 @@ from datetime import datetime
 from types import TracebackType
 from typing import Any, Literal, Mapping, MutableMapping, TextIO
 
+print("[DEBUG] About to import LiteLLM in logger...", flush=True)
 import litellm
+print("[DEBUG] LiteLLM imported in logger successfully", flush=True)
 from pythonjsonlogger.json import JsonFormatter
 from termcolor import colored
 

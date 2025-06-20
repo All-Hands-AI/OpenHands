@@ -9,9 +9,11 @@ import httpx
 
 from openhands.core.config import LLMConfig
 
+print("[DEBUG] About to import LiteLLM...", flush=True)
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
+print("[DEBUG] LiteLLM imported successfully", flush=True)
 
 from litellm import ChatCompletionMessageToolCall, ModelInfo, PromptTokensDetails
 from litellm import Message as LiteLLMMessage
@@ -288,7 +290,9 @@ class LLM(RetryMixin, DebugMixin):
             # Record start time for latency measurement
             start_time = time.time()
             # we don't support streaming here, thus we get a ModelResponse
+            print(f"[DEBUG] About to make LiteLLM completion call to {self.config.model}...", flush=True)
             resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
+            print("[DEBUG] LiteLLM completion call completed successfully", flush=True)
 
             # Calculate and record latency
             latency = time.time() - start_time
