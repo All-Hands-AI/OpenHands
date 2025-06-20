@@ -1,19 +1,17 @@
 import contextlib
 import warnings
 from contextlib import asynccontextmanager
-from typing import AsyncIterator
 
 from fastapi.routing import Mount
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
 
-from fastapi import (
-    FastAPI,
-)
+from fastapi import FastAPI
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands import __version__
+from openhands.server.routes.a2a import app as a2a_router
 from openhands.server.routes.conversation import app as conversation_api_router
 from openhands.server.routes.feedback import app as feedback_api_router
 from openhands.server.routes.files import app as files_api_router
@@ -46,7 +44,7 @@ def combine_lifespans(*lifespans):
 
 
 @asynccontextmanager
-async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
+async def _lifespan(app: FastAPI):
     async with conversation_manager:
         yield
 
@@ -59,7 +57,6 @@ app = FastAPI(
     routes=[Mount(path='/mcp', app=mcp_app)],
 )
 
-
 app.include_router(public_api_router)
 app.include_router(files_api_router)
 app.include_router(security_api_router)
@@ -70,4 +67,5 @@ app.include_router(settings_router)
 app.include_router(secrets_router)
 app.include_router(git_api_router)
 app.include_router(trajectory_router)
+app.mount('/a2a', a2a_router)
 add_health_endpoints(app)
