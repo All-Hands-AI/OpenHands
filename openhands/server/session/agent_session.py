@@ -158,7 +158,7 @@ class AgentSession:
             # NOTE: this needs to happen before controller is created
             # so MCP tools can be included into the SystemMessageAction
             if self.runtime and runtime_connected and agent.config.enable_mcp:
-                await add_mcp_tools_to_agent(agent, self.runtime, self.memory, config)
+                await add_mcp_tools_to_agent(agent, self.runtime, self.memory)
 
             if replay_json:
                 initial_message = self._run_replay(
@@ -330,10 +330,8 @@ class AgentSession:
         if runtime_cls == RemoteRuntime:
             # If provider tokens is passed in custom secrets, then remove provider from provider tokens
             # We prioritize provider tokens set in custom secrets
-            provider_tokens_without_gitlab = (
-                self.override_provider_tokens_with_custom_secret(
-                    git_provider_tokens, custom_secrets
-                )
+            overrided_tokens = self.override_provider_tokens_with_custom_secret(
+                git_provider_tokens, custom_secrets
             )
 
             self.runtime = runtime_cls(
@@ -344,7 +342,7 @@ class AgentSession:
                 status_callback=self._status_callback,
                 headless_mode=False,
                 attach_to_existing=False,
-                git_provider_tokens=provider_tokens_without_gitlab,
+                git_provider_tokens=overrided_tokens,
                 env_vars=env_vars,
                 user_id=self.user_id,
             )
