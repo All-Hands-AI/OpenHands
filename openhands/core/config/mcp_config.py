@@ -2,7 +2,7 @@ import os
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
-from pydantic import BaseModel, Field, ValidationError, model_validator
+from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator
 
 if TYPE_CHECKING:
     from openhands.core.config.openhands_config import OpenHandsConfig
@@ -98,6 +98,20 @@ class MCPConfig(BaseModel):
                 data['shttp_servers'] = cls._normalize_servers(data['shttp_servers'])
 
         return data
+
+    @field_validator('default_timeout')
+    def validate_default_timeout(cls, value: float):
+        """Custom validator to ensure default_timeout is greater than zero.
+
+        Prevents invalid configurations that could lead to timeouts in MCP connections."""
+        try:
+            value = float(value)
+        except ValueError:
+            raise ValueError('default_timeout must be of type float')
+
+        if value <= 0:
+            raise ValueError('default_timeout must be greater than zero')
+        return value
 
     def validate_servers(self) -> None:
         """Validate that server URLs are valid and unique."""

@@ -7,9 +7,9 @@ from mcp.types import CallToolResult
 from pydantic import BaseModel, Field
 
 from openhands.core.config.mcp_config import MCPSHTTPServerConfig, MCPSSEServerConfig
+from openhands.core.config.utils import load_openhands_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.mcp.tool import MCPClientTool
-from openhands.core.config import load_app_config
 
 
 class MCPClient(BaseModel):
@@ -60,7 +60,11 @@ class MCPClient(BaseModel):
         api_key = server.api_key
 
         if timeout is None:
-            timeout = server.timeout if getattr(server, 'timeout', None) else load_app_config().mcp.default_timeout
+            timeout = (
+                server.timeout
+                if getattr(server, 'timeout', None)
+                else load_openhands_config().mcp.default_timeout
+            )
 
         if not server_url:
             raise ValueError('Server URL is required.')
