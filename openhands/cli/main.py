@@ -7,9 +7,8 @@ from prompt_toolkit import print_formatted_text
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.shortcuts import clear
 
-# ruff: noqa: I001
-import openhands.cli.suppress_warnings  # noqa: F401
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
+import openhands.cli.suppress_warnings  # noqa: F401
 from openhands.cli.commands import (
     check_folder_security_agreement,
     handle_commands,

@@ -6,28 +6,6 @@ import warnings
 def suppress_cli_warnings():
     """Suppress common warnings that appear during CLI usage."""
 
-    # Suppress httpx deprecation warnings about content parameter (FIRST!)
-    warnings.filterwarnings(
-        'ignore',
-        message=r".*content=.*upload.*",
-        category=DeprecationWarning,
-    )
-    
-    # Also try module-specific suppression
-    warnings.filterwarnings(
-        'ignore',
-        message=r".*content=.*upload.*",
-        category=DeprecationWarning,
-        module='httpx.*',
-    )
-    
-    # Try suppressing ALL DeprecationWarnings from httpx as a fallback
-    warnings.filterwarnings(
-        'ignore',
-        category=DeprecationWarning,
-        module='httpx.*',
-    )
-
     # Suppress pydub warning about ffmpeg/avconv
     warnings.filterwarnings(
         'ignore',
@@ -48,8 +26,6 @@ def suppress_cli_warnings():
         message='.*PydanticSerializationUnexpectedValue.*',
         category=UserWarning,
     )
-
-
 
     # Suppress general deprecation warnings from dependencies during CLI usage
     # This catches the "Call to deprecated method get_events" warning
