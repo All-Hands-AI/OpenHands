@@ -11,7 +11,7 @@ or custom tools. MCP is based on the open standard defined at [modelcontextproto
 
 ## Recommended Approach: Use MCP/StreamableHTTP Proxies
 
-**Important**: For stdio-based MCP servers, we strongly recommend using MCP/StreamableHTTP proxy tools like [`supergateway`](https://github.com/supercorp-ai/supergateway) instead of direct stdio connections. This approach provides several advantages:
+**Important**: For stdio-based MCP servers, we recommend using MCP/StreamableHTTP proxy tools like [`supergateway`](https://github.com/supercorp-ai/supergateway) instead of direct stdio connections. This approach provides several advantages:
 
 - **Better reliability**: Proxies handle process lifecycle management and error recovery
 - **Improved performance**: HTTP-based communication is more efficient than stdio pipes
