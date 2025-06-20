@@ -135,6 +135,7 @@ class Session:
         self.config.search_api_key = settings.search_api_key
 
         # NOTE: this need to happen AFTER the config is updated with the search_api_key
+        # MCP config merging is handled in user_auth, so we just use what's in settings
         self.config.mcp = settings.mcp_config or MCPConfig(
             sse_servers=[], stdio_servers=[]
         )
