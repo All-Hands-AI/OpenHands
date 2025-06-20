@@ -228,8 +228,8 @@ enable_editor = true
 # Whether the IPython tool is enabled
 enable_jupyter = true
 
-# Whether the command tool is enabled
-enable_cmd = true
+# Whether the bash tool is enabled
+enable_bash = true
 
 # Whether the think tool is enabled
 enable_think = true

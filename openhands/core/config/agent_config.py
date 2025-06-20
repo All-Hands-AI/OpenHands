@@ -22,7 +22,7 @@ class AgentConfig(BaseModel):
     enable_jupyter: bool = Field(default=True)
     """Whether to enable Jupyter tool.
     Note: If using CLIRuntime, Jupyter use is not implemented and should be disabled."""
-    enable_cmd: bool = Field(default=True)
+    enable_bash: bool = Field(default=True)
     """Whether to enable bash tool"""
     enable_think: bool = Field(default=True)
     """Whether to enable think tool"""
