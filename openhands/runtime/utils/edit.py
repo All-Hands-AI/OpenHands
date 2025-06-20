@@ -97,7 +97,7 @@ def _extract_code(string: str) -> str | None:
 
 
 def get_new_file_contents(
-        llm: LLM, old_contents: str, draft_changes: str, num_retries: int = 3
+    llm: LLM, old_contents: str, draft_changes: str, num_retries: int = 3
 ) -> str | None:
     while num_retries > 0:
         messages = [
@@ -162,21 +162,21 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
         )
 
     def _validate_range(
-            self, start: int, end: int, total_lines: int
+        self, start: int, end: int, total_lines: int
     ) -> Observation | None:
         # start and end are 1-indexed and inclusive
         if (
-                (start < 1 and start != -1)
-                or start > total_lines
-                or (start > end and end != -1 and start != -1)
+            (start < 1 and start != -1)
+            or start > total_lines
+            or (start > end and end != -1 and start != -1)
         ):
             return ErrorObservation(
                 f'Invalid range for editing: start={start}, end={end}, total lines={total_lines}. start must be >= 1 and <={total_lines} (total lines of the edited file), start <= end, or start == -1 (append to the end of the file).'
             )
         if (
-                (end < 1 and end != -1)
-                or end > total_lines
-                or (end < start and start != -1 and end != -1)
+            (end < 1 and end != -1)
+            or end > total_lines
+            or (end < start and start != -1 and end != -1)
         ):
             return ErrorObservation(
                 f'Invalid range for editing: start={start}, end={end}, total lines={total_lines}. end must be >= 1 and <= {total_lines} (total lines of the edited file), end >= start, or end == -1 (to edit till the end of the file).'
@@ -184,12 +184,12 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
         return None
 
     def _get_lint_error(
-            self,
-            suffix: str,
-            old_content: str,
-            new_content: str,
-            filepath: str,
-            diff: str,
+        self,
+        suffix: str,
+        old_content: str,
+        new_content: str,
+        filepath: str,
+        diff: str,
     ) -> ErrorObservation | None:
         linter = DefaultLinter()
         # Copy the original file to a temporary file (with the same ext) and lint it
@@ -222,14 +222,14 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
                     new_content=new_content,
                 )
                 error_message = (
-                        (
-                            f'\n[Linting failed for edited file {filepath}. {len(updated_lint_error)} lint errors found.]\n'
-                            '[begin attempted changes]\n'
-                            f'{_obs.visualize_diff(change_applied=False)}\n'
-                            '[end attempted changes]\n'
-                        )
-                        + '-' * 40
-                        + '\n'
+                    (
+                        f'\n[Linting failed for edited file {filepath}. {len(updated_lint_error)} lint errors found.]\n'
+                        '[begin attempted changes]\n'
+                        f'{_obs.visualize_diff(change_applied=False)}\n'
+                        '[end attempted changes]\n'
+                    )
+                    + '-' * 40
+                    + '\n'
                 )
                 error_message += '-' * 20 + 'First 5 lint errors' + '-' * 20 + '\n'
                 for i, lint_error in enumerate(updated_lint_error[:5]):
@@ -243,8 +243,8 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
     def llm_based_edit(self, action: FileEditAction, retry_num: int = 0) -> Observation:
         obs = self.read(FileReadAction(path=action.path))
         if (
-                isinstance(obs, ErrorObservation)
-                and 'File not found'.lower() in obs.content.lower()
+            isinstance(obs, ErrorObservation)
+            and 'File not found'.lower() in obs.content.lower()
         ):
             logger.debug(
                 f'Agent attempted to edit a file that does not exist. Creating the file. Error msg: {obs.content}'
@@ -297,8 +297,14 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
                     diff,
                 )
                 if error_obs is not None:
-                    self.write(FileWriteAction(path=action.path, content=updated_content))
-                    return self.correct_edit(file_content=updated_content, error_obs=error_obs, retry_num=retry_num)
+                    self.write(
+                        FileWriteAction(path=action.path, content=updated_content)
+                    )
+                    return self.correct_edit(
+                        file_content=updated_content,
+                        error_obs=error_obs,
+                        retry_num=retry_num,
+                    )
 
             obs = self.write(FileWriteAction(path=action.path, content=updated_content))
             return FileEditObservation(
@@ -326,7 +332,7 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
                 f'[Edit error: The range of lines to edit is too long.]\n'
                 f'[The maximum number of lines allowed to edit at once is {self.MAX_LINES_TO_EDIT}. '
                 f'Got (L{start_idx + 1}-L{end_idx}) {length_of_range} lines.]\n'
-            # [start_idx, end_idx), so no need to + 1
+                # [start_idx, end_idx), so no need to + 1
             )
             # search for relevant ranges to hint the agent
             topk_chunks: list[Chunk] = get_top_k_chunk_matches(
@@ -364,9 +370,9 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
 
         # piece the updated content with the unchanged content
         updated_lines = (
-                old_file_lines[:start_idx]
-                + _edited_content.split('\n')
-                + old_file_lines[end_idx:]
+            old_file_lines[:start_idx]
+            + _edited_content.split('\n')
+            + old_file_lines[end_idx:]
         )
         updated_content = '\n'.join(updated_lines)
         diff = get_diff(original_file_content, updated_content, action.path)
@@ -380,7 +386,11 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             if error_obs is not None:
                 error_obs.llm_metrics = self.draft_editor_llm.metrics
                 self.write(FileWriteAction(path=action.path, content=updated_content))
-                return self.correct_edit(file_content=updated_content, error_obs=error_obs, retry_num=retry_num)
+                return self.correct_edit(
+                    file_content=updated_content,
+                    error_obs=error_obs,
+                    retry_num=retry_num,
+                )
 
         obs = self.write(FileWriteAction(path=action.path, content=updated_content))
         ret_obs = FileEditObservation(
@@ -397,9 +407,12 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
         correct_num = self.draft_editor_llm.config.correct_num
         return correct_num < retry_num
 
-    def correct_edit(self, file_content: str, error_obs: ErrorObservation, retry_num: int = 0) -> Observation:
-        from openhands.agenthub.codeact_agent.tools import LLMBasedFileEditTool
+    def correct_edit(
+        self, file_content: str, error_obs: ErrorObservation, retry_num: int = 0
+    ) -> Observation:
         import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
+        from openhands.agenthub.codeact_agent.tools import LLMBasedFileEditTool
+
         _retry_num = retry_num + 1
         if self.check_retry_num(_retry_num):
             return error_obs
@@ -413,10 +426,7 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
                 ),
             },
         ]
-        params: dict = {
-            'messages': messages,
-            'tools': tools
-        }
+        params: dict = {'messages': messages, 'tools': tools}
         try:
             response = self.draft_editor_llm.completion(**params)
             actions = codeact_function_calling.response_to_actions(response)

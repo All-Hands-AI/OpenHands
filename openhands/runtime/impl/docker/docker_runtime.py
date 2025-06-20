@@ -368,8 +368,10 @@ class DockerRuntime(ActionExecutionClient):
                 ]
             else:
                 device_requests = [
-                    docker.types.DeviceRequest(capabilities=[['gpu']],
-                                               device_ids=[str(i) for i in gpu_ids.split(',')])
+                    docker.types.DeviceRequest(
+                        capabilities=[['gpu']],
+                        device_ids=[str(i) for i in gpu_ids.split(',')],
+                    )
                 ]
         else:
             device_requests = None
