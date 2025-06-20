@@ -1,0 +1,17 @@
+{
+  "name": "@openhands/ui",
+  "version": "0.1.0",
+  "description": "OpenHands UI Components",
+  "keywords": [
+    "openhands",
+    "ui",
+    "components"
+  ],
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.8.3"
+  }
+}
