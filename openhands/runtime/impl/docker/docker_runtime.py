@@ -296,7 +296,7 @@ class DockerRuntime(ActionExecutionClient):
         self._app_ports_bkup = self._app_ports.copy()
         self.log(
             'info',
-            f'Container app_ports={self._app_ports}',
+            f'Shakudo init_container: Container app_ports={self._app_ports}',
         )
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
 
@@ -333,7 +333,7 @@ class DockerRuntime(ActionExecutionClient):
         else:
             self.log(
                 'warn',
-                'Using host network mode. If you are using MacOS, please make sure you have the latest version of Docker Desktop and enabled host network feature: https://docs.docker.com/network/drivers/host/#docker-desktop',
+                'Shakudo: init_container: Using host network mode. If you are using MacOS, please make sure you have the latest version of Docker Desktop and enabled host network feature: https://docs.docker.com/network/drivers/host/#docker-desktop',
             )
 
         # Combine environment variables
@@ -430,11 +430,14 @@ class DockerRuntime(ActionExecutionClient):
                     ):
                         self._app_ports.append(exposed_port)
         else:
-            self.log('info', 'Host-network mode active: Using previously determined _app_ports as source of truth')
+            self.log('warn', 'Shakudo: _attach_to_container: Host-network mode active: Using previously determined _app_ports as source of truth')
+            for env_var in config['Env']:
+                self.log('warn', f'Shakudo: _attach_to_container: Env var: {env_var}')
+
 
         self.log(
             'info',
-            f'Container app ports: {self._app_ports}',
+            f'Shakudo: _attach_to_container: Container app ports: {self._app_ports}',
         )
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
         self.log(
@@ -488,9 +491,9 @@ class DockerRuntime(ActionExecutionClient):
         host_workspace = self.config.workspace_mount_path
         try:
             shutil.rmtree(host_workspace)
-            self.log("info", f"Deleted host workspace directory: {host_workspace}")
+            self.log("info", f"Shakudo: Deleted host workspace directory: {host_workspace}")
         except Exception as e:
-            self.log("error", f"Error deleting host workspace directory {host_workspace}: {e}")
+            self.log("error", f"Shakudo: Error deleting host workspace directory {host_workspace}: {e}")
 
     def _is_port_in_use_docker(self, port: int) -> bool:
         containers = self.docker_client.containers.list()
@@ -509,7 +512,7 @@ class DockerRuntime(ActionExecutionClient):
             if not self._is_port_in_use_docker(port):
                 self.log(
                     'warn',
-                    f'Shakudo: Found available port {port} in range {port_range}',
+                    f'Shakudo: _find_available_port: Found available port {port} in range {port_range}',
                 )
                 return port
         # If no port is found after max_attempts, return the last tried port
@@ -542,7 +545,7 @@ class DockerRuntime(ActionExecutionClient):
         token = super().get_vscode_token()
         shak_domain = os.getenv("DOMAIN", None)
 
-        self.log('info', f'Shakudo: Domain: {shak_domain}')
+        self.log('info', f'Shakudo: vscode_url: Domain: {shak_domain}')
         if not token:
             return None
 
@@ -563,11 +566,11 @@ class DockerRuntime(ActionExecutionClient):
 
         self.log(
             'warn',
-            f'Web hosts: {hosts}, host_addr: {host_addr}, app_ports: {self._app_ports}',
+            f'Shakudo: Web hosts: {hosts}, host_addr: {host_addr}, app_ports: {self._app_ports}',
         )
         self.log(
             'warn',
-            f'Web hosts: {hosts}, host_addr: {host_addr}, app_ports: {self._app_ports_bkup}',
+            f'Shakudo: web_hosts: bkup_app_ports: {self._app_ports_bkup}',
         )
         return hosts
 
