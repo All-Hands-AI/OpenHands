@@ -84,13 +84,15 @@ stripe = ">=11.5,<13.0"
 google-cloud-aiplatform = "*"
 anthropic = { extras = [ "vertex" ], version = "*" }
 boto3 = "*"
+kubernetes = "^33.1.0"
+pyyaml = "^6.0.2"
 
 [tool.poetry.group.dev]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-ruff = "0.11.13"
-mypy = "1.16.0"
+ruff = "0.12.0"
+mypy = "1.16.1"
 pre-commit = "4.2.0"
 build = "*"
 types-setuptools = "*"
