@@ -78,6 +78,21 @@ https://buriti-emau.github.io/Mapa-UFU/
 
 </Update>
 
+
+<Update label="2025-06-06 Web Search Saves the Day" description="@Ian Walker">
+
+## Tavily adapter helps solve persistent debugging issue
+
+Big congratulations to the new Tavily adapter... OpenHands and I have been beavering away at a Lightstreamer client library for most of this week but were getting a persistent (and unhelpful) "unexpected error" from the server.
+
+Coming back to the problem today, after trying several unsuccessful fixes prompted by me, OH decided all by itself to search the web, and found the cause of the problem (of course it was simply CRLF line endings...). I was on the verge of giving up - good thing OH has more stamina than me!
+
+This demonstrates how OpenHands' web search capabilities can help solve debugging issues that would otherwise require extensive manual research.
+
+[Original Slack thread](https://www.linen.dev/s/openhands/c/success-stories)
+
+</Update>
+
 <Update label="2025-06-05 Paper" description="@Xingyao Wang">
 
 ## I asked OpenHands to update my personal website for the "OpenHands Versa" paper.
@@ -86,5 +101,124 @@ It is an extremely trivial task: You just need to browse to arxiv, copy the auth
 
 [Original Tweet/X thread](https://x.com/xingyaow_/status/1930796287919542410)
 [Original Slack thread](https://www.linen.dev/s/openhands/t/29100738/i-asked-openhands-to-update-my-personal-website-for-the-open#f0324022-b12b-4d34-b12b-bdbc43823f69)
+
+</Update>
+
+
+<Update label="2025-05-30 AWS Troubleshooting" description="@Graham Neubig">
+
+## Quick AWS security group fix
+
+I really don't like trying to fix issues with AWS, especially security groups and other finicky things like this. But I started up an instance and wasn't able to ssh in. So I asked OpenHands:
+
+> Currently, the following ssh command is timing out:
+>
+> $ ssh -i gneubig.pem ubuntu@XXX.us-east-2.compute.amazonaws.com
+> ssh: connect to host XXX.us-east-2.compute.amazonaws.com port 22: Operation timed out
+>
+> Use the provided AWS credentials to take a look at i-XXX and examine why
+
+And 2 minutes later I was able to SSH in!
+
+This shows how OpenHands can quickly diagnose and fix AWS infrastructure issues that would normally require manual investigation.
+
+[Original Slack thread](https://www.linen.dev/s/openhands/c/success-stories)
+
+</Update>
+
+<Update label="2025-02-27 Frontend Feature Development" description="@Xingyao Wang">
+
+## OpenHands as a feature development partner
+
+OpenHands is now my go-to-place to complain about frontend:
+- It adds sound and browser tab notification when it is pending user response (merged in main already!)
+- It also adds a memory monitor as a GitHub plugin into the VSCode inside OH runtime
+
+And ever since switching to Sonnet 3.7, I find myself spending 80% of communication on "features", rather than helping it spot issues and fix bugs.
+
+This demonstrates how OpenHands has evolved from a debugging tool to a full feature development partner, capable of implementing complex UI enhancements and integrations.
+
+[GitHub PR](https://github.com/All-Hands-AI/OpenHands/pull/6530)
+[Original Slack thread](https://www.linen.dev/s/openhands/c/success-stories)
+
+</Update>
+
+<Update label="2024-12-03 Creative Design Acceleration" description="@Rohit Malhotra">
+
+## Pair programming for interactive design projects
+
+Used OpenHands as a pair programmer to do heavy lifting for a creative/interactive design project in p5js.
+
+I usually take around 2 days for high fidelity interactions (planning strategy + writing code + circling back with designer), did this in around 5hrs instead with the designer watching curiously the entire time.
+
+This showcases how OpenHands can accelerate creative and interactive design workflows, reducing development time by 75% while maintaining high quality output.
+
+[Original Tweet](https://x.com/rohit_malh5/status/1863995531657425225)
+[Original Slack thread](https://www.linen.dev/s/openhands/c/success-stories)
+
+</Update>
+
+<Update label="2025-05-04 Chrome Extension Development" description="@Xingyao Wang">
+
+## OpenHands builds Chrome extension for GitHub integration
+
+I asked OpenHands to write a Chrome extension based on our [OpenHands Cloud API](https://docs.all-hands.dev/modules/usage/cloud/cloud-api). Once installed, you can now easily launch an OpenHands cloud session from your GitHub webpage/PR!
+
+This demonstrates OpenHands' ability to create browser extensions and integrate with external APIs, enabling seamless workflows between GitHub and OpenHands Cloud.
+
+[GitHub Repository](https://github.com/xingyaoww/openhands-chrome-extension)
+[Original Slack thread](https://www.linen.dev/s/openhands/c/success-stories)
+
+</Update>
+
+<Update label="2025-04-11 Visual UI Testing" description="@Xingyao Wang">
+
+## OpenHands tests UI automatically with visual browsing
+
+Thanks to visual browsing -- OpenHands can actually test some simple UI by serving the website, clicking the button in the browser and looking at screenshots now!
+
+Prompt is just:
+```
+I want to create a Hello World app in Javascript that:
+* Displays Hello World in the middle.
+* Has a button that when clicked, changes the greeting with a bouncing animation to fun versions of Hello.
+* Has a counter for how many times the button has been clicked.
+* Has another button that changes the app's background color.
+```
+
+Eager-to-work Sonnet 3.7 will test stuff for you without you asking!
+
+This showcases OpenHands' visual browsing capabilities, enabling it to create, serve, and automatically test web applications through actual browser interactions and screenshot analysis.
+
+[Original Slack thread](https://www.linen.dev/s/openhands/c/success-stories)
+
+</Update>
+
+<Update label="2025-03-07 Proactive Error Handling" description="@Graham Neubig">
+
+## OpenHands fixes crashes before you notice them
+
+Interesting story, I asked OpenHands to start an app on port 12000, it showed up on the app pane. I started using the app, and then it crashed... But because it crashed in OpenHands, OpenHands immediately saw the error message and started fixing the problem without me having to do anything. It was already fixing the problem before I even realized what was going wrong.
+
+This demonstrates OpenHands' proactive monitoring capabilities - it doesn't just execute commands, but actively watches for errors and begins remediation automatically, often faster than human reaction time.
+
+[Original Slack thread](https://www.linen.dev/s/openhands/c/success-stories)
+
+</Update>
+
+<Update label="2024-09-03 Foundation Stories" description="@Graham Neubig">
+
+## The beginning of success stories
+
+Hi all! Here's a channel where we can post PRs that were written by OpenHands. Here are some of mine to start out:
+
+• **Writing tests:** e.g. for our [memory condenser](https://github.com/All-Hands-AI/OpenHands/pull/3379) or [agent controller](https://github.com/All-Hands-AI/OpenHands/pull/3357)
+• **Data analysis:** e.g. for [analyzing the number of commits](https://youtu.be/eUn94vTXD5s) to OpenHands by week
+• **Writing de-novo projects:** e.g. writing this [PR viewer app](https://github.com/neubig/pr-viewer/commit/3ee726aa3c0fd88beba659e533fb863bccf2dcb4)
+• **Making improvements to existing apps:** e.g. [adding a toggle to have dark mode](https://github.com/neubig/pr-viewer/pull/7) or [fixing pagination in API calls](https://github.com/neubig/pr-viewer/pull/4) in the app I just shared
+
+This foundational post established the success stories channel and showcased the diverse range of tasks OpenHands can accomplish, from testing and data analysis to full application development.
+
+[Original Slack thread](https://www.linen.dev/s/openhands/c/success-stories)
 
 </Update>
