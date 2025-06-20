@@ -821,10 +821,11 @@ class AgentController:
                     or 'input length and `max_tokens` exceed context limit' in error_str
                     or 'please reduce the length of either one'
                     in error_str  # For OpenRouter context window errors
-                    or 'sambanovaexception'
-                    in error_str  # For SambaNova context window errors
-                    or 'maximum context length'
-                    in error_str  # For SambaNova context window errors
+                    or (
+                        'sambanovaexception' in error_str
+                        and 'maximum context length' in error_str
+                    )
+                    # For SambaNova context window errors - only match when both patterns are present
                     or isinstance(e, ContextWindowExceededError)
                 ):
                     if self.agent.config.enable_history_truncation:
