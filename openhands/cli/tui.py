@@ -183,23 +183,20 @@ def display_initial_user_prompt(prompt: str) -> None:
 def display_event(event: Event, config: OpenHandsConfig) -> None:
     global streaming_output_text_area
     with print_lock:
-        if isinstance(event, CmdRunAction):
-            # Display thought if present
-            if hasattr(event, 'thought') and event.thought:
+        if isinstance(event, Action):
+            if hasattr(event, 'thought'):
                 display_message(event.thought)
+            if hasattr(event, 'final_thought'):
+                display_message(event.final_thought)
+        if isinstance(event, MessageAction):
+            if event.source == EventSource.AGENT:
+                display_message(event.content)
+
+        if isinstance(event, CmdRunAction):
             # Display the command
             display_command(event)
             if event.confirmation_state == ActionConfirmationStatus.CONFIRMED:
                 initialize_streaming_output()
-        elif isinstance(event, MessageAction):
-            if event.source == EventSource.AGENT:
-                display_message(event.content)
-        elif isinstance(event, Action):
-            # Handle other actions that are not CmdRunAction
-            if hasattr(event, 'thought') and event.thought:
-                display_message(event.thought)
-            if hasattr(event, 'final_thought') and event.final_thought:
-                display_message(event.final_thought)
         elif isinstance(event, CmdOutputObservation):
             display_command_output(event.content)
         elif isinstance(event, FileEditObservation):
