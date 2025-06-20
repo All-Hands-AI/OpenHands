@@ -52,6 +52,10 @@ ENABLE_STREAMING = False  # FIXME: this doesn't work
 # Global TextArea for streaming output
 streaming_output_text_area: TextArea | None = None
 
+# Track the last displayed command to avoid immediate duplication
+_last_displayed_command: str | None = None
+_last_display_time: float = 0
+
 # Color and styling constants
 COLOR_GOLD = '#FFD700'
 COLOR_GREY = '#808080'
@@ -193,8 +197,24 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
                 display_message(event.content)
 
         if isinstance(event, CmdRunAction):
-            # Display the command
-            display_command(event)
+            global _last_displayed_command, _last_display_time
+
+            current_time = time.time()
+            command_text = event.command
+
+            # Only display the command if it's different from the last one, or enough time has passed
+            # This prevents duplication when the same command is re-added with CONFIRMED status
+            # but allows the same command to be shown again if it's run later
+            should_display = (
+                _last_displayed_command != command_text
+                or current_time - _last_display_time > 5.0  # 5 second threshold
+            )
+
+            if should_display:
+                display_command(event)
+                _last_displayed_command = command_text
+                _last_display_time = current_time
+
             if event.confirmation_state == ActionConfirmationStatus.CONFIRMED:
                 initialize_streaming_output()
         elif isinstance(event, CmdOutputObservation):
