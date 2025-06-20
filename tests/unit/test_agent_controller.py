@@ -1682,3 +1682,70 @@ async def test_openrouter_context_window_exceeded_error(
     )
 
     await controller.close()
+
+
+@pytest.mark.asyncio
+async def test_sambanova_context_window_exceeded_error(
+    mock_agent, test_event_stream, mock_status_callback
+):
+    """Test that SambaNova context window exceeded errors are properly detected and handled."""
+    max_iterations = 5
+    error_after = 2
+
+    class StepState:
+        def __init__(self):
+            self.has_errored = False
+            self.index = 0
+            self.views = []
+
+        def step(self, state: State):
+            # Store the view for later inspection
+            self.views.append(state.view)
+            # only throw it once.
+            if self.index < error_after or self.has_errored:
+                self.index += 1
+                return MessageAction(content=f'Test message {self.index}')
+
+            # Create a BadRequestError with the SambaNova context window exceeded message pattern
+            error = BadRequestError(
+                message='litellm.BadRequestError: SambanovaException - The maximum context length of DeepSeek-V3-0324 is 32768. However, answering your request will take 39732 tokens. Please reduce the length of the messages or the specified max_completion_tokens value.',
+                model='sambanova/deepseek-v3-0324',
+                llm_provider='sambanova',
+            )
+            self.has_errored = True
+            raise error
+
+    step_state = StepState()
+    mock_agent.step = step_state.step
+    mock_agent.config = AgentConfig(enable_history_truncation=True)
+
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=test_event_stream,
+        iteration_delta=max_iterations,
+        sid='test',
+        confirmation_mode=False,
+        headless_mode=True,
+        status_callback=mock_status_callback,
+    )
+
+    # Set the agent state to RUNNING
+    controller.state.agent_state = AgentState.RUNNING
+
+    # Run the controller until it hits the error
+    for _ in range(error_after + 2):  # +2 to ensure we go past the error
+        await controller._step()
+        if step_state.has_errored:
+            break
+
+    # Verify that the error was handled as a context window exceeded error
+    # by checking that _handle_long_context_error was called (which adds a CondensationAction)
+    events = list(test_event_stream.get_events())
+    condensation_actions = [e for e in events if isinstance(e, CondensationAction)]
+
+    # There should be at least one CondensationAction if the error was handled correctly
+    assert len(condensation_actions) > 0, (
+        'SambaNova context window exceeded error was not handled correctly'
+    )
+
+    await controller.close()
