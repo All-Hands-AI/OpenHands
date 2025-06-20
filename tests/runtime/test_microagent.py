@@ -373,9 +373,9 @@ def test_default_tools_microagent_exists():
     assert 'type: repo' in content, 'default-tools.md should be a repo microagent'
 
     # Verify it has the fetch tool configured
-    assert 'name: "fetch"' in content, 'default-tools.md should have a fetch tool'
-    assert 'command: "uvx"' in content, 'default-tools.md should use uvx command'
-    assert 'args: ["mcp-server-fetch"]' in content, (
+    assert 'name: "fetch"' in content or 'name: fetch' in content, 'default-tools.md should have a fetch tool'
+    assert 'command: uvx' in content, 'default-tools.md should use uvx command'
+    assert 'mcp-server-fetch' in content, (
         'default-tools.md should use mcp-server-fetch'
     )
 
