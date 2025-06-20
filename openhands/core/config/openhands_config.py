@@ -151,6 +151,11 @@ class OpenHandsConfig(BaseModel):
         )
         return self.get_llm_config(llm_config_name)
 
+    def get_mcp_config(self) -> MCPConfig:
+        if not self.mcp:
+            self.mcp = MCPConfig()
+        return self.mcp
+
     def get_agent_configs(self) -> dict[str, AgentConfig]:
         return self.agents
 
