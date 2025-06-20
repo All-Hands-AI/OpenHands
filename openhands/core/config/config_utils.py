@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from pydantic.fields import FieldInfo
 
 OH_DEFAULT_AGENT = 'CodeActAgent'
-OH_MAX_ITERATIONS = 250
+OH_MAX_ITERATIONS = 500
 
 
 def get_field_info(field: FieldInfo) -> dict[str, Any]:

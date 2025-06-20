@@ -13,6 +13,7 @@ from openhands.server.types import AppMode
 class ProviderType(Enum):
     GITHUB = 'github'
     GITLAB = 'gitlab'
+    BITBUCKET = 'bitbucket'
 
 
 class TaskType(str, Enum):
@@ -51,6 +52,16 @@ class SuggestedTask(BaseModel):
                 'ciProvider': 'GitHub',
                 'requestVerb': 'pull request',
             }
+        elif self.git_provider == ProviderType.BITBUCKET:
+            return {
+                'requestType': 'Pull Request',
+                'requestTypeShort': 'PR',
+                'apiName': 'Bitbucket API',
+                'tokenEnvVar': 'BITBUCKET_TOKEN',
+                'ciSystem': 'Bitbucket Pipelines',
+                'ciProvider': 'Bitbucket',
+                'requestVerb': 'pull request',
+            }
 
         raise ValueError(f'Provider {self.git_provider} for suggested task prompts')
 
@@ -83,7 +94,7 @@ class SuggestedTask(BaseModel):
 
 
 class User(BaseModel):
-    id: int
+    id: str
     login: str
     avatar_url: str
     company: str | None = None
@@ -99,7 +110,7 @@ class Branch(BaseModel):
 
 
 class Repository(BaseModel):
-    id: int
+    id: str
     full_name: str
     git_provider: ProviderType
     is_public: bool
