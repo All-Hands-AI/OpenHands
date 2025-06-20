@@ -11,9 +11,16 @@ from openhands.server.types import AppMode
 
 
 class ProviderType(Enum):
-    GITHUB = 'github'
-    GITLAB = 'gitlab'
-    BITBUCKET = 'bitbucket'
+    GITHUB = 'GITHUB'
+    GITLAB = 'GITLAB'
+    BITBUCKET = 'BITBUCKET'
+
+    @classmethod
+    def _missing_(cls, value: object):
+        if isinstance(value, str):
+            for member in cls:
+                if member.value.lower() == value.lower():
+                    return member
 
 
 class TaskType(str, Enum):
