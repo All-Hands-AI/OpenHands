@@ -165,3 +165,145 @@ def test_volumes_default_mode():
 
     # Assert that the mode remains 'rw' (default)
     assert volumes[os.path.abspath('/host/path')]['mode'] == 'rw'
+
+
+# Container Reuse Strategy Tests
+
+
+def test_container_reuse_strategy_none(mock_docker_client, config, event_stream):
+    """Test that container reuse is disabled with 'none' strategy."""
+    config.sandbox.container_reuse_strategy = 'none'
+    runtime = DockerRuntime(config, event_stream, sid='test-sid')
+    runtime.docker_client = mock_docker_client
+
+    # Test _try_reuse_container returns False for 'none' strategy
+    result = runtime._try_reuse_container()
+    assert result is False
+
+
+def test_container_reuse_strategy_pause(mock_docker_client, config, event_stream):
+    """Test pause strategy behavior in container reuse."""
+    config.sandbox.container_reuse_strategy = 'pause'
+    runtime = DockerRuntime(config, event_stream, sid='test-sid')
+    runtime.docker_client = mock_docker_client
+    runtime.container = mock_docker_client.containers.get.return_value
+
+    # Test pause behavior
+    runtime.pause()
+    runtime.container.pause.assert_called_once()
+
+
+def test_container_reuse_strategy_pause_fallback(
+    mock_docker_client, config, event_stream
+):
+    """Test pause strategy falls back to stop when pause fails."""
+    config.sandbox.container_reuse_strategy = 'pause'
+    runtime = DockerRuntime(config, event_stream, sid='test-sid')
+    runtime.docker_client = mock_docker_client
+    runtime.container = mock_docker_client.containers.get.return_value
+
+    # Mock pause to raise an exception
+    runtime.container.pause.side_effect = Exception('Pause failed')
+
+    # Test pause behavior with fallback
+    runtime.pause()
+    runtime.container.pause.assert_called_once()
+    runtime.container.stop.assert_called_once()
+
+
+def test_container_reuse_strategy_keep_alive(mock_docker_client, config, event_stream):
+    """Test keep_alive strategy behavior."""
+    config.sandbox.container_reuse_strategy = 'keep_alive'
+    runtime = DockerRuntime(config, event_stream, sid='test-sid')
+    runtime.docker_client = mock_docker_client
+    runtime.container = mock_docker_client.containers.get.return_value
+
+    # Mock _clean_workspace_for_reuse method
+    runtime._clean_workspace_for_reuse = MagicMock()
+
+    # Test pause behavior for keep_alive strategy
+    runtime.pause()
+    runtime._clean_workspace_for_reuse.assert_called_once()
+    runtime.container.pause.assert_not_called()
+    runtime.container.stop.assert_not_called()
+
+
+def test_container_resume_pause_strategy(mock_docker_client, config, event_stream):
+    """Test resume behavior for pause strategy."""
+    config.sandbox.container_reuse_strategy = 'pause'
+    runtime = DockerRuntime(config, event_stream, sid='test-sid')
+    runtime.docker_client = mock_docker_client
+    runtime.container = mock_docker_client.containers.get.return_value
+    runtime.container.status = 'paused'
+
+    # Mock wait_until_alive to avoid network calls
+    runtime.wait_until_alive = MagicMock()
+
+    # Test resume behavior
+    runtime.resume()
+    runtime.container.unpause.assert_called_once()
+
+
+def test_container_resume_keep_alive_strategy(mock_docker_client, config, event_stream):
+    """Test resume behavior for keep_alive strategy."""
+    config.sandbox.container_reuse_strategy = 'keep_alive'
+    runtime = DockerRuntime(config, event_stream, sid='test-sid')
+    runtime.docker_client = mock_docker_client
+    runtime.container = mock_docker_client.containers.get.return_value
+    runtime.container.status = 'running'
+
+    # Mock wait_until_alive to avoid network calls
+    runtime.wait_until_alive = MagicMock()
+
+    # Test resume behavior
+    runtime.resume()
+    # Container should already be running, no start call needed
+    runtime.container.start.assert_not_called()
+
+
+def test_is_container_reusable_compatible_image(
+    mock_docker_client, config, event_stream
+):
+    """Test container reusability check with compatible image."""
+    runtime = DockerRuntime(config, event_stream, sid='test-sid')
+    runtime.runtime_container_image = 'test-image:latest'
+
+    # Mock container with compatible configuration
+    mock_container = MagicMock()
+    mock_container.attrs = {'Config': {'Image': 'test-image:latest'}}
+    mock_container.status = 'exited'
+
+    result = runtime._is_container_reusable(mock_container)
+    assert result is True
+
+
+def test_is_container_reusable_incompatible_image(
+    mock_docker_client, config, event_stream
+):
+    """Test container reusability check with incompatible image."""
+    runtime = DockerRuntime(config, event_stream, sid='test-sid')
+    runtime.runtime_container_image = 'test-image:latest'
+
+    # Mock container with incompatible configuration
+    mock_container = MagicMock()
+    mock_container.attrs = {'Config': {'Image': 'different-image:latest'}}
+    mock_container.status = 'exited'
+
+    result = runtime._is_container_reusable(mock_container)
+    assert result is False
+
+
+def test_is_container_reusable_running_container(
+    mock_docker_client, config, event_stream
+):
+    """Test container reusability check with running container."""
+    runtime = DockerRuntime(config, event_stream, sid='test-sid')
+    runtime.runtime_container_image = 'test-image:latest'
+
+    # Mock container that's currently running
+    mock_container = MagicMock()
+    mock_container.attrs = {'Config': {'Image': 'test-image:latest'}}
+    mock_container.status = 'running'
+
+    result = runtime._is_container_reusable(mock_container)
+    assert result is False

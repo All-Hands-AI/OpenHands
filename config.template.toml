@@ -312,6 +312,12 @@ classpath = "my_package.my_module.MyCustomAgent"
 # Delay in seconds before closing idle runtimes
 #close_delay = 300
 
+# Container reuse strategy for faster startup
+# "none" - Always create new containers (slowest, most isolation)
+# "pause" - Pause/unpause containers between sessions (default, good balance)
+# "keep_alive" - Keep containers running and clean workspace (fastest)
+#container_reuse_strategy = "pause"
+
 # Remove all containers when stopping the runtime
 #rm_all_containers = false
 
