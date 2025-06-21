@@ -107,10 +107,10 @@ const openHandsHandlers = [
   http.get("/api/options/models", async () =>
     HttpResponse.json([
       "gpt-3.5-turbo",
-      "gpt-4o",
-      "gpt-4o-mini",
-      "anthropic/claude-3.5",
-      "anthropic/claude-sonnet-4-20250514",
+      "OpenAI/gpt-4o",
+      "OpenAI/gpt-4o-mini",
+      "Anthropic/claude-3.5",
+      "Anthropic/claude-sonnet-4-20250514",
     ]),
   ),
 

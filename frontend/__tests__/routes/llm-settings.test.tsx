@@ -59,7 +59,7 @@ describe("Content", () => {
       const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
-        llm_model: "openai/gpt-4o",
+        llm_model: "OpenAI/gpt-4o",
         llm_api_key_set: true,
       });
 
@@ -135,7 +135,7 @@ describe("Content", () => {
       );
       const condensor = screen.getByTestId("enable-memory-condenser-switch");
 
-      expect(model).toHaveValue("anthropic/claude-sonnet-4-20250514");
+      expect(model).toHaveValue("Anthropic/claude-sonnet-4-20250514");
       expect(baseUrl).toHaveValue("");
       expect(apiKey).toHaveValue("");
       expect(apiKey).toHaveProperty("placeholder", "");
@@ -224,8 +224,8 @@ describe("Form submission", () => {
 
     // select provider
     await userEvent.click(provider);
-    const providerOption = screen.getByText("OpenAI");
-    await userEvent.click(providerOption);
+    const providerOptions = screen.getAllByText("OpenAI");
+    await userEvent.click(providerOptions[0]);
     expect(provider).toHaveValue("OpenAI");
 
     // enter api key
@@ -242,7 +242,7 @@ describe("Form submission", () => {
 
     expect(saveSettingsSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        llm_model: "openai/gpt-4o",
+        llm_model: "OpenAI/gpt-4o",
         llm_api_key: "test-api-key",
       }),
     );
@@ -315,7 +315,7 @@ describe("Form submission", () => {
     const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
-      llm_model: "openai/gpt-4o",
+      llm_model: "OpenAI/gpt-4o",
       llm_api_key_set: true,
     });
 
@@ -550,7 +550,7 @@ describe("Form submission", () => {
 
     expect(saveSettingsSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        llm_model: "anthropic/claude-sonnet-4-20250514",
+        llm_model: "Anthropic/claude-sonnet-4-20250514",
         llm_base_url: "",
         confirmation_mode: false,
       }),
