@@ -56,8 +56,6 @@ const NON_TEXT_ATTRIBUTES = [
   "type",
   "href",
   "src",
-  "alt",
-  "placeholder",
   "rel",
   "target",
   "style",
@@ -65,7 +63,6 @@ const NON_TEXT_ATTRIBUTES = [
   "onChange",
   "onSubmit",
   "data-testid",
-  "aria-label",
   "aria-labelledby",
   "aria-describedby",
   "aria-hidden",
@@ -139,6 +136,7 @@ function isLikelyCode(str) {
 }
 
 function isCommonDevelopmentString(str) {
+
   // Technical patterns that are definitely not UI strings
   const technicalPatterns = [
     // URLs and paths
@@ -191,7 +189,7 @@ function isCommonDevelopmentString(str) {
 
   // CSS units and values
   const cssUnitsPattern =
-    /(px|rem|em|vh|vw|vmin|vmax|ch|ex|fr|deg|rad|turn|grad|ms|s)$/;
+    /\b\d+(px|rem|em|vh|vw|vmin|vmax|ch|ex|fr|deg|rad|turn|grad|ms|s)$|^(px|rem|em|vh|vw|vmin|vmax|ch|ex|fr|deg|rad|turn|grad|ms|s)$/;
   const cssValuesPattern =
     /(rgb|rgba|hsl|hsla|#[0-9a-fA-F]+|solid|absolute|relative|sticky|fixed|static|block|inline|flex|grid|none|auto|hidden|visible)/;
 
@@ -394,6 +392,7 @@ function isCommonDevelopmentString(str) {
 }
 
 function isLikelyUserFacingText(str) {
+
   // Basic validation - skip very short strings or strings without letters
   if (!str || str.length <= 2 || !/[a-zA-Z]/.test(str)) {
     return false;
@@ -540,9 +539,13 @@ function isInTranslationContext(path) {
 }
 
 function scanFileForUnlocalizedStrings(filePath) {
-  // Skip all suggestion files as they contain special strings
-  if (filePath.includes("suggestions")) {
+  // Skip suggestion content files as they contain special strings that are already properly localized
+  if (filePath.includes("utils/suggestions/") || filePath.includes("mocks/task-suggestions-handlers.ts")) {
     return [];
+  }
+
+  if (filePath.includes("task-suggestions.tsx")) {
+
   }
 
   try {
