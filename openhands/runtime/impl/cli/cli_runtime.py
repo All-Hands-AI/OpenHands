@@ -56,21 +56,22 @@ if TYPE_CHECKING:
     from openhands.runtime.utils.windows_bash import WindowsPowershellSession
 
 # Import Windows PowerShell support if on Windows
-_powershell_available = False
 if sys.platform == 'win32':
     try:
         from openhands.runtime.utils.windows_bash import WindowsPowershellSession
-        from openhands.runtime.utils.windows_exceptions import DotNetMissingException
-
-        _powershell_available = True
-    except ImportError as import_err:
-        logger.warning(
-            'Failed to import WindowsPowershellSession. PowerShell support will not be available on Windows.'
-        )
-    except DotNetMissingException as dotnet_err:
+        from openhands.runtime.utils.windows_exceptions import DotNetMissingError
+    except (ImportError, DotNetMissingError) as err:
+        # Determine the specific error type and message
+        if isinstance(err, ImportError):
+            error_type = "ImportError"
+            error_message = "Failed to import PowerShell support modules"
+        else:  # DotNetMissingError
+            error_type = "DotNetMissingError"
+            error_message = getattr(err, 'message', str(err))
+        
         # Print a user-friendly error message without stack trace
-        error_message = f"""
-ERROR: {dotnet_err.message}
+        friendly_message = f"""
+ERROR: {error_message}
 
 The .NET SDK is required for OpenHands CLI on Windows.
 PowerShell integration cannot function without .NET Core.
@@ -80,10 +81,10 @@ https://docs.all-hands.dev/usage/windows-without-wsl
 
 After installing .NET SDK, restart your terminal and try again.
 """
-        print(error_message, file=sys.stderr)
-        logger.error(f"DotNetMissingException: {dotnet_err.message}")
-        if hasattr(dotnet_err, 'details') and dotnet_err.details:
-            logger.debug(f"Details: {dotnet_err.details}")
+        print(friendly_message, file=sys.stderr)
+        logger.error(f"{error_type}: {error_message}")
+        if isinstance(err, DotNetMissingError) and hasattr(err, 'details') and err.details:
+            logger.debug(f"Details: {err.details}")
         
         # Exit the program with an error code
         sys.exit(1)
@@ -160,14 +161,9 @@ class CLIRuntime(Runtime):
         self._is_windows = sys.platform == 'win32'
         self._powershell_session: WindowsPowershellSession | None = None
         if self._is_windows:
-            if _powershell_available:
-                logger.info(
-                    'Windows detected. PowerShell support will be used for command execution.'
-                )
-            else:
-                logger.warning(
-                    'Windows detected but PowerShell support is not available. Falling back to subprocess.'
-                )
+            logger.info(
+                'Windows detected. PowerShell support will be used for command execution.'
+            )
 
         logger.warning(
             'Initializing CLIRuntime. WARNING: NO SANDBOX IS USED. '
@@ -186,7 +182,7 @@ class CLIRuntime(Runtime):
         os.chdir(self._workspace_path)
 
         # Initialize PowerShell session if on Windows
-        if self._is_windows and _powershell_available:
+        if self._is_windows:
             try:
                 self._powershell_session = WindowsPowershellSession(
                     work_dir=self._workspace_path,
@@ -195,7 +191,7 @@ class CLIRuntime(Runtime):
                     max_memory_mb=None,
                 )
                 logger.info('PowerShell session initialized successfully.')
-            except DotNetMissingException as dotnet_err:
+            except DotNetMissingError as dotnet_err:
                 # Print a user-friendly error message without stack trace
                 error_message = f"""
 ERROR: {dotnet_err.message}
@@ -209,7 +205,7 @@ https://docs.all-hands.dev/usage/windows-without-wsl
 After installing .NET SDK, restart your terminal and try again.
 """
                 print(error_message, file=sys.stderr)
-                logger.error(f"DotNetMissingException: {dotnet_err.message}")
+                logger.error(f"DotNetMissingError: {dotnet_err.message}")
                 if hasattr(dotnet_err, 'details') and dotnet_err.details:
                     logger.debug(f"Details: {dotnet_err.details}")
                 
@@ -360,7 +356,7 @@ After installing .NET SDK, restart your terminal and try again.
                 # This covers ErrorObservation and any other unexpected types
                 return result
 
-        except DotNetMissingException as dotnet_err:
+        except DotNetMissingError as dotnet_err:
             error_message = f"""
 ERROR: {dotnet_err.message}
 
@@ -373,7 +369,7 @@ https://docs.all-hands.dev/usage/windows-without-wsl
 After installing .NET SDK, restart your terminal and try again.
 """
             print(error_message, file=sys.stderr)
-            logger.error(f"DotNetMissingException: {dotnet_err.message}")
+            logger.error(f"DotNetMissingError: {dotnet_err.message}")
             if hasattr(dotnet_err, 'details') and dotnet_err.details:
                 logger.debug(f"Details: {dotnet_err.details}")
             

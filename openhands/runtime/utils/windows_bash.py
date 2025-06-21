@@ -21,7 +21,7 @@ from openhands.events.observation.commands import (
     CmdOutputObservation,
 )
 from openhands.runtime.utils.bash_constants import TIMEOUT_MESSAGE_TEMPLATE
-from openhands.runtime.utils.windows_exceptions import DotNetMissingException
+from openhands.runtime.utils.windows_exceptions import DotNetMissingError
 from openhands.utils.shutdown_listener import should_continue
 
 try:
@@ -40,12 +40,12 @@ try:
         error_msg = "Failed to import .NET components."
         details = str(clr_sys_ex)
         logger.error(f"{error_msg} Details: {details}")
-        raise DotNetMissingException(error_msg, details)
+        raise DotNetMissingError(error_msg, details)
 except Exception as coreclr_ex:
     error_msg = "Failed to load CoreCLR."
     details = str(coreclr_ex)
     logger.error(f"{error_msg} Details: {details}")
-    raise DotNetMissingException(error_msg, details)
+    raise DotNetMissingError(error_msg, details)
 
 # Attempt to load the PowerShell SDK assembly only if clr and System loaded
 ps_sdk_path = None
@@ -91,7 +91,7 @@ except Exception as e:
     error_msg = "Failed to load PowerShell SDK components."
     details = f"{str(e)} (Path searched: {ps_sdk_path})"
     logger.error(f"{error_msg} Details: {details}")
-    raise DotNetMissingException(error_msg, details)
+    raise DotNetMissingError(error_msg, details)
 
 
 class WindowsPowershellSession:
@@ -128,7 +128,7 @@ class WindowsPowershellSession:
             # Logged critical error during import, just raise here to prevent instantiation
             error_msg = "PowerShell SDK (System.Management.Automation.dll) could not be loaded."
             logger.error(error_msg)
-            raise DotNetMissingException(error_msg)
+            raise DotNetMissingError(error_msg)
 
         self.work_dir = os.path.abspath(work_dir)
         self.username = username
