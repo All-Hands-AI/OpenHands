@@ -66,6 +66,7 @@ from openhands.memory.condenser.impl.llm_summarizing_condenser import (
     LLMSummarizingCondenserConfig,
 )
 from openhands.microagent.microagent import BaseMicroagent
+from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.storage.settings.file_settings_store import FileSettingsStore
 
@@ -436,6 +437,9 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
     # Read task from file, CLI args, or stdin
     task_str = read_task(args, config.cli_multiline_input)
 
+    # Setup the runtime
+    get_runtime_cls(config.runtime).setup(config)
+
     # Run the first session
     new_session_requested = await run_session(
         loop,
@@ -452,6 +456,9 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
         new_session_requested = await run_session(
             loop, config, settings_store, current_dir, None
         )
+
+    # Teardown the runtime
+    get_runtime_cls(config.runtime).teardown(config)
 
 
 def main():
