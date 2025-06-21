@@ -97,22 +97,35 @@ class CLIRuntime(Runtime):
         )
 
         # Set up workspace
-        if self.config.workspace_base is not None:
-            logger.warning(
-                f'Workspace base path is set to {self.config.workspace_base}. '
-                'It will be used as the path for the agent to run in. '
-                'Be careful, the agent can EDIT files in this directory!'
-            )
-            self._workspace_path = self.config.workspace_base
-        else:
-            # Create a temporary directory for the workspace
+        from openhands.core.config.utils import get_workspace_dir_for_cli
+
+        # Try to get workspace from the new configuration approach
+        try:
+            workspace_dir = get_workspace_dir_for_cli(self.config)
+            # Check if this is just the current working directory (default fallback)
+            if workspace_dir != os.getcwd() or self.config.sandbox.volumes is not None:
+                logger.warning(
+                    f'Workspace base path is set to {workspace_dir}. '
+                    'It will be used as the path for the agent to run in. '
+                    'Be careful, the agent can EDIT files in this directory!'
+                )
+                self._workspace_path = workspace_dir
+            else:
+                # Create a temporary directory for the workspace
+                self._workspace_path = tempfile.mkdtemp(
+                    prefix=f'openhands_workspace_{sid}_'
+                )
+                logger.info(f'Created temporary workspace at {self._workspace_path}')
+        except Exception:
+            # Fallback to temporary directory if there's any issue
             self._workspace_path = tempfile.mkdtemp(
                 prefix=f'openhands_workspace_{sid}_'
             )
             logger.info(f'Created temporary workspace at {self._workspace_path}')
 
         # Runtime tests rely on this being set correctly.
-        self.config.workspace_mount_path_in_sandbox = self._workspace_path
+        # Use setattr to avoid deprecation warnings when setting
+        setattr(self.config, 'workspace_mount_path_in_sandbox', self._workspace_path)
 
         # Initialize runtime state
         self._runtime_initialized = False

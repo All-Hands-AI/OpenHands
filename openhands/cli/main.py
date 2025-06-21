@@ -40,6 +40,10 @@ from openhands.core.config import (
 )
 from openhands.core.config.condenser_config import NoOpCondenserConfig
 from openhands.core.config.mcp_config import OpenHandsMCPConfigImpl
+from openhands.core.config.utils import (
+    get_workspace_dir_for_cli,
+    set_workspace_dir_for_cli,
+)
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.loop import run_agent_until_done
 from openhands.core.schema import AgentState
@@ -419,12 +423,15 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
 
     if not should_override_cli_defaults:
         config.runtime = 'cli'
-        if not config.workspace_base:
-            config.workspace_base = os.getcwd()
+        # Check if workspace is already configured
+        current_workspace = get_workspace_dir_for_cli(config)
+        if current_workspace == os.getcwd():
+            # No workspace configured, set current directory using new approach
+            set_workspace_dir_for_cli(config, os.getcwd())
         config.security.confirmation_mode = True
 
     # TODO: Set working directory from config or use current working directory?
-    current_dir = config.workspace_base
+    current_dir = get_workspace_dir_for_cli(config)
 
     if not current_dir:
         raise ValueError('Workspace base directory not specified')

@@ -851,3 +851,79 @@ def setup_config_from_args(args: argparse.Namespace) -> OpenHandsConfig:
         config.sandbox.selected_repo = args.selected_repo
 
     return config
+
+
+def get_workspace_dir_for_cli(config: OpenHandsConfig) -> str:
+    """Get the workspace directory for CLI mode without triggering deprecation warnings.
+
+    This function provides a safe way to get the workspace directory for CLI mode
+    without accessing deprecated fields directly, which would trigger Pydantic
+    deprecation warnings.
+
+    Args:
+        config: The OpenHandsConfig instance
+
+    Returns:
+        The workspace directory path as a string
+    """
+    # First, check if sandbox.volumes is configured with a /workspace mount
+    if config.sandbox.volumes is not None:
+        mounts = config.sandbox.volumes.split(',')
+        for mount in mounts:
+            parts = mount.split(':')
+            if len(parts) >= 2 and parts[1] == '/workspace':
+                return os.path.abspath(parts[0])
+
+    # Check if workspace_mount_path is set (this is set by finalize_config)
+    # Use getattr to avoid triggering deprecation warnings
+    workspace_mount_path = getattr(config, 'workspace_mount_path', None)
+    if workspace_mount_path is not None:
+        return workspace_mount_path
+
+    # Check if workspace_base is set (this is set by finalize_config)
+    # Use getattr to avoid triggering deprecation warnings
+    workspace_base = getattr(config, 'workspace_base', None)
+    if workspace_base is not None:
+        return workspace_base
+
+    # Fall back to current working directory
+    return os.getcwd()
+
+
+def set_workspace_dir_for_cli(config: OpenHandsConfig, workspace_dir: str) -> None:
+    """Set the workspace directory for CLI mode using the new configuration approach.
+
+    This function sets the workspace directory using the new sandbox.volumes approach
+    instead of the deprecated workspace_base field.
+
+    Args:
+        config: The OpenHandsConfig instance
+        workspace_dir: The workspace directory path
+    """
+    workspace_dir = os.path.abspath(workspace_dir)
+
+    # Use the new sandbox.volumes approach
+    if config.sandbox.volumes is not None:
+        # Check if there's already a /workspace mount
+        mounts = config.sandbox.volumes.split(',')
+        new_mounts = []
+        workspace_mount_found = False
+
+        for mount in mounts:
+            parts = mount.split(':')
+            if len(parts) >= 2 and parts[1] == '/workspace':
+                # Replace existing workspace mount
+                mode = parts[2] if len(parts) > 2 else 'rw'
+                new_mounts.append(f'{workspace_dir}:/workspace:{mode}')
+                workspace_mount_found = True
+            else:
+                new_mounts.append(mount)
+
+        if not workspace_mount_found:
+            # Add new workspace mount
+            new_mounts.append(f'{workspace_dir}:/workspace:rw')
+
+        config.sandbox.volumes = ','.join(new_mounts)
+    else:
+        # Set new volumes configuration
+        config.sandbox.volumes = f'{workspace_dir}:/workspace:rw'
