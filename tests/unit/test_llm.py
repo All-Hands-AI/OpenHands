@@ -981,3 +981,58 @@ def test_llm_base_url_auto_protocol_patch(mock_get):
 
     called_url = mock_get.call_args[0][0]
     assert called_url.startswith('http://') or called_url.startswith('https://')
+
+
+@patch('openhands.llm.llm.litellm_completion')
+def test_model_name_case_sensitivity_for_reasoning_effort(mock_litellm_completion):
+    """Test that model names are not automatically lowercased when checking for reasoning effort support.
+
+    This test verifies the fix for issue #9223 where SambaNova models with camel case names
+    were being incorrectly lowercased, causing model not found errors.
+    """
+    # Mock a successful completion response
+    mock_litellm_completion.return_value = {
+        'choices': [{'message': {'content': 'Test response'}}]
+    }
+
+    # Test cases: (model_name, should_have_reasoning_effort)
+    test_cases = [
+        # Lowercase models that should have reasoning effort (existing behavior)
+        ('o1', True),
+        ('o3-mini', True),
+        ('o1-2024-12-17', True),
+        # Camel case models that should NOT have reasoning effort (the fix)
+        ('CamelCaseModel', False),
+        ('SambaNova-Model-Name', False),
+        ('Meta-Llama-3.1-8B-Instruct', False),
+        # Models with provider prefixes that should NOT have reasoning effort
+        ('sambanova/Meta-Llama-3.1-8B-Instruct', False),
+        ('openrouter/CamelCaseModel', False),
+        # Edge case: model with slash where the last part matches reasoning effort model
+        ('provider/o1', True),  # This should still work because we check split('/')[-1]
+    ]
+
+    for model_name, should_have_reasoning_effort in test_cases:
+        config = LLMConfig(model=model_name, api_key='test_key')
+        llm = LLM(config)
+
+        # Reset the mock call count for each test
+        mock_litellm_completion.reset_mock()
+
+        # Make a completion call
+        llm.completion(messages=[{'role': 'user', 'content': 'Hello!'}])
+
+        # Check if reasoning_effort was passed to the completion call
+        call_kwargs = mock_litellm_completion.call_args[1]
+        has_reasoning_effort = 'reasoning_effort' in call_kwargs
+
+        assert has_reasoning_effort == should_have_reasoning_effort, (
+            f'Model {model_name}: expected reasoning_effort={should_have_reasoning_effort}, '
+            f'but got reasoning_effort={has_reasoning_effort}'
+        )
+
+        # If reasoning effort is expected, verify temperature was removed
+        if should_have_reasoning_effort:
+            assert 'temperature' not in call_kwargs, (
+                f'Model {model_name}: temperature should be removed when reasoning_effort is set'
+            )
