@@ -106,11 +106,11 @@ const CONVERSATIONS = new Map<string, Conversation>(
 const openHandsHandlers = [
   http.get("/api/options/models", async () =>
     HttpResponse.json([
-      "OpenAI/gpt-3.5-turbo",
-      "OpenAI/gpt-4o",
-      "OpenAI/gpt-4o-mini",
-      "Anthropic/claude-3.5",
-      "Anthropic/claude-sonnet-4-20250514",
+      "gpt-3.5-turbo",
+      "gpt-4o",
+      "gpt-4o-mini",
+      "anthropic/claude-3.5",
+      "anthropic/claude-sonnet-4-20250514",
     ]),
   ),
 
