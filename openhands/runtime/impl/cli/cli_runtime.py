@@ -63,9 +63,9 @@ if sys.platform == 'win32':
     except (ImportError, DotNetMissingError) as err:
         # Print a user-friendly error message without stack trace
         friendly_message = """
-ERROR: .NET SDK is missing or not properly configured
+ERROR: PowerShell and .NET SDK are required but not properly configured
 
-The .NET SDK is required for OpenHands CLI on Windows.
+The .NET SDK and PowerShell are required for OpenHands CLI on Windows.
 PowerShell integration cannot function without .NET Core.
 
 Please install the .NET SDK by following the instructions at:
