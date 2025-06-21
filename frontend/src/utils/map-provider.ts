@@ -31,6 +31,8 @@ export const mapProvider = (provider: string) =>
     : provider;
 
 export const unmapProvider = (displayName: string): string => {
-  const entry = Object.entries(MAP_PROVIDER).find(([, value]) => value === displayName);
+  const entry = Object.entries(MAP_PROVIDER).find(
+    ([, value]) => value === displayName,
+  );
   return entry ? entry[0] : displayName;
 };

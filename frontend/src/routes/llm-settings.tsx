@@ -95,7 +95,9 @@ function LlmSettingsScreen() {
 
   const basicFormAction = (formData: FormData) => {
     const providerDisplay = formData.get("llm-provider-input")?.toString();
-    const provider = providerDisplay ? unmapProvider(providerDisplay) : undefined;
+    const provider = providerDisplay
+      ? unmapProvider(providerDisplay)
+      : undefined;
     const model = formData.get("llm-model-input")?.toString();
     const apiKey = formData.get("llm-api-key-input")?.toString();
     const searchApiKey = formData.get("search-api-key-input")?.toString();
