@@ -39,7 +39,7 @@ describe("Localization Fix Tests", () => {
     );
     expect(nonTextAttributesMatch).toBeTruthy();
 
-    const nonTextAttributes = nonTextAttributesMatch[1];
+    const nonTextAttributes = nonTextAttributesMatch![1];
     expect(nonTextAttributes).not.toContain('"placeholder"');
     expect(nonTextAttributes).not.toContain('"alt"');
     expect(nonTextAttributes).not.toContain('"aria-label"');
