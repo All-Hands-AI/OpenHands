@@ -171,17 +171,12 @@ class CLIRuntime(Runtime):
 
         # Initialize PowerShell session if on Windows
         if self._is_windows:
-            try:
-                self._powershell_session = WindowsPowershellSession(
-                    work_dir=self._workspace_path,
-                    username=None,  # Use current user
-                    no_change_timeout_seconds=30,
-                    max_memory_mb=None,
-                )
-            except Exception as e:
-                logger.error(f'Failed to initialize PowerShell session: {e}')
-                logger.warning('Falling back to subprocess for command execution.')
-                self._powershell_session = None
+           self._powershell_session = WindowsPowershellSession(
+               work_dir=self._workspace_path,
+               username=None,  # Use current user
+               no_change_timeout_seconds=30,
+               max_memory_mb=None,
+           )
 
         if not self.attach_to_existing:
             await asyncio.to_thread(self.setup_initial_env)
@@ -314,14 +309,7 @@ class CLIRuntime(Runtime):
             ps_action.set_hard_timeout(timeout)
 
             # Execute the command using the PowerShell session
-            result = self._powershell_session.execute(ps_action)
-
-            # The PowerShell session should return a CmdOutputObservation or ErrorObservation
-            if isinstance(result, CmdOutputObservation):
-                return result
-            else:
-                # This covers ErrorObservation and any other unexpected types
-                return result
+            return self._powershell_session.execute(ps_action)
 
 
         except Exception as e:
