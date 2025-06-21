@@ -823,14 +823,18 @@ async def test_notify_on_llm_retry(mock_agent, mock_event_stream, mock_status_ca
         headless_mode=True,
     )
 
-    def notify_on_llm_retry(attempt, max_attempts):
-        controller.status_callback('info', 'STATUS$LLM_RETRY', ANY)
+    def notify_on_llm_retry(attempt, max_attempts, wait_time=None, is_rate_limit=False):
+        if is_rate_limit:
+            controller.status_callback('info', 'STATUS$LLM_RATE_LIMITED_RETRY', ANY)
+        else:
+            controller.status_callback('info', 'STATUS$LLM_RETRY', ANY)
 
     # Attach the retry listener to the agent's LLM
     controller.agent.llm.retry_listener = notify_on_llm_retry
 
-    controller.agent.llm.retry_listener(1, 2)
-    controller.status_callback.assert_called_once_with('info', 'STATUS$LLM_RETRY', ANY)
+    # Test regular retry (non-rate limit)
+    controller.agent.llm.retry_listener(1, 2, None, False)
+    controller.status_callback.assert_called_with('info', 'STATUS$LLM_RETRY', ANY)
     await controller.close()
 
 

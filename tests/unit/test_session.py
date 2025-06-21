@@ -63,7 +63,8 @@ async def test_notify_on_llm_retry(
     )
 
     assert mock_litellm_completion.call_count == 2
+    # Check that queue_status_message was called with rate limit retry message
     session.queue_status_message.assert_called_once_with(
-        'info', 'STATUS$LLM_RETRY', ANY
+        'info', 'STATUS$LLM_RATE_LIMITED_RETRY', ANY
     )
     await session.close()
