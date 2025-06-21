@@ -131,7 +131,7 @@ streamlit = "*"
 whatthepatch = "*"
 retry = "*"
 evaluate = "*"
-swebench = "^3.0.8"
+swebench = { git = "https://github.com/ryanhoangt/SWE-bench.git", branch = "fix-modal-patch-eval" }
 visualswebench = { git = "https://github.com/luolin101/Visual-SWE-bench.git" }
 swegym = { git = "https://github.com/SWE-Gym/SWE-Bench-Package.git" }
 commit0 = "*"
@@ -146,7 +146,8 @@ browsergym-webarena = "0.13.3"
 browsergym-miniwob = "0.13.3"
 browsergym-visualwebarena = "0.13.3"
 boto3-stubs = { extras = [ "s3" ], version = "^1.37.19" }
-pyarrow = "20.0.0"                                                             # transitive dependency, pinned here to avoid conflicts
+# transitive dependency, pinned here to avoid conflicts
+pyarrow = "20.0.0"
 datasets = "*"
 joblib = "*"
 
