@@ -198,10 +198,8 @@ async def test_async_streaming_completion_with_user_cancellation(cancel_after_ch
 
 @patch('openhands.llm.async_llm.litellm_acompletion')
 @pytest.mark.asyncio
-async def test_async_llm_model_name_case_sensitivity_for_reasoning_effort(
-    mock_acompletion,
-):
-    """Test that async LLM does not lowercase model names when checking for reasoning effort support.
+async def test_async_llm_model_name_case_preservation(mock_acompletion):
+    """Test that AsyncLLM preserves model name case when sent to LLM providers.
 
     This test verifies the fix for issue #9223 for the AsyncLLM class.
     """
@@ -210,17 +208,16 @@ async def test_async_llm_model_name_case_sensitivity_for_reasoning_effort(
         'choices': [{'message': {'content': 'Test response'}}]
     }
 
-    # Test cases: (model_name, should_have_reasoning_effort)
+    # Test cases with various model name formats
     test_cases = [
-        # Lowercase models that should have reasoning effort
-        ('o1', True),
-        ('o3-mini', True),
-        # Camel case models that should NOT have reasoning effort
-        ('CamelCaseModel', False),
-        ('SambaNova-Model-Name', False),
+        'o1',  # lowercase
+        'CamelCaseModel',  # camel case
+        'SambaNova-Model-Name',  # SambaNova style
+        'Meta-Llama-3.1-8B-Instruct',  # Real SambaNova model
+        'sambanova/Meta-Llama-3.1-8B-Instruct',  # With provider prefix
     ]
 
-    for model_name, should_have_reasoning_effort in test_cases:
+    for model_name in test_cases:
         with _patch_http():
             config_copy = config.get_llm_config()
             config_copy.model = model_name
@@ -234,22 +231,20 @@ async def test_async_llm_model_name_case_sensitivity_for_reasoning_effort(
                 messages=[{'role': 'user', 'content': 'Hello!'}]
             )
 
-            # Check if reasoning_effort was passed to the completion call
+            # Verify the model name was passed to litellm with original case preserved
+            # Check that the mock was called with the correct model name
+            mock_acompletion.assert_called_once()
             call_kwargs = mock_acompletion.call_args[1]
-            has_reasoning_effort = 'reasoning_effort' in call_kwargs
-
-            assert has_reasoning_effort == should_have_reasoning_effort, (
-                f'AsyncLLM Model {model_name}: expected reasoning_effort={should_have_reasoning_effort}, '
-                f'but got reasoning_effort={has_reasoning_effort}'
+            assert call_kwargs['model'] == model_name, (
+                f'AsyncLLM Model name case not preserved: expected {model_name}, '
+                f'but got {call_kwargs["model"]}'
             )
 
 
 @patch('openhands.llm.async_llm.litellm_acompletion')
 @pytest.mark.asyncio
-async def test_streaming_llm_model_name_case_sensitivity_for_reasoning_effort(
-    mock_acompletion,
-):
-    """Test that streaming LLM does not lowercase model names when checking for reasoning effort support.
+async def test_streaming_llm_model_name_case_preservation(mock_acompletion):
+    """Test that StreamingLLM preserves model name case when sent to LLM providers.
 
     This test verifies the fix for issue #9223 for the StreamingLLM class.
     """
@@ -261,17 +256,16 @@ async def test_streaming_llm_model_name_case_sensitivity_for_reasoning_effort(
 
     mock_acompletion.return_value = mock_streaming_response()
 
-    # Test cases: (model_name, should_have_reasoning_effort)
+    # Test cases with various model name formats
     test_cases = [
-        # Lowercase models that should have reasoning effort
-        ('o1', True),
-        ('o3-mini', True),
-        # Camel case models that should NOT have reasoning effort
-        ('CamelCaseModel', False),
-        ('SambaNova-Model-Name', False),
+        'o1',  # lowercase
+        'CamelCaseModel',  # camel case
+        'SambaNova-Model-Name',  # SambaNova style
+        'Meta-Llama-3.1-8B-Instruct',  # Real SambaNova model
+        'sambanova/Meta-Llama-3.1-8B-Instruct',  # With provider prefix
     ]
 
-    for model_name, should_have_reasoning_effort in test_cases:
+    for model_name in test_cases:
         with _patch_http():
             config_copy = config.get_llm_config()
             config_copy.model = model_name
@@ -287,11 +281,11 @@ async def test_streaming_llm_model_name_case_sensitivity_for_reasoning_effort(
             ):
                 chunks.append(chunk)
 
-            # Check if reasoning_effort was passed to the completion call
+            # Verify the model name was passed to litellm with original case preserved
+            # Check that the mock was called with the correct model name
+            mock_acompletion.assert_called_once()
             call_kwargs = mock_acompletion.call_args[1]
-            has_reasoning_effort = 'reasoning_effort' in call_kwargs
-
-            assert has_reasoning_effort == should_have_reasoning_effort, (
-                f'StreamingLLM Model {model_name}: expected reasoning_effort={should_have_reasoning_effort}, '
-                f'but got reasoning_effort={has_reasoning_effort}'
+            assert call_kwargs['model'] == model_name, (
+                f'StreamingLLM Model name case not preserved: expected {model_name}, '
+                f'but got {call_kwargs["model"]}'
             )

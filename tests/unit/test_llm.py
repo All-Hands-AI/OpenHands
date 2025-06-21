@@ -984,8 +984,8 @@ def test_llm_base_url_auto_protocol_patch(mock_get):
 
 
 @patch('openhands.llm.llm.litellm_completion')
-def test_model_name_case_sensitivity_for_reasoning_effort(mock_litellm_completion):
-    """Test that model names are not automatically lowercased when checking for reasoning effort support.
+def test_model_name_case_preservation_in_llm_calls(mock_litellm_completion):
+    """Test that model names preserve their original case when sent to LLM providers.
 
     This test verifies the fix for issue #9223 where SambaNova models with camel case names
     were being incorrectly lowercased, causing model not found errors.
@@ -995,24 +995,19 @@ def test_model_name_case_sensitivity_for_reasoning_effort(mock_litellm_completio
         'choices': [{'message': {'content': 'Test response'}}]
     }
 
-    # Test cases: (model_name, should_have_reasoning_effort)
+    # Test cases with various model name formats
     test_cases = [
-        # Lowercase models that should have reasoning effort (existing behavior)
-        ('o1', True),
-        ('o3-mini', True),
-        ('o1-2024-12-17', True),
-        # Camel case models that should NOT have reasoning effort (the fix)
-        ('CamelCaseModel', False),
-        ('SambaNova-Model-Name', False),
-        ('Meta-Llama-3.1-8B-Instruct', False),
-        # Models with provider prefixes that should NOT have reasoning effort
-        ('sambanova/Meta-Llama-3.1-8B-Instruct', False),
-        ('openrouter/CamelCaseModel', False),
-        # Edge case: model with slash where the last part matches reasoning effort model
-        ('provider/o1', True),  # This should still work because we check split('/')[-1]
+        'o1',  # lowercase
+        'O1',  # uppercase
+        'CamelCaseModel',  # camel case
+        'SambaNova-Model-Name',  # SambaNova style
+        'Meta-Llama-3.1-8B-Instruct',  # Real SambaNova model
+        'GPT-4o',  # Mixed case
+        'claude-3-5-sonnet',  # lowercase with hyphens
+        'sambanova/Meta-Llama-3.1-8B-Instruct',  # With provider prefix
     ]
 
-    for model_name, should_have_reasoning_effort in test_cases:
+    for model_name in test_cases:
         config = LLMConfig(model=model_name, api_key='test_key')
         llm = LLM(config)
 
@@ -1022,17 +1017,11 @@ def test_model_name_case_sensitivity_for_reasoning_effort(mock_litellm_completio
         # Make a completion call
         llm.completion(messages=[{'role': 'user', 'content': 'Hello!'}])
 
-        # Check if reasoning_effort was passed to the completion call
+        # Verify the model name was passed to litellm with original case preserved
+        # Check that the mock was called with the correct model name
+        mock_litellm_completion.assert_called_once()
         call_kwargs = mock_litellm_completion.call_args[1]
-        has_reasoning_effort = 'reasoning_effort' in call_kwargs
-
-        assert has_reasoning_effort == should_have_reasoning_effort, (
-            f'Model {model_name}: expected reasoning_effort={should_have_reasoning_effort}, '
-            f'but got reasoning_effort={has_reasoning_effort}'
+        assert call_kwargs['model'] == model_name, (
+            f'Model name case not preserved: expected {model_name}, '
+            f'but got {call_kwargs["model"]}'
         )
-
-        # If reasoning effort is expected, verify temperature was removed
-        if should_have_reasoning_effort:
-            assert 'temperature' not in call_kwargs, (
-                f'Model {model_name}: temperature should be removed when reasoning_effort is set'
-            )

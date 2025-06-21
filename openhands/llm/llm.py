@@ -169,7 +169,7 @@ class LLM(RetryMixin, DebugMixin):
             kwargs['top_k'] = self.config.top_k
 
         if (
-            self.config.model in REASONING_EFFORT_SUPPORTED_MODELS
+            self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS
             or self.config.model.split('/')[-1] in REASONING_EFFORT_SUPPORTED_MODELS
         ):
             kwargs['reasoning_effort'] = self.config.reasoning_effort
