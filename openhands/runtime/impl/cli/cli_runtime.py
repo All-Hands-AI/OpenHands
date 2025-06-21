@@ -152,10 +152,6 @@ class CLIRuntime(Runtime):
         # Initialize PowerShell session on Windows
         self._is_windows = sys.platform == 'win32'
         self._powershell_session: WindowsPowershellSession | None = None
-        if self._is_windows:
-            logger.info(
-                'Windows detected. PowerShell support will be used for command execution.'
-            )
 
         logger.warning(
             'Initializing CLIRuntime. WARNING: NO SANDBOX IS USED. '
@@ -182,27 +178,6 @@ class CLIRuntime(Runtime):
                     no_change_timeout_seconds=30,
                     max_memory_mb=None,
                 )
-                logger.info('PowerShell session initialized successfully.')
-            except DotNetMissingError as dotnet_err:
-                # Print a user-friendly error message without stack trace
-                error_message = """
-ERROR: .NET SDK is missing or not properly configured
-
-The .NET SDK is required for OpenHands CLI on Windows.
-PowerShell integration cannot function without .NET Core.
-
-Please install the .NET SDK by following the instructions at:
-https://docs.all-hands.dev/usage/windows-without-wsl
-
-After installing .NET SDK, restart your terminal and try again.
-"""
-                print(error_message, file=sys.stderr)
-                logger.error(f"Windows runtime initialization failed: {type(dotnet_err).__name__}: {str(dotnet_err)}")
-                if hasattr(dotnet_err, 'details') and dotnet_err.details:
-                    logger.debug(f"Details: {dotnet_err.details}")
-                
-                # Exit the program with an error code
-                sys.exit(1)
             except Exception as e:
                 logger.error(f'Failed to initialize PowerShell session: {e}')
                 logger.warning('Falling back to subprocess for command execution.')
@@ -348,25 +323,7 @@ After installing .NET SDK, restart your terminal and try again.
                 # This covers ErrorObservation and any other unexpected types
                 return result
 
-        except DotNetMissingError as dotnet_err:
-            error_message = """
-ERROR: .NET SDK is missing or not properly configured
 
-The .NET SDK is required for OpenHands CLI on Windows.
-PowerShell integration cannot function without .NET Core.
-
-Please install the .NET SDK by following the instructions at:
-https://docs.all-hands.dev/usage/windows-without-wsl
-
-After installing .NET SDK, restart your terminal and try again.
-"""
-            print(error_message, file=sys.stderr)
-            logger.error(f"Windows runtime initialization failed: {type(dotnet_err).__name__}: {str(dotnet_err)}")
-            if hasattr(dotnet_err, 'details') and dotnet_err.details:
-                logger.debug(f"Details: {dotnet_err.details}")
-            
-            # Exit the program with an error code
-            sys.exit(1)
         except Exception as e:
             logger.error(f'Error executing PowerShell command "{command}": {e}')
             return ErrorObservation(
