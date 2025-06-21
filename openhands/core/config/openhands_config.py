@@ -1,7 +1,7 @@
 import os
 from typing import Any, ClassVar
 
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 from openhands.core import logger
 from openhands.core.config.agent_config import AgentConfig
@@ -112,7 +112,7 @@ class OpenHandsConfig(BaseModel):
 
     defaults_dict: ClassVar[dict] = {}
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
     def get_llm_config(self, name: str = 'llm') -> LLMConfig:
         """'llm' is the name for default config (for backward compatibility prior to 0.8)."""

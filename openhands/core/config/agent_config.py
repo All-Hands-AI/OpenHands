@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from openhands.core.config.condenser_config import CondenserConfig, NoOpCondenserConfig
 from openhands.core.config.extended_config import ExtendedConfig
@@ -44,7 +44,7 @@ class AgentConfig(BaseModel):
     extended: ExtendedConfig = Field(default_factory=lambda: ExtendedConfig({}))
     """Extended configuration for the agent."""
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
     @classmethod
     def from_toml_section(cls, data: dict) -> dict[str, AgentConfig]:
