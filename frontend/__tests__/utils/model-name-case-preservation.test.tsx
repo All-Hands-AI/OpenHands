@@ -11,7 +11,7 @@ describe("Model name case preservation", () => {
     formData.set("language", "en");
 
     const settings = extractSettings(formData);
-    
+
     // Test that model names maintain their original casing
     expect(settings.LLM_MODEL).toBe("SambaNova/Meta-Llama-3.1-8B-Instruct");
   });
@@ -46,7 +46,7 @@ describe("Model name case preservation", () => {
     formData.set("language", "en");
 
     const settings = extractSettings(formData);
-    
+
     // Test that camelCase and PascalCase are preserved
     expect(settings.LLM_MODEL).not.toBe("sambanova/meta-llama-3.1-8b-instruct");
     expect(settings.LLM_MODEL).toBe("SambaNova/Meta-Llama-3.1-8B-Instruct");
