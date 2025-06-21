@@ -23,19 +23,42 @@ from openhands.events.observation.commands import (
 from openhands.runtime.utils.bash_constants import TIMEOUT_MESSAGE_TEMPLATE
 from openhands.utils.shutdown_listener import should_continue
 
-pythonnet.load('coreclr')
-logger.info("Successfully called pythonnet.load('coreclr')")
-
-# Now that pythonnet is initialized, import clr and System
 try:
-    import clr
+    pythonnet.load('coreclr')
+    logger.info("Successfully called pythonnet.load('coreclr')")
 
-    logger.debug(f'Imported clr module from: {clr.__file__}')
-    # Load System assembly *after* pythonnet is initialized
-    clr.AddReference('System')
-    import System
-except Exception as clr_sys_ex:
-    raise RuntimeError(f'FATAL: Failed to import clr or System. Error: {clr_sys_ex}')
+    # Now that pythonnet is initialized, import clr and System
+    try:
+        import clr
+
+        logger.debug(f'Imported clr module from: {clr.__file__}')
+        # Load System assembly *after* pythonnet is initialized
+        clr.AddReference('System')
+        import System
+    except Exception as clr_sys_ex:
+        error_msg = f"""
+ERROR: Failed to import .NET components.
+
+The .NET SDK is required for OpenHands CLI on Windows.
+Please install the .NET SDK by following the instructions at:
+https://docs.all-hands.dev/usage/windows-without-wsl
+
+Technical details: {str(clr_sys_ex)}
+"""
+        logger.error(error_msg)
+        raise RuntimeError(error_msg)
+except Exception as coreclr_ex:
+    error_msg = f"""
+ERROR: Failed to load CoreCLR.
+
+The .NET SDK is required for OpenHands CLI on Windows.
+Please install the .NET SDK by following the instructions at:
+https://docs.all-hands.dev/usage/windows-without-wsl
+
+Technical details: {str(coreclr_ex)}
+"""
+    logger.error(error_msg)
+    raise RuntimeError(error_msg)
 
 # Attempt to load the PowerShell SDK assembly only if clr and System loaded
 ps_sdk_path = None
@@ -78,9 +101,18 @@ try:
         RunspaceState,
     )
 except Exception as e:
-    raise RuntimeError(
-        f'FATAL: Failed to load PowerShell SDK components. Error: {e}. Check pythonnet installation and .NET Runtime compatibility. Path searched: {ps_sdk_path}'
-    )
+    error_msg = f"""
+ERROR: Failed to load PowerShell SDK components.
+
+The .NET SDK is required for OpenHands CLI on Windows.
+Please install the .NET SDK by following the instructions at:
+https://docs.all-hands.dev/usage/windows-without-wsl
+
+Technical details: {str(e)}
+Path searched: {ps_sdk_path}
+"""
+    logger.error(error_msg)
+    raise RuntimeError(error_msg)
 
 
 class WindowsPowershellSession:
@@ -115,9 +147,15 @@ class WindowsPowershellSession:
 
         if PowerShell is None:  # Check if SDK loading failed during module import
             # Logged critical error during import, just raise here to prevent instantiation
-            raise RuntimeError(
-                'PowerShell SDK (System.Management.Automation.dll) could not be loaded. Cannot initialize WindowsPowershellSession.'
-            )
+            error_msg = """
+ERROR: PowerShell SDK (System.Management.Automation.dll) could not be loaded.
+
+The .NET SDK is required for OpenHands CLI on Windows.
+Please install the .NET SDK by following the instructions at:
+https://docs.all-hands.dev/usage/windows-without-wsl
+"""
+            logger.error(error_msg)
+            raise RuntimeError(error_msg)
 
         self.work_dir = os.path.abspath(work_dir)
         self.username = username
