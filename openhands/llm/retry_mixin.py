@@ -35,8 +35,28 @@ class RetryMixin:
 
         def before_sleep(retry_state: Any) -> None:
             self.log_retry_attempt(retry_state)
+
+            # Calculate the wait time for this retry attempt
+            wait_time = None
+            if hasattr(retry_state, 'next_action') and hasattr(
+                retry_state.next_action, 'sleep'
+            ):
+                wait_time = retry_state.next_action.sleep
+
             if retry_listener:
-                retry_listener(retry_state.attempt_number, num_retries)
+                # Check if the exception is a rate limit error
+                exception = retry_state.outcome.exception()
+                is_rate_limit = False
+                try:
+                    from litellm.exceptions import RateLimitError
+
+                    is_rate_limit = isinstance(exception, RateLimitError)
+                except ImportError:
+                    pass
+
+                retry_listener(
+                    retry_state.attempt_number, num_retries, wait_time, is_rate_limit
+                )
 
             # Check if the exception is LLMNoResponseError
             exception = retry_state.outcome.exception()

@@ -4143,6 +4143,22 @@
         "ja": "エージェントがレート制限中",
         "uk": "Агента обмежено кількістю запитів"
     },
+    "STATUS$LLM_RATE_LIMITED_RETRY": {
+        "en": "Agent is Rate Limited. Retrying automatically...",
+        "zh-CN": "智能体已达到速率限制。正在自动重试...",
+        "zh-TW": "智慧代理已達到速率限制。正在自動重試...",
+        "de": "Agent ist ratenbegrenzt. Automatischer Wiederholungsversuch...",
+        "ko-KR": "에이전트가 속도 제한되었습니다. 자동으로 재시도 중...",
+        "no": "Agenten er hastighetsbegrenset. Prøver automatisk på nytt...",
+        "it": "L'agente è limitato dalla frequenza. Riprovando automaticamente...",
+        "pt": "O agente está com limite de taxa. Tentando novamente automaticamente...",
+        "es": "El agente está limitado por tasa. Reintentando automáticamente...",
+        "ar": "الوكيل مقيد بحد السرعة. إعادة المحاولة تلقائياً...",
+        "fr": "L'agent est limité en fréquence. Nouvelle tentative automatique...",
+        "tr": "Ajan hız sınırına ulaştı. Otomatik olarak yeniden deniyor...",
+        "ja": "エージェントがレート制限中。自動的に再試行しています...",
+        "uk": "Агента обмежено кількістю запитів. Автоматично повторюємо спробу..."
+    },
     "CHAT_INTERFACE$AGENT_PAUSED_MESSAGE": {
         "en": "Agent has paused.",
         "de": "Agent pausiert.",

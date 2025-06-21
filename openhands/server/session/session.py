@@ -240,11 +240,33 @@ class Session:
             retry_listener=self._notify_on_llm_retry,
         )
 
-    def _notify_on_llm_retry(self, retries: int, max: int) -> None:
-        msg_id = 'STATUS$LLM_RETRY'
-        self.queue_status_message(
-            'info', msg_id, f'Retrying LLM request, {retries} / {max}'
-        )
+    def _notify_on_llm_retry(
+        self,
+        retries: int,
+        max: int,
+        wait_time: float | None = None,
+        is_rate_limit: bool = False,
+    ) -> None:
+        if is_rate_limit:
+            msg_id = 'STATUS$LLM_RATE_LIMITED_RETRY'
+            if wait_time:
+                wait_seconds = int(wait_time)
+                self.queue_status_message(
+                    'info',
+                    msg_id,
+                    f'Agent is Rate Limited. Retrying in {wait_seconds}s... ({retries}/{max})',
+                )
+            else:
+                self.queue_status_message(
+                    'info',
+                    msg_id,
+                    f'Agent is Rate Limited. Retrying... ({retries}/{max})',
+                )
+        else:
+            msg_id = 'STATUS$LLM_RETRY'
+            self.queue_status_message(
+                'info', msg_id, f'Retrying LLM request, {retries} / {max}'
+            )
 
     def on_event(self, event: Event) -> None:
         asyncio.get_event_loop().run_until_complete(self._on_event(event))
