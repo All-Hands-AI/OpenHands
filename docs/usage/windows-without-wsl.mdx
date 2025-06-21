@@ -145,15 +145,17 @@ Open PowerShell as Administrator and run:
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
-### 2. Install .NET SDK
+### 2. Install .NET SDK (Required)
 
-The OpenHands CLI requires the .NET Core runtime for PowerShell integration. Install the .NET SDK which includes the runtime:
+The OpenHands CLI **requires** the .NET Core runtime for PowerShell integration. Without it, the CLI will fail to start with a `coreclr` error. Install the .NET SDK which includes the runtime:
 
 ```powershell
 winget install Microsoft.DotNet.SDK.8
 ```
 
 Alternatively, you can download and install the .NET SDK from the [official Microsoft website](https://dotnet.microsoft.com/download).
+
+After installation, restart your PowerShell session to ensure the environment variables are updated.
 
 ### 3. Install and Run OpenHands
 
@@ -165,11 +167,14 @@ uvx --python 3.12 --from openhands-ai openhands
 
 ### Troubleshooting CLI Issues
 
-If you encounter a `coreclr` error when running OpenHands CLI, ensure that:
+#### CoreCLR Error
 
-1. The .NET SDK is properly installed
-2. Your system PATH includes the .NET SDK directories
-3. You've restarted your PowerShell session after installing the .NET SDK
+If you encounter an error like `Failed to load CoreCLR` or `pythonnet.load('coreclr')` when running OpenHands CLI, this indicates that the .NET Core runtime is missing or not properly configured. To fix this:
+
+1. Install the .NET SDK as described in step 2 above
+2. Verify that your system PATH includes the .NET SDK directories
+3. Restart your PowerShell session completely after installing the .NET SDK
+4. Make sure you're using PowerShell 7 (pwsh) rather than Windows PowerShell
 
 To verify your .NET installation, run:
 
@@ -177,7 +182,9 @@ To verify your .NET installation, run:
 dotnet --info
 ```
 
-This should display information about your installed .NET SDKs and runtimes.
+This should display information about your installed .NET SDKs and runtimes. If this command fails, the .NET SDK is not properly installed or not in your PATH.
+
+If the issue persists after installing the .NET SDK, try installing the specific .NET Runtime version 6.0 or later from the [.NET download page](https://dotnet.microsoft.com/download).
 
 ## Limitations on Windows
 
@@ -185,7 +192,7 @@ When running OpenHands on Windows without WSL or Docker, be aware of the followi
 
 1. **Browser Tool Not Supported**: The browser tool is not currently supported on Windows.
 
-2. **.NET Core Requirement**: The PowerShell integration requires .NET Core Runtime to be installed. If .NET Core is not available, OpenHands will automatically fall back to a more limited PowerShell implementation with reduced functionality.
+2. **.NET Core Requirement**: The PowerShell integration requires .NET Core Runtime to be installed. The CLI implementation attempts to load the CoreCLR at startup with `pythonnet.load('coreclr')` and will fail with an error if .NET Core is not properly installed.
 
 3. **Interactive Shell Commands**: Some interactive shell commands may not work as expected. The PowerShell session implementation has limitations compared to the bash session used on Linux/macOS.
 
