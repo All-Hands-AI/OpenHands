@@ -158,7 +158,7 @@ class AgentSession:
             # NOTE: this needs to happen before controller is created
             # so MCP tools can be included into the SystemMessageAction
             if self.runtime and runtime_connected and agent.config.enable_mcp:
-                await add_mcp_tools_to_agent(agent, self.runtime, self.memory, config)
+                await add_mcp_tools_to_agent(agent, self.runtime, self.memory)
 
             if replay_json:
                 initial_message = self._run_replay(
@@ -232,8 +232,7 @@ class AgentSession:
         if self.event_stream is not None:
             self.event_stream.close()
         if self.controller is not None:
-            end_state = self.controller.get_state()
-            end_state.save_to_session(self.sid, self.file_store, self.user_id)
+            self.controller.save_state()
             await self.controller.close()
         if self.runtime is not None:
             EXECUTOR.submit(self.runtime.close)
@@ -331,10 +330,8 @@ class AgentSession:
         if runtime_cls == RemoteRuntime:
             # If provider tokens is passed in custom secrets, then remove provider from provider tokens
             # We prioritize provider tokens set in custom secrets
-            provider_tokens_without_gitlab = (
-                self.override_provider_tokens_with_custom_secret(
-                    git_provider_tokens, custom_secrets
-                )
+            overrided_tokens = self.override_provider_tokens_with_custom_secret(
+                git_provider_tokens, custom_secrets
             )
 
             self.runtime = runtime_cls(
@@ -345,7 +342,7 @@ class AgentSession:
                 status_callback=self._status_callback,
                 headless_mode=False,
                 attach_to_existing=False,
-                git_provider_tokens=provider_tokens_without_gitlab,
+                git_provider_tokens=overrided_tokens,
                 env_vars=env_vars,
                 user_id=self.user_id,
             )
@@ -439,10 +436,12 @@ class AgentSession:
         initial_state = self._maybe_restore_state()
         controller = AgentController(
             sid=self.sid,
+            user_id=self.user_id,
+            file_store=self.file_store,
             event_stream=self.event_stream,
             agent=agent,
-            max_iterations=int(max_iterations),
-            max_budget_per_task=max_budget_per_task,
+            iteration_delta=int(max_iterations),
+            budget_per_task_delta=max_budget_per_task,
             agent_to_llm_config=agent_to_llm_config,
             agent_configs=agent_configs,
             confirmation_mode=confirmation_mode,

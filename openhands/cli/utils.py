@@ -102,6 +102,8 @@ def extract_model_and_provider(model: str) -> ModelInfo:
             return ModelInfo(provider='openai', model=split[0], separator='/')
         if split[0] in VERIFIED_ANTHROPIC_MODELS:
             return ModelInfo(provider='anthropic', model=split[0], separator='/')
+        if split[0] in VERIFIED_MISTRAL_MODELS:
+            return ModelInfo(provider='mistral', model=split[0], separator='/')
         # return as model only
         return ModelInfo(provider='', model=model, separator='')
 
@@ -143,9 +145,10 @@ def organize_models_and_providers(
     return result_dict
 
 
-VERIFIED_PROVIDERS = ['openai', 'azure', 'anthropic', 'deepseek']
+VERIFIED_PROVIDERS = ['anthropic', 'openai', 'mistral']
 
 VERIFIED_OPENAI_MODELS = [
+    'o4-mini',
     'gpt-4o',
     'gpt-4o-mini',
     'gpt-4-turbo',
@@ -169,6 +172,10 @@ VERIFIED_ANTHROPIC_MODELS = [
     'claude-3-5-sonnet-20240620',
     'claude-2.1',
     'claude-2',
+]
+
+VERIFIED_MISTRAL_MODELS = [
+    'devstral-small-2505',
 ]
 
 

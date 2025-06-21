@@ -47,6 +47,24 @@ const extractAdvancedFormData = (formData: FormData) => {
   };
 };
 
+/**
+ * Parses and validates a max budget per task value.
+ * Ensures the value is at least 1 dollar.
+ * @param value - The string value to parse
+ * @returns The parsed number if valid (>= 1), null otherwise
+ */
+export const parseMaxBudgetPerTask = (value: string): number | null => {
+  if (!value) {
+    return null;
+  }
+
+  const parsedValue = parseFloat(value);
+  // Ensure the value is at least 1 dollar and is a finite number
+  return parsedValue && parsedValue >= 1 && Number.isFinite(parsedValue)
+    ? parsedValue
+    : null;
+};
+
 export const extractSettings = (
   formData: FormData,
 ): Partial<Settings> & { llm_api_key?: string | null } => {
