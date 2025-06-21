@@ -16,26 +16,26 @@ describe("Model name case preservation", () => {
     expect(settings.LLM_MODEL).toBe("SambaNova/Meta-Llama-3.1-8B-Instruct");
   });
 
-  it("should preserve OpenAI model case", () => {
+  it("should preserve openai model case", () => {
     const formData = new FormData();
-    formData.set("llm-provider-input", "OpenAI");
+    formData.set("llm-provider-input", "openai");
     formData.set("llm-model-input", "gpt-4o");
     formData.set("agent", "CodeActAgent");
     formData.set("language", "en");
 
     const settings = extractSettings(formData);
-    expect(settings.LLM_MODEL).toBe("OpenAI/gpt-4o");
+    expect(settings.LLM_MODEL).toBe("openai/gpt-4o");
   });
 
-  it("should preserve Anthropic model case", () => {
+  it("should preserve anthropic model case", () => {
     const formData = new FormData();
-    formData.set("llm-provider-input", "Anthropic");
+    formData.set("llm-provider-input", "anthropic");
     formData.set("llm-model-input", "claude-sonnet-4-20250514");
     formData.set("agent", "CodeActAgent");
     formData.set("language", "en");
 
     const settings = extractSettings(formData);
-    expect(settings.LLM_MODEL).toBe("Anthropic/claude-sonnet-4-20250514");
+    expect(settings.LLM_MODEL).toBe("anthropic/claude-sonnet-4-20250514");
   });
 
   it("should not automatically lowercase model names", () => {
