@@ -21,6 +21,7 @@ from openhands.events.observation.commands import (
     CmdOutputObservation,
 )
 from openhands.runtime.utils.bash_constants import TIMEOUT_MESSAGE_TEMPLATE
+from openhands.runtime.utils.windows_exceptions import DotNetMissingException
 from openhands.utils.shutdown_listener import should_continue
 
 try:
@@ -36,29 +37,15 @@ try:
         clr.AddReference('System')
         import System
     except Exception as clr_sys_ex:
-        error_msg = f"""
-ERROR: Failed to import .NET components.
-
-The .NET SDK is required for OpenHands CLI on Windows.
-Please install the .NET SDK by following the instructions at:
-https://docs.all-hands.dev/usage/windows-without-wsl
-
-Technical details: {str(clr_sys_ex)}
-"""
-        logger.error(error_msg)
-        raise RuntimeError(error_msg)
+        error_msg = "Failed to import .NET components."
+        details = str(clr_sys_ex)
+        logger.error(f"{error_msg} Details: {details}")
+        raise DotNetMissingException(error_msg, details)
 except Exception as coreclr_ex:
-    error_msg = f"""
-ERROR: Failed to load CoreCLR.
-
-The .NET SDK is required for OpenHands CLI on Windows.
-Please install the .NET SDK by following the instructions at:
-https://docs.all-hands.dev/usage/windows-without-wsl
-
-Technical details: {str(coreclr_ex)}
-"""
-    logger.error(error_msg)
-    raise RuntimeError(error_msg)
+    error_msg = "Failed to load CoreCLR."
+    details = str(coreclr_ex)
+    logger.error(f"{error_msg} Details: {details}")
+    raise DotNetMissingException(error_msg, details)
 
 # Attempt to load the PowerShell SDK assembly only if clr and System loaded
 ps_sdk_path = None
@@ -101,18 +88,10 @@ try:
         RunspaceState,
     )
 except Exception as e:
-    error_msg = f"""
-ERROR: Failed to load PowerShell SDK components.
-
-The .NET SDK is required for OpenHands CLI on Windows.
-Please install the .NET SDK by following the instructions at:
-https://docs.all-hands.dev/usage/windows-without-wsl
-
-Technical details: {str(e)}
-Path searched: {ps_sdk_path}
-"""
-    logger.error(error_msg)
-    raise RuntimeError(error_msg)
+    error_msg = "Failed to load PowerShell SDK components."
+    details = f"{str(e)} (Path searched: {ps_sdk_path})"
+    logger.error(f"{error_msg} Details: {details}")
+    raise DotNetMissingException(error_msg, details)
 
 
 class WindowsPowershellSession:
@@ -147,15 +126,9 @@ class WindowsPowershellSession:
 
         if PowerShell is None:  # Check if SDK loading failed during module import
             # Logged critical error during import, just raise here to prevent instantiation
-            error_msg = """
-ERROR: PowerShell SDK (System.Management.Automation.dll) could not be loaded.
-
-The .NET SDK is required for OpenHands CLI on Windows.
-Please install the .NET SDK by following the instructions at:
-https://docs.all-hands.dev/usage/windows-without-wsl
-"""
+            error_msg = "PowerShell SDK (System.Management.Automation.dll) could not be loaded."
             logger.error(error_msg)
-            raise RuntimeError(error_msg)
+            raise DotNetMissingException(error_msg)
 
         self.work_dir = os.path.abspath(work_dir)
         self.username = username

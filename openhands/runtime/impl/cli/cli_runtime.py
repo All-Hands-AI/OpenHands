@@ -60,12 +60,27 @@ _powershell_available = False
 if sys.platform == 'win32':
     try:
         from openhands.runtime.utils.windows_bash import WindowsPowershellSession
+        from openhands.runtime.utils.windows_exceptions import DotNetMissingException
 
         _powershell_available = True
-    except ImportError:
+    except ImportError as import_err:
         logger.warning(
             'Failed to import WindowsPowershellSession. PowerShell support will not be available on Windows.'
         )
+    except DotNetMissingException as dotnet_err:
+        # Print a user-friendly error message without stack trace
+        error_message = f"""
+ERROR: {dotnet_err.message}
+
+The .NET SDK is required for OpenHands CLI on Windows.
+Please install the .NET SDK by following the instructions at:
+https://docs.all-hands.dev/usage/windows-without-wsl
+"""
+        print(error_message, file=sys.stderr)
+        logger.error(f"DotNetMissingException: {dotnet_err.message}")
+        if hasattr(dotnet_err, 'details') and dotnet_err.details:
+            logger.debug(f"Details: {dotnet_err.details}")
+        _powershell_available = False
 
 
 class CLIRuntime(Runtime):
@@ -174,6 +189,21 @@ class CLIRuntime(Runtime):
                     max_memory_mb=None,
                 )
                 logger.info('PowerShell session initialized successfully.')
+            except DotNetMissingException as dotnet_err:
+                # Print a user-friendly error message without stack trace
+                error_message = f"""
+ERROR: {dotnet_err.message}
+
+The .NET SDK is required for OpenHands CLI on Windows.
+Please install the .NET SDK by following the instructions at:
+https://docs.all-hands.dev/usage/windows-without-wsl
+"""
+                print(error_message, file=sys.stderr)
+                logger.error(f"DotNetMissingException: {dotnet_err.message}")
+                if hasattr(dotnet_err, 'details') and dotnet_err.details:
+                    logger.debug(f"Details: {dotnet_err.details}")
+                logger.warning('Falling back to subprocess for command execution.')
+                self._powershell_session = None
             except Exception as e:
                 logger.error(f'Failed to initialize PowerShell session: {e}')
                 logger.warning('Falling back to subprocess for command execution.')
@@ -319,6 +349,21 @@ class CLIRuntime(Runtime):
                 # This covers ErrorObservation and any other unexpected types
                 return result
 
+        except DotNetMissingException as dotnet_err:
+            error_message = f"""
+ERROR: {dotnet_err.message}
+
+The .NET SDK is required for OpenHands CLI on Windows.
+Please install the .NET SDK by following the instructions at:
+https://docs.all-hands.dev/usage/windows-without-wsl
+"""
+            logger.error(f"DotNetMissingException: {dotnet_err.message}")
+            if hasattr(dotnet_err, 'details') and dotnet_err.details:
+                logger.debug(f"Details: {dotnet_err.details}")
+            return ErrorObservation(
+                content=error_message,
+                error_id='DOTNET_MISSING_ERROR',
+            )
         except Exception as e:
             logger.error(f'Error executing PowerShell command "{command}": {e}')
             return ErrorObservation(
