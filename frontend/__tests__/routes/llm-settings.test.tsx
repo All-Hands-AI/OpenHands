@@ -59,7 +59,7 @@ describe("Content", () => {
       const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
-        llm_model: "openai/gpt-4o",
+        llm_model: "OpenAI/gpt-4o",
         llm_api_key_set: true,
       });
 
@@ -135,7 +135,7 @@ describe("Content", () => {
       );
       const condensor = screen.getByTestId("enable-memory-condenser-switch");
 
-      expect(model).toHaveValue("anthropic/claude-sonnet-4-20250514");
+      expect(model).toHaveValue("Anthropic/claude-sonnet-4-20250514");
       expect(baseUrl).toHaveValue("");
       expect(apiKey).toHaveValue("");
       expect(apiKey).toHaveProperty("placeholder", "");
@@ -171,7 +171,7 @@ describe("Content", () => {
       const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
-        llm_model: "openai/gpt-4o",
+        llm_model: "OpenAI/gpt-4o",
         llm_base_url: "https://api.openai.com/v1/chat/completions",
         llm_api_key_set: true,
         agent: "CoActAgent",
@@ -194,7 +194,7 @@ describe("Content", () => {
       const securityAnalyzer = screen.getByTestId("security-analyzer-input");
 
       await waitFor(() => {
-        expect(model).toHaveValue("openai/gpt-4o");
+        expect(model).toHaveValue("OpenAI/gpt-4o");
         expect(baseUrl).toHaveValue(
           "https://api.openai.com/v1/chat/completions",
         );
@@ -242,7 +242,7 @@ describe("Form submission", () => {
 
     expect(saveSettingsSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        llm_model: "openai/gpt-4o",
+        llm_model: "OpenAI/gpt-4o",
         llm_api_key: "test-api-key",
       }),
     );
@@ -266,8 +266,8 @@ describe("Form submission", () => {
 
     // enter custom model
     await userEvent.clear(model);
-    await userEvent.type(model, "openai/gpt-4o");
-    expect(model).toHaveValue("openai/gpt-4o");
+    await userEvent.type(model, "OpenAI/gpt-4o");
+    expect(model).toHaveValue("OpenAI/gpt-4o");
 
     // enter base url
     await userEvent.type(baseUrl, "https://api.openai.com/v1/chat/completions");
@@ -301,7 +301,7 @@ describe("Form submission", () => {
 
     expect(saveSettingsSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        llm_model: "openai/gpt-4o",
+        llm_model: "OpenAI/gpt-4o",
         llm_base_url: "https://api.openai.com/v1/chat/completions",
         agent: "CoActAgent",
         confirmation_mode: true,
@@ -315,7 +315,7 @@ describe("Form submission", () => {
     const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
-      llm_model: "openai/gpt-4o",
+      llm_model: "OpenAI/gpt-4o",
       llm_api_key_set: true,
     });
 
@@ -358,7 +358,7 @@ describe("Form submission", () => {
     const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
-      llm_model: "openai/gpt-4o",
+      llm_model: "OpenAI/gpt-4o",
       llm_base_url: "https://api.openai.com/v1/chat/completions",
       llm_api_key_set: true,
       confirmation_mode: true,
@@ -380,7 +380,7 @@ describe("Form submission", () => {
 
     // enter custom model
     await userEvent.type(model, "-mini");
-    expect(model).toHaveValue("openai/gpt-4o-mini");
+    expect(model).toHaveValue("OpenAI/gpt-4o-mini");
     expect(submitButton).not.toBeDisabled();
 
     // reset model
@@ -388,8 +388,8 @@ describe("Form submission", () => {
     expect(model).toHaveValue("");
     expect(submitButton).toBeDisabled();
 
-    await userEvent.type(model, "openai/gpt-4o");
-    expect(model).toHaveValue("openai/gpt-4o");
+    await userEvent.type(model, "OpenAI/gpt-4o");
+    expect(model).toHaveValue("OpenAI/gpt-4o");
     expect(submitButton).toBeDisabled();
 
     // enter base url
@@ -481,7 +481,7 @@ describe("Form submission", () => {
 
     // dirty the advanced form
     const model = screen.getByTestId("llm-custom-model-input");
-    await userEvent.type(model, "openai/gpt-4o");
+    await userEvent.type(model, "OpenAI/gpt-4o");
     expect(submitButton).not.toBeDisabled();
 
     await userEvent.click(advancedSwitch);
@@ -520,7 +520,7 @@ describe("Form submission", () => {
     const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
-      llm_model: "openai/gpt-4o",
+      llm_model: "OpenAI/gpt-4o",
       llm_base_url: "https://api.openai.com/v1/chat/completions",
       llm_api_key_set: true,
       confirmation_mode: true,
@@ -550,7 +550,7 @@ describe("Form submission", () => {
 
     expect(saveSettingsSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        llm_model: "anthropic/claude-sonnet-4-20250514",
+        llm_model: "Anthropic/claude-sonnet-4-20250514",
         llm_base_url: "",
         confirmation_mode: false,
       }),
