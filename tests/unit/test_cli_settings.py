@@ -249,7 +249,7 @@ class TestModifyLLMSettingsBasic:
         'openhands.cli.settings.LLMSummarizingCondenserConfig',
         MockLLMSummarizingCondenserConfig,
     )
-    async def test_modify_llm_settings_basic_invalid_input(
+    async def test_modify_llm_settings_basic_invalid_provider_input(
         self,
         mock_print,
         mock_confirm,
@@ -270,8 +270,7 @@ class TestModifyLLMSettingsBasic:
             side_effect=[
                 'invalid-provider',  # First invalid provider
                 'openai',  # Valid provider
-                'invalid-model',  # Invalid model
-                'gpt-4',  # Valid model
+                'custom-model',  # Custom model (now allowed with warning)
                 'new-api-key',  # API key
             ]
         )
@@ -284,34 +283,102 @@ class TestModifyLLMSettingsBasic:
         # Call the function
         await modify_llm_settings_basic(app_config, settings_store)
 
-        # Verify error messages were shown for invalid inputs
-        assert (
-            mock_print.call_count >= 2
-        )  # At least two error messages should be printed
+        # Verify error message was shown for invalid provider and warning for custom model
+        assert mock_print.call_count >= 2  # At least two messages should be printed
 
-        # Check for invalid provider error
+        # Check for invalid provider error and custom model warning
         provider_error_found = False
-        model_error_found = False
+        model_warning_found = False
 
         for call in mock_print.call_args_list:
             args, _ = call
             if args and isinstance(args[0], HTML):
                 if 'Invalid provider selected' in args[0].value:
                     provider_error_found = True
-                if 'Invalid model selected' in args[0].value:
-                    model_error_found = True
+                if 'Warning:' in args[0].value and 'custom-model' in args[0].value:
+                    model_warning_found = True
 
         assert provider_error_found, 'No error message for invalid provider'
-        assert model_error_found, 'No error message for invalid model'
+        assert model_warning_found, 'No warning message for custom model'
 
-        # Verify LLM config was updated with correct values
+        # Verify LLM config was updated with the custom model
         app_config.set_llm_config.assert_called_once()
 
-        # Verify settings were saved
+        # Verify settings were saved with the custom model
         settings_store.store.assert_called_once()
         args, kwargs = settings_store.store.call_args
         settings = args[0]
-        assert settings.llm_model == 'openai/gpt-4'
+        assert settings.llm_model == 'openai/custom-model'
+        assert settings.llm_api_key.get_secret_value() == 'new-api-key'
+        assert settings.llm_base_url is None
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.settings.get_supported_llm_models')
+    @patch('openhands.cli.settings.organize_models_and_providers')
+    @patch('openhands.cli.settings.PromptSession')
+    @patch('openhands.cli.settings.cli_confirm')
+    @patch('openhands.cli.settings.print_formatted_text')
+    @patch(
+        'openhands.cli.settings.LLMSummarizingCondenserConfig',
+        MockLLMSummarizingCondenserConfig,
+    )
+    async def test_modify_llm_settings_basic_custom_model_allowed(
+        self,
+        mock_print,
+        mock_confirm,
+        mock_session,
+        mock_organize,
+        mock_get_models,
+        app_config,
+        settings_store,
+    ):
+        """Test that custom model names not in the predefined list are now allowed."""
+        # Setup mocks
+        mock_get_models.return_value = ['openai/gpt-4', 'anthropic/claude-3-opus']
+        mock_organize.return_value = {
+            'openai': {'models': ['gpt-4', 'gpt-3.5-turbo'], 'separator': '/'}
+        }
+
+        session_instance = MagicMock()
+        session_instance.prompt_async = AsyncMock(
+            side_effect=[
+                'openai',  # Provider
+                'gpt-4o-custom',  # Custom model not in predefined list
+                'new-api-key',  # API key
+            ]
+        )
+        mock_session.return_value = session_instance
+
+        # Mock cli_confirm to select the second option (change provider/model) for the first two calls
+        # and then select the first option (save settings) for the last call
+        mock_confirm.side_effect = [1, 1, 0]
+
+        # Call the function
+        await modify_llm_settings_basic(app_config, settings_store)
+
+        # Verify that a warning was shown for the custom model
+        warning_found = False
+        for call in mock_print.call_args_list:
+            args, _ = call
+            if args and isinstance(args[0], HTML):
+                if 'Warning:' in args[0].value and 'gpt-4o-custom' in args[0].value:
+                    warning_found = True
+                    break
+
+        assert warning_found, 'No warning message shown for custom model'
+
+        # Verify LLM config was updated with the custom model
+        app_config.set_llm_config.assert_called_once()
+        args, kwargs = app_config.set_llm_config.call_args
+        assert args[0].model == 'openai/gpt-4o-custom'
+        assert args[0].api_key.get_secret_value() == 'new-api-key'
+        assert args[0].base_url is None
+
+        # Verify settings were saved with the custom model
+        settings_store.store.assert_called_once()
+        args, kwargs = settings_store.store.call_args
+        settings = args[0]
+        assert settings.llm_model == 'openai/gpt-4o-custom'
         assert settings.llm_api_key.get_secret_value() == 'new-api-key'
         assert settings.llm_base_url is None
 
