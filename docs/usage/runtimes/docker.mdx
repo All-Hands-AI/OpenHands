@@ -82,6 +82,24 @@ any files that are mounted into its workspace.
 The `-e SANDBOX_USER_ID=$(id -u)` is passed to the Docker command to ensure the sandbox user matches the host user’s
 permissions. This prevents the agent from creating root-owned files in the mounted workspace.
 
+## Docker Socket Permissions
+
+For OpenHands to manage Docker containers (e.g., when creating sandboxed environments or if you are developing OpenHands and running tests that involve Docker), the user executing the Docker commands (either directly or through OpenHands scripts) needs appropriate permissions to access the Docker daemon socket (typically located at `/var/run/docker.sock`).
+
+If you encounter `PermissionError: [Errno 13] Permission denied` when OpenHands tries to interact with Docker, it usually means the current user lacks these permissions.
+
+**Common Solutions:**
+
+*   **Add user to the `docker` group:**
+    ```bash
+    sudo usermod -aG docker $USER
+    ```
+    After running this command, you'll need to log out and log back in, or start a new shell session with `newgrp docker` for the changes to take effect. This is the most common method for granting Docker access without needing `sudo` for every Docker command.
+
+*   **Running Docker commands with `sudo`:** While possible, this is generally not recommended for regular use due to security implications. OpenHands scripts and internal operations typically assume non-root execution of Docker commands once permissions are correctly set up.
+
+Ensuring correct Docker socket permissions is crucial for the Docker Runtime to function as expected, especially when mounting volumes or when OpenHands needs to manage other containers.
+
 ## Hardened Docker Installation
 
 When deploying OpenHands in environments where security is a priority, you should consider implementing a hardened

@@ -238,8 +238,20 @@ test-frontend:
 	@echo "$(YELLOW)Running tests for frontend...$(RESET)"
 	@cd frontend && npm run test
 
+test-backend:
+	@echo "$(YELLOW)Running tests for backend...$(RESET)"
+	@poetry run pytest tests/
+
+test-e2e:
+	@echo "$(YELLOW)Running E2E tests for frontend...$(RESET)"
+	@cd frontend && npm run test:e2e
+
 test:
+	@echo "$(YELLOW)Running all unit tests (frontend and backend)...$(RESET)"
 	@$(MAKE) -s test-frontend
+	@$(MAKE) -s test-backend
+	@echo "$(GREEN)All unit tests completed.$(RESET)"
+	@echo "$(YELLOW)Note: For End-to-End tests, run 'make test-e2e'.$(RESET)"
 
 build-frontend:
 	@echo "$(YELLOW)Building frontend...$(RESET)"

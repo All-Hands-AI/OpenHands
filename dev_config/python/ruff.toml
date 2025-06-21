@@ -34,6 +34,10 @@ inline-quotes = "single"
 
 [format]
 quote-style = "single"
+# line-length is a top-level setting, not under [format] for ruff v0.11.8
 
 [lint.flake8-bugbear]
 extend-immutable-calls = ["Depends", "fastapi.Depends", "fastapi.params.Depends"]
+
+# line-length should be a global option if supported, or not present if E501 is ignored
+# and the formatter handles it by default. Given the ruff version, it's safer to remove.
