@@ -74,10 +74,16 @@ https://docs.all-hands.dev/usage/windows-without-wsl
 After installing .NET SDK, restart your terminal and try again.
 """
         print(friendly_message, file=sys.stderr)
-        logger.error(f"Windows runtime initialization failed: {type(err).__name__}: {str(err)}")
-        if isinstance(err, DotNetMissingError) and hasattr(err, 'details') and err.details:
-            logger.debug(f"Details: {err.details}")
-        
+        logger.error(
+            f'Windows runtime initialization failed: {type(err).__name__}: {str(err)}'
+        )
+        if (
+            isinstance(err, DotNetMissingError)
+            and hasattr(err, 'details')
+            and err.details
+        ):
+            logger.debug(f'Details: {err.details}')
+
         # Exit the program with an error code
         sys.exit(1)
 
@@ -171,12 +177,12 @@ class CLIRuntime(Runtime):
 
         # Initialize PowerShell session if on Windows
         if self._is_windows:
-           self._powershell_session = WindowsPowershellSession(
-               work_dir=self._workspace_path,
-               username=None,  # Use current user
-               no_change_timeout_seconds=30,
-               max_memory_mb=None,
-           )
+            self._powershell_session = WindowsPowershellSession(
+                work_dir=self._workspace_path,
+                username=None,  # Use current user
+                no_change_timeout_seconds=30,
+                max_memory_mb=None,
+            )
 
         if not self.attach_to_existing:
             await asyncio.to_thread(self.setup_initial_env)
@@ -310,7 +316,6 @@ class CLIRuntime(Runtime):
 
             # Execute the command using the PowerShell session
             return self._powershell_session.execute(ps_action)
-
 
         except Exception as e:
             logger.error(f'Error executing PowerShell command "{command}": {e}')

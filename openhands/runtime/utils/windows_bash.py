@@ -37,14 +37,14 @@ try:
         clr.AddReference('System')
         import System
     except Exception as clr_sys_ex:
-        error_msg = "Failed to import .NET components."
+        error_msg = 'Failed to import .NET components.'
         details = str(clr_sys_ex)
-        logger.error(f"{error_msg} Details: {details}")
+        logger.error(f'{error_msg} Details: {details}')
         raise DotNetMissingError(error_msg, details)
 except Exception as coreclr_ex:
-    error_msg = "Failed to load CoreCLR."
+    error_msg = 'Failed to load CoreCLR.'
     details = str(coreclr_ex)
-    logger.error(f"{error_msg} Details: {details}")
+    logger.error(f'{error_msg} Details: {details}')
     raise DotNetMissingError(error_msg, details)
 
 # Attempt to load the PowerShell SDK assembly only if clr and System loaded
@@ -88,9 +88,9 @@ try:
         RunspaceState,
     )
 except Exception as e:
-    error_msg = "Failed to load PowerShell SDK components."
-    details = f"{str(e)} (Path searched: {ps_sdk_path})"
-    logger.error(f"{error_msg} Details: {details}")
+    error_msg = 'Failed to load PowerShell SDK components.'
+    details = f'{str(e)} (Path searched: {ps_sdk_path})'
+    logger.error(f'{error_msg} Details: {details}')
     raise DotNetMissingError(error_msg, details)
 
 
@@ -126,7 +126,9 @@ class WindowsPowershellSession:
 
         if PowerShell is None:  # Check if SDK loading failed during module import
             # Logged critical error during import, just raise here to prevent instantiation
-            error_msg = "PowerShell SDK (System.Management.Automation.dll) could not be loaded."
+            error_msg = (
+                'PowerShell SDK (System.Management.Automation.dll) could not be loaded.'
+            )
             logger.error(error_msg)
             raise DotNetMissingError(error_msg)
 
