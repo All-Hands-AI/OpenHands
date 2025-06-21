@@ -1,7 +1,9 @@
 import { Settings } from "#/types/settings";
+import { unmapProvider } from "#/utils/map-provider";
 
 const extractBasicFormData = (formData: FormData) => {
-  const provider = formData.get("llm-provider-input")?.toString();
+  const providerDisplay = formData.get("llm-provider-input")?.toString();
+  const provider = providerDisplay ? unmapProvider(providerDisplay) : undefined;
   const model = formData.get("llm-model-input")?.toString();
 
   const LLM_MODEL = `${provider}/${model}`;

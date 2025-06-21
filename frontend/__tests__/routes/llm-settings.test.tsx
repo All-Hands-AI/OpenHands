@@ -59,7 +59,7 @@ describe("Content", () => {
       const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
-        llm_model: "gpt-4o",
+        llm_model: "openai/gpt-4o",
         llm_api_key_set: true,
       });
 
@@ -224,25 +224,25 @@ describe("Form submission", () => {
 
     // select provider
     await userEvent.click(provider);
-    const providerOption = screen.getByText("Anthropic");
+    const providerOption = screen.getByText("OpenAI");
     await userEvent.click(providerOption);
-    expect(provider).toHaveValue("Anthropic");
+    expect(provider).toHaveValue("OpenAI");
 
     // enter api key
     await userEvent.type(apiKey, "test-api-key");
 
     // select model
     await userEvent.click(model);
-    const modelOption = screen.getByText("claude-3.5");
+    const modelOption = screen.getByText("gpt-4o");
     await userEvent.click(modelOption);
-    expect(model).toHaveValue("claude-3.5");
+    expect(model).toHaveValue("gpt-4o");
 
     const submitButton = screen.getByTestId("submit-button");
     await userEvent.click(submitButton);
 
     expect(saveSettingsSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        llm_model: "Anthropic/claude-3.5",
+        llm_model: "openai/gpt-4o",
         llm_api_key: "test-api-key",
       }),
     );
@@ -315,7 +315,7 @@ describe("Form submission", () => {
     const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
-      llm_model: "gpt-4o-mini",
+      llm_model: "openai/gpt-4o",
       llm_api_key_set: true,
     });
 
@@ -329,18 +329,18 @@ describe("Form submission", () => {
     const model = screen.getByTestId("llm-model-input");
     const apiKey = screen.getByTestId("llm-api-key-input");
 
-    // select different model
+    // select model
     await userEvent.click(model);
-    const modelOption = screen.getByText("gpt-4o");
+    const modelOption = screen.getByText("gpt-4o-mini");
     await userEvent.click(modelOption);
-    expect(model).toHaveValue("gpt-4o");
+    expect(model).toHaveValue("gpt-4o-mini");
     expect(submitButton).not.toBeDisabled();
 
-    // reset model back to original
+    // reset model
     await userEvent.click(model);
-    const modelOption2 = screen.getByText("gpt-4o-mini");
+    const modelOption2 = screen.getByText("gpt-4o");
     await userEvent.click(modelOption2);
-    expect(model).toHaveValue("gpt-4o-mini");
+    expect(model).toHaveValue("gpt-4o");
     expect(submitButton).toBeDisabled();
 
     // set api key
@@ -550,7 +550,7 @@ describe("Form submission", () => {
 
     expect(saveSettingsSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        llm_model: "Anthropic/claude-sonnet-4-20250514",
+        llm_model: "anthropic/claude-sonnet-4-20250514",
         llm_base_url: "",
         confirmation_mode: false,
       }),

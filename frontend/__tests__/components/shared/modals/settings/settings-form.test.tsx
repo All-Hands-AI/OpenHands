@@ -33,7 +33,7 @@ describe("SettingsForm", () => {
 
     expect(saveSettingsSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        llm_model: "Anthropic/claude-sonnet-4-20250514",
+        llm_model: DEFAULT_SETTINGS.LLM_MODEL,
       }),
     );
   });
