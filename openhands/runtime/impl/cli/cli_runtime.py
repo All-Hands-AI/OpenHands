@@ -73,14 +73,20 @@ if sys.platform == 'win32':
 ERROR: {dotnet_err.message}
 
 The .NET SDK is required for OpenHands CLI on Windows.
+PowerShell integration cannot function without .NET Core.
+
 Please install the .NET SDK by following the instructions at:
 https://docs.all-hands.dev/usage/windows-without-wsl
+
+After installing .NET SDK, restart your terminal and try again.
 """
         print(error_message, file=sys.stderr)
         logger.error(f"DotNetMissingException: {dotnet_err.message}")
         if hasattr(dotnet_err, 'details') and dotnet_err.details:
             logger.debug(f"Details: {dotnet_err.details}")
-        _powershell_available = False
+        
+        # Exit the program with an error code
+        sys.exit(1)
 
 
 class CLIRuntime(Runtime):
@@ -195,15 +201,20 @@ class CLIRuntime(Runtime):
 ERROR: {dotnet_err.message}
 
 The .NET SDK is required for OpenHands CLI on Windows.
+PowerShell integration cannot function without .NET Core.
+
 Please install the .NET SDK by following the instructions at:
 https://docs.all-hands.dev/usage/windows-without-wsl
+
+After installing .NET SDK, restart your terminal and try again.
 """
                 print(error_message, file=sys.stderr)
                 logger.error(f"DotNetMissingException: {dotnet_err.message}")
                 if hasattr(dotnet_err, 'details') and dotnet_err.details:
                     logger.debug(f"Details: {dotnet_err.details}")
-                logger.warning('Falling back to subprocess for command execution.')
-                self._powershell_session = None
+                
+                # Exit the program with an error code
+                sys.exit(1)
             except Exception as e:
                 logger.error(f'Failed to initialize PowerShell session: {e}')
                 logger.warning('Falling back to subprocess for command execution.')
@@ -354,16 +365,20 @@ https://docs.all-hands.dev/usage/windows-without-wsl
 ERROR: {dotnet_err.message}
 
 The .NET SDK is required for OpenHands CLI on Windows.
+PowerShell integration cannot function without .NET Core.
+
 Please install the .NET SDK by following the instructions at:
 https://docs.all-hands.dev/usage/windows-without-wsl
+
+After installing .NET SDK, restart your terminal and try again.
 """
+            print(error_message, file=sys.stderr)
             logger.error(f"DotNetMissingException: {dotnet_err.message}")
             if hasattr(dotnet_err, 'details') and dotnet_err.details:
                 logger.debug(f"Details: {dotnet_err.details}")
-            return ErrorObservation(
-                content=error_message,
-                error_id='DOTNET_MISSING_ERROR',
-            )
+            
+            # Exit the program with an error code
+            sys.exit(1)
         except Exception as e:
             logger.error(f'Error executing PowerShell command "{command}": {e}')
             return ErrorObservation(
