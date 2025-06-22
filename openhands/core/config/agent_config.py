@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field, ValidationError
 from openhands.core.config.condenser_config import CondenserConfig, NoOpCondenserConfig
 from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.logger import openhands_logger as logger
+from openhands.utils.import_utils import get_impl
 
 
 class AgentConfig(BaseModel):
@@ -98,7 +99,27 @@ class AgentConfig(BaseModel):
             try:
                 # Merge base config with overrides
                 merged = {**base_config.model_dump(), **overrides}
-                custom_config = cls.model_validate(merged)
+                if merged.get('classpath'):
+                    # if an explicit classpath is given, try to load it and look up its config model class
+                    from openhands.controller.agent import Agent
+
+                    try:
+                        agent_cls = get_impl(Agent, merged.get('classpath'))
+                        custom_config = agent_cls.config_model.model_validate(merged)
+                    except Exception as e:
+                        logger.warning(
+                            f"Failed to load custom agent class [{merged.get('classpath')}]: {e}. Using default config model."
+                        )
+                        custom_config = cls.model_validate(merged)
+                else:
+                    # otherwise, try to look up the agent class by name (i.e. if it's a built-in)
+                    # if that fails, just use the default AgentConfig class.
+                    try:
+                        agent_cls = Agent.get_cls(name)
+                        custom_config = agent_cls.config_model.model_validate(merged)
+                    except Exception as e:
+                        # otherwise, just fall back to the default config model
+                        custom_config = cls.model_validate(merged)
                 agent_mapping[name] = custom_config
             except ValidationError as e:
                 logger.warning(
