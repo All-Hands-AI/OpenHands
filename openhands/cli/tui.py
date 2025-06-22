@@ -522,7 +522,7 @@ class CommandCompleter(Completer):
 
 def create_prompt_session(config: OpenHandsConfig) -> PromptSession[str]:
     """Creates a prompt session with VI mode enabled if specified in the config."""
-    return PromptSession(style=DEFAULT_STYLE, vi_mode=config.vi_mode)
+    return PromptSession(style=DEFAULT_STYLE, vi_mode=config.cli.vi_mode)
 
 
 async def read_prompt_input(
@@ -638,7 +638,7 @@ def cli_confirm(
     def _handle_up(event: KeyPressEvent) -> None:
         selected[0] = (selected[0] - 1) % len(choices)
 
-    if config.vi_mode:
+    if config.cli.vi_mode:
 
         @kb.add('k')
         def _handle_k(event: KeyPressEvent) -> None:
@@ -648,7 +648,7 @@ def cli_confirm(
     def _handle_down(event: KeyPressEvent) -> None:
         selected[0] = (selected[0] + 1) % len(choices)
 
-    if config.vi_mode:
+    if config.cli.vi_mode:
 
         @kb.add('j')
         def _handle_j(event: KeyPressEvent) -> None:
