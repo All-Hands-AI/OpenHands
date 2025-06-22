@@ -109,6 +109,10 @@ class OpenHandsConfig(BaseModel):
     mcp_host: str = Field(default=f'localhost:{os.getenv("port", 3000)}')
     mcp: MCPConfig = Field(default_factory=MCPConfig)
     kubernetes: KubernetesConfig = Field(default_factory=KubernetesConfig)
+    vi_mode: bool = Field(
+        default=os.environ.get('OPENHANDS_VI_MODE', 'false').lower()
+        in ('true', '1', 't')
+    )
 
     defaults_dict: ClassVar[dict] = {}
 

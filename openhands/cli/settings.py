@@ -135,9 +135,10 @@ async def get_validated_input(
     return value
 
 
-def save_settings_confirmation() -> bool:
+def save_settings_confirmation(config: OpenHandsConfig) -> bool:
     return (
         cli_confirm(
+            config,
             '\nSave new settings? (They will take effect after restart)',
             ['Yes, save', 'No, discard'],
         )
@@ -173,6 +174,7 @@ async def modify_llm_settings_basic(
         # Show verified providers plus "Select another provider" option
         provider_choices = verified_providers + ['Select another provider']
         provider_choice = cli_confirm(
+            config,
             '(Step 1/3) Select LLM Provider:',
             provider_choices,
         )
@@ -255,6 +257,7 @@ async def modify_llm_settings_basic(
         )
         change_model = (
             cli_confirm(
+                config,
                 'Do you want to use a different model?',
                 [f'Use {default_model}', 'Select another model'],
             )
@@ -302,7 +305,7 @@ async def modify_llm_settings_basic(
     # The try-except block above ensures we either have valid inputs or we've already returned
     # No need to check for None values here
 
-    save_settings = save_settings_confirmation()
+    save_settings = save_settings_confirmation(config)
 
     if not save_settings:
         return
@@ -377,6 +380,7 @@ async def modify_llm_settings_advanced(
 
         enable_confirmation_mode = (
             cli_confirm(
+                config,
                 question='(Step 5/6) Confirmation Mode (CTRL-c to cancel):',
                 choices=['Enable', 'Disable'],
             )
@@ -385,6 +389,7 @@ async def modify_llm_settings_advanced(
 
         enable_memory_condensation = (
             cli_confirm(
+                config,
                 question='(Step 6/6) Memory Condensation (CTRL-c to cancel):',
                 choices=['Enable', 'Disable'],
             )
@@ -401,7 +406,7 @@ async def modify_llm_settings_advanced(
     # The try-except block above ensures we either have valid inputs or we've already returned
     # No need to check for None values here
 
-    save_settings = save_settings_confirmation()
+    save_settings = save_settings_confirmation(config)
 
     if not save_settings:
         return
