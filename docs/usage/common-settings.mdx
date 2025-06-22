@@ -1,0 +1,52 @@
+---
+title: OpenHands Settings
+description: Overview of some of the settings available in OpenHands.
+---
+
+## Openhands Cloud vs Running on Your Own
+
+There are some differences between the settings available in OpenHands Cloud and those available when running OpenHands
+on your own:
+* [OpenHands Cloud settings](/usage/cloud/cloud-ui#settings)
+* [Settings available when running on your own](/usage/how-to/gui-mode#settings)
+
+Refer to these pages for more detailed information.
+
+## Secrets Management
+
+OpenHands provides a secrets manager that allows you to securely store and manage sensitive information that can be
+accessed by the agent during runtime, such as API keys. These secrets are automatically exported as environment
+variables in the agent's runtime environment.
+
+### Accessing the Secrets Manager
+
+In the Settings page, navigate to the `Secrets` tab. Here, you'll see a list of all your existing custom secrets.
+
+### Adding a New Secret
+1. Click `Add a new secret`.
+2. Fill in the following fields:
+   - **Name**: A unique identifier for your secret (e.g., `AWS_ACCESS_KEY`). This will be the environment variable name.
+   - **Value**: The sensitive information you want to store.
+   - **Description** (optional): A brief description of what the secret is used for, which is also provided to the agent.
+3. Click `Add secret` to save.
+
+### Editing a Secret
+
+1. Click the `Edit` button next to the secret you want to modify.
+2. You can update the name and description of the secret.
+<Note>
+  For security reasons, you cannot view or edit the value of an existing secret. If you need to change the
+  value, delete the secret and create a new one.
+</Note>
+
+### Deleting a Secret
+
+1. Click the `Delete` button next to the secret you want to remove.
+2. Select `Confirm` to delete the secret.
+
+### Using Secrets in the Agent
+ - All custom secrets are automatically exported as environment variables in the agent's runtime environment.
+ - You can access them in your code using standard environment variable access methods
+   (e.g., `os.environ['SECRET_NAME']` in Python).
+ - Example: If you create a secret named `OPENAI_API_KEY`, you can access it in your code as
+   `process.env.OPENAI_API_KEY` in JavaScript or `os.environ['OPENAI_API_KEY']` in Python.
