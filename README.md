@@ -48,7 +48,7 @@ Learn more at [docs.all-hands.dev](https://docs.all-hands.dev), or [sign up for 
 
 ## ☁️ OpenHands Cloud
 The easiest way to get started with OpenHands is on [OpenHands Cloud](https://app.all-hands.dev),
-which comes with $50 in free credits for new users.
+which comes with $20 in free credits for new users.
 
 ## 💻 Running OpenHands Locally
 
