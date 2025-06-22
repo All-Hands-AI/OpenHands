@@ -415,3 +415,47 @@ type = "noop"
 # Configuration for the evaluation, please refer to the specific evaluation
 # plugin for the available options
 ##############################################################################
+
+
+########################### Kubernetes #######################################
+# Kubernetes configuration when using the Kubernetes runtime
+##############################################################################
+[kubernetes]
+# The Kubernetes namespace to use for OpenHands resources
+#namespace = "default"
+
+# Domain for ingress resources
+#ingress_domain = "localhost"
+
+# Size of the persistent volume claim
+#pvc_storage_size = "2Gi"
+
+# Storage class for persistent volume claims
+#pvc_storage_class = "standard"
+
+# CPU request for runtime pods
+#resource_cpu_request = "1"
+
+# Memory request for runtime pods
+#resource_memory_request = "1Gi"
+
+# Memory limit for runtime pods
+#resource_memory_limit = "2Gi"
+
+# Optional name of image pull secret for private registries
+#image_pull_secret = ""
+
+# Optional name of TLS secret for ingress
+#ingress_tls_secret = ""
+
+# Optional node selector key for pod scheduling
+#node_selector_key = ""
+
+# Optional node selector value for pod scheduling
+#node_selector_val = ""
+
+# Optional YAML string defining pod tolerations
+#tolerations_yaml = ""
+
+# Run the runtime sandbox container in privileged mode for use with docker-in-docker
+#privileged = false

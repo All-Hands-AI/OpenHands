@@ -26,6 +26,7 @@
           "usage/installation",
           "usage/getting-started",
           "usage/key-features",
+          "usage/faqs",
           {
             "group": "OpenHands Cloud",
             "pages": [
@@ -43,7 +44,7 @@
             ]
           },
           {
-            "group": "Running OpenHands on Your Own",
+            "group": "Run OpenHands on Your Own",
             "pages": [
               "usage/local-setup",
               "usage/how-to/gui-mode",
