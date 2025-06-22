@@ -10,6 +10,7 @@ import {
   isFinishAction,
   isRejectObservation,
   isMcpObservation,
+  isAgentStateChangeObservation,
 } from "#/types/core/guards";
 import { OpenHandsObservation } from "#/types/core/observations";
 import { ImageCarousel } from "../images/image-carousel";
@@ -22,6 +23,7 @@ import { GenericEventMessage } from "./generic-event-message";
 import { FileList } from "../files/file-list";
 import { parseMessageFromEvent } from "./event-content-helpers/parse-message-from-event";
 import { LikertScale } from "../feedback/likert-scale";
+import { AgentState } from "#/types/agent-state";
 
 import { useConfig } from "#/hooks/query/use-config";
 import { useFeedbackExists } from "#/hooks/query/use-feedback-exists";
@@ -29,6 +31,10 @@ import { useFeedbackExists } from "#/hooks/query/use-feedback-exists";
 const hasThoughtProperty = (
   obj: Record<string, unknown>,
 ): obj is { thought: string } => "thought" in obj && !!obj.thought;
+
+// Helper function to determine if we should show feedback for an agent state change
+const shouldShowFeedbackForAgentState = (state: string): boolean =>
+  state === AgentState.AWAITING_USER_INPUT || state === AgentState.ERROR;
 
 interface EventMessageProps {
   event: OpenHandsAction | OpenHandsObservation;
@@ -49,10 +55,21 @@ export function EventMessage({
   const { data: config } = useConfig();
 
   // Use our query hook to check if feedback exists and get rating/reason
+  let eventIdForFeedback: number | undefined;
+
+  if (isFinishAction(event)) {
+    eventIdForFeedback = event.id;
+  } else if (
+    isAgentStateChangeObservation(event) &&
+    shouldShowFeedbackForAgentState(event.args.agent_state)
+  ) {
+    eventIdForFeedback = event.id;
+  }
+
   const {
     data: feedbackData = { exists: false },
     isLoading: isCheckingFeedback,
-  } = useFeedbackExists(isFinishAction(event) ? event.id : undefined);
+  } = useFeedbackExists(eventIdForFeedback);
 
   if (isErrorObservation(event)) {
     return (
@@ -70,9 +87,18 @@ export function EventMessage({
     return null;
   }
 
-  const showLikertScale =
+  // Check if we should show the Likert scale for finish action
+  const showLikertScaleForFinish =
     config?.APP_MODE === "saas" &&
     isFinishAction(event) &&
+    isLastMessage &&
+    !isCheckingFeedback;
+
+  // Check if we should show the Likert scale for agent state change
+  const showLikertScaleForStateChange =
+    config?.APP_MODE === "saas" &&
+    isAgentStateChangeObservation(event) &&
+    shouldShowFeedbackForAgentState(event.args.agent_state) &&
     isLastMessage &&
     !isCheckingFeedback;
 
@@ -80,7 +106,7 @@ export function EventMessage({
     return (
       <>
         <ChatMessage type="agent" message={getEventContent(event).details} />
-        {showLikertScale && (
+        {showLikertScaleForFinish && (
           <LikertScale
             eventId={event.id}
             initiallySubmitted={feedbackData.exists}
@@ -120,6 +146,28 @@ export function EventMessage({
           details={<MCPObservationContent event={event} />}
           success={getObservationResult(event)}
         />
+        {shouldShowConfirmationButtons && <ConfirmationButtons />}
+      </div>
+    );
+  }
+
+  // Handle agent state change observation with feedback
+  if (isAgentStateChangeObservation(event)) {
+    return (
+      <div>
+        <GenericEventMessage
+          title={getEventContent(event).title}
+          details={getEventContent(event).details}
+          success={getObservationResult(event)}
+        />
+        {showLikertScaleForStateChange && (
+          <LikertScale
+            eventId={event.id}
+            initiallySubmitted={feedbackData.exists}
+            initialRating={feedbackData.rating}
+            initialReason={feedbackData.reason}
+          />
+        )}
         {shouldShowConfirmationButtons && <ConfirmationButtons />}
       </div>
     );
