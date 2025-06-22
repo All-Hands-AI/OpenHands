@@ -25,15 +25,19 @@ describe("EventMessage", () => {
     vi.clearAllMocks();
   });
 
-  it("should render LikertScale for finish action when it's the last message", () => {
+  it("should NOT render LikertScale for finish action when it's the last message", () => {
     const finishEvent = {
       id: 123,
-      source: "agent",
-      action: "finish",
+      source: "agent" as const,
+      action: "finish" as const,
       args: {
-        message: "Task completed successfully",
-        task_completed: "true",
+        final_thought: "Task completed successfully",
+        task_completed: "success" as const,
+        outputs: {},
+        thought: "Task completed successfully",
       },
+      message: "Task completed successfully",
+      timestamp: new Date().toISOString(),
     };
 
     renderWithProviders(
@@ -45,9 +49,9 @@ describe("EventMessage", () => {
       />
     );
 
-    // Check that the LikertScale component is rendered by looking for the star rating buttons
-    expect(screen.getByLabelText("Rate 1 stars")).toBeInTheDocument();
-    expect(screen.getByLabelText("Rate 5 stars")).toBeInTheDocument();
+    // Check that the LikertScale component is NOT rendered
+    expect(screen.queryByLabelText("Rate 1 stars")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Rate 5 stars")).not.toBeInTheDocument();
   });
 
   it("should render LikertScale for agent state change to AWAITING_USER_INPUT when it's the last message", () => {
@@ -55,12 +59,14 @@ describe("EventMessage", () => {
       id: 456,
       source: "agent",
       observation: "agent_state_changed",
-      args: {
+      content: "",
+      extras: {
         agent_state: AgentState.AWAITING_USER_INPUT,
         reason: "Waiting for user input",
       },
-      content: "",
-      extras: {},
+      message: "Waiting for user input",
+      timestamp: new Date().toISOString(),
+      cause: 123,
     };
 
     renderWithProviders(
@@ -82,12 +88,14 @@ describe("EventMessage", () => {
       id: 789,
       source: "agent",
       observation: "agent_state_changed",
-      args: {
+      content: "",
+      extras: {
         agent_state: AgentState.ERROR,
         reason: "An error occurred",
       },
-      content: "",
-      extras: {},
+      message: "An error occurred",
+      timestamp: new Date().toISOString(),
+      cause: 123,
     };
 
     renderWithProviders(
@@ -109,12 +117,14 @@ describe("EventMessage", () => {
       id: 101,
       source: "agent",
       observation: "agent_state_changed",
-      args: {
+      content: "",
+      extras: {
         agent_state: AgentState.RUNNING,
         reason: "Agent is running",
       },
-      content: "",
-      extras: {},
+      message: "Agent is running",
+      timestamp: new Date().toISOString(),
+      cause: 123,
     };
 
     renderWithProviders(

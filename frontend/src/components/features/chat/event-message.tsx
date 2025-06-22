@@ -57,11 +57,9 @@ export function EventMessage({
   // Use our query hook to check if feedback exists and get rating/reason
   let eventIdForFeedback: number | undefined;
 
-  if (isFinishAction(event)) {
-    eventIdForFeedback = event.id;
-  } else if (
+  if (
     isAgentStateChangeObservation(event) &&
-    shouldShowFeedbackForAgentState(event.args.agent_state)
+    shouldShowFeedbackForAgentState(event.extras.agent_state)
   ) {
     eventIdForFeedback = event.id;
   }
@@ -87,34 +85,19 @@ export function EventMessage({
     return null;
   }
 
-  // Check if we should show the Likert scale for finish action
-  const showLikertScaleForFinish =
-    config?.APP_MODE === "saas" &&
-    isFinishAction(event) &&
-    isLastMessage &&
-    !isCheckingFeedback;
+  // Removed the Likert scale for finish action
 
   // Check if we should show the Likert scale for agent state change
   const showLikertScaleForStateChange =
     config?.APP_MODE === "saas" &&
     isAgentStateChangeObservation(event) &&
-    shouldShowFeedbackForAgentState(event.args.agent_state) &&
+    shouldShowFeedbackForAgentState(event.extras.agent_state) &&
     isLastMessage &&
     !isCheckingFeedback;
 
   if (isFinishAction(event)) {
     return (
-      <>
-        <ChatMessage type="agent" message={getEventContent(event).details} />
-        {showLikertScaleForFinish && (
-          <LikertScale
-            eventId={event.id}
-            initiallySubmitted={feedbackData.exists}
-            initialRating={feedbackData.rating}
-            initialReason={feedbackData.reason}
-          />
-        )}
-      </>
+      <ChatMessage type="agent" message={getEventContent(event).details} />
     );
   }
 
