@@ -108,7 +108,7 @@ class AgentConfig(BaseModel):
                         custom_config = agent_cls.config_model.model_validate(merged)
                     except Exception as e:
                         logger.warning(
-                            f"Failed to load custom agent class [{merged.get('classpath')}]: {e}. Using default config model."
+                            f'Failed to load custom agent class [{merged.get("classpath")}]: {e}. Using default config model.'
                         )
                         custom_config = cls.model_validate(merged)
                 else:
@@ -117,7 +117,7 @@ class AgentConfig(BaseModel):
                     try:
                         agent_cls = Agent.get_cls(name)
                         custom_config = agent_cls.config_model.model_validate(merged)
-                    except Exception as e:
+                    except Exception:
                         # otherwise, just fall back to the default config model
                         custom_config = cls.model_validate(merged)
                 agent_mapping[name] = custom_config
