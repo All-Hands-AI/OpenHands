@@ -158,6 +158,7 @@ class MCPConfig(BaseModel):
             mcp_mapping['mcp'] = cls(
                 sse_servers=mcp_config.sse_servers,
                 stdio_servers=mcp_config.stdio_servers,
+                shttp_servers=mcp_config.shttp_servers,
             )
         except ValidationError as e:
             raise ValueError(f'Invalid MCP configuration: {e}')
