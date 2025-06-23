@@ -76,7 +76,12 @@ class IssueResolver:
             raise ValueError('Invalid repository format. Expected owner/repo')
         owner, repo = parts
 
-        token = args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
+        token = (
+            args.token
+            or os.getenv('GITHUB_TOKEN')
+            or os.getenv('GITLAB_TOKEN')
+            or os.getenv('BITBUCKET_TOKEN')
+        )
         username = args.username if args.username else os.getenv('GIT_USERNAME')
         if not username:
             raise ValueError('Username is required.')
@@ -120,7 +125,11 @@ class IssueResolver:
         base_domain = args.base_domain
         if base_domain is None:
             base_domain = (
-                'github.com' if platform == ProviderType.GITHUB else 'gitlab.com'
+                'github.com'
+                if platform == ProviderType.GITHUB
+                else 'gitlab.com'
+                if platform == ProviderType.GITLAB
+                else 'bitbucket.org'
             )
 
         self.output_dir = args.output_dir

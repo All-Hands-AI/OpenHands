@@ -9,6 +9,7 @@ from openhands.events.action import MessageAction
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.monitoring import MonitoringListener
+from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation import ServerConversation
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.settings import Settings
@@ -107,12 +108,27 @@ class ConversationManager(ABC):
         """Send data to an event stream."""
 
     @abstractmethod
+    async def send_event_to_conversation(self, sid: str, data: dict):
+        """Send an event to a conversation."""
+
+    @abstractmethod
     async def disconnect_from_session(self, connection_id: str):
         """Disconnect from a session."""
 
     @abstractmethod
     async def close_session(self, sid: str):
         """Close a session."""
+
+    @abstractmethod
+    def get_agent_session(self, sid: str) -> AgentSession | None:
+        """Get the agent session for a given session ID.
+
+        Args:
+            sid: The session ID.
+
+        Returns:
+            The agent session, or None if not found.
+        """
 
     @abstractmethod
     async def get_agent_loop_info(

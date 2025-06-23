@@ -483,7 +483,7 @@ def test_send_pull_request_with_reviewer(
         ),  # PR creation
     ]
 
-    # Mock request reviwers response
+    # Mock request reviewers response
     mock_put.side_effect = [
         MagicMock(status_code=200),  # Reviewer request
     ]

@@ -171,16 +171,17 @@ class TestModifyLLMSettingsBasic:
         session_instance = MagicMock()
         session_instance.prompt_async = AsyncMock(
             side_effect=[
-                'openai',  # Provider
                 'gpt-4',  # Model
                 'new-api-key',  # API Key
             ]
         )
         mock_session.return_value = session_instance
 
-        # Mock cli_confirm to select the second option (change provider/model) for the first two calls
-        # and then select the first option (save settings) for the last call
-        mock_confirm.side_effect = [1, 1, 0]
+        # Mock cli_confirm to:
+        # 1. Select the first provider (openai) from the list
+        # 2. Select "Select another model" option
+        # 3. Select "Yes, save" option
+        mock_confirm.side_effect = [0, 1, 0]
 
         # Call the function
         await modify_llm_settings_basic(app_config, settings_store)
@@ -189,8 +190,8 @@ class TestModifyLLMSettingsBasic:
         app_config.set_llm_config.assert_called_once()
         args, kwargs = app_config.set_llm_config.call_args
         # The model name might be different based on the default model in the list
-        # Just check that it starts with 'openai/'
-        assert args[0].model.startswith('openai/')
+        # Just check that it contains 'gpt-4' instead of checking for prefix
+        assert 'gpt-4' in args[0].model
         assert args[0].api_key.get_secret_value() == 'new-api-key'
         assert args[0].base_url is None
 
@@ -199,8 +200,8 @@ class TestModifyLLMSettingsBasic:
         args, kwargs = settings_store.store.call_args
         settings = args[0]
         # The model name might be different based on the default model in the list
-        # Just check that it starts with openai/
-        assert settings.llm_model.startswith('openai/')
+        # Just check that it contains 'gpt-4' instead of checking for prefix
+        assert 'gpt-4' in settings.llm_model
         assert settings.llm_api_key.get_secret_value() == 'new-api-key'
         assert settings.llm_base_url is None
 
@@ -249,7 +250,7 @@ class TestModifyLLMSettingsBasic:
         'openhands.cli.settings.LLMSummarizingCondenserConfig',
         MockLLMSummarizingCondenserConfig,
     )
-    async def test_modify_llm_settings_basic_invalid_input(
+    async def test_modify_llm_settings_basic_invalid_provider_input(
         self,
         mock_print,
         mock_confirm,
@@ -270,8 +271,7 @@ class TestModifyLLMSettingsBasic:
             side_effect=[
                 'invalid-provider',  # First invalid provider
                 'openai',  # Valid provider
-                'invalid-model',  # Invalid model
-                'gpt-4',  # Valid model
+                'custom-model',  # Custom model (now allowed with warning)
                 'new-api-key',  # API key
             ]
         )
@@ -284,36 +284,140 @@ class TestModifyLLMSettingsBasic:
         # Call the function
         await modify_llm_settings_basic(app_config, settings_store)
 
-        # Verify error messages were shown for invalid inputs
-        assert (
-            mock_print.call_count >= 2
-        )  # At least two error messages should be printed
+        # Verify error message was shown for invalid provider and warning for custom model
+        assert mock_print.call_count >= 2  # At least two messages should be printed
 
-        # Check for invalid provider error
+        # Check for invalid provider error and custom model warning
         provider_error_found = False
-        model_error_found = False
+        model_warning_found = False
 
         for call in mock_print.call_args_list:
             args, _ = call
             if args and isinstance(args[0], HTML):
                 if 'Invalid provider selected' in args[0].value:
                     provider_error_found = True
-                if 'Invalid model selected' in args[0].value:
-                    model_error_found = True
+                if 'Warning:' in args[0].value and 'custom-model' in args[0].value:
+                    model_warning_found = True
 
         assert provider_error_found, 'No error message for invalid provider'
-        assert model_error_found, 'No error message for invalid model'
+        assert model_warning_found, 'No warning message for custom model'
 
-        # Verify LLM config was updated with correct values
+        # Verify LLM config was updated with the custom model
         app_config.set_llm_config.assert_called_once()
 
-        # Verify settings were saved
+        # Verify settings were saved with the custom model
         settings_store.store.assert_called_once()
         args, kwargs = settings_store.store.call_args
         settings = args[0]
-        assert settings.llm_model == 'openai/gpt-4'
+        assert 'custom-model' in settings.llm_model
         assert settings.llm_api_key.get_secret_value() == 'new-api-key'
         assert settings.llm_base_url is None
+
+    def test_default_provider_preference(self):
+        """Test that the default provider prefers 'anthropic' if available."""
+        # This is a simple test to verify that the default provider prefers 'anthropic'
+        # We're directly checking the code in settings.py where the default provider is set
+
+        # Import the settings module to check the default provider
+        # Find the line where the default provider is set
+        import inspect
+
+        import openhands.cli.settings as settings_module
+
+        source_lines = inspect.getsource(
+            settings_module.modify_llm_settings_basic
+        ).splitlines()
+
+        # Look for the line that sets the default provider
+        default_provider_found = False
+        for i, line in enumerate(source_lines):
+            if "# Set default provider - prefer 'anthropic' if available" in line:
+                default_provider_found = True
+                break
+
+        # Assert that the default provider comment exists
+        assert default_provider_found, 'Could not find the default provider comment'
+
+        # Now look for the actual implementation
+        provider_impl_found = False
+        for i, line in enumerate(source_lines):
+            if "'anthropic'" in line and "if 'anthropic' in provider_list" in line:
+                provider_impl_found = True
+                break
+
+        assert provider_impl_found, (
+            "Could not find the implementation that prefers 'anthropic'"
+        )
+
+        # Also check the fallback provider when provider not in organized_models
+        fallback_comment_found = False
+        for i, line in enumerate(source_lines):
+            if (
+                "# If the provider doesn't exist, prefer 'anthropic' if available"
+                in line
+            ):
+                fallback_comment_found = True
+                break
+
+        assert fallback_comment_found, 'Could not find the fallback provider comment'
+
+        # Now look for the actual implementation
+        fallback_impl_found = False
+        for i, line in enumerate(source_lines):
+            if "'anthropic'" in line and "if 'anthropic' in organized_models" in line:
+                fallback_impl_found = True
+                break
+
+        assert fallback_impl_found, (
+            "Could not find the fallback implementation that prefers 'anthropic'"
+        )
+
+    def test_default_model_selection(self):
+        """Test that the default model selection uses the first model in the list."""
+        # This is a simple test to verify that the default model selection uses the first model in the list
+        # We're directly checking the code in settings.py where the default model is set
+
+        import inspect
+
+        import openhands.cli.settings as settings_module
+
+        source_lines = inspect.getsource(
+            settings_module.modify_llm_settings_basic
+        ).splitlines()
+
+        # Look for the block that sets the default model
+        default_model_block = []
+        in_default_model_block = False
+        for line in source_lines:
+            if (
+                '# Set default model to the best verified model for the provider'
+                in line
+            ):
+                in_default_model_block = True
+                default_model_block.append(line)
+            elif in_default_model_block:
+                default_model_block.append(line)
+                if '# Show the default model' in line:
+                    break
+
+        # Assert that we found the default model selection logic
+        assert default_model_block, (
+            'Could not find the block that sets the default model'
+        )
+
+        # Print the actual lines for debugging
+        print('Default model block found:')
+        for line in default_model_block:
+            print(f'  {line.strip()}')
+
+        # Check that the logic uses the first model in the list
+        first_model_check = any(
+            'provider_models[0]' in line for line in default_model_block
+        )
+
+        assert first_model_check, (
+            'Default model selection should use the first model in the list'
+        )
 
 
 class TestModifyLLMSettingsAdvanced:

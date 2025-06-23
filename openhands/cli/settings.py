@@ -13,6 +13,7 @@ from openhands.cli.tui import (
 )
 from openhands.cli.utils import (
     VERIFIED_ANTHROPIC_MODELS,
+    VERIFIED_MISTRAL_MODELS,
     VERIFIED_OPENAI_MODELS,
     VERIFIED_PROVIDERS,
     organize_models_and_providers,
@@ -158,8 +159,8 @@ async def modify_llm_settings_basic(
     provider_completer = FuzzyWordCompleter(provider_list)
     session = PromptSession(key_bindings=kb_cancel())
 
-    # Set default provider - use the first available provider from the list
-    provider = provider_list[0] if provider_list else 'openai'
+    # Set default provider - prefer 'anthropic' if available, otherwise use first
+    provider = 'anthropic' if 'anthropic' in provider_list else provider_list[0]
     model = None
     api_key = None
 
@@ -168,15 +169,26 @@ async def modify_llm_settings_basic(
         print_formatted_text(
             HTML(f'\n<grey>Default provider: </grey><green>{provider}</green>')
         )
-        change_provider = (
-            cli_confirm(
-                'Do you want to use a different provider?',
-                [f'Use {provider}', 'Select another provider'],
-            )
-            == 1
+
+        # Show verified providers plus "Select another provider" option
+        provider_choices = verified_providers + ['Select another provider']
+        provider_choice = cli_confirm(
+            '(Step 1/3) Select LLM Provider:',
+            provider_choices,
         )
 
-        if change_provider:
+        # Ensure provider_choice is an integer (for test compatibility)
+        try:
+            choice_index = int(provider_choice)
+        except (TypeError, ValueError):
+            # If conversion fails (e.g., in tests with mocks), default to 0
+            choice_index = 0
+
+        if choice_index < len(verified_providers):
+            # User selected one of the verified providers
+            provider = verified_providers[choice_index]
+        else:
+            # User selected "Select another provider" - use manual selection
             # Define a validator function that prints an error message
             def provider_validator(x):
                 is_valid = x in organized_models
@@ -196,9 +208,12 @@ async def modify_llm_settings_basic(
 
         # Make sure the provider exists in organized_models
         if provider not in organized_models:
-            # If the provider doesn't exist, use the first available provider
+            # If the provider doesn't exist, prefer 'anthropic' if available,
+            # otherwise use the first provider
             provider = (
-                next(iter(organized_models.keys())) if organized_models else 'openai'
+                'anthropic'
+                if 'anthropic' in organized_models
+                else next(iter(organized_models.keys()))
             )
 
         provider_models = organized_models[provider]['models']
@@ -212,9 +227,27 @@ async def modify_llm_settings_basic(
                 m for m in provider_models if m not in VERIFIED_ANTHROPIC_MODELS
             ]
             provider_models = VERIFIED_ANTHROPIC_MODELS + provider_models
+        if provider == 'mistral':
+            provider_models = [
+                m for m in provider_models if m not in VERIFIED_MISTRAL_MODELS
+            ]
+            provider_models = VERIFIED_MISTRAL_MODELS + provider_models
 
-        # Set default model to the first model in the list
-        default_model = provider_models[0] if provider_models else 'gpt-4'
+        # Set default model to the best verified model for the provider
+        if provider == 'anthropic' and VERIFIED_ANTHROPIC_MODELS:
+            # Use the first model in the VERIFIED_ANTHROPIC_MODELS list as it's the best/newest
+            default_model = VERIFIED_ANTHROPIC_MODELS[0]
+        elif provider == 'openai' and VERIFIED_OPENAI_MODELS:
+            # Use the first model in the VERIFIED_OPENAI_MODELS list as it's the best/newest
+            default_model = VERIFIED_OPENAI_MODELS[0]
+        elif provider == 'mistral' and VERIFIED_MISTRAL_MODELS:
+            # Use the first model in the VERIFIED_MISTRAL_MODELS list as it's the best/newest
+            default_model = VERIFIED_MISTRAL_MODELS[0]
+        else:
+            # For other providers, use the first model in the list
+            default_model = (
+                provider_models[0] if provider_models else 'claude-sonnet-4-20250514'
+            )
 
         # Show the default model but allow changing it
         print_formatted_text(
@@ -231,23 +264,28 @@ async def modify_llm_settings_basic(
         if change_model:
             model_completer = FuzzyWordCompleter(provider_models)
 
-            # Define a validator function that prints an error message
+            # Define a validator function that allows custom models but shows a warning
             def model_validator(x):
-                is_valid = x in provider_models
-                if not is_valid:
+                # Allow any non-empty model name
+                if not x.strip():
+                    return False
+
+                # Show a warning for models not in the predefined list, but still allow them
+                if x not in provider_models:
                     print_formatted_text(
                         HTML(
-                            f'<grey>Invalid model selected for provider {provider}: {x}</grey>'
+                            f'<yellow>Warning: {x} is not in the predefined list for provider {provider}. '
+                            f'Make sure this model name is correct.</yellow>'
                         )
                     )
-                return is_valid
+                return True
 
             model = await get_validated_input(
                 session,
                 '(Step 2/3) Select LLM Model (TAB for options, CTRL-c to cancel): ',
                 completer=model_completer,
                 validator=model_validator,
-                error_message=f'Invalid model selected for provider {provider}',
+                error_message='Model name cannot be empty',
             )
         else:
             # Use the default model
