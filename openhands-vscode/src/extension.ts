@@ -1,27 +1,50 @@
 import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as path from 'path';
 
-// Helper function to find or create a terminal and send a command
+// Helper function to create a new terminal and send a command
 function startOpenHandsInTerminal(options: { task?: string; filePath?: string }): void {
-  const terminalName = 'OpenHands';
-  let terminal = vscode.window.terminals.find((t: vscode.Terminal) => t.name === terminalName);
-
-  if (!terminal) {
-    terminal = vscode.window.createTerminal(terminalName);
-  }
+  // Always create a new terminal for starting OpenHands
+  const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
+  const terminalName = `OpenHands ${timestamp}`;
+  const terminal = vscode.window.createTerminal(terminalName);
   terminal.show(true); // true to preserve focus on the editor
 
-  let commandToSend = 'openhands';
+  // Try to detect and activate virtual environment first
+  const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+  let activationCommand = '';
+  
+  if (workspaceFolder) {
+    const venvPaths = ['.venv', 'venv', '.virtualenv'];
+    for (const venvPath of venvPaths) {
+      const venvFullPath = path.join(workspaceFolder.uri.fsPath, venvPath);
+      try {
+        // Check if virtual environment exists
+        if (fs.existsSync(venvFullPath)) {
+          // Activate the virtual environment
+          const isWindows = process.platform === 'win32';
+          const activateScript = isWindows ? 'Scripts\\activate' : 'bin/activate';
+          activationCommand = `source "${venvFullPath}/${activateScript}" && `;
+          break;
+        }
+      } catch (error) {
+        // Virtual environment doesn't exist, continue checking
+      }
+    }
+  }
+
+  let commandToSend = `${activationCommand}openhands`;
 
   if (options.filePath) {
     // Ensure filePath is properly quoted if it contains spaces or special characters
     const safeFilePath = options.filePath.includes(' ') ? `"${options.filePath}"` : options.filePath;
-    commandToSend = `openhands --file ${safeFilePath}`;
+    commandToSend = `${activationCommand}openhands --file ${safeFilePath}`;
   } else if (options.task) {
     // Sanitize task string for command line (basic sanitization)
     // Replace backticks and double quotes that might break the command
     // A more robust sanitization might be needed depending on expected task content
     const sanitizedTask = options.task.replace(/`/g, '\\`').replace(/"/g, '\\"');
-    commandToSend = `openhands --task "${sanitizedTask}"`;
+    commandToSend = `${activationCommand}openhands --task "${sanitizedTask}"`;
   }
 
   terminal.sendText(commandToSend, true); // true to execute the command (adds newline)
@@ -71,6 +94,17 @@ export function activate(context: vscode.ExtensionContext) {
     startOpenHandsInTerminal({ task: selectedText });
   });
   context.subscriptions.push(startWithSelectionContextDisposable);
+
+  // Command: Send Selected Text to Running OpenHands (placeholder for future implementation)
+  let sendToRunningOpenHandsDisposable = vscode.commands.registerCommand('openhands.sendSelectionToRunningOpenHands', () => {
+    vscode.window.showInformationMessage('OpenHands: Send to running instance feature coming soon!');
+    // TODO: Implement sending text to already running OpenHands CLI
+    // This would need to:
+    // 1. Find the terminal running OpenHands CLI
+    // 2. Send the selected text as input to that CLI
+    // 3. Handle the case where no OpenHands CLI is running
+  });
+  context.subscriptions.push(sendToRunningOpenHandsDisposable);
 }
 
 export function deactivate() {
