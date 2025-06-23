@@ -1,6 +1,5 @@
 import os
 import pathlib
-import shutil
 import subprocess
 
 # This script is intended to be run by Poetry during the build process.
@@ -14,13 +13,10 @@ VSIX_FILENAME = f'{EXTENSION_NAME}-{EXTENSION_VERSION}.vsix'
 # Paths
 ROOT_DIR = pathlib.Path(__file__).parent.resolve()
 VSCODE_EXTENSION_DIR = ROOT_DIR / 'openhands' / 'integrations' / 'vscode'
-RESOURCES_DIR = (
-    ROOT_DIR / 'openhands' / 'integrations' / 'vscode'
-)  # Target for the .vsix
 
 
 def build_vscode_extension():
-    """Builds the VS Code extension and copies the .vsix file."""
+    """Builds the VS Code extension."""
     print(f'--- Building VS Code extension in {VSCODE_EXTENSION_DIR} ---')
 
     # Ensure npm dependencies are installed
@@ -38,23 +34,15 @@ def build_vscode_extension():
         shell=os.name == 'nt',
     )
 
-    # Source path of the generated .vsix file
-    vsix_source_path = VSCODE_EXTENSION_DIR / VSIX_FILENAME
+    # Verify the generated .vsix file exists
+    vsix_path = VSCODE_EXTENSION_DIR / VSIX_FILENAME
 
-    if not vsix_source_path.exists():
+    if not vsix_path.exists():
         raise FileNotFoundError(
-            f'VS Code extension package not found after build: {vsix_source_path}'
+            f'VS Code extension package not found after build: {vsix_path}'
         )
 
-    # Ensure the target resources directory exists
-    RESOURCES_DIR.mkdir(parents=True, exist_ok=True)
-
-    # Destination path for the .vsix file
-    vsix_dest_path = RESOURCES_DIR / VSIX_FILENAME
-
-    print(f'--- Copying {vsix_source_path} to {vsix_dest_path} ---')
-    shutil.copy(vsix_source_path, vsix_dest_path)
-    print(f'--- Copied {VSIX_FILENAME} successfully ---')
+    print(f'--- VS Code extension built successfully: {vsix_path} ---')
 
 
 def build(setup_kwargs):
