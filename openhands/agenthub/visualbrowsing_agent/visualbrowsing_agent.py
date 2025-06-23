@@ -176,9 +176,9 @@ Note:
         self.reset()
 
     def reset(self) -> None:
-        """Resets the VisualBrowsingAgent."""
+        """Resets the VisualBrowsingAgent's internal state."""
         super().reset()
-        self.cost_accumulator = 0
+        # Reset agent-specific counters but not LLM metrics
         self.error_accumulator = 0
 
     def step(self, state: State) -> Action:
@@ -208,7 +208,9 @@ Note:
             # for visualwebarena, webarena and miniwob++ eval, we need to retrieve the initial observation already in browser env
             # initialize and retrieve the first observation by issuing an noop OP
             # For non-benchmark browsing, the browser env starts with a blank page, and the agent is expected to first navigate to desired websites
-            return BrowseInteractiveAction(browser_actions='noop(1000)')
+            return BrowseInteractiveAction(
+                browser_actions='noop(1000)', return_axtree=True
+            )
 
         for event in state.view:
             if isinstance(event, BrowseInteractiveAction):

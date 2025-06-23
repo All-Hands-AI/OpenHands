@@ -8,6 +8,10 @@ from enum import Enum
 from typing import Any
 
 import openhands
+from openhands.controller.state.control_flags import (
+    BudgetControlFlag,
+    IterationControlFlag,
+)
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import AgentState
 from openhands.events.action import (
@@ -20,7 +24,15 @@ from openhands.memory.view import View
 from openhands.storage.files import FileStore
 from openhands.storage.locations import get_conversation_agent_state_filename
 
+RESUMABLE_STATES = [
+    AgentState.RUNNING,
+    AgentState.PAUSED,
+    AgentState.AWAITING_USER_INPUT,
+    AgentState.FINISHED,
+]
 
+
+# NOTE: this is deprecated
 class TrafficControlState(str, Enum):
     # default state, no rate limiting
     NORMAL = 'normal'
@@ -30,14 +42,6 @@ class TrafficControlState(str, Enum):
 
     # traffic control is temporarily paused
     PAUSED = 'paused'
-
-
-RESUMABLE_STATES = [
-    AgentState.RUNNING,
-    AgentState.PAUSED,
-    AgentState.AWAITING_USER_INPUT,
-    AgentState.FINISHED,
-]
 
 
 @dataclass
@@ -75,34 +79,42 @@ class State:
     """
 
     session_id: str = ''
-    # global iteration for the current task
-    iteration: int = 0
-    # local iteration for the current subtask
-    local_iteration: int = 0
-    # max number of iterations for the current task
-    max_iterations: int = 100
+    iteration_flag: IterationControlFlag = field(
+        default_factory=lambda: IterationControlFlag(
+            limit_increase_amount=100, current_value=0, max_value=100
+        )
+    )
+    budget_flag: BudgetControlFlag | None = None
     confirmation_mode: bool = False
     history: list[Event] = field(default_factory=list)
     inputs: dict = field(default_factory=dict)
     outputs: dict = field(default_factory=dict)
     agent_state: AgentState = AgentState.LOADING
     resume_state: AgentState | None = None
-    traffic_control_state: TrafficControlState = TrafficControlState.NORMAL
     # global metrics for the current task
     metrics: Metrics = field(default_factory=Metrics)
-    # local metrics for the current subtask
-    local_metrics: Metrics = field(default_factory=Metrics)
     # root agent has level 0, and every delegate increases the level by one
     delegate_level: int = 0
     # start_id and end_id track the range of events in history
     start_id: int = -1
     end_id: int = -1
 
-    delegates: dict[tuple[int, int], tuple[str, str]] = field(default_factory=dict)
-    # NOTE: This will never be used by the controller, but it can be used by different
+    parent_metrics_snapshot: Metrics | None = None
+    parent_iteration: int = 100
+
+    # NOTE: this is used by the controller to track parent's metrics snapshot before delegation
     # evaluation tasks to store extra data needed to track the progress/state of the task.
     extra_data: dict[str, Any] = field(default_factory=dict)
     last_error: str = ''
+
+    # NOTE: deprecated args, kept here temporarily for backwards compatability
+    # Will be remove in 30 days
+    iteration: int | None = None
+    local_iteration: int | None = None
+    max_iterations: int | None = None
+    traffic_control_state: TrafficControlState | None = None
+    local_metrics: Metrics | None = None
+    delegates: dict[tuple[int, int], tuple[str, str]] | None = None
 
     def save_to_session(
         self, sid: str, file_store: FileStore, user_id: str | None
@@ -165,6 +177,10 @@ class State:
 
         # first state after restore
         state.agent_state = AgentState.LOADING
+
+        # We don't need to clean up deprecated fields here
+        # They will be handled by __getstate__ when the state is saved again
+
         return state
 
     def __getstate__(self) -> dict:
@@ -177,14 +193,51 @@ class State:
         state.pop('_history_checksum', None)
         state.pop('_view', None)
 
+        # Remove deprecated fields before pickling
+        state.pop('iteration', None)
+        state.pop('local_iteration', None)
+        state.pop('max_iterations', None)
+        state.pop('traffic_control_state', None)
+        state.pop('local_metrics', None)
+        state.pop('delegates', None)
+
         return state
 
     def __setstate__(self, state: dict) -> None:
+        # Check if we're restoring from an older version (before control flags)
+        is_old_version = 'iteration' in state
+
+        # Convert old iteration tracking to new iteration_flag if needed
+        if is_old_version:
+            # Create iteration_flag from old values
+            max_iterations = state.get('max_iterations', 100)
+            current_iteration = state.get('iteration', 0)
+
+            # Add the iteration_flag to the state
+            state['iteration_flag'] = IterationControlFlag(
+                limit_increase_amount=max_iterations,
+                current_value=current_iteration,
+                max_value=max_iterations,
+            )
+
+        # Update the state
         self.__dict__.update(state)
+
+        # We keep the deprecated fields for backward compatibility
+        # They will be removed by __getstate__ when the state is saved again
 
         # make sure we always have the attribute history
         if not hasattr(self, 'history'):
             self.history = []
+
+        # Ensure we have default values for new fields if they're missing
+        if not hasattr(self, 'iteration_flag'):
+            self.iteration_flag = IterationControlFlag(
+                limit_increase_amount=100, current_value=0, max_value=100
+            )
+
+        if not hasattr(self, 'budget_flag'):
+            self.budget_flag = None
 
     def get_current_user_intent(self) -> tuple[str | None, list[str] | None]:
         """Returns the latest user message and image(if provided) that appears after a FinishAction, or the first (the task) if nothing was finished yet."""
@@ -222,6 +275,17 @@ class State:
                 f'openhands_version:{openhands.__version__}',
             ],
         }
+
+    def get_local_step(self):
+        if not self.parent_iteration:
+            return self.iteration_flag.current_value
+
+        return self.iteration_flag.current_value - self.parent_iteration
+
+    def get_local_metrics(self):
+        if not self.parent_metrics_snapshot:
+            return self.metrics
+        return self.metrics.diff(self.parent_metrics_snapshot)
 
     @property
     def view(self) -> View:

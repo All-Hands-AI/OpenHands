@@ -10,8 +10,9 @@ services:
     environment:
       - BACKEND_HOST=${BACKEND_HOST:-"0.0.0.0"}
       - SANDBOX_API_HOSTNAME=host.docker.internal
+      - DOCKER_HOST_ADDR=host.docker.internal
       #
-      - SANDBOX_RUNTIME_CONTAINER_IMAGE=${SANDBOX_RUNTIME_CONTAINER_IMAGE:-ghcr.io/all-hands-ai/runtime:0.39-nikolaik}
+      - SANDBOX_RUNTIME_CONTAINER_IMAGE=${SANDBOX_RUNTIME_CONTAINER_IMAGE:-ghcr.io/all-hands-ai/runtime:0.45-nikolaik}
       - SANDBOX_USER_ID=${SANDBOX_USER_ID:-1234}
       - WORKSPACE_MOUNT_PATH=${WORKSPACE_BASE:-$PWD/workspace}
     ports:

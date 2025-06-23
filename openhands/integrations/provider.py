@@ -14,6 +14,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import Action
 from openhands.events.action.commands import CmdRunAction
 from openhands.events.stream import EventStream
+from openhands.integrations.bitbucket.bitbucket_service import BitbucketService
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.service_types import (
@@ -108,6 +109,7 @@ class ProviderHandler:
         self.service_class_map: dict[ProviderType, type[GitService]] = {
             ProviderType.GITHUB: GithubServiceImpl,
             ProviderType.GITLAB: GitLabServiceImpl,
+            ProviderType.BITBUCKET: BitbucketService,
         }
 
         self.external_auth_id = external_auth_id
@@ -130,6 +132,7 @@ class ProviderHandler:
             external_auth_token=self.external_auth_token,
             token=token.token,
             external_token_manager=self.external_token_manager,
+            base_domain=token.host,
         )
 
     async def get_user(self) -> User:
@@ -320,7 +323,7 @@ class ProviderHandler:
 
     async def verify_repo_provider(
         self, repository: str, specified_provider: ProviderType | None = None
-    ):
+    ) -> Repository:
         if specified_provider:
             try:
                 service = self._get_service(specified_provider)

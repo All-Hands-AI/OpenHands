@@ -6,6 +6,21 @@ import { renderWithProviders } from "test-utils";
 import OpenHands from "#/api/open-hands";
 import SettingsScreen from "#/routes/settings";
 import { PaymentForm } from "#/components/features/payment/payment-form";
+import * as useSettingsModule from "#/hooks/query/use-settings";
+
+// Mock the useSettings hook
+vi.mock("#/hooks/query/use-settings", async () => {
+  const actual = await vi.importActual<typeof import("#/hooks/query/use-settings")>("#/hooks/query/use-settings");
+  return {
+    ...actual,
+    useSettings: vi.fn().mockReturnValue({
+      data: {
+        EMAIL_VERIFIED: true, // Mock email as verified to prevent redirection
+      },
+      isLoading: false,
+    }),
+  };
+});
 
 // Mock the i18next hook
 vi.mock("react-i18next", async () => {
@@ -15,11 +30,12 @@ vi.mock("react-i18next", async () => {
     useTranslation: () => ({
       t: (key: string) => {
         const translations: Record<string, string> = {
-          "SETTINGS$NAV_GIT": "Git",
+          "SETTINGS$NAV_INTEGRATIONS": "Integrations",
           "SETTINGS$NAV_APPLICATION": "Application",
           "SETTINGS$NAV_CREDITS": "Credits",
           "SETTINGS$NAV_API_KEYS": "API Keys",
           "SETTINGS$NAV_LLM": "LLM",
+          "SETTINGS$NAV_USER": "User",
           "SETTINGS$TITLE": "Settings"
         };
         return translations[key] || key;
@@ -45,7 +61,11 @@ describe("Settings Billing", () => {
         },
         {
           Component: () => <div data-testid="git-settings-screen" />,
-          path: "/settings/git",
+          path: "/settings/integrations",
+        },
+        {
+          Component: () => <div data-testid="user-settings-screen" />,
+          path: "/settings/user",
         },
       ],
     },

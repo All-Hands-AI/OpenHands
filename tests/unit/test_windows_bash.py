@@ -12,6 +12,16 @@ from openhands.events.observation import ErrorObservation
 from openhands.events.observation.commands import (
     CmdOutputObservation,
 )
+from openhands.runtime.utils.bash_constants import TIMEOUT_MESSAGE_TEMPLATE
+
+
+def get_timeout_suffix(timeout_seconds):
+    """Helper function to generate the expected timeout suffix."""
+    return (
+        f'[The command timed out after {timeout_seconds} seconds. '
+        f'{TIMEOUT_MESSAGE_TEMPLATE}]'
+    )
+
 
 # Skip all tests in this module if not running on Windows
 pytestmark = pytest.mark.skipif(
@@ -168,10 +178,7 @@ def test_long_running_command(windows_bash_session):
     # Verify the initial output was captured
     assert 'Serving HTTP on' in result.content
     # Check for timeout specific metadata
-    assert (
-        "[The command timed out after 1.0 seconds. You may wait longer to see additional output by sending empty command '', send other commands to interact with the current process, or send keys to interrupt/kill the command.]"
-        in result.metadata.suffix
-    )
+    assert get_timeout_suffix(1.0) in result.metadata.suffix
     assert result.exit_code == -1
 
     # The action timed out, but the command should be still running

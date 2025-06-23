@@ -191,19 +191,24 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
         if isinstance(event, MessageAction):
             if event.source == EventSource.AGENT:
                 display_message(event.content)
+
         if isinstance(event, CmdRunAction):
-            display_command(event)
+            # Only display the command if it's not already confirmed
+            # Commands are always shown when AWAITING_CONFIRMATION, so we don't need to show them again when CONFIRMED
+            if event.confirmation_state != ActionConfirmationStatus.CONFIRMED:
+                display_command(event)
+
             if event.confirmation_state == ActionConfirmationStatus.CONFIRMED:
                 initialize_streaming_output()
-        if isinstance(event, CmdOutputObservation):
+        elif isinstance(event, CmdOutputObservation):
             display_command_output(event.content)
-        if isinstance(event, FileEditObservation):
+        elif isinstance(event, FileEditObservation):
             display_file_edit(event)
-        if isinstance(event, FileReadObservation):
+        elif isinstance(event, FileReadObservation):
             display_file_read(event)
-        if isinstance(event, AgentStateChangedObservation):
+        elif isinstance(event, AgentStateChangedObservation):
             display_agent_state_change_message(event.agent_state)
-        if isinstance(event, ErrorObservation):
+        elif isinstance(event, ErrorObservation):
             display_error(event.content)
 
 
@@ -376,7 +381,7 @@ def display_help() -> None:
     # Footer
     print_formatted_text(
         HTML(
-            '<grey>Learn more at: https://docs.all-hands.dev/modules/usage/getting-started</grey>'
+            '<grey>Learn more at: https://docs.all-hands.dev/usage/getting-started</grey>'
         )
     )
 
