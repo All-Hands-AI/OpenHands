@@ -161,11 +161,8 @@ class LLM(RetryMixin, DebugMixin):
         # set up the completion function
         kwargs: dict[str, Any] = {
             'temperature': self.config.temperature,
+            'max_completion_tokens': self.config.max_output_tokens,
         }
-
-        # Only include max_output_tokens if it's explicitly set
-        if self.config.max_output_tokens is not None:
-            kwargs['max_completion_tokens'] = self.config.max_output_tokens
 
         if self.config.top_k is not None:
             # openai doesn't expose top_k
@@ -182,9 +179,8 @@ class LLM(RetryMixin, DebugMixin):
             )  # temperature is not supported for reasoning models
         # Azure issue: https://github.com/All-Hands-AI/OpenHands/issues/6777
         if self.config.model.startswith('azure'):
-            if self.config.max_output_tokens is not None:
-                kwargs['max_tokens'] = self.config.max_output_tokens
-            kwargs.pop('max_completion_tokens', None)
+            kwargs['max_tokens'] = self.config.max_output_tokens
+            kwargs.pop('max_completion_tokens')
 
         self._completion = partial(
             litellm_completion,
