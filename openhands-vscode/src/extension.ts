@@ -13,7 +13,7 @@ function startOpenHandsInTerminal(options: { task?: string; filePath?: string })
   // Try to detect and activate virtual environment first
   const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
   let activationCommand = '';
-  
+
   if (workspaceFolder) {
     const venvPaths = ['.venv', 'venv', '.virtualenv'];
     for (const venvPath of venvPaths) {
@@ -25,12 +25,19 @@ function startOpenHandsInTerminal(options: { task?: string; filePath?: string })
           const isWindows = process.platform === 'win32';
           const activateScript = isWindows ? 'Scripts\\activate' : 'bin/activate';
           activationCommand = `source "${venvFullPath}/${activateScript}" && `;
+          // Show debug info - using error message to force visibility
+          vscode.window.showErrorMessage(`DEBUG: Found venv at ${venvFullPath}`);
           break;
         }
       } catch (error) {
         // Virtual environment doesn't exist, continue checking
       }
     }
+    if (!activationCommand) {
+      vscode.window.showErrorMessage(`DEBUG: No venv found in workspace ${workspaceFolder.uri.fsPath}`);
+    }
+  } else {
+    vscode.window.showErrorMessage('DEBUG: No workspace folder found');
   }
 
   let commandToSend = `${activationCommand}openhands`;
@@ -47,6 +54,8 @@ function startOpenHandsInTerminal(options: { task?: string; filePath?: string })
     commandToSend = `${activationCommand}openhands --task "${sanitizedTask}"`;
   }
 
+  // Debug: show the actual command being sent
+  vscode.window.showErrorMessage(`DEBUG: Sending command: ${commandToSend}`);
   terminal.sendText(commandToSend, true); // true to execute the command (adds newline)
 }
 
@@ -81,6 +90,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Command: Start Conversation with Selected Text
   let startWithSelectionContextDisposable = vscode.commands.registerCommand('openhands.startConversationWithSelectionContext', () => {
+    vscode.window.showErrorMessage('DEBUG: startConversationWithSelectionContext command triggered!');
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
       vscode.window.showErrorMessage('OpenHands: No active text editor found.');
