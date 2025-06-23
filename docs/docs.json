@@ -104,8 +104,9 @@
             ]
           },
           {
-            "group": "Customization",
+            "group": "Customizations & Settings",
             "pages": [
+              "usage/common-settings",
               "usage/prompting/repository",
               {
                 "group": "Microagents",
