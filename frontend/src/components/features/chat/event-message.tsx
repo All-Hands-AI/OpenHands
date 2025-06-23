@@ -48,27 +48,21 @@ export function EventMessage({
 
   const { data: config } = useConfig();
 
-  const shouldShowLikertScale = (eventType: string) => {
+  const shouldShowLikertScale = (
+    eventToCheck: OpenHandsAction | OpenHandsObservation,
+  ) => {
     if (config?.APP_MODE !== "saas" || !isLastMessage) return false;
 
-    switch (eventType) {
-      case "finish":
-        return isFinishAction(event);
-      case "error":
-        return isErrorObservation(event);
-      case "assistant_message":
-        return isAssistantMessage(event) && event.action === "message";
-      default:
-        return false;
-    }
+    return (
+      isFinishAction(eventToCheck) ||
+      isErrorObservation(eventToCheck) ||
+      (isAssistantMessage(eventToCheck) && eventToCheck.action === "message")
+    );
   };
 
-  const eventIdForFeedback =
-    shouldShowLikertScale("finish") ||
-    shouldShowLikertScale("error") ||
-    shouldShowLikertScale("assistant_message")
-      ? event.id
-      : undefined;
+  const eventIdForFeedback = shouldShowLikertScale(event)
+    ? event.id
+    : undefined;
 
   const {
     data: feedbackData = { exists: false },
@@ -95,7 +89,7 @@ export function EventMessage({
           errorId={event.extras.error_id}
           defaultMessage={event.message}
         />
-        {shouldShowLikertScale("error") && renderLikertScale()}
+        {shouldShowLikertScale(event) && renderLikertScale()}
       </>
     );
   }
@@ -111,7 +105,7 @@ export function EventMessage({
     return (
       <>
         <ChatMessage type="agent" message={getEventContent(event).details} />
-        {shouldShowLikertScale("finish") && renderLikertScale()}
+        {shouldShowLikertScale(event) && renderLikertScale()}
       </>
     );
   }
@@ -130,7 +124,7 @@ export function EventMessage({
           )}
           {shouldShowConfirmationButtons && <ConfirmationButtons />}
         </ChatMessage>
-        {shouldShowLikertScale("assistant_message") && renderLikertScale()}
+        {shouldShowLikertScale(event) && renderLikertScale()}
       </div>
     );
   }

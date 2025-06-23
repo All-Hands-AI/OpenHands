@@ -55,7 +55,10 @@ describe("EventMessage", () => {
       source: "agent" as const,
       action: "message" as const,
       args: {
-        content: "I need more information to proceed.",
+        thought: "I need more information to proceed.",
+        image_urls: null,
+        file_urls: [],
+        wait_for_response: true,
       },
       message: "I need more information to proceed.",
       timestamp: new Date().toISOString(),
@@ -77,7 +80,7 @@ describe("EventMessage", () => {
   it("should render LikertScale for error observation when it's the last message", () => {
     const errorEvent = {
       id: 789,
-      source: "agent" as const,
+      source: "user" as const,
       observation: "error" as const,
       content: "An error occurred",
       extras: {
