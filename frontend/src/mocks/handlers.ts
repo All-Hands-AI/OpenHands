@@ -111,6 +111,7 @@ const openHandsHandlers = [
       "gpt-4o-mini",
       "anthropic/claude-3.5",
       "anthropic/claude-sonnet-4-20250514",
+      "sambanova/Meta-Llama-3.1-8B-Instruct",
     ]),
   ),
 
