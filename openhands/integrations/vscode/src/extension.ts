@@ -9,7 +9,7 @@ import * as path from 'path';
  */
 async function probeTerminalStatus(terminal: vscode.Terminal): Promise<boolean> {
   if (!terminal.shellIntegration) {
-    return false; // Can't probe without Shell Integration
+    return false;
   }
 
   try {
@@ -223,8 +223,8 @@ export function activate(context: vscode.ExtensionContext) {
       }
       await startOpenHandsInTerminal({ task: fileContent });
     } else {
-      const documentPath = editor.document.uri.fsPath;
-      await startOpenHandsInTerminal({ filePath: documentPath });
+      const filePath = editor.document.uri.fsPath;
+      await startOpenHandsInTerminal({ filePath: filePath });
     }
   });
   context.subscriptions.push(startWithFileContextDisposable);
