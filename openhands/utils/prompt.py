@@ -53,6 +53,7 @@ class PromptManager:
     def __init__(
         self,
         prompt_dir: str,
+        config: AgentConfig,
         system_prompt_filename: str = 'system_prompt.j2',
     ):
         self.prompt_dir: str = prompt_dir
