@@ -1,3 +1,5 @@
+import importlib
+
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.cli.cli_runtime import CLIRuntime
 from openhands.runtime.impl.docker.docker_runtime import (
@@ -22,38 +24,40 @@ _DEFAULT_RUNTIME_CLASSES: dict[str, type[Runtime]] = {
 _THIRD_PARTY_RUNTIME_CLASSES: dict[str, type[Runtime]] = {}
 
 # Dynamically discover and import third-party runtimes
-import importlib
-import os
 
 # Check if third_party package exists and discover runtimes
 try:
     import third_party.runtime.impl
+
     third_party_base = 'third_party.runtime.impl'
-    
+
     # List of potential third-party runtime modules to try
     # These are discovered from the third_party directory structure
     potential_runtimes = []
     try:
         import pkgutil
-        for importer, modname, ispkg in pkgutil.iter_modules(third_party.runtime.impl.__path__):
+
+        for importer, modname, ispkg in pkgutil.iter_modules(
+            third_party.runtime.impl.__path__
+        ):
             if ispkg:
                 potential_runtimes.append(modname)
     except Exception:
         # If discovery fails, no third-party runtimes will be loaded
         potential_runtimes = []
-    
+
     # Try to import each discovered runtime
     for runtime_name in potential_runtimes:
         try:
             module_path = f'{third_party_base}.{runtime_name}.{runtime_name}_runtime'
             module = importlib.import_module(module_path)
-            
+
             # Try different class name patterns
             possible_class_names = [
                 f'{runtime_name.upper()}Runtime',  # E2BRuntime
                 f'{runtime_name.capitalize()}Runtime',  # E2bRuntime, DaytonaRuntime, etc.
             ]
-            
+
             runtime_class = None
             for class_name in possible_class_names:
                 try:
@@ -61,13 +65,13 @@ try:
                     break
                 except AttributeError:
                     continue
-            
+
             if runtime_class:
                 _THIRD_PARTY_RUNTIME_CLASSES[runtime_name] = runtime_class
-                
+
         except ImportError:
             pass
-            
+
 except ImportError:
     # third_party package not available
     pass
