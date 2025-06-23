@@ -19,6 +19,7 @@ from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 # Conditionally import Daytona runtime if available
 try:
     from openhands.runtime.impl.daytona.daytona_runtime import DaytonaRuntime
+
     _DAYTONA_AVAILABLE = True
 except ImportError:
     _DAYTONA_AVAILABLE = False
@@ -139,7 +140,9 @@ def get_runtime_classes() -> list[type[Runtime]]:
         if _DAYTONA_AVAILABLE:
             return [DaytonaRuntime]
         else:
-            raise ValueError('Daytona runtime not available. Install with: pip install openhands-ai[daytona]')
+            raise ValueError(
+                'Daytona runtime not available. Install with: pip install openhands-ai[daytona]'
+            )
     elif runtime.lower() == 'cli':
         return [CLIRuntime]
     else:
