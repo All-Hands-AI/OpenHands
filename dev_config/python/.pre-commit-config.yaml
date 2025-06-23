@@ -7,6 +7,7 @@ repos:
       - id: end-of-file-fixer
         exclude: docs/modules/python
       - id: check-yaml
+        args: ["--allow-multiple-documents"]
       - id: debug-statements
 
   - repo: https://github.com/tox-dev/pyproject-fmt

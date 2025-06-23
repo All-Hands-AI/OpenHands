@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "#/utils/utils";
-import i18n from "#/i18n";
+import { I18nKey } from "#/i18n/declaration";
 import { useSubmitConversationFeedback } from "#/hooks/mutation/use-submit-conversation-feedback";
 import { ScrollContext } from "#/context/scroll-context";
 
@@ -14,19 +15,14 @@ interface LikertScaleProps {
   initialReason?: string;
 }
 
-const FEEDBACK_REASONS = [
-  i18n.t("FEEDBACK$REASON_MISUNDERSTOOD_INSTRUCTION"),
-  i18n.t("FEEDBACK$REASON_FORGOT_CONTEXT"),
-  i18n.t("FEEDBACK$REASON_UNNECESSARY_CHANGES"),
-  i18n.t("FEEDBACK$REASON_OTHER"),
-];
-
 export function LikertScale({
   eventId,
   initiallySubmitted = false,
   initialRating,
   initialReason,
 }: LikertScaleProps) {
+  const { t } = useTranslation();
+
   const [selectedRating, setSelectedRating] = useState<number | null>(
     initialRating || null,
   );
@@ -42,6 +38,14 @@ export function LikertScale({
 
   // Get scroll context
   const scrollContext = useContext(ScrollContext);
+
+  // Define feedback reasons using the translation hook
+  const FEEDBACK_REASONS = [
+    t(I18nKey.FEEDBACK$REASON_MISUNDERSTOOD_INSTRUCTION),
+    t(I18nKey.FEEDBACK$REASON_FORGOT_CONTEXT),
+    t(I18nKey.FEEDBACK$REASON_UNNECESSARY_CHANGES),
+    t(I18nKey.FEEDBACK$REASON_OTHER),
+  ];
 
   // If scrollContext is undefined, we're not inside a ScrollProvider
   const scrollToBottom = scrollContext?.scrollDomToBottom;
@@ -188,8 +192,8 @@ export function LikertScale({
     <div className="mt-3 flex flex-col gap-1">
       <div className="text-sm text-gray-500 mb-1">
         {isSubmitted
-          ? i18n.t("FEEDBACK$THANK_YOU_FOR_FEEDBACK")
-          : i18n.t("FEEDBACK$RATE_AGENT_PERFORMANCE")}
+          ? t(I18nKey.FEEDBACK$THANK_YOU_FOR_FEEDBACK)
+          : t(I18nKey.FEEDBACK$RATE_AGENT_PERFORMANCE)}
       </div>
       <div className="flex flex-col gap-1">
         <span className="flex gap-2 items-center flex-wrap">
@@ -220,11 +224,11 @@ export function LikertScale({
       {showReasons && !isSubmitted && (
         <div className="mt-1 flex flex-col gap-1">
           <div className="text-xs text-gray-500 mb-1">
-            {i18n.t("FEEDBACK$SELECT_REASON")}
+            {t(I18nKey.FEEDBACK$SELECT_REASON)}
           </div>
           {countdown > 0 && (
             <div className="text-xs text-gray-400 mb-1 italic">
-              {i18n.t("FEEDBACK$SELECT_REASON_COUNTDOWN", {
+              {t(I18nKey.FEEDBACK$SELECT_REASON_COUNTDOWN, {
                 countdown,
               })}
             </div>
