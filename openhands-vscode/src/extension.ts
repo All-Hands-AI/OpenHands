@@ -105,16 +105,7 @@ export function activate(context: vscode.ExtensionContext) {
   });
   context.subscriptions.push(startWithSelectionContextDisposable);
 
-  // Command: Send Selected Text to Running OpenHands (placeholder for future implementation)
-  let sendToRunningOpenHandsDisposable = vscode.commands.registerCommand('openhands.sendSelectionToRunningOpenHands', () => {
-    vscode.window.showInformationMessage('OpenHands: Send to running instance feature coming soon!');
-    // TODO: Implement sending text to already running OpenHands CLI
-    // This would need to:
-    // 1. Find the terminal running OpenHands CLI
-    // 2. Send the selected text as input to that CLI
-    // 3. Handle the case where no OpenHands CLI is running
-  });
-  context.subscriptions.push(sendToRunningOpenHandsDisposable);
+
 }
 
 export function deactivate() {

@@ -15,8 +15,7 @@
   "activationEvents": [
     "onCommand:openhands.startConversation",
     "onCommand:openhands.startConversationWithFileContext",
-    "onCommand:openhands.startConversationWithSelectionContext",
-    "onCommand:openhands.sendSelectionToRunningOpenHands"
+    "onCommand:openhands.startConversationWithSelectionContext"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -35,11 +34,6 @@
         "command": "openhands.startConversationWithSelectionContext",
         "title": "OpenHands: Start Conversation with Selected Text",
         "category": "OpenHands"
-      },
-      {
-        "command": "openhands.sendSelectionToRunningOpenHands",
-        "title": "OpenHands: Send Selection to Running Instance",
-        "category": "OpenHands"
       }
     ],
     "menus": {
@@ -52,11 +46,6 @@
         {
           "command": "openhands.startConversationWithFileContext",
           "group": "navigation@2"
-        },
-        {
-          "when": "editorHasSelection",
-          "command": "openhands.sendSelectionToRunningOpenHands",
-          "group": "navigation@3"
         }
       ],
       "commandPalette": [
@@ -70,10 +59,6 @@
         },
         {
           "command": "openhands.startConversationWithSelectionContext",
-          "when": "editorHasSelection"
-        },
-        {
-          "command": "openhands.sendSelectionToRunningOpenHands",
           "when": "editorHasSelection"
         }
       ]
