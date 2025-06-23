@@ -403,7 +403,9 @@ def attempt_vscode_extension_install():
     # Attempt 1: Install from bundled .vsix
     try:
         with importlib.resources.as_file(
-            importlib.resources.files('openhands').joinpath('resources', vsix_filename)
+            importlib.resources.files('openhands').joinpath(
+                'integrations', 'vscode', vsix_filename
+            )
         ) as vsix_path:
             if vsix_path.exists():
                 # print(f"DEBUG: Found bundled .vsix at '{vsix_path}'. Attempting install...") # Optional debug

@@ -263,4 +263,3 @@ function sendToRunningOpenHands(text: string) {
 *   Terminal naming preferences
 *   Debug message visibility controls
 *   Default OpenHands arguments
-

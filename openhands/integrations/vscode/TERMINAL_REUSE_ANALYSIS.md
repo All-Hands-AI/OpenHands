@@ -28,22 +28,22 @@ function findOrCreateOpenHandsTerminal(): vscode.Terminal {
   const openHandsTerminals = vscode.window.terminals.filter(
     terminal => terminal.name.startsWith('OpenHands')
   );
-  
+
   if (openHandsTerminals.length > 0) {
     // Use most recent terminal
     const terminal = openHandsTerminals[openHandsTerminals.length - 1];
-    
+
     // Safely interrupt any running process
     terminal.sendText('\u0003', false); // Send Ctrl+C
-    
+
     // Brief pause to let interrupt take effect
     setTimeout(() => {
       terminal.sendText('clear', true); // Clear screen
     }, 100);
-    
+
     return terminal;
   }
-  
+
   // Create new terminal if none exist
   const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
   return vscode.window.createTerminal(`OpenHands ${timestamp}`);
@@ -71,7 +71,7 @@ const terminalStates = new Map<string, 'idle' | 'busy'>();
 
 function startOpenHandsInTerminal(options: { task?: string; filePath?: string }): void {
   const idleTerminal = findIdleOpenHandsTerminal();
-  
+
   if (idleTerminal) {
     // Mark as busy and use existing terminal
     terminalStates.set(idleTerminal.name, 'busy');
@@ -88,8 +88,8 @@ function findIdleOpenHandsTerminal(): vscode.Terminal | null {
   const openHandsTerminals = vscode.window.terminals.filter(
     terminal => terminal.name.startsWith('OpenHands')
   );
-  
-  return openHandsTerminals.find(terminal => 
+
+  return openHandsTerminals.find(terminal =>
     terminalStates.get(terminal.name) === 'idle'
   ) || null;
 }
@@ -116,17 +116,17 @@ async function findIdleOpenHandsTerminal(): Promise<vscode.Terminal | null> {
   const openHandsTerminals = vscode.window.terminals.filter(
     terminal => terminal.name.startsWith('OpenHands')
   );
-  
+
   if (openHandsTerminals.length === 0) return null;
-  
+
   const terminal = openHandsTerminals[openHandsTerminals.length - 1];
-  
+
   // Send probe command
   terminal.sendText('echo "PROBE_RESPONSE"', true);
-  
+
   // Wait and check if we can detect the response
   // (This is tricky with VS Code API - no direct way to read terminal output)
-  
+
   return terminal; // Simplified - actual implementation would need output detection
 }
 ```
@@ -149,7 +149,7 @@ async function findIdleOpenHandsTerminal(): Promise<vscode.Terminal | null> {
 function startOpenHandsInTerminal(options: { task?: string; filePath?: string }): void {
   const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
   const terminal = vscode.window.createTerminal(`OpenHands ${timestamp}`);
-  
+
   sendCommandToTerminal(terminal, buildCommand(options));
 }
 ```
