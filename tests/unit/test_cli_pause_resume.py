@@ -5,7 +5,10 @@ import pytest
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.keys import Keys
 
-from openhands.cli.tui import process_agent_pause
+from openhands.cli.tui import (
+    _process_agent_pause_windows,
+    process_agent_pause,
+)
 from openhands.core.schema import AgentState
 from openhands.events import EventSource
 from openhands.events.action import ChangeAgentStateAction
@@ -407,3 +410,181 @@ class TestAgentStatePauseResume:
 
         # Run the test
         await test_func()
+
+
+class TestProcessAgentPauseWindows:
+    @pytest.mark.asyncio
+    @patch('openhands.cli.tui.os.name', 'nt')
+    @patch('openhands.cli.tui._process_agent_pause_windows')
+    async def test_process_agent_pause_calls_windows_implementation(
+        self, mock_windows_impl
+    ):
+        """Test that process_agent_pause calls Windows implementation on Windows."""
+        done = asyncio.Event()
+        event_stream = MagicMock()
+
+        await process_agent_pause(done, event_stream)
+
+        mock_windows_impl.assert_called_once_with(done, event_stream)
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.tui.os.name', 'posix')
+    @patch('openhands.cli.tui._process_agent_pause_unix')
+    async def test_process_agent_pause_calls_unix_implementation(self, mock_unix_impl):
+        """Test that process_agent_pause calls Unix implementation on Unix/Linux."""
+        done = asyncio.Event()
+        event_stream = MagicMock()
+
+        await process_agent_pause(done, event_stream)
+
+        mock_unix_impl.assert_called_once_with(done, event_stream)
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.tui.print_formatted_text')
+    async def test_process_agent_pause_windows_ctrl_p(self, mock_print):
+        """Test Windows-specific pause handling with Ctrl+P."""
+        done = asyncio.Event()
+        event_stream = MagicMock()
+
+        # Mock msvcrt module
+        mock_msvcrt = MagicMock()
+        mock_msvcrt.kbhit.side_effect = [
+            True,
+            False,
+        ]  # Key available, then no more keys
+        mock_msvcrt.getch.return_value = b'\x10'  # Ctrl+P
+
+        with patch.dict('sys.modules', {'msvcrt': mock_msvcrt}):
+            # Create a task to run the Windows pause handler
+            task = asyncio.create_task(_process_agent_pause_windows(done, event_stream))
+
+            # Give it a moment to process the key
+            await asyncio.sleep(0.2)
+
+            # Verify done was set
+            assert done.is_set()
+
+            # Verify print was called with the pause message
+            assert mock_print.call_count == 2
+            assert mock_print.call_args_list[0] == call('')
+
+            # Check that the second call contains the pause message HTML
+            second_call = mock_print.call_args_list[1][0][0]
+            assert isinstance(second_call, HTML)
+            assert 'Pausing the agent' in str(second_call)
+
+            # Verify event was added to stream
+            event_stream.add_event.assert_called_once()
+            args, kwargs = event_stream.add_event.call_args
+            action, source = args
+            assert isinstance(action, ChangeAgentStateAction)
+            assert action.agent_state == AgentState.PAUSED
+            assert source == EventSource.USER
+
+            # Cancel the task
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.tui.print_formatted_text')
+    async def test_process_agent_pause_windows_ctrl_c(self, mock_print):
+        """Test Windows-specific pause handling with Ctrl+C."""
+        done = asyncio.Event()
+        event_stream = MagicMock()
+
+        # Mock msvcrt module
+        mock_msvcrt = MagicMock()
+        mock_msvcrt.kbhit.side_effect = [
+            True,
+            False,
+        ]  # Key available, then no more keys
+        mock_msvcrt.getch.return_value = b'\x03'  # Ctrl+C
+
+        with patch.dict('sys.modules', {'msvcrt': mock_msvcrt}):
+            # Create a task to run the Windows pause handler
+            task = asyncio.create_task(_process_agent_pause_windows(done, event_stream))
+
+            # Give it a moment to process the key
+            await asyncio.sleep(0.2)
+
+            # Verify done was set
+            assert done.is_set()
+
+            # Verify event was added to stream
+            event_stream.add_event.assert_called_once()
+
+            # Cancel the task
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+
+    @pytest.mark.asyncio
+    async def test_process_agent_pause_windows_no_key_press(self):
+        """Test Windows-specific pause handling when no keys are pressed."""
+        done = asyncio.Event()
+        event_stream = MagicMock()
+
+        # Mock msvcrt module
+        mock_msvcrt = MagicMock()
+        mock_msvcrt.kbhit.return_value = False
+
+        with patch.dict('sys.modules', {'msvcrt': mock_msvcrt}):
+            # Create a task to run the Windows pause handler
+            task = asyncio.create_task(_process_agent_pause_windows(done, event_stream))
+
+            # Give it a moment to check for keys
+            await asyncio.sleep(0.2)
+
+            # Manually set done to stop the loop
+            done.set()
+
+            # Give it a moment to finish
+            await asyncio.sleep(0.1)
+
+            # Verify no event was added to stream
+            event_stream.add_event.assert_not_called()
+
+            # Cancel the task
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+
+    @pytest.mark.asyncio
+    async def test_process_agent_pause_windows_exception_handling(self):
+        """Test Windows-specific pause handling with exception in msvcrt."""
+        done = asyncio.Event()
+        event_stream = MagicMock()
+
+        # Mock msvcrt module
+        mock_msvcrt = MagicMock()
+        mock_msvcrt.kbhit.side_effect = Exception('Test exception')
+
+        with patch.dict('sys.modules', {'msvcrt': mock_msvcrt}):
+            # Create a task to run the Windows pause handler
+            task = asyncio.create_task(_process_agent_pause_windows(done, event_stream))
+
+            # Give it a moment to handle the exception
+            await asyncio.sleep(0.2)
+
+            # Manually set done to stop the loop
+            done.set()
+
+            # Give it a moment to finish
+            await asyncio.sleep(0.1)
+
+            # Verify no event was added to stream (exception was handled gracefully)
+            event_stream.add_event.assert_not_called()
+
+            # Cancel the task
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass

@@ -6,6 +6,7 @@ from openhands.cli.tui import (
     CustomDiffLexer,
     UsageMetrics,
     UserCancelledError,
+    create_prompt_session,
     display_banner,
     display_command,
     display_event,
@@ -385,3 +386,46 @@ class TestReadConfirmationInput:
 
         result = await read_confirmation_input()
         assert result == 'no'
+
+
+class TestCreatePromptSession:
+    @patch('openhands.cli.tui.os.name', 'nt')
+    @patch('openhands.cli.tui.create_input')
+    @patch('openhands.cli.tui.PromptSession')
+    def test_create_prompt_session_windows(
+        self, mock_prompt_session, mock_create_input
+    ):
+        """Test that create_prompt_session uses always_prefer_tty=True on Windows."""
+        mock_input = MagicMock()
+        mock_create_input.return_value = mock_input
+        mock_session = MagicMock()
+        mock_prompt_session.return_value = mock_session
+
+        result = create_prompt_session()
+
+        # Verify create_input was called with always_prefer_tty=True
+        mock_create_input.assert_called_once_with(always_prefer_tty=True)
+
+        # Verify PromptSession was called with the input object
+        mock_prompt_session.assert_called_once()
+        call_args = mock_prompt_session.call_args
+        assert 'input' in call_args.kwargs
+        assert call_args.kwargs['input'] == mock_input
+
+        assert result == mock_session
+
+    @patch('openhands.cli.tui.os.name', 'posix')
+    @patch('openhands.cli.tui.PromptSession')
+    def test_create_prompt_session_unix(self, mock_prompt_session):
+        """Test that create_prompt_session uses default settings on Unix/Linux."""
+        mock_session = MagicMock()
+        mock_prompt_session.return_value = mock_session
+
+        result = create_prompt_session()
+
+        # Verify PromptSession was called without input parameter
+        mock_prompt_session.assert_called_once()
+        call_args = mock_prompt_session.call_args
+        assert 'input' not in call_args.kwargs or call_args.kwargs.get('input') is None
+
+        assert result == mock_session

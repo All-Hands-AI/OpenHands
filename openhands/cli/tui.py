@@ -3,6 +3,7 @@
 # CLI Settings are handled separately in cli_settings.py
 
 import asyncio
+import os
 import sys
 import threading
 import time
@@ -521,7 +522,13 @@ class CommandCompleter(Completer):
 
 
 def create_prompt_session() -> PromptSession[str]:
-    return PromptSession(style=DEFAULT_STYLE)
+    # On Windows, we can improve input responsiveness by using specific input settings
+    if os.name == 'nt':  # Windows
+        # Create input with always_prefer_tty=True to improve Windows input handling
+        input_obj = create_input(always_prefer_tty=True)
+        return PromptSession(style=DEFAULT_STYLE, input=input_obj)
+    else:
+        return PromptSession(style=DEFAULT_STYLE)
 
 
 async def read_prompt_input(agent_state: str, multiline: bool = False) -> str:
@@ -583,6 +590,54 @@ async def read_confirmation_input() -> str:
 
 
 async def process_agent_pause(done: asyncio.Event, event_stream: EventStream) -> None:
+    # On Windows, creating a separate input handler can cause keyboard input issues
+    # where multiple key presses are required. Instead, we use a polling approach.
+    if os.name == 'nt':  # Windows
+        await _process_agent_pause_windows(done, event_stream)
+    else:
+        await _process_agent_pause_unix(done, event_stream)
+
+
+async def _process_agent_pause_windows(
+    done: asyncio.Event, event_stream: EventStream
+) -> None:
+    """Windows-specific implementation that avoids creating conflicting input handlers."""
+    try:
+        import msvcrt  # type: ignore[import-untyped]
+    except ImportError:
+        # Fallback to Unix implementation if msvcrt is not available
+        await _process_agent_pause_unix(done, event_stream)
+        return
+
+    async def check_for_pause_keys():
+        while not done.is_set():
+            try:
+                # Use a non-blocking approach to check for key presses
+                if msvcrt.kbhit():  # type: ignore[attr-defined]
+                    key = msvcrt.getch()  # type: ignore[attr-defined]
+                    # Check for Ctrl+P (0x10), Ctrl+C (0x03), or Ctrl+D (0x04)
+                    if key in (b'\x10', b'\x03', b'\x04'):
+                        print_formatted_text('')
+                        print_formatted_text(HTML('<gold>Pausing the agent...</gold>'))
+                        event_stream.add_event(
+                            ChangeAgentStateAction(AgentState.PAUSED),
+                            EventSource.USER,
+                        )
+                        done.set()
+                        return
+                # Small delay to prevent excessive CPU usage
+                await asyncio.sleep(0.1)
+            except Exception:
+                # If there's any error with input detection, just continue
+                await asyncio.sleep(0.1)
+
+    await check_for_pause_keys()
+
+
+async def _process_agent_pause_unix(
+    done: asyncio.Event, event_stream: EventStream
+) -> None:
+    """Unix/Linux implementation using the original approach."""
     input = create_input()
 
     def keys_ready() -> None:
