@@ -94,6 +94,9 @@ class OpenHandsConfig(BaseModel):
     file_uploads_max_file_size_mb: int = Field(default=0)
     file_uploads_restrict_file_types: bool = Field(default=False)
     file_uploads_allowed_extensions: list[str] = Field(default_factory=lambda: ['.*'])
+    daytona_api_key: SecretStr | None = Field(default=None)
+    daytona_api_url: str = Field(default='https://app.daytona.io/api')
+    daytona_target: str = Field(default='eu')
 
     cli_multiline_input: bool = Field(default=False)
     conversation_max_age_seconds: int = Field(default=864000)  # 10 days in seconds

@@ -258,6 +258,7 @@ class SensitiveDataFilter(logging.Filter):
             'jwt_secret',
             'llm_api_key',
             'sandbox_env_github_token',
+            'daytona_api_key',
         ]
 
         # add env var names

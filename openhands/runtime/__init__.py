@@ -8,6 +8,13 @@ from openhands.runtime.impl.local.local_runtime import LocalRuntime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.utils.import_utils import get_impl
 
+# Conditionally import Daytona runtime if available
+try:
+    from openhands.runtime.impl.daytona.daytona_runtime import DaytonaRuntime
+    _DAYTONA_AVAILABLE = True
+except ImportError:
+    _DAYTONA_AVAILABLE = False
+
 # mypy: disable-error-code="type-abstract"
 _DEFAULT_RUNTIME_CLASSES: dict[str, type[Runtime]] = {
     'eventstream': DockerRuntime,
@@ -17,6 +24,10 @@ _DEFAULT_RUNTIME_CLASSES: dict[str, type[Runtime]] = {
     'kubernetes': KubernetesRuntime,
     'cli': CLIRuntime,
 }
+
+# Add Daytona runtime if available
+if _DAYTONA_AVAILABLE:
+    _DEFAULT_RUNTIME_CLASSES['daytona'] = DaytonaRuntime
 
 
 def get_runtime_cls(name: str) -> type[Runtime]:
@@ -44,3 +55,7 @@ __all__ = [
     'CLIRuntime',
     'get_runtime_cls',
 ]
+
+# Add DaytonaRuntime to exports if available
+if _DAYTONA_AVAILABLE:
+    __all__.append('DaytonaRuntime')

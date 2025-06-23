@@ -79,6 +79,7 @@ bashlex = "^0.18"
 # TODO: These are integrations that should probably be optional
 redis = ">=5.2,<7.0"
 minio = "^7.2.8"
+daytona = { version = "0.21.1", optional = true }
 
 stripe = ">=11.5,<13.0"
 google-cloud-aiplatform = "*"
@@ -148,6 +149,10 @@ boto3-stubs = { extras = [ "s3" ], version = "^1.37.19" }
 pyarrow = "20.0.0"                                                             # transitive dependency, pinned here to avoid conflicts
 datasets = "*"
 joblib = "*"
+
+[tool.poetry.extras]
+daytona = ["daytona"]
+all-runtimes = ["daytona"]
 
 [tool.poetry.scripts]
 openhands = "openhands.cli.main:main"

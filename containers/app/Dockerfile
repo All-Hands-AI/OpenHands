@@ -26,7 +26,7 @@ RUN apt-get update -y \
 
 COPY pyproject.toml poetry.lock ./
 RUN touch README.md
-RUN export POETRY_CACHE_DIR && poetry install --no-root && rm -rf $POETRY_CACHE_DIR
+RUN export POETRY_CACHE_DIR && poetry install --no-root --extras all-runtimes && rm -rf $POETRY_CACHE_DIR
 
 FROM base AS openhands-app
 
