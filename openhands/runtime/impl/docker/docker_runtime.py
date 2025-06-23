@@ -5,6 +5,8 @@ import typing
 from uuid import UUID
 import shutil
 import secrets
+import base64
+import re
 
 import os
 import docker
@@ -274,11 +276,16 @@ class DockerRuntime(ActionExecutionClient):
         """Shakudo: Generate a random secret string for use in the runtime.
 
         Returns:
-            str: A random secret string.
+            str: A random secret string. This should be a DNS-safe string
         """
-        secret = secrets.token_urlsafe(16)
-        self.log('warn', f'Shakudo: shak_gen_secret: Generated secret: {secret}')
-        return secret
+        length = 16
+        while True:
+            # Generate ~12 random bytes; base32 expands this to ~20+ chars
+            token = base64.b32encode(secrets.token_bytes(12)).decode('utf-8').lower()
+            # Remove padding and invalid chars (just in case)
+            token_clean = re.sub(r'[^a-z0-9]', '', token)
+            if len(token_clean) >= length:
+                return token_clean[:length]
 
     def init_container(self) -> None:
         self.log('debug', 'Preparing to start container...')
