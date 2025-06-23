@@ -69,20 +69,8 @@ async function findOrCreateOpenHandsTerminal(): Promise<vscode.Terminal> {
   );
 
   if (openHandsTerminals.length > 0) {
-    // Use the most recent terminal
-    const terminal = openHandsTerminals[openHandsTerminals.length - 1];
-
-    if (terminal.shellIntegration) {
-      // Try intelligent probing with Shell Integration
-      const isIdle = await probeTerminalStatus(terminal);
-      if (isIdle) {
-        return terminal; // Safe to reuse
-      }
-      // If busy, let's make a new one
-      return createNewOpenHandsTerminal();
-    }
-
-    // Fallback: create new terminal to avoid conflicts when Shell Integration unavailable
+    // Always create a new terminal if there are existing ones
+    // This ensures we don't interrupt any running programs
     return createNewOpenHandsTerminal();
   }
 
