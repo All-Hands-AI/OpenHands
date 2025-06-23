@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field, SecretStr, ValidationError
 
@@ -87,7 +87,7 @@ class LLMConfig(BaseModel):
     native_tool_calling: bool | None = Field(default=None)
     reasoning_effort: str | None = Field(default='high')
     seed: int | None = Field(default=None)
-    safety_settings: List[Dict[str, str]] | None = Field(default=None, description="Safety settings for models that support them (like Mistral AI and Gemini)")
+    safety_settings: list[dict[str, str]] | None = Field(default=None, description="Safety settings for models that support them (like Mistral AI and Gemini)")
 
     model_config = {'extra': 'forbid'}
 
