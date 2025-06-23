@@ -6,15 +6,11 @@ To set up the entire repo, including frontend and backend, run `make build`.
 You don't need to do this unless the user asks you to, or if you're trying to run the entire application.
 
 ## Running OpenHands with OpenHands:
-To run the full application for development or self-improvement:
+To run the full application to debug issues:
 ```bash
 export INSTALL_DOCKER=0
 export RUNTIME=local
-make build && make run
-```
-For external access (cloud environments), use:
-```bash
-make run FRONTEND_PORT=12000 FRONTEND_HOST=0.0.0.0 BACKEND_HOST=0.0.0.0
+make build && make run FRONTEND_PORT=12000 FRONTEND_HOST=0.0.0.0 BACKEND_HOST=0.0.0.0 &> /tmp/openhands-log.txt &
 ```
 
 IMPORTANT: Before making any changes to the codebase, ALWAYS run `make install-pre-commit-hooks` to ensure pre-commit hooks are properly installed.
