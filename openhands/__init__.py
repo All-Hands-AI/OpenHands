@@ -1,5 +1,16 @@
 import os
 
+# Suppress marshmallow deprecation warning from environs (used by daytona)
+# This must be done before any imports that might trigger the warning
+import warnings
+
+warnings.filterwarnings(
+    'ignore',
+    message=r'.*__version_info__.*deprecated.*',
+    category=DeprecationWarning,
+    module=r'.*environs.*',
+)
+
 __package_name__ = 'openhands_ai'
 
 
