@@ -774,10 +774,11 @@ def convert_non_fncall_messages_to_fncall_messages(
                 tool_result_match = re.search(
                     TOOL_RESULT_REGEX_PATTERN, content, re.DOTALL
                 )
+                first_tool_call_content = None
             elif isinstance(content, list):
-                tool_result_match = next(
+                tool_result_match, first_tool_call_content = next(
                     (
-                        _match
+                        (_match, item)
                         for item in content
                         if item.get('type') == 'text'
                         and (
@@ -785,8 +786,9 @@ def convert_non_fncall_messages_to_fncall_messages(
                                 TOOL_RESULT_REGEX_PATTERN, item['text'], re.DOTALL
                             )
                         )
+                        and item
                     ),
-                    None,
+                    (None, None),
                 )
             else:
                 raise FunctionCallConversionError(
@@ -798,8 +800,7 @@ def convert_non_fncall_messages_to_fncall_messages(
                     isinstance(content, str)
                     or (
                         isinstance(content, list)
-                        and len(content) == 1
-                        and content[0].get('type') == 'text'
+                        and first_tool_call_content
                     )
                 ):
                     raise FunctionCallConversionError(
@@ -807,13 +808,15 @@ def convert_non_fncall_messages_to_fncall_messages(
                     )
                 tool_name = tool_result_match.group(1)
                 tool_result = tool_result_match.group(2).strip()
-
+                if first_tool_call_content:
+                    first_tool_call_content['text'] = tool_result
+                    first_tool_call_content['type'] = 'text'
                 # Convert to tool message format
                 converted_messages.append(
                     {
                         'role': 'tool',
                         'name': tool_name,
-                        'content': [{'type': 'text', 'text': tool_result}]
+                        'content': content
                         if isinstance(content, list)
                         else tool_result,
                         'tool_call_id': f'toolu_{tool_call_counter - 1:02d}',  # Use last generated ID
