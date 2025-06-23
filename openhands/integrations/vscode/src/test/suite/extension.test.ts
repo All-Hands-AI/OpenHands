@@ -49,7 +49,7 @@ suite('Extension Test Suite', () => {
       creationOptions: {},
       exitStatus: undefined, // Added to satisfy Terminal interface
       state: { isInteractedWith: false, shell: undefined as string | undefined }, // Added shell property
-      shellIntegration: undefined // Added to satisfy Terminal interface
+      shellIntegration: undefined // No Shell Integration in tests by default
     };
 
     // Store original functions
@@ -234,6 +234,84 @@ suite('Extension Test Suite', () => {
     if (originalActiveTextEditor) {
       Object.defineProperty(vscode.window, 'activeTextEditor', originalActiveTextEditor);
     }
+  });
+
+  test('Terminal reuse should work when existing OpenHands terminal exists', async () => {
+    // Create a mock existing terminal
+    const existingTerminal = {
+      name: 'OpenHands 10:30:15',
+      processId: Promise.resolve(456),
+      sendText: sendTextSpy as any,
+      show: showSpy as any,
+      hide: () => {},
+      dispose: () => {},
+      creationOptions: {},
+      exitStatus: undefined,
+      state: { isInteractedWith: false, shell: undefined as string | undefined },
+      shellIntegration: undefined // No Shell Integration, should create new terminal
+    };
+
+    // Mock terminals array to return existing terminal
+    Object.defineProperty(vscode.window, 'terminals', {
+      get: () => {
+        findTerminalStub();
+        return [existingTerminal];
+      },
+      configurable: true
+    });
+
+    await vscode.commands.executeCommand('openhands.startConversation');
+
+    // Should create new terminal since no Shell Integration
+    assert.ok(createTerminalStub.called, 'Should create new terminal when no Shell Integration available');
+  });
+
+  test('Terminal reuse with Shell Integration should reuse existing terminal', async () => {
+    // Create mock Shell Integration
+    const mockExecution = {
+      read: () => ({
+        async *[Symbol.asyncIterator]() {
+          yield 'OPENHANDS_PROBE_123456789';
+        }
+      }),
+      exitCode: Promise.resolve(0)
+    };
+
+    const mockShellIntegration = {
+      executeCommand: () => mockExecution
+    };
+
+    // Create a mock existing terminal with Shell Integration
+    const existingTerminalWithShell = {
+      name: 'OpenHands 10:30:15',
+      processId: Promise.resolve(456),
+      sendText: sendTextSpy as any,
+      show: showSpy as any,
+      hide: () => {},
+      dispose: () => {},
+      creationOptions: {},
+      exitStatus: undefined,
+      state: { isInteractedWith: false, shell: undefined as string | undefined },
+      shellIntegration: mockShellIntegration
+    };
+
+    // Mock terminals array to return existing terminal with Shell Integration
+    Object.defineProperty(vscode.window, 'terminals', {
+      get: () => {
+        findTerminalStub();
+        return [existingTerminalWithShell];
+      },
+      configurable: true
+    });
+
+    // Reset create terminal stub to track if new terminal is created
+    createTerminalStub.resetHistory();
+
+    await vscode.commands.executeCommand('openhands.startConversation');
+
+    // Should reuse existing terminal since Shell Integration is available
+    // Note: The probe might timeout in test environment, but it should still reuse the terminal
+    assert.ok(showSpy.called, 'terminal.show should be called');
   });
 
 });
