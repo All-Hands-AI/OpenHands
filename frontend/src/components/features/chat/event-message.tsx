@@ -35,6 +35,7 @@ interface EventMessageProps {
   hasObservationPair: boolean;
   isAwaitingUserConfirmation: boolean;
   isLastMessage: boolean;
+  isInLast10Actions: boolean;
 }
 
 export function EventMessage({
@@ -42,6 +43,7 @@ export function EventMessage({
   hasObservationPair,
   isAwaitingUserConfirmation,
   isLastMessage,
+  isInLast10Actions,
 }: EventMessageProps) {
   const shouldShowConfirmationButtons =
     isLastMessage && event.source === "agent" && isAwaitingUserConfirmation;
@@ -54,7 +56,17 @@ export function EventMessage({
   } = useFeedbackExists(event.id);
 
   const renderLikertScale = () => {
-    if (config?.APP_MODE !== "saas" || !isLastMessage || isCheckingFeedback) {
+    if (config?.APP_MODE !== "saas" || isCheckingFeedback) {
+      return null;
+    }
+
+    // For error observations, show if in last 10 actions
+    // For other events, show only if it's the last message
+    const shouldShow = isErrorObservation(event)
+      ? isInLast10Actions
+      : isLastMessage;
+
+    if (!shouldShow) {
       return null;
     }
 

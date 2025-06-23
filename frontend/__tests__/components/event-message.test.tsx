@@ -42,6 +42,7 @@ describe("EventMessage", () => {
         hasObservationPair={false}
         isAwaitingUserConfirmation={false}
         isLastMessage={true}
+        isInLast10Actions={true}
       />
     );
 
@@ -70,6 +71,7 @@ describe("EventMessage", () => {
         hasObservationPair={false}
         isAwaitingUserConfirmation={false}
         isLastMessage={true}
+        isInLast10Actions={true}
       />
     );
 
@@ -97,6 +99,7 @@ describe("EventMessage", () => {
         hasObservationPair={false}
         isAwaitingUserConfirmation={false}
         isLastMessage={true}
+        isInLast10Actions={true}
       />
     );
 
@@ -125,6 +128,63 @@ describe("EventMessage", () => {
         hasObservationPair={false}
         isAwaitingUserConfirmation={false}
         isLastMessage={false}
+        isInLast10Actions={false}
+      />
+    );
+
+    expect(screen.queryByLabelText("Rate 1 stars")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Rate 5 stars")).not.toBeInTheDocument();
+  });
+
+  it("should render LikertScale for error observation when in last 10 actions but not last message", () => {
+    const errorEvent = {
+      id: 999,
+      source: "user" as const,
+      observation: "error" as const,
+      content: "An error occurred",
+      extras: {
+        error_id: "test-error-456",
+      },
+      message: "An error occurred",
+      timestamp: new Date().toISOString(),
+      cause: 123,
+    };
+
+    renderWithProviders(
+      <EventMessage
+        event={errorEvent}
+        hasObservationPair={false}
+        isAwaitingUserConfirmation={false}
+        isLastMessage={false}
+        isInLast10Actions={true}
+      />
+    );
+
+    expect(screen.getByLabelText("Rate 1 stars")).toBeInTheDocument();
+    expect(screen.getByLabelText("Rate 5 stars")).toBeInTheDocument();
+  });
+
+  it("should NOT render LikertScale for error observation when not in last 10 actions", () => {
+    const errorEvent = {
+      id: 888,
+      source: "user" as const,
+      observation: "error" as const,
+      content: "An error occurred",
+      extras: {
+        error_id: "test-error-789",
+      },
+      message: "An error occurred",
+      timestamp: new Date().toISOString(),
+      cause: 123,
+    };
+
+    renderWithProviders(
+      <EventMessage
+        event={errorEvent}
+        hasObservationPair={false}
+        isAwaitingUserConfirmation={false}
+        isLastMessage={false}
+        isInLast10Actions={false}
       />
     );
 
