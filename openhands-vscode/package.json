@@ -79,6 +79,6 @@
     "@vscode/test-electron": "^2.3.9",
     "@types/node": "^20.12.12",
     "@types/glob": "^8.1.0",
-    "@vscode/vsce": "^2.23.0"
+    "@vscode/vsce": "^3.5.0"
   }
 }
