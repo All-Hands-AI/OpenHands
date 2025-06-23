@@ -503,7 +503,7 @@ class DockerNestedConversationManager(ConversationManager):
 
         # Set up mounted volume for conversation directory within workspace
         # TODO: Check if we are using the standard event store and file store
-        volumes : list[str | None]
+        volumes: list[str | None]
         if not config.sandbox.volumes:
             volumes = []
         else:

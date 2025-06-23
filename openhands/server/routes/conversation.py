@@ -217,9 +217,10 @@ async def get_microagents(
                     triggers=[],
                     inputs=r_agent.metadata.inputs,
                     tools=[
-                        server.name for server in r_agent.metadata.mcp_tools.stdio_servers
+                        server.name
+                        for server in r_agent.metadata.mcp_tools.stdio_servers
                     ]
-                    if r_agent.metadata.mcp_tools else []
+                    if r_agent.metadata.mcp_tools
                     else [],
                 )
             )
@@ -234,7 +235,8 @@ async def get_microagents(
                     triggers=k_agent.triggers,
                     inputs=k_agent.metadata.inputs,
                     tools=[
-                        server.name for server in k_agent.metadata.mcp_tools.stdio_servers
+                        server.name
+                        for server in k_agent.metadata.mcp_tools.stdio_servers
                     ]
                     if k_agent.metadata.mcp_tools
                     else [],
