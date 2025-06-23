@@ -45,6 +45,13 @@ body:
       description: What version of OpenHands are you using?
       placeholder: ex. 0.9.8, main, etc.
 
+  - type: input
+    id: model-name
+    attributes:
+      label: Model Name
+      description: What model are you using?
+      placeholder: ex. gpt-4o, claude-3-5-sonnet, openrouter/deepseek-r1, etc.
+
   - type: dropdown
     id: os
     attributes:
