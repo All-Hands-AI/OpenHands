@@ -55,8 +55,9 @@ Follow these steps to use this workflow in your own repository:
         4. Remove the 'fix-me' label once processed
 
    b. Using `@openhands-agent` mention:
-      - Create a new comment containing `@openhands-agent` in any issue
+      - Create a new comment containing `@openhands-agent` in any issue or pull request
       - The agent will only consider the comment where it's mentioned
+      - **Important**: For pull requests, this functionality only works if the pull request is both *to* and *from* a repository that you have added through the interface
       - The workflow will:
         1. Attempt to resolve the issue based on the specific comment
         2. Create a draft PR if successful, or push a branch if unsuccessful
@@ -162,6 +163,8 @@ python -m openhands.resolver.send_pull_request --issue-number PR_NUMBER --issue-
 ```
 
 This functionality is available both through the GitHub Actions workflow and when running the resolver locally.
+
+**Important Note**: When using the GitHub Actions workflow with `@openhands-agent` mentions in pull requests, this functionality only works if the pull request is both *to* and *from* a repository that you have added through the interface. This is because the agent needs appropriate permissions to access both repositories.
 
 ## Visualizing successful PRs
 
