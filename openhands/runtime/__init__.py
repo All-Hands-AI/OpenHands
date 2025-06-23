@@ -105,11 +105,5 @@ __all__ = [
 ]
 
 # Add third-party runtimes to __all__ if they're available
-if 'daytona' in _THIRD_PARTY_RUNTIME_CLASSES:
-    __all__.append('DaytonaRuntime')
-if 'e2b' in _THIRD_PARTY_RUNTIME_CLASSES:
-    __all__.append('E2BRuntime')
-if 'modal' in _THIRD_PARTY_RUNTIME_CLASSES:
-    __all__.append('ModalRuntime')
-if 'runloop' in _THIRD_PARTY_RUNTIME_CLASSES:
-    __all__.append('RunloopRuntime')
+for runtime_name, runtime_class in _THIRD_PARTY_RUNTIME_CLASSES.items():
+    __all__.append(runtime_class.__name__)
