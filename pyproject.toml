@@ -85,7 +85,6 @@ anyio = "4.9.0"
 pythonnet = "*"
 fastmcp = "^2.3.3"
 mcpm = "1.12.0"
-sglang = "^0.4.4.post4"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.11.11"

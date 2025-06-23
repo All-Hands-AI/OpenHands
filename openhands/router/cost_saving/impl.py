@@ -5,10 +5,13 @@ from openhands.router.cost_saving.prompt import (
     CLASSIFIER_SYSTEM_MESSAGE,
     CLASSIFIER_USER_MESSAGE,
 )
+from transformers import AutoTokenizer
 
 
-class CostSavingRouter(BaseRouter):
-    WEAK_MODEL_CONFIG = 'weak_model'
+class ThresholdBasedCostSavingRouter(BaseRouter):
+    WEAK_MODEL_CONFIG_NAME = 'weak_model'
+    CPT_THRESHOLD = 0.392578125 # FIXME: maybe move to config?
+    TOKENIZER_NAME = "Qwen/Qwen2.5-Coder-1.5B-Instruct"
 
     def __init__(
         self,
@@ -20,61 +23,61 @@ class CostSavingRouter(BaseRouter):
 
         self._validate_model_routing_config(model_routing_config, routing_llms)
 
-        self.classifier_llm = routing_llms[
-            model_routing_config.classifier_llm_config_name
-        ]
-        self.weak_llm = routing_llms[self.WEAK_MODEL_CONFIG]
+        self.weak_llm = routing_llms[self.WEAK_MODEL_CONFIG_NAME]
+        self.classifier_llm = routing_llms[model_routing_config.classifier_llm_config_name]
+        self.tokenizer = AutoTokenizer.from_pretrained(self.TOKENIZER_NAME)
+
         self.routing_history: list[int] = []
-        self.max_token_exceeded = False
+        self.max_token_exceeded = False # FIXME: handle max token exceeded case
 
     def should_route_to(self, prompt: str) -> LLM:
         if self.max_token_exceeded:
             self.routing_history.append(0)
             return self.llm
 
-        messages = [
-            {
-                'role': 'system',
-                'content': CLASSIFIER_SYSTEM_MESSAGE,
-            },
-            {
-                'role': 'user',
-                'content': CLASSIFIER_USER_MESSAGE.format(conversation=prompt),
-            },
-        ]
+        threshold = self.score_trajectory(prompt)
+        print('CostSavingRouter threshold:', threshold)
 
-        try:
-            response = self.classifier_llm.completion(
-                messages=messages,
-            )
-        except Exception as e:
-            print('❌ Failed to get response from classifier LLM:', e)
+        if threshold < self.CPT_THRESHOLD:
             self.routing_history.append(0)
-            self.max_token_exceeded = True
             return self.llm
 
-        try:
-            should_route = (
-                int(response['choices'][0]['message']['content'].strip()) == 1
-            )
-            # print('CostSavingRouter should_route:', should_route)
-        except ValueError:
-            print(
-                '❌ Invalid response from classifier LLM, using default LLM:', response
-            )
-            should_route = False
+        self.routing_history.append(1)
+        return self.weak_llm
 
-        if should_route:
-            self.routing_history.append(1)
-            return self.weak_llm
+    def score_trajectory(self, trajectory, **kwargs):
+        """Score the trajectory using the weak model."""
+        convo = self.create_conversation_prompt(trajectory)
+        prompt = self.tokenizer.apply_chat_template([convo], tokenize=False, add_generation_prompt=True)[0]
 
-        self.routing_history.append(0)
-        return self.llm
+        payload = {
+            "input": prompt,
+        }
+
+        response = self.classifier_llm.passthrough(
+            method='POST',
+            endpoint='classify',
+            json=payload,
+        )
+        response.raise_for_status()
+
+        result = response.json()
+        threshold = result['data'][0]['probs'][1] # Probability for class 1
+        return threshold
+
+
+    def create_conversation_prompt(self, trajectory: str) -> list:
+        """Create conversation format for the tokenizer."""
+        conversation = [
+            {"role": "system", "content": CLASSIFIER_SYSTEM_MESSAGE},
+            {"role": "user", "content": CLASSIFIER_USER_MESSAGE.format(conversation=trajectory)}
+        ]
+        return conversation
 
     def _validate_model_routing_config(
         self, model_routing_config: ModelRoutingConfig, routing_llms: dict[str, LLM]
     ):
-        if self.WEAK_MODEL_CONFIG not in routing_llms:
+        if self.WEAK_MODEL_CONFIG_NAME not in routing_llms:
             raise ValueError(
                 f'Weak LLM config {model_routing_config.reasoning_llm_config_name} not found'
             )
