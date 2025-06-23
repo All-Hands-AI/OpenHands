@@ -177,21 +177,6 @@ export function EventMessage({
     );
   }
 
-  // We no longer need special handling for agent state change observation
-  // as we're using alternative events (finish action, error observation, message action)
-  if (isAgentStateChangeObservation(event)) {
-    return (
-      <div>
-        <GenericEventMessage
-          title={getEventContent(event).title}
-          details={getEventContent(event).details}
-          success={getObservationResult(event)}
-        />
-        {shouldShowConfirmationButtons && <ConfirmationButtons />}
-      </div>
-    );
-  }
-
   return (
     <div>
       {isOpenHandsAction(event) && hasThoughtProperty(event.args) && (
