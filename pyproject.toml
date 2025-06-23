@@ -151,8 +151,8 @@ datasets = "*"
 joblib = "*"
 
 [tool.poetry.extras]
-daytona = ["daytona"]
-all-runtimes = ["daytona"]
+daytona = [ "daytona" ]
+all-runtimes = [ "daytona" ]
 
 [tool.poetry.scripts]
 openhands = "openhands.cli.main:main"
