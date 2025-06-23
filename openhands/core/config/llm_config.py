@@ -89,7 +89,8 @@ class LLMConfig(BaseModel):
     seed: int | None = Field(default=None)
     safety_settings: list[dict[str, str]] | None = Field(
         default=None,
-        description='Safety settings for models that support them (like Mistral AI and Gemini)')
+        description='Safety settings for models that support them (like Mistral AI and Gemini)'
+    )
 
     model_config = {'extra': 'forbid'}
 
