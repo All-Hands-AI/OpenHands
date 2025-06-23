@@ -1,6 +1,7 @@
 import contextlib
 import warnings
 from contextlib import asynccontextmanager
+from typing import AsyncIterator
 
 from fastapi.routing import Mount
 
@@ -44,7 +45,7 @@ def combine_lifespans(*lifespans):
 
 
 @asynccontextmanager
-async def _lifespan(app: FastAPI):
+async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
     async with conversation_manager:
         yield
 
