@@ -10,7 +10,6 @@ import {
   isFinishAction,
   isRejectObservation,
   isMcpObservation,
-  isAgentStateChangeObservation,
 } from "#/types/core/guards";
 import { OpenHandsObservation } from "#/types/core/observations";
 import { ImageCarousel } from "../images/image-carousel";
@@ -31,9 +30,6 @@ const hasThoughtProperty = (
   obj: Record<string, unknown>,
 ): obj is { thought: string } => "thought" in obj && !!obj.thought;
 
-// We no longer need this helper function as we're using alternative events
-// for showing feedback instead of AgentStateChangedObservation
-
 interface EventMessageProps {
   event: OpenHandsAction | OpenHandsObservation;
   hasObservationPair: boolean;
@@ -52,28 +48,45 @@ export function EventMessage({
 
   const { data: config } = useConfig();
 
-  // Use our query hook to check if feedback exists and get rating/reason
-  let eventIdForFeedback: number | undefined;
+  const shouldShowLikertScale = (eventType: string) => {
+    if (config?.APP_MODE !== "saas" || !isLastMessage) return false;
 
-  if (
-    isFinishAction(event) ||
-    isErrorObservation(event) ||
-    (isAssistantMessage(event) && event.action === "message")
-  ) {
-    eventIdForFeedback = event.id;
-  }
+    switch (eventType) {
+      case "finish":
+        return isFinishAction(event);
+      case "error":
+        return isErrorObservation(event);
+      case "assistant_message":
+        return isAssistantMessage(event) && event.action === "message";
+      default:
+        return false;
+    }
+  };
+
+  const eventIdForFeedback =
+    shouldShowLikertScale("finish") ||
+    shouldShowLikertScale("error") ||
+    shouldShowLikertScale("assistant_message")
+      ? event.id
+      : undefined;
 
   const {
     data: feedbackData = { exists: false },
     isLoading: isCheckingFeedback,
   } = useFeedbackExists(eventIdForFeedback);
 
-  // Define all Likert scale conditions before using them
-  const showLikertScaleForErrorObservation =
-    config?.APP_MODE === "saas" &&
-    isErrorObservation(event) &&
-    isLastMessage &&
-    !isCheckingFeedback;
+  const renderLikertScale = () => {
+    if (isCheckingFeedback) return null;
+
+    return (
+      <LikertScale
+        eventId={event.id}
+        initiallySubmitted={feedbackData.exists}
+        initialRating={feedbackData.rating}
+        initialReason={feedbackData.reason}
+      />
+    );
+  };
 
   if (isErrorObservation(event)) {
     return (
@@ -82,14 +95,7 @@ export function EventMessage({
           errorId={event.extras.error_id}
           defaultMessage={event.message}
         />
-        {showLikertScaleForErrorObservation && (
-          <LikertScale
-            eventId={event.id}
-            initiallySubmitted={feedbackData.exists}
-            initialRating={feedbackData.rating}
-            initialReason={feedbackData.reason}
-          />
-        )}
+        {shouldShowLikertScale("error") && renderLikertScale()}
       </div>
     );
   }
@@ -101,41 +107,17 @@ export function EventMessage({
     return null;
   }
 
-  // We no longer need to check for agent state change since we're using alternative events
-
-  // Check if we should show the Likert scale for finish action
-  const showLikertScaleForFinishAction =
-    config?.APP_MODE === "saas" &&
-    isFinishAction(event) &&
-    isLastMessage &&
-    !isCheckingFeedback;
-
   if (isFinishAction(event)) {
     return (
       <div>
         <ChatMessage type="agent" message={getEventContent(event).details} />
-        {showLikertScaleForFinishAction && (
-          <LikertScale
-            eventId={event.id}
-            initiallySubmitted={feedbackData.exists}
-            initialRating={feedbackData.rating}
-            initialReason={feedbackData.reason}
-          />
-        )}
+        {shouldShowLikertScale("finish") && renderLikertScale()}
       </div>
     );
   }
 
   if (isUserMessage(event) || isAssistantMessage(event)) {
     const message = parseMessageFromEvent(event);
-
-    // Check if we should show the Likert scale for assistant message (awaiting user input)
-    const showLikertScaleForAssistantMessage =
-      config?.APP_MODE === "saas" &&
-      isAssistantMessage(event) &&
-      event.action === "message" &&
-      isLastMessage &&
-      !isCheckingFeedback;
 
     return (
       <div>
@@ -148,14 +130,7 @@ export function EventMessage({
           )}
           {shouldShowConfirmationButtons && <ConfirmationButtons />}
         </ChatMessage>
-        {showLikertScaleForAssistantMessage && (
-          <LikertScale
-            eventId={event.id}
-            initiallySubmitted={feedbackData.exists}
-            initialRating={feedbackData.rating}
-            initialReason={feedbackData.reason}
-          />
-        )}
+        {shouldShowLikertScale("assistant_message") && renderLikertScale()}
       </div>
     );
   }
