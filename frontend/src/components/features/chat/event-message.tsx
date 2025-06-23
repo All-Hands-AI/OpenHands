@@ -58,8 +58,11 @@ export function EventMessage({
   let eventIdForFeedback: number | undefined;
 
   if (
-    isAgentStateChangeObservation(event) &&
-    shouldShowFeedbackForAgentState(event.extras.agent_state)
+    (isAgentStateChangeObservation(event) &&
+      shouldShowFeedbackForAgentState(event.extras.agent_state)) ||
+    isFinishAction(event) ||
+    isErrorObservation(event) ||
+    (isAssistantMessage(event) && event.action === "message")
   ) {
     eventIdForFeedback = event.id;
   }
@@ -69,12 +72,29 @@ export function EventMessage({
     isLoading: isCheckingFeedback,
   } = useFeedbackExists(eventIdForFeedback);
 
+  // Define all Likert scale conditions before using them
+  const showLikertScaleForErrorObservation =
+    config?.APP_MODE === "saas" &&
+    isErrorObservation(event) &&
+    isLastMessage &&
+    !isCheckingFeedback;
+
   if (isErrorObservation(event)) {
     return (
-      <ErrorMessage
-        errorId={event.extras.error_id}
-        defaultMessage={event.message}
-      />
+      <div>
+        <ErrorMessage
+          errorId={event.extras.error_id}
+          defaultMessage={event.message}
+        />
+        {showLikertScaleForErrorObservation && (
+          <LikertScale
+            eventId={event.id}
+            initiallySubmitted={feedbackData.exists}
+            initialRating={feedbackData.rating}
+            initialReason={feedbackData.reason}
+          />
+        )}
+      </div>
     );
   }
 
@@ -85,8 +105,6 @@ export function EventMessage({
     return null;
   }
 
-  // Removed the Likert scale for finish action
-
   // Check if we should show the Likert scale for agent state change
   const showLikertScaleForStateChange =
     config?.APP_MODE === "saas" &&
@@ -95,25 +113,60 @@ export function EventMessage({
     isLastMessage &&
     !isCheckingFeedback;
 
+  // Check if we should show the Likert scale for finish action
+  const showLikertScaleForFinishAction =
+    config?.APP_MODE === "saas" &&
+    isFinishAction(event) &&
+    isLastMessage &&
+    !isCheckingFeedback;
+
   if (isFinishAction(event)) {
     return (
-      <ChatMessage type="agent" message={getEventContent(event).details} />
+      <div>
+        <ChatMessage type="agent" message={getEventContent(event).details} />
+        {showLikertScaleForFinishAction && (
+          <LikertScale
+            eventId={event.id}
+            initiallySubmitted={feedbackData.exists}
+            initialRating={feedbackData.rating}
+            initialReason={feedbackData.reason}
+          />
+        )}
+      </div>
     );
   }
 
   if (isUserMessage(event) || isAssistantMessage(event)) {
     const message = parseMessageFromEvent(event);
 
+    // Check if we should show the Likert scale for assistant message (awaiting user input)
+    const showLikertScaleForAssistantMessage =
+      config?.APP_MODE === "saas" &&
+      isAssistantMessage(event) &&
+      event.action === "message" &&
+      isLastMessage &&
+      !isCheckingFeedback;
+
     return (
-      <ChatMessage type={event.source} message={message}>
-        {event.args.image_urls && event.args.image_urls.length > 0 && (
-          <ImageCarousel size="small" images={event.args.image_urls} />
+      <div>
+        <ChatMessage type={event.source} message={message}>
+          {event.args.image_urls && event.args.image_urls.length > 0 && (
+            <ImageCarousel size="small" images={event.args.image_urls} />
+          )}
+          {event.args.file_urls && event.args.file_urls.length > 0 && (
+            <FileList files={event.args.file_urls} />
+          )}
+          {shouldShowConfirmationButtons && <ConfirmationButtons />}
+        </ChatMessage>
+        {showLikertScaleForAssistantMessage && (
+          <LikertScale
+            eventId={event.id}
+            initiallySubmitted={feedbackData.exists}
+            initialRating={feedbackData.rating}
+            initialReason={feedbackData.reason}
+          />
         )}
-        {event.args.file_urls && event.args.file_urls.length > 0 && (
-          <FileList files={event.args.file_urls} />
-        )}
-        {shouldShowConfirmationButtons && <ConfirmationButtons />}
-      </ChatMessage>
+      </div>
     );
   }
 
