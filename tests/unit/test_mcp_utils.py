@@ -13,7 +13,7 @@ from openhands.events.observation.mcp import MCPObservation
 @pytest.mark.asyncio
 async def test_create_mcp_clients_empty():
     """Test creating MCP clients with empty server list."""
-    clients = await openhands.mcp.utils.create_mcp_clients([])
+    clients = await openhands.mcp.utils.create_mcp_clients([], [])
     assert clients == []
 
 
@@ -24,7 +24,7 @@ async def test_create_mcp_clients_success(mock_mcp_client):
     # Setup mock
     mock_client_instance = AsyncMock()
     mock_mcp_client.return_value = mock_client_instance
-    mock_client_instance.connect_sse = AsyncMock()
+    mock_client_instance.connect_http = AsyncMock()
 
     # Test with two servers
     server_configs = [
@@ -32,18 +32,18 @@ async def test_create_mcp_clients_success(mock_mcp_client):
         MCPSSEServerConfig(url='http://server2:8080', api_key='test-key'),
     ]
 
-    clients = await openhands.mcp.utils.create_mcp_clients(server_configs)
+    clients = await openhands.mcp.utils.create_mcp_clients(server_configs, [])
 
     # Verify
     assert len(clients) == 2
     assert mock_mcp_client.call_count == 2
 
-    # Check that connect_sse was called with correct parameters
-    mock_client_instance.connect_sse.assert_any_call(
-        'http://server1:8080', api_key=None
+    # Check that connect_http was called with correct parameters
+    mock_client_instance.connect_http.assert_any_call(
+        server_configs[0], conversation_id=None
     )
-    mock_client_instance.connect_sse.assert_any_call(
-        'http://server2:8080', api_key='test-key'
+    mock_client_instance.connect_http.assert_any_call(
+        server_configs[1], conversation_id=None
     )
 
 
@@ -56,22 +56,20 @@ async def test_create_mcp_clients_connection_failure(mock_mcp_client):
     mock_mcp_client.return_value = mock_client_instance
 
     # First connection succeeds, second fails
-    mock_client_instance.connect_sse.side_effect = [
+    mock_client_instance.connect_http.side_effect = [
         None,  # Success
         Exception('Connection failed'),  # Failure
     ]
-    mock_client_instance.disconnect = AsyncMock()
 
     server_configs = [
         MCPSSEServerConfig(url='http://server1:8080'),
         MCPSSEServerConfig(url='http://server2:8080'),
     ]
 
-    clients = await openhands.mcp.utils.create_mcp_clients(server_configs)
+    clients = await openhands.mcp.utils.create_mcp_clients(server_configs, [])
 
     # Verify only one client was successfully created
     assert len(clients) == 1
-    assert mock_client_instance.disconnect.call_count == 1
 
 
 def test_convert_mcp_clients_to_tools_empty():

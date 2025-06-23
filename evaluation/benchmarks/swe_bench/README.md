@@ -2,6 +2,10 @@
 
 This folder contains the evaluation harness that we built on top of the original [SWE-Bench benchmark](https://www.swebench.com/) ([paper](https://arxiv.org/abs/2310.06770)).
 
+**UPDATE (6/15/2025): We now support running SWE-bench-Live evaluation (see the paper [here](https://arxiv.org/abs/2505.23419))! For how to run it, checkout [this README](./SWE-bench-Live.md).**
+
+**UPDATE (5/26/2025): We now support running interactive SWE-Bench evaluation (see the paper [here](https://arxiv.org/abs/2502.13069))! For how to run it, checkout [this README](./SWE-Interact.md).**
+
 **UPDATE (4/8/2025): We now support running SWT-Bench evaluation! For more details, checkout [the corresponding section](#SWT-Bench-Evaluation).**
 
 **UPDATE (03/27/2025): We now support SWE-Bench multimodal evaluation! Simply use "princeton-nlp/SWE-bench_Multimodal" as the dataset name in the `run_infer.sh` script to evaluate on multimodal instances.**
@@ -45,7 +49,7 @@ For example, for instance ID `django_django-11011`, it will try to pull our pre-
 This image will be used create an OpenHands runtime image where the agent will operate on.
 
 ```bash
-./evaluation/benchmarks/swe_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [max_iter] [num_workers] [dataset] [dataset_split]
+./evaluation/benchmarks/swe_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [max_iter] [num_workers] [dataset] [dataset_split] [n_runs] [mode]
 
 # Example
 ./evaluation/benchmarks/swe_bench/scripts/run_infer.sh llm.eval_gpt4_1106_preview HEAD CodeActAgent 500 100 1 princeton-nlp/SWE-bench_Verified test
@@ -69,13 +73,20 @@ default, it is set to 1.
 - `dataset`, a huggingface dataset name. e.g. `princeton-nlp/SWE-bench`, `princeton-nlp/SWE-bench_Lite`, `princeton-nlp/SWE-bench_Verified`, or `princeton-nlp/SWE-bench_Multimodal`, specifies which dataset to evaluate on.
 - `dataset_split`, split for the huggingface dataset. e.g., `test`, `dev`. Default to `test`.
 
+- `n_runs`, e.g. `3`, is the number of times to run the evaluation. Default is 1.
+- `mode`, e.g. `swt`, `swt-ci`, or `swe`, specifies the evaluation mode. Default is `swe`.
+
 > [!CAUTION]
 > Setting `num_workers` larger than 1 is not officially tested, YMMV.
 
-There is also one optional environment variable you can set.
+There are also optional environment variables you can set:
 
 ```bash
-export USE_HINT_TEXT=true # if you want to use hint text in the evaluation. Default to false. Ignore this if you are not sure.
+# Use hint text in the evaluation (default: false)
+export USE_HINT_TEXT=true # Ignore this if you are not sure.
+
+# Specify a condenser configuration for memory management (default: NoOpCondenser)
+export EVAL_CONDENSER=summarizer_for_eval # Name of the condenser config group in config.toml
 ```
 
 Let's say you'd like to run 10 instances using `llm.eval_gpt4_1106_preview` and CodeActAgent,
@@ -151,6 +162,8 @@ The script now accepts optional arguments:
 - `instance_id`: Specify a single instance to evaluate (optional)
 - `dataset_name`: The name of the dataset to use (default: `"princeton-nlp/SWE-bench_Lite"`)
 - `split`: The split of the dataset to use (default: `"test"`)
+- `environment`: The environment to use for patch evaluation (default: `"local"`). You can set it to
+  `"modal"` to use [official SWE-Bench support](https://github.com/swe-bench/SWE-bench/blob/main/docs/assets/evaluation.md#%EF%B8%8F-evaluation-with-modal) for running evaluation on Modal.
 
 For example, to evaluate a specific instance with a custom dataset and split:
 

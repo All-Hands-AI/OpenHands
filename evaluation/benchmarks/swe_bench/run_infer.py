@@ -41,10 +41,12 @@ from evaluation.utils.shared import (
 from openhands.controller.state.state import State
 from openhands.core.config import (
     AgentConfig,
-    AppConfig,
+    OpenHandsConfig,
     get_llm_config_arg,
     get_parser,
 )
+from openhands.core.config.condenser_config import NoOpCondenserConfig
+from openhands.core.config.utils import get_condenser_config_arg
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.critic import AgentFinishedCritic
@@ -61,7 +63,28 @@ from openhands.utils.shutdown_listener import sleep_if_should_continue
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
 RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'true'
+ENABLE_LLM_EDITOR = os.environ.get('ENABLE_LLM_EDITOR', 'false').lower() == 'true'
 BenchMode = Literal['swe', 'swt', 'swt-ci']
+
+# Global variable to track dataset type
+DATASET_TYPE = 'SWE-bench'
+
+
+def set_dataset_type(dataset_name: str) -> str:
+    """Set dataset type based on dataset name."""
+    global DATASET_TYPE
+    name_lower = dataset_name.lower()
+
+    if 'swe-gym' in name_lower:
+        DATASET_TYPE = 'SWE-Gym'
+    elif 'swe-bench-live' in name_lower:
+        DATASET_TYPE = 'SWE-bench-Live'
+    elif 'multimodal' in name_lower:
+        DATASET_TYPE = 'Multimodal'
+    else:
+        DATASET_TYPE = 'SWE-bench'
+
+    logger.info(f'Dataset type set to: {DATASET_TYPE}')
 
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
@@ -70,7 +93,10 @@ AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
 
 
 def _get_swebench_workspace_dir_name(instance: pd.Series) -> str:
-    return f'{instance.repo}__{instance.version}'.replace('/', '__')
+    if DATASET_TYPE == 'SWE-bench-Live':
+        return instance.instance_id
+    else:
+        return f'{instance.repo}__{instance.version}'.replace('/', '__')
 
 
 def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageAction:
@@ -86,11 +112,15 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageActio
             template_name = 'swe_claude.j2'
         elif 'gemini' in llm_model:
             template_name = 'swe_gemini.j2'
+        elif 'gpt-4.1' in llm_model:
+            template_name = 'swe_gpt4.j2'
         else:
-            template_name = 'swe_default.j2'  # Default for 'swe' mode
+            template_name = (
+                'swe_default.j2'  # Default for 'swe' mode (regular swe-bench)
+            )
     else:
         # Fallback or error handling if mode is unexpected
-        logger.error(f"Unexpected evaluation mode: {mode}. Falling back to default.")
+        logger.error(f'Unexpected evaluation mode: {mode}. Falling back to default.')
         template_name = 'swe_default.j2'
 
     # Set up Jinja2 environment
@@ -112,7 +142,7 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageActio
             f'The following command can be used to run the tests: `{list(MAP_REPO_TO_TEST_FRAMEWORK_VERBOSE[instance.repo].values())[0]}`. Make sure they fail in the expected way.\n'
         )
     else:
-        context['test_instructions'] = '' # Ensure it's defined for other modes
+        context['test_instructions'] = ''  # Ensure it's defined for other modes
 
     # Render the instruction
     instruction = template.render(context)
@@ -146,9 +176,13 @@ def get_instance_docker_image(
     if swebench_official_image:
         # Official SWE-Bench image
         # swebench/sweb.eval.x86_64.django_1776_django-11333:v1
-        docker_image_prefix = 'docker.io/swebench/'
+        # SWE-bench-Live uses the same naming convention as SWE-Bench
+        if DATASET_TYPE == 'SWE-bench-Live':
+            docker_image_prefix = 'docker.io/starryzhang/'
+        elif DATASET_TYPE == 'SWE-bench':
+            docker_image_prefix = 'docker.io/swebench/'
         repo, name = instance_id.split('__')
-        image_name = f'swebench/sweb.eval.x86_64.{repo}_1776_{name}:latest'.lower()
+        image_name = f'{docker_image_prefix.rstrip("/")}/sweb.eval.x86_64.{repo}_1776_{name}:latest'.lower()
         logger.debug(f'Using official SWE-Bench image: {image_name}')
         return image_name
     else:
@@ -164,9 +198,10 @@ def get_instance_docker_image(
 def get_config(
     instance: pd.Series,
     metadata: EvalMetadata,
-) -> AppConfig:
+) -> OpenHandsConfig:
     # We use a different instance image for the each instance of swe-bench eval
-    use_swebench_official_image = 'swe-gym' not in metadata.dataset.lower()
+    use_swebench_official_image = DATASET_TYPE != 'SWE-Gym'
+
     base_container_image = get_instance_docker_image(
         instance['instance_id'],
         swebench_official_image=use_swebench_official_image,
@@ -188,7 +223,7 @@ def get_config(
         instance_id=instance['instance_id'],
     )
 
-    config = AppConfig(
+    config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         max_iterations=metadata.max_iterations,
@@ -198,15 +233,20 @@ def get_config(
         workspace_base=None,
         workspace_mount_path=None,
     )
+
     config.set_llm_config(
         update_llm_config_for_completions_logging(
             metadata.llm_config, metadata.eval_output_dir, instance['instance_id']
         )
     )
+    # get 'draft_editor' config if exists
+    config.set_llm_config(get_llm_config_arg('draft_editor'), 'draft_editor')
+
     agent_config = AgentConfig(
         enable_jupyter=False,
         enable_browsing=RUN_WITH_BROWSING,
-        enable_llm_editor=False,
+        enable_llm_editor=ENABLE_LLM_EDITOR,
+        enable_mcp=False,
         enable_llm_diff=True,
         condenser=metadata.condenser_config,
         enable_prompt_extensions=False,
@@ -260,7 +300,7 @@ def initialize_runtime(
         obs.exit_code == 0,
         f'Failed to export DEBUG=1: {str(obs)}',
     )
-    
+
     # inject the init script
     script_dir = os.path.dirname(__file__)
 
@@ -290,8 +330,12 @@ def initialize_runtime(
         runtime.copy_to(temp_file_path, '/swe_util/eval_data/instances/')
 
         # inject the instance swe entry
+        if DATASET_TYPE == 'SWE-bench-Live':
+            entry_script_path = 'instance_swe_entry_live.sh'
+        else:
+            entry_script_path = 'instance_swe_entry.sh'
         runtime.copy_to(
-            str(os.path.join(script_dir, 'scripts/setup/instance_swe_entry.sh')),
+            str(os.path.join(script_dir, f'scripts/setup/{entry_script_path}')),
             '/swe_util/',
         )
 
@@ -311,14 +355,14 @@ def initialize_runtime(
         logger.error(f'Failed to source ~/.bashrc: {str(obs)}')
     assert_and_raise(obs.exit_code == 0, f'Failed to source ~/.bashrc: {str(obs)}')
 
-    action = CmdRunAction(command='source /swe_util/instance_swe_entry.sh')
+    action = CmdRunAction(command=f'source /swe_util/{entry_script_path}')
     action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(
         obs.exit_code == 0,
-        f'Failed to source /swe_util/instance_swe_entry.sh: {str(obs)}',
+        f'Failed to source /swe_util/{entry_script_path}: {str(obs)}',
     )
 
     action = CmdRunAction(command=f'cd /workspace/{workspace_dir_name}')
@@ -371,9 +415,9 @@ def initialize_runtime(
             obs = runtime.run_action(action)
             logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
-    if 'multimodal' not in metadata.dataset.lower():
+    if DATASET_TYPE != 'Multimodal' and DATASET_TYPE != 'SWE-bench-Live':
         # Only for non-multimodal datasets, we need to activate the testbed environment for Python
-        # SWE-Bench multimodal datasets are not using the testbed environment
+        # SWE-Bench multimodal datasets and SWE-bench-Live are not using the testbed environment
         action = CmdRunAction(command='which python')
         action.set_hard_timeout(600)
         logger.info(action, extra={'msg_type': 'ACTION'})
@@ -615,7 +659,13 @@ def process_instance(
 
         # ======= THIS IS SWE-Bench specific =======
         # Get git patch
-        return_val = complete_runtime(runtime, instance)
+        if DATASET_TYPE == 'SWE-bench-Live':
+            from evaluation.benchmarks.swe_bench.live_utils import (
+                complete_runtime as complete_runtime_fn,
+            )
+        else:
+            complete_runtime_fn = complete_runtime
+        return_val = complete_runtime_fn(runtime, instance)
         git_patch = return_val['git_patch']
         logger.info(
             f'Got git diff for instance {instance.instance_id}:\n--------\n{git_patch}\n--------'
@@ -676,15 +726,16 @@ def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
                 # repos for the swe-bench instances:
                 # ['astropy/astropy', 'django/django', 'matplotlib/matplotlib', 'mwaskom/seaborn', 'pallets/flask', 'psf/requests', 'pydata/xarray', 'pylint-dev/pylint', 'pytest-dev/pytest', 'scikit-learn/scikit-learn', 'sphinx-doc/sphinx', 'sympy/sympy']
                 selected_repos = data['selected_repos']
-                if isinstance(selected_repos, str): selected_repos = [selected_repos]
+                if isinstance(selected_repos, str):
+                    selected_repos = [selected_repos]
                 assert isinstance(selected_repos, list)
                 logger.info(
                     f'Filtering {selected_repos} tasks from "selected_repos"...'
                 )
-                subset = dataset[dataset["repo"].isin(selected_repos)]
+                subset = dataset[dataset['repo'].isin(selected_repos)]
                 logger.info(f'Retained {subset.shape[0]} tasks after filtering')
                 return subset
-                
+
     skip_ids = os.environ.get('SKIP_IDS', '').split(',')
     if len(skip_ids) > 0:
         logger.info(f'Filtering {len(skip_ids)} tasks from "SKIP_IDS"...')
@@ -713,16 +764,21 @@ if __name__ == '__main__':
         choices=['swe', 'swt', 'swt-ci'],
         help="mode to run the evaluation, either 'swe', 'swt', or 'swt-ci'",
     )
+
     args, _ = parser.parse_known_args()
 
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenHands's repo
     dataset = load_dataset(args.dataset, split=args.split)
+
+    # Set the global dataset type based on dataset name
+    set_dataset_type(args.dataset)
+
     swe_bench_tests = filter_dataset(dataset.to_pandas(), 'instance_id')
     logger.info(
         f'Loaded dataset {args.dataset} with split {args.split}: {len(swe_bench_tests)} tasks'
     )
-    if 'SWE-Gym' in args.dataset:
+    if DATASET_TYPE == 'SWE-Gym':
         with open(
             os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
@@ -749,6 +805,21 @@ if __name__ == '__main__':
     if llm_config is None:
         raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
 
+    # Get condenser config from environment variable
+    condenser_name = os.environ.get('EVAL_CONDENSER')
+    if condenser_name:
+        condenser_config = get_condenser_config_arg(condenser_name)
+        if condenser_config is None:
+            raise ValueError(
+                f'Could not find Condenser config: EVAL_CONDENSER={condenser_name}'
+            )
+    else:
+        # If no specific condenser config is provided via env var, default to NoOpCondenser
+        condenser_config = NoOpCondenserConfig()
+        logger.debug(
+            'No Condenser config provided via EVAL_CONDENSER, using NoOpCondenser.'
+        )
+
     details = {'mode': args.mode}
     _agent_cls = openhands.agenthub.Agent.get_cls(args.agent_cls)
 
@@ -763,6 +834,7 @@ if __name__ == '__main__':
         args.eval_note,
         args.eval_output_dir,
         details=details,
+        condenser_config=condenser_config,
     )
 
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')

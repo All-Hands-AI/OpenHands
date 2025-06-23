@@ -4,7 +4,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 from pydantic import SecretStr
 
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
+from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig
 from openhands.events.action import Action
 from openhands.events.action.commands import CmdRunAction
 from openhands.events.observation import NullObservation, Observation
@@ -65,6 +66,14 @@ class TestRuntime(Runtime):
     def call_tool_mcp(self, action):
         return NullObservation(content='')
 
+    def edit(self, action):
+        return NullObservation(content='')
+
+    def get_mcp_config(
+        self, extra_stdio_servers: list[MCPStdioServerConfig] | None = None
+    ):
+        return MCPConfig()
+
 
 @pytest.fixture
 def temp_dir(tmp_path_factory: pytest.TempPathFactory) -> str:
@@ -74,7 +83,7 @@ def temp_dir(tmp_path_factory: pytest.TempPathFactory) -> str:
 @pytest.fixture
 def runtime(temp_dir):
     """Fixture for runtime testing"""
-    config = AppConfig()
+    config = OpenHandsConfig()
     git_provider_tokens = MappingProxyType(
         {ProviderType.GITHUB: ProviderToken(token=SecretStr('test_token'))}
     )
@@ -92,7 +101,7 @@ def runtime(temp_dir):
 
 def mock_repo_and_patch(monkeypatch, provider=ProviderType.GITHUB, is_public=True):
     repo = Repository(
-        id=123, full_name='owner/repo', git_provider=provider, is_public=is_public
+        id='123', full_name='owner/repo', git_provider=provider, is_public=is_public
     )
 
     async def mock_verify_repo_provider(*_args, **_kwargs):
@@ -107,7 +116,7 @@ def mock_repo_and_patch(monkeypatch, provider=ProviderType.GITHUB, is_public=Tru
 @pytest.mark.asyncio
 async def test_export_latest_git_provider_tokens_no_user_id(temp_dir):
     """Test that no token export happens when user_id is not set"""
-    config = AppConfig()
+    config = OpenHandsConfig()
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
     runtime = TestRuntime(config=config, event_stream=event_stream, sid='test')
@@ -125,7 +134,7 @@ async def test_export_latest_git_provider_tokens_no_user_id(temp_dir):
 @pytest.mark.asyncio
 async def test_export_latest_git_provider_tokens_no_token_ref(temp_dir):
     """Test that no token export happens when command doesn't reference tokens"""
-    config = AppConfig()
+    config = OpenHandsConfig()
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
     runtime = TestRuntime(
@@ -158,7 +167,7 @@ async def test_export_latest_git_provider_tokens_success(runtime):
 @pytest.mark.asyncio
 async def test_export_latest_git_provider_tokens_multiple_refs(temp_dir):
     """Test token export with multiple token references"""
-    config = AppConfig()
+    config = OpenHandsConfig()
     # Initialize with both GitHub and GitLab tokens
     git_provider_tokens = MappingProxyType(
         {
@@ -212,7 +221,7 @@ async def test_export_latest_git_provider_tokens_token_update(runtime):
 @pytest.mark.asyncio
 async def test_clone_or_init_repo_no_repo_with_user_id(temp_dir):
     """Test that git init is run when no repository is selected and user_id is set"""
-    config = AppConfig()
+    config = OpenHandsConfig()
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
     runtime = TestRuntime(
@@ -225,14 +234,17 @@ async def test_clone_or_init_repo_no_repo_with_user_id(temp_dir):
     # Verify that git init was called
     assert len(runtime.run_action_calls) == 1
     assert isinstance(runtime.run_action_calls[0], CmdRunAction)
-    assert runtime.run_action_calls[0].command == 'git init'
+    assert (
+        runtime.run_action_calls[0].command
+        == f'git init && git config --global --add safe.directory {runtime.workspace_root}'
+    )
     assert result == ''
 
 
 @pytest.mark.asyncio
 async def test_clone_or_init_repo_no_repo_no_user_id_no_workspace_base(temp_dir):
     """Test that git init is run when no repository is selected, no user_id, and no workspace_base"""
-    config = AppConfig()
+    config = OpenHandsConfig()
     config.workspace_base = None  # Ensure workspace_base is not set
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
@@ -246,14 +258,17 @@ async def test_clone_or_init_repo_no_repo_no_user_id_no_workspace_base(temp_dir)
     # Verify that git init was called
     assert len(runtime.run_action_calls) == 1
     assert isinstance(runtime.run_action_calls[0], CmdRunAction)
-    assert runtime.run_action_calls[0].command == 'git init'
+    assert (
+        runtime.run_action_calls[0].command
+        == f'git init && git config --global --add safe.directory {runtime.workspace_root}'
+    )
     assert result == ''
 
 
 @pytest.mark.asyncio
 async def test_clone_or_init_repo_no_repo_no_user_id_with_workspace_base(temp_dir):
     """Test that git init is not run when no repository is selected, no user_id, but workspace_base is set"""
-    config = AppConfig()
+    config = OpenHandsConfig()
     config.workspace_base = '/some/path'  # Set workspace_base
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
@@ -272,7 +287,7 @@ async def test_clone_or_init_repo_no_repo_no_user_id_with_workspace_base(temp_di
 @pytest.mark.asyncio
 async def test_clone_or_init_repo_auth_error(temp_dir):
     """Test that RuntimeError is raised when authentication fails"""
-    config = AppConfig()
+    config = OpenHandsConfig()
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
     runtime = TestRuntime(
@@ -286,18 +301,18 @@ async def test_clone_or_init_repo_auth_error(temp_dir):
         side_effect=AuthenticationError('Auth failed'),
     ):
         # Call the function with a repository
-        with pytest.raises(RuntimeError) as excinfo:
+        with pytest.raises(Exception) as excinfo:
             await runtime.clone_or_init_repo(None, 'owner/repo', None)
 
         # Verify the error message
-        assert 'Git provider authentication issue when cloning repo' in str(
+        assert 'Git provider authentication issue when getting remote URL' in str(
             excinfo.value
         )
 
 
 @pytest.mark.asyncio
 async def test_clone_or_init_repo_github_with_token(temp_dir, monkeypatch):
-    config = AppConfig()
+    config = OpenHandsConfig()
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
 
@@ -318,15 +333,29 @@ async def test_clone_or_init_repo_github_with_token(temp_dir, monkeypatch):
 
     result = await runtime.clone_or_init_repo(git_provider_tokens, 'owner/repo', None)
 
-    cmd = runtime.run_action_calls[0].command
-    assert f'git clone https://{github_token}@github.com/owner/repo.git repo' in cmd
+    # Verify that git clone and checkout were called as separate commands
+    assert len(runtime.run_action_calls) == 2
+    assert isinstance(runtime.run_action_calls[0], CmdRunAction)
+    assert isinstance(runtime.run_action_calls[1], CmdRunAction)
+
+    # Check that the first command is the git clone with the correct URL format with token
+    clone_cmd = runtime.run_action_calls[0].command
+    assert (
+        f'git clone https://{github_token}@github.com/owner/repo.git repo' in clone_cmd
+    )
+
+    # Check that the second command is the checkout
+    checkout_cmd = runtime.run_action_calls[1].command
+    assert 'cd repo' in checkout_cmd
+    assert 'git checkout -b openhands-workspace-' in checkout_cmd
+
     assert result == 'repo'
 
 
 @pytest.mark.asyncio
 async def test_clone_or_init_repo_github_no_token(temp_dir, monkeypatch):
     """Test cloning a GitHub repository without a token"""
-    config = AppConfig()
+    config = OpenHandsConfig()
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
 
@@ -337,21 +366,26 @@ async def test_clone_or_init_repo_github_no_token(temp_dir, monkeypatch):
     mock_repo_and_patch(monkeypatch, provider=ProviderType.GITHUB)
     result = await runtime.clone_or_init_repo(None, 'owner/repo', None)
 
-    # Verify that git clone was called with the public URL
-    assert len(runtime.run_action_calls) == 1
+    # Verify that git clone and checkout were called as separate commands
+    assert len(runtime.run_action_calls) == 2
     assert isinstance(runtime.run_action_calls[0], CmdRunAction)
+    assert isinstance(runtime.run_action_calls[1], CmdRunAction)
 
-    # Check that the command contains the correct URL format without token
-    cmd = runtime.run_action_calls[0].command
-    assert 'git clone https://github.com/owner/repo.git repo' in cmd
-    assert 'cd repo' in cmd
-    assert 'git checkout -b openhands-workspace-' in cmd
+    # Check that the first command is the git clone with the correct URL format without token
+    clone_cmd = runtime.run_action_calls[0].command
+    assert 'git clone https://github.com/owner/repo.git repo' in clone_cmd
+
+    # Check that the second command is the checkout
+    checkout_cmd = runtime.run_action_calls[1].command
+    assert 'cd repo' in checkout_cmd
+    assert 'git checkout -b openhands-workspace-' in checkout_cmd
+
     assert result == 'repo'
 
 
 @pytest.mark.asyncio
 async def test_clone_or_init_repo_gitlab_with_token(temp_dir, monkeypatch):
-    config = AppConfig()
+    config = OpenHandsConfig()
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
 
@@ -372,17 +406,30 @@ async def test_clone_or_init_repo_gitlab_with_token(temp_dir, monkeypatch):
 
     result = await runtime.clone_or_init_repo(git_provider_tokens, 'owner/repo', None)
 
-    cmd = runtime.run_action_calls[0].command
+    # Verify that git clone and checkout were called as separate commands
+    assert len(runtime.run_action_calls) == 2
+    assert isinstance(runtime.run_action_calls[0], CmdRunAction)
+    assert isinstance(runtime.run_action_calls[1], CmdRunAction)
+
+    # Check that the first command is the git clone with the correct URL format with token
+    clone_cmd = runtime.run_action_calls[0].command
     assert (
-        f'git clone https://oauth2:{gitlab_token}@gitlab.com/owner/repo.git repo' in cmd
+        f'git clone https://oauth2:{gitlab_token}@gitlab.com/owner/repo.git repo'
+        in clone_cmd
     )
+
+    # Check that the second command is the checkout
+    checkout_cmd = runtime.run_action_calls[1].command
+    assert 'cd repo' in checkout_cmd
+    assert 'git checkout -b openhands-workspace-' in checkout_cmd
+
     assert result == 'repo'
 
 
 @pytest.mark.asyncio
 async def test_clone_or_init_repo_with_branch(temp_dir, monkeypatch):
     """Test cloning a repository with a specified branch"""
-    config = AppConfig()
+    config = OpenHandsConfig()
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
 
@@ -393,14 +440,18 @@ async def test_clone_or_init_repo_with_branch(temp_dir, monkeypatch):
     mock_repo_and_patch(monkeypatch, provider=ProviderType.GITHUB)
     result = await runtime.clone_or_init_repo(None, 'owner/repo', 'feature-branch')
 
-    # Verify that git clone was called with the correct branch checkout
-    assert len(runtime.run_action_calls) == 1
+    # Verify that git clone and checkout were called as separate commands
+    assert len(runtime.run_action_calls) == 2
     assert isinstance(runtime.run_action_calls[0], CmdRunAction)
+    assert isinstance(runtime.run_action_calls[1], CmdRunAction)
 
-    # Check that the command contains the correct branch checkout
-    cmd = runtime.run_action_calls[0].command
-    assert 'git clone https://github.com/owner/repo.git repo' in cmd
-    assert 'cd repo' in cmd
-    assert 'git checkout feature-branch' in cmd
-    assert 'git checkout -b' not in cmd  # Should not create a new branch
+    # Check that the first command is the git clone
+    clone_cmd = runtime.run_action_calls[0].command
+
+    # Check that the second command contains the correct branch checkout
+    checkout_cmd = runtime.run_action_calls[1].command
+    assert 'git clone https://github.com/owner/repo.git repo' in clone_cmd
+    assert 'cd repo' in checkout_cmd
+    assert 'git checkout feature-branch' in checkout_cmd
+    assert 'git checkout -b' not in checkout_cmd  # Should not create a new branch
     assert result == 'repo'

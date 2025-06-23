@@ -18,6 +18,7 @@ const getSettingsQueryFn = async (): Promise<Settings> => {
     CONFIRMATION_MODE: apiSettings.confirmation_mode,
     SECURITY_ANALYZER: apiSettings.security_analyzer,
     LLM_API_KEY_SET: apiSettings.llm_api_key_set,
+    SEARCH_API_KEY_SET: apiSettings.search_api_key_set,
     REMOTE_RUNTIME_RESOURCE_FACTOR: apiSettings.remote_runtime_resource_factor,
     PROVIDER_TOKENS_SET: apiSettings.provider_tokens_set,
     ENABLE_DEFAULT_CONDENSER: apiSettings.enable_default_condenser,
@@ -25,7 +26,10 @@ const getSettingsQueryFn = async (): Promise<Settings> => {
     ENABLE_PROACTIVE_CONVERSATION_STARTERS:
       apiSettings.enable_proactive_conversation_starters,
     USER_CONSENTS_TO_ANALYTICS: apiSettings.user_consents_to_analytics,
-
+    SEARCH_API_KEY: apiSettings.search_api_key || "",
+    MAX_BUDGET_PER_TASK: apiSettings.max_budget_per_task,
+    EMAIL: apiSettings.email || "",
+    EMAIL_VERIFIED: apiSettings.email_verified,
     MCP_CONFIG: apiSettings.mcp_config,
     IS_NEW_USER: false,
   };
@@ -42,6 +46,7 @@ export const useSettings = () => {
     // would want to show the modal immediately if the
     // settings are not found
     retry: (_, error) => error.status !== 404,
+    refetchOnWindowFocus: false,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes
     enabled: !isOnTosPage && !!userIsAuthenticated,

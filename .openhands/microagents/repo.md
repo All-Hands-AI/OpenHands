@@ -5,6 +5,14 @@ This repository contains the code for OpenHands, an automated AI software engine
 To set up the entire repo, including frontend and backend, run `make build`.
 You don't need to do this unless the user asks you to, or if you're trying to run the entire application.
 
+## Running OpenHands with OpenHands:
+To run the full application to debug issues:
+```bash
+export INSTALL_DOCKER=0
+export RUNTIME=local
+make build && make run FRONTEND_PORT=12000 FRONTEND_HOST=0.0.0.0 BACKEND_HOST=0.0.0.0 &> /tmp/openhands-log.txt &
+```
+
 IMPORTANT: Before making any changes to the codebase, ALWAYS run `make install-pre-commit-hooks` to ensure pre-commit hooks are properly installed.
 
 Before pushing any changes, you MUST ensure that any lint errors or simple test errors have been fixed.
@@ -44,7 +52,13 @@ Frontend:
   - Available variables: VITE_BACKEND_HOST, VITE_USE_TLS, VITE_INSECURE_SKIP_VERIFY, VITE_FRONTEND_PORT
 - Internationalization:
   - Generate i18n declaration file: `npm run make-i18n`
-
+- Data Fetching & Cache Management:
+  - We use TanStack Query (fka React Query) for data fetching and cache management
+  - Data Access Layer: API client methods are located in `frontend/src/api` and should never be called directly from UI components - they must always be wrapped with TanStack Query
+  - Custom hooks are located in `frontend/src/hooks/query/` and `frontend/src/hooks/mutation/`
+  - Query hooks should follow the pattern use[Resource] (e.g., `useConversationMicroagents`)
+  - Mutation hooks should follow the pattern use[Action] (e.g., `useDeleteConversation`)
+  - Architecture rule: UI components → TanStack Query hooks → Data Access Layer (`frontend/src/api`) → API endpoints
 
 ## Template for Github Pull Request
 
@@ -66,3 +80,18 @@ These details may or may not be useful for your current task.
 - Actions with `thought` property are displayed in the UI based on their action type:
   - Regular actions (like "run", "edit") display the thought as a separate message
   - Special actions (like "think") are displayed as collapsible elements only
+
+#### Adding User Settings:
+- To add a new user setting to OpenHands, follow these steps:
+  1. Add the setting to the frontend:
+     - Add the setting to the `Settings` type in `frontend/src/types/settings.ts`
+     - Add the setting to the `ApiSettings` type in the same file
+     - Add the setting with an appropriate default value to `DEFAULT_SETTINGS` in `frontend/src/services/settings.ts`
+     - Update the `useSettings` hook in `frontend/src/hooks/query/use-settings.ts` to map the API response
+     - Update the `useSaveSettings` hook in `frontend/src/hooks/mutation/use-save-settings.ts` to include the setting in API requests
+     - Add UI components (like toggle switches) in the appropriate settings screen (e.g., `frontend/src/routes/app-settings.tsx`)
+     - Add i18n translations for the setting name and any tooltips in `frontend/src/i18n/translation.json`
+     - Add the translation key to `frontend/src/i18n/declaration.ts`
+  2. Add the setting to the backend:
+     - Add the setting to the `Settings` model in `openhands/storage/data_models/settings.py`
+     - Update any relevant backend code to apply the setting (e.g., in session creation)

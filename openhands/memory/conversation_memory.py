@@ -41,7 +41,12 @@ from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content
-from openhands.utils.prompt import PromptManager, RepositoryInfo, RuntimeInfo
+from openhands.utils.prompt import (
+    ConversationInstructions,
+    PromptManager,
+    RepositoryInfo,
+    RuntimeInfo,
+)
 
 
 class ConversationMemory:
@@ -50,6 +55,18 @@ class ConversationMemory:
     def __init__(self, config: AgentConfig, prompt_manager: PromptManager):
         self.agent_config = config
         self.prompt_manager = prompt_manager
+
+    @staticmethod
+    def _is_valid_image_url(url: str | None) -> bool:
+        """Check if an image URL is valid and non-empty.
+
+        Args:
+            url: The image URL to validate
+
+        Returns:
+            True if the URL is valid, False otherwise
+        """
+        return bool(url and url.strip())
 
     def process_events(
         self,
@@ -383,7 +400,7 @@ class ConversationMemory:
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IPythonRunCellObservation):
             text = obs.content
-            # replace base64 images with a placeholder
+            # Clean up any remaining base64 images in text content
             splitted = text.split('\n')
             for i, line in enumerate(splitted):
                 if '![image](data:image/png;base64,' in line:
@@ -392,7 +409,35 @@ class ConversationMemory:
                     )
             text = '\n'.join(splitted)
             text = truncate_content(text, max_message_chars)
-            message = Message(role='user', content=[TextContent(text=text)])
+
+            # Create message content with text
+            content = [TextContent(text=text)]
+
+            # Add image URLs if available and vision is active
+            if vision_is_active and obs.image_urls:
+                # Filter out empty or invalid image URLs
+                valid_image_urls = [
+                    url for url in obs.image_urls if self._is_valid_image_url(url)
+                ]
+                invalid_count = len(obs.image_urls) - len(valid_image_urls)
+
+                if valid_image_urls:
+                    content.append(ImageContent(image_urls=valid_image_urls))
+                    if invalid_count > 0:
+                        # Add text indicating some images were filtered
+                        content[
+                            0
+                        ].text += f'\n\nNote: {invalid_count} invalid or empty image(s) were filtered from this output. The agent may need to use alternative methods to access visual information.'
+                else:
+                    logger.debug(
+                        'IPython observation has image URLs but none are valid'
+                    )
+                    # Add text indicating all images were filtered
+                    content[
+                        0
+                    ].text += f'\n\nNote: All {len(obs.image_urls)} image(s) in this output were invalid or empty and have been filtered. The agent should use alternative methods to access visual information.'
+
+            message = Message(role='user', content=content)
         elif isinstance(obs, FileEditObservation):
             text = truncate_content(str(obs), max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
@@ -401,32 +446,49 @@ class ConversationMemory:
                 role='user', content=[TextContent(text=obs.content)]
             )  # Content is already truncated by openhands-aci
         elif isinstance(obs, BrowserOutputObservation):
-            text = obs.get_agent_obs_text()
+            text = obs.content
             if (
                 obs.trigger_by_action == ActionType.BROWSE_INTERACTIVE
                 and enable_som_visual_browsing
                 and vision_is_active
             ):
                 text += 'Image: Current webpage screenshot (Note that only visible portion of webpage is present in the screenshot. You may need to scroll to view the remaining portion of the web-page.)\n'
-                message = Message(
-                    role='user',
-                    content=[
-                        TextContent(text=text),
-                        ImageContent(
-                            image_urls=[
-                                # show set of marks if it exists
-                                # otherwise, show raw screenshot when using vision-supported model
-                                obs.set_of_marks
-                                if obs.set_of_marks is not None
-                                and len(obs.set_of_marks) > 0
-                                else obs.screenshot
-                            ]
-                        ),
-                    ],
-                )
-                logger.debug(
-                    f'Vision enabled for browsing, showing {"set of marks" if obs.set_of_marks and len(obs.set_of_marks) > 0 else "screenshot"}'
-                )
+
+                # Determine which image to use and validate it
+                image_url = None
+                if obs.set_of_marks is not None and len(obs.set_of_marks) > 0:
+                    image_url = obs.set_of_marks
+                    image_type = 'set of marks'
+                elif obs.screenshot is not None and len(obs.screenshot) > 0:
+                    image_url = obs.screenshot
+                    image_type = 'screenshot'
+
+                # Create message content with text
+                content = [TextContent(text=text)]
+
+                # Only add ImageContent if we have a valid image URL
+                if self._is_valid_image_url(image_url):
+                    content.append(ImageContent(image_urls=[image_url]))
+                    logger.debug(f'Vision enabled for browsing, showing {image_type}')
+                else:
+                    if image_url:
+                        logger.warning(
+                            f'Invalid image URL format for {image_type}: {image_url[:50]}...'
+                        )
+                        # Add text indicating the image was filtered
+                        content[
+                            0
+                        ].text += f'\n\nNote: The {image_type} for this webpage was invalid or empty and has been filtered. The agent should use alternative methods to access visual information about the webpage.'
+                    else:
+                        logger.debug(
+                            'Vision enabled for browsing, but no valid image available'
+                        )
+                        # Add text indicating no image was available
+                        content[
+                            0
+                        ].text += '\n\nNote: No visual information (screenshot or set of marks) is available for this webpage. The agent should rely on the text content above.'
+
+                message = Message(role='user', content=content)
             else:
                 message = Message(
                     role='user',
@@ -482,6 +544,13 @@ class ConversationMemory:
                         custom_secrets_descriptions=obs.custom_secrets_descriptions,
                     )
 
+                conversation_instructions = None
+
+                if obs.conversation_instructions:
+                    conversation_instructions = ConversationInstructions(
+                        content=obs.conversation_instructions
+                    )
+
                 repo_instructions = (
                     obs.repo_instructions if obs.repo_instructions else ''
                 )
@@ -491,10 +560,10 @@ class ConversationMemory:
                     repo_info.repo_name or repo_info.repo_directory
                 )
                 has_runtime_info = runtime_info is not None and (
-                    runtime_info.available_hosts
-                    or runtime_info.additional_agent_instructions
+                    runtime_info.date or runtime_info.custom_secrets_descriptions
                 )
                 has_repo_instructions = bool(repo_instructions.strip())
+                has_conversation_instructions = conversation_instructions is not None
 
                 # Filter and process microagent knowledge
                 filtered_agents = []
@@ -512,11 +581,17 @@ class ConversationMemory:
                 message_content = []
 
                 # Build the workspace context information
-                if has_repo_info or has_runtime_info or has_repo_instructions:
+                if (
+                    has_repo_info
+                    or has_runtime_info
+                    or has_repo_instructions
+                    or has_conversation_instructions
+                ):
                     formatted_workspace_text = (
                         self.prompt_manager.build_workspace_context(
                             repository_info=repo_info,
                             runtime_info=runtime_info,
+                            conversation_instructions=conversation_instructions,
                             repo_instructions=repo_instructions,
                         )
                     )

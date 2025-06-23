@@ -1,15 +1,23 @@
-from fastapi import APIRouter, Request, status
+from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.async_event_store_wrapper import AsyncEventStoreWrapper
+from openhands.events.event_filter import EventFilter
 from openhands.events.serialization import event_to_trajectory
+from openhands.server.dependencies import get_dependencies
+from openhands.server.session.conversation import ServerConversation
+from openhands.server.utils import get_conversation
 
-app = APIRouter(prefix='/api/conversations/{conversation_id}')
+app = APIRouter(
+    prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies()
+)
 
 
 @app.get('/trajectory')
-async def get_trajectory(request: Request) -> JSONResponse:
+async def get_trajectory(
+    conversation: ServerConversation = Depends(get_conversation),
+) -> JSONResponse:
     """Get trajectory.
 
     This function retrieves the current trajectory and returns it.
@@ -23,7 +31,7 @@ async def get_trajectory(request: Request) -> JSONResponse:
     """
     try:
         async_store = AsyncEventStoreWrapper(
-            request.state.conversation.event_stream, filter_hidden=True
+            conversation.event_stream, filter=EventFilter(exclude_hidden=True)
         )
         trajectory = []
         async for event in async_store:

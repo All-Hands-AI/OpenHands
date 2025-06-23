@@ -6,12 +6,12 @@ with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
 
-from openhands.core.config import AppConfig, LLMConfig
+from openhands.core.config import LLMConfig, OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.llm import bedrock
 
 
-def get_supported_llm_models(config: AppConfig) -> list[str]:
+def get_supported_llm_models(config: OpenHandsConfig) -> list[str]:
     """Get all models supported by LiteLLM.
 
     This function combines models from litellm and Bedrock, removing any

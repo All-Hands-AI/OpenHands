@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pydantic import (
     BaseModel,
+    ConfigDict,
     SecretStr,
 )
 
@@ -37,8 +38,9 @@ class GETSettingsModel(Settings):
         None  # provider + base_domain key-value pair
     )
     llm_api_key_set: bool
+    search_api_key_set: bool = False
 
-    model_config = {'use_enum_values': True}
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class CustomSecretWithoutValueModel(BaseModel):

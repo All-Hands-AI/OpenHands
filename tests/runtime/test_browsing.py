@@ -2,6 +2,7 @@
 
 import os
 
+import pytest
 from conftest import _close_test_runtime, _load_runtime
 
 from openhands.core.logger import openhands_logger as logger
@@ -21,6 +22,10 @@ from openhands.events.observation import (
 # ============================================================================================================================
 
 
+@pytest.mark.skipif(
+    os.environ.get('TEST_RUNTIME') == 'cli',
+    reason='CLIRuntime does not support browsing actions',
+)
 def test_simple_browse(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
 
@@ -40,7 +45,7 @@ def test_simple_browse(temp_dir, runtime_cls, run_as_openhands):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
-    action_browse = BrowseURLAction(url='http://localhost:8000')
+    action_browse = BrowseURLAction(url='http://localhost:8000', return_axtree=False)
     logger.info(action_browse, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action_browse)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -65,6 +70,10 @@ def test_simple_browse(temp_dir, runtime_cls, run_as_openhands):
     _close_test_runtime(runtime)
 
 
+@pytest.mark.skipif(
+    os.environ.get('TEST_RUNTIME') == 'cli',
+    reason='CLIRuntime does not support browsing actions',
+)
 def test_read_pdf_browse(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
@@ -107,7 +116,9 @@ def test_read_pdf_browse(temp_dir, runtime_cls, run_as_openhands):
 
         # Browse to the PDF file
         pdf_url = f'{server_url}/view?path=/workspace/test_document.pdf'
-        action_browse = BrowseInteractiveAction(browser_actions=f'goto("{pdf_url}")')
+        action_browse = BrowseInteractiveAction(
+            browser_actions=f'goto("{pdf_url}")', return_axtree=False
+        )
         logger.info(action_browse, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action_browse)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -135,6 +146,10 @@ def test_read_pdf_browse(temp_dir, runtime_cls, run_as_openhands):
         _close_test_runtime(runtime)
 
 
+@pytest.mark.skipif(
+    os.environ.get('TEST_RUNTIME') == 'cli',
+    reason='CLIRuntime does not support browsing actions',
+)
 def test_read_png_browse(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
@@ -172,7 +187,9 @@ def test_read_png_browse(temp_dir, runtime_cls, run_as_openhands):
 
         # Browse to the PNG file
         png_url = f'{server_url}/view?path=/workspace/test_image.png'
-        action_browse = BrowseInteractiveAction(browser_actions=f'goto("{png_url}")')
+        action_browse = BrowseInteractiveAction(
+            browser_actions=f'goto("{png_url}")', return_axtree=False
+        )
         logger.info(action_browse, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action_browse)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})

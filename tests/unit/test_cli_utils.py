@@ -354,11 +354,27 @@ class TestModelAndProviderFunctions:
         assert result['separator'] == '/'
 
     def test_extract_model_and_provider_anthropic_implicit(self):
-        model = 'claude-3-7-sonnet-20250219'
+        model = 'claude-sonnet-4-20250514'
         result = extract_model_and_provider(model)
 
         assert result['provider'] == 'anthropic'
-        assert result['model'] == 'claude-3-7-sonnet-20250219'
+        assert result['model'] == 'claude-sonnet-4-20250514'
+        assert result['separator'] == '/'
+
+    def test_extract_model_and_provider_mistral_implicit(self):
+        model = 'devstral-small-2505'
+        result = extract_model_and_provider(model)
+
+        assert result['provider'] == 'mistral'
+        assert result['model'] == 'devstral-small-2505'
+        assert result['separator'] == '/'
+
+    def test_extract_model_and_provider_o4_mini(self):
+        model = 'o4-mini'
+        result = extract_model_and_provider(model)
+
+        assert result['provider'] == 'openai'
+        assert result['model'] == 'o4-mini'
         assert result['separator'] == '/'
 
     def test_extract_model_and_provider_versioned(self):
@@ -380,8 +396,11 @@ class TestModelAndProviderFunctions:
     def test_organize_models_and_providers(self):
         models = [
             'openai/gpt-4o',
-            'anthropic/claude-3-7-sonnet-20250219',
+            'anthropic/claude-sonnet-4-20250514',
             'o3-mini',
+            'o4-mini',
+            'devstral-small-2505',
+            'mistral/devstral-small-2505',
             'anthropic.claude-3-5',  # Should be ignored as it uses dot separator for anthropic
             'unknown-model',
         ]
@@ -390,14 +409,19 @@ class TestModelAndProviderFunctions:
 
         assert 'openai' in result
         assert 'anthropic' in result
+        assert 'mistral' in result
         assert 'other' in result
 
-        assert len(result['openai']['models']) == 2
+        assert len(result['openai']['models']) == 3
         assert 'gpt-4o' in result['openai']['models']
         assert 'o3-mini' in result['openai']['models']
+        assert 'o4-mini' in result['openai']['models']
 
         assert len(result['anthropic']['models']) == 1
-        assert 'claude-3-7-sonnet-20250219' in result['anthropic']['models']
+        assert 'claude-sonnet-4-20250514' in result['anthropic']['models']
+
+        assert len(result['mistral']['models']) == 2
+        assert 'devstral-small-2505' in result['mistral']['models']
 
         assert len(result['other']['models']) == 1
         assert 'unknown-model' in result['other']['models']

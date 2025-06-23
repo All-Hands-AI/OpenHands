@@ -27,7 +27,7 @@ from prompt_toolkit.styles import Style
 from prompt_toolkit.widgets import Frame, TextArea
 
 from openhands import __version__
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.schema import AgentState
 from openhands.events import EventSource, EventStream
 from openhands.events.action import (
@@ -41,10 +41,16 @@ from openhands.events.event import Event
 from openhands.events.observation import (
     AgentStateChangedObservation,
     CmdOutputObservation,
+    ErrorObservation,
     FileEditObservation,
     FileReadObservation,
 )
 from openhands.llm.metrics import Metrics
+
+ENABLE_STREAMING = False  # FIXME: this doesn't work
+
+# Global TextArea for streaming output
+streaming_output_text_area: TextArea | None = None
 
 # Color and styling constants
 COLOR_GOLD = '#FFD700'
@@ -174,7 +180,8 @@ def display_initial_user_prompt(prompt: str) -> None:
 
 
 # Prompt output display functions
-def display_event(event: Event, config: AppConfig) -> None:
+def display_event(event: Event, config: OpenHandsConfig) -> None:
+    global streaming_output_text_area
     with print_lock:
         if isinstance(event, Action):
             if hasattr(event, 'thought'):
@@ -184,16 +191,25 @@ def display_event(event: Event, config: AppConfig) -> None:
         if isinstance(event, MessageAction):
             if event.source == EventSource.AGENT:
                 display_message(event.content)
+
         if isinstance(event, CmdRunAction):
-            display_command(event)
-        if isinstance(event, CmdOutputObservation):
+            # Only display the command if it's not already confirmed
+            # Commands are always shown when AWAITING_CONFIRMATION, so we don't need to show them again when CONFIRMED
+            if event.confirmation_state != ActionConfirmationStatus.CONFIRMED:
+                display_command(event)
+
+            if event.confirmation_state == ActionConfirmationStatus.CONFIRMED:
+                initialize_streaming_output()
+        elif isinstance(event, CmdOutputObservation):
             display_command_output(event.content)
-        if isinstance(event, FileEditObservation):
+        elif isinstance(event, FileEditObservation):
             display_file_edit(event)
-        if isinstance(event, FileReadObservation):
+        elif isinstance(event, FileReadObservation):
             display_file_read(event)
-        if isinstance(event, AgentStateChangedObservation):
+        elif isinstance(event, AgentStateChangedObservation):
             display_agent_state_change_message(event.agent_state)
+        elif isinstance(event, ErrorObservation):
+            display_error(event.content)
 
 
 def display_message(message: str) -> None:
@@ -203,20 +219,37 @@ def display_message(message: str) -> None:
         print_formatted_text(f'\n{message}')
 
 
-def display_command(event: CmdRunAction) -> None:
-    if event.confirmation_state == ActionConfirmationStatus.AWAITING_CONFIRMATION:
+def display_error(error: str) -> None:
+    error = error.strip()
+
+    if error:
         container = Frame(
             TextArea(
-                text=f'$ {event.command}',
+                text=error,
                 read_only=True,
-                style=COLOR_GREY,
+                style='ansired',
                 wrap_lines=True,
             ),
-            title='Action',
+            title='Error',
             style='ansired',
         )
         print_formatted_text('')
         print_container(container)
+
+
+def display_command(event: CmdRunAction) -> None:
+    container = Frame(
+        TextArea(
+            text=f'$ {event.command}',
+            read_only=True,
+            style=COLOR_GREY,
+            wrap_lines=True,
+        ),
+        title='Command',
+        style='ansiblue',
+    )
+    print_formatted_text('')
+    print_container(container)
 
 
 def display_command_output(output: str) -> None:
@@ -240,7 +273,7 @@ def display_command_output(output: str) -> None:
             style=COLOR_GREY,
             wrap_lines=True,
         ),
-        title='Action Output',
+        title='Command Output',
         style=f'fg:{COLOR_GREY}',
     )
     print_formatted_text('')
@@ -276,6 +309,36 @@ def display_file_read(event: FileReadObservation) -> None:
     )
     print_formatted_text('')
     print_container(container)
+
+
+def initialize_streaming_output():
+    """Initialize the streaming output TextArea."""
+    if not ENABLE_STREAMING:
+        return
+    global streaming_output_text_area
+    streaming_output_text_area = TextArea(
+        text='',
+        read_only=True,
+        style=COLOR_GREY,
+        wrap_lines=True,
+    )
+    container = Frame(
+        streaming_output_text_area,
+        title='Streaming Output',
+        style=f'fg:{COLOR_GREY}',
+    )
+    print_formatted_text('')
+    print_container(container)
+
+
+def update_streaming_output(text: str):
+    """Update the streaming output TextArea with new text."""
+    global streaming_output_text_area
+
+    # Append the new text to the existing content
+    if streaming_output_text_area is not None:
+        current_text = streaming_output_text_area.text
+        streaming_output_text_area.text = current_text + text
 
 
 # Interactive command output display functions
@@ -318,7 +381,7 @@ def display_help() -> None:
     # Footer
     print_formatted_text(
         HTML(
-            '<grey>Learn more at: https://docs.all-hands.dev/modules/usage/getting-started</grey>'
+            '<grey>Learn more at: https://docs.all-hands.dev/usage/getting-started</grey>'
         )
     )
 
@@ -457,13 +520,16 @@ class CommandCompleter(Completer):
                     )
 
 
-def create_prompt_session() -> PromptSession[str]:
-    return PromptSession(style=DEFAULT_STYLE)
+def create_prompt_session(config: OpenHandsConfig) -> PromptSession[str]:
+    """Creates a prompt session with VI mode enabled if specified in the config."""
+    return PromptSession(style=DEFAULT_STYLE, vi_mode=config.cli.vi_mode)
 
 
-async def read_prompt_input(agent_state: str, multiline: bool = False) -> str:
+async def read_prompt_input(
+    config: OpenHandsConfig, agent_state: str, multiline: bool = False
+) -> str:
     try:
-        prompt_session = create_prompt_session()
+        prompt_session = create_prompt_session(config)
         prompt_session.completer = (
             CommandCompleter(agent_state) if not multiline else None
         )
@@ -495,9 +561,9 @@ async def read_prompt_input(agent_state: str, multiline: bool = False) -> str:
         return '/exit'
 
 
-async def read_confirmation_input() -> str:
+async def read_confirmation_input(config: OpenHandsConfig) -> str:
     try:
-        prompt_session = create_prompt_session()
+        prompt_session = create_prompt_session(config)
 
         with patch_stdout():
             print_formatted_text('')
@@ -543,7 +609,9 @@ async def process_agent_pause(done: asyncio.Event, event_stream: EventStream) ->
 
 
 def cli_confirm(
-    question: str = 'Are you sure?', choices: list[str] | None = None
+    config: OpenHandsConfig,
+    question: str = 'Are you sure?',
+    choices: list[str] | None = None,
 ) -> int:
     """Display a confirmation prompt with the given question and choices.
 
@@ -567,15 +635,27 @@ def cli_confirm(
     kb = KeyBindings()
 
     @kb.add('up')
-    def _(event: KeyPressEvent) -> None:
+    def _handle_up(event: KeyPressEvent) -> None:
         selected[0] = (selected[0] - 1) % len(choices)
 
+    if config.cli.vi_mode:
+
+        @kb.add('k')
+        def _handle_k(event: KeyPressEvent) -> None:
+            selected[0] = (selected[0] - 1) % len(choices)
+
     @kb.add('down')
-    def _(event: KeyPressEvent) -> None:
+    def _handle_down(event: KeyPressEvent) -> None:
         selected[0] = (selected[0] + 1) % len(choices)
 
+    if config.cli.vi_mode:
+
+        @kb.add('j')
+        def _handle_j(event: KeyPressEvent) -> None:
+            selected[0] = (selected[0] + 1) % len(choices)
+
     @kb.add('enter')
-    def _(event: KeyPressEvent) -> None:
+    def _handle_enter(event: KeyPressEvent) -> None:
         event.app.exit(result=selected[0])
 
     style = Style.from_dict({'selected': COLOR_GOLD, 'unselected': ''})

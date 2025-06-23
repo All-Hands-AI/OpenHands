@@ -28,6 +28,18 @@ from openhands.utils.import_utils import get_impl
 
 
 class GitHubService(BaseGitService, GitService):
+    """Default implementation of GitService for GitHub integration.
+
+    TODO: This doesn't seem a good candidate for the get_impl() pattern. What are the abstract methods we should actually separate and implement here?
+    This is an extension point in OpenHands that allows applications to customize GitHub
+    integration behavior. Applications can substitute their own implementation by:
+    1. Creating a class that inherits from GitService
+    2. Implementing all required methods
+    3. Setting server_config.github_service_class to the fully qualified name of the class
+
+    The class is instantiated via get_impl() in openhands.server.shared.py.
+    """
+
     BASE_URL = 'https://api.github.com'
     token: SecretStr = SecretStr('')
     refresh = False
@@ -121,7 +133,7 @@ class GitHubService(BaseGitService, GitService):
         response, _ = await self._make_request(url)
 
         return User(
-            id=response.get('id'),
+            id=str(response.get('id', '')),
             login=response.get('login'),
             avatar_url=response.get('avatar_url'),
             company=response.get('company'),
@@ -217,7 +229,7 @@ class GitHubService(BaseGitService, GitService):
         # Convert to Repository objects
         return [
             Repository(
-                id=repo.get('id'),
+                id=str(repo.get('id')),
                 full_name=repo.get('full_name'),
                 stargazers_count=repo.get('stargazers_count'),
                 git_provider=ProviderType.GITHUB,
@@ -250,7 +262,7 @@ class GitHubService(BaseGitService, GitService):
 
         repos = [
             Repository(
-                id=repo.get('id'),
+                id=str(repo.get('id')),
                 full_name=repo.get('full_name'),
                 stargazers_count=repo.get('stargazers_count'),
                 git_provider=ProviderType.GITHUB,
@@ -395,7 +407,7 @@ class GitHubService(BaseGitService, GitService):
         repo, _ = await self._make_request(url)
 
         return Repository(
-            id=repo.get('id'),
+            id=str(repo.get('id')),
             full_name=repo.get('full_name'),
             stargazers_count=repo.get('stargazers_count'),
             git_provider=ProviderType.GITHUB,
@@ -447,6 +459,54 @@ class GitHubService(BaseGitService, GitService):
                 break
 
         return all_branches
+
+    async def create_pr(
+        self,
+        repo_name: str,
+        source_branch: str,
+        target_branch: str,
+        title: str,
+        body: str | None = None,
+        draft: bool = True,
+    ) -> str:
+        """
+        Creates a PR using user credentials
+
+        Args:
+            repo_name: The full name of the repository (owner/repo)
+            source_branch: The name of the branch where your changes are implemented
+            target_branch: The name of the branch you want the changes pulled into
+            title: The title of the pull request (optional, defaults to a generic title)
+            body: The body/description of the pull request (optional)
+            draft: Whether to create the PR as a draft (optional, defaults to False)
+
+        Returns:
+            - PR URL when successful
+            - Error message when unsuccessful
+        """
+
+        url = f'{self.BASE_URL}/repos/{repo_name}/pulls'
+
+        # Set default body if none provided
+        if not body:
+            body = f'Merging changes from {source_branch} into {target_branch}'
+
+        # Prepare the request payload
+        payload = {
+            'title': title,
+            'head': source_branch,
+            'base': target_branch,
+            'body': body,
+            'draft': draft,
+        }
+
+        # Make the POST request to create the PR
+        response, _ = await self._make_request(
+            url=url, params=payload, method=RequestMethod.POST
+        )
+
+        # Return the HTML URL of the created PR
+        return response['html_url']
 
 
 github_service_cls = os.environ.get(

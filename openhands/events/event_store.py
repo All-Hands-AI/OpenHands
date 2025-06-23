@@ -140,7 +140,7 @@ class EventStore(EventStoreABC):
         return self.cur_id - 1
 
     def filtered_events_by_source(self, source: EventSource) -> Iterable[Event]:
-        for event in self.get_events():
+        for event in self.search_events():
             if event.source == source:
                 yield event
 

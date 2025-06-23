@@ -84,7 +84,7 @@ export function RepositorySelectionForm({
   const allRepositories = repositories?.concat(searchedRepos || []);
   const repositoriesItems = allRepositories?.map((repo) => ({
     key: repo.id,
-    label: repo.full_name,
+    label: decodeURIComponent(repo.full_name),
   }));
 
   const branchesItems = branches?.map((branch) => ({
@@ -93,9 +93,7 @@ export function RepositorySelectionForm({
   }));
 
   const handleRepoSelection = (key: React.Key | null) => {
-    const selectedRepo = allRepositories?.find(
-      (repo) => repo.id.toString() === key,
-    );
+    const selectedRepo = allRepositories?.find((repo) => repo.id === key);
 
     if (selectedRepo) onRepoSelection(selectedRepo.full_name);
     setSelectedRepository(selectedRepo || null);

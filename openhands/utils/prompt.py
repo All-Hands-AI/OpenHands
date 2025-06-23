@@ -26,6 +26,20 @@ class RepositoryInfo:
     repo_directory: str | None = None
 
 
+@dataclass
+class ConversationInstructions:
+    """
+    Optional instructions the agent must follow throughout the conversation while addressing the user's initial task
+
+    Examples include
+
+        1. Resolver instructions: you're responding to GitHub issue #1234, make sure to open a PR when you are done
+        2. Slack instructions: make sure to check whether any of the context attached is relevant to the task <context_messages>
+    """
+
+    content: str = ''
+
+
 class PromptManager:
     """
     Manages prompt templates and includes information from the user's workspace micro-agents and global micro-agents.
@@ -36,14 +50,11 @@ class PromptManager:
         prompt_dir: Directory containing prompt templates.
     """
 
-    def __init__(self, prompt_dir: str, config: AgentConfig):
-        """
-        Initializes the PromptManager.
-
-        Args:
-            prompt_dir: Directory containing prompt templates.
-            config: The agent configuration object.
-        """
+    def __init__(
+        self,
+        prompt_dir: str,
+        system_prompt_filename: str = 'system_prompt.j2',
+    ):
         self.prompt_dir: str = prompt_dir
         self.config: AgentConfig = config
 
@@ -58,6 +69,23 @@ class PromptManager:
         self.user_template: Template = self._load_template('user_prompt')
         self.additional_info_template: Template = self._load_template('additional_info')
         self.microagent_info_template: Template = self._load_template('microagent_info')
+
+    def _load_system_template(self, system_prompt_filename: str) -> Template:
+        """Load the system prompt template using the specified filename."""
+        # Remove .j2 extension if present to use with _load_template
+        template_name = system_prompt_filename
+        if template_name.endswith('.j2'):
+            template_name = template_name[:-3]
+
+        try:
+            return self._load_template(template_name)
+        except FileNotFoundError:
+            # Provide a more specific error message for system prompt files
+            template_path = os.path.join(self.prompt_dir, f'{template_name}.j2')
+            raise FileNotFoundError(
+                f'System prompt file "{system_prompt_filename}" not found at {template_path}. '
+                f'Please ensure the file exists in the prompt directory: {self.prompt_dir}'
+            )
 
     def _load_template(self, template_name: str) -> Template:
         if self.prompt_dir is None:
@@ -88,6 +116,7 @@ class PromptManager:
         self,
         repository_info: RepositoryInfo | None,
         runtime_info: RuntimeInfo | None,
+        conversation_instructions: ConversationInstructions | None,
         repo_instructions: str = '',
     ) -> str:
         """Renders the additional info template with the stored repository/runtime info."""
@@ -95,6 +124,7 @@ class PromptManager:
             repository_info=repository_info,
             repository_instructions=repo_instructions,
             runtime_info=runtime_info,
+            conversation_instructions=conversation_instructions,
         ).strip()
 
     def build_microagent_info(
@@ -127,7 +157,7 @@ class PromptManager:
         if latest_user_message:
             reminder_text = ''
             # Every 10 steps
-            if state.iteration % 10 == 0:
+            if state.iteration_flag.current_value % 10 == 0:
                 reminder_text += """\n\n## WORKFLOW REMINDER: ## Key Requirements & Constraints
 
 1.  **Understand the problem** very well: it is a bug report, and you know humans don't always write good descriptions. Explore the codebase to understand the related code and the problem in depth. It is possible that the solution needs to be a bit more extensive than just the stated text. Don't exagerate though: don't do unrelated refactoring, but also don't interpret the description too strictly.
@@ -163,5 +193,5 @@ Be thorough in your exploration, testing, and reasoning. It's fine if your think
 
 ---
 """
-            reminder_text += f'ENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
+            reminder_text += f'ENVIRONMENT REMINDER: You have {state.iteration_flag.max_value - state.iteration_flag.current_value} turns left to complete the task. When finished reply with <finish></finish>.'
             latest_user_message.content.append(TextContent(text=reminder_text))

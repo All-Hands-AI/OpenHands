@@ -44,11 +44,13 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: 'poetry'
       - name: Install Python dependencies using Poetry
-        run: poetry install --without evaluation
+        run: poetry install --with dev,test,runtime
       - name: Build Environment
         run: make build
-      - name: Run Tests
+      - name: Run Unit Tests
         run: poetry run pytest --forked -n auto -svv ./tests/unit
+      - name: Run Runtime Tests with CLIRuntime
+        run: TEST_RUNTIME=cli poetry run pytest -svv tests/runtime/test_bash.py
 
   # Run specific Windows python tests
   test-on-windows:
@@ -69,8 +71,13 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: 'poetry'
       - name: Install Python dependencies using Poetry
-        run: poetry install --without evaluation
+        run: poetry install --with dev,test,runtime
       - name: Run Windows unit tests
         run: poetry run pytest -svv tests/unit/test_windows_bash.py
-      - name: Run Windows runtime tests
+        env:
+          DEBUG: "1"
+      - name: Run Windows runtime tests with LocalRuntime
         run: $env:TEST_RUNTIME="local"; poetry run pytest -svv tests/runtime/test_bash.py
+        env:
+          TEST_RUNTIME: local
+          DEBUG: "1"
