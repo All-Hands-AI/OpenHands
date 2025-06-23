@@ -78,8 +78,8 @@ async function findOrCreateOpenHandsTerminal(): Promise<vscode.Terminal> {
       if (isIdle) {
         return terminal; // Safe to reuse
       }
-      // If busy, Shell Integration will safely interrupt when we execute new command
-      return terminal;
+      // If busy, let's make a new one
+      return createNewOpenHandsTerminal();
     }
 
     // Fallback: create new terminal to avoid conflicts when Shell Integration unavailable
