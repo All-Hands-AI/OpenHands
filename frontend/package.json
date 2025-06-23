@@ -1,13 +1,13 @@
 {
   "name": "openhands-frontend",
-  "version": "0.44.0",
+  "version": "0.45.0",
   "private": true,
   "type": "module",
   "engines": {
     "node": ">=20.0.0"
   },
   "dependencies": {
-    "@heroui/react": "^2.8.0-beta.7",
+    "@heroui/react": "^2.8.0-beta.9",
     "@microlink/react-json-view": "^1.26.2",
     "@monaco-editor/react": "^4.7.0-rc.0",
     "@react-router/node": "^7.6.2",
@@ -18,7 +18,7 @@
     "@stripe/stripe-js": "^7.3.1",
     "@tailwindcss/postcss": "^4.1.10",
     "@tailwindcss/vite": "^4.1.10",
-    "@tanstack/react-query": "^5.80.7",
+    "@tanstack/react-query": "^5.80.10",
     "@vitejs/plugin-react": "^4.5.2",
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/xterm": "^5.4.0",
@@ -31,7 +31,7 @@
     "i18next-http-backend": "^3.0.2",
     "isbot": "^5.1.28",
     "jose": "^6.0.11",
-    "lucide-react": "^0.517.0",
+    "lucide-react": "^0.519.0",
     "monaco-editor": "^0.52.2",
     "posthog-js": "^1.255.0",
     "react": "^19.1.0",
@@ -84,7 +84,7 @@
     "@babel/traverse": "^7.27.1",
     "@babel/types": "^7.27.0",
     "@mswjs/socket.io-binding": "^0.2.0",
-    "@playwright/test": "^1.53.0",
+    "@playwright/test": "^1.53.1",
     "@react-router/dev": "^7.6.2",
     "@tailwindcss/typography": "^0.5.16",
     "@tanstack/eslint-plugin-query": "^5.78.0",
