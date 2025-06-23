@@ -314,4 +314,263 @@ suite('Extension Test Suite', () => {
     assert.ok(showSpy.called, 'terminal.show should be called');
   });
 
+  test('Shell Integration probe should detect idle terminal', async () => {
+    const executeCommandSpy = createManualSpy();
+
+    // Mock execution that responds with probe ID
+    const mockExecution = {
+      read: () => ({
+        async *[Symbol.asyncIterator]() {
+          yield 'OPENHANDS_PROBE_123456789'; // Simulate successful probe response
+        }
+      }),
+      exitCode: Promise.resolve(0)
+    };
+
+    const mockShellIntegration = {
+      executeCommand: (command: string) => {
+        executeCommandSpy(command);
+        return mockExecution;
+      }
+    };
+
+    const terminalWithShell = {
+      name: 'OpenHands 10:30:15',
+      processId: Promise.resolve(456),
+      sendText: sendTextSpy as any,
+      show: showSpy as any,
+      hide: () => {},
+      dispose: () => {},
+      creationOptions: {},
+      exitStatus: undefined,
+      state: { isInteractedWith: false, shell: undefined as string | undefined },
+      shellIntegration: mockShellIntegration
+    };
+
+    Object.defineProperty(vscode.window, 'terminals', {
+      get: () => {
+        findTerminalStub();
+        return [terminalWithShell];
+      },
+      configurable: true
+    });
+
+    createTerminalStub.resetHistory();
+
+    await vscode.commands.executeCommand('openhands.startConversation');
+
+    // Should have called executeCommand for probe
+    assert.ok(executeCommandSpy.called, 'Shell Integration executeCommand should be called for probe');
+
+    // Check if any of the calls was a probe command
+    const probeCall = executeCommandSpy.argsHistory.find((args: any[]) =>
+      args[0] && args[0].includes('OPENHANDS_PROBE_')
+    );
+    assert.ok(probeCall, `Should execute probe command. Actual calls: ${JSON.stringify(executeCommandSpy.argsHistory)}`);
+
+    // Should reuse terminal (not create new one)
+    assert.ok(!createTerminalStub.called, 'Should not create new terminal when existing one is idle');
+    assert.ok(showSpy.called, 'Should show the reused terminal');
+  });
+
+  test('Shell Integration probe should handle timeout gracefully', async () => {
+    const executeCommandSpy = createManualSpy();
+
+    // Mock execution that never responds (simulates hanging terminal)
+    const mockExecution = {
+      read: () => ({
+        async *[Symbol.asyncIterator]() {
+          // Never yield the expected probe response - simulate hanging
+          yield 'some other output';
+          // Simulate infinite hanging by never resolving
+          await new Promise(() => {}); // Never resolves
+        }
+      }),
+      exitCode: Promise.resolve(0)
+    };
+
+    const mockShellIntegration = {
+      executeCommand: (command: string) => {
+        executeCommandSpy(command);
+        return mockExecution;
+      }
+    };
+
+    const terminalWithShell = {
+      name: 'OpenHands 10:30:15',
+      processId: Promise.resolve(456),
+      sendText: sendTextSpy as any,
+      show: showSpy as any,
+      hide: () => {},
+      dispose: () => {},
+      creationOptions: {},
+      exitStatus: undefined,
+      state: { isInteractedWith: false, shell: undefined as string | undefined },
+      shellIntegration: mockShellIntegration
+    };
+
+    Object.defineProperty(vscode.window, 'terminals', {
+      get: () => {
+        findTerminalStub();
+        return [terminalWithShell];
+      },
+      configurable: true
+    });
+
+    createTerminalStub.resetHistory();
+
+    await vscode.commands.executeCommand('openhands.startConversation');
+
+    // Should have attempted probe
+    assert.ok(executeCommandSpy.called, 'Should attempt probe');
+
+    // Should still reuse terminal even if probe times out (Shell Integration handles interruption)
+    assert.ok(showSpy.called, 'Should show terminal even after probe timeout');
+  });
+
+  test('Shell Integration should use executeCommand instead of sendText', async () => {
+    const executeCommandSpy = createManualSpy();
+
+    const mockExecution = {
+      read: () => ({
+        async *[Symbol.asyncIterator]() {
+          yield 'OPENHANDS_PROBE_123456789';
+        }
+      }),
+      exitCode: Promise.resolve(0)
+    };
+
+    const mockShellIntegration = {
+      executeCommand: (command: string) => {
+        executeCommandSpy(command);
+        return mockExecution;
+      }
+    };
+
+    const terminalWithShell = {
+      name: 'OpenHands 10:30:15',
+      processId: Promise.resolve(456),
+      sendText: sendTextSpy as any,
+      show: showSpy as any,
+      hide: () => {},
+      dispose: () => {},
+      creationOptions: {},
+      exitStatus: undefined,
+      state: { isInteractedWith: false, shell: undefined as string | undefined },
+      shellIntegration: mockShellIntegration
+    };
+
+    Object.defineProperty(vscode.window, 'terminals', {
+      get: () => {
+        findTerminalStub();
+        return [terminalWithShell];
+      },
+      configurable: true
+    });
+
+    sendTextSpy.resetHistory();
+    executeCommandSpy.resetHistory();
+
+    await vscode.commands.executeCommand('openhands.startConversation');
+
+    // Should use Shell Integration executeCommand, not sendText
+    assert.ok(executeCommandSpy.called, 'Should use Shell Integration executeCommand');
+
+    // Should have called executeCommand at least twice: once for probe, once for actual command
+    assert.ok(executeCommandSpy.callCount >= 2, 'Should call executeCommand for probe and actual command');
+
+    // The actual OpenHands command should be executed via Shell Integration
+    const openhandsCommand = executeCommandSpy.argsHistory.find((args: any[]) =>
+      args[0] && args[0].includes('openhands') && !args[0].includes('OPENHANDS_PROBE_')
+    );
+    assert.ok(openhandsCommand, 'Should execute OpenHands command via Shell Integration');
+  });
+
+  test('Shell Integration should monitor command execution completion', async () => {
+    const executeCommandSpy = createManualSpy();
+
+    // Mock the execution object that will be returned
+    const mockExecution = {
+      read: () => ({
+        async *[Symbol.asyncIterator]() {
+          yield 'OPENHANDS_PROBE_123456789';
+        }
+      }),
+      exitCode: Promise.resolve(0)
+    };
+
+    const mockShellIntegration = {
+      executeCommand: (command: string) => {
+        executeCommandSpy(command);
+        return mockExecution;
+      }
+    };
+
+    const terminalWithShell = {
+      name: 'OpenHands 10:30:15',
+      processId: Promise.resolve(456),
+      sendText: sendTextSpy as any,
+      show: showSpy as any,
+      hide: () => {},
+      dispose: () => {},
+      creationOptions: {},
+      exitStatus: undefined,
+      state: { isInteractedWith: false, shell: undefined as string | undefined },
+      shellIntegration: mockShellIntegration
+    };
+
+    Object.defineProperty(vscode.window, 'terminals', {
+      get: () => {
+        findTerminalStub();
+        return [terminalWithShell];
+      },
+      configurable: true
+    });
+
+    await vscode.commands.executeCommand('openhands.startConversation');
+
+    // Should use Shell Integration executeCommand
+    assert.ok(executeCommandSpy.called, 'Should use Shell Integration executeCommand');
+
+    // Note: We can't easily test the event handler registration in unit tests
+    // since vscode.window.onDidEndTerminalShellExecution is read-only
+    // This would be better tested in integration tests
+  });
+
+  test('Shell Integration fallback should work when Shell Integration unavailable', async () => {
+    // Create terminal without Shell Integration
+    const terminalWithoutShell = {
+      name: 'OpenHands 10:30:15',
+      processId: Promise.resolve(456),
+      sendText: sendTextSpy as any,
+      show: showSpy as any,
+      hide: () => {},
+      dispose: () => {},
+      creationOptions: {},
+      exitStatus: undefined,
+      state: { isInteractedWith: false, shell: undefined as string | undefined },
+      shellIntegration: undefined // No Shell Integration
+    };
+
+    Object.defineProperty(vscode.window, 'terminals', {
+      get: () => {
+        findTerminalStub();
+        return [terminalWithoutShell];
+      },
+      configurable: true
+    });
+
+    createTerminalStub.resetHistory();
+    sendTextSpy.resetHistory();
+
+    await vscode.commands.executeCommand('openhands.startConversation');
+
+    // Should create new terminal when no Shell Integration available
+    assert.ok(createTerminalStub.called, 'Should create new terminal when Shell Integration unavailable');
+
+    // Should use sendText fallback for the new terminal
+    assert.ok(sendTextSpy.called, 'Should use sendText fallback');
+    assert.ok(sendTextSpy.lastArgs[0].includes('openhands'), 'Should send OpenHands command');
+  });
+
 });
