@@ -23,7 +23,6 @@ import { GenericEventMessage } from "./generic-event-message";
 import { FileList } from "../files/file-list";
 import { parseMessageFromEvent } from "./event-content-helpers/parse-message-from-event";
 import { LikertScale } from "../feedback/likert-scale";
-import { AgentState } from "#/types/agent-state";
 
 import { useConfig } from "#/hooks/query/use-config";
 import { useFeedbackExists } from "#/hooks/query/use-feedback-exists";
@@ -32,9 +31,8 @@ const hasThoughtProperty = (
   obj: Record<string, unknown>,
 ): obj is { thought: string } => "thought" in obj && !!obj.thought;
 
-// Helper function to determine if we should show feedback for an agent state change
-const shouldShowFeedbackForAgentState = (state: string): boolean =>
-  state === AgentState.AWAITING_USER_INPUT || state === AgentState.ERROR;
+// We no longer need this helper function as we're using alternative events
+// for showing feedback instead of AgentStateChangedObservation
 
 interface EventMessageProps {
   event: OpenHandsAction | OpenHandsObservation;
@@ -58,8 +56,6 @@ export function EventMessage({
   let eventIdForFeedback: number | undefined;
 
   if (
-    (isAgentStateChangeObservation(event) &&
-      shouldShowFeedbackForAgentState(event.extras.agent_state)) ||
     isFinishAction(event) ||
     isErrorObservation(event) ||
     (isAssistantMessage(event) && event.action === "message")
@@ -105,13 +101,7 @@ export function EventMessage({
     return null;
   }
 
-  // Check if we should show the Likert scale for agent state change
-  const showLikertScaleForStateChange =
-    config?.APP_MODE === "saas" &&
-    isAgentStateChangeObservation(event) &&
-    shouldShowFeedbackForAgentState(event.extras.agent_state) &&
-    isLastMessage &&
-    !isCheckingFeedback;
+  // We no longer need to check for agent state change since we're using alternative events
 
   // Check if we should show the Likert scale for finish action
   const showLikertScaleForFinishAction =
@@ -187,7 +177,8 @@ export function EventMessage({
     );
   }
 
-  // Handle agent state change observation with feedback
+  // We no longer need special handling for agent state change observation
+  // as we're using alternative events (finish action, error observation, message action)
   if (isAgentStateChangeObservation(event)) {
     return (
       <div>
@@ -196,14 +187,6 @@ export function EventMessage({
           details={getEventContent(event).details}
           success={getObservationResult(event)}
         />
-        {showLikertScaleForStateChange && (
-          <LikertScale
-            eventId={event.id}
-            initiallySubmitted={feedbackData.exists}
-            initialRating={feedbackData.rating}
-            initialReason={feedbackData.reason}
-          />
-        )}
         {shouldShowConfirmationButtons && <ConfirmationButtons />}
       </div>
     );
