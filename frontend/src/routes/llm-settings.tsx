@@ -23,7 +23,7 @@ import { isCustomModel } from "#/utils/is-custom-model";
 import { LlmSettingsInputsSkeleton } from "#/components/features/settings/llm-settings/llm-settings-inputs-skeleton";
 import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
 import { DEFAULT_SETTINGS } from "#/services/settings";
-import { unmapProvider } from "#/utils/map-provider";
+import { getProviderId } from "#/utils/map-provider";
 
 function LlmSettingsScreen() {
   const { t } = useTranslation();
@@ -96,7 +96,7 @@ function LlmSettingsScreen() {
   const basicFormAction = (formData: FormData) => {
     const providerDisplay = formData.get("llm-provider-input")?.toString();
     const provider = providerDisplay
-      ? unmapProvider(providerDisplay)
+      ? getProviderId(providerDisplay)
       : undefined;
     const model = formData.get("llm-model-input")?.toString();
     const apiKey = formData.get("llm-api-key-input")?.toString();

@@ -30,7 +30,7 @@ export const mapProvider = (provider: string) =>
     ? MAP_PROVIDER[provider as keyof typeof MAP_PROVIDER]
     : provider;
 
-export const unmapProvider = (displayName: string): string => {
+export const getProviderId = (displayName: string): string => {
   const entry = Object.entries(MAP_PROVIDER).find(
     ([, value]) => value === displayName,
   );
