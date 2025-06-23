@@ -48,29 +48,15 @@ export function EventMessage({
 
   const { data: config } = useConfig();
 
-  const shouldShowLikertScale = (
-    eventToCheck: OpenHandsAction | OpenHandsObservation,
-  ) => {
-    if (config?.APP_MODE !== "saas" || !isLastMessage) return false;
-
-    return (
-      isFinishAction(eventToCheck) ||
-      isErrorObservation(eventToCheck) ||
-      (isAssistantMessage(eventToCheck) && eventToCheck.action === "message")
-    );
-  };
-
-  const eventIdForFeedback = shouldShowLikertScale(event)
-    ? event.id
-    : undefined;
-
   const {
     data: feedbackData = { exists: false },
     isLoading: isCheckingFeedback,
-  } = useFeedbackExists(eventIdForFeedback);
+  } = useFeedbackExists(event.id);
 
   const renderLikertScale = () => {
-    if (isCheckingFeedback) return null;
+    if (config?.APP_MODE !== "saas" || !isLastMessage || isCheckingFeedback) {
+      return null;
+    }
 
     return (
       <LikertScale
@@ -89,7 +75,7 @@ export function EventMessage({
           errorId={event.extras.error_id}
           defaultMessage={event.message}
         />
-        {shouldShowLikertScale(event) && renderLikertScale()}
+        {renderLikertScale()}
       </>
     );
   }
@@ -105,7 +91,7 @@ export function EventMessage({
     return (
       <>
         <ChatMessage type="agent" message={getEventContent(event).details} />
-        {shouldShowLikertScale(event) && renderLikertScale()}
+        {renderLikertScale()}
       </>
     );
   }
@@ -124,7 +110,9 @@ export function EventMessage({
           )}
           {shouldShowConfirmationButtons && <ConfirmationButtons />}
         </ChatMessage>
-        {shouldShowLikertScale(event) && renderLikertScale()}
+        {isAssistantMessage(event) &&
+          event.action === "message" &&
+          renderLikertScale()}
       </div>
     );
   }
