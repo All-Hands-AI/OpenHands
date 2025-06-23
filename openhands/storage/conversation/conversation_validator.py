@@ -39,8 +39,6 @@ class ConversationValidator:
         conversation_id: str,
         user_id: str | None,
     ) -> ConversationMetadata:
-
-
         config = load_openhands_config()
         server_config = ServerConfig()
 
@@ -48,14 +46,16 @@ class ConversationValidator:
             ConversationStore,
             server_config.conversation_store_class,
         )
-        conversation_store = await conversation_store_class.get_instance(config, user_id)
+        conversation_store = await conversation_store_class.get_instance(
+            config, user_id
+        )
 
         try:
             metadata = await conversation_store.get_metadata(conversation_id)
         except FileNotFoundError:
             logger.info(
                 f'Creating new conversation metadata for {conversation_id}',
-                extra={'session_id': conversation_id}
+                extra={'session_id': conversation_id},
             )
             await conversation_store.save_metadata(
                 ConversationMetadata(
@@ -68,6 +68,7 @@ class ConversationValidator:
             )
             metadata = await conversation_store.get_metadata(conversation_id)
         return metadata
+
 
 def create_conversation_validator() -> ConversationValidator:
     conversation_validator_cls = os.environ.get(
