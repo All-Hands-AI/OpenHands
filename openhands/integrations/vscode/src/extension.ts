@@ -32,7 +32,7 @@ async function probeTerminalStatus(terminal: vscode.Terminal): Promise<boolean> 
         for await (const data of stream) {
           output += data;
           if (output.includes(`OPENHANDS_PROBE_${probeId}`)) {
-            // If we got the expected output, the terminal is responsive
+            // The terminal is responsive
             return true;
           }
         }
