@@ -991,14 +991,34 @@ def test_api_keys_repr_str():
         llms={'llm': llm_config},
         agents={'agent': agent_config},
         search_api_key='my_search_api_key',
+        e2b_api_key='my_e2b_api_key',
+        modal_api_token_id='my_modal_api_token_id',
+        modal_api_token_secret='my_modal_api_token_secret',
+        runloop_api_key='my_runloop_api_key',
+        daytona_api_key='my_daytona_api_key',
     )
     assert 'my_search_api_key' not in repr(app_config)
     assert 'my_search_api_key' not in str(app_config)
+    assert 'my_e2b_api_key' not in repr(app_config)
+    assert 'my_e2b_api_key' not in str(app_config)
+    assert 'my_modal_api_token_id' not in repr(app_config)
+    assert 'my_modal_api_token_id' not in str(app_config)
+    assert 'my_modal_api_token_secret' not in repr(app_config)
+    assert 'my_modal_api_token_secret' not in str(app_config)
+    assert 'my_runloop_api_key' not in repr(app_config)
+    assert 'my_runloop_api_key' not in str(app_config)
+    assert 'my_daytona_api_key' not in repr(app_config)
+    assert 'my_daytona_api_key' not in str(app_config)
 
     # Check that no other attrs in OpenHandsConfig have 'key' or 'token' in their name
     # This will fail when new attrs are added, and attract attention
     known_key_token_attrs_app = [
         'search_api_key',
+        'e2b_api_key',
+        'modal_api_token_id',
+        'modal_api_token_secret',
+        'runloop_api_key',
+        'daytona_api_key',
     ]
     for attr_name in OpenHandsConfig.model_fields.keys():
         if (

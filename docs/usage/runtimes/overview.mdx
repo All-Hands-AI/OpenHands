@@ -19,4 +19,18 @@ OpenHands supports several different runtime environments:
 - [Docker Runtime](/usage/runtimes/docker) - The default runtime that uses Docker containers for isolation (recommended for most users).
 - [OpenHands Remote Runtime](/usage/runtimes/remote) - Cloud-based runtime for parallel execution (beta).
 - [Local Runtime](/usage/runtimes/local) - Direct execution on your local machine without Docker.
-- [Third-party Runtimes](https://github.com/All-Hands-AI/third-party-runtimes) - These runtimes are supported by their developers, not by OpenHands. Please find them in the repository linked here if you would like to run on third-party infrastructure providers.
+
+### Third-Party Runtimes
+
+The following third-party runtimes are available when you install the `third_party_runtimes` extra:
+
+```bash
+pip install openhands-ai[third_party_runtimes]
+```
+
+- [E2B Runtime](/usage/runtimes/e2b) - Cloud-based runtime using E2B sandboxes.
+- [Modal Runtime](/usage/runtimes/modal) - Serverless runtime using Modal infrastructure.
+- [Runloop Runtime](/usage/runtimes/runloop) - Cloud runtime using Runloop infrastructure.
+- [Daytona Runtime](/usage/runtimes/daytona) - Development environment runtime using Daytona.
+
+**Note**: These third-party runtimes are supported by their respective developers, not by the OpenHands team. For issues specific to these runtimes, please refer to their documentation or contact their support teams.

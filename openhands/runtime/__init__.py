@@ -18,6 +18,40 @@ _DEFAULT_RUNTIME_CLASSES: dict[str, type[Runtime]] = {
     'cli': CLIRuntime,
 }
 
+# Try to import third-party runtimes if available
+_THIRD_PARTY_RUNTIME_CLASSES: dict[str, type[Runtime]] = {}
+
+try:
+    from third_party.runtime.impl.daytona.daytona_runtime import DaytonaRuntime
+
+    _THIRD_PARTY_RUNTIME_CLASSES['daytona'] = DaytonaRuntime
+except ImportError:
+    pass
+
+try:
+    from third_party.runtime.impl.e2b.e2b_runtime import E2BRuntime
+
+    _THIRD_PARTY_RUNTIME_CLASSES['e2b'] = E2BRuntime
+except ImportError:
+    pass
+
+try:
+    from third_party.runtime.impl.modal.modal_runtime import ModalRuntime
+
+    _THIRD_PARTY_RUNTIME_CLASSES['modal'] = ModalRuntime
+except ImportError:
+    pass
+
+try:
+    from third_party.runtime.impl.runloop.runloop_runtime import RunloopRuntime
+
+    _THIRD_PARTY_RUNTIME_CLASSES['runloop'] = RunloopRuntime
+except ImportError:
+    pass
+
+# Combine core and third-party runtimes
+_ALL_RUNTIME_CLASSES = {**_DEFAULT_RUNTIME_CLASSES, **_THIRD_PARTY_RUNTIME_CLASSES}
+
 
 def get_runtime_cls(name: str) -> type[Runtime]:
     """
@@ -25,22 +59,34 @@ def get_runtime_cls(name: str) -> type[Runtime]:
     Otherwise attempt to resolve name as subclass of Runtime and return it.
     Raise on invalid selections.
     """
-    if name in _DEFAULT_RUNTIME_CLASSES:
-        return _DEFAULT_RUNTIME_CLASSES[name]
+    if name in _ALL_RUNTIME_CLASSES:
+        return _ALL_RUNTIME_CLASSES[name]
     try:
         return get_impl(Runtime, name)
     except Exception as e:
-        known_keys = _DEFAULT_RUNTIME_CLASSES.keys()
+        known_keys = _ALL_RUNTIME_CLASSES.keys()
         raise ValueError(
             f'Runtime {name} not supported, known are: {known_keys}'
         ) from e
 
 
+# Build __all__ list dynamically based on available runtimes
 __all__ = [
     'Runtime',
     'RemoteRuntime',
     'DockerRuntime',
     'KubernetesRuntime',
     'CLIRuntime',
+    'LocalRuntime',
     'get_runtime_cls',
 ]
+
+# Add third-party runtimes to __all__ if they're available
+if 'daytona' in _THIRD_PARTY_RUNTIME_CLASSES:
+    __all__.append('DaytonaRuntime')
+if 'e2b' in _THIRD_PARTY_RUNTIME_CLASSES:
+    __all__.append('E2BRuntime')
+if 'modal' in _THIRD_PARTY_RUNTIME_CLASSES:
+    __all__.append('ModalRuntime')
+if 'runloop' in _THIRD_PARTY_RUNTIME_CLASSES:
+    __all__.append('RunloopRuntime')

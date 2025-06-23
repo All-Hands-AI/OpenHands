@@ -45,7 +45,13 @@ class OpenHandsConfig(BaseModel):
         run_as_openhands: Whether to run as openhands.
         max_iterations: Maximum number of iterations allowed.
         max_budget_per_task: Maximum budget per task, agent stops if exceeded.
-
+        e2b_api_key: E2B API key (third-party runtime).
+        modal_api_token_id: Modal API token ID (third-party runtime).
+        modal_api_token_secret: Modal API token secret (third-party runtime).
+        runloop_api_key: Runloop API key (third-party runtime).
+        daytona_api_key: Daytona API key (third-party runtime).
+        daytona_api_url: Daytona API URL (third-party runtime).
+        daytona_target: Daytona target region (third-party runtime).
         disable_color: Whether to disable terminal colors. For terminals that don't support color.
         debug: Whether to enable debugging mode.
         file_uploads_max_file_size_mb: Maximum file upload size in MB. `0` means unlimited.
@@ -87,6 +93,15 @@ class OpenHandsConfig(BaseModel):
     run_as_openhands: bool = Field(default=True)
     max_iterations: int = Field(default=OH_MAX_ITERATIONS)
     max_budget_per_task: float | None = Field(default=None)
+
+    # Third-party runtime API keys (only available when third_party_runtimes extra is installed)
+    e2b_api_key: SecretStr | None = Field(default=None)
+    modal_api_token_id: SecretStr | None = Field(default=None)
+    modal_api_token_secret: SecretStr | None = Field(default=None)
+    runloop_api_key: SecretStr | None = Field(default=None)
+    daytona_api_key: SecretStr | None = Field(default=None)
+    daytona_api_url: str = Field(default='https://app.daytona.io/api')
+    daytona_target: str = Field(default='eu')
 
     disable_color: bool = Field(default=False)
     jwt_secret: SecretStr | None = Field(default=None)

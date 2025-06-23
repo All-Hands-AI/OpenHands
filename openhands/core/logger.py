@@ -254,10 +254,15 @@ class SensitiveDataFilter(logging.Filter):
             'api_key',
             'aws_access_key_id',
             'aws_secret_access_key',
+            'e2b_api_key',
             'github_token',
             'jwt_secret',
+            'modal_api_token_id',
+            'modal_api_token_secret',
             'llm_api_key',
             'sandbox_env_github_token',
+            'runloop_api_key',
+            'daytona_api_key',
         ]
 
         # add env var names
