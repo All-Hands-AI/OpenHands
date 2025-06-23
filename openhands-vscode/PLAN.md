@@ -226,7 +226,6 @@ The integration includes testing to ensure correctness.
 
 *   **Framework:** `pytest` (as used throughout the project)
 *   **Location:** `tests/unit/cli/test_cli_vscode.py`
-*   **Note:** Current test file uses `unittest` but should be migrated to `pytest` for consistency
 *   **Current Test Coverage:**
     *   **Editor Environment Detection:**
         *   Tests VS Code detection via `TERM_PROGRAM` environment variable
