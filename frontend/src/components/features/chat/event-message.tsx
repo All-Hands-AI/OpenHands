@@ -90,13 +90,13 @@ export function EventMessage({
 
   if (isErrorObservation(event)) {
     return (
-      <div>
+      <>
         <ErrorMessage
           errorId={event.extras.error_id}
           defaultMessage={event.message}
         />
         {shouldShowLikertScale("error") && renderLikertScale()}
-      </div>
+      </>
     );
   }
 
