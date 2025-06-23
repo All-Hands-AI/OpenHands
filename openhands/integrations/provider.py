@@ -5,6 +5,7 @@ from typing import Annotated, Any, Coroutine, Literal, overload
 
 from pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
     SecretStr,
     WithJsonSchema,
@@ -34,10 +35,10 @@ class ProviderToken(BaseModel):
     user_id: str | None = Field(default=None)
     host: str | None = Field(default=None)
 
-    model_config = {
-        'frozen': True,  # Makes the entire model immutable
-        'validate_assignment': True,
-    }
+    model_config = ConfigDict(
+        frozen=True,  # Makes the entire model immutable
+        validate_assignment=True,
+    )
 
     @classmethod
     def from_value(cls, token_value: ProviderToken | dict[str, str]) -> ProviderToken:
@@ -62,10 +63,10 @@ class CustomSecret(BaseModel):
     secret: SecretStr = Field(default_factory=lambda: SecretStr(''))
     description: str = Field(default='')
 
-    model_config = {
-        'frozen': True,  # Makes the entire model immutable
-        'validate_assignment': True,
-    }
+    model_config = ConfigDict(
+        frozen=True,  # Makes the entire model immutable
+        validate_assignment=True,
+    )
 
     @classmethod
     def from_value(cls, secret_value: CustomSecret | dict[str, str]) -> CustomSecret:

@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from pydantic import BaseModel, Field, SecretStr, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, ValidationError
 
 from openhands.core.logger import LOG_DIR
 from openhands.core.logger import openhands_logger as logger
@@ -92,7 +92,7 @@ class LLMConfig(BaseModel):
         description='Safety settings for models that support them (like Mistral AI and Gemini)',
     )
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
     @classmethod
     def from_toml_section(cls, data: dict) -> dict[str, LLMConfig]:
