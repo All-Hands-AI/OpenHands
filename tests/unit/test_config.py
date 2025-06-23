@@ -991,12 +991,14 @@ def test_api_keys_repr_str():
         llms={'llm': llm_config},
         agents={'agent': agent_config},
         search_api_key='my_search_api_key',
-        e2b_api_key='my_e2b_api_key',
-        modal_api_token_id='my_modal_api_token_id',
-        modal_api_token_secret='my_modal_api_token_secret',
-        runloop_api_key='my_runloop_api_key',
-        daytona_api_key='my_daytona_api_key',
     )
+
+    # Set third-party runtime configuration fields dynamically
+    app_config.e2b_api_key = 'my_e2b_api_key'
+    app_config.modal_api_token_id = 'my_modal_api_token_id'
+    app_config.modal_api_token_secret = 'my_modal_api_token_secret'
+    app_config.runloop_api_key = 'my_runloop_api_key'
+    app_config.daytona_api_key = 'my_daytona_api_key'
     assert 'my_search_api_key' not in repr(app_config)
     assert 'my_search_api_key' not in str(app_config)
     assert 'my_e2b_api_key' not in repr(app_config)
@@ -1012,13 +1014,10 @@ def test_api_keys_repr_str():
 
     # Check that no other attrs in OpenHandsConfig have 'key' or 'token' in their name
     # This will fail when new attrs are added, and attract attention
+    # Note: Third-party runtime fields (e2b_api_key, modal_*, etc.) are now dynamic
+    # and not part of model_fields
     known_key_token_attrs_app = [
         'search_api_key',
-        'e2b_api_key',
-        'modal_api_token_id',
-        'modal_api_token_secret',
-        'runloop_api_key',
-        'daytona_api_key',
     ]
     for attr_name in OpenHandsConfig.model_fields.keys():
         if (

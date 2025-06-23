@@ -5,7 +5,7 @@ import platform
 import sys
 from ast import literal_eval
 from types import UnionType
-from typing import MutableMapping, get_args, get_origin
+from typing import Any, MutableMapping, get_args, get_origin
 from uuid import uuid4
 
 import toml
@@ -37,6 +37,87 @@ from openhands.utils.import_utils import get_impl
 
 JWT_SECRET = '.jwt_secret'
 load_dotenv()
+
+
+def _load_third_party_config_from_env(
+    cfg: OpenHandsConfig, env_or_toml_dict: dict | MutableMapping[str, str]
+) -> None:
+    """Load third-party runtime configuration from environment variables.
+
+    Args:
+        cfg: The OpenHandsConfig object to set attributes on.
+        env_or_toml_dict: The environment variables or a config.toml dict.
+    """
+    try:
+        from openhands.core.config.third_party_config import (
+            discover_third_party_runtime_configs,
+        )
+
+        runtime_configs = discover_third_party_runtime_configs()
+
+        for runtime_name, config_spec in runtime_configs.items():
+            for field_name, field_spec in config_spec.items():
+                full_field_name = f'{runtime_name}_{field_name}'
+                env_var_name = f'OPENHANDS_{full_field_name.upper()}'
+
+                if env_var_name in env_or_toml_dict:
+                    value = env_or_toml_dict[env_var_name]
+
+                    # Skip empty config values (fall back to default)
+                    if not value:
+                        continue
+
+                    try:
+                        field_type = field_spec.get('type', str)
+
+                        # Convert the env var to the correct type and set it
+                        cast_value: Any
+                        if field_type is bool:
+                            cast_value = str(value).lower() in ['true', '1']
+                        elif field_type is SecretStr:
+                            cast_value = SecretStr(value)
+                        else:
+                            cast_value = field_type(value) if field_type else value
+
+                        setattr(cfg, full_field_name, cast_value)
+
+                    except (ValueError, TypeError) as e:
+                        logger.openhands_logger.error(
+                            f'Error setting third-party config {env_var_name}={value}: {e}'
+                        )
+
+    except ImportError:
+        # third_party package not available, skip
+        pass
+
+
+def _is_third_party_runtime_config(key: str) -> bool:
+    """Check if a configuration key is a third-party runtime configuration field.
+
+    Args:
+        key: The configuration key to check.
+
+    Returns:
+        True if the key is a third-party runtime configuration field.
+    """
+    try:
+        from openhands.core.config.third_party_config import (
+            discover_third_party_runtime_configs,
+        )
+
+        runtime_configs = discover_third_party_runtime_configs()
+
+        for runtime_name, config_spec in runtime_configs.items():
+            for field_name in config_spec.keys():
+                full_field_name = f'{runtime_name}_{field_name}'
+                if key == full_field_name:
+                    return True
+
+        return False
+
+    except ImportError:
+        # third_party package not available
+        return False
 
 
 def load_from_env(
@@ -114,6 +195,9 @@ def load_from_env(
     # Start processing from the root of the config object
     set_attr_from_env(cfg)
 
+    # Load third-party runtime configuration from environment variables
+    _load_third_party_config_from_env(cfg, env_or_toml_dict)
+
     # load default LLM config from env
     default_llm_config = cfg.get_llm_config()
     set_attr_from_env(default_llm_config, 'LLM_')
@@ -156,6 +240,9 @@ def load_from_toml(cfg: OpenHandsConfig, toml_file: str = 'config.toml') -> None
     # Process core section if present
     for key, value in core_config.items():
         if hasattr(cfg, key):
+            setattr(cfg, key, value)
+        elif _is_third_party_runtime_config(key):
+            # Handle third-party runtime configuration fields
             setattr(cfg, key, value)
         else:
             logger.openhands_logger.warning(

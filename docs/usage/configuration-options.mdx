@@ -7,47 +7,28 @@ description: This page outlines all available configuration options for OpenHand
 
 The core configuration options are defined in the `[core]` section of the `config.toml` file.
 
-### Third-Party Runtime API Keys
+### Third-Party Runtime Configuration
 
-These API keys are only available when the `third_party_runtimes` extra is installed:
+Third-party runtime configuration fields are dynamically discovered based on available runtimes when the `third_party_runtimes` extra is installed:
+
 ```bash
 pip install openhands-ai[third_party_runtimes]
 ```
 
-- `e2b_api_key`
-  - Type: `str`
-  - Default: `""`
-  - Description: API key for E2B runtime
+Configuration fields follow these naming patterns:
+- `<runtime>_api_key` - Authentication API key
+- `<runtime>_api_token_id` - Token-based authentication ID
+- `<runtime>_api_token_secret` - Token-based authentication secret
+- `<runtime>_api_url` - Custom API endpoint URL
+- `<runtime>_target` - Target region or environment
 
-- `modal_api_token_id`
-  - Type: `str`
-  - Default: `""`
-  - Description: API token ID for Modal runtime
+The exact fields available depend on which third-party runtimes are installed. Common examples include:
+- E2B runtime: `e2b_api_key`
+- Modal runtime: `modal_api_token_id`, `modal_api_token_secret`
+- Runloop runtime: `runloop_api_key`
+- Daytona runtime: `daytona_api_key`, `daytona_api_url`, `daytona_target`
 
-- `modal_api_token_secret`
-  - Type: `str`
-  - Default: `""`
-  - Description: API token secret for Modal runtime
-
-- `runloop_api_key`
-  - Type: `str`
-  - Default: `""`
-  - Description: API key for Runloop runtime
-
-- `daytona_api_key`
-  - Type: `str`
-  - Default: `""`
-  - Description: API key for Daytona runtime
-
-- `daytona_api_url`
-  - Type: `str`
-  - Default: `"https://app.daytona.io/api"`
-  - Description: API URL for Daytona runtime
-
-- `daytona_target`
-  - Type: `str`
-  - Default: `"eu"`
-  - Description: Target region for Daytona runtime
+For specific configuration requirements, refer to the documentation for each third-party runtime.
 
 ### Workspace
 - `workspace_base` **(Deprecated)**

@@ -45,13 +45,6 @@ class OpenHandsConfig(BaseModel):
         run_as_openhands: Whether to run as openhands.
         max_iterations: Maximum number of iterations allowed.
         max_budget_per_task: Maximum budget per task, agent stops if exceeded.
-        e2b_api_key: E2B API key (third-party runtime).
-        modal_api_token_id: Modal API token ID (third-party runtime).
-        modal_api_token_secret: Modal API token secret (third-party runtime).
-        runloop_api_key: Runloop API key (third-party runtime).
-        daytona_api_key: Daytona API key (third-party runtime).
-        daytona_api_url: Daytona API URL (third-party runtime).
-        daytona_target: Daytona target region (third-party runtime).
         disable_color: Whether to disable terminal colors. For terminals that don't support color.
         debug: Whether to enable debugging mode.
         file_uploads_max_file_size_mb: Maximum file upload size in MB. `0` means unlimited.
@@ -94,15 +87,6 @@ class OpenHandsConfig(BaseModel):
     max_iterations: int = Field(default=OH_MAX_ITERATIONS)
     max_budget_per_task: float | None = Field(default=None)
 
-    # Third-party runtime API keys (only available when third_party_runtimes extra is installed)
-    e2b_api_key: SecretStr | None = Field(default=None)
-    modal_api_token_id: SecretStr | None = Field(default=None)
-    modal_api_token_secret: SecretStr | None = Field(default=None)
-    runloop_api_key: SecretStr | None = Field(default=None)
-    daytona_api_key: SecretStr | None = Field(default=None)
-    daytona_api_url: str = Field(default='https://app.daytona.io/api')
-    daytona_target: str = Field(default='eu')
-
     disable_color: bool = Field(default=False)
     jwt_secret: SecretStr | None = Field(default=None)
     debug: bool = Field(default=False)
@@ -122,7 +106,7 @@ class OpenHandsConfig(BaseModel):
 
     defaults_dict: ClassVar[dict] = {}
 
-    model_config = {'extra': 'forbid'}
+    model_config = {'extra': 'allow'}
 
     def get_llm_config(self, name: str = 'llm') -> LLMConfig:
         """'llm' is the name for default config (for backward compatibility prior to 0.8)."""
@@ -168,5 +152,96 @@ class OpenHandsConfig(BaseModel):
         """Post-initialization hook, called when the instance is created with only default values."""
         super().model_post_init(__context)
 
+        # Initialize third-party runtime configuration fields
+        self._init_third_party_config_fields()
+
         if not OpenHandsConfig.defaults_dict:  # Only set defaults_dict if it's empty
             OpenHandsConfig.defaults_dict = model_defaults_to_dict(self)
+
+    def _init_third_party_config_fields(self) -> None:
+        """Initialize third-party runtime configuration fields dynamically."""
+        try:
+            from openhands.core.config.third_party_config import (
+                discover_third_party_runtime_configs,
+            )
+
+            runtime_configs = discover_third_party_runtime_configs()
+
+            for runtime_name, config_spec in runtime_configs.items():
+                for field_name, field_spec in config_spec.items():
+                    full_field_name = f'{runtime_name}_{field_name}'
+
+                    # Only set if not already set
+                    if not hasattr(self, full_field_name):
+                        default_value = field_spec.get('default', None)
+                        setattr(self, full_field_name, default_value)
+
+        except ImportError:
+            # third_party package not available, skip
+            pass
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        """Override setattr to handle third-party runtime configuration fields."""
+        # Check if this is a third-party runtime configuration field
+        if self._is_third_party_runtime_field(name) and value is not None:
+            # Get the field specification to determine the correct type
+            field_spec = self._get_third_party_field_spec(name)
+            if (
+                field_spec
+                and field_spec.get('type') == SecretStr
+                and not isinstance(value, SecretStr)
+            ):
+                value = SecretStr(value)
+
+        super().__setattr__(name, value)
+
+    def _is_third_party_runtime_field(self, field_name: str) -> bool:
+        """Check if a field is a third-party runtime configuration field."""
+        try:
+            from openhands.core.config.third_party_config import (
+                discover_third_party_runtime_configs,
+            )
+
+            runtime_configs = discover_third_party_runtime_configs()
+
+            for runtime_name, config_spec in runtime_configs.items():
+                for config_field_name in config_spec.keys():
+                    full_field_name = f'{runtime_name}_{config_field_name}'
+                    if field_name == full_field_name:
+                        return True
+            return False
+
+        except ImportError:
+            return False
+
+    def _get_third_party_field_spec(self, field_name: str) -> dict | None:
+        """Get the field specification for a third-party runtime configuration field."""
+        try:
+            from openhands.core.config.third_party_config import (
+                discover_third_party_runtime_configs,
+            )
+
+            runtime_configs = discover_third_party_runtime_configs()
+
+            for runtime_name, config_spec in runtime_configs.items():
+                for config_field_name, field_spec in config_spec.items():
+                    full_field_name = f'{runtime_name}_{config_field_name}'
+                    if field_name == full_field_name:
+                        return field_spec
+            return None
+
+        except ImportError:
+            return None
+
+    def get_third_party_config(self, runtime_name: str, field_name: str) -> Any:
+        """Get a third-party runtime configuration value.
+
+        Args:
+            runtime_name: Name of the runtime (e.g., 'e2b', 'modal')
+            field_name: Name of the field (e.g., 'api_key', 'api_token_id')
+
+        Returns:
+            Configuration value or None if not found
+        """
+        full_field_name = f'{runtime_name}_{field_name}'
+        return getattr(self, full_field_name, None)

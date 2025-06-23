@@ -10,18 +10,22 @@
 # General core configurations
 ##############################################################################
 [core]
-# API key for E2B
-#e2b_api_key = ""
-
-# API key for Modal
-#modal_api_token_id = ""
-#modal_api_token_secret = ""
-
-# API key for Daytona
-#daytona_api_key = ""
-
-# Daytona Target
-#daytona_target = ""
+# Third-party runtime API keys (only available when third_party_runtimes extra is installed)
+# Configuration fields are dynamically discovered based on available third-party runtimes
+# Common patterns include:
+# - <runtime>_api_key for authentication keys
+# - <runtime>_api_token_id and <runtime>_api_token_secret for token-based auth
+# - <runtime>_api_url for custom API endpoints
+# - <runtime>_target for region/target selection
+#
+# Examples (uncomment and modify as needed):
+# e2b_api_key = ""
+# modal_api_token_id = ""
+# modal_api_token_secret = ""
+# runloop_api_key = ""
+# daytona_api_key = ""
+# daytona_api_url = "https://app.daytona.io/api"
+# daytona_target = "eu"
 
 # Base path for the workspace
 #workspace_base = "./workspace"
