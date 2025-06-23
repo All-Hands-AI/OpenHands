@@ -7,7 +7,6 @@ import { ModalBody } from "#/components/shared/modals/modal-body";
 import { BrandButton } from "../settings/brand-button";
 import GitHubLogo from "#/assets/branding/github-logo.svg?react";
 import GitLabLogo from "#/assets/branding/gitlab-logo.svg?react";
-import BitbucketLogo from "#/assets/branding/bitbucket-logo.svg?react";
 import { useAuthUrl } from "#/hooks/use-auth-url";
 import { GetConfigResponse } from "#/api/open-hands.types";
 
@@ -24,11 +23,6 @@ export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
     identityProvider: "gitlab",
   });
 
-  const bitbucketAuthUrl = useAuthUrl({
-    appMode: appMode || null,
-    identityProvider: "bitbucket",
-  });
-
   const handleGitHubAuth = () => {
     if (githubAuthUrl) {
       // Always start the OIDC flow, let the backend handle TOS check
@@ -40,13 +34,6 @@ export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
     if (gitlabAuthUrl) {
       // Always start the OIDC flow, let the backend handle TOS check
       window.location.href = gitlabAuthUrl;
-    }
-  };
-
-  const handleBitbucketAuth = () => {
-    if (bitbucketAuthUrl) {
-      // Always start the OIDC flow, let the backend handle TOS check
-      window.location.href = bitbucketAuthUrl;
     }
   };
 
@@ -79,16 +66,6 @@ export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
             startContent={<GitLabLogo width={20} height={20} />}
           >
             {t(I18nKey.GITLAB$CONNECT_TO_GITLAB)}
-          </BrandButton>
-
-          <BrandButton
-            type="button"
-            variant="primary"
-            onClick={handleBitbucketAuth}
-            className="w-full"
-            startContent={<BitbucketLogo width={20} height={20} />}
-          >
-            {t(I18nKey.BITBUCKET$CONNECT_TO_BITBUCKET)}
           </BrandButton>
         </div>
       </ModalBody>
