@@ -179,7 +179,7 @@ class AgentController:
         self._add_system_message()
 
     def _add_system_message(self):
-        for event in self.event_stream.get_events(start_id=self.state.start_id):
+        for event in self.event_stream.search_events(start_id=self.state.start_id):
             if isinstance(event, MessageAction) and event.source == EventSource.USER:
                 # FIXME: Remove this after 6/1/2025
                 # Do not try to add a system message if we first run into
@@ -1136,6 +1136,7 @@ class AgentController:
         To avoid performance issues with long conversations, we only keep:
         - accumulated_cost: The current total cost
         - accumulated_token_usage: Accumulated token statistics across all API calls
+        - max_budget_per_task: The maximum budget allowed for the task
 
         This includes metrics from both the agent's LLM and the condenser's LLM if it exists.
 
@@ -1157,6 +1158,10 @@ class AgentController:
         metrics.accumulated_cost = agent_metrics.accumulated_cost
         if condenser_metrics:
             metrics.accumulated_cost += condenser_metrics.accumulated_cost
+
+        # Add max_budget_per_task to metrics
+        if self.state.budget_flag:
+            metrics.max_budget_per_task = self.state.budget_flag.max_value
 
         # Set accumulated token usage (sum of agent and condenser token usage)
         # Use a deep copy to ensure we don't modify the original object
@@ -1180,7 +1185,7 @@ class AgentController:
         accumulated_usage = self.state.metrics.accumulated_token_usage
         self.log(
             'debug',
-            f'Action metrics - accumulated_cost: {metrics.accumulated_cost}, '
+            f'Action metrics - accumulated_cost: {metrics.accumulated_cost}, max_budget: {metrics.max_budget_per_task}, '
             f'latest tokens (prompt/completion/cache_read/cache_write): '
             f'{latest_usage.prompt_tokens if latest_usage else 0}/'
             f'{latest_usage.completion_tokens if latest_usage else 0}/'
@@ -1216,7 +1221,7 @@ class AgentController:
         )
 
     def _is_awaiting_observation(self) -> bool:
-        events = self.event_stream.get_events(reverse=True)
+        events = self.event_stream.search_events(reverse=True)
         for event in events:
             if isinstance(event, AgentStateChangedObservation):
                 result = event.agent_state == AgentState.RUNNING
@@ -1257,7 +1262,7 @@ class AgentController:
         self._cached_first_user_message = next(
             (
                 e
-                for e in self.event_stream.get_events(
+                for e in self.event_stream.search_events(
                     start_id=self.state.start_id,
                 )
                 if isinstance(e, MessageAction) and e.source == EventSource.USER

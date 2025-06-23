@@ -31,6 +31,7 @@ export const generateAssistantMessageAction = (
   args: {
     thought: message,
     image_urls: [],
+    file_urls: [],
     wait_for_response: false,
   },
 });
@@ -46,6 +47,7 @@ export const generateUserMessageAction = (
   args: {
     content: message,
     image_urls: [],
+    file_urls: [],
   },
 });
 

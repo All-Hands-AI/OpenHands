@@ -107,6 +107,10 @@ def initialize_repository_for_runtime(
         gitlab_token = SecretStr(os.environ['GITLAB_TOKEN'])
         provider_tokens[ProviderType.GITLAB] = ProviderToken(token=gitlab_token)
 
+    if 'BITBUCKET_TOKEN' in os.environ:
+        bitbucket_token = SecretStr(os.environ['BITBUCKET_TOKEN'])
+        provider_tokens[ProviderType.BITBUCKET] = ProviderToken(token=bitbucket_token)
+
     secret_store = (
         UserSecrets(provider_tokens=provider_tokens) if provider_tokens else None
     )
