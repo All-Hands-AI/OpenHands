@@ -1,7 +1,6 @@
 """Tests for microagent loading in runtime."""
 
 import os
-import tempfile
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -32,10 +31,6 @@ def _create_test_microagents(test_dir: str):
     knowledge_dir = microagents_dir / 'knowledge'
     knowledge_dir.mkdir(exist_ok=True)
     knowledge_agent = """---
-name: test_knowledge_agent
-type: knowledge
-version: 1.0.0
-agent: CodeActAgent
 triggers:
   - test
   - pytest
@@ -48,14 +43,7 @@ Testing best practices and guidelines.
     (knowledge_dir / 'test_knowledge_agent.md').write_text(knowledge_agent)
 
     # Create test repo agent
-    repo_agent = """---
-name: test_repo_agent
-type: repo
-version: 1.0.0
-agent: CodeActAgent
----
-
-# Test Repository Agent
+    repo_agent = """# Test Repository Agent
 
 Repository-specific test instructions.
 """
@@ -232,7 +220,7 @@ This is a test task microagent with a variable: ${test_var}.
     )
 
 
-def test_task_microagent_variable_extraction():
+def test_task_microagent_variable_extraction(temp_dir):
     """Test that variables are correctly extracted from the content."""
     content = """---
 name: test_task
@@ -249,19 +237,18 @@ inputs:
 This is a test with variables: ${var1}, ${var2}, and ${var3}.
 """
 
-    with tempfile.NamedTemporaryFile(suffix='.md') as f:
-        f.write(content.encode())
-        f.flush()
+    with open(os.path.join(temp_dir, 'test_task.md'), 'w') as f:
+        f.write(content)
 
-        agent = BaseMicroagent.load(f.name)
+    agent = BaseMicroagent.load(os.path.join(temp_dir, 'test_task.md'))
 
-        assert isinstance(agent, TaskMicroagent)
-        variables = agent.extract_variables(agent.content)
-        assert set(variables) == {'var1', 'var2', 'var3'}
-        assert agent.requires_user_input()
+    assert isinstance(agent, TaskMicroagent)
+    variables = agent.extract_variables(agent.content)
+    assert set(variables) == {'var1', 'var2', 'var3'}
+    assert agent.requires_user_input()
 
 
-def test_knowledge_microagent_no_prompt():
+def test_knowledge_microagent_no_prompt(temp_dir):
     """Test that a regular KnowledgeMicroagent doesn't get the prompt."""
     content = """---
 name: test_knowledge
@@ -274,19 +261,17 @@ triggers:
 
 This is a test knowledge microagent.
 """
+    with open(os.path.join(temp_dir, 'test_knowledge.md'), 'w') as f:
+        f.write(content)
 
-    with tempfile.NamedTemporaryFile(suffix='.md') as f:
-        f.write(content.encode())
-        f.flush()
+    agent = BaseMicroagent.load(os.path.join(temp_dir, 'test_knowledge.md'))
 
-        agent = BaseMicroagent.load(f.name)
-
-        assert isinstance(agent, KnowledgeMicroagent)
-        assert agent.type == MicroagentType.KNOWLEDGE
-        assert "If the user didn't provide any of these variables" not in agent.content
+    assert isinstance(agent, KnowledgeMicroagent)
+    assert agent.type == MicroagentType.KNOWLEDGE
+    assert "If the user didn't provide any of these variables" not in agent.content
 
 
-def test_task_microagent_trigger_addition():
+def test_task_microagent_trigger_addition(temp_dir):
     """Test that a trigger is added if not present."""
     content = """---
 name: test_task
@@ -300,18 +285,16 @@ inputs:
 
 This is a test task microagent.
 """
+    with open(os.path.join(temp_dir, 'test_task.md'), 'w') as f:
+        f.write(content)
 
-    with tempfile.NamedTemporaryFile(suffix='.md') as f:
-        f.write(content.encode())
-        f.flush()
+    agent = BaseMicroagent.load(os.path.join(temp_dir, 'test_task.md'))
 
-        agent = BaseMicroagent.load(f.name)
-
-        assert isinstance(agent, TaskMicroagent)
-        assert '/test_task' in agent.triggers
+    assert isinstance(agent, TaskMicroagent)
+    assert '/test_task' in agent.triggers
 
 
-def test_task_microagent_no_duplicate_trigger():
+def test_task_microagent_no_duplicate_trigger(temp_dir):
     """Test that a trigger is not duplicated if already present."""
     content = """---
 name: test_task
@@ -328,21 +311,19 @@ inputs:
 
 This is a test task microagent.
 """
+    with open(os.path.join(temp_dir, 'test_task.md'), 'w') as f:
+        f.write(content)
 
-    with tempfile.NamedTemporaryFile(suffix='.md') as f:
-        f.write(content.encode())
-        f.flush()
+    agent = BaseMicroagent.load(os.path.join(temp_dir, 'test_task.md'))
 
-        agent = BaseMicroagent.load(f.name)
-
-        assert isinstance(agent, TaskMicroagent)
-        assert agent.triggers.count('/test_task') == 1  # No duplicates
-        assert len(agent.triggers) == 2
-        assert 'another_trigger' in agent.triggers
-        assert '/test_task' in agent.triggers
+    assert isinstance(agent, TaskMicroagent)
+    assert agent.triggers.count('/test_task') == 1  # No duplicates
+    assert len(agent.triggers) == 2
+    assert 'another_trigger' in agent.triggers
+    assert '/test_task' in agent.triggers
 
 
-def test_task_microagent_match_trigger():
+def test_task_microagent_match_trigger(temp_dir):
     """Test that a task microagent matches its trigger correctly."""
     content = """---
 name: test_task
@@ -359,17 +340,16 @@ inputs:
 This is a test task microagent.
 """
 
-    with tempfile.NamedTemporaryFile(suffix='.md') as f:
-        f.write(content.encode())
-        f.flush()
+    with open(os.path.join(temp_dir, 'test_task.md'), 'w') as f:
+        f.write(content)
 
-        agent = BaseMicroagent.load(f.name)
+    agent = BaseMicroagent.load(os.path.join(temp_dir, 'test_task.md'))
 
-        assert isinstance(agent, TaskMicroagent)
-        assert agent.match_trigger('/test_task') == '/test_task'
-        assert agent.match_trigger('  /test_task  ') == '/test_task'
-        assert agent.match_trigger('This contains /test_task') == '/test_task'
-        assert agent.match_trigger('/other_task') is None
+    assert isinstance(agent, TaskMicroagent)
+    assert agent.match_trigger('/test_task') == '/test_task'
+    assert agent.match_trigger('  /test_task  ') == '/test_task'
+    assert agent.match_trigger('This contains /test_task') == '/test_task'
+    assert agent.match_trigger('/other_task') is None
 
 
 def test_default_tools_microagent_exists():
@@ -391,15 +371,12 @@ def test_default_tools_microagent_exists():
     with open(default_tools_path, 'r') as f:
         content = f.read()
 
-    # Verify it's a repo microagent (always activated)
-    assert 'type: repo' in content, 'default-tools.md should be a repo microagent'
-
-    # Verify it has the fetch tool configured
-    assert 'name: "fetch"' in content or 'name: fetch' in content, (
-        'default-tools.md should have a fetch tool'
-    )
     assert 'command: uvx' in content, 'default-tools.md should use uvx command'
     assert 'mcp-server-fetch' in content, 'default-tools.md should use mcp-server-fetch'
+
+    agent = BaseMicroagent.load(default_tools_path)
+
+    assert isinstance(agent, RepoMicroagent)
 
 
 @pytest.mark.asyncio
