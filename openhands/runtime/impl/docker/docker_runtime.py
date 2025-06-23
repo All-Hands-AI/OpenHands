@@ -598,7 +598,7 @@ class DockerRuntime(ActionExecutionClient):
         if shak_domain:
             # Shakudo: Use the domain for web hosts
             for idx, secret in enumerate(self._shak_app_secrets):
-                hosts[f'https://openhands-app-{secret}.{shak_domain}'] = idx
+                hosts[f'https://{secret}-openhands-app.{shak_domain}'] = idx
         else:
             host_addr = os.environ.get('DOCKER_HOST_ADDR', 'localhost')
             for port in self._app_ports:
