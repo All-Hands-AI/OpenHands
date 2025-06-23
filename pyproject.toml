@@ -80,7 +80,7 @@ bashlex = "^0.18"
 # TODO: These are integrations that should probably be optional
 redis = ">=5.2,<7.0"
 minio = "^7.2.8"
-daytona = "0.21.1"
+daytona = "0.21.3"
 stripe = ">=11.5,<13.0"
 google-cloud-aiplatform = "*"
 anthropic = { extras = [ "vertex" ], version = "*" }
