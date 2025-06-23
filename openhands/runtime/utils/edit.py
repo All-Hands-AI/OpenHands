@@ -94,7 +94,13 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
     # This restricts the number of lines we can edit to avoid exceeding the token limit.
     MAX_LINES_TO_EDIT = 300
 
-    def __init__(self, enable_llm_editor: bool, *args: Any, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        enable_llm_editor: bool,
+        conversation_metrics=None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(*args, **kwargs)
         self.enable_llm_editor = enable_llm_editor
 
@@ -103,8 +109,20 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
 
         draft_editor_config = self.config.get_llm_config('draft_editor')
 
-        # manually set the model name for the draft editor LLM to distinguish token costs
-        llm_metrics = Metrics(model_name='draft_editor:' + draft_editor_config.model)
+        # Use conversation metrics if provided, otherwise create new metrics
+        if conversation_metrics:
+            from openhands.llm.conversation_metrics import ThreadSafeMetrics
+
+            llm_metrics: Any = ThreadSafeMetrics(
+                conversation_metrics,
+                model_name='draft_editor:' + draft_editor_config.model,
+            )
+        else:
+            # Fallback to individual metrics for backward compatibility
+            llm_metrics = Metrics(
+                model_name='draft_editor:' + draft_editor_config.model
+            )
+
         if draft_editor_config.caching_prompt:
             logger.debug(
                 'It is not recommended to cache draft editor LLM prompts as it may incur high costs for the same prompt. '

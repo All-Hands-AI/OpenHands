@@ -130,6 +130,7 @@ class Runtime(FileEditRuntimeMixin):
         headless_mode: bool = False,
         user_id: str | None = None,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
+        conversation_metrics=None,
     ):
         self.git_handler = GitHandler(
             execute_shell_fn=self._execute_shell_fn_git_handler
@@ -174,7 +175,9 @@ class Runtime(FileEditRuntimeMixin):
 
         # Load mixins
         FileEditRuntimeMixin.__init__(
-            self, enable_llm_editor=config.get_agent_config().enable_llm_editor
+            self,
+            enable_llm_editor=config.get_agent_config().enable_llm_editor,
+            conversation_metrics=conversation_metrics,
         )
 
         self.user_id = user_id

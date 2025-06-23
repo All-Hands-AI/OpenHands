@@ -113,15 +113,31 @@ class LLMAttentionCondenser(RollingCondenser):
         return len(view) > self.max_size
 
     @classmethod
-    def from_config(cls, config: LLMAttentionCondenserConfig) -> LLMAttentionCondenser:
+    def from_config(
+        cls, config: LLMAttentionCondenserConfig, conversation_metrics=None
+    ) -> LLMAttentionCondenser:
         # This condenser cannot take advantage of prompt caching. If it happens
         # to be set, we'll pay for the cache writes but never get a chance to
         # save on a read.
         llm_config = config.llm_config.model_copy()
         llm_config.caching_prompt = False
 
+        # Use conversation metrics if provided, otherwise create new metrics
+        if conversation_metrics:
+            from typing import Any
+
+            from openhands.llm.conversation_metrics import ThreadSafeMetrics
+
+            llm_metrics: Any = ThreadSafeMetrics(
+                conversation_metrics, model_name='condenser:' + llm_config.model
+            )
+        else:
+            from openhands.llm.metrics import Metrics
+
+            llm_metrics = Metrics(model_name='condenser:' + llm_config.model)
+
         return LLMAttentionCondenser(
-            llm=LLM(config=llm_config),
+            llm=LLM(config=llm_config, metrics=llm_metrics),
             max_size=config.max_size,
             keep_first=config.keep_first,
         )

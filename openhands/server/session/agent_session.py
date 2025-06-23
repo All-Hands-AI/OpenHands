@@ -3,7 +3,9 @@ import json
 import time
 from logging import LoggerAdapter
 from types import MappingProxyType
-from typing import Callable, cast
+
+# Import for type hints
+from typing import TYPE_CHECKING, Callable, cast
 
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent
@@ -32,6 +34,9 @@ from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import EXECUTOR, call_sync_from_async
 from openhands.utils.shutdown_listener import should_continue
+
+if TYPE_CHECKING:
+    from openhands.llm.conversation_metrics import ConversationMetrics
 
 WAIT_TIME_BEFORE_CLOSE = 90
 WAIT_TIME_BEFORE_CLOSE_INTERVAL = 5
@@ -64,6 +69,7 @@ class AgentSession:
         file_store: FileStore,
         status_callback: Callable | None = None,
         user_id: str | None = None,
+        conversation_metrics: 'ConversationMetrics | None' = None,
     ) -> None:
         """Initializes a new instance of the Session class
 
@@ -77,6 +83,7 @@ class AgentSession:
         self.file_store = file_store
         self._status_callback = status_callback
         self.user_id = user_id
+        self.conversation_metrics = conversation_metrics
         self.logger = OpenHandsLoggerAdapter(
             extra={'session_id': sid, 'user_id': user_id}
         )
@@ -345,6 +352,7 @@ class AgentSession:
                 git_provider_tokens=overrided_tokens,
                 env_vars=env_vars,
                 user_id=self.user_id,
+                conversation_metrics=self.conversation_metrics,
             )
         else:
             provider_handler = ProviderHandler(
@@ -364,6 +372,7 @@ class AgentSession:
                 attach_to_existing=False,
                 env_vars=env_vars,
                 git_provider_tokens=git_provider_tokens,
+                conversation_metrics=self.conversation_metrics,
             )
 
         # FIXME: this sleep is a terrible hack.
@@ -493,6 +502,9 @@ class AgentSession:
             restored_state = State.restore_from_session(
                 self.sid, self.file_store, self.user_id
             )
+            # Set the conversation metrics on the restored state
+            if restored_state and self.conversation_metrics:
+                restored_state.conversation_metrics = self.conversation_metrics
             self.logger.debug(f'Restored state from session, sid: {self.sid}')
         except Exception as e:
             if self.event_stream.get_latest_event_id() > 0:

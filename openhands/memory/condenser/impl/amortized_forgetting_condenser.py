@@ -58,7 +58,7 @@ class AmortizedForgettingCondenser(RollingCondenser):
 
     @classmethod
     def from_config(
-        cls, config: AmortizedForgettingCondenserConfig
+        cls, config: AmortizedForgettingCondenserConfig, conversation_metrics=None
     ) -> AmortizedForgettingCondenser:
         return AmortizedForgettingCondenser(**config.model_dump(exclude=['type']))
 

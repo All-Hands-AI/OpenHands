@@ -19,6 +19,7 @@ from openhands.events.action import (
 )
 from openhands.events.action.agent import AgentFinishAction
 from openhands.events.event import Event, EventSource
+from openhands.llm.conversation_metrics import ConversationMetrics
 from openhands.llm.metrics import Metrics
 from openhands.memory.view import View
 from openhands.storage.files import FileStore
@@ -93,6 +94,8 @@ class State:
     resume_state: AgentState | None = None
     # global metrics for the current task
     metrics: Metrics = field(default_factory=Metrics)
+    # conversation-level metrics manager for thread-safe operations
+    conversation_metrics: ConversationMetrics | None = None
     # root agent has level 0, and every delegate increases the level by one
     delegate_level: int = 0
     # start_id and end_id track the range of events in history

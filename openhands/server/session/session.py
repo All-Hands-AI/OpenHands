@@ -27,6 +27,7 @@ from openhands.events.observation.agent import RecallObservation
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
+from openhands.llm.conversation_metrics import ConversationMetrics, ThreadSafeMetrics
 from openhands.llm.llm import LLM
 from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation_init_data import ConversationInitData
@@ -55,17 +56,22 @@ class Session:
         file_store: FileStore,
         sio: socketio.AsyncServer | None,
         user_id: str | None = None,
+        conversation_metrics: ConversationMetrics | None = None,
     ):
         self.sid = sid
         self.sio = sio
         self.last_active_ts = int(time.time())
         self.file_store = file_store
         self.logger = OpenHandsLoggerAdapter(extra={'session_id': sid})
+        self.conversation_metrics = conversation_metrics or ConversationMetrics(
+            model_name=f'conversation-{sid}'
+        )
         self.agent_session = AgentSession(
             sid,
             file_store,
             status_callback=self.queue_status_message,
             user_id=user_id,
+            conversation_metrics=self.conversation_metrics,
         )
         self.agent_session.event_stream.subscribe(
             EventStreamSubscriber.SERVER, self.on_event, self.sid
@@ -235,9 +241,14 @@ class Session:
     def _create_llm(self, agent_cls: str | None) -> LLM:
         """Initialize LLM, extracted for testing."""
         agent_name = agent_cls if agent_cls is not None else 'agent'
+        # Create thread-safe metrics wrapper for this LLM
+        thread_safe_metrics = ThreadSafeMetrics(
+            self.conversation_metrics, model_name=agent_name
+        )
         return LLM(
             config=self.config.get_llm_config_from_agent(agent_name),
             retry_listener=self._notify_on_llm_retry,
+            metrics=thread_safe_metrics,
         )
 
     def _notify_on_llm_retry(self, retries: int, max: int) -> None:

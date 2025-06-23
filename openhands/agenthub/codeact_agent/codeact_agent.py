@@ -87,8 +87,18 @@ class CodeActAgent(Agent):
         # Create a ConversationMemory instance
         self.conversation_memory = ConversationMemory(self.config, self.prompt_manager)
 
-        self.condenser = Condenser.from_config(self.config.condenser)
-        logger.debug(f'Using condenser: {type(self.condenser)}')
+        self.condenser: Condenser | None = None
+        self._condenser_config = self.config.condenser
+
+    def _get_condenser(self, state: State) -> Condenser:
+        """Get the condenser, creating it lazily with conversation metrics if available."""
+        if self.condenser is None:
+            conversation_metrics = getattr(state, 'conversation_metrics', None)
+            self.condenser = Condenser.from_config(
+                self._condenser_config, conversation_metrics=conversation_metrics
+            )
+            logger.debug(f'Using condenser: {type(self.condenser)}')
+        return self.condenser
 
     @property
     def prompt_manager(self) -> PromptManager:
@@ -171,7 +181,7 @@ class CodeActAgent(Agent):
         # event we'll just return that instead of an action. The controller will
         # immediately ask the agent to step again with the new view.
         condensed_history: list[Event] = []
-        match self.condenser.condensed_history(state):
+        match self._get_condenser(state).condensed_history(state):
             case View(events=events):
                 condensed_history = events
 

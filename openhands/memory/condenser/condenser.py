@@ -124,11 +124,14 @@ class Condenser(ABC):
         CONDENSER_REGISTRY[configuration_type] = cls
 
     @classmethod
-    def from_config(cls, config: CondenserConfig) -> Condenser:
+    def from_config(
+        cls, config: CondenserConfig, conversation_metrics=None
+    ) -> Condenser:
         """Create a condenser from a configuration object.
 
         Args:
             config: Configuration for the condenser.
+            conversation_metrics: Optional shared conversation metrics.
 
         Returns:
             Condenser: A condenser instance.
@@ -138,7 +141,14 @@ class Condenser(ABC):
         """
         try:
             condenser_class = CONDENSER_REGISTRY[type(config)]
-            return condenser_class.from_config(config)
+            # Try to pass conversation_metrics if the condenser supports it
+            try:
+                return condenser_class.from_config(
+                    config, conversation_metrics=conversation_metrics
+                )
+            except TypeError:
+                # Fallback for condensers that don't support conversation_metrics
+                return condenser_class.from_config(config)
         except KeyError:
             raise ValueError(f'Unknown condenser config: {config}')
 

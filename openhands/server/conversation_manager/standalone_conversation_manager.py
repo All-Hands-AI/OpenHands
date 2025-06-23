@@ -12,6 +12,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import MessageAction
 from openhands.events.stream import EventStreamSubscriber, session_exists
+from openhands.llm.conversation_metrics import ConversationMetrics
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.monitoring import MonitoringListener
@@ -304,12 +305,16 @@ class StandaloneConversationManager(ConversationManager):
                 )
                 await self.close_session(oldest_conversation_id)
 
+        # Create conversation-level metrics for this session
+        conversation_metrics = ConversationMetrics(model_name=f'conversation-{sid}')
+
         session = Session(
             sid=sid,
             file_store=self.file_store,
             config=self.config,
             sio=self.sio,
             user_id=user_id,
+            conversation_metrics=conversation_metrics,
         )
         self._local_agent_loops_by_sid[sid] = session
         asyncio.create_task(
@@ -464,8 +469,19 @@ class StandaloneConversationManager(ConversationManager):
         if (
             conversation.title == default_title
         ):  # attempt to autogenerate if default title is in use
+            # Try to get conversation metrics from active session
+            conversation_metrics = None
+            if conversation_id in self._local_agent_loops_by_sid:
+                session = self._local_agent_loops_by_sid[conversation_id]
+                if hasattr(session, 'conversation_metrics'):
+                    conversation_metrics = session.conversation_metrics
+
             title = await auto_generate_title(
-                conversation_id, user_id, self.file_store, settings
+                conversation_id,
+                user_id,
+                self.file_store,
+                settings,
+                conversation_metrics=conversation_metrics,
             )
             if title and not title.isspace():
                 conversation.title = title

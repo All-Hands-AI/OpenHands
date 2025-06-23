@@ -39,8 +39,13 @@ class CondenserPipeline(Condenser):
         return result
 
     @classmethod
-    def from_config(cls, config: CondenserPipelineConfig) -> CondenserPipeline:
-        condensers = [Condenser.from_config(c) for c in config.condensers]
+    def from_config(
+        cls, config: CondenserPipelineConfig, conversation_metrics=None
+    ) -> CondenserPipeline:
+        condensers = [
+            Condenser.from_config(c, conversation_metrics=conversation_metrics)
+            for c in config.condensers
+        ]
         return CondenserPipeline(*condensers)
 
 

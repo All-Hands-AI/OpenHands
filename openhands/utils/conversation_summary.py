@@ -13,7 +13,7 @@ from openhands.storage.files import FileStore
 
 
 async def generate_conversation_title(
-    message: str, llm_config: LLMConfig, max_length: int = 50
+    message: str, llm_config: LLMConfig, max_length: int = 50, conversation_metrics=None
 ) -> Optional[str]:
     """Generate a concise title for a conversation based on the first user message.
 
@@ -35,7 +35,21 @@ async def generate_conversation_title(
         truncated_message = message
 
     try:
-        llm = LLM(llm_config)
+        # Use conversation metrics if provided, otherwise create new metrics
+        if conversation_metrics:
+            from typing import Any
+
+            from openhands.llm.conversation_metrics import ThreadSafeMetrics
+
+            llm_metrics: Any = ThreadSafeMetrics(
+                conversation_metrics, model_name='title_generator:' + llm_config.model
+            )
+        else:
+            from openhands.llm.metrics import Metrics
+
+            llm_metrics = Metrics(model_name='title_generator:' + llm_config.model)
+
+        llm = LLM(llm_config, metrics=llm_metrics)
 
         # Create a simple prompt for the LLM to generate a title
         messages = [
@@ -76,7 +90,11 @@ def get_default_conversation_title(conversation_id: str) -> str:
 
 
 async def auto_generate_title(
-    conversation_id: str, user_id: str | None, file_store: FileStore, settings: Settings
+    conversation_id: str,
+    user_id: str | None,
+    file_store: FileStore,
+    settings: Settings,
+    conversation_metrics=None,
 ) -> str:
     """
     Auto-generate a title for a conversation based on the first user message.
@@ -118,7 +136,9 @@ async def auto_generate_title(
 
                     # Try to generate title using LLM
                     llm_title = await generate_conversation_title(
-                        first_user_message, llm_config
+                        first_user_message,
+                        llm_config,
+                        conversation_metrics=conversation_metrics,
                     )
                     if llm_title:
                         logger.info(f'Generated title using LLM: {llm_title}')
