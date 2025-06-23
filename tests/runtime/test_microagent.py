@@ -20,7 +20,7 @@ from openhands.microagent.microagent import (
     RepoMicroagent,
     TaskMicroagent,
 )
-from openhands.microagent.types import MicroagentType
+from openhands.microagent.types import InputMetadata, MicroagentType
 
 
 def _create_test_microagents(test_dir: str):
@@ -45,7 +45,7 @@ triggers:
 
 Testing best practices and guidelines.
 """
-    (knowledge_dir / 'knowledge.md').write_text(knowledge_agent)
+    (knowledge_dir / 'test_knowledge_agent.md').write_text(knowledge_agent)
 
     # Create test repo agent
     repo_agent = """---
@@ -89,7 +89,7 @@ def test_load_microagents_with_trailing_slashes(
         # Check knowledge agents
         assert len(knowledge_agents) == 1
         agent = knowledge_agents[0]
-        assert agent.name == 'knowledge/knowledge'
+        assert agent.name == 'knowledge/test_knowledge_agent'
         assert 'test' in agent.triggers
         assert 'pytest' in agent.triggers
 
@@ -126,7 +126,7 @@ def test_load_microagents_with_selected_repo(temp_dir, runtime_cls, run_as_openh
         # Check knowledge agents
         assert len(knowledge_agents) == 1
         agent = knowledge_agents[0]
-        assert agent.name == 'knowledge/knowledge'
+        assert agent.name == 'knowledge/test_knowledge_agent'
         assert 'test' in agent.triggers
         assert 'pytest' in agent.triggers
 
@@ -180,7 +180,7 @@ Repository-specific test instructions.
         _close_test_runtime(runtime)
 
 
-def test_task_microagent_creation():
+def test_task_microagent_creation(temp_dir):
     """Test that a TaskMicroagent is created correctly."""
     content = """---
 name: test_task
@@ -196,18 +196,40 @@ inputs:
 
 This is a test task microagent with a variable: ${test_var}.
 """
+    with open(os.path.join(temp_dir, 'test_task.md'), 'w') as f:
+        f.write(content)
 
-    with tempfile.NamedTemporaryFile(suffix='.md') as f:
-        f.write(content.encode())
-        f.flush()
+    agent = BaseMicroagent.load(os.path.join(temp_dir, 'test_task.md'))
 
-        agent = BaseMicroagent.load(f.name)
+    assert isinstance(agent, TaskMicroagent)
+    assert agent.type == MicroagentType.TASK
+    assert agent.name == 'test_task'
+    assert '/test_task' in agent.triggers
+    assert "If the user didn't provide any of these variables" in agent.content
+    assert agent.inputs == [InputMetadata(name='TEST_VAR', description='Test variable')]
+    simplified_content = """---
+triggers:
+- /test_task
+inputs:
+- name: TEST_VAR
+  description: "Test variable"
+---
 
-        assert isinstance(agent, TaskMicroagent)
-        assert agent.type == MicroagentType.TASK
-        assert agent.name == 'test_task'
-        assert '/test_task' in agent.triggers
-        assert "If the user didn't provide any of these variables" in agent.content
+This is a test task microagent with a variable: ${test_var}.
+"""
+
+    with open(os.path.join(temp_dir, 'test_task.md'), 'w') as f:
+        f.write(simplified_content)
+
+    simplified_agent = BaseMicroagent.load(os.path.join(temp_dir, 'test_task.md'))
+
+    assert isinstance(simplified_agent, TaskMicroagent)
+    assert simplified_agent.type == MicroagentType.TASK
+    assert simplified_agent.name == 'test_task'
+    assert '/test_task' in simplified_agent.triggers
+    assert (
+        "If the user didn't provide any of these variables" in simplified_agent.content
+    )
 
 
 def test_task_microagent_variable_extraction():
@@ -373,11 +395,11 @@ def test_default_tools_microagent_exists():
     assert 'type: repo' in content, 'default-tools.md should be a repo microagent'
 
     # Verify it has the fetch tool configured
-    assert 'name: "fetch"' in content or 'name: fetch' in content, 'default-tools.md should have a fetch tool'
-    assert 'command: uvx' in content, 'default-tools.md should use uvx command'
-    assert 'mcp-server-fetch' in content, (
-        'default-tools.md should use mcp-server-fetch'
+    assert 'name: "fetch"' in content or 'name: fetch' in content, (
+        'default-tools.md should have a fetch tool'
     )
+    assert 'command: uvx' in content, 'default-tools.md should use uvx command'
+    assert 'mcp-server-fetch' in content, 'default-tools.md should use mcp-server-fetch'
 
 
 @pytest.mark.asyncio

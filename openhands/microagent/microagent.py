@@ -40,6 +40,11 @@ class BaseMicroagent(BaseModel):
         derived_name = None
         if microagent_dir is not None:
             derived_name = str(path.relative_to(microagent_dir).with_suffix(''))
+        else:
+            derived_name = path.with_suffix('').name
+            logger.warning(
+                f'No microagent_dir provided. Microagent name will be the file name: {derived_name}'
+            )
 
         # Only load directly from path if file_content is not provided
         if file_content is None:
@@ -59,9 +64,11 @@ class BaseMicroagent(BaseModel):
         file_io = io.StringIO(file_content)
         loaded = frontmatter.load(file_io)
         content = loaded.content
+        print(f'loaded: {loaded}')
 
         # Handle case where there's no frontmatter or empty frontmatter
         metadata_dict = loaded.metadata or {}
+        print(f'metadata_dict: {metadata_dict}')
 
         try:
             metadata = MicroagentMetadata(**metadata_dict)
@@ -95,16 +102,24 @@ class BaseMicroagent(BaseModel):
             MicroagentType.TASK: TaskMicroagent,
         }
 
+        # We will always use derived_name if available
+        assert derived_name is not None
+        agent_name = derived_name
+        if metadata.name is not None:
+            logger.warning(
+                f'Detected `name:` field in frontmatter for microagent {metadata.name}. '
+                "This is deprecated. Microagent's name will use the file name "
+                f'({derived_name}) instead.'
+            )
+
         # Infer the agent type:
         # 1. If inputs exist -> TASK
         # 2. If triggers exist -> KNOWLEDGE
         # 3. Else (no triggers) -> REPO (always active)
         inferred_type: MicroagentType
+        print(f'metadata inputs: {metadata.inputs}')
         if metadata.inputs:
             inferred_type = MicroagentType.TASK
-            # Add a trigger for the agent name if not already present
-            # Use derived_name if available, otherwise use metadata.name
-            agent_name = derived_name if derived_name is not None and (metadata.name == 'default' or not metadata.name) else metadata.name
             trigger = f'/{agent_name}'
             if not metadata.triggers or trigger not in metadata.triggers:
                 if not metadata.triggers:
@@ -121,13 +136,6 @@ class BaseMicroagent(BaseModel):
         if inferred_type not in subclass_map:
             # This should theoretically not happen with the logic above
             raise ValueError(f'Could not determine microagent type for: {path}')
-
-        # Use derived_name if available (from relative path), otherwise fallback to metadata.name
-        # If metadata.name is still the default 'default', use the derived_name
-        if derived_name is not None and (metadata.name == 'default' or not metadata.name):
-            agent_name = derived_name
-        else:
-            agent_name = metadata.name
 
         agent_class = subclass_map[inferred_type]
         return agent_class(
