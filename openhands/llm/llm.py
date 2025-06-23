@@ -487,9 +487,6 @@ class LLM(RetryMixin, DebugMixin):
                 # Safe fallback for any potentially viable model
                 self.config.max_input_tokens = 4096
 
-        # Keep max_output_tokens as None if not explicitly set
-        # Let the LLM provider handle defaults
-
         # Initialize function calling capability
         # Check if model name is in our supported list
         model_name_supported = (
