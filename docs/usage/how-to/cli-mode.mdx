@@ -24,10 +24,7 @@ pip install openhands-ai
 uvx --python 3.12 --from openhands-ai openhands
 ```
 
-2. Set the `SANDBOX_VOLUMES` environment variable to specify the directory you want OpenHands to access
-([See using SANDBOX_VOLUMES for more info](../runtimes/docker#using-sandbox_volumes)).
-
-3. Launch an interactive OpenHands conversation from the command line:
+2. Launch an interactive OpenHands conversation from the command line:
 ```bash
 openhands
 ```
@@ -38,13 +35,13 @@ openhands
   poetry run python -m openhands.cli.main
 </Note>
 
-4. Set your model, API key, and other preferences using the UI (or alternatively environment variables, below).
+3. Set your model, API key, and other preferences using the UI (or alternatively environment variables, below).
 
 This command opens an interactive prompt where you can type tasks or commands and get responses from OpenHands.
 The first time you run the CLI, it will take you through configuring the required LLM
 settings. These will be saved for future sessions.
 
-The trajectory of the sessions will be saved in `~/.openhands/sessions`.
+The conversation history of the sessions will be saved in `~/.openhands/sessions`.
 
 ### Running with Docker
 
@@ -80,7 +77,7 @@ This launches the CLI in Docker, allowing you to interact with OpenHands.
 
 The `-e SANDBOX_USER_ID=$(id -u)` ensures files created by the agent in your workspace have the correct permissions.
 
-The trajectory of the sessions will be saved in `~/.openhands/sessions`.
+The conversation history will be saved in `~/.openhands/sessions`.
 
 ## Interactive CLI Overview
 
