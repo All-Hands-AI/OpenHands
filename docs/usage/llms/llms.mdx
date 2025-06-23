@@ -20,7 +20,7 @@ Based on these findings and community feedback, these are the latest models that
 - [openai/o4-mini](https://openai.com/index/introducing-o3-and-o4-mini/)
 - [gemini/gemini-2.5-pro](https://blog.google/technology/google-deepmind/gemini-model-thinking-updates-march-2025/)
 - [deepseek/deepseek-chat](https://api-docs.deepseek.com/)
-- [mistral/mistral-large](https://docs.mistral.ai/) - Good performance with adjusted safety settings
+
 If you have successfully run OpenHands with specific providers, we encourage you to open a PR to share your setup process
 to help others using the same provider!
 
@@ -73,15 +73,14 @@ We have a few guides for running OpenHands with specific model providers:
 - [OpenAI](/usage/llms/openai-llms)
 - [OpenRouter](/usage/llms/openrouter)
 
-## Model-Specific Settings
+## Model Customization
 
-Some LLM providers have specific settings that can be customized to optimize their performance with OpenHands, particularly for code generation tasks:
+Some LLM providers have specific settings that can be customized to optimize their performance with OpenHands, such as:
 
-- **Safety Settings**: For models like Mistral AI and Gemini, you can adjust safety settings to prevent unnecessary filtering of code generation tasks
 - **Custom Tokenizers**: For specialized models, you can configure custom tokenizers
 - **Native Tool Calling**: Toggle native function/tool calling capabilities
 
-For detailed information about model-specific settings, see our [Model Settings Guide](llms/model_settings).
+For detailed information about model customization, see [LLM Configuration Options](configuration-options#llm-customization).
 
 ### API retries and rate limits
 
