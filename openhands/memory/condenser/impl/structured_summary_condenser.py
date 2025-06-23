@@ -107,9 +107,8 @@ class StateSummary(BaseModel):
         properties = {}
 
         # Build properties dictionary from field information
-        for field_name, field in cls.__annotations__.items():
-            field_info = cls.__fields__[field_name]
-            description = field_info.field_info.description or ''
+        for field_name, field in cls.model_fields.items():
+            description = field.description or ''
 
             properties[field_name] = {'type': 'string', 'description': description}
 
