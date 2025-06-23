@@ -11,9 +11,17 @@ for scripting.
 
 ### Running with Python
 
+**Note** - OpenHands requires Python version 3.12 or higher (Python 3.14 is not currently supported)
+
 1. Install OpenHands using pip:
 ```bash
 pip install openhands-ai
+```
+
+Or if you prefer not to manage your own Python environment, you can use `uvx`:
+
+```bash
+uvx --python 3.12 --from openhands-ai openhands
 ```
 
 2. Set the `SANDBOX_VOLUMES` environment variable to specify the directory you want OpenHands to access
@@ -30,6 +38,9 @@ If you have cloned the repository, you can also run the CLI directly using Poetr
 poetry run python -m openhands.cli.main
 </Note>
 
+4. Set your model, API key, and other preferences using the UI (or alternatively environment variables, below).
+
+This command opens an interactive prompt where you can type tasks or commands and get responses from OpenHands.
 The first time you run the CLI, it will take you through configuring the required LLM
 settings. These will be saved for future sessions.
 
@@ -47,24 +58,29 @@ The trajectory of the sessions will be saved in `~/.openhands/sessions`.
 ```bash
 docker run -it \
     --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.42-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.45-nikolaik \
     -e SANDBOX_USER_ID=$(id -u) \
     -e SANDBOX_VOLUMES=$SANDBOX_VOLUMES \
     -e LLM_API_KEY=$LLM_API_KEY \
     -e LLM_MODEL=$LLM_MODEL \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    -v ~/.openhands-state:/.openhands-state \
+    -v ~/.openhands:/.openhands \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app-$(date +%Y%m%d%H%M%S) \
-    docker.all-hands.dev/all-hands-ai/openhands:0.42 \
+    docker.all-hands.dev/all-hands-ai/openhands:0.45 \
     python -m openhands.cli.main --override-cli-mode true
 ```
+
+<Note>
+  If you used OpenHands before version 0.44, you may want to run `mv ~/.openhands-state ~/.openhands` to migrate your
+  conversation history to the new location.
+</Note>
 
 This launches the CLI in Docker, allowing you to interact with OpenHands.
 
 The `-e SANDBOX_USER_ID=$(id -u)` ensures files created by the agent in your workspace have the correct permissions.
 
-The trajectory of the sessions will be saved in `~/.openhands-state/sessions`.
+The trajectory of the sessions will be saved in `~/.openhands/sessions`.
 
 ## Interactive CLI Overview
 

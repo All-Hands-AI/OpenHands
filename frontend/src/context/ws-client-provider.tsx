@@ -28,7 +28,8 @@ import {
 } from "#/types/core/guards";
 import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
 import { useWSErrorMessage } from "#/hooks/use-ws-error-message";
-import { ProjectStatus } from "#/components/features/conversation-panel/conversation-state-indicator";
+
+export type WebSocketStatus = "CONNECTING" | "CONNECTED" | "DISCONNECTED";
 
 const hasValidMessageProperty = (obj: unknown): obj is { message: string } =>
   typeof obj === "object" &&
@@ -69,7 +70,7 @@ const isMessageAction = (
   isUserMessage(event) || isAssistantMessage(event);
 
 interface UseWsClient {
-  status: ProjectStatus;
+  webSocketStatus: WebSocketStatus;
   isLoadingMessages: boolean;
   events: Record<string, unknown>[];
   parsedEvents: (OpenHandsAction | OpenHandsObservation)[];
@@ -77,7 +78,7 @@ interface UseWsClient {
 }
 
 const WsClientContext = React.createContext<UseWsClient>({
-  status: "DISCONNECTED",
+  webSocketStatus: "DISCONNECTED",
   isLoadingMessages: true,
   events: [],
   parsedEvents: [],
@@ -134,7 +135,8 @@ export function WsClientProvider({
   const { setErrorMessage, removeErrorMessage } = useWSErrorMessage();
   const queryClient = useQueryClient();
   const sioRef = React.useRef<Socket | null>(null);
-  const [status, setStatus] = React.useState<ProjectStatus>("CONNECTING");
+  const [webSocketStatus, setWebSocketStatus] =
+    React.useState<WebSocketStatus>("DISCONNECTED");
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
   const [parsedEvents, setParsedEvents] = React.useState<
     (OpenHandsAction | OpenHandsObservation)[]
@@ -155,7 +157,7 @@ export function WsClientProvider({
   }
 
   function handleConnect() {
-    setStatus("CONNECTED");
+    setWebSocketStatus("CONNECTED");
     removeErrorMessage();
   }
 
@@ -254,7 +256,7 @@ export function WsClientProvider({
   }
 
   function handleDisconnect(data: unknown) {
-    setStatus("DISCONNECTED");
+    setWebSocketStatus("DISCONNECTED");
     const sio = sioRef.current;
     if (!sio) {
       return;
@@ -268,7 +270,7 @@ export function WsClientProvider({
 
   function handleError(data: unknown) {
     // set status
-    setStatus("DISCONNECTED");
+    setWebSocketStatus("DISCONNECTED");
     updateStatusWhenErrorMessagePresent(data);
 
     setErrorMessage(
@@ -287,17 +289,14 @@ export function WsClientProvider({
     // reset events when conversationId changes
     setEvents([]);
     setParsedEvents([]);
-    setStatus("CONNECTING");
+    setWebSocketStatus("CONNECTING");
   }, [conversationId]);
 
   React.useEffect(() => {
     if (!conversationId) {
       throw new Error("No conversation ID provided");
     }
-    if (
-      !conversation ||
-      ["STOPPED", "STARTING"].includes(conversation.status)
-    ) {
+    if (conversation?.status !== "RUNNING" && !conversation?.runtime_status) {
       return () => undefined; // conversation not yet loaded
     }
 
@@ -306,6 +305,9 @@ export function WsClientProvider({
     if (sio?.connected) {
       sio.disconnect();
     }
+
+    // Set initial status...
+    setWebSocketStatus("CONNECTING");
 
     const lastEvent = lastEventRef.current;
     const query = {
@@ -341,7 +343,13 @@ export function WsClientProvider({
       sio.off("connect_failed", handleError);
       sio.off("disconnect", handleDisconnect);
     };
-  }, [conversationId, conversation?.url, conversation?.status]);
+  }, [
+    conversationId,
+    conversation?.url,
+    conversation?.status,
+    conversation?.runtime_status,
+    providers,
+  ]);
 
   React.useEffect(
     () => () => {
@@ -356,13 +364,18 @@ export function WsClientProvider({
 
   const value = React.useMemo<UseWsClient>(
     () => ({
-      status,
+      webSocketStatus,
       isLoadingMessages: messageRateHandler.isUnderThreshold,
       events,
       parsedEvents,
       send,
     }),
-    [status, messageRateHandler.isUnderThreshold, events, parsedEvents],
+    [
+      webSocketStatus,
+      messageRateHandler.isUnderThreshold,
+      events,
+      parsedEvents,
+    ],
   );
 
   return <WsClientContext value={value}>{children}</WsClientContext>;
