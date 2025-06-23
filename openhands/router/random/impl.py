@@ -3,6 +3,7 @@ import numpy as np
 from openhands.core.config.model_routing_config import ModelRoutingConfig
 from openhands.llm.llm import LLM
 from openhands.router.base import BaseRouter
+from openhands.core.message import Message
 
 
 class RandomRouter(BaseRouter):
@@ -20,7 +21,7 @@ class RandomRouter(BaseRouter):
         self.model_routing_config = model_routing_config
         np.random.seed(42)
 
-    def should_route_to(self, prompt: str) -> LLM:
+    def should_route_to(self, messages: list[Message]) -> LLM:
         random = np.random.rand()
         if random < self.PERCENTAGE_CALLS_TO_STRONG_LLM:
             return self.llm

@@ -36,15 +36,13 @@ from openhands.router import (
     ThresholdBasedCostSavingRouter,
 )
 
-# CostSavingRouter,
-# RandomRouter,
 from openhands.runtime.plugins import (
     AgentSkillsRequirement,
     JupyterRequirement,
     PluginRequirement,
 )
 from openhands.utils.prompt import PromptManager
-from openhands.utils.trajectory import format_trajectory
+
 
 
 class CodeActAgent(Agent):
@@ -111,7 +109,6 @@ class CodeActAgent(Agent):
                 model_routing_config=model_routing_config,
             )
 
-        # FIXME: remove this
         self.routing_llms = (
             [routing_llm for routing_llm in routing_llms.values()]
             if routing_llms
@@ -212,8 +209,7 @@ class CodeActAgent(Agent):
         # Choose the active LLM based on the router
         if self.router:
             messages = self._get_messages(condensed_history, initial_user_message)
-            formatted_trajectory = format_trajectory(messages)
-            self.active_llm = self.router.should_route_to(formatted_trajectory)
+            self.active_llm = self.router.should_route_to(messages)
 
             if self.active_llm != self.llm:
                 logger.warning(

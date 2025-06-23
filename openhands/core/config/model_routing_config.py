@@ -7,8 +7,7 @@ class ModelRoutingConfig(BaseModel):
     Attributes:
         classifier_llm_config_name: The name of the classifier LLM config to use. Default is 'classifier_model'.
     """
-
-    classifier_llm_config_name: str = Field(default='classifier_model')
+    prob_threshold: float = Field(default=0.392578125) # 60% calls to strong model
 
     model_config = {'extra': 'forbid'}
 
