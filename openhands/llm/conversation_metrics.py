@@ -81,8 +81,8 @@ class ConversationMetrics:
     Uses a queue-based approach to handle concurrent access.
     """
 
-    def __init__(self, model_name: str = 'conversation'):
-        self._metrics = Metrics(model_name=model_name)
+    def __init__(self, metrics: Metrics):
+        self._metrics = metrics
         self._operation_queue: queue.Queue[MetricsOperation] = queue.Queue()
         self._lock = threading.Lock()
         self._processing = False

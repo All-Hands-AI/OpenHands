@@ -6,6 +6,7 @@ from typing import Callable, Iterable
 
 import socketio
 
+from openhands.controller.state.state import State
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
@@ -13,6 +14,7 @@ from openhands.core.schema.agent import AgentState
 from openhands.events.action import MessageAction
 from openhands.events.stream import EventStreamSubscriber, session_exists
 from openhands.llm.conversation_metrics import ConversationMetrics
+from openhands.llm.metrics import Metrics
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.monitoring import MonitoringListener
@@ -248,6 +250,24 @@ class StandaloneConversationManager(ConversationManager):
                     connections.pop(connection_id)
         return connections
 
+
+    def _maybe_restore_metrics(self, sid: str, user_id: str | None) -> State | None:
+        """Helper method to handle state restore logic."""
+        restored_state = None
+
+        # Attempt to restore the state from session.
+        try:
+            restored_state = State.restore_from_session(
+                sid, self.file_store, user_id
+            )
+            # Set the conversation metrics on the restored state
+            if restored_state:
+                restored_state.metrics
+        except Exception as e:
+          pass
+
+        return Metrics()
+
     async def maybe_start_agent_loop(
         self,
         sid: str,
@@ -306,16 +326,19 @@ class StandaloneConversationManager(ConversationManager):
                 await self.close_session(oldest_conversation_id)
 
         # Create conversation-level metrics for this session
-        conversation_metrics = ConversationMetrics(model_name=f'conversation-{sid}')
-
+        metrics = self._maybe_restore_metrics()
+        convo_metrics = ConversationMetrics(metrics)
         session = Session(
             sid=sid,
             file_store=self.file_store,
             config=self.config,
             sio=self.sio,
             user_id=user_id,
-            conversation_metrics=conversation_metrics,
+            conversation_metrics=convo_metrics,
         )
+
+        # Get metrics here and wrap them
+
         self._local_agent_loops_by_sid[sid] = session
         asyncio.create_task(
             session.initialize_agent(settings, initial_user_msg, replay_json)
@@ -324,7 +347,7 @@ class StandaloneConversationManager(ConversationManager):
         try:
             session.agent_session.event_stream.subscribe(
                 EventStreamSubscriber.SERVER,
-                self._create_conversation_update_callback(user_id, sid, settings),
+                self._create_conversation_update_callback(user_id, sid, settings, convo_metrics),
                 UPDATED_AT_CALLBACK_ID,
             )
         except ValueError:
@@ -425,6 +448,7 @@ class StandaloneConversationManager(ConversationManager):
         user_id: str | None,
         conversation_id: str,
         settings: Settings,
+        conversation_metrics: ConversationMetrics
     ) -> Callable:
         def callback(event, *args, **kwargs):
             call_async_from_sync(
@@ -433,6 +457,7 @@ class StandaloneConversationManager(ConversationManager):
                 user_id,
                 conversation_id,
                 settings,
+                conversation_metrics,
                 event,
             )
 
@@ -443,6 +468,7 @@ class StandaloneConversationManager(ConversationManager):
         user_id: str,
         conversation_id: str,
         settings: Settings,
+        conversation_metrics: ConversationMetrics,
         event=None,
     ):
         conversation_store = await self._get_conversation_store(user_id)
@@ -469,13 +495,6 @@ class StandaloneConversationManager(ConversationManager):
         if (
             conversation.title == default_title
         ):  # attempt to autogenerate if default title is in use
-            # Try to get conversation metrics from active session
-            conversation_metrics = None
-            if conversation_id in self._local_agent_loops_by_sid:
-                session = self._local_agent_loops_by_sid[conversation_id]
-                if hasattr(session, 'conversation_metrics'):
-                    conversation_metrics = session.conversation_metrics
-
             title = await auto_generate_title(
                 conversation_id,
                 user_id,

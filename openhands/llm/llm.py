@@ -8,6 +8,7 @@ from typing import Any, Callable
 import httpx
 
 from openhands.core.config import LLMConfig
+from openhands.llm.conversation_metrics import ConversationMetrics
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -113,7 +114,7 @@ class LLM(RetryMixin, DebugMixin):
     def __init__(
         self,
         config: LLMConfig,
-        metrics: Metrics | None = None,
+        conversation_metrics: ConversationMetrics,
         retry_listener: Callable[[int, int], None] | None = None,
     ) -> None:
         """Initializes the LLM. If LLMConfig is passed, its values will be the fallback.
@@ -125,9 +126,7 @@ class LLM(RetryMixin, DebugMixin):
             metrics: The metrics to use.
         """
         self._tried_model_info = False
-        self.metrics: Metrics = (
-            metrics if metrics is not None else Metrics(model_name=config.model)
-        )
+        self.conversation_metrics: ConversationMetrics = conversation_metrics
         self.cost_metric_supported: bool = True
         self.config: LLMConfig = copy.deepcopy(config)
 
@@ -307,7 +306,7 @@ class LLM(RetryMixin, DebugMixin):
             # Calculate and record latency
             latency = time.time() - start_time
             response_id = resp.get('id', 'unknown')
-            self.metrics.add_response_latency(latency, response_id)
+            self.conversation_metrics.add_response_latency(latency, response_id)
 
             non_fncall_response = copy.deepcopy(resp)
 

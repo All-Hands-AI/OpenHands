@@ -7,13 +7,14 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
 from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
+from openhands.llm.conversation_metrics import ConversationMetrics
 from openhands.llm.llm import LLM
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
 
 
 async def generate_conversation_title(
-    message: str, llm_config: LLMConfig, max_length: int = 50, conversation_metrics=None
+    message: str, llm_config: LLMConfig, conversation_metrics: ConversationMetrics, max_length: int = 50,
 ) -> Optional[str]:
     """Generate a concise title for a conversation based on the first user message.
 
@@ -36,19 +37,6 @@ async def generate_conversation_title(
 
     try:
         # Use conversation metrics if provided, otherwise create new metrics
-        if conversation_metrics:
-            from typing import Any
-
-            from openhands.llm.conversation_metrics import ThreadSafeMetrics
-
-            llm_metrics: Any = ThreadSafeMetrics(
-                conversation_metrics, model_name='title_generator:' + llm_config.model
-            )
-        else:
-            from openhands.llm.metrics import Metrics
-
-            llm_metrics = Metrics(model_name='title_generator:' + llm_config.model)
-
         llm = LLM(llm_config, metrics=llm_metrics)
 
         # Create a simple prompt for the LLM to generate a title
@@ -94,7 +82,7 @@ async def auto_generate_title(
     user_id: str | None,
     file_store: FileStore,
     settings: Settings,
-    conversation_metrics=None,
+    conversation_metrics: ConversationMetrics,
 ) -> str:
     """
     Auto-generate a title for a conversation based on the first user message.
