@@ -20,7 +20,7 @@ You'll need to be sure to set your model, API key, and other settings via enviro
 
 ### Working with Repositories
 
-You can specify a GitHub repository for OpenHands to work with:
+You can specify a repository for OpenHands to work with using `--selected-repo` or the `SANDBOX_SELECTED_REPO` environment variable:
 
 ```bash
 # Using command-line argument
@@ -31,53 +31,31 @@ poetry run python -m openhands.core.main \
 # Using environment variable
 export SANDBOX_SELECTED_REPO="owner/repo-name"
 poetry run python -m openhands.core.main -t "fix any linting issues"
-```
 
-#### Private Repositories
-
-For private repositories, you'll need to provide authentication tokens:
-
-```bash
-# Set your GitHub token
-export GITHUB_TOKEN="your-github-token"
-
-# Work with a private repository
+# For private repositories, set authentication tokens
+export GITHUB_TOKEN="your-token"  # or GITLAB_TOKEN, BITBUCKET_TOKEN
 poetry run python -m openhands.core.main \
   --selected-repo "owner/private-repo" \
   -t "review the security implementation"
-```
 
-OpenHands supports GitHub, GitLab, and Bitbucket repositories. Use the appropriate environment variable:
-- `GITHUB_TOKEN` for GitHub repositories
-- `GITLAB_TOKEN` for GitLab repositories  
-- `BITBUCKET_TOKEN` for Bitbucket repositories
-
-### Using Task Files
-
-Instead of specifying tasks inline, you can use a file:
-
-```bash
-# Create a task file
+# Using task files instead of inline commands
 echo "Review the README and suggest improvements" > task.txt
-
-# Run with task file
 poetry run python -m openhands.core.main -f task.txt --selected-repo "owner/repo"
 ```
 
 ## With Docker
 
-To run OpenHands in Headless mode with Docker:
-
-1. Set the following environment variables in your terminal:
-   - `SANDBOX_VOLUMES` to specify the directory you want OpenHands to access ([See using SANDBOX_VOLUMES for more info](../runtimes/docker#using-sandbox_volumes))
-   - `LLM_MODEL` - the LLM model to use (e.g. `export LLM_MODEL="anthropic/claude-sonnet-4-20250514"`)
-   - `LLM_API_KEY` - your API key (e.g. `export LLM_API_KEY="sk_test_12345"`)
-   - `SANDBOX_SELECTED_REPO` - (optional) GitHub repository to work with (e.g. `export SANDBOX_SELECTED_REPO="owner/repo-name"`)
-   - `GITHUB_TOKEN` - (optional) for private GitHub repositories (e.g. `export GITHUB_TOKEN="your-token"`)
-
-2. Run the following Docker command:
+Set environment variables and run the Docker command:
 
 ```bash
+# Set required environment variables
+export SANDBOX_VOLUMES="/path/to/workspace"  # See SANDBOX_VOLUMES docs for details
+export LLM_MODEL="anthropic/claude-sonnet-4-20250514"
+export LLM_API_KEY="your-api-key"
+export SANDBOX_SELECTED_REPO="owner/repo-name"  # Optional
+export GITHUB_TOKEN="your-token"  # Optional, for private repos
+
+# Run OpenHands
 docker run -it \
     --pull=always \
     -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.45-nikolaik \
@@ -96,112 +74,17 @@ docker run -it \
     python -m openhands.core.main -t "write a bash script that prints hi"
 ```
 
-### Working with Repositories in Docker
+> **Note**: If you used OpenHands before version 0.44, run `mv ~/.openhands-state ~/.openhands` to migrate your conversation history.
 
-You can also specify the repository directly in the command:
+## Additional Options
 
-```bash
-docker run -it \
-    --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.45-nikolaik \
-    -e SANDBOX_USER_ID=$(id -u) \
-    -e SANDBOX_VOLUMES=$SANDBOX_VOLUMES \
-    -e LLM_API_KEY=$LLM_API_KEY \
-    -e LLM_MODEL=$LLM_MODEL \
-    -e GITHUB_TOKEN=$GITHUB_TOKEN \
-    -e LOG_ALL_EVENTS=true \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    -v ~/.openhands:/.openhands \
-    --add-host host.docker.internal:host-gateway \
-    --name openhands-app-$(date +%Y%m%d%H%M%S) \
-    docker.all-hands.dev/all-hands-ai/openhands:0.45 \
-    python -m openhands.core.main \
-    --selected-repo "owner/repo-name" \
-    -t "analyze the codebase and create documentation"
-```
-> **Note**: If you used OpenHands before version 0.44, you may want to run `mv ~/.openhands-state ~/.openhands` to migrate your conversation history to the new location.
+Common command-line options:
+- `-d "/path/to/workspace"` - Set working directory
+- `-f task.txt` - Load task from file
+- `-i 50` - Set max iterations
+- `-b 10.0` - Set budget limit (USD)
+- `--no-auto-continue` - Interactive mode
 
-The `-e SANDBOX_USER_ID=$(id -u)` is passed to the Docker command to ensure the sandbox user matches the host user’s
-permissions. This prevents the agent from creating root-owned files in the mounted workspace.
+Run `poetry run python -m openhands.core.main --help` for all options, or use a [`config.toml` file](https://github.com/All-Hands-AI/OpenHands/blob/main/config.template.toml) for complex setups.
 
-## Advanced Headless Configurations
-
-To view all available configuration options for headless mode, run the Python command with the `--help` flag.
-
-### Common Command-Line Options
-
-Here are some frequently used options for headless mode:
-
-```bash
-# Specify working directory
-poetry run python -m openhands.core.main \
-  -d "/path/to/workspace" \
-  -t "analyze this project"
-
-# Set iteration and budget limits
-poetry run python -m openhands.core.main \
-  -i 50 \
-  -b 10.0 \
-  -t "optimize the code for performance"
-
-# Use a specific agent
-poetry run python -m openhands.core.main \
-  -c "CodeActAgent" \
-  -t "implement a new feature"
-
-# Use custom LLM or agent configurations from config.toml
-poetry run python -m openhands.core.main \
-  -l "gpt4" \
-  --agent-config "MyCustomAgent" \
-  -t "review and refactor the codebase"
-
-# Interactive mode (disable auto-continue)
-poetry run python -m openhands.core.main \
-  --no-auto-continue \
-  -t "help me debug this issue step by step"
-```
-
-### Key Options Explained
-
-- `-d, --directory`: Set the working directory for the agent
-- `-f, --file`: Load task from a file instead of command line
-- `-i, --max-iterations`: Maximum number of agent iterations (default varies)
-- `-b, --max-budget-per-task`: Maximum cost budget per task in USD
-- `-c, --agent-cls`: Specify which agent class to use
-- `-l, --llm-config`: Use a specific LLM configuration from config.toml
-- `--agent-config`: Use a specific agent configuration from config.toml
-- `--no-auto-continue`: Disable automatic responses, making the session interactive
-- `--selected-repo`: GitHub repository to clone and work with
-
-### Environment Variables
-
-You can also configure OpenHands using environment variables:
-
-```bash
-# Repository and workspace
-export SANDBOX_SELECTED_REPO="owner/repo-name"
-export WORKSPACE_BASE="/path/to/workspace"
-
-# LLM settings
-export LLM_MODEL="anthropic/claude-sonnet-4-20250514"
-export LLM_API_KEY="your-api-key"
-
-# Agent settings
-export AGENT_ENABLE_BROWSING=true
-export AGENT_ENABLE_JUPYTER=true
-
-# Sandbox settings
-export SANDBOX_TIMEOUT=300
-export SANDBOX_USER_ID=$(id -u)
-
-# Run with environment variables
-poetry run python -m openhands.core.main -t "your task"
-```
-
-### Additional Logs
-
-For the headless mode to log all the agent actions, in the terminal run: `export LOG_ALL_EVENTS=true`
-
-### Configuration Files
-
-For complex setups, use a `config.toml` file. See the [configuration template](https://github.com/All-Hands-AI/OpenHands/blob/main/config.template.toml) for all available options.
+Set `export LOG_ALL_EVENTS=true` to log all agent actions.
