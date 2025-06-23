@@ -185,7 +185,8 @@ def convert_to_settings(settings_with_token_data: Settings) -> Settings:
     filtered_settings_data = {
         key: value
         for key, value in settings_data.items()
-        if key in Settings.model_fields  # Ensures only `Settings` fields are included
+        if key
+        in Settings.__annotations__  # Ensures only `Settings` fields are included
     }
 
     # Convert the API keys to `SecretStr` instances
