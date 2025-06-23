@@ -32,6 +32,7 @@ class GitLabService(BaseGitService, GitService):
 
     The class is instantiated via get_impl() in openhands.server.shared.py.
     """
+
     BASE_URL = 'https://gitlab.com/api/v4'
     GRAPHQL_URL = 'https://gitlab.com/api/graphql'
     token: SecretStr = SecretStr('')
@@ -185,13 +186,12 @@ class GitLabService(BaseGitService, GitService):
         avatar_url = response.get('avatar_url') or ''
 
         return User(
-            id=response.get('id'),
-            username=response.get('username'),
+            id=str(response.get('id', '')),
+            login=response.get('username'),  # type: ignore[call-arg]
             avatar_url=avatar_url,
             name=response.get('name'),
             email=response.get('email'),
             company=response.get('organization'),
-            login=response.get('username'),  # type: ignore[call-arg]
         )
 
     async def search_repositories(
@@ -209,7 +209,7 @@ class GitLabService(BaseGitService, GitService):
         response, _ = await self._make_request(url, params)
         repos = [
             Repository(
-                id=repo.get('id'),
+                id=str(repo.get('id')),
                 full_name=repo.get('path_with_namespace'),
                 stargazers_count=repo.get('star_count'),
                 git_provider=ProviderType.GITLAB,
@@ -260,7 +260,7 @@ class GitLabService(BaseGitService, GitService):
         all_repos = all_repos[:MAX_REPOS]
         return [
             Repository(
-                id=repo.get('id'),  # type: ignore[arg-type]
+                id=str(repo.get('id')),  # type: ignore[arg-type]
                 full_name=repo.get('path_with_namespace'),  # type: ignore[arg-type]
                 stargazers_count=repo.get('star_count'),
                 git_provider=ProviderType.GITLAB,
@@ -410,7 +410,7 @@ class GitLabService(BaseGitService, GitService):
         repo, _ = await self._make_request(url)
 
         return Repository(
-            id=repo.get('id'),
+            id=str(repo.get('id')),
             full_name=repo.get('path_with_namespace'),
             stargazers_count=repo.get('star_count'),
             git_provider=ProviderType.GITLAB,
@@ -472,7 +472,6 @@ class GitLabService(BaseGitService, GitService):
             target_branch: The name of the branch you want the changes merged into
             title: The title of the merge request (optional, defaults to a generic title)
             description: The description of the merge request (optional)
-            draft: Whether to create the MR as a draft (optional, defaults to False)
 
         Returns:
             - MR URL when successful
@@ -485,9 +484,7 @@ class GitLabService(BaseGitService, GitService):
 
         # Set default description if none provided
         if not description:
-            description = (
-                f'Merging changes from {source_branch} into {target_branch}'
-            )
+            description = f'Merging changes from {source_branch} into {target_branch}'
 
         # Prepare the request payload
         payload = {
@@ -502,9 +499,7 @@ class GitLabService(BaseGitService, GitService):
             url=url, params=payload, method=RequestMethod.POST
         )
 
-
         return response['web_url']
-
 
 
 gitlab_service_cls = os.environ.get(

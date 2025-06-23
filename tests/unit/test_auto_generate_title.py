@@ -43,7 +43,7 @@ async def test_auto_generate_title_with_llm():
     ) as mock_event_stream_cls:
         # Configure the mock event stream to return our test message
         mock_event_stream = MagicMock(spec=EventStream)
-        mock_event_stream.get_events.return_value = [user_message]
+        mock_event_stream.search_events.return_value = [user_message]
         mock_event_stream_cls.return_value = mock_event_stream
 
         # Mock the LLM response
@@ -108,7 +108,7 @@ async def test_auto_generate_title_fallback():
     ) as mock_event_stream_cls:
         # Configure the mock event stream to return our test message
         mock_event_stream = MagicMock(spec=EventStream)
-        mock_event_stream.get_events.return_value = [user_message]
+        mock_event_stream.search_events.return_value = [user_message]
         mock_event_stream_cls.return_value = mock_event_stream
 
         # Mock the LLM to raise an exception
@@ -154,7 +154,7 @@ async def test_auto_generate_title_no_messages():
     ) as mock_event_stream_cls:
         # Configure the mock event stream to return no events
         mock_event_stream = MagicMock(spec=EventStream)
-        mock_event_stream.get_events.return_value = []
+        mock_event_stream.search_events.return_value = []
         mock_event_stream_cls.return_value = mock_event_stream
 
         # Create test settings

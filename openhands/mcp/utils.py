@@ -10,7 +10,6 @@ from openhands.core.config.mcp_config import (
     MCPSHTTPServerConfig,
     MCPSSEServerConfig,
 )
-from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.mcp import MCPAction
 from openhands.events.observation.mcp import MCPObservation
@@ -189,9 +188,7 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
     )
 
 
-async def add_mcp_tools_to_agent(
-    agent: 'Agent', runtime: Runtime, memory: 'Memory', app_config: OpenHandsConfig
-):
+async def add_mcp_tools_to_agent(agent: 'Agent', runtime: Runtime, memory: 'Memory'):
     """
     Add MCP tools to an agent.
     """
@@ -210,7 +207,6 @@ async def add_mcp_tools_to_agent(
     extra_stdio_servers = []
 
     # Add microagent MCP tools if available
-    mcp_config: MCPConfig = app_config.mcp
     microagent_mcp_configs = memory.get_microagent_mcp_tools()
     for mcp_config in microagent_mcp_configs:
         if mcp_config.sse_servers:

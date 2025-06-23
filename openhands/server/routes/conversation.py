@@ -5,13 +5,13 @@ from pydantic import BaseModel
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.event_filter import EventFilter
 from openhands.events.serialization.event import event_to_dict
+from openhands.memory.memory import Memory
+from openhands.microagent.types import InputMetadata
 from openhands.runtime.base import Runtime
 from openhands.server.dependencies import get_dependencies
 from openhands.server.session.conversation import ServerConversation
 from openhands.server.shared import conversation_manager
 from openhands.server.utils import get_conversation
-from openhands.microagent.types import InputMetadata
-from openhands.memory.memory import Memory
 
 app = APIRouter(
     prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies()
@@ -216,7 +216,11 @@ async def get_microagents(
                     content=r_agent.content,
                     triggers=[],
                     inputs=r_agent.metadata.inputs,
-                    tools=[server.name for server in r_agent.metadata.mcp_tools.stdio_servers] if r_agent.metadata.mcp_tools else [],
+                    tools=[
+                        server.name for server in r_agent.metadata.mcp_tools.stdio_servers
+                    ]
+                    if r_agent.metadata.mcp_tools else []
+                    else [],
                 )
             )
 
@@ -229,7 +233,11 @@ async def get_microagents(
                     content=k_agent.content,
                     triggers=k_agent.triggers,
                     inputs=k_agent.metadata.inputs,
-                    tools=[server.name for server in k_agent.metadata.mcp_tools.stdio_servers] if k_agent.metadata.mcp_tools else [],
+                    tools=[
+                        server.name for server in k_agent.metadata.mcp_tools.stdio_servers
+                    ]
+                    if k_agent.metadata.mcp_tools
+                    else [],
                 )
             )
 

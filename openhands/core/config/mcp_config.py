@@ -54,6 +54,7 @@ class MCPStdioServerConfig(BaseModel):
             and set(self.env.items()) == set(other.env.items())
         )
 
+
 class MCPSHTTPServerConfig(BaseModel):
     url: str
     api_key: str | None = None
@@ -157,6 +158,7 @@ class MCPConfig(BaseModel):
             mcp_mapping['mcp'] = cls(
                 sse_servers=mcp_config.sse_servers,
                 stdio_servers=mcp_config.stdio_servers,
+                shttp_servers=mcp_config.shttp_servers,
             )
         except ValidationError as e:
             raise ValueError(f'Invalid MCP configuration: {e}')

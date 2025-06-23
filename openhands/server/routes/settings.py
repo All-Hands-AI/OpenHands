@@ -72,6 +72,7 @@ async def load_settings(
         )
         settings_with_token_data.llm_api_key = None
         settings_with_token_data.search_api_key = None
+        settings_with_token_data.sandbox_api_key = None
         return settings_with_token_data
     except Exception as e:
         logger.warning(f'Invalid token: {e}')
