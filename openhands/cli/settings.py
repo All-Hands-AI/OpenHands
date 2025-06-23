@@ -267,23 +267,28 @@ async def modify_llm_settings_basic(
         if change_model:
             model_completer = FuzzyWordCompleter(provider_models)
 
-            # Define a validator function that prints an error message
+            # Define a validator function that allows custom models but shows a warning
             def model_validator(x):
-                is_valid = x in provider_models
-                if not is_valid:
+                # Allow any non-empty model name
+                if not x.strip():
+                    return False
+
+                # Show a warning for models not in the predefined list, but still allow them
+                if x not in provider_models:
                     print_formatted_text(
                         HTML(
-                            f'<grey>Invalid model selected for provider {provider}: {x}</grey>'
+                            f'<yellow>Warning: {x} is not in the predefined list for provider {provider}. '
+                            f'Make sure this model name is correct.</yellow>'
                         )
                     )
-                return is_valid
+                return True
 
             model = await get_validated_input(
                 session,
                 '(Step 2/3) Select LLM Model (TAB for options, CTRL-c to cancel): ',
                 completer=model_completer,
                 validator=model_validator,
-                error_message=f'Invalid model selected for provider {provider}',
+                error_message='Model name cannot be empty',
             )
         else:
             # Use the default model

@@ -275,6 +275,18 @@ class DockerNestedConversationManager(ConversationManager):
         # Not supported - clients should connect directly to the nested server!
         raise ValueError('unsupported_operation')
 
+    async def send_event_to_conversation(self, sid, data):
+        async with httpx.AsyncClient(
+            headers={
+                'X-Session-API-Key': self._get_session_api_key_for_conversation(sid)
+            }
+        ) as client:
+            nested_url = self._get_nested_url(sid)
+            response = await client.post(
+                f'{nested_url}/api/conversations/{sid}/events', json=data
+            )
+            response.raise_for_status()
+
     async def disconnect_from_session(self, connection_id: str):
         # Not supported - clients should connect directly to the nested server!
         raise ValueError('unsupported_operation')
