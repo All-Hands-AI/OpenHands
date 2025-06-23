@@ -442,69 +442,39 @@ class Runtime(FileEditRuntimeMixin):
                 'info', 'STATUS$SETTING_UP_WORKSPACE', 'Setting up workspace...'
             )
 
-        # Create a wrapper script that sources the setup script and captures environment changes
-        wrapper_script = '/tmp/openhands_setup_wrapper.sh'
-        wrapper_content = f"""#!/bin/bash
-# Make the setup script executable
-chmod +x {setup_script}
+        # Run setup script in a subshell to avoid blocking the main bash session
+        # while still ensuring it completes before proceeding
+        setup_command = f"""
+        (
+            set -e
+            chmod +x {setup_script}
+            source {setup_script}
+            echo "OPENHANDS_SETUP_COMPLETE"
+        ) && echo "OPENHANDS_SETUP_SUCCESS" || echo "OPENHANDS_SETUP_FAILED"
+        """
 
-# Run the setup script in a controlled environment
-bash -c 'set -e; source {setup_script}; env > /tmp/openhands_setup_env.txt'
-setup_exit_code=$?
-
-# Return the exit code from the setup script
-exit $setup_exit_code
-"""
-        # Write the wrapper script
-        write_obs = self.write(
-            FileWriteAction(path=wrapper_script, content=wrapper_content)
-        )
-        if isinstance(write_obs, ErrorObservation):
-            self.log(
-                'error', f'Failed to create setup wrapper script: {write_obs.content}'
-            )
-            return
-
-        # Make the wrapper script executable
-        chmod_obs = self.run_action(
-            CmdRunAction(f'chmod +x {wrapper_script}', blocking=True)
-        )
-        if not isinstance(chmod_obs, CmdOutputObservation) or chmod_obs.exit_code != 0:
-            self.log(
-                'error',
-                f'Failed to make wrapper script executable: {chmod_obs.content}',
-            )
-            return
-
-        # Run the wrapper script with a timeout
-        action = CmdRunAction(wrapper_script, blocking=True)
+        action = CmdRunAction(setup_command, blocking=True)
         action.set_hard_timeout(600)  # setup scripts time out after 10 minutes
         obs = self.run_action(action)
 
-        if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
-            self.log('error', f'Setup script failed: {obs.content}')
+        if not isinstance(obs, CmdOutputObservation):
+            self.log('error', f'Setup script execution failed: {obs}')
             return
 
-        # Import environment variables from the setup script
-        import_env_action = CmdRunAction(
-            'if [ -f /tmp/openhands_setup_env.txt ]; then '
-            'while IFS="=" read -r key value; do '
-            'if [[ ! "$key" =~ ^(PWD|SHLVL|_)$ ]]; then '
-            'export "$key=$value"; '
-            'fi; '
-            'done < /tmp/openhands_setup_env.txt; '
-            'fi',
-            blocking=True,
-        )
-        import_env_obs = self.run_action(import_env_action)
-        if (
-            not isinstance(import_env_obs, CmdOutputObservation)
-            or import_env_obs.exit_code != 0
-        ):
+        if obs.exit_code != 0:
             self.log(
-                'warning',
-                f'Failed to import environment variables from setup script: {import_env_obs.content}',
+                'error',
+                f'Setup script failed with exit code {obs.exit_code}: {obs.content}',
             )
+            return
+
+        if 'OPENHANDS_SETUP_SUCCESS' not in obs.content:
+            self.log(
+                'error', f'Setup script did not complete successfully: {obs.content}'
+            )
+            return
+
+        self.log('info', 'Setup script completed successfully')
 
     @property
     def workspace_root(self) -> Path:
