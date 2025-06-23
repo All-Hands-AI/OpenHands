@@ -21,32 +21,55 @@ _DEFAULT_RUNTIME_CLASSES: dict[str, type[Runtime]] = {
 # Try to import third-party runtimes if available
 _THIRD_PARTY_RUNTIME_CLASSES: dict[str, type[Runtime]] = {}
 
+# Dynamically discover and import third-party runtimes
+import importlib
+import os
+
+# Check if third_party package exists and discover runtimes
 try:
-    from third_party.runtime.impl.daytona.daytona_runtime import DaytonaRuntime
-
-    _THIRD_PARTY_RUNTIME_CLASSES['daytona'] = DaytonaRuntime
+    import third_party.runtime.impl
+    third_party_base = 'third_party.runtime.impl'
+    
+    # List of potential third-party runtime modules to try
+    # These are discovered from the third_party directory structure
+    potential_runtimes = []
+    try:
+        import pkgutil
+        for importer, modname, ispkg in pkgutil.iter_modules(third_party.runtime.impl.__path__):
+            if ispkg:
+                potential_runtimes.append(modname)
+    except Exception:
+        # If discovery fails, no third-party runtimes will be loaded
+        potential_runtimes = []
+    
+    # Try to import each discovered runtime
+    for runtime_name in potential_runtimes:
+        try:
+            module_path = f'{third_party_base}.{runtime_name}.{runtime_name}_runtime'
+            module = importlib.import_module(module_path)
+            
+            # Try different class name patterns
+            possible_class_names = [
+                f'{runtime_name.upper()}Runtime',  # E2BRuntime
+                f'{runtime_name.capitalize()}Runtime',  # E2bRuntime, DaytonaRuntime, etc.
+            ]
+            
+            runtime_class = None
+            for class_name in possible_class_names:
+                try:
+                    runtime_class = getattr(module, class_name)
+                    break
+                except AttributeError:
+                    continue
+            
+            if runtime_class:
+                _THIRD_PARTY_RUNTIME_CLASSES[runtime_name] = runtime_class
+                
+        except ImportError:
+            pass
+            
 except ImportError:
-    pass
-
-try:
-    from third_party.runtime.impl.e2b.e2b_runtime import E2BRuntime
-
-    _THIRD_PARTY_RUNTIME_CLASSES['e2b'] = E2BRuntime
-except ImportError:
-    pass
-
-try:
-    from third_party.runtime.impl.modal.modal_runtime import ModalRuntime
-
-    _THIRD_PARTY_RUNTIME_CLASSES['modal'] = ModalRuntime
-except ImportError:
-    pass
-
-try:
-    from third_party.runtime.impl.runloop.runloop_runtime import RunloopRuntime
-
-    _THIRD_PARTY_RUNTIME_CLASSES['runloop'] = RunloopRuntime
-except ImportError:
+    # third_party package not available
     pass
 
 # Combine core and third-party runtimes
