@@ -100,7 +100,7 @@ export function EventMessage({
     const message = parseMessageFromEvent(event);
 
     return (
-      <div>
+      <>
         <ChatMessage type={event.source} message={message}>
           {event.args.image_urls && event.args.image_urls.length > 0 && (
             <ImageCarousel size="small" images={event.args.image_urls} />
@@ -113,7 +113,7 @@ export function EventMessage({
         {isAssistantMessage(event) &&
           event.action === "message" &&
           renderLikertScale()}
-      </div>
+      </>
     );
   }
 
