@@ -109,10 +109,10 @@ export function EventMessage({
 
   if (isFinishAction(event)) {
     return (
-      <div>
+      <>
         <ChatMessage type="agent" message={getEventContent(event).details} />
         {shouldShowLikertScale("finish") && renderLikertScale()}
-      </div>
+      </>
     );
   }
 
