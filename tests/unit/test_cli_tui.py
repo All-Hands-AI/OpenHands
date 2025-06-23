@@ -85,11 +85,30 @@ class TestDisplayFunctions:
     @patch('openhands.cli.tui.display_command')
     def test_display_event_cmd_action(self, mock_display_command):
         config = MagicMock(spec=OpenHandsConfig)
+        # Test that commands awaiting confirmation are displayed
         cmd_action = CmdRunAction(command='echo test')
+        cmd_action.confirmation_state = ActionConfirmationStatus.AWAITING_CONFIRMATION
 
         display_event(cmd_action, config)
 
         mock_display_command.assert_called_once_with(cmd_action)
+
+    @patch('openhands.cli.tui.display_command')
+    @patch('openhands.cli.tui.initialize_streaming_output')
+    def test_display_event_cmd_action_confirmed(
+        self, mock_init_streaming, mock_display_command
+    ):
+        config = MagicMock(spec=OpenHandsConfig)
+        # Test that confirmed commands don't display the command but do initialize streaming
+        cmd_action = CmdRunAction(command='echo test')
+        cmd_action.confirmation_state = ActionConfirmationStatus.CONFIRMED
+
+        display_event(cmd_action, config)
+
+        # Command should not be displayed (since it was already shown when awaiting confirmation)
+        mock_display_command.assert_not_called()
+        # But streaming should be initialized
+        mock_init_streaming.assert_called_once()
 
     @patch('openhands.cli.tui.display_command_output')
     def test_display_event_cmd_output(self, mock_display_output):

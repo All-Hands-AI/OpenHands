@@ -331,13 +331,13 @@ class StandaloneConversationManager(ConversationManager):
         sid = self._local_connection_id_to_session_id.get(connection_id)
         if not sid:
             raise RuntimeError(f'no_connected_session:{connection_id}')
+        await self.send_event_to_conversation(sid, data)
 
+    async def send_event_to_conversation(self, sid: str, data: dict):
         session = self._local_agent_loops_by_sid.get(sid)
-        if session:
-            await session.dispatch(data)
-            return
-
-        raise RuntimeError(f'no_connected_session:{connection_id}:{sid}')
+        if not session:
+            raise RuntimeError(f'no_conversation:{sid}')
+        await session.dispatch(data)
 
     async def disconnect_from_session(self, connection_id: str):
         sid = self._local_connection_id_to_session_id.pop(connection_id, None)

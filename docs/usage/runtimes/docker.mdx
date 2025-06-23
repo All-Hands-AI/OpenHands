@@ -171,3 +171,7 @@ docker network create openhands-network
 docker run # ... \
     --network openhands-network \
 ```
+
+<Note>
+**Docker Desktop Required**: Network isolation features, including custom networks and `host.docker.internal` routing, require Docker Desktop. Docker Engine alone does not support these features on localhost across custom networks. If you're using Docker Engine without Docker Desktop, network isolation may not work as expected.
+</Note>
