@@ -14,6 +14,10 @@ from fastapi import (
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands import __version__
+
+# Import MCP mount fix to handle ASGI middleware issues
+# This prevents: AssertionError: assert message["type"] == "http.response.body"
+from openhands.server.middlewares.mcp_mount import MountFastMCP
 from openhands.server.routes.conversation import app as conversation_api_router
 from openhands.server.routes.feedback import app as feedback_api_router
 from openhands.server.routes.files import app as files_api_router
@@ -31,6 +35,9 @@ from openhands.server.routes.trajectory import app as trajectory_router
 from openhands.server.shared import conversation_manager
 
 mcp_app = mcp_server.http_app(path='/mcp')
+
+# Apply fix for FastMCP ASGI middleware issues when mounted under sub-paths
+mcp_app = MountFastMCP(app=mcp_app)
 
 
 def combine_lifespans(*lifespans):
