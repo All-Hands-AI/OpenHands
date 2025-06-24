@@ -66,28 +66,6 @@ Frontend:
   - Mutation hooks should follow the pattern use[Action] (e.g., `useDeleteConversation`)
   - Architecture rule: UI components → TanStack Query hooks → Data Access Layer (`frontend/src/api`) → API endpoints
 
-## Microagents
-
-Microagents are specialized prompts that enhance OpenHands with domain-specific knowledge and task-specific workflows. They are Markdown files that can include frontmatter for configuration.
-
-### Types:
-- **Public Microagents**: Located in `openhands/microagents/`, available to all users
-- **Repository Microagents**: Located in `.openhands/microagents/`, specific to this repository
-- **User Microagents**: Located in `~/.openhands/microagents/`, for development files that shouldn't be committed to repositories
-
-### Loading Behavior:
-- **Without frontmatter**: Always loaded into LLM context
-- **With triggers in frontmatter**: Only loaded when user's message matches the specified trigger keywords
-
-### Structure:
-```yaml
----
-triggers: ["keyword1", "keyword2"]
----
-# Microagent Content
-Your specialized knowledge and instructions here...
-```
-
 ## Template for Github Pull Request
 
 If you are starting a pull request (PR), please follow the template in `.github/pull_request_template.md`.
@@ -103,6 +81,7 @@ Microagents are specialized prompts that enhance OpenHands with domain-specific 
 #### Types:
 - **Public Microagents**: Located in `microagents/`, available to all users
 - **Repository Microagents**: Located in `.openhands/microagents/`, specific to this repository
+- **User Microagents**: Located in `~/.openhands/microagents/`, for development files that shouldn't be committed to repositories
 
 #### Loading Behavior:
 - **Without frontmatter**: Always loaded into LLM context
