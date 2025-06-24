@@ -6015,6 +6015,38 @@
         "ja": "git フックを設定中...",
         "uk": "Налаштування git-хуків..."
     },
+    "STATUS$SETUP_SCRIPT_SUCCESS": {
+        "en": "Setup script completed successfully.",
+        "zh-CN": "设置脚本执行成功。",
+        "zh-TW": "設置腳本執行成功。",
+        "de": "Setup-Skript erfolgreich abgeschlossen.",
+        "ko-KR": "설정 스크립트가 성공적으로 완료되었습니다.",
+        "no": "Oppsettskript fullført vellykket.",
+        "it": "Script di configurazione completato con successo.",
+        "pt": "Script de configuração concluído com sucesso.",
+        "es": "Script de configuración completado exitosamente.",
+        "ar": "تم إكمال سكريبت الإعداد بنجاح.",
+        "fr": "Script de configuration terminé avec succès.",
+        "tr": "Kurulum betiği başarıyla tamamlandı.",
+        "ja": "セットアップスクリプトが正常に完了しました。",
+        "uk": "Скрипт налаштування успішно завершено."
+    },
+    "STATUS$SETUP_SCRIPT_FAILED": {
+        "en": "Setup script execution failed. Check the terminal output for details.",
+        "zh-CN": "设置脚本执行失败。请检查终端输出以获取详细信息。",
+        "zh-TW": "設置腳本執行失敗。請檢查終端輸出以獲取詳細資訊。",
+        "de": "Ausführung des Setup-Skripts fehlgeschlagen. Überprüfen Sie die Terminal-Ausgabe für Details.",
+        "ko-KR": "설정 스크립트 실행이 실패했습니다. 자세한 내용은 터미널 출력을 확인하세요.",
+        "no": "Utføring av oppsettskript mislyktes. Sjekk terminalutdata for detaljer.",
+        "it": "Esecuzione dello script di configurazione fallita. Controlla l'output del terminale per i dettagli.",
+        "pt": "Execução do script de configuração falhou. Verifique a saída do terminal para detalhes.",
+        "es": "La ejecución del script de configuración falló. Revisa la salida del terminal para más detalles.",
+        "ar": "فشل تنفيذ سكريبت الإعداد. تحقق من مخرجات الطرفية للحصول على التفاصيل.",
+        "fr": "L'exécution du script de configuration a échoué. Vérifiez la sortie du terminal pour plus de détails.",
+        "tr": "Kurulum betiği yürütme başarısız oldu. Ayrıntılar için terminal çıktısını kontrol edin.",
+        "ja": "セットアップスクリプトの実行に失敗しました。詳細については、ターミナル出力を確認してください。",
+        "uk": "Виконання скрипта налаштування не вдалося. Перевірте вивід терміналу для отримання деталей."
+    },
     "ACCOUNT_SETTINGS_MODAL$DISCONNECT": {
         "en": "Disconnect",
         "es": "Desconectar",

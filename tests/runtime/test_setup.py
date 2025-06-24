@@ -7,8 +7,13 @@ from conftest import (
 )
 
 from openhands.core.setup import initialize_repository_for_runtime
-from openhands.events.action import FileReadAction, FileWriteAction
-from openhands.events.observation import FileReadObservation, FileWriteObservation
+from openhands.events.action import CmdRunAction, FileReadAction, FileWriteAction
+from openhands.events.event import EventSource
+from openhands.events.observation import (
+    CmdOutputObservation,
+    FileReadObservation,
+    FileWriteObservation,
+)
 from openhands.integrations.service_types import ProviderType, Repository
 
 
@@ -82,3 +87,131 @@ def test_maybe_run_setup_script_with_long_timeout(
     read_obs = runtime.read(FileReadAction(path='README.md'))
     assert isinstance(read_obs, FileReadObservation)
     assert read_obs.content == 'Hello World\n'
+
+
+def test_setup_script_events_added_to_stream(temp_dir, runtime_cls, run_as_openhands):
+    """Test that setup script command and output are added to the event stream for UI visibility."""
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+
+    setup_script = '.openhands/setup.sh'
+    write_obs = runtime.write(
+        FileWriteAction(
+            path=setup_script,
+            content="#!/bin/bash\necho 'Setup completed successfully'\n",
+        )
+    )
+    assert isinstance(write_obs, FileWriteObservation)
+
+    # Clear any existing events
+    initial_event_count = len(runtime.event_stream.get_events())
+
+    # Run setup script
+    runtime.maybe_run_setup_script()
+
+    # Get all events after running setup script
+    all_events = runtime.event_stream.get_events()
+    new_events = all_events[initial_event_count:]
+
+    # Should have at least 2 new events: the action and the observation
+    assert len(new_events) >= 2
+
+    # Find the setup command action
+    setup_action = None
+    setup_observation = None
+
+    for event in new_events:
+        if (
+            isinstance(event, CmdRunAction)
+            and 'chmod +x .openhands/setup.sh && source .openhands/setup.sh'
+            in event.command
+        ):
+            setup_action = event
+        elif (
+            isinstance(event, CmdOutputObservation)
+            and hasattr(event, '_cause')
+            and setup_action
+            and event._cause == setup_action.id
+        ):
+            setup_observation = event
+
+    # Verify the setup action was added to the event stream
+    assert setup_action is not None, (
+        'Setup command action should be added to event stream'
+    )
+    assert (
+        setup_action.command
+        == 'chmod +x .openhands/setup.sh && source .openhands/setup.sh'
+    )
+    assert (
+        setup_action.thought
+        == 'Running setup script to configure the workspace environment.'
+    )
+    assert setup_action._source == EventSource.ENVIRONMENT
+
+    # Verify the setup observation was added to the event stream
+    assert setup_observation is not None, (
+        'Setup command observation should be added to event stream'
+    )
+    assert setup_observation._source == EventSource.ENVIRONMENT
+    assert 'Setup completed successfully' in setup_observation.content
+
+
+def test_setup_script_failure_events_added_to_stream(
+    temp_dir, runtime_cls, run_as_openhands
+):
+    """Test that setup script failure is properly shown in the event stream."""
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+
+    setup_script = '.openhands/setup.sh'
+    write_obs = runtime.write(
+        FileWriteAction(
+            path=setup_script, content="#!/bin/bash\necho 'Setup failed' && exit 1\n"
+        )
+    )
+    assert isinstance(write_obs, FileWriteObservation)
+
+    # Clear any existing events
+    initial_event_count = len(runtime.event_stream.get_events())
+
+    # Run setup script
+    runtime.maybe_run_setup_script()
+
+    # Get all events after running setup script
+    all_events = runtime.event_stream.get_events()
+    new_events = all_events[initial_event_count:]
+
+    # Should have at least 2 new events: the action and the observation
+    assert len(new_events) >= 2
+
+    # Find the setup command action and observation
+    setup_action = None
+    setup_observation = None
+
+    for event in new_events:
+        if (
+            isinstance(event, CmdRunAction)
+            and 'chmod +x .openhands/setup.sh && source .openhands/setup.sh'
+            in event.command
+        ):
+            setup_action = event
+        elif (
+            isinstance(event, CmdOutputObservation)
+            and hasattr(event, '_cause')
+            and setup_action
+            and event._cause == setup_action.id
+        ):
+            setup_observation = event
+
+    # Verify the setup action was added to the event stream
+    assert setup_action is not None, (
+        'Setup command action should be added to event stream'
+    )
+    assert setup_action._source == EventSource.ENVIRONMENT
+
+    # Verify the setup observation was added to the event stream and shows failure
+    assert setup_observation is not None, (
+        'Setup command observation should be added to event stream'
+    )
+    assert setup_observation._source == EventSource.ENVIRONMENT
+    assert setup_observation.exit_code != 0, 'Setup script should have failed'
+    assert 'Setup failed' in setup_observation.content

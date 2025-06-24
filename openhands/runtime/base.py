@@ -444,12 +444,38 @@ class Runtime(FileEditRuntimeMixin):
 
         # setup scripts time out after 10 minutes
         action = CmdRunAction(
-            f'chmod +x {setup_script} && source {setup_script}', blocking=True
+            f'chmod +x {setup_script} && source {setup_script}',
+            blocking=True,
+            thought='Running setup script to configure the workspace environment.',
         )
         action.set_hard_timeout(600)
+
+        # Add the action to the event stream so it's visible in the UI
+        if self.event_stream:
+            self.event_stream.add_event(action, EventSource.ENVIRONMENT)
+
         obs = self.run_action(action)
+
+        # Add the observation to the event stream so the result is visible in the UI
+        if self.event_stream:
+            self.event_stream.add_event(obs, EventSource.ENVIRONMENT)
+
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
             self.log('error', f'Setup script failed: {obs.content}')
+            if self.status_callback:
+                self.status_callback(
+                    'error',
+                    'STATUS$SETUP_SCRIPT_FAILED',
+                    'Setup script execution failed. Check the terminal output for details.',
+                )
+        else:
+            self.log('info', 'Setup script completed successfully')
+            if self.status_callback:
+                self.status_callback(
+                    'info',
+                    'STATUS$SETUP_SCRIPT_SUCCESS',
+                    'Setup script completed successfully.',
+                )
 
     @property
     def workspace_root(self) -> Path:
