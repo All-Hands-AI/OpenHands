@@ -13,6 +13,7 @@ from fastmcp import FastMCP
 from fastmcp.utilities.logging import get_logger as fastmcp_get_logger
 
 from openhands.core.config.mcp_config import MCPStdioServerConfig
+from openhands.server.middlewares.mcp_mount import MountFastMCP
 
 logger = logging.getLogger(__name__)
 fastmcp_logger = fastmcp_get_logger('fastmcp')
@@ -92,14 +93,12 @@ class MCPProxyManager:
         # Get the SSE app
         # mcp_app = self.proxy.http_app(path='/shttp')
         mcp_app = self.proxy.http_app(path='/sse', transport='sse')
+        
+        # Apply MountFastMCP middleware to fix ASGI protocol violations
+        mcp_app = MountFastMCP(app=mcp_app)
+        
         app.mount('/mcp', mcp_app)
-
-        # Remove any existing mounts at root path
-        if '/mcp' in app.routes:
-            app.routes.remove('/mcp')
-
-        app.mount('/', mcp_app)
-        logger.info('Mounted FastMCP Proxy app at /mcp')
+        logger.info('Mounted FastMCP Proxy app at /mcp with MountFastMCP middleware')
 
     async def update_and_remount(
         self,
