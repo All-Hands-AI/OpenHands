@@ -547,6 +547,57 @@ fi
 
         self.log('info', 'Git pre-commit hook installed successfully')
 
+    def load_microagents_from_directory(
+        self, microagents_dir: Path, source_description: str
+    ) -> list[BaseMicroagent]:
+        """Load microagents from a directory.
+
+        Args:
+            microagents_dir: Path to the directory containing microagents
+            source_description: Description of the source for logging purposes
+
+        Returns:
+            A list of loaded microagents
+        """
+        loaded: list[BaseMicroagent] = []
+
+        files = self.list_files(str(microagents_dir))
+        if not files:
+            return loaded
+
+        self.log(
+            'info',
+            f'Found {len(files)} files in {source_description} microagents directory',
+        )
+        zip_path: Path = self.copy_from(str(microagents_dir))
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmpdir:
+            tmpdir_path = Path(tmpdir)
+
+            with ZipFile(zip_path) as zf:
+                for member in zf.infolist():
+                    target = tmpdir_path / member.filename
+                    if not target.resolve().is_relative_to(tmpdir_path):
+                        raise ValueError(
+                            f"Blocked unsafe path '{member.filename}' "
+                            f'in archive from {source_description}'
+                        )
+                    zf.extract(member, tmpdir_path)
+            zip_path.unlink(missing_ok=True)
+
+            repo_agents, knowledge_agents = load_microagents_from_dir(tmpdir_path)
+
+            self.log(
+                'info',
+                f'Loaded {len(repo_agents)} repo agents and '
+                f'{len(knowledge_agents)} knowledge agents '
+                f'from {source_description}',
+            )
+
+            loaded.extend(repo_agents.values())
+            loaded.extend(knowledge_agents.values())
+
+        return loaded
+
     def _load_microagents_from_directory(
         self, microagents_dir: Path, source_description: str
     ) -> list[BaseMicroagent]:
