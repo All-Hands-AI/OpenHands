@@ -136,11 +136,7 @@ class BaseMicroagent(BaseModel):
             raise ValueError(f'Could not determine microagent type for: {path}')
 
         # Use derived_name if available (from relative path), otherwise fallback to metadata.name
-        # Special handling for .cursorrules files even when microagent_dir is None
-        if path.name == '.cursorrules':
-            agent_name = 'cursorrules'
-        else:
-            agent_name = derived_name if derived_name is not None else metadata.name
+        agent_name = derived_name if derived_name is not None else metadata.name
 
         agent_class = subclass_map[inferred_type]
         return agent_class(
