@@ -25,9 +25,9 @@ You can use the Settings page at any time to:
 - Setup the LLM provider and model for OpenHands.
 - [Setup the search engine](/usage/search-engine-setup).
 - [Configure MCP servers](/usage/mcp).
-- [Connect to GitHub](/usage/how-to/gui-mode#github-setup) and [connect to GitLab](/usage/how-to/gui-mode#gitlab-setup)
+- [Connect to GitHub](/usage/how-to/gui-mode#github-setup) and [connect to GitLab](/usage/how-to/gui-mode#gitlab-setup).
 - Set application settings like your preferred language, notifications and other preferences.
-- Generate custom secrets.
+- [Manage custom secrets](/usage/common-settings#secrets-management).
 
 #### GitHub Setup
 
@@ -45,7 +45,7 @@ OpenHands automatically exports a `GITHUB_TOKEN` to the shell environment if pro
      - All Repositories (You can select specific repositories, but this will impact what returns in repo search)
      - Minimal Permissions (Select `Meta Data = Read-only` read for search, `Pull Requests = Read and Write` and `Content = Read and Write` for branch creation)
   2. **Enter Token in OpenHands**:
-   - In the Settings page, navigate to the `Git` tab.
+   - In the Settings page, navigate to the `Integrations` tab.
    - Paste your token in the `GitHub Token` field.
    - Click `Save Changes` to apply the changes.
 
@@ -97,7 +97,7 @@ OpenHands automatically exports a `GITLAB_TOKEN` to the shell environment if pro
      - `write_repository` (Write repository)
    - Set an expiration date or leave it blank for a non-expiring token.
   2. **Enter Token in OpenHands**:
-   - In the Settings page, navigate to the `Git` tab.
+   - In the Settings page, navigate to the `Integrations` tab.
    - Paste your token in the `GitLab Token` field.
    - Click `Save Changes` to apply the changes.
 
@@ -122,6 +122,41 @@ OpenHands automatically exports a `GITLAB_TOKEN` to the shell environment if pro
 </Accordion>
 </AccordionGroup>
 
+#### BitBucket Setup (Coming soon ...)
+<AccordionGroup>
+<Accordion title="Setting Up a BitBucket Password">
+1. **Generate an App Password**:
+   - On BitBucket, go to Personal Settings > App Password.
+   - Create a new password with the following scopes:
+     - `repository: read`
+     - `repository: write`
+     - `pull requests: read`
+     - `pull requests: write`
+     - `issues: read`
+     - `issues: write`
+   - App passwords are non-expiring token. OpenHands will migrate to using API tokens in the future.
+  2. **Enter Token in OpenHands**:
+   - In the Settings page, navigate to the `Integrations` tab.
+   - Paste your token in the `BitBucket Token` field.
+   - Click `Save Changes` to apply the changes.
+</Accordion>
+
+<Accordion title="Troubleshooting">
+  Common issues and solutions:
+
+  - **Token Not Recognized**:
+     - Ensure the token is properly saved in settings.
+     - Check that the token hasn't expired.
+     - Verify the token has the required scopes.
+
+  - **Verifying Token Works**:
+     - The app will show a green checkmark if the token is valid.
+     - Try accessing a repository to confirm permissions.
+     - Check the browser console for any error messages.
+</Accordion>
+
+</AccordionGroup>
+
 #### Advanced Settings
 
 The `Advanced` settings allows configuration of additional LLM settings. Inside the Settings page, under the `LLM` tab,
@@ -142,11 +177,11 @@ section of the documentation.
 The status indicator located in the bottom left of the screen will cycle through a number of states as a new conversation
 is loaded. Typically these include:
 
-* `Disconnected` : The frontend is not connected to any conversation
+* `Disconnected` : The frontend is not connected to any conversation.
 * `Connecting` : The frontend is connecting a websocket to a conversation.
 * `Building Runtime...` : The server is building a runtime. This is typically in development mode only while building a docker image.
 * `Starting Runtime...` : The server is starting a new runtime instance - probably a new docker container or remote runtime.
-* `Initializing Agent...` : The server is starting the agent loop. (This step does not appear at present with Nested runtimes)
+* `Initializing Agent...` : The server is starting the agent loop (This step does not appear at present with Nested runtimes).
 * `Setting up workspace...` : Usually this means a `git clone ...` operation.
 * `Setting up git hooks` : Setting up the git pre commit hooks for the workspace.
 * `Agent is awaiting user input...` : Ready to go!
@@ -154,7 +189,7 @@ is loaded. Typically these include:
 ## Tips for Effective Use
 
 - Be specific in your requests to get the most accurate and helpful responses, as described in the [prompting best practices](../prompting/prompting-best-practices).
-- Use one of the recommended models, as described in the [LLMs section](usage/llms/llms.md).
+- Use one of the recommended models, as described in the [LLMs section](/usage/llms/llms).
 
 ## Other Ways to Run Openhands
 - [Run OpenHands in a scriptable headless mode.](/usage/how-to/headless-mode)

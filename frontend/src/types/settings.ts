@@ -1,6 +1,7 @@
 export const ProviderOptions = {
   github: "github",
   gitlab: "gitlab",
+  bitbucket: "bitbucket",
 } as const;
 
 export type Provider = keyof typeof ProviderOptions;
@@ -45,6 +46,7 @@ export type Settings = {
   SEARCH_API_KEY?: string;
   IS_NEW_USER?: boolean;
   MCP_CONFIG?: MCPConfig;
+  MAX_BUDGET_PER_TASK: number | null;
   EMAIL?: string;
   EMAIL_VERIFIED?: boolean;
 };
@@ -66,6 +68,7 @@ export type ApiSettings = {
   user_consents_to_analytics: boolean | null;
   search_api_key?: string;
   provider_tokens_set: Partial<Record<Provider, string | null>>;
+  max_budget_per_task: number | null;
   mcp_config?: {
     sse_servers: (string | MCPSSEServer)[];
     stdio_servers: MCPStdioServer[];

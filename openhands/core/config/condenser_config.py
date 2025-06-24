@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Literal, cast
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from openhands.core import logger
 from openhands.core.config.llm_config import LLMConfig
@@ -13,7 +13,7 @@ class NoOpCondenserConfig(BaseModel):
 
     type: Literal['noop'] = Field('noop')
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
 
 class ObservationMaskingCondenserConfig(BaseModel):
@@ -26,7 +26,7 @@ class ObservationMaskingCondenserConfig(BaseModel):
         ge=1,
     )
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
 
 class BrowserOutputCondenserConfig(BaseModel):
@@ -55,7 +55,7 @@ class RecentEventsCondenserConfig(BaseModel):
         default=100, description='Maximum number of events to keep.', ge=1
     )
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
 
 class LLMSummarizingCondenserConfig(BaseModel):
@@ -82,7 +82,7 @@ class LLMSummarizingCondenserConfig(BaseModel):
         description='Maximum length of the event representations to be passed to the LLM.',
     )
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
 
 class AmortizedForgettingCondenserConfig(BaseModel):
@@ -102,7 +102,7 @@ class AmortizedForgettingCondenserConfig(BaseModel):
         ge=0,
     )
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
 
 class LLMAttentionCondenserConfig(BaseModel):
@@ -125,7 +125,7 @@ class LLMAttentionCondenserConfig(BaseModel):
         ge=0,
     )
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
 
 class StructuredSummaryCondenserConfig(BaseModel):
@@ -152,7 +152,7 @@ class StructuredSummaryCondenserConfig(BaseModel):
         description='Maximum length of the event representations to be passed to the LLM.',
     )
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
 
 class CondenserPipelineConfig(BaseModel):
@@ -167,7 +167,7 @@ class CondenserPipelineConfig(BaseModel):
         description='List of condenser configurations to be used in the pipeline.',
     )
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
 class ConversationWindowCondenserConfig(BaseModel):
     """Configuration for ConversationWindowCondenser.

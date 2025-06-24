@@ -15,7 +15,7 @@ from openhands.events.stream import EventStreamSubscriber, session_exists
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.monitoring import MonitoringListener
-from openhands.server.session.agent_session import AgentSession, WAIT_TIME_BEFORE_CLOSE
+from openhands.server.session.agent_session import WAIT_TIME_BEFORE_CLOSE, AgentSession
 from openhands.server.session.conversation import ServerConversation
 from openhands.server.session.session import ROOM_KEY, Session
 from openhands.storage.conversation.conversation_store import ConversationStore
@@ -331,13 +331,13 @@ class StandaloneConversationManager(ConversationManager):
         sid = self._local_connection_id_to_session_id.get(connection_id)
         if not sid:
             raise RuntimeError(f'no_connected_session:{connection_id}')
+        await self.send_event_to_conversation(sid, data)
 
+    async def send_event_to_conversation(self, sid: str, data: dict):
         session = self._local_agent_loops_by_sid.get(sid)
-        if session:
-            await session.dispatch(data)
-            return
-
-        raise RuntimeError(f'no_connected_session:{connection_id}:{sid}')
+        if not session:
+            raise RuntimeError(f'no_conversation:{sid}')
+        await session.dispatch(data)
 
     async def disconnect_from_session(self, connection_id: str):
         sid = self._local_connection_id_to_session_id.pop(connection_id, None)
@@ -508,7 +508,9 @@ class StandaloneConversationManager(ConversationManager):
             session_api_key=None,
             event_store=session.agent_session.event_stream,
             status=_get_status_from_session(session),
-            runtime_status=getattr(session.agent_session.runtime, 'runtime_status', None),
+            runtime_status=getattr(
+                session.agent_session.runtime, 'runtime_status', None
+            ),
         )
 
     def _get_conversation_url(self, conversation_id: str):

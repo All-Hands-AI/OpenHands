@@ -10,6 +10,7 @@ description: Getting started with running OpenHands on your own.
 - MacOS with [Docker Desktop support](https://docs.docker.com/desktop/setup/install/mac-install/#system-requirements)
 - Linux
 - Windows with [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) and [Docker Desktop support](https://docs.docker.com/desktop/setup/install/windows-install/#system-requirements)
+- Windows without WSL (see [Windows Without WSL Guide](/usage/windows-without-wsl))
 
 A system with a modern processor and a minimum of **4GB RAM** is recommended to run OpenHands.
 
@@ -55,6 +56,10 @@ A system with a modern processor and a minimum of **4GB RAM** is recommended to 
   The docker command below to start the app must be run inside the WSL terminal.
   </Note>
 
+  **Alternative: Windows without WSL**
+
+  If you prefer to run OpenHands on Windows without WSL or Docker, see our [Windows Without WSL Guide](/usage/windows-without-wsl).
+
 </Accordion>
 
 </AccordionGroup>
@@ -62,18 +67,20 @@ A system with a modern processor and a minimum of **4GB RAM** is recommended to 
 ### Start the App
 
 ```bash
-docker pull docker.all-hands.dev/all-hands-ai/runtime:0.42-nikolaik
+docker pull docker.all-hands.dev/all-hands-ai/runtime:0.45-nikolaik
 
 docker run -it --rm --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.42-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.45-nikolaik \
     -e LOG_ALL_EVENTS=true \
     -v /var/run/docker.sock:/var/run/docker.sock \
-    -v ~/.openhands-state:/.openhands-state \
+    -v ~/.openhands:/.openhands \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app \
-    docker.all-hands.dev/all-hands-ai/openhands:0.42
+    docker.all-hands.dev/all-hands-ai/openhands:0.45
 ```
+
+> **Note**: If you used OpenHands before version 0.44, you may want to run `mv ~/.openhands-state ~/.openhands` to migrate your conversation history to the new location.
 
 You'll find OpenHands running at http://localhost:3000!
 
@@ -145,8 +152,6 @@ To enable search functionality in OpenHands:
 2. Enter the Tavily API key in the Settings page under `LLM` tab > `Search API Key (Tavily)`
 
 For more details, see the [Search Engine Setup](/usage/search-engine-setup) guide.
-
-Now you're ready to [get started with OpenHands](/usage/getting-started).
 
 ### Versions
 
