@@ -15,6 +15,12 @@ make build && make run FRONTEND_PORT=12000 FRONTEND_HOST=0.0.0.0 BACKEND_HOST=0.
 
 IMPORTANT: Before making any changes to the codebase, ALWAYS run `make install-pre-commit-hooks` to ensure pre-commit hooks are properly installed.
 
+## Git Best Practices
+
+- Always use specific `git add <filename>` instead of `git add .` to avoid accidentally staging unintended files
+- Be especially careful with `git reset --hard` after staging files, as it will remove accidentally staged files
+- When remote has new changes, use `git fetch upstream && git rebase upstream/<branch>` on the same branch
+
 Before pushing any changes, you MUST ensure that any lint errors or simple test errors have been fixed.
 
 * If you've made changes to the backend, you should run `pre-commit run --config ./dev_config/python/.pre-commit-config.yaml` (this will run on staged files).
@@ -59,6 +65,28 @@ Frontend:
   - Query hooks should follow the pattern use[Resource] (e.g., `useConversationMicroagents`)
   - Mutation hooks should follow the pattern use[Action] (e.g., `useDeleteConversation`)
   - Architecture rule: UI components → TanStack Query hooks → Data Access Layer (`frontend/src/api`) → API endpoints
+
+## Microagents
+
+Microagents are specialized prompts that enhance OpenHands with domain-specific knowledge and task-specific workflows. They are Markdown files that can include frontmatter for configuration.
+
+### Types:
+- **Public Microagents**: Located in `openhands/microagents/`, available to all users
+- **Repository Microagents**: Located in `.openhands/microagents/`, specific to this repository
+- **User Microagents**: Located in `~/.openhands/microagents/`, for development files that shouldn't be committed to repositories
+
+### Loading Behavior:
+- **Without frontmatter**: Always loaded into LLM context
+- **With triggers in frontmatter**: Only loaded when user's message matches the specified trigger keywords
+
+### Structure:
+```yaml
+---
+triggers: ["keyword1", "keyword2"]
+---
+# Microagent Content
+Your specialized knowledge and instructions here...
+```
 
 ## Template for Github Pull Request
 
