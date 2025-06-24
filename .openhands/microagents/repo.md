@@ -69,7 +69,6 @@ Frontend:
 
 VSCode Extension:
 - Located in the `openhands/integrations/vscode` directory
-- Prerequisites: A recent version of NodeJS / NPM
 - Setup: Run `npm install` in the extension directory
 - Linting:
   - Run linting with fixes: `npm run lint:fix`
