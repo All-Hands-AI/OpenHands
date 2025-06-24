@@ -64,11 +64,9 @@ class BaseMicroagent(BaseModel):
         file_io = io.StringIO(file_content)
         loaded = frontmatter.load(file_io)
         content = loaded.content
-        print(f'loaded: {loaded}')
 
         # Handle case where there's no frontmatter or empty frontmatter
         metadata_dict = loaded.metadata or {}
-        print(f'metadata_dict: {metadata_dict}')
 
         try:
             metadata = MicroagentMetadata(**metadata_dict)
@@ -117,7 +115,6 @@ class BaseMicroagent(BaseModel):
         # 2. If triggers exist -> KNOWLEDGE
         # 3. Else (no triggers) -> REPO (always active)
         inferred_type: MicroagentType
-        print(f'metadata inputs: {metadata.inputs}')
         if metadata.inputs:
             inferred_type = MicroagentType.TASK
             trigger = f'/{agent_name}'

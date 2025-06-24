@@ -14,7 +14,7 @@ def test_load_markdown_without_frontmatter():
 
     # Verify it's loaded as a repo agent with default values
     assert isinstance(agent, RepoMicroagent)
-    assert agent.name == 'default'
+    assert agent.name == 'test'
     assert agent.content == content
     assert agent.type == MicroagentType.REPO_KNOWLEDGE
     assert agent.metadata.agent == 'CodeActAgent'
@@ -33,7 +33,7 @@ def test_load_markdown_with_empty_frontmatter():
 
     # Verify it's loaded as a repo agent with default values
     assert isinstance(agent, RepoMicroagent)
-    assert agent.name == 'default'
+    assert agent.name == 'test'
     assert (
         agent.content
         == '# Test Content\nThis is a test markdown file with empty frontmatter.'
@@ -55,9 +55,9 @@ This is a test markdown file with partial frontmatter."""
     # Load the agent from content using keyword argument
     agent = BaseMicroagent.load(path=path, file_content=content)
 
-    # Verify it uses provided name but default values for other fields
+    # Verify it uses filename instead of provided name (filename takes precedence)
     assert isinstance(agent, RepoMicroagent)
-    assert agent.name == 'custom_name'
+    assert agent.name == 'test'
     assert (
         agent.content
         == '# Test Content\nThis is a test markdown file with partial frontmatter.'
@@ -82,9 +82,9 @@ This is a test markdown file with full frontmatter."""
     # Load the agent from content using keyword argument
     agent = BaseMicroagent.load(path=path, file_content=content)
 
-    # Verify all provided values are used
+    # Verify filename is used for name but other metadata values are preserved
     assert isinstance(agent, RepoMicroagent)
-    assert agent.name == 'test_agent'
+    assert agent.name == 'test'
     assert (
         agent.content
         == '# Test Content\nThis is a test markdown file with full frontmatter.'
