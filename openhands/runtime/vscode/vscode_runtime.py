@@ -7,22 +7,23 @@ from openhands.core.config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     Action,
-    AgentFinishAction,
+    BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
+    FileEditAction,
     FileReadAction,
     FileWriteAction,
     IPythonRunCellAction,
-    MessageAction,
-    RecallAction,
-    # MkdirAction, RmdirAction, RemoveAction - specific types not used for now
+    MCPAction,
 )
 from openhands.events.observation import (
+    BrowserOutputObservation,
     CmdOutputObservation,
     ErrorObservation,
+    FileEditObservation,
     FileReadObservation,
     FileWriteObservation,
-    NullObservation,
+    MCPObservation,
     Observation,
 )
 from openhands.events.stream import EventStream
@@ -68,12 +69,12 @@ class VsCodeRuntime(Runtime):
         event_id = str(uuid.uuid4())
 
         oh_event_payload = {
-            'id': event_id,
-            'action': action.action,  # type: ignore
-            'args': action.args,  # type: ignore
-            'message': f'Action delegate: {action.message}'
-            if hasattr(action, 'message') and action.message
-            else f'Delegating {type(action)} to VSCode via socket_connection_id: {self.socket_connection_id}',
+            'event_id': event_id,
+            'action': action.__class__.__name__,
+            'args': action.__dict__,
+            'message': getattr(
+                action, 'message', f'Delegating {type(action).__name__} to VSCode'
+            ),
             'source': 'agent',
         }
 
@@ -81,7 +82,10 @@ class VsCodeRuntime(Runtime):
             # Ensure args is a dict before adding thought
             if not isinstance(oh_event_payload.get('args'), dict):
                 oh_event_payload['args'] = {}
-            oh_event_payload['args']['thought'] = action.thought
+            # Type assertion since we just ensured it's a dict
+            args_dict = oh_event_payload['args']
+            assert isinstance(args_dict, dict)
+            args_dict['thought'] = action.thought
 
         future: asyncio.Future[Observation] = asyncio.get_event_loop().create_future()
         self._running_actions[event_id] = future
@@ -167,87 +171,107 @@ class VsCodeRuntime(Runtime):
                     exit_code=obs_extras.get('exit_code', -1),
                     content=obs_content,
                 )
-                # Cannot set observation.cause due to read-only property
             elif obs_type == 'read':
                 observation = FileReadObservation(
                     path=obs_extras.get('path', ''), content=obs_content
                 )
-                # Cannot set observation.cause due to read-only property
             elif obs_type == 'write':
                 observation = FileWriteObservation(
                     path=obs_extras.get('path', ''), content=obs_content
                 )
-                # Cannot set observation.cause due to read-only property
+            elif obs_type == 'edit':
+                observation = FileEditObservation(
+                    path=obs_extras.get('path', ''), content=obs_content
+                )
+            elif obs_type == 'browse':
+                observation = BrowserOutputObservation(
+                    url=obs_extras.get('url', ''),
+                    trigger_by_action=obs_extras.get('trigger_by_action', ''),
+                    content=obs_content,
+                    screenshot=obs_extras.get('screenshot', ''),
+                )
+            elif obs_type == 'ipython':
+                # Import here to avoid circular imports
+                from openhands.events.observation import IPythonRunCellObservation
+
+                observation = IPythonRunCellObservation(
+                    content=obs_content,
+                    code=obs_extras.get('code', ''),
+                )
+            elif obs_type == 'mcp':
+                observation = MCPObservation(
+                    content=obs_content,
+                    name=obs_extras.get('name', ''),
+                    arguments=obs_extras.get('arguments', {}),
+                )
             else:
-                logger.warn(
+                logger.warning(
                     f"Received unknown observation type '{obs_type}' from VSCode for cause {cause_event_id}"
                 )
                 observation = ErrorObservation(
                     content=f"Unknown observation type '{obs_type}' received from VSCode. Content: {obs_content}"
                 )
-                # Cannot set observation.cause due to read-only property
 
             if not future.done():
                 future.set_result(observation)
             else:
-                logger.warn(f'Future for event_id {cause_event_id} was already done.')
+                logger.warning(
+                    f'Future for event_id {cause_event_id} was already done.'
+                )
         else:
-            logger.warn(
+            logger.warning(
                 f'Received observation for unknown event_id or already handled: {cause_event_id}'
             )
 
-    async def run(self, action: CmdRunAction) -> Observation:  # type: ignore[override]
+    def _run_async_action(self, action) -> Observation:
+        """Helper to run async action in sync context."""
+        try:
+            # Try to get the current event loop
+            asyncio.get_running_loop()
+            # If we're already in an async context, we need to use a different approach
+            # Create a new task and run it
+            import concurrent.futures
+
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(
+                    asyncio.run, self._send_action_to_vscode(action)
+                )
+                return future.result()
+        except RuntimeError:
+            # No event loop running, safe to use asyncio.run
+            return asyncio.run(self._send_action_to_vscode(action))
+
+    def run(self, action: CmdRunAction) -> Observation:
+        """Execute a shell command via VSCode."""
+        return self._run_async_action(action)
+
+    def read(self, action: FileReadAction) -> Observation:
+        """Read a file via VSCode."""
+        return self._run_async_action(action)
+
+    def write(self, action: FileWriteAction) -> Observation:
+        """Write to a file via VSCode."""
+        return self._run_async_action(action)
+
+    def edit(self, action: FileEditAction) -> Observation:
+        """Edit a file via VSCode."""
+        return self._run_async_action(action)
+
+    def browse(self, action: BrowseURLAction) -> Observation:
+        """Browse a URL via VSCode."""
+        return self._run_async_action(action)
+
+    def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
+        """Browse interactively via VSCode."""
+        return self._run_async_action(action)
+
+    def run_ipython(self, action: IPythonRunCellAction) -> Observation:
+        """Execute Python code via VSCode."""
+        return self._run_async_action(action)
+
+    async def call_tool_mcp(self, action: MCPAction) -> Observation:
+        """Call MCP tool via VSCode."""
         return await self._send_action_to_vscode(action)
-
-    async def read(self, action: FileReadAction) -> Observation:  # type: ignore[override]
-        return await self._send_action_to_vscode(action)
-
-    async def write(self, action: FileWriteAction) -> Observation:  # type: ignore[override]
-        return await self._send_action_to_vscode(action)
-
-    async def mkdir(self, action: Action) -> Observation:  # type: ignore[override]
-        # TODO: Use specific MkdirAction type if/when defined
-        logger.warn(
-            'mkdir not fully implemented for VsCodeRuntime, using generic send.'
-        )
-        return await self._send_action_to_vscode(action)
-
-    async def rmdir(self, action: Action) -> Observation:  # type: ignore[override]
-        # TODO: Use specific RmdirAction type if/when defined
-        logger.warn(
-            'rmdir not fully implemented for VsCodeRuntime, using generic send.'
-        )
-        return await self._send_action_to_vscode(action)
-
-    async def rm(self, action: Action) -> Observation:  # type: ignore[override]
-        # TODO: Use specific RemoveAction type if/when defined
-        logger.warn('rm not fully implemented for VsCodeRuntime, using generic send.')
-        return await self._send_action_to_vscode(action)
-
-    async def browse(self, action: BrowseURLAction) -> Observation:  # type: ignore[override]
-        logger.info(f'Executing browse action: {action.url}')
-        return NullObservation(
-            content='Browse action is not directly executable in VSCode terminal via this runtime yet.'
-        )
-
-    async def recall(self, action: RecallAction) -> Observation:
-        return NullObservation(content='Recall action not handled by VsCodeRuntime.')
-
-    async def finish(self, action: AgentFinishAction) -> Observation:
-        return NullObservation(
-            content='AgentFinish action not handled by VsCodeRuntime.'
-        )
-
-    async def run_ipython(self, action: IPythonRunCellAction) -> Observation:  # type: ignore[override]
-        logger.warn(
-            'run_ipython (e.g. for Jupyter) not fully implemented for VsCodeRuntime, using generic send.'
-        )
-        return await self._send_action_to_vscode(action)
-
-    async def send_message(self, action: MessageAction) -> Observation:
-        return NullObservation(
-            content='MessageAction not directly handled by VsCodeRuntime execution logic.'
-        )
 
     async def close(self):
         logger.info('Closing VsCodeRuntime. Outstanding actions will be cancelled.')
