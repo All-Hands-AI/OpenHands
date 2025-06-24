@@ -597,21 +597,6 @@ fi
 
         return loaded
 
-    def _load_microagents_from_directory(
-        self, microagents_dir: Path, source_description: str
-    ) -> list[BaseMicroagent]:
-        """Load microagents from a directory.
-
-        Args:
-            microagents_dir: Path to the directory containing microagents
-            source_description: Description of the source for logging purposes
-
-        Returns:
-            A list of loaded microagents
-        """
-        # Use the new implementation that uses TemporaryDirectory
-        return self.load_microagents_from_directory(microagents_dir, source_description)
-
     async def _get_authenticated_git_url(
         self, repo_name: str, git_provider_tokens: PROVIDER_TOKEN_TYPE | None
     ) -> str:
@@ -735,7 +720,7 @@ fi
 
                     # Load microagents from the org-level repo
                     org_microagents_dir = org_repo_dir / 'microagents'
-                    loaded_microagents = self._load_microagents_from_directory(
+                    loaded_microagents = self.load_microagents_from_directory(
                         org_microagents_dir, 'org-level'
                     )
                 else:
@@ -805,7 +790,7 @@ fi
             )
 
         # Load microagents from directory
-        repo_microagents = self._load_microagents_from_directory(
+        repo_microagents = self.load_microagents_from_directory(
             microagents_dir, 'repository'
         )
         loaded_microagents.extend(repo_microagents)
