@@ -1,6 +1,6 @@
-import * as vscode from 'vscode';
-import * as fs from 'fs';
-import * as path from 'path';
+import * as vscode from "vscode";
+import * as fs from "fs";
+import * as path from "path";
 
 // Track terminals that we know are idle (just finished our commands)
 const idleTerminals = new Set<string>();
@@ -35,7 +35,7 @@ function isKnownIdleTerminal(terminal: vscode.Terminal): boolean {
  * @returns vscode.Terminal
  */
 function createNewOpenHandsTerminal(): vscode.Terminal {
-  const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
+  const timestamp = new Date().toLocaleTimeString("en-US", { hour12: false });
   const terminalName = `OpenHands ${timestamp}`;
   return vscode.window.createTerminal(terminalName);
 }
@@ -45,8 +45,8 @@ function createNewOpenHandsTerminal(): vscode.Terminal {
  * @returns vscode.Terminal
  */
 function findOrCreateOpenHandsTerminal(): vscode.Terminal {
-  const openHandsTerminals = vscode.window.terminals.filter(
-    terminal => terminal.name.startsWith('OpenHands')
+  const openHandsTerminals = vscode.window.terminals.filter((terminal) =>
+    terminal.name.startsWith("OpenHands"),
   );
 
   if (openHandsTerminals.length > 0) {
@@ -71,7 +71,10 @@ function findOrCreateOpenHandsTerminal(): vscode.Terminal {
  * @param terminal The terminal to execute the command in
  * @param command The command to execute
  */
-function executeOpenHandsCommand(terminal: vscode.Terminal, command: string): void {
+function executeOpenHandsCommand(
+  terminal: vscode.Terminal,
+  command: string,
+): void {
   // Mark terminal as busy when we start a command
   markTerminalAsBusy(terminal.name);
 
@@ -80,10 +83,10 @@ function executeOpenHandsCommand(terminal: vscode.Terminal, command: string): vo
     const execution = terminal.shellIntegration.executeCommand(command);
 
     // Monitor execution completion
-    const disposable = vscode.window.onDidEndTerminalShellExecution(event => {
+    const disposable = vscode.window.onDidEndTerminalShellExecution((event) => {
       if (event.execution === execution) {
         if (event.exitCode === 0) {
-          console.log('OpenHands command completed successfully');
+          console.log("OpenHands command completed successfully");
           // Mark terminal as idle when command completes successfully
           markTerminalAsIdle(terminal.name);
         } else if (event.exitCode !== undefined) {
@@ -109,17 +112,17 @@ function executeOpenHandsCommand(terminal: vscode.Terminal, command: string): vo
 function detectVirtualEnvironment(): string {
   const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
   if (!workspaceFolder) {
-    vscode.window.showErrorMessage('DEBUG: No workspace folder found');
-    return '';
+    vscode.window.showErrorMessage("DEBUG: No workspace folder found");
+    return "";
   }
 
-  const venvPaths = ['.venv', 'venv', '.virtualenv'];
+  const venvPaths = [".venv", "venv", ".virtualenv"];
   for (const venvPath of venvPaths) {
     const venvFullPath = path.join(workspaceFolder.uri.fsPath, venvPath);
     try {
       if (fs.existsSync(venvFullPath)) {
-        const isWindows = process.platform === 'win32';
-        const activateScript = isWindows ? 'Scripts\\activate' : 'bin/activate';
+        const isWindows = process.platform === "win32";
+        const activateScript = isWindows ? "Scripts\\activate" : "bin/activate";
         const activationCommand = `source "${venvFullPath}/${activateScript}" && `;
         vscode.window.showErrorMessage(`DEBUG: Found venv at ${venvFullPath}`);
         return activationCommand;
@@ -129,8 +132,10 @@ function detectVirtualEnvironment(): string {
     }
   }
 
-  vscode.window.showErrorMessage(`DEBUG: No venv found in workspace ${workspaceFolder.uri.fsPath}`);
-  return '';
+  vscode.window.showErrorMessage(
+    `DEBUG: No venv found in workspace ${workspaceFolder.uri.fsPath}`,
+  );
+  return "";
 }
 
 /**
@@ -141,18 +146,22 @@ function detectVirtualEnvironment(): string {
  */
 function buildOpenHandsCommand(
   options: { task?: string; filePath?: string },
-  activationCommand: string
+  activationCommand: string,
 ): string {
   let commandToSend = `${activationCommand}openhands`;
 
   if (options.filePath) {
     // Ensure filePath is properly quoted if it contains spaces or special characters
-    const safeFilePath = options.filePath.includes(' ') ? `"${options.filePath}"` : options.filePath;
+    const safeFilePath = options.filePath.includes(" ")
+      ? `"${options.filePath}"`
+      : options.filePath;
     commandToSend = `${activationCommand}openhands --file ${safeFilePath}`;
   } else if (options.task) {
     // Sanitize task string for command line (basic sanitization)
     // Replace backticks and double quotes that might break the command
-    const sanitizedTask = options.task.replace(/`/g, '\\`').replace(/"/g, '\\"');
+    const sanitizedTask = options.task
+      .replace(/`/g, "\\`")
+      .replace(/"/g, '\\"');
     commandToSend = `${activationCommand}openhands --task "${sanitizedTask}"`;
   }
 
@@ -163,7 +172,10 @@ function buildOpenHandsCommand(
  * Main function to start OpenHands in terminal with safe terminal reuse
  * @param options Command options
  */
-function startOpenHandsInTerminal(options: { task?: string; filePath?: string }): void {
+function startOpenHandsInTerminal(options: {
+  task?: string;
+  filePath?: string;
+}): void {
   try {
     // Find or create terminal using safe detection
     const terminal = findOrCreateOpenHandsTerminal();
@@ -187,56 +199,74 @@ function startOpenHandsInTerminal(options: { task?: string; filePath?: string })
 
 export function activate(context: vscode.ExtensionContext) {
   // Clean up terminal tracking when terminals are closed
-  const terminalCloseDisposable = vscode.window.onDidCloseTerminal(terminal => {
-    idleTerminals.delete(terminal.name);
-  });
+  const terminalCloseDisposable = vscode.window.onDidCloseTerminal(
+    (terminal) => {
+      idleTerminals.delete(terminal.name);
+    },
+  );
   context.subscriptions.push(terminalCloseDisposable);
 
   // Command: Start New Conversation
-  let startConversationDisposable = vscode.commands.registerCommand('openhands.startConversation', () => {
-    startOpenHandsInTerminal({});
-  });
+  const startConversationDisposable = vscode.commands.registerCommand(
+    "openhands.startConversation",
+    () => {
+      startOpenHandsInTerminal({});
+    },
+  );
   context.subscriptions.push(startConversationDisposable);
 
   // Command: Start Conversation with Active File Content
-  let startWithFileContextDisposable = vscode.commands.registerCommand('openhands.startConversationWithFileContext', () => {
-    const editor = vscode.window.activeTextEditor;
-    if (!editor) {
-      vscode.window.showErrorMessage('OpenHands: No active text editor found.');
-      return;
-    }
-
-    if (editor.document.isUntitled) {
-      const fileContent = editor.document.getText();
-      if (!fileContent.trim()) {
-        vscode.window.showErrorMessage('OpenHands: Active untitled file is empty. Please add content or save the file.');
+  const startWithFileContextDisposable = vscode.commands.registerCommand(
+    "openhands.startConversationWithFileContext",
+    () => {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor) {
+        vscode.window.showErrorMessage(
+          "OpenHands: No active text editor found.",
+        );
         return;
       }
-      startOpenHandsInTerminal({ task: fileContent });
-    } else {
-      const filePath = editor.document.uri.fsPath;
-      startOpenHandsInTerminal({ filePath: filePath });
-    }
-  });
+
+      if (editor.document.isUntitled) {
+        const fileContent = editor.document.getText();
+        if (!fileContent.trim()) {
+          vscode.window.showErrorMessage(
+            "OpenHands: Active untitled file is empty. Please add content or save the file.",
+          );
+          return;
+        }
+        startOpenHandsInTerminal({ task: fileContent });
+      } else {
+        const filePath = editor.document.uri.fsPath;
+        startOpenHandsInTerminal({ filePath });
+      }
+    },
+  );
   context.subscriptions.push(startWithFileContextDisposable);
 
   // Command: Start Conversation with Selected Text
-  let startWithSelectionContextDisposable = vscode.commands.registerCommand('openhands.startConversationWithSelectionContext', () => {
-    vscode.window.showErrorMessage('DEBUG: startConversationWithSelectionContext command triggered!');
-    const editor = vscode.window.activeTextEditor;
-    if (!editor) {
-      vscode.window.showErrorMessage('OpenHands: No active text editor found.');
-      return;
-    }
-    if (editor.selection.isEmpty) {
-      vscode.window.showErrorMessage('OpenHands: No text selected.');
-      return;
-    }
-    const selectedText = editor.document.getText(editor.selection);
-    startOpenHandsInTerminal({ task: selectedText });
-  });
+  const startWithSelectionContextDisposable = vscode.commands.registerCommand(
+    "openhands.startConversationWithSelectionContext",
+    () => {
+      vscode.window.showErrorMessage(
+        "DEBUG: startConversationWithSelectionContext command triggered!",
+      );
+      const editor = vscode.window.activeTextEditor;
+      if (!editor) {
+        vscode.window.showErrorMessage(
+          "OpenHands: No active text editor found.",
+        );
+        return;
+      }
+      if (editor.selection.isEmpty) {
+        vscode.window.showErrorMessage("OpenHands: No text selected.");
+        return;
+      }
+      const selectedText = editor.document.getText(editor.selection);
+      startOpenHandsInTerminal({ task: selectedText });
+    },
+  );
   context.subscriptions.push(startWithSelectionContextDisposable);
-
 }
 
 export function deactivate() {

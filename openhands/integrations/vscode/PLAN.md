@@ -43,7 +43,10 @@ The extension is located in `openhands-vscode/` during development.
         *   `"watch": "tsc -watch -p ./"`
         *   `"test": "npm run compile && node ./out/test/runTest.js"`
         *   `"package-vsix": "npm run compile && vsce package --no-dependencies"`
-    *   `devDependencies`: Includes TypeScript, VS Code types, Mocha for testing, and VSCE for packaging
+        *   `"lint": "npm run typecheck && eslint src --ext .ts && prettier --check src/**/*.ts"`
+        *   `"lint:fix": "eslint src --ext .ts --fix && prettier --write src/**/*.ts"`
+        *   `"typecheck": "tsc --noEmit"`
+    *   `devDependencies`: Includes TypeScript, VS Code types, Mocha for testing, VSCE for packaging, and linting tools (ESLint, Prettier)
 *   **`tsconfig.json`:** TypeScript configuration (module: "commonjs", target: "es2020", outDir: "out", strict: true, esModuleInterop: true)
 *   **`src/extension.ts`:** Main extension logic
 *   **`src/test/`:** Test suite with unit tests
@@ -51,7 +54,23 @@ The extension is located in `openhands-vscode/` during development.
 *   **`README.md`:** User documentation and setup instructions
 *   **Packaged extension:** `openhands-vscode-0.0.1.vsix`
 
-### 2. Core Logic in `src/extension.ts`
+### 2. Code Quality and Linting
+
+The extension uses ESLint and Prettier for code quality and formatting, adapted from the main OpenHands frontend configuration:
+
+*   **`.eslintrc.json`:** ESLint configuration adapted from frontend, using airbnb-base rules for Node.js/VSCode extensions
+    *   Extends: `airbnb-base`, `airbnb-typescript/base`, `prettier`, `@typescript-eslint/recommended`
+    *   Plugins: `prettier`, `unused-imports`
+    *   Special rules for VSCode extensions: allows leading underscores, console warnings
+    *   Test file overrides: relaxed rules for test files (`@typescript-eslint/no-explicit-any` off, etc.)
+*   **`.prettierrc.json`:** Prettier configuration matching frontend (`trailingComma: "all"`)
+*   **`.eslintignore`:** Excludes `out/`, `node_modules/`, `.vscode-test/`, `*.vsix`
+*   **Linting Commands:**
+    *   `npm run lint`: Type check + ESLint check + Prettier check
+    *   `npm run lint:fix`: ESLint fix + Prettier format
+    *   `npm run typecheck`: TypeScript compilation check without output
+
+### 3. Core Logic in `src/extension.ts`
 
 *   **`activate(context: vscode.ExtensionContext)` function:**
     *   Registers all three commands
@@ -264,3 +283,48 @@ function sendToRunningOpenHands(text: string) {
 *   Terminal naming preferences
 *   Debug message visibility controls
 *   Default OpenHands arguments
+
+## Development Workflow
+
+### Code Quality Checks
+
+Before committing changes, run the following commands to ensure code quality:
+
+```bash
+# Install dependencies
+npm install
+
+# Run type checking
+npm run typecheck
+
+# Run linting (check only)
+npm run lint
+
+# Run linting with automatic fixes
+npm run lint:fix
+
+# Compile TypeScript
+npm run compile
+
+# Run tests
+npm run test
+
+# Package extension
+npm run package-vsix
+```
+
+### Pre-commit Checklist
+
+1. **Code Quality:** Run `npm run lint:fix` to ensure consistent formatting and catch issues
+2. **Type Safety:** Run `npm run typecheck` to verify TypeScript compilation
+3. **Functionality:** Run `npm run test` to ensure tests pass
+4. **Build:** Run `npm run compile` to verify successful compilation
+5. **Documentation:** Update relevant documentation files (README.md, PLAN.md, etc.)
+
+### Linting Configuration
+
+The linting setup is designed to maintain consistency with the main OpenHands codebase:
+- **ESLint:** Uses Airbnb base configuration adapted for Node.js/VSCode extensions
+- **Prettier:** Matches frontend formatting rules
+- **TypeScript:** Strict type checking with VSCode extension-specific allowances
+- **Test Files:** Relaxed rules for test files to allow common testing patterns

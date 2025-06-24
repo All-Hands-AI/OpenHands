@@ -34,3 +34,27 @@ Access commands via Command Palette (Ctrl+Shift+P) or right-click menu.
 - OpenHands CLI in your PATH
 - VS Code 1.80.0+
 - Compatible shell for optimal terminal reuse (bash, zsh, PowerShell, fish)
+
+## Development
+
+### Setup
+```bash
+npm install
+```
+
+### Code Quality
+```bash
+# Run linting with fixes
+npm run lint:fix
+
+# Type checking
+npm run typecheck
+
+# Compile TypeScript
+npm run compile
+
+# Run tests
+npm run test
+```
+
+The extension uses ESLint and Prettier for code quality, adapted from the main OpenHands frontend configuration.
