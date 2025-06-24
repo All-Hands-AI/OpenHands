@@ -2,6 +2,23 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
 
+/**
+ * Terminal Management Implementation
+ * 
+ * This implementation uses VSCode's Shell Integration API for safe terminal reuse.
+ * The approach prioritizes user safety by never interrupting running processes.
+ * 
+ * Key VSCode API References:
+ * - Terminal Shell Integration: https://code.visualstudio.com/docs/terminal/shell-integration
+ * - VSCode Extension API: https://code.visualstudio.com/api/references/vscode-api
+ * - Terminal API Reference: https://code.visualstudio.com/api/references/vscode-api#Terminal
+ * - VSCode Source Examples: https://github.com/microsoft/vscode/blob/main/src/vscode-dts/vscode.d.ts
+ * 
+ * Shell Integration Requirements:
+ * - Compatible shells: bash, zsh, PowerShell Core, or fish shell
+ * - Graceful fallback needed for Command Prompt and other shells
+ */
+
 // Track terminals that we know are idle (just finished our commands)
 const idleTerminals = new Set<string>();
 
