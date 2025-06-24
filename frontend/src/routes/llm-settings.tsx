@@ -129,6 +129,8 @@ function LlmSettingsScreen() {
     const apiKey = formData.get("llm-api-key-input")?.toString();
     const searchApiKey = formData.get("search-api-key-input")?.toString();
     const agent = formData.get("agent-input")?.toString();
+    const temperatureStr = formData.get("temperature-input")?.toString();
+    const temperature = temperatureStr ? parseFloat(temperatureStr) : undefined;
     const confirmationMode =
       formData.get("enable-confirmation-mode-switch")?.toString() === "on";
     const enableDefaultCondenser =
@@ -144,6 +146,7 @@ function LlmSettingsScreen() {
         llm_api_key: apiKey || null,
         SEARCH_API_KEY: searchApiKey || "",
         AGENT: agent,
+        TEMPERATURE: temperature,
         CONFIRMATION_MODE: confirmationMode,
         ENABLE_DEFAULT_CONDENSER: enableDefaultCondenser,
         SECURITY_ANALYZER: confirmationMode ? securityAnalyzer : undefined,
@@ -172,6 +175,7 @@ function LlmSettingsScreen() {
       confirmationMode: false,
       enableDefaultCondenser: false,
       securityAnalyzer: false,
+      temperature: false,
     });
   };
 
@@ -406,15 +410,24 @@ function LlmSettingsScreen() {
                 label={t(I18nKey.SETTINGS$TEMPERATURE)}
                 type="number"
                 className="w-full max-w-[680px]"
-                defaultValue={settings.TEMPERATURE}
+                defaultValue={settings.TEMPERATURE.toString()}
+                step={0.1}
+                min={0}
+                max={2}
+                placeholder="0.0"
                 onChange={(value) => {
-                  const temperatureIsDirty = value !== settings.TEMPERATURE;
+                  const numValue = parseFloat(value);
+                  const temperatureIsDirty = numValue !== settings.TEMPERATURE;
                   setDirtyInputs((prev) => ({
                     ...prev,
                     temperature: temperatureIsDirty,
                   }));
                 }}
               />
+
+              <div className="text-xs text-gray-400 mt-1">
+                {t(I18nKey.SETTINGS$TEMPERATURE_HELP)}
+              </div>
 
               <HelpLink
                 testId="search-api-key-help-anchor"

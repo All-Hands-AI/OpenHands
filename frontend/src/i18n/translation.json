@@ -447,6 +447,22 @@
         "de": "Temperatur",
         "uk": "Температура"
     },
+    "SETTINGS$TEMPERATURE_HELP": {
+        "en": "Controls randomness in responses. Lower values (0.0-0.3) for focused tasks, higher values (0.7-1.0) for creative tasks.",
+        "ja": "応答のランダム性を制御します。集中的なタスクには低い値（0.0-0.3）、創造的なタスクには高い値（0.7-1.0）を使用します。",
+        "zh-CN": "控制响应的随机性。集中任务使用较低值（0.0-0.3），创造性任务使用较高值（0.7-1.0）。",
+        "zh-TW": "控制回應的隨機性。專注任務使用較低值（0.0-0.3），創意任務使用較高值（0.7-1.0）。",
+        "ko-KR": "응답의 무작위성을 제어합니다. 집중적인 작업에는 낮은 값(0.0-0.3), 창의적인 작업에는 높은 값(0.7-1.0)을 사용하세요.",
+        "no": "Kontrollerer tilfeldighet i svar. Lavere verdier (0.0-0.3) for fokuserte oppgaver, høyere verdier (0.7-1.0) for kreative oppgaver.",
+        "it": "Controlla la casualità nelle risposte. Valori più bassi (0.0-0.3) per compiti focalizzati, valori più alti (0.7-1.0) per compiti creativi.",
+        "pt": "Controla a aleatoriedade nas respostas. Valores mais baixos (0.0-0.3) para tarefas focadas, valores mais altos (0.7-1.0) para tarefas criativas.",
+        "es": "Controla la aleatoriedad en las respuestas. Valores más bajos (0.0-0.3) para tareas enfocadas, valores más altos (0.7-1.0) para tareas creativas.",
+        "ar": "يتحكم في العشوائية في الاستجابات. قيم أقل (0.0-0.3) للمهام المركزة، قيم أعلى (0.7-1.0) للمهام الإبداعية.",
+        "fr": "Contrôle l'aléatoire dans les réponses. Valeurs plus faibles (0.0-0.3) pour les tâches ciblées, valeurs plus élevées (0.7-1.0) pour les tâches créatives.",
+        "tr": "Yanıtlardaki rastgeleliği kontrol eder. Odaklanmış görevler için düşük değerler (0.0-0.3), yaratıcı görevler için yüksek değerler (0.7-1.0).",
+        "de": "Kontrolliert die Zufälligkeit in Antworten. Niedrigere Werte (0.0-0.3) für fokussierte Aufgaben, höhere Werte (0.7-1.0) für kreative Aufgaben.",
+        "uk": "Контролює випадковість у відповідях. Нижчі значення (0.0-0.3) для сфокусованих завдань, вищі значення (0.7-1.0) для творчих завдань."
+    },
     "SETTINGS$MCP_CONFIGURATION": {
         "en": "MCP Configuration",
         "ja": "MCP設定",

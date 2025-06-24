@@ -42,7 +42,7 @@ class Settings(BaseModel):
     search_api_key: SecretStr | None = None
     max_budget_per_task: float | None = None
     email: str | None = None
-    temperature: float | None = None
+    temperature: float = Field(default=0.0)
     email_verified: bool | None = None
 
     model_config = {
@@ -130,6 +130,7 @@ class Settings(BaseModel):
             llm_model=llm_config.model,
             llm_api_key=llm_config.api_key,
             llm_base_url=llm_config.base_url,
+            temperature=llm_config.temperature,
             remote_runtime_resource_factor=app_config.sandbox.remote_runtime_resource_factor,
             mcp_config=mcp_config,
             search_api_key=app_config.search_api_key,
