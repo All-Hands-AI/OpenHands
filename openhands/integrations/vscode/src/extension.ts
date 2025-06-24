@@ -52,10 +52,10 @@ function isKnownIdleTerminal(terminal: vscode.Terminal): boolean {
  * @returns vscode.Terminal
  */
 function createNewOpenHandsTerminal(): vscode.Terminal {
-  const timestamp = new Date().toLocaleTimeString("en-US", { 
-    hour12: false, 
-    hour: '2-digit', 
-    minute: '2-digit' 
+  const timestamp = new Date().toLocaleTimeString("en-US", {
+    hour12: false,
+    hour: "2-digit",
+    minute: "2-digit",
   });
   const terminalName = `OpenHands ${timestamp}`;
   return vscode.window.createTerminal(terminalName);
