@@ -6,7 +6,6 @@ from unittest import mock
 import pytest
 
 # Ensure the main module can be imported if tests are run from a different CWD
-# This might need adjustment based on your project's specific PYTHONPATH setup for tests
 try:
     from openhands.cli import main as cli_main
 except ImportError:
