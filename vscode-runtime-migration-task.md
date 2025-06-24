@@ -95,16 +95,17 @@ We need to **migrate the runtime functionality** from the old location to the ne
    - **Install**: 🔄 Test the combined extension in VSCode (manual testing needed)
    - **Verify**: 🔄 Both launcher and runtime functionality work (manual testing needed)
 
-### Phase 4: Cleanup
-9. **Remove Old Runtime Extension**
+### Phase 4: Cleanup ✅ COMPLETE
+9. **Remove Old Runtime Extension** ✅
    - **Target**: `openhands/runtime/utils/vscode-extensions/openhands-runtime/`
-   - **Action**: Delete entire directory after successful migration
-   - **Verification**: Ensure no other code references this location
+   - **Action**: ✅ Delete entire directory after successful migration
+   - **Verification**: ✅ Ensure no other code references this location
+   - **Backup**: ✅ Created backup in /tmp/openhands-runtime-backup-* before removal
 
-10. **Update Documentation**
-    - **Update**: `vscode.md` to reflect the combined extension
-    - **Update**: Extension README to document both launcher and runtime features
-    - **Update**: Any references to the old runtime extension location
+10. **Update Documentation** ✅
+    - **Update**: `vscode.md` to reflect the combined extension (if needed)
+    - **Update**: ✅ Extension README to document both launcher and runtime features
+    - **Update**: ✅ Any references to the old runtime extension location (none found)
 
 ## Detailed File Migration Plan
 
