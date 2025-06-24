@@ -2,51 +2,32 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 
+// Track terminals that we know are idle (just finished our commands)
+const idleTerminals = new Set<string>();
+
 /**
- * Probes a terminal to check if it's idle using Shell Integration API
- * @param terminal The terminal to probe
- * @returns Promise<boolean> true if terminal is idle, false if busy or probe failed
+ * Marks a terminal as idle after our command completes
+ * @param terminalName The name of the terminal
  */
-async function probeTerminalStatus(terminal: vscode.Terminal): Promise<boolean> {
-  if (!terminal.shellIntegration) {
-    return false;
-  }
+function markTerminalAsIdle(terminalName: string): void {
+  idleTerminals.add(terminalName);
+}
 
-  try {
-    const probeId = Date.now();
-    const probeCommand = `echo "OPENHANDS_PROBE_${probeId}"`;
+/**
+ * Marks a terminal as busy when we start a command
+ * @param terminalName The name of the terminal
+ */
+function markTerminalAsBusy(terminalName: string): void {
+  idleTerminals.delete(terminalName);
+}
 
-    const execution = terminal.shellIntegration.executeCommand(probeCommand);
-
-    // Set up timeout for probe
-    const timeout = new Promise<boolean>((_, reject) =>
-      setTimeout(() => reject(new Error('Probe timeout')), 2000)
-    );
-
-    // Read output to verify response
-    const readOutput = async (): Promise<boolean> => {
-      try {
-        const stream = execution.read();
-        let output = '';
-
-        for await (const data of stream) {
-          output += data;
-          if (output.includes(`OPENHANDS_PROBE_${probeId}`)) {
-            // The terminal is responsive
-            return true;
-          }
-        }
-        return false;
-      } catch (error) {
-        return false;
-      }
-    };
-
-    return await Promise.race([readOutput(), timeout]);
-  } catch (error) {
-    // Probe failed, assume terminal is busy
-    return false;
-  }
+/**
+ * Checks if we know a terminal is idle (safe to reuse)
+ * @param terminal The terminal to check
+ * @returns boolean true if we know it's idle, false otherwise
+ */
+function isKnownIdleTerminal(terminal: vscode.Terminal): boolean {
+  return idleTerminals.has(terminal.name);
 }
 
 /**
@@ -60,27 +41,24 @@ function createNewOpenHandsTerminal(): vscode.Terminal {
 }
 
 /**
- * Finds an existing OpenHands terminal or creates a new one using intelligent detection
- * @returns Promise<vscode.Terminal>
+ * Finds an existing OpenHands terminal or creates a new one using safe detection
+ * @returns vscode.Terminal
  */
-async function findOrCreateOpenHandsTerminal(): Promise<vscode.Terminal> {
+function findOrCreateOpenHandsTerminal(): vscode.Terminal {
   const openHandsTerminals = vscode.window.terminals.filter(
     terminal => terminal.name.startsWith('OpenHands')
   );
 
   if (openHandsTerminals.length > 0) {
-    // Use the most recent terminal
+    // Use the most recent terminal, but only if we know it's idle
     const terminal = openHandsTerminals[openHandsTerminals.length - 1];
 
-    // Check if terminal has shell integration and probe its status
-    if (terminal.shellIntegration) {
-      const isIdle = await probeTerminalStatus(terminal);
-      if (isIdle) {
-        return terminal;
-      }
+    // Only reuse terminals that we know are idle (safe to reuse)
+    if (isKnownIdleTerminal(terminal)) {
+      return terminal;
     }
 
-    // If terminal is busy or probe failed, create new one
+    // If we don't know the terminal is idle, create a new one to avoid interrupting running processes
     return createNewOpenHandsTerminal();
   }
 
@@ -93,7 +71,10 @@ async function findOrCreateOpenHandsTerminal(): Promise<vscode.Terminal> {
  * @param terminal The terminal to execute the command in
  * @param command The command to execute
  */
-async function executeOpenHandsCommand(terminal: vscode.Terminal, command: string): Promise<void> {
+function executeOpenHandsCommand(terminal: vscode.Terminal, command: string): void {
+  // Mark terminal as busy when we start a command
+  markTerminalAsBusy(terminal.name);
+
   if (terminal.shellIntegration) {
     // Use Shell Integration for better control
     const execution = terminal.shellIntegration.executeCommand(command);
@@ -103,8 +84,12 @@ async function executeOpenHandsCommand(terminal: vscode.Terminal, command: strin
       if (event.execution === execution) {
         if (event.exitCode === 0) {
           console.log('OpenHands command completed successfully');
+          // Mark terminal as idle when command completes successfully
+          markTerminalAsIdle(terminal.name);
         } else if (event.exitCode !== undefined) {
           console.log(`OpenHands command exited with code ${event.exitCode}`);
+          // Mark terminal as idle even if command failed (user can reuse it)
+          markTerminalAsIdle(terminal.name);
         }
         disposable.dispose(); // Clean up the event listener
       }
@@ -112,6 +97,8 @@ async function executeOpenHandsCommand(terminal: vscode.Terminal, command: strin
   } else {
     // Fallback to traditional sendText
     terminal.sendText(command, true);
+    // For traditional sendText, we can't track completion, so don't mark as idle
+    // This means terminals without Shell Integration won't be reused, which is safer
   }
 }
 
@@ -173,13 +160,13 @@ function buildOpenHandsCommand(
 }
 
 /**
- * Main function to start OpenHands in terminal with intelligent terminal reuse
+ * Main function to start OpenHands in terminal with safe terminal reuse
  * @param options Command options
  */
-async function startOpenHandsInTerminal(options: { task?: string; filePath?: string }): Promise<void> {
+function startOpenHandsInTerminal(options: { task?: string; filePath?: string }): void {
   try {
-    // Find or create terminal using intelligent detection
-    const terminal = await findOrCreateOpenHandsTerminal();
+    // Find or create terminal using safe detection
+    const terminal = findOrCreateOpenHandsTerminal();
     terminal.show(true); // true to preserve focus on the editor
 
     // Detect virtual environment
@@ -192,21 +179,27 @@ async function startOpenHandsInTerminal(options: { task?: string; filePath?: str
     vscode.window.showErrorMessage(`DEBUG: Sending command: ${commandToSend}`);
 
     // Execute command using Shell Integration when available
-    await executeOpenHandsCommand(terminal, commandToSend);
+    executeOpenHandsCommand(terminal, commandToSend);
   } catch (error) {
     vscode.window.showErrorMessage(`Error starting OpenHands: ${error}`);
   }
 }
 
 export function activate(context: vscode.ExtensionContext) {
+  // Clean up terminal tracking when terminals are closed
+  const terminalCloseDisposable = vscode.window.onDidCloseTerminal(terminal => {
+    idleTerminals.delete(terminal.name);
+  });
+  context.subscriptions.push(terminalCloseDisposable);
+
   // Command: Start New Conversation
-  let startConversationDisposable = vscode.commands.registerCommand('openhands.startConversation', async () => {
-    await startOpenHandsInTerminal({});
+  let startConversationDisposable = vscode.commands.registerCommand('openhands.startConversation', () => {
+    startOpenHandsInTerminal({});
   });
   context.subscriptions.push(startConversationDisposable);
 
   // Command: Start Conversation with Active File Content
-  let startWithFileContextDisposable = vscode.commands.registerCommand('openhands.startConversationWithFileContext', async () => {
+  let startWithFileContextDisposable = vscode.commands.registerCommand('openhands.startConversationWithFileContext', () => {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
       vscode.window.showErrorMessage('OpenHands: No active text editor found.');
@@ -219,16 +212,16 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showErrorMessage('OpenHands: Active untitled file is empty. Please add content or save the file.');
         return;
       }
-      await startOpenHandsInTerminal({ task: fileContent });
+      startOpenHandsInTerminal({ task: fileContent });
     } else {
       const filePath = editor.document.uri.fsPath;
-      await startOpenHandsInTerminal({ filePath: filePath });
+      startOpenHandsInTerminal({ filePath: filePath });
     }
   });
   context.subscriptions.push(startWithFileContextDisposable);
 
   // Command: Start Conversation with Selected Text
-  let startWithSelectionContextDisposable = vscode.commands.registerCommand('openhands.startConversationWithSelectionContext', async () => {
+  let startWithSelectionContextDisposable = vscode.commands.registerCommand('openhands.startConversationWithSelectionContext', () => {
     vscode.window.showErrorMessage('DEBUG: startConversationWithSelectionContext command triggered!');
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
@@ -240,10 +233,9 @@ export function activate(context: vscode.ExtensionContext) {
       return;
     }
     const selectedText = editor.document.getText(editor.selection);
-    await startOpenHandsInTerminal({ task: selectedText });
+    startOpenHandsInTerminal({ task: selectedText });
   });
   context.subscriptions.push(startWithSelectionContextDisposable);
-
 
 }
 

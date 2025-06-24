@@ -8,7 +8,7 @@ When launching `openhands --task "selected text"` from VS Code, we want to:
 
 **Current Issue:** If an OpenHands terminal exists but has a running process (OH CLI or other app), sending new commands creates a mess by interfering with the running process.
 
-## Technical Capabilities (Updated 2024/2025)
+## Technical Capabilities
 
 **VSCode Shell Integration API** provides powerful new capabilities:
 - `terminal.shellIntegration.executeCommand()` - Execute commands with full control
@@ -228,79 +228,90 @@ function trackTerminalExecution(terminal: vscode.Terminal, execution: vscode.Ter
 - **Manual interference** - User commands break tracking
 - **Over-engineering** - More complex than needed for most use cases
 
-## Recommendation
+## Implemented Solution
 
-**Primary: Shell Integration with Intelligent Probing (Approach 1)**
+**Primary: Safe State Tracking (Modified Approach 4)**
 **Fallback: Always Create New Terminal (Approach 3)**
 
-### Implementation Strategy
+### Current Implementation
 
-**Phase 1: Smart Detection with Graceful Fallback**
+The extension now uses a **Safe State Tracking** approach that eliminates the risk of interrupting running processes:
+
+**Key Principles:**
+1. **Never probe busy terminals** - No commands are sent to terminals that might be running processes
+2. **Track only our own commands** - Only reuse terminals where we know our OpenHands commands have completed
+3. **Safe fallback** - Create new terminals when in doubt
+
+**Implementation Details:**
 ```typescript
-async function findOrCreateOpenHandsTerminal(): Promise<vscode.Terminal> {
+// Track terminals that we know are idle (completed our commands)
+const idleTerminals = new Set<string>();
+
+function findOrCreateOpenHandsTerminal(): vscode.Terminal {
   const openHandsTerminals = vscode.window.terminals.filter(
     terminal => terminal.name.startsWith('OpenHands')
   );
 
   if (openHandsTerminals.length > 0) {
     const terminal = openHandsTerminals[openHandsTerminals.length - 1];
-
-    if (terminal.shellIntegration) {
-      // Try intelligent probing
-      const isIdle = await probeTerminalStatus(terminal);
-      if (isIdle) {
-        return terminal; // Safe to reuse
-      }
-      // If busy, Shell Integration will handle interruption safely
+    
+    // Only reuse terminals that we know are idle (safe to reuse)
+    if (isKnownIdleTerminal(terminal)) {
       return terminal;
     }
+    
+    // If we don't know the terminal is idle, create new one
+    return createNewOpenHandsTerminal();
   }
 
-  // Fallback: create new terminal (no user nagging)
   return createNewOpenHandsTerminal();
 }
 ```
 
-### Rationale
+**State Tracking:**
+- Terminals are marked as busy when we start commands
+- Terminals are marked as idle when our commands complete (using Shell Integration events)
+- Terminals without Shell Integration are never marked as idle (safer)
+- Terminal state is cleaned up when terminals are closed
 
-1. **Modern API Usage:** Leverages VSCode's latest Shell Integration capabilities
-2. **Intelligent Detection:** Actually determines if terminal is idle vs busy
-3. **Safe Operation:** API handles interruption automatically when needed
-4. **Graceful Degradation:** Falls back to new terminal creation when Shell Integration unavailable
-5. **No User Interruption:** Avoids nagging users with choices
-6. **Predictable Behavior:** Consistent experience across different shell environments
+**Benefits:**
+- **Zero interruption risk** - Never sends commands to potentially busy terminals
+- **Efficient reuse** - Reuses terminals that have completed OpenHands commands
+- **Shell Integration aware** - Uses modern VS Code APIs when available
+- **Graceful degradation** - Works safely even without Shell Integration
 
-### Implementation Priority
+### Previous Approach (Abandoned)
 
-**Phase 1: Basic Shell Integration Support**
-- Implement intelligent probing for compatible shells
-- Fallback to new terminal creation for incompatible environments
-- Add Shell Integration detection and usage
+The original plan was to use intelligent probing with Shell Integration, but this approach was abandoned because:
 
-**Phase 2: Enhanced Monitoring**
-- Add execution monitoring with `onDidEndTerminalShellExecution`
-- Implement output reading for better command feedback
-- Add error handling for failed executions
+1. **Probing commands interrupted running processes** - Even simple `echo` commands could interfere with CLIs
+2. **Shell Integration executeCommand() was too intrusive** - It would interrupt running processes to execute probe commands
+3. **User experience was poor** - Users reported that their running CLIs were being stopped
 
-**Phase 3: Configuration Options (Optional)**
-- Add user preference for terminal reuse behavior
-- Implement terminal cleanup/management features
-- Add debugging/logging for Shell Integration status
+### Final Implementation Rationale
 
-## Code Changes Required
+1. **Safety First:** Never risk interrupting user processes
+2. **Simple State Tracking:** Only track terminals where we executed commands
+3. **Shell Integration for Monitoring:** Use Shell Integration only to monitor our own command completion
+4. **Conservative Reuse:** Only reuse terminals we know are safe
+5. **Predictable Behavior:** Always create new terminals when in doubt
+
+## Code Changes Implemented
 
 **File:** `src/extension.ts`
-**Functions to modify:**
-- `startOpenHandsInTerminal()` - Add Shell Integration detection
-- Add `probeTerminalStatus()` - Implement intelligent probing
-- Add `executeOpenHandsCommand()` - Use Shell Integration when available
+**Functions implemented:**
+- `markTerminalAsIdle()` / `markTerminalAsBusy()` - Track terminal states safely
+- `isKnownIdleTerminal()` - Check if terminal is safe to reuse
+- `findOrCreateOpenHandsTerminal()` - Safe terminal selection logic
+- `executeOpenHandsCommand()` - Command execution with state tracking
 
-**Current behavior:** Always creates new terminal with timestamp
+**Previous behavior:** Always creates new terminal with timestamp
 **New behavior:**
 1. Check for existing OpenHands terminals
-2. If found and has Shell Integration: probe for idle status
-3. If idle or Shell Integration handles interruption: reuse terminal
-4. Otherwise: create new terminal with timestamp
+2. If found and known to be idle: reuse terminal
+3. If found but state unknown: create new terminal (safe fallback)
+4. Track command completion using Shell Integration events
+5. Clean up state when terminals are closed
 
 **Configuration options (future):**
 ```json

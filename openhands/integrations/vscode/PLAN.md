@@ -57,7 +57,7 @@ The extension is located in `openhands-vscode/` during development.
     *   Registers all three commands
 *   **Helper Function: `startOpenHandsInTerminal(options: { task?: string; filePath?: string })`:**
     *   **Virtual Environment Detection:** Automatically detects and activates virtual environments (`.venv`, `venv`, `.virtualenv`) in the workspace
-    *   **Terminal Management:** Creates a new terminal with timestamp (e.g., "OpenHands 14:30:25")
+    *   **Safe Terminal Management:** Reuses idle terminals or creates new ones without interrupting running processes
     *   **Command Construction:**
         *   If `options.filePath` is provided: `openhands --file "path/to/file"`
         *   If `options.task` is provided: `openhands --task "sanitized task content"`
@@ -90,7 +90,8 @@ The extension is located in `openhands-vscode/` during development.
 *   **Automatic Extension Installation:** When running OpenHands CLI from VS Code terminal for the first time, it automatically attempts to install the extension
 *   **Virtual Environment Support:** Extension automatically detects and activates Python virtual environments in the workspace
 *   Commands are accessible via Command Palette and editor context menus
-*   Each OpenHands session runs in a new timestamped VS Code terminal
+*   OpenHands sessions reuse idle terminals or create new timestamped terminals as needed
+*   **Safe Operation:** Never interrupts running processes in existing terminals
 *   **Cross-Editor Support:** Also works with Windsurf
 
 ## Part 2: OpenHands CLI Enhancements (`odie/openhands/cli/main.py`)

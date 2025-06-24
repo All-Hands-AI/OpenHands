@@ -4,20 +4,20 @@ Start OpenHands conversations directly from VS Code with your current file or se
 
 ## What it does
 
-- **Start conversation**: Opens OpenHands in a terminal (intelligently reuses existing terminals when possible)
+- **Start conversation**: Opens OpenHands in a terminal (safely reuses idle terminals or creates new ones)
 - **Send current file**: Starts OpenHands with your active file
 - **Send selection**: Starts OpenHands with selected text
-- **Smart terminal management**: Uses VS Code's Shell Integration API to detect idle terminals and reuse them safely
+- **Safe terminal management**: Never interrupts running processes; creates new terminals when needed
 
 Access commands via Command Palette (Ctrl+Shift+P) or right-click menu.
 
 ## Features
 
-### Intelligent Terminal Reuse
-- **Smart Detection**: Uses VS Code's Shell Integration API to probe terminal status
-- **Safe Reuse**: Only reuses terminals that are confirmed to be idle
-- **Graceful Fallback**: Creates new terminals when Shell Integration is unavailable
-- **Cross-Shell Support**: Works with bash, zsh, PowerShell, and fish shells
+### Safe Terminal Management
+- **Non-Intrusive**: Never interrupts running processes in existing terminals
+- **Smart Reuse**: Only reuses terminals that have completed OpenHands commands
+- **Safe Fallback**: Creates new terminals when existing ones may be busy
+- **Shell Integration**: Uses VS Code's Shell Integration API when available for better tracking
 
 ### Virtual Environment Support
 - **Auto-Detection**: Automatically finds and activates Python virtual environments
