@@ -200,6 +200,7 @@ model = "gpt-4o"
 # https://github.com/All-Hands-AI/OpenHands/pull/4711
 #native_tool_calling = None
 
+
 # Safety settings for models that support them (e.g., Mistral AI, Gemini)
 # Example for Mistral AI:
 # safety_settings = [
@@ -218,6 +219,9 @@ model = "gpt-4o"
 # ]
 #safety_settings = []
 
+[llm.draft_editor]
+# The number of times llm_editor tries to fix an error when editing.
+correct_num = 5
 
 [llm.gpt4o-mini]
 api_key = ""
@@ -334,6 +338,9 @@ classpath = "my_package.my_module.MyCustomAgent"
 
 # Enable GPU support in the runtime
 #enable_gpu = false
+
+# When there are multiple cards, you can specify the GPU by ID
+#cuda_visible_devices = ''
 
 # Additional Docker runtime kwargs
 #docker_runtime_kwargs = {}
