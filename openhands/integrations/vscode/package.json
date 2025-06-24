@@ -1,7 +1,7 @@
 {
   "name": "openhands-vscode",
   "displayName": "OpenHands Integration",
-  "description": "Integrates OpenHands with VS Code for easy conversation starting and context passing.",
+  "description": "Integrates OpenHands with VS Code for conversation starting, context passing, and runtime execution.",
   "version": "0.0.1",
   "publisher": "openhands",
   "license": "MIT",
@@ -15,7 +15,8 @@
   "activationEvents": [
     "onCommand:openhands.startConversation",
     "onCommand:openhands.startConversationWithFileContext",
-    "onCommand:openhands.startConversationWithSelectionContext"
+    "onCommand:openhands.startConversationWithSelectionContext",
+    "onStartupFinished"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -74,6 +75,16 @@
           "when": "editorHasSelection"
         }
       ]
+    },
+    "configuration": {
+      "title": "OpenHands",
+      "properties": {
+        "openhands.serverUrl": {
+          "type": "string",
+          "default": "http://localhost:3000",
+          "description": "URL of the OpenHands backend server for runtime connection."
+        }
+      }
     }
   },
   "scripts": {
@@ -105,5 +116,9 @@
     "eslint-plugin-prettier": "^5.5.0",
     "eslint-plugin-unused-imports": "^4.1.4",
     "prettier": "^3.5.3"
+  },
+  "dependencies": {
+    "@openhands/types": "file:../../../packages/types",
+    "socket.io-client": "^4.8.1"
   }
 }

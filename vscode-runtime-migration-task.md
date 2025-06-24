@@ -52,17 +52,17 @@ We need to **migrate the runtime functionality** from the old location to the ne
    - **Action**: Add runtime functionality alongside existing launcher functionality
    - **Integration**: Combine launcher commands with runtime action handling
 
-4. **Update Package Configuration**
+4. **Update Package Configuration** ✅
    - **Target**: `openhands/integrations/vscode/package.json`
    - **Actions**:
-     - Add runtime-related dependencies (socket.io-client, @openhands/types)
-     - Add runtime activation events
-     - Add runtime configuration settings
-     - Update extension description to include runtime capabilities
+     - ✅ Add runtime-related dependencies (socket.io-client, @openhands/types)
+     - ✅ Add runtime activation events (onStartupFinished)
+     - ✅ Add runtime configuration settings (openhands.serverUrl)
+     - ✅ Update extension description to include runtime capabilities
 
-5. **Update TypeScript Configuration**
+5. **Update TypeScript Configuration** ✅
    - **Target**: `openhands/integrations/vscode/tsconfig.json`
-   - **Action**: Ensure proper compilation of new service files
+   - **Action**: ✅ Ensure proper compilation of new service files (already includes src directory)
 
 ### Phase 3: Integration and Testing
 6. **Integrate Runtime with Launcher**
