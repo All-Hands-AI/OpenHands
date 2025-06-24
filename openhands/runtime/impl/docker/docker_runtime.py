@@ -457,13 +457,18 @@ class DockerRuntime(ActionExecutionClient):
         else:
             self.log('warn', 'Shakudo: _attach_to_container: Host-network mode active: Using previously determined _app_ports as source of truth')
             self._shak_app_secrets = []
-
+            self._app_ports = []
             for env_var in config['Env']:
                 self.log('warn', f'Shakudo: _attach_to_container: Env var: {env_var}')
                 if env_var.startswith('SHAK_APP_PORT_'):
                     secret = env_var.split('=')[1]
                     if secret not in self._shak_app_secrets:
                         self._shak_app_secrets.append(secret)
+                if env_var.startswith('APP_PORT_'):
+                    app_port_str = env_var.split('=')[1]
+                    app_port = int(app_port_str)
+                    if app_port not in self._app_ports:
+                        self._app_ports.append(app_port)
 
         self.log(
             'info',
@@ -598,7 +603,8 @@ class DockerRuntime(ActionExecutionClient):
         if shak_domain:
             # Shakudo: Use the domain for web hosts
             for idx, secret in enumerate(self._shak_app_secrets):
-                hosts[f'https://{secret}-openhands-app.{shak_domain}'] = idx
+                port = self._app_ports[idx] if idx < len(self._app_ports) else idx
+                hosts[f'https://{secret}-openhands-app.{shak_domain}'] = port
         else:
             host_addr = os.environ.get('DOCKER_HOST_ADDR', 'localhost')
             for port in self._app_ports:
