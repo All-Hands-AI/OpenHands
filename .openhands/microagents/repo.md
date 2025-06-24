@@ -17,7 +17,7 @@ IMPORTANT: Before making any changes to the codebase, ALWAYS run `make install-p
 
 ## Git Best Practices
 
-- Always use specific `git add <filename>` instead of `git add .` to avoid accidentally staging unintended files
+- Prefer specific `git add <filename>` instead of `git add .` to avoid accidentally staging unintended files
 - Be especially careful with `git reset --hard` after staging files, as it will remove accidentally staged files
 - When remote has new changes, use `git fetch upstream && git rebase upstream/<branch>` on the same branch
 
