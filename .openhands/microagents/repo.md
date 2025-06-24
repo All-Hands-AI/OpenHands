@@ -73,7 +73,7 @@ These details may or may not be useful for your current task.
 Microagents are specialized prompts that enhance OpenHands with domain-specific knowledge and task-specific workflows. They are Markdown files that can include frontmatter for configuration.
 
 #### Types:
-- **Public Microagents**: Located in `openhands/microagents/`, available to all users
+- **Public Microagents**: Located in `microagents/`, available to all users
 - **Repository Microagents**: Located in `.openhands/microagents/`, specific to this repository
 
 #### Loading Behavior:
