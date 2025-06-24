@@ -17,15 +17,10 @@ from openhands.events.action import (
     MCPAction,
 )
 from openhands.events.observation import (
-    BrowserOutputObservation,
-    CmdOutputObservation,
     ErrorObservation,
-    FileEditObservation,
-    FileReadObservation,
-    FileWriteObservation,
-    MCPObservation,
     Observation,
 )
+from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStream
 from openhands.runtime.base import Runtime
 
@@ -68,24 +63,12 @@ class VsCodeRuntime(Runtime):
 
         event_id = str(uuid.uuid4())
 
-        oh_event_payload = {
-            'event_id': event_id,
-            'action': action.__class__.__name__,
-            'args': action.__dict__,
-            'message': getattr(
-                action, 'message', f'Delegating {type(action).__name__} to VSCode'
-            ),
-            'source': 'agent',
-        }
-
-        if hasattr(action, 'thought') and action.thought:
-            # Ensure args is a dict before adding thought
-            if not isinstance(oh_event_payload.get('args'), dict):
-                oh_event_payload['args'] = {}
-            # Type assertion since we just ensured it's a dict
-            args_dict = oh_event_payload['args']
-            assert isinstance(args_dict, dict)
-            args_dict['thought'] = action.thought
+        # Use proper serialization to create event payload for VSCode
+        oh_event_payload = event_to_dict(action)
+        oh_event_payload['event_id'] = event_id
+        oh_event_payload['message'] = getattr(
+            action, 'message', f'Delegating {type(action).__name__} to VSCode'
+        )
 
         future: asyncio.Future[Observation] = asyncio.get_event_loop().create_future()
         self._running_actions[event_id] = future
@@ -159,57 +142,17 @@ class VsCodeRuntime(Runtime):
 
         if cause_event_id in self._running_actions:
             future = self._running_actions[cause_event_id]
-            obs_type = observation_event.get('observation')
-            obs_content = observation_event.get('content', '')
-            obs_extras = observation_event.get('extras', {})
 
-            observation: Observation
-            if obs_type == 'run':
-                observation = CmdOutputObservation(
-                    command_id=-1,
-                    command=obs_extras.get('command', ''),
-                    exit_code=obs_extras.get('exit_code', -1),
-                    content=obs_content,
-                )
-            elif obs_type == 'read':
-                observation = FileReadObservation(
-                    path=obs_extras.get('path', ''), content=obs_content
-                )
-            elif obs_type == 'write':
-                observation = FileWriteObservation(
-                    path=obs_extras.get('path', ''), content=obs_content
-                )
-            elif obs_type == 'edit':
-                observation = FileEditObservation(
-                    path=obs_extras.get('path', ''), content=obs_content
-                )
-            elif obs_type == 'browse':
-                observation = BrowserOutputObservation(
-                    url=obs_extras.get('url', ''),
-                    trigger_by_action=obs_extras.get('trigger_by_action', ''),
-                    content=obs_content,
-                    screenshot=obs_extras.get('screenshot', ''),
-                )
-            elif obs_type == 'ipython':
-                # Import here to avoid circular imports
-                from openhands.events.observation import IPythonRunCellObservation
-
-                observation = IPythonRunCellObservation(
-                    content=obs_content,
-                    code=obs_extras.get('code', ''),
-                )
-            elif obs_type == 'mcp':
-                observation = MCPObservation(
-                    content=obs_content,
-                    name=obs_extras.get('name', ''),
-                    arguments=obs_extras.get('arguments', {}),
-                )
-            else:
-                logger.warning(
-                    f"Received unknown observation type '{obs_type}' from VSCode for cause {cause_event_id}"
+            try:
+                # Use proper deserialization to convert observation event back to Observation object
+                observation = event_from_dict(observation_event)
+                assert isinstance(observation, Observation)
+            except Exception as e:
+                logger.error(
+                    f'Failed to deserialize observation from VSCode for cause {cause_event_id}: {e}'
                 )
                 observation = ErrorObservation(
-                    content=f"Unknown observation type '{obs_type}' received from VSCode. Content: {obs_content}"
+                    content=f'Failed to deserialize observation from VSCode: {e}. Raw event: {observation_event}'
                 )
 
             if not future.done():
