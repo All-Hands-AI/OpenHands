@@ -26,7 +26,7 @@ export const DEFAULT_SETTINGS: Settings = {
     sse_servers: [],
     stdio_servers: [],
   },
-  TEMPERATURE: 0.7, // Added default temperature value
+  TEMPERATURE: 0.0, // Aligning with backend default temperature value
 };
 
 /**
