@@ -6,7 +6,7 @@ import * as path from "path";
  * Terminal Management Implementation
  * 
  * This implementation uses VSCode's Shell Integration API for safe terminal reuse.
- * The approach prioritizes user safety by never interrupting running processes.
+ * The approach prioritizes the expected user experience by never interrupting running processes.
  * 
  * Key VSCode API References:
  * - Terminal Shell Integration: https://code.visualstudio.com/docs/terminal/shell-integration
