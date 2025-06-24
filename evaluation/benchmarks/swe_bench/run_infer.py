@@ -247,6 +247,7 @@ def get_config(
         enable_browsing=RUN_WITH_BROWSING,
         enable_llm_editor=ENABLE_LLM_EDITOR,
         enable_mcp=False,
+        enable_llm_diff=True,
         condenser=metadata.condenser_config,
         enable_prompt_extensions=False,
     )
@@ -288,6 +289,17 @@ def initialize_runtime(
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(obs.exit_code == 0, f'Failed to export USER: {str(obs)}')
+
+    # Set DEBUG environment variable
+    action = CmdRunAction(command="echo 'export DEBUG=1' >> ~/.bashrc")
+    action.set_hard_timeout(600)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert_and_raise(
+        obs.exit_code == 0,
+        f'Failed to export DEBUG=1: {str(obs)}',
+    )
 
     # inject the init script
     script_dir = os.path.dirname(__file__)

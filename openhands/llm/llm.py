@@ -199,6 +199,7 @@ class LLM(RetryMixin, DebugMixin):
             custom_llm_provider=self.config.custom_llm_provider,
             timeout=self.config.timeout,
             top_p=self.config.top_p,
+            top_k=self.config.top_k,
             drop_params=self.config.drop_params,
             seed=self.config.seed,
             **kwargs,
@@ -433,10 +434,6 @@ class LLM(RetryMixin, DebugMixin):
             )
 
             resp_json = response.json()
-            if 'data' not in resp_json:
-                logger.error(
-                    f'Error getting model info from LiteLLM proxy: {resp_json}'
-                )
             all_model_info = resp_json.get('data', [])
             current_model_info = next(
                 (

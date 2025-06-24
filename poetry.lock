@@ -6484,7 +6484,7 @@ name = "openhands-aci"
 version = "0.3.0"
 description = "An Agent-Computer Interface (ACI) designed for software development agents OpenHands."
 optional = false
-python-versions = "<4.0,>=3.12"
+python-versions = "^3.12"
 groups = ["main"]
 files = [
     {file = "openhands_aci-0.3.0-py3-none-any.whl", hash = "sha256:4f060aa1c2ae11a14f08eb72e9bf09f81db916766aab10ccea6df3bc52faafd1"},
