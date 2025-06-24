@@ -117,6 +117,7 @@ class Runtime(FileEditRuntimeMixin):
     status_callback: Callable[[str, str, str], None] | None
     runtime_status: RuntimeStatus | None
     _runtime_initialized: bool = False
+    _setup_script_executed: bool = False
 
     def __init__(
         self,
@@ -432,6 +433,10 @@ class Runtime(FileEditRuntimeMixin):
 
     def maybe_run_setup_script(self):
         """Run .openhands/setup.sh if it exists in the workspace or repository."""
+        # Check if setup script has already been executed
+        if self._setup_script_executed:
+            return
+
         setup_script = '.openhands/setup.sh'
         read_obs = self.read(FileReadAction(path=setup_script))
         if isinstance(read_obs, ErrorObservation):
@@ -459,6 +464,9 @@ class Runtime(FileEditRuntimeMixin):
         # Add the observation to the event stream so the result is visible in the UI
         if self.event_stream:
             self.event_stream.add_event(obs, EventSource.ENVIRONMENT)
+
+        # Mark setup script as executed to prevent duplicate execution
+        self._setup_script_executed = True
 
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
             self.log('error', f'Setup script failed: {obs.content}')

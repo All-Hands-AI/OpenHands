@@ -175,6 +175,55 @@ def test_setup_script_events_added_to_stream(temp_dir, runtime_cls, run_as_openh
     assert 'Setup completed successfully' in setup_observation.content
 
 
+def test_setup_script_not_executed_multiple_times(
+    temp_dir, runtime_cls, run_as_openhands
+):
+    """Test that setup script is not executed multiple times when called repeatedly."""
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+
+    setup_script = '.openhands/setup.sh'
+    write_obs = runtime.write(
+        FileWriteAction(
+            path=setup_script,
+            content="#!/bin/bash\necho 'Setup completed successfully'\n",
+        )
+    )
+    assert isinstance(write_obs, FileWriteObservation)
+
+    # Verify the flag is initially False
+    assert not runtime._setup_script_executed
+
+    # Get initial events
+    initial_events = list(runtime.event_stream.search_events())
+    initial_event_count = len(initial_events)
+
+    # Run setup script first time
+    runtime.maybe_run_setup_script()
+
+    # Verify the flag is now True
+    assert runtime._setup_script_executed
+
+    # Run setup script second time (should be a no-op)
+    runtime.maybe_run_setup_script()
+
+    # Get all events after running setup script
+    all_events = list(runtime.event_stream.search_events())
+    new_events = all_events[initial_event_count:]
+
+    # Count how many times the setup command appears in the events
+    setup_command_count = 0
+    for event in new_events:
+        if (
+            hasattr(event, 'command')
+            and 'chmod +x .openhands/setup.sh && source .openhands/setup.sh'
+            in event.command
+        ):
+            setup_command_count += 1
+
+    # The setup script should only be executed once, even if called multiple times
+    assert setup_command_count == 1
+
+
 def test_setup_script_failure_events_added_to_stream(
     temp_dir, runtime_cls, run_as_openhands
 ):
