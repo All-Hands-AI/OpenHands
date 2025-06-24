@@ -18,6 +18,7 @@ from openhands.runtime.impl.local.local_runtime import LocalRuntime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.runtime.impl.runloop.runloop_runtime import RunloopRuntime
 from openhands.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
+from openhands.runtime.vscode.vscode_runtime import VsCodeRuntime
 from openhands.storage import get_file_store
 from openhands.utils.async_utils import call_async_from_sync
 
@@ -136,6 +137,8 @@ def get_runtime_classes() -> list[type[Runtime]]:
         return [DaytonaRuntime]
     elif runtime.lower() == 'cli':
         return [CLIRuntime]
+    elif runtime.lower() == 'vscode':
+        return [VsCodeRuntime]
     else:
         raise ValueError(f'Invalid runtime: {runtime}')
 
