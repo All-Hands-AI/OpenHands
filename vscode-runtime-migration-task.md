@@ -39,7 +39,7 @@ We need to **migrate the runtime functionality** from the old location to the ne
    - ✅ Understand dependencies and imports
    - ✅ Created comprehensive migration plan
 
-### Phase 2: File Migration 🔄 IN PROGRESS
+### Phase 2: File Migration ✅ COMPLETE
 2. **Migrate Core Runtime Files**
    - **Source**: `openhands/runtime/utils/vscode-extensions/openhands-runtime/src/extension/services/`
    - **Destination**: `openhands/integrations/vscode/src/services/`
@@ -64,8 +64,8 @@ We need to **migrate the runtime functionality** from the old location to the ne
    - **Target**: `openhands/integrations/vscode/tsconfig.json`
    - **Action**: ✅ Ensure proper compilation of new service files (already includes src directory)
 
-### Phase 3: Integration and Testing
-6. **Integrate Runtime with Launcher**
+### Phase 3: Integration and Testing 🔄 IN PROGRESS
+6. **Integrate Runtime with Launcher** ✅
    - **Approach**: Extend existing `extension.ts` with runtime capabilities
    - **Architecture**:
      ```typescript
@@ -76,19 +76,24 @@ We need to **migrate the runtime functionality** from the old location to the ne
      │   └── runtime-action-handler.ts  // New: Action execution
      └── activation logic   // Combined activation
      ```
+   - ✅ Added imports for runtime services
+   - ✅ Added runtime initialization function
+   - ✅ Integrated runtime startup in activate()
+   - ✅ Added cleanup in deactivate()
+   - ✅ Added configuration reading for server URL
 
-7. **Update Dependencies**
+7. **Update Dependencies** ✅
    - **Target**: `openhands/integrations/vscode/package.json`
    - **Add dependencies**:
-     - `socket.io-client` - for backend communication
-     - `@openhands/types` - for OpenHands type definitions
-   - **Install**: Run `npm install` in the extension directory
+     - ✅ `socket.io-client` - for backend communication
+     - ✅ `@openhands/types` - for OpenHands type definitions
+   - **Install**: ✅ Run `npm install` in the extension directory
 
-8. **Test Integration**
-   - **Compile**: `npm run compile`
-   - **Package**: `npm run package-vsix`
-   - **Install**: Test the combined extension in VSCode
-   - **Verify**: Both launcher and runtime functionality work
+8. **Test Integration** ✅
+   - **Compile**: ✅ `npm run compile` - No TypeScript errors
+   - **Package**: ✅ `npm run package-vsix` - Successfully created openhands-vscode-0.0.1.vsix
+   - **Install**: 🔄 Test the combined extension in VSCode (manual testing needed)
+   - **Verify**: 🔄 Both launcher and runtime functionality work (manual testing needed)
 
 ### Phase 4: Cleanup
 9. **Remove Old Runtime Extension**

@@ -1,9 +1,15 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
+import { SocketService } from "./services/socket-service";
+import { VSCodeRuntimeActionHandler } from "./services/runtime-action-handler";
 
 // Create output channel for debug logging
 const outputChannel = vscode.window.createOutputChannel("OpenHands Debug");
+
+// Runtime services - initialized in activate()
+let socketService: SocketService | null = null;
+let runtimeActionHandler: VSCodeRuntimeActionHandler | null = null;
 
 /**
  * This implementation uses VSCode's Shell Integration API.
@@ -218,7 +224,66 @@ function startOpenHandsInTerminal(options: {
   }
 }
 
+/**
+ * Initialize runtime services for OpenHands backend communication
+ * @param context VSCode extension context
+ */
+async function initializeRuntime(context: vscode.ExtensionContext): Promise<void> {
+  try {
+    // Get server URL from configuration
+    const config = vscode.workspace.getConfiguration('openhands');
+    const serverUrl = config.get<string>('serverUrl', 'http://localhost:3000');
+    
+    outputChannel.appendLine(`DEBUG: Initializing OpenHands runtime with server URL: ${serverUrl}`);
+    
+    // Initialize socket service
+    socketService = new SocketService(serverUrl);
+    
+    // Initialize runtime action handler
+    runtimeActionHandler = new VSCodeRuntimeActionHandler();
+    runtimeActionHandler.setSocketService(socketService);
+    
+    // Set up event listener for incoming actions
+    socketService.onEvent((event) => {
+      if (runtimeActionHandler) {
+        runtimeActionHandler.handleAction(event);
+      }
+    });
+    
+    // Attempt to connect to OpenHands backend
+    // Note: This will only succeed if OpenHands backend is running
+    try {
+      await socketService.connect();
+      outputChannel.appendLine('DEBUG: Successfully connected to OpenHands backend for runtime execution');
+      vscode.window.showInformationMessage('OpenHands runtime connected - ready to execute actions in VSCode');
+    } catch (error) {
+      outputChannel.appendLine(`DEBUG: Could not connect to OpenHands backend: ${error}`);
+      outputChannel.appendLine('DEBUG: Runtime will attempt to connect when OpenHands backend becomes available');
+      // Don't show error to user - this is expected when backend isn't running
+    }
+    
+  } catch (error) {
+    outputChannel.appendLine(`ERROR: Failed to initialize OpenHands runtime: ${error}`);
+    vscode.window.showErrorMessage(`Failed to initialize OpenHands runtime: ${error}`);
+  }
+}
+
+/**
+ * Clean up runtime services
+ */
+function cleanupRuntime(): void {
+  if (socketService) {
+    socketService.disconnect();
+    socketService = null;
+  }
+  runtimeActionHandler = null;
+  outputChannel.appendLine('DEBUG: OpenHands runtime services cleaned up');
+}
+
 export function activate(context: vscode.ExtensionContext) {
+  // Initialize runtime services for OpenHands backend communication
+  initializeRuntime(context);
+  
   // Clean up terminal tracking when terminals are closed
   const terminalCloseDisposable = vscode.window.onDidCloseTerminal(
     (terminal) => {
@@ -289,6 +354,9 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() {
+  // Clean up runtime services
+  cleanupRuntime();
+  
   // Clean up resources if needed, though for this simple extension,
   // VS Code handles terminal disposal.
 }
