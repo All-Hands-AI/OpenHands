@@ -36,6 +36,9 @@ from openhands.server.shared import conversation_manager
 
 mcp_app = mcp_server.http_app(path='/mcp')
 
+# Save original lifespan before applying middleware
+mcp_app_lifespan = mcp_app.lifespan
+
 # Apply fix for FastMCP ASGI middleware issues when mounted under sub-paths
 mcp_app = MountFastMCP(app=mcp_app)
 
@@ -62,7 +65,7 @@ app = FastAPI(
     title='OpenHands',
     description='OpenHands: Code Less, Make More',
     version=__version__,
-    lifespan=combine_lifespans(_lifespan, mcp_app.lifespan),
+    lifespan=combine_lifespans(_lifespan, mcp_app_lifespan),
     routes=[Mount(path='/mcp', app=mcp_app)],
 )
 
