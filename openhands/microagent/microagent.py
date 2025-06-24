@@ -136,7 +136,11 @@ class BaseMicroagent(BaseModel):
             raise ValueError(f'Could not determine microagent type for: {path}')
 
         # Use derived_name if available (from relative path), otherwise fallback to metadata.name
-        agent_name = derived_name if derived_name is not None else metadata.name
+        # Special handling for .cursorrules files even when microagent_dir is None
+        if path.name == '.cursorrules':
+            agent_name = 'cursorrules'
+        else:
+            agent_name = derived_name if derived_name is not None else metadata.name
 
         agent_class = subclass_map[inferred_type]
         return agent_class(
@@ -273,13 +277,15 @@ def load_microagents_from_dir(
     # Load all agents from microagents directory
     logger.debug(f'Loading agents from {microagent_dir}')
     if microagent_dir.exists():
-        for file in chain(
-            microagent_dir.parent.parent.rglob('.cursorrules'),
-            microagent_dir.rglob('*.md'),
-        ):
-            # skip README.md
-            if file.name == 'README.md':
-                continue
+        # Collect .cursorrules file from repo root and .md files from microagents dir
+        cursorrules_files = []
+        if (microagent_dir.parent.parent / '.cursorrules').exists():
+            cursorrules_files = [microagent_dir.parent.parent / '.cursorrules']
+
+        md_files = [f for f in microagent_dir.rglob('*.md') if f.name != 'README.md']
+
+        # Process all files in one loop
+        for file in chain(cursorrules_files, md_files):
             try:
                 agent = BaseMicroagent.load(file, microagent_dir)
                 if isinstance(agent, RepoMicroagent):

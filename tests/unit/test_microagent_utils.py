@@ -209,7 +209,7 @@ def test_cursorrules_file_load():
 Follow the existing code style.
 Add proper error handling."""
 
-    cursorrules_path = Path('test.cursorrules')
+    cursorrules_path = Path('.cursorrules')
 
     # Test loading .cursorrules file directly
     agent = BaseMicroagent.load(cursorrules_path, file_content=cursorrules_content)
