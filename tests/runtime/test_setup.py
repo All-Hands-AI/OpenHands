@@ -47,7 +47,7 @@ def test_maybe_run_setup_script(temp_dir, runtime_cls, run_as_openhands):
     write_readme = runtime.write(
         FileWriteAction(
             path='README.md',
-            content="",
+            content='',
         )
     )
     assert isinstance(write_readme, FileWriteObservation)
@@ -84,7 +84,7 @@ def test_maybe_run_setup_script_with_long_timeout(
     write_readme = runtime.write(
         FileWriteAction(
             path='README.md',
-            content="",
+            content='',
         )
     )
     assert isinstance(write_readme, FileWriteObservation)
