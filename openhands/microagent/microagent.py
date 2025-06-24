@@ -40,7 +40,11 @@ class BaseMicroagent(BaseModel):
         # Otherwise, we will rely on the name from metadata later
         derived_name = None
         if microagent_dir is not None:
-            derived_name = str(path.relative_to(microagent_dir).with_suffix(''))
+            # Special handling for .cursorrules files which are not in microagent_dir
+            if path.name == '.cursorrules':
+                derived_name = 'cursorrules'
+            else:
+                derived_name = str(path.relative_to(microagent_dir).with_suffix(''))
 
         # Only load directly from path if file_content is not provided
         if file_content is None:
