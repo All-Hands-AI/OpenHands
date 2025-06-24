@@ -268,7 +268,7 @@ export function activate(context: vscode.ExtensionContext) {
   const startWithSelectionContextDisposable = vscode.commands.registerCommand(
     "openhands.startConversationWithSelectionContext",
     () => {
-      vscode.window.showErrorMessage(
+      outputChannel.appendLine(
         "DEBUG: startConversationWithSelectionContext command triggered!",
       );
       const editor = vscode.window.activeTextEditor;
