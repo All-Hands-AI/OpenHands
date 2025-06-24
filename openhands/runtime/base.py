@@ -4,7 +4,6 @@ import copy
 import json
 import os
 import random
-import shutil
 import string
 import tempfile
 from abc import abstractmethod
@@ -610,37 +609,8 @@ fi
         Returns:
             A list of loaded microagents
         """
-        loaded_microagents: list[BaseMicroagent] = []
-        files = self.list_files(str(microagents_dir))
-
-        if not files:
-            return loaded_microagents
-
-        self.log(
-            'info',
-            f'Found {len(files)} files in {source_description} microagents directory',
-        )
-        zip_path = self.copy_from(str(microagents_dir))
-        microagent_folder = tempfile.mkdtemp()
-
-        try:
-            with ZipFile(zip_path, 'r') as zip_file:
-                zip_file.extractall(microagent_folder)
-
-            zip_path.unlink()
-            repo_agents, knowledge_agents = load_microagents_from_dir(microagent_folder)
-
-            self.log(
-                'info',
-                f'Loaded {len(repo_agents)} repo agents and {len(knowledge_agents)} knowledge agents from {source_description}',
-            )
-
-            loaded_microagents.extend(repo_agents.values())
-            loaded_microagents.extend(knowledge_agents.values())
-        finally:
-            shutil.rmtree(microagent_folder)
-
-        return loaded_microagents
+        # Use the new implementation that uses TemporaryDirectory
+        return self.load_microagents_from_directory(microagents_dir, source_description)
 
     async def _get_authenticated_git_url(
         self, repo_name: str, git_provider_tokens: PROVIDER_TOKEN_TYPE | None
@@ -738,45 +708,41 @@ fi
 
         # Try to clone the org-level .openhands repo
         try:
-            # Create a temporary directory for the org-level repo
-            org_repo_dir = self.workspace_root / f'org_openhands_{org_name}'
+            # Use a temporary directory for the org-level repo
+            with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+                org_repo_dir = Path(temp_dir) / f'org_openhands_{org_name}'
 
-            # Get authenticated URL and do a shallow clone (--depth 1) for efficiency
-            try:
-                remote_url = call_async_from_sync(
-                    self._get_authenticated_git_url,
-                    GENERAL_TIMEOUT,
-                    org_openhands_repo,
-                    self.git_provider_tokens,
-                )
-            except Exception as e:
-                raise Exception(str(e))
-            clone_cmd = (
-                f'GIT_TERMINAL_PROMPT=0 git clone --depth 1 {remote_url} {org_repo_dir}'
-            )
+                # Get authenticated URL and do a shallow clone (--depth 1) for efficiency
+                try:
+                    remote_url = call_async_from_sync(
+                        self._get_authenticated_git_url,
+                        GENERAL_TIMEOUT,
+                        org_openhands_repo,
+                        self.git_provider_tokens,
+                    )
+                except Exception as e:
+                    raise Exception(str(e))
+                clone_cmd = f'GIT_TERMINAL_PROMPT=0 git clone --depth 1 {remote_url} {org_repo_dir}'
 
-            action = CmdRunAction(command=clone_cmd)
-            obs = self.run_action(action)
+                action = CmdRunAction(command=clone_cmd)
+                obs = self.run_action(action)
 
-            if isinstance(obs, CmdOutputObservation) and obs.exit_code == 0:
-                self.log(
-                    'info',
-                    f'Successfully cloned org-level microagents from {org_openhands_repo}',
-                )
+                if isinstance(obs, CmdOutputObservation) and obs.exit_code == 0:
+                    self.log(
+                        'info',
+                        f'Successfully cloned org-level microagents from {org_openhands_repo}',
+                    )
 
-                # Load microagents from the org-level repo
-                org_microagents_dir = org_repo_dir / 'microagents'
-                loaded_microagents = self._load_microagents_from_directory(
-                    org_microagents_dir, 'org-level'
-                )
-
-                # Clean up the org repo directory
-                shutil.rmtree(org_repo_dir)
-            else:
-                self.log(
-                    'info',
-                    f'No org-level microagents found at {org_openhands_repo}',
-                )
+                    # Load microagents from the org-level repo
+                    org_microagents_dir = org_repo_dir / 'microagents'
+                    loaded_microagents = self._load_microagents_from_directory(
+                        org_microagents_dir, 'org-level'
+                    )
+                else:
+                    self.log(
+                        'info',
+                        f'No org-level microagents found at {org_openhands_repo}',
+                    )
 
         except Exception as e:
             self.log('error', f'Error loading org-level microagents: {str(e)}')
