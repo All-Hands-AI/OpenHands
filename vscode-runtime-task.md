@@ -1,137 +1,195 @@
-# VSCode Runtime Implementation Analysis
+# VSCode Runtime Implementation Analysis - Corrected
 
 ## What a VSCode Runtime Should Be
 
-A VSCode Runtime should implement the OpenHands Runtime interface to execute actions within the VSCode environment. Based on the existing CLIRuntime pattern and Runtime base class:
+A VSCode Runtime should implement the OpenHands Runtime interface to execute actions within the VSCode environment. Based on the actual Actions and Observations defined in `openhands.events`:
 
-### Core Responsibilities
-1. **Action Execution**: Receive actions from AgentController and execute them
-2. **Observation Generation**: Convert execution results into proper Observation objects
-3. **Communication**: Handle bidirectional communication with VSCode extension
-4. **Error Handling**: Provide meaningful error messages and graceful failure handling
-5. **Resource Management**: Properly manage connections and cleanup resources
+### Actual Actions in OpenHands
+From `openhands/events/action/__init__.py`:
+- `CmdRunAction` - Execute shell commands
+- `FileReadAction` - Read file contents
+- `FileWriteAction` - Write file contents
+- `FileEditAction` - Edit files (create, str_replace, insert, undo_edit, view)
+- `BrowseURLAction` - Browse URLs
+- `BrowseInteractiveAction` - Interactive browsing
+- `IPythonRunCellAction` - Execute Python code
+- `AgentFinishAction`, `MessageAction`, etc.
 
-### Architecture Pattern
-```
-AgentController → VSCodeRuntime → Socket.IO → VSCode Extension → VSCode API
-                                     ↑              ↓
-                                Socket.IO ← Observations ←
-```
+### Actual Observations in OpenHands
+From `openhands/events/observation/__init__.py`:
+- `CmdOutputObservation` - Command execution results
+- `FileReadObservation` - File read results
+- `FileWriteObservation` - File write results
+- `FileEditObservation` - File edit results
+- `BrowserOutputObservation` - Browse results
+- `IPythonRunCellObservation` - Python execution results
+- `ErrorObservation` - Error results
+- `NullObservation` - No-op results
 
-### Required Methods (from Runtime base class)
-- `run(action: CmdRunAction)` - Execute shell commands
-- `read(action: FileReadAction)` - Read file contents
-- `write(action: FileWriteAction)` - Write file contents
-- `mkdir/rmdir/rm` - Directory and file operations
-- `browse(action: BrowseURLAction)` - Handle URL browsing
-- `run_ipython(action: IPythonRunCellAction)` - Execute Python code
-- `close()` - Cleanup and shutdown
-
-## Current Implementation Analysis
-
-### ✅ **Correct Architectural Approach**
-The current `vscode_runtime.py` uses the right architecture:
-- Leverages existing Socket.IO infrastructure (`sio_server`, `socket_connection_id`)
-- Uses `oh_event` emissions to send actions to VSCode extension
-- Implements async/await pattern for action-observation cycles
-- Follows the established OpenHands event protocol
-
-### ✅ **Proper Socket.IO Integration**
+### Required Abstract Methods (from Runtime base class)
 ```python
-await self.sio_server.emit('oh_event', oh_event_payload, to=self.socket_connection_id)
+@abstractmethod
+def run(self, action: CmdRunAction) -> Observation:
+@abstractmethod
+def run_ipython(self, action: IPythonRunCellAction) -> Observation:
+@abstractmethod
+def read(self, action: FileReadAction) -> Observation:
+@abstractmethod
+def write(self, action: FileWriteAction) -> Observation:
+@abstractmethod
+def edit(self, action: FileEditAction) -> Observation:
+@abstractmethod
+def browse(self, action: BrowseURLAction) -> Observation:
+@abstractmethod
+def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
+@abstractmethod
+async def call_tool_mcp(self, action: MCPAction) -> Observation:
 ```
-This correctly uses the existing Socket.IO server from `openhands/server/shared.py`.
 
-### ✅ **Good Event Correlation**
-- Uses UUID event IDs to correlate actions with observations
-- Maintains `_running_actions` dict to track pending operations
-- Implements proper timeout handling with `asyncio.wait_for`
+## Current Implementation Issues
 
-### ✅ **Proper Observation Handling**
-The `handle_observation_from_vscode` method correctly:
-- Maps observation types to proper Observation classes
-- Resolves futures to complete the async action cycle
-- Handles unknown observation types gracefully
+### ❌ **Hallucinated Actions and Methods**
 
-## Implementation Issues and Recommendations
+**Problem**: VSCode runtime implements methods for actions that don't exist:
 
-### 🔧 **Constructor Dependencies**
-**Issue**: Constructor requires `sio_server` and `socket_connection_id` parameters that need to be provided by the caller.
-
-**Recommendation**:
-- Document how these parameters should be obtained
-- Consider adding factory methods or integration with conversation manager
-- Ensure proper initialization in agent session creation
-
-### 🔧 **Event Protocol Standardization**
-**Current**: Uses custom event structure with `action`, `args`, `message` fields.
-
-**Recommendation**:
-- Align with existing OpenHands event serialization (`event_to_dict`)
-- Consider using standard Action serialization instead of custom format
-- Ensure VSCode extension can properly deserialize events
-
-### 🔧 **Missing Action Types**
-**Issue**: Some methods use generic `Action` type instead of specific action classes.
-
-**Recommendation**:
 ```python
-# Instead of:
-async def mkdir(self, action: Action) -> Observation:
-
-# Use specific types when available:
-async def mkdir(self, action: MkdirAction) -> Observation:
+async def mkdir(self, action: Action) -> Observation:  # ❌ MkdirAction doesn't exist
+async def rmdir(self, action: Action) -> Observation:  # ❌ RmdirAction doesn't exist
+async def rm(self, action: Action) -> Observation:    # ❌ RemoveAction doesn't exist
 ```
 
-### 🔧 **Observation Response Protocol**
-**Current**: Expects observations with `cause`, `observation`, `content`, `extras` fields.
+**Reality**: These action types are not defined in OpenHands. Directory operations are handled through:
+- `CmdRunAction` for shell commands like `mkdir`, `rmdir`, `rm`
+- `FileEditAction` with `command='create'` for creating files/directories
 
-**Recommendation**:
-- Document the expected response format for VSCode extension
-- Consider using standard Observation serialization
-- Add validation for required fields in responses
+**Fix**: Remove these methods entirely.
 
-### 🔧 **Connection Management**
-**Issue**: No validation that Socket.IO connection is active.
+### ❌ **Missing Required Abstract Methods**
 
-**Recommendation**:
-- Add connection health checks
-- Handle disconnection scenarios gracefully
-- Implement reconnection logic if needed
+**Problem**: VSCode runtime is missing required abstract methods:
 
-### 🔧 **Error Handling Enhancement**
-**Current**: Basic error handling with ErrorObservation.
+```python
+# Missing:
+def edit(self, action: FileEditAction) -> Observation:           # ❌ Required
+def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:  # ❌ Required
+async def call_tool_mcp(self, action: MCPAction) -> Observation:  # ❌ Required
+```
 
-**Recommendation**:
-- Add more specific error types
-- Include stack traces in debug mode
-- Better handling of VSCode extension errors
+**Fix**: Implement all required abstract methods from Runtime base class.
 
-## Integration Requirements
+### ❌ **Incorrect Method Signatures**
 
-### VSCode Extension Side
-The VSCode extension needs to:
-1. Connect to OpenHands Socket.IO server as a client
-2. Listen for `oh_event` emissions from VSCodeRuntime
-3. Execute actions using VSCode API
-4. Send observations back via Socket.IO (likely `oh_user_action` or custom event)
-5. Handle action types: `run`, `read`, `write`, `mkdir`, `rmdir`, `rm`, etc.
+**Problem**: Some methods have wrong signatures:
 
-### Server Integration
-The VSCodeRuntime needs to be:
-1. Registered in the runtime registry (`get_runtime_cls`)
-2. Properly instantiated with Socket.IO server reference
-3. Connected to the conversation manager for event handling
-4. Integrated with agent session lifecycle
+```python
+# Current (wrong):
+async def run(self, action: CmdRunAction) -> Observation:  # ❌ Should not be async
+async def read(self, action: FileReadAction) -> Observation:  # ❌ Should not be async
+
+# Correct (from base class):
+def run(self, action: CmdRunAction) -> Observation:  # ✅ Sync method
+def read(self, action: FileReadAction) -> Observation:  # ✅ Sync method
+```
+
+**Fix**: Match the exact signatures from Runtime base class.
+
+### ❌ **Non-Standard Methods**
+
+**Problem**: VSCode runtime implements methods not in the Runtime interface:
+
+```python
+async def recall(self, action: RecallAction) -> Observation:     # ❌ Not in Runtime interface
+async def finish(self, action: AgentFinishAction) -> Observation:  # ❌ Not in Runtime interface
+async def send_message(self, action: MessageAction) -> Observation:  # ❌ Not in Runtime interface
+```
+
+**Reality**: These actions are handled by the AgentController, not the Runtime.
+
+**Fix**: Remove these methods. Runtime only handles execution actions.
+
+## Corrected Implementation Requirements
+
+### ✅ **Required Methods Only**
+```python
+class VsCodeRuntime(Runtime):
+    # Required abstract methods:
+    def run(self, action: CmdRunAction) -> Observation:
+    def run_ipython(self, action: IPythonRunCellAction) -> Observation:
+    def read(self, action: FileReadAction) -> Observation:
+    def write(self, action: FileWriteAction) -> Observation:
+    def edit(self, action: FileEditAction) -> Observation:
+    def browse(self, action: BrowseURLAction) -> Observation:
+    def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
+    async def call_tool_mcp(self, action: MCPAction) -> Observation:
+```
+
+### ✅ **Correct Action-Observation Mapping**
+```python
+# CmdRunAction → CmdOutputObservation
+def run(self, action: CmdRunAction) -> Observation:
+    # Send to VSCode, expect CmdOutputObservation back
+
+# FileReadAction → FileReadObservation
+def read(self, action: FileReadAction) -> Observation:
+    # Send to VSCode, expect FileReadObservation back
+
+# FileWriteAction → FileWriteObservation
+def write(self, action: FileWriteAction) -> Observation:
+    # Send to VSCode, expect FileWriteObservation back
+
+# FileEditAction → FileEditObservation
+def edit(self, action: FileEditAction) -> Observation:
+    # Send to VSCode, expect FileEditObservation back
+```
+
+### ✅ **Directory Operations via Existing Actions**
+```python
+# Instead of mkdir/rmdir/rm methods, handle via:
+
+# Directory creation via shell command:
+CmdRunAction(command="mkdir -p /path/to/dir")  # → CmdOutputObservation
+
+# File creation via edit:
+FileEditAction(path="/path/to/file", command="create", file_text="content")  # → FileEditObservation
+
+# File/directory removal via shell command:
+CmdRunAction(command="rm -rf /path/to/target")  # → CmdOutputObservation
+```
+
+## Socket.IO Integration (Correct)
+
+### ✅ **Architecture is Sound**
+The Socket.IO integration is correct:
+- Uses existing `socketio.AsyncServer` from `openhands/server/shared.py`
+- Emits `oh_event` to VSCode extension client
+- Expects observations back via Socket.IO
+- Proper event correlation with UUIDs
+
+### ✅ **Event Protocol**
+```python
+oh_event_payload = {
+    'event_id': str(uuid.uuid4()),
+    'action': action.__class__.__name__,  # e.g., "CmdRunAction"
+    'args': action.__dict__,
+    'message': getattr(action, 'message', '')
+}
+```
 
 ## Next Steps
 
-1. **Test Socket.IO Integration**: Verify the runtime can successfully emit events
-2. **Implement VSCode Extension**: Create the TypeScript side to handle actions
-3. **Standardize Event Protocol**: Align with OpenHands event serialization
-4. **Add Integration Tests**: Test the full action-observation cycle
-5. **Document Extension API**: Specify the contract between runtime and extension
+1. **Remove hallucinated methods**: Delete `mkdir`, `rmdir`, `rm`, `recall`, `finish`, `send_message`
+2. **Add missing required methods**: Implement `edit`, `browse_interactive`, `call_tool_mcp`
+3. **Fix method signatures**: Remove `async` from sync methods, match base class exactly
+4. **Test with actual actions**: Verify runtime works with real Action instances
+5. **Implement VSCode extension**: Create TypeScript side to handle the Socket.IO events
 
 ## Conclusion
 
-The current VSCode Runtime implementation is **architecturally sound** and correctly leverages OpenHands' existing Socket.IO infrastructure. The main issues are implementation details around event protocols, error handling, and integration points rather than fundamental design problems.
+The VSCode Runtime has the **correct architectural approach** with Socket.IO, but implements **wrong action types**. The main issues are:
+
+1. **Hallucinated actions** - implementing methods for actions that don't exist
+2. **Missing required methods** - not implementing all abstract methods from base class
+3. **Wrong signatures** - async methods that should be sync
+4. **Scope creep** - implementing agent-level actions instead of just execution actions
+
+Once these are fixed, the runtime should work correctly with OpenHands' existing infrastructure.
