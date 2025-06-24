@@ -43,10 +43,19 @@ def test_maybe_run_setup_script(temp_dir, runtime_cls, run_as_openhands):
     """Test that setup script is executed when it exists."""
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
 
+    # Create an empty README.md file first to ensure we start with a clean state
+    write_readme = runtime.write(
+        FileWriteAction(
+            path='README.md',
+            content="",
+        )
+    )
+    assert isinstance(write_readme, FileWriteObservation)
+
     setup_script = '.openhands/setup.sh'
     write_obs = runtime.write(
         FileWriteAction(
-            path=setup_script, content="#!/bin/bash\necho 'Hello World' >> README.md\n"
+            path=setup_script, content="#!/bin/bash\necho 'Hello World' > README.md\n"
         )
     )
     assert isinstance(write_obs, FileWriteObservation)
@@ -71,11 +80,20 @@ def test_maybe_run_setup_script_with_long_timeout(
         runtime_startup_env_vars={'NO_CHANGE_TIMEOUT_SECONDS': '1'},
     )
 
+    # Create an empty README.md file first to ensure we start with a clean state
+    write_readme = runtime.write(
+        FileWriteAction(
+            path='README.md',
+            content="",
+        )
+    )
+    assert isinstance(write_readme, FileWriteObservation)
+
     setup_script = '.openhands/setup.sh'
     write_obs = runtime.write(
         FileWriteAction(
             path=setup_script,
-            content="#!/bin/bash\nsleep 3 && echo 'Hello World' >> README.md\n",
+            content="#!/bin/bash\nsleep 3 && echo 'Hello World' > README.md\n",
         )
     )
     assert isinstance(write_obs, FileWriteObservation)
@@ -102,14 +120,15 @@ def test_setup_script_events_added_to_stream(temp_dir, runtime_cls, run_as_openh
     )
     assert isinstance(write_obs, FileWriteObservation)
 
-    # Clear any existing events
-    initial_event_count = len(runtime.event_stream.get_events())
+    # Get initial events
+    initial_events = list(runtime.event_stream.get_events())
+    initial_event_count = len(initial_events)
 
     # Run setup script
     runtime.maybe_run_setup_script()
 
     # Get all events after running setup script
-    all_events = runtime.event_stream.get_events()
+    all_events = list(runtime.event_stream.get_events())
     new_events = all_events[initial_event_count:]
 
     # Should have at least 2 new events: the action and the observation
@@ -170,14 +189,15 @@ def test_setup_script_failure_events_added_to_stream(
     )
     assert isinstance(write_obs, FileWriteObservation)
 
-    # Clear any existing events
-    initial_event_count = len(runtime.event_stream.get_events())
+    # Get initial events
+    initial_events = list(runtime.event_stream.get_events())
+    initial_event_count = len(initial_events)
 
     # Run setup script
     runtime.maybe_run_setup_script()
 
     # Get all events after running setup script
-    all_events = runtime.event_stream.get_events()
+    all_events = list(runtime.event_stream.get_events())
     new_events = all_events[initial_event_count:]
 
     # Should have at least 2 new events: the action and the observation
