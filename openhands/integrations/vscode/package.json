@@ -22,30 +22,42 @@
     "commands": [
       {
         "command": "openhands.startConversation",
-        "title": "OpenHands: Start New Conversation",
+        "title": "Start New Conversation",
         "category": "OpenHands"
       },
       {
         "command": "openhands.startConversationWithFileContext",
-        "title": "OpenHands: Start Conversation with Active File Content",
+        "title": "Start with File Content",
         "category": "OpenHands"
       },
       {
         "command": "openhands.startConversationWithSelectionContext",
-        "title": "OpenHands: Start Conversation with Selected Text",
+        "title": "Start with Selected Text",
         "category": "OpenHands"
+      }
+    ],
+    "submenus": [
+      {
+        "id": "openhands.contextMenu",
+        "label": "OpenHands"
       }
     ],
     "menus": {
       "editor/context": [
         {
+          "submenu": "openhands.contextMenu",
+          "group": "navigation@1"
+        }
+      ],
+      "openhands.contextMenu": [
+        {
           "when": "editorHasSelection",
           "command": "openhands.startConversationWithSelectionContext",
-          "group": "navigation@1"
+          "group": "1@1"
         },
         {
           "command": "openhands.startConversationWithFileContext",
-          "group": "navigation@2"
+          "group": "1@2"
         }
       ],
       "commandPalette": [
