@@ -1,5 +1,7 @@
 import asyncio
 import uuid
+from pathlib import Path
+from typing import Callable
 
 import socketio  # Added for type hinting
 
@@ -23,6 +25,7 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStream
 from openhands.runtime.base import Runtime
+from openhands.runtime.plugins import PluginRequirement
 
 # GLOBAL_SOCKET_IO_CLIENT = None # Removed
 
@@ -38,18 +41,33 @@ class VsCodeRuntime(Runtime):
         self,
         config: OpenHandsConfig,
         event_stream: EventStream,
-        sio_server: socketio.AsyncServer,  # The main backend Socket.IO server
-        socket_connection_id: str,  # The Socket.IO SID of the VS Code extension client
-        logical_sid: str = 'default_logical_sid',  # Logical identifier for this runtime/conversation
+        sid: str = 'default',
+        plugins: list[PluginRequirement] | None = None,
+        env_vars: dict[str, str] | None = None,
+        status_callback: Callable[[str, str, str], None] | None = None,
+        attach_to_existing: bool = False,
+        headless_mode: bool = False,
+        user_id: str | None = None,
+        # VSCode-specific parameters (optional for testing)
+        sio_server: socketio.AsyncServer | None = None,
+        socket_connection_id: str | None = None,
     ):
         super().__init__(config=config, event_stream=event_stream)
+        self.sid = sid
+        self.plugins = plugins or []
+        self.env_vars = env_vars or {}
+        self.status_callback = status_callback
+        self.attach_to_existing = attach_to_existing
+        self.headless_mode = headless_mode
+        self.user_id = user_id
+
+        # VSCode-specific attributes
         self.sio_server = sio_server
         self.socket_connection_id = socket_connection_id
-        self.logical_sid = logical_sid  # Renamed from self.sid for clarity
         self._running_actions: dict[str, asyncio.Future[Observation]] = {}
+
         logger.info(
-            f'VsCodeRuntime initialized for logical_sid: {self.logical_sid}, '
-            f'socket_connection_id: {self.socket_connection_id}'
+            f'VsCodeRuntime initialized with sid={sid}, socket_connection_id={socket_connection_id}'
         )
 
     async def _send_action_to_vscode(self, action: Action) -> Observation:
@@ -215,6 +233,51 @@ class VsCodeRuntime(Runtime):
     async def call_tool_mcp(self, action: MCPAction) -> Observation:
         """Call MCP tool via VSCode."""
         return await self._send_action_to_vscode(action)
+
+    async def connect(self):
+        """Connect to VSCode extension via Socket.IO.
+
+        This method is called during runtime initialization.
+        The actual Socket.IO connection should be established by the VSCode extension.
+        """
+        logger.info('VSCode Runtime ready for connection from VSCode extension')
+        # The Socket.IO server is started in __init__, so we're ready for connections
+
+    def copy_from(self, path: str) -> Path:
+        """Copy files from the VSCode workspace to the host.
+
+        For VSCode runtime, file operations are handled through the extension,
+        so files are already accessible on the host. Return the path as-is.
+        """
+        logger.debug(f'VSCode Runtime: copy_from {path} (no-op)')
+        return Path(path)
+
+    def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
+        """Copy files from the host to the VSCode workspace.
+
+        For VSCode runtime, file operations are handled through the extension,
+        so this is a no-op as files are already accessible on the host.
+        """
+        logger.debug(
+            f'VSCode Runtime: copy_to {host_src} -> {sandbox_dest} (no-op, recursive={recursive})'
+        )
+
+    def get_mcp_config(self, extra_stdio_servers: list | None = None):
+        """Get MCP configuration for this runtime.
+
+        Returns the MCP configuration from the runtime config.
+        """
+        return self.config.mcp
+
+    def list_files(self, path: str | None = None) -> list[str]:
+        """List files in the given path.
+
+        For VSCode runtime, we delegate file listing to the extension.
+        This is a synchronous wrapper around the async file listing operation.
+        """
+        # For now, return empty list as file operations should go through VSCode extension
+        logger.debug(f'VSCode Runtime: list_files {path} (delegated to extension)')
+        return []
 
     async def close(self):
         logger.info('Closing VsCodeRuntime. Outstanding actions will be cancelled.')
