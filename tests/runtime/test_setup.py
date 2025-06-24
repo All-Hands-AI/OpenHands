@@ -121,14 +121,14 @@ def test_setup_script_events_added_to_stream(temp_dir, runtime_cls, run_as_openh
     assert isinstance(write_obs, FileWriteObservation)
 
     # Get initial events
-    initial_events = list(runtime.event_stream.get_events())
+    initial_events = list(runtime.event_stream.search_events())
     initial_event_count = len(initial_events)
 
     # Run setup script
     runtime.maybe_run_setup_script()
 
     # Get all events after running setup script
-    all_events = list(runtime.event_stream.get_events())
+    all_events = list(runtime.event_stream.search_events())
     new_events = all_events[initial_event_count:]
 
     # Should have at least 2 new events: the action and the observation
@@ -190,14 +190,14 @@ def test_setup_script_failure_events_added_to_stream(
     assert isinstance(write_obs, FileWriteObservation)
 
     # Get initial events
-    initial_events = list(runtime.event_stream.get_events())
+    initial_events = list(runtime.event_stream.search_events())
     initial_event_count = len(initial_events)
 
     # Run setup script
     runtime.maybe_run_setup_script()
 
     # Get all events after running setup script
-    all_events = list(runtime.event_stream.get_events())
+    all_events = list(runtime.event_stream.search_events())
     new_events = all_events[initial_event_count:]
 
     # Should have at least 2 new events: the action and the observation
