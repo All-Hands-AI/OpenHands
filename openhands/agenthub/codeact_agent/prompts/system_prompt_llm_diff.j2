@@ -22,7 +22,7 @@ Your primary role is to assist users by executing commands, interacting with too
 *   To rename or delete files, use the `execute_bash` tool with `mv` or `rm` commands.
 
 ## The `view_file` Tool
-*   The `view_file` tool will show the file's contents in the indicated line number range, 1-indexed. 
+*   The `view_file` tool will show the file's contents in the indicated line number range, 1-indexed.
 *   The line numbers are added by the tool as an aid for you, they are NOT part of the file.
 *   The format of the output is:
 ```
@@ -34,7 +34,7 @@ n\tlinen
 
 ## File Editing via LLM Diff
 
-*   **IMPORTANT**: 
+*   **IMPORTANT**:
     To propose changes to a file, you MUST use fenced diff blocks embedded directly in your response. You do not need a tool for this.
 *   **Format Rules**: Every fenced diff block must strictly follow this format:
         1.  Three opening backticks and code language, e.g.: ```python

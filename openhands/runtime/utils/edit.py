@@ -352,22 +352,32 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
     # ==========================================================================
 
     def _exact_replace(
-        self, original_lines: list[str], search_lines: list[str], replace_lines: list[str]
+        self,
+        original_lines: list[str],
+        search_lines: list[str],
+        replace_lines: list[str],
     ) -> list[str] | None:
         """Attempts an exact character-for-character replacement."""
         search_tuple = tuple(search_lines)
         search_len = len(search_lines)
         if search_len == 0:
-            return None # Cannot replace empty search block exactly
+            return None  # Cannot replace empty search block exactly
 
         for i in range(len(original_lines) - search_len + 1):
             original_tuple = tuple(original_lines[i : i + search_len])
             if search_tuple == original_tuple:
-                return original_lines[:i] + replace_lines + original_lines[i + search_len :]
+                return (
+                    original_lines[:i]
+                    + replace_lines
+                    + original_lines[i + search_len :]
+                )
         return None
 
     def _whitespace_flexible_replace(
-        self, original_lines: list[str], search_lines: list[str], replace_lines: list[str]
+        self,
+        original_lines: list[str],
+        search_lines: list[str],
+        replace_lines: list[str],
     ) -> list[str] | None:
         """Attempts replacement ignoring consistent leading whitespace differences."""
         search_len = len(search_lines)
@@ -375,30 +385,46 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             return None
 
         # Calculate min leading whitespace in search block (ignoring blank lines)
-        search_leading_spaces = [len(s) - len(s.lstrip(' ')) for s in search_lines if s.strip()]
+        search_leading_spaces = [
+            len(s) - len(s.lstrip(' ')) for s in search_lines if s.strip()
+        ]
         min_search_leading = min(search_leading_spaces) if search_leading_spaces else 0
-        stripped_search_lines = [s[min_search_leading:] if s.strip() else s for s in search_lines]
+        stripped_search_lines = [
+            s[min_search_leading:] if s.strip() else s for s in search_lines
+        ]
         stripped_search_tuple = tuple(stripped_search_lines)
 
         for i in range(len(original_lines) - search_len + 1):
             original_chunk = original_lines[i : i + search_len]
 
             # Calculate min leading whitespace in original chunk
-            original_leading_spaces = [len(s) - len(s.lstrip(' ')) for s in original_chunk if s.strip()]
-            min_original_leading = min(original_leading_spaces) if original_leading_spaces else 0
+            original_leading_spaces = [
+                len(s) - len(s.lstrip(' ')) for s in original_chunk if s.strip()
+            ]
+            min_original_leading = (
+                min(original_leading_spaces) if original_leading_spaces else 0
+            )
             leading_whitespace_prefix = ' ' * min_original_leading
 
             # Strip original chunk consistently
-            stripped_original_lines = [s[min_original_leading:] if s.strip() else s for s in original_chunk]
+            stripped_original_lines = [
+                s[min_original_leading:] if s.strip() else s for s in original_chunk
+            ]
             stripped_original_tuple = tuple(stripped_original_lines)
 
             if stripped_search_tuple == stripped_original_tuple:
                 # Match found! Apply original leading whitespace to replace_lines
                 adjusted_replace_lines = [
-                    leading_whitespace_prefix + rline[min_search_leading:] if rline.strip() else rline
+                    leading_whitespace_prefix + rline[min_search_leading:]
+                    if rline.strip()
+                    else rline
                     for rline in replace_lines
                 ]
-                return original_lines[:i] + adjusted_replace_lines + original_lines[i + search_len :]
+                return (
+                    original_lines[:i]
+                    + adjusted_replace_lines
+                    + original_lines[i + search_len :]
+                )
         return None
 
     def _find_most_similar_block(
@@ -423,23 +449,33 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
 
         if best_match_start_idx != -1:
             start = max(0, best_match_start_idx - context_lines)
-            end = min(len(original_lines), best_match_start_idx + search_len + context_lines)
+            end = min(
+                len(original_lines), best_match_start_idx + search_len + context_lines
+            )
             context_chunk = original_lines[start:end]
 
             # Add markers to indicate the likely match within the context
             marked_chunk = []
             for idx, line in enumerate(context_chunk):
                 current_original_line_idx = start + idx
-                if best_match_start_idx <= current_original_line_idx < best_match_start_idx + search_len:
-                     marked_chunk.append(f'> {line}') # Mark lines within the best match range
+                if (
+                    best_match_start_idx
+                    <= current_original_line_idx
+                    < best_match_start_idx + search_len
+                ):
+                    marked_chunk.append(
+                        f'> {line}'
+                    )  # Mark lines within the best match range
                 else:
-                     marked_chunk.append(f'  {line}')
+                    marked_chunk.append(f'  {line}')
 
             return '\n'.join(marked_chunk), best_ratio
         else:
             return None, 0.0
 
-    def _apply_llm_diff_edit(self, action: FileEditAction, original_content: str) -> tuple[str | None, Observation | None]:
+    def _apply_llm_diff_edit(
+        self, action: FileEditAction, original_content: str
+    ) -> tuple[str | None, Observation | None]:
         """Helper to apply a single LLM_DIFF edit block."""
         # Use standard splitlines (no keepends)
         original_lines = original_content.splitlines()
@@ -453,14 +489,16 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
         if not search_content.strip():
             # Append if file exists, otherwise content is replace_content
             # Ensure single newline separation if original content exists and doesn't end with newline
-            separator = '\n' if original_content and not original_content.endswith('\n') else ''
+            separator = (
+                '\n' if original_content and not original_content.endswith('\n') else ''
+            )
             updated_content = original_content + separator + replace_content
             # Preserve original trailing newline status
             if original_content.endswith('\n') and not updated_content.endswith('\n'):
-                 updated_content += '\n'
+                updated_content += '\n'
             elif not original_content.endswith('\n') and updated_content.endswith('\n'):
-                 # This case is less likely, but if replace_content added a newline, remove it if original didn't have one
-                 updated_content = updated_content.rstrip('\n')
+                # This case is less likely, but if replace_content added a newline, remove it if original didn't have one
+                updated_content = updated_content.rstrip('\n')
             return updated_content, None
 
         # Attempt exact match
@@ -468,12 +506,16 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
 
         # Attempt whitespace flexible match if exact failed
         if updated_lines is None:
-            updated_lines = self._whitespace_flexible_replace(original_lines, search_lines, replace_lines)
+            updated_lines = self._whitespace_flexible_replace(
+                original_lines, search_lines, replace_lines
+            )
 
         # Handle match failure
         if updated_lines is None:
             logger.warning(f'Failed to apply diff to {action.path}')
-            similar_block, ratio = self._find_most_similar_block(original_lines, search_lines)
+            similar_block, ratio = self._find_most_similar_block(
+                original_lines, search_lines
+            )
             error_msg = (
                 f'Failed to apply edit to {action.path}.\n'
                 'The SEARCH block did not match the file content exactly or with flexible whitespace.\n\n'
@@ -481,42 +523,50 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
                 f'{search_content}\n'
                 '--- END FAILED SEARCH BLOCK ---\n'
             )
-            if similar_block and ratio > 0.6: # Threshold from Aider
-                 error_msg += (
+            if similar_block and ratio > 0.6:  # Threshold from Aider
+                error_msg += (
                     f'\n--- MOST SIMILAR BLOCK FOUND (similarity: {ratio:.2f}) ---\n'
                     f'{similar_block}\n'
                     '--- END MOST SIMILAR BLOCK ---\n\n'
                     'Please check the SEARCH block and the file content and try again.'
-                 )
+                )
             else:
-                 error_msg += '\nNo similar block found.'
+                error_msg += '\nNo similar block found.'
 
             return None, ErrorObservation(error_msg)
 
         # Match successful - join with newline
         final_content = '\n'.join(updated_lines)
-        
-        return final_content, None
 
+        return final_content, None
 
     def llm_diff_edit(self, action: FileEditAction) -> Observation:
         """Applies a fenced diff edit parsed directly from LLM output."""
         if action.impl_source != 'llm_diff':
-             # Should not happen if dispatch is correct, but safety check
-             raise ValueError(f"llm_diff_edit called with incorrect action source: {action.impl_source}")
+            # Should not happen if dispatch is correct, but safety check
+            raise ValueError(
+                f'llm_diff_edit called with incorrect action source: {action.impl_source}'
+            )
 
         # Read original file or handle creation
         read_obs = self.read(FileReadAction(path=action.path))
-        original_content = ""
+        original_content = ''
         prev_exist = True
 
-        if isinstance(read_obs, ErrorObservation) and 'File not found'.lower() in read_obs.content.lower():
-            logger.info(f'File {action.path} not found. Attempting to create based on edit.')
+        if (
+            isinstance(read_obs, ErrorObservation)
+            and 'File not found'.lower() in read_obs.content.lower()
+        ):
+            logger.info(
+                f'File {action.path} not found. Attempting to create based on edit.'
+            )
             prev_exist = False
             # Check if it's a valid creation (empty search block)
             search_content = getattr(action, 'search', '')
             if search_content.strip():
-                return ErrorObservation(f"File {action.path} not found and SEARCH block is not empty. Cannot apply edit.")
+                return ErrorObservation(
+                    f'File {action.path} not found and SEARCH block is not empty. Cannot apply edit.'
+                )
             # Content will be handled by _apply_llm_diff_edit
         elif isinstance(read_obs, ErrorObservation):
             # Other read error
@@ -524,7 +574,9 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
         elif isinstance(read_obs, FileReadObservation):
             original_content = read_obs.content
         else:
-             return ErrorObservation(f"Unexpected observation type received when reading {action.path}: {type(read_obs)}")
+            return ErrorObservation(
+                f'Unexpected observation type received when reading {action.path}: {type(read_obs)}'
+            )
 
         # Apply the edit logic
         updated_content, error_obs = self._apply_llm_diff_edit(action, original_content)
@@ -532,9 +584,10 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
         if error_obs:
             return error_obs
         if updated_content is None:
-             # Should have been caught by error_obs, but safety check
-             return ErrorObservation(f"Edit application failed for {action.path}. Be more careful! You can try smaller or larger edit blocks.")
-
+            # Should have been caught by error_obs, but safety check
+            return ErrorObservation(
+                f'Edit application failed for {action.path}. Be more careful! You can try smaller or larger edit blocks.'
+            )
 
         # Lint the updated content (optional)
         diff = get_diff(original_content, updated_content, action.path)
@@ -553,16 +606,18 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
                 return lint_error_obs
 
         # Write the final content
-        write_obs = self.write(FileWriteAction(path=action.path, content=updated_content))
+        write_obs = self.write(
+            FileWriteAction(path=action.path, content=updated_content)
+        )
         if isinstance(write_obs, ErrorObservation):
-            return write_obs # Return write error if it occurs
+            return write_obs  # Return write error if it occurs
 
         # Return success observation
         return FileEditObservation(
-            content=diff, # Return the calculated diff
+            content=diff,  # Return the calculated diff
             path=action.path,
             prev_exist=prev_exist,
             old_content=original_content,
             new_content=updated_content,
-            impl_source=action.impl_source, # Pass source along
+            impl_source=action.impl_source,  # Pass source along
         )

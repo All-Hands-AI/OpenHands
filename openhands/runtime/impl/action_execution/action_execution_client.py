@@ -31,8 +31,8 @@ from openhands.events.action import (
     IPythonRunCellAction,
 )
 from openhands.events.action.action import Action
-from openhands.events.event import FileEditSource
 from openhands.events.action.mcp import MCPAction
+from openhands.events.event import FileEditSource
 from openhands.events.observation import (
     AgentThinkObservation,
     ErrorObservation,

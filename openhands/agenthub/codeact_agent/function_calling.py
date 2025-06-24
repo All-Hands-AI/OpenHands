@@ -58,7 +58,9 @@ def combine_thought(action: Action, thought: str) -> Action:
 
 
 def response_to_actions(
-    response: ModelResponse, mcp_tool_names: list[str] | None = None, is_llm_diff_enabled: bool = False
+    response: ModelResponse,
+    mcp_tool_names: list[str] | None = None,
+    is_llm_diff_enabled: bool = False,
 ) -> list[Action]:
     """
     Parses the LLM response and converts it into a list of OpenHands Actions.
