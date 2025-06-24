@@ -382,7 +382,7 @@ class Runtime(FileEditRuntimeMixin):
                 action = CmdRunAction(
                     command=f'git init && git config --global --add safe.directory {self.workspace_root}'
                 )
-                self.run_action(action)
+                await call_sync_from_async(self.run_action, action)
             else:
                 logger.info(
                     'In workspace mount mode, not initializing a new git repository.'
@@ -420,14 +420,14 @@ class Runtime(FileEditRuntimeMixin):
         )
 
         clone_action = CmdRunAction(command=clone_command)
-        self.run_action(clone_action)
+        await call_sync_from_async(self.run_action, clone_action)
 
         cd_checkout_action = CmdRunAction(
             command=f'cd {dir_name} && {checkout_command}'
         )
         action = cd_checkout_action
         self.log('info', f'Cloning repo: {selected_repository}')
-        self.run_action(action)
+        await call_sync_from_async(self.run_action, action)
         return dir_name
 
     def maybe_run_setup_script(self):
