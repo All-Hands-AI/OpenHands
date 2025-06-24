@@ -15,6 +15,11 @@ make build && make run FRONTEND_PORT=12000 FRONTEND_HOST=0.0.0.0 BACKEND_HOST=0.
 
 IMPORTANT: Before making any changes to the codebase, ALWAYS run `make install-pre-commit-hooks` to ensure pre-commit hooks are properly installed.
 
+## Git Best Practices
+
+- Always use specific `git add <filename>` instead of `git add .` to avoid accidentally staging unintended files
+- Be especially careful with `git reset --hard` after staging files, as it will remove accidentally staged files
+
 Before pushing any changes, you MUST ensure that any lint errors or simple test errors have been fixed.
 
 * If you've made changes to the backend, you should run `pre-commit run --config ./dev_config/python/.pre-commit-config.yaml` (this will run on staged files).
