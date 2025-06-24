@@ -19,6 +19,7 @@ Before pushing any changes, you MUST ensure that any lint errors or simple test 
 
 * If you've made changes to the backend, you should run `pre-commit run --config ./dev_config/python/.pre-commit-config.yaml` (this will run on staged files).
 * If you've made changes to the frontend, you should run `cd frontend && npm run lint:fix && npm run build ; cd ..`
+* If you've made changes to the VSCode extension, you should run `cd openhands/integrations/vscode && npm run lint:fix && npm run compile ; cd ../../..`
 
 The pre-commit hooks MUST pass successfully before pushing any changes to the repository. This is a mandatory requirement to maintain code quality and consistency.
 
@@ -59,6 +60,20 @@ Frontend:
   - Query hooks should follow the pattern use[Resource] (e.g., `useConversationMicroagents`)
   - Mutation hooks should follow the pattern use[Action] (e.g., `useDeleteConversation`)
   - Architecture rule: UI components → TanStack Query hooks → Data Access Layer (`frontend/src/api`) → API endpoints
+
+VSCode Extension:
+- Located in the `openhands/integrations/vscode` directory
+- Prerequisites: A recent version of NodeJS / NPM
+- Setup: Run `npm install` in the extension directory
+- Linting:
+  - Run linting with fixes: `npm run lint:fix`
+  - Check only: `npm run lint`
+  - Type checking: `npm run typecheck`
+- Building:
+  - Compile TypeScript: `npm run compile`
+  - Package extension: `npm run package-vsix`
+- Testing:
+  - Run tests: `npm run test`
 
 ## Template for Github Pull Request
 
