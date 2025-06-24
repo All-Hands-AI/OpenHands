@@ -32,7 +32,6 @@ function ServedApp() {
   };
 
   const resetUrl = () => {
-    console.log("resetUrl called: ", activeHost);
     setCurrentActiveHost(activeHost);
     setPath("");
 
