@@ -15,7 +15,7 @@ export const useAutoLogin = () => {
   // Get the stored login method
   const loginMethod = getLoginMethod();
 
-  // Get the auth URLs for both providers
+  // Get the auth URLs for all providers
   const githubAuthUrl = useAuthUrl({
     appMode: config?.APP_MODE || null,
     identityProvider: "github",
@@ -24,6 +24,11 @@ export const useAutoLogin = () => {
   const gitlabAuthUrl = useAuthUrl({
     appMode: config?.APP_MODE || null,
     identityProvider: "gitlab",
+  });
+
+  const bitbucketAuthUrl = useAuthUrl({
+    appMode: config?.APP_MODE || null,
+    identityProvider: "bitbucket",
   });
 
   useEffect(() => {
@@ -48,13 +53,23 @@ export const useAutoLogin = () => {
     }
 
     // Get the appropriate auth URL based on the stored login method
-    const authUrl =
-      loginMethod === LoginMethod.GITHUB ? githubAuthUrl : gitlabAuthUrl;
+    let authUrl: string | null = null;
+    if (loginMethod === LoginMethod.GITHUB) {
+      authUrl = githubAuthUrl;
+    } else if (loginMethod === LoginMethod.GITLAB) {
+      authUrl = gitlabAuthUrl;
+    } else if (loginMethod === LoginMethod.BITBUCKET) {
+      authUrl = bitbucketAuthUrl;
+    }
 
     // If we have an auth URL, redirect to it
     if (authUrl) {
+      // Add the login method as a query parameter
+      const url = new URL(authUrl);
+      url.searchParams.append("login_method", loginMethod);
+
       // After successful login, the user will be redirected back and can navigate to the last page
-      window.location.href = authUrl;
+      window.location.href = url.toString();
     }
   }, [
     config?.APP_MODE,
@@ -64,5 +79,6 @@ export const useAutoLogin = () => {
     loginMethod,
     githubAuthUrl,
     gitlabAuthUrl,
+    bitbucketAuthUrl,
   ]);
 };

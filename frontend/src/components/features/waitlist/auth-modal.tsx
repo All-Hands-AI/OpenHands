@@ -9,7 +9,6 @@ import GitHubLogo from "#/assets/branding/github-logo.svg?react";
 import GitLabLogo from "#/assets/branding/gitlab-logo.svg?react";
 import { useAuthUrl } from "#/hooks/use-auth-url";
 import { GetConfigResponse } from "#/api/open-hands.types";
-import { LoginMethod, setLoginMethod } from "#/utils/local-storage";
 
 interface AuthModalProps {
   githubAuthUrl: string | null;
@@ -26,10 +25,6 @@ export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
 
   const handleGitHubAuth = () => {
     if (githubAuthUrl) {
-      // Store the login method in local storage (only in SAAS mode)
-      if (appMode === "saas") {
-        setLoginMethod(LoginMethod.GITHUB);
-      }
       // Always start the OIDC flow, let the backend handle TOS check
       window.location.href = githubAuthUrl;
     }
@@ -37,10 +32,6 @@ export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
 
   const handleGitLabAuth = () => {
     if (gitlabAuthUrl) {
-      // Store the login method in local storage (only in SAAS mode)
-      if (appMode === "saas") {
-        setLoginMethod(LoginMethod.GITLAB);
-      }
       // Always start the OIDC flow, let the backend handle TOS check
       window.location.href = gitlabAuthUrl;
     }

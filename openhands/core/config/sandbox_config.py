@@ -1,6 +1,6 @@
 import os
 
-from pydantic import BaseModel, Field, ValidationError, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 
 class SandboxConfig(BaseModel):
@@ -73,7 +73,10 @@ class SandboxConfig(BaseModel):
     runtime_startup_env_vars: dict[str, str] = Field(default_factory=dict)
     browsergym_eval_env: str | None = Field(default=None)
     platform: str | None = Field(default=None)
-    close_delay: int = Field(default=15)
+    close_delay: int = Field(
+        default=3600,
+        description='The delay in seconds before closing the sandbox after the agent is done.',
+    )
     remote_runtime_resource_factor: int = Field(default=1)
     enable_gpu: bool = Field(default=False)
     docker_runtime_kwargs: dict | None = Field(default=None)
@@ -85,7 +88,7 @@ class SandboxConfig(BaseModel):
         description="Volume mounts in the format 'host_path:container_path[:mode]', e.g. '/my/host/dir:/workspace:rw'. Multiple mounts can be specified using commas, e.g. '/path1:/workspace/path1,/path2:/workspace/path2:ro'",
     )
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
     @classmethod
     def from_toml_section(cls, data: dict) -> dict[str, 'SandboxConfig']:

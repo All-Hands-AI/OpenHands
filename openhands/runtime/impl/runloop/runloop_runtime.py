@@ -6,13 +6,15 @@ from runloop_api_client import Runloop
 from runloop_api_client.types import DevboxView
 from runloop_api_client.types.shared_params import LaunchParameters
 
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
 from openhands.runtime.plugins import PluginRequirement
+from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.runtime.utils.command import get_action_execution_server_startup_command
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
@@ -27,7 +29,7 @@ class RunloopRuntime(ActionExecutionClient):
 
     def __init__(
         self,
-        config: AppConfig,
+        config: OpenHandsConfig,
         event_stream: EventStream,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
@@ -35,6 +37,8 @@ class RunloopRuntime(ActionExecutionClient):
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = True,
+        user_id: str | None = None,
+        git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
     ):
         assert config.runloop_api_key is not None, 'Runloop API key is required'
         self.devbox: DevboxView | None = None
@@ -52,6 +56,8 @@ class RunloopRuntime(ActionExecutionClient):
             status_callback,
             attach_to_existing,
             headless_mode,
+            user_id,
+            git_provider_tokens,
         )
         # Buffer for container logs
         self._vscode_url: str | None = None
@@ -114,7 +120,7 @@ class RunloopRuntime(ActionExecutionClient):
         return self._wait_for_devbox(devbox)
 
     async def connect(self):
-        self.send_status_message('STATUS$STARTING_RUNTIME')
+        self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
 
         if self.attach_to_existing:
             active_devboxes = self.runloop_api_client.devboxes.list(
@@ -139,7 +145,7 @@ class RunloopRuntime(ActionExecutionClient):
         # End Runloop connect
         # NOTE: Copied from DockerRuntime
         logger.info('Waiting for client to become ready...')
-        self.send_status_message('STATUS$WAITING_FOR_CLIENT')
+        self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
         self._wait_until_alive()
 
         if not self.attach_to_existing:
@@ -148,7 +154,7 @@ class RunloopRuntime(ActionExecutionClient):
         logger.info(
             f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}'
         )
-        self.send_status_message(' ')
+        self.set_runtime_status(RuntimeStatus.READY)
 
     @tenacity.retry(
         stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),

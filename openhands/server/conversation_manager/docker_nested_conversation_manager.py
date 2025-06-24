@@ -15,14 +15,13 @@ from docker.models.containers import Container
 from fastapi import status
 
 from openhands.controller.agent import Agent
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import MessageAction
 from openhands.events.nested_event_store import NestedEventStore
 from openhands.events.stream import EventStream
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
 from openhands.llm.llm import LLM
-from openhands.runtime.impl.docker.containers import stop_all_containers
 from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.conversation_manager.conversation_manager import (
@@ -30,7 +29,7 @@ from openhands.server.conversation_manager.conversation_manager import (
 )
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.monitoring import MonitoringListener
-from openhands.server.session.conversation import Conversation
+from openhands.server.session.conversation import ServerConversation
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.session.session import ROOM_KEY, Session
 from openhands.storage.conversation.conversation_store import ConversationStore
@@ -45,15 +44,16 @@ from openhands.utils.import_utils import get_impl
 
 @dataclass
 class DockerNestedConversationManager(ConversationManager):
-    """Conversation manager where the agent loops exist inside the docker containers."""
+    """ServerConversation manager where the agent loops exist inside the docker containers."""
 
     sio: socketio.AsyncServer
-    config: AppConfig
+    config: OpenHandsConfig
     server_config: ServerConfig
     file_store: FileStore
     docker_client: docker.DockerClient = field(default_factory=docker.from_env)
     _conversation_store_class: type[ConversationStore] | None = None
     _starting_conversation_ids: set[str] = field(default_factory=set)
+    _runtime_container_image: str | None = None
 
     async def __aenter__(self):
         # No action is required on startup for this implementation
@@ -65,11 +65,11 @@ class DockerNestedConversationManager(ConversationManager):
 
     async def attach_to_conversation(
         self, sid: str, user_id: str | None = None
-    ) -> Conversation | None:
+    ) -> ServerConversation | None:
         # Not supported - clients should connect directly to the nested server!
         raise ValueError('unsupported_operation')
 
-    async def detach_from_conversation(self, conversation: Conversation):
+    async def detach_from_conversation(self, conversation: ServerConversation):
         # Not supported - clients should connect directly to the nested server!
         raise ValueError('unsupported_operation')
 
@@ -89,7 +89,8 @@ class DockerNestedConversationManager(ConversationManager):
         """
         Get the running agent loops directly from docker.
         """
-        names = (container.name for container in self.docker_client.containers.list())
+        containers: list[Container] = self.docker_client.containers.list()
+        names = (container.name or '' for container in containers)
         conversation_ids = {
             name[len('openhands-runtime-') :]
             for name in names
@@ -124,14 +125,16 @@ class DockerNestedConversationManager(ConversationManager):
             )
 
         nested_url = self._get_nested_url(sid)
+        session_api_key = self._get_session_api_key_for_conversation(sid)
         return AgentLoopInfo(
             conversation_id=sid,
             url=nested_url,
-            session_api_key=self._get_session_api_key_for_conversation(sid),
+            session_api_key=session_api_key,
             event_store=NestedEventStore(
                 base_url=nested_url,
                 sid=sid,
                 user_id=user_id,
+                session_api_key=session_api_key,
             ),
             status=ConversationStatus.STARTING
             if sid in self._starting_conversation_ids
@@ -153,6 +156,12 @@ class DockerNestedConversationManager(ConversationManager):
         try:
             # Build the runtime container image if it is missing
             await call_sync_from_async(runtime.maybe_build_runtime_container_image)
+            self._runtime_container_image = runtime.runtime_container_image
+
+            # check that the container already exists...
+            if await self._start_existing_container(runtime):
+                self._starting_conversation_ids.discard(sid)
+                return
 
             # initialize the container but dont wait for it to start
             await call_sync_from_async(runtime.init_container)
@@ -170,7 +179,7 @@ class DockerNestedConversationManager(ConversationManager):
             )
 
         except Exception:
-            self._starting_conversation_ids.remove(sid)
+            self._starting_conversation_ids.discard(sid)
             raise
 
     async def _start_conversation(
@@ -194,6 +203,8 @@ class DockerNestedConversationManager(ConversationManager):
                 settings_json = settings.model_dump(context={'expose_secrets': True})
                 settings_json.pop('custom_secrets', None)
                 settings_json.pop('git_provider_tokens', None)
+                if settings_json.get('git_provider'):
+                    settings_json['git_provider'] = settings_json['git_provider'].value
                 secrets_store = settings_json.pop('secrets_store', None) or {}
                 response = await client.post(
                     f'{api_url}/api/settings', json=settings_json
@@ -258,24 +269,70 @@ class DockerNestedConversationManager(ConversationManager):
                 )
                 assert response.status_code == status.HTTP_200_OK
         finally:
-            self._starting_conversation_ids.remove(sid)
+            self._starting_conversation_ids.discard(sid)
 
     async def send_to_event_stream(self, connection_id: str, data: dict):
         # Not supported - clients should connect directly to the nested server!
         raise ValueError('unsupported_operation')
+
+    async def send_event_to_conversation(self, sid, data):
+        async with httpx.AsyncClient(
+            headers={
+                'X-Session-API-Key': self._get_session_api_key_for_conversation(sid)
+            }
+        ) as client:
+            nested_url = self._get_nested_url(sid)
+            response = await client.post(
+                f'{nested_url}/api/conversations/{sid}/events', json=data
+            )
+            response.raise_for_status()
 
     async def disconnect_from_session(self, connection_id: str):
         # Not supported - clients should connect directly to the nested server!
         raise ValueError('unsupported_operation')
 
     async def close_session(self, sid: str):
-        stop_all_containers(f'openhands-runtime-{sid}')
+        # First try to graceful stop server.
+        try:
+            container = self.docker_client.containers.get(f'openhands-runtime-{sid}')
+        except docker.errors.NotFound:
+            return
+        try:
+            nested_url = self.get_nested_url_for_container(container)
+            async with httpx.AsyncClient(
+                headers={
+                    'X-Session-API-Key': self._get_session_api_key_for_conversation(sid)
+                }
+            ) as client:
+                # Stop conversation
+                response = await client.post(
+                    f'{nested_url}/api/conversations/{sid}/stop'
+                )
+                response.raise_for_status()
 
-    async def get_agent_loop_info(self, user_id=None, filter_to_sids=None):
+                # Check up to 3 times that client has closed
+                for _ in range(3):
+                    response = await client.get(f'{nested_url}/api/conversations/{sid}')
+                    response.raise_for_status()
+                    if response.json().get('status') == 'STOPPED':
+                        break
+                    await asyncio.sleep(1)
+
+        except Exception as e:
+            logger.warning(
+                'error_stopping_container', extra={'sid': sid, 'error': str(e)}
+            )
+        container.stop()
+
+    async def get_agent_loop_info(
+        self, user_id: str | None = None, filter_to_sids: set[str] | None = None
+    ) -> list[AgentLoopInfo]:
         results = []
-        containers = self.docker_client.containers.list()
+        containers: list[Container] = self.docker_client.containers.list()
         for container in containers:
-            if not container.name.startswith('openhands-runtime-'):
+            if not container.name or not container.name.startswith(
+                'openhands-runtime-'
+            ):
                 continue
             conversation_id = container.name[len('openhands-runtime-') :]
             if filter_to_sids is not None and conversation_id not in filter_to_sids:
@@ -309,7 +366,7 @@ class DockerNestedConversationManager(ConversationManager):
     def get_instance(
         cls,
         sio: socketio.AsyncServer,
-        config: AppConfig,
+        config: OpenHandsConfig,
         file_store: FileStore,
         server_config: ServerConfig,
         monitoring_listener: MonitoringListener,
@@ -320,6 +377,15 @@ class DockerNestedConversationManager(ConversationManager):
             server_config=server_config,
             file_store=file_store,
         )
+
+    def get_agent_session(self, sid: str):
+        """Get the agent session for a given session ID.
+        Args:
+            sid: The session ID.
+        Returns:
+            The agent session, or None if not found.
+        """
+        raise ValueError('unsupported_operation')
 
     async def _get_conversation_store(self, user_id: str | None) -> ConversationStore:
         conversation_store_class = self._conversation_store_class
@@ -338,11 +404,12 @@ class DockerNestedConversationManager(ConversationManager):
     def get_nested_url_for_container(self, container: Container) -> str:
         env = container.attrs['Config']['Env']
         container_port = int(next(e[5:] for e in env if e.startswith('port=')))
-        conversation_id = container.name[len('openhands-runtime-') :]
+        container_name = container.name or ''
+        conversation_id = container_name[len('openhands-runtime-') :]
         nested_url = f'{self.config.sandbox.local_runtime_url}:{container_port}/api/conversations/{conversation_id}'
         return nested_url
 
-    def _get_session_api_key_for_conversation(self, conversation_id: str):
+    def _get_session_api_key_for_conversation(self, conversation_id: str) -> str:
         jwt_secret = self.config.jwt_secret.get_secret_value()  # type:ignore
         conversation_key = f'{jwt_secret}:{conversation_id}'.encode()
         session_api_key = (
@@ -352,7 +419,9 @@ class DockerNestedConversationManager(ConversationManager):
         )
         return session_api_key
 
-    async def ensure_num_conversations_below_limit(self, sid: str, user_id: str | None):
+    async def ensure_num_conversations_below_limit(
+        self, sid: str, user_id: str | None
+    ) -> None:
         response_ids = await self.get_running_agent_loops(user_id)
         if len(response_ids) >= self.config.max_concurrent_conversations:
             logger.info(
@@ -384,7 +453,7 @@ class DockerNestedConversationManager(ConversationManager):
                 )
                 await self.close_session(oldest_conversation_id)
 
-    def _get_provider_handler(self, settings: Settings):
+    def _get_provider_handler(self, settings: Settings) -> ProviderHandler:
         provider_tokens = None
         if isinstance(settings, ConversationInitData):
             provider_tokens = settings.git_provider_tokens
@@ -394,7 +463,9 @@ class DockerNestedConversationManager(ConversationManager):
         )
         return provider_handler
 
-    async def _create_runtime(self, sid: str, user_id: str | None, settings: Settings):
+    async def _create_runtime(
+        self, sid: str, user_id: str | None, settings: Settings
+    ) -> DockerRuntime:
         # This session is created here only because it is the easiest way to get a runtime, which
         # is the easiest way to create the needed docker container
         session = Session(
@@ -421,8 +492,14 @@ class DockerNestedConversationManager(ConversationManager):
         )
         env_vars['SERVE_FRONTEND'] = '0'
         env_vars['RUNTIME'] = 'local'
-        env_vars['USER'] = 'CURRENT_USER'
+        # TODO: In the long term we may come up with a more secure strategy for user management within the nested runtime.
+        env_vars['USER'] = 'root'
         env_vars['SESSION_API_KEY'] = self._get_session_api_key_for_conversation(sid)
+        # We need to be able to specify the nested conversation id within the nested runtime
+        env_vars['ALLOW_SET_CONVERSATION_ID'] = '1'
+        env_vars['WORKSPACE_BASE'] = '/workspace'
+        env_vars['SANDBOX_CLOSE_DELAY'] = '0'
+        env_vars['SKIP_DEPENDENCY_CHECK'] = '1'
 
         # Set up mounted volume for conversation directory within workspace
         # TODO: Check if we are using the standard event store and file store
@@ -432,10 +509,13 @@ class DockerNestedConversationManager(ConversationManager):
         else:
             volumes = [v.strip() for v in config.sandbox.volumes.split(',')]
         conversation_dir = get_conversation_dir(sid, user_id)
+
         volumes.append(
-            f'{config.file_store_path}/{conversation_dir}:{AppConfig.model_fields["file_store_path"].default}/{conversation_dir}:rw'
+            f'{config.file_store_path}/{conversation_dir}:/root/.openhands/file_store/{conversation_dir}:rw'
         )
         config.sandbox.volumes = ','.join(volumes)
+        if not config.sandbox.runtime_container_image:
+            config.sandbox.runtime_container_image = self._runtime_container_image
 
         # Currently this eventstream is never used and only exists because one is required in order to create a docker runtime
         event_stream = EventStream(sid, self.file_store, user_id)
@@ -447,7 +527,6 @@ class DockerNestedConversationManager(ConversationManager):
             plugins=agent.sandbox_plugins,
             headless_mode=False,
             attach_to_existing=False,
-            env_vars=env_vars,
             main_module='openhands.server',
         )
 
@@ -455,6 +534,18 @@ class DockerNestedConversationManager(ConversationManager):
         runtime.setup_initial_env = lambda: None  # type:ignore
 
         return runtime
+
+    async def _start_existing_container(self, runtime: DockerRuntime) -> bool:
+        try:
+            container = self.docker_client.containers.get(runtime.container_name)
+            if container:
+                status = container.status
+                if status == 'exited':
+                    await call_sync_from_async(container.start)
+                return True
+            return False
+        except docker.errors.NotFound:
+            return False
 
 
 def _last_updated_at_key(conversation: ConversationMetadata) -> float:

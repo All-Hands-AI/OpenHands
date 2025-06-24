@@ -1,6 +1,5 @@
 import asyncio
 import os
-from types import MappingProxyType
 from typing import Any
 from urllib.parse import parse_qs
 
@@ -12,6 +11,7 @@ from openhands.events.action import (
 )
 from openhands.events.action.agent import RecallAction
 from openhands.events.async_event_store_wrapper import AsyncEventStoreWrapper
+from openhands.events.event_store import EventStore
 from openhands.events.observation import (
     NullObservation,
 )
@@ -19,33 +19,17 @@ from openhands.events.observation.agent import (
     AgentStateChangedObservation,
 )
 from openhands.events.serialization import event_to_dict
-from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderToken
 from openhands.integrations.service_types import ProviderType
-from openhands.server.session.conversation_init_data import ConversationInitData
+from openhands.server.services.conversation_service import (
+    setup_init_convo_settings,
+)
 from openhands.server.shared import (
-    SecretsStoreImpl,
-    SettingsStoreImpl,
-    config,
     conversation_manager,
-    server_config,
     sio,
 )
-from openhands.server.types import AppMode
 from openhands.storage.conversation.conversation_validator import (
     create_conversation_validator,
 )
-from openhands.storage.data_models.user_secrets import UserSecrets
-
-
-def create_provider_tokens_object(
-    providers_set: list[ProviderType],
-) -> PROVIDER_TOKEN_TYPE:
-    provider_information: dict[ProviderType, ProviderToken] = {}
-
-    for provider in providers_set:
-        provider_information[provider] = ProviderToken(token=None, user_id=None)
-
-    return MappingProxyType(provider_information)
 
 
 @sio.event
@@ -62,6 +46,9 @@ async def connect(connection_id: str, environ: dict) -> None:
             )
             latest_event_id = -1
         conversation_id = query_params.get('conversation_id', [None])[0]
+        logger.info(
+            f'Socket request for conversation {conversation_id} with connection_id {connection_id}'
+        )
         raw_list = query_params.get('providers_set', [])
         providers_list = []
         for item in raw_list:
@@ -84,48 +71,32 @@ async def connect(connection_id: str, environ: dict) -> None:
         user_id = await conversation_validator.validate(
             conversation_id, cookies_str, authorization_header
         )
-
-        settings_store = await SettingsStoreImpl.get_instance(config, user_id)
-        settings = await settings_store.load()
-
-        secrets_store = await SecretsStoreImpl.get_instance(config, user_id)
-        user_secrets: UserSecrets | None = await secrets_store.load()
-
-        if not settings:
-            raise ConnectionRefusedError(
-                'Settings not found', {'msg_id': 'CONFIGURATION$SETTINGS_NOT_FOUND'}
-            )
-        session_init_args: dict = {}
-        if settings:
-            session_init_args = {**settings.__dict__, **session_init_args}
-
-        git_provider_tokens = create_provider_tokens_object(providers_set)
-        if server_config.app_mode != AppMode.SAAS and user_secrets:
-            git_provider_tokens = user_secrets.provider_tokens
-
-        session_init_args['git_provider_tokens'] = git_provider_tokens
-        if user_secrets:
-            session_init_args['custom_secrets'] = user_secrets.custom_secrets
-
-        conversation_init_data = ConversationInitData(**session_init_args)
-
-        agent_loop_info = await conversation_manager.join_conversation(
-            conversation_id,
-            connection_id,
-            conversation_init_data,
-            user_id,
-        )
         logger.info(
-            f'Connected to conversation {conversation_id} with connection_id {connection_id}. Replaying event stream...'
+            f'User {user_id} is allowed to connect to conversation {conversation_id}'
+        )
+
+        try:
+            event_store = EventStore(
+                conversation_id, conversation_manager.file_store, user_id
+            )
+        except FileNotFoundError as e:
+            logger.error(
+                f'Failed to create EventStore for conversation {conversation_id}: {e}'
+            )
+            raise ConnectionRefusedError(f'Failed to access conversation events: {e}')
+
+        logger.info(
+            f'Replaying event stream for conversation {conversation_id} with connection_id {connection_id}...'
         )
         agent_state_changed = None
-        if agent_loop_info is None:
-            raise ConnectionRefusedError('Failed to join conversation')
-        async_store = AsyncEventStoreWrapper(
-            agent_loop_info.event_store, latest_event_id + 1
-        )
+
+        # Create an async store to replay events
+        async_store = AsyncEventStoreWrapper(event_store, latest_event_id + 1)
+
+        # Process all available events
         async for event in async_store:
             logger.debug(f'oh_event: {event.__class__.__name__}')
+
             if isinstance(
                 event,
                 (NullAction, NullObservation, RecallAction),
@@ -135,12 +106,33 @@ async def connect(connection_id: str, environ: dict) -> None:
                 agent_state_changed = event
             else:
                 await sio.emit('oh_event', event_to_dict(event), to=connection_id)
+
+        # Send the agent state changed event last if we have one
         if agent_state_changed:
             await sio.emit(
                 'oh_event', event_to_dict(agent_state_changed), to=connection_id
             )
+
         logger.info(
             f'Finished replaying event stream for conversation {conversation_id}'
+        )
+
+        conversation_init_data = await setup_init_convo_settings(
+            user_id, conversation_id, providers_set
+        )
+
+        agent_loop_info = await conversation_manager.join_conversation(
+            conversation_id,
+            connection_id,
+            conversation_init_data,
+            user_id,
+        )
+
+        if agent_loop_info is None:
+            raise ConnectionRefusedError('Failed to join conversation')
+
+        logger.info(
+            f'Successfully joined conversation {conversation_id} with connection_id {connection_id}'
         )
     except ConnectionRefusedError:
         # Close the broken connection after sending an error message

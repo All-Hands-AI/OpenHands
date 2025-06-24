@@ -3,6 +3,7 @@ from typing import Iterable
 from urllib.parse import urlencode
 
 import httpx  # type: ignore
+from fastapi import status
 
 from openhands.events.event import Event
 from openhands.events.event_filter import EventFilter
@@ -19,6 +20,7 @@ class NestedEventStore(EventStoreABC):
     base_url: str
     sid: str
     user_id: str | None
+    session_api_key: str | None = None
 
     def search_events(
         self,
@@ -36,12 +38,18 @@ class NestedEventStore(EventStoreABC):
             if limit is not None:
                 search_params['limit'] = min(100, limit)
             search_str = urlencode(search_params)
-            url = f'{self.base_url}/events{search_str}'
-            response = httpx.get(url)
+            url = f'{self.base_url}/events?{search_str}'
+            headers = {}
+            if self.session_api_key:
+                headers['X-Session-API-Key'] = self.session_api_key
+            response = httpx.get(url, headers=headers)
+            if response.status_code == status.HTTP_404_NOT_FOUND:
+                # Follow pattern of event store not throwing errors on not found
+                return
             result_set = response.json()
-            for result in result_set['results']:
+            for result in result_set['events']:
                 event = event_from_dict(result)
-                start_id = event.id
+                start_id = max(start_id, event.id + 1)
                 if end_id == event.id:
                     if not filter or filter.include(event):
                         yield event

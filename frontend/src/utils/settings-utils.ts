@@ -1,10 +1,12 @@
 import { Settings } from "#/types/settings";
+import { getProviderId } from "#/utils/map-provider";
 
 const extractBasicFormData = (formData: FormData) => {
-  const provider = formData.get("llm-provider-input")?.toString();
+  const providerDisplay = formData.get("llm-provider-input")?.toString();
+  const provider = providerDisplay ? getProviderId(providerDisplay) : undefined;
   const model = formData.get("llm-model-input")?.toString();
 
-  const LLM_MODEL = `${provider}/${model}`.toLowerCase();
+  const LLM_MODEL = `${provider}/${model}`;
   const LLM_API_KEY = formData.get("llm-api-key-input")?.toString();
   const AGENT = formData.get("agent")?.toString();
   const LANGUAGE = formData.get("language")?.toString();
@@ -45,6 +47,24 @@ const extractAdvancedFormData = (formData: FormData) => {
     SECURITY_ANALYZER,
     ENABLE_DEFAULT_CONDENSER,
   };
+};
+
+/**
+ * Parses and validates a max budget per task value.
+ * Ensures the value is at least 1 dollar.
+ * @param value - The string value to parse
+ * @returns The parsed number if valid (>= 1), null otherwise
+ */
+export const parseMaxBudgetPerTask = (value: string): number | null => {
+  if (!value) {
+    return null;
+  }
+
+  const parsedValue = parseFloat(value);
+  // Ensure the value is at least 1 dollar and is a finite number
+  return parsedValue && parsedValue >= 1 && Number.isFinite(parsedValue)
+    ? parsedValue
+    : null;
 };
 
 export const extractSettings = (

@@ -3,6 +3,7 @@ from typing import Any
 
 from pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
     SerializationInfo,
     field_serializer,
@@ -31,11 +32,11 @@ class UserSecrets(BaseModel):
         default_factory=lambda: MappingProxyType({})
     )
 
-    model_config = {
-        'frozen': True,
-        'validate_assignment': True,
-        'arbitrary_types_allowed': True,
-    }
+    model_config = ConfigDict(
+        frozen=True,
+        validate_assignment=True,
+        arbitrary_types_allowed=True,
+    )
 
     @field_serializer('provider_tokens')
     def provider_tokens_serializer(
@@ -137,7 +138,6 @@ class UserSecrets(BaseModel):
                 new_data['custom_secrets'] = secrets
 
         return new_data
-    
 
     def set_event_stream_secrets(self, event_stream: EventStream) -> None:
         """
@@ -157,7 +157,6 @@ class UserSecrets(BaseModel):
             secrets[secret_name] = value['secret']
 
         return secrets
-
 
     def get_custom_secrets_descriptions(self) -> dict[str, str]:
         secrets = {}

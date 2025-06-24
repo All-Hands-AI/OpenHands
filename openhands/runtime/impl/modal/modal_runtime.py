@@ -7,12 +7,14 @@ import httpx
 import modal
 import tenacity
 
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.events import EventStream
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
 from openhands.runtime.plugins import PluginRequirement
+from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.runtime.utils.command import get_action_execution_server_startup_command
 from openhands.runtime.utils.runtime_build import (
     BuildFromImageType,
@@ -31,7 +33,7 @@ class ModalRuntime(ActionExecutionClient):
     When receive an event, it will send the event to runtime-client which run inside the Modal sandbox environment.
 
     Args:
-        config (AppConfig): The application configuration.
+        config (OpenHandsConfig): The application configuration.
         event_stream (EventStream): The event stream to subscribe to.
         sid (str, optional): The session ID. Defaults to 'default'.
         plugins (list[PluginRequirement] | None, optional): List of plugin requirements. Defaults to None.
@@ -44,7 +46,7 @@ class ModalRuntime(ActionExecutionClient):
 
     def __init__(
         self,
-        config: AppConfig,
+        config: OpenHandsConfig,
         event_stream: EventStream,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
@@ -52,6 +54,8 @@ class ModalRuntime(ActionExecutionClient):
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = True,
+        user_id: str | None = None,
+        git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
     ):
         assert config.modal_api_token_id, 'Modal API token id is required'
         assert config.modal_api_token_secret, 'Modal API token secret is required'
@@ -99,10 +103,12 @@ class ModalRuntime(ActionExecutionClient):
             status_callback,
             attach_to_existing,
             headless_mode,
+            user_id,
+            git_provider_tokens,
         )
 
     async def connect(self):
-        self.send_status_message('STATUS$STARTING_RUNTIME')
+        self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
 
         self.log('debug', f'ModalRuntime `{self.sid}`')
 
@@ -120,14 +126,14 @@ class ModalRuntime(ActionExecutionClient):
                     sandbox_id, client=self.modal_client
                 )
         else:
-            self.send_status_message('STATUS$PREPARING_CONTAINER')
+            self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
             await call_sync_from_async(
                 self._init_sandbox,
                 sandbox_workspace_dir=self.config.workspace_mount_path_in_sandbox,
                 plugins=self.plugins,
             )
 
-            self.send_status_message('STATUS$CONTAINER_STARTED')
+            self.set_runtime_status(RuntimeStatus.RUNTIME_STARTED)
 
         if self.sandbox is None:
             raise Exception('Sandbox not initialized')
@@ -137,13 +143,13 @@ class ModalRuntime(ActionExecutionClient):
 
         if not self.attach_to_existing:
             self.log('debug', 'Waiting for client to become ready...')
-            self.send_status_message('STATUS$WAITING_FOR_CLIENT')
+            self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
 
         self._wait_until_alive()
         self.setup_initial_env()
 
         if not self.attach_to_existing:
-            self.send_status_message(' ')
+            self.set_runtime_status(RuntimeStatus.READY)
         self._runtime_initialized = True
 
     @property
