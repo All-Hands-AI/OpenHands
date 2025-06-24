@@ -226,7 +226,7 @@ def test_get_microagents_from_org_or_user_github(temp_workspace):
 
 
 def test_get_microagents_from_org_or_user_gitlab_success_with_config(temp_workspace):
-    """Test that GitLab repositories try openhands-config first and succeed."""
+    """Test that GitLab repositories use openhands-config and succeed."""
     runtime = MockRuntime(temp_workspace)
 
     # Create a mock org directory with microagents
@@ -243,45 +243,37 @@ def test_get_microagents_from_org_or_user_gitlab_success_with_config(temp_worksp
 
             # Should succeed with openhands-config
             assert len(result) >= 0  # May be empty if no microagents found
-            # Should try both _is_gitlab_repository and get_microagents_from_org_or_user
-            assert mock_async.call_count == 2
+            # Should only try once for openhands-config
+            assert mock_async.call_count == 1
 
 
-def test_get_microagents_from_org_or_user_gitlab_fallback_to_openhands(temp_workspace):
-    """Test that GitLab repositories fall back to .openhands if openhands-config fails."""
+def test_get_microagents_from_org_or_user_gitlab_failure(temp_workspace):
+    """Test that GitLab repositories handle failure gracefully when openhands-config doesn't exist."""
     runtime = MockRuntime(temp_workspace)
 
     # Mock the provider detection to return GitLab
     with patch.object(runtime, '_is_gitlab_repository', return_value=True):
-        # Mock the _get_authenticated_git_url to fail for openhands-config, succeed for .openhands
+        # Mock the _get_authenticated_git_url to fail for openhands-config
         with patch('openhands.runtime.base.call_async_from_sync') as mock_async:
+            mock_async.side_effect = Exception('openhands-config not found')
 
-            def side_effect(func, timeout, repo_name, tokens):
-                if 'openhands-config' in repo_name:
-                    raise Exception('openhands-config not found')
-                else:
-                    return 'https://gitlab.com/owner/.openhands.git'
+            result = runtime.get_microagents_from_org_or_user('gitlab.com/owner/repo')
 
-            mock_async.side_effect = side_effect
-
-            runtime.get_microagents_from_org_or_user('gitlab.com/owner/repo')
-
-            # Should try both openhands-config and .openhands
-            assert mock_async.call_count == 2
+            # Should return empty list when repository doesn't exist
+            assert len(result) == 0
+            # Should only try once for openhands-config
+            assert mock_async.call_count == 1
 
 
-def test_get_microagents_from_selected_repo_gitlab_local_config(temp_workspace):
-    """Test that GitLab repositories check openhands-config directory locally."""
+def test_get_microagents_from_selected_repo_gitlab_uses_openhands(temp_workspace):
+    """Test that GitLab repositories use .openhands directory for repository-specific microagents."""
     runtime = MockRuntime(temp_workspace)
 
     # Create a repository directory structure
     repo_dir = temp_workspace / 'repo'
     repo_dir.mkdir()
 
-    # Create microagents in openhands-config directory
-    create_test_microagents(repo_dir, 'openhands-config')
-
-    # Also create .openhands directory (should not be used)
+    # Create microagents in .openhands directory
     create_test_microagents(repo_dir, '.openhands')
 
     # Mock the provider detection to return GitLab
@@ -290,32 +282,9 @@ def test_get_microagents_from_selected_repo_gitlab_local_config(temp_workspace):
         with patch.object(runtime, 'get_microagents_from_org_or_user', return_value=[]):
             result = runtime.get_microagents_from_selected_repo('gitlab.com/owner/repo')
 
-            # Should find microagents from openhands-config, not .openhands
+            # Should find microagents from .openhands directory
             # The exact assertion depends on the mock implementation
             # At minimum, it should not raise an exception
-            assert isinstance(result, list)
-
-
-def test_get_microagents_from_selected_repo_gitlab_fallback_to_openhands(
-    temp_workspace,
-):
-    """Test that GitLab repositories fall back to .openhands if openhands-config doesn't exist."""
-    runtime = MockRuntime(temp_workspace)
-
-    # Create a repository directory structure
-    repo_dir = temp_workspace / 'repo'
-    repo_dir.mkdir()
-
-    # Create microagents only in .openhands directory (no openhands-config)
-    create_test_microagents(repo_dir, '.openhands')
-
-    # Mock the provider detection to return GitLab
-    with patch.object(runtime, '_is_gitlab_repository', return_value=True):
-        # Mock org-level microagents (empty)
-        with patch.object(runtime, 'get_microagents_from_org_or_user', return_value=[]):
-            result = runtime.get_microagents_from_selected_repo('gitlab.com/owner/repo')
-
-            # Should find microagents from .openhands as fallback
             assert isinstance(result, list)
 
 
