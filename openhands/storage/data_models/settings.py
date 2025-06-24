@@ -42,6 +42,7 @@ class Settings(BaseModel):
     search_api_key: SecretStr | None = None
     max_budget_per_task: float | None = None
     email: str | None = None
+    temperature: float | None = None
     email_verified: bool | None = None
 
     model_config = {

@@ -32,6 +32,7 @@ const getSettingsQueryFn = async (): Promise<Settings> => {
     EMAIL_VERIFIED: apiSettings.email_verified,
     MCP_CONFIG: apiSettings.mcp_config,
     IS_NEW_USER: false,
+    TEMPERATURE: apiSettings.temperature, // Added temperature field
   };
 };
 

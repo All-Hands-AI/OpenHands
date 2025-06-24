@@ -431,6 +431,22 @@
         "de": "MCP",
         "uk": "MCP"
     },
+    "SETTINGS$TEMPERATURE": {
+        "en": "Temperature",
+        "ja": "温度",
+        "zh-CN": "温度",
+        "zh-TW": "溫度",
+        "ko-KR": "온도",
+        "no": "Temperatur",
+        "it": "Temperatura",
+        "pt": "Temperatura",
+        "es": "Temperatura",
+        "ar": "درجة الحرارة",
+        "fr": "Température",
+        "tr": "Sıcaklık",
+        "de": "Temperatur",
+        "uk": "Температура"
+    },
     "SETTINGS$MCP_CONFIGURATION": {
         "en": "MCP Configuration",
         "ja": "MCP設定",
@@ -3999,7 +4015,7 @@
         "ja": "設定を更新しました",
         "uk": "Налаштування оновлено"
     },
-     "CHAT_INTERFACE$AUGMENTED_PROMPT_FILES_TITLE":{
+    "CHAT_INTERFACE$AUGMENTED_PROMPT_FILES_TITLE": {
         "en": "NEW FILES ADDED",
         "de": "NEUE DATEIEN HINZUGEFÜGT",
         "zh-CN": "已添加新文件",
@@ -4013,8 +4029,8 @@
         "fr": "NOUVEAUX FICHIERS AJOUTÉS",
         "tr": "YENİ DOSYALAR EKLENDİ",
         "ja": "新しいファイルが追加されました",
-         "uk": "ДОДАНО НОВІ ФАЙЛИ"
-     },
+        "uk": "ДОДАНО НОВІ ФАЙЛИ"
+    },
     "CHAT_INTERFACE$DISCONNECTED": {
         "en": "Disconnected",
         "ja": "切断されました",
@@ -5455,7 +5471,7 @@
         "ja": "セキュリティアナライザー",
         "uk": "Увімкнути аналізатор безпеки"
     },
-    "SETTINGS$SECURITY_ANALYZER_PLACEHOLDER":{
+    "SETTINGS$SECURITY_ANALYZER_PLACEHOLDER": {
         "en": "Select a security analyzer…",
         "de": "Wählen Sie einen Sicherheitsanalysator aus…",
         "zh-CN": "选择一个安全分析器…",

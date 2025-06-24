@@ -46,6 +46,7 @@ function LlmSettingsScreen() {
     confirmationMode: false,
     enableDefaultCondenser: false,
     securityAnalyzer: false,
+    temperature: false,
   });
 
   const modelsAndProviders = organizeModelsAndProviders(
@@ -76,6 +77,7 @@ function LlmSettingsScreen() {
   const handleSuccessfulMutation = () => {
     displaySuccessToast(t(I18nKey.SETTINGS$SAVED));
     setDirtyInputs({
+      temperature: false,
       model: false,
       apiKey: false,
       searchApiKey: false,
@@ -396,6 +398,22 @@ function LlmSettingsScreen() {
                     <KeyStatusIcon isSet={settings.SEARCH_API_KEY_SET} />
                   )
                 }
+              />
+
+              <SettingsInput
+                testId="temperature-input"
+                name="temperature-input"
+                label={t(I18nKey.SETTINGS$TEMPERATURE)}
+                type="number"
+                className="w-full max-w-[680px]"
+                defaultValue={settings.TEMPERATURE}
+                onChange={(value) => {
+                  const temperatureIsDirty = value !== settings.TEMPERATURE;
+                  setDirtyInputs((prev) => ({
+                    ...prev,
+                    temperature: temperatureIsDirty,
+                  }));
+                }}
               />
 
               <HelpLink
