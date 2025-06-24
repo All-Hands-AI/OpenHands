@@ -68,6 +68,29 @@ If you are starting a pull request (PR), please follow the template in `.github/
 
 These details may or may not be useful for your current task.
 
+### Microagents
+
+Microagents are specialized prompts that enhance OpenHands with domain-specific knowledge and task-specific workflows. They are Markdown files that can include frontmatter for configuration.
+
+#### Types:
+- **Public Microagents**: Located in `openhands/microagents/`, available to all users
+- **Repository Microagents**: Located in `.openhands/microagents/`, specific to this repository
+
+#### Loading Behavior:
+- **Without frontmatter**: Always loaded into LLM context
+- **With triggers in frontmatter**: Only loaded when user's message matches the specified trigger keywords
+
+#### Structure:
+```yaml
+---
+triggers:
+- keyword1
+- keyword2
+---
+# Microagent Content
+Your specialized knowledge and instructions here...
+```
+
 ### Frontend
 
 #### Action Handling:
