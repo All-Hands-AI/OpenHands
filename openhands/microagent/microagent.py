@@ -1,5 +1,6 @@
 import io
 import re
+from itertools import chain
 from pathlib import Path
 from typing import Union
 
@@ -52,6 +53,16 @@ class BaseMicroagent(BaseModel):
                 name='repo_legacy',
                 content=file_content,
                 metadata=MicroagentMetadata(name='repo_legacy'),
+                source=str(path),
+                type=MicroagentType.REPO_KNOWLEDGE,
+            )
+
+        # Handle .cursorrules files
+        if path.name == '.cursorrules':
+            return RepoMicroagent(
+                name='cursorrules',
+                content=file_content,
+                metadata=MicroagentMetadata(name='cursorrules'),
                 source=str(path),
                 type=MicroagentType.REPO_KNOWLEDGE,
             )
@@ -258,7 +269,10 @@ def load_microagents_from_dir(
     # Load all agents from microagents directory
     logger.debug(f'Loading agents from {microagent_dir}')
     if microagent_dir.exists():
-        for file in microagent_dir.rglob('*.md'):
+        for file in chain(
+            microagent_dir.parent.parent.rglob('.cursorrules'),
+            microagent_dir.rglob('*.md'),
+        ):
             # skip README.md
             if file.name == 'README.md':
                 continue
