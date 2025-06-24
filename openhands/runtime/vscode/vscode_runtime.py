@@ -4,7 +4,6 @@ import uuid
 import socketio  # Added for type hinting
 
 from openhands.core.config import OpenHandsConfig
-from openhands.core.event_stream import EventStream
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     Action,
@@ -26,6 +25,7 @@ from openhands.events.observation import (
     NullObservation,
     Observation,
 )
+from openhands.events.stream import EventStream
 from openhands.runtime.base import Runtime
 
 # GLOBAL_SOCKET_IO_CLIENT = None # Removed
@@ -69,11 +69,11 @@ class VsCodeRuntime(Runtime):
 
         oh_event_payload = {
             'id': event_id,
-            'action': action.action,
-            'args': action.args,
+            'action': action.action,  # type: ignore
+            'args': action.args,  # type: ignore
             'message': f'Action delegate: {action.message}'
             if hasattr(action, 'message') and action.message
-            else f'Delegating {action.action} to VSCode via socket_connection_id: {self.socket_connection_id}',
+            else f'Delegating {type(action)} to VSCode via socket_connection_id: {self.socket_connection_id}',
             'source': 'agent',
         }
 
@@ -87,7 +87,7 @@ class VsCodeRuntime(Runtime):
         self._running_actions[event_id] = future
 
         logger.info(
-            f'Sending action to VSCode (event_id: {event_id}, socket_id: {self.socket_connection_id}): {action.action}'
+            f'Sending action to VSCode (event_id: {event_id}, socket_id: {self.socket_connection_id}): {type(action)}'
         )
         logger.debug(f'Action details: {oh_event_payload}')
 
@@ -137,11 +137,11 @@ class VsCodeRuntime(Runtime):
             # The future is automatically cancelled by wait_for on timeout.
             # We just need to ensure it's removed from _running_actions, which finally does.
             return ErrorObservation(
-                content=f'Timeout waiting for VS Code extension response for action: {action.action}'
+                content=f'Timeout waiting for VS Code extension response for action: {type(action)}'
             )
         except asyncio.CancelledError:
             logger.info(f'Action {event_id} was cancelled while awaiting observation.')
-            return ErrorObservation(content=f'Action {action.action} was cancelled.')
+            return ErrorObservation(content=f'Action {type(action)} was cancelled.')
         finally:
             self._running_actions.pop(event_id, None)
 
