@@ -254,12 +254,12 @@ function findOrCreateOpenHandsTerminal(): vscode.Terminal {
 
   if (openHandsTerminals.length > 0) {
     const terminal = openHandsTerminals[openHandsTerminals.length - 1];
-    
+
     // Only reuse terminals that we know are idle (safe to reuse)
     if (isKnownIdleTerminal(terminal)) {
       return terminal;
     }
-    
+
     // If we don't know the terminal is idle, create new one
     return createNewOpenHandsTerminal();
   }
