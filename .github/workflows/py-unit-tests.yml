@@ -51,6 +51,8 @@ jobs:
         run: poetry run pytest --forked -n auto -svv ./tests/unit
       - name: Run Runtime Tests with CLIRuntime
         run: TEST_RUNTIME=cli poetry run pytest -svv tests/runtime/test_bash.py
+      - name: Run Runtime Tests with VSCodeRuntime
+        run: TEST_RUNTIME=vscode poetry run pytest -svv tests/runtime/test_bash.py
 
   # Run specific Windows python tests
   test-on-windows:
