@@ -2,6 +2,9 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
 
+// Create output channel for debug logging
+const outputChannel = vscode.window.createOutputChannel("OpenHands Debug");
+
 /**
  * Terminal Management Implementation
  * 
@@ -129,7 +132,7 @@ function executeOpenHandsCommand(
 function detectVirtualEnvironment(): string {
   const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
   if (!workspaceFolder) {
-    vscode.window.showErrorMessage("DEBUG: No workspace folder found");
+    outputChannel.appendLine("DEBUG: No workspace folder found");
     return "";
   }
 
@@ -141,7 +144,7 @@ function detectVirtualEnvironment(): string {
         const isWindows = process.platform === "win32";
         const activateScript = isWindows ? "Scripts\\activate" : "bin/activate";
         const activationCommand = `source "${venvFullPath}/${activateScript}" && `;
-        vscode.window.showErrorMessage(`DEBUG: Found venv at ${venvFullPath}`);
+        outputChannel.appendLine(`DEBUG: Found venv at ${venvFullPath}`);
         return activationCommand;
       }
     } catch (error) {
@@ -149,7 +152,7 @@ function detectVirtualEnvironment(): string {
     }
   }
 
-  vscode.window.showErrorMessage(
+  outputChannel.appendLine(
     `DEBUG: No venv found in workspace ${workspaceFolder.uri.fsPath}`,
   );
   return "";
@@ -205,7 +208,7 @@ function startOpenHandsInTerminal(options: {
     const commandToSend = buildOpenHandsCommand(options, activationCommand);
 
     // Debug: show the actual command being sent
-    vscode.window.showErrorMessage(`DEBUG: Sending command: ${commandToSend}`);
+    outputChannel.appendLine(`DEBUG: Sending command: ${commandToSend}`);
 
     // Execute command using Shell Integration when available
     executeOpenHandsCommand(terminal, commandToSend);
