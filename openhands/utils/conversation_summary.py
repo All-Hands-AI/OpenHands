@@ -5,9 +5,18 @@ from typing import Optional
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.llm.llm import LLM
+from openhands.utils.async_utils import call_sync_from_async
 
 
 async def generate_conversation_title(
+    message: str, llm_config: LLMConfig, max_length: int = 50
+) -> Optional[str]:
+    return await call_sync_from_async(
+        sync_generate_conversation_title, message, llm_config, max_length
+    )
+
+
+def sync_generate_conversation_title(
     message: str, llm_config: LLMConfig, max_length: int = 50
 ) -> Optional[str]:
     """Generate a concise title for a conversation based on the first user message.

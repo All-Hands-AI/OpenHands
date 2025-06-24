@@ -93,6 +93,9 @@ async def list_files(request: Request, path: str | None = None):
     file_list = [f for f in file_list if f not in FILES_TO_IGNORE]
 
     async def filter_for_gitignore(file_list, base_path):
+        gitignore_filename = '.gitignore'
+        if gitignore_filename not in file_list:
+            return file_list
         gitignore_path = os.path.join(base_path, '.gitignore')
         try:
             read_action = FileReadAction(gitignore_path)

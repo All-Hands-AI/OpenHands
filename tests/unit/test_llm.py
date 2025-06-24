@@ -906,7 +906,7 @@ def test_completion_with_log_completions(mock_litellm_completion, default_config
         assert len(files) == 1
 
 
-@patch('httpx.get')
+@patch('httpx.Client.get')
 def test_llm_base_url_auto_protocol_patch(mock_get):
     """Test that LLM base_url without protocol is automatically fixed with 'http://'."""
     config = LLMConfig(

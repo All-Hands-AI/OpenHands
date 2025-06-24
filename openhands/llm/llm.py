@@ -435,6 +435,7 @@ class LLM(RetryMixin, DebugMixin):
         """
         return self._completion
 
+    @workflow(name='init_model_info')
     def init_model_info(self) -> None:
         if self._tried_model_info:
             return
@@ -452,12 +453,13 @@ class LLM(RetryMixin, DebugMixin):
             if not base_url.startswith(('http://', 'https://')):
                 base_url = 'http://' + base_url
 
-            response = httpx.get(
-                f'{base_url}/v1/model/info',
-                headers={
-                    'Authorization': f'Bearer {self.config.api_key.get_secret_value() if self.config.api_key else None}'
-                },
-            )
+            with httpx.Client() as client:
+                response = client.get(
+                    f'{base_url}/v1/model/info',
+                    headers={
+                        'Authorization': f'Bearer {self.config.api_key.get_secret_value() if self.config.api_key else None}'
+                    },
+                )
 
             resp_json = response.json()
             if 'data' not in resp_json:
