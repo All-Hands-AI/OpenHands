@@ -163,6 +163,7 @@ class LLM(RetryMixin, DebugMixin):
             'temperature': self.config.temperature,
             'max_completion_tokens': self.config.max_output_tokens,
         }
+
         if self.config.top_k is not None:
             # openai doesn't expose top_k
             # litellm will handle it a bit differently than the openai-compatible params
@@ -180,6 +181,12 @@ class LLM(RetryMixin, DebugMixin):
         if self.config.model.startswith('azure'):
             kwargs['max_tokens'] = self.config.max_output_tokens
             kwargs.pop('max_completion_tokens')
+
+        # Add safety settings for models that support them
+        if 'mistral' in self.config.model.lower() and self.config.safety_settings:
+            kwargs['safety_settings'] = self.config.safety_settings
+        elif 'gemini' in self.config.model.lower() and self.config.safety_settings:
+            kwargs['safety_settings'] = self.config.safety_settings
 
         self._completion = partial(
             litellm_completion,
@@ -485,26 +492,6 @@ class LLM(RetryMixin, DebugMixin):
             else:
                 # Safe fallback for any potentially viable model
                 self.config.max_input_tokens = 4096
-
-        if self.config.max_output_tokens is None:
-            # Safe default for any potentially viable model
-            self.config.max_output_tokens = 4096
-            if self.model_info is not None:
-                # max_output_tokens has precedence over max_tokens, if either exists.
-                # litellm has models with both, one or none of these 2 parameters!
-                if 'max_output_tokens' in self.model_info and isinstance(
-                    self.model_info['max_output_tokens'], int
-                ):
-                    self.config.max_output_tokens = self.model_info['max_output_tokens']
-                elif 'max_tokens' in self.model_info and isinstance(
-                    self.model_info['max_tokens'], int
-                ):
-                    self.config.max_output_tokens = self.model_info['max_tokens']
-            if any(
-                model in self.config.model
-                for model in ['claude-3-7-sonnet', 'claude-3.7-sonnet']
-            ):
-                self.config.max_output_tokens = 64000  # litellm set max to 128k, but that requires a header to be set
 
         # Initialize function calling capability
         # Check if model name is in our supported list

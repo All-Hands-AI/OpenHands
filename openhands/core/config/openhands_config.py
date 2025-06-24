@@ -1,10 +1,11 @@
 import os
 from typing import Any, ClassVar
 
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 from openhands.core import logger
 from openhands.core.config.agent_config import AgentConfig
+from openhands.core.config.cli_config import CLIConfig
 from openhands.core.config.config_utils import (
     OH_DEFAULT_AGENT,
     OH_MAX_ITERATIONS,
@@ -109,10 +110,11 @@ class OpenHandsConfig(BaseModel):
     mcp_host: str = Field(default=f'localhost:{os.getenv("port", 3000)}')
     mcp: MCPConfig = Field(default_factory=MCPConfig)
     kubernetes: KubernetesConfig = Field(default_factory=KubernetesConfig)
+    cli: CLIConfig = Field(default_factory=CLIConfig)
 
     defaults_dict: ClassVar[dict] = {}
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
     def get_llm_config(self, name: str = 'llm') -> LLMConfig:
         """'llm' is the name for default config (for backward compatibility prior to 0.8)."""

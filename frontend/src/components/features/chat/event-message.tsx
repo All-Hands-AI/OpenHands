@@ -35,6 +35,7 @@ interface EventMessageProps {
   hasObservationPair: boolean;
   isAwaitingUserConfirmation: boolean;
   isLastMessage: boolean;
+  isInLast10Actions: boolean;
 }
 
 export function EventMessage({
@@ -42,24 +43,52 @@ export function EventMessage({
   hasObservationPair,
   isAwaitingUserConfirmation,
   isLastMessage,
+  isInLast10Actions,
 }: EventMessageProps) {
   const shouldShowConfirmationButtons =
     isLastMessage && event.source === "agent" && isAwaitingUserConfirmation;
 
   const { data: config } = useConfig();
 
-  // Use our query hook to check if feedback exists and get rating/reason
   const {
     data: feedbackData = { exists: false },
     isLoading: isCheckingFeedback,
-  } = useFeedbackExists(isFinishAction(event) ? event.id : undefined);
+  } = useFeedbackExists(event.id);
+
+  const renderLikertScale = () => {
+    if (config?.APP_MODE !== "saas" || isCheckingFeedback) {
+      return null;
+    }
+
+    // For error observations, show if in last 10 actions
+    // For other events, show only if it's the last message
+    const shouldShow = isErrorObservation(event)
+      ? isInLast10Actions
+      : isLastMessage;
+
+    if (!shouldShow) {
+      return null;
+    }
+
+    return (
+      <LikertScale
+        eventId={event.id}
+        initiallySubmitted={feedbackData.exists}
+        initialRating={feedbackData.rating}
+        initialReason={feedbackData.reason}
+      />
+    );
+  };
 
   if (isErrorObservation(event)) {
     return (
-      <ErrorMessage
-        errorId={event.extras.error_id}
-        defaultMessage={event.message}
-      />
+      <>
+        <ErrorMessage
+          errorId={event.extras.error_id}
+          defaultMessage={event.message}
+        />
+        {renderLikertScale()}
+      </>
     );
   }
 
@@ -70,24 +99,11 @@ export function EventMessage({
     return null;
   }
 
-  const showLikertScale =
-    config?.APP_MODE === "saas" &&
-    isFinishAction(event) &&
-    isLastMessage &&
-    !isCheckingFeedback;
-
   if (isFinishAction(event)) {
     return (
       <>
         <ChatMessage type="agent" message={getEventContent(event).details} />
-        {showLikertScale && (
-          <LikertScale
-            eventId={event.id}
-            initiallySubmitted={feedbackData.exists}
-            initialRating={feedbackData.rating}
-            initialReason={feedbackData.reason}
-          />
-        )}
+        {renderLikertScale()}
       </>
     );
   }
@@ -96,15 +112,20 @@ export function EventMessage({
     const message = parseMessageFromEvent(event);
 
     return (
-      <ChatMessage type={event.source} message={message}>
-        {event.args.image_urls && event.args.image_urls.length > 0 && (
-          <ImageCarousel size="small" images={event.args.image_urls} />
-        )}
-        {event.args.file_urls && event.args.file_urls.length > 0 && (
-          <FileList files={event.args.file_urls} />
-        )}
-        {shouldShowConfirmationButtons && <ConfirmationButtons />}
-      </ChatMessage>
+      <>
+        <ChatMessage type={event.source} message={message}>
+          {event.args.image_urls && event.args.image_urls.length > 0 && (
+            <ImageCarousel size="small" images={event.args.image_urls} />
+          )}
+          {event.args.file_urls && event.args.file_urls.length > 0 && (
+            <FileList files={event.args.file_urls} />
+          )}
+          {shouldShowConfirmationButtons && <ConfirmationButtons />}
+        </ChatMessage>
+        {isAssistantMessage(event) &&
+          event.action === "message" &&
+          renderLikertScale()}
+      </>
     );
   }
 
