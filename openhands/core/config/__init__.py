@@ -5,6 +5,7 @@ from openhands.core.config.config_utils import (
     OH_MAX_ITERATIONS,
     get_field_info,
 )
+from openhands.core.config.conversation_config import ConversationConfig
 from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.sandbox_config import SandboxConfig
@@ -42,4 +43,5 @@ __all__ = [
     'parse_arguments',
     'setup_config_from_args',
     'SearchEngineConfig',
+    'ConversationConfig',
 ]

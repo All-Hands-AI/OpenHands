@@ -21,6 +21,7 @@ from openhands.core.config.config_utils import (
     OH_DEFAULT_AGENT,
     OH_MAX_ITERATIONS,
 )
+from openhands.core.config.conversation_config import ConversationConfig
 from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.mcp_config import MCPConfig
@@ -204,7 +205,23 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
             # Re-raise ValueError from SandboxConfig.from_toml_section
             raise ValueError('Error in [sandbox] section in config.toml')
 
-    # Process MCP sections if present
+    if 'conversation' in toml_config:
+        try:
+            conversation_mapping = ConversationConfig.from_toml_section(
+                toml_config['conversation']
+            )
+            # We only use the base conversation config for now
+            if 'conversation' in conversation_mapping:
+                cfg.conversation = conversation_mapping['conversation']
+        except (TypeError, KeyError, ValidationError) as e:
+            logger.openhands_logger.warning(
+                f'Cannot parse [conversation] config from toml, values have not been applied.\nError: {e}'
+            )
+        except ValueError:
+            # Re-raise ValueError from ConversationConfig.from_toml_section
+            raise ValueError('Error in [conversation] section in config.toml')
+
+            # Process MCP sections if present
     if 'mcp' in toml_config:
         try:
             cfg.dict_mcp_config = MCPConfig.from_toml_section(toml_config['mcp'])
@@ -310,6 +327,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
         'condenser',
         'mcp',
         'search_engine',
+        'conversation',
     }
     for key in toml_config:
         if key.lower() not in known_sections:

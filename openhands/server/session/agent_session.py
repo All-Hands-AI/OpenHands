@@ -126,17 +126,6 @@ class AgentSession:
         finished = False  # For monitoring
         runtime_connected = False
         self.config = config
-        # Initialize A2A manager before creating controller
-        # a2a_manager: A2AManager | None = None
-        # try:
-        #     a2a_manager = A2AManager(agent.config.a2a_server_urls)
-        #     await a2a_manager.initialize_agent_cards()
-        # except Exception as e:
-        #     self.logger.warning(f'Error initializing A2A manager: {e}')
-        #     a2a_manager = None
-        # # If the agent has its own A2A manager, use that instead of the one we just created
-        # if a2a_manager is not None:
-        #     agent.a2a_manager = agent.a2a_manager
         try:
             self._create_security_analyzer(config.security.security_analyzer)
             start_time = time.time()
@@ -363,7 +352,7 @@ class AgentSession:
         # This is to give the websocket a second to connect, so that
         # the status messages make it through to the frontend.
         # We should find a better way to plumb status messages through.
-        await asyncio.sleep(1)
+        await asyncio.sleep(0.1)
         try:
             start_time = time.time()
             await self.runtime.connect()

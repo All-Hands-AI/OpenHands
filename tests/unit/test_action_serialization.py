@@ -51,6 +51,7 @@ def test_event_props_serialization_deserialization():
             'image_urls': None,
             'wait_for_response': False,
             'mode': None,
+            'enable_think': True,
         },
     }
     serialization_deserialization(original_action_dict, MessageAction)
@@ -64,6 +65,7 @@ def test_message_action_serialization_deserialization():
             'image_urls': None,
             'wait_for_response': False,
             'mode': None,
+            'enable_think': True,
         },
     }
     serialization_deserialization(original_action_dict, MessageAction)
@@ -77,6 +79,7 @@ def test_agent_finish_action_serialization_deserialization():
             'thought': '',
             'task_completed': None,
             'final_thought': '',
+            'enable_think': True,
         },
     }
     serialization_deserialization(original_action_dict, AgentFinishAction)

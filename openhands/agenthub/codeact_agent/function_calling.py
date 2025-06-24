@@ -21,7 +21,6 @@ from openhands.agenthub.codeact_agent.tools import (
     create_str_replace_editor_tool,
 )
 from openhands.core.exceptions import (
-    FunctionCallNotExistsError,
     FunctionCallValidationError,
 )
 from openhands.core.logger import openhands_logger as logger
@@ -63,6 +62,8 @@ def response_to_actions(
     response: ModelResponse,
     sid: str | None = None,
     workspace_mount_path_in_sandbox_store_in_session: bool = True,
+    tools: list[dict] | None = None,
+    enable_think: bool = True,
 ) -> list[Action]:
     actions: list[Action] = []
     assert len(response.choices) == 1, 'Only one choice is supported for now'
@@ -118,13 +119,14 @@ def response_to_actions(
                 )
 
             # ================================================
-            # AgentFinishAction
+            # AgentFinishActionc
             # ================================================
             elif tool_call.function.name == FinishTool['function']['name']:
                 logger.debug(f'FinishTool: {arguments}')
                 action = AgentFinishAction(
                     final_thought=arguments.get('message', ''),
                     task_completed=arguments.get('task_completed', None),
+                    enable_think=enable_think,
                 )
 
             # ================================================
@@ -148,7 +150,7 @@ def response_to_actions(
                     path = put_session_id_in_path(path, sid)
                     if path == '':
                         raise FunctionCallValidationError(
-                            f'Invalid path: {path}. Original path: {arguments["path"]}. Please provide a valid path.'
+                            f"Invalid path: {path}. Original path: {arguments['path']}. Please provide a valid path."
                         )
 
                 action = FileEditAction(
@@ -179,7 +181,7 @@ def response_to_actions(
                     path = put_session_id_in_path(path, sid)
                     if path == '':
                         raise FunctionCallValidationError(
-                            f'Invalid path: {path}. Original path: {arguments["path"]}. Please provide a valid path.'
+                            f"Invalid path: {path}. Original path: {arguments['path']}. Please provide a valid path."
                         )
                 command = arguments['command']
                 other_kwargs = {
@@ -236,16 +238,27 @@ def response_to_actions(
                     MCPClientTool.postfix(), ''
                 )
                 logger.info(f'Original action name: {original_action_name}')
-                arguments = json.loads(tool_call.function.arguments)
-                if 'pyodide' in original_action_name:
-                    # we don't trust sessionId passed by the LLM. Always use the one from the session to get deterministic results
-                    arguments['sessionId'] = sid
-                # Update the arguments string with the modified sessionId
-                updated_arguments_str = json.dumps(arguments)
-                action = McpAction(
-                    name=original_action_name,
-                    arguments=updated_arguments_str,
+
+                tool_found = any(
+                    tool.get('function', {}).get('name') == tool_call.function.name
+                    for tool in tools or []
                 )
+
+                if not tool_found:
+                    action = AgentThinkAction(
+                        thought=f'MCP tool {tool_call.function.name} is not available. Please check the available tools and retry with an existing tool.'
+                    )
+                else:
+                    arguments = json.loads(tool_call.function.arguments)
+                    if 'pyodide' in original_action_name:
+                        # we don't trust sessionId passed by the LLM. Always use the one from the session to get deterministic results
+                        arguments['sessionId'] = sid
+                    # Update the arguments string with the modified sessionId
+                    updated_arguments_str = json.dumps(arguments)
+                    action = McpAction(
+                        name=original_action_name,
+                        arguments=updated_arguments_str,
+                    )
             # ================================================
             # A2A
             # ================================================
@@ -261,8 +274,8 @@ def response_to_actions(
                     task_message=arguments['task_message'],
                 )
             else:
-                raise FunctionCallNotExistsError(
-                    f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
+                action = AgentThinkAction(
+                    thought=f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
                 )
 
             # We only add thought to the first action
@@ -274,6 +287,7 @@ def response_to_actions(
                 function_name=tool_call.function.name,
                 model_response=response,
                 total_calls_in_response=len(assistant_msg.tool_calls),
+                enable_show_thought=enable_think,
             )
             actions.append(action)
     else:
@@ -359,7 +373,7 @@ def put_session_id_in_path(path: str, sid: str) -> str:
             return cleaned_path.rstrip('/')
         # Construct path with sid, adding '/' only if remaining_path exists
         result = (
-            f'/workspace/{sid}/{remaining_path.lstrip("/")}'
+            f"/workspace/{sid}/{remaining_path.lstrip('/')}"
             if remaining_path
             else f'/workspace/{sid}'
         )

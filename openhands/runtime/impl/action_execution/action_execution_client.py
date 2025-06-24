@@ -40,11 +40,14 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
-from openhands.mcp import MCPClient, create_mcp_clients
+from openhands.mcp import MCPClient
 from openhands.mcp import call_tool_mcp as call_tool_mcp_handler
+from openhands.mcp.tool import MCPClientTool
+from openhands.mcp.utils import connect_single_client
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.request import send_request
+from openhands.server.mcp_cache import mcp_tools_cache
 from openhands.utils.async_utils import call_async_from_sync
 from openhands.utils.http_session import HttpSession
 from openhands.utils.tenacity_stop import stop_if_should_exit
@@ -83,7 +86,7 @@ class ActionExecutionClient(Runtime):
         self._runtime_initialized: bool = False
         self._runtime_closed: bool = False
         self._vscode_token: str | None = None  # initial dummy value
-        self.mcp_clients: list[MCPClient] | None = None
+        self.mcp_clients: list[MCPClient] = []
         super().__init__(
             config,
             event_stream,
@@ -335,17 +338,38 @@ class ActionExecutionClient(Runtime):
         return self.send_action_for_execution(action)
 
     async def call_tool_mcp(self, action: McpAction) -> Observation:
-        if self.mcp_clients is None:
-            self.log(
-                'debug',
-                f'Creating MCP clients with servers: {self.config.dict_mcp_config}',
+        if not mcp_tools_cache:
+            return ErrorObservation('MCP tools cache is not initialized')
+
+        mcp_name = next(
+            (
+                mcp_name
+                for mcp_name, tools in mcp_tools_cache.mcp_tools.items()
+                if any(
+                    action.name
+                    == tool['function']['name'].replace(MCPClientTool.postfix(), '')
+                    for tool in tools
+                )
+            ),
+            None,
+        )
+        if not mcp_name:
+            return ErrorObservation(f'MCP name for tool {action.name} not found')
+
+        mcp_client = await connect_single_client(
+            mcp_name,
+            self.config.dict_mcp_config[mcp_name],
+            self.sid,
+            self.mnemonic,
+        )
+        if mcp_client is None:
+            return ErrorObservation(
+                f'Could not connect to MCP client for tool {action.name}'
             )
-            self.mcp_clients = await create_mcp_clients(
-                self.config.dict_mcp_config,
-                sid=self.sid,
-                mnemonic=self.mnemonic,
-            )
-        return await call_tool_mcp_handler(self.mcp_clients, action)
+        result = await call_tool_mcp_handler([mcp_client], action)
+        # append mcp_client to list so we can disconnect them later when session is closed
+        self.mcp_clients.append(mcp_client)
+        return result
 
     async def aclose(self) -> None:
         if self.mcp_clients:

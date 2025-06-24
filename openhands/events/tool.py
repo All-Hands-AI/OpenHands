@@ -1,3 +1,5 @@
+from typing import Optional
+
 from litellm import ModelResponse
 from pydantic import BaseModel
 
@@ -9,3 +11,4 @@ class ToolCallMetadata(BaseModel):
 
     model_response: ModelResponse
     total_calls_in_response: int
+    enable_show_thought: Optional[bool] = True

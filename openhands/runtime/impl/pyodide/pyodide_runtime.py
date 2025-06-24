@@ -69,12 +69,13 @@ class PyodideRuntime(ActionExecutionClient):
 
         logger.info('Waiting for client to become ready...')
         self.send_status_message('STATUS$WAITING_FOR_CLIENT')
-        self._wait_until_alive()
+        # no need to check if alive. If the service is dead -> others won't be able to use.
+        # self._wait_until_alive()
 
-        self._send_action_server_request(
-            'POST',
-            f'{self._get_action_execution_server_host()}/connect',
-        )
+        # self._send_action_server_request(
+        #     'POST',
+        #     f'{self._get_action_execution_server_host()}/connect',
+        # )
 
         logger.info('Pyodide initialized')
         self.send_status_message(' ')

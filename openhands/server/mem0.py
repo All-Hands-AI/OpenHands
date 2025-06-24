@@ -264,7 +264,7 @@ async def process_single_event_for_mem0(
                     parsed_events.append({'role': 'assistant', 'content': file_text})
                 metadata['type'] = Mem0MetadataType.FINISH_CONCLUSION.value
 
-    logger.info(f'duongtd_parsed_events: {parsed_events}')
+    logger.debug(f'duongtd_parsed_events: {parsed_events}')
     if parsed_events:
         try:
             # Try to get the running event loop

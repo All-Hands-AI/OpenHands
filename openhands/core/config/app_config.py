@@ -10,6 +10,7 @@ from openhands.core.config.config_utils import (
     OH_MAX_ITERATIONS,
     model_defaults_to_dict,
 )
+from openhands.core.config.conversation_config import ConversationConfig
 from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.mcp_config import MCPConfig
@@ -113,6 +114,7 @@ class AppConfig(BaseModel):
     evaluation_endpoint_url: str | None = Field(default=None)
     evaluation_timeout: int = Field(default=60)
     enable_evaluation: bool = Field(default=False)
+    conversation: ConversationConfig = Field(default_factory=ConversationConfig)
 
     def get_llm_config(self, name: str = 'llm') -> LLMConfig:
         """'llm' is the name for default config (for backward compatibility prior to 0.8)."""

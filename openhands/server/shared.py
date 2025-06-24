@@ -24,6 +24,9 @@ server_config = load_server_config()
 file_store = get_file_store(config.file_store, config.file_store_path)
 imagen = Imagen()
 
+# Initialize MCP tools cache
+# mcp_tools_cache = get_mcp_tools_cache()
+
 client_manager = None
 # redis_host = os.environ.get('REDIS_HOST')
 # if redis_host:

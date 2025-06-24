@@ -60,7 +60,7 @@ class VSCodePlugin(Plugin):
             output += line
             if 'at' in line:
                 break
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.1)
             logger.debug('Waiting for VSCode server to start...')
 
         logger.debug(

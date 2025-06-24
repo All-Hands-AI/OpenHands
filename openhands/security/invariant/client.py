@@ -31,7 +31,7 @@ class InvariantClient:
                 return response.json().get('id'), None
             except (httpx.NetworkError, httpx.TimeoutException):
                 elapsed += 1
-                time.sleep(1)
+                time.sleep(0.1)
             except httpx.HTTPError as http_err:
                 return None, http_err
             except Exception as err:

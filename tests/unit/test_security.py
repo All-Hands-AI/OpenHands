@@ -351,6 +351,7 @@ async def test_unsafe_bash_command(temp_dir: str):
                             'outputs': {'content': 'outputs content'},
                             'task_completed': None,
                             'final_thought': '',
+                            'enable_think': True,
                         },
                     ),
                 ),
@@ -435,7 +436,8 @@ async def test_unsafe_bash_command(temp_dir: str):
         ),
         (  # Test BrowseURLAction
             BrowseURLAction(
-                url='http://localhost:3000', thought='browsing to localhost'
+                url='http://localhost:3000',
+                thought='browsing to localhost',
             ),
             [
                 Message(
@@ -524,7 +526,7 @@ def test_parse_observation(observation, expected_trace):
     assert parse_observation([], observation) == expected_trace
 
 
-### Tests the alignment checkers of browser agent
+# Tests the alignment checkers of browser agent
 
 
 @pytest.fixture

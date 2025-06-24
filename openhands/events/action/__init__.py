@@ -20,7 +20,7 @@ from openhands.events.action.files import (
     FileWriteAction,
 )
 from openhands.events.action.mcp import McpAction
-from openhands.events.action.message import MessageAction
+from openhands.events.action.message import MessageAction, StreamingMessageAction
 
 __all__ = [
     'Action',
@@ -37,6 +37,7 @@ __all__ = [
     'ChangeAgentStateAction',
     'IPythonRunCellAction',
     'MessageAction',
+    'StreamingMessageAction',
     'ActionConfirmationStatus',
     'AgentThinkAction',
     'RecallAction',

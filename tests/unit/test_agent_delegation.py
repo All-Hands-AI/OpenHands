@@ -45,6 +45,7 @@ def mock_parent_agent():
     agent.llm.config = LLMConfig()
     agent.config = AgentConfig()
     agent.workspace_mount_path_in_sandbox_store_in_session = True
+    agent.streaming_llm = None
     return agent
 
 
@@ -57,6 +58,7 @@ def mock_child_agent():
     agent.llm.metrics = Metrics()
     agent.llm.config = LLMConfig()
     agent.config = AgentConfig()
+    agent.streaming_llm = None
     return agent
 
 
@@ -101,9 +103,9 @@ async def test_delegation_flow(
     # We also need to disable any internal client creation logic
     monkeypatch.setattr(
         'openhands.server.thesis_auth.os.getenv',
-        lambda x, default=None: 'http://fake-url'
-        if x == 'THESIS_AUTH_SERVER_URL'
-        else default,
+        lambda x, default=None: (
+            'http://fake-url' if x == 'THESIS_AUTH_SERVER_URL' else default
+        ),
     )
 
     # Mock Mem0Client to avoid actual initialization attempts during tests

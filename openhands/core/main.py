@@ -35,6 +35,7 @@ from openhands.mcp import fetch_mcp_tools_from_config
 from openhands.mcp.utils import fetch_search_tools_from_config
 from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
+from openhands.server.mcp_cache import mcp_tools_cache
 from openhands.utils.async_utils import call_async_from_sync
 
 
@@ -95,6 +96,11 @@ async def run_controller(
         >>> state = await run_controller(config=config, initial_user_action=action)
     """
     sid = sid or generate_sid(config)
+
+    if not mcp_tools_cache.is_loaded:
+        await mcp_tools_cache.initialize_tools(
+            config.dict_mcp_config, config.dict_search_engine_config
+        )
 
     if agent is None:
         agent = create_agent(config)

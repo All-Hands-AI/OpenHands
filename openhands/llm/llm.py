@@ -78,6 +78,7 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'Qwen3-235B-A22B-fp8-tput',
     'grok-3-mini',
     'grok-3-mini-beta',
+    'skylark-prod-250415',
 ]
 
 REASONING_EFFORT_SUPPORTED_MODELS = [
@@ -229,7 +230,7 @@ class LLM(RetryMixin, DebugMixin):
 
             messages: list[dict[str, Any]] | dict[str, Any] = []
             mock_function_calling = not self.is_function_calling_active()
-            logger.info(f'Mock function calling: {mock_function_calling}')
+            logger.debug(f'Mock function calling: {mock_function_calling}')
             # Add session_id and user_id as span attributes if they exist
             try:
                 span = trace.get_current_span()
@@ -648,19 +649,20 @@ class LLM(RetryMixin, DebugMixin):
             prompt_tokens_details: PromptTokensDetails = usage.get(
                 'prompt_tokens_details'
             )
+            model_extra = usage.get('model_extra', {})
+            cache_read_input_tokens = model_extra.get('cache_read_input_tokens', 0)
+            cache_write_tokens = model_extra.get('cache_creation_input_tokens', 0)
+
             cache_hit_tokens = (
                 prompt_tokens_details.cached_tokens
-                if prompt_tokens_details and prompt_tokens_details.cached_tokens
-                else 0
+                if prompt_tokens_details
+                and prompt_tokens_details.cached_tokens
+                and prompt_tokens_details.cached_tokens > 0
+                else cache_read_input_tokens
             )
             if cache_hit_tokens:
                 stats += 'Input tokens (cache hit): ' + str(cache_hit_tokens) + '\n'
 
-            # For Anthropic, the cache writes have a different cost than regular input tokens
-            # but litellm doesn't separate them in the usage stats
-            # we can read it from the provider-specific extra field
-            model_extra = usage.get('model_extra', {})
-            cache_write_tokens = model_extra.get('cache_creation_input_tokens', 0)
             if cache_write_tokens:
                 stats += 'Input tokens (cache write): ' + str(cache_write_tokens) + '\n'
 
@@ -765,6 +767,7 @@ class LLM(RetryMixin, DebugMixin):
 
         # try directly get response_cost from response
         _hidden_params = getattr(response, '_hidden_params', {})
+
         cost = _hidden_params.get('additional_headers', {}).get(
             'llm_provider-x-litellm-response-cost', None
         )
@@ -772,12 +775,29 @@ class LLM(RetryMixin, DebugMixin):
             cost = float(cost)
             logger.debug(f'Got response_cost from response: {cost}')
 
+        # Update _hidden_params to fix cost calculation for litellm_proxy models
+        if hasattr(response, '_hidden_params'):
+            custom_llm_provider = None
+            if 'claude' in self.config.model:
+                custom_llm_provider = 'anthropic'
+            elif 'gemini' in self.config.model:
+                custom_llm_provider = 'google'
+            elif 'gpt' in self.config.model:
+                custom_llm_provider = 'openai'
+            if response._hidden_params is None:
+                response._hidden_params = {}
+            response._hidden_params['custom_llm_provider'] = custom_llm_provider
+        else:
+            response._hidden_params = {'custom_llm_provider': None}
+
         try:
+            #
             if cost is None:
                 try:
                     cost = litellm_completion_cost(
                         completion_response=response, **extra_kwargs
                     )
+                    logger.debug(f'Got cost from litellm: {cost}')
                 except Exception as e:
                     logger.error(f'Error getting cost from litellm: {e}')
 
@@ -884,7 +904,7 @@ def transform_messages_for_gemini(messages):
                 message['content'] = message['content'][0]['text']
             else:
                 logger.warning(
-                    f'content format in message not matched for gemini: {message["content"]}'
+                    f"content format in message not matched for gemini: {message['content']}"
                 )
 
     return messages

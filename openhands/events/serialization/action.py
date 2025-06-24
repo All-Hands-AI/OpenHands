@@ -27,7 +27,7 @@ from openhands.events.action.files import (
     FileWriteAction,
 )
 from openhands.events.action.mcp import McpAction
-from openhands.events.action.message import MessageAction
+from openhands.events.action.message import MessageAction, StreamingMessageAction
 
 actions = (
     NullAction,
@@ -49,6 +49,7 @@ actions = (
     McpAction,
     A2AListRemoteAgentsAction,
     A2ASendTaskAction,
+    StreamingMessageAction,
 )
 
 ACTION_TYPE_TO_CLASS = {action_class.action: action_class for action_class in actions}  # type: ignore[attr-defined]
@@ -125,7 +126,14 @@ def action_from_dict(action: dict) -> Action:
     args = handle_action_deprecated_args(args)
 
     try:
-        decoded_action = action_class(**args)
+        # Filter args to only include valid parameters for the action class
+        import inspect
+
+        sig = inspect.signature(action_class)
+        valid_params = set(sig.parameters.keys())
+        filtered_args = {k: v for k, v in args.items() if k in valid_params}
+
+        decoded_action = action_class(**filtered_args)
         if 'timeout' in action:
             blocking = args.get('blocking', False)
             decoded_action.set_hard_timeout(action['timeout'], blocking=blocking)

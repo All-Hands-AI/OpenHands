@@ -417,3 +417,7 @@ type = "mcp_sse"
 url = "http://0.0.0.0:8080/sse"
 tools = ["search"]
 name = "google"
+
+[conversation]
+# Whether to enable streaming for the conversation
+enable_streaming = true

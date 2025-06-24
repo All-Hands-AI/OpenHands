@@ -66,10 +66,10 @@ class CacheControlMiddleware(BaseHTTPMiddleware):
 class InMemoryRateLimiter:
     history: dict
     requests: int
-    seconds: int
-    sleep_seconds: int
+    seconds: float
+    sleep_seconds: float
 
-    def __init__(self, requests: int = 2, seconds: int = 1, sleep_seconds: int = 1):
+    def __init__(self, requests: int = 2, seconds: float = 1, sleep_seconds: float = 1):
         self.requests = requests
         self.seconds = seconds
         self.sleep_seconds = sleep_seconds

@@ -167,7 +167,7 @@ def _remove_command_prefix(command_output: str, command: str) -> str:
 
 
 class BashSession:
-    POLL_INTERVAL = 0.5
+    POLL_INTERVAL = 0.1
     HISTORY_LIMIT = 10_000
     PS1 = CmdOutputMetadata.to_ps1_prompt()
 

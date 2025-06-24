@@ -310,7 +310,7 @@ class StandaloneConversationManager(ConversationManager):
             response_ids = await self.get_running_agent_loops(user_id)
             if len(response_ids) >= self.config.max_concurrent_conversations:
                 logger.info(
-                    'too_many_sessions_for:{user_id}',
+                    f'too_many_sessions_for:{user_id}',
                     extra={'session_id': sid, 'user_id': user_id},
                 )
                 # # Get the conversations sorted (oldest first)

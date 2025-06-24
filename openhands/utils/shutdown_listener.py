@@ -3,7 +3,6 @@ This module monitors the app for shutdown signals. This exists because the atexi
 does not play nocely with stareltte / uvicorn shutdown signals.
 """
 
-import asyncio
 import signal
 import threading
 import time
@@ -73,15 +72,6 @@ def sleep_if_should_continue(timeout: float) -> None:
     start_time = time.time()
     while (time.time() - start_time) < timeout and should_continue():
         time.sleep(1)
-
-
-async def async_sleep_if_should_continue(timeout: float) -> None:
-    if timeout <= 1:
-        await asyncio.sleep(timeout)
-        return
-    start_time = time.time()
-    while time.time() - start_time < timeout and should_continue():
-        await asyncio.sleep(1)
 
 
 def add_shutdown_listener(callable: Callable) -> UUID:

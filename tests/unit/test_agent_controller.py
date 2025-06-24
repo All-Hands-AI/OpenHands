@@ -51,6 +51,7 @@ def mock_agent():
     agent.llm.metrics = Metrics()
     agent.llm.config = AppConfig().get_llm_config()
     agent.a2a_manager = MagicMock(spec=A2AManager)
+    agent.streaming_llm = None  # Add the streaming_llm attribute
     return agent
 
 
@@ -223,6 +224,7 @@ async def test_run_controller_with_fatal_error(test_event_stream, mock_memory):
     agent.llm.metrics = Metrics()
     agent.llm.config = config.get_llm_config()
     agent.a2a_manager = MagicMock(spec=A2AManager)
+    agent.streaming_llm = None
 
     runtime = MagicMock(spec=Runtime)
 
@@ -288,6 +290,7 @@ async def test_run_controller_stop_with_stuck(test_event_stream, mock_memory):
     agent.llm.metrics = Metrics()
     agent.llm.config = config.get_llm_config()
     agent.a2a_manager = MagicMock(spec=A2AManager)
+    agent.streaming_llm = None
     runtime = MagicMock(spec=Runtime)
 
     def on_event(event: Event):
@@ -624,6 +627,7 @@ async def test_run_controller_max_iterations_has_metrics(
     agent.llm.metrics = Metrics()
     agent.llm.config = config.get_llm_config()
     agent.a2a_manager = MagicMock(spec=A2AManager)
+    agent.streaming_llm = None
 
     def agent_step_fn(state):
         print(f'agent_step_fn received state: {state}')
@@ -1030,6 +1034,7 @@ async def test_run_controller_with_memory_error(test_event_stream):
     agent.llm.metrics = Metrics()
     agent.llm.config = config.get_llm_config()
     agent.a2a_manager = MagicMock(spec=A2AManager)
+    agent.streaming_llm = None
 
     # Create a real action to return from the mocked step function
     def agent_step_fn(state):
@@ -1074,6 +1079,7 @@ async def test_action_metrics_copy():
     # Create agent with metrics
     agent = MagicMock(spec=Agent)
     agent.llm = MagicMock(spec=LLM)
+    agent.streaming_llm = None
     metrics = Metrics(model_name='test-model')
     metrics.accumulated_cost = 0.05
 
@@ -1202,6 +1208,7 @@ async def test_first_user_message_with_identical_content():
     mock_agent.llm = MagicMock(spec=LLM)
     mock_agent.llm.metrics = Metrics()
     mock_agent.llm.config = AppConfig().get_llm_config()
+    mock_agent.streaming_llm = None
 
     controller = AgentController(
         agent=mock_agent,
@@ -1269,6 +1276,7 @@ async def test_agent_controller_processes_null_observation_with_cause():
     mock_agent.llm = MagicMock(spec=LLM)
     mock_agent.llm.metrics = Metrics()
     mock_agent.llm.config = AppConfig().get_llm_config()
+    mock_agent.streaming_llm = None
 
     # Create a controller with the mock agent
     controller = AgentController(
@@ -1343,6 +1351,7 @@ def test_agent_controller_should_step_with_null_observation_cause_zero():
 
     # Create a mock agent
     mock_agent = MagicMock(spec=Agent)
+    mock_agent.streaming_llm = None
 
     # Create an agent controller
     controller = AgentController(

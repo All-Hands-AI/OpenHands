@@ -112,7 +112,7 @@ class JupyterKernel:
                 except Exception:
                     # kernels are not ready yet
                     n_tries -= 1
-                    await asyncio.sleep(1)
+                    await asyncio.sleep(0.1)
 
             if n_tries == 0:
                 raise ConnectionRefusedError('Failed to connect to kernel')

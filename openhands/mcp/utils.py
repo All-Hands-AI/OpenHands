@@ -50,50 +50,57 @@ def convert_mcp_clients_to_tools(mcp_clients: list[MCPClient] | None) -> list[di
     return all_mcp_tools
 
 
+async def connect_single_client(
+    name: str,
+    mcp_config: MCPConfig,
+    sid: Optional[str] = None,
+    mnemonic: Optional[str] = None,
+) -> Optional[MCPClient]:
+    """Connect to a single MCP server and return the client or None on failure."""
+    logger.info(
+        f'Initializing MCP {name} agent for {mcp_config.url} with {mcp_config.mode} connection...'
+    )
+
+    client = MCPClient(name=name)
+    try:
+        await client.connect_sse(mcp_config.url, sid, mnemonic)
+        logger.info(f'Connected to MCP server {mcp_config.url} via SSE')
+        return client
+    except Exception as e:
+        logger.error(f'Failed to connect to {mcp_config.url}: {str(e)}')
+        try:
+            await client.disconnect()
+        except Exception as disconnect_error:
+            logger.error(
+                f'Error during disconnect after failed connection: {str(disconnect_error)}'
+            )
+        return None
+
+
 async def create_mcp_clients(
     dict_mcp_config: dict[str, MCPConfig],
     sid: Optional[str] = None,
     mnemonic: Optional[str] = None,
 ) -> list[MCPClient]:
-    # Initialize SSE connections
-    async def connect_client(name: str, mcp_config: MCPConfig) -> Optional[MCPClient]:
-        logger.info(
-            f'Initializing MCP {name} agent for {mcp_config.url} with {mcp_config.mode} connection...'
-        )
-        # check if the name in a search engine config
-        if f'search_engine_{name}' in dict_mcp_config:
-            return None
+    """Create MCP clients with concurrent connections for better performance."""
 
-        client = MCPClient(name=name)
-        try:
-            await client.connect_sse(mcp_config.url, sid, mnemonic)
-            logger.info(f'Connected to MCP server {mcp_config.url} via SSE')
-            return client
-        except Exception as e:
-            logger.error(f'Failed to connect to {mcp_config.url}: {str(e)}')
-            try:
-                await client.disconnect()
-            except Exception as disconnect_error:
-                logger.error(
-                    f'Error during disconnect after failed connection: {str(disconnect_error)}'
-                )
-            return None
+    # Create connection tasks for all MCP configs concurrently
+    connection_tasks = []
+    for name, config in dict_mcp_config.items():
+        # Skip if this is a search engine config
+        # if f'search_engine' not in name:
+        connection_tasks.append(connect_single_client(name, config, sid, mnemonic))
 
-    # Create tasks for all clients
-    tasks = [
-        connect_client(name, mcp_config) for name, mcp_config in dict_mcp_config.items()
-    ]
+    # Execute all connections concurrently
+    results = await asyncio.gather(*connection_tasks, return_exceptions=True)
 
-    # Run all connection attempts concurrently, ignoring exceptions
-    results = await asyncio.gather(*tasks, return_exceptions=True)
-    # Filter out exceptions and None results
-    mcp_clients: list[MCPClient] = [
-        r
-        for r in results
-        if not isinstance(r, Exception)
-        and not isinstance(r, BaseException)
-        and r is not None
-    ]
+    # Collect successful clients, filtering out None values and exceptions
+    mcp_clients: list[MCPClient] = []
+    for result in results:
+        if isinstance(result, Exception):
+            logger.error(f'Unexpected error during MCP client connection: {result}')
+        elif result is not None and isinstance(result, MCPClient):
+            mcp_clients.append(result)
 
     return mcp_clients
 

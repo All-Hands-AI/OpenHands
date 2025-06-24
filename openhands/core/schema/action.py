@@ -6,6 +6,10 @@ class ActionType(str, Enum):
     """Represents a message.
     """
 
+    STREAMING_MESSAGE = 'streaming_message'
+    """Represents a streaming message chunk for UI display only.
+    """
+
     START = 'start'
     """Starts a new development task OR send chat from the user. Only sent by the client.
     """

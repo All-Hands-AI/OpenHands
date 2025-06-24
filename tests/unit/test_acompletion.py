@@ -76,7 +76,17 @@ async def test_acompletion_non_streaming():
 
 @pytest.mark.asyncio
 async def test_acompletion_streaming(mock_response):
-    with patch.object(StreamingLLM, '_call_acompletion') as mock_call_acompletion:
+    with patch.object(
+        StreamingLLM, '_call_acompletion'
+    ) as mock_call_acompletion, patch(
+        'openhands.llm.streaming_llm.stream_chunk_builder'
+    ) as mock_stream_builder:
+        # Mock the stream_chunk_builder to return a simple response
+        mock_stream_builder.return_value = {
+            'choices': [{'message': {'content': 'Full response'}}],
+            'usage': {'prompt_tokens': 10, 'completion_tokens': 15},
+        }
+
         mock_call_acompletion.return_value.__aiter__.return_value = iter(mock_response)
         test_llm = _get_llm(StreamingLLM)
         async for chunk in test_llm.async_streaming_completion(

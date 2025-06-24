@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any
+from typing import Any, Optional
 
 from openhands.core.schema import ActionType
 from openhands.events.action.action import Action
@@ -43,6 +43,7 @@ class AgentFinishAction(Action):
     outputs: dict[str, Any] = field(default_factory=dict)
     thought: str = ''
     action: str = ActionType.FINISH
+    enable_think: Optional[bool] = True
 
     @property
     def message(self) -> str:

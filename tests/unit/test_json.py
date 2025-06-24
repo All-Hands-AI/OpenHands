@@ -20,6 +20,7 @@ def test_event_serialization_deserialization():
             'image_urls': None,
             'wait_for_response': False,
             'mode': None,
+            'enable_think': True,
         },
     }
     assert deserialized == expected
@@ -42,6 +43,7 @@ def test_array_serialization_deserialization():
                 'image_urls': None,
                 'wait_for_response': False,
                 'mode': None,
+                'enable_think': True,
             },
         }
     ]
