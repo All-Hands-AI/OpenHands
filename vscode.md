@@ -1,88 +1,70 @@
-# VSCode Integration with OpenHands
+# VSCode Integration Approaches
 
-This document outlines the three main approaches for integrating VSCode with OpenHands, each serving different use cases and levels of integration.
+OpenHands can integrate with VSCode in three different ways, each serving different use cases:
 
-## Overview
+## 1. VSCode Extension Approach
+**Purpose**: Bring OpenHands functionality directly into the VSCode editor interface.
 
-There are three distinct integration approaches being developed:
+**How it works**:
+- VSCode extension (TypeScript) provides UI panels, commands, and editor integrations
+- Extension communicates with OpenHands backend via Socket.IO (same protocol as web frontend)
+- Users interact with OpenHands through VSCode's native interface (panels, command palette, etc.)
 
-1. **VSCode Integration Extension** - Simple menu integration
-2. **VSCode Runtime** - Execution environment integration
-3. **OpenHands Tab** - Full UI integration
+**Use cases**:
+- Code assistance and generation within the editor
+- File operations with visual feedback
+- Integrated chat interface
+- Code review and suggestions
 
-## 1. VSCode Integration Extension (vscode-integration)
+## 2. VSCode Runtime Approach ⭐ **(Current Focus)**
+**Purpose**: Use VSCode as the execution environment for OpenHands actions.
 
-**Purpose**: Provides a simple way to launch OpenHands from within VSCode.
+**How it works**:
+- OpenHands AgentController sends actions to VSCode Runtime (Python)
+- VSCode Runtime forwards actions to VSCode Extension via Socket.IO
+- VSCode Extension executes actions using VSCode API (file ops, terminal, etc.)
+- VSCode Extension sends observations back via Socket.IO
+- VSCode Runtime returns observations to AgentController
 
-**Features**:
-- Auto-installs as a VSCode extension
-- Adds commands to VSCode's command palette and menus
-- Allows users to start OpenHands sessions directly from VSCode
-- Minimal integration - primarily a launcher
-
-**Implementation**:
-- VSCode extension (TypeScript/JavaScript)
-- Located in `/openhands/integrations/vscode/`
-- Focuses on VSCode extension API for menu integration
-
-**Use Case**: Users who want to quickly start OpenHands while working in VSCode without leaving their editor environment.
-
-## 2. VSCode Runtime (vscode-runtime)
-
-**Purpose**: Executes OpenHands actions directly within the VSCode environment using VSCode APIs.
-
-**Features**:
-- Implements the OpenHands Runtime interface
-- Actions are executed in TypeScript using VSCode API
-- File operations, terminal commands, etc. run through VSCode's built-in capabilities
-- Provides a sandboxed execution environment within VSCode
-
-**Implementation**:
-- Python Runtime class: `/openhands/runtime/vscode/vscode_runtime.py`
-- TypeScript action handlers using VSCode API
-- Communication bridge between Python OpenHands core and TypeScript execution
-
-**Use Case**: Users who want OpenHands actions to be executed directly in their VSCode workspace, leveraging VSCode's file system access, terminal, and other built-in features.
-
-**Current Status**: Implementation exists but has issues with assumptions about Socket.IO connections and other infrastructure that may not be properly set up.
-
-## 3. OpenHands Tab (openhands-tab)
-
-**Purpose**: Provides a complete OpenHands user interface as a tab within VSCode.
-
-**Features**:
-- Full OpenHands UI embedded in VSCode
-- Users can send prompts, view agent actions and observations
-- Complete conversation history and interaction capabilities
-- Seamless integration with VSCode workspace
-
-**Implementation**:
-- VSCode webview panel hosting OpenHands frontend
-- Frontend components adapted for VSCode environment
-- Located in `/frontend/src/routes/vscode-tab.tsx`
-
-**Use Case**: Users who want the full OpenHands experience without leaving VSCode, with complete access to all OpenHands features in a native VSCode interface.
-
-## Integration Architecture
-
+**Architecture**:
 ```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│ VSCode          │    │ OpenHands Core   │    │ Execution       │
-│ Integration     │    │ (Python)         │    │ Environment     │
-├─────────────────┤    ├──────────────────┤    ├─────────────────┤
-│ 1. Menu Commands│───▶│ Agent Controller │    │ Local/Docker/   │
-│ 2. Runtime API  │◀──▶│ Runtime Interface│◀──▶│ Remote/VSCode   │
-│ 3. UI Tab       │    │ Event Stream     │    │                 │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
+AgentController → VSCodeRuntime → Socket.IO Server → VSCode Extension → VSCode API
+                                      ↑                    ↓
+                                 Socket.IO ← Observations ←
 ```
 
-## Current Focus: VSCode Runtime
+**Use cases**:
+- Leverage VSCode's file system access and workspace management
+- Use VSCode's integrated terminal and debugging capabilities
+- Access VSCode's language services and extensions
+- Work within user's existing VSCode setup and configuration
 
-The current task focuses on **approach #2 (VSCode Runtime)**. This involves:
+## 3. VSCode Tab Approach
+**Purpose**: Embed OpenHands web interface as a tab within VSCode.
 
-- Implementing a proper Runtime class that executes actions via VSCode API
-- Setting up communication between Python OpenHands core and TypeScript execution
-- Handling file operations, terminal commands, and other actions through VSCode's capabilities
-- Ensuring proper error handling and observation reporting
+**How it works**:
+- VSCode extension creates a webview panel
+- Panel loads the OpenHands web interface
+- Standard Socket.IO communication with OpenHands backend
+- VSCode provides the container, OpenHands runs as usual
 
-The existing implementation in `vscode_runtime.py` needs review and fixes for assumptions about infrastructure that may not exist.
+**Use cases**:
+- Quick access to OpenHands without leaving VSCode
+- Minimal integration effort
+- Familiar web interface within editor context
+- Good for users who prefer the web UI but want editor integration
+
+---
+
+## Socket.IO Infrastructure
+
+OpenHands has existing Socket.IO infrastructure that all approaches leverage:
+
+- **Server**: `openhands/server/shared.py` creates `socketio.AsyncServer`
+- **Event Handlers**: `openhands/server/listen_socket.py` handles client connections
+- **Event Flow**: Clients connect, send `oh_user_action` events, receive `oh_event` emissions
+- **Consistency**: VSCode integrations use the same protocol as the web frontend
+
+## Current Implementation Status
+
+We are currently implementing the **VSCode Runtime approach** (`vscode_runtime.py`), which allows OpenHands to use VSCode as its execution environment.
