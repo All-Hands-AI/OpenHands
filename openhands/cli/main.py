@@ -155,7 +155,7 @@ async def run_session(
         nonlocal reload_microagents, new_session_requested
         while True:
             next_message = await read_prompt_input(
-                agent_state, multiline=config.cli_multiline_input
+                config, agent_state, multiline=config.cli_multiline_input
             )
 
             if not next_message.strip():
@@ -214,7 +214,7 @@ async def run_session(
                     )
                     return
 
-                confirmation_status = await read_confirmation_input()
+                confirmation_status = await read_confirmation_input(config)
                 if confirmation_status == 'yes' or confirmation_status == 'always':
                     event_stream.add_event(
                         ChangeAgentStateAction(AgentState.USER_CONFIRMED),
