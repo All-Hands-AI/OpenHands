@@ -76,11 +76,11 @@ async function findOrCreateOpenHandsTerminal(): Promise<vscode.Terminal> {
     if (terminal.shellIntegration) {
       const isIdle = await probeTerminalStatus(terminal);
       if (isIdle) {
-        return terminal; // Safe to reuse if idle
+        return terminal;
       }
     }
 
-    // If terminal is busy or probe failed, create a new one to avoid interrupting running programs
+    // If terminal is busy or probe failed, create new one
     return createNewOpenHandsTerminal();
   }
 
