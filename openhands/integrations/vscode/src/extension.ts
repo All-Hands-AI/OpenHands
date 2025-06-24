@@ -241,18 +241,16 @@ export function activate(context: vscode.ExtensionContext) {
     () => {
       const editor = vscode.window.activeTextEditor;
       if (!editor) {
-        vscode.window.showErrorMessage(
-          "OpenHands: No active text editor found.",
-        );
+        // No active editor, start conversation without task
+        startOpenHandsInTerminal({});
         return;
       }
 
       if (editor.document.isUntitled) {
         const fileContent = editor.document.getText();
         if (!fileContent.trim()) {
-          vscode.window.showErrorMessage(
-            "OpenHands: Active untitled file is empty. Please add content or save the file.",
-          );
+          // Empty untitled file, start conversation without task
+          startOpenHandsInTerminal({});
           return;
         }
         startOpenHandsInTerminal({ task: fileContent });
@@ -273,13 +271,13 @@ export function activate(context: vscode.ExtensionContext) {
       );
       const editor = vscode.window.activeTextEditor;
       if (!editor) {
-        vscode.window.showErrorMessage(
-          "OpenHands: No active text editor found.",
-        );
+        // No active editor, start conversation without task
+        startOpenHandsInTerminal({});
         return;
       }
       if (editor.selection.isEmpty) {
-        vscode.window.showErrorMessage("OpenHands: No text selected.");
+        // No text selected, start conversation without task
+        startOpenHandsInTerminal({});
         return;
       }
       const selectedText = editor.document.getText(editor.selection);
