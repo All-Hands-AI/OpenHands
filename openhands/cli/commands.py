@@ -52,6 +52,7 @@ async def handle_commands(
 
     if command == '/exit':
         close_repl = handle_exit_command(
+            config,
             event_stream,
             usage_metrics,
             sid,
@@ -66,7 +67,7 @@ async def handle_commands(
         handle_status_command(usage_metrics, sid)
     elif command == '/new':
         close_repl, new_session_requested = handle_new_command(
-            event_stream, usage_metrics, sid
+            config, event_stream, usage_metrics, sid
         )
     elif command == '/settings':
         await handle_settings_command(config, settings_store)
@@ -81,12 +82,16 @@ async def handle_commands(
 
 
 def handle_exit_command(
-    event_stream: EventStream, usage_metrics: UsageMetrics, sid: str
+    config: OpenHandsConfig,
+    event_stream: EventStream,
+    usage_metrics: UsageMetrics,
+    sid: str,
 ) -> bool:
     close_repl = False
 
     confirm_exit = (
-        cli_confirm('\nTerminate session?', ['Yes, proceed', 'No, dismiss']) == 0
+        cli_confirm(config, '\nTerminate session?', ['Yes, proceed', 'No, dismiss'])
+        == 0
     )
 
     if confirm_exit:
@@ -119,7 +124,7 @@ async def handle_init_command(
     reload_microagents = False
 
     if config.runtime == 'local':
-        init_repo = await init_repository(current_dir)
+        init_repo = await init_repository(config, current_dir)
         if init_repo:
             event_stream.add_event(
                 MessageAction(content=REPO_MD_CREATE_PROMPT),
@@ -140,13 +145,17 @@ def handle_status_command(usage_metrics: UsageMetrics, sid: str) -> None:
 
 
 def handle_new_command(
-    event_stream: EventStream, usage_metrics: UsageMetrics, sid: str
+    config: OpenHandsConfig,
+    event_stream: EventStream,
+    usage_metrics: UsageMetrics,
+    sid: str,
 ) -> tuple[bool, bool]:
     close_repl = False
     new_session_requested = False
 
     new_session_requested = (
         cli_confirm(
+            config,
             '\nCurrent session will be terminated and you will lose the conversation history.\n\nContinue?',
             ['Yes, proceed', 'No, dismiss'],
         )
@@ -171,6 +180,7 @@ async def handle_settings_command(
 ) -> None:
     display_settings(config)
     modify_settings = cli_confirm(
+        config,
         '\nWhich settings would you like to modify?',
         [
             'Basic',
@@ -207,7 +217,7 @@ async def handle_resume_command(
     return close_repl, new_session_requested
 
 
-async def init_repository(current_dir: str) -> bool:
+async def init_repository(config: OpenHandsConfig, current_dir: str) -> bool:
     repo_file_path = Path(current_dir) / '.openhands' / 'microagents' / 'repo.md'
     init_repo = False
 
@@ -237,6 +247,7 @@ async def init_repository(current_dir: str) -> bool:
 
             init_repo = (
                 cli_confirm(
+                    config,
                     'Do you want to re-initialize?',
                     ['Yes, re-initialize', 'No, dismiss'],
                 )
@@ -255,6 +266,7 @@ async def init_repository(current_dir: str) -> bool:
 
         init_repo = (
             cli_confirm(
+                config,
                 'Do you want to proceed?',
                 ['Yes, create', 'No, dismiss'],
             )
@@ -297,7 +309,10 @@ def check_folder_security_agreement(config: OpenHandsConfig, current_dir: str) -
         print_formatted_text('')
 
         confirm = (
-            cli_confirm('Do you wish to continue?', ['Yes, proceed', 'No, exit']) == 0
+            cli_confirm(
+                config, 'Do you wish to continue?', ['Yes, proceed', 'No, exit']
+            )
+            == 0
         )
 
         if confirm:
