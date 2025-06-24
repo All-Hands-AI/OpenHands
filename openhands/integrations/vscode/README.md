@@ -17,7 +17,8 @@ Access commands via Command Palette (Ctrl+Shift+P) or right-click menu.
 - **Non-Intrusive**: Never interrupts running processes in existing terminals
 - **Smart Reuse**: Only reuses terminals that have completed OpenHands commands
 - **Safe Fallback**: Creates new terminals when existing ones may be busy
-- **Shell Integration**: Uses VS Code's Shell Integration API when available for better tracking
+- **Shell Integration**: Uses VS Code's Shell Integration API when available for better command tracking
+- **Conservative Approach**: When in doubt, creates a new terminal to avoid conflicts
 
 ### Virtual Environment Support
 - **Auto-Detection**: Automatically finds and activates Python virtual environments

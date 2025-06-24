@@ -1,4 +1,6 @@
-# Terminal Reuse Problem Analysis
+# VSCode Extension Terminal Reuse - Development Analysis
+
+This document contains the detailed technical analysis and decision-making process for implementing safe terminal reuse in the OpenHands VSCode extension. This is development-time documentation that explains the various approaches considered and why the current implementation was chosen.
 
 ## Problem Statement
 
@@ -28,9 +30,9 @@ When launching `openhands --task "selected text"` from VS Code, we want to:
 - [Shell Integration Guide](https://code.visualstudio.com/docs/terminal/shell-integration)
 - [VSCode Source: vscode.d.ts](https://github.com/microsoft/vscode/blob/main/src/vscode-dts/vscode.d.ts)
 
-## Solution Approaches
+## Solution Approaches Considered
 
-### Approach 1: Shell Integration with Intelligent Probing ⭐ **NEW RECOMMENDED**
+### Approach 1: Shell Integration with Intelligent Probing (ABANDONED)
 
 **Concept:** Use VSCode's Shell Integration API to intelligently detect terminal state and safely manage commands.
 
@@ -93,28 +95,12 @@ async function probeTerminalStatus(terminal: vscode.Terminal): Promise<boolean> 
     return false; // Assume busy if probe fails
   }
 }
-
-async function executeOpenHandsCommand(terminal: vscode.Terminal, command: string): Promise<void> {
-  if (terminal.shellIntegration) {
-    // Use Shell Integration for better control
-    const execution = terminal.shellIntegration.executeCommand(command);
-
-    // Monitor execution completion
-    vscode.window.onDidEndTerminalShellExecution(event => {
-      if (event.execution === execution) {
-        if (event.exitCode === 0) {
-          console.log('OpenHands command completed successfully');
-        } else if (event.exitCode !== undefined) {
-          console.log(`OpenHands command exited with code ${event.exitCode}`);
-        }
-      }
-    });
-  } else {
-    // Fallback to traditional sendText
-    terminal.sendText(command, true);
-  }
-}
 ```
+
+**Why Abandoned:**
+1. **Probing commands interrupted running processes** - Even simple `echo` commands could interfere with CLIs
+2. **Shell Integration executeCommand() was too intrusive** - It would interrupt running processes to execute probe commands
+3. **User experience was poor** - Users reported that their running CLIs were being stopped
 
 **Pros:**
 - **Intelligent detection** - Can actually determine if terminal is idle
@@ -127,6 +113,7 @@ async function executeOpenHandsCommand(terminal: vscode.Terminal, command: strin
 - **Shell dependency** - Requires compatible shell (bash, zsh, PowerShell, fish)
 - **Complexity** - More complex than simple approaches
 - **Timing** - Probe adds small delay for detection
+- **Actually interrupts processes** - The main reason for abandonment
 
 ### Approach 2: Interrupt-and-Reuse Strategy (Fallback)
 
@@ -228,7 +215,7 @@ function trackTerminalExecution(terminal: vscode.Terminal, execution: vscode.Ter
 - **Manual interference** - User commands break tracking
 - **Over-engineering** - More complex than needed for most use cases
 
-## Implemented Solution
+## Final Implementation: Safe State Tracking
 
 **Primary: Safe State Tracking (Modified Approach 4)**
 **Fallback: Always Create New Terminal (Approach 3)**
@@ -280,22 +267,6 @@ function findOrCreateOpenHandsTerminal(): vscode.Terminal {
 - **Shell Integration aware** - Uses modern VS Code APIs when available
 - **Graceful degradation** - Works safely even without Shell Integration
 
-### Previous Approach (Abandoned)
-
-The original plan was to use intelligent probing with Shell Integration, but this approach was abandoned because:
-
-1. **Probing commands interrupted running processes** - Even simple `echo` commands could interfere with CLIs
-2. **Shell Integration executeCommand() was too intrusive** - It would interrupt running processes to execute probe commands
-3. **User experience was poor** - Users reported that their running CLIs were being stopped
-
-### Final Implementation Rationale
-
-1. **Safety First:** Never risk interrupting user processes
-2. **Simple State Tracking:** Only track terminals where we executed commands
-3. **Shell Integration for Monitoring:** Use Shell Integration only to monitor our own command completion
-4. **Conservative Reuse:** Only reuse terminals we know are safe
-5. **Predictable Behavior:** Always create new terminals when in doubt
-
 ## Code Changes Implemented
 
 **File:** `src/extension.ts`
@@ -328,6 +299,14 @@ The original plan was to use intelligent probing with Shell Integration, but thi
 }
 ```
 
+## Implementation Rationale
+
+1. **Safety First:** Never risk interrupting user processes
+2. **Simple State Tracking:** Only track terminals where we executed commands
+3. **Shell Integration for Monitoring:** Use Shell Integration only to monitor our own command completion
+4. **Conservative Reuse:** Only reuse terminals we know are safe
+5. **Predictable Behavior:** Always create new terminals when in doubt
+
 ## References for Implementation
 
 **VSCode API Documentation:**
@@ -339,3 +318,13 @@ The original plan was to use intelligent probing with Shell Integration, but thi
 - [VSCode Source Examples](https://github.com/microsoft/vscode/blob/main/src/vscode-dts/vscode.d.ts)
 - Shell Integration requires: bash, zsh, PowerShell Core, or fish shell
 - Graceful fallback needed for Command Prompt and other shells
+
+## Development Notes
+
+This analysis was created during the development of the OpenHands VSCode extension to document the decision-making process for terminal reuse functionality. The final implementation prioritizes user safety and experience over complex optimization.
+
+Key lessons learned:
+1. Probing terminals is inherently risky and should be avoided
+2. Shell Integration is powerful but must be used carefully
+3. Conservative approaches often provide better user experience
+4. State tracking should be simple and fail-safe
