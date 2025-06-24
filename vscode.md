@@ -68,3 +68,30 @@ OpenHands has existing Socket.IO infrastructure that all approaches leverage:
 ## Current Implementation Status
 
 We are currently implementing the **VSCode Runtime approach** (`vscode_runtime.py`), which allows OpenHands to use VSCode as its execution environment.
+
+### Implementation Issues Identified
+
+The current VSCode Runtime implementation has several issues:
+
+1. **Hallucinated Actions**: Implements methods for actions that don't exist in OpenHands:
+   - `mkdir()`, `rmdir()`, `rm()` - these action types don't exist
+   - Directory operations should use `CmdRunAction` or `FileEditAction`
+
+2. **Missing Required Methods**: Doesn't implement all abstract methods from Runtime base class:
+   - `edit()` for `FileEditAction`
+   - `browse_interactive()` for `BrowseInteractiveAction`
+   - `call_tool_mcp()` for `MCPAction`
+
+3. **Wrong Method Signatures**: Some methods are async when they should be sync to match base class
+
+4. **Scope Issues**: Implements agent-level actions (`finish`, `recall`, `send_message`) that should be handled by AgentController
+
+### Actual OpenHands Actions
+- `CmdRunAction` - Execute shell commands
+- `FileReadAction` - Read files
+- `FileWriteAction` - Write files
+- `FileEditAction` - Edit files (create, str_replace, insert, etc.)
+- `BrowseURLAction` - Browse URLs
+- `IPythonRunCellAction` - Execute Python code
+
+The Socket.IO architecture is correct, but the action handling needs to be fixed to match OpenHands' actual event system.
