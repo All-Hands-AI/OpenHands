@@ -686,6 +686,7 @@ fi
         )
 
         # Try to clone the org-level .openhands repo
+        org_repo_dir = None
         try:
             # Create a temporary directory for the org-level repo
             org_repo_dir = self.workspace_root / f'org_openhands_{org_name}'
@@ -720,7 +721,9 @@ fi
                 )
 
                 # Clean up the org repo directory
-                shutil.rmtree(org_repo_dir)
+                if org_repo_dir.exists():
+                    shutil.rmtree(org_repo_dir)
+                    org_repo_dir = None  # Mark as already removed
             else:
                 self.log(
                     'info',
@@ -729,6 +732,15 @@ fi
 
         except Exception as e:
             self.log('error', f'Error loading org-level microagents: {str(e)}')
+            # Clean up the org repo directory if it still exists
+            if org_repo_dir is not None and org_repo_dir.exists():
+                try:
+                    shutil.rmtree(org_repo_dir)
+                except Exception as cleanup_error:
+                    self.log(
+                        'warning',
+                        f'Error cleaning up org repo directory: {str(cleanup_error)}',
+                    )
 
         return loaded_microagents
 
