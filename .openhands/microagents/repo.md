@@ -19,6 +19,7 @@ IMPORTANT: Before making any changes to the codebase, ALWAYS run `make install-p
 
 - Always use specific `git add <filename>` instead of `git add .` to avoid accidentally staging unintended files
 - Be especially careful with `git reset --hard` after staging files, as it will remove accidentally staged files
+- When remote has new changes, use `git fetch upstream && git rebase upstream/<branch>` on the same branch
 
 Before pushing any changes, you MUST ensure that any lint errors or simple test errors have been fixed.
 
@@ -79,6 +80,9 @@ VSCode Extension:
   - Package extension: `npm run package-vsix`
 - Testing:
   - Run tests: `npm run test`
+- Development Best Practices:
+  - Use `vscode.window.createOutputChannel()` for debug logging instead of `showErrorMessage()` popups
+  - Pre-commit process runs both frontend and backend checks when committing extension changes
 
 ## Microagents
 
@@ -87,6 +91,7 @@ Microagents are specialized prompts that enhance OpenHands with domain-specific 
 ### Types:
 - **Public Microagents**: Located in `openhands/microagents/`, available to all users
 - **Repository Microagents**: Located in `.openhands/microagents/`, specific to this repository
+- **User Microagents**: Located in `~/.openhands/microagents/`, for development files that shouldn't be committed to repositories
 
 ### Loading Behavior:
 - **Without frontmatter**: Always loaded into LLM context
