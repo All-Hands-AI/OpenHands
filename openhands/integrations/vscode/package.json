@@ -10,7 +10,7 @@
     "url": "https://github.com/all-hands-ai/OpenHands.git"
   },
   "engines": {
-    "vscode": "^1.80.0"
+    "vscode": "^1.98.2"
   },
   "activationEvents": [
     "onCommand:openhands.startConversation",
@@ -75,7 +75,7 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@types/vscode": "^1.80.0",
+    "@types/vscode": "^1.98.2",
     "typescript": "^5.0.0",
     "@types/mocha": "^10.0.6",
     "mocha": "^10.4.0",

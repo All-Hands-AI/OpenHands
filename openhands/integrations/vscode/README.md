@@ -32,7 +32,7 @@ Access commands via Command Palette (Ctrl+Shift+P) or right-click menu.
 ## Requirements
 
 - OpenHands CLI in your PATH
-- VS Code 1.80.0+
+- VS Code 1.98.2+
 - Compatible shell for optimal terminal reuse (bash, zsh, PowerShell, fish)
 
 ## Development

@@ -18,7 +18,7 @@ The extension is located in `openhands-vscode/` during development.
     *   `description`: "Integrates OpenHands with VS Code for easy conversation starting and context passing."
     *   `version`: `0.0.1`
     *   `publisher`: `openhands`
-    *   `engines`: `{ "vscode": "^1.80.0" }`
+    *   `engines`: `{ "vscode": "^1.98.2" }`
     *   `activationEvents`:
         *   `"onCommand:openhands.startConversation"`
         *   `"onCommand:openhands.startConversationWithFileContext"`
