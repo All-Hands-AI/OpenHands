@@ -32,13 +32,13 @@ poetry run python -m openhands.core.main \
 export SANDBOX_SELECTED_REPO="owner/repo-name"
 poetry run python -m openhands.core.main -t "fix any linting issues"
 
-# For private repositories, set authentication tokens
+# For the agent to act on GitHub, or for access to private repositories, set authentication tokens
 export GITHUB_TOKEN="your-token"  # or GITLAB_TOKEN, BITBUCKET_TOKEN
 poetry run python -m openhands.core.main \
   --selected-repo "owner/private-repo" \
   -t "review the security implementation"
 
-# Using task files instead of inline commands
+# Using task files instead of inline task
 echo "Review the README and suggest improvements" > task.txt
 poetry run python -m openhands.core.main -f task.txt --selected-repo "owner/repo"
 ```
@@ -53,7 +53,7 @@ export SANDBOX_VOLUMES="/path/to/workspace"  # See SANDBOX_VOLUMES docs for deta
 export LLM_MODEL="anthropic/claude-sonnet-4-20250514"
 export LLM_API_KEY="your-api-key"
 export SANDBOX_SELECTED_REPO="owner/repo-name"  # Optional
-export GITHUB_TOKEN="your-token"  # Optional, for private repos
+export GITHUB_TOKEN="your-token"
 
 # Run OpenHands
 docker run -it \
