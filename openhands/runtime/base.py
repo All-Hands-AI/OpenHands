@@ -617,6 +617,7 @@ fi
         provider_domains = {
             ProviderType.GITHUB: 'github.com',
             ProviderType.GITLAB: 'gitlab.com',
+            ProviderType.AZURE_DEVOPS: 'dev.azure.com',
             ProviderType.BITBUCKET: 'bitbucket.org',
         }
 
@@ -635,6 +636,8 @@ fi
                     remote_url = (
                         f'https://oauth2:{token_value}@{domain}/{repo_name}.git'
                     )
+                elif provider == ProviderType.AZURE_DEVOPS:
+                    remote_url = f'https://{token_value}@{domain}/{repo_name}.git'
                 elif provider == ProviderType.BITBUCKET:
                     # For Bitbucket, handle username:app_password format
                     if ':' in token_value:
