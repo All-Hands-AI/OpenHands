@@ -235,31 +235,45 @@ Following software engineering best practices: **Unit Testing → Integration Te
    - ✅ File operations (copy_from, copy_to, list_files)
    - ✅ MCP configuration and tool calls
 
-#### 4.2 Python Server Routes Tests ✅ TODO  
-**File**: `tests/unit/server/test_vscode_routes.py`
+#### 4.2 Python Server Routes Tests ✅ COMPLETED  
+**File**: `tests/unit/server/test_vscode_routes.py` - **23/23 tests passing (100%)**
 
-**Test Categories**:
-1. **Registration Endpoint** (`POST /api/vscode/register`)
-   - ✅ Valid registration requests
-   - ✅ Invalid request validation (missing fields)
+**Test Categories Completed**:
+1. **Registration Endpoint** (`POST /api/vscode/register`) - **5/5 tests**
+   - ✅ Valid registration requests with full/minimal data
+   - ✅ Invalid request validation (missing fields, malformed JSON)
    - ✅ Registry storage and response format
-   - ✅ Duplicate registration handling
+   - ✅ Empty capabilities handling
+   - ✅ Enhanced Pydantic validation with Field constraints
 
-2. **Discovery Endpoint** (`GET /api/vscode/instances`)
+2. **Discovery Endpoint** (`GET /api/vscode/instances`) - **4/4 tests**
    - ✅ Empty registry response
-   - ✅ Multiple instances response
+   - ✅ Single and multiple instances response
    - ✅ Status filtering and data format
+   - ✅ Stale instance cleanup (5-minute threshold)
 
-3. **Instance Management**
+3. **Instance Management** - **8/8 tests**
    - ✅ Heartbeat endpoint (`POST /api/vscode/heartbeat/{connection_id}`)
    - ✅ Unregister endpoint (`DELETE /api/vscode/unregister/{connection_id}`)
    - ✅ Instance details (`GET /api/vscode/instance/{connection_id}`)
    - ✅ Registry stats (`GET /api/vscode/registry/stats`)
+   - ✅ Non-existent instance handling for all endpoints
+   - ✅ Complex stats with multiple statuses and recent activity
 
-4. **Error Handling**
-   - ✅ Invalid connection IDs
-   - ✅ Expired instances cleanup
-   - ✅ Malformed request bodies
+4. **Error Handling** - **6/6 tests**
+   - ✅ Server error simulations (UUID generation failures)
+   - ✅ Invalid connection IDs and formats
+   - ✅ Malformed request bodies and type validation
+   - ✅ Empty string field validation
+   - ✅ Extremely long field values
+   - ✅ Concurrent modification scenarios
+
+**Technical Achievements**:
+- Enhanced validation with `min_length=1` constraints for required fields
+- Comprehensive FastAPI TestClient integration
+- Mock time.time() for predictable testing
+- Registry cleanup fixtures for test isolation
+- Realistic error scenarios without problematic mocking
 
 #### 4.3 TypeScript Extension Tests ✅ TODO
 **File**: `openhands/integrations/vscode/src/test/suite/services.test.ts`
