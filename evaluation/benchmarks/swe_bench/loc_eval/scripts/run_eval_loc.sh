@@ -7,15 +7,16 @@ usage() {
     echo "Usage: $0 [OPTIONS]"
     echo "Options:"
     echo "  --infer-dir DIR         Directory containing model inference outputs"
-    echo "  --eval-dir DIR          Directory containing inference evaluation outputs"
-    echo "  --output-dir DIR        Output directory to save eval results"
+    echo "  --eval-dir DIR          Directory containing inference evaluation outputs (optional)"
+    echo "  --save-dir DIR          Output directory to save eval results"
     echo "  --split SPLIT           SWE-Bench dataset split selection"
     echo "  --dataset DATASET       Dataset name"
     echo "  --max-infer-turn NUM    Max number of turns for coding agent"
     echo "  -h, --help              Display this help message"
     echo ""
     echo "Example:"
-    echo "  $0 --infer-dir ./inference_outputs --eval-dir ./evaluation_outputs --output-dir ./saves --split test"
+    echo "  $0 --infer-dir ./inference_outputs --eval-dir ./evaluation_outputs --save-dir ./saves --split test"
+    echo "  $0 --infer-dir ./inference_outputs --save-dir ./saves --split test"
 }
 
 # Check if no arguments were provided
@@ -35,8 +36,8 @@ while [[ $# -gt 0 ]]; do
             EVAL_DIR="$2"
             shift 2
             ;;
-        --output-dir)
-            OUTPUT_DIR="$2"
+        --save-dir)
+            SAVE_DIR="$2"
             shift 2
             ;;
         --split)
@@ -63,9 +64,9 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Check for required arguments
-if [ -z "$INFER_DIR" ] || [ -z "$EVAL_DIR" ] || [ -z "$OUTPUT_DIR" ]; then
-    echo "Error: Missing required arguments"
+# Check for required arguments (only INFER_DIR and SAVE_DIR are required)
+if [ -z "$INFER_DIR" ] || [ -z "$SAVE_DIR" ]; then
+    echo "Error: Missing required arguments (--infer-dir and --save-dir are required)"
     usage
     exit 1
 fi
@@ -84,6 +85,14 @@ fi
 if [ -z "$MAX_TURN" ]; then
     MAX_TURN=20
     echo "Max inference turn not specified, using default: $MAX_TURN"
+fi
+
+# Handle optional EVAL_DIR
+if [ -z "$EVAL_DIR" ] || [ "$EVAL_DIR" = "" ]; then
+    echo "Evaluation directory not specified, script will run without it"
+    EVAL_DIR_ARG=""
+else
+    EVAL_DIR_ARG="--eval-dir \"$EVAL_DIR\""
 fi
 
 # Color codes for output
@@ -140,33 +149,27 @@ if [ ! -d "$INFER_DIR" ]; then
     exit 1
 fi
 
-if [ ! -d "$EVAL_DIR" ]; then
+# Only check EVAL_DIR if it was provided and is not empty
+if [ -n "$EVAL_DIR" ] && [ "$EVAL_DIR" != "" ] && [ ! -d "$EVAL_DIR" ]; then
     print_error "Evaluation directory not found: $EVAL_DIR"
     exit 1
 fi
 
 # Create output directory if it doesn't exist
-if [ ! -d "$OUTPUT_DIR" ]; then
-    print_status "Creating output directory: $OUTPUT_DIR"
-    mkdir -p "$OUTPUT_DIR"
-fi
-
-# Check for required subdirectories in data directory
-if [ ! -d "$INFER_DIR/histories" ]; then
-    print_error "Required subdirectory 'histories' not found in $INFER_DIR"
-    exit 1
-fi
-
-if [ ! -d "$INFER_DIR/metrics" ]; then
-    print_error "Required subdirectory 'metrics' not found in $INFER_DIR"
-    exit 1
+if [ ! -d "$SAVE_DIR" ]; then
+    print_status "Creating output directory: $SAVE_DIR"
+    mkdir -p "$SAVE_DIR"
 fi
 
 # Display configuration
 print_header "Starting Localization Evaluation with the following configuration:"
 echo "  Inference Directory:   $INFER_DIR"
-echo "  Evaluation Directory:  $EVAL_DIR"
-echo "  Output Directory:      $OUTPUT_DIR"
+if [ -n "$EVAL_DIR" ] && [ "$EVAL_DIR" != "" ]; then
+    echo "  Evaluation Directory:  $EVAL_DIR"
+else
+    echo "  Evaluation Directory:  (not provided)"
+fi
+echo "  Output Directory:      $SAVE_DIR"
 echo "  Split:                 $SPLIT"
 echo "  Dataset:               $DATASET"
 echo "  Max Turns:             $MAX_TURN"
@@ -198,30 +201,36 @@ else:
 }
 
 # Set up logging
-LOG_FILE="$OUTPUT_DIR/loc_evaluation_$(date +%Y%m%d_%H%M%S).log"
+LOG_FILE="$SAVE_DIR/loc_evaluation_$(date +%Y%m%d_%H%M%S).log"
 print_status "Logging output to: $LOG_FILE"
+
+# Build the command with conditional eval-dir argument
+CMD_ARGS="\"$SCRIPT_NAME\" \
+    --infer-dir \"$INFER_DIR\" \
+    --save-dir \"$SAVE_DIR\" \
+    --split \"$SPLIT\" \
+    --dataset \"$DATASET\" \
+    --max-infer-turn \"$MAX_TURN\""
+
+# Add eval-dir only if it's provided and not empty
+if [ -n "$EVAL_DIR" ] && [ "$EVAL_DIR" != "" ]; then
+    CMD_ARGS="$CMD_ARGS --eval-dir \"$EVAL_DIR\""
+fi
 
 # Run the Python script
 print_header "Running localization evaluation..."
-$PYTHON_CMD "$SCRIPT_NAME" \
-    --infer-dir "$INFER_DIR" \
-    --eval-dir "$EVAL_DIR" \
-    --output-dir "$OUTPUT_DIR" \
-    --split "$SPLIT" \
-    --dataset "$DATASET" \
-    --max-infer-turn "$MAX_TURN" \
-    2>&1 | tee "$LOG_FILE"
+eval "$PYTHON_CMD $CMD_ARGS" 2>&1 | tee "$LOG_FILE"
 
 # Check if the script ran successfully
 if [ ${PIPESTATUS[0]} -eq 0 ]; then
     print_status "Localization evaluation completed successfully!"
-    print_status "Results saved to: $OUTPUT_DIR"
+    print_status "Results saved to: $SAVE_DIR"
     print_status "Log file: $LOG_FILE"
     
     # Display summary if results exist
-    if [ -f "$OUTPUT_DIR/loc_eval_results/loc_acc/overall_eval.json" ]; then
+    if [ -f "$SAVE_DIR/loc_eval_results/loc_acc/overall_eval.json" ]; then
         print_header "Evaluation Summary:"
-        cat "$OUTPUT_DIR/loc_eval_results/loc_acc/overall_eval.json"
+        cat "$SAVE_DIR/loc_eval_results/loc_acc/overall_eval.json"
         echo
     fi
 else
