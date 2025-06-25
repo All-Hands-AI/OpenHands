@@ -256,5 +256,5 @@ python -m src.report run_instance_swt_logs/OpenHands-CodeAct-gpt-4o-2024-11-20/O
 
 [llm.eval_codestral]
 model="mistral/codestral-latest"
-api_key="psU5cIMeKgOPGOcqjnJiOAIHbIowycH2"
+api_key="YOUR-KEY-HERE"
 base_url="https://codestral.mistral.ai/v1"
