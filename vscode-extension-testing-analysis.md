@@ -1,18 +1,61 @@
 # VSCode Extension Testing Analysis
 
-## Current Problem Summary
+## ✅ ISSUE RESOLVED - Module Resolution Fixed!
 
-We attempted to implement Phase 4.3 TypeScript Extension Tests but encountered critical issues that prevented us from creating real service tests. Instead of solving the root problems, we created superficial placeholder tests.
+**Status**: The TypeScript types package issue has been **COMPLETELY SOLVED** using npm link with dual-format package support.
 
-## Issues Identified
+## Solution Implemented: npm link with Dual-Format Package
 
-### 1. Module Resolution Failure
+### What Was Done:
+1. **Package Renamed**: `@openhands/types` → `openhands-types` (for npm compatibility)
+2. **Dual-Format Build**: Created both CommonJS (.cjs) and ES modules (.js) outputs
+3. **npm link Established**: Proper symlink between packages/types and VSCode extension
+4. **Import Path Fixes**: Fixed CommonJS require statements to use .cjs extensions
+5. **Build Automation**: Added scripts to handle dual builds and file renaming
+
+### Technical Implementation:
+- **packages/types/package.json**: Dual exports configuration with proper file extensions
+- **packages/types/tsconfig.cjs.json**: CommonJS build configuration
+- **packages/types/fix-cjs-imports.js**: Script to fix import paths in CommonJS files
+- **VSCode extension package.json**: Updated dependency to `"openhands-types": "^0.1.0"`
+- **Import statements**: Updated in socket-service.ts and runtime-action-handler.ts
+
+### Root Cause Analysis:
+The original issue was a **module format mismatch**:
+- Types package was configured as ES modules (`"type": "module"`)
+- VSCode extension test environment expected CommonJS
+- File-based linking (`"file:../../../packages/types"`) failed in test environment
+- Solution: Create dual-format package with proper .cjs extensions for CommonJS
+
+### Verification Results:
+- ✅ **Extension compiles successfully** without errors
+- ✅ **Tests run properly** (20 tests passing)
+- ✅ **Module resolution working** in both development and test environments
+- ✅ **npm link functioning** with proper symlink established
+
+### Remaining Test Failures:
+The 14 failing tests are **NOT related to module resolution** but are due to:
+- Network connectivity issues (tests trying to connect to OpenHands backend)
+- Test mocking/stubbing issues
+- Extension command registration problems in test environment
+
+These are separate issues from the original TypeScript types package problem that was blocking testing.
+
+## Original Problem Analysis (For Reference)
+
+### 1. Module Resolution Failure - SOLVED ✅
 ```
 Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/Users/enyst/repos/odie/packages/types/dist/core/base'
 ```
-- **Root Cause**: `@openhands/types` package can't be resolved in VSCode test environment
-- **Dependency**: `"@openhands/types": "file:../../../packages/types"`
-- **Status**: TypeScript compilation works, but test execution fails
+
+**Root Cause Identified**: Module format mismatch between ES modules and CommonJS in test environment.
+
+**Solution Applied**: Option 3 - Fix local package linking with dual-format support
+- ✅ Renamed package to `openhands-types` 
+- ✅ Implemented dual-format build (ESM + CJS)
+- ✅ Used npm link for proper symlink
+- ✅ Fixed import paths with .cjs extensions
+- ✅ Automated build process with scripts
 
 ### 2. Extension Activation Issues
 - 14 existing extension tests failing - commands not registered

@@ -6,7 +6,7 @@
       "es2022"
     ],
     "target": "es2022",
-    "outDir": "./dist",
+    "outDir": "./dist/esm",
     "rootDir": "./src",
     "declaration": true,
     "emitDeclarationOnly": false,

@@ -4,7 +4,7 @@ import {
   OpenHandsObservationEvent,
   OpenHandsParsedEvent,
   isOpenHandsAction,
-} from "@openhands/types";
+} from "openhands-types";
 import { SocketService } from "./socket-service";
 
 export class VSCodeRuntimeActionHandler {

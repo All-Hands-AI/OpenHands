@@ -104,16 +104,14 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@types/vscode": "^1.98.2",
-    "typescript": "^5.0.0",
-    "@types/mocha": "^10.0.6",
-    "mocha": "^10.4.0",
-    "@vscode/test-electron": "^2.3.9",
-    "@types/node": "^20.12.12",
     "@types/glob": "^8.1.0",
-    "@vscode/vsce": "^3.5.0",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.12.12",
+    "@types/vscode": "^1.98.2",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
+    "@vscode/test-electron": "^2.3.9",
+    "@vscode/vsce": "^3.5.0",
     "eslint": "^8.57.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-config-airbnb-typescript": "^18.0.0",
@@ -121,10 +119,11 @@
     "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-prettier": "^5.5.0",
     "eslint-plugin-unused-imports": "^4.1.4",
-    "prettier": "^3.5.3"
+    "mocha": "^10.4.0",
+    "prettier": "^3.5.3",
+    "typescript": "^5.0.0"
   },
   "dependencies": {
-    "@openhands/types": "file:../../../packages/types",
     "socket.io-client": "^4.8.1"
   }
 }

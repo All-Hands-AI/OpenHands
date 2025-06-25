@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-import { OpenHandsParsedEvent } from "@openhands/types";
+import { OpenHandsParsedEvent } from "openhands-types";
 import * as vscode from "vscode";
 import * as path from "path";
 
