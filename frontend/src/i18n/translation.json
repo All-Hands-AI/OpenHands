@@ -1297,10 +1297,10 @@
     },
     "HOME$LETS_START_BUILDING": {
         "en": "Let's Start Building!",
-        "ja": "構築を始めましょう！",
-        "zh-CN": "让我们开始构建！",
-        "zh-TW": "讓我們開始構建！",
-        "ko-KR": "구축을 시작합시다!",
+        "ja": "開発を始めましょう！",
+        "zh-CN": "让我们开始开发！",
+        "zh-TW": "讓我們開始開發！",
+        "ko-KR": "개발을 시작합시다!",
         "no": "La oss begynne å bygge!",
         "it": "Iniziamo a costruire!",
         "pt": "Vamos começar a construir!",
@@ -1313,7 +1313,7 @@
     },
     "HOME$OPENHANDS_DESCRIPTION": {
         "en": "OpenHands makes it easy to build and maintain software using AI-driven development.",
-        "ja": "OpenHandsはAI駆動の開発を使用してソフトウェアの構築と維持を容易にします。",
+        "ja": "OpenHandsはAI駆動の開発を使用してソフトウェアの開発と維持を容易にします。",
         "zh-CN": "OpenHands使用AI驱动的开发方式，轻松构建和维护软件。",
         "zh-TW": "OpenHands使用AI驅動的開發方式，輕鬆構建和維護軟件。",
         "ko-KR": "OpenHands는 AI 기반 개발을 사용하여 소프트웨어를 쉽게 구축하고 유지할 수 있게 합니다.",

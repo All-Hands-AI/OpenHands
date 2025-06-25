@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
     SecretStr,
     SerializationInfo,
@@ -38,6 +39,7 @@ class Settings(BaseModel):
     sandbox_runtime_container_image: str | None = None
     mcp_config: MCPConfig | None = None
     search_api_key: SecretStr | None = None
+    sandbox_api_key: SecretStr | None = None
     max_budget_per_task: float | None = None
     email: str | None = None
     temperature: float = Field(default=0.0)
@@ -61,9 +63,9 @@ class Settings(BaseModel):
     disabled_microagents: list[str] = Field(default_factory=list)
     enable_history_truncation: bool = Field(default=True)
 
-    model_config = {
-        'validate_assignment': True,
-    }
+    model_config = ConfigDict(
+        validate_assignment=True,
+    )
 
     @field_serializer('llm_api_key', 'search_api_key')
     def api_key_serializer(self, api_key: SecretStr | None, info: SerializationInfo):
