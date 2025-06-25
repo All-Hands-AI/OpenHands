@@ -103,32 +103,120 @@ After deeper analysis, I now understand that the Socket.IO approach is actually 
 - **Elegant message routing**: Socket.IO server handles all the routing
 - **No need for separate HTTP server**: VSCode Extension doesn't need to run its own server
 
-### The Real Problems Are Different
-- **Connection timing**: VSCode Extension connects automatically instead of on-demand
-- **Connection coordination**: How does VsCodeRuntime get the right socket_connection_id?
-- **Event structure**: Are events properly formatted and handled?
-- **Lifecycle management**: When should connections be established/torn down?
+### The Real Problems Identified
 
-### Questions for Implementation
+#### 1. **Missing Constructor Parameters**
+VsCodeRuntime requires `sio_server` and `socket_connection_id` parameters, but AgentSession only passes standard runtime parameters:
 
-1. **Server Startup**: How should VsCodeRuntime signal the VSCode extension to start its HTTP server?
-   - File-based signaling (create a file that extension watches)
-   - VSCode command that VsCodeRuntime can trigger
-   - Environment variable or configuration file
+```python
+# In agent_session.py - only standard parameters passed
+self.runtime = runtime_cls(
+    config=config,
+    event_stream=self.event_stream,
+    sid=self.sid,
+    plugins=agent.sandbox_plugins,
+    # ... other standard params
+    # ❌ Missing: sio_server, socket_connection_id
+)
 
-2. **Port Management**: How should the HTTP server port be determined and communicated?
-   - Fixed port (like 40000-49999 range mentioned in DockerRuntime)
-   - Dynamic port discovery
-   - Configuration-based port assignment
+# In VsCodeRuntime constructor - VSCode-specific params default to None
+def __init__(self, 
+    # ... standard params
+    sio_server: socketio.AsyncServer | None = None,  # ❌ Defaults to None
+    socket_connection_id: str | None = None,         # ❌ Defaults to None
+):
+```
 
-3. **Extension Lifecycle**: Should the HTTP server run continuously or only when needed?
-   - Always running when extension is active
-   - Start/stop on demand when VsCodeRuntime needs it
+#### 2. **Connection Coordination Problem**
+- VSCode Extension connects to Socket.IO server and gets a connection_id
+- VsCodeRuntime needs that same connection_id to send events
+- **But there's no mechanism to pass the connection_id from extension to runtime!**
 
-4. **Multiple Instances**: How to handle multiple OpenHands instances using VSCode runtime?
-   - Multiple ports for multiple instances
-   - Queue/multiplexing on single port
-   - Reject additional instances
+#### 3. **Timing Issues**
+- VSCode Extension connects automatically on startup
+- VsCodeRuntime is created later when user starts a conversation
+- Connection happens before runtime needs it (should be on-demand)
+
+#### 4. **Architecture Gap**
+- Socket.IO server exists (`sio` in `shared.py`)
+- VSCode Extension connects as client
+- VsCodeRuntime needs reference to server + connection_id
+- **Missing: coordination mechanism between extension and runtime**
+
+## Proposed Solution: Runtime Registration Pattern
+
+### Core Idea: VSCode Extension Registers with OpenHands Server
+
+Instead of trying to pass connection_id to runtime, flip the approach:
+
+1. **VSCode Extension connects** to Socket.IO server (as it does now)
+2. **Extension registers itself** as available VSCode runtime via API call
+3. **OpenHands server stores** the mapping: `vscode_instance_id → socket_connection_id`
+4. **VsCodeRuntime queries server** for available VSCode connections
+5. **Runtime uses server's Socket.IO** to communicate with extension
+
+### Implementation Steps
+
+#### Step 1: VSCode Extension Registration
+```typescript
+// After Socket.IO connection established
+const response = await fetch(`${serverUrl}/api/vscode/register`, {
+    method: 'POST',
+    body: JSON.stringify({
+        socket_connection_id: this.socket.id,
+        workspace_path: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath,
+        capabilities: ['file_operations', 'terminal', 'editor']
+    })
+});
+```
+
+#### Step 2: Server-Side Registry
+```python
+# New endpoint in OpenHands server
+@app.post("/api/vscode/register")
+async def register_vscode_runtime(request: VSCodeRegistrationRequest):
+    # Store mapping in memory/redis
+    vscode_registry[request.socket_connection_id] = {
+        'workspace_path': request.workspace_path,
+        'capabilities': request.capabilities,
+        'registered_at': datetime.now()
+    }
+```
+
+#### Step 3: VsCodeRuntime Integration
+```python
+class VsCodeRuntime(Runtime):
+    def __init__(self, config, event_stream, sid, **kwargs):
+        super().__init__(config, event_stream, sid, **kwargs)
+        # Get sio_server from shared.py (already exists)
+        from openhands.server.shared import sio
+        self.sio_server = sio
+        self.socket_connection_id = None  # Will be set on connect()
+    
+    async def connect(self):
+        # Query server for available VSCode connections
+        available_connections = await self._get_available_vscode_connections()
+        if not available_connections:
+            raise RuntimeError("No VSCode extension connected")
+        
+        # Use first available connection (or let user choose)
+        self.socket_connection_id = available_connections[0]['socket_connection_id']
+```
+
+### Benefits of This Approach
+1. **No constructor changes needed** - VsCodeRuntime gets sio_server from shared.py
+2. **Dynamic connection discovery** - Runtime finds available VSCode instances
+3. **Proper lifecycle management** - Extension registers/unregisters itself
+4. **Multiple VSCode support** - Could support multiple VSCode instances
+5. **Clean separation** - Extension handles connection, runtime handles execution
+
+## Next Steps
+
+1. **Implement VSCode registration API endpoint** in OpenHands server
+2. **Update VSCode Extension** to register after Socket.IO connection
+3. **Modify VsCodeRuntime.connect()** to discover available connections
+4. **Test the coordination mechanism** end-to-end
+5. **Handle edge cases** (disconnections, multiple instances, etc.)
 
 ## References
 
