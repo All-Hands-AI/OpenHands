@@ -1445,7 +1445,7 @@ version = "3.4.0"
 description = "Validate configuration and produce human readable error messages."
 optional = false
 python-versions = ">=3.8"
-groups = ["dev", "evaluation"]
+groups = ["main", "dev", "evaluation"]
 files = [
     {file = "cfgv-3.4.0-py2.py3-none-any.whl", hash = "sha256:b7265b1f29fd3316bfcd2b330d63d024f2bfd8bcb8b0272f8e19a504856c48f9"},
     {file = "cfgv-3.4.0.tar.gz", hash = "sha256:e52591d4c5f5dead8e0f673fb16db7949d2cfb3f7da4582893288f0ded8fe560"},
@@ -1961,7 +1961,7 @@ version = "3.0.1"
 description = "HuggingFace community-driven open-source library of datasets"
 optional = false
 python-versions = ">=3.8.0"
-groups = ["evaluation"]
+groups = ["main", "evaluation"]
 files = [
     {file = "datasets-3.0.1-py3-none-any.whl", hash = "sha256:db080aab41c8cc68645117a0f172e5c6789cbc672f066de0aa5a08fc3eebc686"},
     {file = "datasets-3.0.1.tar.gz", hash = "sha256:40d63b09e76a3066c32e746d6fdc36fd3f29ed2acd49bf5b1a2100da32936511"},
@@ -2152,7 +2152,7 @@ version = "0.3.8"
 description = "serialize all of Python"
 optional = false
 python-versions = ">=3.8"
-groups = ["evaluation"]
+groups = ["main", "evaluation"]
 files = [
     {file = "dill-0.3.8-py3-none-any.whl", hash = "sha256:c36ca9ffb54365bdd2f8eb3eff7d2a21237f8452b57ace88b1ac615b7e815bd7"},
     {file = "dill-0.3.8.tar.gz", hash = "sha256:3ebe3c479ad625c4553aca177444d89b486b1d84982eeacded644afc0cf797ca"},
@@ -2519,7 +2519,7 @@ version = "1.8.2"
 description = "Python supercharged for fastai development"
 optional = false
 python-versions = ">=3.9"
-groups = ["evaluation"]
+groups = ["main", "evaluation"]
 files = [
     {file = "fastcore-1.8.2-py3-none-any.whl", hash = "sha256:8e66134d9acc411ffdddde64e080e46814e24011c6368b5c9d50165ee8140e8b"},
     {file = "fastcore-1.8.2.tar.gz", hash = "sha256:8d50abd09b4d484589488dab7d78594d681de3466a84d2d1beb8b6db0d0c00b7"},
@@ -2992,7 +2992,7 @@ version = "1.0.6"
 description = "A python client for the GitHub API"
 optional = false
 python-versions = ">=3.7"
-groups = ["evaluation"]
+groups = ["main", "evaluation"]
 files = [
     {file = "ghapi-1.0.6-py3-none-any.whl", hash = "sha256:b3d96bf18fcaa2cb7131bad9de2948e2a1c2bb226377a25826f6c80950c57854"},
     {file = "ghapi-1.0.6.tar.gz", hash = "sha256:64fdd9f06d8e3373065c42c2a03e067e2bbb9ca18b583cd6e38a28aaad0224f6"},
@@ -3894,7 +3894,7 @@ version = "2.6.12"
 description = "File identification library for Python"
 optional = false
 python-versions = ">=3.9"
-groups = ["dev", "evaluation"]
+groups = ["main", "dev", "evaluation"]
 files = [
     {file = "identify-2.6.12-py2.py3-none-any.whl", hash = "sha256:ad9672d5a72e0d2ff7c5c8809b62dfa60458626352fb0eb7b55e69bdc45334a2"},
     {file = "identify-2.6.12.tar.gz", hash = "sha256:d8de45749f1efb108badef65ee8386f0f7bb19a7f26185f74de6367bffbaf0e6"},
@@ -5822,7 +5822,7 @@ version = "0.70.16"
 description = "better multiprocessing and multithreading in Python"
 optional = false
 python-versions = ">=3.8"
-groups = ["evaluation"]
+groups = ["main", "evaluation"]
 files = [
     {file = "multiprocess-0.70.16-pp310-pypy310_pp73-macosx_10_13_x86_64.whl", hash = "sha256:476887be10e2f59ff183c006af746cb6f1fd0eadcfd4ef49e605cbe2659920ee"},
     {file = "multiprocess-0.70.16-pp310-pypy310_pp73-manylinux_2_28_x86_64.whl", hash = "sha256:d951bed82c8f73929ac82c61f01a7b5ce8f3e5ef40f5b52553b4f547ce2b08ec"},
@@ -6091,7 +6091,7 @@ version = "1.9.1"
 description = "Node.js virtual environment builder"
 optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,>=2.7"
-groups = ["dev", "evaluation"]
+groups = ["main", "dev", "evaluation"]
 files = [
     {file = "nodeenv-1.9.1-py2.py3-none-any.whl", hash = "sha256:ba11c9782d29c27c70ffbdda2d7415098754709be8a7056d79a737cd901155c9"},
     {file = "nodeenv-1.9.1.tar.gz", hash = "sha256:6ec12890a2dab7946721edbfbcd91f3319c6ccc9aec47be7c7e6b7011ee6645f"},
@@ -7093,7 +7093,7 @@ version = "4.2.0"
 description = "A framework for managing and maintaining multi-language pre-commit hooks."
 optional = false
 python-versions = ">=3.9"
-groups = ["dev", "evaluation"]
+groups = ["main", "dev", "evaluation"]
 files = [
     {file = "pre_commit-4.2.0-py2.py3-none-any.whl", hash = "sha256:a009ca7205f1eb497d10b845e52c838a98b6cdd2102a6c8e4540e94ee75c58bd"},
     {file = "pre_commit-4.2.0.tar.gz", hash = "sha256:601283b9757afd87d40c4c4a9b2b5de9637a8ea02eaff7adc2d0fb4e04841146"},
@@ -7364,7 +7364,7 @@ version = "20.0.0"
 description = "Python library for Apache Arrow"
 optional = false
 python-versions = ">=3.9"
-groups = ["evaluation"]
+groups = ["main", "evaluation"]
 files = [
     {file = "pyarrow-20.0.0-cp310-cp310-macosx_12_0_arm64.whl", hash = "sha256:c7dd06fd7d7b410ca5dc839cc9d485d2bc4ae5240851bcd45d85105cc90a47d7"},
     {file = "pyarrow-20.0.0-cp310-cp310-macosx_12_0_x86_64.whl", hash = "sha256:d5382de8dc34c943249b01c19110783d0d64b207167c728461add1ecc2db88e4"},
@@ -9709,11 +9709,11 @@ typing_extensions = {version = ">=4.5.0", markers = "python_version >= \"3.7\""}
 
 [[package]]
 name = "swebench"
-version = "2.0.13"
+version = "4.0.3"
 description = "The official SWE-bench package - a benchmark for evaluating LMs on software engineering"
 optional = false
-python-versions = ">=3.8"
-groups = ["evaluation"]
+python-versions = ">=3.10"
+groups = ["main"]
 files = []
 develop = false
 
@@ -9724,15 +9724,20 @@ datasets = "*"
 docker = "*"
 ghapi = "*"
 GitPython = "*"
+modal = "*"
 pre-commit = "*"
 python-dotenv = "*"
 requests = "*"
 rich = "*"
+tenacity = "*"
 tqdm = "*"
 unidiff = "*"
 
 [package.extras]
-inference = ["anthropic", "flash_attn", "jedi", "openai", "peft", "protobuf", "sentencepiece", "tenacity", "tiktoken", "torch", "transformers", "triton"]
+datasets = ["anthropic", "jedi", "openai", "protobuf", "sentencepiece", "tiktoken", "transformers"]
+docs = ["mike", "mkdocs", "mkdocs-glightbox", "mkdocs-include-markdown-plugin", "mkdocs-material", "mkdocstrings", "mkdocstrings-python", "pymdown-extensions"]
+inference = ["anthropic", "flash_attn", "jedi", "openai", "peft", "protobuf", "requests", "sentencepiece", "tiktoken", "torch", "transformers", "triton"]
+test = ["pytest", "pytest-cov"]
 
 [package.source]
 type = "git"
@@ -10599,7 +10604,7 @@ version = "0.7.5"
 description = "Unified diff parsing/metadata extraction library."
 optional = false
 python-versions = "*"
-groups = ["evaluation"]
+groups = ["main", "evaluation"]
 files = [
     {file = "unidiff-0.7.5-py2.py3-none-any.whl", hash = "sha256:c93bf2265cc1ba2a520e415ab05da587370bc2a3ae9e0414329f54f0c2fc09e8"},
     {file = "unidiff-0.7.5.tar.gz", hash = "sha256:2e5f0162052248946b9f0970a40e9e124236bf86c82b70821143a6fc1dea2574"},
@@ -11304,7 +11309,7 @@ version = "3.5.0"
 description = "Python binding for xxHash"
 optional = false
 python-versions = ">=3.7"
-groups = ["evaluation"]
+groups = ["main", "evaluation"]
 files = [
     {file = "xxhash-3.5.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:ece616532c499ee9afbb83078b1b952beffef121d989841f7f4b3dc5ac0fd212"},
     {file = "xxhash-3.5.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:3171f693dbc2cef6477054a665dc255d996646b4023fe56cb4db80e26f4cc520"},
@@ -11776,4 +11781,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12,<3.14"
-content-hash = "9a12f427187c956df623c6d138fa24b8dbd47414e8df6327d5514022814619d7"
+content-hash = "f6430495c9b67a9c2ce5c8c4d489f06e265049d833ac89df0dd18476e3dce59a"
