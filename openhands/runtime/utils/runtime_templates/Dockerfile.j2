@@ -115,11 +115,11 @@ WORKDIR /openhands/code
 RUN /openhands/micromamba/bin/micromamba config set changeps1 False && \
     /openhands/micromamba/bin/micromamba run -n openhands poetry config virtualenvs.path /openhands/poetry && \
     /openhands/micromamba/bin/micromamba run -n openhands poetry env use \
-    {%- if 'ubuntu' in base_image and not (base_image.endswith(':latest') or base_image.endswith(':24.04')) -%}
-    python3.10 \
-    {%- else -%}
-    python3.12 \
-    {%- endif -%}
+    {%- if 'ubuntu' in base_image and not (base_image.endswith(':latest') or base_image.endswith(':24.04')) %}
+    python3.10
+    {%- else %}
+    python3.12
+    {%- endif %}
 
 # Install project dependencies in smaller chunks
 RUN /openhands/micromamba/bin/micromamba run -n openhands poetry install --only main --no-interaction --no-root
@@ -161,11 +161,11 @@ RUN mkdir -p /openhands/micromamba/bin && \
 # Create the openhands virtual environment and install poetry and python
 RUN /openhands/micromamba/bin/micromamba create -n openhands -y && \
     /openhands/micromamba/bin/micromamba install -n openhands -c conda-forge poetry \
-    {%- if 'ubuntu' in base_image and not (base_image.endswith(':latest') or base_image.endswith(':24.04')) -%}
+    {%- if 'ubuntu' in base_image and not (base_image.endswith(':latest') or base_image.endswith(':24.04')) %}
     python=3.10 \
-    {%- else -%}
+    {%- else %}
     python=3.12 \
-    {%- endif -%}
+    {%- endif %}
     -y
 
 # Create a clean openhands directory including only the pyproject.toml, poetry.lock and openhands/__init__.py
