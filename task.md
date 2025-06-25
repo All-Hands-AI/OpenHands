@@ -58,24 +58,38 @@ VsCodeRuntime requires `sio_server` and `socket_connection_id` parameters, but A
 - VsCodeRuntime is created later when user starts a conversation
 - Connection happens before runtime needs it (should be on-demand)
 
-## Proposed Solution: Runtime Registration Pattern
+## Proposed Solution: Lazy Connection Pattern
 
-### Core Concept
-Instead of trying to pass `connection_id` to runtime constructor, implement a **registration system**:
+### Core Problem Identified
+The original Runtime Registration Pattern had a **fundamental timing issue**:
+- VSCode Extension activates when VSCode starts
+- Extension immediately tries to connect to OpenHands server
+- **But OpenHands server might not be running yet!**
+- Connection fails, extension becomes unusable
 
-1. **VSCode Extension connects** to Socket.IO server (as it does now)
-2. **Extension registers itself** as available VSCode runtime via API call
-3. **OpenHands server stores** the mapping: `socket_connection_id → VSCode instance info`
-4. **VsCodeRuntime queries server** for available VSCode connections on `connect()`
-5. **Runtime uses server's Socket.IO** to communicate with extension
+### Better Approach: Lazy Connection
+Instead of connecting immediately on extension activation:
+
+1. **VSCode starts** → Extension activates (but **doesn't connect**)
+2. **User starts OpenHands** → Server starts and waits
+3. **User runs VSCode command** (e.g., "Start Conversation") → Extension connects on-demand
+4. **Extension registers** with server after successful connection
+5. **VsCodeRuntime discovers** the registered connection when needed
+
+### Benefits
+- ✅ **No timing dependency** - Extension works regardless of OpenHands startup order
+- ✅ **Matches user mental model** - "I'll connect when I need OpenHands"
+- ✅ **Simpler implementation** - No retry patterns or background polling
+- ✅ **Resource efficient** - No unnecessary connections
 
 ## Next Actions Needed
 
 ### Architecture Implementation:
-1. Implement VSCode registration API endpoint in OpenHands server
-2. Update VSCode Extension to register after Socket.IO connection  
-3. Modify VsCodeRuntime.connect() to discover available connections
-4. Test the coordination mechanism end-to-end
+1. **Modify extension activation** - Remove immediate `initializeRuntime()` call
+2. **Add lazy connection** - Connect only when user runs OpenHands commands
+3. **Implement registration API** - Extension registers after successful connection
+4. **Update VsCodeRuntime.connect()** - Discover registered connections
+5. **Test the lazy connection flow** end-to-end
 
 **Status**: Architecture breakthrough complete, ready for code migration and implementation!
 
