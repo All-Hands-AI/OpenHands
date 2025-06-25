@@ -21,7 +21,13 @@ import { PathComponent } from "./path-component";
 
 const trimText = (text: string, maxLength: number): string => {
   if (!text) return "";
-  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+  if (text.length <= maxLength) return text;
+
+  // Truncate in the middle, keeping beginning and end
+  const half = Math.floor(maxLength / 2);
+  const beginning = text.substring(0, half);
+  const end = text.substring(text.length - half);
+  return `${beginning}...${end}`;
 };
 
 interface ExpandableMessageProps {
