@@ -145,7 +145,40 @@ Instead of connecting immediately on extension activation:
 - ❌ **Actions sent but no response** (timeout handling)
 - ❌ **Invalid responses from VSCode** (validation/error handling)
 
-**Status**: Phase 1 Complete! Ready for Phase 2 - Server Registration System!
+**Status**: Phase 2 Complete! Ready for Phase 3 - Runtime Discovery & Error Handling!
+
+## Phase 2 Implementation Status ✅ COMPLETED
+
+### Server Registration System - DONE
+- ✅ **VSCode Registry API** (`/api/vscode/*` endpoints)
+  - ✅ `POST /api/vscode/register` - Register VSCode instance
+  - ✅ `GET /api/vscode/instances` - List registered instances  
+  - ✅ `POST /api/vscode/heartbeat/{id}` - Keep registration alive
+  - ✅ `DELETE /api/vscode/unregister/{id}` - Remove registration
+  - ✅ `GET /api/vscode/instance/{id}` - Get specific instance info
+  - ✅ `GET /api/vscode/registry/stats` - Registry statistics
+- ✅ **In-memory registry** with automatic stale cleanup (5min timeout)
+- ✅ **Pydantic models** for request/response validation
+- ✅ **Error handling** with proper HTTP status codes
+- ✅ **Integrated with FastAPI** app in `server/app.py`
+
+### Extension Registration Integration - DONE  
+- ✅ **Modified SocketService** to register on connect
+- ✅ **Workspace information** extraction (path, name)
+- ✅ **Version information** (VSCode + extension versions)
+- ✅ **Capabilities declaration** (file ops, editing, etc.)
+- ✅ **Heartbeat system** (30-second intervals)
+- ✅ **Automatic unregistration** on disconnect
+- ✅ **TypeScript compilation** successful
+
+### What Phase 2 Achieved:
+1. **Server-side registry** tracks all VSCode instances
+2. **Extension auto-registers** when connecting to OpenHands
+3. **Heartbeat mechanism** keeps registrations fresh
+4. **Clean unregistration** when VSCode disconnects
+5. **Discovery API** ready for VsCodeRuntime to use
+
+**Next**: Phase 3 will implement VsCodeRuntime discovery logic and comprehensive error handling.
 
 ## Important Notes
 
