@@ -2,6 +2,7 @@ import asyncio
 import os
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Callable
 
 import openhands
@@ -33,7 +34,7 @@ GLOBAL_MICROAGENTS_DIR = os.path.join(
     'microagents',
 )
 
-USER_MICROAGENTS_DIR = os.path.expanduser('~/.openhands/microagents')
+USER_MICROAGENTS_DIR = Path.home() / '.openhands' / 'microagents'
 
 
 class Memory:
