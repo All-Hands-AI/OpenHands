@@ -5,7 +5,7 @@ import platform
 import sys
 from ast import literal_eval
 from types import UnionType
-from typing import Any, MutableMapping, get_args, get_origin
+from typing import MutableMapping, get_args, get_origin
 from uuid import uuid4
 
 import toml
