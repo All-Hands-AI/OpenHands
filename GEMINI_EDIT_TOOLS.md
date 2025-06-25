@@ -21,6 +21,30 @@ enable_editor = true       # Must be true to use any editor tools
 enable_gemini_editor = true  # Enable Gemini-style edit tools
 ```
 
+### Disabling the Previous Editing Tool
+
+If you want to use only the Gemini-style editing tools and disable the previous editing tool (`str_replace_editor`), you have two options:
+
+1. **Option 1**: Set `enable_editor = false` in your config. This will disable all editor tools except the LLM-based editor.
+
+```toml
+[agent]
+enable_llm_editor = false
+enable_editor = false  # Disables all editor tools
+enable_gemini_editor = true  # This will have no effect since enable_editor is false
+```
+
+2. **Option 2**: Keep `enable_editor = true` but modify the agent's tool list to exclude the standard editor tool. This allows you to use the Gemini-style editing tools while disabling the standard editor tool.
+
+```toml
+[agent]
+enable_llm_editor = false
+enable_editor = true
+enable_gemini_editor = true
+```
+
+Then, in your agent implementation, modify the tool list to exclude the standard editor tool and include only the Gemini-style editing tools.
+
 ## Tool Descriptions
 
 ### replace

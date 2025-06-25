@@ -18,8 +18,8 @@ from openhands.llm.tool_names import (
     GEMINI_READ_FILE_TOOL_NAME,
     GEMINI_WRITE_FILE_TOOL_NAME,
 )
-from openhands.runtime.plugins.agent_skills.file_editor import FileEditor
-from openhands.runtime.plugins.agent_skills.file_reader import FileReader
+from openhands.runtime.plugins.agent_skills.file_editor import file_editor
+from openhands.runtime.plugins.agent_skills.file_reader import file_readers
 from openhands.runtime.utils.edit import FileEditRuntimeMixin
 from openhands_aci.utils.diff import get_diff  # type: ignore
 
@@ -119,7 +119,7 @@ class GeminiFileEditor(FileEditRuntimeMixin):
     def __init__(self, *args, **kwargs):
         """Initialize the GeminiFileEditor."""
         super().__init__(*args, **kwargs)
-        self.file_reader = FileReader()
+        # No need to initialize file_reader as we'll use file_readers directly
 
     def handle_action(self, action: Action) -> Observation:
         """Handle a file edit action.
