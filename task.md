@@ -101,7 +101,7 @@ Instead of connecting immediately on extension activation:
 #### Sub-steps:
 1. **Add VSCode registry data structure** - Track `connection_id → VSCode instance info`
 2. **Implement registration API endpoint** - `/api/vscode/register` POST endpoint
-3. **Add discovery API endpoint** - `/api/vscode/discover` GET endpoint  
+3. **Add discovery API endpoint** - `/api/vscode/discover` GET endpoint
 4. **Handle disconnection cleanup** - Remove stale registry entries
 5. **Add Socket.IO event handlers** - Handle VSCode-specific events
 
@@ -129,7 +129,7 @@ Instead of connecting immediately on extension activation:
 
 ### Extension Side:
 - ❌ **OpenHands server not running** when user tries to connect
-- ❌ **Connection drops** during operation  
+- ❌ **Connection drops** during operation
 - ❌ **Server rejects registration** (duplicate, invalid data)
 - ❌ **Network issues** (timeouts, DNS failures)
 
@@ -152,7 +152,7 @@ Instead of connecting immediately on extension activation:
 ### Server Registration System - DONE
 - ✅ **VSCode Registry API** (`/api/vscode/*` endpoints)
   - ✅ `POST /api/vscode/register` - Register VSCode instance
-  - ✅ `GET /api/vscode/instances` - List registered instances  
+  - ✅ `GET /api/vscode/instances` - List registered instances
   - ✅ `POST /api/vscode/heartbeat/{id}` - Keep registration alive
   - ✅ `DELETE /api/vscode/unregister/{id}` - Remove registration
   - ✅ `GET /api/vscode/instance/{id}` - Get specific instance info
@@ -162,7 +162,7 @@ Instead of connecting immediately on extension activation:
 - ✅ **Error handling** with proper HTTP status codes
 - ✅ **Integrated with FastAPI** app in `server/app.py`
 
-### Extension Registration Integration - DONE  
+### Extension Registration Integration - DONE
 - ✅ **Modified SocketService** to register on connect
 - ✅ **Workspace information** extraction (path, name)
 - ✅ **Version information** (VSCode + extension versions)
@@ -187,7 +187,7 @@ Following software engineering best practices: **Unit Testing → Integration Te
 
 ### Testing Patterns Identified:
 - **Python**: pytest with unittest.mock for mocking
-- **TypeScript**: vitest with mocking capabilities  
+- **TypeScript**: vitest with mocking capabilities
 - **Existing Coverage**: CLI VSCode integration, URL helpers, runtime patterns
 
 ### Unit Testing Scope
@@ -235,7 +235,7 @@ Following software engineering best practices: **Unit Testing → Integration Te
    - ✅ File operations (copy_from, copy_to, list_files)
    - ✅ MCP configuration and tool calls
 
-#### 4.2 Python Server Routes Tests ✅ COMPLETED  
+#### 4.2 Python Server Routes Tests ✅ COMPLETED
 **File**: `tests/unit/server/test_vscode_routes.py` - **23/23 tests passing (100%)**
 
 **Test Categories Completed**:
@@ -276,7 +276,7 @@ Following software engineering best practices: **Unit Testing → Integration Te
 - Realistic error scenarios without problematic mocking
 
 #### 4.3 TypeScript Extension Tests ✅ COMPLETED
-**Files**: 
+**Files**:
 - `openhands/integrations/vscode/src/test/suite/socket-service.test.ts`
 - `openhands/integrations/vscode/src/test/suite/runtime-action-handler.test.ts`
 
@@ -322,7 +322,7 @@ Following software engineering best practices: **Unit Testing → Integration Te
 
 ### Testing Implementation Order:
 1. **Phase 4.1**: VsCodeRuntime unit tests (Python) - Foundation
-2. **Phase 4.2**: Server routes unit tests (Python) - API validation  
+2. **Phase 4.2**: Server routes unit tests (Python) - API validation
 3. **Phase 4.3**: Extension services unit tests (TypeScript) - Client validation
 4. **Phase 4.4**: Integration points tests - Cross-component validation
 

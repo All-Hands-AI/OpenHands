@@ -117,7 +117,7 @@ We need to **migrate the runtime functionality** from the old location to the ne
 openhands/runtime/utils/vscode-extensions/openhands-runtime/src/extension/services/socket-service.ts
 → openhands/integrations/vscode/src/services/socket-service.ts
 
-openhands/runtime/utils/vscode-extensions/openhands-runtime/src/extension/services/vscodeRuntimeActionHandler.ts  
+openhands/runtime/utils/vscode-extensions/openhands-runtime/src/extension/services/vscodeRuntimeActionHandler.ts
 → openhands/integrations/vscode/src/services/runtime-action-handler.ts
 ```
 
@@ -162,7 +162,7 @@ openhands/runtime/utils/vscode-extensions/openhands-runtime/src/extension/servic
 export function activate(context: vscode.ExtensionContext) {
     // Existing launcher functionality
     registerLauncherCommands(context);
-    
+
     // New runtime functionality
     initializeRuntime(context);
 }
@@ -223,7 +223,7 @@ src/services/
 
 - **Phase 1 (Analysis)**: ✅ Complete
 - **Phase 2 (Migration)**: 2-3 hours
-- **Phase 3 (Integration)**: 2-3 hours  
+- **Phase 3 (Integration)**: 2-3 hours
 - **Phase 4 (Cleanup)**: 1 hour
 - **Total**: 5-7 hours
 

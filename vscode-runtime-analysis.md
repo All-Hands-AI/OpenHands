@@ -30,7 +30,7 @@ A VSCode Runtime should serve as an execution environment that allows OpenHands 
 ### Current Behavior (Problematic)
 The current implementation has architectural issues:
 
-1. **Automatic Connection on Activation**: 
+1. **Automatic Connection on Activation**:
    - Extension connects to backend immediately when VSCode starts
    - This happens regardless of whether OpenHands is actually using VSCode as runtime
    - Connection attempt occurs in `initializeRuntime()` during extension activation
@@ -50,7 +50,7 @@ The current implementation has architectural issues:
 async function initializeRuntime(context: vscode.ExtensionContext): Promise<void> {
   // Creates socket service immediately
   socketService = new SocketService(serverUrl);
-  
+
   // Attempts connection regardless of whether it's needed
   try {
     await socketService.connect();
@@ -120,7 +120,7 @@ self.runtime = runtime_cls(
 )
 
 # In VsCodeRuntime constructor - VSCode-specific params default to None
-def __init__(self, 
+def __init__(self,
     # ... standard params
     sio_server: socketio.AsyncServer | None = None,  # ❌ Defaults to None
     socket_connection_id: str | None = None,         # ❌ Defaults to None
@@ -192,13 +192,13 @@ class VsCodeRuntime(Runtime):
         from openhands.server.shared import sio
         self.sio_server = sio
         self.socket_connection_id = None  # Will be set on connect()
-    
+
     async def connect(self):
         # Query server for available VSCode connections
         available_connections = await self._get_available_vscode_connections()
         if not available_connections:
             raise RuntimeError("No VSCode extension connected")
-        
+
         # Use first available connection (or let user choose)
         self.socket_connection_id = available_connections[0]['socket_connection_id']
 ```
