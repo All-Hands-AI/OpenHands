@@ -154,7 +154,12 @@ BrowserTool = ChatCompletionToolParam(
                         'The Python code that interacts with the browser.\n'
                         + _BROWSER_TOOL_DESCRIPTION
                     ),
-                }
+                },
+                'safety_risk': {
+                    'type': 'string',
+                    'description': "The LLM's assessment of the safety risk of this browser action. This helps the security analyzer determine whether user confirmation is needed.",
+                    'enum': ['LOW', 'MEDIUM', 'HIGH'],
+                },
             },
             'required': ['code'],
         },

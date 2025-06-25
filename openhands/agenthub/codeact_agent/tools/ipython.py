@@ -17,6 +17,11 @@ IPythonTool = ChatCompletionToolParam(
                     'type': 'string',
                     'description': 'The Python code to execute. Supports magic commands like %pip.',
                 },
+                'safety_risk': {
+                    'type': 'string',
+                    'description': "The LLM's assessment of the safety risk of this Python code. This helps the security analyzer determine whether user confirmation is needed.",
+                    'enum': ['LOW', 'MEDIUM', 'HIGH'],
+                },
             },
             'required': ['code'],
         },

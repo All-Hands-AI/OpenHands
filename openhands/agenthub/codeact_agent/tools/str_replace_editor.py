@@ -100,6 +100,11 @@ def create_str_replace_editor_tool(
                         'items': {'type': 'integer'},
                         'type': 'array',
                     },
+                    'safety_risk': {
+                        'type': 'string',
+                        'description': "The LLM's assessment of the safety risk of this file operation. This helps the security analyzer determine whether user confirmation is needed.",
+                        'enum': ['LOW', 'MEDIUM', 'HIGH'],
+                    },
                 },
                 'required': ['command', 'path'],
             },

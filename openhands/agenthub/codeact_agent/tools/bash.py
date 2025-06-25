@@ -72,6 +72,11 @@ def create_cmd_run_tool(
                         'type': 'number',
                         'description': 'Optional. Sets a hard timeout in seconds for the command execution. If not provided, the command will use the default soft timeout behavior.',
                     },
+                    'safety_risk': {
+                        'type': 'string',
+                        'description': "The LLM's assessment of the safety risk of this command. This helps the security analyzer determine whether user confirmation is needed.",
+                        'enum': ['LOW', 'MEDIUM', 'HIGH'],
+                    },
                 },
                 'required': ['command'],
             },
