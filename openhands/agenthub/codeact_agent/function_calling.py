@@ -50,6 +50,13 @@ def combine_thought(action: Action, thought: str) -> Action:
     return action
 
 
+def add_reasoning_content(action: Action, reasoning_content: str | None) -> Action:
+    """Add reasoning content to an action if it supports it."""
+    if reasoning_content and hasattr(action, 'reasoning_content'):
+        action.reasoning_content = reasoning_content
+    return action
+
+
 def response_to_actions(
     response: ModelResponse, mcp_tool_names: list[str] | None = None
 ) -> list[Action]:
@@ -66,6 +73,14 @@ def response_to_actions(
             for msg in assistant_msg.content:
                 if msg['type'] == 'text':
                     thought += msg['text']
+
+        # Extract reasoning content if available
+        reasoning_content = None
+        if (
+            hasattr(assistant_msg, 'reasoning_content')
+            and assistant_msg.reasoning_content
+        ):
+            reasoning_content = str(assistant_msg.reasoning_content)
 
         # Process each tool call to OpenHands action
         for i, tool_call in enumerate(assistant_msg.tool_calls):
@@ -226,9 +241,10 @@ def response_to_actions(
                     f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
                 )
 
-            # We only add thought to the first action
+            # We only add thought and reasoning content to the first action
             if i == 0:
                 action = combine_thought(action, thought)
+                action = add_reasoning_content(action, reasoning_content)
             # Add metadata for tool calling
             action.tool_call_metadata = ToolCallMetadata(
                 tool_call_id=tool_call.id,
@@ -238,10 +254,19 @@ def response_to_actions(
             )
             actions.append(action)
     else:
+        # Extract reasoning content if available
+        reasoning_content = None
+        if (
+            hasattr(assistant_msg, 'reasoning_content')
+            and assistant_msg.reasoning_content
+        ):
+            reasoning_content = str(assistant_msg.reasoning_content)
+
         actions.append(
             MessageAction(
                 content=str(assistant_msg.content) if assistant_msg.content else '',
                 wait_for_response=True,
+                reasoning_content=reasoning_content,
             )
         )
 

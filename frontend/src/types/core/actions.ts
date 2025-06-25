@@ -28,6 +28,7 @@ export interface CommandAction extends OpenHandsActionEvent<"run"> {
     confirmation_state: "confirmed" | "rejected" | "awaiting_confirmation";
     thought: string;
     hidden?: boolean;
+    reasoning_content?: string | null;
   };
 }
 
@@ -39,6 +40,7 @@ export interface AssistantMessageAction
     image_urls: string[] | null;
     file_urls: string[];
     wait_for_response: boolean;
+    reasoning_content?: string | null;
   };
 }
 
@@ -50,6 +52,7 @@ export interface IPythonAction extends OpenHandsActionEvent<"run_ipython"> {
     confirmation_state: "confirmed" | "rejected" | "awaiting_confirmation";
     kernel_init_code: string;
     thought: string;
+    reasoning_content?: string | null;
   };
 }
 
@@ -107,6 +110,7 @@ export interface FileReadAction extends OpenHandsActionEvent<"read"> {
     security_risk: ActionSecurityRisk | null;
     impl_source?: string;
     view_range?: number[] | null;
+    reasoning_content?: string | null;
   };
 }
 
@@ -116,6 +120,7 @@ export interface FileWriteAction extends OpenHandsActionEvent<"write"> {
     path: string;
     content: string;
     thought: string;
+    reasoning_content?: string | null;
   };
 }
 
@@ -135,6 +140,7 @@ export interface FileEditAction extends OpenHandsActionEvent<"edit"> {
     thought: string;
     security_risk: ActionSecurityRisk | null;
     impl_source?: string;
+    reasoning_content?: string | null;
   };
 }
 

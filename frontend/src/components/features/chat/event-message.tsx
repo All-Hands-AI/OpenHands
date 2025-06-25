@@ -22,6 +22,7 @@ import { GenericEventMessage } from "./generic-event-message";
 import { FileList } from "../files/file-list";
 import { parseMessageFromEvent } from "./event-content-helpers/parse-message-from-event";
 import { LikertScale } from "../feedback/likert-scale";
+import { ReasoningContent } from "./reasoning-content";
 
 import { useConfig } from "#/hooks/query/use-config";
 import { useFeedbackExists } from "#/hooks/query/use-feedback-exists";
@@ -29,6 +30,13 @@ import { useFeedbackExists } from "#/hooks/query/use-feedback-exists";
 const hasThoughtProperty = (
   obj: Record<string, unknown>,
 ): obj is { thought: string } => "thought" in obj && !!obj.thought;
+
+const hasReasoningContent = (
+  obj: Record<string, unknown>,
+): obj is { reasoning_content: string } =>
+  "reasoning_content" in obj &&
+  !!obj.reasoning_content &&
+  typeof obj.reasoning_content === "string";
 
 interface EventMessageProps {
   event: OpenHandsAction | OpenHandsObservation;
@@ -113,6 +121,9 @@ export function EventMessage({
 
     return (
       <>
+        {isAssistantMessage(event) && hasReasoningContent(event.args) && (
+          <ReasoningContent content={event.args.reasoning_content} />
+        )}
         <ChatMessage type={event.source} message={message}>
           {event.args.image_urls && event.args.image_urls.length > 0 && (
             <ImageCarousel size="small" images={event.args.image_urls} />
@@ -148,6 +159,10 @@ export function EventMessage({
 
   return (
     <div>
+      {isOpenHandsAction(event) && hasReasoningContent(event.args) && (
+        <ReasoningContent content={event.args.reasoning_content} />
+      )}
+
       {isOpenHandsAction(event) && hasThoughtProperty(event.args) && (
         <ChatMessage type="agent" message={event.args.thought} />
       )}
