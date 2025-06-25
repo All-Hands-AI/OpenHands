@@ -346,7 +346,13 @@ class LLM(RetryMixin, DebugMixin):
                     + str(resp)
                 )
 
-            message_back: str = resp['choices'][0]['message']['content'] or ''
+            message_content = resp['choices'][0]['message']['content'] or ''
+            reasoning_content = resp['choices'][0]['message'].get('reasoning_content')
+            if reasoning_content:
+                message_content = '<think>' + reasoning_content + '</think>\n' + message_content
+            resp['choices'][0]['message']['content'] = message_content
+            message_back: str = message_content
+
             tool_calls: list[ChatCompletionMessageToolCall] = resp['choices'][0][
                 'message'
             ].get('tool_calls', [])
