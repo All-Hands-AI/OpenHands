@@ -86,6 +86,9 @@ class MountFastMCP:
                         if root_path_bytes == b'/':
                             # If mounted at root, the relative path is already correct
                             full_path = relative_path
+                        elif relative_path.startswith(root_path_bytes):
+                            # If the relative path already includes the root path, don't prepend it
+                            full_path = relative_path
                         else:
                             # Otherwise, prepend the root path
                             full_path = root_path_bytes + relative_path
