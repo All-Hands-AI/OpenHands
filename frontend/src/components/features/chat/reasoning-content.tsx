@@ -10,7 +10,7 @@ import ArrowUp from "#/icons/angle-up-solid.svg?react";
 import LightbulbIcon from "#/icons/lightbulb.svg?react";
 
 interface ReasoningContentProps {
-  content: string;
+  content: string | null;
   className?: string;
 }
 
