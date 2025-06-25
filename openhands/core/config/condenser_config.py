@@ -11,7 +11,7 @@ from openhands.core.config.llm_config import LLMConfig
 class NoOpCondenserConfig(BaseModel):
     """Configuration for NoOpCondenser."""
 
-    type: Literal['noop'] = Field('noop')
+    type: Literal['noop'] = Field(default='noop')
 
     model_config = ConfigDict(extra='forbid')
 
@@ -19,7 +19,7 @@ class NoOpCondenserConfig(BaseModel):
 class ObservationMaskingCondenserConfig(BaseModel):
     """Configuration for ObservationMaskingCondenser."""
 
-    type: Literal['observation_masking'] = Field('observation_masking')
+    type: Literal['observation_masking'] = Field(default='observation_masking')
     attention_window: int = Field(
         default=100,
         description='The number of most-recent events where observations will not be masked.',
@@ -32,7 +32,7 @@ class ObservationMaskingCondenserConfig(BaseModel):
 class BrowserOutputCondenserConfig(BaseModel):
     """Configuration for the BrowserOutputCondenser."""
 
-    type: Literal['browser_output_masking'] = Field('browser_output_masking')
+    type: Literal['browser_output_masking'] = Field(default='browser_output_masking')
     attention_window: int = Field(
         default=1,
         description='The number of most recent browser output observations that will not be masked.',
@@ -43,7 +43,7 @@ class BrowserOutputCondenserConfig(BaseModel):
 class RecentEventsCondenserConfig(BaseModel):
     """Configuration for RecentEventsCondenser."""
 
-    type: Literal['recent'] = Field('recent')
+    type: Literal['recent'] = Field(default='recent')
 
     # at least one event by default, because the best guess is that it is the user task
     keep_first: int = Field(
@@ -61,7 +61,7 @@ class RecentEventsCondenserConfig(BaseModel):
 class LLMSummarizingCondenserConfig(BaseModel):
     """Configuration for LLMCondenser."""
 
-    type: Literal['llm'] = Field('llm')
+    type: Literal['llm'] = Field(default='llm')
     llm_config: LLMConfig = Field(
         ..., description='Configuration for the LLM to use for condensing.'
     )
@@ -88,7 +88,7 @@ class LLMSummarizingCondenserConfig(BaseModel):
 class AmortizedForgettingCondenserConfig(BaseModel):
     """Configuration for AmortizedForgettingCondenser."""
 
-    type: Literal['amortized'] = Field('amortized')
+    type: Literal['amortized'] = Field(default='amortized')
     max_size: int = Field(
         default=100,
         description='Maximum size of the condensed history before triggering forgetting.',
@@ -108,7 +108,7 @@ class AmortizedForgettingCondenserConfig(BaseModel):
 class LLMAttentionCondenserConfig(BaseModel):
     """Configuration for LLMAttentionCondenser."""
 
-    type: Literal['llm_attention'] = Field('llm_attention')
+    type: Literal['llm_attention'] = Field(default='llm_attention')
     llm_config: LLMConfig = Field(
         ..., description='Configuration for the LLM to use for attention.'
     )
@@ -131,7 +131,7 @@ class LLMAttentionCondenserConfig(BaseModel):
 class StructuredSummaryCondenserConfig(BaseModel):
     """Configuration for StructuredSummaryCondenser instances."""
 
-    type: Literal['structured'] = Field('structured')
+    type: Literal['structured'] = Field(default='structured')
     llm_config: LLMConfig = Field(
         ..., description='Configuration for the LLM to use for condensing.'
     )
@@ -156,12 +156,9 @@ class StructuredSummaryCondenserConfig(BaseModel):
 
 
 class CondenserPipelineConfig(BaseModel):
-    """Configuration for the CondenserPipeline.
+    """Configuration for the CondenserPipeline."""
 
-    Not currently supported by the TOML or ENV_VAR configuration strategies.
-    """
-
-    type: Literal['pipeline'] = Field('pipeline')
+    type: Literal['pipeline'] = Field(default='pipeline')
     condensers: list[CondenserConfig] = Field(
         default_factory=list,
         description='List of condenser configurations to be used in the pipeline.',
@@ -175,9 +172,9 @@ class ConversationWindowCondenserConfig(BaseModel):
     Not currently supported by the TOML or ENV_VAR configuration strategies.
     """
 
-    type: Literal['conversation_window'] = Field('conversation_window')
+    type: Literal['conversation_window'] = Field(default='conversation_window')
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
 # Type alias for convenience
 CondenserConfig = (
@@ -293,6 +290,7 @@ def create_condenser_config(condenser_type: str, data: dict) -> CondenserConfig:
         'structured': StructuredSummaryCondenserConfig,
         'pipeline': CondenserPipelineConfig,
         'conversation_window': ConversationWindowCondenserConfig,
+        'browser_output_masking': BrowserOutputCondenserConfig,
     }
 
     if condenser_type not in condenser_classes:
