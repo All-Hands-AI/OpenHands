@@ -2,7 +2,7 @@
   "name": "openhands-vscode",
   "displayName": "OpenHands Integration",
   "description": "Integrates OpenHands with VS Code for conversation starting, context passing, and runtime execution.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "openhands",
   "license": "MIT",
   "repository": {
