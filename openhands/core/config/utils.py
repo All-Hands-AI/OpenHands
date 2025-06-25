@@ -44,80 +44,33 @@ def _load_third_party_config_from_env(
 ) -> None:
     """Load third-party runtime configuration from environment variables.
 
+    This function is now a no-op since third-party runtimes read configuration
+    directly from environment variables instead of through OpenHandsConfig.
+
     Args:
-        cfg: The OpenHandsConfig object to set attributes on.
-        env_or_toml_dict: The environment variables or a config.toml dict.
+        cfg: The OpenHandsConfig object (unused).
+        env_or_toml_dict: The environment variables or a config.toml dict (unused).
     """
-    try:
-        from openhands.core.config.third_party_config import (
-            discover_third_party_runtime_configs,
-        )
-
-        runtime_configs = discover_third_party_runtime_configs()
-
-        for runtime_name, config_spec in runtime_configs.items():
-            for field_name, field_spec in config_spec.items():
-                full_field_name = f'{runtime_name}_{field_name}'
-                env_var_name = f'OPENHANDS_{full_field_name.upper()}'
-
-                if env_var_name in env_or_toml_dict:
-                    value = env_or_toml_dict[env_var_name]
-
-                    # Skip empty config values (fall back to default)
-                    if not value:
-                        continue
-
-                    try:
-                        field_type = field_spec.get('type', str)
-
-                        # Convert the env var to the correct type and set it
-                        cast_value: Any
-                        if field_type is bool:
-                            cast_value = str(value).lower() in ['true', '1']
-                        elif field_type is SecretStr:
-                            cast_value = SecretStr(value)
-                        else:
-                            cast_value = field_type(value) if field_type else value
-
-                        setattr(cfg, full_field_name, cast_value)
-
-                    except (ValueError, TypeError) as e:
-                        logger.openhands_logger.error(
-                            f'Error setting third-party config {env_var_name}={value}: {e}'
-                        )
-
-    except ImportError:
-        # third_party package not available, skip
-        pass
+    # Third-party runtimes now read configuration directly from environment variables
+    # No configuration loading needed here
+    pass
 
 
 def _is_third_party_runtime_config(key: str) -> bool:
     """Check if a configuration key is a third-party runtime configuration field.
 
+    Since third-party runtimes now read configuration directly from environment
+    variables, this function always returns False.
+
     Args:
         key: The configuration key to check.
 
     Returns:
-        True if the key is a third-party runtime configuration field.
+        False (third-party runtime configs are no longer part of OpenHandsConfig).
     """
-    try:
-        from openhands.core.config.third_party_config import (
-            discover_third_party_runtime_configs,
-        )
-
-        runtime_configs = discover_third_party_runtime_configs()
-
-        for runtime_name, config_spec in runtime_configs.items():
-            for field_name in config_spec.keys():
-                full_field_name = f'{runtime_name}_{field_name}'
-                if key == full_field_name:
-                    return True
-
-        return False
-
-    except ImportError:
-        # third_party package not available
-        return False
+    # Third-party runtimes now read configuration directly from environment variables
+    # No third-party config fields exist in OpenHandsConfig anymore
+    return False
 
 
 def load_from_env(
