@@ -13,7 +13,11 @@ from openhands.events.observation import (
     FileWriteObservation,
     Observation,
 )
-from openhands.llm.tool_names import GEMINI_EDIT_TOOL_NAME, GEMINI_WRITE_FILE_TOOL_NAME
+from openhands.llm.tool_names import (
+    GEMINI_EDIT_TOOL_NAME,
+    GEMINI_READ_FILE_TOOL_NAME,
+    GEMINI_WRITE_FILE_TOOL_NAME,
+)
 from openhands.runtime.plugins.agent_skills.file_editor import FileEditor
 from openhands.runtime.plugins.agent_skills.file_reader import FileReader
 from openhands.runtime.utils.edit import FileEditRuntimeMixin
@@ -76,6 +80,39 @@ class GeminiWriteFileAction(Action):
         }
 
 
+class GeminiReadFileAction(Action):
+    """Action for Gemini-style read file operations."""
+
+    def __init__(
+        self,
+        absolute_path: str,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
+    ):
+        """Initialize a GeminiReadFileAction.
+
+        Args:
+            absolute_path: The absolute path to the file to read.
+            offset: The line number to start reading from (0-based). Optional.
+            limit: The maximum number of lines to read. Optional.
+        """
+        super().__init__()
+        self.absolute_path = absolute_path
+        self.offset = offset
+        self.limit = limit
+
+    def to_dict(self) -> Dict:
+        """Convert the action to a dictionary."""
+        result = {
+            "absolute_path": self.absolute_path,
+        }
+        if self.offset is not None:
+            result["offset"] = self.offset
+        if self.limit is not None:
+            result["limit"] = self.limit
+        return result
+
+
 class GeminiFileEditor(FileEditRuntimeMixin):
     """Gemini-style file editor implementation."""
 
@@ -97,6 +134,8 @@ class GeminiFileEditor(FileEditRuntimeMixin):
             return self.handle_edit_action(action)
         elif isinstance(action, GeminiWriteFileAction):
             return self.handle_write_file_action(action)
+        elif isinstance(action, GeminiReadFileAction):
+            return self.handle_read_file_action(action)
         else:
             return ErrorObservation(
                 f"Unsupported action type: {type(action).__name__}"
@@ -257,6 +296,66 @@ class GeminiFileEditor(FileEditRuntimeMixin):
         except Exception as e:
             return ErrorObservation(f"Error writing file: {str(e)}")
 
+    def handle_read_file_action(self, action: GeminiReadFileAction) -> Observation:
+        """Handle a Gemini-style read file action.
+
+        Args:
+            action: The read file action to handle.
+
+        Returns:
+            An observation of the result.
+        """
+        # Validate file path
+        if not os.path.isabs(action.absolute_path):
+            return ErrorObservation(
+                f"File path must be absolute: {action.absolute_path}"
+            )
+
+        # Check if file exists
+        if not os.path.exists(action.absolute_path):
+            return ErrorObservation(f"File not found: {action.absolute_path}")
+
+        # Read the file
+        try:
+            with open(action.absolute_path, "r", encoding="utf-8") as f:
+                content = f.read()
+        except Exception as e:
+            return ErrorObservation(f"Error reading file: {str(e)}")
+
+        # Handle offset and limit if provided
+        if action.offset is not None or action.limit is not None:
+            lines = content.splitlines()
+            
+            offset = action.offset or 0
+            if offset < 0:
+                return ErrorObservation(f"Offset must be non-negative: {offset}")
+            
+            if offset >= len(lines):
+                return ErrorObservation(
+                    f"Offset {offset} is out of range for file with {len(lines)} lines"
+                )
+            
+            if action.limit is not None:
+                if action.limit <= 0:
+                    return ErrorObservation(f"Limit must be positive: {action.limit}")
+                
+                end = min(offset + action.limit, len(lines))
+                lines = lines[offset:end]
+                content = "\n".join(lines)
+                
+                # Add a note if we truncated the file
+                if end < len(lines):
+                    content += f"\n\n[Note: Showing lines {offset}-{end-1} of {len(lines)} total lines]"
+            else:
+                lines = lines[offset:]
+                content = "\n".join(lines)
+                
+                # Add a note if we started from a non-zero offset
+                if offset > 0:
+                    content += f"\n\n[Note: Showing lines {offset}-{len(lines)-1} of {len(lines)} total lines]"
+
+        return FileReadObservation(content=content, path=action.absolute_path)
+
     @classmethod
     def get_supported_tool_names(cls) -> List[str]:
         """Get the names of tools supported by this skill.
@@ -264,7 +363,7 @@ class GeminiFileEditor(FileEditRuntimeMixin):
         Returns:
             A list of supported tool names.
         """
-        return [GEMINI_EDIT_TOOL_NAME, GEMINI_WRITE_FILE_TOOL_NAME]
+        return [GEMINI_EDIT_TOOL_NAME, GEMINI_READ_FILE_TOOL_NAME, GEMINI_WRITE_FILE_TOOL_NAME]
 
     @classmethod
     def create_action_from_tool_call(
@@ -290,5 +389,11 @@ class GeminiFileEditor(FileEditRuntimeMixin):
             return GeminiWriteFileAction(
                 file_path=tool_args["file_path"],
                 content=tool_args["content"],
+            )
+        elif tool_name == GEMINI_READ_FILE_TOOL_NAME:
+            return GeminiReadFileAction(
+                absolute_path=tool_args["absolute_path"],
+                offset=tool_args.get("offset"),
+                limit=tool_args.get("limit"),
             )
         return None

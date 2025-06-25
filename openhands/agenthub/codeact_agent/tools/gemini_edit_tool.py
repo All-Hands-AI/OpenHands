@@ -1,6 +1,10 @@
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
-from openhands.llm.tool_names import GEMINI_EDIT_TOOL_NAME, GEMINI_WRITE_FILE_TOOL_NAME
+from openhands.llm.tool_names import (
+    GEMINI_EDIT_TOOL_NAME,
+    GEMINI_READ_FILE_TOOL_NAME,
+    GEMINI_WRITE_FILE_TOOL_NAME,
+)
 
 _GEMINI_EDIT_TOOL_DESCRIPTION = """Replaces text within a file. By default, replaces a single occurrence, but can replace multiple occurrences when `expected_replacements` is specified. This tool requires providing significant context around the change to ensure precise targeting.
 
@@ -74,6 +78,41 @@ def create_gemini_write_file_tool() -> ChatCompletionToolParam:
                     },
                 },
                 'required': ['file_path', 'content'],
+            },
+        ),
+    )
+
+_GEMINI_READ_FILE_TOOL_DESCRIPTION = """Reads and returns the content of a specified file from the local filesystem.
+For text files, it can read specific line ranges using offset and limit parameters.
+
+The absolute_path must be an absolute path (e.g., '/home/user/project/file.txt'). Relative paths are not supported.
+"""
+
+def create_gemini_read_file_tool() -> ChatCompletionToolParam:
+    """Creates a Gemini-style read file tool for reading content from files."""
+    return ChatCompletionToolParam(
+        type='function',
+        function=ChatCompletionToolParamFunctionChunk(
+            name=GEMINI_READ_FILE_TOOL_NAME,
+            description=_GEMINI_READ_FILE_TOOL_DESCRIPTION,
+            parameters={
+                'type': 'object',
+                'properties': {
+                    'absolute_path': {
+                        'description': "The absolute path to the file to read (e.g., '/home/user/project/file.txt'). Relative paths are not supported. You must provide an absolute path.",
+                        'type': 'string',
+                        'pattern': '^/',
+                    },
+                    'offset': {
+                        'description': "Optional: For text files, the 0-based line number to start reading from. Requires 'limit' to be set. Use for paginating through large files.",
+                        'type': 'number',
+                    },
+                    'limit': {
+                        'description': "Optional: For text files, maximum number of lines to read. Use with 'offset' to paginate through large files. If omitted, reads the entire file (if feasible, up to a default limit).",
+                        'type': 'number',
+                    },
+                },
+                'required': ['absolute_path'],
             },
         ),
     )

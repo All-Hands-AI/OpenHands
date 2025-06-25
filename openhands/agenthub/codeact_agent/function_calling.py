@@ -22,7 +22,11 @@ from openhands.agenthub.codeact_agent.tools.gemini_edit_tool import (
     create_gemini_edit_tool,
     create_gemini_write_file_tool,
 )
-from openhands.llm.tool_names import GEMINI_EDIT_TOOL_NAME, GEMINI_WRITE_FILE_TOOL_NAME
+from openhands.llm.tool_names import (
+    GEMINI_EDIT_TOOL_NAME,
+    GEMINI_READ_FILE_TOOL_NAME,
+    GEMINI_WRITE_FILE_TOOL_NAME,
+)
 from openhands.core.exceptions import (
     FunctionCallNotExistsError,
     FunctionCallValidationError,
@@ -262,6 +266,23 @@ def response_to_actions(
                 action = GeminiWriteFileAction(
                     file_path=arguments['file_path'],
                     content=arguments['content'],
+                )
+                
+            # ================================================
+            # Gemini Read File Tool
+            # ================================================
+            elif tool_call.function.name == GEMINI_READ_FILE_TOOL_NAME:
+                if 'absolute_path' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "absolute_path" in tool call {tool_call.function.name}'
+                    )
+                
+                from openhands.runtime.plugins.agent_skills.gemini_file_editor.gemini_file_editor import GeminiReadFileAction
+                
+                action = GeminiReadFileAction(
+                    absolute_path=arguments['absolute_path'],
+                    offset=arguments.get('offset'),
+                    limit=arguments.get('limit'),
                 )
 
             # ================================================

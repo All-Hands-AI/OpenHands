@@ -4,10 +4,11 @@ This branch adds Gemini-style file editing tools to OpenHands. These tools are d
 
 ## Overview
 
-The Gemini edit tools provide two main capabilities:
+The Gemini edit tools provide three main capabilities:
 
 1. **replace** - A tool for replacing text within files with precise targeting
 2. **write_file** - A tool for writing content to files
+3. **read_file** - A tool for reading content from files with optional pagination
 
 ## Usage
 
@@ -58,6 +59,26 @@ The `write_file` tool is designed to write content to a file. If the file doesn'
 {
   "file_path": "/path/to/file.py",
   "content": "def hello_world():\n    print('Hello, OpenHands!')\n    return True"
+}
+```
+
+### read_file
+
+The `read_file` tool is designed to read content from files. It supports pagination through large files using offset and limit parameters.
+
+#### Parameters
+
+- `absolute_path` - The absolute path to the file to read
+- `offset` - (Optional) The 0-based line number to start reading from
+- `limit` - (Optional) The maximum number of lines to read
+
+#### Example
+
+```json
+{
+  "absolute_path": "/path/to/file.py",
+  "offset": 10,
+  "limit": 20
 }
 ```
 

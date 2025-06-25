@@ -20,6 +20,7 @@ from openhands.agenthub.codeact_agent.tools.str_replace_editor import (
 )
 from openhands.agenthub.codeact_agent.tools.gemini_edit_tool import (
     create_gemini_edit_tool,
+    create_gemini_read_file_tool,
     create_gemini_write_file_tool,
 )
 from openhands.agenthub.codeact_agent.tools.think import ThinkTool
@@ -137,6 +138,7 @@ class CodeActAgent(Agent):
             if getattr(self.config, 'enable_gemini_editor', False):
                 tools.append(create_gemini_edit_tool())
                 tools.append(create_gemini_write_file_tool())
+                tools.append(create_gemini_read_file_tool())
             else:
                 tools.append(
                     create_str_replace_editor_tool(
