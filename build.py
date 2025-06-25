@@ -42,19 +42,17 @@ def build_vscode_extension():
             print('--- No pre-built VS Code extension found ---')
         return
 
-    # Check if pre-built extension already exists
-    if vsix_path.exists():
-        print(f'--- Pre-built VS Code extension found: {vsix_path} ---')
-        return
-
-    # Check Node.js version
+    # Check Node.js version - if insufficient, use pre-built extension as fallback
     if not check_node_version():
         print('--- Warning: Node.js version < 16 detected or Node.js not found ---')
         print('--- Skipping VS Code extension build (requires Node.js >= 16) ---')
         print('--- Using pre-built extension if available ---')
 
         if not vsix_path.exists():
-            print('--- No pre-built VS Code extension found ---')
+            print('--- Warning: No pre-built VS Code extension found ---')
+            print('--- VS Code extension will not be available ---')
+        else:
+            print(f'--- Using pre-built VS Code extension: {vsix_path} ---')
         return
 
     print(f'--- Building VS Code extension in {VSCODE_EXTENSION_DIR} ---')
