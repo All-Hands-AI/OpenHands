@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from jinja2 import Environment, FileSystemLoader
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
@@ -38,7 +38,10 @@ from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
 )
 from openhands.server.dependencies import get_dependencies
-from openhands.server.services.conversation_service import create_new_conversation
+from openhands.server.services.conversation_service import (
+    create_new_conversation,
+    setup_init_convo_settings,
+)
 from openhands.server.session.conversation import ServerConversation
 from openhands.server.shared import (
     ConversationStoreImpl,
@@ -85,7 +88,7 @@ class InitSessionRequest(BaseModel):
     if os.getenv('ALLOW_SET_CONVERSATION_ID', '0') == '1':
         conversation_id: str = Field(default_factory=lambda: uuid.uuid4().hex)
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
 
 class ConversationResponse(BaseModel):
@@ -93,6 +96,10 @@ class ConversationResponse(BaseModel):
     conversation_id: str
     message: str | None = None
     conversation_status: ConversationStatus | None = None
+
+
+class ProvidersSetModel(BaseModel):
+    providers_set: list[ProviderType] | None = None
 
 
 @app.post('/conversations')
@@ -395,6 +402,7 @@ async def _get_conversation_info(
 @app.post('/conversations/{conversation_id}/start')
 async def start_conversation(
     conversation_id: str,
+    providers_set: ProvidersSetModel,
     user_id: str = Depends(get_user_id),
     settings: Settings = Depends(get_user_settings),
     conversation_store: ConversationStore = Depends(get_conversation_store),
@@ -420,10 +428,15 @@ async def start_conversation(
                 status_code=status.HTTP_404_NOT_FOUND,
             )
 
+        # Set up conversation init data with provider information
+        conversation_init_data = await setup_init_convo_settings(
+            user_id, conversation_id, providers_set.providers_set or []
+        )
+
         # Start the agent loop
         agent_loop_info = await conversation_manager.maybe_start_agent_loop(
             sid=conversation_id,
-            settings=settings,
+            settings=conversation_init_data,
             user_id=user_id,
         )
 

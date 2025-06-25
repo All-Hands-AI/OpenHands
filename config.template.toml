@@ -201,6 +201,27 @@ model = "gpt-4o"
 #native_tool_calling = None
 
 
+# Safety settings for models that support them (e.g., Mistral AI, Gemini)
+# Example for Mistral AI:
+# safety_settings = [
+#   { "category" = "hate", "threshold" = "low" },
+#   { "category" = "harassment", "threshold" = "low" },
+#   { "category" = "sexual", "threshold" = "low" },
+#   { "category" = "dangerous", "threshold" = "low" }
+# ]
+#
+# Example for Gemini:
+# safety_settings = [
+#   { "category" = "HARM_CATEGORY_HARASSMENT", "threshold" = "BLOCK_NONE" },
+#   { "category" = "HARM_CATEGORY_HATE_SPEECH", "threshold" = "BLOCK_NONE" },
+#   { "category" = "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold" = "BLOCK_NONE" },
+#   { "category" = "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold" = "BLOCK_NONE" }
+# ]
+#safety_settings = []
+
+[llm.draft_editor]
+# The number of times llm_editor tries to fix an error when editing.
+correct_num = 5
 
 [llm.gpt4o-mini]
 api_key = ""
@@ -317,6 +338,9 @@ classpath = "my_package.my_module.MyCustomAgent"
 
 # Enable GPU support in the runtime
 #enable_gpu = false
+
+# When there are multiple cards, you can specify the GPU by ID
+#cuda_visible_devices = ''
 
 # Additional Docker runtime kwargs
 #docker_runtime_kwargs = {}

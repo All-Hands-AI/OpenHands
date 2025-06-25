@@ -833,10 +833,10 @@
     },
     "HOME$LETS_START_BUILDING": {
         "en": "Let's Start Building!",
-        "ja": "構築を始めましょう！",
-        "zh-CN": "让我们开始构建！",
-        "zh-TW": "讓我們開始構建！",
-        "ko-KR": "구축을 시작합시다!",
+        "ja": "開発を始めましょう！",
+        "zh-CN": "让我们开始开发！",
+        "zh-TW": "讓我們開始開發！",
+        "ko-KR": "개발을 시작합시다!",
         "no": "La oss begynne å bygge!",
         "it": "Iniziamo a costruire!",
         "pt": "Vamos começar a construir!",
@@ -849,7 +849,7 @@
     },
     "HOME$OPENHANDS_DESCRIPTION": {
         "en": "OpenHands makes it easy to build and maintain software using AI-driven development.",
-        "ja": "OpenHandsはAI駆動の開発を使用してソフトウェアの構築と維持を容易にします。",
+        "ja": "OpenHandsはAI駆動の開発を使用してソフトウェアの開発と維持を容易にします。",
         "zh-CN": "OpenHands使用AI驱动的开发方式，轻松构建和维护软件。",
         "zh-TW": "OpenHands使用AI驅動的開發方式，輕鬆構建和維護軟件。",
         "ko-KR": "OpenHands는 AI 기반 개발을 사용하여 소프트웨어를 쉽게 구축하고 유지할 수 있게 합니다.",
@@ -9630,6 +9630,22 @@
         "tr": "Ajan gereksiz değişiklikler yaptı",
         "de": "Der Agent hat unnötige Änderungen vorgenommen",
         "uk": "Агент зробив непотрібні зміни"
+    },
+    "FEEDBACK$REASON_SHOULD_ASK_FIRST": {
+        "en": "The agent should've asked me first before doing it!",
+        "ja": "エージェントは実行する前に私に確認すべきでした！",
+        "zh-CN": "代理应该先问我再做这件事！",
+        "zh-TW": "代理應該先問我再做這件事！",
+        "ko-KR": "에이전트는 먼저 나에게 물어봤어야 했습니다!",
+        "no": "Agenten burde ha spurt meg først før den gjorde det!",
+        "it": "L'agente avrebbe dovuto chiedermelo prima di farlo!",
+        "pt": "O agente deveria ter me perguntado primeiro antes de fazer isso!",
+        "es": "¡El agente debería haberme preguntado primero antes de hacerlo!",
+        "ar": "كان يجب على الوكيل أن يسألني أولاً قبل القيام بذلك!",
+        "fr": "L'agent aurait dû me demander d'abord avant de le faire !",
+        "tr": "Ajan bunu yapmadan önce bana sormalıydı!",
+        "de": "Der Agent hätte mich vorher fragen sollen!",
+        "uk": "Агент повинен був спочатку запитати мене, перш ніж це робити!"
     },
     "FEEDBACK$REASON_OTHER": {
         "en": "Other",
