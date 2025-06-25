@@ -78,7 +78,18 @@ class RetryMixin:
             retry_state.retry_object, 'stop'
         ):
             # Get the max retries from the stop_after_attempt
-            for stop_func in retry_state.retry_object.stop.stop_funcs:
+            stop_condition = retry_state.retry_object.stop
+
+            # Handle both single stop conditions and stop_any (combined conditions)
+            stop_funcs = []
+            if hasattr(stop_condition, 'stops'):
+                # This is a stop_any object with multiple stop conditions
+                stop_funcs = stop_condition.stops
+            else:
+                # This is a single stop condition
+                stop_funcs = [stop_condition]
+
+            for stop_func in stop_funcs:
                 if hasattr(stop_func, 'max_attempts'):
                     # Add retry information to the exception
                     exception.retry_attempt = retry_state.attempt_number
