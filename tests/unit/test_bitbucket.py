@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from pydantic import SecretStr
 
+from openhands.integrations.bitbucket.bitbucket_service import BitBucketService
 from openhands.integrations.provider import ProviderToken, ProviderType
 from openhands.integrations.service_types import ProviderType as ServiceProviderType
 from openhands.integrations.service_types import Repository
@@ -18,6 +19,7 @@ from openhands.resolver.send_pull_request import send_pull_request
 from openhands.runtime.base import Runtime
 from openhands.server.routes.secrets import check_provider_tokens
 from openhands.server.settings import POSTProviderModel
+from openhands.server.types import AppMode
 
 
 # BitbucketIssueHandler Tests
@@ -360,7 +362,7 @@ async def test_validate_provider_token_with_bitbucket_token():
         patch('openhands.integrations.utils.GitHubService') as mock_github_service,
         patch('openhands.integrations.utils.GitLabService') as mock_gitlab_service,
         patch(
-            'openhands.integrations.utils.BitbucketService'
+            'openhands.integrations.utils.BitBucketService'
         ) as mock_bitbucket_service,
     ):
         # Set up the mocks
@@ -433,15 +435,9 @@ async def test_bitbucket_sort_parameter_mapping():
     """
     Test that the Bitbucket service correctly maps sort parameters.
     """
-    from unittest.mock import patch
-
-    from pydantic import SecretStr
-
-    from openhands.integrations.bitbucket.bitbucket_service import BitbucketService
-    from openhands.server.types import AppMode
 
     # Create a service instance
-    service = BitbucketService(token=SecretStr('test-token'))
+    service = BitBucketService(token=SecretStr('test-token'))
 
     # Mock the _make_request method to avoid actual API calls
     with patch.object(service, '_make_request') as mock_request:
@@ -478,7 +474,7 @@ async def test_validate_provider_token_with_empty_tokens():
         patch('openhands.integrations.utils.GitHubService') as mock_github_service,
         patch('openhands.integrations.utils.GitLabService') as mock_gitlab_service,
         patch(
-            'openhands.integrations.utils.BitbucketService'
+            'openhands.integrations.utils.BitBucketService'
         ) as mock_bitbucket_service,
     ):
         # Configure mocks to raise exceptions for invalid tokens
