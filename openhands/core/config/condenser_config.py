@@ -166,6 +166,7 @@ class CondenserPipelineConfig(BaseModel):
 
     model_config = ConfigDict(extra='forbid')
 
+
 class ConversationWindowCondenserConfig(BaseModel):
     """Configuration for ConversationWindowCondenser.
 
@@ -175,6 +176,7 @@ class ConversationWindowCondenserConfig(BaseModel):
     type: Literal['conversation_window'] = Field(default='conversation_window')
 
     model_config = ConfigDict(extra='forbid')
+
 
 # Type alias for convenience
 CondenserConfig = (

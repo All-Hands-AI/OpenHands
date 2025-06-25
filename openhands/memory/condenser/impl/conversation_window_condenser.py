@@ -1,12 +1,16 @@
 from __future__ import annotations
 
-from openhands.events.action.agent import CondensationAction, CondensationRequestAction, RecallAction
-from openhands.events.action.message import MessageAction, SystemMessageAction
-from openhands.events.observation import Observation
-from openhands.events.event import EventSource
-from openhands.memory.condenser.condenser import RollingCondenser, View, Condensation
 from openhands.core.config.condenser_config import ConversationWindowCondenserConfig
 from openhands.core.logger import openhands_logger as logger
+from openhands.events.action.agent import (
+    CondensationAction,
+    RecallAction,
+)
+from openhands.events.action.message import MessageAction, SystemMessageAction
+from openhands.events.event import EventSource
+from openhands.events.observation import Observation
+from openhands.memory.condenser.condenser import Condensation, RollingCondenser, View
+
 
 class ConversationWindowCondenser(RollingCondenser):
     def __init__(self) -> None:
@@ -26,9 +30,7 @@ class ConversationWindowCondenser(RollingCondenser):
         # Handle empty history
         if not events:
             # No events to condense
-            action = CondensationAction(
-                forgotten_event_ids=[]
-            )
+            action = CondensationAction(forgotten_event_ids=[])
             return Condensation(action=action)
 
         # 1. Identify essential initial events
@@ -44,16 +46,20 @@ class ConversationWindowCondenser(RollingCondenser):
 
         # Find First User Message
         first_user_msg = next(
-            (e for e in events if isinstance(e, MessageAction) and e.source == EventSource.USER),
-            None
+            (
+                e
+                for e in events
+                if isinstance(e, MessageAction) and e.source == EventSource.USER
+            ),
+            None,
         )
 
         if first_user_msg is None:
-            logger.warning('No first user message found in history during condensation.')
-            # Return empty condensation if no user message
-            action = CondensationAction(
-                forgotten_event_ids=[]
+            logger.warning(
+                'No first user message found in history during condensation.'
             )
+            # Return empty condensation if no user message
+            action = CondensationAction(forgotten_event_ids=[])
             return Condensation(action=action)
 
         # Find the first user message index
@@ -150,19 +156,19 @@ class ConversationWindowCondenser(RollingCondenser):
         # Create the condensation action
         if forgotten_event_ids:
             # Use range if the forgotten events are contiguous
-            if len(forgotten_event_ids) > 1 and forgotten_event_ids[-1] - forgotten_event_ids[0] == len(forgotten_event_ids) - 1:
+            if (
+                len(forgotten_event_ids) > 1
+                and forgotten_event_ids[-1] - forgotten_event_ids[0]
+                == len(forgotten_event_ids) - 1
+            ):
                 action = CondensationAction(
                     forgotten_events_start_id=forgotten_event_ids[0],
-                    forgotten_events_end_id=forgotten_event_ids[-1]
+                    forgotten_events_end_id=forgotten_event_ids[-1],
                 )
             else:
-                action = CondensationAction(
-                    forgotten_event_ids=forgotten_event_ids
-                )
+                action = CondensationAction(forgotten_event_ids=forgotten_event_ids)
         else:
-            action = CondensationAction(
-                forgotten_event_ids=[]
-            )
+            action = CondensationAction(forgotten_event_ids=[])
 
         return Condensation(action=action)
 
@@ -170,7 +176,10 @@ class ConversationWindowCondenser(RollingCondenser):
         return view.unhandled_condensation_request
 
     @classmethod
-    def from_config(cls, _config: ConversationWindowCondenserConfig) -> ConversationWindowCondenser:
+    def from_config(
+        cls, _config: ConversationWindowCondenserConfig
+    ) -> ConversationWindowCondenser:
         return ConversationWindowCondenser()
+
 
 ConversationWindowCondenser.register_config(ConversationWindowCondenserConfig)

@@ -196,6 +196,7 @@ class CondensationAction(Action):
             return f'Summary: {self.summary}'
         return f'Condenser is dropping the events: {self.forgotten}.'
 
+
 @dataclass
 class CondensationRequestAction(Action):
     """This action is used to request a condensation of the conversation history.
