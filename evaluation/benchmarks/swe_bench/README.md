@@ -252,9 +252,3 @@ The results of the evaluation can be obtained by running the reporting script of
 # Example
 python -m src.report run_instance_swt_logs/OpenHands-CodeAct-gpt-4o-2024-11-20/OpenHands__CodeActAgent__gpt-4o-2024-11-20 --dataset verified
 ```
-
-
-[llm.eval_codestral]
-model="mistral/codestral-latest"
-api_key="YOUR-KEY-HERE"
-base_url="https://codestral.mistral.ai/v1"
