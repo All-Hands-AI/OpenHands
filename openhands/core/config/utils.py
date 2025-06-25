@@ -114,8 +114,6 @@ def load_from_env(
     # Start processing from the root of the config object
     set_attr_from_env(cfg)
 
-    # Third-party runtime configuration is now handled by the third-party runtimes themselves
-
     # load default LLM config from env
     default_llm_config = cfg.get_llm_config()
     set_attr_from_env(default_llm_config, 'LLM_')
@@ -159,7 +157,6 @@ def load_from_toml(cfg: OpenHandsConfig, toml_file: str = 'config.toml') -> None
     for key, value in core_config.items():
         if hasattr(cfg, key):
             setattr(cfg, key, value)
-        # Third-party runtime configuration is now handled by the third-party runtimes themselves
         else:
             logger.openhands_logger.warning(
                 f'Unknown config key "{key}" in [core] section'
