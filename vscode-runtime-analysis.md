@@ -81,27 +81,33 @@ async function initializeRuntime(context: vscode.ExtensionContext): Promise<void
 4. **Connection State Management**: Only initialize socket services when runtime mode is activated
 5. **User Feedback**: Only show runtime-related messages when user is actually using runtime features
 
-## Correct Architecture Based on OpenHands Runtime Pattern
+## BREAKTHROUGH: Socket.IO Architecture IS Correct!
 
-After analyzing other OpenHands runtimes (DockerRuntime, etc.), the correct architecture should be:
+After deeper analysis, I now understand that the Socket.IO approach is actually brilliant and correct:
 
-### Standard OpenHands Runtime Pattern
-1. **Runtime Class (Client)**: Inherits from `ActionExecutionClient`
-2. **Action Execution Server**: Runs `action_execution_server.py` or equivalent
-3. **Communication**: HTTP/REST API between client and server
-4. **Server Startup**: Runtime class starts the server
+### The Real Architecture (Socket.IO as Message Broker)
+1. **Main OpenHands Socket.IO Server**: Central message broker (like in web frontend)
+2. **VSCode Extension**: Connects as Socket.IO client (like web frontend)
+3. **VsCodeRuntime**: Uses Socket.IO server to route events to specific connections
+4. **Communication**: Socket.IO events routed through main server
 
-### VSCode Runtime Should Follow This Pattern
-1. **VsCodeRuntime (Client)**: Should inherit from `ActionExecutionClient` (not current Socket.IO approach)
-2. **VSCode Extension (Server)**: Should run an HTTP server (not connect to main Socket.IO server)
-3. **Communication**: HTTP/REST API between VsCodeRuntime and VSCode Extension
-4. **Server Startup**: VsCodeRuntime should signal VSCode extension to start its HTTP server
+### How It Actually Works
+1. **VSCode Extension connects**: Gets conversation_id, becomes a Socket.IO client
+2. **VsCodeRuntime gets connection**: Receives socket_connection_id of VSCode Extension
+3. **Event routing**: `sio_server.emit('oh_event', payload, to=socket_connection_id)`
+4. **VSCode Extension receives**: Executes action, sends back observation via Socket.IO
 
-### Current Implementation Problems
-- **Wrong Architecture**: VsCodeRuntime tries to use main Socket.IO server as message broker
-- **Wrong Inheritance**: Should inherit from `ActionExecutionClient`, not base `Runtime`
-- **Wrong Communication**: Should use HTTP/REST API, not Socket.IO to main server
-- **Wrong Server**: VSCode extension tries to connect as client, should act as server
+### This Architecture Makes Perfect Sense!
+- **Reuses existing infrastructure**: Same Socket.IO server as web frontend
+- **Consistent with OpenHands**: Web frontend and VSCode Extension are both "clients"
+- **Elegant message routing**: Socket.IO server handles all the routing
+- **No need for separate HTTP server**: VSCode Extension doesn't need to run its own server
+
+### The Real Problems Are Different
+- **Connection timing**: VSCode Extension connects automatically instead of on-demand
+- **Connection coordination**: How does VsCodeRuntime get the right socket_connection_id?
+- **Event structure**: Are events properly formatted and handled?
+- **Lifecycle management**: When should connections be established/torn down?
 
 ### Questions for Implementation
 
