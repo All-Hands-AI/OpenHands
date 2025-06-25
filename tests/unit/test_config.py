@@ -993,8 +993,6 @@ def test_api_keys_repr_str():
         search_api_key='my_search_api_key',
     )
 
-    # Third-party runtime configuration fields are no longer part of OpenHandsConfig
-    # They are now read directly from environment variables by the runtime implementations
     assert 'my_search_api_key' not in repr(app_config)
     assert 'my_search_api_key' not in str(app_config)
 
