@@ -23,7 +23,7 @@ def check_node_version():
         version_str = result.stdout.strip()
         # Extract major version number (e.g., "v12.22.9" -> 12)
         major_version = int(version_str.lstrip('v').split('.')[0])
-        return major_version >= 14
+        return major_version >= 16  # Many VSCode extension deps require >= 16
     except (subprocess.CalledProcessError, FileNotFoundError, ValueError):
         return False
 
@@ -49,8 +49,8 @@ def build_vscode_extension():
     
     # Check Node.js version
     if not check_node_version():
-        print('--- Warning: Node.js version < 14 detected or Node.js not found ---')
-        print('--- Skipping VS Code extension build (requires Node.js >= 14) ---')
+        print('--- Warning: Node.js version < 16 detected or Node.js not found ---')
+        print('--- Skipping VS Code extension build (requires Node.js >= 16) ---')
         print('--- Using pre-built extension if available ---')
         
         if not vsix_path.exists():
