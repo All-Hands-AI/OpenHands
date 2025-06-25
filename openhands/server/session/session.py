@@ -118,7 +118,9 @@ class Session:
         )
         # Apply remote_runtime_resource_factor from settings
         if settings.remote_runtime_resource_factor is not None:
-            self.config.sandbox.remote_runtime_resource_factor = settings.remote_runtime_resource_factor
+            self.config.sandbox.remote_runtime_resource_factor = (
+                settings.remote_runtime_resource_factor
+            )
         max_iterations = settings.max_iterations or self.config.max_iterations
 
         # Prioritize settings over config for max_budget_per_task

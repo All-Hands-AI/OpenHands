@@ -60,4 +60,3 @@
 - **Actions**:
   - Add a section describing the new temperature setting and its purpose.
   - Provide instructions on how to use the new setting.
-
