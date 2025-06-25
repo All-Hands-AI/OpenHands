@@ -7,7 +7,7 @@ import subprocess
 # Define the expected name of the .vsix file based on the extension's package.json
 # This should match the name and version in openhands-vscode/package.json
 EXTENSION_NAME = 'openhands-vscode'
-EXTENSION_VERSION = '0.0.1'
+EXTENSION_VERSION = '0.0.2'
 VSIX_FILENAME = f'{EXTENSION_NAME}-{EXTENSION_VERSION}.vsix'
 
 # Paths
