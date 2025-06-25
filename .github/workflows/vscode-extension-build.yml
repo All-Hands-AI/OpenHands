@@ -30,52 +30,52 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
+
       - name: Set up Node.js
         uses: useblacksmith/setup-node@v5
         with:
           node-version: ${{ matrix.node-version }}
-      
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      
+
       - name: Install VSCode extension dependencies
         working-directory: ./openhands/integrations/vscode
         run: npm ci
-      
+
       - name: Build VSCode extension via build.py
         run: python build.py
         env:
           # Ensure we don't skip the build
           SKIP_VSCODE_BUILD: ""
-      
+
       - name: Validate .vsix file
         run: |
           # Verify the .vsix was created and is valid
           if [ -f "openhands/integrations/vscode/openhands-vscode-0.0.1.vsix" ]; then
             echo "✅ VSCode extension built successfully"
             ls -la openhands/integrations/vscode/openhands-vscode-0.0.1.vsix
-            
+
             # Basic validation that the .vsix is a valid zip file
             echo "🔍 Validating .vsix structure..."
             file openhands/integrations/vscode/openhands-vscode-0.0.1.vsix
             unzip -t openhands/integrations/vscode/openhands-vscode-0.0.1.vsix
-            
+
             echo "✅ VSCode extension validation passed"
           else
             echo "❌ VSCode extension build failed - .vsix not found"
             exit 1
           fi
-      
+
       - name: Upload VSCode extension artifact
         uses: actions/upload-artifact@v4
         with:
           name: vscode-extension-node${{ matrix.node-version }}
           path: openhands/integrations/vscode/openhands-vscode-0.0.1.vsix
           retention-days: 7
-      
+
       - name: Comment on PR with artifact link
         if: github.event_name == 'pull_request' && matrix.node-version == '18'
         uses: actions/github-script@v7
@@ -83,41 +83,41 @@ jobs:
           script: |
             const fs = require('fs');
             const path = require('path');
-            
+
             // Get file size for display
             const vsixPath = 'openhands/integrations/vscode/openhands-vscode-0.0.1.vsix';
             const stats = fs.statSync(vsixPath);
             const fileSizeKB = Math.round(stats.size / 1024);
-            
+
             const comment = `## 🔧 VSCode Extension Built Successfully!
-            
+
             The VSCode extension has been built and is ready for testing.
-            
+
             **📦 Download**: [openhands-vscode-0.0.1.vsix](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) (${fileSizeKB} KB)
-            
+
             **🚀 To install**:
             1. Download the artifact from the workflow run above
             2. In VSCode: \`Ctrl+Shift+P\` → "Extensions: Install from VSIX..."
             3. Select the downloaded \`.vsix\` file
-            
+
             **✅ Tested with**: Node.js 18, 20, 22
             **🔍 Validation**: File structure and integrity verified
-            
+
             ---
             *Built from commit ${{ github.sha }}*`;
-            
+
             // Check if we already commented on this PR
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
             });
-            
-            const botComment = comments.find(comment => 
-              comment.user.login === 'github-actions[bot]' && 
+
+            const botComment = comments.find(comment =>
+              comment.user.login === 'github-actions[bot]' &&
               comment.body.includes('VSCode Extension Built Successfully')
             );
-            
+
             if (botComment) {
               // Update existing comment
               await github.rest.issues.updateComment({
