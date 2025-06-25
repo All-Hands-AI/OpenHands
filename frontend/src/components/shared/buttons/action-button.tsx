@@ -6,6 +6,7 @@ interface ActionButtonProps {
   content: string;
   action: AgentState;
   handleAction: (action: AgentState) => void;
+  className?: string;
 }
 
 export function ActionButton({
@@ -13,6 +14,7 @@ export function ActionButton({
   content,
   action,
   handleAction,
+  className = "",
   children,
 }: React.PropsWithChildren<ActionButtonProps>) {
   return (
@@ -20,7 +22,7 @@ export function ActionButton({
       <button
         onClick={() => handleAction(action)}
         disabled={isDisabled}
-        className="relative overflow-visible cursor-default hover:cursor-pointer group disabled:cursor-not-allowed transition-all duration-300 ease-in-out"
+        className={`relative overflow-visible cursor-default hover:cursor-pointer group disabled:cursor-not-allowed transition-all duration-300 ease-in-out ${className}`}
         type="button"
       >
         <span className="relative group-hover:filter group-hover:drop-shadow-[0_0_5px_rgba(255,64,0,0.4)]">
