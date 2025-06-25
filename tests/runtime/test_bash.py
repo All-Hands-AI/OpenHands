@@ -454,12 +454,7 @@ def test_cmd_run(temp_dir, runtime_cls, run_as_openhands):
             ):
                 assert 'openhands' in obs.content
             elif runtime_cls == LocalRuntime or runtime_cls == CLIRuntime:
-                # Skip this assertion when running as root in the test environment
-                # This allows tests to pass in environments where the test is run as root
-                import os
-
-                if os.geteuid() != 0:  # Only check if not running as root
-                    assert 'root' not in obs.content and 'openhands' not in obs.content
+                assert 'root' not in obs.content and 'openhands' not in obs.content
             else:
                 assert 'root' in obs.content
             assert 'test' in obs.content
