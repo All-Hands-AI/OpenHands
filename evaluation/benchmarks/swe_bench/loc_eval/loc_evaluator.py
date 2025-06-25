@@ -590,18 +590,6 @@ if __name__ == '__main__':
         help="Directory containing model inference outputs"
     )
     parser.add_argument(
-        "--eval-dir",
-        type=str,
-        default=None,
-        help="Directory containing inference evaluation outputs"
-    )
-    parser.add_argument(
-        "--save-dir",
-        type=str,
-        default=None,
-        help="Output directory to save eval results"
-    )
-    parser.add_argument(
         "--dataset",
         type=str,
         default=None,
@@ -621,6 +609,13 @@ if __name__ == '__main__':
     )
 
     args = parser.parse_args()
+
+    # Eval infer and loc
+    args.save_dir = f"{args.infer_dir}/loc_eval"
+    os.makedirs(args.save_dir, exist_ok=True)
+    args.eval_dir = f"{args.infer_dir}/eval_outputs"
+    if not os.path.isdir(args.eval_dir):
+        args.eval_dir = None
 
     # SWE-Bench
     args.swe_output_file = os.path.join(args.save_dir, "swe_dataset.json")

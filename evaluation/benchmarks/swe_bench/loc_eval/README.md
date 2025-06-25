@@ -23,11 +23,9 @@ This folder implements localization evaluation at both file and function levels 
 - Run localization evaluation
     - Format:
         ```bash
-        ./evaluation/benchmarks/swe_bench/scripts/eval_localization.sh [infer-dir] [eval-dir] [output-dir] [split] [dataset] [max-infer-turn]
+        ./evaluation/benchmarks/swe_bench/scripts/eval_localization.sh [infer-dir] [split] [dataset] [max-infer-turn]
         ```
         - `infer-dir`: inference directory containing inference outputs
-        - `eval-dir`: evaluation directory containing evaluation outputs
-        - `output-dir`: localization evaluation output dir
         - `split`: SWE-Bench dataset split to use
         - `dataset`: SWE-Bench dataset name
         - `max-infer-turn`: the maximum number of iterations the agent took to run inference
@@ -37,9 +35,9 @@ This folder implements localization evaluation at both file and function levels 
         # Example
         ./evaluation/benchmarks/swe_bench/scripts/eval_localization.sh \
             --infer-dir ./evaluation/evaluation_outputs/outputs/princeton-nlp__SWE-bench_Verified-test/CodeActAgent/gpt_4o_100_N \
-            --eval-dir ./evaluation/evaluation_outputs/outputs/princeton-nlp__SWE-bench_Verified-test/CodeActAgent/gpt_4o_100_N/eval_outputs \
-            --output-dir ./evaluation/evaluation_outputs/outputs/princeton-nlp__SWE-bench_Verified-test/CodeActAgent/gpt_4o_100_N/loc_eval \
             --split test \
             --dataset princeton-nlp/SWE-bench_Verified \
             --max-infer-turn 100
         ```
+
+- Localization evaluation results will be automatically saved to `[infer-dir]/loc_eval`
