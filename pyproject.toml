@@ -53,7 +53,7 @@ protobuf = "^5.0.0,<6.0.0"                         # Updated to support newer op
 opentelemetry-api = "^1.33.1"
 opentelemetry-exporter-otlp-proto-grpc = "^1.33.1"
 modal = ">=0.66.26,<1.1.0"
-runloop-api-client = "0.44.0"
+runloop-api-client = "0.43.0"
 libtmux = ">=0.37,<0.40"
 pygithub = "^2.5.0"
 joblib = "*"
@@ -80,7 +80,7 @@ bashlex = "^0.18"
 # TODO: These are integrations that should probably be optional
 redis = ">=5.2,<7.0"
 minio = "^7.2.8"
-daytona = "0.21.4"
+daytona = "0.21.1"
 stripe = ">=11.5,<13.0"
 google-cloud-aiplatform = "*"
 anthropic = { extras = [ "vertex" ], version = "*" }
