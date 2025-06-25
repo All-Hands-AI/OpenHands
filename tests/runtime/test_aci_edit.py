@@ -133,10 +133,19 @@ def test_create_with_none_file_text(temp_dir, runtime_cls, run_as_openhands):
         )
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert (
-            obs.content
-            == 'ERROR:\nParameter `file_text` is required for command: create.'
+        # After the fix, file_text=None should be normalized to empty string
+        # and the file should be created successfully
+        assert 'File created successfully' in obs.content
+
+        # Verify file was created and is empty
+        action = FileEditAction(
+            command='view',
+            path=new_file,
         )
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        # Empty file should show just the line number with no content
+        assert '1\t' in obs.content
     finally:
         _close_test_runtime(runtime)
 

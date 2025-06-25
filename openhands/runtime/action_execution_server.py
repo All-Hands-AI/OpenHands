@@ -124,6 +124,11 @@ def _execute_file_editor(
     """
     result: ToolResult | None = None
 
+    # Normalize file_text for create command: convert None to empty string
+    # This allows users to create empty files when file_text is None
+    if command == 'create' and file_text is None:
+        file_text = ''
+
     # Convert insert_line from string to int if needed
     if insert_line is not None and isinstance(insert_line, str):
         try:
