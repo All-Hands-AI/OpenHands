@@ -5,6 +5,7 @@ import copy
 import argparse
 import statistics
 import pandas as pd
+from tqdm import tqdm
 from datasets import load_dataset
 from typing import Dict, List, Any, Tuple, Optional
 
@@ -184,7 +185,6 @@ class LocEvaluator:
             filepath = os.path.join(output_dir, file_name)
             with open(filepath, 'w') as f:
                 json.dump(data, f, indent=4)
-            logger.info(f"Saved localization evaluation to: {filepath}")
             return True
         except Exception as e:
             logger.error(f"Error writing to JSON: {str(e)}")
@@ -309,9 +309,7 @@ class LocEvaluator:
         history_idx = 1
         
         while history_idx < len(self.trajectory)-2:
-            history_idx += 1
-            logger.info(f"Progress: {history_idx}-{history_idx+1} / {len(self.trajectory)-1}")
-            
+            history_idx += 1            
             action_history = self.trajectory[history_idx]
             observ_history = self.trajectory[history_idx+1]
 
@@ -360,14 +358,6 @@ class LocEvaluator:
                                 self.agent_loc["loc progress"]["function"][self.gold_loc["function"].index(new_agent_loc)] = True
 
             agent_trajectory["trajectory"][f"turn {turn_idx}"]["loc_eval"] = self.agent_loc
-            
-            # Show progress
-            logger.info(
-                f"Progress Debugging:"
-                f"\n[Turn {turn_idx} - Agent Action] {action_history['action']}"
-                f"\n[Turn {turn_idx} - Gold Localiz] {self.gold_loc}"
-                f"\n[Turn {turn_idx} - Agent Locali] {self.agent_loc}"
-            )
 
         # Task success
         agent_trajectory["final_eval"] = {
@@ -399,7 +389,6 @@ class LocEvaluator:
         # Task success
         if self.eval_task_success:
             agent_trajectory["final_eval"]["task_success"] = self._add_task_success_metric()
-            logger.info(f"\n[Turn {turn_idx} - Task Success] {self.task_success}")
 
         # Align loc with success
         if self.task_success:
@@ -463,9 +452,6 @@ class LocEvaluator:
         self.instance = instance
         self.trajectory = trajectory
         self.sandbox_root = repo_root
-        
-        # Log initialization
-        logger.info(f"LocEvaluator initialized for instance {instance.instance_id}")
 
         # Max turn
         self._parse_agent_turn_num()
@@ -650,13 +636,12 @@ if __name__ == '__main__':
     loc_eval_results = {}
     loc_evaluator = LocEvaluator(args)
 
-    for infer_idx, infer_instance in enumerate(infer_outputs):
+    for infer_idx, infer_instance in tqdm(enumerate(infer_outputs), total=len(infer_outputs), desc="Processing instances"):
         instance_id = infer_instance['instance_id']
         swe_instance = swe_instances.query(f"instance_id == '{instance_id}'").iloc[0]
         assert instance_id == swe_instance.instance_id
+        
         processed_instances.append(instance_id)
-        logger.info(f"[Progress {infer_idx+1}/{len(infer_outputs)}] Processing inference output for instance {instance_id}")
-
         upload_instruction = infer_instance["instruction"]
         repo_root = upload_instruction.split("<uploaded_files>")[1].split("</uploaded_files>")[0].strip()
         curr_trajectory = infer_instance['history']
