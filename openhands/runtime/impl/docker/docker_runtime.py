@@ -38,6 +38,8 @@ from openhands.utils.tenacity_stop import stop_if_should_exit
 
 CONTAINER_NAME_PREFIX = 'openhands-runtime-'
 
+USE_CONTAINER_NETWORK = os.environ.get('USE_CONTAINER_NETWORK', 'false').lower() == 'true'
+
 EXECUTION_SERVER_PORT_RANGE = (30000, 39999)
 VSCODE_PORT_RANGE = (40000, 49999)
 APP_PORT_RANGE_1 = (50000, 54999)
@@ -111,6 +113,23 @@ class DockerRuntime(ActionExecutionClient):
             self.config.sandbox.local_runtime_url = (
                 f'http://{os.environ["DOCKER_HOST_ADDR"]}'
             )
+
+        self._container_network_target = None
+        if USE_CONTAINER_NETWORK:
+            self._container_network_target = self._detect_current_container_name()
+
+            if self._container_network_target:
+                logger.info(
+                    f'Using container network mode. Sharing network namespace of app container: {self._container_network_target}'
+                )
+
+                self.config.sandbox.local_runtime_url = 'http://127.0.0.1'
+                self.config.sandbox.use_host_network = False
+            else:
+                logger.warning(
+                    'USE_CONTAINER_NETWORK is true but container name could not be detected. '
+                    'Falling back to default network configuration.'
+                )
 
         self.docker_client: docker.DockerClient = self._init_docker_client()
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
@@ -271,6 +290,42 @@ class DockerRuntime(ActionExecutionClient):
 
         return volumes
 
+    @staticmethod
+    def _detect_current_container_name() -> str | None:
+        try:
+            client = DockerRuntime._init_docker_client()
+
+            # Try using the full hostname (should match container ID)
+            import socket
+            host_id_full = socket.gethostname()
+            host_id_short = host_id_full[:12]
+
+            try:
+                return client.containers.get(host_id_full).name
+            except docker.errors.NotFound:
+                pass
+
+            # Try matching any container by short ID prefix
+            for c in client.containers.list(all=True):
+                if c.id.startswith(host_id_short):
+                    return c.name
+
+            # Legacy fallback: parse cgroup for container ID
+            with open('/proc/self/cgroup') as f:
+                for line in f:
+                    tail = line.strip().split('/')[-1]
+                    if len(tail) >= 12:
+                        legacy_id = tail.split('-')[-1][:12]
+                        for c in client.containers.list(all=True):
+                            if c.id.startswith(legacy_id):
+                                return c.name
+            return None
+        except Exception as ex:
+            logger.warning(
+                f'Container autodetection failed: {ex}'
+            )
+            return None
+
     def init_container(self) -> None:
         self.log('debug', 'Preparing to start container...')
         self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
@@ -288,7 +343,7 @@ class DockerRuntime(ActionExecutionClient):
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
 
         use_host_network = self.config.sandbox.use_host_network
-        network_mode: typing.Literal['host'] | None = (
+        network_mode: typing.Literal['host'] | str | None = (
             'host' if use_host_network else None
         )
 
@@ -324,6 +379,10 @@ class DockerRuntime(ActionExecutionClient):
                 'warn',
                 'Using host network mode. If you are using MacOS, please make sure you have the latest version of Docker Desktop and enabled host network feature: https://docs.docker.com/network/drivers/host/#docker-desktop',
             )
+
+        if self._container_network_target:
+            network_mode = f'container:{self._container_network_target}'
+            port_mapping = None
 
         # Combine environment variables
         environment = dict(**self.initial_env_vars)
