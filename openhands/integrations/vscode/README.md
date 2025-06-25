@@ -49,7 +49,7 @@ The VS Code extension is automatically built during OpenHands installation. The 
 
 1. **Automatic Build**: When installing OpenHands via `pip install`, the extension is built automatically
 2. **Pre-built Extension**: A pre-built `.vsix` file is included for systems with older Node.js versions
-3. **Node.js Requirements**: Building from source requires Node.js >= 16
+3. **Node.js Requirements**: Building from source requires Node.js >= 18 (aligned with frontend)
 
 #### Build Options
 

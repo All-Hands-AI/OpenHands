@@ -10,7 +10,8 @@
     "url": "https://github.com/all-hands-ai/OpenHands.git"
   },
   "engines": {
-    "vscode": "^1.98.2"
+    "vscode": "^1.98.2",
+    "node": ">=18.0.0"
   },
   "activationEvents": [
     "onCommand:openhands.startConversation",
