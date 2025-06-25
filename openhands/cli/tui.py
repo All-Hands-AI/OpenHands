@@ -521,19 +521,32 @@ class CommandCompleter(Completer):
                     )
 
 
-def create_prompt_session() -> PromptSession[str]:
+def create_prompt_session(config: OpenHandsConfig | None = None) -> PromptSession[str]:
+    """Creates a prompt session with VI mode enabled if specified in the config.
+
+    On Windows, improves input responsiveness by using specific input settings.
+    """
+    # Set up kwargs for PromptSession
+    kwargs = {'style': DEFAULT_STYLE}
+
+    # Add VI mode if config is provided
+    if config is not None:
+        kwargs['vi_mode'] = config.cli.vi_mode
+
     # On Windows, we can improve input responsiveness by using specific input settings
     if os.name == 'nt':  # Windows
         # Create input with always_prefer_tty=True to improve Windows input handling
         input_obj = create_input(always_prefer_tty=True)
-        return PromptSession(style=DEFAULT_STYLE, input=input_obj)
-    else:
-        return PromptSession(style=DEFAULT_STYLE)
+        kwargs['input'] = input_obj
+
+    return PromptSession(**kwargs)
 
 
-async def read_prompt_input(agent_state: str, multiline: bool = False) -> str:
+async def read_prompt_input(
+    config: OpenHandsConfig, agent_state: str, multiline: bool = False
+) -> str:
     try:
-        prompt_session = create_prompt_session()
+        prompt_session = create_prompt_session(config)
         prompt_session.completer = (
             CommandCompleter(agent_state) if not multiline else None
         )
@@ -565,9 +578,9 @@ async def read_prompt_input(agent_state: str, multiline: bool = False) -> str:
         return '/exit'
 
 
-async def read_confirmation_input() -> str:
+async def read_confirmation_input(config: OpenHandsConfig) -> str:
     try:
-        prompt_session = create_prompt_session()
+        prompt_session = create_prompt_session(config)
 
         with patch_stdout():
             print_formatted_text('')
@@ -661,7 +674,9 @@ async def _process_agent_pause_unix(
 
 
 def cli_confirm(
-    question: str = 'Are you sure?', choices: list[str] | None = None
+    config: OpenHandsConfig,
+    question: str = 'Are you sure?',
+    choices: list[str] | None = None,
 ) -> int:
     """Display a confirmation prompt with the given question and choices.
 
@@ -685,15 +700,27 @@ def cli_confirm(
     kb = KeyBindings()
 
     @kb.add('up')
-    def _(event: KeyPressEvent) -> None:
+    def _handle_up(event: KeyPressEvent) -> None:
         selected[0] = (selected[0] - 1) % len(choices)
 
+    if config.cli.vi_mode:
+
+        @kb.add('k')
+        def _handle_k(event: KeyPressEvent) -> None:
+            selected[0] = (selected[0] - 1) % len(choices)
+
     @kb.add('down')
-    def _(event: KeyPressEvent) -> None:
+    def _handle_down(event: KeyPressEvent) -> None:
         selected[0] = (selected[0] + 1) % len(choices)
 
+    if config.cli.vi_mode:
+
+        @kb.add('j')
+        def _handle_j(event: KeyPressEvent) -> None:
+            selected[0] = (selected[0] + 1) % len(choices)
+
     @kb.add('enter')
-    def _(event: KeyPressEvent) -> None:
+    def _handle_enter(event: KeyPressEvent) -> None:
         event.app.exit(result=selected[0])
 
     style = Style.from_dict({'selected': COLOR_GOLD, 'unselected': ''})

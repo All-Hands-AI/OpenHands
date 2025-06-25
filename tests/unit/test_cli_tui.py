@@ -282,7 +282,7 @@ class TestReadConfirmationInput:
         mock_session.prompt_async.return_value = 'y'
         mock_create_session.return_value = mock_session
 
-        result = await read_confirmation_input()
+        result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
         assert result == 'yes'
 
     @pytest.mark.asyncio
@@ -292,7 +292,7 @@ class TestReadConfirmationInput:
         mock_session.prompt_async.return_value = 'yes'
         mock_create_session.return_value = mock_session
 
-        result = await read_confirmation_input()
+        result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
         assert result == 'yes'
 
     @pytest.mark.asyncio
@@ -302,7 +302,7 @@ class TestReadConfirmationInput:
         mock_session.prompt_async.return_value = 'n'
         mock_create_session.return_value = mock_session
 
-        result = await read_confirmation_input()
+        result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
         assert result == 'no'
 
     @pytest.mark.asyncio
@@ -312,7 +312,7 @@ class TestReadConfirmationInput:
         mock_session.prompt_async.return_value = 'no'
         mock_create_session.return_value = mock_session
 
-        result = await read_confirmation_input()
+        result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
         assert result == 'no'
 
     @pytest.mark.asyncio
@@ -322,7 +322,7 @@ class TestReadConfirmationInput:
         mock_session.prompt_async.return_value = 'a'
         mock_create_session.return_value = mock_session
 
-        result = await read_confirmation_input()
+        result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
         assert result == 'always'
 
     @pytest.mark.asyncio
@@ -332,7 +332,7 @@ class TestReadConfirmationInput:
         mock_session.prompt_async.return_value = 'always'
         mock_create_session.return_value = mock_session
 
-        result = await read_confirmation_input()
+        result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
         assert result == 'always'
 
     @pytest.mark.asyncio
@@ -342,7 +342,7 @@ class TestReadConfirmationInput:
         mock_session.prompt_async.return_value = 'invalid'
         mock_create_session.return_value = mock_session
 
-        result = await read_confirmation_input()
+        result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
         assert result == 'no'
 
     @pytest.mark.asyncio
@@ -352,7 +352,7 @@ class TestReadConfirmationInput:
         mock_session.prompt_async.return_value = ''
         mock_create_session.return_value = mock_session
 
-        result = await read_confirmation_input()
+        result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
         assert result == 'no'
 
     @pytest.mark.asyncio
@@ -362,7 +362,7 @@ class TestReadConfirmationInput:
         mock_session.prompt_async.return_value = None
         mock_create_session.return_value = mock_session
 
-        result = await read_confirmation_input()
+        result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
         assert result == 'no'
 
     @pytest.mark.asyncio
@@ -374,7 +374,7 @@ class TestReadConfirmationInput:
         mock_session.prompt_async.side_effect = KeyboardInterrupt
         mock_create_session.return_value = mock_session
 
-        result = await read_confirmation_input()
+        result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
         assert result == 'no'
 
     @pytest.mark.asyncio
@@ -384,7 +384,7 @@ class TestReadConfirmationInput:
         mock_session.prompt_async.side_effect = EOFError
         mock_create_session.return_value = mock_session
 
-        result = await read_confirmation_input()
+        result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
         assert result == 'no'
 
 
