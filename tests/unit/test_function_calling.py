@@ -243,3 +243,144 @@ def test_unexpected_argument_handling():
     # Verify the error message mentions the unexpected argument
     assert 'old_str_prefix' in str(exc_info.value)
     assert 'Unexpected argument' in str(exc_info.value)
+
+
+def test_str_replace_editor_create_missing_file_text():
+    """Test that str_replace_editor create command fails when file_text is missing."""
+    response = create_mock_response(
+        'str_replace_editor',
+        {
+            'command': 'create',
+            'path': '/test/file.py',
+            # Missing file_text parameter
+        },
+    )
+
+    with pytest.raises(FunctionCallValidationError) as exc_info:
+        response_to_actions(response)
+
+    assert 'Missing required argument "file_text" for command "create"' in str(
+        exc_info.value
+    )
+
+
+def test_str_replace_editor_create_with_file_text():
+    """Test that str_replace_editor create command works when file_text is provided."""
+    response = create_mock_response(
+        'str_replace_editor',
+        {
+            'command': 'create',
+            'path': '/test/file.py',
+            'file_text': 'print("Hello, World!")',
+        },
+    )
+
+    actions = response_to_actions(response)
+    assert len(actions) == 1
+    action = actions[0]
+    assert isinstance(action, FileEditAction)
+    assert action.path == '/test/file.py'
+    assert action.command == 'create'
+    assert action.file_text == 'print("Hello, World!")'
+
+
+def test_str_replace_editor_str_replace_missing_old_str():
+    """Test that str_replace_editor str_replace command fails when old_str is missing."""
+    response = create_mock_response(
+        'str_replace_editor',
+        {
+            'command': 'str_replace',
+            'path': '/test/file.py',
+            'new_str': 'new content',
+            # Missing old_str parameter
+        },
+    )
+
+    with pytest.raises(FunctionCallValidationError) as exc_info:
+        response_to_actions(response)
+
+    assert 'Missing required argument "old_str" for command "str_replace"' in str(
+        exc_info.value
+    )
+
+
+def test_str_replace_editor_str_replace_missing_new_str():
+    """Test that str_replace_editor str_replace command fails when new_str is missing."""
+    response = create_mock_response(
+        'str_replace_editor',
+        {
+            'command': 'str_replace',
+            'path': '/test/file.py',
+            'old_str': 'old content',
+            # Missing new_str parameter
+        },
+    )
+
+    with pytest.raises(FunctionCallValidationError) as exc_info:
+        response_to_actions(response)
+
+    assert 'Missing required argument "new_str" for command "str_replace"' in str(
+        exc_info.value
+    )
+
+
+def test_str_replace_editor_insert_missing_new_str():
+    """Test that str_replace_editor insert command fails when new_str is missing."""
+    response = create_mock_response(
+        'str_replace_editor',
+        {
+            'command': 'insert',
+            'path': '/test/file.py',
+            'insert_line': 5,
+            # Missing new_str parameter
+        },
+    )
+
+    with pytest.raises(FunctionCallValidationError) as exc_info:
+        response_to_actions(response)
+
+    assert 'Missing required argument "new_str" for command "insert"' in str(
+        exc_info.value
+    )
+
+
+def test_str_replace_editor_insert_missing_insert_line():
+    """Test that str_replace_editor insert command fails when insert_line is missing."""
+    response = create_mock_response(
+        'str_replace_editor',
+        {
+            'command': 'insert',
+            'path': '/test/file.py',
+            'new_str': 'new content',
+            # Missing insert_line parameter
+        },
+    )
+
+    with pytest.raises(FunctionCallValidationError) as exc_info:
+        response_to_actions(response)
+
+    assert 'Missing required argument "insert_line" for command "insert"' in str(
+        exc_info.value
+    )
+
+
+def test_str_replace_editor_insert_with_all_params():
+    """Test that str_replace_editor insert command works when all parameters are provided."""
+    response = create_mock_response(
+        'str_replace_editor',
+        {
+            'command': 'insert',
+            'path': '/test/file.py',
+            'new_str': 'new content',
+            'insert_line': 5,
+        },
+    )
+
+    actions = response_to_actions(response)
+    assert len(actions) == 1
+    action = actions[0]
+    assert isinstance(action, FileEditAction)
+    assert action.path == '/test/file.py'
+    assert action.command == 'insert'
+    assert action.new_str == 'new content'
+    assert action.insert_line == 5

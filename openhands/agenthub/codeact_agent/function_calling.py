@@ -159,6 +159,32 @@ def response_to_actions(
                     )
                 path = arguments['path']
                 command = arguments['command']
+
+                # Validate command-specific required parameters
+                if command == 'create':
+                    if 'file_text' not in arguments:
+                        raise FunctionCallValidationError(
+                            f'Missing required argument "file_text" for command "create" in tool call {tool_call.function.name}'
+                        )
+                elif command == 'str_replace':
+                    if 'old_str' not in arguments:
+                        raise FunctionCallValidationError(
+                            f'Missing required argument "old_str" for command "str_replace" in tool call {tool_call.function.name}'
+                        )
+                    if 'new_str' not in arguments:
+                        raise FunctionCallValidationError(
+                            f'Missing required argument "new_str" for command "str_replace" in tool call {tool_call.function.name}'
+                        )
+                elif command == 'insert':
+                    if 'new_str' not in arguments:
+                        raise FunctionCallValidationError(
+                            f'Missing required argument "new_str" for command "insert" in tool call {tool_call.function.name}'
+                        )
+                    if 'insert_line' not in arguments:
+                        raise FunctionCallValidationError(
+                            f'Missing required argument "insert_line" for command "insert" in tool call {tool_call.function.name}'
+                        )
+
                 other_kwargs = {
                     k: v for k, v in arguments.items() if k not in ['command', 'path']
                 }
