@@ -93,10 +93,10 @@ class MCPProxyManager:
         # Get the SSE app
         # mcp_app = self.proxy.http_app(path='/shttp')
         mcp_app = self.proxy.http_app(path='/sse', transport='sse')
-        
+
         # Apply MountFastMCP middleware to fix ASGI protocol violations
         mcp_app = MountFastMCP(app=mcp_app)
-        
+
         app.mount('/mcp', mcp_app)
         logger.info('Mounted FastMCP Proxy app at /mcp with MountFastMCP middleware')
 
