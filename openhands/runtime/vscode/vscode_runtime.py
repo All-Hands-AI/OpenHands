@@ -1,8 +1,9 @@
 import asyncio
 import uuid
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Dict, List, Optional
 
+import aiohttp
 import socketio  # Added for type hinting
 
 from openhands.core.config import OpenHandsConfig
@@ -48,7 +49,7 @@ class VsCodeRuntime(Runtime):
         attach_to_existing: bool = False,
         headless_mode: bool = False,
         user_id: str | None = None,
-        # VSCode-specific parameters (optional for testing)
+        # VSCode-specific parameters (optional for testing/injection)
         sio_server: socketio.AsyncServer | None = None,
         socket_connection_id: str | None = None,
     ):
@@ -62,22 +63,109 @@ class VsCodeRuntime(Runtime):
         self.user_id = user_id
 
         # VSCode-specific attributes
-        self.sio_server = sio_server
-        self.socket_connection_id = socket_connection_id
+        self.sio_server = sio_server  # Will be set from shared.py if None
+        self.socket_connection_id = socket_connection_id  # Will be discovered if None
         self._running_actions: dict[str, asyncio.Future[Observation]] = {}
+        self._server_url = f"http://localhost:{config.server.port}"
 
         logger.info(
-            f'VsCodeRuntime initialized with sid={sid}, socket_connection_id={socket_connection_id}'
+            f'VsCodeRuntime initialized with sid={sid}'
         )
 
+    async def _get_available_vscode_instances(self) -> List[Dict]:
+        """Query the server registry for available VSCode instances."""
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"{self._server_url}/api/vscode/instances") as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        instances = data.get('instances', [])
+                        logger.info(f"Found {len(instances)} available VSCode instances")
+                        return instances
+                    else:
+                        logger.error(f"Failed to get VSCode instances: HTTP {response.status}")
+                        return []
+        except Exception as e:
+            logger.error(f"Error querying VSCode instances: {e}")
+            return []
+
+    async def _validate_vscode_connection(self, connection_id: str) -> bool:
+        """Validate that a VSCode connection is still active."""
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"{self._server_url}/api/vscode/instance/{connection_id}") as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        status = data.get('status', 'unknown')
+                        logger.debug(f"VSCode connection {connection_id} status: {status}")
+                        return status == 'active'
+                    else:
+                        logger.warning(f"VSCode connection {connection_id} validation failed: HTTP {response.status}")
+                        return False
+        except Exception as e:
+            logger.error(f"Error validating VSCode connection {connection_id}: {e}")
+            return False
+
+    async def _discover_and_connect(self) -> bool:
+        """Discover available VSCode instances and establish connection."""
+        # Get sio_server from shared.py if not provided
+        if self.sio_server is None:
+            try:
+                from openhands.server.shared import sio
+                self.sio_server = sio
+                logger.info("Retrieved Socket.IO server from shared.py")
+            except ImportError as e:
+                logger.error(f"Failed to import Socket.IO server from shared.py: {e}")
+                return False
+
+        # If socket_connection_id is already set (e.g., for testing), validate it
+        if self.socket_connection_id:
+            if await self._validate_vscode_connection(self.socket_connection_id):
+                logger.info(f"Using existing VSCode connection: {self.socket_connection_id}")
+                return True
+            else:
+                logger.warning(f"Existing connection {self.socket_connection_id} is no longer valid")
+                self.socket_connection_id = None
+
+        # Discover available VSCode instances
+        instances = await self._get_available_vscode_instances()
+        if not instances:
+            logger.error("No VSCode instances are currently registered with OpenHands")
+            return False
+
+        # Filter for active instances
+        active_instances = [inst for inst in instances if inst.get('status') == 'active']
+        if not active_instances:
+            logger.error("No active VSCode instances found")
+            return False
+
+        # Use the first active instance (could be enhanced to let user choose)
+        selected_instance = active_instances[0]
+        self.socket_connection_id = selected_instance['connection_id']
+        
+        logger.info(f"Connected to VSCode instance: {self.socket_connection_id}")
+        logger.info(f"Workspace: {selected_instance.get('workspace_path', 'Unknown')}")
+        logger.info(f"Capabilities: {selected_instance.get('capabilities', [])}")
+        
+        return True
+
     async def _send_action_to_vscode(self, action: Action) -> Observation:
+        # Ensure we have a valid connection
         if self.sio_server is None or self.socket_connection_id is None:
-            logger.error(
-                'sio_server or socket_connection_id is not configured. Cannot send action to VS Code.'
-            )
-            return ErrorObservation(
-                content='VsCodeRuntime is not properly configured with a connection. Cannot operate.'
-            )
+            logger.info("No VSCode connection established, attempting discovery...")
+            if not await self._discover_and_connect():
+                return ErrorObservation(
+                    content='No VSCode instances available. Please ensure VSCode with OpenHands extension is running and connected.'
+                )
+
+        # Validate connection is still active before sending action
+        if self.socket_connection_id and not await self._validate_vscode_connection(self.socket_connection_id):
+            logger.warning("VSCode connection became inactive, attempting to reconnect...")
+            self.socket_connection_id = None  # Force rediscovery
+            if not await self._discover_and_connect():
+                return ErrorObservation(
+                    content='VSCode connection lost and no alternative instances available.'
+                )
 
         event_id = str(uuid.uuid4())
 
@@ -97,8 +185,8 @@ class VsCodeRuntime(Runtime):
         logger.debug(f'Action details: {oh_event_payload}')
 
         try:
-            if not hasattr(self.sio_server, 'emit'):
-                logger.error("Provided sio_server does not have an 'emit' method.")
+            if self.sio_server is None or not hasattr(self.sio_server, 'emit'):
+                logger.error("sio_server is None or does not have an 'emit' method.")
                 # Clean up future before returning
                 self._running_actions.pop(event_id, None)
                 future.cancel()  # Ensure future is not left pending
@@ -237,11 +325,17 @@ class VsCodeRuntime(Runtime):
     async def connect(self):
         """Connect to VSCode extension via Socket.IO.
 
-        This method is called during runtime initialization.
-        The actual Socket.IO connection should be established by the VSCode extension.
+        This method discovers available VSCode instances and establishes connection.
         """
-        logger.info('VSCode Runtime ready for connection from VSCode extension')
-        # The Socket.IO server is started in __init__, so we're ready for connections
+        logger.info('VsCodeRuntime connecting to available VSCode instances...')
+        
+        if await self._discover_and_connect():
+            logger.info('VsCodeRuntime successfully connected to VSCode extension')
+        else:
+            logger.error('VsCodeRuntime failed to connect to any VSCode extension')
+            raise RuntimeError(
+                'No VSCode instances available. Please ensure VSCode with OpenHands extension is running and connected to OpenHands server.'
+            )
 
     def copy_from(self, path: str) -> Path:
         """Copy files from the VSCode workspace to the host.
