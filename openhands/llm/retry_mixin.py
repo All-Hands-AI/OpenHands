@@ -72,6 +72,19 @@ class RetryMixin:
     def log_retry_attempt(self, retry_state: Any) -> None:
         """Log retry attempts."""
         exception = retry_state.outcome.exception()
+
+        # Add retry attempt and max retries to the exception for later use
+        if hasattr(retry_state, 'retry_object') and hasattr(
+            retry_state.retry_object, 'stop'
+        ):
+            # Get the max retries from the stop_after_attempt
+            for stop_func in retry_state.retry_object.stop.stop_funcs:
+                if hasattr(stop_func, 'max_attempts'):
+                    # Add retry information to the exception
+                    exception.retry_attempt = retry_state.attempt_number
+                    exception.max_retries = stop_func.max_attempts
+                    break
+
         logger.error(
             f'{exception}. Attempt #{retry_state.attempt_number} | You can customize retry values in the configuration.',
         )

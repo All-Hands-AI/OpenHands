@@ -4143,6 +4143,22 @@
         "ja": "エージェントがレート制限中。自動的に再試行しています...",
         "uk": "Агента обмежено кількістю запитів. Автоматично повторюємо спробу..."
     },
+    "CHAT_INTERFACE$AGENT_RATE_LIMITED_STOPPED_MESSAGE": {
+        "en": "Agent is rate-limited. Stopped.",
+        "zh-CN": "智能体已达到速率限制。已停止。",
+        "zh-TW": "智慧代理已達到速率限制。已停止。",
+        "de": "Agent ist ratenbegrenzt. Angehalten.",
+        "ko-KR": "에이전트가 속도 제한되었습니다. 중지됨.",
+        "no": "Agenten er hastighetsbegrenset. Stoppet.",
+        "it": "L'agente è limitato dalla frequenza. Fermato.",
+        "pt": "O agente está com limite de taxa. Parado.",
+        "es": "El agente está limitado por tasa. Detenido.",
+        "ar": "الوكيل مقيد بحد السرعة. توقف.",
+        "fr": "L'agent est limité en fréquence. Arrêté.",
+        "tr": "Ajan hız sınırına ulaştı. Durduruldu.",
+        "ja": "エージェントがレート制限中。停止しました。",
+        "uk": "Агента обмежено кількістю запитів. Зупинено."
+    },
     "CHAT_INTERFACE$AGENT_PAUSED_MESSAGE": {
         "en": "Agent has paused.",
         "de": "Agent pausiert.",
