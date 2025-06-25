@@ -36,7 +36,7 @@ Access launcher commands via Command Palette (Ctrl+Shift+P) or right-click menu.
 
 ### Runtime Configuration
 - **Server URL**: Configure OpenHands backend URL via VS Code settings (`openhands.serverUrl`)
-- **Auto-Connect**: Automatically attempts to connect to backend on extension startup
+- **On-Demand Connection**: Connects to backend only when OpenHands is configured to use VSCode as runtime
 - **Graceful Fallback**: Works offline when backend is not available
 
 ## Setup

@@ -82,16 +82,69 @@ Instead of connecting immediately on extension activation:
 - ✅ **Simpler implementation** - No retry patterns or background polling
 - ✅ **Resource efficient** - No unnecessary connections
 
-## Next Actions Needed
+## Implementation Plan: Lazy Connection Pattern
 
-### Architecture Implementation:
-1. **Modify extension activation** - Remove immediate `initializeRuntime()` call
-2. **Add lazy connection** - Connect only when user runs OpenHands commands
-3. **Implement registration API** - Extension registers after successful connection
-4. **Update VsCodeRuntime.connect()** - Discover registered connections
-5. **Test the lazy connection flow** end-to-end
+### Phase 1: Extension Lazy Connection ✅ NEXT
+**Goal**: Remove immediate connection, add lazy connection triggered by user commands
 
-**Status**: Architecture breakthrough complete, ready for code migration and implementation!
+#### Sub-steps:
+1. **Modify `activate()` function** - Remove `initializeRuntime()` call
+2. **Add connection status tracking** - Track connection state in extension
+3. **Modify user commands** - Trigger connection before executing commands
+4. **Add user feedback** - Show connection status/errors in VSCode UI
+5. **Handle connection failures** - Graceful error handling with retry options
+
+### Phase 2: Server Registration System
+**Goal**: Add VSCode registry and discovery APIs to OpenHands server
+
+#### Sub-steps:
+1. **Add VSCode registry data structure** - Track `connection_id → VSCode instance info`
+2. **Implement registration API endpoint** - `/api/vscode/register` POST endpoint
+3. **Add discovery API endpoint** - `/api/vscode/discover` GET endpoint  
+4. **Handle disconnection cleanup** - Remove stale registry entries
+5. **Add Socket.IO event handlers** - Handle VSCode-specific events
+
+### Phase 3: Runtime Discovery & Error Handling
+**Goal**: Update VsCodeRuntime to discover connections and handle errors gracefully
+
+#### Sub-steps:
+1. **Implement connection discovery** - Query server registry in `connect()`
+2. **Add timeout handling** - Proper timeouts for all actions
+3. **Add clear error messages** - User-friendly error messages for all failure modes
+4. **Handle disconnection scenarios** - Runtime behavior when VSCode disconnects
+5. **Add connection validation** - Verify connection before sending actions
+
+### Phase 4: Integration & Testing
+**Goal**: Test full flow and error scenarios
+
+#### Sub-steps:
+1. **Test happy path** - Full flow from VSCode command to runtime execution
+2. **Test error scenarios** - Server not running, VSCode disconnects, timeouts
+3. **Add comprehensive logging** - Debug information for troubleshooting
+4. **Performance testing** - Ensure no performance regressions
+5. **Documentation update** - Update README and docs
+
+## Error Scenarios to Handle
+
+### Extension Side:
+- ❌ **OpenHands server not running** when user tries to connect
+- ❌ **Connection drops** during operation  
+- ❌ **Server rejects registration** (duplicate, invalid data)
+- ❌ **Network issues** (timeouts, DNS failures)
+
+### Server Side:
+- ❌ **VSCode connects but never registers** (stale connections)
+- ❌ **VSCode disconnects without cleanup** (registry cleanup)
+- ❌ **Multiple VSCode instances** registering (conflict resolution)
+- ❌ **Stale registry entries** (periodic cleanup)
+
+### Runtime Side:
+- ❌ **No VSCode instances available** (clear user message)
+- ❌ **VSCode disconnects during action** (timeout/retry logic)
+- ❌ **Actions sent but no response** (timeout handling)
+- ❌ **Invalid responses from VSCode** (validation/error handling)
+
+**Status**: Ready to implement Phase 1 - Extension Lazy Connection!
 
 ## Important Notes
 

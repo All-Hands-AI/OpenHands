@@ -16,6 +16,7 @@
     "onCommand:openhands.startConversation",
     "onCommand:openhands.startConversationWithFileContext",
     "onCommand:openhands.startConversationWithSelectionContext",
+    "onCommand:openhands.testConnection",
     "onStartupFinished"
   ],
   "main": "./out/extension.js",
@@ -34,6 +35,11 @@
       {
         "command": "openhands.startConversationWithSelectionContext",
         "title": "Start with Selected Text",
+        "category": "OpenHands"
+      },
+      {
+        "command": "openhands.testConnection",
+        "title": "Test Connection",
         "category": "OpenHands"
       }
     ],
