@@ -3,13 +3,20 @@ import copy
 import functools
 import os
 import re
+import shutil
+import zipfile
 
 import huggingface_hub
 import pandas as pd
 from datasets import load_dataset
+from PIL import Image
 from pydantic import SecretStr
 
 from evaluation.benchmarks.gaia.scorer import question_scorer
+from evaluation.benchmarks.gaia.utils import (
+    image_to_jpg_base64_url,
+    image_to_png_base64_url,
+)
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
@@ -97,27 +104,44 @@ def initialize_runtime(
     if instance['file_name'] != '':
         # if this question comes with a file, we need to save it to the workspace
         assert metadata.data_split is not None
+        extension_name = instance['file_name'].split('.')[-1]
         src_file = os.path.join(
             DATASET_CACHE_DIR, '2023', metadata.data_split, instance['file_name']
         )
         assert os.path.exists(src_file)
-        dest_file = os.path.join('/workspace', instance['file_name'])
-        runtime.copy_to(src_file, dest_file)
+        if extension_name == 'zip':
+            temp_dir = os.path.join(
+                DATASET_CACHE_DIR, '2023', metadata.data_split, 'tmp_file'
+            )
+            os.makedirs(temp_dir, exist_ok=True)
+            with zipfile.ZipFile(src_file, 'r') as zip_ref:
+                zip_ref.extractall(temp_dir)
+            for root, dirs, files in os.walk(temp_dir):
+                for file in files:
+                    dest_file = '/workspace'
+                    runtime.copy_to(os.path.join(root, file), dest_file)
+            shutil.rmtree(temp_dir)
+        elif extension_name not in ['jpg', 'png']:
+            dest_file = '/workspace'
+            runtime.copy_to(src_file, dest_file)
 
-        # rename to file.extension_name
-        extension_name = instance['file_name'].split('.')[-1]
-        action = CmdRunAction(
-            command=f'mv /workspace/{instance["file_name"]} /workspace/file.{extension_name}'
-        )
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        assert obs.exit_code == 0
+            # rename to file.extension_name
+            action = CmdRunAction(
+                command=f'mv /workspace/{instance["file_name"]} /workspace/file.{extension_name}'
+            )
+            logger.info(action, extra={'msg_type': 'ACTION'})
+            obs = runtime.run_action(action)
+            assert obs.exit_code == 0
 
     action = CmdRunAction(command='cd /workspace')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
+    action = CmdRunAction(
+        command='apt-get update && apt-get install -y ffmpeg && apt-get install -y ffprobe'
+    )
+    runtime.run_action(action)
     logger.info(f'{"-" * 50} END Runtime Initialization Fn {"-" * 50}')
 
 
@@ -151,8 +175,31 @@ Here is the task:
         task_question=instance['Question'],
     )
     logger.info(f'Instruction: {instruction}')
+    image_urls = []
     if dest_file:
-        instruction += f'\n\nThe mentioned file is provided in the workspace at: {dest_file.split("/")[-1]}'
+        if extension_name not in ['jpg', 'png', 'zip']:
+            instruction += f'To solve this task you will have to use the attached file provided in the workspace at location: {dest_file}\n\n'
+        elif extension_name == 'zip':
+            filenames = []
+            src_file = os.path.join(
+                DATASET_CACHE_DIR, '2023', metadata.data_split, instance['file_name']
+            )
+            with zipfile.ZipFile(src_file, 'r') as zip_ref:
+                filenames = zip_ref.namelist()
+
+            filenames = [f'/workspace/{file}' for file in filenames]
+            filenames = ', '.join(filenames)
+            instruction += f'To solve this task you will have to use the attached files provided in the workspace at locations: {filenames}\n\n'
+        else:  # Image files: jpg, png
+            src_file = os.path.join(
+                DATASET_CACHE_DIR, '2023', metadata.data_split, instance['file_name']
+            )
+            instruction += 'Image: To solve this task you will have to use the image shown below.\n\n'
+            image = Image.open(src_file)
+            if extension_name == 'jpg':
+                image_urls.append(image_to_jpg_base64_url(image))
+            else:
+                image_urls.append(image_to_png_base64_url(image))
 
     instruction += """IMPORTANT: When seeking information from a website, REFRAIN from arbitrary URL navigation. You should utilize the designated search engine tool with precise keywords to obtain relevant URLs or use the specific website's search interface. DO NOT navigate directly to specific URLs as they may not exist.\n\nFor example: if you want to search for a research paper on Arxiv, either use the search engine tool with specific keywords or navigate to arxiv.org and then use its interface.\n"""
     instruction += 'IMPORTANT: You should NEVER ask for Human Help.\n'
@@ -174,7 +221,9 @@ Here is the task:
     state: State | None = asyncio.run(
         run_controller(
             config=config,
-            initial_user_action=MessageAction(content=instruction),
+            initial_user_action=MessageAction(
+                content=instruction, image_urls=image_urls
+            ),
             runtime=runtime,
             fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
                 metadata.agent_class
