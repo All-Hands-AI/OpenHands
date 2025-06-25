@@ -124,6 +124,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "openhands-types": "git+https://github.com/enyst/openhands-types.git",
     "socket.io-client": "^4.8.1"
   }
 }
