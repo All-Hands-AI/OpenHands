@@ -1,6 +1,7 @@
 import os
 import pathlib
 import subprocess
+import sys
 
 # This script is intended to be run by Poetry during the build process.
 
@@ -15,34 +16,80 @@ ROOT_DIR = pathlib.Path(__file__).parent.resolve()
 VSCODE_EXTENSION_DIR = ROOT_DIR / 'openhands' / 'integrations' / 'vscode'
 
 
+def check_node_version():
+    """Check if Node.js version is sufficient for building the extension."""
+    try:
+        result = subprocess.run(['node', '--version'], capture_output=True, text=True, check=True)
+        version_str = result.stdout.strip()
+        # Extract major version number (e.g., "v12.22.9" -> 12)
+        major_version = int(version_str.lstrip('v').split('.')[0])
+        return major_version >= 14
+    except (subprocess.CalledProcessError, FileNotFoundError, ValueError):
+        return False
+
+
 def build_vscode_extension():
     """Builds the VS Code extension."""
+    vsix_path = VSCODE_EXTENSION_DIR / VSIX_FILENAME
+    
+    # Check if VSCode extension build is disabled via environment variable
+    if os.environ.get('SKIP_VSCODE_BUILD', '').lower() in ('1', 'true', 'yes'):
+        print('--- Skipping VS Code extension build (SKIP_VSCODE_BUILD is set) ---')
+        if vsix_path.exists():
+            print(f'--- Using existing VS Code extension: {vsix_path} ---')
+        else:
+            print('--- Warning: No pre-built VS Code extension found ---')
+            print('--- VS Code extension will not be available ---')
+        return
+    
+    # Check if pre-built extension already exists
+    if vsix_path.exists():
+        print(f'--- Pre-built VS Code extension found: {vsix_path} ---')
+        return
+    
+    # Check Node.js version
+    if not check_node_version():
+        print('--- Warning: Node.js version < 14 detected or Node.js not found ---')
+        print('--- Skipping VS Code extension build (requires Node.js >= 14) ---')
+        print('--- Using pre-built extension if available ---')
+        
+        if not vsix_path.exists():
+            print('--- Warning: No pre-built VS Code extension found ---')
+            print('--- VS Code extension will not be available ---')
+        return
+    
     print(f'--- Building VS Code extension in {VSCODE_EXTENSION_DIR} ---')
 
-    # Ensure npm dependencies are installed
-    print('--- Running npm install for VS Code extension ---')
-    subprocess.run(
-        ['npm', 'install'], cwd=VSCODE_EXTENSION_DIR, check=True, shell=os.name == 'nt'
-    )
-
-    # Package the extension
-    print(f'--- Packaging VS Code extension ({VSIX_FILENAME}) ---')
-    subprocess.run(
-        ['npm', 'run', 'package-vsix'],
-        cwd=VSCODE_EXTENSION_DIR,
-        check=True,
-        shell=os.name == 'nt',
-    )
-
-    # Verify the generated .vsix file exists
-    vsix_path = VSCODE_EXTENSION_DIR / VSIX_FILENAME
-
-    if not vsix_path.exists():
-        raise FileNotFoundError(
-            f'VS Code extension package not found after build: {vsix_path}'
+    try:
+        # Ensure npm dependencies are installed
+        print('--- Running npm install for VS Code extension ---')
+        subprocess.run(
+            ['npm', 'install'], cwd=VSCODE_EXTENSION_DIR, check=True, shell=os.name == 'nt'
         )
 
-    print(f'--- VS Code extension built successfully: {vsix_path} ---')
+        # Package the extension
+        print(f'--- Packaging VS Code extension ({VSIX_FILENAME}) ---')
+        subprocess.run(
+            ['npm', 'run', 'package-vsix'],
+            cwd=VSCODE_EXTENSION_DIR,
+            check=True,
+            shell=os.name == 'nt',
+        )
+
+        # Verify the generated .vsix file exists
+        if not vsix_path.exists():
+            raise FileNotFoundError(
+                f'VS Code extension package not found after build: {vsix_path}'
+            )
+
+        print(f'--- VS Code extension built successfully: {vsix_path} ---')
+        
+    except subprocess.CalledProcessError as e:
+        print(f'--- Warning: Failed to build VS Code extension: {e} ---')
+        print('--- Continuing without building extension ---')
+        if not vsix_path.exists():
+            print('--- Warning: No pre-built VS Code extension found ---')
+            print('--- VS Code extension will not be available ---')
 
 
 def build(setup_kwargs):

@@ -43,6 +43,25 @@ Access commands via Command Palette (Ctrl+Shift+P) or right-click menu.
 npm install
 ```
 
+### Building the Extension
+
+The VS Code extension is automatically built during OpenHands installation. The build process:
+
+1. **Automatic Build**: When installing OpenHands via `pip install`, the extension is built automatically
+2. **Pre-built Extension**: A pre-built `.vsix` file is included for systems with older Node.js versions
+3. **Node.js Requirements**: Building from source requires Node.js >= 14
+
+#### Build Options
+
+- **Skip Build**: Set `SKIP_VSCODE_BUILD=1` to skip building and use the pre-built extension
+- **Force Rebuild**: Delete the `.vsix` file to force a rebuild on next install
+
+#### Manual Build
+```bash
+# Package the extension manually
+npm run package-vsix
+```
+
 ### Code Quality
 ```bash
 # Run linting with fixes
