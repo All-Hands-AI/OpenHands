@@ -1,22 +1,7 @@
-"""Daytona runtime implementation."""
+"""Daytona runtime implementation.
 
-from pydantic import SecretStr
-
-# Configuration specification for this runtime
-CONFIG_SPEC = {
-    'api_key': {
-        'type': SecretStr,
-        'default': None,
-        'description': 'Daytona API key for authentication'
-    },
-    'api_url': {
-        'type': str,
-        'default': 'https://app.daytona.io/api',
-        'description': 'Daytona API URL endpoint'
-    },
-    'target': {
-        'type': str,
-        'default': 'eu',
-        'description': 'Daytona target region'
-    }
-}
+This runtime reads configuration directly from environment variables:
+- DAYTONA_API_KEY: API key for Daytona authentication
+- DAYTONA_API_URL: Daytona API URL endpoint (defaults to https://app.daytona.io/api)
+- DAYTONA_TARGET: Daytona target region (defaults to 'eu')
+"""

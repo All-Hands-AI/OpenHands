@@ -50,7 +50,7 @@ class E2BRuntime(ActionExecutionClient):
             git_provider_tokens,
         )
         if sandbox is None:
-            self.sandbox = E2BSandbox()
+            self.sandbox = E2BSandbox(config.sandbox)
         if not isinstance(self.sandbox, E2BSandbox):
             raise ValueError('E2BRuntime requires an E2BSandbox')
         self.file_store = E2BFileStore(self.sandbox.filesystem)

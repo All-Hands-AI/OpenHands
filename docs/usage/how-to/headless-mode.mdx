@@ -32,7 +32,7 @@ To run OpenHands in Headless mode with Docker:
 ```bash
 docker run -it \
     --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.45-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.46-nikolaik \
     -e SANDBOX_USER_ID=$(id -u) \
     -e SANDBOX_VOLUMES=$SANDBOX_VOLUMES \
     -e LLM_API_KEY=$LLM_API_KEY \
@@ -42,7 +42,7 @@ docker run -it \
     -v ~/.openhands:/.openhands \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app-$(date +%Y%m%d%H%M%S) \
-    docker.all-hands.dev/all-hands-ai/openhands:0.45 \
+    docker.all-hands.dev/all-hands-ai/openhands:0.46 \
     python -m openhands.core.main -t "write a bash script that prints hi"
 ```
 > **Note**: If you used OpenHands before version 0.44, you may want to run `mv ~/.openhands-state ~/.openhands` to migrate your conversation history to the new location.

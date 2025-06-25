@@ -148,7 +148,7 @@ def load_from_env(
     # helper function to set attributes based on env vars
     def set_attr_from_env(sub_config: BaseModel, prefix: str = '') -> None:
         """Set attributes of a config model based on environment variables."""
-        for field_name, field_info in sub_config.model_fields.items():
+        for field_name, field_info in sub_config.__class__.model_fields.items():
             field_value = getattr(sub_config, field_name)
             field_type = field_info.annotation
 

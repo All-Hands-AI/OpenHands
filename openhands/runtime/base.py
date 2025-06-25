@@ -719,7 +719,8 @@ fi
                 )
 
                 # Clean up the org repo directory
-                shutil.rmtree(org_repo_dir)
+                action = CmdRunAction(f'rm -rf {org_repo_dir}')
+                self.run_action(action)
             else:
                 self.log(
                     'info',

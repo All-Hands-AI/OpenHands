@@ -1,10 +1,11 @@
 import os
 from typing import Any, ClassVar
 
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 from openhands.core import logger
 from openhands.core.config.agent_config import AgentConfig
+from openhands.core.config.cli_config import CLIConfig
 from openhands.core.config.config_utils import (
     OH_DEFAULT_AGENT,
     OH_MAX_ITERATIONS,
@@ -103,10 +104,11 @@ class OpenHandsConfig(BaseModel):
     mcp_host: str = Field(default=f'localhost:{os.getenv("port", 3000)}')
     mcp: MCPConfig = Field(default_factory=MCPConfig)
     kubernetes: KubernetesConfig = Field(default_factory=KubernetesConfig)
+    cli: CLIConfig = Field(default_factory=CLIConfig)
 
     defaults_dict: ClassVar[dict] = {}
 
-    model_config = {'extra': 'allow'}
+    model_config = ConfigDict(extra='forbid')
 
     def get_llm_config(self, name: str = 'llm') -> LLMConfig:
         """'llm' is the name for default config (for backward compatibility prior to 0.8)."""
@@ -152,96 +154,5 @@ class OpenHandsConfig(BaseModel):
         """Post-initialization hook, called when the instance is created with only default values."""
         super().model_post_init(__context)
 
-        # Initialize third-party runtime configuration fields
-        self._init_third_party_config_fields()
-
         if not OpenHandsConfig.defaults_dict:  # Only set defaults_dict if it's empty
             OpenHandsConfig.defaults_dict = model_defaults_to_dict(self)
-
-    def _init_third_party_config_fields(self) -> None:
-        """Initialize third-party runtime configuration fields dynamically."""
-        try:
-            from openhands.core.config.third_party_config import (
-                discover_third_party_runtime_configs,
-            )
-
-            runtime_configs = discover_third_party_runtime_configs()
-
-            for runtime_name, config_spec in runtime_configs.items():
-                for field_name, field_spec in config_spec.items():
-                    full_field_name = f'{runtime_name}_{field_name}'
-
-                    # Only set if not already set
-                    if not hasattr(self, full_field_name):
-                        default_value = field_spec.get('default', None)
-                        setattr(self, full_field_name, default_value)
-
-        except ImportError:
-            # third_party package not available, skip
-            pass
-
-    def __setattr__(self, name: str, value: Any) -> None:
-        """Override setattr to handle third-party runtime configuration fields."""
-        # Check if this is a third-party runtime configuration field
-        if self._is_third_party_runtime_field(name) and value is not None:
-            # Get the field specification to determine the correct type
-            field_spec = self._get_third_party_field_spec(name)
-            if (
-                field_spec
-                and field_spec.get('type') == SecretStr
-                and not isinstance(value, SecretStr)
-            ):
-                value = SecretStr(value)
-
-        super().__setattr__(name, value)
-
-    def _is_third_party_runtime_field(self, field_name: str) -> bool:
-        """Check if a field is a third-party runtime configuration field."""
-        try:
-            from openhands.core.config.third_party_config import (
-                discover_third_party_runtime_configs,
-            )
-
-            runtime_configs = discover_third_party_runtime_configs()
-
-            for runtime_name, config_spec in runtime_configs.items():
-                for config_field_name in config_spec.keys():
-                    full_field_name = f'{runtime_name}_{config_field_name}'
-                    if field_name == full_field_name:
-                        return True
-            return False
-
-        except ImportError:
-            return False
-
-    def _get_third_party_field_spec(self, field_name: str) -> dict | None:
-        """Get the field specification for a third-party runtime configuration field."""
-        try:
-            from openhands.core.config.third_party_config import (
-                discover_third_party_runtime_configs,
-            )
-
-            runtime_configs = discover_third_party_runtime_configs()
-
-            for runtime_name, config_spec in runtime_configs.items():
-                for config_field_name, field_spec in config_spec.items():
-                    full_field_name = f'{runtime_name}_{config_field_name}'
-                    if field_name == full_field_name:
-                        return field_spec
-            return None
-
-        except ImportError:
-            return None
-
-    def get_third_party_config(self, runtime_name: str, field_name: str) -> Any:
-        """Get a third-party runtime configuration value.
-
-        Args:
-            runtime_name: Name of the runtime (e.g., 'e2b', 'modal')
-            field_name: Name of the field (e.g., 'api_key', 'api_token_id')
-
-        Returns:
-            Configuration value or None if not found
-        """
-        full_field_name = f'{runtime_name}_{field_name}'
-        return getattr(self, full_field_name, None)

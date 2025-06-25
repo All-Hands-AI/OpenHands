@@ -3,9 +3,9 @@ repos:
     rev: v5.0.0
     hooks:
       - id: trailing-whitespace
-        exclude: docs/modules/python|third_party/
+        exclude: ^(docs/|modules/|python/|openhands-ui/|third_party/)
       - id: end-of-file-fixer
-        exclude: docs/modules/python|third_party/
+        exclude: ^(docs/|modules/|python/|openhands-ui/|third_party/)
       - id: check-yaml
         args: ["--allow-multiple-documents"]
       - id: debug-statements
