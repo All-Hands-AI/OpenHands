@@ -39,8 +39,7 @@ def build_vscode_extension():
         if vsix_path.exists():
             print(f'--- Using existing VS Code extension: {vsix_path} ---')
         else:
-            print('--- Warning: No pre-built VS Code extension found ---')
-            print('--- VS Code extension will not be available ---')
+            print('--- No pre-built VS Code extension found ---')
         return
 
     # Check if pre-built extension already exists
@@ -55,8 +54,7 @@ def build_vscode_extension():
         print('--- Using pre-built extension if available ---')
 
         if not vsix_path.exists():
-            print('--- Warning: No pre-built VS Code extension found ---')
-            print('--- VS Code extension will not be available ---')
+            print('--- No pre-built VS Code extension found ---')
         return
 
     print(f'--- Building VS Code extension in {VSCODE_EXTENSION_DIR} ---')
