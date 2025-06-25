@@ -22,6 +22,8 @@ class AgentConfig(BaseModel):
     """Whether to enable LLM editor tool"""
     enable_editor: bool = Field(default=True)
     """Whether to enable the standard editor tool (str_replace_editor), only has an effect if enable_llm_editor is False."""
+    enable_gemini_editor: bool = Field(default=False)
+    """Whether to enable Gemini-style editor tools (replace, write_file), only has an effect if enable_llm_editor is False and enable_editor is True."""
     enable_jupyter: bool = Field(default=True)
     """Whether to enable Jupyter tool.
     Note: If using CLIRuntime, Jupyter use is not implemented and should be disabled."""

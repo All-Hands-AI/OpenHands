@@ -18,6 +18,11 @@ from openhands.agenthub.codeact_agent.tools import (
     create_cmd_run_tool,
     create_str_replace_editor_tool,
 )
+from openhands.agenthub.codeact_agent.tools.gemini_edit_tool import (
+    create_gemini_edit_tool,
+    create_gemini_write_file_tool,
+)
+from openhands.llm.tool_names import GEMINI_EDIT_TOOL_NAME, GEMINI_WRITE_FILE_TOOL_NAME
 from openhands.core.exceptions import (
     FunctionCallNotExistsError,
     FunctionCallValidationError,
@@ -212,6 +217,52 @@ def response_to_actions(
                         f'Missing required argument "code" in tool call {tool_call.function.name}'
                     )
                 action = BrowseInteractiveAction(browser_actions=arguments['code'])
+                
+            # ================================================
+            # Gemini Edit Tool
+            # ================================================
+            elif tool_call.function.name == GEMINI_EDIT_TOOL_NAME:
+                if 'file_path' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "file_path" in tool call {tool_call.function.name}'
+                    )
+                if 'old_string' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "old_string" in tool call {tool_call.function.name}'
+                    )
+                if 'new_string' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "new_string" in tool call {tool_call.function.name}'
+                    )
+                
+                from openhands.runtime.plugins.agent_skills.gemini_file_editor.gemini_file_editor import GeminiEditAction
+                
+                action = GeminiEditAction(
+                    file_path=arguments['file_path'],
+                    old_string=arguments['old_string'],
+                    new_string=arguments['new_string'],
+                    expected_replacements=arguments.get('expected_replacements', 1),
+                )
+                
+            # ================================================
+            # Gemini Write File Tool
+            # ================================================
+            elif tool_call.function.name == GEMINI_WRITE_FILE_TOOL_NAME:
+                if 'file_path' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "file_path" in tool call {tool_call.function.name}'
+                    )
+                if 'content' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "content" in tool call {tool_call.function.name}'
+                    )
+                
+                from openhands.runtime.plugins.agent_skills.gemini_file_editor.gemini_file_editor import GeminiWriteFileAction
+                
+                action = GeminiWriteFileAction(
+                    file_path=arguments['file_path'],
+                    content=arguments['content'],
+                )
 
             # ================================================
             # MCPAction (MCP)

@@ -1,0 +1,294 @@
+"""Gemini-style file editor implementation for OpenHands."""
+
+import os
+import re
+from typing import Dict, List, Optional, Union
+
+from openhands.core.logger import openhands_logger as logger
+from openhands.events.action import Action
+from openhands.events.observation import (
+    ErrorObservation,
+    FileEditObservation,
+    FileReadObservation,
+    FileWriteObservation,
+    Observation,
+)
+from openhands.llm.tool_names import GEMINI_EDIT_TOOL_NAME, GEMINI_WRITE_FILE_TOOL_NAME
+from openhands.runtime.plugins.agent_skills.file_editor import FileEditor
+from openhands.runtime.plugins.agent_skills.file_reader import FileReader
+from openhands.runtime.utils.edit import FileEditRuntimeMixin
+from openhands_aci.utils.diff import get_diff  # type: ignore
+
+
+class GeminiEditAction(Action):
+    """Action for Gemini-style edit operations."""
+
+    def __init__(
+        self,
+        file_path: str,
+        old_string: str,
+        new_string: str,
+        expected_replacements: int = 1,
+    ):
+        """Initialize a GeminiEditAction.
+
+        Args:
+            file_path: The absolute path to the file to modify.
+            old_string: The exact literal text to replace.
+            new_string: The exact literal text to replace old_string with.
+            expected_replacements: Number of replacements expected. Defaults to 1.
+        """
+        super().__init__()
+        self.file_path = file_path
+        self.old_string = old_string
+        self.new_string = new_string
+        self.expected_replacements = expected_replacements
+
+    def to_dict(self) -> Dict:
+        """Convert the action to a dictionary."""
+        return {
+            "file_path": self.file_path,
+            "old_string": self.old_string,
+            "new_string": self.new_string,
+            "expected_replacements": self.expected_replacements,
+        }
+
+
+class GeminiWriteFileAction(Action):
+    """Action for Gemini-style write file operations."""
+
+    def __init__(self, file_path: str, content: str):
+        """Initialize a GeminiWriteFileAction.
+
+        Args:
+            file_path: The absolute path to the file to write to.
+            content: The content to write to the file.
+        """
+        super().__init__()
+        self.file_path = file_path
+        self.content = content
+
+    def to_dict(self) -> Dict:
+        """Convert the action to a dictionary."""
+        return {
+            "file_path": self.file_path,
+            "content": self.content,
+        }
+
+
+class GeminiFileEditor(FileEditRuntimeMixin):
+    """Gemini-style file editor implementation."""
+
+    def __init__(self, *args, **kwargs):
+        """Initialize the GeminiFileEditor."""
+        super().__init__(*args, **kwargs)
+        self.file_reader = FileReader()
+
+    def handle_action(self, action: Action) -> Observation:
+        """Handle a file edit action.
+
+        Args:
+            action: The action to handle.
+
+        Returns:
+            An observation of the result.
+        """
+        if isinstance(action, GeminiEditAction):
+            return self.handle_edit_action(action)
+        elif isinstance(action, GeminiWriteFileAction):
+            return self.handle_write_file_action(action)
+        else:
+            return ErrorObservation(
+                f"Unsupported action type: {type(action).__name__}"
+            )
+
+    def handle_edit_action(self, action: GeminiEditAction) -> Observation:
+        """Handle a Gemini-style edit action.
+
+        Args:
+            action: The edit action to handle.
+
+        Returns:
+            An observation of the result.
+        """
+        # Validate file path
+        if not os.path.isabs(action.file_path):
+            return ErrorObservation(
+                f"File path must be absolute: {action.file_path}"
+            )
+
+        # Read the file
+        read_obs = self.read_file(action.file_path)
+        if isinstance(read_obs, ErrorObservation):
+            if "File not found" in read_obs.content:
+                # If old_string is empty, create a new file with new_string
+                if action.old_string == "":
+                    return self.write_file(action.file_path, action.new_string)
+                else:
+                    return ErrorObservation(
+                        f"File not found. Cannot apply edit. Use an empty old_string to create a new file."
+                    )
+            return read_obs
+
+        if not isinstance(read_obs, FileReadObservation):
+            return ErrorObservation(
+                f"Unexpected observation type: {type(read_obs).__name__}"
+            )
+
+        # Get the file content
+        file_content = read_obs.content
+
+        # Check if old_string is empty (create new file)
+        if action.old_string == "":
+            return ErrorObservation(
+                f"Failed to edit. Attempted to create a file that already exists."
+            )
+
+        # Find occurrences of old_string
+        occurrences = file_content.count(action.old_string)
+        
+        if occurrences == 0:
+            return ErrorObservation(
+                f"Failed to edit, could not find the string to replace."
+            )
+        
+        if occurrences != action.expected_replacements:
+            return ErrorObservation(
+                f"Failed to edit, expected {action.expected_replacements} occurrence(s) but found {occurrences}."
+            )
+
+        # Replace the old_string with new_string
+        new_content = file_content.replace(action.old_string, action.new_string)
+        
+        # Write the new content
+        write_obs = self.write_file(action.file_path, new_content)
+        if isinstance(write_obs, ErrorObservation):
+            return write_obs
+
+        # Generate diff
+        diff = get_diff(file_content, new_content, action.file_path)
+        
+        return FileEditObservation(
+            content=diff,
+            path=action.file_path,
+            prev_exist=True,
+            old_content=file_content,
+            new_content=new_content,
+        )
+
+    def handle_write_file_action(self, action: GeminiWriteFileAction) -> Observation:
+        """Handle a Gemini-style write file action.
+
+        Args:
+            action: The write file action to handle.
+
+        Returns:
+            An observation of the result.
+        """
+        # Validate file path
+        if not os.path.isabs(action.file_path):
+            return ErrorObservation(
+                f"File path must be absolute: {action.file_path}"
+            )
+
+        # Check if file exists
+        file_exists = os.path.exists(action.file_path)
+        original_content = ""
+        
+        if file_exists:
+            # Read the existing file
+            read_obs = self.read_file(action.file_path)
+            if isinstance(read_obs, ErrorObservation):
+                return read_obs
+            if isinstance(read_obs, FileReadObservation):
+                original_content = read_obs.content
+
+        # Write the new content
+        write_obs = self.write_file(action.file_path, action.content)
+        if isinstance(write_obs, ErrorObservation):
+            return write_obs
+
+        # Generate diff
+        diff = get_diff(original_content, action.content, action.file_path)
+        
+        return FileEditObservation(
+            content=diff,
+            path=action.file_path,
+            prev_exist=file_exists,
+            old_content=original_content,
+            new_content=action.content,
+        )
+
+    def read_file(self, file_path: str) -> Union[FileReadObservation, ErrorObservation]:
+        """Read a file.
+
+        Args:
+            file_path: The path to the file to read.
+
+        Returns:
+            An observation of the file content or an error.
+        """
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            return FileReadObservation(content=content, path=file_path)
+        except FileNotFoundError:
+            return ErrorObservation(f"File not found: {file_path}")
+        except Exception as e:
+            return ErrorObservation(f"Error reading file: {str(e)}")
+
+    def write_file(self, file_path: str, content: str) -> Union[FileWriteObservation, ErrorObservation]:
+        """Write content to a file.
+
+        Args:
+            file_path: The path to the file to write to.
+            content: The content to write.
+
+        Returns:
+            An observation of the write operation or an error.
+        """
+        try:
+            # Create parent directories if they don't exist
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            
+            with open(file_path, "w", encoding="utf-8") as f:
+                f.write(content)
+            return FileWriteObservation(path=file_path)
+        except Exception as e:
+            return ErrorObservation(f"Error writing file: {str(e)}")
+
+    @classmethod
+    def get_supported_tool_names(cls) -> List[str]:
+        """Get the names of tools supported by this skill.
+
+        Returns:
+            A list of supported tool names.
+        """
+        return [GEMINI_EDIT_TOOL_NAME, GEMINI_WRITE_FILE_TOOL_NAME]
+
+    @classmethod
+    def create_action_from_tool_call(
+        cls, tool_name: str, tool_args: Dict
+    ) -> Optional[Action]:
+        """Create an action from a tool call.
+
+        Args:
+            tool_name: The name of the tool.
+            tool_args: The arguments for the tool.
+
+        Returns:
+            An action or None if the tool is not supported.
+        """
+        if tool_name == GEMINI_EDIT_TOOL_NAME:
+            return GeminiEditAction(
+                file_path=tool_args["file_path"],
+                old_string=tool_args["old_string"],
+                new_string=tool_args["new_string"],
+                expected_replacements=tool_args.get("expected_replacements", 1),
+            )
+        elif tool_name == GEMINI_WRITE_FILE_TOOL_NAME:
+            return GeminiWriteFileAction(
+                file_path=tool_args["file_path"],
+                content=tool_args["content"],
+            )
+        return None
