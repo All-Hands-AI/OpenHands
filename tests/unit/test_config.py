@@ -998,7 +998,6 @@ def test_api_keys_repr_str():
 
     # Check that no other attrs in OpenHandsConfig have 'key' or 'token' in their name
     # This will fail when new attrs are added, and attract attention
-    # Note: Third-party runtime fields are no longer part of OpenHandsConfig
     known_key_token_attrs_app = [
         'search_api_key',
     ]
