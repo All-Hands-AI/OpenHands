@@ -734,12 +734,7 @@ fi
                     self.git_provider_tokens,
                 )
             except Exception as e:
-                # If we can't get the URL, return empty list
-                self.log(
-                    'debug', f'Could not get URL for {org_openhands_repo}: {str(e)}'
-                )
-                return loaded_microagents
-
+                raise Exception(str(e))
             clone_cmd = (
                 f'GIT_TERMINAL_PROMPT=0 git clone --depth 1 {remote_url} {org_repo_dir}'
             )
