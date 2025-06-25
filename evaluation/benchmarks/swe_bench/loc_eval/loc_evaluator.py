@@ -375,8 +375,14 @@ class LocEvaluator:
                     },
                 },
                 "turn_idx": {
-                    "file": max(self.agent_loc["turn index"]["file"]),
-                    "function": max(self.agent_loc["turn index"]["function"]),
+                    "file": {
+                        "micro": max(self.agent_loc["turn index"]["file"]),
+                        "macro": min(self.agent_loc["turn index"]["file"]),
+                    },
+                    "function": {
+                        "micro": max(self.agent_loc["turn index"]["function"]),
+                        "macro": min(self.agent_loc["turn index"]["function"]),
+                    },
                 },
                 "details": {
                     "loc_file": self.agent_loc["loc progress"]["file"],
