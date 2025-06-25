@@ -149,7 +149,7 @@ boto3-stubs = { extras = [ "s3" ], version = "^1.37.19" }
 pyarrow = "20.0.0"
 datasets = "*"
 joblib = "*"
-swebench = {git = "https://github.com/ryanhoangt/SWE-bench.git", rev = "fix-modal-patch-eval"}
+swebench = { git = "https://github.com/ryanhoangt/SWE-bench.git", rev = "fix-modal-patch-eval" }
 
 [tool.poetry.scripts]
 openhands = "openhands.cli.main:main"
