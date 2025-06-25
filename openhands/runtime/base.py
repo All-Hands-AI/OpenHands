@@ -459,14 +459,16 @@ class Runtime(FileEditRuntimeMixin):
         if self.event_stream:
             self.event_stream.add_event(action, EventSource.ENVIRONMENT)
 
+        # Mark setup script as executed to prevent duplicate execution
+        # Set this before running the action to ensure it's not executed twice
+        # even if there's an error during execution
+        self._setup_script_executed = True
+
         obs = self.run_action(action)
 
         # Add the observation to the event stream so the result is visible in the UI
         if self.event_stream:
             self.event_stream.add_event(obs, EventSource.ENVIRONMENT)
-
-        # Mark setup script as executed to prevent duplicate execution
-        self._setup_script_executed = True
 
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
             self.log('error', f'Setup script failed: {obs.content}')
