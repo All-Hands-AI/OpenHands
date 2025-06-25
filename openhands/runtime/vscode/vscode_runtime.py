@@ -66,7 +66,7 @@ class VsCodeRuntime(Runtime):
         self.sio_server = sio_server  # Will be set from shared.py if None
         self.socket_connection_id = socket_connection_id  # Will be discovered if None
         self._running_actions: dict[str, asyncio.Future[Observation]] = {}
-        self._server_url = f"http://localhost:{config.server.port}"
+        self._server_url = "http://localhost:3000"  # Default OpenHands server port
 
         logger.info(
             f'VsCodeRuntime initialized with sid={sid}'

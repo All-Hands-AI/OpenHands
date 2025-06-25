@@ -178,7 +178,191 @@ Instead of connecting immediately on extension activation:
 4. **Clean unregistration** when VSCode disconnects
 5. **Discovery API** ready for VsCodeRuntime to use
 
-**Next**: Phase 4 - Integration Testing & Final Validation
+**Next**: Phase 4 - Unit Testing (Before Integration Testing)
+
+## Phase 4 Unit Testing Plan 🧪
+
+### Testing Strategy
+Following software engineering best practices: **Unit Testing → Integration Testing → End-to-End Testing**
+
+### Testing Patterns Identified:
+- **Python**: pytest with unittest.mock for mocking
+- **TypeScript**: vitest with mocking capabilities  
+- **Existing Coverage**: CLI VSCode integration, URL helpers, runtime patterns
+
+### Unit Testing Scope
+
+#### 4.1 Python VsCodeRuntime Tests ✅ TODO
+**File**: `tests/unit/runtime/test_vscode_runtime.py`
+
+**Test Categories**:
+1. **Constructor & Initialization**
+   - ✅ Standard parameters (config, event_stream, sid)
+   - ✅ Optional VSCode parameters (sio_server, socket_connection_id)
+   - ✅ Server URL construction from config
+   - ✅ Default attribute initialization
+
+2. **Discovery System**
+   - ✅ `_get_available_vscode_instances()` - HTTP requests to `/api/vscode/instances`
+   - ✅ `_validate_vscode_connection()` - Connection health checks
+   - ✅ `_discover_and_connect()` - Full discovery workflow
+   - ✅ Error handling for network failures, empty responses
+   - ✅ Instance filtering (active vs inactive)
+
+3. **Connection Management**
+   - ✅ `connect()` method - Discovery and connection establishment
+   - ✅ Socket.IO server retrieval from shared.py
+   - ✅ Connection validation before actions
+   - ✅ Automatic reconnection on connection loss
+   - ✅ Failover to alternative instances
+
+4. **Action Execution**
+   - ✅ `_send_action_to_vscode()` - Core action sending logic
+   - ✅ Event serialization and UUID generation
+   - ✅ Socket.IO emit calls with proper parameters
+   - ✅ Future management and timeout handling
+   - ✅ Error handling for emit failures
+
+5. **Observation Handling**
+   - ✅ `handle_observation_from_vscode()` - Response processing
+   - ✅ Event deserialization and validation
+   - ✅ Future resolution with observations
+   - ✅ Error handling for malformed responses
+
+6. **Runtime Interface Methods**
+   - ✅ All action methods (run, read, write, edit, browse, etc.)
+   - ✅ Async/sync wrapper `_run_async_action()`
+   - ✅ File operations (copy_from, copy_to, list_files)
+   - ✅ MCP configuration and tool calls
+
+#### 4.2 Python Server Routes Tests ✅ TODO  
+**File**: `tests/unit/server/test_vscode_routes.py`
+
+**Test Categories**:
+1. **Registration Endpoint** (`POST /api/vscode/register`)
+   - ✅ Valid registration requests
+   - ✅ Invalid request validation (missing fields)
+   - ✅ Registry storage and response format
+   - ✅ Duplicate registration handling
+
+2. **Discovery Endpoint** (`GET /api/vscode/instances`)
+   - ✅ Empty registry response
+   - ✅ Multiple instances response
+   - ✅ Status filtering and data format
+
+3. **Instance Management**
+   - ✅ Heartbeat endpoint (`POST /api/vscode/heartbeat/{connection_id}`)
+   - ✅ Unregister endpoint (`DELETE /api/vscode/unregister/{connection_id}`)
+   - ✅ Instance details (`GET /api/vscode/instance/{connection_id}`)
+   - ✅ Registry stats (`GET /api/vscode/registry/stats`)
+
+4. **Error Handling**
+   - ✅ Invalid connection IDs
+   - ✅ Expired instances cleanup
+   - ✅ Malformed request bodies
+
+#### 4.3 TypeScript Extension Tests ✅ TODO
+**File**: `openhands/integrations/vscode/src/test/suite/services.test.ts`
+
+**Test Categories**:
+1. **SocketService Class**
+   - ✅ Constructor and initialization
+   - ✅ Connection establishment with retry logic
+   - ✅ Registration workflow after connection
+   - ✅ Heartbeat mechanism
+   - ✅ Event emission and listening
+   - ✅ Disconnection and cleanup
+   - ✅ Error handling for connection failures
+
+2. **RuntimeActionHandler Class**
+   - ✅ Action type routing and validation
+   - ✅ File operations (read, write, edit)
+   - ✅ Terminal command execution
+   - ✅ Browser actions
+   - ✅ IPython cell execution
+   - ✅ Observation creation and response
+   - ✅ Error handling for unsupported actions
+
+3. **Extension Integration**
+   - ✅ Extension activation scenarios
+   - ✅ Command registration and execution
+   - ✅ Service initialization and lifecycle
+   - ✅ VSCode API integration points
+
+#### 4.4 Integration Points Tests ✅ TODO
+**File**: `tests/unit/integration/test_vscode_integration.py`
+
+**Test Categories**:
+1. **Socket.IO Event Flow**
+   - ✅ Event serialization/deserialization compatibility
+   - ✅ Message format validation between Python and TypeScript
+   - ✅ Error event handling
+
+2. **Registry Coordination**
+   - ✅ Extension registration → Runtime discovery flow
+   - ✅ Connection ID consistency
+   - ✅ Workspace metadata propagation
+
+### Testing Implementation Order:
+1. **Phase 4.1**: VsCodeRuntime unit tests (Python) - Foundation
+2. **Phase 4.2**: Server routes unit tests (Python) - API validation  
+3. **Phase 4.3**: Extension services unit tests (TypeScript) - Client validation
+4. **Phase 4.4**: Integration points tests - Cross-component validation
+
+### Success Criteria:
+- ✅ All unit tests pass with >90% code coverage
+- ✅ Mock-based testing isolates components properly
+- ✅ Error scenarios comprehensively tested
+- ✅ Regression prevention for discovered issues
+- ✅ Foundation ready for integration testing
+
+**Current Status**: Phase 4.1 - VsCodeRuntime unit tests partially implemented
+
+## Phase 4.1 Implementation Status ⏳ IN PROGRESS
+
+### VsCodeRuntime Unit Tests - PARTIAL COMPLETION
+**File**: `tests/unit/runtime/test_vscode_runtime.py`
+
+#### ✅ COMPLETED Test Classes:
+1. **TestVsCodeRuntimeConstructor** (2/2 tests passing)
+   - ✅ `test_constructor_with_standard_parameters` - Basic initialization
+   - ✅ `test_constructor_with_optional_parameters` - VSCode-specific parameters
+
+2. **TestVsCodeRuntimeDiscovery** (4/4 tests passing)
+   - ✅ `test_get_available_vscode_instances_success` - API call success
+   - ✅ `test_get_available_vscode_instances_empty` - Empty response handling
+   - ✅ `test_get_available_vscode_instances_error` - Network error handling
+   - ✅ `test_validate_vscode_connection` - Connection validation
+
+3. **TestVsCodeRuntimeConnection** (5/5 tests passing)
+   - ✅ `test_discover_and_connect_success` - Successful connection
+   - ✅ `test_discover_and_connect_no_instances` - No instances available
+   - ✅ `test_discover_and_connect_validation_failure` - Connection validation fails
+   - ✅ `test_discover_and_connect_multiple_instances` - Multiple instance handling
+   - ✅ `test_connect_method` - Main connect() method
+
+#### ❌ FAILING Test Classes:
+4. **TestVsCodeRuntimeActions** (0/4 tests passing)
+   - ❌ `test_run_action_cmd_success` - Test hanging due to async/mock issues
+   - ❌ `test_run_action_file_read_success` - Similar async issues
+   - ❌ `test_run_action_connection_error` - Mock setup problems
+   - ❌ `test_run_action_with_valid_connection` - Async handling issues
+
+5. **TestVsCodeRuntimeErrorHandling** - Not yet implemented
+6. **TestVsCodeRuntimeIntegration** - Not yet implemented
+
+#### Issues Identified:
+- **Async/Sync Boundary**: `run_action()` is synchronous but calls async methods internally
+- **Mock Complexity**: Complex async mocking required for HTTP calls and Socket.IO operations
+- **Connection Validation**: Tests need proper mocking of connection validation methods
+- **Event Loop Issues**: Tests hanging due to asyncio event loop conflicts
+
+#### Current Test Status: **11/15 tests passing** (73% completion)
+
+**Next Steps**: 
+1. Fix async mocking issues in action tests
+2. Implement error handling and integration test classes
+3. Achieve >90% test coverage before moving to Phase 4.2
 
 ## Phase 3 Implementation Status ✅ COMPLETED
 
