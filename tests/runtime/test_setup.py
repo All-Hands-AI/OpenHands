@@ -165,11 +165,19 @@ def test_setup_script_events_added_to_stream(temp_dir, runtime_cls, run_as_openh
         setup_action.thought
         == 'Running setup script to configure the workspace environment.'
     )
+    # Use hasattr to check if the source property exists and has the correct value
+    assert hasattr(setup_action, '_source'), (
+        'Setup action should have _source attribute'
+    )
     assert setup_action.source == EventSource.ENVIRONMENT
 
     # Verify the setup observation was added to the event stream
     assert setup_observation is not None, (
         'Setup command observation should be added to event stream'
+    )
+    # Use hasattr to check if the source property exists and has the correct value
+    assert hasattr(setup_observation, '_source'), (
+        'Setup observation should have _source attribute'
     )
     assert setup_observation.source == EventSource.ENVIRONMENT
     assert 'Setup completed successfully' in setup_observation.content
@@ -275,11 +283,19 @@ def test_setup_script_failure_events_added_to_stream(
     assert setup_action is not None, (
         'Setup command action should be added to event stream'
     )
+    # Use hasattr to check if the source property exists and has the correct value
+    assert hasattr(setup_action, '_source'), (
+        'Setup action should have _source attribute'
+    )
     assert setup_action.source == EventSource.ENVIRONMENT
 
     # Verify the setup observation was added to the event stream and shows failure
     assert setup_observation is not None, (
         'Setup command observation should be added to event stream'
+    )
+    # Use hasattr to check if the source property exists and has the correct value
+    assert hasattr(setup_observation, '_source'), (
+        'Setup observation should have _source attribute'
     )
     assert setup_observation.source == EventSource.ENVIRONMENT
     assert setup_observation.exit_code != 0, 'Setup script should have failed'
