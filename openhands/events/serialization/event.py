@@ -129,9 +129,11 @@ def event_to_dict(event: 'Event') -> dict:
         d['content'] = props.pop('content', '')
 
         # props is a dict whose values can include a complex object like an instance of a BaseModel subclass
-        # such as CmdOutputMetadata
-        # we serialize it along with the rest
-        # we also handle the Enum conversion for RecallObservation
+        # such as CmdOutputMetadata or new fields like 'summary' in ErrorObservation.
+        # We serialize it along with the rest.
+        # We also handle the Enum conversion for RecallObservation.
+        # New fields like `summary` (in ErrorObservation) or `error_summary` (in AgentStateChangedObservation)
+        # will automatically be included in `extras` if they are not None and not handled as top-level keys.
         d['extras'] = {
             k: (v.value if isinstance(v, Enum) else _convert_pydantic_to_dict(v))
             for k, v in props.items()

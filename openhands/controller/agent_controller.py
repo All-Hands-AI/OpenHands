@@ -37,6 +37,7 @@ from openhands.core.exceptions import (
     LLMNoActionError,
     LLMResponseError,
 )
+from openhands.core.error_summarizer import summarize_error
 from openhands.core.logger import LOG_ALL_EVENTS
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import AgentState
@@ -242,7 +243,17 @@ class AgentController:
     ) -> None:
         """React to an exception by setting the agent state to error and sending a status message."""
         # Store the error reason before setting the agent state
-        self.state.last_error = f'{type(e).__name__}: {str(e)}'
+        # Store the error reason before setting the agent state
+        original_error_message = f'{type(e).__name__}: {str(e)}'
+        self.state.last_error = original_error_message
+        # Attempt to generate and store a summary
+        try:
+            # TODO: Consider what context might be useful here, e.g., last action attempted.
+            self.state.last_error_summary = summarize_error(e, context={'original_message': original_error_message})
+        except Exception as summary_ex:
+            # If summarization itself fails, log it and proceed without a summary
+            self.log('error', f"Failed to summarize error: {summary_ex}")
+            self.state.last_error_summary = None # Ensure it's None if summarization fails
 
         if self.status_callback is not None:
             err_id = ''
@@ -588,11 +599,18 @@ class AgentController:
 
         # Create observation with reason field if it's an error state
         reason = ''
+        error_summary = None
         if new_state == AgentState.ERROR:
             reason = self.state.last_error
+            error_summary = getattr(self.state, 'last_error_summary', None)
 
         self.event_stream.add_event(
-            AgentStateChangedObservation('', self.state.agent_state, reason),
+            AgentStateChangedObservation(
+                content='',  # content is not used by AgentStateChangedObservation
+                agent_state=self.state.agent_state,
+                reason=reason,
+                error_summary=error_summary
+            ),
             EventSource.ENVIRONMENT,
         )
 
@@ -802,9 +820,11 @@ class AgentController:
                 FunctionCallValidationError,
                 FunctionCallNotExistsError,
             ) as e:
+                summary = summarize_error(e)
                 self.event_stream.add_event(
                     ErrorObservation(
                         content=str(e),
+                        summary=summary,
                     ),
                     EventSource.AGENT,
                 )
