@@ -121,10 +121,12 @@ OpenHands has existing Socket.IO infrastructure that all approaches leverage:
 - Successfully tested and pushed to `vscode-integration` branch
 
 ### 🔧 **Task 2 - VSCode Runtime (In Progress)**
-- VSCode Runtime implementation has been analyzed and fixed
-- Removed hallucinated actions, added missing required methods
-- Fixed method signatures and observation handling
-- Ready for integration with Task 1 extension
+- VSCode Runtime implementation has been integrated with Task 1 extension
+- Runtime action handler supports file operations (read, write, edit) and terminal commands
+- Socket.IO communication established between OpenHands backend and VSCode extension
+- VSCode extension can execute OpenHands actions within the VSCode environment
+- Connection management with lazy initialization and error handling
+- **Current work**: Refining functionality and ensuring robust operation
 
 ### 📋 **Task 3 - VSCode Tab (Planned)**
 - Will be added to the combined extension
@@ -133,8 +135,8 @@ OpenHands has existing Socket.IO infrastructure that all approaches leverage:
 
 ## Next Steps
 
-1. **Rebase and combine**: Rebase `vscode-runtime` on `vscode-integration`
-2. **Integrate Task 2**: Add runtime action handler to existing extension
+1. ✅ **Rebase and combine**: Completed - `vscode-runtime` branch contains integrated functionality
+2. 🔧 **Refine Task 2**: Currently working on making VSCode Runtime robust and reliable
 3. **Add Task 3**: Implement webview panel for OpenHands UI
 4. **Test integration**: Verify all three tasks work together seamlessly
 5. **Update documentation**: Document the complete integration suite
