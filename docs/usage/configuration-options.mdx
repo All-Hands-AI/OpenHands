@@ -12,28 +12,9 @@ description: This page outlines all available configuration options for OpenHand
 
 The core configuration options are defined in the `[core]` section of the `config.toml` file.
 
-### Third-Party Runtime Configuration
+### API Keys
 
-Third-party runtime configuration fields are dynamically discovered based on available runtimes when the `third_party_runtimes` extra is installed:
-
-```bash
-pip install openhands-ai[third_party_runtimes]
-```
-
-Configuration fields follow these naming patterns:
-- `<runtime>_api_key` - Authentication API key
-- `<runtime>_api_token_id` - Token-based authentication ID
-- `<runtime>_api_token_secret` - Token-based authentication secret
-- `<runtime>_api_url` - Custom API endpoint URL
-- `<runtime>_target` - Target region or environment
-
-The exact fields available depend on which third-party runtimes are installed. Common examples include:
-- E2B runtime: `e2b_api_key`
-- Modal runtime: `modal_api_token_id`, `modal_api_token_secret`
-- Runloop runtime: `runloop_api_key`
-- Daytona runtime: `daytona_api_key`, `daytona_api_url`, `daytona_target`
-
-For specific configuration requirements, refer to the documentation for each third-party runtime.
+OpenHands supports various API integrations that may require authentication keys.
 
 ### Workspace
 - `workspace_base` **(Deprecated)**

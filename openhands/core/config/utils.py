@@ -39,40 +39,6 @@ JWT_SECRET = '.jwt_secret'
 load_dotenv()
 
 
-def _load_third_party_config_from_env(
-    cfg: OpenHandsConfig, env_or_toml_dict: dict | MutableMapping[str, str]
-) -> None:
-    """Load third-party runtime configuration from environment variables.
-
-    This function is now a no-op since third-party runtimes read configuration
-    directly from environment variables instead of through OpenHandsConfig.
-
-    Args:
-        cfg: The OpenHandsConfig object (unused).
-        env_or_toml_dict: The environment variables or a config.toml dict (unused).
-    """
-    # Third-party runtimes now read configuration directly from environment variables
-    # No configuration loading needed here
-    pass
-
-
-def _is_third_party_runtime_config(key: str) -> bool:
-    """Check if a configuration key is a third-party runtime configuration field.
-
-    Since third-party runtimes now read configuration directly from environment
-    variables, this function always returns False.
-
-    Args:
-        key: The configuration key to check.
-
-    Returns:
-        False (third-party runtime configs are no longer part of OpenHandsConfig).
-    """
-    # Third-party runtimes now read configuration directly from environment variables
-    # No third-party config fields exist in OpenHandsConfig anymore
-    return False
-
-
 def load_from_env(
     cfg: OpenHandsConfig, env_or_toml_dict: dict | MutableMapping[str, str]
 ) -> None:
@@ -148,8 +114,7 @@ def load_from_env(
     # Start processing from the root of the config object
     set_attr_from_env(cfg)
 
-    # Load third-party runtime configuration from environment variables
-    _load_third_party_config_from_env(cfg, env_or_toml_dict)
+    # Third-party runtime configuration is now handled by the third-party runtimes themselves
 
     # load default LLM config from env
     default_llm_config = cfg.get_llm_config()
@@ -194,9 +159,7 @@ def load_from_toml(cfg: OpenHandsConfig, toml_file: str = 'config.toml') -> None
     for key, value in core_config.items():
         if hasattr(cfg, key):
             setattr(cfg, key, value)
-        elif _is_third_party_runtime_config(key):
-            # Handle third-party runtime configuration fields
-            setattr(cfg, key, value)
+        # Third-party runtime configuration is now handled by the third-party runtimes themselves
         else:
             logger.openhands_logger.warning(
                 f'Unknown config key "{key}" in [core] section'
