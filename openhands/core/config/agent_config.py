@@ -53,8 +53,7 @@ class AgentConfig(BaseModel):
 
     @classmethod
     def from_toml_section(cls, data: dict) -> dict[str, AgentConfig]:
-        """
-        Create a mapping of AgentConfig instances from a toml dictionary representing the [agent] section.
+        """Create a mapping of AgentConfig instances from a toml dictionary representing the [agent] section.
 
         The default configuration is built from all non-dict keys in data.
         Then, each key with a dict value is treated as a custom agent configuration, and its values override
@@ -72,7 +71,6 @@ class AgentConfig(BaseModel):
             dict[str, AgentConfig]: A mapping where the key "agent" corresponds to the default configuration
             and additional keys represent custom configurations.
         """
-
         # Initialize the result mapping
         agent_mapping: dict[str, AgentConfig] = {}
 
