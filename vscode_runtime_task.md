@@ -46,25 +46,7 @@ A VSCode runtime should provide a bridge between OpenHands and a VSCode extensio
    - ✅ Can be instantiated and tested with `TEST_RUNTIME=vscode`
    - ✅ Added to CI workflow for automated testing
 
-### Current Issues and Limitations
 
-1. **Connection Management**:
-   - ❌ No automatic connection establishment
-   - ❌ Requires manual setup of Socket.IO server and connection ID
-   - ❌ No reconnection logic for dropped connections
-
-2. **Error Handling**:
-   - ⚠️ Returns generic error when not connected (expected behavior for testing)
-   - ⚠️ No timeout handling for long-running operations
-   - ⚠️ Limited error context from extension failures
-
-3. **File Operations**:
-   - ⚠️ `copy_from`/`copy_to` are no-ops (appropriate for VSCode but may need refinement)
-   - ⚠️ `list_files` returns empty list (should delegate to extension)
-
-4. **Async/Sync Mismatch**:
-   - ⚠️ `close()` method is async but called synchronously by test framework
-   - ⚠️ Some operations use `asyncio.run()` which can conflict with existing event loops
 
 ### Test Results
 
@@ -81,29 +63,34 @@ ERROR: VsCodeRuntime is not properly configured with a connection. Cannot operat
 
 This is correct behavior when no VSCode extension is connected.
 
+## Implementation Locations
+
+- **VSCode Extension**: `/openhands/integrations/vscode/` - TypeScript extension with Socket.IO connection and action handlers
+- **VSCode Runtime**: `/openhands/runtime/vscode/` - Python runtime implementation that communicates with the extension
+- **Server API Routes**: `/openhands/server/routes/vscode.py` - FastAPI endpoints for extension registration and discovery
+
 ## Next Steps
 
 ### For Full VSCode Integration:
 
 1. **VSCode Extension Development**:
-   - Create a VSCode extension that connects to the OpenHands Socket.IO server
-   - Implement action handlers for all runtime operations
-   - Add UI for showing agent activity
+   - ✅ Create a VSCode extension that connects to the OpenHands Socket.IO server
+   - ✅ Implement action handlers for all runtime operations
+   - ⏳ Further refinement and testing of action handlers
 
 2. **Connection Management**:
-   - Add automatic connection discovery
-   - Implement reconnection logic
-   - Add connection status monitoring
+   - ✅ Add automatic connection discovery (server-side registry implemented)
+   - ⏳ Implement reconnection logic
+   - ⏳ Add connection status monitoring
 
 3. **Enhanced File Operations**:
-   - Implement proper `list_files` through extension
-   - Add workspace-aware file operations
-   - Handle VSCode-specific file events
+   - ⏳ Implement proper `list_files` through extension
+   - ⏳ Add workspace-aware file operations
+   - ⏳ Handle VSCode-specific file events
 
 4. **Testing Infrastructure**:
-   - Create mock VSCode extension for testing
-   - Add integration tests with actual VSCode
-   - Add performance benchmarks
+   - ✅ Create mock VSCode extension for testing
+   - ⏳ Add integration tests with actual VSCode
 
 ### For Current Testing:
 
@@ -114,19 +101,7 @@ The VSCode runtime is now properly integrated into the test framework and will:
 
 This provides a solid foundation for future VSCode extension development.
 
-## Files Modified
 
-1. **`openhands/runtime/vscode/vscode_runtime.py`**:
-   - Fixed constructor signature to match standard runtime interface
-   - Added missing abstract methods: `connect`, `copy_from`, `copy_to`, `get_mcp_config`, `list_files`
-   - Added proper imports for `Callable` and `PluginRequirement`
-
-2. **`tests/runtime/conftest.py`**:
-   - Added import for `VsCodeRuntime`
-   - Added `vscode` case to `get_runtime_classes()` function
-
-3. **`.github/workflows/py-unit-tests.yml`**:
-   - Added VSCode runtime test step to CI workflow
 
 ## Current Status
 

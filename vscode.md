@@ -33,6 +33,14 @@ AgentController → VSCodeRuntime → Socket.IO Server → VSCode Extension → 
                                 Socket.IO ← Observations ←
 ```
 
+**Connection Flow**:
+1. User starts OpenHands with `--runtime vscode`
+2. OpenHands backend creates `VsCodeRuntime` instance (Python)
+3. `VsCodeRuntime` connects to OpenHands Socket.IO server
+4. VSCode extension connects to the same Socket.IO server (triggered by runtime activation)
+5. Actions flow: Backend → Socket.IO → VSCode Extension → VSCode API
+6. Observations flow: VSCode API → VSCode Extension → Socket.IO → Backend
+
 **Use cases**:
 - Leverage VSCode's file system access and workspace management
 - Use VSCode's integrated terminal and debugging capabilities
