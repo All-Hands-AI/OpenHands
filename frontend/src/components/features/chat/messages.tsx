@@ -50,9 +50,25 @@ export const Messages: React.FC<MessagesProps> = React.memo(
     );
   },
   (prevProps, nextProps) => {
-    // Prevent re-renders if messages are the same length
+    // If lengths are different, we need to re-render
     if (prevProps.messages.length !== nextProps.messages.length) {
       return false;
+    }
+
+    // If awaiting confirmation state changed, we need to re-render
+    if (
+      prevProps.isAwaitingUserConfirmation !==
+      nextProps.isAwaitingUserConfirmation
+    ) {
+      return false;
+    }
+
+    // Deep comparison of message IDs to avoid unnecessary re-renders
+    // This is more efficient than comparing the entire message objects
+    for (let i = 0; i < prevProps.messages.length; i += 1) {
+      if (prevProps.messages[i].id !== nextProps.messages[i].id) {
+        return false;
+      }
     }
 
     return true;
