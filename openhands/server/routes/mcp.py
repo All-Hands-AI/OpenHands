@@ -8,7 +8,7 @@ from fastmcp.server.dependencies import get_http_request
 from pydantic import Field
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.integrations.bitbucket.bitbucket_service import BitbucketService
+from openhands.integrations.bitbucket.bitbucket_service import BitBucketServiceImpl
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.provider import ProviderToken
@@ -242,7 +242,7 @@ async def create_bitbucket_pr(
         else ProviderToken()
     )
 
-    bitbucket_service = BitbucketService(
+    bitbucket_service = BitBucketServiceImpl(
         user_id=bitbucket_token.user_id,
         external_auth_id=user_id,
         external_auth_token=access_token,
