@@ -349,7 +349,9 @@ class LLM(RetryMixin, DebugMixin):
             message_content = resp['choices'][0]['message']['content'] or ''
             reasoning_content = resp['choices'][0]['message'].get('reasoning_content')
             if reasoning_content:
-                message_content = '<think>' + reasoning_content + '</think>\n' + message_content
+                message_content = (
+                    '<think>' + reasoning_content + '</think>\n' + message_content
+                )
             resp['choices'][0]['message']['content'] = message_content
             message_back: str = message_content
 
