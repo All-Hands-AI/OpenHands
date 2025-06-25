@@ -55,7 +55,7 @@ export class VSCodeRuntimeActionHandler {
     return resolvedPath;
   }
 
-  private async openOrFocusFile(filePath: string): Promise<void> {
+  private static async openOrFocusFile(filePath: string): Promise<void> {
     try {
       const uri = vscode.Uri.file(filePath);
       const document = await vscode.workspace.openTextDocument(uri);
@@ -198,7 +198,7 @@ export class VSCodeRuntimeActionHandler {
       const content = contentBuffer.toString();
       this.sendObservation(event, "read", content, { path: filePath });
       // Optionally open the file in the editor for viewing
-      await this.openOrFocusFile(sanitizedPath);
+      await VSCodeRuntimeActionHandler.openOrFocusFile(sanitizedPath);
     } catch (error) {
       console.error(`Error reading file ${sanitizedPath}:`, error);
       this.sendErrorObservation(
@@ -244,7 +244,7 @@ export class VSCodeRuntimeActionHandler {
         { path: filePath },
       );
       // Open the file in the editor for viewing
-      await this.openOrFocusFile(sanitizedPath);
+      await VSCodeRuntimeActionHandler.openOrFocusFile(sanitizedPath);
     } catch (error) {
       console.error(`Error writing to file ${sanitizedPath}:`, error);
       this.sendErrorObservation(
@@ -298,7 +298,7 @@ export class VSCodeRuntimeActionHandler {
       await vscode.workspace.fs.writeFile(uri, contentBuffer);
 
       // Open or focus the file to show changes
-      await this.openOrFocusFile(sanitizedPath);
+      await VSCodeRuntimeActionHandler.openOrFocusFile(sanitizedPath);
 
       this.sendObservation(
         event,

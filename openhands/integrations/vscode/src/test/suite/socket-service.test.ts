@@ -1,14 +1,14 @@
 import * as assert from "assert";
 import { SocketService } from "../../services/socket-service";
 
-// Mock Socket.IO client
-const mockSocket = {
-  on: () => {},
-  emit: () => {},
-  disconnect: () => {},
-  connected: true,
-  id: "mock-socket-id",
-};
+// Mock Socket.IO client (for future use if needed)
+// const mockSocket = {
+//   on: () => {},
+//   emit: () => {},
+//   disconnect: () => {},
+//   connected: true,
+//   id: "mock-socket-id",
+// };
 
 // Mock fetch globally
 const originalFetch = global.fetch;

@@ -51,7 +51,7 @@ Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/Users/enyst/repos/odie/packag
 **Root Cause Identified**: Module format mismatch between ES modules and CommonJS in test environment.
 
 **Solution Applied**: Option 3 - Fix local package linking with dual-format support
-- ✅ Renamed package to `openhands-types` 
+- ✅ Renamed package to `openhands-types`
 - ✅ Implemented dual-format build (ESM + CJS)
 - ✅ Used npm link for proper symlink
 - ✅ Fixed import paths with .cjs extensions

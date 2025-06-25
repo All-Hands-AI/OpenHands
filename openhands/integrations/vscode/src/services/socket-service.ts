@@ -67,11 +67,11 @@ export class SocketService {
         console.log("Disconnected from OpenHands backend");
       });
 
-      this.socket.on("error", (error: any) => {
+      this.socket.on("error", (error: unknown) => {
         console.error("Socket.IO error:", error);
       });
 
-      this.socket.on("connect_error", (error: any) => {
+      this.socket.on("connect_error", (error: unknown) => {
         console.error("Socket.IO connection error:", error);
       });
 
