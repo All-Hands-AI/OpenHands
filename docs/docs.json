@@ -26,6 +26,7 @@
           "usage/installation",
           "usage/getting-started",
           "usage/key-features",
+          "usage/faqs",
           {
             "group": "OpenHands Cloud",
             "pages": [
@@ -43,7 +44,7 @@
             ]
           },
           {
-            "group": "Running OpenHands on Your Own",
+            "group": "Run OpenHands on Your Own",
             "pages": [
               "usage/local-setup",
               "usage/how-to/gui-mode",
@@ -103,8 +104,9 @@
             ]
           },
           {
-            "group": "Customization",
+            "group": "Customizations & Settings",
             "pages": [
+              "usage/common-settings",
               "usage/prompting/repository",
               {
                 "group": "Microagents",
@@ -150,6 +152,12 @@
         ]
       },
       {
+        "tab": "Success Stories",
+        "pages": [
+          "success-stories/index"
+        ]
+      },
+      {
           "tab": "API Reference",
           "openapi": "/openapi.json"
       }
@@ -188,7 +196,7 @@
   },
   "footer": {
     "socials": {
-      "slack": "https://join.slack.com/t/openhands-ai/shared_invite/zt-34zm4j0gj-Qz5kRHoca8DFCbqXPS~f_A",
+      "slack": "https://join.slack.com/t/openhands-ai/shared_invite/zt-3847of6xi-xuYJIPa6YIPg4ElbDWbtSA",
       "github": "https://github.com/All-Hands-AI/OpenHands",
       "discord": "https://discord.gg/ESHStjSjD4"
     }

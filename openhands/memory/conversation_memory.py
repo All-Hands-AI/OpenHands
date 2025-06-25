@@ -28,6 +28,7 @@ from openhands.events.observation import (
     AgentThinkObservation,
     BrowserOutputObservation,
     CmdOutputObservation,
+    FileDownloadObservation,
     FileEditObservation,
     FileReadObservation,
     IPythonRunCellObservation,
@@ -55,6 +56,18 @@ class ConversationMemory:
     def __init__(self, config: AgentConfig, prompt_manager: PromptManager):
         self.agent_config = config
         self.prompt_manager = prompt_manager
+
+    @staticmethod
+    def _is_valid_image_url(url: str | None) -> bool:
+        """Check if an image URL is valid and non-empty.
+
+        Args:
+            url: The image URL to validate
+
+        Returns:
+            True if the URL is valid, False otherwise
+        """
+        return bool(url and url.strip())
 
     def process_events(
         self,
@@ -276,7 +289,12 @@ class ConversationMemory:
             role = 'user' if action.source == 'user' else 'assistant'
             content = [TextContent(text=action.content or '')]
             if vision_is_active and action.image_urls:
-                content.append(ImageContent(image_urls=action.image_urls))
+                if role == 'user':
+                    for idx, url in enumerate(action.image_urls):
+                        content.append(TextContent(text=f'Image {idx + 1}:'))
+                        content.append(ImageContent(image_urls=[url]))
+                else:
+                    content.append(ImageContent(image_urls=action.image_urls))
             if role not in ('user', 'system', 'assistant', 'tool'):
                 raise ValueError(f'Invalid role: {role}')
             return [
@@ -327,6 +345,7 @@ class ConversationMemory:
         - AgentDelegateObservation: Formats results from delegated agent tasks
         - ErrorObservation: Formats error messages from failed actions
         - UserRejectObservation: Formats user rejection messages
+        - FileDownloadObservation: Formats the result of a browsing action that opened/downloaded a file
 
         In function calling mode, observations with tool_call_metadata are stored in
         tool_call_id_to_message for later processing instead of being returned immediately.
@@ -380,7 +399,27 @@ class ConversationMemory:
 
             # Add image URLs if available and vision is active
             if vision_is_active and obs.image_urls:
-                content.append(ImageContent(image_urls=obs.image_urls))
+                # Filter out empty or invalid image URLs
+                valid_image_urls = [
+                    url for url in obs.image_urls if self._is_valid_image_url(url)
+                ]
+                invalid_count = len(obs.image_urls) - len(valid_image_urls)
+
+                if valid_image_urls:
+                    content.append(ImageContent(image_urls=valid_image_urls))
+                    if invalid_count > 0:
+                        # Add text indicating some images were filtered
+                        content[
+                            0
+                        ].text += f'\n\nNote: {invalid_count} invalid or empty image(s) were filtered from this output. The agent may need to use alternative methods to access visual information.'
+                else:
+                    logger.debug(
+                        'IPython observation has image URLs but none are valid'
+                    )
+                    # Add text indicating all images were filtered
+                    content[
+                        0
+                    ].text += f'\n\nNote: All {len(obs.image_urls)} image(s) in this output were invalid or empty and have been filtered. The agent should use alternative methods to access visual information.'
 
             message = Message(role='user', content=content)
         elif isinstance(obs, FileEditObservation):
@@ -397,26 +436,43 @@ class ConversationMemory:
                 and enable_som_visual_browsing
                 and vision_is_active
             ):
-                text += 'Image: Current webpage screenshot (Note that only visible portion of webpage is present in the screenshot. You may need to scroll to view the remaining portion of the web-page.)\n'
-                message = Message(
-                    role='user',
-                    content=[
-                        TextContent(text=text),
-                        ImageContent(
-                            image_urls=[
-                                # show set of marks if it exists
-                                # otherwise, show raw screenshot when using vision-supported model
-                                obs.set_of_marks
-                                if obs.set_of_marks is not None
-                                and len(obs.set_of_marks) > 0
-                                else obs.screenshot
-                            ]
-                        ),
-                    ],
-                )
-                logger.debug(
-                    f'Vision enabled for browsing, showing {"set of marks" if obs.set_of_marks and len(obs.set_of_marks) > 0 else "screenshot"}'
-                )
+                text += 'Image: Current webpage screenshot (Note that only visible portion of webpage is present in the screenshot. However, the Accessibility tree contains information from the entire webpage.)\n'
+
+                # Determine which image to use and validate it
+                image_url = None
+                if obs.set_of_marks is not None and len(obs.set_of_marks) > 0:
+                    image_url = obs.set_of_marks
+                    image_type = 'set of marks'
+                elif obs.screenshot is not None and len(obs.screenshot) > 0:
+                    image_url = obs.screenshot
+                    image_type = 'screenshot'
+
+                # Create message content with text
+                content = [TextContent(text=text)]
+
+                # Only add ImageContent if we have a valid image URL
+                if self._is_valid_image_url(image_url):
+                    content.append(ImageContent(image_urls=[image_url]))
+                    logger.debug(f'Vision enabled for browsing, showing {image_type}')
+                else:
+                    if image_url:
+                        logger.warning(
+                            f'Invalid image URL format for {image_type}: {image_url[:50]}...'
+                        )
+                        # Add text indicating the image was filtered
+                        content[
+                            0
+                        ].text += f'\n\nNote: The {image_type} for this webpage was invalid or empty and has been filtered. The agent should use alternative methods to access visual information about the webpage.'
+                    else:
+                        logger.debug(
+                            'Vision enabled for browsing, but no valid image available'
+                        )
+                        # Add text indicating no image was available
+                        content[
+                            0
+                        ].text += '\n\nNote: No visual information (screenshot or set of marks) is available for this webpage. The agent should rely on the text content above.'
+
+                message = Message(role='user', content=content)
             else:
                 message = Message(
                     role='user',
@@ -441,6 +497,9 @@ class ConversationMemory:
             text += '\n[Last action has been rejected by the user]'
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, AgentCondensationObservation):
+            text = truncate_content(obs.content, max_message_chars)
+            message = Message(role='user', content=[TextContent(text=text)])
+        elif isinstance(obs, FileDownloadObservation):
             text = truncate_content(obs.content, max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
         elif (

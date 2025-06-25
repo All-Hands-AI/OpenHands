@@ -11,6 +11,7 @@ from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.service_types import ProviderType
 from openhands.llm.llm import LLM
+from openhands.resolver.interfaces.bitbucket import BitbucketIssueHandler
 from openhands.resolver.interfaces.github import GithubIssueHandler
 from openhands.resolver.interfaces.gitlab import GitlabIssueHandler
 from openhands.resolver.interfaces.issue import Issue
@@ -235,40 +236,55 @@ def send_pull_request(
     pr_title: str | None = None,
     base_domain: str | None = None,
 ) -> str:
-    """Send a pull request to a GitHub or Gitlab repository.
+    """Send a pull request to a GitHub, GitLab, or Bitbucket repository.
 
     Args:
         issue: The issue to send the pull request for
-        token: The GitHub or Gitlab token to use for authentication
-        username: The GitHub or Gitlab username, if provided
+        token: The token to use for authentication
+        username: The username, if provided
         platform: The platform of the repository.
         patch_dir: The directory containing the patches to apply
         pr_type: The type: branch (no PR created), draft or ready (regular PR created)
         fork_owner: The owner of the fork to push changes to (if different from the original repo owner)
         additional_message: The additional messages to post as a comment on the PR in json list format
         target_branch: The target branch to create the pull request against (defaults to repository default branch)
-        reviewer: The GitHub or Gitlab username of the reviewer to assign
+        reviewer: The username of the reviewer to assign
         pr_title: Custom title for the pull request (optional)
-        base_domain: The base domain for the git server (defaults to "github.com" for GitHub and "gitlab.com" for GitLab)
+        base_domain: The base domain for the git server (defaults to "github.com" for GitHub, "gitlab.com" for GitLab, and "bitbucket.org" for Bitbucket)
     """
     if pr_type not in ['branch', 'draft', 'ready']:
         raise ValueError(f'Invalid pr_type: {pr_type}')
 
     # Determine default base_domain based on platform
     if base_domain is None:
-        base_domain = 'github.com' if platform == ProviderType.GITHUB else 'gitlab.com'
+        if platform == ProviderType.GITHUB:
+            base_domain = 'github.com'
+        elif platform == ProviderType.GITLAB:
+            base_domain = 'gitlab.com'
+        else:  # platform == ProviderType.BITBUCKET
+            base_domain = 'bitbucket.org'
 
+    # Create the appropriate handler based on platform
     handler = None
     if platform == ProviderType.GITHUB:
         handler = ServiceContextIssue(
             GithubIssueHandler(issue.owner, issue.repo, token, username, base_domain),
             None,
         )
-    else:  # platform == Platform.GITLAB
+    elif platform == ProviderType.GITLAB:
         handler = ServiceContextIssue(
             GitlabIssueHandler(issue.owner, issue.repo, token, username, base_domain),
             None,
         )
+    elif platform == ProviderType.BITBUCKET:
+        handler = ServiceContextIssue(
+            BitbucketIssueHandler(
+                issue.owner, issue.repo, token, username, base_domain
+            ),
+            None,
+        )
+    else:
+        raise ValueError(f'Unsupported platform: {platform}')
 
     # Create a new branch with a unique name
     base_branch_name = f'openhands-fix-issue-{issue.number}'

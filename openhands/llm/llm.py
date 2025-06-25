@@ -181,6 +181,12 @@ class LLM(RetryMixin, DebugMixin):
             kwargs['max_tokens'] = self.config.max_output_tokens
             kwargs.pop('max_completion_tokens')
 
+        # Add safety settings for models that support them
+        if 'mistral' in self.config.model.lower() and self.config.safety_settings:
+            kwargs['safety_settings'] = self.config.safety_settings
+        elif 'gemini' in self.config.model.lower() and self.config.safety_settings:
+            kwargs['safety_settings'] = self.config.safety_settings
+
         self._completion = partial(
             litellm_completion,
             model=self.config.model,
@@ -288,7 +294,20 @@ class LLM(RetryMixin, DebugMixin):
             # Record start time for latency measurement
             start_time = time.time()
             # we don't support streaming here, thus we get a ModelResponse
-            resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
+
+            # Suppress httpx deprecation warnings during LiteLLM calls
+            # This prevents the "Use 'content=<...>' to upload raw bytes/text content" warning
+            # that appears when LiteLLM makes HTTP requests to LLM providers
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    'ignore', category=DeprecationWarning, module='httpx.*'
+                )
+                warnings.filterwarnings(
+                    'ignore',
+                    message=r'.*content=.*upload.*',
+                    category=DeprecationWarning,
+                )
+                resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
 
             # Calculate and record latency
             latency = time.time() - start_time
@@ -772,9 +791,6 @@ class LLM(RetryMixin, DebugMixin):
 
     def __repr__(self) -> str:
         return str(self)
-
-    def reset(self) -> None:
-        self.metrics.reset()
 
     def format_messages_for_llm(self, messages: Message | list[Message]) -> list[dict]:
         if isinstance(messages, Message):

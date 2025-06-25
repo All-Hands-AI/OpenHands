@@ -372,20 +372,6 @@ class Runtime(FileEditRuntimeMixin):
         selected_repository: str | None,
         selected_branch: str | None,
     ) -> str:
-        repository = None
-        if selected_repository:  # Determine provider from repo name
-            try:
-                provider_handler = ProviderHandler(
-                    git_provider_tokens or MappingProxyType({})
-                )
-                repository = await provider_handler.verify_repo_provider(
-                    selected_repository
-                )
-            except AuthenticationError:
-                raise RuntimeError(
-                    'Git provider authentication issue when cloning repo'
-                )
-
         if not selected_repository:
             # In SaaS mode (indicated by user_id being set), always run git init
             # In OSS mode, only run git init if workspace_base is not set
@@ -403,34 +389,9 @@ class Runtime(FileEditRuntimeMixin):
                 )
             return ''
 
-        # This satisfies mypy because param is optional, but `verify_repo_provider` guarentees this gets populated
-        if not repository:
-            return ''
-
-        provider = repository.git_provider
-        provider_domains = {
-            ProviderType.GITHUB: 'github.com',
-            ProviderType.GITLAB: 'gitlab.com',
-        }
-
-        domain = provider_domains[provider]
-
-        # If git_provider_tokens is provided, use the host from the token if available
-        if git_provider_tokens and provider in git_provider_tokens:
-            domain = git_provider_tokens[provider].host or domain
-
-        # Try to use token if available, otherwise use public URL
-        if git_provider_tokens and provider in git_provider_tokens:
-            git_token = git_provider_tokens[provider].token
-            if git_token:
-                if provider == ProviderType.GITLAB:
-                    remote_repo_url = f'https://oauth2:{git_token.get_secret_value()}@{domain}/{selected_repository}.git'
-                else:
-                    remote_repo_url = f'https://{git_token.get_secret_value()}@{domain}/{selected_repository}.git'
-            else:
-                remote_repo_url = f'https://{domain}/{selected_repository}.git'
-        else:
-            remote_repo_url = f'https://{domain}/{selected_repository}.git'
+        remote_repo_url = await self._get_authenticated_git_url(
+            selected_repository, git_provider_tokens
+        )
 
         if not remote_repo_url:
             raise ValueError('Missing either Git token or valid repository')
@@ -630,47 +591,104 @@ fi
 
         return loaded_microagents
 
-    def _get_authenticated_git_url(self, repo_path: str) -> str:
+    async def _get_authenticated_git_url(
+        self, repo_name: str, git_provider_tokens: PROVIDER_TOKEN_TYPE | None
+    ) -> str:
         """Get an authenticated git URL for a repository.
 
         Args:
-            repo_path: Repository path (e.g., "github.com/acme-co/api")
+            repo_path: Repository name (owner/repo)
 
         Returns:
             Authenticated git URL if credentials are available, otherwise regular HTTPS URL
         """
-        remote_url = f'https://{repo_path}.git'
 
-        # Determine provider from repo path
-        provider = None
-        if 'github.com' in repo_path:
-            provider = ProviderType.GITHUB
-        elif 'gitlab.com' in repo_path:
-            provider = ProviderType.GITLAB
+        try:
+            provider_handler = ProviderHandler(
+                git_provider_tokens or MappingProxyType({})
+            )
+            repository = await provider_handler.verify_repo_provider(repo_name)
+        except AuthenticationError:
+            raise Exception('Git provider authentication issue when getting remote URL')
 
-        # Add authentication if available
-        if (
-            provider
-            and self.git_provider_tokens
-            and provider in self.git_provider_tokens
-        ):
-            git_token = self.git_provider_tokens[provider].token
+        provider = repository.git_provider
+        repo_name = repository.full_name
+
+        provider_domains = {
+            ProviderType.GITHUB: 'github.com',
+            ProviderType.GITLAB: 'gitlab.com',
+            ProviderType.BITBUCKET: 'bitbucket.org',
+        }
+
+        domain = provider_domains[provider]
+
+        # If git_provider_tokens is provided, use the host from the token if available
+        if git_provider_tokens and provider in git_provider_tokens:
+            domain = git_provider_tokens[provider].host or domain
+
+        # Try to use token if available, otherwise use public URL
+        if git_provider_tokens and provider in git_provider_tokens:
+            git_token = git_provider_tokens[provider].token
             if git_token:
+                token_value = git_token.get_secret_value()
                 if provider == ProviderType.GITLAB:
-                    remote_url = f'https://oauth2:{git_token.get_secret_value()}@{repo_path.replace("gitlab.com/", "")}.git'
+                    remote_url = (
+                        f'https://oauth2:{token_value}@{domain}/{repo_name}.git'
+                    )
+                elif provider == ProviderType.BITBUCKET:
+                    # For Bitbucket, handle username:app_password format
+                    if ':' in token_value:
+                        # App token format: username:app_password
+                        remote_url = f'https://{token_value}@{domain}/{repo_name}.git'
+                    else:
+                        # Access token format: use x-token-auth
+                        remote_url = f'https://x-token-auth:{token_value}@{domain}/{repo_name}.git'
                 else:
-                    remote_url = f'https://{git_token.get_secret_value()}@{repo_path.replace("github.com/", "")}.git'
+                    # GitHub
+                    remote_url = f'https://{token_value}@{domain}/{repo_name}.git'
+            else:
+                remote_url = f'https://{domain}/{repo_name}.git'
+        else:
+            remote_url = f'https://{domain}/{repo_name}.git'
 
         return remote_url
+
+    def _is_gitlab_repository(self, repo_name: str) -> bool:
+        """Check if a repository is hosted on GitLab.
+
+        Args:
+            repo_name: Repository name (e.g., "gitlab.com/org/repo" or "org/repo")
+
+        Returns:
+            True if the repository is hosted on GitLab, False otherwise
+        """
+        try:
+            provider_handler = ProviderHandler(
+                self.git_provider_tokens or MappingProxyType({})
+            )
+            repository = call_async_from_sync(
+                provider_handler.verify_repo_provider,
+                GENERAL_TIMEOUT,
+                repo_name,
+            )
+            return repository.git_provider == ProviderType.GITLAB
+        except Exception:
+            # If we can't determine the provider, assume it's not GitLab
+            # This is a safe fallback since we'll just use the default .openhands
+            return False
 
     def get_microagents_from_org_or_user(
         self, selected_repository: str
     ) -> list[BaseMicroagent]:
-        """Load microagents from the organization or user level .openhands repository.
+        """Load microagents from the organization or user level repository.
 
         For example, if the repository is github.com/acme-co/api, this will check if
         github.com/acme-co/.openhands exists. If it does, it will clone it and load
         the microagents from the ./microagents/ folder.
+
+        For GitLab repositories, it will use openhands-config instead of .openhands
+        since GitLab doesn't support repository names starting with non-alphanumeric
+        characters.
 
         Args:
             selected_repository: The repository path (e.g., "github.com/acme-co/api")
@@ -685,28 +703,41 @@ fi
             return loaded_microagents
 
         # Extract the domain and org/user name
-        domain = repo_parts[0] if len(repo_parts) > 2 else 'github.com'
         org_name = repo_parts[-2]
 
-        # Construct the org-level .openhands repo path
-        org_openhands_repo = f'{domain}/{org_name}/.openhands'
-        if domain not in org_openhands_repo:
-            org_openhands_repo = f'github.com/{org_openhands_repo}'
+        # Determine if this is a GitLab repository
+        is_gitlab = self._is_gitlab_repository(selected_repository)
+
+        # For GitLab, use openhands-config (since .openhands is not a valid repo name)
+        # For other providers, use .openhands
+        if is_gitlab:
+            org_openhands_repo = f'{org_name}/openhands-config'
+        else:
+            org_openhands_repo = f'{org_name}/.openhands'
 
         self.log(
             'info',
             f'Checking for org-level microagents at {org_openhands_repo}',
         )
 
-        # Try to clone the org-level .openhands repo
+        # Try to clone the org-level repo
         try:
             # Create a temporary directory for the org-level repo
             org_repo_dir = self.workspace_root / f'org_openhands_{org_name}'
 
             # Get authenticated URL and do a shallow clone (--depth 1) for efficiency
-            remote_url = self._get_authenticated_git_url(org_openhands_repo)
-
-            clone_cmd = f'git clone --depth 1 {remote_url} {org_repo_dir}'
+            try:
+                remote_url = call_async_from_sync(
+                    self._get_authenticated_git_url,
+                    GENERAL_TIMEOUT,
+                    org_openhands_repo,
+                    self.git_provider_tokens,
+                )
+            except Exception as e:
+                raise Exception(str(e))
+            clone_cmd = (
+                f'GIT_TERMINAL_PROMPT=0 git clone --depth 1 {remote_url} {org_repo_dir}'
+            )
 
             action = CmdRunAction(command=clone_cmd)
             obs = self.run_action(action)
@@ -724,7 +755,8 @@ fi
                 )
 
                 # Clean up the org repo directory
-                shutil.rmtree(org_repo_dir)
+                action = CmdRunAction(f'rm -rf {org_repo_dir}')
+                self.run_action(action)
             else:
                 self.log(
                     'info',
@@ -732,7 +764,10 @@ fi
                 )
 
         except Exception as e:
-            self.log('error', f'Error loading org-level microagents: {str(e)}')
+            self.log(
+                'debug',
+                f'Error loading org-level microagents from {org_openhands_repo}: {str(e)}',
+            )
 
         return loaded_microagents
 
@@ -743,9 +778,13 @@ fi
         If selected_repository is None, load microagents from the current workspace.
         This is the main entry point for loading microagents.
 
-        This method also checks for user/org level microagents stored in a .openhands repository.
+        This method also checks for user/org level microagents stored in a repository.
         For example, if the repository is github.com/acme-co/api, it will also check for
         github.com/acme-co/.openhands and load microagents from there if it exists.
+
+        For GitLab repositories, it will use openhands-config instead of .openhands
+        since GitLab doesn't support repository names starting with non-alphanumeric
+        characters.
         """
         loaded_microagents: list[BaseMicroagent] = []
         microagents_dir = self.workspace_root / '.openhands' / 'microagents'
