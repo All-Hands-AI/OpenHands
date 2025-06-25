@@ -104,3 +104,12 @@ Instead of trying to pass `connection_id` to runtime constructor, implement a **
 4. Test the coordination mechanism end-to-end
 
 **Status**: Architecture breakthrough complete, ready for code migration and implementation!
+
+## Important Notes
+
+**Git Remote**: We work on the `upstream` remote (https://github.com/All-Hands-AI/OpenHands.git), not origin. Always push to `upstream`!
+
+```bash
+git push upstream vscode-runtime  # ✅ Correct
+git push origin vscode-runtime    # ❌ Wrong remote
+```
