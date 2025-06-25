@@ -664,14 +664,14 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "boto3-stubs"
-version = "1.38.42"
-description = "Type annotations for boto3 1.38.42 generated with mypy-boto3-builder 8.11.0"
+version = "1.38.43"
+description = "Type annotations for boto3 1.38.43 generated with mypy-boto3-builder 8.11.0"
 optional = false
 python-versions = ">=3.8"
 groups = ["evaluation"]
 files = [
-    {file = "boto3_stubs-1.38.42-py3-none-any.whl", hash = "sha256:9901e3e162fff10580a56fc33634089aa2096ea91256ad157efa835b71b8ebc1"},
-    {file = "boto3_stubs-1.38.42.tar.gz", hash = "sha256:28efa210ab1f0399af4ef10fff6f3b3438c0e5111450293200e33920daf545a9"},
+    {file = "boto3_stubs-1.38.43-py3-none-any.whl", hash = "sha256:2dc863a0bae3a9f31de6cdaff083be0f5f8850d4a846a017ef6079b620294f12"},
+    {file = "boto3_stubs-1.38.43.tar.gz", hash = "sha256:6fe495830b63ffe3bbc8082e96890eee1e9a93ec5c3c1bd9b9b531ec4d90c1a7"},
 ]
 
 [package.dependencies]
@@ -728,7 +728,7 @@ bedrock-data-automation-runtime = ["mypy-boto3-bedrock-data-automation-runtime (
 bedrock-runtime = ["mypy-boto3-bedrock-runtime (>=1.38.0,<1.39.0)"]
 billing = ["mypy-boto3-billing (>=1.38.0,<1.39.0)"]
 billingconductor = ["mypy-boto3-billingconductor (>=1.38.0,<1.39.0)"]
-boto3 = ["boto3 (==1.38.42)"]
+boto3 = ["boto3 (==1.38.43)"]
 braket = ["mypy-boto3-braket (>=1.38.0,<1.39.0)"]
 budgets = ["mypy-boto3-budgets (>=1.38.0,<1.39.0)"]
 ce = ["mypy-boto3-ce (>=1.38.0,<1.39.0)"]
@@ -3174,14 +3174,14 @@ tool = ["click (>=6.0.0)"]
 
 [[package]]
 name = "google-cloud-aiplatform"
-version = "1.98.0"
+version = "1.99.0"
 description = "Vertex AI API client library"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "google_cloud_aiplatform-1.98.0-py2.py3-none-any.whl", hash = "sha256:583f3da3ea9cea984ec98c670b425b8c7ce250f106593de414c1b954df57ebf0"},
-    {file = "google_cloud_aiplatform-1.98.0.tar.gz", hash = "sha256:d57ba65f95f03f7c3fe26cc3e870e6ce7f396c7bfed3c401a4672b8a8b53119b"},
+    {file = "google_cloud_aiplatform-1.99.0-py2.py3-none-any.whl", hash = "sha256:3026fadb11900f3d1bb95cb75dedd15e04de8521ab64815dae292b52ccf84917"},
+    {file = "google_cloud_aiplatform-1.99.0.tar.gz", hash = "sha256:ea509e0d58e456a4c3d9bd007a8c273cbd0ae7e8542258869a418a1a4e68ec3b"},
 ]
 
 [package.dependencies]
@@ -5075,14 +5075,14 @@ types-tqdm = "*"
 
 [[package]]
 name = "litellm"
-version = "1.73.0"
+version = "1.73.1"
 description = "Library to easily interface with LLM API providers"
 optional = false
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 groups = ["main"]
 files = [
-    {file = "litellm-1.73.0-py3-none-any.whl", hash = "sha256:0a0a14c2f2522ffaf6cfbea043108d837047ee2b8dff5fb1dc14a7bd3cea0118"},
-    {file = "litellm-1.73.0.tar.gz", hash = "sha256:4fdbb86f349be2038068827517786f6f7e7f761528d8f5d4b941b406d33bb8c3"},
+    {file = "litellm-1.73.1-py3-none-any.whl", hash = "sha256:4a1c21c3ab3902874c4a4ea1cfd9bf4d2b470829ab6a4ee776b32f81d26bdbc6"},
+    {file = "litellm-1.73.1.tar.gz", hash = "sha256:33ad55ff051bf925419619ec37f32949decdc52a6109c8c0700cfb1209696590"},
 ]
 
 [package.dependencies]
@@ -5101,7 +5101,7 @@ tokenizers = "*"
 [package.extras]
 caching = ["diskcache (>=5.6.1,<6.0.0)"]
 extra-proxy = ["azure-identity (>=1.15.0,<2.0.0)", "azure-keyvault-secrets (>=4.8.0,<5.0.0)", "google-cloud-kms (>=2.21.3,<3.0.0)", "prisma (==0.11.0)", "redisvl (>=0.4.1,<0.5.0) ; python_version >= \"3.9\" and python_version < \"3.14\"", "resend (>=0.8.0,<0.9.0)"]
-proxy = ["PyJWT (>=2.8.0,<3.0.0)", "apscheduler (>=3.10.4,<4.0.0)", "backoff", "boto3 (==1.34.34)", "cryptography (>=43.0.1,<44.0.0)", "fastapi (>=0.115.5,<0.116.0)", "fastapi-sso (>=0.16.0,<0.17.0)", "gunicorn (>=23.0.0,<24.0.0)", "litellm-enterprise (==0.1.8)", "litellm-proxy-extras (==0.2.5)", "mcp (==1.9.3) ; python_version >= \"3.10\"", "orjson (>=3.9.7,<4.0.0)", "pynacl (>=1.5.0,<2.0.0)", "python-multipart (>=0.0.18,<0.0.19)", "pyyaml (>=6.0.1,<7.0.0)", "rich (==13.7.1)", "rq", "uvicorn (>=0.29.0,<0.30.0)", "uvloop (>=0.21.0,<0.22.0) ; sys_platform != \"win32\"", "websockets (>=13.1.0,<14.0.0)"]
+proxy = ["PyJWT (>=2.8.0,<3.0.0)", "apscheduler (>=3.10.4,<4.0.0)", "backoff", "boto3 (==1.34.34)", "cryptography (>=43.0.1,<44.0.0)", "fastapi (>=0.115.5,<0.116.0)", "fastapi-sso (>=0.16.0,<0.17.0)", "gunicorn (>=23.0.0,<24.0.0)", "litellm-enterprise (==0.1.9)", "litellm-proxy-extras (==0.2.5)", "mcp (==1.9.3) ; python_version >= \"3.10\"", "orjson (>=3.9.7,<4.0.0)", "pynacl (>=1.5.0,<2.0.0)", "python-multipart (>=0.0.18,<0.0.19)", "pyyaml (>=6.0.1,<7.0.0)", "rich (==13.7.1)", "rq", "uvicorn (>=0.29.0,<0.30.0)", "uvloop (>=0.21.0,<0.22.0) ; sys_platform != \"win32\"", "websockets (>=13.1.0,<14.0.0)"]
 utils = ["numpydoc"]
 
 [[package]]
@@ -9057,14 +9057,14 @@ files = [
 
 [[package]]
 name = "runloop-api-client"
-version = "0.44.0"
+version = "0.45.0"
 description = "The official Python library for the runloop API"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "runloop_api_client-0.44.0-py3-none-any.whl", hash = "sha256:157bf3d1711a58241972ac473d3b3737c3aae6182ff8a8a7820d95471e6dc516"},
-    {file = "runloop_api_client-0.44.0.tar.gz", hash = "sha256:b3238ea256f392e18620c8a43bb2275d222d4c7284f0798cbcd8de316a254968"},
+    {file = "runloop_api_client-0.45.0-py3-none-any.whl", hash = "sha256:838fc4aea1b9a16acd7c771c336bb9e3827fce71a5e3abf281120dff83910263"},
+    {file = "runloop_api_client-0.45.0.tar.gz", hash = "sha256:e11318a625a6bc9eaa66f66d9c705cfb8ae2775817d2976fee58031d71ba27b8"},
 ]
 
 [package.dependencies]
@@ -11778,4 +11778,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12,<3.14"
-content-hash = "3acd8cff93c168245f4e1c89e94e2fff93bfd75204ed7e914b12cdc92211bd99"
+content-hash = "a89603f32fccb341ff6ffca4d4b364abe67638b1ed1dd91ace16c427c1d0d758"
