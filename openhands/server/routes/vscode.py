@@ -10,7 +10,7 @@ from typing import Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException
 from fastapi import status as http_status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.dependencies import get_dependencies
@@ -37,11 +37,11 @@ class VSCodeInstance(BaseModel):
 
 class VSCodeRegistrationRequest(BaseModel):
     """Request payload for VSCode instance registration"""
-    workspace_path: str
-    workspace_name: str
-    vscode_version: str
-    extension_version: str
-    capabilities: List[str] = []
+    workspace_path: str = Field(..., min_length=1, description="Path to the workspace directory")
+    workspace_name: str = Field(..., min_length=1, description="Name of the workspace")
+    vscode_version: str = Field(..., min_length=1, description="VSCode version")
+    extension_version: str = Field(..., min_length=1, description="Extension version")
+    capabilities: List[str] = Field(default=[], description="List of capabilities supported by this instance")
 
 
 class VSCodeRegistrationResponse(BaseModel):
