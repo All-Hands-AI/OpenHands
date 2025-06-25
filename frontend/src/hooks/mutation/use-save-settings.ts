@@ -28,6 +28,23 @@ const saveSettingsMutationFn = async (settings: Partial<PostSettings>) => {
     search_api_key: settings.SEARCH_API_KEY?.trim() || "",
     max_budget_per_task: settings.MAX_BUDGET_PER_TASK,
     temperature: settings.TEMPERATURE,
+    top_p: settings.TOP_P,
+    max_output_tokens: settings.MAX_OUTPUT_TOKENS,
+    max_input_tokens: settings.MAX_INPUT_TOKENS,
+    max_message_chars: settings.MAX_MESSAGE_CHARS,
+    input_cost_per_token: settings.INPUT_COST_PER_TOKEN,
+    output_cost_per_token: settings.OUTPUT_COST_PER_TOKEN,
+    // Agent Configuration Parameters
+    enable_browsing: settings.ENABLE_BROWSING,
+    enable_llm_editor: settings.ENABLE_LLM_EDITOR,
+    enable_editor: settings.ENABLE_EDITOR,
+    enable_jupyter: settings.ENABLE_JUPYTER,
+    enable_cmd: settings.ENABLE_CMD,
+    enable_think: settings.ENABLE_THINK,
+    enable_finish: settings.ENABLE_FINISH,
+    enable_prompt_extensions: settings.ENABLE_PROMPT_EXTENSIONS,
+    disabled_microagents: settings.DISABLED_MICROAGENTS,
+    enable_history_truncation: settings.ENABLE_HISTORY_TRUNCATION,
   };
 
   await OpenHands.saveSettings(apiSettings);

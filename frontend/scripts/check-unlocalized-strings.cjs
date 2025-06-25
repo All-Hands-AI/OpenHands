@@ -116,6 +116,7 @@ const EXCLUDED_TECHNICAL_STRINGS = [
   "add-secret-form", // Test ID for secret form
   "edit-secret-form", // Test ID for secret form
   "search-api-key-input", // Input name for search API key
+  "input-cost-per-token-input", // Input name for input cost per token
   "noopener,noreferrer", // Options for window.open
   "STATUS$READY",
   "STATUS$STOPPED",

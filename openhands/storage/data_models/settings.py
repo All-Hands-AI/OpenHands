@@ -17,9 +17,7 @@ from openhands.storage.data_models.user_secrets import UserSecrets
 
 
 class Settings(BaseModel):
-    """
-    Persisted settings for OpenHands sessions
-    """
+    """Persisted settings for OpenHands sessions."""
 
     language: str | None = None
     agent: str | None = None
@@ -43,7 +41,25 @@ class Settings(BaseModel):
     max_budget_per_task: float | None = None
     email: str | None = None
     temperature: float = Field(default=0.0)
+    top_p: float = Field(default=1.0)
+    max_output_tokens: int | None = None
+    max_input_tokens: int | None = None
+    max_message_chars: int = Field(default=30_000)
+    input_cost_per_token: float | None = None
+    output_cost_per_token: float | None = None
     email_verified: bool | None = None
+
+    # Agent Configuration Parameters
+    enable_browsing: bool = Field(default=True)
+    enable_llm_editor: bool = Field(default=False)
+    enable_editor: bool = Field(default=True)
+    enable_jupyter: bool = Field(default=True)
+    enable_cmd: bool = Field(default=True)
+    enable_think: bool = Field(default=True)
+    enable_finish: bool = Field(default=True)
+    enable_prompt_extensions: bool = Field(default=True)
+    disabled_microagents: list[str] = Field(default_factory=list)
+    enable_history_truncation: bool = Field(default=True)
 
     model_config = {
         'validate_assignment': True,
@@ -103,7 +119,6 @@ class Settings(BaseModel):
     @field_serializer('secrets_store')
     def secrets_store_serializer(self, secrets: UserSecrets, info: SerializationInfo):
         """Custom serializer for secrets store."""
-
         """Force invalidate secret store"""
         return {'provider_tokens': {}}
 
@@ -121,6 +136,9 @@ class Settings(BaseModel):
         if hasattr(app_config, 'mcp'):
             mcp_config = app_config.mcp
 
+        # Get agent config for the default agent
+        agent_config = app_config.get_agent_config(app_config.default_agent)
+
         settings = Settings(
             language='en',
             agent=app_config.default_agent,
@@ -131,9 +149,26 @@ class Settings(BaseModel):
             llm_api_key=llm_config.api_key,
             llm_base_url=llm_config.base_url,
             temperature=llm_config.temperature,
+            top_p=llm_config.top_p,
+            max_output_tokens=llm_config.max_output_tokens,
+            max_input_tokens=llm_config.max_input_tokens,
+            max_message_chars=llm_config.max_message_chars,
+            input_cost_per_token=llm_config.input_cost_per_token,
+            output_cost_per_token=llm_config.output_cost_per_token,
             remote_runtime_resource_factor=app_config.sandbox.remote_runtime_resource_factor,
             mcp_config=mcp_config,
             search_api_key=app_config.search_api_key,
             max_budget_per_task=app_config.max_budget_per_task,
+            # Agent configuration parameters
+            enable_browsing=agent_config.enable_browsing,
+            enable_llm_editor=agent_config.enable_llm_editor,
+            enable_editor=agent_config.enable_editor,
+            enable_jupyter=agent_config.enable_jupyter,
+            enable_cmd=agent_config.enable_cmd,
+            enable_think=agent_config.enable_think,
+            enable_finish=agent_config.enable_finish,
+            enable_prompt_extensions=agent_config.enable_prompt_extensions,
+            disabled_microagents=agent_config.disabled_microagents,
+            enable_history_truncation=agent_config.enable_history_truncation,
         )
         return settings

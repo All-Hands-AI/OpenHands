@@ -27,6 +27,23 @@ export const DEFAULT_SETTINGS: Settings = {
     stdio_servers: [],
   },
   TEMPERATURE: 0.0, // Aligning with backend default temperature value
+  TOP_P: 1.0,
+  MAX_OUTPUT_TOKENS: null,
+  MAX_INPUT_TOKENS: null,
+  MAX_MESSAGE_CHARS: 30000,
+  INPUT_COST_PER_TOKEN: null,
+  OUTPUT_COST_PER_TOKEN: null,
+  // Agent Configuration Parameters
+  ENABLE_BROWSING: true,
+  ENABLE_LLM_EDITOR: false,
+  ENABLE_EDITOR: true,
+  ENABLE_JUPYTER: true,
+  ENABLE_CMD: true,
+  ENABLE_THINK: true,
+  ENABLE_FINISH: true,
+  ENABLE_PROMPT_EXTENSIONS: true,
+  DISABLED_MICROAGENTS: [],
+  ENABLE_HISTORY_TRUNCATION: true,
 };
 
 /**

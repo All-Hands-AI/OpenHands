@@ -116,6 +116,9 @@ class Session:
             or settings.sandbox_runtime_container_image
             else self.config.sandbox.runtime_container_image
         )
+        # Apply remote_runtime_resource_factor from settings
+        if settings.remote_runtime_resource_factor is not None:
+            self.config.sandbox.remote_runtime_resource_factor = settings.remote_runtime_resource_factor
         max_iterations = settings.max_iterations or self.config.max_iterations
 
         # Prioritize settings over config for max_budget_per_task
@@ -132,6 +135,21 @@ class Session:
         default_llm_config.model = settings.llm_model or ''
         default_llm_config.api_key = settings.llm_api_key
         default_llm_config.base_url = settings.llm_base_url
+        # Apply all LLM parameters from settings
+        if settings.temperature is not None:
+            default_llm_config.temperature = settings.temperature
+        if settings.top_p is not None:
+            default_llm_config.top_p = settings.top_p
+        if settings.max_output_tokens is not None:
+            default_llm_config.max_output_tokens = settings.max_output_tokens
+        if settings.max_input_tokens is not None:
+            default_llm_config.max_input_tokens = settings.max_input_tokens
+        if settings.max_message_chars is not None:
+            default_llm_config.max_message_chars = settings.max_message_chars
+        if settings.input_cost_per_token is not None:
+            default_llm_config.input_cost_per_token = settings.input_cost_per_token
+        if settings.output_cost_per_token is not None:
+            default_llm_config.output_cost_per_token = settings.output_cost_per_token
         self.config.search_api_key = settings.search_api_key
 
         # NOTE: this need to happen AFTER the config is updated with the search_api_key
@@ -152,6 +170,31 @@ class Session:
 
         llm = self._create_llm(agent_cls)
         agent_config = self.config.get_agent_config(agent_cls)
+
+        # Apply user settings to agent config
+        if settings.enable_browsing is not None:
+            agent_config.enable_browsing = settings.enable_browsing
+        if settings.enable_llm_editor is not None:
+            agent_config.enable_llm_editor = settings.enable_llm_editor
+        if settings.enable_editor is not None:
+            agent_config.enable_editor = settings.enable_editor
+        if settings.enable_jupyter is not None:
+            agent_config.enable_jupyter = settings.enable_jupyter
+        if settings.enable_cmd is not None:
+            agent_config.enable_cmd = settings.enable_cmd
+        if settings.enable_think is not None:
+            agent_config.enable_think = settings.enable_think
+        if settings.enable_finish is not None:
+            agent_config.enable_finish = settings.enable_finish
+        if settings.enable_prompt_extensions is not None:
+            agent_config.enable_prompt_extensions = settings.enable_prompt_extensions
+        if settings.disabled_microagents is not None:
+            agent_config.disabled_microagents = settings.disabled_microagents
+        if settings.enable_history_truncation is not None:
+            agent_config.enable_history_truncation = settings.enable_history_truncation
+
+        # Update the config with the modified agent config so runtime initialization uses it
+        self.config.set_agent_config(agent_config, agent_cls)
 
         if settings.enable_default_condenser:
             # Default condenser chains a condenser that limits browser the total

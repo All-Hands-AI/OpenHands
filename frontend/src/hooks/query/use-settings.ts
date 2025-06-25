@@ -32,7 +32,24 @@ const getSettingsQueryFn = async (): Promise<Settings> => {
     EMAIL_VERIFIED: apiSettings.email_verified,
     MCP_CONFIG: apiSettings.mcp_config,
     IS_NEW_USER: false,
-    TEMPERATURE: apiSettings.temperature, // Added temperature field
+    TEMPERATURE: apiSettings.temperature,
+    TOP_P: apiSettings.top_p,
+    MAX_OUTPUT_TOKENS: apiSettings.max_output_tokens,
+    MAX_INPUT_TOKENS: apiSettings.max_input_tokens,
+    MAX_MESSAGE_CHARS: apiSettings.max_message_chars,
+    INPUT_COST_PER_TOKEN: apiSettings.input_cost_per_token,
+    OUTPUT_COST_PER_TOKEN: apiSettings.output_cost_per_token,
+    // Agent Configuration Parameters
+    ENABLE_BROWSING: apiSettings.enable_browsing,
+    ENABLE_LLM_EDITOR: apiSettings.enable_llm_editor,
+    ENABLE_EDITOR: apiSettings.enable_editor,
+    ENABLE_JUPYTER: apiSettings.enable_jupyter,
+    ENABLE_CMD: apiSettings.enable_cmd,
+    ENABLE_THINK: apiSettings.enable_think,
+    ENABLE_FINISH: apiSettings.enable_finish,
+    ENABLE_PROMPT_EXTENSIONS: apiSettings.enable_prompt_extensions,
+    DISABLED_MICROAGENTS: apiSettings.disabled_microagents,
+    ENABLE_HISTORY_TRUNCATION: apiSettings.enable_history_truncation,
   };
 };
 

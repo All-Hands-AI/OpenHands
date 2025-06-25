@@ -49,7 +49,24 @@ export type Settings = {
   MAX_BUDGET_PER_TASK: number | null;
   EMAIL?: string;
   EMAIL_VERIFIED?: boolean;
-  TEMPERATURE: number; // Added temperature field
+  TEMPERATURE: number;
+  TOP_P: number;
+  MAX_OUTPUT_TOKENS: number | null;
+  MAX_INPUT_TOKENS: number | null;
+  MAX_MESSAGE_CHARS: number;
+  INPUT_COST_PER_TOKEN: number | null;
+  OUTPUT_COST_PER_TOKEN: number | null;
+  // Agent Configuration Parameters
+  ENABLE_BROWSING: boolean;
+  ENABLE_LLM_EDITOR: boolean;
+  ENABLE_EDITOR: boolean;
+  ENABLE_JUPYTER: boolean;
+  ENABLE_CMD: boolean;
+  ENABLE_THINK: boolean;
+  ENABLE_FINISH: boolean;
+  ENABLE_PROMPT_EXTENSIONS: boolean;
+  DISABLED_MICROAGENTS: string[];
+  ENABLE_HISTORY_TRUNCATION: boolean;
 };
 
 export type ApiSettings = {
@@ -76,7 +93,24 @@ export type ApiSettings = {
   };
   email?: string;
   email_verified?: boolean;
-  temperature: number; // Added temperature field
+  temperature: number;
+  top_p: number;
+  max_output_tokens: number | null;
+  max_input_tokens: number | null;
+  max_message_chars: number;
+  input_cost_per_token: number | null;
+  output_cost_per_token: number | null;
+  // Agent Configuration Parameters
+  enable_browsing: boolean;
+  enable_llm_editor: boolean;
+  enable_editor: boolean;
+  enable_jupyter: boolean;
+  enable_cmd: boolean;
+  enable_think: boolean;
+  enable_finish: boolean;
+  enable_prompt_extensions: boolean;
+  disabled_microagents: string[];
+  enable_history_truncation: boolean;
 };
 
 export type PostSettings = Settings & {
