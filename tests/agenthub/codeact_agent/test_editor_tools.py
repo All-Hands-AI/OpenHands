@@ -1,7 +1,8 @@
 """Tests for editor tool selection in CodeActAgent."""
 
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import patch, MagicMock
 
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 from openhands.core.config import AgentConfig
@@ -10,8 +11,8 @@ from openhands.llm.tool_names import (
     GEMINI_EDIT_TOOL_NAME,
     GEMINI_READ_FILE_TOOL_NAME,
     GEMINI_WRITE_FILE_TOOL_NAME,
-    STR_REPLACE_EDITOR_TOOL_NAME,
     LLM_BASED_EDIT_TOOL_NAME,
+    STR_REPLACE_EDITOR_TOOL_NAME,
 )
 
 
@@ -27,11 +28,11 @@ def get_tool_names(tools):
 
 
 @pytest.mark.parametrize(
-    "config_params,expected_tools,unexpected_tools",
+    'config_params,expected_tools,unexpected_tools',
     [
         # Test with all editors disabled
         (
-            {"enable_editor": False},
+            {'enable_editor': False},
             [],
             [
                 STR_REPLACE_EDITOR_TOOL_NAME,
@@ -44,7 +45,7 @@ def get_tool_names(tools):
         ),
         # Test with only LLM editor enabled
         (
-            {"enable_llm_editor": True},
+            {'enable_llm_editor': True, 'enable_claude_editor': False},
             [LLM_BASED_EDIT_TOOL_NAME],
             [
                 STR_REPLACE_EDITOR_TOOL_NAME,
@@ -56,7 +57,7 @@ def get_tool_names(tools):
         ),
         # Test with only Claude editor enabled
         (
-            {"enable_claude_editor": True, "enable_gemini_editor": False},
+            {'enable_claude_editor': True, 'enable_gemini_editor': False},
             [CLAUDE_EDITOR_TOOL_NAME],
             [
                 STR_REPLACE_EDITOR_TOOL_NAME,
@@ -68,7 +69,7 @@ def get_tool_names(tools):
         ),
         # Test with only Gemini editor enabled
         (
-            {"enable_claude_editor": False, "enable_gemini_editor": True},
+            {'enable_claude_editor': False, 'enable_gemini_editor': True},
             [
                 GEMINI_EDIT_TOOL_NAME,
                 GEMINI_WRITE_FILE_TOOL_NAME,
@@ -82,7 +83,7 @@ def get_tool_names(tools):
         ),
         # Test with both Claude and Gemini editors enabled
         (
-            {"enable_claude_editor": True, "enable_gemini_editor": True},
+            {'enable_claude_editor': True, 'enable_gemini_editor': True},
             [
                 CLAUDE_EDITOR_TOOL_NAME,
                 GEMINI_EDIT_TOOL_NAME,
@@ -94,12 +95,12 @@ def get_tool_names(tools):
                 LLM_BASED_EDIT_TOOL_NAME,
             ],
         ),
-        # Test legacy behavior (str_replace_editor only)
+        # Test default behavior (claude_editor enabled by default)
         (
             {},  # Default config
-            [STR_REPLACE_EDITOR_TOOL_NAME],
+            [CLAUDE_EDITOR_TOOL_NAME],
             [
-                CLAUDE_EDITOR_TOOL_NAME,
+                STR_REPLACE_EDITOR_TOOL_NAME,
                 GEMINI_EDIT_TOOL_NAME,
                 GEMINI_WRITE_FILE_TOOL_NAME,
                 GEMINI_READ_FILE_TOOL_NAME,
@@ -112,22 +113,22 @@ def test_editor_tool_selection(config_params, expected_tools, unexpected_tools):
     """Test that the correct editor tools are selected based on configuration."""
     # Create config with the specified parameters
     config = AgentConfig(**config_params)
-    
+
     # Create a mock LLM
     mock_llm = MagicMock()
-    mock_llm.config.model = "test-model"
-    
+    mock_llm.config.model = 'test-model'
+
     # Create the agent with the config and mock LLM
     agent = CodeActAgent(config=config, llm=mock_llm)
-    
+
     # Get the tools
     tools = agent._get_tools()
     tool_names = get_tool_names(tools)
-    
+
     # Check that expected tools are present
     for tool_name in expected_tools:
-        assert tool_name in tool_names, f"Expected tool {tool_name} to be present"
-    
+        assert tool_name in tool_names, f'Expected tool {tool_name} to be present'
+
     # Check that unexpected tools are not present
     for tool_name in unexpected_tools:
-        assert tool_name not in tool_names, f"Unexpected tool {tool_name} is present"
+        assert tool_name not in tool_names, f'Unexpected tool {tool_name} is present'

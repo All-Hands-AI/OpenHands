@@ -23,7 +23,7 @@ class AgentConfig(BaseModel):
     enable_llm_editor: bool = Field(default=False)
     """Whether to enable LLM-based editor tool (edit_file)"""
 
-    enable_claude_editor: bool = Field(default=False)
+    enable_claude_editor: bool = Field(default=True)
     """Whether to enable Claude-style editor tool (claude_editor)"""
 
     enable_gemini_editor: bool = Field(default=False)

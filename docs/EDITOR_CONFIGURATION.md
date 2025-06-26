@@ -40,6 +40,39 @@ By default:
 
 For backward compatibility, if you don't specify `enable_claude_editor` and it's not defined in your configuration, the system will fall back to using the legacy `str_replace_editor` tool.
 
+## Configuration in config.toml
+
+You can configure the editors in your `config.toml` file under the `[agent]` section:
+
+### Enable Gemini editor and disable Claude editor:
+```toml
+[agent]
+enable_gemini_editor = true
+enable_claude_editor = false
+```
+
+### Enable only the LLM-based editor:
+```toml
+[agent]
+enable_llm_editor = true
+enable_claude_editor = false
+enable_gemini_editor = false
+```
+
+### Enable multiple editors:
+```toml
+[agent]
+enable_claude_editor = true
+enable_gemini_editor = true
+enable_llm_editor = false
+```
+
+### Disable all editors:
+```toml
+[agent]
+enable_editor = false
+```
+
 ## Usage Examples
 
 ### Using Only Claude Editor

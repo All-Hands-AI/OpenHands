@@ -12,7 +12,7 @@ def test_editor_config_defaults():
 
     # Individual editor settings
     assert config.enable_llm_editor is False
-    assert config.enable_claude_editor is False
+    assert config.enable_claude_editor is True
     assert config.enable_gemini_editor is False
 
 
