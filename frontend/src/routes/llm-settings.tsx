@@ -380,7 +380,7 @@ function LlmSettingsScreen() {
                 className="w-full max-w-[680px]"
                 defaultValue={settings.SEARCH_API_KEY || ""}
                 onChange={handleSearchApiKeyIsDirty}
-                placeholder="sk-tavily-..."
+                placeholder={t(I18nKey.API$TAVILY_KEY_EXAMPLE)}
                 startContent={
                   settings.SEARCH_API_KEY_SET && (
                     <KeyStatusIcon isSet={settings.SEARCH_API_KEY_SET} />
@@ -455,7 +455,7 @@ function LlmSettingsScreen() {
                 className="w-full max-w-[680px]"
                 defaultValue={settings.SEARCH_API_KEY || ""}
                 onChange={handleSearchApiKeyIsDirty}
-                placeholder="tvly-..."
+                placeholder={t(I18nKey.API$TVLY_KEY_EXAMPLE)}
                 startContent={
                   settings.SEARCH_API_KEY_SET && (
                     <KeyStatusIcon isSet={settings.SEARCH_API_KEY_SET} />
