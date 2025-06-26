@@ -47,6 +47,13 @@ function LlmSettingsScreen() {
     confirmationMode: false,
     enableDefaultCondenser: false,
     securityAnalyzer: false,
+    temperature: false,
+    topP: false,
+    maxOutputTokens: false,
+    maxInputTokens: false,
+    maxMessageChars: false,
+    inputCostPerToken: false,
+    outputCostPerToken: false,
   });
 
   const modelsAndProviders = organizeModelsAndProviders(
@@ -77,6 +84,7 @@ function LlmSettingsScreen() {
   const handleSuccessfulMutation = () => {
     displaySuccessToast(t(I18nKey.SETTINGS$SAVED));
     setDirtyInputs({
+      temperature: false,
       model: false,
       apiKey: false,
       searchApiKey: false,
@@ -85,6 +93,12 @@ function LlmSettingsScreen() {
       confirmationMode: false,
       enableDefaultCondenser: false,
       securityAnalyzer: false,
+      topP: false,
+      maxOutputTokens: false,
+      maxInputTokens: false,
+      maxMessageChars: false,
+      inputCostPerToken: false,
+      outputCostPerToken: false,
     });
   };
 
@@ -130,6 +144,40 @@ function LlmSettingsScreen() {
     const apiKey = formData.get("llm-api-key-input")?.toString();
     const searchApiKey = formData.get("search-api-key-input")?.toString();
     const agent = formData.get("agent-input")?.toString();
+    const temperatureStr = formData.get("temperature-input")?.toString();
+    const temperature = temperatureStr ? parseFloat(temperatureStr) : undefined;
+    const topPStr = formData.get("top-p-input")?.toString();
+    const topP = topPStr ? parseFloat(topPStr) : undefined;
+    const maxOutputTokensStr = formData
+      .get("max-output-tokens-input")
+      ?.toString();
+    const maxOutputTokens = maxOutputTokensStr
+      ? parseInt(maxOutputTokensStr, 10)
+      : undefined;
+    const maxInputTokensStr = formData
+      .get("max-input-tokens-input")
+      ?.toString();
+    const maxInputTokens = maxInputTokensStr
+      ? parseInt(maxInputTokensStr, 10)
+      : undefined;
+    const maxMessageCharsStr = formData
+      .get("max-message-chars-input")
+      ?.toString();
+    const maxMessageChars = maxMessageCharsStr
+      ? parseInt(maxMessageCharsStr, 10)
+      : undefined;
+    const inputCostPerTokenStr = formData
+      .get("input-cost-per-token-input")
+      ?.toString();
+    const inputCostPerToken = inputCostPerTokenStr
+      ? parseFloat(inputCostPerTokenStr)
+      : undefined;
+    const outputCostPerTokenStr = formData
+      .get("output-cost-per-token-input")
+      ?.toString();
+    const outputCostPerToken = outputCostPerTokenStr
+      ? parseFloat(outputCostPerTokenStr)
+      : undefined;
     const confirmationMode =
       formData.get("enable-confirmation-mode-switch")?.toString() === "on";
     const enableDefaultCondenser =
@@ -145,6 +193,13 @@ function LlmSettingsScreen() {
         llm_api_key: apiKey || null,
         SEARCH_API_KEY: searchApiKey || "",
         AGENT: agent,
+        TEMPERATURE: temperature,
+        TOP_P: topP,
+        MAX_OUTPUT_TOKENS: maxOutputTokens,
+        MAX_INPUT_TOKENS: maxInputTokens,
+        MAX_MESSAGE_CHARS: maxMessageChars,
+        INPUT_COST_PER_TOKEN: inputCostPerToken,
+        OUTPUT_COST_PER_TOKEN: outputCostPerToken,
         CONFIRMATION_MODE: confirmationMode,
         ENABLE_DEFAULT_CONDENSER: enableDefaultCondenser,
         SECURITY_ANALYZER: confirmationMode ? securityAnalyzer : undefined,
@@ -173,6 +228,13 @@ function LlmSettingsScreen() {
       confirmationMode: false,
       enableDefaultCondenser: false,
       securityAnalyzer: false,
+      temperature: false,
+      topP: false,
+      maxOutputTokens: false,
+      maxInputTokens: false,
+      maxMessageChars: false,
+      inputCostPerToken: false,
+      outputCostPerToken: false,
     });
   };
 
@@ -399,6 +461,158 @@ function LlmSettingsScreen() {
                     <KeyStatusIcon isSet={settings.SEARCH_API_KEY_SET} />
                   )
                 }
+              />
+
+              <SettingsInput
+                testId="temperature-input"
+                name="temperature-input"
+                label={t(I18nKey.SETTINGS$TEMPERATURE)}
+                type="number"
+                className="w-full max-w-[680px]"
+                defaultValue={settings.TEMPERATURE.toString()}
+                step={0.01}
+                min={0}
+                max={2}
+                placeholder="0.0"
+                onChange={(value) => {
+                  const numValue = parseFloat(value);
+                  const temperatureIsDirty = numValue !== settings.TEMPERATURE;
+                  setDirtyInputs((prev) => ({
+                    ...prev,
+                    temperature: temperatureIsDirty,
+                  }));
+                }}
+              />
+
+              <div className="text-xs text-gray-400 mt-1">
+                {t(I18nKey.SETTINGS$TEMPERATURE_HELP)}
+              </div>
+
+              <SettingsInput
+                testId="top-p-input"
+                name="top-p-input"
+                label={t(I18nKey.SETTINGS$TOP_P)}
+                type="number"
+                className="w-full max-w-[680px]"
+                defaultValue={settings.TOP_P.toString()}
+                step={0.01}
+                min={0}
+                max={1}
+                placeholder="1.0"
+                onChange={(value) => {
+                  const numValue = parseFloat(value);
+                  const topPIsDirty = numValue !== settings.TOP_P;
+                  setDirtyInputs((prev) => ({
+                    ...prev,
+                    topP: topPIsDirty,
+                  }));
+                }}
+              />
+
+              <div className="text-xs text-gray-400 mt-1">
+                {t(I18nKey.SETTINGS$TOP_P_HELP)}
+              </div>
+
+              <SettingsInput
+                testId="max-output-tokens-input"
+                name="max-output-tokens-input"
+                label={t(I18nKey.SETTINGS$MAX_OUTPUT_TOKENS)}
+                type="number"
+                className="w-full max-w-[680px]"
+                defaultValue={settings.MAX_OUTPUT_TOKENS?.toString() || ""}
+                min={1}
+                placeholder="4096"
+                onChange={(value) => {
+                  const numValue = value ? parseInt(value, 10) : null;
+                  const maxOutputTokensIsDirty =
+                    numValue !== settings.MAX_OUTPUT_TOKENS;
+                  setDirtyInputs((prev) => ({
+                    ...prev,
+                    maxOutputTokens: maxOutputTokensIsDirty,
+                  }));
+                }}
+              />
+
+              <SettingsInput
+                testId="max-input-tokens-input"
+                name="max-input-tokens-input"
+                label={t(I18nKey.SETTINGS$MAX_INPUT_TOKENS)}
+                type="number"
+                className="w-full max-w-[680px]"
+                defaultValue={settings.MAX_INPUT_TOKENS?.toString() || ""}
+                min={1}
+                placeholder="128000"
+                onChange={(value) => {
+                  const numValue = value ? parseInt(value, 10) : null;
+                  const maxInputTokensIsDirty =
+                    numValue !== settings.MAX_INPUT_TOKENS;
+                  setDirtyInputs((prev) => ({
+                    ...prev,
+                    maxInputTokens: maxInputTokensIsDirty,
+                  }));
+                }}
+              />
+
+              <SettingsInput
+                testId="max-message-chars-input"
+                name="max-message-chars-input"
+                label={t(I18nKey.SETTINGS$MAX_MESSAGE_CHARS)}
+                type="number"
+                className="w-full max-w-[680px]"
+                defaultValue={settings.MAX_MESSAGE_CHARS.toString()}
+                min={1000}
+                placeholder="30000"
+                onChange={(value) => {
+                  const numValue = parseInt(value, 10);
+                  const maxMessageCharsIsDirty =
+                    numValue !== settings.MAX_MESSAGE_CHARS;
+                  setDirtyInputs((prev) => ({
+                    ...prev,
+                    maxMessageChars: maxMessageCharsIsDirty,
+                  }));
+                }}
+              />
+
+              <SettingsInput
+                testId="input-cost-per-token-input"
+                name="input-cost-per-token-input"
+                label={t(I18nKey.SETTINGS$INPUT_COST_PER_TOKEN)}
+                type="number"
+                className="w-full max-w-[680px]"
+                defaultValue={settings.INPUT_COST_PER_TOKEN?.toString() || ""}
+                step={0.000001}
+                min={0}
+                placeholder="0.000003"
+                onChange={(value) => {
+                  const numValue = value ? parseFloat(value) : null;
+                  const inputCostPerTokenIsDirty =
+                    numValue !== settings.INPUT_COST_PER_TOKEN;
+                  setDirtyInputs((prev) => ({
+                    ...prev,
+                    inputCostPerToken: inputCostPerTokenIsDirty,
+                  }));
+                }}
+              />
+
+              <SettingsInput
+                testId="output-cost-per-token-input"
+                name="output-cost-per-token-input"
+                label={t(I18nKey.SETTINGS$OUTPUT_COST_PER_TOKEN)}
+                type="number"
+                className="w-full max-w-[680px]"
+                defaultValue={settings.OUTPUT_COST_PER_TOKEN?.toString() || ""}
+                step={0.000001}
+                min={0}
+                placeholder="0.000015"
+                onChange={(value) => {
+                  const numValue = value ? parseFloat(value) : null;
+                  const outputCostPerTokenIsDirty =
+                    numValue !== settings.OUTPUT_COST_PER_TOKEN;
+                  setDirtyInputs((prev) => ({
+                    ...prev,
+                    outputCostPerToken: outputCostPerTokenIsDirty,
+                  }));
+                }}
               />
 
               <HelpLink

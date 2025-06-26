@@ -62,8 +62,17 @@ async def load_settings(
                 if provider_token.token or provider_token.user_id:
                     provider_tokens_set[provider_type] = provider_token.host
 
+        settings_data = settings.model_dump(exclude={'secrets_store'})
+        # Ensure LLM parameters have default values if None
+        if settings_data.get('temperature') is None:
+            settings_data['temperature'] = 0.0
+        if settings_data.get('top_p') is None:
+            settings_data['top_p'] = 1.0
+        if settings_data.get('max_message_chars') is None:
+            settings_data['max_message_chars'] = 30_000
+
         settings_with_token_data = GETSettingsModel(
-            **settings.model_dump(exclude='secrets_store'),
+            **settings_data,
             llm_api_key_set=settings.llm_api_key is not None
             and bool(settings.llm_api_key),
             search_api_key_set=settings.search_api_key is not None
