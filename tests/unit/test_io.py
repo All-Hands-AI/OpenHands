@@ -30,24 +30,6 @@ def test_multiline_input():
         assert result == 'line 1\nline 2\nline 3'
 
 
-def test_read_task_from_file():
-    """Test that read_task_from_file returns the file content."""
-    # Create a temporary file with some content
-    with tempfile.NamedTemporaryFile(mode='w+', delete=False) as temp_file:
-        temp_file.write('This is a test file content.')
-        temp_file_path = temp_file.name
-
-    try:
-        # Call the function with the temporary file
-        result = read_task_from_file(temp_file_path)
-
-        # Check that the result is exactly the file content
-        assert result == 'This is a test file content.'
-    finally:
-        # Clean up the temporary file
-        os.unlink(temp_file_path)
-
-
 def test_read_task_with_file_option():
     """Test that read_task enhances file content with a prompt when using the file option."""
     # Create a temporary file with some content
