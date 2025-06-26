@@ -1,6 +1,9 @@
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
-from openhands.agenthub.codeact_agent.tools.security_utils import IPYTHON_RISK_DESC, RISK_LEVELS
+from openhands.agenthub.codeact_agent.tools.security_utils import (
+    IPYTHON_RISK_DESC,
+    RISK_LEVELS,
+)
 
 _IPYTHON_DESCRIPTION = """Run a cell of Python code in an IPython environment.
 * The assistant should define variables and import packages before using them.
@@ -25,7 +28,7 @@ IPythonTool = ChatCompletionToolParam(
                     'enum': RISK_LEVELS,
                 },
             },
-            'required': ['code'],
+            'required': ['code', 'safety_risk'],
         },
     ),
 )

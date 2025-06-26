@@ -2,7 +2,10 @@ import sys
 
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
-from openhands.agenthub.codeact_agent.tools.security_utils import BASH_RISK_DESC, RISK_LEVELS
+from openhands.agenthub.codeact_agent.tools.security_utils import (
+    BASH_RISK_DESC,
+    RISK_LEVELS,
+)
 from openhands.llm.tool_names import EXECUTE_BASH_TOOL_NAME
 
 _DETAILED_BASH_DESCRIPTION = """Execute a bash command in the terminal within a persistent shell session.
@@ -79,7 +82,7 @@ def create_cmd_run_tool(
                         'enum': RISK_LEVELS,
                     },
                 },
-                'required': ['command'],
+                'required': ['command', 'safety_risk'],
             },
         ),
     )
