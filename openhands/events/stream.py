@@ -9,6 +9,7 @@ from functools import partial
 from typing import Any, Callable
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.events.action.message import StreamingMessageAction
 from openhands.events.event import Event, EventSource
 from openhands.events.event_store import EventStore
 from openhands.events.serialization.event import event_from_dict, event_to_dict
@@ -190,10 +191,11 @@ class EventStream(EventStore):
                 self._write_page_cache = []
 
         if event.id is not None:
-            # Write the event to the store - this can take some time
-            self.file_store.write(
-                self._get_filename_for_id(event.id, self.user_id), json.dumps(data)
-            )
+            if not isinstance(event, StreamingMessageAction):
+                # Write the event to the store - this can take some time
+                self.file_store.write(
+                    self._get_filename_for_id(event.id, self.user_id), json.dumps(data)
+                )
 
             # Store the cache page last - if it is not present during reads then it will simply be bypassed.
             self._store_cache_page(current_write_page)

@@ -377,6 +377,25 @@ class CodeActAgent(Agent):
                     )
 
                     for action in actions:
+                        if isinstance(action, AgentFinishAction):
+                            content = ''
+                            if action.task_completed == 'partial':
+                                content = 'I believe that the task was **completed partially**.'
+                            elif action.task_completed == 'false':
+                                content = (
+                                    'I believe that the task was **not completed**.'
+                                )
+                            elif action.task_completed == 'true':
+                                content = 'I believe that the task was **completed successfully**.'
+                            if content and self.event_stream:
+                                self.event_stream.add_event(
+                                    StreamingMessageAction(
+                                        content=content,
+                                        wait_for_response=True,
+                                        enable_process_llm=False,
+                                    ),
+                                    EventSource.AGENT,
+                                )
                         self.pending_actions.append(action)
 
             except Exception as e:

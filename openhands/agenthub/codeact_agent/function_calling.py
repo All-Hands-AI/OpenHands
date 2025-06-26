@@ -58,6 +58,222 @@ def combine_thought(action: Action, thought: str) -> Action:
     return action
 
 
+def _validate_required_args(
+    tool_name: str, arguments: dict, required_args: list[str]
+) -> None:
+    """Validate that required arguments are present in tool call arguments."""
+    for arg in required_args:
+        if arg not in arguments:
+            raise FunctionCallValidationError(
+                f'Missing required argument "{arg}" in tool call {tool_name}'
+            )
+
+
+def _process_path_with_session(
+    path: str, sid: str | None, workspace_mount_path_in_sandbox_store_in_session: bool
+) -> str:
+    """Process file path with session ID if needed."""
+    if (
+        sid is not None
+        and sid != ''
+        and sid not in path
+        and workspace_mount_path_in_sandbox_store_in_session
+    ):
+        processed_path = put_session_id_in_path(path, sid)
+        if processed_path == '':
+            raise FunctionCallValidationError(
+                f'Invalid path: {processed_path}. Original path: {path}. Please provide a valid path.'
+            )
+        return processed_path
+    return path
+
+
+def _parse_builtin_tool(
+    tool_name: str,
+    arguments: dict,
+    sid: str | None,
+    workspace_mount_path_in_sandbox_store_in_session: bool,
+    enable_think: bool,
+) -> Action:
+    """Parse built-in tool calls into actions."""
+    # CmdRunTool (Bash)
+    if tool_name == create_cmd_run_tool()['function']['name']:
+        _validate_required_args(tool_name, arguments, ['command'])
+        is_input = arguments.get('is_input', 'false') == 'true'
+        return CmdRunAction(command=arguments['command'], is_input=is_input)
+
+    # IPythonTool (Jupyter)
+    elif tool_name == IPythonTool['function']['name']:
+        _validate_required_args(tool_name, arguments, ['code'])
+        return IPythonRunCellAction(code=arguments['code'])
+
+    # Agent delegation
+    elif tool_name == 'delegate_to_browsing_agent':
+        return AgentDelegateAction(agent='BrowsingAgent', inputs=arguments)
+
+    # FinishTool
+    elif tool_name == FinishTool['function']['name']:
+        logger.debug(f'FinishTool: {arguments}')
+        return AgentFinishAction(
+            final_thought=arguments.get('message', ''),
+            task_completed=arguments.get('task_completed', None),
+            enable_think=enable_think,
+        )
+
+    # LLMBasedFileEditTool (deprecated)
+    elif tool_name == LLMBasedFileEditTool['function']['name']:
+        _validate_required_args(tool_name, arguments, ['path', 'content'])
+        path = _process_path_with_session(
+            arguments['path'], sid, workspace_mount_path_in_sandbox_store_in_session
+        )
+        return FileEditAction(
+            path=path,
+            content=arguments['content'],
+            start=arguments.get('start', 1),
+            end=arguments.get('end', -1),
+        )
+
+    # String replace editor tool
+    elif tool_name == create_str_replace_editor_tool()['function']['name']:
+        _validate_required_args(tool_name, arguments, ['command', 'path'])
+        path = _process_path_with_session(
+            arguments['path'], sid, workspace_mount_path_in_sandbox_store_in_session
+        )
+        command = arguments['command']
+        other_kwargs = {
+            k: v for k, v in arguments.items() if k not in ['command', 'path']
+        }
+
+        if command == 'view':
+            return FileReadAction(
+                path=path,
+                impl_source=FileReadSource.OH_ACI,
+                view_range=other_kwargs.get('view_range', None),
+            )
+        else:
+            other_kwargs.pop('view_range', None)  # Remove view_range for FileEditAction
+            return FileEditAction(
+                path=path,
+                command=command,
+                impl_source=FileEditSource.OH_ACI,
+                **other_kwargs,
+            )
+
+    # ThinkTool
+    elif tool_name == ThinkTool['function']['name']:
+        return AgentThinkAction(thought=arguments.get('thought', ''))
+
+    # BrowserTool
+    elif tool_name == BrowserTool['function']['name']:
+        _validate_required_args(tool_name, arguments, ['code'])
+        return BrowseInteractiveAction(browser_actions=arguments['code'])
+
+    # WebReadTool
+    elif tool_name == WebReadTool['function']['name']:
+        _validate_required_args(tool_name, arguments, ['url'])
+        return BrowseURLAction(url=arguments['url'])
+
+    return AgentThinkAction(
+        thought=f'Tool {tool_name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
+    )
+
+
+built_in_tools = {
+    create_cmd_run_tool()['function']['name'],
+    IPythonTool['function']['name'],
+    'delegate_to_browsing_agent',
+    FinishTool['function']['name'],
+    LLMBasedFileEditTool['function']['name'],
+    create_str_replace_editor_tool()['function']['name'],
+    ThinkTool['function']['name'],
+    BrowserTool['function']['name'],
+    WebReadTool['function']['name'],
+}
+
+
+def _parse_tool_call(
+    tool_call,
+    sid: str | None,
+    workspace_mount_path_in_sandbox_store_in_session: bool,
+    tools: list[dict] | None,
+    enable_think: bool,
+) -> Action:
+    """Parse a single tool call into an action."""
+    try:
+        arguments = json.loads(tool_call.function.arguments)
+    except json.decoder.JSONDecodeError as e:
+        raise RuntimeError(
+            f'Failed to parse tool call arguments: {tool_call.function.arguments}'
+        ) from e
+
+    tool_name = tool_call.function.name
+    logger.info(f'Tool call in function_calling.py: {tool_name}')
+
+    # Handle MCP tools
+    if tool_name.endswith(MCPClientTool.postfix()):
+        original_action_name = tool_name.replace(MCPClientTool.postfix(), '')
+        logger.info(f'Original action name: {original_action_name}')
+
+        # Check if MCP tool is available
+        tool_found = any(
+            tool.get('function', {}).get('name') == tool_name for tool in tools or []
+        )
+
+        if tool_found:
+            # Handle MCP tool
+            if 'pyodide' in original_action_name:
+                arguments['sessionId'] = (
+                    sid  # Always use session ID for deterministic results
+                )
+            return McpAction(
+                name=original_action_name,
+                arguments=json.dumps(arguments),
+            )
+        else:
+            # Check if original action name matches a built-in tool
+
+            if original_action_name in built_in_tools:
+                # Handle as built-in tool
+                action = _parse_builtin_tool(
+                    original_action_name,
+                    arguments,
+                    sid,
+                    workspace_mount_path_in_sandbox_store_in_session,
+                    enable_think,
+                )
+                if action:
+                    return action
+
+            # Tool not found in either MCP or built-in
+            return AgentThinkAction(
+                thought=f'MCP tool {tool_name} is not available. Please check the available tools and retry with an existing tool.'
+            )
+    elif tool_name == 'a2a_list_remote_agents':
+        return A2AListRemoteAgentsAction()
+    elif tool_name == 'a2a_send_task':
+        _validate_required_args(tool_name, arguments, ['agent_name', 'task_message'])
+        return A2ASendTaskAction(
+            agent_name=arguments['agent_name'],
+            task_message=arguments['task_message'],
+        )
+
+    # Handle built-in tools
+    action = _parse_builtin_tool(
+        tool_name,
+        arguments,
+        sid,
+        workspace_mount_path_in_sandbox_store_in_session,
+        enable_think,
+    )
+    if action:
+        return action
+
+    # Unknown tool
+    return AgentThinkAction(
+        thought=f'Tool {tool_name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
+    )
+
+
 def response_to_actions(
     response: ModelResponse,
     sid: str | None = None,
@@ -83,200 +299,13 @@ def response_to_actions(
         for i, tool_call in enumerate(assistant_msg.tool_calls):
             action: Action
             logger.info(f'Tool call in function_calling.py: {tool_call.function.name}')
-            try:
-                arguments = json.loads(tool_call.function.arguments)
-            except json.decoder.JSONDecodeError as e:
-                raise RuntimeError(
-                    f'Failed to parse tool call arguments: {tool_call.function.arguments}'
-                ) from e
-
-            # ================================================
-            # CmdRunTool (Bash)
-            # ================================================
-
-            if tool_call.function.name == create_cmd_run_tool()['function']['name']:
-                if 'command' not in arguments:
-                    raise FunctionCallValidationError(
-                        f'Missing required argument "command" in tool call {tool_call.function.name}'
-                    )
-                # convert is_input to boolean
-                is_input = arguments.get('is_input', 'false') == 'true'
-                action = CmdRunAction(command=arguments['command'], is_input=is_input)
-
-            # ================================================
-            # IPythonTool (Jupyter)
-            # ================================================
-            elif tool_call.function.name == IPythonTool['function']['name']:
-                if 'code' not in arguments:
-                    raise FunctionCallValidationError(
-                        f'Missing required argument "code" in tool call {tool_call.function.name}'
-                    )
-                action = IPythonRunCellAction(code=arguments['code'])
-            elif tool_call.function.name == 'delegate_to_browsing_agent':
-                action = AgentDelegateAction(
-                    agent='BrowsingAgent',
-                    inputs=arguments,
-                )
-
-            # ================================================
-            # AgentFinishActionc
-            # ================================================
-            elif tool_call.function.name == FinishTool['function']['name']:
-                logger.debug(f'FinishTool: {arguments}')
-                action = AgentFinishAction(
-                    final_thought=arguments.get('message', ''),
-                    task_completed=arguments.get('task_completed', None),
-                    enable_think=enable_think,
-                )
-
-            # ================================================
-            # LLMBasedFileEditTool (LLM-based file editor, deprecated)
-            # ================================================
-            elif tool_call.function.name == LLMBasedFileEditTool['function']['name']:
-                if 'path' not in arguments:
-                    raise FunctionCallValidationError(
-                        f'Missing required argument "path" in tool call {tool_call.function.name}'
-                    )
-                if 'content' not in arguments:
-                    raise FunctionCallValidationError(
-                        f'Missing required argument "content" in tool call {tool_call.function.name}'
-                    )
-                path: str = arguments['path']
-                if (
-                    sid is not None
-                    and sid not in path
-                    and workspace_mount_path_in_sandbox_store_in_session
-                ):
-                    path = put_session_id_in_path(path, sid)
-                    if path == '':
-                        raise FunctionCallValidationError(
-                            f"Invalid path: {path}. Original path: {arguments['path']}. Please provide a valid path."
-                        )
-
-                action = FileEditAction(
-                    path=path,
-                    content=arguments['content'],
-                    start=arguments.get('start', 1),
-                    end=arguments.get('end', -1),
-                )
-            elif (
-                tool_call.function.name
-                == create_str_replace_editor_tool()['function']['name']
-            ):
-                if 'command' not in arguments:
-                    raise FunctionCallValidationError(
-                        f'Missing required argument "command" in tool call {tool_call.function.name}'
-                    )
-                if 'path' not in arguments:
-                    raise FunctionCallValidationError(
-                        f'Missing required argument "path" in tool call {tool_call.function.name}'
-                    )
-                path = arguments['path']
-                if (
-                    sid is not None
-                    and sid != ''
-                    and sid not in path
-                    and workspace_mount_path_in_sandbox_store_in_session
-                ):
-                    path = put_session_id_in_path(path, sid)
-                    if path == '':
-                        raise FunctionCallValidationError(
-                            f"Invalid path: {path}. Original path: {arguments['path']}. Please provide a valid path."
-                        )
-                command = arguments['command']
-                other_kwargs = {
-                    k: v for k, v in arguments.items() if k not in ['command', 'path']
-                }
-
-                if command == 'view':
-                    action = FileReadAction(
-                        path=path,
-                        impl_source=FileReadSource.OH_ACI,
-                        view_range=other_kwargs.get('view_range', None),
-                    )
-                else:
-                    if 'view_range' in other_kwargs:
-                        # Remove view_range from other_kwargs since it is not needed for FileEditAction
-                        other_kwargs.pop('view_range')
-                    action = FileEditAction(
-                        path=path,
-                        command=command,
-                        impl_source=FileEditSource.OH_ACI,
-                        **other_kwargs,
-                    )
-            # ================================================
-            # AgentThinkAction
-            # ================================================
-            elif tool_call.function.name == ThinkTool['function']['name']:
-                action = AgentThinkAction(thought=arguments.get('thought', ''))
-
-            # ================================================
-            # BrowserTool
-            # ================================================
-            elif tool_call.function.name == BrowserTool['function']['name']:
-                if 'code' not in arguments:
-                    raise FunctionCallValidationError(
-                        f'Missing required argument "code" in tool call {tool_call.function.name}'
-                    )
-                action = BrowseInteractiveAction(browser_actions=arguments['code'])
-
-            # ================================================
-            # WebReadTool (simplified browsing)
-            # ================================================
-            elif tool_call.function.name == WebReadTool['function']['name']:
-                if 'url' not in arguments:
-                    raise FunctionCallValidationError(
-                        f'Missing required argument "url" in tool call {tool_call.function.name}'
-                    )
-                action = BrowseURLAction(url=arguments['url'])
-
-            # ================================================
-            # McpAction (MCP)
-            # ================================================
-            elif tool_call.function.name.endswith(MCPClientTool.postfix()):
-                original_action_name = tool_call.function.name.replace(
-                    MCPClientTool.postfix(), ''
-                )
-                logger.info(f'Original action name: {original_action_name}')
-
-                tool_found = any(
-                    tool.get('function', {}).get('name') == tool_call.function.name
-                    for tool in tools or []
-                )
-
-                if not tool_found:
-                    action = AgentThinkAction(
-                        thought=f'MCP tool {tool_call.function.name} is not available. Please check the available tools and retry with an existing tool.'
-                    )
-                else:
-                    arguments = json.loads(tool_call.function.arguments)
-                    if 'pyodide' in original_action_name:
-                        # we don't trust sessionId passed by the LLM. Always use the one from the session to get deterministic results
-                        arguments['sessionId'] = sid
-                    # Update the arguments string with the modified sessionId
-                    updated_arguments_str = json.dumps(arguments)
-                    action = McpAction(
-                        name=original_action_name,
-                        arguments=updated_arguments_str,
-                    )
-            # ================================================
-            # A2A
-            # ================================================
-            elif tool_call.function.name == 'a2a_list_remote_agents':
-                action = A2AListRemoteAgentsAction()
-            elif tool_call.function.name == 'a2a_send_task':
-                if 'agent_name' and 'task_message' not in arguments:
-                    raise FunctionCallValidationError(
-                        f'Missing required argument "agent_name" and "task_message" in tool call {tool_call.function.name}'
-                    )
-                action = A2ASendTaskAction(
-                    agent_name=arguments['agent_name'],
-                    task_message=arguments['task_message'],
-                )
-            else:
-                action = AgentThinkAction(
-                    thought=f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
-                )
+            action = _parse_tool_call(
+                tool_call,
+                sid,
+                workspace_mount_path_in_sandbox_store_in_session,
+                tools,
+                enable_think,
+            )
 
             # We only add thought to the first action
             if i == 0:
@@ -295,6 +324,7 @@ def response_to_actions(
             MessageAction(
                 content=str(assistant_msg.content) if assistant_msg.content else '',
                 wait_for_response=True,
+                enable_think=enable_think,
             )
         )
 

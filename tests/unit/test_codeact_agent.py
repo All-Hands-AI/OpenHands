@@ -26,6 +26,7 @@ from openhands.core.message import ImageContent, Message, TextContent
 from openhands.core.schema.research import ResearchMode
 from openhands.events.action import (
     CmdRunAction,
+    FileReadAction,
     MessageAction,
 )
 from openhands.events.action.agent import AgentThinkAction
@@ -748,6 +749,40 @@ def test_mcp_tool_not_found():
     assert (
         'Please check the available tools and retry with an existing tool'
         in actions[0].thought
+    )
+
+
+def test_mcp_tool_fallback_to_builtin():
+    """Test that MCP tool calls fallback to built-in tools when MCP tool is not available."""
+    # Create a mock response with MCP tool call that's not in tools list
+    mock_response = Mock(spec=ModelResponse)
+    mock_response.id = 'test_response_id'
+    mock_response.choices = [Mock()]
+
+    # Create tool call for MCP version of str_replace_editor
+    tool_call = Mock(spec=ChatCompletionMessageToolCall)
+    tool_call.id = 'test_tool_call_id'
+    tool_call.function = Mock()
+    tool_call.function.name = 'str_replace_editor_mcp_tool_call'  # MCP version
+    tool_call.function.arguments = '{"command": "view", "path": "/test/file.py"}'
+
+    mock_response.choices[0].message = Mock()
+    mock_response.choices[0].message.tool_calls = [tool_call]
+    mock_response.choices[0].message.content = ''
+
+    # No MCP tools available (empty tools list)
+    tools = []
+
+    # Call response_to_actions
+    actions = response_to_actions(mock_response, tools=tools)
+
+    # Should fallback to built-in FileReadAction
+    assert len(actions) == 1
+    assert isinstance(actions[0], FileReadAction)
+    assert actions[0].path == '/test/file.py'
+    assert (
+        actions[0].tool_call_metadata.function_name
+        == 'str_replace_editor_mcp_tool_call'
     )
 
 

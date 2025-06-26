@@ -11,6 +11,7 @@ from openhands.events.action import (
     NullAction,
 )
 from openhands.events.action.agent import RecallAction
+from openhands.events.action.message import StreamingMessageAction
 from openhands.events.async_event_store_wrapper import AsyncEventStoreWrapper
 from openhands.events.observation import (
     NullObservation,
@@ -230,7 +231,7 @@ async def connect(connection_id: str, environ):
             logger.debug(f'oh_event: {event.__class__.__name__}')
             if isinstance(
                 event,
-                (NullAction, NullObservation, RecallAction),
+                (NullAction, NullObservation, RecallAction, StreamingMessageAction),
             ):
                 continue
             elif isinstance(event, AgentStateChangedObservation):
@@ -242,6 +243,15 @@ async def connect(connection_id: str, environ):
                 )
 
                 new_event_dict = {**event_dict, 'initialize_conversation': True}
+                args = new_event_dict.get('args', {})
+                tool_call_metadata = new_event_dict.get('tool_call_metadata', {})
+                if 'enable_think' not in args or not args.get('enable_think'):
+                    args['enable_think'] = True
+                if (
+                    'enable_show_thought' not in tool_call_metadata
+                    or not tool_call_metadata.get('enable_show_thought')
+                ):
+                    tool_call_metadata['enable_show_thought'] = True
                 if (
                     mode == 'shared'
                     and new_event_dict.get('source') == 'user'
