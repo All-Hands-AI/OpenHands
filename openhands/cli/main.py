@@ -433,23 +433,7 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
         return
 
     # Read task from file, CLI args, or stdin
-    if args.file:
-        # For CLI usage, we want to enhance the file content with a prompt
-        # that instructs the agent to read and understand the file first
-        with open(args.file, 'r', encoding='utf-8') as file:
-            file_content = file.read()
-
-        # Create a prompt that instructs the agent to read and understand the file first
-        task_str = f"""The user has tagged a file '{args.file}'.
-Please read and understand the following file content first:
-
-```
-{file_content}
-```
-
-After reviewing the file, please ask the user what they would like to do with it."""
-    else:
-        task_str = read_task(args, config.cli_multiline_input)
+    task_str = read_task(args, config.cli_multiline_input)
 
     # Run the first session
     new_session_requested = await run_session(
