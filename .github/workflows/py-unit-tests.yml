@@ -79,7 +79,7 @@ jobs:
         env:
           DEBUG: "1"
       - name: Run Windows runtime tests with LocalRuntime
-        run: $env:TEST_RUNTIME="local"; poetry run pytest -svv tests/runtime/test_bash.py --timeout=1800
+        run: $env:TEST_RUNTIME="local"; poetry run pytest -svv tests/runtime/test_bash.py
         env:
           TEST_RUNTIME: local
           DEBUG: "1"
