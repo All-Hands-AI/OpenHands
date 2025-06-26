@@ -3,7 +3,7 @@
 import os
 
 import pytest
-from conftest import _close_test_runtime, _load_runtime
+from conftest import TEST_RUNTIME, _close_test_runtime, _load_runtime
 
 from openhands.events.observation import (
     ErrorObservation,
@@ -75,7 +75,7 @@ def test_gemini_read_file_action():
     assert 'limit' not in action_dict
 
 
-@pytest.mark.skip(reason='Requires Docker runtime which is not available in CI')
+@pytest.mark.skipif(TEST_RUNTIME != 'docker', reason='Test requires Docker runtime')
 def test_gemini_file_editor_replace(temp_dir, runtime_cls, run_as_openhands):
     """Test GeminiFileEditor replace functionality."""
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
@@ -117,7 +117,7 @@ def test_gemini_file_editor_replace(temp_dir, runtime_cls, run_as_openhands):
         _close_test_runtime(runtime)
 
 
-@pytest.mark.skip(reason='Requires Docker runtime which is not available in CI')
+@pytest.mark.skipif(TEST_RUNTIME != 'docker', reason='Test requires Docker runtime')
 def test_gemini_file_editor_replace_multiple_occurrences(
     temp_dir, runtime_cls, run_as_openhands
 ):
@@ -171,7 +171,7 @@ def test_gemini_file_editor_replace_multiple_occurrences(
         _close_test_runtime(runtime)
 
 
-@pytest.mark.skip(reason='Requires Docker runtime which is not available in CI')
+@pytest.mark.skipif(TEST_RUNTIME != 'docker', reason='Test requires Docker runtime')
 def test_gemini_file_editor_replace_nonexistent_string(
     temp_dir, runtime_cls, run_as_openhands
 ):
@@ -205,7 +205,7 @@ def test_gemini_file_editor_replace_nonexistent_string(
         _close_test_runtime(runtime)
 
 
-@pytest.mark.skip(reason='Requires Docker runtime which is not available in CI')
+@pytest.mark.skipif(TEST_RUNTIME != 'docker', reason='Test requires Docker runtime')
 def test_gemini_file_editor_write_file(temp_dir, runtime_cls, run_as_openhands):
     """Test GeminiFileEditor write_file functionality."""
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
@@ -255,7 +255,7 @@ def test_gemini_file_editor_write_file(temp_dir, runtime_cls, run_as_openhands):
         _close_test_runtime(runtime)
 
 
-@pytest.mark.skip(reason='Requires Docker runtime which is not available in CI')
+@pytest.mark.skipif(TEST_RUNTIME != 'docker', reason='Test requires Docker runtime')
 def test_gemini_file_editor_read_file(temp_dir, runtime_cls, run_as_openhands):
     """Test GeminiFileEditor read_file functionality."""
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
@@ -309,7 +309,7 @@ def test_gemini_file_editor_read_file(temp_dir, runtime_cls, run_as_openhands):
         _close_test_runtime(runtime)
 
 
-@pytest.mark.skip(reason='Requires Docker runtime which is not available in CI')
+@pytest.mark.skipif(TEST_RUNTIME != 'docker', reason='Test requires Docker runtime')
 def test_gemini_file_editor_read_nonexistent_file(
     temp_dir, runtime_cls, run_as_openhands
 ):
@@ -331,7 +331,7 @@ def test_gemini_file_editor_read_nonexistent_file(
         _close_test_runtime(runtime)
 
 
-@pytest.mark.skip(reason='Requires Docker runtime which is not available in CI')
+@pytest.mark.skipif(TEST_RUNTIME != 'docker', reason='Test requires Docker runtime')
 def test_gemini_file_editor_read_with_invalid_offset(
     temp_dir, runtime_cls, run_as_openhands
 ):
@@ -372,7 +372,7 @@ def test_gemini_file_editor_read_with_invalid_offset(
         _close_test_runtime(runtime)
 
 
-@pytest.mark.skip(reason='Requires Docker runtime which is not available in CI')
+@pytest.mark.skipif(TEST_RUNTIME != 'docker', reason='Test requires Docker runtime')
 def test_gemini_file_editor_read_with_invalid_limit(
     temp_dir, runtime_cls, run_as_openhands
 ):
