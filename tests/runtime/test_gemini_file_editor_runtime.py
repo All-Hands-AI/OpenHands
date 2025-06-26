@@ -1,9 +1,31 @@
 """Runtime tests for Gemini-style file editing tools."""
 
 import os
+import subprocess
+import sys
 
 import pytest
 from conftest import TEST_RUNTIME, _close_test_runtime, _load_runtime
+
+# Check if Docker is available
+def is_docker_available():
+    """Check if Docker is available."""
+    try:
+        subprocess.run(
+            ["docker", "info"], 
+            stdout=subprocess.PIPE, 
+            stderr=subprocess.PIPE, 
+            check=True
+        )
+        return True
+    except (subprocess.SubprocessError, FileNotFoundError):
+        return False
+
+# Skip all tests if Docker is not available
+pytestmark = pytest.mark.skipif(
+    not is_docker_available(),
+    reason="Docker is not available"
+)
 
 from openhands.events.observation import (
     ErrorObservation,
