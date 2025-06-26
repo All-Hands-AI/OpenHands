@@ -36,7 +36,8 @@ class SecurityAnalyzer:
             return
 
         try:
-            # Analyze the event for security risks
+            # Set the security_risk attribute on the event
+            event.security_risk = await self.security_risk(event)  # type: ignore [attr-defined]
             await self.act(event)
         except Exception as e:
             logger.error(f'Error occurred while analyzing the event: {e}')
