@@ -118,6 +118,13 @@ class Session:
         )
         max_iterations = settings.max_iterations or self.config.max_iterations
 
+        # Prioritize settings over config for max_budget_per_task
+        max_budget_per_task = (
+            settings.max_budget_per_task
+            if settings.max_budget_per_task is not None
+            else self.config.max_budget_per_task
+        )
+
         # This is a shallow copy of the default LLM config, so changes here will
         # persist if we retrieve the default LLM config again when constructing
         # the agent
@@ -126,6 +133,8 @@ class Session:
         default_llm_config.api_key = settings.llm_api_key
         default_llm_config.base_url = settings.llm_base_url
         self.config.search_api_key = settings.search_api_key
+        if settings.sandbox_api_key:
+            self.config.sandbox.api_key = settings.sandbox_api_key.get_secret_value()
 
         # NOTE: this need to happen AFTER the config is updated with the search_api_key
         self.config.mcp = settings.mcp_config or MCPConfig(
@@ -138,7 +147,7 @@ class Session:
             )
         )
         if openhands_mcp_server:
-            self.config.mcp.sse_servers.append(openhands_mcp_server)
+            self.config.mcp.shttp_servers.append(openhands_mcp_server)
         self.config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
 
         # TODO: override other LLM config & agent config groups (#2075)
@@ -161,7 +170,7 @@ class Session:
                 condensers=[
                     BrowserOutputCondenserConfig(attention_window=2),
                     LLMSummarizingCondenserConfig(
-                        llm_config=llm.config, keep_first=4, max_size=80
+                        llm_config=llm.config, keep_first=4, max_size=120
                     ),
                 ]
             )
@@ -200,7 +209,7 @@ class Session:
                 config=self.config,
                 agent=agent,
                 max_iterations=max_iterations,
-                max_budget_per_task=self.config.max_budget_per_task,
+                max_budget_per_task=max_budget_per_task,
                 agent_to_llm_config=self.config.get_agent_to_llm_config_map(),
                 agent_configs=self.config.get_agent_configs(),
                 git_provider_tokens=git_provider_tokens,
@@ -281,8 +290,8 @@ class Session:
                 isinstance(event, AgentStateChangedObservation)
                 and event.agent_state == AgentState.ERROR
             ):
-                self.logger.info(
-                    'Agent status error',
+                self.logger.error(
+                    f'Agent status error: {event.reason}',
                     extra={'signal': 'agent_status_error'},
                 )
         elif isinstance(event, ErrorObservation):
@@ -340,8 +349,8 @@ class Session:
             controller = self.agent_session.controller
             if controller is not None and not agent_session.is_closed():
                 await controller.set_agent_state_to(AgentState.ERROR)
-            self.logger.info(
-                'Agent status error',
+            self.logger.error(
+                f'Agent status error: {message}',
                 extra={'signal': 'agent_status_error'},
             )
         await self.send(

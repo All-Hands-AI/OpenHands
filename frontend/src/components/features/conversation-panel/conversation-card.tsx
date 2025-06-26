@@ -4,13 +4,12 @@ import posthog from "posthog-js";
 import { useTranslation } from "react-i18next";
 import { formatTimeDelta } from "#/utils/format-time-delta";
 import { ConversationRepoLink } from "./conversation-repo-link";
-import {
-  ProjectStatus,
-  ConversationStateIndicator,
-} from "./conversation-state-indicator";
+import { ConversationStateIndicator } from "./conversation-state-indicator";
 import { EllipsisButton } from "./ellipsis-button";
 import { ConversationCardContextMenu } from "./conversation-card-context-menu";
 import { SystemMessageModal } from "./system-message-modal";
+import { MicroagentsModal } from "./microagents-modal";
+import { BudgetDisplay } from "./budget-display";
 import { cn } from "#/utils/utils";
 import { BaseModal } from "../../shared/modals/base-modal/base-modal";
 import { RootState } from "#/store";
@@ -19,6 +18,7 @@ import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
 import OpenHands from "#/api/open-hands";
 import { useWsClient } from "#/context/ws-client-provider";
 import { isSystemMessage } from "#/types/core/guards";
+import { ConversationStatus } from "#/types/conversation-status";
 
 interface ConversationCardProps {
   onClick?: () => void;
@@ -30,7 +30,7 @@ interface ConversationCardProps {
   selectedRepository: string | null;
   lastUpdatedAt: string; // ISO 8601
   createdAt?: string; // ISO 8601
-  status?: ProjectStatus;
+  conversationStatus?: ConversationStatus;
   variant?: "compact" | "default";
   conversationId?: string; // Optional conversation ID for VS Code URL
 }
@@ -49,7 +49,7 @@ export function ConversationCard({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   lastUpdatedAt,
   createdAt,
-  status = "STOPPED",
+  conversationStatus = "STOPPED",
   variant = "default",
   conversationId,
 }: ConversationCardProps) {
@@ -59,6 +59,8 @@ export function ConversationCard({
   const [titleMode, setTitleMode] = React.useState<"view" | "edit">("view");
   const [metricsModalVisible, setMetricsModalVisible] = React.useState(false);
   const [systemModalVisible, setSystemModalVisible] = React.useState(false);
+  const [microagentsModalVisible, setMicroagentsModalVisible] =
+    React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const systemMessage = parsedEvents.find(isSystemMessage);
@@ -142,6 +144,13 @@ export function ConversationCard({
     setSystemModalVisible(true);
   };
 
+  const handleShowMicroagents = (
+    event: React.MouseEvent<HTMLButtonElement>,
+  ) => {
+    event.stopPropagation();
+    setMicroagentsModalVisible(true);
+  };
+
   React.useEffect(() => {
     if (titleMode === "edit") {
       inputRef.current?.focus();
@@ -196,7 +205,9 @@ export function ConversationCard({
           </div>
 
           <div className="flex items-center">
-            <ConversationStateIndicator status={status} />
+            <ConversationStateIndicator
+              conversationStatus={conversationStatus}
+            />
             {hasContextMenu && (
               <div className="pl-2">
                 <EllipsisButton
@@ -223,6 +234,11 @@ export function ConversationCard({
                   onShowAgentTools={
                     showOptions && systemMessage
                       ? handleShowAgentTools
+                      : undefined
+                  }
+                  onShowMicroagents={
+                    showOptions && conversationId
+                      ? handleShowMicroagents
                       : undefined
                   }
                   position={variant === "compact" ? "top" : "bottom"}
@@ -270,7 +286,7 @@ export function ConversationCard({
             <div className="rounded-md p-3">
               <div className="grid gap-3">
                 {metrics?.cost !== null && (
-                  <div className="flex justify-between items-center border-b border-neutral-700 pb-2">
+                  <div className="flex justify-between items-center pb-2">
                     <span className="text-lg font-semibold">
                       {t(I18nKey.CONVERSATION$TOTAL_COST)}
                     </span>
@@ -279,6 +295,10 @@ export function ConversationCard({
                     </span>
                   </div>
                 )}
+                <BudgetDisplay
+                  cost={metrics?.cost ?? null}
+                  maxBudgetPerTask={metrics?.max_budget_per_task ?? null}
+                />
 
                 {metrics?.usage !== null && (
                   <>
@@ -367,6 +387,13 @@ export function ConversationCard({
         onClose={() => setSystemModalVisible(false)}
         systemMessage={systemMessage ? systemMessage.args : null}
       />
+
+      {microagentsModalVisible && (
+        <MicroagentsModal
+          onClose={() => setMicroagentsModalVisible(false)}
+          conversationId={conversationId}
+        />
+      )}
     </>
   );
 }

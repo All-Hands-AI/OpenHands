@@ -208,9 +208,7 @@ async def test_run_session_without_initial_action(
     mock_display_runtime_init.assert_called_once_with('local')
     mock_display_animation.assert_called_once()
     mock_create_agent.assert_called_once_with(mock_config)
-    mock_add_mcp_tools.assert_called_once_with(
-        mock_agent, mock_runtime, mock_memory, mock_config
-    )
+    mock_add_mcp_tools.assert_called_once_with(mock_agent, mock_runtime, mock_memory)
     mock_create_runtime.assert_called_once()
     mock_create_controller.assert_called_once()
     mock_create_memory.assert_called_once()
@@ -381,7 +379,7 @@ async def test_main_without_task(
     mock_run_session.return_value = False
 
     # Run the function
-    await cli.main(loop)
+    await cli.main_with_loop(loop)
 
     # Assertions
     mock_parse_args.assert_called_once()
@@ -393,7 +391,13 @@ async def test_main_without_task(
 
     # Check that run_session was called with expected arguments
     mock_run_session.assert_called_once_with(
-        loop, mock_config, mock_settings_store, '/test/dir', None, session_name=None
+        loop,
+        mock_config,
+        mock_settings_store,
+        '/test/dir',
+        None,
+        session_name=None,
+        skip_banner=False,
     )
 
 
@@ -458,7 +462,7 @@ async def test_main_with_task(
     mock_run_session.side_effect = [True, False]
 
     # Run the function
-    await cli.main(loop)
+    await cli.main_with_loop(loop)
 
     # Assertions
     mock_parse_args.assert_called_once()
@@ -553,7 +557,7 @@ async def test_main_with_session_name_passes_name_to_run_session(
     mock_run_session.return_value = False
 
     # Run the function
-    await cli.main(loop)
+    await cli.main_with_loop(loop)
 
     # Assertions
     mock_parse_args.assert_called_once()
@@ -571,6 +575,7 @@ async def test_main_with_session_name_passes_name_to_run_session(
         '/test/dir',
         None,
         session_name=test_session_name,
+        skip_banner=False,
     )
 
 
@@ -713,7 +718,7 @@ async def test_main_security_check_fails(
     mock_check_security.return_value = False
 
     # Run the function
-    await cli.main(loop)
+    await cli.main_with_loop(loop)
 
     # Assertions
     mock_parse_args.assert_called_once()
@@ -796,7 +801,7 @@ async def test_config_loading_order(
     mock_run_session.return_value = False  # No new session requested
 
     # Run the function
-    await cli.main(loop)
+    await cli.main_with_loop(loop)
 
     # Assertions for argument parsing and config setup
     mock_parse_args.assert_called_once()

@@ -112,7 +112,7 @@ def codeact_user_response(
 ) -> str:
     encaps_str = (
         (
-            'Please encapsulate your final answer (answer ONLY) within <solution> and </solution>.\n'
+            'Your final answer MUST be encapsulated within <solution> and </solution>.\n'
             'For example: The answer to the question is <solution> 42 </solution>.\n'
         )
         if encapsulate_solution
@@ -120,7 +120,7 @@ def codeact_user_response(
     )
     msg = (
         'Please continue working on the task on whatever approach you think is suitable.\n'
-        'If you think you have solved the task, please first send your answer to user through message and then finish the interaction.\n'
+        'When you think you have solved the question, please use the finish tool and include your final answer in the message parameter of the finish tool.\n'
         f'{encaps_str}'
         'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP.\n'
     )
@@ -266,8 +266,19 @@ def prepare_dataset(
             f'Randomly sampling {eval_n_limit} unique instances with random seed 42.'
         )
 
+    def make_serializable(instance: pd.Series) -> dict:
+        import numpy as np
+
+        instance_dict = instance.to_dict()
+        for k, v in instance_dict.items():
+            if isinstance(v, np.ndarray):
+                instance_dict[k] = v.tolist()
+            elif isinstance(v, pd.Timestamp):
+                instance_dict[k] = str(v)
+        return instance_dict
+
     new_dataset = [
-        instance
+        make_serializable(instance)
         for _, instance in dataset.iterrows()
         if str(instance[id_column]) not in finished_ids
     ]
