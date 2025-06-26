@@ -120,9 +120,7 @@ def process_instance(
     """
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
-        assert log_dir is not None, (
-            "Can't reset logger without a provided log directory."
-        )
+        assert log_dir is not None, "Can't reset logger without a provided log directory."
         os.makedirs(log_dir, exist_ok=True)
         reset_logger_for_multiprocessing(logger, instance.instance_id, log_dir)
     else:
@@ -222,9 +220,7 @@ def process_instance(
 
             if isinstance(obs, CmdOutputObservation) and obs.exit_code == 0:
                 pid = obs.content.split()[-1].strip()
-                logger.info(
-                    f'[{instance_id}] Evaluation process started with PID: {pid}'
-                )
+                logger.info(f'[{instance_id}] Evaluation process started with PID: {pid}')
 
                 # Poll for completion
                 start_time = time.time()
@@ -232,27 +228,16 @@ def process_instance(
                 while True:
                     seconds_elapsed = time.time() - start_time
                     if seconds_elapsed > timeout:
-                        logger.info(
-                            f'[{instance_id}] Evaluation timed out after {timeout} seconds'
-                        )
+                        logger.info(f'[{instance_id}] Evaluation timed out after {timeout} seconds')
                         instance['test_result']['report']['test_timeout'] = True
                         break
-                    check_action = CmdRunAction(
-                        command=f'ps -p {pid} > /dev/null; echo $?'
-                    )
+                    check_action = CmdRunAction(command=f'ps -p {pid} > /dev/null; echo $?')
                     check_action.set_hard_timeout(300)
                     check_obs = runtime.run_action(check_action)
-                    if (
-                        isinstance(check_obs, CmdOutputObservation)
-                        and check_obs.content.split()[-1].strip() == '1'
-                    ):
-                        logger.info(
-                            f'[{instance_id}] Evaluation process completed after {seconds_elapsed} seconds'
-                        )
+                    if isinstance(check_obs, CmdOutputObservation) and check_obs.content.split()[-1].strip() == '1':
+                        logger.info(f'[{instance_id}] Evaluation process completed after {seconds_elapsed} seconds')
                         break
-                    logger.info(
-                        f'[{instance_id}] [{seconds_elapsed:.0f}s] Evaluation still running, waiting...'
-                    )
+                    logger.info(f'[{instance_id}] [{seconds_elapsed:.0f}s] Evaluation still running, waiting...')
                     time.sleep(30)  # Wait for 30 seconds before checking again
 
                 # Read the log file
@@ -291,13 +276,9 @@ def process_instance(
                             logger.info(
                                 f'[{instance_id}] report: {report}\nResult for {instance_id}: resolved: {report["resolved"]}'
                             )
-                            instance['test_result']['report']['resolved'] = report[
-                                'resolved'
-                            ]
+                            instance['test_result']['report']['resolved'] = report['resolved']
                         except Exception as e:
-                            logger.error(
-                                f'[{instance_id}] Error when getting eval report: {e}'
-                            )
+                            logger.error(f'[{instance_id}] Error when getting eval report: {e}')
                             instance['test_result']['report']['resolved'] = False
                             instance['test_result']['report']['error_eval'] = True
             else:
@@ -310,9 +291,7 @@ def process_instance(
                 metadata=metadata,
             )
         else:
-            logger.info(
-                f'[{instance_id}] Unexpected output when applying patch:\n{apply_patch_output}'
-            )
+            logger.info(f'[{instance_id}] Unexpected output when applying patch:\n{apply_patch_output}')
             raise RuntimeError(
                 instance_id,
                 f'Unexpected output when applying patch:\n{apply_patch_output}',
@@ -345,15 +324,9 @@ if __name__ == '__main__':
     args, _ = parser.parse_known_args()
 
     # Load SWE-Bench dataset
-    full_dataset: list[SWEbenchInstance] = load_swebench_dataset(
-        args.dataset, args.split
-    )
-    instance_id_to_instance = {
-        instance['instance_id']: instance for instance in full_dataset
-    }
-    logger.info(
-        f'Loaded dataset {args.dataset} with split {args.split} to run inference on.'
-    )
+    full_dataset: list[SWEbenchInstance] = load_swebench_dataset(args.dataset, args.split)
+    instance_id_to_instance = {instance['instance_id']: instance for instance in full_dataset}
+    logger.info(f'Loaded dataset {args.dataset} with split {args.split} to run inference on.')
 
     # Load predictions
     assert args.input_file.endswith('.jsonl'), 'Input file must be a jsonl file.'
@@ -365,25 +338,16 @@ if __name__ == '__main__':
                 for line in tqdm(f, desc='Loading predictions')
             ]
         )
-    assert 'instance_id' in predictions.columns, (
-        'Input file must contain instance_id column.'
-    )
+    assert 'instance_id' in predictions.columns, 'Input file must contain instance_id column.'
 
     if 'model_patch' not in predictions.columns and (
-        'test_result' in predictions.columns
-        and 'model_patch' in predictions['test_result'].iloc[0]
+        'test_result' in predictions.columns and 'model_patch' in predictions['test_result'].iloc[0]
     ):
-        raise ValueError(
-            'Input file must contain model_patch column OR test_result column with model_patch field.'
-        )
-    assert len(predictions['instance_id'].unique()) == len(predictions), (
-        'instance_id column must be unique.'
-    )
+        raise ValueError('Input file must contain model_patch column OR test_result column with model_patch field.')
+    assert len(predictions['instance_id'].unique()) == len(predictions), 'instance_id column must be unique.'
 
     if 'model_patch' not in predictions.columns:
-        predictions['model_patch'] = predictions['test_result'].apply(
-            lambda x: x.get('git_patch', '')
-        )
+        predictions['model_patch'] = predictions['test_result'].apply(lambda x: x.get('git_patch', ''))
     assert {'instance_id', 'model_patch'}.issubset(set(predictions.columns)), (
         'Input file must contain instance_id and model_patch columns.'
     )
@@ -392,9 +356,7 @@ if __name__ == '__main__':
     predictions['model_patch'] = predictions['model_patch'].apply(process_git_patch)
 
     # Merge predictions with dataset
-    predictions['instance'] = predictions['instance_id'].apply(
-        lambda x: instance_id_to_instance[x]
-    )
+    predictions['instance'] = predictions['instance_id'].apply(lambda x: instance_id_to_instance[x])
     predictions['test_spec'] = predictions['instance'].apply(make_test_spec)
 
     # Prepare dataset
@@ -414,21 +376,15 @@ if __name__ == '__main__':
             agent_class='dummy_agent',  # Placeholder agent class
             llm_config=LLMConfig(model='dummy_model'),  # Minimal LLM config
             max_iterations=1,  # Minimal iterations
-            eval_output_dir=os.path.dirname(
-                args.input_file
-            ),  # Use input file dir as output dir
+            eval_output_dir=os.path.dirname(args.input_file),  # Use input file dir as output dir
             start_time=time.strftime('%Y-%m-%d %H:%M:%S'),  # Current time
-            git_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'])
-            .decode('utf-8')
-            .strip(),  # Current commit
+            git_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('utf-8').strip(),  # Current commit
             dataset=args.dataset,  # Dataset name from args
         )
 
     # The evaluation harness constrains the signature of `process_instance_func` but we need to
     # pass extra information. Build a new function object to avoid issues with multiprocessing.
-    process_instance_func = partial(
-        process_instance, log_dir=output_file.replace('.jsonl', '.logs')
-    )
+    process_instance_func = partial(process_instance, log_dir=output_file.replace('.jsonl', '.logs'))
 
     run_evaluation(
         instances,
@@ -447,10 +403,6 @@ if __name__ == '__main__':
 
     report = {}
     for field in fields:
-        count = evaluated_predictions.apply(
-            count_report_field, args=(field,), axis=1
-        ).sum()
+        count = evaluated_predictions.apply(count_report_field, args=(field,), axis=1).sum()
         report[field] = count
-        logger.info(
-            f'# {field}: {count} / {len(evaluated_predictions)}. ({count / len(evaluated_predictions):.2%})'
-        )
+        logger.info(f'# {field}: {count} / {len(evaluated_predictions)}. ({count / len(evaluated_predictions):.2%})')

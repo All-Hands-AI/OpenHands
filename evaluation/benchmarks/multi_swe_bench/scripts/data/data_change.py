@@ -24,9 +24,7 @@ with (
         new_item['repo'] = f'{org}/{repo}'
         new_item['instance_id'] = f'{org}__{repo}-{number}'
         new_item['problem_statement'] = (
-            item['resolved_issues'][0].get('title', '')
-            + '\n'
-            + item['resolved_issues'][0].get('body', '')
+            item['resolved_issues'][0].get('title', '') + '\n' + item['resolved_issues'][0].get('body', '')
         )
         new_item['FAIL_TO_PASS'] = []
         new_item['PASS_TO_PASS'] = []

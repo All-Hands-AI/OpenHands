@@ -95,9 +95,7 @@ class TestDisplayFunctions:
 
     @patch('openhands.cli.tui.display_command')
     @patch('openhands.cli.tui.initialize_streaming_output')
-    def test_display_event_cmd_action_confirmed(
-        self, mock_init_streaming, mock_display_command
-    ):
+    def test_display_event_cmd_action_confirmed(self, mock_init_streaming, mock_display_command):
         config = MagicMock(spec=OpenHandsConfig)
         # Test that confirmed commands don't display the command but do initialize streaming
         cmd_action = CmdRunAction(command='echo test')
@@ -366,9 +364,7 @@ class TestReadConfirmationInput:
 
     @pytest.mark.asyncio
     @patch('openhands.cli.tui.create_prompt_session')
-    async def test_read_confirmation_input_keyboard_interrupt(
-        self, mock_create_session
-    ):
+    async def test_read_confirmation_input_keyboard_interrupt(self, mock_create_session):
         mock_session = AsyncMock()
         mock_session.prompt_async.side_effect = KeyboardInterrupt
         mock_create_session.return_value = mock_session

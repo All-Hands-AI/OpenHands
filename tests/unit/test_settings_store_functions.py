@@ -64,9 +64,7 @@ async def test_check_provider_tokens_valid():
     existing_provider_tokens = {}
 
     # Mock the validate_provider_token function to return GITHUB for valid tokens
-    with patch(
-        'openhands.server.routes.secrets.validate_provider_token'
-    ) as mock_validate:
+    with patch('openhands.server.routes.secrets.validate_provider_token') as mock_validate:
         mock_validate.return_value = ProviderType.GITHUB
 
         result = await check_provider_tokens(providers, existing_provider_tokens)
@@ -86,9 +84,7 @@ async def test_check_provider_tokens_invalid():
     existing_provider_tokens = {}
 
     # Mock the validate_provider_token function to return None for invalid tokens
-    with patch(
-        'openhands.server.routes.secrets.validate_provider_token'
-    ) as mock_validate:
+    with patch('openhands.server.routes.secrets.validate_provider_token') as mock_validate:
         mock_validate.return_value = None
 
         result = await check_provider_tokens(providers, existing_provider_tokens)
@@ -226,10 +222,7 @@ async def test_store_provider_tokens_new_tokens(test_client, file_secrets_store)
 
     user_secrets = await file_secrets_store.load()
 
-    assert (
-        user_secrets.provider_tokens[ProviderType.GITHUB].token.get_secret_value()
-        == 'new-token'
-    )
+    assert user_secrets.provider_tokens[ProviderType.GITHUB].token.get_secret_value() == 'new-token'
 
 
 @pytest.mark.asyncio
@@ -254,10 +247,7 @@ async def test_store_provider_tokens_update_existing(test_client, file_secrets_s
 
     user_secrets = await file_secrets_store.load()
 
-    assert (
-        user_secrets.provider_tokens[ProviderType.GITHUB].token.get_secret_value()
-        == 'updated-token'
-    )
+    assert user_secrets.provider_tokens[ProviderType.GITHUB].token.get_secret_value() == 'updated-token'
 
 
 @pytest.mark.asyncio
@@ -279,7 +269,4 @@ async def test_store_provider_tokens_keep_existing(test_client, file_secrets_sto
 
     user_secrets = await file_secrets_store.load()
 
-    assert (
-        user_secrets.provider_tokens[ProviderType.GITHUB].token.get_secret_value()
-        == 'existing-token'
-    )
+    assert user_secrets.provider_tokens[ProviderType.GITHUB].token.get_secret_value() == 'existing-token'

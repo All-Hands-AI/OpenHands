@@ -58,9 +58,7 @@ class RetryMixin:
             before_sleep=before_sleep,
             stop=stop_after_attempt(num_retries) | stop_if_should_exit(),
             reraise=True,
-            retry=(
-                retry_if_exception_type(retry_exceptions)
-            ),  # retry only for these types
+            retry=(retry_if_exception_type(retry_exceptions)),  # retry only for these types
             wait=wait_exponential(
                 multiplier=retry_multiplier,
                 min=retry_min_wait,

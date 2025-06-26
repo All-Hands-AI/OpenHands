@@ -225,9 +225,7 @@ def main():
     detailed_results.sort(key=lambda x: (-x[3], x[0]))
 
     # Calculate perfect completion stats
-    perfect_completions = sum(
-        1 for _, _, _, _, is_perfect, _ in detailed_results if is_perfect
-    )
+    perfect_completions = sum(1 for _, _, _, _, is_perfect, _ in detailed_results if is_perfect)
 
     # Print header
     print('\n# Evaluation Results Report')
@@ -235,9 +233,7 @@ def main():
     print('\n*Sorted by score (⭐ indicates perfect completion)*\n')
 
     # Print table header
-    print(
-        '| Filename | Total | Result | Score | Steps | Cost (assuming no prompt caching)|'
-    )
+    print('| Filename | Total | Result | Score | Steps | Cost (assuming no prompt caching)|')
     print('|----------|--------|---------|-------|-------|------|')
 
     # Print individual file results
@@ -254,11 +250,7 @@ def main():
         f'**Perfect Completions:** {perfect_completions}/{len(eval_results)} ({(perfect_completions / len(eval_results) * 100):.2f}%)\n'
     )
 
-    overall_score = (
-        sum(score for _, _, _, score, _, _ in detailed_results)
-        / len(detailed_results)
-        * 100
-    )
+    overall_score = sum(score for _, _, _, score, _, _ in detailed_results) / len(detailed_results) * 100
     avg_steps = sum(steps for steps, _ in traj_results.values()) / len(traj_results)
     avg_cost = sum(cost for _, cost in traj_results.values()) / len(traj_results)
     print(f'**Overall Score:** {overall_score:.2f}%\n')
@@ -270,9 +262,7 @@ def main():
         highest_score = max(score for _, _, _, score, _, _ in detailed_results)
         lowest_score = min(score for _, _, _, score, _, _ in detailed_results)
         median_score = detailed_results[len(detailed_results) // 2][3]
-        avg_score = sum(score for _, _, _, score, _, _ in detailed_results) / len(
-            detailed_results
-        )
+        avg_score = sum(score for _, _, _, score, _, _ in detailed_results) / len(detailed_results)
 
         print('\n## Statistics\n')
         print('| Metric | Value |')
@@ -288,16 +278,10 @@ def main():
         print('|---------|--------|')
         for task_nature in ['sde', 'pm', 'ds', 'admin', 'hr', 'finance', 'other']:
             num_of_tasks = sum(
-                1
-                for _, _, _, _, _, nature_category in detailed_results
-                if nature_category == task_nature
+                1 for _, _, _, _, _, nature_category in detailed_results if nature_category == task_nature
             )
             task_nature_score = (
-                sum(
-                    score
-                    for _, _, _, score, _, nature_category in detailed_results
-                    if nature_category == task_nature
-                )
+                sum(score for _, _, _, score, _, nature_category in detailed_results if nature_category == task_nature)
                 / num_of_tasks
             )
             perfect_completions = sum(
@@ -308,9 +292,7 @@ def main():
             print(
                 f'| Perfect Completions for {task_nature} | {perfect_completions}/{num_of_tasks} ({perfect_completions / num_of_tasks * 100:.2f}%) |'
             )
-            print(
-                f'| Average Score for {task_nature} | {task_nature_score * 100:.2f}% |'
-            )
+            print(f'| Average Score for {task_nature} | {task_nature_score * 100:.2f}% |')
 
 
 if __name__ == '__main__':

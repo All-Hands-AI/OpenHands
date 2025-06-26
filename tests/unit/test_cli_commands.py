@@ -45,9 +45,7 @@ class TestHandleCommands:
     async def test_handle_exit_command(self, mock_handle_exit, mock_dependencies):
         mock_handle_exit.return_value = True
 
-        close_repl, reload_microagents, new_session = await handle_commands(
-            '/exit', **mock_dependencies
-        )
+        close_repl, reload_microagents, new_session = await handle_commands('/exit', **mock_dependencies)
 
         mock_handle_exit.assert_called_once_with(
             mock_dependencies['config'],
@@ -64,9 +62,7 @@ class TestHandleCommands:
     async def test_handle_help_command(self, mock_handle_help, mock_dependencies):
         mock_handle_help.return_value = (False, False, False)
 
-        close_repl, reload_microagents, new_session = await handle_commands(
-            '/help', **mock_dependencies
-        )
+        close_repl, reload_microagents, new_session = await handle_commands('/help', **mock_dependencies)
 
         mock_handle_help.assert_called_once()
         assert close_repl is False
@@ -78,9 +74,7 @@ class TestHandleCommands:
     async def test_handle_init_command(self, mock_handle_init, mock_dependencies):
         mock_handle_init.return_value = (True, True)
 
-        close_repl, reload_microagents, new_session = await handle_commands(
-            '/init', **mock_dependencies
-        )
+        close_repl, reload_microagents, new_session = await handle_commands('/init', **mock_dependencies)
 
         mock_handle_init.assert_called_once_with(
             mock_dependencies['config'],
@@ -96,13 +90,9 @@ class TestHandleCommands:
     async def test_handle_status_command(self, mock_handle_status, mock_dependencies):
         mock_handle_status.return_value = (False, False, False)
 
-        close_repl, reload_microagents, new_session = await handle_commands(
-            '/status', **mock_dependencies
-        )
+        close_repl, reload_microagents, new_session = await handle_commands('/status', **mock_dependencies)
 
-        mock_handle_status.assert_called_once_with(
-            mock_dependencies['usage_metrics'], mock_dependencies['sid']
-        )
+        mock_handle_status.assert_called_once_with(mock_dependencies['usage_metrics'], mock_dependencies['sid'])
         assert close_repl is False
         assert reload_microagents is False
         assert new_session is False
@@ -112,9 +102,7 @@ class TestHandleCommands:
     async def test_handle_new_command(self, mock_handle_new, mock_dependencies):
         mock_handle_new.return_value = (True, True)
 
-        close_repl, reload_microagents, new_session = await handle_commands(
-            '/new', **mock_dependencies
-        )
+        close_repl, reload_microagents, new_session = await handle_commands('/new', **mock_dependencies)
 
         mock_handle_new.assert_called_once_with(
             mock_dependencies['config'],
@@ -128,12 +116,8 @@ class TestHandleCommands:
 
     @pytest.mark.asyncio
     @patch('openhands.cli.commands.handle_settings_command')
-    async def test_handle_settings_command(
-        self, mock_handle_settings, mock_dependencies
-    ):
-        close_repl, reload_microagents, new_session = await handle_commands(
-            '/settings', **mock_dependencies
-        )
+    async def test_handle_settings_command(self, mock_handle_settings, mock_dependencies):
+        close_repl, reload_microagents, new_session = await handle_commands('/settings', **mock_dependencies)
 
         mock_handle_settings.assert_called_once_with(
             mock_dependencies['config'],
@@ -147,9 +131,7 @@ class TestHandleCommands:
     async def test_handle_unknown_command(self, mock_dependencies):
         user_message = 'Hello, this is not a command'
 
-        close_repl, reload_microagents, new_session = await handle_commands(
-            user_message, **mock_dependencies
-        )
+        close_repl, reload_microagents, new_session = await handle_commands(user_message, **mock_dependencies)
 
         # The command should be treated as a message and added to the event stream
         mock_dependencies['event_stream'].add_event.assert_called_once()
@@ -243,9 +225,7 @@ class TestHandleNewCommand:
         mock_cli_confirm.return_value = 0  # First option, which is "Yes, proceed"
 
         # Call the function under test
-        close_repl, new_session = handle_new_command(
-            config, event_stream, usage_metrics, sid
-        )
+        close_repl, new_session = handle_new_command(config, event_stream, usage_metrics, sid)
 
         # Verify correct behavior
         mock_cli_confirm.assert_called_once()
@@ -272,9 +252,7 @@ class TestHandleNewCommand:
         mock_cli_confirm.return_value = 1  # Second option, which is "No, dismiss"
 
         # Call the function under test
-        close_repl, new_session = handle_new_command(
-            config, event_stream, usage_metrics, sid
-        )
+        close_repl, new_session = handle_new_command(config, event_stream, usage_metrics, sid)
 
         # Verify correct behavior
         mock_cli_confirm.assert_called_once()
@@ -297,9 +275,7 @@ class TestHandleInitCommand:
         mock_init_repository.return_value = True
 
         # Call the function under test
-        close_repl, reload_microagents = await handle_init_command(
-            config, event_stream, current_dir
-        )
+        close_repl, reload_microagents = await handle_init_command(config, event_stream, current_dir)
 
         # Verify correct behavior
         mock_init_repository.assert_called_once_with(config, current_dir)
@@ -325,9 +301,7 @@ class TestHandleInitCommand:
         mock_init_repository.return_value = False
 
         # Call the function under test
-        close_repl, reload_microagents = await handle_init_command(
-            config, event_stream, current_dir
-        )
+        close_repl, reload_microagents = await handle_init_command(config, event_stream, current_dir)
 
         # Verify correct behavior
         mock_init_repository.assert_called_once_with(config, current_dir)
@@ -346,9 +320,7 @@ class TestHandleInitCommand:
         current_dir = '/test/dir'
 
         # Call the function under test
-        close_repl, reload_microagents = await handle_init_command(
-            config, event_stream, current_dir
-        )
+        close_repl, reload_microagents = await handle_init_command(config, event_stream, current_dir)
 
         # Verify correct behavior
         mock_init_repository.assert_not_called()

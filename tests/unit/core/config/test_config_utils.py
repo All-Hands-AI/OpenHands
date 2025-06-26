@@ -123,18 +123,10 @@ def test_finalize_config_multiple_agents_cli_runtime():
 
     finalize_config(app_config)
 
-    assert not app_config.agents['Agent1'].enable_jupyter, (
-        'Jupyter should be disabled for Agent1'
-    )
-    assert not app_config.agents['Agent1'].enable_browsing, (
-        'Browsing should be disabled for Agent1'
-    )
-    assert not app_config.agents['Agent2'].enable_jupyter, (
-        'Jupyter should be disabled for Agent2'
-    )
-    assert not app_config.agents['Agent2'].enable_browsing, (
-        'Browsing should be disabled for Agent2'
-    )
+    assert not app_config.agents['Agent1'].enable_jupyter, 'Jupyter should be disabled for Agent1'
+    assert not app_config.agents['Agent1'].enable_browsing, 'Browsing should be disabled for Agent1'
+    assert not app_config.agents['Agent2'].enable_jupyter, 'Jupyter should be disabled for Agent2'
+    assert not app_config.agents['Agent2'].enable_browsing, 'Browsing should be disabled for Agent2'
 
 
 def test_finalize_config_multiple_agents_other_runtime():
@@ -146,23 +138,13 @@ def test_finalize_config_multiple_agents_other_runtime():
     app_config.runtime = 'docker'
 
     agent_config1 = AgentConfig(enable_jupyter=True, enable_browsing=True)  # Defaults
-    agent_config2 = AgentConfig(
-        enable_jupyter=False, enable_browsing=False
-    )  # Explicitly false
+    agent_config2 = AgentConfig(enable_jupyter=False, enable_browsing=False)  # Explicitly false
     app_config.agents['Agent1'] = agent_config1
     app_config.agents['Agent2'] = agent_config2
 
     finalize_config(app_config)
 
-    assert app_config.agents['Agent1'].enable_jupyter, (
-        'Jupyter should be True for Agent1'
-    )
-    assert app_config.agents['Agent1'].enable_browsing, (
-        'Browsing should be True for Agent1'
-    )
-    assert not app_config.agents['Agent2'].enable_jupyter, (
-        'Jupyter should be False for Agent2'
-    )
-    assert not app_config.agents['Agent2'].enable_browsing, (
-        'Browsing should be False for Agent2'
-    )
+    assert app_config.agents['Agent1'].enable_jupyter, 'Jupyter should be True for Agent1'
+    assert app_config.agents['Agent1'].enable_browsing, 'Browsing should be True for Agent1'
+    assert not app_config.agents['Agent2'].enable_jupyter, 'Jupyter should be False for Agent2'
+    assert not app_config.agents['Agent2'].enable_browsing, 'Browsing should be False for Agent2'

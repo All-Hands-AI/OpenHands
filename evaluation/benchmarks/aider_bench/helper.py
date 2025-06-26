@@ -16,7 +16,6 @@ FAKE_RESPONSES = {
 
 INST_SUFFIXES: dict[str, str] = {
     'CodeActAgent': (
-        'REMEMBER: All edits must be made directly in the files. Do NOT send'
-        ' the edited file as output to the user.\n'
+        'REMEMBER: All edits must be made directly in the files. Do NOT send the edited file as output to the user.\n'
     )
 }

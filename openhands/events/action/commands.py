@@ -11,9 +11,7 @@ from openhands.events.action.action import (
 
 @dataclass
 class CmdRunAction(Action):
-    command: (
-        str  # When `command` is empty, it will be used to print the current tmux window
-    )
+    command: str  # When `command` is empty, it will be used to print the current tmux window
     is_input: bool = False  # if True, the command is an input to the running process
     thought: str = ''
     blocking: bool = False  # if True, the command will be run in a blocking manner, but a timeout must be set through _set_hard_timeout
@@ -41,9 +39,7 @@ class CmdRunAction(Action):
 class IPythonRunCellAction(Action):
     code: str
     thought: str = ''
-    include_extra: bool = (
-        True  # whether to include CWD & Python interpreter in the output
-    )
+    include_extra: bool = True  # whether to include CWD & Python interpreter in the output
     action: str = ActionType.RUN_IPYTHON
     runnable: ClassVar[bool] = True
     confirmation_state: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED

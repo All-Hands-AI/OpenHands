@@ -43,9 +43,7 @@ def test_browsergym_eval_env(runtime_cls, temp_dir):
     )
 
     # Test browse
-    action = BrowseInteractiveAction(
-        browser_actions=BROWSER_EVAL_GET_GOAL_ACTION, return_axtree=False
-    )
+    action = BrowseInteractiveAction(browser_actions=BROWSER_EVAL_GET_GOAL_ACTION, return_axtree=False)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -60,15 +58,10 @@ def test_browsergym_eval_env(runtime_cls, temp_dir):
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert (
-        obs.url.strip()
-        == 'file:///miniwob-plusplus/miniwob/html/miniwob/choose-list.html'
-    )
+    assert obs.url.strip() == 'file:///miniwob-plusplus/miniwob/html/miniwob/choose-list.html'
 
     # Make sure the rewards are working
-    action = BrowseInteractiveAction(
-        browser_actions=BROWSER_EVAL_GET_REWARDS_ACTION, return_axtree=False
-    )
+    action = BrowseInteractiveAction(browser_actions=BROWSER_EVAL_GET_REWARDS_ACTION, return_axtree=False)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})

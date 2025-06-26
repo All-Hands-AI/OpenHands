@@ -40,10 +40,7 @@ class StuckDetector:
             # In interactive mode, only look at history after the last user message
             last_user_msg_idx = -1
             for i, event in enumerate(reversed(self.state.history)):
-                if (
-                    isinstance(event, MessageAction)
-                    and event.source == EventSource.USER
-                ):
+                if isinstance(event, MessageAction) and event.source == EventSource.USER:
                     last_user_msg_idx = len(self.state.history) - i - 1
                     break
 
@@ -109,21 +106,16 @@ class StuckDetector:
 
         return False
 
-    def _is_stuck_repeating_action_observation(
-        self, last_actions: list[Event], last_observations: list[Event]
-    ) -> bool:
+    def _is_stuck_repeating_action_observation(self, last_actions: list[Event], last_observations: list[Event]) -> bool:
         # scenario 1: same action, same observation
         # it takes 4 actions and 4 observations to detect a loop
         # assert len(last_actions) == 4 and len(last_observations) == 4
 
         # Check for a loop of 4 identical action-observation pairs
         if len(last_actions) == 4 and len(last_observations) == 4:
-            actions_equal = all(
-                self._eq_no_pid(last_actions[0], action) for action in last_actions
-            )
+            actions_equal = all(self._eq_no_pid(last_actions[0], action) for action in last_actions)
             observations_equal = all(
-                self._eq_no_pid(last_observations[0], observation)
-                for observation in last_observations
+                self._eq_no_pid(last_observations[0], observation) for observation in last_observations
             )
 
             if actions_equal and observations_equal:
@@ -132,9 +124,7 @@ class StuckDetector:
 
         return False
 
-    def _is_stuck_repeating_action_error(
-        self, last_actions: list[Event], last_observations: list[Event]
-    ) -> bool:
+    def _is_stuck_repeating_action_error(self, last_actions: list[Event], last_observations: list[Event]) -> bool:
         # scenario 2: same action, errors
         # it takes 3 actions and 3 observations to detect a loop
         # check if the last three actions are the same and result in errors
@@ -149,21 +139,12 @@ class StuckDetector:
                 logger.warning('Action, ErrorObservation loop detected')
                 return True
             # or, are the last three observations all IPythonRunCellObservation with SyntaxError?
-            elif all(
-                isinstance(obs, IPythonRunCellObservation)
-                for obs in last_observations[:3]
-            ):
+            elif all(isinstance(obs, IPythonRunCellObservation) for obs in last_observations[:3]):
                 warning = 'Action, IPythonRunCellObservation loop detected'
                 for error_message in self.SYNTAX_ERROR_MESSAGES:
-                    if error_message.startswith(
-                        'SyntaxError: unterminated string literal (detected at line'
-                    ):
+                    if error_message.startswith('SyntaxError: unterminated string literal (detected at line'):
                         if self._check_for_consistent_line_error(
-                            [
-                                obs
-                                for obs in last_observations[:3]
-                                if isinstance(obs, IPythonRunCellObservation)
-                            ],
+                            [obs for obs in last_observations[:3] if isinstance(obs, IPythonRunCellObservation)],
                             error_message,
                         ):
                             logger.warning(warning)
@@ -172,11 +153,7 @@ class StuckDetector:
                         'SyntaxError: invalid syntax. Perhaps you forgot a comma?',
                         'SyntaxError: incomplete input',
                     ) and self._check_for_consistent_invalid_syntax(
-                        [
-                            obs
-                            for obs in last_observations[:3]
-                            if isinstance(obs, IPythonRunCellObservation)
-                        ],
+                        [obs for obs in last_observations[:3] if isinstance(obs, IPythonRunCellObservation)],
                         error_message,
                     ):
                         logger.warning(warning)
@@ -217,13 +194,7 @@ class StuckDetector:
         return (
             len(set(first_lines)) == 1
             and len(valid_observations) == 3
-            and len(
-                set(
-                    obs.content.strip().split('\n')[:-2][-1]
-                    for obs in valid_observations
-                )
-            )
-            == 1
+            and len(set(obs.content.strip().split('\n')[:-2][-1] for obs in valid_observations)) == 1
         )
 
     def _check_for_consistent_line_error(
@@ -269,10 +240,7 @@ class StuckDetector:
         if len(agent_message_actions) >= 3:
             last_agent_message_actions = agent_message_actions[-3:]
 
-            if all(
-                (last_agent_message_actions[0][1] == action[1])
-                for action in last_agent_message_actions
-            ):
+            if all((last_agent_message_actions[0][1] == action[1]) for action in last_agent_message_actions):
                 # check if there are any observations between the repeated MessageActions
                 # then it's not yet a loop, maybe it can recover
                 start_index = last_agent_message_actions[0][0]
@@ -289,9 +257,7 @@ class StuckDetector:
                     return True
         return False
 
-    def _is_stuck_action_observation_pattern(
-        self, filtered_history: list[Event]
-    ) -> bool:
+    def _is_stuck_action_observation_pattern(self, filtered_history: list[Event]) -> bool:
         # scenario 4: action, observation pattern on the last six steps
         # check if the agent repeats the same (Action, Observation)
         # every other step in the last six steps
@@ -349,9 +315,7 @@ class StuckDetector:
         """
         # Look for AgentCondensationObservation events
         condensation_events = [
-            (i, event)
-            for i, event in enumerate(filtered_history)
-            if isinstance(event, AgentCondensationObservation)
+            (i, event) for i, event in enumerate(filtered_history) if isinstance(event, AgentCondensationObservation)
         ]
 
         # Need at least 10 condensation events to detect a loop
@@ -374,33 +338,21 @@ class StuckDetector:
                     break
 
             if not has_other_events:
-                logger.warning(
-                    'Context window error loop detected - repeated condensation events'
-                )
+                logger.warning('Context window error loop detected - repeated condensation events')
                 return True
 
         return False
 
     def _eq_no_pid(self, obj1: Event, obj2: Event) -> bool:
-        if isinstance(obj1, IPythonRunCellAction) and isinstance(
-            obj2, IPythonRunCellAction
-        ):
+        if isinstance(obj1, IPythonRunCellAction) and isinstance(obj2, IPythonRunCellAction):
             # for loop detection on edit actions, ignore the thought, compare some code
             # the code should have at least 3 lines, to avoid simple one-liners
-            if (
-                'edit_file_by_replace(' in obj1.code
-                and 'edit_file_by_replace(' in obj2.code
-            ):
-                return (
-                    len(obj1.code.split('\n')) > 2
-                    and obj1.code.split('\n')[:3] == obj2.code.split('\n')[:3]
-                )
+            if 'edit_file_by_replace(' in obj1.code and 'edit_file_by_replace(' in obj2.code:
+                return len(obj1.code.split('\n')) > 2 and obj1.code.split('\n')[:3] == obj2.code.split('\n')[:3]
             else:
                 # default comparison
                 return obj1 == obj2
-        elif isinstance(obj1, CmdOutputObservation) and isinstance(
-            obj2, CmdOutputObservation
-        ):
+        elif isinstance(obj1, CmdOutputObservation) and isinstance(obj2, CmdOutputObservation):
             # for loop detection, ignore command_id, which is the pid
             return obj1.command == obj2.command and obj1.exit_code == obj2.exit_code
         else:

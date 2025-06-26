@@ -42,8 +42,7 @@ def format_task_dict(example, use_knowledge):
     task = {
         'instance_id': example['instance_id'],
         'task_inst': example['task_inst'],
-        'dataset_path': '/benchmark/datasets/'
-        + example['dataset_folder_tree'].split('\n')[0][4:],
+        'dataset_path': '/benchmark/datasets/' + example['dataset_folder_tree'].split('\n')[0][4:],
         'dataset_folder_tree': example['dataset_folder_tree'],
         'dataset_preview': example['dataset_preview'],
         'pred_program_name': 'pred_' + example['gold_program_name'],
@@ -60,9 +59,7 @@ def get_config(
     instance_id: str,
 ) -> OpenHandsConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
-    sandbox_config.base_container_image = (
-        'docker.io/xingyaoww/openhands-eval-scienceagentbench'
-    )
+    sandbox_config.base_container_image = 'docker.io/xingyaoww/openhands-eval-scienceagentbench'
     config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
@@ -205,9 +202,7 @@ If the program uses some packages that are incompatible, please figure out alter
             config=config,
             initial_user_action=MessageAction(content=instruction),
             runtime=runtime,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
-                metadata.agent_class
-            ),
+            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(metadata.agent_class),
         )
     )
 
@@ -253,9 +248,7 @@ if __name__ == '__main__':
 
     dataset_processed = []
     for example in tqdm(sab_dataset):
-        dataset_processed.append(
-            format_task_dict(example, args.use_knowledge == 'true')
-        )
+        dataset_processed.append(format_task_dict(example, args.use_knowledge == 'true'))
 
     dataset = pd.DataFrame(dataset_processed)
 
@@ -279,6 +272,4 @@ if __name__ == '__main__':
     dataset['instance_id'] = dataset['instance_id'].apply(str)
     instances = prepare_dataset(dataset, output_file, args.eval_n_limit)
 
-    run_evaluation(
-        instances, metadata, output_file, args.eval_num_workers, process_instance
-    )
+    run_evaluation(instances, metadata, output_file, args.eval_num_workers, process_instance)

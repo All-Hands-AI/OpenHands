@@ -12,23 +12,15 @@ class ServerConfig(ServerConfigInterface):
     github_client_id = os.environ.get('GITHUB_APP_CLIENT_ID', '')
     enable_billing = os.environ.get('ENABLE_BILLING', 'false') == 'true'
     hide_llm_settings = os.environ.get('HIDE_LLM_SETTINGS', 'false') == 'true'
-    settings_store_class: str = (
-        'openhands.storage.settings.file_settings_store.FileSettingsStore'
-    )
-    secret_store_class: str = (
-        'openhands.storage.secrets.file_secrets_store.FileSecretsStore'
-    )
-    conversation_store_class: str = (
-        'openhands.storage.conversation.file_conversation_store.FileConversationStore'
-    )
+    settings_store_class: str = 'openhands.storage.settings.file_settings_store.FileSettingsStore'
+    secret_store_class: str = 'openhands.storage.secrets.file_secrets_store.FileSecretsStore'
+    conversation_store_class: str = 'openhands.storage.conversation.file_conversation_store.FileConversationStore'
     conversation_manager_class: str = os.environ.get(
         'CONVERSATION_MANAGER_CLASS',
         'openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager',
     )
     monitoring_listener_class: str = 'openhands.server.monitoring.MonitoringListener'
-    user_auth_class: str = (
-        'openhands.server.user_auth.default_user_auth.DefaultUserAuth'
-    )
+    user_auth_class: str = 'openhands.server.user_auth.default_user_auth.DefaultUserAuth'
 
     def verify_config(self):
         if self.config_cls:

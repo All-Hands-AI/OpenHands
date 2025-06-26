@@ -55,9 +55,7 @@ class PromptManager:
         system_prompt_filename: str = 'system_prompt.j2',
     ):
         self.prompt_dir: str = prompt_dir
-        self.system_template: Template = self._load_system_template(
-            system_prompt_filename
-        )
+        self.system_template: Template = self._load_system_template(system_prompt_filename)
         self.user_template: Template = self._load_template('user_prompt')
         self.additional_info_template: Template = self._load_template('additional_info')
         self.microagent_info_template: Template = self._load_template('microagent_info')
@@ -129,9 +127,7 @@ class PromptManager:
             triggered_agents: A list of MicroagentKnowledge objects containing information
                               about triggered microagents.
         """
-        return self.microagent_info_template.render(
-            triggered_agents=triggered_agents
-        ).strip()
+        return self.microagent_info_template.render(triggered_agents=triggered_agents).strip()
 
     def add_turns_left_reminder(self, messages: list[Message], state: State) -> None:
         latest_user_message = next(
@@ -139,8 +135,7 @@ class PromptManager:
                 (
                     m
                     for m in reversed(messages)
-                    if m.role == 'user'
-                    and any(isinstance(c, TextContent) for c in m.content)
+                    if m.role == 'user' and any(isinstance(c, TextContent) for c in m.content)
                 ),
                 1,
             ),

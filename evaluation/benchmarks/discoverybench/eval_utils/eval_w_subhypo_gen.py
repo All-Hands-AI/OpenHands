@@ -57,9 +57,7 @@ def get_score_from_answer(type, answer):
         answer_str = rel_json['answer'].strip()
         if answer_str.startswith('A') or 'very similar' in answer_str:
             return 1.0
-        elif (
-            answer_str.startswith('B') or 'similar but general than HypoA' in answer_str
-        ):
+        elif answer_str.startswith('B') or 'similar but general than HypoA' in answer_str:
             return 0.5
         elif answer_str.startswith('C') or 'different' in answer_str:
             return 0.0
@@ -194,10 +192,7 @@ def prepare_dataset_metadata_json(dataset_meta, dataset_type, use_column_metadat
             datasets_json.append(
                 {
                     'dataset_description': d['description'],
-                    'columns': [
-                        {'name': col['name'], 'description': col['description']}
-                        for col in d['columns']['raw']
-                    ]
+                    'columns': [{'name': col['name'], 'description': col['description']} for col in d['columns']['raw']]
                     if use_column_metadata
                     else [],
                 }
@@ -207,10 +202,7 @@ def prepare_dataset_metadata_json(dataset_meta, dataset_type, use_column_metadat
             datasets_json.append(
                 {
                     'dataset_description': d['description'],
-                    'columns': [
-                        {'name': col['name'], 'description': col['description']}
-                        for col in d['columns']
-                    ]
+                    'columns': [{'name': col['name'], 'description': col['description']} for col in d['columns']]
                     if use_column_metadata
                     else [],
                 }
@@ -264,9 +256,7 @@ def get_sub_hypotheses(
         ]
         }```
         """
-    datasets_json = prepare_dataset_metadata_json(
-        dataset_meta, dataset_type, use_column_metadata=use_column_metadata
-    )
+    datasets_json = prepare_dataset_metadata_json(dataset_meta, dataset_type, use_column_metadata=use_column_metadata)
     _prompt = extraction_prompt % (datasets_json, hypo, workflow)
     sub_hypo_json = get_response(client, _prompt, model=llm_used, max_retry=1)
 
@@ -283,9 +273,7 @@ def get_sub_hypotheses(
     return sub_hypo_json
 
 
-def match_context_with_gpt(
-    gold_hyp, gold_context, pred_hyp, pred_context, model='gpt-3.5-turbo'
-):
+def match_context_with_gpt(gold_hyp, gold_context, pred_hyp, pred_context, model='gpt-3.5-turbo'):
     prompt = f"""\
         Given a gold hypothesis, a gold context, a predicted hypothesis, and a predicted context, your task is \
         to determine if the predicted context semantically matches the ground-truth context. \
@@ -322,9 +310,7 @@ def is_matching_context(gold_hyp, gold_context, pred_hyp, pred_context, llm_used
         return True
     if 'None' in [gold_context, pred_context]:
         return False
-    return match_context_with_gpt(
-        gold_hyp, gold_context, pred_hyp, pred_context, model=llm_used
-    )
+    return match_context_with_gpt(gold_hyp, gold_context, pred_hyp, pred_context, model=llm_used)
 
 
 def run_eval_gold_vs_gen_NL_subhypo(
@@ -367,10 +353,7 @@ def run_eval_gold_vs_gen_NL_subhypo(
 
     eval_rec['context'] = context_score
     eval_rec['accuracy_score'] = (
-        1.0
-        * eval_rec['context']['score']
-        * eval_rec['var']['score']['f1']
-        * eval_rec['rel']['score']
+        1.0 * eval_rec['context']['score'] * eval_rec['var']['score']['f1'] * eval_rec['rel']['score']
     )
 
     return eval_rec
@@ -521,15 +504,9 @@ def run_eval_gold_vs_gen_NL_hypo_workflow(
 
     eval_rec['matched_gold_gen_subh_evals'] = matched_gold_gen_subh_evals
     eval_rec['recall_context'] = (
-        len(gold_subh_covered) / len(gold_sub_hypo_json['sub_hypo'])
-        if len(gold_sub_hypo_json['sub_hypo'])
-        else 0.0
+        len(gold_subh_covered) / len(gold_sub_hypo_json['sub_hypo']) if len(gold_sub_hypo_json['sub_hypo']) else 0.0
     )
-    mean_accuracy_score = (
-        sum_accuracy_score / len(gen_subh_to_gold_subh)
-        if len(gen_subh_to_gold_subh)
-        else 0.0
-    )
+    mean_accuracy_score = sum_accuracy_score / len(gen_subh_to_gold_subh) if len(gen_subh_to_gold_subh) else 0.0
     eval_rec['mean_accuracy_score'] = mean_accuracy_score
     final_score = eval_rec['recall_context'] * mean_accuracy_score
     eval_rec['final_score'] = final_score

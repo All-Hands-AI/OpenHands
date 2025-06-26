@@ -23,9 +23,7 @@ def test_load_markdown_without_frontmatter():
 
 def test_load_markdown_with_empty_frontmatter():
     """Test loading a markdown file with empty frontmatter."""
-    content = (
-        '---\n---\n# Test Content\nThis is a test markdown file with empty frontmatter.'
-    )
+    content = '---\n---\n# Test Content\nThis is a test markdown file with empty frontmatter.'
     path = Path('test.md')
 
     # Load the agent from content using keyword argument
@@ -34,10 +32,7 @@ def test_load_markdown_with_empty_frontmatter():
     # Verify it's loaded as a repo agent with default values
     assert isinstance(agent, RepoMicroagent)
     assert agent.name == 'default'
-    assert (
-        agent.content
-        == '# Test Content\nThis is a test markdown file with empty frontmatter.'
-    )
+    assert agent.content == '# Test Content\nThis is a test markdown file with empty frontmatter.'
     assert agent.type == MicroagentType.REPO_KNOWLEDGE
     assert agent.metadata.agent == 'CodeActAgent'
     assert agent.metadata.version == '1.0.0'
@@ -58,10 +53,7 @@ This is a test markdown file with partial frontmatter."""
     # Verify it uses provided name but default values for other fields
     assert isinstance(agent, RepoMicroagent)
     assert agent.name == 'custom_name'
-    assert (
-        agent.content
-        == '# Test Content\nThis is a test markdown file with partial frontmatter.'
-    )
+    assert agent.content == '# Test Content\nThis is a test markdown file with partial frontmatter.'
     assert agent.type == MicroagentType.REPO_KNOWLEDGE
     assert agent.metadata.agent == 'CodeActAgent'
     assert agent.metadata.version == '1.0.0'
@@ -85,10 +77,7 @@ This is a test markdown file with full frontmatter."""
     # Verify all provided values are used
     assert isinstance(agent, RepoMicroagent)
     assert agent.name == 'test_agent'
-    assert (
-        agent.content
-        == '# Test Content\nThis is a test markdown file with full frontmatter.'
-    )
+    assert agent.content == '# Test Content\nThis is a test markdown file with full frontmatter.'
     assert agent.type == MicroagentType.REPO_KNOWLEDGE
     assert agent.metadata.agent == 'CustomAgent'
     assert agent.metadata.version == '2.0.0'

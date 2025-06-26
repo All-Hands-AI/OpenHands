@@ -43,16 +43,12 @@ def remove_code(target_filepath: str, line_start: int, line_end: int, language: 
         comment_indent_size = get_indent_size(signature_line) + indent_size
         lines = (
             lines[:line_start]
-            + [
-                f'{" " * comment_indent_size + comment_prefix[language.lower()]}TODO: replace with your code here'
-            ]
+            + [f'{" " * comment_indent_size + comment_prefix[language.lower()]}TODO: replace with your code here']
             + ([''] * 2)
             + lines[line_end:]
         )
     first_line_after_removed_index = line_start
-    while len(
-        lines[first_line_after_removed_index].strip()
-    ) == 0 and first_line_after_removed_index < len(lines):
+    while len(lines[first_line_after_removed_index].strip()) == 0 and first_line_after_removed_index < len(lines):
         first_line_after_removed_index += 1
 
     first_line_after_removed = lines[first_line_after_removed_index]

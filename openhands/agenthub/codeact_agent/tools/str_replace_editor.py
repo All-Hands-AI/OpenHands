@@ -52,9 +52,7 @@ def create_str_replace_editor_tool(
     use_short_description: bool = False,
 ) -> ChatCompletionToolParam:
     description = (
-        _SHORT_STR_REPLACE_EDITOR_DESCRIPTION
-        if use_short_description
-        else _DETAILED_STR_REPLACE_EDITOR_DESCRIPTION
+        _SHORT_STR_REPLACE_EDITOR_DESCRIPTION if use_short_description else _DETAILED_STR_REPLACE_EDITOR_DESCRIPTION
     )
     return ChatCompletionToolParam(
         type='function',

@@ -153,9 +153,7 @@ async def test_search_with_invalid_conversation():
                         'created_at': '2025-01-16T19:51:04Z',
                     }
                 ),
-                get_conversation_metadata_filename(
-                    'conv2'
-                ): 'invalid json',  # Invalid conversation
+                get_conversation_metadata_filename('conv2'): 'invalid json',  # Invalid conversation
             }
         )
     )

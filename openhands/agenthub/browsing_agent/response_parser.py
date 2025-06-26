@@ -16,18 +16,14 @@ class BrowsingResponseParser(ResponseParser):
         self.action_parsers = [BrowsingActionParserMessage()]
         self.default_parser = BrowsingActionParserBrowseInteractive()
 
-    def parse(
-        self, response: str | dict[str, list[dict[str, dict[str, str | None]]]]
-    ) -> Action:
+    def parse(self, response: str | dict[str, list[dict[str, dict[str, str | None]]]]) -> Action:
         if isinstance(response, str):
             action_str = response
         else:
             action_str = self.parse_response(response)
         return self.parse_action(action_str)
 
-    def parse_response(
-        self, response: dict[str, list[dict[str, dict[str, str | None]]]]
-    ) -> str:
+    def parse_response(self, response: dict[str, list[dict[str, dict[str, str | None]]]]) -> str:
         action_str = response['choices'][0]['message']['content']
         if action_str is None:
             return ''
@@ -96,9 +92,7 @@ class BrowsingActionParserBrowseInteractive(ActionParser):
         ### goto('https://www.whitehouse.gov/about-the-white-house/presidents/')
         # and parse_response added )``` to the end of the string
         parts = action_str.split('```')
-        browser_actions = (
-            parts[1].strip() if parts[1].strip() != '' else parts[0].strip()
-        )
+        browser_actions = parts[1].strip() if parts[1].strip() != '' else parts[0].strip()
         thought = parts[0].strip() if parts[1].strip() != '' else ''
 
         # if the LLM wants to talk to the user, we extract the message

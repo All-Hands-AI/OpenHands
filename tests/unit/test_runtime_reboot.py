@@ -38,10 +38,7 @@ def test_runtime_timeout_error(runtime, mock_session):
     with pytest.raises(AgentRuntimeTimeoutError) as exc_info:
         runtime.send_action_for_execution(action)
 
-    assert (
-        str(exc_info.value)
-        == 'Runtime failed to return execute_action before the requested timeout of 120s'
-    )
+    assert str(exc_info.value) == 'Runtime failed to return execute_action before the requested timeout of 120s'
 
 
 @pytest.mark.parametrize(
@@ -54,16 +51,12 @@ def test_runtime_timeout_error(runtime, mock_session):
         ),
     ],
 )
-def test_runtime_disconnected_error(
-    runtime, mock_session, status_code, expected_message
-):
+def test_runtime_disconnected_error(runtime, mock_session, status_code, expected_message):
     # Mock the request to return the specified status code
     mock_response = Mock()
     mock_response.status_code = status_code
     mock_response.raise_for_status = Mock(
-        side_effect=httpx.HTTPStatusError(
-            'mock_error', request=MagicMock(), response=mock_response
-        )
+        side_effect=httpx.HTTPStatusError('mock_error', request=MagicMock(), response=mock_response)
     )
     mock_response.json = Mock(
         return_value={
@@ -74,9 +67,7 @@ def test_runtime_disconnected_error(
     )
 
     # Mock the runtime to raise the error
-    runtime.send_action_for_execution.side_effect = AgentRuntimeDisconnectedError(
-        expected_message
-    )
+    runtime.send_action_for_execution.side_effect = AgentRuntimeDisconnectedError(expected_message)
 
     # Create a command action
     action = CmdRunAction(command='test command')

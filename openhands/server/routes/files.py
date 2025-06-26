@@ -27,9 +27,7 @@ from openhands.server.utils import get_conversation, get_conversation_store
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.utils.async_utils import call_sync_from_async
 
-app = APIRouter(
-    prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies()
-)
+app = APIRouter(prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies())
 
 
 @app.get(
@@ -89,9 +87,7 @@ async def list_files(
         try:
             read_action = FileReadAction(gitignore_path)
             observation = await call_sync_from_async(runtime.run_action, read_action)
-            spec = PathSpec.from_lines(
-                GitWildMatchPattern, observation.content.splitlines()
-            )
+            spec = PathSpec.from_lines(GitWildMatchPattern, observation.content.splitlines())
         except Exception as e:
             logger.warning(e)
             return file_list
@@ -316,9 +312,7 @@ async def upload_files(
     runtime: Runtime = conversation.runtime
 
     for file in files:
-        file_path = os.path.join(
-            runtime.config.workspace_mount_path_in_sandbox, str(file.filename)
-        )
+        file_path = os.path.join(runtime.config.workspace_mount_path_in_sandbox, str(file.filename))
         try:
             file_content = await file.read()
             write_action = FileWriteAction(

@@ -142,10 +142,7 @@ def test_generate_dockerfile_build_from_scratch():
 
     # Check the update command
     assert 'COPY ./code/openhands /openhands/code/openhands' in dockerfile_content
-    assert (
-        '/openhands/micromamba/bin/micromamba run -n openhands poetry install'
-        in dockerfile_content
-    )
+    assert '/openhands/micromamba/bin/micromamba run -n openhands poetry install' in dockerfile_content
 
 
 def test_generate_dockerfile_build_from_lock():
@@ -187,24 +184,17 @@ def test_generate_dockerfile_build_from_versioned():
 def test_get_runtime_image_repo_and_tag_eventstream():
     base_image = 'debian:11'
     img_repo, img_tag = get_runtime_image_repo_and_tag(base_image)
-    assert (
-        img_repo == f'{get_runtime_image_repo()}'
-        and img_tag == f'{OH_VERSION}_image_debian_tag_11'
-    )
+    assert img_repo == f'{get_runtime_image_repo()}' and img_tag == f'{OH_VERSION}_image_debian_tag_11'
 
     img_repo, img_tag = get_runtime_image_repo_and_tag(DEFAULT_BASE_IMAGE)
     assert (
         img_repo == f'{get_runtime_image_repo()}'
-        and img_tag
-        == f'{OH_VERSION}_image_nikolaik_s_python-nodejs_tag_python3.12-nodejs22'
+        and img_tag == f'{OH_VERSION}_image_nikolaik_s_python-nodejs_tag_python3.12-nodejs22'
     )
 
     base_image = 'ubuntu'
     img_repo, img_tag = get_runtime_image_repo_and_tag(base_image)
-    assert (
-        img_repo == f'{get_runtime_image_repo()}'
-        and img_tag == f'{OH_VERSION}_image_ubuntu_tag_latest'
-    )
+    assert img_repo == f'{get_runtime_image_repo()}' and img_tag == f'{OH_VERSION}_image_ubuntu_tag_latest'
 
 
 def test_build_runtime_image_from_scratch():
@@ -217,9 +207,7 @@ def test_build_runtime_image_from_scratch():
     mock_source_hash.return_value = 'mock-source-tag'
     mock_runtime_builder = MagicMock()
     mock_runtime_builder.image_exists.return_value = False
-    mock_runtime_builder.build.return_value = (
-        f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag_mock-source-tag'
-    )
+    mock_runtime_builder.build.return_value = f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag_mock-source-tag'
     mock_prep_build_folder = MagicMock()
     mod = build_runtime_image.__module__
     with (
@@ -242,13 +230,8 @@ def test_build_runtime_image_from_scratch():
             platform=None,
             extra_build_args=None,
         )
-        assert (
-            image_name
-            == f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag_mock-source-tag'
-        )
-        mock_prep_build_folder.assert_called_once_with(
-            ANY, base_image, BuildFromImageType.SCRATCH, None
-        )
+        assert image_name == f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag_mock-source-tag'
+        mock_prep_build_folder.assert_called_once_with(ANY, base_image, BuildFromImageType.SCRATCH, None)
 
 
 def test_build_runtime_image_exact_hash_exist():
@@ -261,9 +244,7 @@ def test_build_runtime_image_exact_hash_exist():
     mock_versioned_tag.return_value = 'mock-versioned-tag'
     mock_runtime_builder = MagicMock()
     mock_runtime_builder.image_exists.return_value = True
-    mock_runtime_builder.build.return_value = (
-        f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag_mock-source-tag'
-    )
+    mock_runtime_builder.build.return_value = f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag_mock-source-tag'
     mock_prep_build_folder = MagicMock()
     mod = build_runtime_image.__module__
     with (
@@ -276,10 +257,7 @@ def test_build_runtime_image_exact_hash_exist():
         ),
     ):
         image_name = build_runtime_image(base_image, mock_runtime_builder)
-        assert (
-            image_name
-            == f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag_mock-source-tag'
-        )
+        assert image_name == f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag_mock-source-tag'
         mock_runtime_builder.build.assert_not_called()
         mock_prep_build_folder.assert_not_called()
 
@@ -307,9 +285,7 @@ def test_build_runtime_image_exact_hash_not_exist_and_lock_exist():
             raise ValueError(f'Unexpected image name: {image_name}')
 
     mock_runtime_builder.image_exists.side_effect = image_exists_side_effect
-    mock_runtime_builder.build.return_value = (
-        f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag_mock-source-tag'
-    )
+    mock_runtime_builder.build.return_value = f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag_mock-source-tag'
 
     mock_prep_build_folder = MagicMock()
     mod = build_runtime_image.__module__
@@ -323,10 +299,7 @@ def test_build_runtime_image_exact_hash_not_exist_and_lock_exist():
         ),
     ):
         image_name = build_runtime_image(base_image, mock_runtime_builder)
-        assert (
-            image_name
-            == f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag_mock-source-tag'
-        )
+        assert image_name == f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag_mock-source-tag'
         mock_runtime_builder.build.assert_called_once_with(
             path=ANY,
             tags=[
@@ -366,9 +339,7 @@ def test_build_runtime_image_exact_hash_not_exist_and_lock_not_exist_and_version
             raise ValueError(f'Unexpected image name: {image_name}')
 
     mock_runtime_builder.image_exists.side_effect = image_exists_side_effect
-    mock_runtime_builder.build.return_value = (
-        f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag_mock-source-tag'
-    )
+    mock_runtime_builder.build.return_value = f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag_mock-source-tag'
 
     mock_prep_build_folder = MagicMock()
     mod = build_runtime_image.__module__
@@ -382,10 +353,7 @@ def test_build_runtime_image_exact_hash_not_exist_and_lock_not_exist_and_version
         ),
     ):
         image_name = build_runtime_image(base_image, mock_runtime_builder)
-        assert (
-            image_name
-            == f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag_mock-source-tag'
-        )
+        assert image_name == f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag_mock-source-tag'
         mock_runtime_builder.build.assert_called_once_with(
             path=ANY,
             tags=[
@@ -525,9 +493,7 @@ CMD ["sh", "-c", "echo 'Hello, World!'"]
                 container.remove(force=True)
                 logger.info(f'Removed test container: `{container.id}`')
             except Exception as e:
-                logger.warning(
-                    f'Failed to remove test container `{container.id}`: {str(e)}'
-                )
+                logger.warning(f'Failed to remove test container `{container.id}`: {str(e)}')
 
         # Clean up the image
         if built_image_name:
@@ -535,9 +501,7 @@ CMD ["sh", "-c", "echo 'Hello, World!'"]
                 client.images.remove(built_image_name, force=True)
                 logger.info(f'Removed test image: `{built_image_name}`')
             except Exception as e:
-                logger.warning(
-                    f'Failed to remove test image `{built_image_name}`: {str(e)}'
-                )
+                logger.warning(f'Failed to remove test image `{built_image_name}`: {str(e)}')
         else:
             logger.warning('No image was built, so no image cleanup was necessary.')
 
@@ -594,9 +558,7 @@ CMD ["sh", "-c", "echo 'Hello, World!'"]
                 container.remove(force=True)
                 logger.info(f'Removed test container: `{container.id}`')
             except Exception as e:
-                logger.warning(
-                    f'Failed to remove test container `{container.id}`: {str(e)}'
-                )
+                logger.warning(f'Failed to remove test container `{container.id}`: {str(e)}')
 
         # Clean up the image
         if built_image_name:
@@ -604,9 +566,7 @@ CMD ["sh", "-c", "echo 'Hello, World!'"]
                 client.images.remove(built_image_name, force=True)
                 logger.info(f'Removed test image: `{built_image_name}`')
             except Exception as e:
-                logger.warning(
-                    f'Failed to remove test image `{built_image_name}`: {str(e)}'
-                )
+                logger.warning(f'Failed to remove test image `{built_image_name}`: {str(e)}')
         else:
             logger.warning('No image was built, so no image cleanup was necessary.')
 
@@ -628,18 +588,12 @@ def test_image_exists_not_found():
         'Version': '20.10.0',
         'Components': [{'Name': 'Engine', 'Version': '20.10.0'}],
     }  # Ensure version is >= 18.09
-    mock_client.images.get.side_effect = docker.errors.ImageNotFound(
-        "He doesn't like you!"
-    )
-    mock_client.api.pull.side_effect = docker.errors.ImageNotFound(
-        "I don't like you either!"
-    )
+    mock_client.images.get.side_effect = docker.errors.ImageNotFound("He doesn't like you!")
+    mock_client.api.pull.side_effect = docker.errors.ImageNotFound("I don't like you either!")
     builder = DockerRuntimeBuilder(mock_client)
     assert not builder.image_exists('nonexistent:image')
     mock_client.images.get.assert_called_once_with('nonexistent:image')
-    mock_client.api.pull.assert_called_once_with(
-        'nonexistent', tag='image', stream=True, decode=True
-    )
+    mock_client.api.pull.assert_called_once_with('nonexistent', tag='image', stream=True, decode=True)
 
 
 def test_truncate_hash():

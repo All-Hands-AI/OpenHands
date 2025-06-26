@@ -30,17 +30,13 @@ async def test_auto_generate_title_with_llm():
     user_id = 'test-user'
 
     # Create a mock event
-    user_message = MessageAction(
-        content='Help me write a Python script to analyze data'
-    )
+    user_message = MessageAction(content='Help me write a Python script to analyze data')
     user_message._source = EventSource.USER
     user_message._id = 1
     user_message._timestamp = datetime.now(timezone.utc).isoformat()
 
     # Mock the EventStream class
-    with patch(
-        'openhands.utils.conversation_summary.EventStream'
-    ) as mock_event_stream_cls:
+    with patch('openhands.utils.conversation_summary.EventStream') as mock_event_stream_cls:
         # Configure the mock event stream to return our test message
         mock_event_stream = MagicMock(spec=EventStream)
         mock_event_stream.search_events.return_value = [user_message]
@@ -62,17 +58,13 @@ async def test_auto_generate_title_with_llm():
             )
 
             # Call the auto_generate_title function directly
-            title = await auto_generate_title(
-                conversation_id, user_id, file_store, settings
-            )
+            title = await auto_generate_title(conversation_id, user_id, file_store, settings)
 
             # Verify the result
             assert title == 'Python Data Analysis Script'
 
             # Verify EventStream was created with the correct parameters
-            mock_event_stream_cls.assert_called_once_with(
-                conversation_id, file_store, user_id
-            )
+            mock_event_stream_cls.assert_called_once_with(conversation_id, file_store, user_id)
 
             # Verify LLM was called with appropriate parameters
             mock_llm_cls.assert_called_once_with(
@@ -103,9 +95,7 @@ async def test_auto_generate_title_fallback():
     user_message._timestamp = datetime.now(timezone.utc).isoformat()
 
     # Mock the EventStream class
-    with patch(
-        'openhands.utils.conversation_summary.EventStream'
-    ) as mock_event_stream_cls:
+    with patch('openhands.utils.conversation_summary.EventStream') as mock_event_stream_cls:
         # Configure the mock event stream to return our test message
         mock_event_stream = MagicMock(spec=EventStream)
         mock_event_stream.search_events.return_value = [user_message]
@@ -124,18 +114,14 @@ async def test_auto_generate_title_fallback():
             )
 
             # Call the auto_generate_title function directly
-            title = await auto_generate_title(
-                conversation_id, user_id, file_store, settings
-            )
+            title = await auto_generate_title(conversation_id, user_id, file_store, settings)
 
             # Verify the result is a truncated version of the message
             assert title == 'This is a very long message th...'
             assert len(title) <= 35
 
             # Verify EventStream was created with the correct parameters
-            mock_event_stream_cls.assert_called_once_with(
-                conversation_id, file_store, user_id
-            )
+            mock_event_stream_cls.assert_called_once_with(conversation_id, file_store, user_id)
 
 
 @pytest.mark.asyncio
@@ -149,9 +135,7 @@ async def test_auto_generate_title_no_messages():
     user_id = 'test-user'
 
     # Mock the EventStream class
-    with patch(
-        'openhands.utils.conversation_summary.EventStream'
-    ) as mock_event_stream_cls:
+    with patch('openhands.utils.conversation_summary.EventStream') as mock_event_stream_cls:
         # Configure the mock event stream to return no events
         mock_event_stream = MagicMock(spec=EventStream)
         mock_event_stream.search_events.return_value = []
@@ -165,17 +149,13 @@ async def test_auto_generate_title_no_messages():
         )
 
         # Call the auto_generate_title function directly
-        title = await auto_generate_title(
-            conversation_id, user_id, file_store, settings
-        )
+        title = await auto_generate_title(conversation_id, user_id, file_store, settings)
 
         # Verify the result is empty
         assert title == ''
 
         # Verify EventStream was created with the correct parameters
-        mock_event_stream_cls.assert_called_once_with(
-            conversation_id, file_store, user_id
-        )
+        mock_event_stream_cls.assert_called_once_with(conversation_id, file_store, user_id)
 
 
 @pytest.mark.asyncio

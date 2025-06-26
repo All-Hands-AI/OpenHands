@@ -47,9 +47,7 @@ api_key = "custom-api-key-3"
     return str(toml_file)
 
 
-def test_load_from_toml_llm_with_fallback(
-    default_config: OpenHandsConfig, generic_llm_toml: str
-) -> None:
+def test_load_from_toml_llm_with_fallback(default_config: OpenHandsConfig, generic_llm_toml: str) -> None:
     """Test that custom LLM configurations fallback non-overridden attributes
     like 'num_retries' from the generic [llm] section.
     """
@@ -80,9 +78,7 @@ def test_load_from_toml_llm_with_fallback(
     assert custom3.num_retries == 3  # from [llm]
 
 
-def test_load_from_toml_llm_custom_overrides_all(
-    default_config: OpenHandsConfig, tmp_path: pathlib.Path
-) -> None:
+def test_load_from_toml_llm_custom_overrides_all(default_config: OpenHandsConfig, tmp_path: pathlib.Path) -> None:
     """Test that a custom LLM can fully override all attributes from the generic [llm] section."""
     toml_content = """
 [core]
@@ -116,9 +112,7 @@ num_retries = 10
     assert custom_full.num_retries == 10  # overridden value
 
 
-def test_load_from_toml_llm_custom_partial_override(
-    default_config: OpenHandsConfig, generic_llm_toml: str
-) -> None:
+def test_load_from_toml_llm_custom_partial_override(default_config: OpenHandsConfig, generic_llm_toml: str) -> None:
     """Test that custom LLM configurations can partially override attributes
     from the generic [llm] section while inheriting others.
     """
@@ -137,9 +131,7 @@ def test_load_from_toml_llm_custom_partial_override(
     assert custom2.num_retries == 5  # Overridden value
 
 
-def test_load_from_toml_llm_custom_no_override(
-    default_config: OpenHandsConfig, generic_llm_toml: str
-) -> None:
+def test_load_from_toml_llm_custom_no_override(default_config: OpenHandsConfig, generic_llm_toml: str) -> None:
     """Test that custom LLM configurations with no additional overrides
     inherit all non-specified attributes from the generic [llm] section.
     """
@@ -152,9 +144,7 @@ def test_load_from_toml_llm_custom_no_override(
     assert custom3.num_retries == 3  # from [llm]
 
 
-def test_load_from_toml_llm_missing_generic(
-    default_config: OpenHandsConfig, tmp_path: pathlib.Path
-) -> None:
+def test_load_from_toml_llm_missing_generic(default_config: OpenHandsConfig, tmp_path: pathlib.Path) -> None:
     """Test that custom LLM configurations without a generic [llm] section
     use only their own attributes and fallback to defaults for others.
     """
@@ -178,9 +168,7 @@ api_key = "custom-only-api-key"
     assert custom_only.num_retries == 4  # default value
 
 
-def test_load_from_toml_llm_invalid_config(
-    default_config: OpenHandsConfig, tmp_path: pathlib.Path
-) -> None:
+def test_load_from_toml_llm_invalid_config(default_config: OpenHandsConfig, tmp_path: pathlib.Path) -> None:
     """Test that invalid custom LLM configurations do not override the generic
     and raise appropriate warnings.
     """
@@ -214,9 +202,7 @@ unknown_attr = "should_not_exist"
     assert custom_invalid.num_retries == 3  # default value
 
 
-def test_azure_model_api_version(
-    default_config: OpenHandsConfig, tmp_path: pathlib.Path
-) -> None:
+def test_azure_model_api_version(default_config: OpenHandsConfig, tmp_path: pathlib.Path) -> None:
     """Test that Azure models get the correct API version by default."""
     toml_content = """
 [core]

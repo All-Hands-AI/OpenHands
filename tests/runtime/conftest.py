@@ -25,9 +25,7 @@ TEST_IN_CI = os.getenv('TEST_IN_CI', 'False').lower() in ['true', '1', 'yes']
 TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'docker').lower()
 RUN_AS_OPENHANDS = os.getenv('RUN_AS_OPENHANDS', 'True').lower() in ['true', '1', 'yes']
 test_mount_path = ''
-project_dir = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-)
+project_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sandbox_test_folder = '/workspace'
 
 
@@ -80,13 +78,9 @@ def _reset_cwd() -> None:
 
 @pytest.fixture(autouse=True)
 def print_method_name(request):
-    print(
-        '\n\n########################################################################'
-    )
+    print('\n\n########################################################################')
     print(f'Running test: {request.node.name}')
-    print(
-        '########################################################################\n\n'
-    )
+    print('########################################################################\n\n')
 
 
 @pytest.fixture
@@ -102,9 +96,7 @@ def temp_dir(tmp_path_factory: TempPathFactory, request) -> str:
     Returns:
     - str: The temporary directory path that was created
     """
-    temp_dir = tmp_path_factory.mktemp(
-        'rt_' + str(random.randint(100000, 999999)), numbered=False
-    )
+    temp_dir = tmp_path_factory.mktemp('rt_' + str(random.randint(100000, 999999)), numbered=False)
 
     logger.info(f'\n*** {request.node.name}\n>> temp folder: {temp_dir}\n')
 
@@ -141,13 +133,9 @@ def get_runtime_classes() -> list[type[Runtime]]:
 
 
 def get_run_as_openhands() -> list[bool]:
-    print(
-        '\n\n########################################################################'
-    )
+    print('\n\n########################################################################')
     print('USER: ' + 'openhands' if RUN_AS_OPENHANDS else 'root')
-    print(
-        '########################################################################\n\n'
-    )
+    print('########################################################################\n\n')
     return [RUN_AS_OPENHANDS]
 
 
@@ -192,9 +180,7 @@ def base_container_image(request):
             request.param = None
         if request.param is None and hasattr(request.config, 'sandbox'):
             try:
-                request.param = request.config.sandbox.getoption(
-                    '--base_container_image'
-                )
+                request.param = request.config.sandbox.getoption('--base_container_image')
             except ValueError:
                 request.param = None
         if request.param is None:
@@ -247,9 +233,7 @@ def _load_runtime(
     print(f'use_host_network: {config.sandbox.use_host_network}')
     print(f'workspace_base: {config.workspace_base}')
     print(f'workspace_mount_path: {config.workspace_mount_path}')
-    print(
-        f'workspace_mount_path_in_sandbox: {config.workspace_mount_path_in_sandbox}\n'
-    )
+    print(f'workspace_mount_path_in_sandbox: {config.workspace_mount_path_in_sandbox}\n')
 
     config.sandbox.browsergym_eval_env = browsergym_eval_env
     config.sandbox.enable_auto_lint = enable_auto_lint

@@ -34,9 +34,7 @@ def default_llm_config():
 
 @pytest.mark.asyncio
 @patch('openhands.llm.llm.litellm_completion')
-async def test_notify_on_llm_retry(
-    mock_litellm_completion, mock_sio, default_llm_config
-):
+async def test_notify_on_llm_retry(mock_litellm_completion, mock_sio, default_llm_config):
     config = OpenHandsConfig()
     config.set_llm_config(default_llm_config)
     session = Session(
@@ -50,9 +48,7 @@ async def test_notify_on_llm_retry(
 
     with patch('time.sleep') as _mock_sleep:
         mock_litellm_completion.side_effect = [
-            RateLimitError(
-                'Rate limit exceeded', llm_provider='test_provider', model='test_model'
-            ),
+            RateLimitError('Rate limit exceeded', llm_provider='test_provider', model='test_model'),
             {'choices': [{'message': {'content': 'Retry successful'}}]},
         ]
     llm = session._create_llm('..cls..')
@@ -63,7 +59,5 @@ async def test_notify_on_llm_retry(
     )
 
     assert mock_litellm_completion.call_count == 2
-    session.queue_status_message.assert_called_once_with(
-        'info', 'STATUS$LLM_RETRY', ANY
-    )
+    session.queue_status_message.assert_called_once_with('info', 'STATUS$LLM_RETRY', ANY)
     await session.close()

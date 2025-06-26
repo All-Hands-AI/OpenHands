@@ -24,9 +24,7 @@ class CodeGenTask(Task):
         code_to_exec = self.extract_answer(solution)
         LOGGER.debug(f'CODE_TO_EXEC:\n{code_to_exec}')
         LOGGER.debug(f'TEST_CODE:\n{self._reference}')
-        res = check_correctness(
-            solution_code=code_to_exec, test_code=self._reference, timeout=10
-        )
+        res = check_correctness(solution_code=code_to_exec, test_code=self._reference, timeout=10)
         return res['success']
 
 

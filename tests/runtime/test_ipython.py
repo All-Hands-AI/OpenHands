@@ -83,9 +83,7 @@ def test_simple_cmd_ipython_and_fileop(temp_dir, runtime_cls, run_as_openhands):
     action_read = FileReadAction(path='hello.sh')
     logger.info(action_read, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action_read)
-    assert isinstance(obs, FileReadObservation), (
-        'The observation should be a FileReadObservation.'
-    )
+    assert isinstance(obs, FileReadObservation), 'The observation should be a FileReadObservation.'
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
     assert obs.content == 'echo "Hello, World!"\n'
@@ -278,10 +276,7 @@ def test_ipython_package_install(temp_dir, runtime_cls, run_as_openhands):
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert (
-        'Successfully installed pymsgbox-1.0.9' in obs.content
-        or '[Package installed successfully]' in obs.content
-    )
+    assert 'Successfully installed pymsgbox-1.0.9' in obs.content or '[Package installed successfully]' in obs.content
 
     action = IPythonRunCellAction(code='import pymsgbox')
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -306,9 +301,7 @@ def test_ipython_file_editor_permissions_as_openhands(temp_dir, runtime_cls):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands=True)
 
     # Create a file owned by root with restricted permissions
-    action = CmdRunAction(
-        command='sudo touch /root/test.txt && sudo chmod 600 /root/test.txt'
-    )
+    action = CmdRunAction(command='sudo touch /root/test.txt && sudo chmod 600 /root/test.txt')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -331,9 +324,7 @@ def test_ipython_file_editor_permissions_as_openhands(temp_dir, runtime_cls):
     assert 'Permission denied' in obs.content
 
     # Try to create a file in root directory - should fail with permission denied
-    test_code = (
-        "print(file_editor(command='create', path='/root/new.txt', file_text='test'))"
-    )
+    test_code = "print(file_editor(command='create', path='/root/new.txt', file_text='test'))"
     action = IPythonRunCellAction(code=test_code)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)

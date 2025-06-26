@@ -14,17 +14,9 @@ _LOGGER = logging.getLogger(__name__)
 def remove_setup_files(model_patch: str, instance: dict, delete_setup_changes: bool):
     """Discard all changes that a patch applies to files changes by the pre_install script and that are reproduction scripts (top-level script)"""
     setup_files = ['setup.py', 'tox.ini', 'pyproject.toml']
-    pre_install = (
-        MAP_VERSION_TO_INSTALL.get(instance['repo'], {})
-        .get(instance['version'], {})
-        .get('pre_install', [])
-    )
+    pre_install = MAP_VERSION_TO_INSTALL.get(instance['repo'], {}).get(instance['version'], {}).get('pre_install', [])
     relevant_files = (
-        [
-            file
-            for file in setup_files
-            if any(file in install and 'sed' in install for install in pre_install)
-        ]
+        [file for file in setup_files if any(file in install and 'sed' in install for install in pre_install)]
         if delete_setup_changes
         else []
     )
@@ -38,10 +30,7 @@ def remove_setup_files(model_patch: str, instance: dict, delete_setup_changes: b
 
     to_delete = []
     for i, file in enumerate(patch):
-        if (
-            any(f in file.source_file for f in relevant_files)
-            or file.target_file.count('/') == 1
-        ):
+        if any(f in file.source_file for f in relevant_files) or file.target_file.count('/') == 1:
             to_delete.append(i)
     for i in reversed(to_delete):
         del patch[i]
@@ -58,9 +47,7 @@ def main(
             try:
                 git_diff = pred['test_result']['git_patch']
             except KeyError:
-                _LOGGER.warning(
-                    'Warning: No git diff found for instance %s', pred['instance_id']
-                )
+                _LOGGER.warning('Warning: No git diff found for instance %s', pred['instance_id'])
                 continue
             ci_mode = pred['metadata']['details'].get('mode', '') == 'swt-ci'
             try:

@@ -39,9 +39,7 @@ class Test(BaseIntegrationTest):
         message_actions = [
             event
             for event in histories
-            if isinstance(
-                event, (MessageAction, AgentFinishAction, AgentDelegateObservation)
-            )
+            if isinstance(event, (MessageAction, AgentFinishAction, AgentDelegateObservation))
         ]
         logger.info(f'Total message-like events: {len(message_actions)}')
 
@@ -64,9 +62,7 @@ class Test(BaseIntegrationTest):
             except Exception as e:
                 logger.error(f'Error processing event: {e}')
 
-        logger.debug(
-            f'Total messages: {len(message_actions)}. Messages: {message_actions}'
-        )
+        logger.debug(f'Total messages: {len(message_actions)}. Messages: {message_actions}')
         return TestResult(
             success=False,
             reason=f'The answer is not found in any message. Total messages: {len(message_actions)}.',

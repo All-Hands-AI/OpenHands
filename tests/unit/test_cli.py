@@ -38,9 +38,7 @@ def mock_controller():
 
 
 @pytest.mark.asyncio
-async def test_cleanup_session_closes_resources(
-    mock_agent, mock_runtime, mock_controller
-):
+async def test_cleanup_session_closes_resources(mock_agent, mock_runtime, mock_controller):
     """Test that cleanup_session calls close methods on agent, runtime, and controller."""
     loop = asyncio.get_running_loop()
     await cli.cleanup_session(loop, mock_agent, mock_runtime, mock_controller)
@@ -51,9 +49,7 @@ async def test_cleanup_session_closes_resources(
 
 
 @pytest.mark.asyncio
-async def test_cleanup_session_cancels_pending_tasks(
-    mock_agent, mock_runtime, mock_controller
-):
+async def test_cleanup_session_cancels_pending_tasks(mock_agent, mock_runtime, mock_controller):
     """Test that cleanup_session cancels other pending tasks."""
     loop = asyncio.get_running_loop()
     other_task_ran = False
@@ -94,9 +90,7 @@ async def test_cleanup_session_cancels_pending_tasks(
 
 
 @pytest.mark.asyncio
-async def test_cleanup_session_handles_exceptions(
-    mock_agent, mock_runtime, mock_controller
-):
+async def test_cleanup_session_handles_exceptions(mock_agent, mock_runtime, mock_controller):
     """Test that cleanup_session handles exceptions during cleanup gracefully."""
     loop = asyncio.get_running_loop()
     mock_controller.close.side_effect = Exception('Test cleanup error')
@@ -120,9 +114,7 @@ def mock_config():
 
     # Mock search_api_key with get_secret_value method
     search_api_key_mock = MagicMock()
-    search_api_key_mock.get_secret_value.return_value = (
-        ''  # Empty string, not starting with 'tvly-'
-    )
+    search_api_key_mock.get_secret_value.return_value = ''  # Empty string, not starting with 'tvly-'
     config.search_api_key = search_api_key_mock
 
     return config
@@ -183,16 +175,12 @@ async def test_run_session_without_initial_action(
     mock_memory = MagicMock()
     mock_create_memory.return_value = mock_memory
 
-    with patch(
-        'openhands.cli.main.read_prompt_input', new_callable=AsyncMock
-    ) as mock_read_prompt:
+    with patch('openhands.cli.main.read_prompt_input', new_callable=AsyncMock) as mock_read_prompt:
         # Set up read_prompt_input to return a string that will trigger the command handler
         mock_read_prompt.return_value = '/exit'
 
         # Mock handle_commands to return values that will exit the loop
-        with patch(
-            'openhands.cli.main.handle_commands', new_callable=AsyncMock
-        ) as mock_handle_commands:
+        with patch('openhands.cli.main.handle_commands', new_callable=AsyncMock) as mock_handle_commands:
             mock_handle_commands.return_value = (
                 True,
                 False,
@@ -200,9 +188,7 @@ async def test_run_session_without_initial_action(
             )  # close_repl, reload_microagents, new_session_requested
 
             # Run the function
-            result = await cli.run_session(
-                loop, mock_config, mock_settings_store, '/test/dir'
-            )
+            result = await cli.run_session(loop, mock_config, mock_settings_store, '/test/dir')
 
     # Assertions for initialization flow
     mock_display_runtime_init.assert_called_once_with('local')
@@ -275,16 +261,12 @@ async def test_run_session_with_initial_action(
     initial_action_content = 'Test initial message'
 
     # Run the function with the initial action
-    with patch(
-        'openhands.cli.main.read_prompt_input', new_callable=AsyncMock
-    ) as mock_read_prompt:
+    with patch('openhands.cli.main.read_prompt_input', new_callable=AsyncMock) as mock_read_prompt:
         # Set up read_prompt_input to return a string that will trigger the command handler
         mock_read_prompt.return_value = '/exit'
 
         # Mock handle_commands to return values that will exit the loop
-        with patch(
-            'openhands.cli.main.handle_commands', new_callable=AsyncMock
-        ) as mock_handle_commands:
+        with patch('openhands.cli.main.handle_commands', new_callable=AsyncMock) as mock_handle_commands:
             mock_handle_commands.return_value = (
                 True,
                 False,
@@ -587,9 +569,7 @@ async def test_main_with_session_name_passes_name_to_run_session(
 @patch('openhands.cli.main.add_mcp_tools_to_agent')
 @patch('openhands.cli.main.run_agent_until_done')
 @patch('openhands.cli.main.cleanup_session')
-@patch(
-    'openhands.cli.main.read_prompt_input', new_callable=AsyncMock
-)  # For REPL control
+@patch('openhands.cli.main.read_prompt_input', new_callable=AsyncMock)  # For REPL control
 @patch('openhands.cli.main.handle_commands', new_callable=AsyncMock)  # For REPL control
 @patch('openhands.core.setup.State.restore_from_session')  # Key mock
 @patch('openhands.controller.AgentController.__init__')  # To check initial_state
@@ -629,9 +609,7 @@ async def test_run_session_with_name_attempts_state_restore(
     mock_runtime = AsyncMock()
     mock_runtime.event_stream = MagicMock()  # This is the EventStream instance
     mock_runtime.event_stream.sid = expected_sid
-    mock_runtime.event_stream.file_store = (
-        MagicMock()
-    )  # Mock the file_store attribute on the EventStream
+    mock_runtime.event_stream.file_store = MagicMock()  # Mock the file_store attribute on the EventStream
     mock_create_runtime.return_value = mock_runtime
 
     # This is what State.restore_from_session will return
@@ -666,9 +644,7 @@ async def test_run_session_with_name_attempts_state_restore(
 
     # State.restore_from_session is called from within core.setup.create_controller,
     # which receives the runtime object (and thus its event_stream with sid and file_store).
-    mock_restore_from_session.assert_called_once_with(
-        expected_sid, mock_runtime.event_stream.file_store
-    )
+    mock_restore_from_session.assert_called_once_with(expected_sid, mock_runtime.event_stream.file_store)
 
     # Check that AgentController was initialized with the loaded state
     mock_agent_controller_init.assert_called_once()

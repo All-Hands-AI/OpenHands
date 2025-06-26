@@ -24,9 +24,7 @@ class SecurityAnalyzer:
         def sync_on_event(event: Event) -> None:
             asyncio.create_task(self.on_event(event))
 
-        self.event_stream.subscribe(
-            EventStreamSubscriber.SECURITY_ANALYZER, sync_on_event, str(uuid4())
-        )
+        self.event_stream.subscribe(EventStreamSubscriber.SECURITY_ANALYZER, sync_on_event, str(uuid4()))
 
     async def on_event(self, event: Event) -> None:
         """Handles the incoming event, and when Action is received, analyzes it for security risks."""
@@ -44,9 +42,7 @@ class SecurityAnalyzer:
 
     async def handle_api_request(self, request: Request) -> Any:
         """Handles the incoming API request."""
-        raise NotImplementedError(
-            'Need to implement handle_api_request method in SecurityAnalyzer subclass'
-        )
+        raise NotImplementedError('Need to implement handle_api_request method in SecurityAnalyzer subclass')
 
     async def log_event(self, event: Event) -> None:
         """Logs the incoming event."""
@@ -58,9 +54,7 @@ class SecurityAnalyzer:
 
     async def security_risk(self, event: Action) -> ActionSecurityRisk:
         """Evaluates the Action for security risks and returns the risk level."""
-        raise NotImplementedError(
-            'Need to implement security_risk method in SecurityAnalyzer subclass'
-        )
+        raise NotImplementedError('Need to implement security_risk method in SecurityAnalyzer subclass')
 
     async def close(self) -> None:
         """Cleanup resources allocated by the SecurityAnalyzer."""

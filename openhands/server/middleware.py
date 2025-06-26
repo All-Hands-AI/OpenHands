@@ -22,9 +22,7 @@ class LocalhostCORSMiddleware(CORSMiddleware):
     def __init__(self, app: ASGIApp) -> None:
         allow_origins_str = os.getenv('PERMITTED_CORS_ORIGINS')
         if allow_origins_str:
-            allow_origins = tuple(
-                origin.strip() for origin in allow_origins_str.split(',')
-            )
+            allow_origins = tuple(origin.strip() for origin in allow_origins_str.split(','))
         else:
             allow_origins = ()
         super().__init__(
@@ -54,17 +52,13 @@ class CacheControlMiddleware(BaseHTTPMiddleware):
     Middleware to disable caching for all routes by adding appropriate headers
     """
 
-    async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         response = await call_next(request)
         if request.url.path.startswith('/assets'):
             # The content of the assets directory has fingerprinted file names so we cache aggressively
             response.headers['Cache-Control'] = 'public, max-age=2592000, immutable'
         else:
-            response.headers['Cache-Control'] = (
-                'no-cache, no-store, must-revalidate, max-age=0'
-            )
+            response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
             response.headers['Pragma'] = 'no-cache'
             response.headers['Expires'] = '0'
         return response
@@ -113,9 +107,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self.rate_limiter = rate_limiter
 
-    async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         if not self.is_rate_limited_request(request):
             return await call_next(request)
         ok = await self.rate_limiter(request)

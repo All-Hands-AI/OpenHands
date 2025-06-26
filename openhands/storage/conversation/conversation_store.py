@@ -57,15 +57,11 @@ class ConversationStore(ABC):
     ) -> ConversationMetadataResultSet:
         """Search conversations."""
 
-    async def get_all_metadata(
-        self, conversation_ids: Iterable[str]
-    ) -> list[ConversationMetadata]:
+    async def get_all_metadata(self, conversation_ids: Iterable[str]) -> list[ConversationMetadata]:
         """Get metadata for multiple conversations in parallel."""
         return await wait_all([self.get_metadata(cid) for cid in conversation_ids])
 
     @classmethod
     @abstractmethod
-    async def get_instance(
-        cls, config: OpenHandsConfig, user_id: str | None
-    ) -> ConversationStore:
+    async def get_instance(cls, config: OpenHandsConfig, user_id: str | None) -> ConversationStore:
         """Get a store for the user represented by the token given."""

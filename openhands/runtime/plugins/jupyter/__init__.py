@@ -26,9 +26,7 @@ class JupyterPlugin(Plugin):
     gateway_process: asyncio.subprocess.Process | subprocess.Popen
     python_interpreter_path: str
 
-    async def initialize(
-        self, username: str, kernel_id: str = 'openhands-default'
-    ) -> None:
+    async def initialize(self, username: str, kernel_id: str = 'openhands-default') -> None:
         self.kernel_gateway_port = find_available_tcp_port(40000, 49999)
         self.kernel_id = kernel_id
         is_local_runtime = os.environ.get('LOCAL_RUNTIME_MODE') == '1'
@@ -97,9 +95,7 @@ class JupyterPlugin(Plugin):
                 time.sleep(1)  # type: ignore[ASYNC101] # noqa: ASYNC101
                 logger.debug('Waiting for jupyter kernel gateway to start...')
 
-            logger.debug(
-                f'Jupyter kernel gateway started at port {self.kernel_gateway_port}. Output: {output}'
-            )
+            logger.debug(f'Jupyter kernel gateway started at port {self.kernel_gateway_port}. Output: {output}')
         else:
             # Unix systems (Linux/macOS)
             jupyter_launch_command = (
@@ -130,26 +126,18 @@ class JupyterPlugin(Plugin):
                 await asyncio.sleep(1)
                 logger.debug('Waiting for jupyter kernel gateway to start...')
 
-            logger.debug(
-                f'Jupyter kernel gateway started at port {self.kernel_gateway_port}. Output: {output}'
-            )
+            logger.debug(f'Jupyter kernel gateway started at port {self.kernel_gateway_port}. Output: {output}')
 
-        _obs = await self.run(
-            IPythonRunCellAction(code='import sys; print(sys.executable)')
-        )
+        _obs = await self.run(IPythonRunCellAction(code='import sys; print(sys.executable)'))
         self.python_interpreter_path = _obs.content.strip()
 
     async def _run(self, action: Action) -> IPythonRunCellObservation:
         """Internal method to run a code cell in the jupyter kernel."""
         if not isinstance(action, IPythonRunCellAction):
-            raise ValueError(
-                f'Jupyter plugin only supports IPythonRunCellAction, but got {action}'
-            )
+            raise ValueError(f'Jupyter plugin only supports IPythonRunCellAction, but got {action}')
 
         if not hasattr(self, 'kernel'):
-            self.kernel = JupyterKernel(
-                f'localhost:{self.kernel_gateway_port}', self.kernel_id
-            )
+            self.kernel = JupyterKernel(f'localhost:{self.kernel_gateway_port}', self.kernel_id)
 
         if not self.kernel.initialized:
             await self.kernel.initialize()

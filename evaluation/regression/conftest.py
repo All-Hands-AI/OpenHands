@@ -19,9 +19,7 @@ def agents():
     """
     agents = []
     for agent in os.listdir(AGENTHUB_DIR):
-        if os.path.isdir(os.path.join(AGENTHUB_DIR, agent)) and agent.endswith(
-            '_agent'
-        ):
+        if os.path.isdir(os.path.join(AGENTHUB_DIR, agent)) and agent.endswith('_agent'):
             agents.append(agent)
     return agents
 
@@ -119,9 +117,7 @@ def run_test_case(test_cases_dir, workspace_dir, request):
 
         shutil.rmtree(os.path.join(agent_dir, 'workspace'), ignore_errors=True)
         if os.path.isdir(os.path.join(case_dir, 'start')):
-            os.copytree(
-                os.path.join(case_dir, 'start'), os.path.join(agent_dir, 'workspace')
-            )
+            os.copytree(os.path.join(case_dir, 'start'), os.path.join(agent_dir, 'workspace'))
         else:
             os.makedirs(os.path.join(agent_dir, 'workspace'))
         agents_ref = {

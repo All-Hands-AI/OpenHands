@@ -36,9 +36,7 @@ class TestGitHandler(unittest.TestCase):
         """Execute a shell command and return the result."""
         self.executed_commands.append((cmd, cwd))
         try:
-            result = subprocess.run(
-                cmd, shell=True, cwd=cwd, capture_output=True, text=True, check=False
-            )
+            result = subprocess.run(cmd, shell=True, cwd=cwd, capture_output=True, text=True, check=False)
             return CommandResult(result.stdout, result.returncode)
         except Exception as e:
             return CommandResult(str(e), 1)
@@ -46,40 +44,24 @@ class TestGitHandler(unittest.TestCase):
     def _setup_git_repos(self):
         """Set up real git repositories for testing."""
         # Set up origin repository
-        self._execute_command(
-            'git --no-pager init --initial-branch=main', self.origin_dir
-        )
-        self._execute_command(
-            "git --no-pager config user.email 'test@example.com'", self.origin_dir
-        )
-        self._execute_command(
-            "git --no-pager config user.name 'Test User'", self.origin_dir
-        )
+        self._execute_command('git --no-pager init --initial-branch=main', self.origin_dir)
+        self._execute_command("git --no-pager config user.email 'test@example.com'", self.origin_dir)
+        self._execute_command("git --no-pager config user.name 'Test User'", self.origin_dir)
 
         # Create a file and commit it
         with open(os.path.join(self.origin_dir, 'file1.txt'), 'w') as f:
             f.write('Original content')
 
         self._execute_command('git --no-pager add file1.txt', self.origin_dir)
-        self._execute_command(
-            "git --no-pager commit -m 'Initial commit'", self.origin_dir
-        )
+        self._execute_command("git --no-pager commit -m 'Initial commit'", self.origin_dir)
 
         # Clone the origin repository to local
-        self._execute_command(
-            f'git --no-pager clone {self.origin_dir} {self.local_dir}'
-        )
-        self._execute_command(
-            "git --no-pager config user.email 'test@example.com'", self.local_dir
-        )
-        self._execute_command(
-            "git --no-pager config user.name 'Test User'", self.local_dir
-        )
+        self._execute_command(f'git --no-pager clone {self.origin_dir} {self.local_dir}')
+        self._execute_command("git --no-pager config user.email 'test@example.com'", self.local_dir)
+        self._execute_command("git --no-pager config user.name 'Test User'", self.local_dir)
 
         # Create a feature branch in the local repository
-        self._execute_command(
-            'git --no-pager checkout -b feature-branch', self.local_dir
-        )
+        self._execute_command('git --no-pager checkout -b feature-branch', self.local_dir)
 
         # Modify a file and create a new file
         with open(os.path.join(self.local_dir, 'file1.txt'), 'w') as f:
@@ -90,15 +72,11 @@ class TestGitHandler(unittest.TestCase):
 
         # Add and commit file1.txt changes to create a baseline
         self._execute_command('git --no-pager add file1.txt', self.local_dir)
-        self._execute_command(
-            "git --no-pager commit -m 'Update file1.txt'", self.local_dir
-        )
+        self._execute_command("git --no-pager commit -m 'Update file1.txt'", self.local_dir)
 
         # Add and commit file2.txt, then modify it
         self._execute_command('git --no-pager add file2.txt', self.local_dir)
-        self._execute_command(
-            "git --no-pager commit -m 'Add file2.txt'", self.local_dir
-        )
+        self._execute_command("git --no-pager commit -m 'Add file2.txt'", self.local_dir)
 
         # Modify file2.txt and stage it
         with open(os.path.join(self.local_dir, 'file2.txt'), 'w') as f:
@@ -110,9 +88,7 @@ class TestGitHandler(unittest.TestCase):
             f.write('File to be deleted')
 
         self._execute_command('git --no-pager add file3.txt', self.local_dir)
-        self._execute_command(
-            "git --no-pager commit -m 'Add file3.txt'", self.local_dir
-        )
+        self._execute_command("git --no-pager commit -m 'Add file3.txt'", self.local_dir)
         self._execute_command('git --no-pager rm file3.txt', self.local_dir)
 
         # Modify file1.txt again but don't stage it (unstaged change)
@@ -120,9 +96,7 @@ class TestGitHandler(unittest.TestCase):
             f.write('Modified content again')
 
         # Push the feature branch to origin
-        self._execute_command(
-            'git --no-pager push -u origin feature-branch', self.local_dir
-        )
+        self._execute_command('git --no-pager push -u origin feature-branch', self.local_dir)
 
     def test_is_git_repo(self):
         """Test that _is_git_repo returns True for a git repository."""
@@ -130,10 +104,7 @@ class TestGitHandler(unittest.TestCase):
 
         # Verify the command was executed
         self.assertTrue(
-            any(
-                cmd == 'git --no-pager rev-parse --is-inside-work-tree'
-                for cmd, _ in self.executed_commands
-            )
+            any(cmd == 'git --no-pager rev-parse --is-inside-work-tree' for cmd, _ in self.executed_commands)
         )
 
     def test_get_default_branch(self):
@@ -143,10 +114,7 @@ class TestGitHandler(unittest.TestCase):
 
         # Verify the command was executed
         self.assertTrue(
-            any(
-                cmd == 'git --no-pager remote show origin | grep "HEAD branch"'
-                for cmd, _ in self.executed_commands
-            )
+            any(cmd == 'git --no-pager remote show origin | grep "HEAD branch"' for cmd, _ in self.executed_commands)
         )
 
     def test_get_current_branch(self):
@@ -156,12 +124,7 @@ class TestGitHandler(unittest.TestCase):
         print('executed commands:', self.executed_commands)
 
         # Verify the command was executed
-        self.assertTrue(
-            any(
-                cmd == 'git --no-pager rev-parse --abbrev-ref HEAD'
-                for cmd, _ in self.executed_commands
-            )
-        )
+        self.assertTrue(any(cmd == 'git --no-pager rev-parse --abbrev-ref HEAD' for cmd, _ in self.executed_commands))
 
     def test_get_valid_ref_with_origin_current_branch(self):
         """Test that _get_valid_ref returns the current branch in origin when it exists."""
@@ -171,9 +134,7 @@ class TestGitHandler(unittest.TestCase):
 
         # Check that the refs were checked in the correct order
         verify_commands = [
-            cmd
-            for cmd, _ in self.executed_commands
-            if cmd.startswith('git --no-pager rev-parse --verify')
+            cmd for cmd, _ in self.executed_commands if cmd.startswith('git --no-pager rev-parse --verify')
         ]
 
         # First should check origin/feature-branch (current branch)
@@ -183,17 +144,13 @@ class TestGitHandler(unittest.TestCase):
         self.assertEqual(ref, 'origin/feature-branch')
 
         # Verify the ref exists
-        result = self._execute_command(
-            f'git --no-pager rev-parse --verify {ref}', self.local_dir
-        )
+        result = self._execute_command(f'git --no-pager rev-parse --verify {ref}', self.local_dir)
         self.assertEqual(result.exit_code, 0)
 
     def test_get_valid_ref_without_origin_current_branch(self):
         """Test that _get_valid_ref falls back to default branch when current branch doesn't exist in origin."""
         # Create a new branch that doesn't exist in origin
-        self._execute_command(
-            'git --no-pager checkout -b new-local-branch', self.local_dir
-        )
+        self._execute_command('git --no-pager checkout -b new-local-branch', self.local_dir)
 
         # Clear the executed commands to start fresh
         self.executed_commands = []
@@ -203,24 +160,18 @@ class TestGitHandler(unittest.TestCase):
 
         # Check that the refs were checked in the correct order
         verify_commands = [
-            cmd
-            for cmd, _ in self.executed_commands
-            if cmd.startswith('git --no-pager rev-parse --verify')
+            cmd for cmd, _ in self.executed_commands if cmd.startswith('git --no-pager rev-parse --verify')
         ]
 
         # Should have tried origin/new-local-branch first (which doesn't exist)
-        self.assertTrue(
-            any('origin/new-local-branch' in cmd for cmd in verify_commands)
-        )
+        self.assertTrue(any('origin/new-local-branch' in cmd for cmd in verify_commands))
 
         # Should have found a valid ref (origin/main or merge-base)
         self.assertNotEqual(ref, 'origin/new-local-branch')
         self.assertTrue(ref == 'origin/main' or 'merge-base' in ref)
 
         # Verify the ref exists
-        result = self._execute_command(
-            f'git --no-pager rev-parse --verify {ref}', self.local_dir
-        )
+        result = self._execute_command(f'git --no-pager rev-parse --verify {ref}', self.local_dir)
         self.assertEqual(result.exit_code, 0)
 
     def test_get_valid_ref_without_origin(self):
@@ -231,20 +182,14 @@ class TestGitHandler(unittest.TestCase):
 
         # Initialize git repo without origin
         self._execute_command('git --no-pager init', no_origin_dir)
-        self._execute_command(
-            "git --no-pager config user.email 'test@example.com'", no_origin_dir
-        )
-        self._execute_command(
-            "git --no-pager config user.name 'Test User'", no_origin_dir
-        )
+        self._execute_command("git --no-pager config user.email 'test@example.com'", no_origin_dir)
+        self._execute_command("git --no-pager config user.name 'Test User'", no_origin_dir)
 
         # Create a file and commit it
         with open(os.path.join(no_origin_dir, 'file1.txt'), 'w') as f:
             f.write('Content in repo without origin')
         self._execute_command('git --no-pager add file1.txt', no_origin_dir)
-        self._execute_command(
-            "git --no-pager commit -m 'Initial commit'", no_origin_dir
-        )
+        self._execute_command("git --no-pager commit -m 'Initial commit'", no_origin_dir)
 
         # Create a custom GitHandler with a modified _get_default_branch method for this test
         class TestGitHandler(GitHandler):
@@ -265,12 +210,7 @@ class TestGitHandler(unittest.TestCase):
         ref = no_origin_handler._get_valid_ref()
 
         # Verify that git commands were executed
-        self.assertTrue(
-            any(
-                cmd.startswith('git --no-pager rev-parse --verify')
-                for cmd, _ in self.executed_commands
-            )
-        )
+        self.assertTrue(any(cmd.startswith('git --no-pager rev-parse --verify') for cmd, _ in self.executed_commands))
 
         # Should have fallen back to the empty tree ref
         self.assertEqual(
@@ -291,11 +231,7 @@ class TestGitHandler(unittest.TestCase):
         self.assertEqual(content.strip(), 'Modified content')
 
         # Should have called _get_valid_ref and then git show
-        show_commands = [
-            cmd
-            for cmd, _ in self.executed_commands
-            if cmd.startswith('git --no-pager show')
-        ]
+        show_commands = [cmd for cmd, _ in self.executed_commands if cmd.startswith('git --no-pager show')]
         self.assertTrue(any('file1.txt' in cmd for cmd in show_commands))
 
     def test_get_current_file_content(self):
@@ -304,9 +240,7 @@ class TestGitHandler(unittest.TestCase):
         self.assertEqual(content.strip(), 'Modified content again')
 
         # Verify the command was executed
-        self.assertTrue(
-            any(cmd == 'cat file1.txt' for cmd, _ in self.executed_commands)
-        )
+        self.assertTrue(any(cmd == 'cat file1.txt' for cmd, _ in self.executed_commands))
 
     def test_get_changed_files(self):
         """Test that _get_changed_files returns the list of changed files."""
@@ -326,11 +260,7 @@ class TestGitHandler(unittest.TestCase):
         self.assertIn('new_file.txt', file_paths)
 
         # Should have called _get_valid_ref and then git diff
-        diff_commands = [
-            cmd
-            for cmd, _ in self.executed_commands
-            if cmd.startswith('git --no-pager diff')
-        ]
+        diff_commands = [cmd for cmd, _ in self.executed_commands if cmd.startswith('git --no-pager diff')]
         self.assertTrue(diff_commands)
 
     def test_get_untracked_files(self):
@@ -346,10 +276,7 @@ class TestGitHandler(unittest.TestCase):
 
         # Verify the command was executed
         self.assertTrue(
-            any(
-                cmd == 'git --no-pager ls-files --others --exclude-standard'
-                for cmd, _ in self.executed_commands
-            )
+            any(cmd == 'git --no-pager ls-files --others --exclude-standard' for cmd, _ in self.executed_commands)
         )
 
     def test_get_git_changes(self):
@@ -386,15 +313,8 @@ class TestGitHandler(unittest.TestCase):
         self.assertEqual(diff['original'].strip(), 'Modified content')
 
         # Should have called _get_current_file_content and _get_ref_content
-        self.assertTrue(
-            any('cat file1.txt' in cmd for cmd, _ in self.executed_commands)
-        )
-        self.assertTrue(
-            any(
-                'git --no-pager show' in cmd and 'file1.txt' in cmd
-                for cmd, _ in self.executed_commands
-            )
-        )
+        self.assertTrue(any('cat file1.txt' in cmd for cmd, _ in self.executed_commands))
+        self.assertTrue(any('git --no-pager show' in cmd and 'file1.txt' in cmd for cmd, _ in self.executed_commands))
 
 
 if __name__ == '__main__':

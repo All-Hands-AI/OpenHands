@@ -13,9 +13,7 @@ def main(output_jsonl: str):
                     'model_patch': output['test_result']['git_patch'],
                 }
             except Exception as e:
-                print(
-                    f'Error while reading output of instance {output["instance_id"]}: {e}'
-                )
+                print(f'Error while reading output of instance {output["instance_id"]}: {e}')
 
             print(json.dumps(pred))
 

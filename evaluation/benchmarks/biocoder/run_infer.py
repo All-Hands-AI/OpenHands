@@ -34,9 +34,7 @@ from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
-    'CodeActAgent': functools.partial(
-        codeact_user_response, encapsulate_solution=True, try_parse=None
-    ),
+    'CodeActAgent': functools.partial(codeact_user_response, encapsulate_solution=True, try_parse=None),
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
@@ -117,9 +115,7 @@ def initialize_runtime(
         runtime.copy_to(testcase_path, '/testing_files')
 
     # setup paths
-    remove_code_script = os.path.join(
-        os.path.dirname(__file__), 'scripts', 'setup', 'remove_code.py'
-    )
+    remove_code_script = os.path.join(os.path.dirname(__file__), 'scripts', 'setup', 'remove_code.py')
     runtime.copy_to(remove_code_script, '/testing_files')
 
     action = CmdRunAction(command='cd /workspace')
@@ -147,9 +143,7 @@ def initialize_runtime(
     assert obs.exit_code == 0, f'Failed to chmod the files: {obs.content}'
 
     # remove code for evaluation instance
-    target_filepath = os.path.join(
-        '/workspace', instance.repository.split('/')[1], instance.filePath
-    )
+    target_filepath = os.path.join('/workspace', instance.repository.split('/')[1], instance.filePath)
     line_start = instance.lineStart
     line_end = instance.lineEnd
     language = instance.language.lower()
@@ -178,15 +172,11 @@ def complete_runtime(
 
     test_result = {'result': {}, 'metadata': {}}
 
-    copy_changed_code_script = os.path.join(
-        os.path.dirname(__file__), 'scripts', 'setup', 'copy_changed_code.py'
-    )
+    copy_changed_code_script = os.path.join(os.path.dirname(__file__), 'scripts', 'setup', 'copy_changed_code.py')
     runtime.copy_to(copy_changed_code_script, '/testing_files')
 
     file_ext = FILE_EXT_MAP[instance.language.lower()]
-    target_filepath = os.path.join(
-        '/workspace', instance.repository.split('/')[1], instance.filePath
-    )
+    target_filepath = os.path.join('/workspace', instance.repository.split('/')[1], instance.filePath)
     generated_path = os.path.join('/testing_files', 'generated.' + file_ext)
 
     action = CmdRunAction(
@@ -284,9 +274,7 @@ def process_instance(
             config=config,
             initial_user_action=MessageAction(content=instruction),
             runtime=runtime,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
-                metadata.agent_class
-            ],
+            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[metadata.agent_class],
         )
     )
 
@@ -343,6 +331,4 @@ if __name__ == '__main__':
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(biocoder_tests, output_file, args.eval_n_limit)
 
-    run_evaluation(
-        instances, metadata, output_file, args.eval_num_workers, process_instance
-    )
+    run_evaluation(instances, metadata, output_file, args.eval_num_workers, process_instance)

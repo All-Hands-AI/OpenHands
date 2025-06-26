@@ -58,9 +58,7 @@ async def test_anthropic_default_model_is_best_verified(
         pass  # Expected exception
 
     # Check that the default model displayed is the best verified model
-    best_verified_model = VERIFIED_ANTHROPIC_MODELS[
-        0
-    ]  # First model in the list is the best
+    best_verified_model = VERIFIED_ANTHROPIC_MODELS[0]  # First model in the list is the best
     default_model_displayed = False
 
     for call in mock_print.call_args_list:
@@ -68,12 +66,9 @@ async def test_anthropic_default_model_is_best_verified(
         if (
             args
             and hasattr(args[0], 'value')
-            and f'Default model: </grey><green>{best_verified_model}</green>'
-            in args[0].value
+            and f'Default model: </grey><green>{best_verified_model}</green>' in args[0].value
         ):
             default_model_displayed = True
             break
 
-    assert default_model_displayed, (
-        f'Default model displayed was not {best_verified_model}'
-    )
+    assert default_model_displayed, f'Default model displayed was not {best_verified_model}'

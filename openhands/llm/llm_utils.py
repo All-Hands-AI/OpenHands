@@ -8,9 +8,7 @@ if TYPE_CHECKING:
     from litellm import ChatCompletionToolParam
 
 
-def check_tools(
-    tools: list['ChatCompletionToolParam'], llm_config: LLMConfig
-) -> list['ChatCompletionToolParam']:
+def check_tools(tools: list['ChatCompletionToolParam'], llm_config: LLMConfig) -> list['ChatCompletionToolParam']:
     """Checks and modifies tools for compatibility with the current LLM."""
     # Special handling for Gemini models which don't support default fields and have limited format support
     if 'gemini' in llm_config.model.lower():
@@ -24,9 +22,7 @@ def check_tools(
         for tool in checked_tools:
             if 'function' in tool and 'parameters' in tool['function']:
                 if 'properties' in tool['function']['parameters']:
-                    for prop_name, prop in tool['function']['parameters'][
-                        'properties'
-                    ].items():
+                    for prop_name, prop in tool['function']['parameters']['properties'].items():
                         # Remove default fields
                         if 'default' in prop:
                             del prop['default']

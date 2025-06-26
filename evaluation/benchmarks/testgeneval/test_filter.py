@@ -9,9 +9,7 @@ from evaluation.benchmarks.testgeneval.log_parsers import (
 
 
 def indent_text(text, indent_level):
-    return '\n'.join(
-        ' ' * indent_level + line if line.strip() else line for line in text.split('\n')
-    )
+    return '\n'.join(' ' * indent_level + line if line.strip() else line for line in text.split('\n'))
 
 
 def extract_preamble_classes_and_functions(code):
@@ -81,9 +79,7 @@ def extract_preamble_classes_and_functions(code):
         class_match = class_pattern.search(code, current_position)
         method_match = method_pattern.search(code, current_position)
 
-        if class_match and (
-            not method_match or class_match.start() < method_match.start()
-        ):
+        if class_match and (not method_match or class_match.start() < method_match.start()):
             class_name = class_match.group(0)
             class_body, end_idx = extract_class_body(code, class_match.end())
             current_position = end_idx
@@ -97,13 +93,9 @@ def extract_preamble_classes_and_functions(code):
                 if not set_prefix:
                     class_prefix = class_name + class_body[:method_start]
                     set_prefix = True
-                next_method = method_pattern.search(
-                    class_body, method_start + len(method_name)
-                )
+                next_method = method_pattern.search(class_body, method_start + len(method_name))
                 method_body = (
-                    class_body[method_start : next_method.start()]
-                    if next_method
-                    else class_body[method_start:]
+                    class_body[method_start : next_method.start()] if next_method else class_body[method_start:]
                 )
                 methods.append((method_name, method_body))
 
@@ -117,12 +109,8 @@ def extract_preamble_classes_and_functions(code):
             lines = code[start_idx:].split('\n')
             current_indent = len(lines[0]) - len(lines[0].lstrip())
 
-            next_function = function_pattern.search(
-                code, start_idx + len(function_name)
-            )
-            while next_function and (
-                class_match is None or next_function.start() < class_match.start()
-            ):
+            next_function = function_pattern.search(code, start_idx + len(function_name))
+            while next_function and (class_match is None or next_function.start() < class_match.start()):
                 # Calculate the indentation of the next function
                 next_function_start = next_function.start()
                 next_line = code[next_function_start:].split('\n', 1)[0]
@@ -133,9 +121,7 @@ def extract_preamble_classes_and_functions(code):
                     break
 
                 # Continue searching for the next top-level function
-                next_function = function_pattern.search(
-                    code, next_function.start() + len(next_function.group(0))
-                )
+                next_function = function_pattern.search(code, next_function.start() + len(next_function.group(0)))
 
             if next_function:
                 next_function_start = next_function.start()
@@ -154,20 +140,12 @@ def extract_preamble_classes_and_functions(code):
     if classes and test_functions:
         preamble = code[: min(classes[0][2], test_functions[0][1])]
     else:
-        preamble = (
-            code[: classes[0][2]]
-            if classes
-            else code[: test_functions[0][1]]
-            if test_functions
-            else code
-        )
+        preamble = code[: classes[0][2]] if classes else code[: test_functions[0][1]] if test_functions else code
 
     return preamble.strip(), classes, test_functions
 
 
-def filter_passing_tests(
-    test_content: str, test_output: str, repo: str
-) -> tuple[str, list[str], list[str]]:
+def filter_passing_tests(test_content: str, test_output: str, repo: str) -> tuple[str, list[str], list[str]]:
     """
     Filter tests based on their execution results.
     Returns:
@@ -200,15 +178,11 @@ def filter_passing_tests(
         non_fail_methods = []
         for method_name, method_body in methods:
             # Extract the base method name for matching
-            method_full_name = (
-                method_name.split('.')[-1].split('(')[0].strip().split(' ')[-1]
-            )
+            method_full_name = method_name.split('.')[-1].split('(')[0].strip().split(' ')[-1]
             # Check if the method name is in failing_tests or if any failing_test is in the method name
             if not (
                 any(method_full_name in failing_test for failing_test in failing_tests)
-                or any(
-                    failing_test in method_full_name for failing_test in failing_tests
-                )
+                or any(failing_test in method_full_name for failing_test in failing_tests)
             ):
                 non_fail_methods.append((method_name, method_body))
 
@@ -243,9 +217,7 @@ def filter_passing_tests(
     return '\n\n'.join(content_parts), passing_tests, failing_tests
 
 
-def filter_tests(
-    test_content: str, test_output: str, repo: str
-) -> tuple[str, list[str], list[str]]:
+def filter_tests(test_content: str, test_output: str, repo: str) -> tuple[str, list[str], list[str]]:
     """
     Filter tests using AST parsing to remove failing test functions from the test file.
     Non-test functions (e.g. setup or helper methods) and classes (even if all test methods are failing)
@@ -267,16 +239,8 @@ def filter_tests(
         # Parse test results using the appropriate parser.
         parser = MAP_REPO_TO_PARSER.get(repo, parse_log_pytest)
         test_results = parser(test_output)
-        passing_tests = [
-            name
-            for name, status in test_results.items()
-            if status == TestStatus.PASSED.value
-        ]
-        failing_tests = [
-            name
-            for name, status in test_results.items()
-            if status != TestStatus.PASSED.value
-        ]
+        passing_tests = [name for name, status in test_results.items() if status == TestStatus.PASSED.value]
+        failing_tests = [name for name, status in test_results.items() if status != TestStatus.PASSED.value]
 
         # Helper function to decide if a test name should be considered failing.
         def is_failing(name: str) -> bool:

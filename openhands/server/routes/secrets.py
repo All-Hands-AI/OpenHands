@@ -40,15 +40,11 @@ async def invalidate_legacy_secrets_store(
     """
 
     if len(settings.secrets_store.provider_tokens.items()) > 0:
-        user_secrets = UserSecrets(
-            provider_tokens=settings.secrets_store.provider_tokens
-        )
+        user_secrets = UserSecrets(provider_tokens=settings.secrets_store.provider_tokens)
         await secrets_store.store(user_secrets)
 
         # Invalidate old tokens via settings store serializer
-        invalidated_secrets_settings = settings.model_copy(
-            update={'secrets_store': UserSecrets()}
-        )
+        invalidated_secrets_settings = settings.model_copy(update={'secrets_store': UserSecrets()})
         await settings_store.store(invalidated_secrets_settings)
 
         return user_secrets
@@ -56,13 +52,9 @@ async def invalidate_legacy_secrets_store(
     return None
 
 
-def process_token_validation_result(
-    confirmed_token_type: ProviderType | None, token_type: ProviderType
-) -> str:
+def process_token_validation_result(confirmed_token_type: ProviderType | None, token_type: ProviderType) -> str:
     if not confirmed_token_type or confirmed_token_type != token_type:
-        return (
-            f'Invalid token. Please make sure it is a valid {token_type.value} token.'
-        )
+        return f'Invalid token. Please make sure it is a valid {token_type.value} token.'
 
     return ''
 
@@ -81,23 +73,13 @@ async def check_provider_tokens(
                 )  # FE always sends latest host
                 msg = process_token_validation_result(confirmed_token_type, token_type)
 
-            existing_token = (
-                existing_provider_tokens.get(token_type, None)
-                if existing_provider_tokens
-                else None
-            )
-            if (
-                existing_token
-                and (existing_token.host != token_value.host)
-                and existing_token.token
-            ):
+            existing_token = existing_provider_tokens.get(token_type, None) if existing_provider_tokens else None
+            if existing_token and (existing_token.host != token_value.host) and existing_token.token:
                 confirmed_token_type = await validate_provider_token(
                     existing_token.token, token_value.host
                 )  # Host has changed, check it against existing token
                 if not confirmed_token_type or confirmed_token_type != token_type:
-                    msg = process_token_validation_result(
-                        confirmed_token_type, token_type
-                    )
+                    msg = process_token_validation_result(confirmed_token_type, token_type)
 
     return msg
 
@@ -111,9 +93,7 @@ async def store_provider_tokens(
     provider_err_msg = await check_provider_tokens(provider_info, provider_tokens)
     if provider_err_msg:
         # We don't have direct access to user_id here, but we can log the provider info
-        logger.info(
-            f'Returning 401 Unauthorized - Provider token error: {provider_err_msg}'
-        )
+        logger.info(f'Returning 401 Unauthorized - Provider token error: {provider_err_msg}')
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
             content={'error': provider_err_msg},
@@ -134,13 +114,11 @@ async def store_provider_tokens(
                     if existing_token and existing_token.token:
                         provider_info.provider_tokens[provider] = existing_token
 
-                provider_info.provider_tokens[provider] = provider_info.provider_tokens[
-                    provider
-                ].model_copy(update={'host': token_value.host})
+                provider_info.provider_tokens[provider] = provider_info.provider_tokens[provider].model_copy(
+                    update={'host': token_value.host}
+                )
 
-        updated_secrets = user_secrets.model_copy(
-            update={'provider_tokens': provider_info.provider_tokens}
-        )
+        updated_secrets = user_secrets.model_copy(update={'provider_tokens': provider_info.provider_tokens})
         await secrets_store.store(updated_secrets)
 
         return JSONResponse(
@@ -218,9 +196,7 @@ async def create_custom_secret(
 ) -> JSONResponse:
     try:
         existing_secrets = await secrets_store.load()
-        custom_secrets = (
-            dict(existing_secrets.custom_secrets) if existing_secrets else {}
-        )
+        custom_secrets = dict(existing_secrets.custom_secrets) if existing_secrets else {}
 
         secret_name = incoming_secret.name
         secret_value = incoming_secret.value
@@ -240,9 +216,7 @@ async def create_custom_secret(
         # Create a new UserSecrets that preserves provider tokens
         updated_user_secrets = UserSecrets(
             custom_secrets=custom_secrets,
-            provider_tokens=existing_secrets.provider_tokens
-            if existing_secrets
-            else {},
+            provider_tokens=existing_secrets.provider_tokens if existing_secrets else {},
         )
 
         await secrets_store.store(updated_user_secrets)

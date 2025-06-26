@@ -134,10 +134,7 @@ async def new_conversation(
     if auth_type == AuthType.BEARER:
         conversation_trigger = ConversationTrigger.REMOTE_API_KEY
 
-    if (
-        conversation_trigger == ConversationTrigger.REMOTE_API_KEY
-        and not initial_user_msg
-    ):
+    if conversation_trigger == ConversationTrigger.REMOTE_API_KEY and not initial_user_msg:
         return JSONResponse(
             content={
                 'status': 'error',
@@ -220,22 +217,13 @@ async def search_conversations(
         conversation
         for conversation in conversation_metadata_result_set.results
         if hasattr(conversation, 'created_at')
-        and (now - conversation.created_at.replace(tzinfo=timezone.utc)).total_seconds()
-        <= max_age
+        and (now - conversation.created_at.replace(tzinfo=timezone.utc)).total_seconds() <= max_age
     ]
 
-    conversation_ids = set(
-        conversation.conversation_id for conversation in filtered_results
-    )
-    connection_ids_to_conversation_ids = await conversation_manager.get_connections(
-        filter_to_sids=conversation_ids
-    )
-    agent_loop_info = await conversation_manager.get_agent_loop_info(
-        filter_to_sids=conversation_ids
-    )
-    agent_loop_info_by_conversation_id = {
-        info.conversation_id: info for info in agent_loop_info
-    }
+    conversation_ids = set(conversation.conversation_id for conversation in filtered_results)
+    connection_ids_to_conversation_ids = await conversation_manager.get_connections(filter_to_sids=conversation_ids)
+    agent_loop_info = await conversation_manager.get_agent_loop_info(filter_to_sids=conversation_ids)
+    agent_loop_info_by_conversation_id = {info.conversation_id: info for info in agent_loop_info}
     result = ConversationInfoResultSet(
         results=await wait_all(
             _get_conversation_info(
@@ -245,9 +233,7 @@ async def search_conversations(
                     for conversation_id in connection_ids_to_conversation_ids.values()
                     if conversation_id == conversation.conversation_id
                 ),
-                agent_loop_info=agent_loop_info_by_conversation_id.get(
-                    conversation.conversation_id
-                ),
+                agent_loop_info=agent_loop_info_by_conversation_id.get(conversation.conversation_id),
             )
             for conversation in filtered_results
         ),
@@ -263,16 +249,10 @@ async def get_conversation(
 ) -> ConversationInfo | None:
     try:
         metadata = await conversation_store.get_metadata(conversation_id)
-        num_connections = len(
-            await conversation_manager.get_connections(filter_to_sids={conversation_id})
-        )
-        agent_loop_infos = await conversation_manager.get_agent_loop_info(
-            filter_to_sids={conversation_id}
-        )
+        num_connections = len(await conversation_manager.get_connections(filter_to_sids={conversation_id}))
+        agent_loop_infos = await conversation_manager.get_agent_loop_info(filter_to_sids={conversation_id})
         agent_loop_info = agent_loop_infos[0] if agent_loop_infos else None
-        conversation_info = await _get_conversation_info(
-            metadata, num_connections, agent_loop_info
-        )
+        conversation_info = await _get_conversation_info(metadata, num_connections, agent_loop_info)
         return conversation_info
     except FileNotFoundError:
         return None
@@ -477,9 +457,7 @@ async def stop_conversation(
         agent_loop_info = await conversation_manager.get_agent_loop_info(
             user_id=user_id, filter_to_sids={conversation_id}
         )
-        conversation_status = (
-            agent_loop_info[0].status if agent_loop_info else ConversationStatus.STOPPED
-        )
+        conversation_status = agent_loop_info[0].status if agent_loop_info else ConversationStatus.STOPPED
 
         if conversation_status not in (
             ConversationStatus.STARTING,

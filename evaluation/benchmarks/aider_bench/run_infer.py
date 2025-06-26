@@ -39,9 +39,7 @@ from openhands.utils.async_utils import call_async_from_sync
 # Configure visibility of unit tests to the Agent.
 USE_UNIT_TESTS = os.environ.get('USE_UNIT_TESTS', 'false').lower() == 'true'
 SKIP_NUM = os.environ.get('SKIP_NUM')
-SKIP_NUM = (
-    int(SKIP_NUM) if SKIP_NUM and SKIP_NUM.isdigit() and int(SKIP_NUM) >= 0 else None
-)
+SKIP_NUM = int(SKIP_NUM) if SKIP_NUM and SKIP_NUM.isdigit() and int(SKIP_NUM) >= 0 else None
 
 
 def get_config(
@@ -169,9 +167,7 @@ def process_instance(
         log_dir = os.path.join(metadata.eval_output_dir, 'infer_logs')
         reset_logger_for_multiprocessing(logger, str(instance.instance_id), log_dir)
     else:
-        logger.info(
-            f'\nStarting evaluation for instance {str(instance.instance_id)}.\n'
-        )
+        logger.info(f'\nStarting evaluation for instance {str(instance.instance_id)}.\n')
 
     # =============================================
     # build instruction
@@ -184,17 +180,14 @@ def process_instance(
         signature_file=f'{instance.instance_name}.py',
     )
     if USE_UNIT_TESTS:
-        logger.info(
-            f'\nInstruction to run test_file: {instance.instance_name}_test.py\n'
-        )
+        logger.info(f'\nInstruction to run test_file: {instance.instance_name}_test.py\n')
         instruction += (
             f'Use `python -m unittest {instance.instance_name}_test.py` to run the test_file '
             'and verify the correctness of your solution. DO NOT EDIT the test file.\n\n'
         )
 
     instruction += (
-        'IMPORTANT: You should ONLY interact with the environment provided '
-        'to you AND NEVER ASK FOR HUMAN HELP.\n'
+        'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
     )
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += INST_SUFFIXES[metadata.agent_class]

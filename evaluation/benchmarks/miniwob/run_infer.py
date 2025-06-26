@@ -68,9 +68,7 @@ def get_config(
         workspace_mount_path=None,
     )
     config.set_llm_config(
-        update_llm_config_for_completions_logging(
-            metadata.llm_config, metadata.eval_output_dir, env_id
-        )
+        update_llm_config_for_completions_logging(metadata.llm_config, metadata.eval_output_dir, env_id)
     )
     return config
 
@@ -149,20 +147,14 @@ def process_instance(
     call_async_from_sync(runtime.connect)
     task_str, obs = initialize_runtime(runtime)
 
-    task_str += (
-        f'\nInitial browser state (output of `noop(1000)`):\n{obs.get_agent_obs_text()}'
-    )
+    task_str += f'\nInitial browser state (output of `noop(1000)`):\n{obs.get_agent_obs_text()}'
 
     state: State | None = asyncio.run(
         run_controller(
             config=config,
-            initial_user_action=MessageAction(
-                content=task_str
-            ),  # take output from initialize_runtime
+            initial_user_action=MessageAction(content=task_str),  # take output from initialize_runtime
             runtime=runtime,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
-                metadata.agent_class
-            ],
+            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[metadata.agent_class],
         )
     )
 
@@ -211,13 +203,7 @@ if __name__ == '__main__':
     args = parse_arguments()
 
     dataset = pd.DataFrame(
-        {
-            'instance_id': [
-                id
-                for id in gym.envs.registry.keys()
-                if id.startswith('browsergym/miniwob')
-            ]
-        }
+        {'instance_id': [id for id in gym.envs.registry.keys() if id.startswith('browsergym/miniwob')]}
     )
 
     llm_config = None
@@ -239,6 +225,4 @@ if __name__ == '__main__':
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(dataset, output_file, args.eval_n_limit)
 
-    run_evaluation(
-        instances, metadata, output_file, args.eval_num_workers, process_instance
-    )
+    run_evaluation(instances, metadata, output_file, args.eval_num_workers, process_instance)

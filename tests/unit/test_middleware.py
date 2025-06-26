@@ -23,9 +23,7 @@ def app():
 
 def test_localhost_cors_middleware_init_with_env_var():
     """Test that the middleware correctly parses PERMITTED_CORS_ORIGINS environment variable."""
-    with patch.dict(
-        os.environ, {'PERMITTED_CORS_ORIGINS': 'https://example.com,https://test.com'}
-    ):
+    with patch.dict(os.environ, {'PERMITTED_CORS_ORIGINS': 'https://example.com,https://test.com'}):
         app = FastAPI()
         middleware = LocalhostCORSMiddleware(app)
 

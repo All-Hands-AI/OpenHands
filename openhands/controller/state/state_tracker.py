@@ -29,9 +29,7 @@ class StateTracker:
 
     """
 
-    def __init__(
-        self, sid: str | None, file_store: FileStore | None, user_id: str | None
-    ):
+    def __init__(self, sid: str | None, file_store: FileStore | None, user_id: str | None):
         self.sid = sid
         self.file_store = file_store
         self.user_id = user_id
@@ -90,9 +88,7 @@ class StateTracker:
             )
             self.state.start_id = 0
 
-            logger.info(
-                f'AgentController {id} - created new state. start_id: {self.state.start_id}'
-            )
+            logger.info(f'AgentController {id} - created new state. start_id: {self.state.start_id}')
         else:
             self.state = state
             if self.state.start_id <= -1:
@@ -120,11 +116,7 @@ class StateTracker:
         # delegates start with a start_id and initially won't find any events
         # otherwise we're restoring a previous session
         start_id = self.state.start_id if self.state.start_id >= 0 else 0
-        end_id = (
-            self.state.end_id
-            if self.state.end_id >= 0
-            else event_stream.get_latest_event_id()
-        )
+        end_id = self.state.end_id if self.state.end_id >= 0 else event_stream.get_latest_event_id()
 
         # sanity check
         if start_id > end_id + 1:
@@ -175,19 +167,13 @@ class StateTracker:
 
             for start_id, end_id in sorted(delegate_ranges):
                 # Add events before delegate range
-                filtered_events.extend(
-                    event for event in events[current_idx:] if event.id < start_id
-                )
+                filtered_events.extend(event for event in events[current_idx:] if event.id < start_id)
 
                 # Add delegate action and observation
-                filtered_events.extend(
-                    event for event in events if event.id in (start_id, end_id)
-                )
+                filtered_events.extend(event for event in events if event.id in (start_id, end_id))
 
                 # Update index to after delegate range
-                current_idx = next(
-                    (i for i, e in enumerate(events) if e.id > end_id), len(events)
-                )
+                current_idx = next((i for i, e in enumerate(events) if e.id > end_id), len(events))
 
             # Add any remaining events after last delegate range
             filtered_events.extend(events[current_idx:])
@@ -207,11 +193,7 @@ class StateTracker:
         # - 'hidden' events, events with hidden=True
         # - backend events (the default 'filtered out' types, types in self.filter_out)
         start_id = self.state.start_id if self.state.start_id >= 0 else 0
-        end_id = (
-            self.state.end_id
-            if self.state.end_id >= 0
-            else event_stream.get_latest_event_id()
-        )
+        end_id = self.state.end_id if self.state.end_id >= 0 else event_stream.get_latest_event_id()
 
         self.state.history = list(
             event_stream.search_events(
@@ -228,10 +210,7 @@ class StateTracker:
             self.state.history.append(event)
 
     def get_trajectory(self, include_screenshots: bool = False) -> list[dict]:
-        return [
-            event_to_trajectory(event, include_screenshots)
-            for event in self.state.history
-        ]
+        return [event_to_trajectory(event, include_screenshots) for event in self.state.history]
 
     def maybe_increase_control_flags_limits(self, headless_mode: bool):
         # Iteration and budget extensions are independent of each other

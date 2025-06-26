@@ -29,9 +29,7 @@ def get_error_prefix(obs: BrowserOutputObservation) -> str:
     return f'## Error from previous action:\n{obs.last_browser_action_error}\n'
 
 
-def create_goal_prompt(
-    goal: str, image_urls: list[str] | None
-) -> tuple[str, list[str]]:
+def create_goal_prompt(goal: str, image_urls: list[str] | None) -> tuple[str, list[str]]:
     goal_txt: str = f"""\
 # Instructions
 Review the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
@@ -208,9 +206,7 @@ Note:
             # for visualwebarena, webarena and miniwob++ eval, we need to retrieve the initial observation already in browser env
             # initialize and retrieve the first observation by issuing an noop OP
             # For non-benchmark browsing, the browser env starts with a blank page, and the agent is expected to first navigate to desired websites
-            return BrowseInteractiveAction(
-                browser_actions='noop(1000)', return_axtree=True
-            )
+            return BrowseInteractiveAction(browser_actions='noop(1000)', return_axtree=True)
 
         for event in state.view:
             if isinstance(event, BrowseInteractiveAction):
@@ -230,10 +226,7 @@ Note:
 
         # if the final BrowserInteractiveAction exec BrowserGym's send_msg_to_user,
         # we should also send a message back to the user in OpenHands and call it a day
-        if (
-            isinstance(last_action, BrowseInteractiveAction)
-            and last_action.browsergym_send_msg_to_user
-        ):
+        if isinstance(last_action, BrowseInteractiveAction) and last_action.browsergym_send_msg_to_user:
             return MessageAction(last_action.browsergym_send_msg_to_user)
 
         history_prompt = get_history_prompt(prev_actions)
@@ -244,14 +237,10 @@ Note:
                 if len(error_prefix) > 0:
                     self.error_accumulator += 1
                     if self.error_accumulator > 5:
-                        return MessageAction(
-                            'Too many errors encountered. Task failed.'
-                        )
+                        return MessageAction('Too many errors encountered. Task failed.')
             focused_element = '## Focused element:\nNone\n'
             if last_obs.focused_element_bid is not None:
-                focused_element = (
-                    f"## Focused element:\nbid='{last_obs.focused_element_bid}'\n"
-                )
+                focused_element = f"## Focused element:\nbid='{last_obs.focused_element_bid}'\n"
             tabs = get_tabs(last_obs)
             try:
                 # IMPORTANT: keep AX Tree of full webpage, add visible and clickable tags
@@ -268,9 +257,7 @@ Note:
                 )
                 cur_axtree_txt = get_axtree(axtree_txt=cur_axtree_txt)
             except Exception as e:
-                logger.error(
-                    'Error when trying to process the accessibility tree: %s', e
-                )
+                logger.error('Error when trying to process the accessibility tree: %s', e)
                 return MessageAction('Error encountered when browsing.')
             set_of_marks = last_obs.set_of_marks
         goal, image_urls = state.get_current_user_intent()
@@ -281,9 +268,7 @@ Note:
         observation_txt, som_screenshot = create_observation_prompt(
             cur_axtree_txt, tabs, focused_element, error_prefix, set_of_marks
         )
-        human_prompt: list[TextContent | ImageContent] = [
-            TextContent(type='text', text=goal_txt)
-        ]
+        human_prompt: list[TextContent | ImageContent] = [TextContent(type='text', text=goal_txt)]
         if len(goal_images) > 0:
             human_prompt.append(ImageContent(image_urls=goal_images))
         human_prompt.append(TextContent(type='text', text=observation_txt))

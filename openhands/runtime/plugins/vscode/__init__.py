@@ -31,9 +31,7 @@ class VSCodePlugin(Plugin):
         if os.name == 'nt' or sys.platform == 'win32':
             self.vscode_port = None
             self.vscode_connection_token = None
-            logger.warning(
-                'VSCode plugin is not supported on Windows. Plugin will be disabled.'
-            )
+            logger.warning('VSCode plugin is not supported on Windows. Plugin will be disabled.')
             return
 
         if username not in ['root', 'openhands']:
@@ -51,16 +49,12 @@ class VSCodePlugin(Plugin):
         try:
             self.vscode_port = int(os.environ['VSCODE_PORT'])
         except (KeyError, ValueError):
-            logger.warning(
-                'VSCODE_PORT environment variable not set or invalid. VSCode plugin will be disabled.'
-            )
+            logger.warning('VSCODE_PORT environment variable not set or invalid. VSCode plugin will be disabled.')
             return
 
         self.vscode_connection_token = str(uuid.uuid4())
         if not check_port_available(self.vscode_port):
-            logger.warning(
-                f'Port {self.vscode_port} is not available. VSCode plugin will be disabled.'
-            )
+            logger.warning(f'Port {self.vscode_port} is not available. VSCode plugin will be disabled.')
             return
         cmd = (
             f"su - {username} -s /bin/bash << 'EOF'\n"
@@ -89,9 +83,7 @@ class VSCodePlugin(Plugin):
             await asyncio.sleep(1)
             logger.debug('Waiting for VSCode server to start...')
 
-        logger.debug(
-            f'VSCode server started at port {self.vscode_port}. Output: {output}'
-        )
+        logger.debug(f'VSCode server started at port {self.vscode_port}. Output: {output}')
 
     def _setup_vscode_settings(self) -> None:
         """

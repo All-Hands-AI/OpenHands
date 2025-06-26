@@ -37,15 +37,11 @@ def default_config():
 
 def test_handle_nonexistent_issue_reference():
     llm_config = LLMConfig(model='test', api_key='test')
-    handler = ServiceContextPR(
-        GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
-    )
+    handler = ServiceContextPR(GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config)
 
     # Mock the requests.get to simulate a 404 error
     mock_response = MagicMock()
-    mock_response.raise_for_status.side_effect = httpx.HTTPError(
-        '404 Client Error: Not Found'
-    )
+    mock_response.raise_for_status.side_effect = httpx.HTTPError('404 Client Error: Not Found')
 
     with patch('httpx.get', return_value=mock_response):
         # Call the method with a non-existent issue reference
@@ -64,15 +60,11 @@ def test_handle_nonexistent_issue_reference():
 
 def test_handle_rate_limit_error():
     llm_config = LLMConfig(model='test', api_key='test')
-    handler = ServiceContextPR(
-        GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
-    )
+    handler = ServiceContextPR(GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config)
 
     # Mock the requests.get to simulate a rate limit error
     mock_response = MagicMock()
-    mock_response.raise_for_status.side_effect = httpx.HTTPError(
-        '403 Client Error: Rate Limit Exceeded'
-    )
+    mock_response.raise_for_status.side_effect = httpx.HTTPError('403 Client Error: Rate Limit Exceeded')
 
     with patch('httpx.get', return_value=mock_response):
         # Call the method with an issue reference
@@ -91,9 +83,7 @@ def test_handle_rate_limit_error():
 
 def test_handle_network_error():
     llm_config = LLMConfig(model='test', api_key='test')
-    handler = ServiceContextPR(
-        GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
-    )
+    handler = ServiceContextPR(GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config)
 
     # Mock the requests.get to simulate a network error
     with patch('httpx.get', side_effect=httpx.NetworkError('Network Error')):
@@ -113,9 +103,7 @@ def test_handle_network_error():
 
 def test_successful_issue_reference():
     llm_config = LLMConfig(model='test', api_key='test')
-    handler = ServiceContextPR(
-        GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
-    )
+    handler = ServiceContextPR(GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config)
 
     # Mock a successful response
     mock_response = MagicMock()
@@ -163,17 +151,13 @@ class DotDict(dict):
             if isinstance(value, dict):
                 self[key] = DotDict(value)
             elif isinstance(value, list):
-                self[key] = [
-                    DotDict(item) if isinstance(item, dict) else item for item in value
-                ]
+                self[key] = [DotDict(item) if isinstance(item, dict) else item for item in value]
 
     def __getattr__(self, key):
         if key in self:
             return self[key]
         else:
-            raise AttributeError(
-                f"'{self.__class__.__name__}' object has no attribute '{key}'"
-            )
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{key}'")
 
     def __setattr__(self, key, value):
         self[key] = value
@@ -182,9 +166,7 @@ class DotDict(dict):
         if key in self:
             del self[key]
         else:
-            raise AttributeError(
-                f"'{self.__class__.__name__}' object has no attribute '{key}'"
-            )
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{key}'")
 
 
 @patch('openhands.llm.llm.litellm_completion')
@@ -194,26 +176,12 @@ def test_guess_success_rate_limit_wait_time(mock_litellm_completion, default_con
     with patch('time.sleep') as mock_sleep:
         # Simulate a rate limit error followed by a successful response
         mock_litellm_completion.side_effect = [
-            RateLimitError(
-                'Rate limit exceeded', llm_provider='test_provider', model='test_model'
-            ),
-            DotDict(
-                {
-                    'choices': [
-                        {
-                            'message': {
-                                'content': '--- success\ntrue\n--- explanation\nRetry successful'
-                            }
-                        }
-                    ]
-                }
-            ),
+            RateLimitError('Rate limit exceeded', llm_provider='test_provider', model='test_model'),
+            DotDict({'choices': [{'message': {'content': '--- success\ntrue\n--- explanation\nRetry successful'}}]}),
         ]
 
         llm = LLM(config=default_config)
-        handler = ServiceContextIssue(
-            GithubIssueHandler('test-owner', 'test-repo', 'test-token'), default_config
-        )
+        handler = ServiceContextIssue(GithubIssueHandler('test-owner', 'test-repo', 'test-token'), default_config)
         handler.llm = llm
 
         # Mock issue and history
@@ -238,9 +206,7 @@ def test_guess_success_rate_limit_wait_time(mock_litellm_completion, default_con
 
         # Validate wait time
         wait_time = mock_sleep.call_args[0][0]
-        assert (
-            default_config.retry_min_wait <= wait_time <= default_config.retry_max_wait
-        ), (
+        assert default_config.retry_min_wait <= wait_time <= default_config.retry_max_wait, (
             f'Expected wait time between {default_config.retry_min_wait} and {default_config.retry_max_wait} seconds, but got {wait_time}'
         )
 
@@ -255,9 +221,7 @@ def test_guess_success_exhausts_retries(mock_completion, default_config):
 
     # Initialize LLM and handler
     llm = LLM(config=default_config)
-    handler = ServiceContextPR(
-        GithubPRHandler('test-owner', 'test-repo', 'test-token'), default_config
-    )
+    handler = ServiceContextPR(GithubPRHandler('test-owner', 'test-repo', 'test-token'), default_config)
     handler.llm = llm
 
     # Mock issue and history
@@ -276,6 +240,4 @@ def test_guess_success_exhausts_retries(mock_completion, default_config):
         handler.guess_success(issue, history)
 
     # Assertions
-    assert (
-        mock_completion.call_count == default_config.num_retries
-    )  # Initial call + retries
+    assert mock_completion.call_count == default_config.num_retries  # Initial call + retries

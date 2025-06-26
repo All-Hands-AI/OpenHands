@@ -78,9 +78,7 @@ def test_get_messages(codeact_agent: CodeActAgent):
     codeact_agent.reset()
     messages = codeact_agent._get_messages(history, message_action_1)
 
-    assert (
-        len(messages) == 6
-    )  # System, initial user + user message, agent message, last user message
+    assert len(messages) == 6  # System, initial user + user message, agent message, last user message
     assert messages[0].role == 'system'  # system message
     assert messages[0].content[0].cache_prompt  # system message should be cached
     assert messages[1].role == 'user'
@@ -121,14 +119,8 @@ def test_get_messages_prompt_caching(codeact_agent: CodeActAgent):
     messages = codeact_agent._get_messages(history, initial_user_message)
 
     # Check that only the last two user messages have cache_prompt=True
-    cached_user_messages = [
-        msg
-        for msg in messages
-        if msg.role in ('user', 'system') and msg.content[0].cache_prompt
-    ]
-    assert (
-        len(cached_user_messages) == 2
-    )  # Including the initial system message + last user message
+    cached_user_messages = [msg for msg in messages if msg.role in ('user', 'system') and msg.content[0].cache_prompt]
+    assert len(cached_user_messages) == 2  # Including the initial system message + last user message
 
     # Verify that these are indeed the last user message (from start)
     assert cached_user_messages[0].content[0].text.startswith('You are OpenHands agent')

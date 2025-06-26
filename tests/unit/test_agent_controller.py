@@ -66,9 +66,7 @@ def mock_agent():
     agent.config.enable_mcp = True
 
     # Add a proper system message mock
-    system_message = SystemMessageAction(
-        content='Test system message', tools=['test_tool']
-    )
+    system_message = SystemMessageAction(content='Test system message', tools=['test_tool'])
     system_message._source = EventSource.AGENT
     system_message._id = -1  # Set invalid ID to avoid the ID check
     agent.get_system_message.return_value = system_message
@@ -197,9 +195,7 @@ async def test_react_to_exception(mock_agent, mock_event_stream, mock_status_cal
 
 
 @pytest.mark.asyncio
-async def test_react_to_content_policy_violation(
-    mock_agent, mock_event_stream, mock_status_callback
-):
+async def test_react_to_content_policy_violation(mock_agent, mock_event_stream, mock_status_callback):
     """Test that the controller properly handles content policy violations from the LLM."""
     controller = AgentController(
         agent=mock_agent,
@@ -236,9 +232,7 @@ async def test_react_to_content_policy_violation(
 
 
 @pytest.mark.asyncio
-async def test_run_controller_with_fatal_error(
-    test_event_stream, mock_memory, mock_agent
-):
+async def test_run_controller_with_fatal_error(test_event_stream, mock_memory, mock_agent):
     config = OpenHandsConfig()
 
     def agent_step_fn(state):
@@ -271,9 +265,7 @@ async def test_run_controller_with_fatal_error(
             microagent_obs._cause = event.id
             test_event_stream.add_event(microagent_obs, EventSource.ENVIRONMENT)
 
-    test_event_stream.subscribe(
-        EventStreamSubscriber.MEMORY, on_event_memory, str(uuid4())
-    )
+    test_event_stream.subscribe(EventStreamSubscriber.MEMORY, on_event_memory, str(uuid4()))
 
     state = await run_controller(
         config=config,
@@ -295,16 +287,12 @@ async def test_run_controller_with_fatal_error(
     assert state.iteration_flag.current_value == 3
     assert state.agent_state == AgentState.ERROR
     assert state.last_error == 'AgentStuckInLoopError: Agent got stuck in a loop'
-    assert (
-        error_observation.reason == 'AgentStuckInLoopError: Agent got stuck in a loop'
-    )
+    assert error_observation.reason == 'AgentStuckInLoopError: Agent got stuck in a loop'
     assert len(events) == 12
 
 
 @pytest.mark.asyncio
-async def test_run_controller_stop_with_stuck(
-    test_event_stream, mock_memory, mock_agent
-):
+async def test_run_controller_stop_with_stuck(test_event_stream, mock_memory, mock_agent):
     config = OpenHandsConfig()
 
     def agent_step_fn(state):
@@ -320,9 +308,7 @@ async def test_run_controller_stop_with_stuck(
 
     def on_event(event: Event):
         if isinstance(event, CmdRunAction):
-            non_fatal_error_obs = ErrorObservation(
-                'Non fatal error here to trigger loop'
-            )
+            non_fatal_error_obs = ErrorObservation('Non fatal error here to trigger loop')
             non_fatal_error_obs._cause = event.id
             test_event_stream.add_event(non_fatal_error_obs, EventSource.ENVIRONMENT)
 
@@ -339,9 +325,7 @@ async def test_run_controller_stop_with_stuck(
             microagent_obs._cause = event.id
             test_event_stream.add_event(microagent_obs, EventSource.ENVIRONMENT)
 
-    test_event_stream.subscribe(
-        EventStreamSubscriber.MEMORY, on_event_memory, str(uuid4())
-    )
+    test_event_stream.subscribe(EventStreamSubscriber.MEMORY, on_event_memory, str(uuid4()))
 
     state = await run_controller(
         config=config,
@@ -445,9 +429,7 @@ async def test_step_max_budget(mock_agent, mock_event_stream):
     # Metrics are always synced with budget flag before
     metrics = Metrics()
     metrics.accumulated_cost = 10.1
-    budget_flag = BudgetControlFlag(
-        limit_increase_amount=10, current_value=10.1, max_value=10
-    )
+    budget_flag = BudgetControlFlag(limit_increase_amount=10, current_value=10.1, max_value=10)
 
     controller = AgentController(
         agent=mock_agent,
@@ -470,9 +452,7 @@ async def test_step_max_budget_headless(mock_agent, mock_event_stream):
     # Metrics are always synced with budget flag before
     metrics = Metrics()
     metrics.accumulated_cost = 10.1
-    budget_flag = BudgetControlFlag(
-        limit_increase_amount=10, current_value=10.1, max_value=10
-    )
+    budget_flag = BudgetControlFlag(limit_increase_amount=10, current_value=10.1, max_value=10)
 
     controller = AgentController(
         agent=mock_agent,
@@ -609,9 +589,7 @@ async def test_reset_with_pending_action_no_observation(mock_agent, mock_event_s
 
 
 @pytest.mark.asyncio
-async def test_reset_with_pending_action_existing_observation(
-    mock_agent, mock_event_stream
-):
+async def test_reset_with_pending_action_existing_observation(mock_agent, mock_event_stream):
     """Test reset() when there's a pending action with tool call metadata and an existing observation."""
     controller = AgentController(
         agent=mock_agent,
@@ -682,9 +660,7 @@ async def test_reset_without_pending_action(mock_agent, mock_event_stream):
 
 
 @pytest.mark.asyncio
-async def test_reset_with_pending_action_no_metadata(
-    mock_agent, mock_event_stream, monkeypatch
-):
+async def test_reset_with_pending_action_no_metadata(mock_agent, mock_event_stream, monkeypatch):
     """Test reset() when there's a pending action without tool call metadata."""
     controller = AgentController(
         agent=mock_agent,
@@ -726,9 +702,7 @@ async def test_reset_with_pending_action_no_metadata(
 
 
 @pytest.mark.asyncio
-async def test_run_controller_max_iterations_has_metrics(
-    test_event_stream, mock_memory, mock_agent
-):
+async def test_run_controller_max_iterations_has_metrics(test_event_stream, mock_memory, mock_agent):
     config = OpenHandsConfig(
         max_iterations=3,
     )
@@ -744,9 +718,7 @@ async def test_run_controller_max_iterations_has_metrics(
         print(f'agent_step_fn received state: {state}')
         # Mock the cost of the LLM
         mock_agent.llm.metrics.add_cost(10.0)
-        print(
-            f'mock_agent.llm.metrics.accumulated_cost: {mock_agent.llm.metrics.accumulated_cost}'
-        )
+        print(f'mock_agent.llm.metrics.accumulated_cost: {mock_agent.llm.metrics.accumulated_cost}')
         nonlocal step_count
         step_count += 1
         return CmdRunAction(command=f'ls {step_count}')
@@ -757,9 +729,7 @@ async def test_run_controller_max_iterations_has_metrics(
 
     def on_event(event: Event):
         if isinstance(event, CmdRunAction):
-            non_fatal_error_obs = ErrorObservation(
-                'Non fatal error. event id: ' + str(event.id)
-            )
+            non_fatal_error_obs = ErrorObservation('Non fatal error. event id: ' + str(event.id))
             non_fatal_error_obs._cause = event.id
             event_stream.add_event(non_fatal_error_obs, EventSource.ENVIRONMENT)
 
@@ -791,10 +761,7 @@ async def test_run_controller_max_iterations_has_metrics(
     state.metrics = mock_agent.llm.metrics
     assert state.iteration_flag.current_value == 3
     assert state.agent_state == AgentState.ERROR
-    assert (
-        state.last_error
-        == 'RuntimeError: Agent reached maximum iteration. Current iteration: 3, max iteration: 3'
-    )
+    assert state.last_error == 'RuntimeError: Agent reached maximum iteration. Current iteration: 3, max iteration: 3'
     error_observations = test_event_stream.get_matching_events(
         reverse=True, limit=1, event_types=(AgentStateChangedObservation)
     )
@@ -835,9 +802,7 @@ async def test_notify_on_llm_retry(mock_agent, mock_event_stream, mock_status_ca
 
 
 @pytest.mark.asyncio
-async def test_context_window_exceeded_error_handling(
-    mock_agent, mock_runtime, test_event_stream, mock_memory
-):
+async def test_context_window_exceeded_error_handling(mock_agent, mock_runtime, test_event_stream, mock_memory):
     """Test that context window exceeded errors are handled correctly by the controller, providing a smaller view but keeping the history intact."""
     max_iterations = 5
     error_after = 2
@@ -884,9 +849,7 @@ async def test_context_window_exceeded_error_handling(
             microagent_obs._cause = event.id
             test_event_stream.add_event(microagent_obs, EventSource.ENVIRONMENT)
 
-    test_event_stream.subscribe(
-        EventStreamSubscriber.MEMORY, on_event_memory, str(uuid4())
-    )
+    test_event_stream.subscribe(EventStreamSubscriber.MEMORY, on_event_memory, str(uuid4()))
     config = OpenHandsConfig(max_iterations=max_iterations)
     mock_runtime.event_stream = test_event_stream
     mock_runtime.config = copy.deepcopy(config)
@@ -919,16 +882,12 @@ async def test_context_window_exceeded_error_handling(
     # triggers a recall response). But if the pre/post-views are on the turn
     # when we throw the context window exceeded error, we should see the
     # post-step view compressed (condensation effects should be visible).
-    for index, (first_view, second_view) in enumerate(
-        zip(step_state.views[:-1], step_state.views[1:])
-    ):
+    for index, (first_view, second_view) in enumerate(zip(step_state.views[:-1], step_state.views[1:])):
         if index == error_after:
             # Verify that no CondensationAction is present in either view
             # (CondensationAction events are never included in views)
             assert not any(isinstance(e, CondensationAction) for e in first_view.events)
-            assert not any(
-                isinstance(e, CondensationAction) for e in second_view.events
-            )
+            assert not any(isinstance(e, CondensationAction) for e in second_view.events)
             # The view length should be compressed due to condensation effects
             assert len(first_view) > len(second_view)
         else:
@@ -940,47 +899,20 @@ async def test_context_window_exceeded_error_handling(
     # - 1 recall actions,
     # - 1 recall observations,
     # - 1 condensation action.
-    assert (
-        len(
-            [event for event in final_state.history if isinstance(event, MessageAction)]
-        )
-        == max_iterations
-    )
+    assert len([event for event in final_state.history if isinstance(event, MessageAction)]) == max_iterations
     assert (
         len(
             [
                 event
                 for event in final_state.history
-                if isinstance(event, MessageAction)
-                and event.source == EventSource.AGENT
+                if isinstance(event, MessageAction) and event.source == EventSource.AGENT
             ]
         )
         == max_iterations - 1
     )
-    assert (
-        len([event for event in final_state.history if isinstance(event, RecallAction)])
-        == 1
-    )
-    assert (
-        len(
-            [
-                event
-                for event in final_state.history
-                if isinstance(event, RecallObservation)
-            ]
-        )
-        == 1
-    )
-    assert (
-        len(
-            [
-                event
-                for event in final_state.history
-                if isinstance(event, CondensationAction)
-            ]
-        )
-        == 1
-    )
+    assert len([event for event in final_state.history if isinstance(event, RecallAction)]) == 1
+    assert len([event for event in final_state.history if isinstance(event, RecallObservation)]) == 1
+    assert len([event for event in final_state.history if isinstance(event, CondensationAction)]) == 1
     # With the refactored system message handling, we now have max_iterations + 4 events
     assert (
         len(final_state.history) == max_iterations + 4
@@ -1029,9 +961,7 @@ async def test_run_controller_with_context_window_exceeded_with_truncation(
             microagent_obs._cause = event.id
             test_event_stream.add_event(microagent_obs, EventSource.ENVIRONMENT)
 
-    test_event_stream.subscribe(
-        EventStreamSubscriber.MEMORY, on_event_memory, str(uuid4())
-    )
+    test_event_stream.subscribe(EventStreamSubscriber.MEMORY, on_event_memory, str(uuid4()))
     mock_runtime.event_stream = test_event_stream
     config = OpenHandsConfig(max_iterations=5)
     mock_runtime.config = copy.deepcopy(config)
@@ -1053,18 +983,13 @@ async def test_run_controller_with_context_window_exceeded_with_truncation(
     # A timeout error indicates the run_controller entrypoint is not making
     # progress
     except asyncio.TimeoutError as e:
-        raise AssertionError(
-            'The run_controller function did not complete in time.'
-        ) from e
+        raise AssertionError('The run_controller function did not complete in time.') from e
 
     # Hitting the iteration limit indicates the controller is failing for the
     # expected reason
     assert state.iteration_flag.current_value == 5
     assert state.agent_state == AgentState.ERROR
-    assert (
-        state.last_error
-        == 'RuntimeError: Agent reached maximum iteration. Current iteration: 5, max iteration: 5'
-    )
+    assert state.last_error == 'RuntimeError: Agent reached maximum iteration. Current iteration: 5, max iteration: 5'
 
     # Check that the context window exceeded error was raised during the run
     assert step_state.has_errored
@@ -1108,9 +1033,7 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
             microagent_obs._cause = event.id
             test_event_stream.add_event(microagent_obs, EventSource.ENVIRONMENT)
 
-    test_event_stream.subscribe(
-        EventStreamSubscriber.MEMORY, on_event_memory, str(uuid4())
-    )
+    test_event_stream.subscribe(EventStreamSubscriber.MEMORY, on_event_memory, str(uuid4()))
     mock_runtime.event_stream = test_event_stream
     config = OpenHandsConfig(max_iterations=3)
     mock_runtime.config = copy.deepcopy(config)
@@ -1131,9 +1054,7 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
     # A timeout error indicates the run_controller entrypoint is not making
     # progress
     except asyncio.TimeoutError as e:
-        raise AssertionError(
-            'The run_controller function did not complete in time.'
-        ) from e
+        raise AssertionError('The run_controller function did not complete in time.') from e
 
     # Hitting the iteration limit indicates the controller is failing for the
     # expected reason
@@ -1186,9 +1107,7 @@ async def test_run_controller_with_memory_error(test_event_stream, mock_agent):
     def mock_find_microagent_knowledge(*args, **kwargs):
         raise RuntimeError('Test memory error')
 
-    with patch.object(
-        memory, '_find_microagent_knowledge', side_effect=mock_find_microagent_knowledge
-    ):
+    with patch.object(memory, '_find_microagent_knowledge', side_effect=mock_find_microagent_knowledge):
         state = await run_controller(
             config=config,
             initial_user_action=MessageAction(content='Test message'),
@@ -1288,24 +1207,16 @@ async def test_action_metrics_copy(mock_agent):
 
     # Verify metrics were copied correctly
     assert last_action.llm_metrics is not None
-    assert (
-        last_action.llm_metrics.accumulated_cost == 0.07
-    )  # 0.05 initial + 0.02 from add_cost
+    assert last_action.llm_metrics.accumulated_cost == 0.07  # 0.05 initial + 0.02 from add_cost
 
     # Should not include individual token usages anymore (after the fix)
     assert len(last_action.llm_metrics.token_usages) == 0
 
     # But should include the accumulated token usage
     assert last_action.llm_metrics.accumulated_token_usage.prompt_tokens == 15  # 5 + 10
-    assert (
-        last_action.llm_metrics.accumulated_token_usage.completion_tokens == 30
-    )  # 10 + 20
-    assert (
-        last_action.llm_metrics.accumulated_token_usage.cache_read_tokens == 7
-    )  # 2 + 5
-    assert (
-        last_action.llm_metrics.accumulated_token_usage.cache_write_tokens == 7
-    )  # 2 + 5
+    assert last_action.llm_metrics.accumulated_token_usage.completion_tokens == 30  # 10 + 20
+    assert last_action.llm_metrics.accumulated_token_usage.cache_read_tokens == 7  # 2 + 5
+    assert last_action.llm_metrics.accumulated_token_usage.cache_write_tokens == 7  # 2 + 5
 
     # Should not include the cost history
     assert len(last_action.llm_metrics.costs) == 0
@@ -1400,23 +1311,13 @@ async def test_condenser_metrics_included(mock_agent, test_event_stream):
     assert last_action.llm_metrics is not None
 
     # Verify that both agent and condenser metrics are included
-    assert (
-        last_action.llm_metrics.accumulated_cost == 0.08
-    )  # 0.05 from agent + 0.03 from condenser
+    assert last_action.llm_metrics.accumulated_cost == 0.08  # 0.05 from agent + 0.03 from condenser
 
     # The accumulated token usage should include both agent and condenser metrics
-    assert (
-        last_action.llm_metrics.accumulated_token_usage.prompt_tokens == 300
-    )  # 100 + 200
-    assert (
-        last_action.llm_metrics.accumulated_token_usage.completion_tokens == 150
-    )  # 50 + 100
-    assert (
-        last_action.llm_metrics.accumulated_token_usage.cache_read_tokens == 30
-    )  # 10 + 20
-    assert (
-        last_action.llm_metrics.accumulated_token_usage.cache_write_tokens == 5010
-    )  # 10 + 5000
+    assert last_action.llm_metrics.accumulated_token_usage.prompt_tokens == 300  # 100 + 200
+    assert last_action.llm_metrics.accumulated_token_usage.completion_tokens == 150  # 50 + 100
+    assert last_action.llm_metrics.accumulated_token_usage.cache_read_tokens == 30  # 10 + 20
+    assert last_action.llm_metrics.accumulated_token_usage.cache_write_tokens == 5010  # 10 + 5000
 
     await controller.close()
 
@@ -1464,17 +1365,11 @@ async def test_first_user_message_with_identical_content(test_event_stream, mock
 
     # Test the comparison used in the actual code
     assert first_message == first_user_message  # This should be True
-    assert (
-        second_message.id != first_user_message.id
-    )  # This should be False, but may be True if there's a bug
+    assert second_message.id != first_user_message.id  # This should be False, but may be True if there's a bug
 
     # Verify caching behavior
-    assert (
-        controller._cached_first_user_message is not None
-    )  # Cache should be populated
-    assert (
-        controller._cached_first_user_message is first_user_message
-    )  # Cache should store the same object
+    assert controller._cached_first_user_message is not None  # Cache should be populated
+    assert controller._cached_first_user_message is first_user_message  # Cache should store the same object
 
     # Mock get_events to verify it's not called again
     with patch.object(test_event_stream, 'get_events') as mock_get_events:
@@ -1540,9 +1435,7 @@ async def test_agent_controller_processes_null_observation_with_cause():
         recall_action = recall_actions[0]
 
         # Find any NullObservation events
-        null_obs_events = [
-            event for event in events if isinstance(event, NullObservation)
-        ]
+        null_obs_events = [event for event in events if isinstance(event, NullObservation)]
         assert len(null_obs_events) > 0, 'No NullObservation was created'
         null_observation = null_obs_events[0]
 
@@ -1553,9 +1446,7 @@ async def test_agent_controller_processes_null_observation_with_cause():
         )
 
         # Verify the controller's should_step method returns True for this observation
-        assert controller.should_step(null_observation), (
-            'should_step should return True for this NullObservation'
-        )
+        assert controller.should_step(null_observation), 'should_step should return True for this NullObservation'
 
         # Verify the controller's step method was called
         # This means the controller processed the NullObservation
@@ -1595,16 +1486,12 @@ def test_agent_controller_should_step_with_null_observation_cause_zero(mock_agen
     result = controller.should_step(null_observation)
 
     # It should return False since we only want to step on NullObservation with cause > 0
-    assert result is False, (
-        'should_step should return False for NullObservation with cause = 0'
-    )
+    assert result is False, 'should_step should return False for NullObservation with cause = 0'
 
 
 def test_system_message_in_event_stream(mock_agent, test_event_stream):
     """Test that SystemMessageAction is added to event stream in AgentController."""
-    _ = AgentController(
-        agent=mock_agent, event_stream=test_event_stream, iteration_delta=10
-    )
+    _ = AgentController(agent=mock_agent, event_stream=test_event_stream, iteration_delta=10)
 
     # Get events from the event stream
     events = list(test_event_stream.get_events())
@@ -1617,9 +1504,7 @@ def test_system_message_in_event_stream(mock_agent, test_event_stream):
 
 
 @pytest.mark.asyncio
-async def test_openrouter_context_window_exceeded_error(
-    mock_agent, test_event_stream, mock_status_callback
-):
+async def test_openrouter_context_window_exceeded_error(mock_agent, test_event_stream, mock_status_callback):
     """Test that OpenRouter context window exceeded errors are properly detected and handled."""
     max_iterations = 5
     error_after = 2
@@ -1677,17 +1562,13 @@ async def test_openrouter_context_window_exceeded_error(
     condensation_actions = [e for e in events if isinstance(e, CondensationAction)]
 
     # There should be at least one CondensationAction if the error was handled correctly
-    assert len(condensation_actions) > 0, (
-        'OpenRouter context window exceeded error was not handled correctly'
-    )
+    assert len(condensation_actions) > 0, 'OpenRouter context window exceeded error was not handled correctly'
 
     await controller.close()
 
 
 @pytest.mark.asyncio
-async def test_sambanova_context_window_exceeded_error(
-    mock_agent, test_event_stream, mock_status_callback
-):
+async def test_sambanova_context_window_exceeded_error(mock_agent, test_event_stream, mock_status_callback):
     """Test that SambaNova context window exceeded errors are properly detected and handled."""
     max_iterations = 5
     error_after = 2
@@ -1744,9 +1625,7 @@ async def test_sambanova_context_window_exceeded_error(
     condensation_actions = [e for e in events if isinstance(e, CondensationAction)]
 
     # There should be at least one CondensationAction if the error was handled correctly
-    assert len(condensation_actions) > 0, (
-        'SambaNova context window exceeded error was not handled correctly'
-    )
+    assert len(condensation_actions) > 0, 'SambaNova context window exceeded error was not handled correctly'
 
     await controller.close()
 
@@ -1812,8 +1691,6 @@ async def test_sambanova_generic_exception_not_handled_as_context_error(
     condensation_actions = [e for e in events if isinstance(e, CondensationAction)]
 
     # There should be NO CondensationAction if the error was correctly NOT handled as context window error
-    assert len(condensation_actions) == 0, (
-        'Generic SambaNova exception was incorrectly handled as context window error'
-    )
+    assert len(condensation_actions) == 0, 'Generic SambaNova exception was incorrectly handled as context window error'
 
     await controller.close()

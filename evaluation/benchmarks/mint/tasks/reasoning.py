@@ -98,9 +98,7 @@ class MultipleChoiceTask(Task):
             for i in wrong_option_list:
                 if self.compare_w_digits(i, answer) or (i in answer):
                     return False
-            if self.compare_w_digits(correct_option, answer) or (
-                correct_option in answer
-            ):
+            if self.compare_w_digits(correct_option, answer) or (correct_option in answer):
                 return True
             else:
                 return False
@@ -196,8 +194,7 @@ class TheoremqaTask(Task):
         super().__init__(**kwargs)
         self._id = id
         self._prompt = (
-            'Answer the following question with a number, a list of numbers or True or False. '
-            + prompt.strip()
+            'Answer the following question with a number, a list of numbers or True or False. ' + prompt.strip()
         )
         self._reference = reference
         self._answer_type = kwargs.get('answer_type')
@@ -241,21 +238,13 @@ class TheoremqaTask(Task):
 
         # Drop the units before and after the number
         if re.match(r'[-+]?(?:[\d,]*\.*\d+) [^0-9 ]+$', prediction):
-            prediction = re.search(
-                r'([-+]?(?:[\d,]*\.*\d+)) [^0-9 ]+$', prediction
-            ).group(1)
+            prediction = re.search(r'([-+]?(?:[\d,]*\.*\d+)) [^0-9 ]+$', prediction).group(1)
         if re.match(r'[^0-9 ]+ [-+]?(?:[\d,]*\.*\d+)$', prediction):
-            prediction = re.search(
-                r'[^0-9 ]+ ([-+]?(?:[\d,]*\.*\d+))$', prediction
-            ).group(1)
+            prediction = re.search(r'[^0-9 ]+ ([-+]?(?:[\d,]*\.*\d+))$', prediction).group(1)
         if re.match(r'[-+]?(?:[\d,]*\.*\d+)[^\d]{1,2}$', prediction):
-            prediction = re.search(
-                r'([-+]?(?:[\d,]*\.*\d+))[^\d]{1,2}$', prediction
-            ).group(1)
+            prediction = re.search(r'([-+]?(?:[\d,]*\.*\d+))[^\d]{1,2}$', prediction).group(1)
         if re.match(r'[^-+\d]{1,2}(?:[\d,]*\.*\d+)$', prediction):
-            prediction = re.search(
-                r'[^-+\d]{1,2}((?:[\d,]*\.*\d+))$', prediction
-            ).group(1)
+            prediction = re.search(r'[^-+\d]{1,2}((?:[\d,]*\.*\d+))$', prediction).group(1)
 
         # Preprocessing the number [Stage 1]
         if '10^' in prediction:
@@ -268,37 +257,16 @@ class TheoremqaTask(Task):
             prediction = prediction.replace(',', '')
 
         # Preprocessing the option [Stage 3]
-        if (
-            'a)' in prediction
-            or 'a )' in prediction
-            or prediction.lower().strip() == 'a'
-        ):
+        if 'a)' in prediction or 'a )' in prediction or prediction.lower().strip() == 'a':
             prediction = '(a)'
-        if (
-            'b)' in prediction
-            or 'b )' in prediction
-            or prediction.lower().strip() == 'b'
-        ):
+        if 'b)' in prediction or 'b )' in prediction or prediction.lower().strip() == 'b':
             prediction = '(b)'
-        if (
-            'c)' in prediction
-            or 'c )' in prediction
-            or prediction.lower().strip() == 'c'
-        ):
+        if 'c)' in prediction or 'c )' in prediction or prediction.lower().strip() == 'c':
             prediction = '(c)'
-        if (
-            'd)' in prediction
-            or 'd )' in prediction
-            or prediction.lower().strip() == 'd'
-        ):
+        if 'd)' in prediction or 'd )' in prediction or prediction.lower().strip() == 'd':
             prediction = '(d)'
 
-        if (
-            '(a)' in prediction
-            or '(b)' in prediction
-            or '(c)' in prediction
-            or '(d)' in prediction
-        ):
+        if '(a)' in prediction or '(b)' in prediction or '(c)' in prediction or '(d)' in prediction:
             prediction = '"' + re.search(r'\([a-d]\)', prediction).group(0) + '"'
 
         # If the prediction is empty, use dummy '0'
@@ -309,9 +277,7 @@ class TheoremqaTask(Task):
         try:
             prediction = eval(prediction)
         except Exception:
-            LOGGER.warning(
-                f'[TASK] Failed to convert the answer: {prediction}\n{traceback.format_exc()}'
-            )
+            LOGGER.warning(f'[TASK] Failed to convert the answer: {prediction}\n{traceback.format_exc()}')
             return None  # failed to convert the answer
 
         # Performing common type conversion

@@ -39,9 +39,7 @@ def _create_chunks_from_raw_string(content: str, size: int):
     return ret
 
 
-def create_chunks(
-    text: str, size: int = 100, language: str | None = None
-) -> list[Chunk]:
+def create_chunks(text: str, size: int = 100, language: str | None = None) -> list[Chunk]:
     try:
         parser = get_parser(language) if language is not None else None
     except AttributeError:
@@ -71,9 +69,7 @@ def normalized_lcs(chunk: str, query: str) -> float:
     return _score / len(chunk)
 
 
-def get_top_k_chunk_matches(
-    text: str, query: str, k: int = 3, max_chunk_size: int = 100
-) -> list[Chunk]:
+def get_top_k_chunk_matches(text: str, query: str, k: int = 3, max_chunk_size: int = 100) -> list[Chunk]:
     """Get the top k chunks in the text that match the query.
 
     The query could be a string of draft code edits.

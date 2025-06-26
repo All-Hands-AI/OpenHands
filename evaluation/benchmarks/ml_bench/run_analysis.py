@@ -92,16 +92,10 @@ def classify_error(llm: LLM, failed_case: dict) -> str:
         response = llm.completion(messages=[{'content': prompt, 'role': 'user'}])
         error_category = response.choices[0].message['content']
     except Exception as e:
-        logger.error(
-            f'Failed to classify the error for the failed case: {failed_case["instance_id"]}'
-        )
+        logger.error(f'Failed to classify the error for the failed case: {failed_case["instance_id"]}')
         logger.error(e)
         error_category = input(
-            failed_case['instruction']
-            + ': '
-            + failed_case['eval_script']
-            + ' - '
-            + failed_case['eval_output']
+            failed_case['instruction'] + ': ' + failed_case['eval_script'] + ' - ' + failed_case['eval_output']
         )
 
     if error_category not in ['E1', 'E2', 'E3', 'E4', 'E5']:
@@ -139,9 +133,7 @@ if __name__ == '__main__':
         with open(args.json_file_path.replace('.jsonl', '_failed.jsonl'), 'r') as file:
             for line in file:
                 failed.append(json.loads(line.strip()))
-        print(
-            f'Loaded {len(failed)} failed cases from {args.json_file_path.replace(".jsonl", "_failed.jsonl")}'
-        )
+        print(f'Loaded {len(failed)} failed cases from {args.json_file_path.replace(".jsonl", "_failed.jsonl")}')
 
     for failed_case in tqdm.tqdm(new_failed):
         if failed_case['instance_id'] in [case['instance_id'] for case in failed]:

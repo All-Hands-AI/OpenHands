@@ -26,9 +26,7 @@ def test_initialize_repository_for_runtime(temp_dir, runtime_cls, run_as_openhan
         'openhands.runtime.base.ProviderHandler.verify_repo_provider',
         return_value=mock_repo,
     ):
-        repository_dir = initialize_repository_for_runtime(
-            runtime, selected_repository='All-Hands-AI/OpenHands'
-        )
+        repository_dir = initialize_repository_for_runtime(runtime, selected_repository='All-Hands-AI/OpenHands')
 
     assert repository_dir is not None
     assert repository_dir == 'OpenHands'
@@ -40,9 +38,7 @@ def test_maybe_run_setup_script(temp_dir, runtime_cls, run_as_openhands):
 
     setup_script = '.openhands/setup.sh'
     write_obs = runtime.write(
-        FileWriteAction(
-            path=setup_script, content="#!/bin/bash\necho 'Hello World' >> README.md\n"
-        )
+        FileWriteAction(path=setup_script, content="#!/bin/bash\necho 'Hello World' >> README.md\n")
     )
     assert isinstance(write_obs, FileWriteObservation)
 
@@ -55,9 +51,7 @@ def test_maybe_run_setup_script(temp_dir, runtime_cls, run_as_openhands):
     assert read_obs.content == 'Hello World\n'
 
 
-def test_maybe_run_setup_script_with_long_timeout(
-    temp_dir, runtime_cls, run_as_openhands
-):
+def test_maybe_run_setup_script_with_long_timeout(temp_dir, runtime_cls, run_as_openhands):
     """Test that setup script is executed when it exists."""
     runtime, config = _load_runtime(
         temp_dir,

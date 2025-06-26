@@ -60,9 +60,7 @@ def corpus_bleu(golds: list[list[str]], preds: list[list[str]]) -> float:
     )
 
 
-def edit_sim(
-    gold: Union[str, list[str]], pred: Union[str, list[str]], sep: str = ' '
-) -> float:
+def edit_sim(gold: Union[str, list[str]], pred: Union[str, list[str]], sep: str = ' ') -> float:
     """
     Calculate char-level edit similarity, in the range of 0~100.
 
@@ -127,9 +125,7 @@ def batch_exact_match(golds: list[T], preds: list[T]) -> list[float]:
     return [exact_match(gold, pred) for gold, pred in zip(golds, preds)]
 
 
-def rouge_l(
-    gold: Union[str, list[str]], pred: Union[str, list[str]], sep: str = ' '
-) -> dict[str, float]:
+def rouge_l(gold: Union[str, list[str]], pred: Union[str, list[str]], sep: str = ' ') -> dict[str, float]:
     """
     Calculate ROUGE-L F1, precision, and recall scores, in the range of 0~100.
 
@@ -223,9 +219,7 @@ def batch_accuracy(
     return [accuracy(gold, pred, ignore) for gold, pred in zip(golds, preds)]
 
 
-def first_match_to_topk(
-    first_match_list: list[int], k_values: list[int]
-) -> dict[int, list[float]]:
+def first_match_to_topk(first_match_list: list[int], k_values: list[int]) -> dict[int, list[float]]:
     """
     Calculate top-k accuracy with the first match ranks (1-indexed).
 

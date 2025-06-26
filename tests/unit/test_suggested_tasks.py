@@ -27,9 +27,7 @@ async def test_get_suggested_tasks():
                             'title': 'PR with conflicts',
                             'repository': {'nameWithOwner': 'test-org/repo-1'},
                             'mergeable': 'CONFLICTING',
-                            'commits': {
-                                'nodes': [{'commit': {'statusCheckRollup': None}}]
-                            },
+                            'commits': {'nodes': [{'commit': {'statusCheckRollup': None}}]},
                             'reviews': {'nodes': []},
                         },
                         {
@@ -37,15 +35,7 @@ async def test_get_suggested_tasks():
                             'title': 'PR with failing checks',
                             'repository': {'nameWithOwner': 'test-org/repo-1'},
                             'mergeable': 'MERGEABLE',
-                            'commits': {
-                                'nodes': [
-                                    {
-                                        'commit': {
-                                            'statusCheckRollup': {'state': 'FAILURE'}
-                                        }
-                                    }
-                                ]
-                            },
+                            'commits': {'nodes': [{'commit': {'statusCheckRollup': {'state': 'FAILURE'}}}]},
                             'reviews': {'nodes': []},
                         },
                         {
@@ -53,15 +43,7 @@ async def test_get_suggested_tasks():
                             'title': 'PR with comments',
                             'repository': {'nameWithOwner': 'test-user/repo-2'},
                             'mergeable': 'MERGEABLE',
-                            'commits': {
-                                'nodes': [
-                                    {
-                                        'commit': {
-                                            'statusCheckRollup': {'state': 'SUCCESS'}
-                                        }
-                                    }
-                                ]
-                            },
+                            'commits': {'nodes': [{'commit': {'statusCheckRollup': {'state': 'SUCCESS'}}}]},
                             'reviews': {'nodes': [{'state': 'CHANGES_REQUESTED'}]},
                         },
                     ]
@@ -101,9 +83,7 @@ async def test_get_suggested_tasks():
     assert TaskType.FAILING_CHECKS in task_types
     assert TaskType.UNRESOLVED_COMMENTS in task_types
     assert TaskType.OPEN_ISSUE in task_types
-    assert (
-        len([t for t in task_types if t == TaskType.OPEN_ISSUE]) == 2
-    )  # Should have 2 open issues
+    assert len([t for t in task_types if t == TaskType.OPEN_ISSUE]) == 2  # Should have 2 open issues
 
     # Verify repositories are correct
     repos = {task.repo for task in tasks}

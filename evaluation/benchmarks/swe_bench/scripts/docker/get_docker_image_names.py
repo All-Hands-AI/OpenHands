@@ -44,7 +44,5 @@ with open(args.output, 'w') as f:
         ]:
             f.write(swebench_instance_id_to_docker_image_name(instance_id) + '\n')
         else:
-            f.write(
-                swebench_multimodal_instance_id_to_docker_image_name(instance_id) + '\n'
-            )
+            f.write(swebench_multimodal_instance_id_to_docker_image_name(instance_id) + '\n')
 print(f'Saved {len(instance_ids)} images to {args.output}')

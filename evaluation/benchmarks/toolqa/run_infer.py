@@ -99,7 +99,9 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
 
     # Prepare instruction
     instruction = encode_question(question)
-    instruction += 'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
+    instruction += (
+        'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
+    )
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += AGENT_CLS_TO_INST_SUFFIX[metadata.agent_class]
     logger.info(f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'})
@@ -114,9 +116,7 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
             config=config,
             initial_user_action=MessageAction(content=instruction),
             runtime=runtime,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
-                metadata.agent_class
-            ],
+            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[metadata.agent_class],
         )
     )
     # ======= Attempt to evaluate the agent's edits =======
@@ -201,9 +201,7 @@ if __name__ == '__main__':
         'genda',
     ]
     if args.dataset not in dataset_choices:
-        raise ValueError(
-            'Please choose from agenda, airbnb, coffee, dblp, flight, gsm8k, scirex, yelp for dataset.'
-        )
+        raise ValueError('Please choose from agenda, airbnb, coffee, dblp, flight, gsm8k, scirex, yelp for dataset.')
     if args.hardness not in ['easy', 'hard']:
         raise ValueError('Please choose from easy and hard for hardness.')
 
@@ -219,6 +217,4 @@ if __name__ == '__main__':
     )
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(toolqa_test, output_file, args.eval_n_limit)
-    run_evaluation(
-        instances, metadata, output_file, args.eval_num_workers, process_instance
-    )
+    run_evaluation(instances, metadata, output_file, args.eval_num_workers, process_instance)

@@ -14,9 +14,7 @@ class DebugMixin:
 
         messages = messages if isinstance(messages, list) else [messages]
         debug_message = MESSAGE_SEPARATOR.join(
-            self._format_message_content(msg)
-            for msg in messages
-            if msg['content'] is not None
+            self._format_message_content(msg) for msg in messages if msg['content'] is not None
         )
 
         if debug_message:
@@ -31,20 +29,14 @@ class DebugMixin:
     def _format_message_content(self, message: dict[str, Any]) -> str:
         content = message['content']
         if isinstance(content, list):
-            return '\n'.join(
-                self._format_content_element(element) for element in content
-            )
+            return '\n'.join(self._format_content_element(element) for element in content)
         return str(content)
 
     def _format_content_element(self, element: dict[str, Any] | Any) -> str:
         if isinstance(element, dict):
             if 'text' in element:
                 return str(element['text'])
-            if (
-                self.vision_is_active()
-                and 'image_url' in element
-                and 'url' in element['image_url']
-            ):
+            if self.vision_is_active() and 'image_url' in element and 'url' in element['image_url']:
                 return str(element['image_url']['url'])
         return str(element)
 

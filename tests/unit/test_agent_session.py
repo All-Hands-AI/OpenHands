@@ -97,9 +97,7 @@ async def test_agent_session_start_with_no_state(mock_agent):
 
     # Patch AgentController and State.restore_from_session to fail; patch Memory in AgentSession
     with (
-        patch(
-            'openhands.server.session.agent_session.AgentController', SpyAgentController
-        ),
+        patch('openhands.server.session.agent_session.AgentController', SpyAgentController),
         patch(
             'openhands.server.session.agent_session.EventStream',
             return_value=mock_event_stream,
@@ -194,9 +192,7 @@ async def test_agent_session_start_with_restored_state(mock_agent):
 
     # Patch AgentController and State.restore_from_session to succeed, patch Memory in AgentSession
     with (
-        patch(
-            'openhands.server.session.agent_session.AgentController', SpyAgentController
-        ),
+        patch('openhands.server.session.agent_session.AgentController', SpyAgentController),
         patch(
             'openhands.server.session.agent_session.EventStream',
             return_value=mock_event_stream,
@@ -305,9 +301,7 @@ async def test_metrics_centralization_and_sharing(mock_agent):
 
         # Verify that the merged metrics are reflected in both agent and controller
         assert session.controller.state.metrics.accumulated_cost == current_cost + 0.1
-        assert (
-            session.controller.agent.llm.metrics.accumulated_cost == current_cost + 0.1
-        )
+        assert session.controller.agent.llm.metrics.accumulated_cost == current_cost + 0.1
 
         # Reset the agent and verify that metrics are not reset
         session.controller.agent.reset()

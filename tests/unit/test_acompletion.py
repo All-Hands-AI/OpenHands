@@ -59,9 +59,7 @@ def _patch_http():
 @pytest.mark.asyncio
 async def test_acompletion_non_streaming():
     with patch.object(AsyncLLM, '_call_acompletion') as mock_call_acompletion:
-        mock_response = {
-            'choices': [{'message': {'content': 'This is a test message.'}}]
-        }
+        mock_response = {'choices': [{'message': {'content': 'This is a test message.'}}]}
         mock_call_acompletion.return_value = mock_response
         test_llm = _get_llm(AsyncLLM)
         response = await test_llm.async_completion(
@@ -91,9 +89,7 @@ async def test_acompletion_streaming(mock_response):
 @pytest.mark.asyncio
 async def test_completion(test_llm):
     with patch.object(LLM, 'completion') as mock_completion:
-        mock_completion.return_value = {
-            'choices': [{'message': {'content': 'This is a test message.'}}]
-        }
+        mock_completion.return_value = {'choices': [{'message': {'content': 'This is a test message.'}}]}
         response = test_llm.completion(messages=[{'role': 'user', 'content': 'Hello!'}])
         assert response['choices'][0]['message']['content'] == 'This is a test message.'
 
@@ -119,9 +115,7 @@ async def test_async_completion_with_user_cancellation(cancel_delay):
         print('Completing mock_acompletion without cancellation')
         return {'choices': [{'message': {'content': 'This is a test message.'}}]}
 
-    with patch.object(
-        AsyncLLM, '_call_acompletion', new_callable=AsyncMock
-    ) as mock_call_acompletion:
+    with patch.object(AsyncLLM, '_call_acompletion', new_callable=AsyncMock) as mock_call_acompletion:
         mock_call_acompletion.side_effect = mock_acompletion
         test_llm = _get_llm(AsyncLLM)
 
@@ -174,9 +168,7 @@ async def test_async_streaming_completion_with_user_cancellation(cancel_after_ch
                 raise UserCancelledError('LLM request cancelled by user')
             await asyncio.sleep(0.05)  # Simulate some delay between chunks
 
-    with patch.object(
-        AsyncLLM, '_call_acompletion', new_callable=AsyncMock
-    ) as mock_call_acompletion:
+    with patch.object(AsyncLLM, '_call_acompletion', new_callable=AsyncMock) as mock_call_acompletion:
         mock_call_acompletion.return_value = mock_acompletion()
         test_llm = _get_llm(StreamingLLM)
 

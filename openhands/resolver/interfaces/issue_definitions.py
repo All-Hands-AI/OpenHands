@@ -121,9 +121,7 @@ class ServiceContextPR(ServiceContext):
     ) -> tuple[str, str, list[str]]:
         """Generate instruction for the agent."""
         user_instruction_template = jinja2.Template(user_instructions_prompt_template)
-        conversation_instructions_template = jinja2.Template(
-            conversation_instructions_prompt_template
-        )
+        conversation_instructions_template = jinja2.Template(conversation_instructions_prompt_template)
         images = []
 
         issues_str = None
@@ -141,9 +139,7 @@ class ServiceContextPR(ServiceContext):
         review_thread_str = None
         review_thread_file_str = None
         if issue.review_threads:
-            review_threads = [
-                review_thread.comment for review_thread in issue.review_threads
-            ]
+            review_threads = [review_thread.comment for review_thread in issue.review_threads]
             review_thread_files = []
             for review_thread in issue.review_threads:
                 review_thread_files.extend(review_thread.files)
@@ -329,9 +325,7 @@ class ServiceContextIssue(ServiceContext):
     def send_comment_msg(self, issue_number: int, msg: str) -> None:
         return self._strategy.send_comment_msg(issue_number, msg)
 
-    def get_issue_comments(
-        self, issue_number: int, comment_id: int | None = None
-    ) -> list[str] | None:
+    def get_issue_comments(self, issue_number: int, comment_id: int | None = None) -> list[str] | None:
         return self._strategy.get_issue_comments(issue_number, comment_id)
 
     def get_instruction(
@@ -345,9 +339,7 @@ class ServiceContextIssue(ServiceContext):
         # Format thread comments if they exist
         thread_context = ''
         if issue.thread_comments:
-            thread_context = '\n\nIssue Thread Comments:\n' + '\n---\n'.join(
-                issue.thread_comments
-            )
+            thread_context = '\n\nIssue Thread Comments:\n' + '\n---\n'.join(issue.thread_comments)
 
         images = []
         images.extend(extract_image_urls(issue.body))
@@ -358,9 +350,7 @@ class ServiceContextIssue(ServiceContext):
             body=issue.title + '\n\n' + issue.body + thread_context
         )  # Issue body and comments
 
-        conversation_instructions_template = jinja2.Template(
-            conversation_instructions_prompt_template
-        )
+        conversation_instructions_template = jinja2.Template(conversation_instructions_prompt_template)
         conversation_instructions = conversation_instructions_template.render(
             repo_instruction=repo_instruction,
         )
@@ -381,9 +371,7 @@ class ServiceContextIssue(ServiceContext):
         # Include thread comments in the prompt if they exist
         issue_context = issue.body
         if issue.thread_comments:
-            issue_context += '\n\nIssue Thread Comments:\n' + '\n---\n'.join(
-                issue.thread_comments
-            )
+            issue_context += '\n\nIssue Thread Comments:\n' + '\n---\n'.join(issue.thread_comments)
 
         with open(
             os.path.join(

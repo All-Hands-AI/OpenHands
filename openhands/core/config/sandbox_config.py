@@ -49,9 +49,7 @@ class SandboxConfig(BaseModel):
     pause_closed_runtimes: bool = Field(default=True)
     rm_all_containers: bool = Field(default=False)
     api_key: str | None = Field(default=None)
-    base_container_image: str | None = Field(
-        default='nikolaik/python-nodejs:python3.12-nodejs22'
-    )
+    base_container_image: str | None = Field(default='nikolaik/python-nodejs:python3.12-nodejs22')
     runtime_container_image: str | None = Field(default=None)
     user_id: int = Field(default=os.getuid() if hasattr(os, 'getuid') else 1000)
     timeout: int = Field(default=120)
@@ -61,9 +59,7 @@ class SandboxConfig(BaseModel):
     remote_runtime_class: str | None = Field(
         default=None
     )  # can be "None" (default to gvisor) or "sysbox" (support docker inside runtime + more stable)
-    enable_auto_lint: bool = Field(
-        default=False
-    )  # once enabled, OpenHands would lint files after editing
+    enable_auto_lint: bool = Field(default=False)  # once enabled, OpenHands would lint files after editing
     use_host_network: bool = Field(default=False)
     runtime_binding_address: str = Field(default='0.0.0.0')
     runtime_extra_build_args: list[str] | None = Field(default=None)

@@ -31,9 +31,7 @@ def get_token_usage_for_event(event: Event, metrics: Metrics) -> TokenUsage | No
     return None
 
 
-def get_token_usage_for_event_id(
-    events: list[Event], event_id: int, metrics: Metrics
-) -> TokenUsage | None:
+def get_token_usage_for_event_id(events: list[Event], event_id: int, metrics: Metrics) -> TokenUsage | None:
     """
     Starting from the event with .id == event_id and moving backwards in `events`,
     find the first TokenUsage record (if any) associated either with:

@@ -27,7 +27,5 @@ class BaseCritic(abc.ABC):
     """
 
     @abc.abstractmethod
-    def evaluate(
-        self, events: list[Event], git_patch: str | None = None
-    ) -> CriticResult:
+    def evaluate(self, events: list[Event], git_patch: str | None = None) -> CriticResult:
         pass

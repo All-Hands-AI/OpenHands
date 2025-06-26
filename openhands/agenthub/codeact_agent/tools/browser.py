@@ -150,10 +150,7 @@ BrowserTool = ChatCompletionToolParam(
             'properties': {
                 'code': {
                     'type': 'string',
-                    'description': (
-                        'The Python code that interacts with the browser.\n'
-                        + _BROWSER_TOOL_DESCRIPTION
-                    ),
+                    'description': ('The Python code that interacts with the browser.\n' + _BROWSER_TOOL_DESCRIPTION),
                 }
             },
             'required': ['code'],

@@ -47,10 +47,7 @@ def test_init():
     assert handler.username == 'test-user'
     assert handler.base_domain == 'bitbucket.org'
     assert handler.base_url == 'https://api.bitbucket.org/2.0'
-    assert (
-        handler.download_url
-        == 'https://bitbucket.org/test-workspace/test-repo/get/master.zip'
-    )
+    assert handler.download_url == 'https://bitbucket.org/test-workspace/test-repo/get/master.zip'
     assert handler.clone_url == 'https://bitbucket.org/test-workspace/test-repo.git'
     assert handler.headers == {
         'Authorization': 'Bearer test-token',
@@ -59,24 +56,15 @@ def test_init():
 
 
 def test_get_repo_url(bitbucket_handler):
-    assert (
-        bitbucket_handler.get_repo_url()
-        == 'https://bitbucket.org/test-workspace/test-repo'
-    )
+    assert bitbucket_handler.get_repo_url() == 'https://bitbucket.org/test-workspace/test-repo'
 
 
 def test_get_issue_url(bitbucket_handler):
-    assert (
-        bitbucket_handler.get_issue_url(123)
-        == 'https://bitbucket.org/test-workspace/test-repo/issues/123'
-    )
+    assert bitbucket_handler.get_issue_url(123) == 'https://bitbucket.org/test-workspace/test-repo/issues/123'
 
 
 def test_get_pr_url(bitbucket_handler):
-    assert (
-        bitbucket_handler.get_pr_url(123)
-        == 'https://bitbucket.org/test-workspace/test-repo/pull-requests/123'
-    )
+    assert bitbucket_handler.get_pr_url(123) == 'https://bitbucket.org/test-workspace/test-repo/pull-requests/123'
 
 
 @pytest.mark.asyncio
@@ -88,11 +76,7 @@ async def test_get_issue(mock_client, bitbucket_handler):
         'id': 123,
         'title': 'Test Issue',
         'content': {'raw': 'Test Issue Body'},
-        'links': {
-            'html': {
-                'href': 'https://bitbucket.org/test-workspace/test-repo/issues/123'
-            }
-        },
+        'links': {'html': {'href': 'https://bitbucket.org/test-workspace/test-repo/issues/123'}},
         'state': 'open',
         'reporter': {'display_name': 'Test User'},
         'assignee': [{'display_name': 'Assignee User'}],
@@ -115,11 +99,7 @@ def test_create_pr(mock_post, bitbucket_handler):
     mock_response = MagicMock()
     mock_response.raise_for_status.return_value = None
     mock_response.json.return_value = {
-        'links': {
-            'html': {
-                'href': 'https://bitbucket.org/test-workspace/test-repo/pull-requests/123'
-            }
-        },
+        'links': {'html': {'href': 'https://bitbucket.org/test-workspace/test-repo/pull-requests/123'}},
     }
     mock_post.return_value = mock_response
 
@@ -151,9 +131,7 @@ def test_create_pr(mock_post, bitbucket_handler):
 @patch('openhands.resolver.send_pull_request.ServiceContextIssue')
 @patch('openhands.resolver.send_pull_request.BitbucketIssueHandler')
 @patch('subprocess.run')
-def test_send_pull_request_bitbucket(
-    mock_run, mock_bitbucket_handler, mock_service_context
-):
+def test_send_pull_request_bitbucket(mock_run, mock_bitbucket_handler, mock_service_context):
     # Mock subprocess.run to avoid actual git operations
     mock_run.return_value = MagicMock(returncode=0)
 
@@ -166,9 +144,7 @@ def test_send_pull_request_bitbucket(
     mock_service.get_branch_name.return_value = 'openhands-fix-123'
     mock_service.branch_exists.return_value = True
     mock_service.get_default_branch_name.return_value = 'main'
-    mock_service.get_clone_url.return_value = (
-        'https://bitbucket.org/test-workspace/test-repo.git'
-    )
+    mock_service.get_clone_url.return_value = 'https://bitbucket.org/test-workspace/test-repo.git'
     mock_service.create_pull_request.return_value = {
         'html_url': 'https://bitbucket.org/test-workspace/test-repo/pull-requests/123'
     }
@@ -236,14 +212,10 @@ class TestBitbucketProviderDomain(unittest.TestCase):
     """Test that Bitbucket provider domain is properly handled in Runtime.clone_or_init_repo."""
 
     @patch('openhands.runtime.base.Runtime.__abstractmethods__', set())
-    @patch(
-        'openhands.runtime.utils.edit.FileEditRuntimeMixin.__init__', return_value=None
-    )
+    @patch('openhands.runtime.utils.edit.FileEditRuntimeMixin.__init__', return_value=None)
     @patch('openhands.runtime.base.ProviderHandler')
     @pytest.mark.asyncio
-    async def test_get_authenticated_git_url_bitbucket(
-        self, mock_provider_handler, mock_file_edit_init, *args
-    ):
+    async def test_get_authenticated_git_url_bitbucket(self, mock_provider_handler, mock_file_edit_init, *args):
         """Test that _get_authenticated_git_url correctly handles Bitbucket repositories."""
         # Mock the provider handler to return a repository with Bitbucket as the provider
         mock_repository = Repository(
@@ -268,17 +240,11 @@ class TestBitbucketProviderDomain(unittest.TestCase):
 
         # Test with username:password format token
         git_provider_tokens = {
-            ProviderType.BITBUCKET: ProviderToken(
-                token=SecretStr('username:app_password'), host='bitbucket.org'
-            )
+            ProviderType.BITBUCKET: ProviderToken(token=SecretStr('username:app_password'), host='bitbucket.org')
         }
-        url = await runtime._get_authenticated_git_url(
-            'workspace/repo', git_provider_tokens
-        )
+        url = await runtime._get_authenticated_git_url('workspace/repo', git_provider_tokens)
         # Bitbucket tokens with colon are used directly as username:password
-        self.assertEqual(
-            url, 'https://username:app_password@bitbucket.org/workspace/repo.git'
-        )
+        self.assertEqual(url, 'https://username:app_password@bitbucket.org/workspace/repo.git')
 
         # Test with email:password format token (more realistic)
         git_provider_tokens = {
@@ -286,9 +252,7 @@ class TestBitbucketProviderDomain(unittest.TestCase):
                 token=SecretStr('user@example.com:app_password'), host='bitbucket.org'
             )
         }
-        url = await runtime._get_authenticated_git_url(
-            'workspace/repo', git_provider_tokens
-        )
+        url = await runtime._get_authenticated_git_url('workspace/repo', git_provider_tokens)
         # Email addresses in tokens are used as-is (no URL encoding in our implementation)
         self.assertEqual(
             url,
@@ -297,23 +261,15 @@ class TestBitbucketProviderDomain(unittest.TestCase):
 
         # Test with simple token format (access token)
         git_provider_tokens = {
-            ProviderType.BITBUCKET: ProviderToken(
-                token=SecretStr('simple_token'), host='bitbucket.org'
-            )
+            ProviderType.BITBUCKET: ProviderToken(token=SecretStr('simple_token'), host='bitbucket.org')
         }
-        url = await runtime._get_authenticated_git_url(
-            'workspace/repo', git_provider_tokens
-        )
+        url = await runtime._get_authenticated_git_url('workspace/repo', git_provider_tokens)
         # Simple tokens use x-token-auth format
-        self.assertEqual(
-            url, 'https://x-token-auth:simple_token@bitbucket.org/workspace/repo.git'
-        )
+        self.assertEqual(url, 'https://x-token-auth:simple_token@bitbucket.org/workspace/repo.git')
 
     @patch('openhands.runtime.base.ProviderHandler')
     @patch.object(Runtime, 'run_action')
-    async def test_bitbucket_provider_domain(
-        self, mock_run_action, mock_provider_handler
-    ):
+    async def test_bitbucket_provider_domain(self, mock_run_action, mock_provider_handler):
         # Mock the provider handler to return a repository with Bitbucket as the provider
         mock_repository = Repository(
             id='1',
@@ -361,9 +317,7 @@ async def test_validate_provider_token_with_bitbucket_token():
     with (
         patch('openhands.integrations.utils.GitHubService') as mock_github_service,
         patch('openhands.integrations.utils.GitLabService') as mock_gitlab_service,
-        patch(
-            'openhands.integrations.utils.BitBucketService'
-        ) as mock_bitbucket_service,
+        patch('openhands.integrations.utils.BitBucketService') as mock_bitbucket_service,
     ):
         # Set up the mocks
         github_instance = AsyncMock()
@@ -403,9 +357,7 @@ async def test_check_provider_tokens_with_only_bitbucket():
 
     # Create provider tokens with only Bitbucket
     provider_tokens = {
-        ProviderType.BITBUCKET: ProviderToken(
-            token=SecretStr('username:app_password'), host='bitbucket.org'
-        ),
+        ProviderType.BITBUCKET: ProviderToken(token=SecretStr('username:app_password'), host='bitbucket.org'),
         ProviderType.GITHUB: ProviderToken(token=SecretStr(''), host='github.com'),
         ProviderType.GITLAB: ProviderToken(token=SecretStr(''), host='gitlab.com'),
     }
@@ -414,9 +366,7 @@ async def test_check_provider_tokens_with_only_bitbucket():
     post_model = POSTProviderModel(provider_tokens=provider_tokens)
 
     # Call check_provider_tokens with the patched validate_provider_token
-    with patch(
-        'openhands.server.routes.secrets.validate_provider_token', mock_validate
-    ):
+    with patch('openhands.server.routes.secrets.validate_provider_token', mock_validate):
         result = await check_provider_tokens(post_model, None)
 
         # Verify that validate_provider_token was called only once (for Bitbucket)
@@ -547,20 +497,12 @@ async def test_validate_provider_token_with_empty_tokens():
     with (
         patch('openhands.integrations.utils.GitHubService') as mock_github_service,
         patch('openhands.integrations.utils.GitLabService') as mock_gitlab_service,
-        patch(
-            'openhands.integrations.utils.BitBucketService'
-        ) as mock_bitbucket_service,
+        patch('openhands.integrations.utils.BitBucketService') as mock_bitbucket_service,
     ):
         # Configure mocks to raise exceptions for invalid tokens
-        mock_github_service.return_value.verify_access.side_effect = Exception(
-            'Invalid token'
-        )
-        mock_gitlab_service.return_value.verify_access.side_effect = Exception(
-            'Invalid token'
-        )
-        mock_bitbucket_service.return_value.verify_access.side_effect = Exception(
-            'Invalid token'
-        )
+        mock_github_service.return_value.verify_access.side_effect = Exception('Invalid token')
+        mock_gitlab_service.return_value.verify_access.side_effect = Exception('Invalid token')
+        mock_bitbucket_service.return_value.verify_access.side_effect = Exception('Invalid token')
 
         # Test with an empty token
         token = SecretStr('')
@@ -614,9 +556,7 @@ def test_initialize_repository_for_runtime_with_bitbucket_token(
 
     # Set up environment with BITBUCKET_TOKEN
     with patch.dict(os.environ, {'BITBUCKET_TOKEN': 'username:app_password'}):
-        result = initialize_repository_for_runtime(
-            runtime=mock_runtime, selected_repository='all-hands-ai/test-repo'
-        )
+        result = initialize_repository_for_runtime(runtime=mock_runtime, selected_repository='all-hands-ai/test-repo')
 
     # Verify the result
     assert result == 'test-repo'
@@ -632,10 +572,7 @@ def test_initialize_repository_for_runtime_with_bitbucket_token(
     provider_tokens = args[2]  # Third argument is immutable_provider_tokens
     assert provider_tokens is not None
     assert ProviderType.BITBUCKET in provider_tokens
-    assert (
-        provider_tokens[ProviderType.BITBUCKET].token.get_secret_value()
-        == 'username:app_password'
-    )
+    assert provider_tokens[ProviderType.BITBUCKET].token.get_secret_value() == 'username:app_password'
 
     # Check that the repository was passed correctly
     assert args[3] == 'all-hands-ai/test-repo'  # selected_repository
@@ -670,9 +607,7 @@ def test_initialize_repository_for_runtime_with_multiple_tokens(
             'BITBUCKET_TOKEN': 'username:bitbucket_app_password',
         },
     ):
-        result = initialize_repository_for_runtime(
-            runtime=mock_runtime, selected_repository='all-hands-ai/test-repo'
-        )
+        result = initialize_repository_for_runtime(runtime=mock_runtime, selected_repository='all-hands-ai/test-repo')
 
     # Verify the result
     assert result == 'test-repo'
@@ -691,18 +626,9 @@ def test_initialize_repository_for_runtime_with_multiple_tokens(
     assert ProviderType.BITBUCKET in provider_tokens
 
     # Verify token values
-    assert (
-        provider_tokens[ProviderType.GITHUB].token.get_secret_value()
-        == 'github_token_123'
-    )
-    assert (
-        provider_tokens[ProviderType.GITLAB].token.get_secret_value()
-        == 'gitlab_token_456'
-    )
-    assert (
-        provider_tokens[ProviderType.BITBUCKET].token.get_secret_value()
-        == 'username:bitbucket_app_password'
-    )
+    assert provider_tokens[ProviderType.GITHUB].token.get_secret_value() == 'github_token_123'
+    assert provider_tokens[ProviderType.GITLAB].token.get_secret_value() == 'gitlab_token_456'
+    assert provider_tokens[ProviderType.BITBUCKET].token.get_secret_value() == 'username:bitbucket_app_password'
 
 
 @patch('openhands.core.setup.call_async_from_sync')
@@ -734,9 +660,7 @@ def test_initialize_repository_for_runtime_without_bitbucket_token(
         if 'BITBUCKET_TOKEN' in os.environ:
             del os.environ['BITBUCKET_TOKEN']
 
-        result = initialize_repository_for_runtime(
-            runtime=mock_runtime, selected_repository='all-hands-ai/test-repo'
-        )
+        result = initialize_repository_for_runtime(runtime=mock_runtime, selected_repository='all-hands-ai/test-repo')
 
     # Verify the result
     assert result == 'test-repo'

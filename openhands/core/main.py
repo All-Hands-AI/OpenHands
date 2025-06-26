@@ -135,10 +135,8 @@ async def run_controller(
     # Add MCP tools to the agent
     if agent.config.enable_mcp:
         # Add OpenHands' MCP server by default
-        _, openhands_mcp_stdio_servers = (
-            OpenHandsMCPConfigImpl.create_default_mcp_server_config(
-                config.mcp_host, config, None
-            )
+        _, openhands_mcp_stdio_servers = OpenHandsMCPConfigImpl.create_default_mcp_server_config(
+            config.mcp_host, config, None
         )
         runtime.config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
 
@@ -148,13 +146,9 @@ async def run_controller(
     if config.replay_trajectory_path:
         logger.info('Trajectory replay is enabled')
         assert isinstance(initial_user_action, NullAction)
-        replay_events, initial_user_action = load_replay_log(
-            config.replay_trajectory_path
-        )
+        replay_events, initial_user_action = load_replay_log(config.replay_trajectory_path)
 
-    controller, initial_state = create_controller(
-        agent, runtime, config, replay_events=replay_events
-    )
+    controller, initial_state = create_controller(agent, runtime, config, replay_events=replay_events)
 
     assert isinstance(initial_user_action, Action), (
         f'initial user actions must be an Action, got {type(initial_user_action)}'
@@ -211,9 +205,7 @@ async def run_controller(
     if config.file_store is not None and config.file_store != 'memory':
         end_state = controller.get_state()
         # NOTE: the saved state does not include delegates events
-        end_state.save_to_session(
-            event_stream.sid, event_stream.file_store, event_stream.user_id
-        )
+        end_state.save_to_session(event_stream.sid, event_stream.file_store, event_stream.user_id)
 
     await controller.close(set_stop_state=False)
 
@@ -285,9 +277,7 @@ if __name__ == '__main__':
     initial_user_action: Action = NullAction()
     if config.replay_trajectory_path:
         if task_str:
-            raise ValueError(
-                'User-specified task is not supported under trajectory replay mode'
-            )
+            raise ValueError('User-specified task is not supported under trajectory replay mode')
     else:
         if not task_str:
             raise ValueError('No task provided. Please specify a task through -t, -f.')
@@ -304,8 +294,6 @@ if __name__ == '__main__':
             config=config,
             initial_user_action=initial_user_action,
             sid=sid,
-            fake_user_response_fn=None
-            if args.no_auto_continue
-            else auto_continue_response,
+            fake_user_response_fn=None if args.no_auto_continue else auto_continue_response,
         )
     )

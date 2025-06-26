@@ -51,9 +51,7 @@ from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
 def _is_retryable_error(exception):
-    return isinstance(
-        exception, (httpx.RemoteProtocolError, httpcore.RemoteProtocolError)
-    )
+    return isinstance(exception, (httpx.RemoteProtocolError, httpcore.RemoteProtocolError))
 
 
 class ActionExecutionClient(Runtime):
@@ -166,9 +164,7 @@ class ActionExecutionClient(Runtime):
                 params=params,
                 timeout=30,
             ) as response:
-                with tempfile.NamedTemporaryFile(
-                    suffix='.zip', delete=False
-                ) as temp_file:
+                with tempfile.NamedTemporaryFile(suffix='.zip', delete=False) as temp_file:
                     for chunk in response.iter_bytes():
                         temp_file.write(chunk)
                     temp_file.flush()
@@ -176,9 +172,7 @@ class ActionExecutionClient(Runtime):
         except httpx.TimeoutException:
             raise TimeoutError('Copy operation timed out')
 
-    def copy_to(
-        self, host_src: str, sandbox_dest: str, recursive: bool = False
-    ) -> None:
+    def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False) -> None:
         if not os.path.exists(host_src):
             raise FileNotFoundError(f'Source file {host_src} does not exist')
 
@@ -191,9 +185,7 @@ class ActionExecutionClient(Runtime):
 
             if recursive:
                 # Create and write the zip file inside the try block
-                with tempfile.NamedTemporaryFile(
-                    suffix='.zip', delete=False
-                ) as temp_zip:
+                with tempfile.NamedTemporaryFile(suffix='.zip', delete=False) as temp_zip:
                     temp_zip_path = temp_zip.name
 
                 try:
@@ -201,9 +193,7 @@ class ActionExecutionClient(Runtime):
                         for root, _, files in os.walk(host_src):
                             for file in files:
                                 file_path = os.path.join(root, file)
-                                arcname = os.path.relpath(
-                                    file_path, os.path.dirname(host_src)
-                                )
+                                arcname = os.path.relpath(file_path, os.path.dirname(host_src))
                                 zipf.write(file_path, arcname)
 
                     self.log(
@@ -267,10 +257,7 @@ class ActionExecutionClient(Runtime):
             return ''
 
     def send_action_for_execution(self, action: Action) -> Observation:
-        if (
-            isinstance(action, FileEditAction)
-            and action.impl_source == FileEditSource.LLM_BASED_EDIT
-        ):
+        if isinstance(action, FileEditAction) and action.impl_source == FileEditSource.LLM_BASED_EDIT:
             return self.llm_based_edit(action)
 
         # set timeout to default if not set
@@ -287,8 +274,7 @@ class ActionExecutionClient(Runtime):
                 return NullObservation('')
             if (
                 hasattr(action, 'confirmation_state')
-                and action.confirmation_state
-                == ActionConfirmationStatus.AWAITING_CONFIRMATION
+                and action.confirmation_state == ActionConfirmationStatus.AWAITING_CONFIRMATION
             ):
                 return NullObservation('')
             action_type = action.action  # type: ignore[attr-defined]
@@ -299,13 +285,8 @@ class ActionExecutionClient(Runtime):
                     f'Action {action_type} is not supported in the current runtime.',
                     error_id='AGENT_ERROR$BAD_ACTION',
                 )
-            if (
-                getattr(action, 'confirmation_state', None)
-                == ActionConfirmationStatus.REJECTED
-            ):
-                return UserRejectObservation(
-                    'Action has been rejected by the user! Waiting for further user input.'
-                )
+            if getattr(action, 'confirmation_state', None) == ActionConfirmationStatus.REJECTED:
+                return UserRejectObservation('Action has been rejected by the user! Waiting for further user input.')
 
             assert action.timeout is not None
 
@@ -351,9 +332,7 @@ class ActionExecutionClient(Runtime):
     def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         return self.send_action_for_execution(action)
 
-    def get_mcp_config(
-        self, extra_stdio_servers: list[MCPStdioServerConfig] | None = None
-    ) -> MCPConfig:
+    def get_mcp_config(self, extra_stdio_servers: list[MCPStdioServerConfig] | None = None) -> MCPConfig:
         import sys
 
         # Check if we're on Windows - MCP is disabled on Windows
@@ -366,18 +345,12 @@ class ActionExecutionClient(Runtime):
         updated_mcp_config = self.config.mcp.model_copy()
 
         # Get current stdio servers
-        current_stdio_servers: list[MCPStdioServerConfig] = list(
-            updated_mcp_config.stdio_servers
-        )
+        current_stdio_servers: list[MCPStdioServerConfig] = list(updated_mcp_config.stdio_servers)
         if extra_stdio_servers:
             current_stdio_servers.extend(extra_stdio_servers)
 
         # Check if there are any new servers using the __eq__ operator
-        new_servers = [
-            server
-            for server in current_stdio_servers
-            if server not in self._last_updated_mcp_stdio_servers
-        ]
+        new_servers = [server for server in current_stdio_servers if server not in self._last_updated_mcp_stdio_servers]
 
         self.log(
             'debug',
@@ -393,9 +366,7 @@ class ActionExecutionClient(Runtime):
                 if server not in combined_servers:
                     combined_servers.append(server)
 
-            stdio_tools = [
-                server.model_dump(mode='json') for server in combined_servers
-            ]
+            stdio_tools = [server.model_dump(mode='json') for server in combined_servers]
             stdio_tools.sort(key=lambda x: x.get('name', ''))  # Sort by server name
 
             self.log(

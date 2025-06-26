@@ -41,9 +41,7 @@ class ReplayManager:
                     # event, we override wait_for_response to False, as a response
                     # would have been included in the next event, and we don't
                     # want the user to interfere with the replay process
-                    logger.info(
-                        'Replay events contains wait_for_response message action, ignoring wait_for_response'
-                    )
+                    logger.info('Replay events contains wait_for_response message action, ignoring wait_for_response')
                     event.wait_for_response = False
         self.replay_events = replay_events
         self.replay_mode = bool(replay_events)
@@ -83,9 +81,7 @@ class ReplayManager:
     @staticmethod
     def get_replay_events(trajectory: list[dict]) -> list[Event]:
         if not isinstance(trajectory, list):
-            raise ValueError(
-                f'Expected a list in {trajectory}, got {type(trajectory).__name__}'
-            )
+            raise ValueError(f'Expected a list in {trajectory}, got {type(trajectory).__name__}')
         replay_events = []
         for item in trajectory:
             event = event_from_dict(item)

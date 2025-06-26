@@ -17,16 +17,12 @@ from openhands.events.serialization import (
 from openhands.events.serialization.observation import observation_from_dict
 
 
-def serialization_deserialization(
-    original_observation_dict, cls, max_message_chars: int = 10000
-):
+def serialization_deserialization(original_observation_dict, cls, max_message_chars: int = 10000):
     observation_instance = event_from_dict(original_observation_dict)
     assert isinstance(observation_instance, Observation), (
         'The observation instance should be an instance of Observation.'
     )
-    assert isinstance(observation_instance, cls), (
-        f'The observation instance should be an instance of {cls}.'
-    )
+    assert isinstance(observation_instance, cls), f'The observation instance should be an instance of {cls}.'
     serialized_observation_dict = event_to_dict(observation_instance)
     serialized_observation_trajectory = event_to_trajectory(observation_instance)
     assert serialized_observation_dict == original_observation_dict, (
@@ -356,10 +352,7 @@ def test_microagent_observation_environment_serialization():
         '127.0.0.1': 8080,
         'localhost': 5000,
     }
-    assert (
-        serialized['extras']['additional_agent_instructions']
-        == 'You know it all about this runtime'
-    )
+    assert serialized['extras']['additional_agent_instructions'] == 'You know it all about this runtime'
     # Deserialize back to RecallObservation
     deserialized = observation_from_dict(serialized)
 
@@ -369,10 +362,7 @@ def test_microagent_observation_environment_serialization():
     assert deserialized.repo_directory == original.repo_directory
     assert deserialized.repo_instructions == original.repo_instructions
     assert deserialized.runtime_hosts == original.runtime_hosts
-    assert (
-        deserialized.additional_agent_instructions
-        == original.additional_agent_instructions
-    )
+    assert deserialized.additional_agent_instructions == original.additional_agent_instructions
     # Check that knowledge microagent fields are empty
     assert deserialized.microagent_knowledge == []
 
@@ -407,14 +397,8 @@ def test_microagent_observation_combined_serialization():
     # Verify serialized data has both types of fields
     assert serialized['extras']['recall_type'] == RecallType.WORKSPACE_CONTEXT.value
     assert serialized['extras']['repo_name'] == 'OpenHands'
-    assert (
-        serialized['extras']['microagent_knowledge'][0]['name']
-        == 'python_best_practices'
-    )
-    assert (
-        serialized['extras']['additional_agent_instructions']
-        == 'You know it all about this runtime'
-    )
+    assert serialized['extras']['microagent_knowledge'][0]['name'] == 'python_best_practices'
+    assert serialized['extras']['additional_agent_instructions'] == 'You know it all about this runtime'
     # Deserialize back to RecallObservation
     deserialized = observation_from_dict(serialized)
 
@@ -426,10 +410,7 @@ def test_microagent_observation_combined_serialization():
     assert deserialized.repo_directory == original.repo_directory
     assert deserialized.repo_instructions == original.repo_instructions
     assert deserialized.runtime_hosts == original.runtime_hosts
-    assert (
-        deserialized.additional_agent_instructions
-        == original.additional_agent_instructions
-    )
+    assert deserialized.additional_agent_instructions == original.additional_agent_instructions
 
     # Knowledge microagent properties
     assert deserialized.microagent_knowledge == original.microagent_knowledge

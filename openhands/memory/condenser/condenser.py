@@ -118,9 +118,7 @@ class Condenser(ABC):
             ValueError: If the configuration type is already registered.
         """
         if configuration_type in CONDENSER_REGISTRY:
-            raise ValueError(
-                f'Condenser configuration {configuration_type} is already registered'
-            )
+            raise ValueError(f'Condenser configuration {configuration_type} is already registered')
         CONDENSER_REGISTRY[configuration_type] = cls
 
     @classmethod

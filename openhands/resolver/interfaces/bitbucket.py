@@ -150,9 +150,7 @@ class BitbucketIssueHandler(IssueHandlerInterface):
         logger.warning('BitbucketIssueHandler.download_issues not implemented')
         return []
 
-    def get_issue_comments(
-        self, issue_number: int, comment_id: int | None = None
-    ) -> list[str] | None:
+    def get_issue_comments(self, issue_number: int, comment_id: int | None = None) -> list[str] | None:
         """Get comments for an issue.
 
         Args:
@@ -174,9 +172,7 @@ class BitbucketIssueHandler(IssueHandlerInterface):
         Returns:
             The URL for the branch
         """
-        return (
-            f'https://{self.base_domain}/{self.owner}/{self.repo}/branch/{branch_name}'
-        )
+        return f'https://{self.base_domain}/{self.owner}/{self.repo}/branch/{branch_name}'
 
     def get_compare_url(self, branch_name: str) -> str:
         """Get the URL for comparing branches.
@@ -311,9 +307,7 @@ class BitbucketIssueHandler(IssueHandlerInterface):
         Returns:
             A list of thread comments
         """
-        logger.warning(
-            'BitbucketIssueHandler.get_issue_thread_comments not implemented'
-        )
+        logger.warning('BitbucketIssueHandler.get_issue_thread_comments not implemented')
         return []
 
     def get_issue_review_comments(self, issue_number: int) -> list[str]:
@@ -325,9 +319,7 @@ class BitbucketIssueHandler(IssueHandlerInterface):
         Returns:
             A list of review comments
         """
-        logger.warning(
-            'BitbucketIssueHandler.get_issue_review_comments not implemented'
-        )
+        logger.warning('BitbucketIssueHandler.get_issue_review_comments not implemented')
         return []
 
     def get_issue_review_threads(self, issue_number: int) -> list[ReviewThread]:
@@ -375,18 +367,14 @@ class BitbucketIssueHandler(IssueHandlerInterface):
 
         if review_threads:
             for review_thread in review_threads:
-                new_issue_references.extend(
-                    extract_issue_references(review_thread.comment)
-                )
+                new_issue_references.extend(extract_issue_references(review_thread.comment))
 
         if thread_comments:
             for thread_comment in thread_comments:
                 new_issue_references.extend(extract_issue_references(thread_comment))
 
         non_duplicate_references = set(new_issue_references)
-        unique_issue_references = non_duplicate_references.difference(
-            closing_issue_numbers
-        )
+        unique_issue_references = non_duplicate_references.difference(closing_issue_numbers)
 
         for issue_number in unique_issue_references:
             try:
@@ -429,11 +417,7 @@ class BitbucketIssueHandler(IssueHandlerInterface):
                 continue
 
             # Handle None body for PRs
-            body = (
-                issue.get('content', {}).get('raw', '')
-                if issue.get('content') is not None
-                else ''
-            )
+            body = issue.get('content', {}).get('raw', '') if issue.get('content') is not None else ''
 
             # Placeholder for PR metadata
             closing_issues: list[str] = []

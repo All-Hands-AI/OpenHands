@@ -39,9 +39,7 @@ def get_runtime_cls(name: str) -> type[Runtime]:
         return get_impl(Runtime, name)
     except Exception as e:
         known_keys = _DEFAULT_RUNTIME_CLASSES.keys()
-        raise ValueError(
-            f'Runtime {name} not supported, known are: {known_keys}'
-        ) from e
+        raise ValueError(f'Runtime {name} not supported, known are: {known_keys}') from e
 
 
 __all__ = [

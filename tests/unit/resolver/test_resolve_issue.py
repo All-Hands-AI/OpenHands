@@ -44,9 +44,7 @@ def test_setup_sandbox_config_default():
 
 def test_setup_sandbox_config_both_images():
     """Test that providing both container images raises ValueError"""
-    with pytest.raises(
-        ValueError, match='Cannot provide both runtime and base container images.'
-    ):
+    with pytest.raises(ValueError, match='Cannot provide both runtime and base container images.'):
         openhands_config = OpenHandsConfig()
 
         IssueResolver.update_sandbox_config(
@@ -88,9 +86,7 @@ def test_setup_sandbox_config_runtime_only():
         is_experimental=False,
     )
 
-    assert_sandbox_config(
-        openhands_config.sandbox, runtime_container_image=runtime_image
-    )
+    assert_sandbox_config(openhands_config.sandbox, runtime_container_image=runtime_image)
 
 
 def test_setup_sandbox_config_experimental():
@@ -123,9 +119,7 @@ def test_setup_sandbox_config_gitlab_ci(mock_get_unique_uid, mock_getuid):
                 is_experimental=False,
             )
 
-            assert_sandbox_config(
-                openhands_config.sandbox, local_runtime_url='http://localhost'
-            )
+            assert_sandbox_config(openhands_config.sandbox, local_runtime_url='http://localhost')
 
 
 @mock.patch('openhands.resolver.issue_resolver.os.getuid', return_value=1000)
@@ -142,16 +136,12 @@ def test_setup_sandbox_config_gitlab_ci_non_root(mock_getuid):
                 is_experimental=False,
             )
 
-            assert_sandbox_config(
-                openhands_config.sandbox, local_runtime_url='http://localhost'
-            )
+            assert_sandbox_config(openhands_config.sandbox, local_runtime_url='http://localhost')
 
 
 @mock.patch('openhands.events.observation.CmdOutputObservation')
 @mock.patch('openhands.runtime.base.Runtime')
-def test_initialize_runtime_runs_setup_script_and_git_hooks(
-    mock_runtime, mock_cmd_output
-):
+def test_initialize_runtime_runs_setup_script_and_git_hooks(mock_runtime, mock_cmd_output):
     """Test that initialize_runtime calls maybe_run_setup_script and maybe_setup_git_hooks"""
 
     # Create a minimal resolver instance with just the methods we need

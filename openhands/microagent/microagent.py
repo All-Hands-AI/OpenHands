@@ -81,9 +81,7 @@ class BaseMicroagent(BaseModel):
         except Exception as e:
             # Provide more detailed error message for validation errors
             error_msg = f'Error validating microagent metadata in {path.name}: {str(e)}'
-            if 'type' in metadata_dict and metadata_dict['type'] not in [
-                t.value for t in MicroagentType
-            ]:
+            if 'type' in metadata_dict and metadata_dict['type'] not in [t.value for t in MicroagentType]:
                 valid_types = ', '.join([f'"{t.value}"' for t in MicroagentType])
                 error_msg += f'. Invalid "type" value: "{metadata_dict["type"]}". Valid types are: {valid_types}'
             raise MicroagentValidationError(error_msg) from e
@@ -180,9 +178,7 @@ class RepoMicroagent(BaseMicroagent):
     def __init__(self, **data):
         super().__init__(**data)
         if self.type != MicroagentType.REPO_KNOWLEDGE:
-            raise ValueError(
-                f'RepoMicroagent initialized with incorrect type: {self.type}'
-            )
+            raise ValueError(f'RepoMicroagent initialized with incorrect type: {self.type}')
 
 
 class TaskMicroagent(KnowledgeMicroagent):
@@ -195,9 +191,7 @@ class TaskMicroagent(KnowledgeMicroagent):
     def __init__(self, **data):
         super().__init__(**data)
         if self.type != MicroagentType.TASK:
-            raise ValueError(
-                f'TaskMicroagent initialized with incorrect type: {self.type}'
-            )
+            raise ValueError(f'TaskMicroagent initialized with incorrect type: {self.type}')
 
         # Append a prompt to ask for missing variables
         self._append_missing_variables_prompt()

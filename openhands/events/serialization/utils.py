@@ -15,6 +15,4 @@ def remove_fields(obj: dict | list | tuple, fields: set[str]) -> None:
         for item in obj:
             remove_fields(item, fields)
     if hasattr(obj, '__dataclass_fields__'):
-        raise ValueError(
-            'Object must not contain dataclass, consider converting to dict first'
-        )
+        raise ValueError('Object must not contain dataclass, consider converting to dict first')

@@ -10,10 +10,7 @@ HOST_PATH = 'workspace'
 
 
 def test_resolve_path():
-    assert (
-        files.resolve_path('test.txt', '/workspace', HOST_PATH, CONTAINER_PATH)
-        == Path(HOST_PATH) / 'test.txt'
-    )
+    assert files.resolve_path('test.txt', '/workspace', HOST_PATH, CONTAINER_PATH) == Path(HOST_PATH) / 'test.txt'
     assert (
         files.resolve_path('subdir/test.txt', '/workspace', HOST_PATH, CONTAINER_PATH)
         == Path(HOST_PATH) / 'subdir' / 'test.txt'
@@ -53,13 +50,9 @@ def test_resolve_path():
             CONTAINER_PATH,
         )
     with pytest.raises(PermissionError):
-        files.resolve_path(
-            Path('..') / 'test.txt', '/workspace', HOST_PATH, CONTAINER_PATH
-        )
+        files.resolve_path(Path('..') / 'test.txt', '/workspace', HOST_PATH, CONTAINER_PATH)
     with pytest.raises(PermissionError):
-        files.resolve_path(
-            Path('/') / 'test.txt', '/workspace', HOST_PATH, CONTAINER_PATH
-        )
+        files.resolve_path(Path('/') / 'test.txt', '/workspace', HOST_PATH, CONTAINER_PATH)
     assert (
         files.resolve_path('test.txt', '/workspace/test', HOST_PATH, CONTAINER_PATH)
         == Path(HOST_PATH) / 'test' / 'test.txt'

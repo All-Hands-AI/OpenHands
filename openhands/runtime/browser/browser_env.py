@@ -82,9 +82,7 @@ class BrowserEnv:
             elif 'miniwob' in self.browsergym_eval_env:
                 import browsergym.miniwob  # noqa F401 register miniwob tasks as gym environments
             else:
-                raise ValueError(
-                    f'Unsupported browsergym eval env: {self.browsergym_eval_env}'
-                )
+                raise ValueError(f'Unsupported browsergym eval env: {self.browsergym_eval_env}')
             env = gym.make(self.browsergym_eval_env, tags_to_mark='all', timeout=100000)
         else:
             env = gym.make(
@@ -167,14 +165,10 @@ class BrowserEnv:
                     obs['text_content'] = self.html_text_converter.handle(html_str)
                     # make observation serializable
                     obs['set_of_marks'] = image_to_png_base64_url(
-                        overlay_som(
-                            obs['screenshot'], obs.get('extra_element_properties', {})
-                        ),
+                        overlay_som(obs['screenshot'], obs.get('extra_element_properties', {})),
                         add_data_prefix=True,
                     )
-                    obs['screenshot'] = image_to_png_base64_url(
-                        obs['screenshot'], add_data_prefix=True
-                    )
+                    obs['screenshot'] = image_to_png_base64_url(obs['screenshot'], add_data_prefix=True)
                     obs['active_page_index'] = obs['active_page_index'].item()
                     obs['elapsed_time'] = obs['elapsed_time'].item()
                     self.browser_side.send((unique_request_id, obs))
@@ -215,9 +209,7 @@ class BrowserEnv:
             self.agent_side.send(('SHUTDOWN', None))
             self.process.join(5)  # Wait for the process to terminate
             if self.process.is_alive():
-                logger.error(
-                    'Browser process did not terminate, forcefully terminating...'
-                )
+                logger.error('Browser process did not terminate, forcefully terminating...')
                 self.process.terminate()
                 self.process.join(5)  # Wait for the process to terminate
                 if self.process.is_alive():

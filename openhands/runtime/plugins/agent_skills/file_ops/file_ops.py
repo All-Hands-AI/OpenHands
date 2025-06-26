@@ -105,9 +105,7 @@ def _lint_file(file_path: str) -> tuple[str | None, int | None]:
         # Linting successful. No issues found.
         return None, None
     first_error_line = lint_error[0].line if len(lint_error) > 0 else None
-    error_text = 'ERRORS:\n' + '\n'.join(
-        [f'{file_path}:{err.line}:{err.column}: {err.message}' for err in lint_error]
-    )
+    error_text = 'ERRORS:\n' + '\n'.join([f'{file_path}:{err.line}:{err.column}: {err.message}' for err in lint_error])
     return error_text, first_error_line
 
 
@@ -180,9 +178,7 @@ def _cur_file_header(current_file: str | None, total_lines: int) -> str:
     return f'[File: {os.path.abspath(current_file)} ({total_lines} lines total)]\n'
 
 
-def open_file(
-    path: str, line_number: int | None = 1, context_lines: int | None = WINDOW
-) -> None:
+def open_file(path: str, line_number: int | None = 1, context_lines: int | None = WINDOW) -> None:
     """Opens a file in the editor and optionally positions at a specific line.
 
     The function displays a limited window of content, centered around the specified line
@@ -246,9 +242,7 @@ def goto_line(line_number: int) -> None:
 
     CURRENT_LINE = _clamp(line_number, 1, total_lines)
     output = _cur_file_header(CURRENT_FILE, total_lines)
-    output += _print_window(
-        CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True, ignore_window=False
-    )
+    output += _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True, ignore_window=False)
     print(output)
 
 
@@ -265,9 +259,7 @@ def scroll_down() -> None:
         total_lines = max(1, sum(1 for _ in file))
     CURRENT_LINE = _clamp(CURRENT_LINE + WINDOW, 1, total_lines)
     output = _cur_file_header(CURRENT_FILE, total_lines)
-    output += _print_window(
-        CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True, ignore_window=True
-    )
+    output += _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True, ignore_window=True)
     print(output)
 
 
@@ -284,9 +276,7 @@ def scroll_up() -> None:
         total_lines = max(1, sum(1 for _ in file))
     CURRENT_LINE = _clamp(CURRENT_LINE - WINDOW, 1, total_lines)
     output = _cur_file_header(CURRENT_FILE, total_lines)
-    output += _print_window(
-        CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True, ignore_window=True
-    )
+    output += _print_window(CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True, ignore_window=True)
     print(output)
 
 
@@ -323,9 +313,7 @@ def search_dir(search_term: str, dir_path: str = './') -> None:
     num_files = len(set(match[0] for match in matches))
 
     if num_files > 100:
-        print(
-            f'More than {num_files} files matched for "{search_term}" in {dir_path}. Please narrow your search.'
-        )
+        print(f'More than {num_files} files matched for "{search_term}" in {dir_path}. Please narrow your search.')
         return
 
     print(f'[Found {num_matches} matches for "{search_term}" in {dir_path}]')

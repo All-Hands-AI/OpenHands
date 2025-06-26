@@ -22,9 +22,7 @@ def get_changed_code(target_filepath, line_start, include_signature=False):
     return text
 
 
-def copy_changed_code(
-    target_filepath, generated_code_filepath, line_start, include_signature=False
-):
+def copy_changed_code(target_filepath, generated_code_filepath, line_start, include_signature=False):
     changed_code = get_changed_code(target_filepath, line_start, include_signature)
     with open(generated_code_filepath, 'w') as f:
         f.write(changed_code)

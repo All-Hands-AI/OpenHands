@@ -38,18 +38,12 @@ class TestSpec:
 
     @property
     def test_script(self):
-        return (
-            '\n'.join(['#!/bin/bash', 'set -uo pipefail'] + self.test_script_list)
-            + '\n'
-        )
+        return '\n'.join(['#!/bin/bash', 'set -uo pipefail'] + self.test_script_list) + '\n'
         # Don't exit early because we need to revert tests at the end
 
     @property
     def mutation_script(self):
-        return (
-            '\n'.join(['#!/bin/bash', 'set -uo pipefail'] + self.mutation_script_list)
-            + '\n'
-        )
+        return '\n'.join(['#!/bin/bash', 'set -uo pipefail'] + self.mutation_script_list) + '\n'
         # Don't exit early because we need to revert tests at the end
 
 
@@ -118,9 +112,7 @@ def make_mutation_script_list(specs, env_name, repo_directory, mutation_timeout)
     return eval_commands
 
 
-def make_test_spec(
-    instance: TestGenEvalInstance, mutation_timeout: int, buffer: int
-) -> TestSpec:
+def make_test_spec(instance: TestGenEvalInstance, mutation_timeout: int, buffer: int) -> TestSpec:
     if isinstance(instance, TestSpec):
         return instance
     instance_id = instance[KEY_INSTANCE_ID]
@@ -138,18 +130,14 @@ def make_test_spec(
 
     test_cmd = ' '.join(
         [
-            MAP_REPO_VERSION_TO_SPECS[instance['repo']][instance['version']][
-                'test_cmd'
-            ],
+            MAP_REPO_VERSION_TO_SPECS[instance['repo']][instance['version']]['test_cmd'],
             *get_test_directives(instance),
         ]
     )
 
     test_script_list = make_test_script_list(test_cmd, specs, env_name, repo_directory)
 
-    mutation_script_list = make_mutation_script_list(
-        specs, env_name, repo_directory, mutation_timeout - buffer
-    )
+    mutation_script_list = make_mutation_script_list(specs, env_name, repo_directory, mutation_timeout - buffer)
 
     return TestSpec(
         instance_id=instance_id,

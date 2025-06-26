@@ -24,9 +24,7 @@ instance_id_to_status = defaultdict(
 
 # Process official report if it exists
 swebench_official_report_json = os.path.join(dirname, 'report.json')
-openhands_remote_report_jsonl = args.input_file.replace(
-    '.jsonl', '.swebench_eval.jsonl'
-)
+openhands_remote_report_jsonl = args.input_file.replace('.jsonl', '.swebench_eval.jsonl')
 
 if os.path.exists(swebench_official_report_json):
     output_md_filepath = os.path.join(dirname, 'README.md')
@@ -50,35 +48,25 @@ if os.path.exists(swebench_official_report_json):
     # instance_id to status
     for instance_id in report['resolved_ids']:
         instance_id_to_status[instance_id]['resolved'] = True
-        output_md += (
-            f'- [{instance_id}](./eval_outputs/{instance_id}/run_instance.log)\n'
-        )
+        output_md += f'- [{instance_id}](./eval_outputs/{instance_id}/run_instance.log)\n'
 
     output_md += '\n## Unresolved Instances\n'
     for instance_id in report['unresolved_ids']:
-        output_md += (
-            f'- [{instance_id}](./eval_outputs/{instance_id}/run_instance.log)\n'
-        )
+        output_md += f'- [{instance_id}](./eval_outputs/{instance_id}/run_instance.log)\n'
 
     output_md += '\n## Error Instances\n'
     for instance_id in report['error_ids']:
         instance_id_to_status[instance_id]['error_eval'] = True
-        output_md += (
-            f'- [{instance_id}](./eval_outputs/{instance_id}/run_instance.log)\n'
-        )
+        output_md += f'- [{instance_id}](./eval_outputs/{instance_id}/run_instance.log)\n'
 
     output_md += '\n## Empty Patch Instances\n'
     for instance_id in report['empty_patch_ids']:
         instance_id_to_status[instance_id]['empty_generation'] = True
-        output_md += (
-            f'- [{instance_id}](./eval_outputs/{instance_id}/run_instance.log)\n'
-        )
+        output_md += f'- [{instance_id}](./eval_outputs/{instance_id}/run_instance.log)\n'
 
     output_md += '\n## Incomplete Instances\n'
     for instance_id in report['incomplete_ids']:
-        output_md += (
-            f'- [{instance_id}](./eval_outputs/{instance_id}/run_instance.log)\n'
-        )
+        output_md += f'- [{instance_id}](./eval_outputs/{instance_id}/run_instance.log)\n'
 
     with open(output_md_filepath, 'w') as f:
         f.write(output_md)
@@ -111,12 +99,8 @@ elif os.path.exists(openhands_remote_report_jsonl):
     print(f'Total instances in eval report: {n_eval_instances}')
 
     # Verify no duplicates
-    assert len(instance_ids) == n_instances, (
-        'Duplicate instance ids found in original output'
-    )
-    assert len(eval_instance_ids) == n_eval_instances, (
-        'Duplicate instance ids found in eval report'
-    )
+    assert len(instance_ids) == n_instances, 'Duplicate instance ids found in original output'
+    assert len(eval_instance_ids) == n_eval_instances, 'Duplicate instance ids found in eval report'
 
     # Initialize counters
     stats = {'total': len(instance_ids), 'resolved': 0, 'empty_patch': 0, 'error': 0}
@@ -207,9 +191,7 @@ with open(args.input_file, 'r') as infile:
         data = json.loads(line)
         instance_id = data['instance_id']
         current_report = data.get('report', {})
-        new_report = instance_id_to_status[
-            instance_id
-        ]  # if no report, it's not resolved
+        new_report = instance_id_to_status[instance_id]  # if no report, it's not resolved
         if current_report != new_report:
             needs_update = True
             break

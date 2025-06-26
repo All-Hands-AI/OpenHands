@@ -50,9 +50,7 @@ async def test_await_all_multi_exception():
     async def dummy(value: int):
         await asyncio.sleep(0.1)
         if value & 1:
-            raise ValueError(
-                f'Invalid value {value}'
-            )  # Throw an exception on every odd value
+            raise ValueError(f'Invalid value {value}')  # Throw an exception on every odd value
         return value * 2
 
     # expect an exception to be raised.

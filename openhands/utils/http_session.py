@@ -21,9 +21,7 @@ class HttpSession:
 
     def request(self, *args, **kwargs):
         if self._is_closed:
-            logger.error(
-                'Session is being used after close!', stack_info=True, exc_info=True
-            )
+            logger.error('Session is being used after close!', stack_info=True, exc_info=True)
             self._is_closed = False
         headers = kwargs.get('headers') or {}
         headers = {**self.headers, **headers}
@@ -32,9 +30,7 @@ class HttpSession:
 
     def stream(self, *args, **kwargs):
         if self._is_closed:
-            logger.error(
-                'Session is being used after close!', stack_info=True, exc_info=True
-            )
+            logger.error('Session is being used after close!', stack_info=True, exc_info=True)
             self._is_closed = False
         headers = kwargs.get('headers') or {}
         headers = {**self.headers, **headers}

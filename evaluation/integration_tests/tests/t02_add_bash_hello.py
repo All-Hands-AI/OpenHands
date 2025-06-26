@@ -34,7 +34,5 @@ class Test(BaseIntegrationTest):
                 reason=f'Failed to execute /workspace/hello.sh: {obs.content}.',
             )
         if obs.content.strip() != 'hello':
-            return TestResult(
-                success=False, reason=f'Script did not print "hello": {obs.content}.'
-            )
+            return TestResult(success=False, reason=f'Script did not print "hello": {obs.content}.')
         return TestResult(success=True)

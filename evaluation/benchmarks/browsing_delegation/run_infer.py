@@ -34,9 +34,7 @@ SUPPORTED_AGENT_CLS = {'CodeActAgent'}
 def get_config(
     metadata: EvalMetadata,
 ) -> OpenHandsConfig:
-    assert metadata.max_iterations == 1, (
-        'max_iterations must be 1 for browsing delegation evaluation.'
-    )
+    assert metadata.max_iterations == 1, 'max_iterations must be 1 for browsing delegation evaluation.'
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = 'python:3.12-bookworm'
     config = OpenHandsConfig(
@@ -103,17 +101,11 @@ def process_instance(
             instruction_for_delegate = action['args']['inputs']['task']
             # parse `browse_actions` from `instruction_for_delegate`
             # task = f'{thought}. I should start with: {browse_actions}'
-            instruction_for_delegate = re.search(
-                r'I should start with: (.*)', instruction_for_delegate
-            ).group(1)
+            instruction_for_delegate = re.search(r'I should start with: (.*)', instruction_for_delegate).group(1)
 
             # calculate the edit distance between the instance.instruction and the instruction_for_delegate
-            edit_distance = nltk.edit_distance(
-                instance.instruction, instruction_for_delegate
-            )
-            is_exact_match = (
-                instance.instruction.strip() == instruction_for_delegate.strip()
-            )
+            edit_distance = nltk.edit_distance(instance.instruction, instruction_for_delegate)
+            is_exact_match = instance.instruction.strip() == instruction_for_delegate.strip()
             result['edit_distance'] = edit_distance
             result['is_exact_match'] = is_exact_match
 
@@ -160,9 +152,7 @@ if __name__ == '__main__':
     )
 
     if metadata.agent_class not in SUPPORTED_AGENT_CLS:
-        raise ValueError(
-            f'Agent class {metadata.agent_class} not supported with AgentDelegation.'
-        )
+        raise ValueError(f'Agent class {metadata.agent_class} not supported with AgentDelegation.')
 
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(dataset, output_file, args.eval_n_limit)

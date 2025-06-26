@@ -60,9 +60,7 @@ def parse_action(trace: list[TraceElement], action: Action) -> list[TraceElement
     return inv_trace
 
 
-def parse_observation(
-    trace: list[TraceElement], obs: Observation
-) -> list[TraceElement]:
+def parse_observation(trace: list[TraceElement], obs: Observation) -> list[TraceElement]:
     last_id = get_last_id(trace)
     if isinstance(obs, (NullObservation, AgentStateChangedObservation)):
         return []
@@ -73,9 +71,7 @@ def parse_observation(
     return []
 
 
-def parse_element(
-    trace: list[TraceElement], element: Action | Observation
-) -> list[TraceElement]:
+def parse_element(trace: list[TraceElement], element: Action | Observation) -> list[TraceElement]:
     if isinstance(element, Action):
         return parse_action(trace, element)
     return parse_observation(trace, element)

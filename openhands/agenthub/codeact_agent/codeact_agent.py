@@ -108,8 +108,7 @@ class CodeActAgent(Agent):
         use_short_tool_desc = False
         if self.llm is not None:
             use_short_tool_desc = any(
-                model_substr in self.llm.config.model
-                for model_substr in SHORT_TOOL_DESCRIPTION_LLM_SUBSTRS
+                model_substr in self.llm.config.model for model_substr in SHORT_TOOL_DESCRIPTION_LLM_SUBSTRS
             )
 
         tools = []
@@ -129,11 +128,7 @@ class CodeActAgent(Agent):
         if self.config.enable_llm_editor:
             tools.append(LLMBasedFileEditTool)
         elif self.config.enable_editor:
-            tools.append(
-                create_str_replace_editor_tool(
-                    use_short_description=use_short_tool_desc
-                )
-            )
+            tools.append(create_str_replace_editor_tool(use_short_description=use_short_tool_desc))
         return tools
 
     def reset(self) -> None:
@@ -178,9 +173,7 @@ class CodeActAgent(Agent):
             case Condensation(action=condensation_action):
                 return condensation_action
 
-        logger.debug(
-            f'Processing {len(condensed_history)} events from a total of {len(state.history)} events'
-        )
+        logger.debug(f'Processing {len(condensed_history)} events from a total of {len(state.history)} events')
 
         initial_user_message = self._get_initial_user_message(state.history)
         messages = self._get_messages(condensed_history, initial_user_message)
@@ -212,14 +205,10 @@ class CodeActAgent(Agent):
             )
             # Depending on desired robustness, could raise error or create a dummy action
             # and log the error
-            raise ValueError(
-                'Initial user message not found in history. Please report this issue.'
-            )
+            raise ValueError('Initial user message not found in history. Please report this issue.')
         return initial_user_message
 
-    def _get_messages(
-        self, events: list[Event], initial_user_message: MessageAction
-    ) -> list[Message]:
+    def _get_messages(self, events: list[Event], initial_user_message: MessageAction) -> list[Message]:
         """Constructs the message history for the LLM conversation.
 
         This method builds a structured conversation history by processing events from the state

@@ -167,22 +167,14 @@ async def browse(
             url=obs.get('url', ''),  # URL of the page
             screenshot=obs.get('screenshot', None),  # base64-encoded screenshot, png
             screenshot_path=screenshot_path,  # path to saved screenshot file
-            set_of_marks=obs.get(
-                'set_of_marks', None
-            ),  # base64-encoded Set-of-Marks annotated screenshot, png,
+            set_of_marks=obs.get('set_of_marks', None),  # base64-encoded Set-of-Marks annotated screenshot, png,
             goal_image_urls=obs.get('image_content', []),
             open_pages_urls=obs.get('open_pages_urls', []),  # list of open pages
-            active_page_index=obs.get(
-                'active_page_index', -1
-            ),  # index of the active page
+            active_page_index=obs.get('active_page_index', -1),  # index of the active page
             axtree_object=obs.get('axtree_object', {}),  # accessibility tree object
             extra_element_properties=obs.get('extra_element_properties', {}),
-            focused_element_bid=obs.get(
-                'focused_element_bid', None
-            ),  # focused element bid
-            last_browser_action=obs.get(
-                'last_action', ''
-            ),  # last browser env action performed
+            focused_element_bid=obs.get('focused_element_bid', None),  # focused element bid
+            last_browser_action=obs.get('last_action', ''),  # last browser env action performed
             last_browser_action_error=obs.get('last_action_error', ''),
             error=True if obs.get('last_action_error', '') else False,  # error flag
             trigger_by_action=action.action,

@@ -127,9 +127,7 @@ async def run_session(
     display_runtime_initialization_message(config.runtime)
 
     # Show Initialization loader
-    loop.run_in_executor(
-        None, display_initialization_animation, 'Initializing...', is_loaded
-    )
+    loop.run_in_executor(None, display_initialization_animation, 'Initializing...', is_loaded)
 
     agent = create_agent(config)
     runtime = create_runtime(
@@ -154,9 +152,7 @@ async def run_session(
     async def prompt_for_next_task(agent_state: str) -> None:
         nonlocal reload_microagents, new_session_requested
         while True:
-            next_message = await read_prompt_input(
-                config, agent_state, multiline=config.cli_multiline_input
-            )
+            next_message = await read_prompt_input(config, agent_state, multiline=config.cli_multiline_input)
 
             if not next_message.strip():
                 continue
@@ -194,9 +190,7 @@ async def run_session(
 
                 # Reload microagents after initialization of repo.md
                 if reload_microagents:
-                    microagents: list[BaseMicroagent] = (
-                        runtime.get_microagents_from_selected_repo(None)
-                    )
+                    microagents: list[BaseMicroagent] = runtime.get_microagents_from_selected_repo(None)
                     memory.load_user_workspace_microagents(microagents)
                     reload_microagents = False
                 await prompt_for_next_task(event.agent_state)
@@ -268,10 +262,8 @@ async def run_session(
     # Add MCP tools to the agent
     if agent.config.enable_mcp:
         # Add OpenHands' MCP server by default
-        _, openhands_mcp_stdio_servers = (
-            OpenHandsMCPConfigImpl.create_default_mcp_server_config(
-                config.mcp_host, config, None
-            )
+        _, openhands_mcp_stdio_servers = OpenHandsMCPConfigImpl.create_default_mcp_server_config(
+            config.mcp_host, config, None
         )
 
         runtime.config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
@@ -322,9 +314,7 @@ async def run_session(
         # No session restored, no initial action: prompt for the user's first message
         asyncio.create_task(prompt_for_next_task(''))
 
-    await run_agent_until_done(
-        controller, runtime, memory, [AgentState.STOPPED, AgentState.ERROR]
-    )
+    await run_agent_until_done(controller, runtime, memory, [AgentState.STOPPED, AgentState.ERROR])
 
     await cleanup_session(loop, agent, runtime, controller)
 
@@ -340,9 +330,7 @@ async def run_setup_flow(config: OpenHandsConfig, settings_store: FileSettingsSt
     # Display the banner with ASCII art first
     display_banner(session_id='setup')
 
-    print_formatted_text(
-        HTML('<grey>No settings found. Starting initial setup...</grey>\n')
-    )
+    print_formatted_text(HTML('<grey>No settings found. Starting initial setup...</grey>\n'))
 
     # Use the existing settings modification function for basic setup
     await modify_llm_settings_basic(config, settings_store)
@@ -389,9 +377,7 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
             llm_config.api_key = settings.llm_api_key
             llm_config.base_url = settings.llm_base_url
             config.set_llm_config(llm_config)
-        config.security.confirmation_mode = (
-            settings.confirmation_mode if settings.confirmation_mode else False
-        )
+        config.security.confirmation_mode = settings.confirmation_mode if settings.confirmation_mode else False
 
         if settings.enable_default_condenser:
             # TODO: Make this generic?
@@ -449,9 +435,7 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
 
     # If a new session was requested, run it
     while new_session_requested:
-        new_session_requested = await run_session(
-            loop, config, settings_store, current_dir, None
-        )
+        new_session_requested = await run_session(loop, config, settings_store, current_dir, None)
 
 
 def main():

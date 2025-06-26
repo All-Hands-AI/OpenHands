@@ -71,9 +71,7 @@ def test_pr_title_with_quotes(monkeypatch):
         data = kwargs.get('json', {})
         title = data.get('title', '')
         expected = "Fix issue #123: Issue with 'quotes' and \"double quotes\" and <class 'ValueError'>"
-        assert title == expected, (
-            f'PR title was incorrectly escaped.\nExpected: {expected}\nGot: {title}'
-        )
+        assert title == expected, f'PR title was incorrectly escaped.\nExpected: {expected}\nGot: {title}'
         return MockResponse()
 
     class MockGetResponse:
@@ -101,9 +99,7 @@ def test_pr_title_with_quotes(monkeypatch):
         print(f'Running command: {args[0] if args else kwargs.get("args", [])}')
         if isinstance(args[0], list) and args[0][0] == 'git':
             if 'push' in args[0]:
-                return subprocess.CompletedProcess(
-                    args[0], returncode=0, stdout='', stderr=''
-                )
+                return subprocess.CompletedProcess(args[0], returncode=0, stdout='', stderr='')
             return original_run(*args, **kwargs)
         return original_run(*args, **kwargs)
 
@@ -115,9 +111,7 @@ def test_pr_title_with_quotes(monkeypatch):
         subprocess.run(['git', 'init', temp_dir], check=True)
 
         # Add these lines to configure git
-        subprocess.run(
-            ['git', '-C', temp_dir, 'config', 'user.name', 'Test User'], check=True
-        )
+        subprocess.run(['git', '-C', temp_dir, 'config', 'user.name', 'Test User'], check=True)
         subprocess.run(
             ['git', '-C', temp_dir, 'config', 'user.email', 'test@example.com'],
             check=True,
@@ -130,9 +124,7 @@ def test_pr_title_with_quotes(monkeypatch):
 
         print('Adding and committing test file...')
         subprocess.run(['git', '-C', temp_dir, 'add', 'test.txt'], check=True)
-        subprocess.run(
-            ['git', '-C', temp_dir, 'commit', '-m', 'Initial commit'], check=True
-        )
+        subprocess.run(['git', '-C', temp_dir, 'commit', '-m', 'Initial commit'], check=True)
 
         # Create a test issue with problematic title
         print('Creating test issue...')

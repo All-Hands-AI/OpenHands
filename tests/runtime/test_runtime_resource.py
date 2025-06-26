@@ -19,9 +19,7 @@ def test_stress_docker_runtime(temp_dir, runtime_cls, repeat=1):
         },
     )
 
-    action = CmdRunAction(
-        command='sudo apt-get update && sudo apt-get install -y stress-ng'
-    )
+    action = CmdRunAction(command='sudo apt-get update && sudo apt-get install -y stress-ng')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})

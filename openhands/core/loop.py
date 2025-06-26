@@ -29,13 +29,9 @@ async def run_agent_until_done(
             logger.info(msg)
 
     if hasattr(runtime, 'status_callback') and runtime.status_callback:
-        raise ValueError(
-            'Runtime status_callback was set, but run_agent_until_done will override it'
-        )
+        raise ValueError('Runtime status_callback was set, but run_agent_until_done will override it')
     if hasattr(controller, 'status_callback') and controller.status_callback:
-        raise ValueError(
-            'Controller status_callback was set, but run_agent_until_done will override it'
-        )
+        raise ValueError('Controller status_callback was set, but run_agent_until_done will override it')
 
     runtime.status_callback = status_callback
     controller.status_callback = status_callback

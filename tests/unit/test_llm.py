@@ -75,9 +75,7 @@ def test_token_usage_add():
     assert combined.completion_tokens == 11  # 5 + 6
     assert combined.cache_read_tokens == 5  # 3 + 2
     assert combined.cache_write_tokens == 6  # 2 + 4
-    assert (
-        combined.response_id == 'response-1'
-    )  # Should keep the response_id from the first instance
+    assert combined.response_id == 'response-1'  # Should keep the response_id from the first instance
 
 
 def test_metrics_merge_accumulated_token_usage():
@@ -204,9 +202,7 @@ def test_llm_init_with_metrics():
     metrics = Metrics()
     llm = LLM(config, metrics=metrics)
     assert llm.metrics is metrics
-    assert (
-        llm.metrics.model_name == 'default'
-    )  # because we didn't specify model_name in Metrics init
+    assert llm.metrics.model_name == 'default'  # because we didn't specify model_name in Metrics init
 
 
 @patch('openhands.llm.llm.litellm_completion')
@@ -231,9 +227,7 @@ def test_response_latency_tracking(mock_time, mock_litellm_completion):
     assert len(llm.metrics.response_latencies) == 1
     latency_record = llm.metrics.response_latencies[0]
     assert latency_record.model == 'gpt-4o'
-    assert (
-        latency_record.latency == 2.5
-    )  # Should be the difference between our mocked times
+    assert latency_record.latency == 2.5  # Should be the difference between our mocked times
     assert latency_record.response_id == 'test-response-123'
 
     # Verify the completion response was returned correctly
@@ -268,12 +262,8 @@ def test_llm_init_with_openrouter_model(mock_get_model_info, default_config):
 
 
 @patch('openhands.llm.llm.litellm_completion')
-def test_completion_with_mocked_logger(
-    mock_litellm_completion, default_config, mock_logger
-):
-    mock_litellm_completion.return_value = {
-        'choices': [{'message': {'content': 'Test response'}}]
-    }
+def test_completion_with_mocked_logger(mock_litellm_completion, default_config, mock_logger):
+    mock_litellm_completion.return_value = {'choices': [{'message': {'content': 'Test response'}}]}
 
     llm = LLM(config=default_config)
     response = llm.completion(
@@ -320,9 +310,7 @@ def test_completion_retries(
 def test_completion_rate_limit_wait_time(mock_litellm_completion, default_config):
     with patch('time.sleep') as mock_sleep:
         mock_litellm_completion.side_effect = [
-            RateLimitError(
-                'Rate limit exceeded', llm_provider='test_provider', model='test_model'
-            ),
+            RateLimitError('Rate limit exceeded', llm_provider='test_provider', model='test_model'),
             {'choices': [{'message': {'content': 'Retry successful'}}]},
         ]
 
@@ -337,9 +325,7 @@ def test_completion_rate_limit_wait_time(mock_litellm_completion, default_config
 
         mock_sleep.assert_called_once()
         wait_time = mock_sleep.call_args[0][0]
-        assert (
-            default_config.retry_min_wait <= wait_time <= default_config.retry_max_wait
-        ), (
+        assert default_config.retry_min_wait <= wait_time <= default_config.retry_max_wait, (
             f'Expected wait time between {default_config.retry_min_wait} and {default_config.retry_max_wait} seconds, but got {wait_time}'
         )
 
@@ -403,9 +389,7 @@ def test_completion_keyboard_interrupt_handler(mock_litellm_completion, default_
 
 
 @patch('openhands.llm.llm.litellm_completion')
-def test_completion_retry_with_llm_no_response_error_zero_temp(
-    mock_litellm_completion, default_config
-):
+def test_completion_retry_with_llm_no_response_error_zero_temp(mock_litellm_completion, default_config):
     """
     Test that the retry decorator properly handles LLMNoResponseError by:
     1. First call to llm_completion uses temperature=0 and throws LLMNoResponseError
@@ -422,11 +406,7 @@ def test_completion_retry_with_llm_no_response_error_zero_temp(
             raise LLMNoResponseError('LLM did not return a response')
 
         else:
-            return {
-                'choices': [
-                    {'message': {'content': f'Response with temperature={temperature}'}}
-                ]
-            }
+            return {'choices': [{'message': {'content': f'Response with temperature={temperature}'}}]}
 
     mock_litellm_completion.side_effect = side_effect
 
@@ -439,9 +419,7 @@ def test_completion_retry_with_llm_no_response_error_zero_temp(
     )
 
     # Verify the response after retry
-    assert (
-        response['choices'][0]['message']['content'] == 'Response with temperature=1.0'
-    )
+    assert response['choices'][0]['message']['content'] == 'Response with temperature=1.0'
 
     # Verify that litellm_completion was called twice
     assert mock_litellm_completion.call_count == 2
@@ -456,9 +434,7 @@ def test_completion_retry_with_llm_no_response_error_zero_temp(
 
 
 @patch('openhands.llm.llm.litellm_completion')
-def test_completion_retry_with_llm_no_response_error_nonzero_temp(
-    mock_litellm_completion, default_config
-):
+def test_completion_retry_with_llm_no_response_error_nonzero_temp(mock_litellm_completion, default_config):
     """
     Test that the retry decorator works for LLMNoResponseError when initial temperature is non-zero,
     and keeps the original temperature on retry.
@@ -468,9 +444,7 @@ def test_completion_retry_with_llm_no_response_error_nonzero_temp(
     2. The temperature remains unchanged (not set to 0.2)
     3. After all retries are exhausted, the error is raised
     """
-    mock_litellm_completion.side_effect = LLMNoResponseError(
-        'LLM did not return a response'
-    )
+    mock_litellm_completion.side_effect = LLMNoResponseError('LLM did not return a response')
 
     llm = LLM(config=default_config)
     with pytest.raises(LLMNoResponseError):
@@ -569,15 +543,7 @@ def test_completion_retry_with_llm_no_response_error_nonzero_temp_successful_ret
             raise LLMNoResponseError('LLM did not return a response')
         else:
             # Second call should return a successful response
-            return {
-                'choices': [
-                    {
-                        'message': {
-                            'content': f'Successful response with temperature={temperature}'
-                        }
-                    }
-                ]
-            }
+            return {'choices': [{'message': {'content': f'Successful response with temperature={temperature}'}}]}
 
     mock_litellm_completion.side_effect = side_effect
 
@@ -590,10 +556,7 @@ def test_completion_retry_with_llm_no_response_error_nonzero_temp_successful_ret
     )
 
     # Verify the response after retry
-    assert (
-        response['choices'][0]['message']['content']
-        == 'Successful response with temperature=0.7'
-    )
+    assert response['choices'][0]['message']['content'] == 'Successful response with temperature=0.7'
 
     # Verify that litellm_completion was called twice
     assert mock_litellm_completion.call_count == 2
@@ -608,9 +571,7 @@ def test_completion_retry_with_llm_no_response_error_nonzero_temp_successful_ret
 
 
 @patch('openhands.llm.llm.litellm_completion')
-def test_completion_retry_with_llm_no_response_error_successful_retry(
-    mock_litellm_completion, default_config
-):
+def test_completion_retry_with_llm_no_response_error_successful_retry(mock_litellm_completion, default_config):
     """
     Test that the retry decorator works for LLMNoResponseError with zero temperature
     and successfully retries with temperature=0.2.
@@ -630,15 +591,7 @@ def test_completion_retry_with_llm_no_response_error_successful_retry(
             raise LLMNoResponseError('LLM did not return a response')
         else:
             # Second call should return a successful response
-            return {
-                'choices': [
-                    {
-                        'message': {
-                            'content': f'Successful response with temperature={temperature}'
-                        }
-                    }
-                ]
-            }
+            return {'choices': [{'message': {'content': f'Successful response with temperature={temperature}'}}]}
 
     mock_litellm_completion.side_effect = side_effect
 
@@ -651,10 +604,7 @@ def test_completion_retry_with_llm_no_response_error_successful_retry(
     )
 
     # Verify the response after retry
-    assert (
-        response['choices'][0]['message']['content']
-        == 'Successful response with temperature=1.0'
-    )
+    assert response['choices'][0]['message']['content'] == 'Successful response with temperature=1.0'
 
     # Verify that litellm_completion was called twice
     assert mock_litellm_completion.call_count == 2
@@ -670,9 +620,7 @@ def test_completion_retry_with_llm_no_response_error_successful_retry(
 
 @patch('openhands.llm.llm.litellm_completion')
 def test_completion_with_litellm_mock(mock_litellm_completion, default_config):
-    mock_response = {
-        'choices': [{'message': {'content': 'This is a mocked response.'}}]
-    }
+    mock_response = {'choices': [{'message': {'content': 'This is a mocked response.'}}]}
     mock_litellm_completion.return_value = mock_response
 
     test_llm = LLM(config=default_config)
@@ -695,9 +643,7 @@ def test_completion_with_litellm_mock(mock_litellm_completion, default_config):
 
 @patch('openhands.llm.llm.litellm_completion')
 def test_completion_with_two_positional_args(mock_litellm_completion, default_config):
-    mock_response = {
-        'choices': [{'message': {'content': 'Response to positional args.'}}]
-    }
+    mock_response = {'choices': [{'message': {'content': 'Response to positional args.'}}]}
     mock_litellm_completion.return_value = mock_response
 
     test_llm = LLM(config=default_config)
@@ -708,25 +654,17 @@ def test_completion_with_two_positional_args(mock_litellm_completion, default_co
     )
 
     # Assertions
-    assert (
-        response['choices'][0]['message']['content'] == 'Response to positional args.'
-    )
+    assert response['choices'][0]['message']['content'] == 'Response to positional args.'
     mock_litellm_completion.assert_called_once()
 
     # Check if the correct arguments were passed to litellm_completion
     call_args, call_kwargs = mock_litellm_completion.call_args
-    assert (
-        call_kwargs['model'] == default_config.model
-    )  # Should use the model from config, not the first arg
-    assert call_kwargs['messages'] == [
-        {'role': 'user', 'content': 'Hello from positional args!'}
-    ]
+    assert call_kwargs['model'] == default_config.model  # Should use the model from config, not the first arg
+    assert call_kwargs['messages'] == [{'role': 'user', 'content': 'Hello from positional args!'}]
     assert not call_kwargs['stream']
 
     # Ensure the first positional argument (model) was ignored
-    assert (
-        len(call_args) == 0
-    )  # No positional args should be passed to litellm_completion here
+    assert len(call_args) == 0  # No positional args should be passed to litellm_completion here
 
 
 @patch('openhands.llm.llm.litellm.token_counter')
@@ -738,15 +676,11 @@ def test_get_token_count_with_dict_messages(mock_token_counter, default_config):
     token_count = llm.get_token_count(messages)
 
     assert token_count == 42
-    mock_token_counter.assert_called_once_with(
-        model=default_config.model, messages=messages, custom_tokenizer=None
-    )
+    mock_token_counter.assert_called_once_with(model=default_config.model, messages=messages, custom_tokenizer=None)
 
 
 @patch('openhands.llm.llm.litellm.token_counter')
-def test_get_token_count_with_message_objects(
-    mock_token_counter, default_config, mock_logger
-):
+def test_get_token_count_with_message_objects(mock_token_counter, default_config, mock_logger):
     llm = LLM(default_config)
 
     # Create a Message object and its equivalent dict
@@ -767,9 +701,7 @@ def test_get_token_count_with_message_objects(
 
 @patch('openhands.llm.llm.litellm.token_counter')
 @patch('openhands.llm.llm.create_pretrained_tokenizer')
-def test_get_token_count_with_custom_tokenizer(
-    mock_create_tokenizer, mock_token_counter, default_config
-):
+def test_get_token_count_with_custom_tokenizer(mock_create_tokenizer, mock_token_counter, default_config):
     mock_tokenizer = MagicMock()
     mock_create_tokenizer.return_value = mock_tokenizer
     mock_token_counter.return_value = 42
@@ -783,15 +715,11 @@ def test_get_token_count_with_custom_tokenizer(
 
     assert token_count == 42
     mock_create_tokenizer.assert_called_once_with('custom/tokenizer')
-    mock_token_counter.assert_called_once_with(
-        model=config.model, messages=messages, custom_tokenizer=mock_tokenizer
-    )
+    mock_token_counter.assert_called_once_with(model=config.model, messages=messages, custom_tokenizer=mock_tokenizer)
 
 
 @patch('openhands.llm.llm.litellm.token_counter')
-def test_get_token_count_error_handling(
-    mock_token_counter, default_config, mock_logger
-):
+def test_get_token_count_error_handling(mock_token_counter, default_config, mock_logger):
     mock_token_counter.side_effect = Exception('Token counting failed')
     llm = LLM(default_config)
     messages = [{'role': 'user', 'content': 'Hello!'}]
@@ -800,9 +728,7 @@ def test_get_token_count_error_handling(
 
     assert token_count == 0
     mock_token_counter.assert_called_once()
-    mock_logger.error.assert_called_once_with(
-        'Error getting token count for\n model gpt-4o\nToken counting failed'
-    )
+    mock_logger.error.assert_called_once_with('Error getting token count for\n model gpt-4o\nToken counting failed')
 
 
 @patch('openhands.llm.llm.litellm_completion')
@@ -945,9 +871,7 @@ def test_completion_with_log_completions(mock_litellm_completion, default_config
     with tempfile.TemporaryDirectory() as temp_dir:
         default_config.log_completions = True
         default_config.log_completions_folder = temp_dir
-        mock_response = {
-            'choices': [{'message': {'content': 'This is a mocked response.'}}]
-        }
+        mock_response = {'choices': [{'message': {'content': 'This is a mocked response.'}}]}
         mock_litellm_completion.return_value = mock_response
 
         test_llm = LLM(config=default_config)
@@ -956,9 +880,7 @@ def test_completion_with_log_completions(mock_litellm_completion, default_config
             stream=False,
             drop_params=True,
         )
-        assert (
-            response['choices'][0]['message']['content'] == 'This is a mocked response.'
-        )
+        assert response['choices'][0]['message']['content'] == 'This is a mocked response.'
         files = list(Path(temp_dir).iterdir())
         # Expect a log to be generated
         assert len(files) == 1

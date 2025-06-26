@@ -129,9 +129,7 @@ def process_instance(
             config=config,
             initial_user_action=MessageAction(content=instruction),
             runtime=runtime,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
-                metadata.agent_class
-            ],
+            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[metadata.agent_class],
         )
     )
     # ======= Attempt to evaluate the agent's edits =======
@@ -173,9 +171,7 @@ def process_instance(
 
 if __name__ == '__main__':
     parser = get_parser()
-    parser.add_argument(
-        '--answerer_model', '-a', default='gpt-3.5-turbo', help='answerer model'
-    )
+    parser.add_argument('--answerer_model', '-a', default='gpt-3.5-turbo', help='answerer model')
     parser.add_argument(
         '--dataset',
         default='things',
@@ -183,9 +179,7 @@ if __name__ == '__main__':
         type=str,
         help='dataset to be used',
     )
-    parser.add_argument(
-        '--OPENAI_API_KEY', type=str, required=True, help='Your OpenAI API key'
-    )
+    parser.add_argument('--OPENAI_API_KEY', type=str, required=True, help='Your OpenAI API key')
     parser.add_argument(
         '--data-split',
         default='test',
@@ -194,9 +188,7 @@ if __name__ == '__main__':
     )
     args, _ = parser.parse_known_args()
 
-    eda_dataset = load_dataset(
-        'yizheapple/entity-deduction-arena', name=args.dataset, split=args.data_split
-    )
+    eda_dataset = load_dataset('yizheapple/entity-deduction-arena', name=args.dataset, split=args.data_split)
     eda_dataset.rename(columns={'text': 'instance_id'}, inplace=True)
 
     llm_config = None
@@ -223,9 +215,7 @@ if __name__ == '__main__':
     )
 
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
-    prepared_dataset = prepare_dataset(
-        eda_dataset.to_pandas(), output_file, args.eval_n_limit
-    )
+    prepared_dataset = prepare_dataset(eda_dataset.to_pandas(), output_file, args.eval_n_limit)
 
     run_evaluation(
         prepared_dataset,

@@ -26,11 +26,7 @@ def create_test_events(event_specs: list[dict]) -> list[Event]:
     for spec in event_specs:
         event_type = spec['type']
         # Attributes for the constructor
-        kwargs = {
-            k: v
-            for k, v in spec.items()
-            if k not in ['type', 'id', 'source', 'hidden', 'cause']
-        }
+        kwargs = {k: v for k, v in spec.items() if k not in ['type', 'id', 'source', 'hidden', 'cause']}
 
         # Provide default values for required fields if not in spec, to ensure instantiation
         if event_type == MessageAction and 'content' not in kwargs:
@@ -41,9 +37,7 @@ def create_test_events(event_specs: list[dict]) -> list[Event]:
             if 'content' not in kwargs:
                 kwargs['content'] = f'default_obs_content_for_{spec["id"]}'
             if 'command_id' not in kwargs:
-                kwargs['command_id'] = spec.get(
-                    'cause', spec['id'] - 1 if spec['id'] > 0 else 0
-                )  # Simplistic default
+                kwargs['command_id'] = spec.get('cause', spec['id'] - 1 if spec['id'] > 0 else 0)  # Simplistic default
             if 'command' not in kwargs:
                 kwargs['command'] = f'default_cmd_for_obs_{spec["id"]}'
         elif event_type == NullAction:
@@ -66,9 +60,7 @@ def create_test_events(event_specs: list[dict]) -> list[Event]:
         # Set internal attributes after instantiation
         event._id = spec['id']
         # Default source based on type, can be overridden by spec
-        default_source = (
-            EventSource.AGENT if issubclass(event_type, Action) else EventSource.USER
-        )
+        default_source = EventSource.AGENT if issubclass(event_type, Action) else EventSource.USER
         event._source = spec.get('source', default_source)
         event._hidden = spec.get('hidden', False)
         if 'cause' in spec:
@@ -189,9 +181,7 @@ def test_get_contextual_events_basic_retrieval():
     args_after, kwargs_after = calls[1]
     assert kwargs_after['start_id'] == target_event_id + 1
     assert isinstance(kwargs_after['filter'], EventFilter)
-    assert (
-        'reverse' not in kwargs_after or kwargs_after['reverse'] is False
-    )  # default is False
+    assert 'reverse' not in kwargs_after or kwargs_after['reverse'] is False  # default is False
     assert kwargs_after['limit'] == context_size + 1
 
 
@@ -510,9 +500,7 @@ def test_get_contextual_events_all_events_filtered():
     that should be filtered out.
     """
     mock_event_stream = MagicMock(spec=EventStream)
-    target_event_id = (
-        2  # Target event itself might be filtered or not, doesn't matter for this test
-    )
+    target_event_id = 2  # Target event itself might be filtered or not, doesn't matter for this test
 
     # All events are of types that should be filtered by the default filter in _get_contextual_events
     # create_test_events(all_event_specs) # Not strictly needed as search_events will return []

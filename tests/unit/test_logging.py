@@ -121,8 +121,7 @@ def test_special_cases_masking(test_handler):
 
     with patch.dict('openhands.core.logger.os.environ', environ, clear=True):
         log_message = ' '.join(
-            f"{attr}={value} with no single quotes' and something"
-            for attr, value in environ.items()
+            f"{attr}={value} with no single quotes' and something" for attr, value in environ.items()
         )
         logger.info(log_message)
 

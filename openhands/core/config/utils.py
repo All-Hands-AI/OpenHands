@@ -39,9 +39,7 @@ JWT_SECRET = '.jwt_secret'
 load_dotenv()
 
 
-def load_from_env(
-    cfg: OpenHandsConfig, env_or_toml_dict: dict | MutableMapping[str, str]
-) -> None:
+def load_from_env(cfg: OpenHandsConfig, env_or_toml_dict: dict | MutableMapping[str, str]) -> None:
     """Sets config attributes from environment variables or TOML dictionary.
 
     Reads environment-style variables and updates the config attributes accordingly.
@@ -146,9 +144,7 @@ def load_from_toml(cfg: OpenHandsConfig, toml_file: str = 'config.toml') -> None
 
     # Check for the [core] section
     if 'core' not in toml_config:
-        logger.openhands_logger.warning(
-            f'No [core] section found in {toml_file}. Core settings will use defaults.'
-        )
+        logger.openhands_logger.warning(f'No [core] section found in {toml_file}. Core settings will use defaults.')
         core_config = {}
     else:
         core_config = toml_config['core']
@@ -158,9 +154,7 @@ def load_from_toml(cfg: OpenHandsConfig, toml_file: str = 'config.toml') -> None
         if hasattr(cfg, key):
             setattr(cfg, key, value)
         else:
-            logger.openhands_logger.warning(
-                f'Unknown config key "{key}" in [core] section'
-            )
+            logger.openhands_logger.warning(f'Unknown config key "{key}" in [core] section')
 
     # Process agent section if present
     if 'agent' in toml_config:
@@ -232,9 +226,7 @@ def load_from_toml(cfg: OpenHandsConfig, toml_file: str = 'config.toml') -> None
     # Process kubernetes section if present
     if 'kubernetes' in toml_config:
         try:
-            kubernetes_mapping = KubernetesConfig.from_toml_section(
-                toml_config['kubernetes']
-            )
+            kubernetes_mapping = KubernetesConfig.from_toml_section(toml_config['kubernetes'])
             if 'kubernetes' in kubernetes_mapping:
                 cfg.kubernetes = kubernetes_mapping['kubernetes']
         except (TypeError, KeyError, ValidationError) as e:
@@ -246,9 +238,7 @@ def load_from_toml(cfg: OpenHandsConfig, toml_file: str = 'config.toml') -> None
     if 'condenser' in toml_config:
         try:
             # Pass the LLM configs to the condenser config parser
-            condenser_mapping = condenser_config_from_toml_section(
-                toml_config['condenser'], cfg.llms
-            )
+            condenser_mapping = condenser_config_from_toml_section(toml_config['condenser'], cfg.llms)
             # Assign the default condenser configuration to the default agent configuration
             if 'condenser' in condenser_mapping:
                 # Get the default agent config and assign the condenser config to it
@@ -349,8 +339,7 @@ def finalize_config(cfg: OpenHandsConfig) -> None:
         # This allows users to mount volumes without affecting the workspace
         if not workspace_mount_found:
             logger.openhands_logger.debug(
-                'No explicit /workspace mount found in SANDBOX_VOLUMES. '
-                'Using default workspace path in sandbox.'
+                'No explicit /workspace mount found in SANDBOX_VOLUMES. Using default workspace path in sandbox.'
             )
             # Ensure workspace_mount_path and workspace_base are None to avoid
             # unintended mounting behavior
@@ -393,11 +382,7 @@ def finalize_config(cfg: OpenHandsConfig) -> None:
         pathlib.Path(cfg.cache_dir).mkdir(parents=True, exist_ok=True)
 
     if not cfg.jwt_secret:
-        cfg.jwt_secret = SecretStr(
-            get_or_create_jwt_secret(
-                get_file_store(cfg.file_store, cfg.file_store_path)
-            )
-        )
+        cfg.jwt_secret = SecretStr(get_or_create_jwt_secret(get_file_store(cfg.file_store, cfg.file_store_path)))
 
     # If CLIRuntime is selected, disable Jupyter for all agents
     # Assuming 'cli' is the identifier for CLIRuntime
@@ -413,9 +398,7 @@ def finalize_config(cfg: OpenHandsConfig) -> None:
         )
 
 
-def get_agent_config_arg(
-    agent_config_arg: str, toml_file: str = 'config.toml'
-) -> AgentConfig | None:
+def get_agent_config_arg(agent_config_arg: str, toml_file: str = 'config.toml') -> AgentConfig | None:
     """Get a group of agent settings from the config file.
 
     A group in config.toml can look like this:
@@ -454,9 +437,7 @@ def get_agent_config_arg(
         logger.openhands_logger.error(f'Config file not found: {e}')
         return None
     except toml.TomlDecodeError as e:
-        logger.openhands_logger.error(
-            f'Cannot parse agent group from {agent_config_arg}. Exception: {e}'
-        )
+        logger.openhands_logger.error(f'Cannot parse agent group from {agent_config_arg}. Exception: {e}')
         return None
 
     # update the agent config with the specified section
@@ -466,9 +447,7 @@ def get_agent_config_arg(
     return None
 
 
-def get_llm_config_arg(
-    llm_config_arg: str, toml_file: str = 'config.toml'
-) -> LLMConfig | None:
+def get_llm_config_arg(llm_config_arg: str, toml_file: str = 'config.toml') -> LLMConfig | None:
     """Get a group of llm settings from the config file.
 
     A group in config.toml can look like this:
@@ -511,9 +490,7 @@ def get_llm_config_arg(
         logger.openhands_logger.error(f'Config file not found: {e}')
         return None
     except toml.TomlDecodeError as e:
-        logger.openhands_logger.error(
-            f'Cannot parse llm group from {llm_config_arg}. Exception: {e}'
-        )
+        logger.openhands_logger.error(f'Cannot parse llm group from {llm_config_arg}. Exception: {e}')
         return None
 
     # update the llm config with the specified section
@@ -523,9 +500,7 @@ def get_llm_config_arg(
     return None
 
 
-def get_condenser_config_arg(
-    condenser_config_arg: str, toml_file: str = 'config.toml'
-) -> CondenserConfig | None:
+def get_condenser_config_arg(condenser_config_arg: str, toml_file: str = 'config.toml') -> CondenserConfig | None:
     """Get a group of condenser settings from the config file by name.
 
     A group in config.toml can look like this:
@@ -559,9 +534,7 @@ def get_condenser_config_arg(
     if condenser_config_arg.startswith('condenser.'):
         condenser_config_arg = condenser_config_arg[10:]
 
-    logger.openhands_logger.debug(
-        f'Loading condenser config [{condenser_config_arg}] from {toml_file}'
-    )
+    logger.openhands_logger.debug(f'Loading condenser config [{condenser_config_arg}] from {toml_file}')
 
     # load the toml file
     try:
@@ -577,18 +550,13 @@ def get_condenser_config_arg(
         return None
 
     # Check if the condenser section and the specific config exist
-    if (
-        'condenser' not in toml_config
-        or condenser_config_arg not in toml_config['condenser']
-    ):
+    if 'condenser' not in toml_config or condenser_config_arg not in toml_config['condenser']:
         logger.openhands_logger.error(
             f'Condenser config section [condenser.{condenser_config_arg}] not found in {toml_file}'
         )
         return None
 
-    condenser_data = toml_config['condenser'][
-        condenser_config_arg
-    ].copy()  # Use copy to modify
+    condenser_data = toml_config['condenser'][condenser_config_arg].copy()  # Use copy to modify
 
     # Determine the type and handle potential LLM dependency
     condenser_type = condenser_data.get('type')
@@ -624,14 +592,10 @@ def get_condenser_config_arg(
     # Create the condenser config instance
     try:
         config = create_condenser_config(condenser_type, condenser_data)
-        logger.openhands_logger.info(
-            f'Successfully loaded condenser config [{condenser_config_arg}] from {toml_file}'
-        )
+        logger.openhands_logger.info(f'Successfully loaded condenser config [{condenser_config_arg}] from {toml_file}')
         return config
     except (ValidationError, ValueError) as e:
-        logger.openhands_logger.error(
-            f'Invalid condenser configuration for [{condenser_config_arg}]: {e}.'
-        )
+        logger.openhands_logger.error(f'Invalid condenser configuration for [{condenser_config_arg}]: {e}.')
         return None
 
 
@@ -641,9 +605,7 @@ def get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description='Run the agent via CLI')
 
     # Add version argument
-    parser.add_argument(
-        '-v', '--version', action='store_true', help='Show version information'
-    )
+    parser.add_argument('-v', '--version', action='store_true', help='Show version information')
 
     parser.add_argument(
         '--config-file',
@@ -788,18 +750,12 @@ def register_custom_agents(config: OpenHandsConfig) -> None:
             try:
                 agent_cls = get_impl(Agent, agent_config.classpath)
                 Agent.register(agent_name, agent_cls)
-                logger.openhands_logger.info(
-                    f"Registered custom agent '{agent_name}' from {agent_config.classpath}"
-                )
+                logger.openhands_logger.info(f"Registered custom agent '{agent_name}' from {agent_config.classpath}")
             except Exception as e:
-                logger.openhands_logger.error(
-                    f"Failed to register agent '{agent_name}': {e}"
-                )
+                logger.openhands_logger.error(f"Failed to register agent '{agent_name}': {e}")
 
 
-def load_openhands_config(
-    set_logging_levels: bool = True, config_file: str = 'config.toml'
-) -> OpenHandsConfig:
+def load_openhands_config(set_logging_levels: bool = True, config_file: str = 'config.toml') -> OpenHandsConfig:
     """Load the configuration from the specified config file and environment variables.
 
     Args:

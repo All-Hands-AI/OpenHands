@@ -23,9 +23,7 @@ class AsyncLLM(LLM):
         self._async_completion = partial(
             self._call_acompletion,
             model=self.config.model,
-            api_key=self.config.api_key.get_secret_value()
-            if self.config.api_key
-            else None,
+            api_key=self.config.api_key.get_secret_value() if self.config.api_key else None,
             base_url=self.config.base_url,
             api_version=self.config.api_version,
             custom_llm_provider=self.config.custom_llm_provider,
@@ -71,9 +69,7 @@ class AsyncLLM(LLM):
 
             # if we have no messages, something went very wrong
             if not messages:
-                raise ValueError(
-                    'The messages list is empty. At least one message is required.'
-                )
+                raise ValueError('The messages list is empty. At least one message is required.')
 
             self.log_prompt(messages)
 

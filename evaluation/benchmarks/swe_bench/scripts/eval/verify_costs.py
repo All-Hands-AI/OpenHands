@@ -27,9 +27,7 @@ def verify_instance_costs(row: pd.Series) -> float:
         costs = metrics.get('costs', [])
 
         if accumulated is None:
-            logger.warning(
-                f'Instance {row["instance_id"]}: No accumulated_cost in metrics'
-            )
+            logger.warning(f'Instance {row["instance_id"]}: No accumulated_cost in metrics')
             return 0.0
 
         # Check for duplicate consecutive costs and systematic even-odd pairs
@@ -50,10 +48,7 @@ def verify_instance_costs(row: pd.Series) -> float:
 
         # Calculate total cost, accounting for buggy double counting if detected
         if len(costs) >= 2 and has_duplicate and all_pairs_match:
-            paired_steps_cost = sum(
-                cost_entry['cost']
-                for cost_entry in costs[: -1 if len(costs) % 2 else None]
-            )
+            paired_steps_cost = sum(cost_entry['cost'] for cost_entry in costs[: -1 if len(costs) % 2 else None])
             real_paired_cost = paired_steps_cost / 2
 
             unpaired_cost = costs[-1]['cost'] if len(costs) % 2 else 0
@@ -71,19 +66,13 @@ def verify_instance_costs(row: pd.Series) -> float:
         return total_cost
 
     except Exception as e:
-        logger.error(
-            f'Error verifying costs for instance {row.get("instance_id", "UNKNOWN")}: {e}'
-        )
+        logger.error(f'Error verifying costs for instance {row.get("instance_id", "UNKNOWN")}: {e}')
         return 0.0
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description='Verify costs in SWE-bench output file'
-    )
-    parser.add_argument(
-        'input_filepath', type=str, help='Path to the output.jsonl file'
-    )
+    parser = argparse.ArgumentParser(description='Verify costs in SWE-bench output file')
+    parser.add_argument('input_filepath', type=str, help='Path to the output.jsonl file')
     args = parser.parse_args()
 
     try:

@@ -25,9 +25,7 @@ def test_image_content_serializes_all_urls():
     serialized = image_content.model_dump()
 
     # Should serialize all URLs, including empty ones (filtering happens upstream)
-    assert len(serialized) == 4, (
-        f'Expected 4 URLs (including empty), got {len(serialized)}'
-    )
+    assert len(serialized) == 4, f'Expected 4 URLs (including empty), got {len(serialized)}'
 
     expected_urls = [
         'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
@@ -73,9 +71,7 @@ def test_image_content_all_valid_urls():
     serialized = image_content.model_dump()
 
     # Should preserve all valid URLs
-    assert len(serialized) == len(valid_urls), (
-        f'Expected {len(valid_urls)} URLs, got {len(serialized)}'
-    )
+    assert len(serialized) == len(valid_urls), f'Expected {len(valid_urls)} URLs, got {len(serialized)}'
 
     for i, item in enumerate(serialized):
         assert item['type'] == 'image_url'

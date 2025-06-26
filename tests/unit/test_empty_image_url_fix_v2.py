@@ -21,9 +21,7 @@ def test_empty_image_url_handling():
 
     # Create conversation memory with vision enabled
     agent_config = AgentConfig(enable_som_visual_browsing=True)
-    prompt_manager = PromptManager(
-        prompt_dir='openhands/agenthub/codeact_agent/prompts'
-    )
+    prompt_manager = PromptManager(prompt_dir='openhands/agenthub/codeact_agent/prompts')
     conv_memory = ConversationMemory(agent_config, prompt_manager)
 
     # Process the observation with vision enabled
@@ -50,22 +48,15 @@ def test_empty_image_url_handling():
                     assert url is not None, 'None image URL should be filtered out'
                     # Should start with data: prefix for base64 images
                     if url:  # Only check if URL is not empty
-                        assert url.startswith('data:'), (
-                            f'Invalid image URL format: {url}'
-                        )
+                        assert url.startswith('data:'), f'Invalid image URL format: {url}'
             elif hasattr(content, 'text'):
                 # Check for notification text about missing visual information
-                if (
-                    'No visual information' in content.text
-                    or 'has been filtered' in content.text
-                ):
+                if 'No visual information' in content.text or 'has been filtered' in content.text:
                     has_notification_text = True
 
     # Should not have image content but should have notification text
     assert not has_image_content, 'Should not have ImageContent for empty images'
-    assert has_notification_text, (
-        'Should have notification text about missing visual information'
-    )
+    assert has_notification_text, 'Should have notification text about missing visual information'
 
 
 def test_valid_image_url_handling():
@@ -84,9 +75,7 @@ def test_valid_image_url_handling():
 
     # Create conversation memory with vision enabled
     agent_config = AgentConfig(enable_som_visual_browsing=True)
-    prompt_manager = PromptManager(
-        prompt_dir='openhands/agenthub/codeact_agent/prompts'
-    )
+    prompt_manager = PromptManager(prompt_dir='openhands/agenthub/codeact_agent/prompts')
     conv_memory = ConversationMemory(agent_config, prompt_manager)
 
     # Process the observation with vision enabled
@@ -110,9 +99,7 @@ def test_valid_image_url_handling():
                 assert len(content.image_urls) > 0, 'Should have at least one image URL'
                 for url in content.image_urls:
                     assert url != '', 'Image URL should not be empty'
-                    assert url.startswith('data:image/'), (
-                        f'Invalid image URL format: {url}'
-                    )
+                    assert url.startswith('data:image/'), f'Invalid image URL format: {url}'
 
     assert found_image_content, 'Should have found ImageContent with valid URLs'
 
@@ -133,9 +120,7 @@ def test_mixed_image_url_handling():
 
     # Create conversation memory with vision enabled
     agent_config = AgentConfig(enable_som_visual_browsing=True)
-    prompt_manager = PromptManager(
-        prompt_dir='openhands/agenthub/codeact_agent/prompts'
-    )
+    prompt_manager = PromptManager(prompt_dir='openhands/agenthub/codeact_agent/prompts')
     conv_memory = ConversationMemory(agent_config, prompt_manager)
 
     # Process the observation with vision enabled
@@ -156,13 +141,9 @@ def test_mixed_image_url_handling():
             if isinstance(content, ImageContent):
                 found_image_content = True
                 # Should have exactly one valid image URL (set_of_marks)
-                assert len(content.image_urls) == 1, (
-                    f'Should have exactly one image URL, got {len(content.image_urls)}'
-                )
+                assert len(content.image_urls) == 1, f'Should have exactly one image URL, got {len(content.image_urls)}'
                 url = content.image_urls[0]
-                assert url == valid_base64_image, (
-                    f'Should use the valid image URL: {url}'
-                )
+                assert url == valid_base64_image, f'Should use the valid image URL: {url}'
 
     assert found_image_content, 'Should have found ImageContent with valid URL'
 
@@ -180,9 +161,7 @@ def test_ipython_empty_image_url_handling():
 
     # Create conversation memory with vision enabled
     agent_config = AgentConfig(enable_som_visual_browsing=True)
-    prompt_manager = PromptManager(
-        prompt_dir='openhands/agenthub/codeact_agent/prompts'
-    )
+    prompt_manager = PromptManager(prompt_dir='openhands/agenthub/codeact_agent/prompts')
     conv_memory = ConversationMemory(agent_config, prompt_manager)
 
     # Process the observation with vision enabled
@@ -227,9 +206,7 @@ def test_ipython_mixed_image_url_handling():
 
     # Create conversation memory with vision enabled
     agent_config = AgentConfig(enable_som_visual_browsing=True)
-    prompt_manager = PromptManager(
-        prompt_dir='openhands/agenthub/codeact_agent/prompts'
-    )
+    prompt_manager = PromptManager(prompt_dir='openhands/agenthub/codeact_agent/prompts')
     conv_memory = ConversationMemory(agent_config, prompt_manager)
 
     # Process the observation with vision enabled
@@ -251,13 +228,9 @@ def test_ipython_mixed_image_url_handling():
             if isinstance(content, ImageContent):
                 found_image_content = True
                 # Should have exactly one valid image URL
-                assert len(content.image_urls) == 1, (
-                    f'Should have exactly one image URL, got {len(content.image_urls)}'
-                )
+                assert len(content.image_urls) == 1, f'Should have exactly one image URL, got {len(content.image_urls)}'
                 url = content.image_urls[0]
-                assert url == valid_base64_image, (
-                    f'Should use the valid image URL: {url}'
-                )
+                assert url == valid_base64_image, f'Should use the valid image URL: {url}'
             elif hasattr(content, 'text'):
                 # Check for notification text about filtered images
                 if 'invalid or empty image(s) were filtered' in content.text:

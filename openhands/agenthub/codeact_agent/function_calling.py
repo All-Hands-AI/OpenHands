@@ -50,9 +50,7 @@ def combine_thought(action: Action, thought: str) -> Action:
     return action
 
 
-def response_to_actions(
-    response: ModelResponse, mcp_tool_names: list[str] | None = None
-) -> list[Action]:
+def response_to_actions(response: ModelResponse, mcp_tool_names: list[str] | None = None) -> list[Action]:
     actions: list[Action] = []
     assert len(response.choices) == 1, 'Only one choice is supported for now'
     choice = response.choices[0]
@@ -141,14 +139,9 @@ def response_to_actions(
                     content=arguments['content'],
                     start=arguments.get('start', 1),
                     end=arguments.get('end', -1),
-                    impl_source=arguments.get(
-                        'impl_source', FileEditSource.LLM_BASED_EDIT
-                    ),
+                    impl_source=arguments.get('impl_source', FileEditSource.LLM_BASED_EDIT),
                 )
-            elif (
-                tool_call.function.name
-                == create_str_replace_editor_tool()['function']['name']
-            ):
+            elif tool_call.function.name == create_str_replace_editor_tool()['function']['name']:
                 if 'command' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "command" in tool call {tool_call.function.name}'
@@ -159,9 +152,7 @@ def response_to_actions(
                     )
                 path = arguments['path']
                 command = arguments['command']
-                other_kwargs = {
-                    k: v for k, v in arguments.items() if k not in ['command', 'path']
-                }
+                other_kwargs = {k: v for k, v in arguments.items() if k not in ['command', 'path']}
 
                 if command == 'view':
                     action = FileReadAction(
@@ -178,11 +169,7 @@ def response_to_actions(
                     valid_kwargs = {}
                     # Get valid parameters from the str_replace_editor tool definition
                     str_replace_editor_tool = create_str_replace_editor_tool()
-                    valid_params = set(
-                        str_replace_editor_tool['function']['parameters'][
-                            'properties'
-                        ].keys()
-                    )
+                    valid_params = set(str_replace_editor_tool['function']['parameters']['properties'].keys())
                     for key, value in other_kwargs.items():
                         if key in valid_params:
                             valid_kwargs[key] = value

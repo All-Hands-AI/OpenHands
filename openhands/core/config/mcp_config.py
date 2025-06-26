@@ -169,10 +169,7 @@ class OpenHandsMCPConfig:
     @staticmethod
     def add_search_engine(app_config: 'OpenHandsConfig') -> MCPStdioServerConfig | None:
         """Add search engine to the MCP config"""
-        if (
-            app_config.search_api_key
-            and app_config.search_api_key.get_secret_value().startswith('tvly-')
-        ):
+        if app_config.search_api_key and app_config.search_api_key.get_secret_value().startswith('tvly-'):
             logger.info('Adding search engine to MCP config')
             return MCPStdioServerConfig(
                 name='tavily',

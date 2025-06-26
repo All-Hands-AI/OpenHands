@@ -21,17 +21,11 @@ def get_supported_llm_models(config: OpenHandsConfig) -> list[str]:
         list[str]: A sorted list of unique model names.
     """
     litellm_model_list = litellm.model_list + list(litellm.model_cost.keys())
-    litellm_model_list_without_bedrock = bedrock.remove_error_modelId(
-        litellm_model_list
-    )
+    litellm_model_list_without_bedrock = bedrock.remove_error_modelId(litellm_model_list)
     # TODO: for bedrock, this is using the default config
     llm_config: LLMConfig = config.get_llm_config()
     bedrock_model_list = []
-    if (
-        llm_config.aws_region_name
-        and llm_config.aws_access_key_id
-        and llm_config.aws_secret_access_key
-    ):
+    if llm_config.aws_region_name and llm_config.aws_access_key_id and llm_config.aws_secret_access_key:
         bedrock_model_list = bedrock.list_foundation_models(
             llm_config.aws_region_name,
             llm_config.aws_access_key_id.get_secret_value(),

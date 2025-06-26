@@ -14,9 +14,7 @@ def test_get_converted_issues_initializes_review_comments():
     with patch('httpx.get') as mock_get:
         # Mock the response for issues
         mock_issues_response = MagicMock()
-        mock_issues_response.json.return_value = [
-            {'iid': 1, 'title': 'Test Issue', 'description': 'Test Body'}
-        ]
+        mock_issues_response.json.return_value = [{'iid': 1, 'title': 'Test Issue', 'description': 'Test Body'}]
         # Mock the response for comments
         mock_comments_response = MagicMock()
         mock_comments_response.json.return_value = []
@@ -31,9 +29,7 @@ def test_get_converted_issues_initializes_review_comments():
 
         # Create an instance of IssueHandler
         llm_config = LLMConfig(model='test', api_key='test')
-        handler = ServiceContextIssue(
-            GitlabIssueHandler('test-owner', 'test-repo', 'test-token'), llm_config
-        )
+        handler = ServiceContextIssue(GitlabIssueHandler('test-owner', 'test-repo', 'test-token'), llm_config)
 
         # Get converted issues
         issues = handler.get_converted_issues(issue_numbers=[1])
@@ -57,9 +53,7 @@ def test_get_converted_issues_handles_empty_body():
     with patch('httpx.get') as mock_get:
         # Mock the response for issues
         mock_issues_response = MagicMock()
-        mock_issues_response.json.return_value = [
-            {'iid': 1, 'title': 'Test Issue', 'description': None}
-        ]
+        mock_issues_response.json.return_value = [{'iid': 1, 'title': 'Test Issue', 'description': None}]
         # Mock the response for comments
         mock_comments_response = MagicMock()
         mock_comments_response.json.return_value = []
@@ -72,9 +66,7 @@ def test_get_converted_issues_handles_empty_body():
 
         # Create an instance of IssueHandler
         llm_config = LLMConfig(model='test', api_key='test')
-        handler = ServiceContextIssue(
-            GitlabIssueHandler('test-owner', 'test-repo', 'test-token'), llm_config
-        )
+        handler = ServiceContextIssue(GitlabIssueHandler('test-owner', 'test-repo', 'test-token'), llm_config)
 
         # Get converted issues
         issues = handler.get_converted_issues(issue_numbers=[1])
@@ -154,9 +146,7 @@ def test_pr_handler_get_converted_issues_with_comments():
 
             # Create an instance of PRHandler
             llm_config = LLMConfig(model='test', api_key='test')
-            handler = ServiceContextPR(
-                GitlabPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
-            )
+            handler = ServiceContextPR(GitlabPRHandler('test-owner', 'test-repo', 'test-token'), llm_config)
 
             # Get converted issues
             prs = handler.get_converted_issues(issue_numbers=[1])
@@ -174,9 +164,7 @@ def test_pr_handler_get_converted_issues_with_comments():
             assert prs[0].owner == 'test-owner'
             assert prs[0].repo == 'test-repo'
             assert prs[0].head_branch == 'test-branch'
-            assert prs[0].closing_issues == [
-                'This is additional context from an externally referenced issue.'
-            ]
+            assert prs[0].closing_issues == ['This is additional context from an externally referenced issue.']
 
 
 def test_get_issue_comments_with_specific_comment_id():
@@ -193,9 +181,7 @@ def test_get_issue_comments_with_specific_comment_id():
 
         # Create an instance of IssueHandler
         llm_config = LLMConfig(model='test', api_key='test')
-        handler = ServiceContextIssue(
-            GitlabIssueHandler('test-owner', 'test-repo', 'test-token'), llm_config
-        )
+        handler = ServiceContextIssue(GitlabIssueHandler('test-owner', 'test-repo', 'test-token'), llm_config)
 
         # Get comments with a specific comment_id
         specific_comment = handler.get_issue_comments(issue_number=1, comment_id=123)
@@ -287,14 +273,10 @@ def test_pr_handler_get_converted_issues_with_specific_thread_comment():
 
             # Create an instance of PRHandler
             llm_config = LLMConfig(model='test', api_key='test')
-            handler = ServiceContextPR(
-                GitlabPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
-            )
+            handler = ServiceContextPR(GitlabPRHandler('test-owner', 'test-repo', 'test-token'), llm_config)
 
             # Get converted issues
-            prs = handler.get_converted_issues(
-                issue_numbers=[1], comment_id=specific_comment_id
-            )
+            prs = handler.get_converted_issues(issue_numbers=[1], comment_id=specific_comment_id)
 
             # Verify that we got exactly one PR
             assert len(prs) == 1
@@ -406,14 +388,10 @@ def test_pr_handler_get_converted_issues_with_specific_review_thread_comment():
 
             # Create an instance of PRHandler
             llm_config = LLMConfig(model='test', api_key='test')
-            handler = ServiceContextPR(
-                GitlabPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
-            )
+            handler = ServiceContextPR(GitlabPRHandler('test-owner', 'test-repo', 'test-token'), llm_config)
 
             # Get converted issues
-            prs = handler.get_converted_issues(
-                issue_numbers=[1], comment_id=specific_comment_id
-            )
+            prs = handler.get_converted_issues(issue_numbers=[1], comment_id=specific_comment_id)
 
             # Verify that we got exactly one PR
             assert len(prs) == 1
@@ -519,15 +497,11 @@ def test_pr_handler_get_converted_issues_with_specific_comment_and_issue_refs():
 
         # Mock the response for fetching the external issue referenced in PR body
         mock_external_issue_response_in_body = MagicMock()
-        mock_external_issue_response_in_body.json.return_value = {
-            'description': 'External context #1.'
-        }
+        mock_external_issue_response_in_body.json.return_value = {'description': 'External context #1.'}
 
         # Mock the response for fetching the external issue referenced in review thread
         mock_external_issue_response_review_thread = MagicMock()
-        mock_external_issue_response_review_thread.json.return_value = {
-            'description': 'External context #2.'
-        }
+        mock_external_issue_response_review_thread.json.return_value = {'description': 'External context #2.'}
 
         mock_get.side_effect = [
             mock_prs_response,  # First call for PRs
@@ -545,14 +519,10 @@ def test_pr_handler_get_converted_issues_with_specific_comment_and_issue_refs():
 
             # Create an instance of PRHandler
             llm_config = LLMConfig(model='test', api_key='test')
-            handler = ServiceContextPR(
-                GitlabPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
-            )
+            handler = ServiceContextPR(GitlabPRHandler('test-owner', 'test-repo', 'test-token'), llm_config)
 
             # Get converted issues
-            prs = handler.get_converted_issues(
-                issue_numbers=[1], comment_id=specific_comment_id
-            )
+            prs = handler.get_converted_issues(issue_numbers=[1], comment_id=specific_comment_id)
 
             # Verify that we got exactly one PR
             assert len(prs) == 1
@@ -628,15 +598,11 @@ def test_pr_handler_get_converted_issues_with_duplicate_issue_refs():
 
         # Mock the response for fetching the external issue referenced in PR body
         mock_external_issue_response_in_body = MagicMock()
-        mock_external_issue_response_in_body.json.return_value = {
-            'description': 'External context #1.'
-        }
+        mock_external_issue_response_in_body.json.return_value = {'description': 'External context #1.'}
 
         # Mock the response for fetching the external issue referenced in review thread
         mock_external_issue_response_in_comment = MagicMock()
-        mock_external_issue_response_in_comment.json.return_value = {
-            'description': 'External context #2.'
-        }
+        mock_external_issue_response_in_comment.json.return_value = {'description': 'External context #2.'}
 
         mock_get.side_effect = [
             mock_prs_response,  # First call for PRs
@@ -654,9 +620,7 @@ def test_pr_handler_get_converted_issues_with_duplicate_issue_refs():
 
             # Create an instance of PRHandler
             llm_config = LLMConfig(model='test', api_key='test')
-            handler = ServiceContextPR(
-                GitlabPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
-            )
+            handler = ServiceContextPR(GitlabPRHandler('test-owner', 'test-repo', 'test-token'), llm_config)
 
             # Get converted issues
             prs = handler.get_converted_issues(issue_numbers=[1])

@@ -75,11 +75,7 @@ class ReadOnlyAgent(CodeActAgent):
         Args:
         - mcp_tools (list[dict]): The list of MCP tools.
         """
-        logger.warning(
-            'ReadOnlyAgent does not support MCP tools. MCP tools will be ignored by the agent.'
-        )
+        logger.warning('ReadOnlyAgent does not support MCP tools. MCP tools will be ignored by the agent.')
 
     def response_to_actions(self, response: 'ModelResponse') -> list['Action']:
-        return readonly_function_calling.response_to_actions(
-            response, mcp_tool_names=list(self.mcp_tools.keys())
-        )
+        return readonly_function_calling.response_to_actions(response, mcp_tool_names=list(self.mcp_tools.keys()))

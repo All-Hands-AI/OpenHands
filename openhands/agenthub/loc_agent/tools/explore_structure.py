@@ -170,11 +170,7 @@ def create_explore_tree_structure_tool(
         if use_simplified_description
         else _DETAILED_STRUCTURE_EXPLORER_DESCRIPTION
     )
-    example = (
-        _SIMPLIFIED_TREE_EXAMPLE
-        if use_simplified_description
-        else _DETAILED_TREE_EXAMPLE
-    )
+    example = _SIMPLIFIED_TREE_EXAMPLE if use_simplified_description else _DETAILED_TREE_EXAMPLE
     return ChatCompletionToolParam(
         type='function',
         function=ChatCompletionToolParamFunctionChunk(

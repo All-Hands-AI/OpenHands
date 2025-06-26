@@ -91,10 +91,7 @@ MAP_VERSION_TO_INSTALL_DJANGO = {
     for k in ['1.7', '1.8', '1.9', '1.10', '1.11', '2.0', '2.1', '2.2']
 }
 MAP_VERSION_TO_INSTALL_DJANGO.update(
-    {
-        k: {'python': '3.5', 'install': 'python setup.py install'}
-        for k in ['1.4', '1.5', '1.6']
-    }
+    {k: {'python': '3.5', 'install': 'python setup.py install'} for k in ['1.4', '1.5', '1.6']}
 )
 MAP_VERSION_TO_INSTALL_DJANGO.update(
     {
@@ -388,9 +385,7 @@ MAP_VERSION_TO_INSTALL_MATPLOTLIB.update(
         k: {
             'python': '3.5',
             'install': 'python setup.py build; python setup.py install',
-            'pre_install': [
-                'apt-get -y update && apt-get -y upgrade && && apt-get install -y imagemagick ffmpeg'
-            ],
+            'pre_install': ['apt-get -y update && apt-get -y upgrade && && apt-get install -y imagemagick ffmpeg'],
             'pip_packages': ['pytest'],
             'execute_test_as_nonroot': True,
         }
@@ -448,9 +443,7 @@ for k in ['3.0', '3.1', '3.2', '3.3', '3.4', '3.5', '4.0', '4.1', '4.2', '4.3', 
                 "sed -i 's/sphinxcontrib-serializinghtml/sphinxcontrib-serializinghtml<=1.1.9/' setup.py",
             ]
         )
-MAP_VERSION_TO_INSTALL_SPHINX['7.2']['pre_install'] += [
-    'apt-get update && apt-get install -y graphviz'
-]
+MAP_VERSION_TO_INSTALL_SPHINX['7.2']['pre_install'] += ['apt-get update && apt-get install -y graphviz']
 MAP_VERSION_TO_INSTALL_ASTROPY = {
     k: {
         'python': '3.9',
@@ -497,8 +490,7 @@ MAP_VERSION_TO_INSTALL_SYMPY = {
         'pip_packages': ['mpmath==1.3.0', 'flake8-comprehensions'],
         'install': 'python -m pip install -e .',
     }
-    for k in ['0.7', '1.0', '1.1', '1.10', '1.11', '1.12', '1.2', '1.4', '1.5', '1.6']
-    + ['1.7', '1.8', '1.9']
+    for k in ['0.7', '1.0', '1.1', '1.10', '1.11', '1.12', '1.2', '1.4', '1.5', '1.6'] + ['1.7', '1.8', '1.9']
 }
 MAP_VERSION_TO_INSTALL_SYMPY.update(
     {
@@ -733,16 +725,12 @@ MAP_VERSION_TO_INSTALL_PYDICOM.update(
 MAP_VERSION_TO_INSTALL_PYDICOM.update(
     {k: {**MAP_VERSION_TO_INSTALL_PYDICOM[k], 'python': '3.9'} for k in ['2.1', '2.2']}
 )
-MAP_VERSION_TO_INSTALL_PYDICOM.update(
-    {k: {**MAP_VERSION_TO_INSTALL_PYDICOM[k], 'python': '3.10'} for k in ['2.3']}
-)
+MAP_VERSION_TO_INSTALL_PYDICOM.update({k: {**MAP_VERSION_TO_INSTALL_PYDICOM[k], 'python': '3.10'} for k in ['2.3']})
 MAP_VERSION_TO_INSTALL_PYDICOM.update(
     {k: {**MAP_VERSION_TO_INSTALL_PYDICOM[k], 'python': '3.11'} for k in ['2.4', '3.0']}
 )
 MAP_VERSION_TO_INSTALL_HUMANEVAL = {k: {'python': '3.9'} for k in ['1.0']}
-MAP_VERSION_TO_INSTALL_HUMANEVAL_FIX = {
-    k: {'python': '3.10', 'packages': 'pytest'} for k in ['0.0.1']
-}
+MAP_VERSION_TO_INSTALL_HUMANEVAL_FIX = {k: {'python': '3.10', 'packages': 'pytest'} for k in ['0.0.1']}
 
 # Constants - Task Instance Instllation Environment
 MAP_VERSION_TO_INSTALL = {
@@ -775,68 +763,28 @@ MAP_REPO_TO_INSTALL = {}
 # Constants - Task Instance Test Frameworks
 TEST_PYTEST_VERBOSE = 'pytest -rA --tb=long -p no:cacheprovider'
 MAP_REPO_TO_TEST_FRAMEWORK_VERBOSE = {
-    'astropy/astropy': {
-        k: TEST_PYTEST_VERBOSE for k in MAP_VERSION_TO_INSTALL_ASTROPY.keys()
-    },
+    'astropy/astropy': {k: TEST_PYTEST_VERBOSE for k in MAP_VERSION_TO_INSTALL_ASTROPY.keys()},
     'django/django': {
         k: './tests/runtests.py --verbosity 2 --settings=test_sqlite --parallel 1'
         for k in MAP_VERSION_TO_INSTALL_DJANGO.keys()
     },
-    'marshmallow-code/marshmallow': {
-        k: TEST_PYTEST_VERBOSE for k in MAP_VERSION_TO_INSTALL_MARSHMALLOW.keys()
-    },
-    'matplotlib/matplotlib': {
-        k: TEST_PYTEST_VERBOSE for k in MAP_VERSION_TO_INSTALL_MATPLOTLIB.keys()
-    },
-    'mwaskom/seaborn': {
-        k: 'pytest -rA --tb=long' for k in MAP_VERSION_TO_INSTALL_SEABORN.keys()
-    },
-    'pallets/flask': {
-        k: TEST_PYTEST_VERBOSE for k in MAP_VERSION_TO_INSTALL_FLASK.keys()
-    },
-    'psf/requests': {
-        k: TEST_PYTEST_VERBOSE for k in MAP_VERSION_TO_INSTALL_REQUESTS.keys()
-    },
-    'pvlib/pvlib-python': {
-        k: TEST_PYTEST_VERBOSE for k in MAP_VERSION_TO_INSTALL_PVLIB.keys()
-    },
-    'pydata/xarray': {
-        k: TEST_PYTEST_VERBOSE for k in MAP_VERSION_TO_INSTALL_XARRAY.keys()
-    },
-    'pydicom/pydicom': {
-        k: TEST_PYTEST_VERBOSE for k in MAP_VERSION_TO_INSTALL_PYDICOM.keys()
-    },
-    'pylint-dev/astroid': {
-        k: TEST_PYTEST_VERBOSE for k in MAP_VERSION_TO_INSTALL_ASTROID.keys()
-    },
-    'pylint-dev/pylint': {
-        k: TEST_PYTEST_VERBOSE for k in MAP_VERSION_TO_INSTALL_PYLINT.keys()
-    },
-    'pytest-dev/pytest': {
-        k: 'pytest -rA --tb=long' for k in MAP_VERSION_TO_INSTALL_PYTEST.keys()
-    },
-    'pyvista/pyvista': {
-        k: TEST_PYTEST_VERBOSE for k in MAP_VERSION_TO_INSTALL_PYVISTA.keys()
-    },
-    'scikit-learn/scikit-learn': {
-        k: TEST_PYTEST_VERBOSE for k in MAP_VERSION_TO_INSTALL_SKLEARN.keys()
-    },
-    'sphinx-doc/sphinx': {
-        k: 'tox -epy39 -v --' for k in MAP_VERSION_TO_INSTALL_SPHINX.keys()
-    },
-    'sqlfluff/sqlfluff': {
-        k: TEST_PYTEST_VERBOSE for k in MAP_VERSION_TO_INSTALL_SQLFLUFF.keys()
-    },
-    'swe-bench/humaneval': {
-        k: 'python' for k in MAP_VERSION_TO_INSTALL_HUMANEVAL.keys()
-    },
-    'nielstron/humaneval_fix': {
-        k: TEST_PYTEST_VERBOSE for k in MAP_VERSION_TO_INSTALL_HUMANEVAL.keys()
-    },
-    'sympy/sympy': {
-        k: 'bin/test -C --verbose' for k in MAP_VERSION_TO_INSTALL_SYMPY.keys()
-    },
+    'marshmallow-code/marshmallow': {k: TEST_PYTEST_VERBOSE for k in MAP_VERSION_TO_INSTALL_MARSHMALLOW.keys()},
+    'matplotlib/matplotlib': {k: TEST_PYTEST_VERBOSE for k in MAP_VERSION_TO_INSTALL_MATPLOTLIB.keys()},
+    'mwaskom/seaborn': {k: 'pytest -rA --tb=long' for k in MAP_VERSION_TO_INSTALL_SEABORN.keys()},
+    'pallets/flask': {k: TEST_PYTEST_VERBOSE for k in MAP_VERSION_TO_INSTALL_FLASK.keys()},
+    'psf/requests': {k: TEST_PYTEST_VERBOSE for k in MAP_VERSION_TO_INSTALL_REQUESTS.keys()},
+    'pvlib/pvlib-python': {k: TEST_PYTEST_VERBOSE for k in MAP_VERSION_TO_INSTALL_PVLIB.keys()},
+    'pydata/xarray': {k: TEST_PYTEST_VERBOSE for k in MAP_VERSION_TO_INSTALL_XARRAY.keys()},
+    'pydicom/pydicom': {k: TEST_PYTEST_VERBOSE for k in MAP_VERSION_TO_INSTALL_PYDICOM.keys()},
+    'pylint-dev/astroid': {k: TEST_PYTEST_VERBOSE for k in MAP_VERSION_TO_INSTALL_ASTROID.keys()},
+    'pylint-dev/pylint': {k: TEST_PYTEST_VERBOSE for k in MAP_VERSION_TO_INSTALL_PYLINT.keys()},
+    'pytest-dev/pytest': {k: 'pytest -rA --tb=long' for k in MAP_VERSION_TO_INSTALL_PYTEST.keys()},
+    'pyvista/pyvista': {k: TEST_PYTEST_VERBOSE for k in MAP_VERSION_TO_INSTALL_PYVISTA.keys()},
+    'scikit-learn/scikit-learn': {k: TEST_PYTEST_VERBOSE for k in MAP_VERSION_TO_INSTALL_SKLEARN.keys()},
+    'sphinx-doc/sphinx': {k: 'tox -epy39 -v --' for k in MAP_VERSION_TO_INSTALL_SPHINX.keys()},
+    'sqlfluff/sqlfluff': {k: TEST_PYTEST_VERBOSE for k in MAP_VERSION_TO_INSTALL_SQLFLUFF.keys()},
+    'swe-bench/humaneval': {k: 'python' for k in MAP_VERSION_TO_INSTALL_HUMANEVAL.keys()},
+    'nielstron/humaneval_fix': {k: TEST_PYTEST_VERBOSE for k in MAP_VERSION_TO_INSTALL_HUMANEVAL.keys()},
+    'sympy/sympy': {k: 'bin/test -C --verbose' for k in MAP_VERSION_TO_INSTALL_SYMPY.keys()},
 }
-MAP_REPO_TO_TEST_FRAMEWORK_VERBOSE['django/django']['1.9'] = (
-    './tests/runtests.py --verbosity 2'
-)
+MAP_REPO_TO_TEST_FRAMEWORK_VERBOSE['django/django']['1.9'] = './tests/runtests.py --verbosity 2'

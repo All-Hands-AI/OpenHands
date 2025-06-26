@@ -41,9 +41,7 @@ class AgentConfig(BaseModel):
     """Whether history should be truncated to continue the session when hitting LLM context length limit."""
     enable_som_visual_browsing: bool = Field(default=True)
     """Whether to enable SoM (Set of Marks) visual browsing."""
-    condenser: CondenserConfig = Field(
-        default_factory=lambda: NoOpCondenserConfig(type='noop')
-    )
+    condenser: CondenserConfig = Field(default_factory=lambda: NoOpCondenserConfig(type='noop'))
     extended: ExtendedConfig = Field(default_factory=lambda: ExtendedConfig({}))
     """Extended configuration for the agent."""
 
@@ -122,9 +120,7 @@ class AgentConfig(BaseModel):
                         custom_config = cls.model_validate(merged)
                 agent_mapping[name] = custom_config
             except ValidationError as e:
-                logger.warning(
-                    f'Invalid agent configuration for [{name}]: {e}. This section will be skipped.'
-                )
+                logger.warning(f'Invalid agent configuration for [{name}]: {e}. This section will be skipped.')
                 # Skip this custom section but continue with others
                 continue
 

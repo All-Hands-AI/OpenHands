@@ -10,10 +10,7 @@ from openhands.runtime.utils.bash_constants import TIMEOUT_MESSAGE_TEMPLATE
 
 def get_no_change_timeout_suffix(timeout_seconds):
     """Helper function to generate the expected no-change timeout suffix."""
-    return (
-        f'\n[The command has no new output after {timeout_seconds} seconds. '
-        f'{TIMEOUT_MESSAGE_TEMPLATE}]'
-    )
+    return f'\n[The command has no new output after {timeout_seconds} seconds. {TIMEOUT_MESSAGE_TEMPLATE}]'
 
 
 def test_session_initialization():
@@ -85,9 +82,7 @@ def test_long_running_command_follow_by_execute():
     session.initialize()
 
     # Test command that produces output slowly
-    obs = session.execute(
-        CmdRunAction('for i in {1..3}; do echo $i; sleep 3; done', blocking=False)
-    )
+    obs = session.execute(CmdRunAction('for i in {1..3}; do echo $i; sleep 3; done', blocking=False))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert '1' in obs.content  # First number should appear before timeout
     assert obs.metadata.exit_code == -1  # -1 indicates command is still running
@@ -267,9 +262,7 @@ def test_command_output_continuation():
                 numbers_seen.add(i)
 
         # We need to see numbers 2-5 and then the command completion
-        while (
-            len(numbers_seen) < 5 or session.prev_status != BashCommandStatus.COMPLETED
-        ):
+        while len(numbers_seen) < 5 or session.prev_status != BashCommandStatus.COMPLETED:
             obs = session.execute(CmdRunAction('', is_input=True))
             logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
@@ -277,27 +270,18 @@ def test_command_output_continuation():
             for i in range(1, 6):
                 if str(i) in obs.content and i not in numbers_seen:
                     numbers_seen.add(i)
-                    logger.info(
-                        f'Found number {i} in output', extra={'msg_type': 'TEST_INFO'}
-                    )
+                    logger.info(f'Found number {i} in output', extra={'msg_type': 'TEST_INFO'})
 
             # Check if the command has completed
             if session.prev_status == BashCommandStatus.COMPLETED:
-                assert (
-                    '[The command completed with exit code 0.]' in obs.metadata.suffix
-                )
+                assert '[The command completed with exit code 0.]' in obs.metadata.suffix
                 break
             else:
-                assert (
-                    '[The command has no new output after 1 seconds.'
-                    in obs.metadata.suffix
-                )
+                assert '[The command has no new output after 1 seconds.' in obs.metadata.suffix
                 assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
 
         # Verify we've seen all numbers
-        assert numbers_seen == {1, 2, 3, 4, 5}, (
-            f'Expected to see numbers 1-5, but saw {numbers_seen}'
-        )
+        assert numbers_seen == {1, 2, 3, 4, 5}, f'Expected to see numbers 1-5, but saw {numbers_seen}'
 
         # Verify the command completed
         assert session.prev_status == BashCommandStatus.COMPLETED

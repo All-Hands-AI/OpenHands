@@ -30,7 +30,5 @@ class SettingsStore(ABC):
 
     @classmethod
     @abstractmethod
-    async def get_instance(
-        cls, config: OpenHandsConfig, user_id: str | None
-    ) -> SettingsStore:
+    async def get_instance(cls, config: OpenHandsConfig, user_id: str | None) -> SettingsStore:
         """Get a store for the user represented by the token given."""

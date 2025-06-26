@@ -24,13 +24,9 @@ from openhands.integrations.service_types import ProviderType
 
 
 class UserSecrets(BaseModel):
-    provider_tokens: PROVIDER_TOKEN_TYPE_WITH_JSON_SCHEMA = Field(
-        default_factory=lambda: MappingProxyType({})
-    )
+    provider_tokens: PROVIDER_TOKEN_TYPE_WITH_JSON_SCHEMA = Field(default_factory=lambda: MappingProxyType({}))
 
-    custom_secrets: CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA = Field(
-        default_factory=lambda: MappingProxyType({})
-    )
+    custom_secrets: CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA = Field(default_factory=lambda: MappingProxyType({}))
 
     model_config = ConfigDict(
         frozen=True,
@@ -49,11 +45,7 @@ class UserSecrets(BaseModel):
             if not provider_token or not provider_token.token:
                 continue
 
-            token_type_str = (
-                token_type.value
-                if isinstance(token_type, ProviderType)
-                else str(token_type)
-            )
+            token_type_str = token_type.value if isinstance(token_type, ProviderType) else str(token_type)
 
             token = None
             if provider_token.token:
@@ -72,9 +64,7 @@ class UserSecrets(BaseModel):
         return tokens
 
     @field_serializer('custom_secrets')
-    def custom_secrets_serializer(
-        self, custom_secrets: CUSTOM_SECRETS_TYPE, info: SerializationInfo
-    ):
+    def custom_secrets_serializer(self, custom_secrets: CUSTOM_SECRETS_TYPE, info: SerializationInfo):
         secrets = {}
         expose_secrets = info.context and info.context.get('expose_secrets', False)
 
@@ -102,18 +92,12 @@ class UserSecrets(BaseModel):
 
         if 'provider_tokens' in data:
             tokens = data['provider_tokens']
-            if isinstance(
-                tokens, dict
-            ):  # Ensure conversion happens only for dict inputs
+            if isinstance(tokens, dict):  # Ensure conversion happens only for dict inputs
                 converted_tokens = {}
                 for key, value in tokens.items():
                     try:
-                        provider_type = (
-                            ProviderType(key) if isinstance(key, str) else key
-                        )
-                        converted_tokens[provider_type] = ProviderToken.from_value(
-                            value
-                        )
+                        provider_type = ProviderType(key) if isinstance(key, str) else key
+                        converted_tokens[provider_type] = ProviderToken.from_value(value)
                     except ValueError:
                         # Skip invalid provider types or tokens
                         continue

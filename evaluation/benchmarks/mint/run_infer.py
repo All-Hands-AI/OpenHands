@@ -105,9 +105,7 @@ def get_config(
 ) -> OpenHandsConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = 'xingyaoww/od-eval-mint:v1.0'
-    sandbox_config.runtime_extra_deps = (
-        f'$OH_INTERPRETER_PATH -m pip install {" ".join(MINT_DEPENDENCIES)}'
-    )
+    sandbox_config.runtime_extra_deps = f'$OH_INTERPRETER_PATH -m pip install {" ".join(MINT_DEPENDENCIES)}'
 
     config = OpenHandsConfig(
         default_agent=metadata.agent_class,
@@ -266,9 +264,7 @@ if __name__ == '__main__':
     dataset_dfs = []
     for subset in subsets:
         in_context_example = load_incontext_example(subset)
-        _cur_dataset = load_dataset(
-            'ryanhoangt/xingyaoww-mint-bench', name=subset, split='test'
-        )
+        _cur_dataset = load_dataset('ryanhoangt/xingyaoww-mint-bench', name=subset, split='test')
         logger.info(f'Loaded MINT - {subset} subset')
         _df = _cur_dataset.to_pandas().rename(columns={'id': 'instance_id'})
         _df['instance_id'] = _df['instance_id'].apply(lambda x: f'{subset}/{x}')  # noqa
@@ -298,6 +294,4 @@ if __name__ == '__main__':
     )
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(dataset_df, output_file, args.eval_n_limit)
-    run_evaluation(
-        instances, metadata, output_file, args.eval_num_workers, process_instance
-    )
+    run_evaluation(instances, metadata, output_file, args.eval_num_workers, process_instance)

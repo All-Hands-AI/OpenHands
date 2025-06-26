@@ -32,9 +32,7 @@ async def test_generate_conversation_title_success():
 
     # Patch the LLM class to return our mock
     with patch('openhands.utils.conversation_summary.LLM', return_value=mock_llm):
-        result = await generate_conversation_title(
-            'Can you help me with Python?', LLMConfig(model='test-model')
-        )
+        result = await generate_conversation_title('Can you help me with Python?', LLMConfig(model='test-model'))
 
     assert result == 'Generated Title'
     # Verify the mock was called with the expected arguments
@@ -75,9 +73,7 @@ async def test_generate_conversation_title_exception():
 
     # Patch the LLM class to return our mock
     with patch('openhands.utils.conversation_summary.LLM', return_value=mock_llm):
-        result = await generate_conversation_title(
-            'Can you help me with Python?', LLMConfig(model='test-model')
-        )
+        result = await generate_conversation_title('Can you help me with Python?', LLMConfig(model='test-model'))
 
     # Verify that None is returned when an exception occurs
     assert result is None

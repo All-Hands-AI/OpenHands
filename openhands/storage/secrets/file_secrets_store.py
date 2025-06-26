@@ -20,11 +20,7 @@ class FileSecretsStore(SecretsStore):
         try:
             json_str = await call_sync_from_async(self.file_store.read, self.path)
             kwargs = json.loads(json_str)
-            provider_tokens = {
-                k: v
-                for k, v in (kwargs.get('provider_tokens') or {}).items()
-                if v.get('token')
-            }
+            provider_tokens = {k: v for k, v in (kwargs.get('provider_tokens') or {}).items() if v.get('token')}
             kwargs['provider_tokens'] = provider_tokens
             secrets = UserSecrets(**kwargs)
             return secrets
@@ -36,9 +32,7 @@ class FileSecretsStore(SecretsStore):
         await call_sync_from_async(self.file_store.write, self.path, json_str)
 
     @classmethod
-    async def get_instance(
-        cls, config: OpenHandsConfig, user_id: str | None
-    ) -> FileSecretsStore:
+    async def get_instance(cls, config: OpenHandsConfig, user_id: str | None) -> FileSecretsStore:
         file_store = file_store = get_file_store(
             config.file_store,
             config.file_store_path,

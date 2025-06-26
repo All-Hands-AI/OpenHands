@@ -226,9 +226,7 @@ def test_goto_line_negative(tmp_path):
         with contextlib.redirect_stdout(buf):
             open_file(str(temp_file_path))
 
-    _capture_file_operation_error(
-        lambda: goto_line(-1), 'ERROR: Line number must be between 1 and 4.'
-    )
+    _capture_file_operation_error(lambda: goto_line(-1), 'ERROR: Line number must be between 1 and 4.')
 
 
 def test_goto_line_out_of_bound(tmp_path):
@@ -240,9 +238,7 @@ def test_goto_line_out_of_bound(tmp_path):
         with contextlib.redirect_stdout(buf):
             open_file(str(temp_file_path))
 
-    _capture_file_operation_error(
-        lambda: goto_line(100), 'ERROR: Line number must be between 1 and 9.'
-    )
+    _capture_file_operation_error(lambda: goto_line(100), 'ERROR: Line number must be between 1 and 9.')
 
 
 def test_scroll_down(tmp_path):
@@ -391,13 +387,7 @@ def test_print_window_internal(tmp_path):
         with contextlib.redirect_stdout(buf):
             _print_window(str(test_file_path), current_line, window, return_str=False)
         result = buf.getvalue()
-        expected = (
-            '(48 more lines above)\n'
-            '49|Line `49`\n'
-            '50|Line `50`\n'
-            '51|Line `51`\n'
-            '(49 more lines below)\n'
-        )
+        expected = '(48 more lines above)\n49|Line `49`\n50|Line `50`\n51|Line `51`\n(49 more lines below)\n'
         assert result == expected
 
 
@@ -504,11 +494,7 @@ def test_search_dir_cwd(tmp_path, monkeypatch):
         result = buf.getvalue()
     assert result is not None
 
-    expected = (
-        '[Found 1 matches for "bingo" in ./]\n'
-        './a50.txt (Line 6): bingo\n'
-        '[End of matches for "bingo" in ./]\n'
-    )
+    expected = '[Found 1 matches for "bingo" in ./]\n./a50.txt (Line 6): bingo\n[End of matches for "bingo" in ./]\n'
     assert result.split('\n') == expected.split('\n')
 
 
@@ -647,10 +633,7 @@ def test_parse_latex(tmp_path):
     sys.stdout = old_stdout
 
     # Check if the output is correct
-    expected_output = (
-        f'[Reading LaTex file from {test_latex_path}]\n'
-        'Hello, this is a test LaTeX document.\n'
-    )
+    expected_output = f'[Reading LaTex file from {test_latex_path}]\nHello, this is a test LaTeX document.\n'
     assert output == expected_output, f'Expected output does not match. Got: {output}'
 
 
@@ -675,11 +658,7 @@ def test_parse_pdf(tmp_path):
     sys.stdout = old_stdout
 
     # Check if the output is correct
-    expected_output = (
-        f'[Reading PDF file from {test_pdf_path}]\n'
-        '@@ Page 1 @@\n'
-        'Hello, this is a test PDF document.\n'
-    )
+    expected_output = f'[Reading PDF file from {test_pdf_path}]\n@@ Page 1 @@\nHello, this is a test PDF document.\n'
     assert output == expected_output, f'Expected output does not match. Got: {output}'
 
 

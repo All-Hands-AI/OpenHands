@@ -207,9 +207,7 @@ def test_browser_tool():
     assert BrowserTool['function']['parameters']['type'] == 'object'
     assert 'code' in BrowserTool['function']['parameters']['properties']
     assert BrowserTool['function']['parameters']['required'] == ['code']
-    assert (
-        BrowserTool['function']['parameters']['properties']['code']['type'] == 'string'
-    )
+    assert BrowserTool['function']['parameters']['properties']['code']['type'] == 'string'
     assert 'description' in BrowserTool['function']['parameters']['properties']['code']
 
 
@@ -275,9 +273,7 @@ def test_step_with_no_pending_actions(mock_state: State):
 
 
 @pytest.mark.parametrize('agent_type', ['CodeActAgent', 'ReadOnlyAgent'])
-def test_correct_tool_description_loaded_based_on_model_name(
-    agent_type, mock_state: State
-):
+def test_correct_tool_description_loaded_based_on_model_name(agent_type, mock_state: State):
     """Tests that the simplified tool descriptions are loaded for specific models."""
     o3_mock_config = Mock()
     o3_mock_config.model = 'mock_o3_model'
@@ -310,9 +306,7 @@ def test_correct_tool_description_loaded_based_on_model_name(
         assert any(len(tool['function']['description']) > 1024 for tool in agent.tools)
 
 
-def test_mismatched_tool_call_events_and_auto_add_system_message(
-    agent, mock_state: State
-):
+def test_mismatched_tool_call_events_and_auto_add_system_message(agent, mock_state: State):
     """Tests that the agent can convert mismatched tool call events (i.e., an observation with no corresponding action) into messages.
 
     This also tests that the system message is automatically added to the event stream if SystemMessageAction is not present.
@@ -327,9 +321,7 @@ def test_mismatched_tool_call_events_and_auto_add_system_message(
                     message=Mock(
                         role='assistant',
                         content='',
-                        tool_calls=[
-                            Mock(spec=ChatCompletionMessageToolCall, id='tool_call_0')
-                        ],
+                        tool_calls=[Mock(spec=ChatCompletionMessageToolCall, id='tool_call_0')],
                     )
                 )
             ],
@@ -357,9 +349,7 @@ def test_mismatched_tool_call_events_and_auto_add_system_message(
     messages = agent._get_messages(mock_state.history, initial_user_message)
     assert len(messages) == 4  # System + initial user + action + observation
     assert messages[0].role == 'system'  # First message should be the system message
-    assert (
-        messages[1].role == 'user'
-    )  # Second message should be the initial user message
+    assert messages[1].role == 'user'  # Second message should be the initial user message
     assert messages[2].role == 'assistant'  # Third message should be the action
     assert messages[3].role == 'tool'  # Fourth message should be the observation
 
@@ -368,25 +358,19 @@ def test_mismatched_tool_call_events_and_auto_add_system_message(
     messages = agent._get_messages(mock_state.history, initial_user_message)
     assert len(messages) == 4
     assert messages[0].role == 'system'  # First message should be the system message
-    assert (
-        messages[1].role == 'user'
-    )  # Second message should be the initial user message
+    assert messages[1].role == 'user'  # Second message should be the initial user message
 
     # If only one of the two events is present, then we should just get the system message
     # plus any valid message from the event
     mock_state.history = [initial_user_message, action]
     messages = agent._get_messages(mock_state.history, initial_user_message)
-    assert (
-        len(messages) == 2
-    )  # System + initial user message, action is waiting for its observation
+    assert len(messages) == 2  # System + initial user message, action is waiting for its observation
     assert messages[0].role == 'system'
     assert messages[1].role == 'user'
 
     mock_state.history = [initial_user_message, observation]
     messages = agent._get_messages(mock_state.history, initial_user_message)
-    assert (
-        len(messages) == 2
-    )  # System + initial user message, observation has no matching action
+    assert len(messages) == 2  # System + initial user message, observation has no matching action
     assert messages[0].role == 'system'
     assert messages[1].role == 'user'
 
@@ -449,16 +433,12 @@ def test_enhance_messages_adds_newlines_between_consecutive_user_messages(
         # Fifth user message with only ImageContent - no TextContent to modify
         Message(
             role='user',
-            content=[
-                ImageContent(image_urls=['https://example.com/another-image.jpg'])
-            ],
+            content=[ImageContent(image_urls=['https://example.com/another-image.jpg'])],
         ),
     ]
 
     # Call _enhance_messages
-    enhanced_messages = agent.conversation_memory._apply_user_message_formatting(
-        messages
-    )
+    enhanced_messages = agent.conversation_memory._apply_user_message_formatting(messages)
 
     # Verify newlines were added correctly
     assert enhanced_messages[1].content[0].text.startswith('\n\n')
@@ -492,9 +472,7 @@ def test_get_system_message():
     assert result._source == EventSource.AGENT
 
 
-def test_step_raises_error_if_no_initial_user_message(
-    agent: CodeActAgent, mock_state: State
-):
+def test_step_raises_error_if_no_initial_user_message(agent: CodeActAgent, mock_state: State):
     """Tests that step raises ValueError if the initial user message is not found."""
     # Ensure history does NOT contain a user MessageAction
     assistant_message = MessageAction(content='Assistant message')

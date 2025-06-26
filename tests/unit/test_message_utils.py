@@ -35,9 +35,7 @@ def test_get_token_usage_for_event():
         model_response={'id': 'test-response-id'},
         total_calls_in_response=1,
     )
-    event._tool_call_metadata = (
-        mock_tool_call_metadata  # normally you'd do event.tool_call_metadata = ...
-    )
+    event._tool_call_metadata = mock_tool_call_metadata  # normally you'd do event.tool_call_metadata = ...
 
     # We should find that usage record
     found = get_token_usage_for_event(event, metrics)

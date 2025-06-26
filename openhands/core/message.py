@@ -86,9 +86,7 @@ class Message(BaseModel):
 
     def _string_serializer(self) -> dict[str, Any]:
         # convert content to a single string
-        content = '\n'.join(
-            item.text for item in self.content if isinstance(item, TextContent)
-        )
+        content = '\n'.join(item.text for item in self.content if isinstance(item, TextContent))
         message_dict: dict[str, Any] = {'content': content, 'role': self.role}
 
         # add tool call keys if we have a tool call or response
@@ -149,9 +147,7 @@ class Message(BaseModel):
 
         # an observation message with tool response
         if self.tool_call_id is not None:
-            assert self.name is not None, (
-                'name is required when tool_call_id is not None'
-            )
+            assert self.name is not None, 'name is required when tool_call_id is not None'
             message_dict['tool_call_id'] = self.tool_call_id
             message_dict['name'] = self.name
 

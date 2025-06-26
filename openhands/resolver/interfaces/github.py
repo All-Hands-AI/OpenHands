@@ -64,11 +64,7 @@ class GithubIssueHandler(IssueHandlerInterface):
         return f'{self.base_url}/issues'
 
     def get_clone_url(self) -> str:
-        username_and_token = (
-            f'{self.username}:{self.token}'
-            if self.username
-            else f'x-auth-token:{self.token}'
-        )
+        username_and_token = f'{self.username}:{self.token}' if self.username else f'x-auth-token:{self.token}'
         return f'https://{username_and_token}@{self.base_domain}/{self.owner}/{self.repo}.git'
 
     def get_graphql_url(self) -> str:
@@ -98,11 +94,7 @@ class GithubIssueHandler(IssueHandlerInterface):
 
         all_issues = self.download_issues()
         logger.info(f'Limiting resolving to issues {issue_numbers}.')
-        all_issues = [
-            issue
-            for issue in all_issues
-            if issue['number'] in issue_numbers and 'pull_request' not in issue
-        ]
+        all_issues = [issue for issue in all_issues if issue['number'] in issue_numbers and 'pull_request' not in issue]
 
         if len(issue_numbers) == 1 and not all_issues:
             raise ValueError(f'Issue {issue_numbers[0]} not found')
@@ -111,9 +103,7 @@ class GithubIssueHandler(IssueHandlerInterface):
         for issue in all_issues:
             # Check for required fields (number and title)
             if any([issue.get(key) is None for key in ['number', 'title']]):
-                logger.warning(
-                    f'Skipping issue {issue} as it is missing number or title.'
-                )
+                logger.warning(f'Skipping issue {issue} as it is missing number or title.')
                 continue
 
             # Handle empty body by using empty string
@@ -121,9 +111,7 @@ class GithubIssueHandler(IssueHandlerInterface):
                 issue['body'] = ''
 
             # Get issue thread comments
-            thread_comments = self.get_issue_comments(
-                issue['number'], comment_id=comment_id
-            )
+            thread_comments = self.get_issue_comments(issue['number'], comment_id=comment_id)
             # Convert empty lists to None for optional fields
             issue_details = Issue(
                 owner=self.owner,
@@ -151,12 +139,8 @@ class GithubIssueHandler(IssueHandlerInterface):
             if not issues:
                 break
 
-            if not isinstance(issues, list) or any(
-                [not isinstance(issue, dict) for issue in issues]
-            ):
-                raise ValueError(
-                    'Expected list of dictionaries from Service Github API.'
-                )
+            if not isinstance(issues, list) or any([not isinstance(issue, dict) for issue in issues]):
+                raise ValueError('Expected list of dictionaries from Service Github API.')
 
             all_issues.extend(issues)
             assert isinstance(params['page'], int)
@@ -164,9 +148,7 @@ class GithubIssueHandler(IssueHandlerInterface):
 
         return all_issues
 
-    def get_issue_comments(
-        self, issue_number: int, comment_id: int | None = None
-    ) -> list[str] | None:
+    def get_issue_comments(self, issue_number: int, comment_id: int | None = None) -> list[str] | None:
         """Download comments for a specific issue from Github."""
         url = f'{self.download_url}/{issue_number}/comments'
         params = {'per_page': 100, 'page': 1}
@@ -182,11 +164,7 @@ class GithubIssueHandler(IssueHandlerInterface):
 
             if comment_id:
                 matching_comment = next(
-                    (
-                        comment['body']
-                        for comment in comments
-                        if comment['id'] == comment_id
-                    ),
+                    (comment['body'] for comment in comments if comment['id'] == comment_id),
                     None,
                 )
                 if matching_comment:
@@ -200,9 +178,7 @@ class GithubIssueHandler(IssueHandlerInterface):
 
     def branch_exists(self, branch_name: str) -> bool:
         logger.info(f'Checking if branch {branch_name} exists...')
-        response = httpx.get(
-            f'{self.base_url}/branches/{branch_name}', headers=self.headers
-        )
+        response = httpx.get(f'{self.base_url}/branches/{branch_name}', headers=self.headers)
         exists = response.status_code == 200
         logger.info(f'Branch {branch_name} exists: {exists}')
         return exists
@@ -237,9 +213,7 @@ class GithubIssueHandler(IssueHandlerInterface):
             'Content-Type': 'application/json',
         }
 
-        response = httpx.post(
-            url, json={'query': query, 'variables': variables}, headers=headers
-        )
+        response = httpx.post(url, json={'query': query, 'variables': variables}, headers=headers)
         response.raise_for_status()
 
     def get_pull_url(self, pr_number: int) -> str:
@@ -272,9 +246,7 @@ class GithubIssueHandler(IssueHandlerInterface):
             json=review_data,
         )
         if review_response.status_code != 201:
-            logger.warning(
-                f'Failed to request review from {reviewer}: {review_response.text}'
-            )
+            logger.warning(f'Failed to request review from {reviewer}: {review_response.text}')
 
     def send_comment_msg(self, issue_number: int, msg: str) -> None:
         """Send a comment message to a GitHub issue or pull request.
@@ -286,13 +258,9 @@ class GithubIssueHandler(IssueHandlerInterface):
         # Post a comment on the PR
         comment_url = f'{self.base_url}/issues/{issue_number}/comments'
         comment_data = {'body': msg}
-        comment_response = httpx.post(
-            comment_url, headers=self.headers, json=comment_data
-        )
+        comment_response = httpx.post(comment_url, headers=self.headers, json=comment_data)
         if comment_response.status_code != 201:
-            logger.error(
-                f'Failed to post comment: {comment_response.status_code} {comment_response.text}'
-            )
+            logger.error(f'Failed to post comment: {comment_response.status_code} {comment_response.text}')
         else:
             logger.info(f'Comment added to the PR: {msg}')
 
@@ -328,9 +296,7 @@ class GithubPRHandler(GithubIssueHandler):
         """
         super().__init__(owner, repo, token, username, base_domain)
         if self.base_domain == 'github.com':
-            self.download_url = (
-                f'https://api.github.com/repos/{self.owner}/{self.repo}/pulls'
-            )
+            self.download_url = f'https://api.github.com/repos/{self.owner}/{self.repo}/pulls'
         else:
             self.download_url = f'https://{self.base_domain}/api/v3/repos/{self.owner}/{self.repo}/pulls'
 
@@ -404,32 +370,22 @@ class GithubPRHandler(GithubIssueHandler):
             'Content-Type': 'application/json',
         }
 
-        response = httpx.post(
-            url, json={'query': query, 'variables': variables}, headers=headers
-        )
+        response = httpx.post(url, json={'query': query, 'variables': variables}, headers=headers)
         response.raise_for_status()
         response_json = response.json()
 
         # Parse the response to get closing issue references and unresolved review comments
-        pr_data = (
-            response_json.get('data', {}).get('repository', {}).get('pullRequest', {})
-        )
+        pr_data = response_json.get('data', {}).get('repository', {}).get('pullRequest', {})
 
         # Get closing issues
         closing_issues = pr_data.get('closingIssuesReferences', {}).get('edges', [])
         closing_issues_bodies = [issue['node']['body'] for issue in closing_issues]
-        closing_issue_numbers = [
-            issue['node']['number'] for issue in closing_issues
-        ]  # Extract issue numbers
+        closing_issue_numbers = [issue['node']['number'] for issue in closing_issues]  # Extract issue numbers
 
         # Get review comments
         reviews = pr_data.get('reviews', {}).get('nodes', [])
         if comment_id is not None:
-            reviews = [
-                review
-                for review in reviews
-                if int(review['fullDatabaseId']) == comment_id
-            ]
+            reviews = [review for review in reviews if int(review['fullDatabaseId']) == comment_id]
         review_bodies = [review['body'] for review in reviews]
 
         # Get unresolved review threads
@@ -438,31 +394,22 @@ class GithubPRHandler(GithubIssueHandler):
         raw_review_threads = pr_data.get('reviewThreads', {}).get('edges', [])
         for thread in raw_review_threads:
             node = thread.get('node', {})
-            if not node.get(
-                'isResolved', True
-            ):  # Check if the review thread is unresolved
+            if not node.get('isResolved', True):  # Check if the review thread is unresolved
                 id = node.get('id')
                 thread_contains_comment_id = False
                 my_review_threads = node.get('comments', {}).get('nodes', [])
                 message = ''
                 files = []
                 for i, review_thread in enumerate(my_review_threads):
-                    if (
-                        comment_id is not None
-                        and int(review_thread['fullDatabaseId']) == comment_id
-                    ):
+                    if comment_id is not None and int(review_thread['fullDatabaseId']) == comment_id:
                         thread_contains_comment_id = True
 
-                    if (
-                        i == len(my_review_threads) - 1
-                    ):  # Check if it's the last thread in the thread
+                    if i == len(my_review_threads) - 1:  # Check if it's the last thread in the thread
                         if len(my_review_threads) > 1:
                             message += '---\n'  # Add "---" before the last message if there's more than one thread
                         message += 'latest feedback:\n' + review_thread['body'] + '\n'
                     else:
-                        message += (
-                            review_thread['body'] + '\n'
-                        )  # Add each thread in a new line
+                        message += review_thread['body'] + '\n'  # Add each thread in a new line
 
                     file = review_thread.get('path')
                     if file and file not in files:
@@ -482,9 +429,7 @@ class GithubPRHandler(GithubIssueHandler):
         )
 
     # Override processing of downloaded issues
-    def get_pr_comments(
-        self, pr_number: int, comment_id: int | None = None
-    ) -> list[str] | None:
+    def get_pr_comments(self, pr_number: int, comment_id: int | None = None) -> list[str] | None:
         """Download comments for a specific pull request from Github."""
         if self.base_domain == 'github.com':
             url = f'https://api.github.com/repos/{self.owner}/{self.repo}/issues/{pr_number}/comments'
@@ -507,11 +452,7 @@ class GithubPRHandler(GithubIssueHandler):
 
             if comment_id is not None:
                 matching_comment = next(
-                    (
-                        comment['body']
-                        for comment in comments
-                        if comment['id'] == comment_id
-                    ),
+                    (comment['body'] for comment in comments if comment['id'] == comment_id),
                     None,
                 )
                 if matching_comment:
@@ -543,18 +484,14 @@ class GithubPRHandler(GithubIssueHandler):
 
         if review_threads:
             for review_thread in review_threads:
-                new_issue_references.extend(
-                    extract_issue_references(review_thread.comment)
-                )
+                new_issue_references.extend(extract_issue_references(review_thread.comment))
 
         if thread_comments:
             for thread_comment in thread_comments:
                 new_issue_references.extend(extract_issue_references(thread_comment))
 
         non_duplicate_references = set(new_issue_references)
-        unique_issue_references = non_duplicate_references.difference(
-            closing_issue_numbers
-        )
+        unique_issue_references = non_duplicate_references.difference(closing_issue_numbers)
 
         for issue_number in unique_issue_references:
             try:
@@ -606,9 +543,7 @@ class GithubPRHandler(GithubIssueHandler):
             head_branch = issue['head']['ref']
 
             # Get PR thread comments
-            thread_comments = self.get_pr_comments(
-                issue['number'], comment_id=comment_id
-            )
+            thread_comments = self.get_pr_comments(issue['number'], comment_id=comment_id)
 
             closing_issues = self.get_context_from_external_issues_references(
                 closing_issues,

@@ -36,6 +36,4 @@ class ExtendedConfig(RootModel[dict[str, Any]]):
             root_dict: dict[str, Any] = self.model_dump()
             return root_dict[key]
         except KeyError as e:
-            raise AttributeError(
-                f"'ExtendedConfig' object has no attribute '{key}'"
-            ) from e
+            raise AttributeError(f"'ExtendedConfig' object has no attribute '{key}'") from e

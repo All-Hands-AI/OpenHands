@@ -103,9 +103,7 @@ class ProviderHandler:
         external_token_manager: bool = False,
     ):
         if not isinstance(provider_tokens, MappingProxyType):
-            raise TypeError(
-                f'provider_tokens must be a MappingProxyType, got {type(provider_tokens).__name__}'
-            )
+            raise TypeError(f'provider_tokens must be a MappingProxyType, got {type(provider_tokens).__name__}')
 
         self.service_class_map: dict[ProviderType, type[GitService]] = {
             ProviderType.GITHUB: GithubServiceImpl,
@@ -146,9 +144,7 @@ class ProviderHandler:
                 continue
         raise AuthenticationError('Need valid provider token')
 
-    async def _get_latest_provider_token(
-        self, provider: ProviderType
-    ) -> SecretStr | None:
+    async def _get_latest_provider_token(self, provider: ProviderType) -> SecretStr | None:
         """Get latest token from service"""
         service = self._get_service(provider)
         return await service.get_latest_token()
@@ -195,9 +191,7 @@ class ProviderHandler:
         for provider in self.provider_tokens:
             try:
                 service = self._get_service(provider)
-                service_repos = await service.search_repositories(
-                    query, per_page, sort, order
-                )
+                service_repos = await service.search_repositories(query, per_page, sort, order)
                 all_repos.extend(service_repos)
             except Exception as e:
                 logger.warning(f'Error searching repos from {provider}: {e}')
@@ -224,9 +218,7 @@ class ProviderHandler:
             exposed_env_vars = await self.get_env_vars(expose_secrets=True)
         event_stream.set_secrets(exposed_env_vars)
 
-    def expose_env_vars(
-        self, env_secrets: dict[ProviderType, SecretStr]
-    ) -> dict[str, str]:
+    def expose_env_vars(self, env_secrets: dict[ProviderType, SecretStr]) -> dict[str, str]:
         """
         Return string values instead of typed values for environment secrets
         Called just before exporting secrets to runtime, or setting secrets in the event stream
@@ -279,11 +271,7 @@ class ProviderHandler:
 
         for provider in provider_list:
             if provider in self.provider_tokens:
-                token = (
-                    self.provider_tokens[provider].token
-                    if self.provider_tokens
-                    else SecretStr('')
-                )
+                token = self.provider_tokens[provider].token if self.provider_tokens else SecretStr('')
 
                 if get_latest:
                     token = await self._get_latest_provider_token(provider)
@@ -297,9 +285,7 @@ class ProviderHandler:
         return self.expose_env_vars(env_vars)
 
     @classmethod
-    def check_cmd_action_for_provider_token_ref(
-        cls, event: Action
-    ) -> list[ProviderType]:
+    def check_cmd_action_for_provider_token_ref(cls, event: Action) -> list[ProviderType]:
         """
         Detect if agent run action is using a provider token (e.g $GITHUB_TOKEN)
         Returns a list of providers which are called by the agent
@@ -322,9 +308,7 @@ class ProviderHandler:
         """
         return f'{provider.value}_token'.lower()
 
-    async def verify_repo_provider(
-        self, repository: str, specified_provider: ProviderType | None = None
-    ) -> Repository:
+    async def verify_repo_provider(self, repository: str, specified_provider: ProviderType | None = None) -> Repository:
         if specified_provider:
             try:
                 service = self._get_service(specified_provider)
@@ -341,9 +325,7 @@ class ProviderHandler:
 
         raise AuthenticationError(f'Unable to access repo {repository}')
 
-    async def get_branches(
-        self, repository: str, specified_provider: ProviderType | None = None
-    ) -> list[Branch]:
+    async def get_branches(self, repository: str, specified_provider: ProviderType | None = None) -> list[Branch]:
         """
         Get branches for a repository
 
@@ -362,9 +344,7 @@ class ProviderHandler:
                 branches = await service.get_branches(repository)
                 return branches
             except Exception as e:
-                logger.warning(
-                    f'Error fetching branches from {specified_provider}: {e}'
-                )
+                logger.warning(f'Error fetching branches from {specified_provider}: {e}')
 
         for provider in self.provider_tokens:
             try:
@@ -378,9 +358,7 @@ class ProviderHandler:
                 logger.warning(f'Error fetching branches from {provider}: {e}')
 
         # Sort branches by last push date (newest first)
-        all_branches.sort(
-            key=lambda b: b.last_push_date if b.last_push_date else '', reverse=True
-        )
+        all_branches.sort(key=lambda b: b.last_push_date if b.last_push_date else '', reverse=True)
 
         # Move main/master branch to the top if it exists
         main_branches = []

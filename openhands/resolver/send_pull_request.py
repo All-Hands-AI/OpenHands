@@ -40,15 +40,11 @@ def apply_patch(repo_dir: str, patch: str) -> None:
 
         # Remove both "a/" and "b/" prefixes from paths
         old_path = (
-            os.path.join(
-                repo_dir, diff.header.old_path.removeprefix('a/').removeprefix('b/')
-            )
+            os.path.join(repo_dir, diff.header.old_path.removeprefix('a/').removeprefix('b/'))
             if diff.header.old_path and diff.header.old_path != '/dev/null'
             else None
         )
-        new_path = os.path.join(
-            repo_dir, diff.header.new_path.removeprefix('a/').removeprefix('b/')
-        )
+        new_path = os.path.join(repo_dir, diff.header.new_path.removeprefix('a/').removeprefix('b/'))
 
         # Check if the file is being deleted
         if diff.header.new_path == '/dev/null':
@@ -121,9 +117,7 @@ def apply_patch(repo_dir: str, patch: str) -> None:
     logger.info('Patch applied successfully')
 
 
-def initialize_repo(
-    output_dir: str, issue_number: int, issue_type: str, base_commit: str | None = None
-) -> str:
+def initialize_repo(output_dir: str, issue_number: int, issue_type: str, base_commit: str | None = None) -> str:
     """Initialize the repository.
 
     Args:
@@ -187,9 +181,7 @@ def make_commit(repo_dir: str, issue: Issue, issue_type: str) -> None:
         logger.info('Git user configured as openhands')
 
     # Add all changes to the git index
-    result = subprocess.run(
-        f'git -C {repo_dir} add .', shell=True, capture_output=True, text=True
-    )
+    result = subprocess.run(f'git -C {repo_dir} add .', shell=True, capture_output=True, text=True)
     if result.returncode != 0:
         logger.error(f'Error adding files: {result.stderr}')
         raise RuntimeError('Failed to add files to git')
@@ -204,9 +196,7 @@ def make_commit(repo_dir: str, issue: Issue, issue_type: str) -> None:
 
     # If there are no changes, raise an error
     if not status_result.stdout.strip():
-        logger.error(
-            f'No changes to commit for issue #{issue.number}. Skipping commit.'
-        )
+        logger.error(f'No changes to commit for issue #{issue.number}. Skipping commit.')
         raise RuntimeError('ERROR: Openhands failed to make code changes.')
 
     # Prepare the commit message
@@ -278,9 +268,7 @@ def send_pull_request(
         )
     elif platform == ProviderType.BITBUCKET:
         handler = ServiceContextIssue(
-            BitbucketIssueHandler(
-                issue.owner, issue.repo, token, username, base_domain
-            ),
+            BitbucketIssueHandler(issue.owner, issue.repo, token, username, base_domain),
             None,
         )
     else:
@@ -312,9 +300,7 @@ def send_pull_request(
     )
     if result.returncode != 0:
         logger.error(f'Error creating new branch: {result.stderr}')
-        raise RuntimeError(
-            f'Failed to create a new branch {branch_name} in {patch_dir}:'
-        )
+        raise RuntimeError(f'Failed to create a new branch {branch_name} in {patch_dir}:')
 
     # Determine the repository to push to (original or fork)
     push_owner = fork_owner if fork_owner else issue.owner
@@ -333,9 +319,7 @@ def send_pull_request(
         raise RuntimeError('Failed to push changes to the remote repository')
 
     # Prepare the PR data: title and body
-    final_pr_title = (
-        pr_title if pr_title else f'Fix issue #{issue.number}: {issue.title}'
-    )
+    final_pr_title = pr_title if pr_title else f'Fix issue #{issue.number}: {issue.title}'
     pr_body = f'This pull request fixes #{issue.number}.'
     if additional_message:
         pr_body += f'\n\n{additional_message}'
@@ -356,12 +340,8 @@ def send_pull_request(
         data = {
             'title': final_pr_title,
             ('body' if platform == ProviderType.GITHUB else 'description'): pr_body,
-            (
-                'head' if platform == ProviderType.GITHUB else 'source_branch'
-            ): head_branch,
-            (
-                'base' if platform == ProviderType.GITHUB else 'target_branch'
-            ): base_branch,
+            ('head' if platform == ProviderType.GITHUB else 'source_branch'): head_branch,
+            ('base' if platform == ProviderType.GITHUB else 'target_branch'): base_branch,
             'draft': pr_type == 'draft',
         }
 
@@ -373,9 +353,7 @@ def send_pull_request(
             number = pr_data['number']
             handler.request_reviewers(reviewer, number)
 
-    logger.info(
-        f'{pr_type} created: {url}\n\n--- Title: {final_pr_title}\n\n--- Body:\n{pr_body}'
-    )
+    logger.info(f'{pr_type} created: {url}\n\n--- Title: {final_pr_title}\n\n--- Body:\n{pr_body}')
 
     return url
 
@@ -425,11 +403,7 @@ def update_existing_pull_request(
     branch_name = issue.head_branch
 
     # Prepare the push command
-    push_command = (
-        f'git -C {patch_dir} push '
-        f'{handler.get_authorize_url()}'
-        f'{issue.owner}/{issue.repo}.git {branch_name}'
-    )
+    push_command = f'git -C {patch_dir} push {handler.get_authorize_url()}{issue.owner}/{issue.repo}.git {branch_name}'
 
     # Push the changes to the existing branch
     result = subprocess.run(push_command, shell=True, capture_output=True, text=True)
@@ -445,9 +419,7 @@ def update_existing_pull_request(
         try:
             explanations = json.loads(additional_message)
             if explanations:
-                comment_message = (
-                    'OpenHands made the following changes to resolve the issues:\n\n'
-                )
+                comment_message = 'OpenHands made the following changes to resolve the issues:\n\n'
                 for explanation in explanations:
                     comment_message += f'- {explanation}\n'
 
@@ -508,9 +480,7 @@ def process_single_issue(
     if base_domain is None:
         base_domain = 'github.com' if platform == ProviderType.GITHUB else 'gitlab.com'
     if not resolver_output.success and not send_on_failure:
-        logger.info(
-            f'Issue {resolver_output.issue.number} was not successfully resolved. Skipping PR creation.'
-        )
+        logger.info(f'Issue {resolver_output.issue.number} was not successfully resolved. Skipping PR creation.')
         return
 
     issue_type = resolver_output.issue_type
@@ -565,9 +535,7 @@ def process_single_issue(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description='Send a pull request to Github or Gitlab.'
-    )
+    parser = argparse.ArgumentParser(description='Send a pull request to Github or Gitlab.')
     parser.add_argument(
         '--selected-repo',
         type=str,
@@ -662,9 +630,7 @@ def main() -> None:
 
     token = my_args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
     if not token:
-        raise ValueError(
-            'token is not set, set via --token or GITHUB_TOKEN or GITLAB_TOKEN environment variable.'
-        )
+        raise ValueError('token is not set, set via --token or GITHUB_TOKEN or GITLAB_TOKEN environment variable.')
     username = my_args.username if my_args.username else os.getenv('GIT_USERNAME')
 
     platform = call_async_from_sync(

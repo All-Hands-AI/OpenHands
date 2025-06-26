@@ -45,11 +45,7 @@ def parse_pdf(file_path: str) -> None:
     content = PyPDF2.PdfReader(file_path)
     text = ''
     for page_idx in range(len(content.pages)):
-        text += (
-            f'@@ Page {page_idx + 1} @@\n'
-            + content.pages[page_idx].extract_text()
-            + '\n\n'
-        )
+        text += f'@@ Page {page_idx + 1} @@\n' + content.pages[page_idx].extract_text() + '\n\n'
     print(text.strip())
 
 
@@ -130,18 +126,14 @@ def parse_audio(file_path: str, model: str = 'whisper-1') -> None:
     try:
         # TODO: record the COST of the API call
         with open(file_path, 'rb') as audio_file:
-            transcript = _get_openai_client().audio.translations.create(
-                model=model, file=audio_file
-            )
+            transcript = _get_openai_client().audio.translations.create(model=model, file=audio_file)
         print(transcript.text)
 
     except Exception as e:
         print(f'Error transcribing audio file: {e}')
 
 
-def parse_image(
-    file_path: str, task: str = 'Describe this image as detail as possible.'
-) -> None:
+def parse_image(file_path: str, task: str = 'Describe this image as detail as possible.') -> None:
     """Parses the content of an image file and prints the description.
 
     Args:
@@ -177,9 +169,7 @@ def parse_video(
         frame_interval: int: The interval between frames to analyze. Defaults to 30.
 
     """
-    print(
-        f'[Processing video file from {file_path} with frame interval {frame_interval}]'
-    )
+    print(f'[Processing video file from {file_path} with frame interval {frame_interval}]')
 
     task = task or 'This is one frame from a video, please summarize this frame.'
     base64_frames = _base64_video(file_path)

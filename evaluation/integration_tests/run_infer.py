@@ -57,9 +57,7 @@ def get_config(
         debug=True,
     )
     config.set_llm_config(
-        update_llm_config_for_completions_logging(
-            metadata.llm_config, metadata.eval_output_dir, instance_id
-        )
+        update_llm_config_for_completions_logging(metadata.llm_config, metadata.eval_output_dir, instance_id)
     )
     agent_config = AgentConfig(
         enable_jupyter=True,
@@ -82,9 +80,7 @@ def process_instance(
         log_dir = os.path.join(metadata.eval_output_dir, 'infer_logs')
         reset_logger_for_multiprocessing(logger, str(instance.instance_id), log_dir)
     else:
-        logger.info(
-            f'\nStarting evaluation for instance {str(instance.instance_id)}.\n'
-        )
+        logger.info(f'\nStarting evaluation for instance {str(instance.instance_id)}.\n')
 
     # =============================================
     # import test instance
@@ -93,9 +89,7 @@ def process_instance(
     spec = importlib.util.spec_from_file_location(instance_id, instance.file_path)
     test_module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(test_module)
-    assert hasattr(test_module, 'Test'), (
-        f'Test module {instance_id} does not have a Test class'
-    )
+    assert hasattr(test_module, 'Test'), f'Test module {instance_id} does not have a Test class'
 
     test_class: type[BaseIntegrationTest] = test_module.Test
     assert issubclass(test_class, BaseIntegrationTest), (
@@ -157,15 +151,9 @@ def load_integration_tests() -> pd.DataFrame:
     """Load tests from python files under ./tests"""
     cur_dir = os.path.dirname(os.path.abspath(__file__))
     test_dir = os.path.join(cur_dir, 'tests')
-    test_files = [
-        os.path.join(test_dir, f)
-        for f in os.listdir(test_dir)
-        if f.startswith('t') and f.endswith('.py')
-    ]
+    test_files = [os.path.join(test_dir, f) for f in os.listdir(test_dir) if f.startswith('t') and f.endswith('.py')]
     df = pd.DataFrame(test_files, columns=['file_path'])
-    df['instance_id'] = df['file_path'].apply(
-        lambda x: os.path.basename(x).rstrip('.py')
-    )
+    df['instance_id'] = df['file_path'].apply(lambda x: os.path.basename(x).rstrip('.py'))
     return df
 
 
@@ -217,22 +205,14 @@ if __name__ == '__main__':
     df['success'] = df['test_result'].apply(lambda x: x['success'])
     df['reason'] = df['test_result'].apply(lambda x: x['reason'])
     logger.info('-' * 100)
-    logger.info(
-        f'Success rate: {df["success"].mean():.2%} ({df["success"].sum()}/{len(df)})'
-    )
-    logger.info(
-        '\nEvaluation Results:'
-        + '\n'
-        + df[['instance_id', 'success', 'reason']].to_string(index=False)
-    )
+    logger.info(f'Success rate: {df["success"].mean():.2%} ({df["success"].sum()}/{len(df)})')
+    logger.info('\nEvaluation Results:' + '\n' + df[['instance_id', 'success', 'reason']].to_string(index=False))
     logger.info('-' * 100)
 
     # record cost for each instance, with 3 decimal places
     # we sum up all the "costs" from the metrics array
     df['cost'] = df['metrics'].apply(
-        lambda m: round(sum(c['cost'] for c in m['costs']), 3)
-        if m and 'costs' in m
-        else 0.0
+        lambda m: round(sum(c['cost'] for c in m['costs']), 3) if m and 'costs' in m else 0.0
     )
 
     # capture the top-level error if present, per instance
@@ -242,13 +222,6 @@ if __name__ == '__main__':
 
     report_file = os.path.join(metadata.eval_output_dir, 'report.md')
     with open(report_file, 'w') as f:
-        f.write(
-            f'Success rate: {df["success"].mean():.2%}'
-            f' ({df["success"].sum()}/{len(df)})\n'
-        )
+        f.write(f'Success rate: {df["success"].mean():.2%} ({df["success"].sum()}/{len(df)})\n')
         f.write(f'\nTotal cost: USD {df["cost"].sum():.2f}\n')
-        f.write(
-            df[
-                ['instance_id', 'success', 'reason', 'cost', 'error_message']
-            ].to_markdown(index=False)
-        )
+        f.write(df[['instance_id', 'success', 'reason', 'cost', 'error_message']].to_markdown(index=False))

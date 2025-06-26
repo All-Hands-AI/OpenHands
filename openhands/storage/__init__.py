@@ -32,9 +32,7 @@ def get_file_store(
             # Fallback to default headers. Use the session api key if it is defined in the env.
             file_store_web_hook_headers = {}
             if os.getenv('SESSION_API_KEY'):
-                file_store_web_hook_headers['X-Session-API-Key'] = os.getenv(
-                    'SESSION_API_KEY'
-                )
+                file_store_web_hook_headers['X-Session-API-Key'] = os.getenv('SESSION_API_KEY')
         store = WebHookFileStore(
             store,
             file_store_web_hook_url,

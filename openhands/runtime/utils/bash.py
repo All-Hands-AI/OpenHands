@@ -92,11 +92,7 @@ def escape_bash_special_chars(command: str) -> str:
 
         def visit_node(node: Any) -> None:
             nonlocal last_pos
-            if (
-                node.kind == 'redirect'
-                and hasattr(node, 'heredoc')
-                and node.heredoc is not None
-            ):
+            if node.kind == 'redirect' and hasattr(node, 'heredoc') and node.heredoc is not None:
                 # We're entering a heredoc - preserve everything as-is until we see EOF
                 # Store the heredoc end marker (usually 'EOF' but could be different)
                 between = command[last_pos : node.pos[0]]
@@ -233,9 +229,7 @@ class BashSession:
         _initial_window.kill_window()
 
         # Configure bash to use simple PS1 and disable PS2
-        self.pane.send_keys(
-            f'export PROMPT_COMMAND=\'export PS1="{self.PS1}"\'; export PS2=""'
-        )
+        self.pane.send_keys(f'export PROMPT_COMMAND=\'export PS1="{self.PS1}"\'; export PS2=""')
         time.sleep(0.1)  # Wait for command to take effect
         self._clear_screen()
 
@@ -341,7 +335,9 @@ class BashSession:
         if get_content_before_last_match:
             # Count the number of lines in the truncated output
             num_lines = len(raw_command_output.splitlines())
-            metadata.prefix = f'[Previous command outputs are truncated. Showing the last {num_lines} lines of the output below.]\n'
+            metadata.prefix = (
+                f'[Previous command outputs are truncated. Showing the last {num_lines} lines of the output below.]\n'
+            )
 
         metadata.suffix = (
             f'\n[The command completed with exit code {metadata.exit_code}.]'
@@ -374,9 +370,7 @@ class BashSession:
                 'Expected exactly one PS1 metadata block BEFORE the execution of a command, '
                 f'but got {len(ps1_matches)} PS1 metadata blocks:\n---\n{pane_content!r}\n---'
             )
-        raw_command_output = self._combine_outputs_between_matches(
-            pane_content, ps1_matches
-        )
+        raw_command_output = self._combine_outputs_between_matches(pane_content, ps1_matches)
         metadata = CmdOutputMetadata()  # No metadata available
         metadata.suffix = (
             f'\n[The command has no new output after {self.NO_CHANGE_TIMEOUT_SECONDS} seconds. '
@@ -407,14 +401,9 @@ class BashSession:
                 'Expected exactly one PS1 metadata block BEFORE the execution of a command, '
                 f'but got {len(ps1_matches)} PS1 metadata blocks:\n---\n{pane_content!r}\n---'
             )
-        raw_command_output = self._combine_outputs_between_matches(
-            pane_content, ps1_matches
-        )
+        raw_command_output = self._combine_outputs_between_matches(pane_content, ps1_matches)
         metadata = CmdOutputMetadata()  # No metadata available
-        metadata.suffix = (
-            f'\n[The command timed out after {timeout} seconds. '
-            f'{TIMEOUT_MESSAGE_TEMPLATE}]'
-        )
+        metadata.suffix = f'\n[The command timed out after {timeout} seconds. {TIMEOUT_MESSAGE_TEMPLATE}]'
         command_output = self._get_command_output(
             command,
             raw_command_output,
@@ -461,9 +450,7 @@ class BashSession:
         combined_output = ''
         for i in range(len(ps1_matches) - 1):
             # Extract content between current and next PS1 prompt
-            output_segment = pane_content[
-                ps1_matches[i].end() + 1 : ps1_matches[i + 1].start()
-            ]
+            output_segment = pane_content[ps1_matches[i].end() + 1 : ps1_matches[i + 1].start()]
             combined_output += output_segment + '\n'
         # Add the content after the last PS1 prompt
         combined_output += pane_content[ps1_matches[-1].end() + 1 :]
@@ -512,17 +499,13 @@ class BashSession:
 
         # Get initial state before sending command
         initial_pane_output = self._get_pane_content()
-        initial_ps1_matches = CmdOutputMetadata.matches_ps1_metadata(
-            initial_pane_output
-        )
+        initial_ps1_matches = CmdOutputMetadata.matches_ps1_metadata(initial_pane_output)
         initial_ps1_count = len(initial_ps1_matches)
         logger.debug(f'Initial PS1 count: {initial_ps1_count}')
 
         start_time = time.time()
         last_change_time = start_time
-        last_pane_output = (
-            initial_pane_output  # Use initial output as the starting point
-        )
+        last_pane_output = initial_pane_output  # Use initial output as the starting point
 
         # When prev command is still running, and we are trying to send a new command
         if (
@@ -531,21 +514,15 @@ class BashSession:
                 BashCommandStatus.HARD_TIMEOUT,
                 BashCommandStatus.NO_CHANGE_TIMEOUT,
             }
-            and not last_pane_output.rstrip().endswith(
-                CMD_OUTPUT_PS1_END.rstrip()
-            )  # prev command is not completed
+            and not last_pane_output.rstrip().endswith(CMD_OUTPUT_PS1_END.rstrip())  # prev command is not completed
             and not is_input
             and command != ''  # not input and not empty command
         ):
             _ps1_matches = CmdOutputMetadata.matches_ps1_metadata(last_pane_output)
             # Use initial_ps1_matches if _ps1_matches is empty, otherwise use _ps1_matches
             # This handles the case where the prompt might be scrolled off screen but existed before
-            current_matches_for_output = (
-                _ps1_matches if _ps1_matches else initial_ps1_matches
-            )
-            raw_command_output = self._combine_outputs_between_matches(
-                last_pane_output, current_matches_for_output
-            )
+            current_matches_for_output = _ps1_matches if _ps1_matches else initial_ps1_matches
+            raw_command_output = self._combine_outputs_between_matches(last_pane_output, current_matches_for_output)
             metadata = CmdOutputMetadata()  # No metadata available
             metadata.suffix = (
                 f'\n[Your command "{command}" is NOT executed. '
@@ -591,9 +568,7 @@ class BashSession:
             _start_time = time.time()
             logger.debug(f'GETTING PANE CONTENT at {_start_time}')
             cur_pane_output = self._get_pane_content()
-            logger.debug(
-                f'PANE CONTENT GOT after {time.time() - _start_time:.2f} seconds'
-            )
+            logger.debug(f'PANE CONTENT GOT after {time.time() - _start_time:.2f} seconds')
             logger.debug(f'BEGIN OF PANE CONTENT: {cur_pane_output.split("\n")[:10]}')
             logger.debug(f'END OF PANE CONTENT: {cur_pane_output.split("\n")[-10:]}')
             ps1_matches = CmdOutputMetadata.matches_ps1_metadata(cur_pane_output)
@@ -608,10 +583,7 @@ class BashSession:
             # Condition 1: A new prompt has appeared since the command started.
             # Condition 2: The prompt count hasn't increased (potentially because the initial one scrolled off),
             # BUT the *current* visible pane ends with a prompt, indicating completion.
-            if (
-                current_ps1_count > initial_ps1_count
-                or cur_pane_output.rstrip().endswith(CMD_OUTPUT_PS1_END.rstrip())
-            ):
+            if current_ps1_count > initial_ps1_count or cur_pane_output.rstrip().endswith(CMD_OUTPUT_PS1_END.rstrip()):
                 return self._handle_completed_command(
                     command,
                     pane_content=cur_pane_output,
@@ -627,10 +599,7 @@ class BashSession:
             logger.debug(
                 f'CHECKING NO CHANGE TIMEOUT ({self.NO_CHANGE_TIMEOUT_SECONDS}s): elapsed {time_since_last_change}. Action blocking: {action.blocking}'
             )
-            if (
-                not action.blocking
-                and time_since_last_change >= self.NO_CHANGE_TIMEOUT_SECONDS
-            ):
+            if not action.blocking and time_since_last_change >= self.NO_CHANGE_TIMEOUT_SECONDS:
                 return self._handle_nochange_timeout_command(
                     command,
                     pane_content=cur_pane_output,
@@ -639,9 +608,7 @@ class BashSession:
 
             # 3) Execution timed out due to hard timeout
             elapsed_time = time.time() - start_time
-            logger.debug(
-                f'CHECKING HARD TIMEOUT ({action.timeout}s): elapsed {elapsed_time:.2f}'
-            )
+            logger.debug(f'CHECKING HARD TIMEOUT ({action.timeout}s): elapsed {elapsed_time:.2f}')
             if action.timeout and elapsed_time >= action.timeout:
                 logger.debug('Hard timeout triggered.')
                 return self._handle_hard_timeout_command(

@@ -73,9 +73,7 @@ def _reverse(changes: list[Change]) -> list[Change]:
     return [_reverse_change(c) for c in changes]
 
 
-def apply_diff(
-    diff: diffobj, text: str | list[str], reverse: bool = False, use_patch: bool = False
-) -> list[str]:
+def apply_diff(diff: diffobj, text: str | list[str], reverse: bool = False, use_patch: bool = False) -> list[str]:
     lines = text.splitlines() if isinstance(text, str) else list(text)
 
     if use_patch:
@@ -91,9 +89,7 @@ def apply_diff(
         if old is not None and line is not None:
             if old > n_lines:
                 raise HunkApplyException(
-                    'context line {n}, "{line}" does not exist in source'.format(
-                        n=old, line=line
-                    ),
+                    'context line {n}, "{line}" does not exist in source'.format(n=old, line=line),
                     hunk=hunk,
                 )
             if lines[old - 1] != line:
@@ -103,9 +99,7 @@ def apply_diff(
                 normalized_source = ' '.join(lines[old - 1].split())
                 if normalized_line != normalized_source:
                     raise HunkApplyException(
-                        'context line {n}, "{line}" does not match "{sl}"'.format(
-                            n=old, line=line, sl=lines[old - 1]
-                        ),
+                        'context line {n}, "{line}" does not match "{sl}"'.format(n=old, line=line, sl=lines[old - 1]),
                         hunk=hunk,
                     )
 

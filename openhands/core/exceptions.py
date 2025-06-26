@@ -82,9 +82,7 @@ class LLMNoActionError(Exception):
 # This exception gets sent back to the LLM
 # The LLM output did not include an action, or the action was not the expected type
 class LLMResponseError(Exception):
-    def __init__(
-        self, message: str = 'Failed to retrieve action from LLM response'
-    ) -> None:
+    def __init__(self, message: str = 'Failed to retrieve action from LLM response') -> None:
         super().__init__(message)
 
 
@@ -203,9 +201,7 @@ class AgentRuntimeNotFoundError(AgentRuntimeUnavailableError):
 
 
 class BrowserInitException(Exception):
-    def __init__(
-        self, message: str = 'Failed to initialize browser environment'
-    ) -> None:
+    def __init__(self, message: str = 'Failed to initialize browser environment') -> None:
         super().__init__(message)
 
 

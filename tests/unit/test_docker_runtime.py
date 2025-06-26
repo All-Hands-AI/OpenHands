@@ -104,9 +104,7 @@ def test_volumes_multiple_mounts():
     runtime = DockerRuntime.__new__(DockerRuntime)
     runtime.config = MagicMock()
     runtime.config.runtime_mount = None
-    runtime.config.sandbox.volumes = (
-        '/host/path1:/container/path1,/host/path2:/container/path2:ro'
-    )
+    runtime.config.sandbox.volumes = '/host/path1:/container/path1,/host/path2:/container/path2:ro'
     runtime.config.workspace_mount_path = '/host/path1'
     runtime.config.workspace_mount_path_in_sandbox = '/container/path1'
 
@@ -130,7 +128,9 @@ def test_multiple_volumes():
     # Create a DockerRuntime instance with a mock config
     runtime = DockerRuntime.__new__(DockerRuntime)
     runtime.config = MagicMock()
-    runtime.config.sandbox.volumes = '/host/path1:/container/path1,/host/path2:/container/path2,/host/path3:/container/path3:ro'
+    runtime.config.sandbox.volumes = (
+        '/host/path1:/container/path1,/host/path2:/container/path2,/host/path3:/container/path3:ro'
+    )
     runtime.config.workspace_mount_path = '/host/path1'
     runtime.config.workspace_mount_path_in_sandbox = '/container/path1'
 

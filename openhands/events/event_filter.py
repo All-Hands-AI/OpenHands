@@ -58,18 +58,10 @@ class EventFilter:
             if event.source is None or event.source.value != self.source:
                 return False
 
-        if (
-            self.start_date
-            and event.timestamp is not None
-            and event.timestamp < self.start_date
-        ):
+        if self.start_date and event.timestamp is not None and event.timestamp < self.start_date:
             return False
 
-        if (
-            self.end_date
-            and event.timestamp is not None
-            and event.timestamp > self.end_date
-        ):
+        if self.end_date and event.timestamp is not None and event.timestamp > self.end_date:
             return False
 
         if self.exclude_hidden and getattr(event, 'hidden', False):

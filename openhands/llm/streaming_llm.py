@@ -17,9 +17,7 @@ class StreamingLLM(AsyncLLM):
         self._async_streaming_completion = partial(
             self._call_acompletion,
             model=self.config.model,
-            api_key=self.config.api_key.get_secret_value()
-            if self.config.api_key
-            else None,
+            api_key=self.config.api_key.get_secret_value() if self.config.api_key else None,
             base_url=self.config.base_url,
             api_version=self.config.api_version,
             custom_llm_provider=self.config.custom_llm_provider,
@@ -60,9 +58,7 @@ class StreamingLLM(AsyncLLM):
 
             # if we have no messages, something went very wrong
             if not messages:
-                raise ValueError(
-                    'The messages list is empty. At least one message is required.'
-                )
+                raise ValueError('The messages list is empty. At least one message is required.')
 
             # Set reasoning effort for models that support it
             if self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS:
@@ -82,9 +78,7 @@ class StreamingLLM(AsyncLLM):
                         and self.config.on_cancel_requested_fn is not None
                         and await self.config.on_cancel_requested_fn()
                     ):
-                        raise UserCancelledError(
-                            'LLM request cancelled due to CANCELLED state'
-                        )
+                        raise UserCancelledError('LLM request cancelled due to CANCELLED state')
                     # with streaming, it is "delta", not "message"!
                     message_back = chunk['choices'][0]['delta'].get('content', '')
                     if message_back:

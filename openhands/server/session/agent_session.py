@@ -77,9 +77,7 @@ class AgentSession:
         self.file_store = file_store
         self._status_callback = status_callback
         self.user_id = user_id
-        self.logger = OpenHandsLoggerAdapter(
-            extra={'session_id': sid, 'user_id': user_id}
-        )
+        self.logger = OpenHandsLoggerAdapter(extra={'session_id': sid, 'user_id': user_id})
 
     async def start(
         self,
@@ -109,9 +107,7 @@ class AgentSession:
         - agent_configs:
         """
         if self.controller or self.runtime:
-            raise RuntimeError(
-                'Session already started. You need to close this session and start a new one.'
-            )
+            raise RuntimeError('Session already started. You need to close this session and start a new one.')
 
         if self._closed:
             self.logger.warning('Session closed before starting')
@@ -122,9 +118,7 @@ class AgentSession:
         finished = False  # For monitoring
         runtime_connected = False
         restored_state = False
-        custom_secrets_handler = UserSecrets(
-            custom_secrets=custom_secrets if custom_secrets else {}
-        )
+        custom_secrets_handler = UserSecrets(custom_secrets=custom_secrets if custom_secrets else {})
         try:
             self._create_security_analyzer(config.security.security_analyzer)
             runtime_connected = await self._create_runtime(
@@ -206,13 +200,9 @@ class AgentSession:
                 'restored_state': restored_state,
             }
             if success:
-                self.logger.info(
-                    f'Agent session start succeeded in {duration}s', extra=log_metadata
-                )
+                self.logger.info(f'Agent session start succeeded in {duration}s', extra=log_metadata)
             else:
-                self.logger.error(
-                    f'Agent session start failed in {duration}s', extra=log_metadata
-                )
+                self.logger.error(f'Agent session start failed in {duration}s', extra=log_metadata)
 
     async def close(self) -> None:
         """Closes the Agent session"""
@@ -220,14 +210,10 @@ class AgentSession:
             return
         self._closed = True
         while self._starting and should_continue():
-            self.logger.debug(
-                f'Waiting for initialization to finish before closing session {self.sid}'
-            )
+            self.logger.debug(f'Waiting for initialization to finish before closing session {self.sid}')
             await asyncio.sleep(WAIT_TIME_BEFORE_CLOSE_INTERVAL)
             if time.time() <= self._started_at + WAIT_TIME_BEFORE_CLOSE:
-                self.logger.error(
-                    f'Waited too long for initialization to finish before closing session {self.sid}'
-                )
+                self.logger.error(f'Waited too long for initialization to finish before closing session {self.sid}')
                 break
         if self.event_stream is not None:
             self.event_stream.close()
@@ -279,9 +265,9 @@ class AgentSession:
 
         if security_analyzer:
             self.logger.debug(f'Using security analyzer: {security_analyzer}')
-            self.security_analyzer = options.SecurityAnalyzers.get(
-                security_analyzer, SecurityAnalyzer
-            )(self.event_stream)
+            self.security_analyzer = options.SecurityAnalyzers.get(security_analyzer, SecurityAnalyzer)(
+                self.event_stream
+            )
 
     def override_provider_tokens_with_custom_secret(
         self,
@@ -330,9 +316,7 @@ class AgentSession:
         if runtime_cls == RemoteRuntime:
             # If provider tokens is passed in custom secrets, then remove provider from provider tokens
             # We prioritize provider tokens set in custom secrets
-            overrided_tokens = self.override_provider_tokens_with_custom_secret(
-                git_provider_tokens, custom_secrets
-            )
+            overrided_tokens = self.override_provider_tokens_with_custom_secret(git_provider_tokens, custom_secrets)
 
             self.runtime = runtime_cls(
                 config=config,
@@ -348,8 +332,7 @@ class AgentSession:
             )
         else:
             provider_handler = ProviderHandler(
-                provider_tokens=git_provider_tokens
-                or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({}))
+                provider_tokens=git_provider_tokens or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({}))
             )
 
             # Merge git provider tokens with custom secrets before passing over to runtime
@@ -376,20 +359,14 @@ class AgentSession:
         except AgentRuntimeUnavailableError as e:
             self.logger.error(f'Runtime initialization failed: {e}')
             if self._status_callback:
-                self._status_callback(
-                    'error', 'STATUS$ERROR_RUNTIME_DISCONNECTED', str(e)
-                )
+                self._status_callback('error', 'STATUS$ERROR_RUNTIME_DISCONNECTED', str(e))
             return False
 
-        await self.runtime.clone_or_init_repo(
-            git_provider_tokens, selected_repository, selected_branch
-        )
+        await self.runtime.clone_or_init_repo(git_provider_tokens, selected_repository, selected_branch)
         await call_sync_from_async(self.runtime.maybe_run_setup_script)
         await call_sync_from_async(self.runtime.maybe_setup_git_hooks)
 
-        self.logger.debug(
-            f'Runtime initialized with plugins: {[plugin.name for plugin in self.runtime.plugins]}'
-        )
+        self.logger.debug(f'Runtime initialized with plugins: {[plugin.name for plugin in self.runtime.plugins]}')
         return True
 
     def _create_controller(
@@ -419,9 +396,7 @@ class AgentSession:
         if self.controller is not None:
             raise RuntimeError('Controller already created')
         if self.runtime is None:
-            raise RuntimeError(
-                'Runtime must be initialized before the agent controller'
-            )
+            raise RuntimeError('Runtime must be initialized before the agent controller')
 
         msg = (
             '\n--------------------------------- OpenHands Configuration ---------------------------------\n'
@@ -490,9 +465,7 @@ class AgentSession:
         # Use a heuristic to figure out if we should have a state:
         # if we have events in the stream.
         try:
-            restored_state = State.restore_from_session(
-                self.sid, self.file_store, self.user_id
-            )
+            restored_state = State.restore_from_session(self.sid, self.file_store, self.user_id)
             self.logger.debug(f'Restored state from session, sid: {self.sid}')
         except Exception as e:
             if self.event_stream.get_latest_event_id() > 0:

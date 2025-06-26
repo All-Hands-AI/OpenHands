@@ -27,9 +27,7 @@ def get_all_sub_trees(root_node):
     while len(node_stack) != 0:
         cur_node, cur_depth = node_stack.pop()
         if cur_node.child_count > 0:
-            sub_tree_sexp_list.append(
-                [cur_node.sexp(), cur_depth, cur_node, cur_node.children[0].text]
-            )
+            sub_tree_sexp_list.append([cur_node.sexp(), cur_depth, cur_node, cur_node.children[0].text])
         else:
             sub_tree_sexp_list.append([cur_node.sexp(), cur_depth, cur_node, None])
         for child_node in cur_node.children:

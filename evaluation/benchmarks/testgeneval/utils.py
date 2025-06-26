@@ -40,9 +40,7 @@ def get_test_directives(instance: TestGenEvalInstance) -> list:
     return directives
 
 
-def load_testgeneval_dataset(
-    name='kjain14/testgeneval', split='test', ids=None
-) -> list[TestGenEvalInstance]:
+def load_testgeneval_dataset(name='kjain14/testgeneval', split='test', ids=None) -> list[TestGenEvalInstance]:
     """
     Load SWE-bench dataset from Hugging Face Datasets or local .json/.jsonl file
     """
@@ -63,11 +61,6 @@ def load_testgeneval_dataset(
         dataset_ids = {instance['id'] for instance in dataset}
     if ids:
         if ids - dataset_ids:
-            raise ValueError(
-                (
-                    'Some instance IDs not found in dataset!'
-                    f'\nMissing IDs:\n{" ".join(ids - dataset_ids)}'
-                )
-            )
+            raise ValueError((f'Some instance IDs not found in dataset!\nMissing IDs:\n{" ".join(ids - dataset_ids)}'))
         dataset = [instance for instance in dataset if instance['id'] in ids]
     return [cast(TestGenEvalInstance, instance) for instance in dataset]

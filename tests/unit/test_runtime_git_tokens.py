@@ -22,9 +22,7 @@ class TestRuntime(Runtime):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.run_action_calls = []
-        self._execute_shell_fn_git_handler = MagicMock(
-            return_value=MagicMock(exit_code=0, stdout='', stderr='')
-        )
+        self._execute_shell_fn_git_handler = MagicMock(return_value=MagicMock(exit_code=0, stdout='', stderr=''))
 
     async def connect(self):
         pass
@@ -69,9 +67,7 @@ class TestRuntime(Runtime):
     def edit(self, action):
         return NullObservation(content='')
 
-    def get_mcp_config(
-        self, extra_stdio_servers: list[MCPStdioServerConfig] | None = None
-    ):
+    def get_mcp_config(self, extra_stdio_servers: list[MCPStdioServerConfig] | None = None):
         return MCPConfig()
 
 
@@ -84,9 +80,7 @@ def temp_dir(tmp_path_factory: pytest.TempPathFactory) -> str:
 def runtime(temp_dir):
     """Fixture for runtime testing"""
     config = OpenHandsConfig()
-    git_provider_tokens = MappingProxyType(
-        {ProviderType.GITHUB: ProviderToken(token=SecretStr('test_token'))}
-    )
+    git_provider_tokens = MappingProxyType({ProviderType.GITHUB: ProviderToken(token=SecretStr('test_token'))})
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
     runtime = TestRuntime(
@@ -100,16 +94,12 @@ def runtime(temp_dir):
 
 
 def mock_repo_and_patch(monkeypatch, provider=ProviderType.GITHUB, is_public=True):
-    repo = Repository(
-        id='123', full_name='owner/repo', git_provider=provider, is_public=is_public
-    )
+    repo = Repository(id='123', full_name='owner/repo', git_provider=provider, is_public=is_public)
 
     async def mock_verify_repo_provider(*_args, **_kwargs):
         return repo
 
-    monkeypatch.setattr(
-        ProviderHandler, 'verify_repo_provider', mock_verify_repo_provider
-    )
+    monkeypatch.setattr(ProviderHandler, 'verify_repo_provider', mock_verify_repo_provider)
     return repo
 
 
@@ -137,9 +127,7 @@ async def test_export_latest_git_provider_tokens_no_token_ref(temp_dir):
     config = OpenHandsConfig()
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
-    runtime = TestRuntime(
-        config=config, event_stream=event_stream, sid='test', user_id='test_user'
-    )
+    runtime = TestRuntime(config=config, event_stream=event_stream, sid='test', user_id='test_user')
 
     # Create a command that doesn't reference any tokens
     cmd = CmdRunAction(command='echo "hello"')
@@ -224,9 +212,7 @@ async def test_clone_or_init_repo_no_repo_with_user_id(temp_dir):
     config = OpenHandsConfig()
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
-    runtime = TestRuntime(
-        config=config, event_stream=event_stream, sid='test', user_id='test_user'
-    )
+    runtime = TestRuntime(config=config, event_stream=event_stream, sid='test', user_id='test_user')
 
     # Call the function with no repository
     result = await runtime.clone_or_init_repo(None, None, None)
@@ -248,9 +234,7 @@ async def test_clone_or_init_repo_no_repo_no_user_id_no_workspace_base(temp_dir)
     config.workspace_base = None  # Ensure workspace_base is not set
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
-    runtime = TestRuntime(
-        config=config, event_stream=event_stream, sid='test', user_id=None
-    )
+    runtime = TestRuntime(config=config, event_stream=event_stream, sid='test', user_id=None)
 
     # Call the function with no repository
     result = await runtime.clone_or_init_repo(None, None, None)
@@ -272,9 +256,7 @@ async def test_clone_or_init_repo_no_repo_no_user_id_with_workspace_base(temp_di
     config.workspace_base = '/some/path'  # Set workspace_base
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
-    runtime = TestRuntime(
-        config=config, event_stream=event_stream, sid='test', user_id=None
-    )
+    runtime = TestRuntime(config=config, event_stream=event_stream, sid='test', user_id=None)
 
     # Call the function with no repository
     result = await runtime.clone_or_init_repo(None, None, None)
@@ -290,9 +272,7 @@ async def test_clone_or_init_repo_auth_error(temp_dir):
     config = OpenHandsConfig()
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
-    runtime = TestRuntime(
-        config=config, event_stream=event_stream, sid='test', user_id='test_user'
-    )
+    runtime = TestRuntime(config=config, event_stream=event_stream, sid='test', user_id='test_user')
 
     # Mock the verify_repo_provider method to raise AuthenticationError
     with patch.object(
@@ -305,9 +285,7 @@ async def test_clone_or_init_repo_auth_error(temp_dir):
             await runtime.clone_or_init_repo(None, 'owner/repo', None)
 
         # Verify the error message
-        assert 'Git provider authentication issue when getting remote URL' in str(
-            excinfo.value
-        )
+        assert 'Git provider authentication issue when getting remote URL' in str(excinfo.value)
 
 
 @pytest.mark.asyncio
@@ -317,9 +295,7 @@ async def test_clone_or_init_repo_github_with_token(temp_dir, monkeypatch):
     event_stream = EventStream('abc', file_store)
 
     github_token = 'github_test_token'
-    git_provider_tokens = MappingProxyType(
-        {ProviderType.GITHUB: ProviderToken(token=SecretStr(github_token))}
-    )
+    git_provider_tokens = MappingProxyType({ProviderType.GITHUB: ProviderToken(token=SecretStr(github_token))})
 
     runtime = TestRuntime(
         config=config,
@@ -340,9 +316,7 @@ async def test_clone_or_init_repo_github_with_token(temp_dir, monkeypatch):
 
     # Check that the first command is the git clone with the correct URL format with token
     clone_cmd = runtime.run_action_calls[0].command
-    assert (
-        f'git clone https://{github_token}@github.com/owner/repo.git repo' in clone_cmd
-    )
+    assert f'git clone https://{github_token}@github.com/owner/repo.git repo' in clone_cmd
 
     # Check that the second command is the checkout
     checkout_cmd = runtime.run_action_calls[1].command
@@ -359,9 +333,7 @@ async def test_clone_or_init_repo_github_no_token(temp_dir, monkeypatch):
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
 
-    runtime = TestRuntime(
-        config=config, event_stream=event_stream, sid='test', user_id='test_user'
-    )
+    runtime = TestRuntime(config=config, event_stream=event_stream, sid='test', user_id='test_user')
 
     mock_repo_and_patch(monkeypatch, provider=ProviderType.GITHUB)
     result = await runtime.clone_or_init_repo(None, 'owner/repo', None)
@@ -390,9 +362,7 @@ async def test_clone_or_init_repo_gitlab_with_token(temp_dir, monkeypatch):
     event_stream = EventStream('abc', file_store)
 
     gitlab_token = 'gitlab_test_token'
-    git_provider_tokens = MappingProxyType(
-        {ProviderType.GITLAB: ProviderToken(token=SecretStr(gitlab_token))}
-    )
+    git_provider_tokens = MappingProxyType({ProviderType.GITLAB: ProviderToken(token=SecretStr(gitlab_token))})
 
     runtime = TestRuntime(
         config=config,
@@ -413,10 +383,7 @@ async def test_clone_or_init_repo_gitlab_with_token(temp_dir, monkeypatch):
 
     # Check that the first command is the git clone with the correct URL format with token
     clone_cmd = runtime.run_action_calls[0].command
-    assert (
-        f'git clone https://oauth2:{gitlab_token}@gitlab.com/owner/repo.git repo'
-        in clone_cmd
-    )
+    assert f'git clone https://oauth2:{gitlab_token}@gitlab.com/owner/repo.git repo' in clone_cmd
 
     # Check that the second command is the checkout
     checkout_cmd = runtime.run_action_calls[1].command
@@ -433,9 +400,7 @@ async def test_clone_or_init_repo_with_branch(temp_dir, monkeypatch):
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
 
-    runtime = TestRuntime(
-        config=config, event_stream=event_stream, sid='test', user_id='test_user'
-    )
+    runtime = TestRuntime(config=config, event_stream=event_stream, sid='test', user_id='test_user')
 
     mock_repo_and_patch(monkeypatch, provider=ProviderType.GITHUB)
     result = await runtime.clone_or_init_repo(None, 'owner/repo', 'feature-branch')

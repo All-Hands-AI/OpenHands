@@ -38,9 +38,7 @@ def process_report(oh_output_file):
             succ += 1
         else:
             fail += 1
-            print(
-                f'{instance_id}: file mismatch, gold = {gold_modified_files}, generated = {generated_modified_files}'
-            )
+            print(f'{instance_id}: file mismatch, gold = {gold_modified_files}, generated = {generated_modified_files}')
     print(
         f'\nSUMMARY: {succ} out of {succ + fail} instances found correct files to edit, success rate = {succ / float(succ + fail)}'
     )

@@ -55,23 +55,16 @@ def load_file_upload_config(
 
     # Sanity check for max_file_size_mb
     if not isinstance(max_file_size_mb, int) or max_file_size_mb < 0:
-        logger.warning(
-            f'Invalid max_file_size_mb: {max_file_size_mb}. Setting to 0 (no limit).'
-        )
+        logger.warning(f'Invalid max_file_size_mb: {max_file_size_mb}. Setting to 0 (no limit).')
         max_file_size_mb = 0
 
     # Sanity check for allowed_extensions
     if not isinstance(allowed_extensions, (list, set)) or not allowed_extensions:
-        logger.warning(
-            f'Invalid allowed_extensions: {allowed_extensions}. Setting to [".*"].'
-        )
+        logger.warning(f'Invalid allowed_extensions: {allowed_extensions}. Setting to [".*"].')
         allowed_extensions = ['.*']
     else:
         # Ensure all extensions start with a dot and are lowercase
-        allowed_extensions = [
-            ext.lower() if ext.startswith('.') else f'.{ext.lower()}'
-            for ext in allowed_extensions
-        ]
+        allowed_extensions = [ext.lower() if ext.startswith('.') else f'.{ext.lower()}' for ext in allowed_extensions]
 
     # If restrictions are disabled, allow all
     if not restrict_file_types:

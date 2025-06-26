@@ -86,9 +86,7 @@ def get_config(
     return config
 
 
-def get_dv_query_for_real(
-    datasets, question, domain_knowledge=None, workflow_tags=None
-):
+def get_dv_query_for_real(datasets, question, domain_knowledge=None, workflow_tags=None):
     """
     Prepare a structured query for the agent to execute on the specified datasets.
 
@@ -193,17 +191,13 @@ def complete_runtime(state: State):
 
     if last_agent_finish_action is not None:
         final_message_1 = last_agent_finish_action.thought
-        gen_hypo_1, gen_workflow_1, error_1 = extract_gen_hypo_from_logs(
-            final_message_1
-        )
+        gen_hypo_1, gen_workflow_1, error_1 = extract_gen_hypo_from_logs(final_message_1)
     else:
         gen_hypo_1, gen_workflow_1, error_1 = '', '', ''
 
     if last_agent_message_action is not None:
         final_message_2 = last_agent_message_action.content
-        gen_hypo_2, gen_workflow_2, error_2 = extract_gen_hypo_from_logs(
-            final_message_2
-        )
+        gen_hypo_2, gen_workflow_2, error_2 = extract_gen_hypo_from_logs(final_message_2)
     else:
         gen_hypo_2, gen_workflow_2, error_2 = '', '', ''
 
@@ -290,9 +284,7 @@ def process_instance(
             config=config,
             initial_user_action=MessageAction(content=instruction),
             runtime=runtime,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
-                metadata.agent_class
-            ),
+            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(metadata.agent_class),
         )
     )
 

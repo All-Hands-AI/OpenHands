@@ -54,9 +54,7 @@ logger.info(f'Using docker image prefix: {DOCKER_IMAGE_PREFIX}')
 
 def get_config(instance: pd.Series) -> OpenHandsConfig:
     base_container_image = get_instance_docker_image(instance['instance_id_swebench'])
-    assert base_container_image, (
-        f'Invalid container image for instance {instance["instance_id_swebench"]}.'
-    )
+    assert base_container_image, f'Invalid container image for instance {instance["instance_id_swebench"]}.'
     logger.info(f'Using instance container image: {base_container_image}.')
     return OpenHandsConfig(
         run_as_openhands=False,
@@ -66,9 +64,7 @@ def get_config(instance: pd.Series) -> OpenHandsConfig:
             use_host_network=False,
             timeout=1800,
             api_key=os.environ.get('ALLHANDS_API_KEY'),
-            remote_runtime_api_url=os.environ.get(
-                'SANDBOX_REMOTE_RUNTIME_API_URL', 'http://localhost:8000'
-            ),
+            remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL', 'http://localhost:8000'),
         ),
         workspace_base=None,
         workspace_mount_path=None,
@@ -148,9 +144,7 @@ def run_tests(runtime, instance, test_script, log_file='/tmp/test_output.log'):
     return test_obs.exit_code, test_obs.content, elapsed_time
 
 
-def run_mutation_testing(
-    runtime, instance, mutation_script, log_file='/tmp/mutation_output.log'
-):
+def run_mutation_testing(runtime, instance, mutation_script, log_file='/tmp/mutation_output.log'):
     action = CmdRunAction(command=f'bash {mutation_script} > {log_file} 2>&1 & echo $!')
     action.set_hard_timeout(60)
     obs = runtime.run_action(action)
@@ -183,15 +177,11 @@ def run_mutation_testing(
     mutation_action = CmdRunAction(command=f'cat {log_file}')
     mutation_action.set_hard_timeout(300)
     mutation_obs = runtime.run_action(mutation_action)
-    assert isinstance(mutation_obs, CmdOutputObservation), (
-        'Failed to retrieve mutation output.'
-    )
+    assert isinstance(mutation_obs, CmdOutputObservation), 'Failed to retrieve mutation output.'
     return mutation_obs.exit_code, mutation_obs.content
 
 
-def grade_test_output(
-    test_suite: str, instance: pd.Series, test_output: str, test_spec: TestSpec, runtime
-):
+def grade_test_output(test_suite: str, instance: pd.Series, test_output: str, test_spec: TestSpec, runtime):
     """
     Two-pass test grading with short-circuiting:
     1. Run all tests to identify passing/failing tests
@@ -220,9 +210,7 @@ def grade_test_output(
         )
 
     logger.info('Calling filter unit tests')
-    filtered_content, passing_tests, failing_tests = filter_tests(
-        test_suite, unit_test_output, test_spec.repo
-    )
+    filtered_content, passing_tests, failing_tests = filter_tests(test_suite, unit_test_output, test_spec.repo)
 
     total_tests = len(passing_tests) + len(failing_tests)
     test_stats = {
@@ -294,9 +282,7 @@ def process_instance(
         AssertionError: if the `reset_logger` flag is set without a provided log directory.
     """
     if reset_logger:
-        assert log_dir is not None, (
-            "Can't reset logger without a provided log directory."
-        )
+        assert log_dir is not None, "Can't reset logger without a provided log directory."
         os.makedirs(log_dir, exist_ok=True)
         reset_logger_for_multiprocessing(logger, instance.instance_id, log_dir)
     else:
@@ -342,14 +328,10 @@ def process_instance(
 
     if instance['test_suite'] == '' or instance['test_suite'] is None:
         instance['test_result']['report']['empty_generation'] = True
-        return EvalOutput(
-            instance_id=instance.instance_id, test_result=instance['test_result']
-        )
+        return EvalOutput(instance_id=instance.instance_id, test_result=instance['test_result'])
 
     if not args.skip_lexical:
-        lexical_metrics = compute_lexical_metrics(
-            instance['test_suite'], instance['instance']['test_src']
-        )
+        lexical_metrics = compute_lexical_metrics(instance['test_suite'], instance['instance']['test_src'])
         instance['test_result']['lexical'] = lexical_metrics
 
     test_suite = instance['test_suite']
@@ -380,8 +362,8 @@ def process_instance(
         _, test_output, test_time = run_tests(runtime, instance, '/tmp/test.sh')
 
         # Grade tests with two-pass approach
-        coverage_success, coverage, unit_test_output, coverage_output, test_stats = (
-            grade_test_output(test_suite, instance, test_output, test_spec, runtime)
+        coverage_success, coverage, unit_test_output, coverage_output, test_stats = grade_test_output(
+            test_suite, instance, test_output, test_spec, runtime
         )
 
         # Update report with test statistics
@@ -398,12 +380,7 @@ def process_instance(
         )
 
         # Only run mutation testing if we have passing tests and coverage
-        if (
-            not args.skip_mutation
-            and coverage_success
-            and test_stats['any_pass']
-            and coverage > 0
-        ):
+        if not args.skip_mutation and coverage_success and test_stats['any_pass'] and coverage > 0:
             mutation_timeout = max(10, 1.5 * test_time)
             mutation_toml = MUTATION_TEMPLATE.format(
                 test_cmd=test_spec.test_cmd,
@@ -419,9 +396,7 @@ def process_instance(
 
             run_command(runtime, 'cp /tmp/mutation.toml /testbed/mutation.toml')
 
-            mutation_code, mutation_output = run_mutation_testing(
-                runtime, instance, '/tmp/mutation.sh'
-            )
+            mutation_code, mutation_output = run_mutation_testing(runtime, instance, '/tmp/mutation.sh')
             # instance['test_result']['report']['mutation_output'] = mutation_output
             if mutation_output and mutation_code == 0:
                 (
@@ -433,13 +408,9 @@ def process_instance(
                 instance['test_result']['report']['num_mutants'] = num_mutants
                 instance['test_result']['report']['mutation_success'] = mutation_success
                 instance['test_result']['report']['mutation_score'] = mutation_score
-                instance['test_result']['report']['mutation_error_interval'] = (
-                    mutation_confidence_interval
-                )
+                instance['test_result']['report']['mutation_error_interval'] = mutation_confidence_interval
 
-        return EvalOutput(
-            instance_id=instance.instance_id, test_result=instance['test_result']
-        )
+        return EvalOutput(instance_id=instance.instance_id, test_result=instance['test_result'])
     except Exception as e:
         logger.error(f'Error processing instance {instance.instance_id}: {e}')
         raise RuntimeError(
@@ -465,15 +436,11 @@ def count_and_log_fields(evaluated_predictions, fields, key):
 
     def count_field(row, field):
         value = row['test_result'][key][field]
-        return (
-            value if value != -1 else None
-        )  # Ignore -1 fields by treating them as None
+        return value if value != -1 else None  # Ignore -1 fields by treating them as None
 
     for field in fields:
         # Extract the valid values for the field, ignoring -1
-        valid_values = evaluated_predictions.apply(
-            count_field, args=(field,), axis=1
-        ).dropna()
+        valid_values = evaluated_predictions.apply(count_field, args=(field,), axis=1).dropna()
 
         if valid_values.empty:  # If all values are -1
             logger.info(f'# {field}: -1 (All values are -1)')
@@ -485,24 +452,16 @@ def count_and_log_fields(evaluated_predictions, fields, key):
 
 if __name__ == '__main__':
     parser = get_parser()
-    parser.add_argument(
-        '--input-file', type=str, required=True, help='Path to input predictions file'
-    )
+    parser.add_argument('--input-file', type=str, required=True, help='Path to input predictions file')
     parser.add_argument(
         '--dataset',
         type=str,
         default='kjain14/testgeneval',
         help='Dataset to evaluate on',
     )
-    parser.add_argument(
-        '--split', type=str, default='test', help='Split to evaluate on'
-    )
-    parser.add_argument(
-        '--skip_mutation', action='store_true', help='Skip mutation testing'
-    )
-    parser.add_argument(
-        '--skip_lexical', action='store_true', help='Skip lexical metrics'
-    )
+    parser.add_argument('--split', type=str, default='test', help='Split to evaluate on')
+    parser.add_argument('--skip_mutation', action='store_true', help='Skip mutation testing')
+    parser.add_argument('--skip_lexical', action='store_true', help='Skip lexical metrics')
     parser.add_argument(
         '--mutation_timeout',
         type=int,
@@ -517,58 +476,37 @@ if __name__ == '__main__':
     )
     args, _ = parser.parse_known_args()
 
-    dataset: list[TestGenEvalInstance] = load_testgeneval_dataset(
-        args.dataset, args.split
-    )
+    dataset: list[TestGenEvalInstance] = load_testgeneval_dataset(args.dataset, args.split)
 
-    logger.info(
-        f'Loaded dataset {args.dataset} with split {args.split} to run inference on.'
-    )
+    logger.info(f'Loaded dataset {args.dataset} with split {args.split} to run inference on.')
 
     # Load predictions
     assert args.input_file.endswith('.jsonl'), 'Input file must be a jsonl file.'
     predictions = pd.read_json(args.input_file, lines=True)
-    assert 'instance_id' in predictions.columns, (
-        'Input file must contain instance_id column.'
-    )
+    assert 'instance_id' in predictions.columns, 'Input file must contain instance_id column.'
 
     if 'test_suite' not in predictions.columns and (
-        'test_result' in predictions.columns
-        and 'test_suite' in predictions['test_result'].iloc(0)
+        'test_result' in predictions.columns and 'test_suite' in predictions['test_result'].iloc(0)
     ):
-        raise ValueError(
-            'Input file must contain test_suite column OR test_result column with test_suite field.'
-        )
+        raise ValueError('Input file must contain test_suite column OR test_result column with test_suite field.')
 
     if 'instance_id_swebench' not in predictions.columns:
-        predictions['instance_id_swebench'] = predictions['instance'].apply(
-            lambda x: x['instance_id_swebench']
-        )
+        predictions['instance_id_swebench'] = predictions['instance'].apply(lambda x: x['instance_id_swebench'])
 
-    if 'instance_id' not in predictions.columns and (
-        'instance_id' in predictions['instance'].iloc(0)
-    ):
-        raise ValueError(
-            'Input file must contain id column OR instance column with id field.'
-        )
+    if 'instance_id' not in predictions.columns and ('instance_id' in predictions['instance'].iloc(0)):
+        raise ValueError('Input file must contain id column OR instance column with id field.')
 
     if 'instance_id' not in predictions.columns:
-        predictions['instance_id'] = predictions['instance'].apply(
-            lambda x: x['instance_id']
-        )
+        predictions['instance_id'] = predictions['instance'].apply(lambda x: x['instance_id'])
 
     if 'test_suite' not in predictions.columns:
-        predictions['test_suite'] = predictions['test_result'].apply(
-            lambda x: x['test_suite']
-        )
+        predictions['test_suite'] = predictions['test_result'].apply(lambda x: x['test_suite'])
 
-    assert len(predictions['instance_id'].unique()) == len(predictions), (
-        'instance_id column must be unique.'
+    assert len(predictions['instance_id'].unique()) == len(predictions), 'instance_id column must be unique.'
+
+    assert {'instance_id_swebench', 'test_suite', 'instance_id'}.issubset(set(predictions.columns)), (
+        'Input file must contain id, instance_id and test_suite columns.'
     )
-
-    assert {'instance_id_swebench', 'test_suite', 'instance_id'}.issubset(
-        set(predictions.columns)
-    ), 'Input file must contain id, instance_id and test_suite columns.'
 
     predictions['test_spec'] = predictions['instance'].apply(
         lambda x: make_test_spec(x, args.mutation_timeout, args.mutation_buffer)
@@ -587,9 +525,7 @@ if __name__ == '__main__':
 
     # The evaluation harness constrains the signature of `process_instance_func` but we need to
     # pass extra information. Build a new function object to avoid issues with multiprocessing.
-    process_instance_func = partial(
-        process_instance, log_dir=output_file.replace('.jsonl', '.logs')
-    )
+    process_instance_func = partial(process_instance, log_dir=output_file.replace('.jsonl', '.logs'))
 
     run_evaluation(
         instances,

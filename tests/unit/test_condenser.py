@@ -40,9 +40,7 @@ from openhands.memory.condenser.impl import (
 from openhands.memory.condenser.impl.pipeline import CondenserPipeline
 
 
-def create_test_event(
-    message: str, timestamp: datetime | None = None, id: int | None = None
-) -> Event:
+def create_test_event(message: str, timestamp: datetime | None = None, id: int | None = None) -> Event:
     """Create a simple test event."""
     event = Event()
     event._message = message
@@ -59,9 +57,7 @@ def mock_llm() -> LLM:
     # Create a MagicMock for the LLM object
     mock_llm = MagicMock(
         spec=LLM,
-        config=MagicMock(
-            spec=LLMConfig, model='gpt-4o', api_key='test_key', custom_llm_provider=None
-        ),
+        config=MagicMock(spec=LLMConfig, model='gpt-4o', api_key='test_key', custom_llm_provider=None),
         metrics=MagicMock(),
     )
     _mock_content = None
@@ -387,9 +383,7 @@ def test_llm_summarizing_condenser_keeps_first_and_summary_events(mock_llm):
     """Test that the LLM summarizing condenser appropriately maintains the event prefix and any summary events."""
     max_size = 10
     keep_first = 3
-    condenser = LLMSummarizingCondenser(
-        max_size=max_size, keep_first=keep_first, llm=mock_llm
-    )
+    condenser = LLMSummarizingCondenser(max_size=max_size, keep_first=keep_first, llm=mock_llm)
 
     mock_llm.set_mock_response_content('Summary of forgotten events')
 
@@ -400,9 +394,7 @@ def test_llm_summarizing_condenser_keeps_first_and_summary_events(mock_llm):
         assert len(view) == harness.expected_size(i, max_size)
 
         # Ensure that the we've called out the summarizing LLM once per condensation
-        assert mock_llm.completion.call_count == harness.expected_condensations(
-            i, max_size
-        )
+        assert mock_llm.completion.call_count == harness.expected_condensations(i, max_size)
 
         # Ensure that the prefix is appropiately maintained
         assert view[:keep_first] == events[: min(keep_first, i + 1)]
@@ -416,9 +408,7 @@ def test_amortized_forgetting_condenser_from_config():
     """Test that AmortizedForgettingCondenser objects can be made from config."""
     max_size = 50
     keep_first = 10
-    config = AmortizedForgettingCondenserConfig(
-        max_size=max_size, keep_first=keep_first
-    )
+    config = AmortizedForgettingCondenserConfig(max_size=max_size, keep_first=keep_first)
     condenser = Condenser.from_config(config)
 
     assert isinstance(condenser, AmortizedForgettingCondenser)
@@ -522,9 +512,7 @@ def test_llm_attention_condenser_gives_expected_view_size(mock_llm):
 
     def set_response_content(history: list[Event]):
         mock_llm.set_mock_response_content(
-            ImportantEventSelection(
-                ids=[event.id for event in history]
-            ).model_dump_json()
+            ImportantEventSelection(ids=[event.id for event in history]).model_dump_json()
         )
 
     harness = RollingCondenserTestHarness(condenser)
@@ -543,9 +531,7 @@ def test_llm_attention_condenser_handles_events_outside_history(mock_llm):
 
     def set_response_content(history: list[Event]):
         mock_llm.set_mock_response_content(
-            ImportantEventSelection(
-                ids=[event.id for event in history] + [-1, -2, -3, -4]
-            ).model_dump_json()
+            ImportantEventSelection(ids=[event.id for event in history] + [-1, -2, -3, -4]).model_dump_json()
         )
 
     harness = RollingCondenserTestHarness(condenser)
@@ -586,9 +572,7 @@ def test_llm_attention_condenser_handles_too_few_events(mock_llm):
     events = [create_test_event(f'Event {i}', id=i) for i in range(max_size * 10)]
 
     def set_response_content(history: list[Event]):
-        mock_llm.set_mock_response_content(
-            ImportantEventSelection(ids=[]).model_dump_json()
-        )
+        mock_llm.set_mock_response_content(ImportantEventSelection(ids=[]).model_dump_json())
 
     harness = RollingCondenserTestHarness(condenser)
     harness.add_callback(set_response_content)
@@ -601,16 +585,12 @@ def test_llm_attention_condenser_handles_keep_first_events(mock_llm):
     """Test that LLMAttentionCondenser works when keep_first=1 is allowed (must be less than half of max_size)."""
     max_size = 12
     keep_first = 4
-    condenser = LLMAttentionCondenser(
-        max_size=max_size, keep_first=keep_first, llm=mock_llm
-    )
+    condenser = LLMAttentionCondenser(max_size=max_size, keep_first=keep_first, llm=mock_llm)
 
     events = [create_test_event(f'Event {i}', id=i) for i in range(max_size * 10)]
 
     def set_response_content(history: list[Event]):
-        mock_llm.set_mock_response_content(
-            ImportantEventSelection(ids=[]).model_dump_json()
-        )
+        mock_llm.set_mock_response_content(ImportantEventSelection(ids=[]).model_dump_json())
 
     harness = RollingCondenserTestHarness(condenser)
     harness.add_callback(set_response_content)
@@ -665,9 +645,7 @@ def test_structured_summary_condenser_invalid_config():
     # If all other parameters are good but there's no function calling the
     # condenser still counts as improperly configured.
     llm.is_function_calling_active.return_value = False
-    pytest.raises(
-        ValueError, StructuredSummaryCondenser, llm=llm, max_size=40, keep_first=2
-    )
+    pytest.raises(ValueError, StructuredSummaryCondenser, llm=llm, max_size=40, keep_first=2)
 
 
 def test_structured_summary_condenser_gives_expected_view_size(mock_llm):
@@ -690,9 +668,7 @@ def test_structured_summary_condenser_keeps_first_and_summary_events(mock_llm):
     """Test that the StructuredSummaryCondenser appropriately maintains the event prefix and any summary events."""
     max_size = 10
     keep_first = 3
-    condenser = StructuredSummaryCondenser(
-        max_size=max_size, keep_first=keep_first, llm=mock_llm
-    )
+    condenser = StructuredSummaryCondenser(max_size=max_size, keep_first=keep_first, llm=mock_llm)
 
     mock_llm.set_mock_response_content('Summary of forgotten events')
 
@@ -703,9 +679,7 @@ def test_structured_summary_condenser_keeps_first_and_summary_events(mock_llm):
         assert len(view) == harness.expected_size(i, max_size)
 
         # Ensure that the we've called out the summarizing LLM once per condensation
-        assert mock_llm.completion.call_count == harness.expected_condensations(
-            i, max_size
-        )
+        assert mock_llm.completion.call_count == harness.expected_condensations(i, max_size)
 
         # Ensure that the prefix is appropiately maintained
         assert view[:keep_first] == events[: min(keep_first, i + 1)]
@@ -750,9 +724,7 @@ def test_condenser_pipeline_chains_sub_condensers():
 
     harness = RollingCondenserTestHarness(condenser)
     events = [
-        BrowserOutputObservation(
-            f'Observation {i}', url='', trigger_by_action=ActionType.BROWSE
-        )
+        BrowserOutputObservation(f'Observation {i}', url='', trigger_by_action=ActionType.BROWSE)
         if i % 3 == 0
         else create_test_event(f'Event {i}')
         for i in range(0, MAX_SIZE * NUMBER_OF_CONDENSATIONS)
@@ -768,11 +740,7 @@ def test_condenser_pipeline_chains_sub_condensers():
         # to the number of browser outputs in the view, not the whole view or
         # the event stream).
         browser_outputs = [
-            event
-            for event in view
-            if isinstance(
-                event, (BrowserOutputObservation, AgentCondensationObservation)
-            )
+            event for event in view if isinstance(event, (BrowserOutputObservation, AgentCondensationObservation))
         ]
 
         for event in browser_outputs[:-ATTENTION_WINDOW]:

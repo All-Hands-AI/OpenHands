@@ -64,13 +64,9 @@ class InvariantAnalyzer(SecurityAnalyzer):
                 exc_info=False,
             )
             raise ex
-        running_containers = self.docker_client.containers.list(
-            filters={'name': self.container_name}
-        )
+        running_containers = self.docker_client.containers.list(filters={'name': self.container_name})
         if not running_containers:
-            all_containers = self.docker_client.containers.list(
-                all=True, filters={'name': self.container_name}
-            )
+            all_containers = self.docker_client.containers.list(all=True, filters={'name': self.container_name})
             if all_containers:
                 self.container = all_containers[0]
                 all_containers[0].start()
@@ -90,15 +86,11 @@ class InvariantAnalyzer(SecurityAnalyzer):
         while self.container.status != 'running':
             self.container = self.docker_client.containers.get(self.container_name)
             elapsed += 1
-            logger.debug(
-                f'waiting for container to start: {elapsed}, container status: {self.container.status}'
-            )
+            logger.debug(f'waiting for container to start: {elapsed}, container status: {self.container.status}')
             if elapsed > self.timeout:
                 break
 
-        self.api_port = int(
-            self.container.attrs['NetworkSettings']['Ports']['8000/tcp'][0]['HostPort']
-        )
+        self.api_port = int(self.container.attrs['NetworkSettings']['Ports']['8000/tcp'][0]['HostPort'])
 
         self.api_server = f'{self.api_host}:{self.api_port}'
         self.client = InvariantClient(self.api_server, self.sid)
@@ -115,9 +107,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
         if isinstance(event, Observation):
             element = parse_element(self.trace, event)
             self.trace.extend(element)
-            self.input.extend(
-                [cast(dict[str, Any], e.model_dump(exclude_none=True)) for e in element]
-            )
+            self.input.extend([cast(dict[str, Any], e.model_dump(exclude_none=True)) for e in element])
         else:
             logger.debug('Invariant skipping element: event')
 
@@ -196,13 +186,9 @@ class InvariantAnalyzer(SecurityAnalyzer):
                     }
                 )
                 event_source = EventSource.AGENT
-                await call_sync_from_async(
-                    self.event_stream.add_event, new_event, event_source
-                )
+                await call_sync_from_async(self.event_stream.add_event, new_event, event_source)
 
-    def parse_browser_action(
-        self, browser_action: str
-    ) -> list[tuple[str | None, list[str]]]:
+    def parse_browser_action(self, browser_action: str) -> list[tuple[str | None, list[str]]]:
         assert browser_action[-1] == ')'
         tree = ast.parse(browser_action, mode='exec')
         function_calls: list[tuple[str | None, list[str]]] = []
@@ -215,9 +201,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
                 if isinstance(call_node.func, ast.Name):
                     func_name = call_node.func.id
                 elif isinstance(call_node.func, ast.Attribute):
-                    func_name = (
-                        f'{ast.unparse(call_node.func.value)}.{call_node.func.attr}'
-                    )
+                    func_name = f'{ast.unparse(call_node.func.value)}.{call_node.func.attr}'
 
                 # Extract positional arguments
                 args = [ast.unparse(arg) for arg in call_node.args]
@@ -237,9 +221,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
             getattr(recent_trace_element, 'type', None) == 'function'
             and recent_trace_element.function.name == 'browse_interactive'
         ):
-            function_calls = self.parse_browser_action(
-                recent_trace_element.function.arguments['browser_actions']
-            )
+            function_calls = self.parse_browser_action(recent_trace_element.function.arguments['browser_actions'])
             for function_call in function_calls:
                 action_name, action_args = function_call
                 if action_name == 'fill':
@@ -254,10 +236,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
                         Message(
                             role='user',
                             content=[
-                                TextContent(
-                                    text='Answer Yes or No. Is this harmful content: '
-                                    + repr(action_args[1])
-                                )
+                                TextContent(text='Answer Yes or No. Is this harmful content: ' + repr(action_args[1]))
                             ],
                         )
                     )
@@ -282,9 +261,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
                         }
                     )
                     event_source = EventSource.AGENT
-                    await call_sync_from_async(
-                        self.event_stream.add_event, new_event, event_source
-                    )
+                    await call_sync_from_async(self.event_stream.add_event, new_event, event_source)
                     break
 
     async def should_confirm(self, event: Event) -> bool:
@@ -293,14 +270,11 @@ class InvariantAnalyzer(SecurityAnalyzer):
             risk is not None
             and risk < self.settings.get('RISK_SEVERITY', ActionSecurityRisk.MEDIUM)
             and hasattr(event, 'confirmation_state')
-            and event.confirmation_state
-            == ActionConfirmationStatus.AWAITING_CONFIRMATION
+            and event.confirmation_state == ActionConfirmationStatus.AWAITING_CONFIRMATION
         )
 
     async def confirm(self, event: Event) -> None:
-        new_event = action_from_dict(
-            {'action': 'change_agent_state', 'args': {'agent_state': 'user_confirmed'}}
-        )
+        new_event = action_from_dict({'action': 'change_agent_state', 'args': {'agent_state': 'user_confirmed'}})
         # we should confirm only on agent actions
         event_source = event.source if event.source else EventSource.AGENT
         self.event_stream.add_event(new_event, event_source)
@@ -308,9 +282,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
     async def security_risk(self, event: Action) -> ActionSecurityRisk:
         logger.debug('Calling security_risk on InvariantAnalyzer')
         new_elements = parse_element(self.trace, event)
-        input_data = [
-            cast(dict[str, Any], e.model_dump(exclude_none=True)) for e in new_elements
-        ]
+        input_data = [cast(dict[str, Any], e.model_dump(exclude_none=True)) for e in new_elements]
         self.trace.extend(new_elements)
         check_result = self.monitor.check(self.input, input_data)
         self.input.extend(input_data)

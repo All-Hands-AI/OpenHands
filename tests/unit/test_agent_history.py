@@ -464,12 +464,8 @@ def test_only_dangling_observations_in_recent_slice(controller_fixture):
     # Validation: remove leading dangle2(6). validated_slice = [] (Corrected based on user feedback/bugfix)
     # Final = essentials + validated_slice = [sys(1), user(2), recall_act(3), recall_obs(4)]
     # Expected IDs: [1, 2, 3, 4]. Length 4.
-    with patch(
-        'openhands.controller.agent_controller.logger.warning'
-    ) as mock_log_warning:
-        truncated_events = controller._apply_conversation_window(
-            controller.state.history
-        )
+    with patch('openhands.controller.agent_controller.logger.warning') as mock_log_warning:
+        truncated_events = controller._apply_conversation_window(controller.state.history)
 
         assert len(truncated_events) == 4
         expected_ids = [1, 2, 3, 4]

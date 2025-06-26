@@ -104,9 +104,7 @@ class OpenHandsConfig(BaseModel):
     cli_multiline_input: bool = Field(default=False)
     conversation_max_age_seconds: int = Field(default=864000)  # 10 days in seconds
     enable_default_condenser: bool = Field(default=True)
-    max_concurrent_conversations: int = Field(
-        default=3
-    )  # Maximum number of concurrent agent loops allowed per user
+    max_concurrent_conversations: int = Field(default=3)  # Maximum number of concurrent agent loops allowed per user
     mcp_host: str = Field(default=f'localhost:{os.getenv("port", 3000)}')
     mcp: MCPConfig = Field(default_factory=MCPConfig)
     kubernetes: KubernetesConfig = Field(default_factory=KubernetesConfig)
@@ -121,9 +119,7 @@ class OpenHandsConfig(BaseModel):
         if name in self.llms:
             return self.llms[name]
         if name is not None and name != 'llm':
-            logger.openhands_logger.warning(
-                f'llm config group {name} not found, using default config'
-            )
+            logger.openhands_logger.warning(f'llm config group {name} not found, using default config')
         if 'llm' not in self.llms:
             self.llms['llm'] = LLMConfig()
         return self.llms['llm']
@@ -148,9 +144,7 @@ class OpenHandsConfig(BaseModel):
 
     def get_llm_config_from_agent(self, name: str = 'agent') -> LLMConfig:
         agent_config: AgentConfig = self.get_agent_config(name)
-        llm_config_name = (
-            agent_config.llm_config if agent_config.llm_config is not None else 'llm'
-        )
+        llm_config_name = agent_config.llm_config if agent_config.llm_config is not None else 'llm'
         return self.get_llm_config(llm_config_name)
 
     def get_agent_configs(self) -> dict[str, AgentConfig]:

@@ -103,9 +103,7 @@ class BitBucketService(BaseGitService, GitService):
         try:
             async with httpx.AsyncClient() as client:
                 bitbucket_headers = await self._get_bitbucket_headers()
-                response = await self.execute_request(
-                    client, url, bitbucket_headers, params, method
-                )
+                response = await self.execute_request(client, url, bitbucket_headers, params, method)
                 if self.refresh and self._has_token_expired(response.status_code):
                     await self.get_latest_token()
                     bitbucket_headers = await self._get_bitbucket_headers()
@@ -149,9 +147,7 @@ class BitBucketService(BaseGitService, GitService):
         # Bitbucket doesn't have a dedicated search endpoint like GitHub
         return []
 
-    async def _fetch_paginated_data(
-        self, url: str, params: dict, max_items: int
-    ) -> list[dict]:
+    async def _fetch_paginated_data(self, url: str, params: dict, max_items: int) -> list[dict]:
         """
         Fetch data with pagination support for Bitbucket API.
 
@@ -213,9 +209,7 @@ class BitBucketService(BaseGitService, GitService):
             bitbucket_sort = sort
             if sort == 'pushed':
                 # Bitbucket doesn't support 'pushed', use 'updated_on' instead
-                bitbucket_sort = (
-                    '-updated_on'  # Use negative prefix for descending order
-                )
+                bitbucket_sort = '-updated_on'  # Use negative prefix for descending order
             elif sort == 'updated':
                 bitbucket_sort = '-updated_on'
             elif sort == 'created':
@@ -264,9 +258,7 @@ class BitBucketService(BaseGitService, GitService):
         # TODO: implemented suggested tasks
         return []
 
-    async def get_repository_details_from_repo_name(
-        self, repository: str
-    ) -> Repository:
+    async def get_repository_details_from_repo_name(self, repository: str) -> Repository:
         """Gets all repository details from repository name."""
         # Extract owner and repo from the repository string (e.g., "owner/repo")
         parts = repository.split('/')
@@ -367,9 +359,7 @@ class BitBucketService(BaseGitService, GitService):
             'draft': draft,
         }
 
-        data, _ = await self._make_request(
-            url=url, params=payload, method=RequestMethod.POST
-        )
+        data, _ = await self._make_request(url=url, params=payload, method=RequestMethod.POST)
 
         # Return the URL to the pull request
         return data.get('links', {}).get('html', {}).get('href', '')

@@ -161,9 +161,7 @@ def convert_instance_dict(instance):
 
     # Find the index of the correct answer after shuffling and store it as a letter (A/B/C/D)
     correct_index = out_instance_dict['choices'].index(correct_answer)
-    correct_letter = chr(
-        65 + correct_index
-    )  # Convert index (0-3) to corresponding letter (A-D)
+    correct_letter = chr(65 + correct_index)  # Convert index (0-3) to corresponding letter (A-D)
 
     out_instance_dict['correct_solution'] = correct_letter
 
@@ -221,9 +219,7 @@ Ok now its time to start solving the question. Good luck!
             config=config,
             initial_user_action=MessageAction(content=instruction),
             runtime=runtime,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
-                metadata.agent_class
-            ),
+            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(metadata.agent_class),
         )
     )
     assert state is not None, 'State should not be None.'
@@ -244,18 +240,10 @@ Ok now its time to start solving the question. Good luck!
         'D': False,
     }
     for event in reversed(state.history):
-        if (
-            isinstance(event, AgentFinishAction)
-            and event.source != 'user'
-            and '<<FINAL_ANSWER||' in event.thought
-        ):
+        if isinstance(event, AgentFinishAction) and event.source != 'user' and '<<FINAL_ANSWER||' in event.thought:
             final_message = event.thought
             break
-        elif (
-            isinstance(event, MessageAction)
-            and event.source != 'user'
-            and '<<FINAL_ANSWER||' in event.content
-        ):
+        elif isinstance(event, MessageAction) and event.source != 'user' and '<<FINAL_ANSWER||' in event.content:
             final_message = event.content
             break
         elif isinstance(event, Observation):
@@ -343,9 +331,7 @@ if __name__ == '__main__':
     gpqa_dataset['instance_id'] = gpqa_dataset.index
 
     if args.agent_cls != 'CodeActAgent':
-        raise ValueError(
-            f'Agent class {args.agent_cls} not supported for GPQA evaluation.'
-        )
+        raise ValueError(f'Agent class {args.agent_cls} not supported for GPQA evaluation.')
 
     metadata = make_metadata(
         llm_config=llm_config,

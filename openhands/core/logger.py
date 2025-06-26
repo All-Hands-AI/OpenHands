@@ -132,13 +132,13 @@ class ColoredFormatter(logging.Formatter):
         if msg_type in LOG_COLORS and not DISABLE_COLOR_PRINTING:
             msg_type_color = colored(msg_type, LOG_COLORS[msg_type])
             msg = colored(record.msg, LOG_COLORS[msg_type])
-            time_str = colored(
-                self.formatTime(record, self.datefmt), LOG_COLORS[msg_type]
-            )
+            time_str = colored(self.formatTime(record, self.datefmt), LOG_COLORS[msg_type])
             name_str = colored(record.name, LOG_COLORS[msg_type])
             level_str = colored(record.levelname, LOG_COLORS[msg_type])
             if msg_type in ['ERROR'] or DEBUG:
-                return f'{time_str} - {name_str}:{level_str}: {record.filename}:{record.lineno}\n{msg_type_color}\n{msg}'
+                return (
+                    f'{time_str} - {name_str}:{level_str}: {record.filename}:{record.lineno}\n{msg_type_color}\n{msg}'
+                )
             return f'{time_str} - {msg_type_color}\n{msg}'
         elif msg_type == 'STEP':
             if LOG_ALL_EVENTS:
@@ -288,9 +288,7 @@ def get_console_handler(log_level: int = logging.INFO) -> logging.StreamHandler:
     return console_handler
 
 
-def get_file_handler(
-    log_dir: str, log_level: int = logging.INFO
-) -> logging.FileHandler:
+def get_file_handler(log_dir: str, log_level: int = logging.INFO) -> logging.FileHandler:
     """Returns a file handler for logging."""
     os.makedirs(log_dir, exist_ok=True)
     timestamp = datetime.now().strftime('%Y-%m-%d')
@@ -331,9 +329,7 @@ def json_log_handler(
 logging.basicConfig(level=logging.ERROR)
 
 
-def log_uncaught_exceptions(
-    ex_cls: type[BaseException], ex: BaseException, tb: TracebackType | None
-) -> Any:
+def log_uncaught_exceptions(ex_cls: type[BaseException], ex: BaseException, tb: TracebackType | None) -> Any:
     """Logs uncaught exceptions along with the traceback.
 
     Args:
@@ -380,9 +376,7 @@ LOG_DIR = os.path.join(
 )
 
 if LOG_TO_FILE:
-    openhands_logger.addHandler(
-        get_file_handler(LOG_DIR, current_log_level)
-    )  # default log to project root
+    openhands_logger.addHandler(get_file_handler(LOG_DIR, current_log_level))  # default log to project root
     openhands_logger.debug(f'Logging to file in: {LOG_DIR}')
 
 # Exclude LiteLLM from logging output as it can leak keys
@@ -436,9 +430,7 @@ class LlmFileHandler(logging.FileHandler):
                 try:
                     os.unlink(file_path)
                 except Exception as e:
-                    openhands_logger.error(
-                        'Failed to delete %s. Reason: %s', file_path, e
-                    )
+                    openhands_logger.error('Failed to delete %s. Reason: %s', file_path, e)
         filename = f'{self.filename}_{self.message_counter:03}.log'
         self.baseFilename = os.path.join(self.log_directory, filename)
         super().__init__(self.baseFilename, mode, encoding, delay)
@@ -483,15 +475,11 @@ llm_response_logger = _setup_llm_logger('response', current_log_level)
 class OpenHandsLoggerAdapter(logging.LoggerAdapter):
     extra: dict
 
-    def __init__(
-        self, logger: logging.Logger = openhands_logger, extra: dict | None = None
-    ) -> None:
+    def __init__(self, logger: logging.Logger = openhands_logger, extra: dict | None = None) -> None:
         self.logger = logger
         self.extra = extra or {}
 
-    def process(
-        self, msg: str, kwargs: MutableMapping[str, Any]
-    ) -> tuple[str, MutableMapping[str, Any]]:
+    def process(self, msg: str, kwargs: MutableMapping[str, Any]) -> tuple[str, MutableMapping[str, Any]]:
         """
         If 'extra' is supplied in kwargs, merge it with the adapters 'extra' dict
         Starting in Python 3.13, LoggerAdapter's merge_extra option will do this.

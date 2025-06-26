@@ -34,9 +34,7 @@ class IssueHandlerInterface(ABC):
         pass
 
     @abstractmethod
-    def get_issue_comments(
-        self, issue_number: int, comment_id: int | None = None
-    ) -> list[str] | None:
+    def get_issue_comments(self, issue_number: int, comment_id: int | None = None) -> list[str] | None:
         pass
 
     @abstractmethod

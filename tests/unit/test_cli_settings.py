@@ -89,9 +89,7 @@ class TestDisplaySettings:
         assert 'Enabled' in settings_text
 
     @patch('openhands.cli.settings.print_container')
-    def test_display_settings_advanced_config(
-        self, mock_print_container, advanced_app_config
-    ):
+    def test_display_settings_advanced_config(self, mock_print_container, advanced_app_config):
         display_settings(advanced_app_config)
         mock_print_container.assert_called_once()
 
@@ -225,9 +223,7 @@ class TestModifyLLMSettingsBasic:
     ):
         # Setup mocks
         mock_get_models.return_value = ['openai/gpt-4', 'anthropic/claude-3-opus']
-        mock_organize.return_value = {
-            'openai': {'models': ['gpt-4', 'gpt-3.5-turbo'], 'separator': '/'}
-        }
+        mock_organize.return_value = {'openai': {'models': ['gpt-4', 'gpt-3.5-turbo'], 'separator': '/'}}
 
         session_instance = MagicMock()
         session_instance.prompt_async = AsyncMock(side_effect=UserCancelledError())
@@ -262,9 +258,7 @@ class TestModifyLLMSettingsBasic:
     ):
         # Setup mocks
         mock_get_models.return_value = ['openai/gpt-4', 'anthropic/claude-3-opus']
-        mock_organize.return_value = {
-            'openai': {'models': ['gpt-4', 'gpt-3.5-turbo'], 'separator': '/'}
-        }
+        mock_organize.return_value = {'openai': {'models': ['gpt-4', 'gpt-3.5-turbo'], 'separator': '/'}}
 
         session_instance = MagicMock()
         session_instance.prompt_async = AsyncMock(
@@ -324,9 +318,7 @@ class TestModifyLLMSettingsBasic:
 
         import openhands.cli.settings as settings_module
 
-        source_lines = inspect.getsource(
-            settings_module.modify_llm_settings_basic
-        ).splitlines()
+        source_lines = inspect.getsource(settings_module.modify_llm_settings_basic).splitlines()
 
         # Look for the line that sets the default provider
         default_provider_found = False
@@ -345,17 +337,12 @@ class TestModifyLLMSettingsBasic:
                 provider_impl_found = True
                 break
 
-        assert provider_impl_found, (
-            "Could not find the implementation that prefers 'anthropic'"
-        )
+        assert provider_impl_found, "Could not find the implementation that prefers 'anthropic'"
 
         # Also check the fallback provider when provider not in organized_models
         fallback_comment_found = False
         for i, line in enumerate(source_lines):
-            if (
-                "# If the provider doesn't exist, prefer 'anthropic' if available"
-                in line
-            ):
+            if "# If the provider doesn't exist, prefer 'anthropic' if available" in line:
                 fallback_comment_found = True
                 break
 
@@ -368,9 +355,7 @@ class TestModifyLLMSettingsBasic:
                 fallback_impl_found = True
                 break
 
-        assert fallback_impl_found, (
-            "Could not find the fallback implementation that prefers 'anthropic'"
-        )
+        assert fallback_impl_found, "Could not find the fallback implementation that prefers 'anthropic'"
 
     def test_default_model_selection(self):
         """Test that the default model selection uses the first model in the list."""
@@ -381,18 +366,13 @@ class TestModifyLLMSettingsBasic:
 
         import openhands.cli.settings as settings_module
 
-        source_lines = inspect.getsource(
-            settings_module.modify_llm_settings_basic
-        ).splitlines()
+        source_lines = inspect.getsource(settings_module.modify_llm_settings_basic).splitlines()
 
         # Look for the block that sets the default model
         default_model_block = []
         in_default_model_block = False
         for line in source_lines:
-            if (
-                '# Set default model to the best verified model for the provider'
-                in line
-            ):
+            if '# Set default model to the best verified model for the provider' in line:
                 in_default_model_block = True
                 default_model_block.append(line)
             elif in_default_model_block:
@@ -401,9 +381,7 @@ class TestModifyLLMSettingsBasic:
                     break
 
         # Assert that we found the default model selection logic
-        assert default_model_block, (
-            'Could not find the block that sets the default model'
-        )
+        assert default_model_block, 'Could not find the block that sets the default model'
 
         # Print the actual lines for debugging
         print('Default model block found:')
@@ -411,13 +389,9 @@ class TestModifyLLMSettingsBasic:
             print(f'  {line.strip()}')
 
         # Check that the logic uses the first model in the list
-        first_model_check = any(
-            'provider_models[0]' in line for line in default_model_block
-        )
+        first_model_check = any('provider_models[0]' in line for line in default_model_block)
 
-        assert first_model_check, (
-            'Default model selection should use the first model in the list'
-        )
+        assert first_model_check, 'Default model selection should use the first model in the list'
 
 
 class TestModifyLLMSettingsAdvanced:
@@ -567,12 +541,8 @@ class TestModifyLLMSettingsAdvanced:
         await modify_llm_settings_advanced(app_config, settings_store)
 
         # Verify error message was shown
-        assert (
-            mock_print.call_count == 3
-        )  # Called 3 times: empty line, error message, empty line
-        error_message_call = mock_print.call_args_list[
-            1
-        ]  # The second call contains the error message
+        assert mock_print.call_count == 3  # Called 3 times: empty line, error message, empty line
+        error_message_call = mock_print.call_args_list[1]  # The second call contains the error message
         args, kwargs = error_message_call
         assert isinstance(args[0], HTML)
         assert 'Invalid agent' in args[0].value

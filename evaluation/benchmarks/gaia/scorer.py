@@ -68,8 +68,7 @@ def question_scorer(
             else:
                 # we do not remove punct since comparisons can include punct
                 comparisons.append(
-                    normalize_str(ma_elem, remove_punct=False)
-                    == normalize_str(gt_elem, remove_punct=False)
+                    normalize_str(ma_elem, remove_punct=False) == normalize_str(gt_elem, remove_punct=False)
                 )
         return all(comparisons)
 

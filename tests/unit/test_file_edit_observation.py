@@ -99,10 +99,7 @@ def test_file_edit_observation_new_file():
 
     assert obs.prev_exist is False
     assert obs.old_content == ''
-    assert (
-        str(obs)
-        == '[New file /test/new_file.txt is created with the provided content.]\n'
-    )
+    assert str(obs) == '[New file /test/new_file.txt is created with the provided content.]\n'
 
     # Test that trying to visualize diff for a new file works
     diff = obs.visualize_diff()
@@ -126,10 +123,6 @@ def test_file_edit_observation_context_lines():
     groups_2 = obs.get_edit_groups(n_context_lines=2)
 
     # More context should mean more lines in the groups
-    total_lines_0 = sum(
-        len(g['before_edits']) + len(g['after_edits']) for g in groups_0
-    )
-    total_lines_2 = sum(
-        len(g['before_edits']) + len(g['after_edits']) for g in groups_2
-    )
+    total_lines_0 = sum(len(g['before_edits']) + len(g['after_edits']) for g in groups_0)
+    total_lines_2 = sum(len(g['before_edits']) + len(g['after_edits']) for g in groups_2)
     assert total_lines_2 > total_lines_0

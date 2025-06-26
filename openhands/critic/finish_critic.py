@@ -12,9 +12,7 @@ class AgentFinishedCritic(BaseCritic):
     def __init__(self):
         pass
 
-    def evaluate(
-        self, events: list[Event], git_patch: str | None = None
-    ) -> CriticResult:
+    def evaluate(self, events: list[Event], git_patch: str | None = None) -> CriticResult:
         last_action = next((h for h in reversed(events) if isinstance(h, Action)), None)
 
         if git_patch is not None and len(git_patch.strip()) == 0:

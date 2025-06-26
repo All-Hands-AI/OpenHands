@@ -20,9 +20,7 @@ def docker_login():
 
 
 # Function to generate Dockerfile content based on image type
-def generate_dockerfile_content(
-    base_image, dependencies, datum, patch_path, test_patch_path
-):
+def generate_dockerfile_content(base_image, dependencies, datum, patch_path, test_patch_path):
     dockerfile_content = f"""
 FROM {base_image}
 SHELL ["/bin/bash", "-c"]
@@ -63,7 +61,9 @@ def process_images(dataset, original_namespace, new_namespace, start_instance_id
         if not found_start and datum['instance_id'] == start_instance_id:
             found_start = True
         elif found_start:
-            full_image_name = f'{original_namespace}/sweb.eval.x86_64.{datum["instance_id"].replace("__", "_s_")}:latest'
+            full_image_name = (
+                f'{original_namespace}/sweb.eval.x86_64.{datum["instance_id"].replace("__", "_s_")}:latest'
+            )
             print(f'Processing image: {full_image_name}')
             run_command(f'docker pull {full_image_name}')
 
@@ -97,9 +97,7 @@ def process_images(dataset, original_namespace, new_namespace, start_instance_id
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description='Process Docker images with .eval in the name.'
-    )
+    parser = argparse.ArgumentParser(description='Process Docker images with .eval in the name.')
     parser.add_argument('--dataset', type=str, default='kjain14/testgeneval')
     parser.add_argument('--split', type=str, default='test')
     parser.add_argument(
@@ -124,6 +122,4 @@ if __name__ == '__main__':
     dataset = load_dataset(args.dataset)[args.split]
 
     docker_login()
-    process_images(
-        dataset, args.original_namespace, args.new_namespace, args.start_instance_id
-    )
+    process_images(dataset, args.original_namespace, args.new_namespace, args.start_instance_id)

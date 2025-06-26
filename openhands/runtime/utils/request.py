@@ -23,10 +23,7 @@ class RequestHTTPError(httpx.HTTPStatusError):
 
 
 def is_retryable_error(exception: Any) -> bool:
-    return (
-        isinstance(exception, httpx.HTTPStatusError)
-        and exception.response.status_code == 429
-    )
+    return isinstance(exception, httpx.HTTPStatusError) and exception.response.status_code == 429
 
 
 @retry(

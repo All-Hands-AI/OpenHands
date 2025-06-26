@@ -143,9 +143,7 @@ index 9daeafb..b02def2 100644
     with open(dos_file, 'rb') as f:
         dos_content = f.read()
 
-    assert b'\r\n' not in unix_content, (
-        'Unix-style line endings were changed to DOS-style'
-    )
+    assert b'\r\n' not in unix_content, 'Unix-style line endings were changed to DOS-style'
     assert b'\r\n' in dos_content, 'DOS-style line endings were changed to Unix-style'
 
     # Check if content was updated correctly
@@ -277,9 +275,7 @@ def test_update_existing_pull_request(
     # Mock LLM instance and completion call
     mock_llm_instance = MagicMock()
     mock_completion_response = MagicMock()
-    mock_completion_response.choices = [
-        MagicMock(message=MagicMock(content='This is an issue resolution.'))
-    ]
+    mock_completion_response.choices = [MagicMock(message=MagicMock(content='This is an issue resolution.'))]
     mock_llm_instance.completion.return_value = mock_completion_response
     mock_llm_class.return_value = mock_llm_instance
 
@@ -303,9 +299,7 @@ def test_update_existing_pull_request(
         f'https://{username}:{token}@gitlab.com/'
         f'{issue.owner}/{issue.repo}.git {issue.head_branch}'
     )
-    mock_subprocess_run.assert_called_once_with(
-        push_command, shell=True, capture_output=True, text=True
-    )
+    mock_subprocess_run.assert_called_once_with(push_command, shell=True, capture_output=True, text=True)
 
     # Assert: Check if the auto-generated comment was posted to the PR
     comment_url = f'https://gitlab.com/api/v4/projects/{quote(f"{issue.owner}/{issue.repo}", safe="")}/issues/{issue.number}/notes'
@@ -328,10 +322,7 @@ def test_update_existing_pull_request(
     )
 
     # Assert: Check the returned PR URL
-    assert (
-        result
-        == f'https://gitlab.com/{issue.owner}/{issue.repo}/-/merge_requests/{issue.number}'
-    )
+    assert result == f'https://gitlab.com/{issue.owner}/{issue.repo}/-/merge_requests/{issue.number}'
 
 
 @pytest.mark.parametrize(
@@ -430,10 +421,7 @@ def test_send_pull_request(
 
     # Check PR creation based on pr_type
     if pr_type == 'branch':
-        assert (
-            result
-            == 'https://gitlab.com/test-owner/test-repo/-/compare/main...openhands-fix-issue-42'
-        )
+        assert result == 'https://gitlab.com/test-owner/test-repo/-/compare/main...openhands-fix-issue-42'
         mock_post.assert_not_called()
     else:
         assert result == 'https://gitlab.com/test-owner/test-repo/-/merge_requests/1'
@@ -443,9 +431,7 @@ def test_send_pull_request(
         assert post_data['title'] == expected_title
         assert post_data['description'].startswith('This pull request fixes #42.')
         assert post_data['source_branch'] == 'openhands-fix-issue-42'
-        assert post_data['target_branch'] == (
-            target_branch if target_branch else 'main'
-        )
+        assert post_data['target_branch'] == (target_branch if target_branch else 'main')
         assert post_data['draft'] == (pr_type == 'draft')
 
 
@@ -516,10 +502,7 @@ def test_send_pull_request_with_reviewer(
 
     # Check reviewer request
     reviewer_request_call = mock_put.call_args_list[0]
-    assert (
-        reviewer_request_call[0][0]
-        == 'https://gitlab.com/api/v4/projects/test-owner%2Ftest-repo/merge_requests/1'
-    )
+    assert reviewer_request_call[0][0] == 'https://gitlab.com/api/v4/projects/test-owner%2Ftest-repo/merge_requests/1'
     assert reviewer_request_call[1]['json'] == {'reviewer_ids': [123]}
 
     # Check the result URL
@@ -527,9 +510,7 @@ def test_send_pull_request_with_reviewer(
 
 
 @patch('httpx.get')
-def test_send_pull_request_invalid_target_branch(
-    mock_get, mock_issue, mock_output_dir, mock_llm_config
-):
+def test_send_pull_request_invalid_target_branch(mock_get, mock_issue, mock_output_dir, mock_llm_config):
     """Test that an error is raised when specifying a non-existent target branch"""
     repo_path = os.path.join(mock_output_dir, 'repo')
 
@@ -540,9 +521,7 @@ def test_send_pull_request_invalid_target_branch(
     ]
 
     # Test that ValueError is raised when target branch doesn't exist
-    with pytest.raises(
-        ValueError, match='Target branch nonexistent-branch does not exist'
-    ):
+    with pytest.raises(ValueError, match='Target branch nonexistent-branch does not exist'):
         send_pull_request(
             issue=mock_issue,
             token='test-token',
@@ -575,9 +554,7 @@ def test_send_pull_request_git_push_failure(
     ]
 
     # Test that RuntimeError is raised when git push fails
-    with pytest.raises(
-        RuntimeError, match='Failed to push changes to the remote repository'
-    ):
+    with pytest.raises(RuntimeError, match='Failed to push changes to the remote repository'):
         send_pull_request(
             issue=mock_issue,
             token='test-token',
@@ -635,9 +612,7 @@ def test_send_pull_request_permission_error(
     ]
 
     # Test that RuntimeError is raised when PR creation fails due to permissions
-    with pytest.raises(
-        RuntimeError, match='Failed to create pull request due to missing permissions.'
-    ):
+    with pytest.raises(RuntimeError, match='Failed to create pull request due to missing permissions.'):
         send_pull_request(
             issue=mock_issue,
             token='test-token',
@@ -661,9 +636,7 @@ def test_reply_to_comment(mock_get, mock_post, mock_issue):
     reply = 'This is a test reply.'
 
     # Create an instance of GitlabIssueHandler
-    handler = GitlabIssueHandler(
-        owner='test-owner', repo='test-repo', token=token, username='test-user'
-    )
+    handler = GitlabIssueHandler(owner='test-owner', repo='test-repo', token=token, username='test-user')
 
     mock_get.return_value = MagicMock(
         json=lambda: {
@@ -734,9 +707,7 @@ def test_process_single_pr_update(
             title='Issue 1',
             body='Body 1',
             closing_issues=[],
-            review_threads=[
-                ReviewThread(comment='review comment for feedback', files=[])
-            ],
+            review_threads=[ReviewThread(comment='review comment for feedback', files=[])],
             thread_ids=['1'],
             head_branch='branch 1',
         ),
@@ -752,9 +723,7 @@ def test_process_single_pr_update(
         error=None,
     )
 
-    mock_update_existing_pull_request.return_value = (
-        'https://gitlab.com/test-owner/test-repo/-/merge_requests/1'
-    )
+    mock_update_existing_pull_request.return_value = 'https://gitlab.com/test-owner/test-repo/-/merge_requests/1'
     mock_initialize_repo.return_value = f'{mock_output_dir}/patches/pr_1'
 
     process_single_issue(
@@ -771,12 +740,8 @@ def test_process_single_pr_update(
     )
 
     mock_initialize_repo.assert_called_once_with(mock_output_dir, 1, 'pr', 'branch 1')
-    mock_apply_patch.assert_called_once_with(
-        f'{mock_output_dir}/patches/pr_1', resolver_output.git_patch
-    )
-    mock_make_commit.assert_called_once_with(
-        f'{mock_output_dir}/patches/pr_1', resolver_output.issue, 'pr'
-    )
+    mock_apply_patch.assert_called_once_with(f'{mock_output_dir}/patches/pr_1', resolver_output.git_patch)
+    mock_make_commit.assert_called_once_with(f'{mock_output_dir}/patches/pr_1', resolver_output.issue, 'pr')
     mock_update_existing_pull_request.assert_called_once_with(
         issue=resolver_output.issue,
         token=token,
@@ -828,9 +793,7 @@ def test_process_single_issue(
     )
 
     # Mock return value
-    mock_send_pull_request.return_value = (
-        'https://gitlab.com/test-owner/test-repo/-/merge_requests/1'
-    )
+    mock_send_pull_request.return_value = 'https://gitlab.com/test-owner/test-repo/-/merge_requests/1'
     mock_initialize_repo.return_value = f'{mock_output_dir}/patches/issue_1'
 
     # Call the function
@@ -849,12 +812,8 @@ def test_process_single_issue(
 
     # Assert that the mocked functions were called with correct arguments
     mock_initialize_repo.assert_called_once_with(mock_output_dir, 1, 'issue', 'def456')
-    mock_apply_patch.assert_called_once_with(
-        f'{mock_output_dir}/patches/issue_1', resolver_output.git_patch
-    )
-    mock_make_commit.assert_called_once_with(
-        f'{mock_output_dir}/patches/issue_1', resolver_output.issue, 'issue'
-    )
+    mock_apply_patch.assert_called_once_with(f'{mock_output_dir}/patches/issue_1', resolver_output.git_patch)
+    mock_make_commit.assert_called_once_with(f'{mock_output_dir}/patches/issue_1', resolver_output.issue, 'issue')
     mock_send_pull_request.assert_called_once_with(
         issue=resolver_output.issue,
         token=token,
@@ -931,9 +890,7 @@ def test_process_single_issue_unsuccessful(
 
 @patch('httpx.get')
 @patch('subprocess.run')
-def test_send_pull_request_branch_naming(
-    mock_run, mock_get, mock_issue, mock_output_dir, mock_llm_config
-):
+def test_send_pull_request_branch_naming(mock_run, mock_get, mock_issue, mock_output_dir, mock_llm_config):
     repo_path = os.path.join(mock_output_dir, 'repo')
 
     # Mock API responses
@@ -987,10 +944,7 @@ def test_send_pull_request_branch_naming(
     )
 
     # Check the result
-    assert (
-        result
-        == 'https://gitlab.com/test-owner/test-repo/-/compare/main...openhands-fix-issue-42-try3'
-    )
+    assert result == 'https://gitlab.com/test-owner/test-repo/-/compare/main...openhands-fix-issue-42-try3'
 
 
 @patch('openhands.resolver.send_pull_request.argparse.ArgumentParser')
@@ -1026,9 +980,7 @@ def test_main(
     mock_parser.return_value.parse_args.return_value = mock_args
 
     # Setup environment variables
-    mock_getenv.side_effect = (
-        lambda key, default=None: 'mock_token' if key == 'GITLAB_TOKEN' else default
-    )
+    mock_getenv.side_effect = lambda key, default=None: 'mock_token' if key == 'GITLAB_TOKEN' else default
 
     # Setup path exists
     mock_path_exists.return_value = True
@@ -1080,9 +1032,7 @@ def test_main(
 
     # Test for invalid token
     mock_args.issue_number = '42'  # Reset to valid issue number
-    mock_getenv.side_effect = (
-        lambda key, default=None: None
-    )  # Return None for all env vars
+    mock_getenv.side_effect = lambda key, default=None: None  # Return None for all env vars
     with pytest.raises(ValueError, match='token is not set'):
         main()
 
@@ -1100,9 +1050,7 @@ def test_make_commit_escapes_issue_title(mock_subprocess_run):
     )
 
     # Mock subprocess.run to return success for all calls
-    mock_subprocess_run.return_value = MagicMock(
-        returncode=0, stdout='sample output', stderr=''
-    )
+    mock_subprocess_run.return_value = MagicMock(returncode=0, stdout='sample output', stderr='')
 
     # Call the function
     issue_type = 'issue'
@@ -1114,9 +1062,7 @@ def test_make_commit_escapes_issue_title(mock_subprocess_run):
 
     # Check the git commit call
     git_commit_call = calls[3][0][0]
-    expected_commit_message = (
-        'Fix issue #42: Issue with "quotes" and $pecial characters'
-    )
+    expected_commit_message = 'Fix issue #42: Issue with "quotes" and $pecial characters'
     assert [
         'git',
         '-C',
@@ -1146,9 +1092,7 @@ def test_make_commit_no_changes(mock_subprocess_run):
         MagicMock(returncode=1, stdout=''),  # git status --porcelain (no changes)
     ]
 
-    with pytest.raises(
-        RuntimeError, match='ERROR: Openhands failed to make code changes.'
-    ):
+    with pytest.raises(RuntimeError, match='ERROR: Openhands failed to make code changes.'):
         make_commit(repo_dir, issue, 'issue')
 
     # Check that subprocess.run was called for checking git status and add, but not commit

@@ -21,9 +21,7 @@ def try_parse_answer(act) -> str | None:
 
 
 FAKE_RESPONSES = {
-    'CodeActAgent': partial(
-        codeact_user_response, encapsulate_solution=True, try_parse=try_parse_answer
-    ),
+    'CodeActAgent': partial(codeact_user_response, encapsulate_solution=True, try_parse=try_parse_answer),
 }
 
 INST_SUFFIXES: dict[str, str] = {

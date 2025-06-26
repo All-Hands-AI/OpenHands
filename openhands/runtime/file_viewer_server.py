@@ -16,9 +16,7 @@ from openhands.runtime.utils.file_viewer import generate_file_viewer_html
 
 def create_app() -> FastAPI:
     """Create the FastAPI application."""
-    app = FastAPI(
-        title='File Viewer Server', openapi_url=None, docs_url=None, redoc_url=None
-    )
+    app = FastAPI(title='File Viewer Server', openapi_url=None, docs_url=None, redoc_url=None)
 
     @app.get('/')
     async def root() -> dict[str, str]:
@@ -51,9 +49,7 @@ def create_app() -> FastAPI:
             )
 
         if not os.path.exists(path):
-            return HTMLResponse(
-                content=f'<h1>Error: File not found</h1><p>{path}</p>', status_code=404
-            )
+            return HTMLResponse(content=f'<h1>Error: File not found</h1><p>{path}</p>', status_code=404)
 
         if os.path.isdir(path):
             return HTMLResponse(

@@ -60,15 +60,11 @@ async def handle_commands(
     elif command == '/help':
         handle_help_command()
     elif command == '/init':
-        close_repl, reload_microagents = await handle_init_command(
-            config, event_stream, current_dir
-        )
+        close_repl, reload_microagents = await handle_init_command(config, event_stream, current_dir)
     elif command == '/status':
         handle_status_command(usage_metrics, sid)
     elif command == '/new':
-        close_repl, new_session_requested = handle_new_command(
-            config, event_stream, usage_metrics, sid
-        )
+        close_repl, new_session_requested = handle_new_command(config, event_stream, usage_metrics, sid)
     elif command == '/settings':
         await handle_settings_command(config, settings_store)
     elif command == '/resume':
@@ -89,10 +85,7 @@ def handle_exit_command(
 ) -> bool:
     close_repl = False
 
-    confirm_exit = (
-        cli_confirm(config, '\nTerminate session?', ['Yes, proceed', 'No, dismiss'])
-        == 0
-    )
+    confirm_exit = cli_confirm(config, '\nTerminate session?', ['Yes, proceed', 'No, dismiss']) == 0
 
     if confirm_exit:
         event_stream.add_event(
@@ -133,9 +126,7 @@ async def handle_init_command(
             reload_microagents = True
             close_repl = True
     else:
-        print_formatted_text(
-            '\nRepository initialization through the CLI is only supported for local runtime.\n'
-        )
+        print_formatted_text('\nRepository initialization through the CLI is only supported for local runtime.\n')
 
     return close_repl, reload_microagents
 
@@ -224,13 +215,9 @@ async def init_repository(config: OpenHandsConfig, current_dir: str) -> bool:
     if repo_file_path.exists():
         try:
             # Path.exists() ensures repo_file_path is not None, so we can safely pass it to read_file
-            content = await asyncio.get_event_loop().run_in_executor(
-                None, read_file, repo_file_path
-            )
+            content = await asyncio.get_event_loop().run_in_executor(None, read_file, repo_file_path)
 
-            print_formatted_text(
-                'Repository instructions file (repo.md) already exists.\n'
-            )
+            print_formatted_text('Repository instructions file (repo.md) already exists.\n')
 
             container = Frame(
                 TextArea(
@@ -260,9 +247,7 @@ async def init_repository(config: OpenHandsConfig, current_dir: str) -> bool:
             print_formatted_text('Error reading repository instructions file (repo.md)')
             init_repo = False
     else:
-        print_formatted_text(
-            '\nRepository instructions file will be created by exploring the repository.\n'
-        )
+        print_formatted_text('\nRepository instructions file will be created by exploring the repository.\n')
 
         init_repo = (
             cli_confirm(
@@ -308,12 +293,7 @@ def check_folder_security_agreement(config: OpenHandsConfig, current_dir: str) -
         print_container(security_frame)
         print_formatted_text('')
 
-        confirm = (
-            cli_confirm(
-                config, 'Do you wish to continue?', ['Yes, proceed', 'No, exit']
-            )
-            == 0
-        )
+        confirm = cli_confirm(config, 'Do you wish to continue?', ['Yes, proceed', 'No, exit']) == 0
 
         if confirm:
             add_local_config_trusted_dir(current_dir)

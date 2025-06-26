@@ -223,10 +223,7 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
         'You should create a script named `run.sh` under the specified path in the repo to run the task.\n\n'
         f'You can find the task repo at: {task_path}\n\n'
         + (
-            'Here is the prefix code for the task:\n'
-            '```bash\n'
-            f'{instance["prefix_code"]}\n'
-            '```\n\n'
+            f'Here is the prefix code for the task:\n```bash\n{instance["prefix_code"]}\n```\n\n'
             if instance['prefix_code']
             else ''
         )
@@ -244,9 +241,7 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
             config=config,
             initial_user_action=MessageAction(content=instruction),
             runtime=runtime,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
-                metadata.agent_class
-            ),
+            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(metadata.agent_class),
         )
     )
     assert state is not None
@@ -308,6 +303,4 @@ if __name__ == '__main__':
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(ml_bench, output_file, args.eval_n_limit)
 
-    run_evaluation(
-        instances, metadata, output_file, args.eval_num_workers, process_instance
-    )
+    run_evaluation(instances, metadata, output_file, args.eval_num_workers, process_instance)

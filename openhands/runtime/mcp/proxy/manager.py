@@ -58,9 +58,7 @@ class MCPProxyManager:
         Initialize the FastMCP proxy with the current configuration.
         """
         if len(self.config['mcpServers']) == 0:
-            logger.info(
-                'No MCP servers configured for FastMCP Proxy, skipping initialization.'
-            )
+            logger.info('No MCP servers configured for FastMCP Proxy, skipping initialization.')
             return None
 
         # Create a new proxy with the current configuration
@@ -72,9 +70,7 @@ class MCPProxyManager:
 
         logger.info('FastMCP Proxy initialized successfully')
 
-    async def mount_to_app(
-        self, app: FastAPI, allow_origins: Optional[list[str]] = None
-    ) -> None:
+    async def mount_to_app(self, app: FastAPI, allow_origins: Optional[list[str]] = None) -> None:
         """
         Mount the SSE server app to a FastAPI application.
 

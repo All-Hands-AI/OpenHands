@@ -29,9 +29,7 @@ class LLMSummarizingCondenser(RollingCondenser):
         max_event_length: int = 10_000,
     ):
         if keep_first >= max_size // 2:
-            raise ValueError(
-                f'keep_first ({keep_first}) must be less than half of max_size ({max_size})'
-            )
+            raise ValueError(f'keep_first ({keep_first}) must be less than half of max_size ({max_size})')
         if keep_first < 0:
             raise ValueError(f'keep_first ({keep_first}) cannot be negative')
         if max_size < 1:
@@ -114,9 +112,7 @@ CURRENT_STATE: Last flip: Heads, Haiku count: 15/20"""
         # Add the previous summary if it exists. We'll always have a summary
         # event, but the types aren't precise enought to guarantee that it has a
         # message attribute.
-        summary_event_content = self._truncate(
-            summary_event.message if summary_event.message else ''
-        )
+        summary_event_content = self._truncate(summary_event.message if summary_event.message else '')
         prompt += f'<PREVIOUS SUMMARY>\n{summary_event_content}\n</PREVIOUS SUMMARY>\n'
 
         prompt += '\n\n'
@@ -153,9 +149,7 @@ CURRENT_STATE: Last flip: Heads, Haiku count: 15/20"""
         return len(view) > self.max_size
 
     @classmethod
-    def from_config(
-        cls, config: LLMSummarizingCondenserConfig
-    ) -> LLMSummarizingCondenser:
+    def from_config(cls, config: LLMSummarizingCondenserConfig) -> LLMSummarizingCondenser:
         # This condenser cannot take advantage of prompt caching. If it happens
         # to be set, we'll pay for the cache writes but never get a chance to
         # save on a read.

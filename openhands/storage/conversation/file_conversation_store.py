@@ -51,9 +51,7 @@ class FileConversationStore(ConversationStore):
         return result
 
     async def delete_metadata(self, conversation_id: str) -> None:
-        path = str(
-            Path(self.get_conversation_metadata_filename(conversation_id)).parent
-        )
+        path = str(Path(self.get_conversation_metadata_filename(conversation_id)).parent)
         await call_sync_from_async(self.file_store.delete, path)
 
     async def exists(self, conversation_id: str) -> bool:
@@ -87,9 +85,7 @@ class FileConversationStore(ConversationStore):
             try:
                 conversations.append(await self.get_metadata(conversation_id))
             except Exception:
-                logger.warning(
-                    f'Could not load conversation metadata: {conversation_id}'
-                )
+                logger.warning(f'Could not load conversation metadata: {conversation_id}')
         conversations.sort(key=_sort_key, reverse=True)
         conversations = conversations[start:end]
         next_page_id = offset_to_page_id(end, end < num_conversations)
@@ -102,9 +98,7 @@ class FileConversationStore(ConversationStore):
         return get_conversation_metadata_filename(conversation_id)
 
     @classmethod
-    async def get_instance(
-        cls, config: OpenHandsConfig, user_id: str | None
-    ) -> FileConversationStore:
+    async def get_instance(cls, config: OpenHandsConfig, user_id: str | None) -> FileConversationStore:
         file_store = get_file_store(
             config.file_store,
             config.file_store_path,

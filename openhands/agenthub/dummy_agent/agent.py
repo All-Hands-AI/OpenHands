@@ -33,9 +33,7 @@ FIXME: There are a few problems this surfaced
 * Browser not working
 """
 
-ActionObs = TypedDict(
-    'ActionObs', {'action': Action, 'observations': list[Observation]}
-)
+ActionObs = TypedDict('ActionObs', {'action': Action, 'observations': list[Observation]})
 
 
 class DummyAgent(Agent):
@@ -57,20 +55,12 @@ class DummyAgent(Agent):
                 'observations': [CmdOutputObservation('foo', command='echo "foo"')],
             },
             {
-                'action': FileWriteAction(
-                    content='echo "Hello, World!"', path='hello.sh'
-                ),
-                'observations': [
-                    FileWriteObservation(
-                        content='echo "Hello, World!"', path='hello.sh'
-                    )
-                ],
+                'action': FileWriteAction(content='echo "Hello, World!"', path='hello.sh'),
+                'observations': [FileWriteObservation(content='echo "Hello, World!"', path='hello.sh')],
             },
             {
                 'action': FileReadAction(path='hello.sh'),
-                'observations': [
-                    FileReadObservation('echo "Hello, World!"\n', path='hello.sh')
-                ],
+                'observations': [FileReadObservation('echo "Hello, World!"\n', path='hello.sh')],
             },
             {
                 'action': CmdRunAction(command='bash hello.sh'),
@@ -94,9 +84,7 @@ class DummyAgent(Agent):
                 ],
             },
             {
-                'action': BrowseInteractiveAction(
-                    browser_actions='goto("https://google.com")'
-                ),
+                'action': BrowseInteractiveAction(browser_actions='goto("https://google.com")'),
                 'observations': [
                     BrowserOutputObservation(
                         '<html><body>Simulated Google page after interaction</body></html>',
@@ -111,9 +99,7 @@ class DummyAgent(Agent):
                 'observations': [AgentStateChangedObservation('', AgentState.REJECTED)],
             },
             {
-                'action': AgentFinishAction(
-                    outputs={}, thought='Task completed', action='finish'
-                ),
+                'action': AgentFinishAction(outputs={}, thought='Task completed', action='finish'),
                 'observations': [AgentStateChangedObservation('', AgentState.FINISHED)],
             },
         ]
@@ -133,9 +119,7 @@ class DummyAgent(Agent):
                 hist_events = state.view[-len(expected_observations) :]
 
                 if len(hist_events) < len(expected_observations):
-                    print(
-                        f'Warning: Expected {len(expected_observations)} observations, but got {len(hist_events)}'
-                    )
+                    print(f'Warning: Expected {len(expected_observations)} observations, but got {len(hist_events)}')
 
                 for i in range(min(len(expected_observations), len(hist_events))):
                     hist_obs = event_to_dict(hist_events[i])
@@ -149,8 +133,6 @@ class DummyAgent(Agent):
                         obs.pop('source', None)
 
                     if hist_obs != expected_obs:
-                        print(
-                            f'Warning: Observation mismatch. Expected {expected_obs}, got {hist_obs}'
-                        )
+                        print(f'Warning: Observation mismatch. Expected {expected_obs}, got {hist_obs}')
 
         return action

@@ -212,10 +212,7 @@ class TestCliPauseResumeInRunSession:
                 nonlocal is_paused
 
                 if isinstance(event.observation, AgentStateChangedObservation):
-                    if (
-                        event.observation.agent_state
-                        == AgentState.AWAITING_USER_CONFIRMATION
-                    ):
+                    if event.observation.agent_state == AgentState.AWAITING_USER_CONFIRMATION:
                         if is_paused.is_set():
                             return
 
@@ -276,15 +273,11 @@ class TestAgentStatePauseResume:
     @pytest.mark.asyncio
     @patch('openhands.cli.main.display_agent_running_message')
     @patch('openhands.cli.main.process_agent_pause')
-    async def test_agent_running_enables_pause(
-        self, mock_process_agent_pause, mock_display_message
-    ):
+    async def test_agent_running_enables_pause(self, mock_process_agent_pause, mock_display_message):
         """Test that when the agent is running, pause functionality is enabled."""
         # Create a mock event and event stream
         event = MagicMock()
-        event.observation = AgentStateChangedObservation(
-            agent_state=AgentState.RUNNING, content='Agent is running'
-        )
+        event.observation = AgentStateChangedObservation(agent_state=AgentState.RUNNING, content='Agent is running')
         event_stream = MagicMock()
 
         # Create mock dependencies
@@ -301,9 +294,7 @@ class TestAgentStatePauseResume:
                 if isinstance(event.observation, AgentStateChangedObservation):
                     if event.observation.agent_state == AgentState.RUNNING:
                         mock_display_message()
-                        loop.create_task(
-                            mock_process_agent_pause(is_paused, event_stream)
-                        )
+                        loop.create_task(mock_process_agent_pause(is_paused, event_stream))
 
             # Call on_event_async_test
             await on_event_async_test(event)
@@ -320,9 +311,7 @@ class TestAgentStatePauseResume:
     @pytest.mark.asyncio
     @patch('openhands.cli.main.display_event')
     @patch('openhands.cli.main.update_usage_metrics')
-    async def test_pause_event_changes_agent_state(
-        self, mock_update_metrics, mock_display_event
-    ):
+    async def test_pause_event_changes_agent_state(self, mock_update_metrics, mock_display_event):
         """Test that when is_paused is set, a PAUSED state change event is added to the stream."""
         # Create mock dependencies
         event = MagicMock()

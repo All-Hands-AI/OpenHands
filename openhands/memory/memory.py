@@ -86,10 +86,7 @@ class Memory:
                 # if this is a workspace context recall (on first user message)
                 # create and add a RecallObservation
                 # with info about repo, runtime, instructions, etc. including microagent knowledge if any
-                if (
-                    event.source == EventSource.USER
-                    and event.recall_type == RecallType.WORKSPACE_CONTEXT
-                ):
+                if event.source == EventSource.USER and event.recall_type == RecallType.WORKSPACE_CONTEXT:
                     logger.debug('Workspace context recall')
                     workspace_obs: RecallObservation | NullObservation | None = None
 
@@ -106,12 +103,9 @@ class Memory:
                 # Handle knowledge recall (triggered microagents)
                 # Allow triggering from both user and agent messages
                 elif (
-                    event.source == EventSource.USER
-                    or event.source == EventSource.AGENT
+                    event.source == EventSource.USER or event.source == EventSource.AGENT
                 ) and event.recall_type == RecallType.KNOWLEDGE:
-                    logger.debug(
-                        f'Microagent knowledge recall from {event.source} message'
-                    )
+                    logger.debug(f'Microagent knowledge recall from {event.source} message')
                     microagent_obs: RecallObservation | NullObservation | None = None
                     microagent_obs = self._on_microagent_recall(event)
                     if microagent_obs is None:
@@ -128,9 +122,7 @@ class Memory:
             self.send_error_message('STATUS$ERROR_MEMORY', error_str)
             return
 
-    def _on_workspace_context_recall(
-        self, event: RecallAction
-    ) -> RecallObservation | None:
+    def _on_workspace_context_recall(self, event: RecallAction) -> RecallObservation | None:
         """Add repository and runtime information to the stream as a RecallObservation.
 
         This method collects information from all available repo microagents and concatenates their contents.
@@ -169,16 +161,14 @@ class Memory:
                 if self.repository_info and self.repository_info.repo_name is not None
                 else '',
                 repo_directory=self.repository_info.repo_directory
-                if self.repository_info
-                and self.repository_info.repo_directory is not None
+                if self.repository_info and self.repository_info.repo_directory is not None
                 else '',
                 repo_instructions=repo_instructions if repo_instructions else '',
                 runtime_hosts=self.runtime_info.available_hosts
                 if self.runtime_info and self.runtime_info.available_hosts is not None
                 else {},
                 additional_agent_instructions=self.runtime_info.additional_agent_instructions
-                if self.runtime_info
-                and self.runtime_info.additional_agent_instructions is not None
+                if self.runtime_info and self.runtime_info.additional_agent_instructions is not None
                 else '',
                 microagent_knowledge=microagent_knowledge,
                 content='Added workspace context',
@@ -241,17 +231,13 @@ class Memory:
                 )
         return recalled_content
 
-    def load_user_workspace_microagents(
-        self, user_microagents: list[BaseMicroagent]
-    ) -> None:
+    def load_user_workspace_microagents(self, user_microagents: list[BaseMicroagent]) -> None:
         """
         This method loads microagents from a user's cloned repo or workspace directory.
 
         This is typically called from agent_session or setup once the workspace is cloned.
         """
-        logger.info(
-            'Loading user workspace microagents: %s', [m.name for m in user_microagents]
-        )
+        logger.info('Loading user workspace microagents: %s', [m.name for m in user_microagents])
         for user_microagent in user_microagents:
             if isinstance(user_microagent, KnowledgeMicroagent):
                 self.knowledge_microagents[user_microagent.name] = user_microagent
@@ -262,9 +248,7 @@ class Memory:
         """
         Loads microagents from the global microagents_dir
         """
-        repo_agents, knowledge_agents = load_microagents_from_dir(
-            GLOBAL_MICROAGENTS_DIR
-        )
+        repo_agents, knowledge_agents = load_microagents_from_dir(GLOBAL_MICROAGENTS_DIR)
         for name, agent in knowledge_agents.items():
             if isinstance(agent, KnowledgeMicroagent):
                 self.knowledge_microagents[name] = agent
@@ -285,9 +269,7 @@ class Memory:
         for agent in self.repo_microagents.values():
             if agent.metadata.mcp_tools:
                 mcp_configs.append(agent.metadata.mcp_tools)
-                logger.debug(
-                    f'Found MCP tools in repo microagent {agent.name}: {agent.metadata.mcp_tools}'
-                )
+                logger.debug(f'Found MCP tools in repo microagent {agent.name}: {agent.metadata.mcp_tools}')
 
         return mcp_configs
 
@@ -321,16 +303,12 @@ class Memory:
                 custom_secrets_descriptions=custom_secrets_descriptions,
             )
 
-    def set_conversation_instructions(
-        self, conversation_instructions: str | None
-    ) -> None:
+    def set_conversation_instructions(self, conversation_instructions: str | None) -> None:
         """
         Set contextual information for conversation
         This is information the agent may require
         """
-        self.conversation_instructions = ConversationInstructions(
-            content=conversation_instructions or ''
-        )
+        self.conversation_instructions = ConversationInstructions(content=conversation_instructions or '')
 
     def send_error_message(self, message_id: str, message: str):
         """Sends an error message if the callback function was provided."""
@@ -338,9 +316,7 @@ class Memory:
             try:
                 if self.loop is None:
                     self.loop = asyncio.get_running_loop()
-                asyncio.run_coroutine_threadsafe(
-                    self._send_status_message('error', message_id, message), self.loop
-                )
+                asyncio.run_coroutine_threadsafe(self._send_status_message('error', message_id, message), self.loop)
             except RuntimeError as e:
                 logger.error(
                     f'Error sending status message: {e.__class__.__name__}',

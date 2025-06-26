@@ -201,9 +201,7 @@ class GitHubService(BaseGitService, GitService):
             # Iterate through each installation ID
             for installation_id in installation_ids:
                 params = {'per_page': str(PER_PAGE)}
-                url = (
-                    f'{self.BASE_URL}/user/installations/{installation_id}/repositories'
-                )
+                url = f'{self.BASE_URL}/user/installations/{installation_id}/repositories'
 
                 # Fetch repositories for this installation
                 installation_repos = await self._fetch_paginated_repos(
@@ -244,9 +242,7 @@ class GitHubService(BaseGitService, GitService):
         installations = response.get('installations', [])
         return [i['id'] for i in installations]
 
-    async def search_repositories(
-        self, query: str, per_page: int, sort: str, order: str
-    ) -> list[Repository]:
+    async def search_repositories(self, query: str, per_page: int, sort: str, order: str) -> list[Repository]:
         url = f'{self.BASE_URL}/search/repositories'
         # Add is:public to the query to ensure we only search for public repositories
         query_with_visibility = f'{query} is:public'
@@ -273,9 +269,7 @@ class GitHubService(BaseGitService, GitService):
 
         return repos
 
-    async def execute_graphql_query(
-        self, query: str, variables: dict[str, Any]
-    ) -> dict[str, Any]:
+    async def execute_graphql_query(self, query: str, variables: dict[str, Any]) -> dict[str, Any]:
         """Execute a GraphQL query against the GitHub API."""
         try:
             async with httpx.AsyncClient() as client:
@@ -289,9 +283,7 @@ class GitHubService(BaseGitService, GitService):
 
                 result = response.json()
                 if 'errors' in result:
-                    raise UnknownException(
-                        f'GraphQL query error: {json.dumps(result["errors"])}'
-                    )
+                    raise UnknownException(f'GraphQL query error: {json.dumps(result["errors"])}')
 
                 return dict(result)
 
@@ -316,9 +308,7 @@ class GitHubService(BaseGitService, GitService):
         variables = {'login': login}
 
         try:
-            pr_response = await self.execute_graphql_query(
-                suggested_task_pr_graphql_query, variables
-            )
+            pr_response = await self.execute_graphql_query(suggested_task_pr_graphql_query, variables)
             pr_data = pr_response['data']['user']
 
             # Process pull requests
@@ -334,16 +324,10 @@ class GitHubService(BaseGitService, GitService):
                 elif (
                     pr['commits']['nodes']
                     and pr['commits']['nodes'][0]['commit']['statusCheckRollup']
-                    and pr['commits']['nodes'][0]['commit']['statusCheckRollup'][
-                        'state'
-                    ]
-                    == 'FAILURE'
+                    and pr['commits']['nodes'][0]['commit']['statusCheckRollup']['state'] == 'FAILURE'
                 ):
                     task_type = TaskType.FAILING_CHECKS
-                elif any(
-                    review['state'] in ['CHANGES_REQUESTED', 'COMMENTED']
-                    for review in pr['reviews']['nodes']
-                ):
+                elif any(review['state'] in ['CHANGES_REQUESTED', 'COMMENTED'] for review in pr['reviews']['nodes']):
                     task_type = TaskType.UNRESOLVED_COMMENTS
 
                 # Only add the task if it's not OPEN_PR
@@ -369,9 +353,7 @@ class GitHubService(BaseGitService, GitService):
 
         try:
             # Execute issue query
-            issue_response = await self.execute_graphql_query(
-                suggested_task_issue_graphql_query, variables
-            )
+            issue_response = await self.execute_graphql_query(suggested_task_issue_graphql_query, variables)
             issue_data = issue_response['data']['user']
 
             # Process issues
@@ -400,9 +382,7 @@ class GitHubService(BaseGitService, GitService):
 
         return tasks
 
-    async def get_repository_details_from_repo_name(
-        self, repository: str
-    ) -> Repository:
+    async def get_repository_details_from_repo_name(self, repository: str) -> Repository:
         url = f'{self.BASE_URL}/repos/{repository}'
         repo, _ = await self._make_request(url)
 
@@ -438,9 +418,7 @@ class GitHubService(BaseGitService, GitService):
                 last_push_date = None
                 if branch_data.get('commit') and branch_data['commit'].get('commit'):
                     commit_info = branch_data['commit']['commit']
-                    if commit_info.get('committer') and commit_info['committer'].get(
-                        'date'
-                    ):
+                    if commit_info.get('committer') and commit_info['committer'].get('date'):
                         last_push_date = commit_info['committer']['date']
 
                 branch = Branch(
@@ -501,9 +479,7 @@ class GitHubService(BaseGitService, GitService):
         }
 
         # Make the POST request to create the PR
-        response, _ = await self._make_request(
-            url=url, params=payload, method=RequestMethod.POST
-        )
+        response, _ = await self._make_request(url=url, params=payload, method=RequestMethod.POST)
 
         # Return the HTML URL of the created PR
         return response['html_url']

@@ -51,9 +51,7 @@ def run_chatgpt_query_multi_turn(
                     **OPENAI_GEN_HYP,
                 )
             else:
-                response = client.chat.completions.create(
-                    model=model_name, messages=messages, **OPENAI_GEN_HYP
-                )
+                response = client.chat.completions.create(model=model_name, messages=messages, **OPENAI_GEN_HYP)
             break
 
         except Exception as e:

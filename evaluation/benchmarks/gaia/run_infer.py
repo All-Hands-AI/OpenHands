@@ -105,14 +105,10 @@ def initialize_runtime(
         # if this question comes with a file, we need to save it to the workspace
         assert metadata.data_split is not None
         extension_name = instance['file_name'].split('.')[-1]
-        src_file = os.path.join(
-            DATASET_CACHE_DIR, '2023', metadata.data_split, instance['file_name']
-        )
+        src_file = os.path.join(DATASET_CACHE_DIR, '2023', metadata.data_split, instance['file_name'])
         assert os.path.exists(src_file)
         if extension_name == 'zip':
-            temp_dir = os.path.join(
-                DATASET_CACHE_DIR, '2023', metadata.data_split, 'tmp_file'
-            )
+            temp_dir = os.path.join(DATASET_CACHE_DIR, '2023', metadata.data_split, 'tmp_file')
             os.makedirs(temp_dir, exist_ok=True)
             with zipfile.ZipFile(src_file, 'r') as zip_ref:
                 zip_ref.extractall(temp_dir)
@@ -126,9 +122,7 @@ def initialize_runtime(
             runtime.copy_to(src_file, dest_file)
 
             # rename to file.extension_name
-            action = CmdRunAction(
-                command=f'mv /workspace/{instance["file_name"]} /workspace/file.{extension_name}'
-            )
+            action = CmdRunAction(command=f'mv /workspace/{instance["file_name"]} /workspace/file.{extension_name}')
             logger.info(action, extra={'msg_type': 'ACTION'})
             obs = runtime.run_action(action)
             assert obs.exit_code == 0
@@ -138,9 +132,7 @@ def initialize_runtime(
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
-    action = CmdRunAction(
-        command='apt-get update && apt-get install -y ffmpeg && apt-get install -y ffprobe'
-    )
+    action = CmdRunAction(command='apt-get update && apt-get install -y ffmpeg && apt-get install -y ffprobe')
     runtime.run_action(action)
     logger.info(f'{"-" * 50} END Runtime Initialization Fn {"-" * 50}')
 
@@ -181,9 +173,7 @@ Here is the task:
             instruction += f'To solve this task you will have to use the attached file provided in the workspace at location: {dest_file}\n\n'
         elif extension_name == 'zip':
             filenames = []
-            src_file = os.path.join(
-                DATASET_CACHE_DIR, '2023', metadata.data_split, instance['file_name']
-            )
+            src_file = os.path.join(DATASET_CACHE_DIR, '2023', metadata.data_split, instance['file_name'])
             with zipfile.ZipFile(src_file, 'r') as zip_ref:
                 filenames = zip_ref.namelist()
 
@@ -191,9 +181,7 @@ Here is the task:
             filenames = ', '.join(filenames)
             instruction += f'To solve this task you will have to use the attached files provided in the workspace at locations: {filenames}\n\n'
         else:  # Image files: jpg, png
-            src_file = os.path.join(
-                DATASET_CACHE_DIR, '2023', metadata.data_split, instance['file_name']
-            )
+            src_file = os.path.join(DATASET_CACHE_DIR, '2023', metadata.data_split, instance['file_name'])
             instruction += 'Image: To solve this task you will have to use the image shown below.\n\n'
             image = Image.open(src_file)
             if extension_name == 'jpg':
@@ -204,9 +192,7 @@ Here is the task:
     instruction += """IMPORTANT: When seeking information from a website, REFRAIN from arbitrary URL navigation. You should utilize the designated search engine tool with precise keywords to obtain relevant URLs or use the specific website's search interface. DO NOT navigate directly to specific URLs as they may not exist.\n\nFor example: if you want to search for a research paper on Arxiv, either use the search engine tool with specific keywords or navigate to arxiv.org and then use its interface.\n"""
     instruction += 'IMPORTANT: You should NEVER ask for Human Help.\n'
     instruction += 'IMPORTANT: Please encapsulate your final answer (answer ONLY) within <solution> and </solution>. Your answer will be evaluated using string matching approaches so it important that you STRICTLY adhere to the output formatting instructions specified in the task (e.g., alphabetization, sequencing, units, rounding, decimal places, etc.)\n'
-    instruction += (
-        'For example: The answer to the question is <solution> 42 </solution>.\n'
-    )
+    instruction += 'For example: The answer to the question is <solution> 42 </solution>.\n'
     instruction += "IMPORTANT: Your final answer should be a number OR as few words as possible OR a comma separated list of numbers and/or strings. If you are asked for a number, express it numerically (i.e., with digits rather than words), do not use commas, and do not include units such as $ or percent signs unless specified otherwise. If you are asked for a string, don't use articles, neither abbreviations (e.g. for cities). If you are asked for a comma separated list, apply the above rules depending of whether the element to be put in the list is a number or a string.\n"
 
     # NOTE: You can actually set slightly different instruction for different agents
@@ -221,13 +207,9 @@ Here is the task:
     state: State | None = asyncio.run(
         run_controller(
             config=config,
-            initial_user_action=MessageAction(
-                content=instruction, image_urls=image_urls
-            ),
+            initial_user_action=MessageAction(content=instruction, image_urls=image_urls),
             runtime=runtime,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
-                metadata.agent_class
-            ],
+            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[metadata.agent_class],
         )
     )
     # ======= Attempt to evaluate the agent's edits =======
@@ -259,12 +241,8 @@ Here is the task:
     else:
         model_answer = model_answer[0]
 
-    logger.info(
-        f'Final message: {model_answer} | Ground truth: {instance["Final answer"]}'
-    )
-    score = question_scorer(
-        model_answer=model_answer, ground_truth=instance['Final answer']
-    )
+    logger.info(f'Final message: {model_answer} | Ground truth: {instance["Final answer"]}')
+    score = question_scorer(model_answer=model_answer, ground_truth=instance['Final answer'])
     test_result = {
         'score': score,
         'model_answer_raw': model_answer_raw,

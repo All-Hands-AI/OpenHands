@@ -109,9 +109,7 @@ def convert_tool_call_to_string(tool_call: dict) -> str:
     try:
         args = json.loads(tool_call['function']['arguments'])
     except json.JSONDecodeError as e:
-        raise ValueError(
-            f'Failed to parse arguments as JSON. Arguments: {tool_call["function"]["arguments"]}'
-        ) from e
+        raise ValueError(f'Failed to parse arguments as JSON. Arguments: {tool_call["function"]["arguments"]}') from e
     for param_name, param_value in args.items():
         is_multiline = isinstance(param_value, str) and '\n' in param_value
         ret += f'<parameter={param_name}>'
@@ -149,11 +147,7 @@ def format_traj(traj, first_n_turns=None, last_n_turns=None) -> str:
             (first_n_turns is not None and i >= first_n_turns and last_n_turns is None)
             or
             # Case 2: last_n_turns specified and we're before it
-            (
-                last_n_turns is not None
-                and i < n_turns - last_n_turns
-                and first_n_turns is None
-            )
+            (last_n_turns is not None and i < n_turns - last_n_turns and first_n_turns is None)
             or
             # Case 3: both specified and we're in the middle section
             (
@@ -170,18 +164,14 @@ def format_traj(traj, first_n_turns=None, last_n_turns=None) -> str:
         else:
             if current_messages:
                 # Merge all accumulated user messages into one
-                merged_content = '\n'.join(
-                    _convert_content(msg['content']) for msg in current_messages
-                )
+                merged_content = '\n'.join(_convert_content(msg['content']) for msg in current_messages)
                 merged_traj.append({'role': 'user', 'content': merged_content})
                 current_messages = []
             merged_traj.append(message)
 
     # Don't forget to handle any remaining user messages
     if current_messages:
-        merged_content = '\n'.join(
-            _convert_content(msg['content']) for msg in current_messages
-        )
+        merged_content = '\n'.join(_convert_content(msg['content']) for msg in current_messages)
         merged_traj.append({'role': 'user', 'content': merged_content})
 
     # Now process the merged trajectory
@@ -198,11 +188,7 @@ def format_traj(traj, first_n_turns=None, last_n_turns=None) -> str:
             output += f'{content}\n'
         elif role == 'assistant':
             output += f'{content}\n'
-            if (
-                'tool_calls' in message
-                and message['tool_calls'] is not None
-                and len(message['tool_calls']) > 0
-            ):
+            if 'tool_calls' in message and message['tool_calls'] is not None and len(message['tool_calls']) > 0:
                 for toolcall_id, tool_call in enumerate(message['tool_calls']):
                     output += f'### Tool Call {toolcall_id}\n'
                     output += f'{convert_tool_call_to_string(tool_call)}\n'
@@ -227,17 +213,13 @@ def write_row_to_md_file(row, instance_id_to_test_result):
     if 'report' in row and row['report'] is not None:
         if not isinstance(row['report'], dict):
             resolved = None
-            print(
-                f'ERROR: Report is not a dict, but a {type(row["report"])}. Row: {row}'
-            )
+            print(f'ERROR: Report is not a dict, but a {type(row["report"])}. Row: {row}')
         else:
             resolved = row['report'].get('resolved', False)
     elif row['instance_id'] in instance_id_to_test_result:
         report = instance_id_to_test_result[row['instance_id']].get('report', {})
         resolved = report.get('resolved', False)
-        test_output = instance_id_to_test_result[row['instance_id']].get(
-            'test_output', None
-        )
+        test_output = instance_id_to_test_result[row['instance_id']].get('test_output', None)
     else:
         resolved = None
 
@@ -257,9 +239,7 @@ def write_row_to_md_file(row, instance_id_to_test_result):
     else:
         report = None
 
-    test_output_file = os.path.join(
-        output_dir, 'eval_outputs', instance_id, 'test_output.txt'
-    )
+    test_output_file = os.path.join(output_dir, 'eval_outputs', instance_id, 'test_output.txt')
     if test_output is None and os.path.exists(test_output_file):
         with open(test_output_file, 'r') as f:
             test_output = f.read()
@@ -298,11 +278,7 @@ def write_row_to_md_file(row, instance_id_to_test_result):
 instance_id_to_test_result = {}
 if eval_output_df is not None:
     instance_id_to_test_result = (
-        eval_output_df[['instance_id', 'test_result']]
-        .set_index('instance_id')['test_result']
-        .to_dict()
+        eval_output_df[['instance_id', 'test_result']].set_index('instance_id')['test_result'].to_dict()
     )
 
-oh_format.progress_apply(
-    write_row_to_md_file, axis=1, instance_id_to_test_result=instance_id_to_test_result
-)
+oh_format.progress_apply(write_row_to_md_file, axis=1, instance_id_to_test_result=instance_id_to_test_result)

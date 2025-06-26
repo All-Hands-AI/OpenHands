@@ -5,9 +5,7 @@ import sys
 from openhands.core.logger import openhands_logger as logger
 
 
-def init_user_and_working_directory(
-    username: str, user_id: int, initial_cwd: str
-) -> int | None:
+def init_user_and_working_directory(username: str, user_id: int, initial_cwd: str) -> int | None:
     """Create working directory and user if not exists.
     It performs the following steps effectively:
     * Creates the Working Directory:
@@ -71,28 +69,20 @@ def init_user_and_working_directory(
     # Check if the username already exists
     existing_user_id = -1
     try:
-        result = subprocess.run(
-            f'id -u {username}', shell=True, check=True, capture_output=True
-        )
+        result = subprocess.run(f'id -u {username}', shell=True, check=True, capture_output=True)
         existing_user_id = int(result.stdout.decode().strip())
 
         # The user ID already exists, skip setup
         if existing_user_id == user_id:
-            logger.debug(
-                f'User `{username}` already has the provided UID {user_id}. Skipping user setup.'
-            )
+            logger.debug(f'User `{username}` already has the provided UID {user_id}. Skipping user setup.')
         else:
-            logger.warning(
-                f'User `{username}` already exists with UID {existing_user_id}. Skipping user setup.'
-            )
+            logger.warning(f'User `{username}` already exists with UID {existing_user_id}. Skipping user setup.')
             return existing_user_id
         return None
     except subprocess.CalledProcessError as e:
         # Returncode 1 indicates, that the user does not exist yet
         if e.returncode == 1:
-            logger.debug(
-                f'User `{username}` does not exist. Proceeding with user creation.'
-            )
+            logger.debug(f'User `{username}` does not exist. Proceeding with user creation.')
         else:
             logger.error(f'Error checking user `{username}`, skipping setup:\n{e}\n')
             raise
@@ -104,17 +94,10 @@ def init_user_and_working_directory(
         raise RuntimeError(f'Failed to add sudoer: {output.stderr.decode()}')
     logger.debug(f'Added sudoer successfully. Output: [{output.stdout.decode()}]')
 
-    command = (
-        f'useradd -rm -d /home/{username} -s /bin/bash '
-        f'-g root -G sudo -u {user_id} {username}'
-    )
+    command = f'useradd -rm -d /home/{username} -s /bin/bash -g root -G sudo -u {user_id} {username}'
     output = subprocess.run(command, shell=True, capture_output=True)
     if output.returncode == 0:
-        logger.debug(
-            f'Added user `{username}` successfully with UID {user_id}. Output: [{output.stdout.decode()}]'
-        )
+        logger.debug(f'Added user `{username}` successfully with UID {user_id}. Output: [{output.stdout.decode()}]')
     else:
-        raise RuntimeError(
-            f'Failed to create user `{username}` with UID {user_id}. Output: [{output.stderr.decode()}]'
-        )
+        raise RuntimeError(f'Failed to create user `{username}` with UID {user_id}. Output: [{output.stderr.decode()}]')
     return None

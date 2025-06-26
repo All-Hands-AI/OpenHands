@@ -56,9 +56,7 @@ def response_to_actions(
             try:
                 arguments = json.loads(tool_call.function.arguments)
             except json.decoder.JSONDecodeError as e:
-                raise RuntimeError(
-                    f'Failed to parse tool call arguments: {tool_call.function.arguments}'
-                ) from e
+                raise RuntimeError(f'Failed to parse tool call arguments: {tool_call.function.arguments}') from e
 
             # ================================================
             # LocAgent's Tools

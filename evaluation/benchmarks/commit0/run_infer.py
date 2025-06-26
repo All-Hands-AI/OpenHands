@@ -81,16 +81,12 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
     )
 
     if RUN_WITH_BROWSING:
-        instruction += (
-            '<IMPORTANT!>\nYou SHOULD NEVER attempt to browse the web. </IMPORTANT!>\n'
-        )
+        instruction += '<IMPORTANT!>\nYou SHOULD NEVER attempt to browse the web. </IMPORTANT!>\n'
     return instruction
 
 
 # TODO: migrate all swe-bench docker to ghcr.io/openhands
-DOCKER_IMAGE_PREFIX = os.environ.get(
-    'EVAL_DOCKER_IMAGE_PREFIX', 'docker.io/wentingzhao/'
-)
+DOCKER_IMAGE_PREFIX = os.environ.get('EVAL_DOCKER_IMAGE_PREFIX', 'docker.io/wentingzhao/')
 logger.info(f'Using docker image prefix: {DOCKER_IMAGE_PREFIX}')
 
 
@@ -151,9 +147,7 @@ def initialize_runtime(
     workspace_dir_name = _get_commit0_workspace_dir_name(instance)
     obs: CmdOutputObservation
 
-    action = CmdRunAction(
-        command=f'git clone -b commit0_combined https://github.com/{instance["repo"]}.git'
-    )
+    action = CmdRunAction(command=f'git clone -b commit0_combined https://github.com/{instance["repo"]}.git')
     action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
@@ -178,9 +172,7 @@ def initialize_runtime(
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert_and_raise(
-        obs.exit_code == 0, f'Failed to git checkout new branch openhands: {str(obs)}'
-    )
+    assert_and_raise(obs.exit_code == 0, f'Failed to git checkout new branch openhands: {str(obs)}')
 
     # Install commit0
     action = CmdRunAction(command='/root/.cargo/bin/uv pip install commit0')
@@ -229,8 +221,7 @@ def complete_runtime(
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(
-        isinstance(obs, CmdOutputObservation)
-        and (obs.exit_code == 0 or obs.exit_code == 1),
+        isinstance(obs, CmdOutputObservation) and (obs.exit_code == 0 or obs.exit_code == 1),
         f'Failed to git commit -m "openhands": {str(obs)}',
     )
 
@@ -238,9 +229,7 @@ def complete_runtime(
     n_retries = 0
     git_patch = None
     while n_retries < 5:
-        action = CmdRunAction(
-            command=f"git diff {instance['base_commit']} HEAD -- . ':(exclude)spec.pdf.bz2'"
-        )
+        action = CmdRunAction(command=f"git diff {instance['base_commit']} HEAD -- . ':(exclude)spec.pdf.bz2'")
         action.set_hard_timeout(600 + 100 * n_retries)
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
@@ -405,9 +394,7 @@ def process_instance(
                 config=config,
                 initial_user_action=MessageAction(content=instruction),
                 runtime=runtime,
-                fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
-                    metadata.agent_class
-                ],
+                fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[metadata.agent_class],
             )
         )
 
@@ -429,15 +416,9 @@ def process_instance(
         zip_file = return_val['zip_file']
 
         repo_name = instance['repo'].split('/')[1]
-        zip_dest = os.path.join(
-            metadata.eval_output_dir, 'repos', repo_name, f'{repo_name}.zip'
-        )
-        patch_file = os.path.join(
-            metadata.eval_output_dir, 'repos', repo_name, f'{repo_name}_patch.diff'
-        )
-        test_output_file = os.path.join(
-            metadata.eval_output_dir, 'repos', repo_name, f'{repo_name}_test_output.txt'
-        )
+        zip_dest = os.path.join(metadata.eval_output_dir, 'repos', repo_name, f'{repo_name}.zip')
+        patch_file = os.path.join(metadata.eval_output_dir, 'repos', repo_name, f'{repo_name}_patch.diff')
+        test_output_file = os.path.join(metadata.eval_output_dir, 'repos', repo_name, f'{repo_name}_test_output.txt')
         pytest_exit_code_file = os.path.join(
             metadata.eval_output_dir,
             'repos',
@@ -458,9 +439,7 @@ def process_instance(
             with open(write_target[0], 'w') as f:
                 f.write(write_target[1])
 
-        logger.info(
-            f'Got evaluation result for repo {instance.instance_id}:\n--------\n{eval_result}\n--------'
-        )
+        logger.info(f'Got evaluation result for repo {instance.instance_id}:\n--------\n{eval_result}\n--------')
     finally:
         runtime.close()
     # ==========================================
@@ -507,10 +486,7 @@ def commit0_setup(dataset: pd.DataFrame, repo_split: str) -> pd.DataFrame:
     """
 
     filtered_dataset = pd.concat(
-        [
-            dataset[dataset['repo'].str.split('/').str[1] == repo]
-            for repo in SPLIT.get(repo_split, [])
-        ]
+        [dataset[dataset['repo'].str.split('/').str[1] == repo] for repo in SPLIT.get(repo_split, [])]
     )
 
     # Drop setup column if it exists
@@ -566,9 +542,7 @@ if __name__ == '__main__':
     details = {}
     _agent_cls = openhands.agenthub.Agent.get_cls(args.agent_cls)
 
-    dataset_descrption = (
-        args.dataset.replace('/', '__') + '-' + args.repo_split.replace('/', '__')
-    )
+    dataset_descrption = args.dataset.replace('/', '__') + '-' + args.repo_split.replace('/', '__')
     metadata = make_metadata(
         llm_config,
         dataset_descrption,

@@ -45,17 +45,10 @@ def codeact_user_response(state: State) -> str:
     )
     if state.history:
         # check if the agent has tried to talk to the user 3 times, if so, let the agent know it can give up
-        user_msgs = [
-            event
-            for event in state.history
-            if isinstance(event, MessageAction) and event.source == 'user'
-        ]
+        user_msgs = [event for event in state.history if isinstance(event, MessageAction) and event.source == 'user']
         if len(user_msgs) > 2:
             # let the agent know that it can give up when it has tried 3 times
-            return (
-                msg
-                + 'If you want to give up, use the "finish" tool to finish the interaction.\n'
-            )
+            return msg + 'If you want to give up, use the "finish" tool to finish the interaction.\n'
     return msg
 
 
@@ -114,9 +107,7 @@ def load_bird():
         """Downloads and extracts the bird dataset from a specified URL into a local directory."""
         devset_path = os.path.join(LOCAL_DATASET_PATH, 'dev')
         if not os.path.exists(devset_path):
-            logger.info(
-                f'{LOCAL_DATASET_PATH} folder does not exist, starting download and extraction...'
-            )
+            logger.info(f'{LOCAL_DATASET_PATH} folder does not exist, starting download and extraction...')
             os.makedirs(LOCAL_DATASET_PATH, exist_ok=True)
 
             download_url = 'https://bird-bench.oss-cn-beijing.aliyuncs.com/dev.zip'
@@ -164,28 +155,15 @@ def load_bird():
             table_info_query = f'PRAGMA table_info(`{table_name}`);'
             top_k_row_query = f'SELECT * FROM {table_name} LIMIT {limit_value};'
             try:
-                headers = [
-                    x[1]
-                    for x in sqlite3.connect(db_path)
-                    .cursor()
-                    .execute(table_info_query)
-                    .fetchall()
-                ]
+                headers = [x[1] for x in sqlite3.connect(db_path).cursor().execute(table_info_query).fetchall()]
             except Exception:
                 logger.error(f'Error Connection: {table_info_query}, {top_k_row_query}')
                 exit(0)
 
             prompt += create_table_statement + ';\n'
             if limit_value > 0:
-                top_k_rows = (
-                    sqlite3.connect(db_path)
-                    .cursor()
-                    .execute(top_k_row_query)
-                    .fetchall()
-                )
-                prompt += (
-                    f'/*\n3 example rows:\n{top_k_row_query}\n{"    ".join(headers)}\n'
-                )
+                top_k_rows = sqlite3.connect(db_path).cursor().execute(top_k_row_query).fetchall()
+                prompt += f'/*\n3 example rows:\n{top_k_row_query}\n{"    ".join(headers)}\n'
                 for row in top_k_rows:
                     row = [str(x) for x in row]
                     row = [x if x is not None else '' for x in row]
@@ -212,9 +190,7 @@ def load_bird():
         """Processes the raw bird dataset into a structured format and saves it as JSON."""
         processed_path = os.path.join(LOCAL_DATASET_PATH, 'dev', 'processed_dev.json')
         if not os.path.exists(processed_path):
-            logger.info(
-                f'{processed_path} folder does not exist, starting processing...'
-            )
+            logger.info(f'{processed_path} folder does not exist, starting processing...')
             raw_data_path = os.path.join(LOCAL_DATASET_PATH, 'dev', 'dev.json')
             database_path = os.path.join(LOCAL_DATASET_PATH, 'dev', 'dev_databases')
             processed_data = []
@@ -223,9 +199,7 @@ def load_bird():
                 for e in tqdm(data):
                     item = {
                         'instance_id': f'{len(processed_data)}',
-                        'db_path': os.path.join(
-                            database_path, e['db_id'], f'{e["db_id"]}.sqlite'
-                        ),
+                        'db_path': os.path.join(database_path, e['db_id'], f'{e["db_id"]}.sqlite'),
                         'db_id': e['db_id'],
                         'instruction': _create_prompt(e, database_path),
                         'SQL': e['SQL'],
@@ -408,9 +382,7 @@ def process_instance(
         run_controller(
             config=config,
             initial_user_action=MessageAction(content=instruction),
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
-                metadata.agent_class
-            ],
+            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[metadata.agent_class],
             runtime=runtime,
         )
     )
@@ -467,6 +439,4 @@ if __name__ == '__main__':
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(dataset, output_file, args.eval_n_limit)
 
-    run_evaluation(
-        instances, metadata, output_file, args.eval_num_workers, process_instance
-    )
+    run_evaluation(instances, metadata, output_file, args.eval_num_workers, process_instance)

@@ -35,9 +35,7 @@ class Task(ABC):
         assert hasattr(self, '_id'), 'Task does not have an id.'
         return self._id
 
-    def in_context_example(
-        self, use_tool: bool = True, with_feedback: bool = False
-    ) -> str:
+    def in_context_example(self, use_tool: bool = True, with_feedback: bool = False) -> str:
         """Return the in-context example for the task."""
         if use_tool and not with_feedback:
             return self._in_context_example['with_tool']

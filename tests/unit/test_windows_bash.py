@@ -17,16 +17,11 @@ from openhands.runtime.utils.bash_constants import TIMEOUT_MESSAGE_TEMPLATE
 
 def get_timeout_suffix(timeout_seconds):
     """Helper function to generate the expected timeout suffix."""
-    return (
-        f'[The command timed out after {timeout_seconds} seconds. '
-        f'{TIMEOUT_MESSAGE_TEMPLATE}]'
-    )
+    return f'[The command timed out after {timeout_seconds} seconds. {TIMEOUT_MESSAGE_TEMPLATE}]'
 
 
 # Skip all tests in this module if not running on Windows
-pytestmark = pytest.mark.skipif(
-    sys.platform != 'win32', reason='WindowsPowershellSession tests require Windows'
-)
+pytestmark = pytest.mark.skipif(sys.platform != 'win32', reason='WindowsPowershellSession tests require Windows')
 
 
 @pytest.fixture
@@ -113,10 +108,7 @@ def test_command_failure_exit_code(windows_bash_session):
     assert isinstance(result, CmdOutputObservation)
     # Error should be captured in the output
     assert 'ERROR' in result.content
-    assert (
-        'is not recognized' in result.content
-        or 'CommandNotFoundException' in result.content
-    )
+    assert 'is not recognized' in result.content or 'CommandNotFoundException' in result.content
     assert result.exit_code == 1
 
 
@@ -286,9 +278,7 @@ def test_working_directory(windows_bash_session, temp_work_dir):
     # Check only the base name of the temp directory
     temp_dir_basename = os.path.basename(abs_temp_work_dir)
     assert windows_bash_session._cwd.lower().endswith(temp_dir_basename.lower())
-    assert result_cd_back.metadata.working_dir.lower().endswith(
-        temp_dir_basename.lower()
-    )
+    assert result_cd_back.metadata.working_dir.lower().endswith(temp_dir_basename.lower())
 
 
 def test_cleanup(windows_bash_session):
@@ -349,9 +339,7 @@ def test_exception_during_execution(windows_bash_session):
     mock_powershell_class = MagicMock()
     # Configure its Create method (which is called in execute) to raise an exception
     # This simulates an error during the creation of the PowerShell object itself.
-    mock_powershell_class.Create.side_effect = Exception(
-        'Test exception from mocked Create'
-    )
+    mock_powershell_class.Create.side_effect = Exception('Test exception from mocked Create')
 
     with patch(patch_target, mock_powershell_class):
         action = CmdRunAction(command="Write-Output 'Test'")
@@ -428,9 +416,7 @@ def test_stateful_file_operations(windows_bash_session, temp_work_dir):
     sub_dir_path = Path(abs_temp_work_dir) / sub_dir_name
 
     # Use PowerShell to create directory
-    create_dir_action = CmdRunAction(
-        command=f'New-Item -Path "{sub_dir_name}" -ItemType Directory'
-    )
+    create_dir_action = CmdRunAction(command=f'New-Item -Path "{sub_dir_name}" -ItemType Directory')
     result = windows_bash_session.execute(create_dir_action)
     assert result.exit_code == 0
 
@@ -446,9 +432,7 @@ def test_stateful_file_operations(windows_bash_session, temp_work_dir):
 
     # 3. Create a file in the current directory (which should be the subdirectory)
     test_content = 'This is a test file created by PowerShell'
-    create_file_action = CmdRunAction(
-        command=f'Set-Content -Path "test_file.txt" -Value "{test_content}"'
-    )
+    create_file_action = CmdRunAction(command=f'Set-Content -Path "test_file.txt" -Value "{test_content}"')
     result = windows_bash_session.execute(create_file_action)
     assert result.exit_code == 0
 
@@ -471,17 +455,13 @@ def test_stateful_file_operations(windows_bash_session, temp_work_dir):
     assert windows_bash_session._cwd.lower().endswith(temp_dir_basename.lower())
 
     # 7. Read the file using relative path
-    read_from_parent_action = CmdRunAction(
-        command=f'Get-Content -Path "{sub_dir_name}/test_file.txt"'
-    )
+    read_from_parent_action = CmdRunAction(command=f'Get-Content -Path "{sub_dir_name}/test_file.txt"')
     result = windows_bash_session.execute(read_from_parent_action)
     assert result.exit_code == 0
     assert test_content in result.content
 
     # 8. Clean up
-    remove_file_action = CmdRunAction(
-        command=f'Remove-Item -Path "{sub_dir_name}/test_file.txt" -Force'
-    )
+    remove_file_action = CmdRunAction(command=f'Remove-Item -Path "{sub_dir_name}/test_file.txt" -Force')
     result = windows_bash_session.execute(remove_file_action)
     assert result.exit_code == 0
 

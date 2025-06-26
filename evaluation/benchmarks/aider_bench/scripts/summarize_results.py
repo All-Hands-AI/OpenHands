@@ -22,9 +22,7 @@ def extract_test_results(df: pd.DataFrame) -> tuple[list[str], list[str]]:
 def visualize_results(df: pd.DataFrame):
     df1 = pd.DataFrame()
     df1['cost'] = df['metrics'].apply(pd.Series)['accumulated_cost']
-    df1['result'] = (
-        df['test_result'].apply(pd.Series)['exit_code'].map({0: 'Pass', 1: 'Fail'})
-    )
+    df1['result'] = df['test_result'].apply(pd.Series)['exit_code'].map({0: 'Pass', 1: 'Fail'})
     df1['actions'] = pd.Series([len(a) - 1 for a in df['history']])
 
     passed = np.sum(df1['result'] == 'Pass')
@@ -61,9 +59,7 @@ if __name__ == '__main__':
     passed_tests, failed_tests = extract_test_results(df)
     resolve_rate = visualize_results(df)
 
-    print(
-        f'\nPassed {len(passed_tests)} tests, failed {len(failed_tests)} tests, resolve rate = {resolve_rate:.2f}%'
-    )
+    print(f'\nPassed {len(passed_tests)} tests, failed {len(failed_tests)} tests, resolve rate = {resolve_rate:.2f}%')
     print('PASSED TESTS:')
     print(passed_tests)
     print('FAILED TESTS:')

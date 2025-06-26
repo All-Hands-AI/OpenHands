@@ -47,9 +47,7 @@ def create_mock_response(function_name: str, arguments: dict) -> ModelResponse:
 
 def test_execute_bash_valid():
     """Test execute_bash with valid arguments."""
-    response = create_mock_response(
-        'execute_bash', {'command': 'ls', 'is_input': 'false'}
-    )
+    response = create_mock_response('execute_bash', {'command': 'ls', 'is_input': 'false'})
     actions = response_to_actions(response)
     assert len(actions) == 1
     assert isinstance(actions[0], CmdRunAction)
@@ -130,9 +128,7 @@ def test_edit_file_missing_required():
 def test_str_replace_editor_valid():
     """Test str_replace_editor with valid arguments."""
     # Test view command
-    response = create_mock_response(
-        'str_replace_editor', {'command': 'view', 'path': '/path/to/file'}
-    )
+    response = create_mock_response('str_replace_editor', {'command': 'view', 'path': '/path/to/file'})
     actions = response_to_actions(response)
     assert len(actions) == 1
     assert isinstance(actions[0], FileReadAction)

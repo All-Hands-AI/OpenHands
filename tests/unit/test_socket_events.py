@@ -19,9 +19,7 @@ async def test_oh_user_action():
         await oh_user_action(connection_id, test_data)
 
         # Verify the conversation manager was called with the correct arguments
-        mock_manager.send_to_event_stream.assert_called_once_with(
-            connection_id, test_data
-        )
+        mock_manager.send_to_event_stream.assert_called_once_with(connection_id, test_data)
 
 
 @pytest.mark.asyncio
@@ -38,6 +36,4 @@ async def test_oh_action():
         await oh_action(connection_id, test_data)
 
         # Verify the conversation manager was called with the correct arguments
-        mock_manager.send_to_event_stream.assert_called_once_with(
-            connection_id, test_data
-        )
+        mock_manager.send_to_event_stream.assert_called_once_with(connection_id, test_data)

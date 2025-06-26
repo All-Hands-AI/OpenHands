@@ -66,9 +66,7 @@ async def test_get_microagents():
     mock_conversation.sid = 'test_sid'
 
     # Mock the conversation manager
-    with patch(
-        'openhands.server.routes.conversation.conversation_manager'
-    ) as mock_manager:
+    with patch('openhands.server.routes.conversation.conversation_manager') as mock_manager:
         # Set up the mocks
         mock_manager.get_agent_session.return_value = mock_agent_session
 
@@ -93,9 +91,7 @@ async def test_get_microagents():
         assert repo_agent['tools'] == ['git', 'file_editor']
 
         # Check knowledge microagent
-        knowledge_agent = next(
-            m for m in content['microagents'] if m['name'] == 'test_knowledge'
-        )
+        knowledge_agent = next(m for m in content['microagents'] if m['name'] == 'test_knowledge')
         assert knowledge_agent['type'] == 'knowledge'
         assert knowledge_agent['content'] == 'This is a test knowledge microagent'
         assert knowledge_agent['triggers'] == ['test', 'knowledge']
@@ -111,9 +107,7 @@ async def test_get_microagents_no_agent_session():
     mock_conversation.sid = 'test_sid'
 
     # Mock the conversation manager
-    with patch(
-        'openhands.server.routes.conversation.conversation_manager'
-    ) as mock_manager:
+    with patch('openhands.server.routes.conversation.conversation_manager') as mock_manager:
         # Set up the mocks
         mock_manager.get_agent_session.return_value = None
 
@@ -138,9 +132,7 @@ async def test_get_microagents_exception():
     mock_conversation.sid = 'test_sid'
 
     # Mock the conversation manager
-    with patch(
-        'openhands.server.routes.conversation.conversation_manager'
-    ) as mock_manager:
+    with patch('openhands.server.routes.conversation.conversation_manager') as mock_manager:
         # Set up the mocks to raise an exception
         mock_manager.get_agent_session.side_effect = Exception('Test exception')
 

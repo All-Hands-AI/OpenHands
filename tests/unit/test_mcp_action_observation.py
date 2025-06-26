@@ -61,9 +61,7 @@ def test_mcp_action_str_representation():
 
 def test_mcp_observation_creation():
     """Test creating an MCPObservation."""
-    observation = MCPObservation(
-        content=json.dumps({'result': 'success', 'data': 'test data'})
-    )
+    observation = MCPObservation(content=json.dumps({'result': 'success', 'data': 'test data'}))
 
     assert observation.content == json.dumps({'result': 'success', 'data': 'test data'})
     assert observation.observation == ObservationType.MCP
@@ -71,9 +69,7 @@ def test_mcp_observation_creation():
 
 def test_mcp_observation_message():
     """Test the message property of MCPObservation."""
-    observation = MCPObservation(
-        content=json.dumps({'result': 'success', 'data': 'test data'})
-    )
+    observation = MCPObservation(content=json.dumps({'result': 'success', 'data': 'test data'}))
 
     message = observation.message
     assert message == json.dumps({'result': 'success', 'data': 'test data'})
@@ -137,9 +133,7 @@ def test_mcp_observation_with_arguments():
     serialized = event_to_dict(observation)
 
     assert serialized['observation'] == ObservationType.MCP
-    assert serialized['content'] == json.dumps(
-        {'result': 'success', 'data': 'test data'}
-    )
+    assert serialized['content'] == json.dumps({'result': 'success', 'data': 'test data'})
     assert serialized['extras']['name'] == 'test_tool'
     assert serialized['extras']['arguments'] == complex_args
     assert serialized['extras']['arguments']['nested_arg']['inner_key'] == 'inner_value'

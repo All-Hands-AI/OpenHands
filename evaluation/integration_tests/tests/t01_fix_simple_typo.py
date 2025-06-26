@@ -27,13 +27,8 @@ class Test(BaseIntegrationTest):
         action = CmdRunAction(command='cat /workspace/bad.txt')
         obs = runtime.run_action(action)
         if obs.exit_code != 0:
-            return TestResult(
-                success=False, reason=f'Failed to run command: {obs.content}'
-            )
+            return TestResult(success=False, reason=f'Failed to run command: {obs.content}')
         # check if the file /workspace/bad.txt has been fixed
-        if (
-            obs.content.strip().replace('\r\n', '\n')
-            == 'This is a stupid typo.\nReally?\nNo more typos!\nEnjoy!'
-        ):
+        if obs.content.strip().replace('\r\n', '\n') == 'This is a stupid typo.\nReally?\nNo more typos!\nEnjoy!':
             return TestResult(success=True)
         return TestResult(success=False, reason=f'File not fixed: {obs.content}')

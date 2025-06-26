@@ -15,16 +15,12 @@ class InvariantClient:
         self.Policy = self._Policy(self)
         self.Monitor = self._Monitor(self)
 
-    def _create_session(
-        self, session_id: str | None = None
-    ) -> tuple[str | None, Exception | None]:
+    def _create_session(self, session_id: str | None = None) -> tuple[str | None, Exception | None]:
         elapsed = 0
         while elapsed < self.timeout:
             try:
                 if session_id:
-                    response = httpx.get(
-                        f'{self.server}/session/new?session_id={session_id}', timeout=60
-                    )
+                    response = httpx.get(f'{self.server}/session/new?session_id={session_id}', timeout=60)
                 else:
                     response = httpx.get(f'{self.server}/session/new', timeout=60)
                 response.raise_for_status()
@@ -40,9 +36,7 @@ class InvariantClient:
 
     def close_session(self) -> Exception | None:
         try:
-            response = httpx.delete(
-                f'{self.server}/session/?session_id={self.session_id}', timeout=60
-            )
+            response = httpx.delete(f'{self.server}/session/?session_id={self.session_id}', timeout=60)
             response.raise_for_status()
         except (ConnectionError, httpx.TimeoutException, httpx.HTTPError) as err:
             return err

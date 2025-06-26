@@ -53,9 +53,7 @@ class Test(BaseIntegrationTest):
         action = CmdRunAction(command='git status')
         obs = runtime.run_action(action)
         if obs.exit_code != 0:
-            return TestResult(
-                success=False, reason=f'Failed to git status: {obs.content}.'
-            )
+            return TestResult(success=False, reason=f'Failed to git status: {obs.content}.')
         if 'nothing to commit, working tree clean' in obs.content.strip():
             return TestResult(success=True)
 

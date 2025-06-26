@@ -10,11 +10,7 @@ parser.add_argument('output_path', type=str, help='path to output.jsonl')
 args = parser.parse_args()
 
 if __name__ == '__main__':
-    env_ids = [
-        id
-        for id in gym.envs.registry.keys()
-        if id.startswith('browsergym/visualwebarena')
-    ]
+    env_ids = [id for id in gym.envs.registry.keys() if id.startswith('browsergym/visualwebarena')]
     total_num = len(env_ids)
     print('Total number of tasks: ', total_num)
     total_reward = 0

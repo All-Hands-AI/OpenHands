@@ -40,21 +40,15 @@ class E2BBox:
 
     def _archive(self, host_src: str, recursive: bool = False):
         if recursive:
-            assert os.path.isdir(host_src), (
-                'Source must be a directory when recursive is True'
-            )
+            assert os.path.isdir(host_src), 'Source must be a directory when recursive is True'
             files = glob(host_src + '/**/*', recursive=True)
             srcname = os.path.basename(host_src)
             tar_filename = os.path.join(os.path.dirname(host_src), srcname + '.tar')
             with tarfile.open(tar_filename, mode='w') as tar:
                 for file in files:
-                    tar.add(
-                        file, arcname=os.path.relpath(file, os.path.dirname(host_src))
-                    )
+                    tar.add(file, arcname=os.path.relpath(file, os.path.dirname(host_src)))
         else:
-            assert os.path.isfile(host_src), (
-                'Source must be a file when recursive is False'
-            )
+            assert os.path.isfile(host_src), 'Source must be a file when recursive is False'
             srcname = os.path.basename(host_src)
             tar_filename = os.path.join(os.path.dirname(host_src), srcname + '.tar')
             with tarfile.open(tar_filename, mode='w') as tar:
@@ -100,9 +94,7 @@ class E2BBox:
                 f'sudo tar -xf {uploaded_path} -C {sandbox_dest} && sudo rm {uploaded_path}'
             )
             if process.exit_code != 0:
-                raise Exception(
-                    f'Failed to extract {uploaded_path} to {sandbox_dest}: {process.stderr}'
-                )
+                raise Exception(f'Failed to extract {uploaded_path} to {sandbox_dest}: {process.stderr}')
 
         # Delete the local archive
         os.remove(tar_filename)

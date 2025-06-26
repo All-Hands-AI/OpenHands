@@ -20,20 +20,12 @@ def test_extract_issue_references():
     """) == [789]
 
     # Test issue references in inline code should be ignored
-    assert extract_issue_references(
-        'This `#123` should be ignored but #456 should be extracted'
-    ) == [456]
-    assert extract_issue_references(
-        'This `#123` should be ignored but #456 should be extracted'
-    ) == [456]
+    assert extract_issue_references('This `#123` should be ignored but #456 should be extracted') == [456]
+    assert extract_issue_references('This `#123` should be ignored but #456 should be extracted') == [456]
 
     # Test issue references in URLs should be ignored
-    assert extract_issue_references(
-        'Check http://example.com/#123 but #456 should be extracted'
-    ) == [456]
-    assert extract_issue_references(
-        'Check http://example.com/#123 but #456 should be extracted'
-    ) == [456]
+    assert extract_issue_references('Check http://example.com/#123 but #456 should be extracted') == [456]
+    assert extract_issue_references('Check http://example.com/#123 but #456 should be extracted') == [456]
 
     # Test issue references in markdown links should be extracted
     assert extract_issue_references('[Link to #123](http://example.com) and #456') == [

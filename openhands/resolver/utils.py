@@ -53,11 +53,7 @@ def codeact_user_response(
         # check if the last action has an answer, if so, early exit
         if try_parse is not None:
             last_action = next(
-                (
-                    event
-                    for event in reversed(state.history)
-                    if isinstance(event, Action)
-                ),
+                (event for event in reversed(state.history) if isinstance(event, Action)),
                 None,
             )
             ans = try_parse(last_action)
@@ -65,17 +61,10 @@ def codeact_user_response(
                 return '/exit'
 
         # check if the agent has tried to talk to the user 3 times, if so, let the agent know it can give up
-        user_msgs = [
-            event
-            for event in state.history
-            if isinstance(event, MessageAction) and event.source == 'user'
-        ]
+        user_msgs = [event for event in state.history if isinstance(event, MessageAction) and event.source == 'user']
         if len(user_msgs) >= 2:
             # let the agent know that it can give up when it has tried 3 times
-            return (
-                msg
-                + 'If you want to give up, run: <execute_bash> exit </execute_bash>.\n'
-            )
+            return msg + 'If you want to give up, run: <execute_bash> exit </execute_bash>.\n'
     return msg
 
 
@@ -87,9 +76,7 @@ def cleanup() -> None:
         process.join()
 
 
-def reset_logger_for_multiprocessing(
-    logger: logging.Logger, instance_id: str, log_dir: str
-) -> None:
+def reset_logger_for_multiprocessing(logger: logging.Logger, instance_id: str, log_dir: str) -> None:
     """Reset the logger for multiprocessing.
 
     Save logs to a separate file for each process, instead of trying to write to the
@@ -114,9 +101,7 @@ def reset_logger_for_multiprocessing(
         logger.removeHandler(handler)
     os.makedirs(os.path.dirname(log_file), exist_ok=True)
     file_handler = logging.FileHandler(log_file)
-    file_handler.setFormatter(
-        logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    )
+    file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
     logger.addHandler(file_handler)
 
 

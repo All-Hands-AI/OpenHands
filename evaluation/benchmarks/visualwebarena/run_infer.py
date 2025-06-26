@@ -220,13 +220,7 @@ if __name__ == '__main__':
     args = parse_arguments()
 
     dataset = pd.DataFrame(
-        {
-            'instance_id': [
-                id
-                for id in gym.envs.registry.keys()
-                if id.startswith('browsergym/visualwebarena')
-            ]
-        }
+        {'instance_id': [id for id in gym.envs.registry.keys() if id.startswith('browsergym/visualwebarena')]}
     )
     llm_config = None
     if args.llm_config:

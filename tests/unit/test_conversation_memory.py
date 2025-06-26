@@ -53,9 +53,7 @@ def agent_config():
 def conversation_memory(agent_config):
     prompt_manager = MagicMock(spec=PromptManager)
     prompt_manager.get_system_message.return_value = 'System message'
-    prompt_manager.build_workspace_context.return_value = (
-        'Formatted repository and runtime info'
-    )
+    prompt_manager.build_workspace_context.return_value = 'Formatted repository and runtime info'
 
     # Make build_microagent_info return the actual content from the triggered agents
     def build_microagent_info(triggered_agents):
@@ -70,9 +68,7 @@ def conversation_memory(agent_config):
 @pytest.fixture
 def prompt_dir(tmp_path):
     # Copy contents from "openhands/agenthub/codeact_agent" to the temp directory
-    shutil.copytree(
-        'openhands/agenthub/codeact_agent/prompts', tmp_path, dirs_exist_ok=True
-    )
+    shutil.copytree('openhands/agenthub/codeact_agent/prompts', tmp_path, dirs_exist_ok=True)
 
     # Return the temporary directory path
     return tmp_path
@@ -151,9 +147,7 @@ def initial_user_action():
     return msg
 
 
-def test_ensure_initial_user_message_adds_if_only_system(
-    conversation_memory, initial_user_action
-):
+def test_ensure_initial_user_message_adds_if_only_system(conversation_memory, initial_user_action):
     """Test adding the initial user message when only the system message exists."""
     system_message = SystemMessageAction(content='System')
     system_message._source = EventSource.AGENT
@@ -164,9 +158,7 @@ def test_ensure_initial_user_message_adds_if_only_system(
     assert events[1] == initial_user_action
 
 
-def test_ensure_initial_user_message_correct_already_present(
-    conversation_memory, initial_user_action
-):
+def test_ensure_initial_user_message_correct_already_present(conversation_memory, initial_user_action):
     """Test that nothing changes if the correct initial user message is at index 1."""
     system_message = SystemMessageAction(content='System')
     agent_message = MessageAction(content='Assistant')
@@ -181,9 +173,7 @@ def test_ensure_initial_user_message_correct_already_present(
     assert events == original_events
 
 
-def test_ensure_initial_user_message_incorrect_at_index_1(
-    conversation_memory, initial_user_action
-):
+def test_ensure_initial_user_message_incorrect_at_index_1(conversation_memory, initial_user_action):
     """Test inserting the correct initial user message when an incorrect message is at index 1."""
     system_message = SystemMessageAction(content='System')
     incorrect_second_message = MessageAction(content='Assistant')
@@ -196,9 +186,7 @@ def test_ensure_initial_user_message_incorrect_at_index_1(
     assert events[2] == incorrect_second_message  # Original second message shifted
 
 
-def test_ensure_initial_user_message_correct_present_later(
-    conversation_memory, initial_user_action
-):
+def test_ensure_initial_user_message_correct_present_later(conversation_memory, initial_user_action):
     """Test inserting the correct initial user message at index 1 even if it exists later."""
     system_message = SystemMessageAction(content='System')
     incorrect_second_message = MessageAction(content='Assistant')
@@ -214,9 +202,7 @@ def test_ensure_initial_user_message_correct_present_later(
     # The duplicate initial_user_action originally at index 2 is now at index 3 (implicitly tested by length and content)
 
 
-def test_ensure_initial_user_message_different_user_msg_at_index_1(
-    conversation_memory, initial_user_action
-):
+def test_ensure_initial_user_message_different_user_msg_at_index_1(conversation_memory, initial_user_action):
     """Test inserting the correct initial user message when a *different* user message is at index 1."""
     system_message = SystemMessageAction(content='System')
     different_user_message = MessageAction(content='Different User Message')
@@ -340,17 +326,12 @@ def test_process_events_with_ipython_run_cell_observation(conversation_memory):
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
     assert 'IPython output' in result.content[0].text
-    assert (
-        '![image](data:image/png;base64, ...) already displayed to user'
-        in result.content[0].text
-    )
+    assert '![image](data:image/png;base64, ...) already displayed to user' in result.content[0].text
     assert 'ABC123' not in result.content[0].text
 
 
 def test_process_events_with_agent_delegate_observation(conversation_memory):
-    obs = AgentDelegateObservation(
-        content='Content', outputs={'content': 'Delegated agent output'}
-    )
+    obs = AgentDelegateObservation(content='Content', outputs={'content': 'Delegated agent output'})
 
     initial_user_message = MessageAction(content='Initial user message')
     initial_user_message._source = EventSource.USER
@@ -565,9 +546,7 @@ def test_process_events_with_function_calling_observation(conversation_memory):
     )
 
     # No direct message when using function calling
-    assert (
-        len(messages) == 2
-    )  # should be no messages except system message and initial user message
+    assert len(messages) == 2  # should be no messages except system message and initial user message
 
 
 def test_process_events_with_message_action_with_image(conversation_memory):
@@ -710,10 +689,7 @@ def test_process_events_with_environment_microagent_observation(conversation_mem
     assert call_args['repository_info'].repo_directory == '/path/to/repo'
     assert isinstance(call_args['runtime_info'], RuntimeInfo)
     assert call_args['runtime_info'].available_hosts == {'localhost': 8080}
-    assert (
-        call_args['repo_instructions']
-        == '# Test Repository\nThis is a test repository.'
-    )
+    assert call_args['repo_instructions'] == '# Test Repository\nThis is a test repository.'
 
 
 def test_process_events_with_knowledge_microagent_microagent_observation(
@@ -777,9 +753,7 @@ def test_process_events_with_knowledge_microagent_microagent_observation(
     assert 'disabled_agent' not in agent_names
 
 
-def test_process_events_with_microagent_observation_extensions_disabled(
-    agent_config, conversation_memory
-):
+def test_process_events_with_microagent_observation_extensions_disabled(agent_config, conversation_memory):
     """Test processing a RecallObservation when prompt extensions are disabled."""
     # Modify the agent config to disable prompt extensions
     agent_config.enable_prompt_extensions = False
@@ -860,9 +834,7 @@ It may or may not be relevant to the user's request.
     prompt_manager = PromptManager(prompt_dir=prompt_dir)
 
     # Initialize ConversationMemory
-    conversation_memory = ConversationMemory(
-        config=agent_config, prompt_manager=prompt_manager
-    )
+    conversation_memory = ConversationMemory(config=agent_config, prompt_manager=prompt_manager)
 
     # Create a RecallObservation with microagent knowledge
     microagent_observation = RecallObservation(
@@ -940,9 +912,7 @@ each of which has a corresponding port:
     prompt_manager = PromptManager(prompt_dir=prompt_dir)
 
     # Initialize ConversationMemory
-    conversation_memory = ConversationMemory(
-        config=agent_config, prompt_manager=prompt_manager
-    )
+    conversation_memory = ConversationMemory(config=agent_config, prompt_manager=prompt_manager)
 
     # Create a RecallObservation with environment info
     microagent_observation = RecallObservation(
@@ -1173,18 +1143,11 @@ def test_has_agent_in_earlier_events(conversation_memory):
     assert conversation_memory._has_agent_in_earlier_events('agent1', 4, events) is True
 
     # Test looking for an agent in a later position (should not find it)
-    assert (
-        conversation_memory._has_agent_in_earlier_events('agent2', 0, events) is False
-    )
-    assert (
-        conversation_memory._has_agent_in_earlier_events('agent2', 1, events) is False
-    )
+    assert conversation_memory._has_agent_in_earlier_events('agent2', 0, events) is False
+    assert conversation_memory._has_agent_in_earlier_events('agent2', 1, events) is False
 
     # Test looking for an agent in a different microagent type (should not find it)
-    assert (
-        conversation_memory._has_agent_in_earlier_events('non_existent', 3, events)
-        is False
-    )
+    assert conversation_memory._has_agent_in_earlier_events('non_existent', 3, events) is False
 
 
 class TestFilterUnmatchedToolCalls:
@@ -1201,9 +1164,7 @@ class TestFilterUnmatchedToolCalls:
             Message(role='assistant', content=[TextContent(text='Hi there')]),
             Message(role='user', content=[TextContent(text='How are you?')]),
         ]
-        assert (
-            list(ConversationMemory._filter_unmatched_tool_calls(messages)) == messages
-        )
+        assert list(ConversationMemory._filter_unmatched_tool_calls(messages)) == messages
 
     def test_matched_tool_calls_are_unchanged(self):
         messages = [
@@ -1228,9 +1189,7 @@ class TestFilterUnmatchedToolCalls:
         ]
 
         # All tool calls have matching responses, should remain unchanged
-        assert (
-            list(ConversationMemory._filter_unmatched_tool_calls(messages)) == messages
-        )
+        assert list(ConversationMemory._filter_unmatched_tool_calls(messages)) == messages
 
     def test_tool_call_without_response_is_removed(self):
         messages = [
@@ -1405,9 +1364,7 @@ def test_process_events_partial_history(conversation_memory):
     system_message = SystemMessageAction(content='System message')
     system_message._source = EventSource.AGENT
 
-    user_message = MessageAction(
-        content='Initial user query'
-    )  # This is the crucial initial_user_action
+    user_message = MessageAction(content='Initial user query')  # This is the crucial initial_user_action
     user_message._source = EventSource.USER
 
     recall_obs = RecallObservation(
@@ -1424,9 +1381,7 @@ def test_process_events_partial_history(conversation_memory):
         tool_call_id='call_ls_1', function_name='execute_bash', response_id='resp_ls_1'
     )
 
-    cmd_obs = CmdOutputObservation(
-        command_id=1, command='ls', content='file1.txt\nfile2.py', exit_code=0
-    )
+    cmd_obs = CmdOutputObservation(command_id=1, command='ls', content='file1.txt\nfile2.py', exit_code=0)
     cmd_obs._source = EventSource.AGENT
     cmd_obs.tool_call_metadata = _create_mock_tool_call_metadata(
         tool_call_id='call_ls_1', function_name='execute_bash', response_id='resp_ls_1'
@@ -1454,9 +1409,7 @@ def test_process_events_partial_history(conversation_memory):
     assert messages_full[1].role == 'user'
     assert messages_full[1].content[0].text == 'Initial user query'
     assert messages_full[2].role == 'user'  # Recall obs becomes user message
-    assert (
-        'Formatted repository and runtime info' in messages_full[2].content[0].text
-    )  # From fixture mock
+    assert 'Formatted repository and runtime info' in messages_full[2].content[0].text  # From fixture mock
     assert messages_full[3].role == 'assistant'
     assert messages_full[3].tool_calls is not None
     assert len(messages_full[3].tool_calls) == 1
@@ -1480,13 +1433,9 @@ def test_process_events_partial_history(conversation_memory):
 
     # Expected: System (added), Initial User (added), Assistant (tool call), Tool Response
     assert len(messages_partial_action_obs) == 4
-    assert (
-        messages_partial_action_obs[0].role == 'system'
-    )  # Added by _ensure_system_message
+    assert messages_partial_action_obs[0].role == 'system'  # Added by _ensure_system_message
     assert messages_partial_action_obs[0].content[0].text == 'System message'
-    assert (
-        messages_partial_action_obs[1].role == 'user'
-    )  # Added by _ensure_initial_user_message
+    assert messages_partial_action_obs[1].role == 'user'  # Added by _ensure_initial_user_message
     assert messages_partial_action_obs[1].content[0].text == 'Initial user query'
     assert messages_partial_action_obs[2].role == 'assistant'
     assert messages_partial_action_obs[2].tool_calls is not None
@@ -1513,19 +1462,13 @@ def test_process_events_partial_history(conversation_memory):
     # assistant message (from CmdRunAction) with the matching tool_call.id in the input history.
     # Therefore, _filter_unmatched_tool_calls should remove the tool response message.
     assert len(messages_partial_obs_only) == 2
-    assert (
-        messages_partial_obs_only[0].role == 'system'
-    )  # Added by _ensure_system_message
+    assert messages_partial_obs_only[0].role == 'system'  # Added by _ensure_system_message
     assert messages_partial_obs_only[0].content[0].text == 'System message'
-    assert (
-        messages_partial_obs_only[1].role == 'user'
-    )  # Added by _ensure_initial_user_message
+    assert messages_partial_obs_only[1].role == 'user'  # Added by _ensure_initial_user_message
     assert messages_partial_obs_only[1].content[0].text == 'Initial user query'
 
 
-def test_process_ipython_observation_with_vision_enabled(
-    agent_config, mock_prompt_manager
-):
+def test_process_ipython_observation_with_vision_enabled(agent_config, mock_prompt_manager):
     """Test that _process_observation correctly handles IPythonRunCellObservation with image_urls when vision is enabled."""
     # Create a ConversationMemory instance
     memory = ConversationMemory(agent_config, mock_prompt_manager)
@@ -1554,9 +1497,7 @@ def test_process_ipython_observation_with_vision_enabled(
     assert message.content[1].image_urls == ['data:image/png;base64,abc123']
 
 
-def test_process_ipython_observation_with_vision_disabled(
-    agent_config, mock_prompt_manager
-):
+def test_process_ipython_observation_with_vision_disabled(agent_config, mock_prompt_manager):
     """Test that _process_observation correctly handles IPythonRunCellObservation with image_urls when vision is disabled."""
     # Create a ConversationMemory instance
     memory = ConversationMemory(agent_config, mock_prompt_manager)

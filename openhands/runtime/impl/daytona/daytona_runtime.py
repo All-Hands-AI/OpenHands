@@ -221,9 +221,7 @@ class DaytonaRuntime(ActionExecutionClient):
 
     @tenacity.retry(
         retry=tenacity.retry_if_exception(
-            lambda e: (
-                isinstance(e, httpx.HTTPError) or isinstance(e, RequestHTTPError)
-            )
+            lambda e: (isinstance(e, httpx.HTTPError) or isinstance(e, RequestHTTPError))
             and hasattr(e, 'response')
             and e.response.status_code == 502
         ),
@@ -249,14 +247,10 @@ class DaytonaRuntime(ActionExecutionClient):
             return self._vscode_url
         token = super().get_vscode_token()
         if not token:
-            self.log(
-                'warning', 'Failed to get VSCode token while trying to get VSCode URL'
-            )
+            self.log('warning', 'Failed to get VSCode token while trying to get VSCode URL')
             return None
         if not self.sandbox:
-            self.log(
-                'warning', 'Sandbox is not initialized while trying to get VSCode URL'
-            )
+            self.log('warning', 'Sandbox is not initialized while trying to get VSCode URL')
             return None
         self._vscode_url = (
             self._construct_api_url(self._vscode_port)

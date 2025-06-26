@@ -68,9 +68,7 @@ class ModalRuntime(ActionExecutionClient):
             config.modal_api_token_id.get_secret_value(),
             config.modal_api_token_secret.get_secret_value(),
         )
-        self.app = modal.App.lookup(
-            'openhands', create_if_missing=True, client=self.modal_client
-        )
+        self.app = modal.App.lookup('openhands', create_if_missing=True, client=self.modal_client)
 
         # workspace_base cannot be used because we can't bind mount into a sandbox.
         if self.config.workspace_base is not None:
@@ -122,9 +120,7 @@ class ModalRuntime(ActionExecutionClient):
             if self.sid in MODAL_RUNTIME_IDS:
                 sandbox_id = MODAL_RUNTIME_IDS[self.sid]
                 self.log('debug', f'Attaching to existing Modal sandbox: {sandbox_id}')
-                self.sandbox = modal.Sandbox.from_id(
-                    sandbox_id, client=self.modal_client
-                )
+                self.sandbox = modal.Sandbox.from_id(sandbox_id, client=self.modal_client)
         else:
             self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
             await call_sync_from_async(
@@ -190,9 +186,7 @@ class ModalRuntime(ActionExecutionClient):
                 ),
             )
         else:
-            raise ValueError(
-                'Neither runtime container image nor base container image is set'
-            )
+            raise ValueError('Neither runtime container image nor base container image is set')
 
         return base_runtime_image.run_commands(
             """
@@ -246,9 +240,7 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
             self.log('debug', 'Container started')
 
         except Exception as e:
-            self.log(
-                'error', f'Error: Instance {self.sid} FAILED to start container!\n'
-            )
+            self.log('error', f'Error: Instance {self.sid} FAILED to start container!\n')
             self.log('error', str(e))
             self.close()
             raise e
@@ -275,10 +267,7 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
 
         tunnel = self.sandbox.tunnels()[self._vscode_port]
         tunnel_url = tunnel.url
-        self._vscode_url = (
-            tunnel_url
-            + f'/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
-        )
+        self._vscode_url = tunnel_url + f'/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
 
         self.log(
             'debug',

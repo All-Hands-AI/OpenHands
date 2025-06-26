@@ -36,9 +36,7 @@ def OPENAI_SEMANTICS_GEN_MESSAGES(dependent, relationship, domain, domain_desc):
     ]
 
 
-def OPENAI_SEMANTICS_GEN_W_MAP_MESSAGES(
-    dependent, relationship, domain, domain_desc, mapping
-):
+def OPENAI_SEMANTICS_GEN_W_MAP_MESSAGES(dependent, relationship, domain, domain_desc, mapping):
     return [
         {
             'role': 'system',
@@ -90,9 +88,7 @@ def create_prompt(usr_msg):
 def get_response(client, prompt, max_retry=5, model='gpt-3.5-turbo', verbose=False):
     n_try = 0
     while n_try < max_retry:
-        response = client.chat.completions.create(
-            model=model, messages=create_prompt(prompt), **OPENAI_GEN_HYP
-        )
+        response = client.chat.completions.create(model=model, messages=create_prompt(prompt), **OPENAI_GEN_HYP)
 
         # COMMENT: changed from
         # response.choices[0].message.content.strip().strip('```json').strip('```')
@@ -115,9 +111,7 @@ def get_response(client, prompt, max_retry=5, model='gpt-3.5-turbo', verbose=Fal
     return None
 
 
-def get_code_fix(
-    client, code, error, max_retry=5, model='gpt-3.5-turbo', verbose=False
-):
+def get_code_fix(client, code, error, max_retry=5, model='gpt-3.5-turbo', verbose=False):
     prompt = f"""\
 Given the following code snippet and error message, provide a single-line fix for the error. \
 Note that the code is going to be executed using python `eval`. \
@@ -134,15 +128,11 @@ Return only a JSON object with the fixed code in the following format:
 {{
     "fixed_code": "..."
 }}"""
-    response = get_response(
-        client, prompt, max_retry=max_retry, model=model, verbose=verbose
-    )
+    response = get_response(client, prompt, max_retry=max_retry, model=model, verbose=verbose)
     return response
 
 
-def get_new_hypothesis(
-    client, target, old, expr, cols, model='gpt-3.5-turbo', verbose=False
-):
+def get_new_hypothesis(client, target, old, expr, cols, model='gpt-3.5-turbo', verbose=False):
     prompt = f"""\
 Given a target column from a dataset, a pandas expression to derive the column from existing columns, a list of \
 existing columns, and a previously written hypothesis text, carefully check if the hypothesis text is consistent with \

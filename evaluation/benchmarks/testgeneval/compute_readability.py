@@ -8,10 +8,7 @@ def total_byte_entropy_stats(python_code):
         byte_counts[byte] = byte_counts.get(byte, 0) + 1
 
     total_bytes = sum(byte_counts.values())
-    entropy = -sum(
-        (count / total_bytes) * math.log2(count / total_bytes)
-        for count in byte_counts.values()
-    )
+    entropy = -sum((count / total_bytes) * math.log2(count / total_bytes) for count in byte_counts.values())
 
     return {'total_byte_entropy': entropy}
 
@@ -83,10 +80,7 @@ def numbers_floats_stats(tree, num_lines):
         nonlocal total_numbers, total_floats
         if node.type in ['integer_literal', 'decimal_literal']:
             total_numbers += 1
-            if (
-                '.' in node.text.decode('utf8')
-                or 'e' in node.text.decode('utf8').lower()
-            ):
+            if '.' in node.text.decode('utf8') or 'e' in node.text.decode('utf8').lower():
                 total_floats += 1
         for child in node.children:
             traverse(child)
@@ -169,9 +163,7 @@ def distinct_methods_stats(tree, num_lines):
     traverse(tree.root_node)
     total_distinct_methods = len(method_names)
     total_method_ratio = (
-        total_distinct_methods / (total_nodes - total_distinct_methods)
-        if total_nodes > total_distinct_methods
-        else 0
+        total_distinct_methods / (total_nodes - total_distinct_methods) if total_nodes > total_distinct_methods else 0
     )
 
     return {

@@ -47,14 +47,10 @@ async def load_settings(
             )
 
         # On initial load, user secrets may not be populated with values migrated from settings store
-        user_secrets = await invalidate_legacy_secrets_store(
-            settings, settings_store, secrets_store
-        )
+        user_secrets = await invalidate_legacy_secrets_store(settings, settings_store, secrets_store)
 
         # If invalidation is successful, then the returned user secrets holds the most recent values
-        git_providers = (
-            user_secrets.provider_tokens if user_secrets else provider_tokens
-        )
+        git_providers = user_secrets.provider_tokens if user_secrets else provider_tokens
 
         provider_tokens_set: dict[ProviderType, str | None] = {}
         if git_providers:
@@ -64,10 +60,8 @@ async def load_settings(
 
         settings_with_token_data = GETSettingsModel(
             **settings.model_dump(exclude='secrets_store'),
-            llm_api_key_set=settings.llm_api_key is not None
-            and bool(settings.llm_api_key),
-            search_api_key_set=settings.search_api_key is not None
-            and bool(settings.search_api_key),
+            llm_api_key_set=settings.llm_api_key is not None and bool(settings.llm_api_key),
+            search_api_key_set=settings.search_api_key is not None and bool(settings.search_api_key),
             provider_tokens_set=provider_tokens_set,
         )
         settings_with_token_data.llm_api_key = None
@@ -78,9 +72,7 @@ async def load_settings(
         logger.warning(f'Invalid token: {e}')
         # Get user_id from settings if available
         user_id = getattr(settings, 'user_id', 'unknown') if settings else 'unknown'
-        logger.info(
-            f'Returning 401 Unauthorized - Invalid token for user_id: {user_id}'
-        )
+        logger.info(f'Returning 401 Unauthorized - Invalid token for user_id: {user_id}')
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
             content={'error': 'Invalid token'},
@@ -107,9 +99,7 @@ async def reset_settings() -> JSONResponse:
     )
 
 
-async def store_llm_settings(
-    settings: Settings, settings_store: SettingsStore
-) -> Settings:
+async def store_llm_settings(settings: Settings, settings_store: SettingsStore) -> Settings:
     existing_settings = await settings_store.load()
 
     # Convert to Settings model and merge with existing settings
@@ -154,15 +144,11 @@ async def store_settings(
 
             # Keep existing analytics consent if not provided
             if settings.user_consents_to_analytics is None:
-                settings.user_consents_to_analytics = (
-                    existing_settings.user_consents_to_analytics
-                )
+                settings.user_consents_to_analytics = existing_settings.user_consents_to_analytics
 
         # Update sandbox config with new settings
         if settings.remote_runtime_resource_factor is not None:
-            config.sandbox.remote_runtime_resource_factor = (
-                settings.remote_runtime_resource_factor
-            )
+            config.sandbox.remote_runtime_resource_factor = settings.remote_runtime_resource_factor
 
         settings = convert_to_settings(settings)
         await settings_store.store(settings)

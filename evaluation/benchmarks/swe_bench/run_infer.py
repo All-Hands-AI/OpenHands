@@ -115,9 +115,7 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageActio
         elif 'gpt-4.1' in llm_model:
             template_name = 'swe_gpt4.j2'
         else:
-            template_name = (
-                'swe_default.j2'  # Default for 'swe' mode (regular swe-bench)
-            )
+            template_name = 'swe_default.j2'  # Default for 'swe' mode (regular swe-bench)
     else:
         # Fallback or error handling if mode is unexpected
         logger.error(f'Unexpected evaluation mode: {mode}. Falling back to default.')
@@ -148,24 +146,18 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageActio
     instruction = template.render(context)
 
     if RUN_WITH_BROWSING:
-        instruction += (
-            '<IMPORTANT!>\nYou SHOULD NEVER attempt to browse the web. </IMPORTANT!>\n'
-        )
+        instruction += '<IMPORTANT!>\nYou SHOULD NEVER attempt to browse the web. </IMPORTANT!>\n'
 
     if 'image_assets' in instance:
         assets = json.loads(instance['image_assets'])
-        assert 'problem_statement' in assets, (
-            'problem_statement is required in image_assets'
-        )
+        assert 'problem_statement' in assets, 'problem_statement is required in image_assets'
         image_urls = assets['problem_statement']
         return MessageAction(content=instruction, image_urls=image_urls)
     return MessageAction(content=instruction)
 
 
 # TODO: migrate all swe-bench docker to ghcr.io/openhands
-DEFAULT_DOCKER_IMAGE_PREFIX = os.environ.get(
-    'EVAL_DOCKER_IMAGE_PREFIX', 'docker.io/xingyaoww/'
-)
+DEFAULT_DOCKER_IMAGE_PREFIX = os.environ.get('EVAL_DOCKER_IMAGE_PREFIX', 'docker.io/xingyaoww/')
 logger.info(f'Default docker image prefix: {DEFAULT_DOCKER_IMAGE_PREFIX}')
 
 
@@ -189,9 +181,7 @@ def get_instance_docker_image(
         # OpenHands version of the image
         docker_image_prefix = DEFAULT_DOCKER_IMAGE_PREFIX
         image_name = 'sweb.eval.x86_64.' + instance_id
-        image_name = image_name.replace(
-            '__', '_s_'
-        )  # to comply with docker image naming convention
+        image_name = image_name.replace('__', '_s_')  # to comply with docker image naming convention
         return (docker_image_prefix.rstrip('/') + '/' + image_name).lower()
 
 
@@ -370,9 +360,7 @@ def initialize_runtime(
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(obs.exit_code == 0, f'Failed to git reset --hard: {str(obs)}')
 
-    action = CmdRunAction(
-        command='for remote_name in $(git remote); do git remote remove "${remote_name}"; done'
-    )
+    action = CmdRunAction(command='for remote_name in $(git remote); do git remote remove "${remote_name}"; done')
     action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
@@ -386,9 +374,7 @@ def initialize_runtime(
             setup_commands.append(MAP_REPO_TO_INSTALL[instance['repo']])
 
         # Run pre-install set up if provided
-        install = MAP_VERSION_TO_INSTALL.get(instance['repo'], {}).get(
-            instance['version'], []
-        )
+        install = MAP_VERSION_TO_INSTALL.get(instance['repo'], {}).get(instance['version'], [])
         if 'pre_install' in install:
             for pre_install in install['pre_install']:
                 setup_commands.append(pre_install)
@@ -538,9 +524,7 @@ def complete_runtime(
     n_retries = 0
     git_patch = None
     while n_retries < 5:
-        action = CmdRunAction(
-            command=f'git diff --no-color --cached {instance["base_commit"]} > patch.diff'
-        )
+        action = CmdRunAction(command=f'git diff --no-color --cached {instance["base_commit"]} > patch.diff')
         action.set_hard_timeout(max(300 + 100 * n_retries, 600))
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
@@ -617,9 +601,7 @@ def process_instance(
 
     metadata = copy.deepcopy(metadata)
     metadata.details['runtime_failure_count'] = runtime_failure_count
-    metadata.details['remote_runtime_resource_factor'] = (
-        config.sandbox.remote_runtime_resource_factor
-    )
+    metadata.details['remote_runtime_resource_factor'] = config.sandbox.remote_runtime_resource_factor
 
     runtime = create_runtime(config)
     call_async_from_sync(runtime.connect)
@@ -635,9 +617,7 @@ def process_instance(
                 config=config,
                 initial_user_action=message_action,
                 runtime=runtime,
-                fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
-                    metadata.agent_class
-                ],
+                fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[metadata.agent_class],
             )
         )
 
@@ -655,9 +635,7 @@ def process_instance(
             complete_runtime_fn = complete_runtime
         return_val = complete_runtime_fn(runtime, instance)
         git_patch = return_val['git_patch']
-        logger.info(
-            f'Got git diff for instance {instance.instance_id}:\n--------\n{git_patch}\n--------'
-        )
+        logger.info(f'Got git diff for instance {instance.instance_id}:\n--------\n{git_patch}\n--------')
     finally:
         runtime.close()
     # ==========================================
@@ -681,9 +659,7 @@ def process_instance(
     # Save the output
     instruction = message_action.content
     if message_action.image_urls:
-        instruction += (
-            '\n\n<image_urls>' + '\n'.join(message_action.image_urls) + '</image_urls>'
-        )
+        instruction += '\n\n<image_urls>' + '\n'.join(message_action.image_urls) + '</image_urls>'
     output = EvalOutput(
         instance_id=instance.instance_id,
         instruction=instruction,
@@ -704,9 +680,7 @@ def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
             data = toml.load(file)
             if 'selected_ids' in data:
                 selected_ids = data['selected_ids']
-                logger.info(
-                    f'Filtering {len(selected_ids)} tasks from "selected_ids"...'
-                )
+                logger.info(f'Filtering {len(selected_ids)} tasks from "selected_ids"...')
                 subset = dataset[dataset[filter_column].isin(selected_ids)]
                 logger.info(f'Retained {subset.shape[0]} tasks after filtering')
                 return subset
@@ -717,9 +691,7 @@ def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
                 if isinstance(selected_repos, str):
                     selected_repos = [selected_repos]
                 assert isinstance(selected_repos, list)
-                logger.info(
-                    f'Filtering {selected_repos} tasks from "selected_repos"...'
-                )
+                logger.info(f'Filtering {selected_repos} tasks from "selected_repos"...')
                 subset = dataset[dataset['repo'].isin(selected_repos)]
                 logger.info(f'Retained {subset.shape[0]} tasks after filtering')
                 return subset
@@ -763,9 +735,7 @@ if __name__ == '__main__':
     set_dataset_type(args.dataset)
 
     swe_bench_tests = filter_dataset(dataset.to_pandas(), 'instance_id')
-    logger.info(
-        f'Loaded dataset {args.dataset} with split {args.split}: {len(swe_bench_tests)} tasks'
-    )
+    logger.info(f'Loaded dataset {args.dataset} with split {args.split}: {len(swe_bench_tests)} tasks')
     if DATASET_TYPE == 'SWE-Gym':
         with open(
             os.path.join(
@@ -776,12 +746,8 @@ if __name__ == '__main__':
             'r',
         ) as f:
             swegym_verified_instances = json.load(f)
-            swe_bench_tests = swe_bench_tests[
-                swe_bench_tests['instance_id'].isin(swegym_verified_instances)
-            ]
-        logger.info(
-            f'{len(swe_bench_tests)} tasks left after filtering for SWE-Gym verified instances'
-        )
+            swe_bench_tests = swe_bench_tests[swe_bench_tests['instance_id'].isin(swegym_verified_instances)]
+        logger.info(f'{len(swe_bench_tests)} tasks left after filtering for SWE-Gym verified instances')
 
     llm_config = None
     if args.llm_config:
@@ -798,22 +764,16 @@ if __name__ == '__main__':
     if condenser_name:
         condenser_config = get_condenser_config_arg(condenser_name)
         if condenser_config is None:
-            raise ValueError(
-                f'Could not find Condenser config: EVAL_CONDENSER={condenser_name}'
-            )
+            raise ValueError(f'Could not find Condenser config: EVAL_CONDENSER={condenser_name}')
     else:
         # If no specific condenser config is provided via env var, default to NoOpCondenser
         condenser_config = NoOpCondenserConfig()
-        logger.debug(
-            'No Condenser config provided via EVAL_CONDENSER, using NoOpCondenser.'
-        )
+        logger.debug('No Condenser config provided via EVAL_CONDENSER, using NoOpCondenser.')
 
     details = {'mode': args.mode}
     _agent_cls = openhands.agenthub.Agent.get_cls(args.agent_cls)
 
-    dataset_descrption = (
-        args.dataset.replace('/', '__') + '-' + args.split.replace('/', '__')
-    )
+    dataset_descrption = args.dataset.replace('/', '__') + '-' + args.split.replace('/', '__')
     metadata = make_metadata(
         llm_config,
         dataset_descrption,
@@ -830,19 +790,13 @@ if __name__ == '__main__':
 
     # Run evaluation in iterative mode:
     # If a rollout fails to output AgentFinishAction, we will try again until it succeeds OR total 3 attempts have been made.
-    ITERATIVE_EVAL_MODE = (
-        os.environ.get('ITERATIVE_EVAL_MODE', 'false').lower() == 'true'
-    )
-    ITERATIVE_EVAL_MODE_MAX_ATTEMPTS = int(
-        os.environ.get('ITERATIVE_EVAL_MODE_MAX_ATTEMPTS', '3')
-    )
+    ITERATIVE_EVAL_MODE = os.environ.get('ITERATIVE_EVAL_MODE', 'false').lower() == 'true'
+    ITERATIVE_EVAL_MODE_MAX_ATTEMPTS = int(os.environ.get('ITERATIVE_EVAL_MODE_MAX_ATTEMPTS', '3'))
 
     if not ITERATIVE_EVAL_MODE:
         # load the dataset
         instances = prepare_dataset(swe_bench_tests, output_file, args.eval_n_limit)
-        if len(instances) > 0 and not isinstance(
-            instances['PASS_TO_PASS'][instances['PASS_TO_PASS'].index[0]], str
-        ):
+        if len(instances) > 0 and not isinstance(instances['PASS_TO_PASS'][instances['PASS_TO_PASS'].index[0]], str):
             for col in ['PASS_TO_PASS', 'FAIL_TO_PASS']:
                 instances[col] = instances[col].apply(lambda x: str(x))
 
@@ -852,18 +806,14 @@ if __name__ == '__main__':
             output_file,
             args.eval_num_workers,
             process_instance,
-            timeout_seconds=8
-            * 60
-            * 60,  # 8 hour PER instance should be more than enough
+            timeout_seconds=8 * 60 * 60,  # 8 hour PER instance should be more than enough
             max_retries=5,
         )
     else:
         critic = AgentFinishedCritic()
 
         def get_cur_output_file_path(attempt: int) -> str:
-            return (
-                f'{output_file.removesuffix(".jsonl")}.critic_attempt_{attempt}.jsonl'
-            )
+            return f'{output_file.removesuffix(".jsonl")}.critic_attempt_{attempt}.jsonl'
 
         eval_ids = None
         for attempt in range(1, ITERATIVE_EVAL_MODE_MAX_ATTEMPTS + 1):
@@ -875,16 +825,12 @@ if __name__ == '__main__':
             # For deterministic eval, we set temperature to 0.1 for (>1) attempt
             # so hopefully we get slightly different results
             if attempt > 1 and metadata.llm_config.temperature == 0:
-                logger.info(
-                    f'Detected temperature is 0 for (>1) attempt {attempt}. Setting temperature to 0.1...'
-                )
+                logger.info(f'Detected temperature is 0 for (>1) attempt {attempt}. Setting temperature to 0.1...')
                 metadata.llm_config.temperature = 0.1
 
             # Load instances - at first attempt, we evaluate all instances
             # On subsequent attempts, we only evaluate the instances that failed the previous attempt determined by critic
-            instances = prepare_dataset(
-                swe_bench_tests, cur_output_file, args.eval_n_limit, eval_ids=eval_ids
-            )
+            instances = prepare_dataset(swe_bench_tests, cur_output_file, args.eval_n_limit, eval_ids=eval_ids)
             if len(instances) > 0 and not isinstance(
                 instances['PASS_TO_PASS'][instances['PASS_TO_PASS'].index[0]], str
             ):
@@ -892,18 +838,14 @@ if __name__ == '__main__':
                     instances[col] = instances[col].apply(lambda x: str(x))
 
             # Run evaluation - but save them to cur_output_file
-            logger.info(
-                f'Evaluating {len(instances)} instances for attempt {attempt}...'
-            )
+            logger.info(f'Evaluating {len(instances)} instances for attempt {attempt}...')
             run_evaluation(
                 instances,
                 metadata,
                 cur_output_file,
                 args.eval_num_workers,
                 process_instance,
-                timeout_seconds=8
-                * 60
-                * 60,  # 8 hour PER instance should be more than enough
+                timeout_seconds=8 * 60 * 60,  # 8 hour PER instance should be more than enough
                 max_retries=5,
             )
 
@@ -916,22 +858,14 @@ if __name__ == '__main__':
                 for line in f:
                     instance = json.loads(line)
                     try:
-                        history = [
-                            event_from_dict(event) for event in instance['history']
-                        ]
-                        critic_result = critic.evaluate(
-                            history, instance['test_result'].get('git_patch', '')
-                        )
+                        history = [event_from_dict(event) for event in instance['history']]
+                        critic_result = critic.evaluate(history, instance['test_result'].get('git_patch', ''))
                         if not critic_result.success:
                             instances_failed.append(instance['instance_id'])
                     except Exception as e:
-                        logger.error(
-                            f'Error loading history for instance {instance["instance_id"]}: {e}'
-                        )
+                        logger.error(f'Error loading history for instance {instance["instance_id"]}: {e}')
                         instances_failed.append(instance['instance_id'])
-            logger.info(
-                f'{len(instances_failed)} instances failed the current attempt {attempt}: {instances_failed}'
-            )
+            logger.info(f'{len(instances_failed)} instances failed the current attempt {attempt}: {instances_failed}')
             eval_ids = instances_failed
 
             # If no instances failed, we break
@@ -940,17 +874,13 @@ if __name__ == '__main__':
 
         # Then we should aggregate the results from all attempts into the original output file
         # and remove the intermediate files
-        logger.info(
-            'Aggregating results from all attempts into the original output file...'
-        )
+        logger.info('Aggregating results from all attempts into the original output file...')
         fout = open(output_file, 'w')
         added_instance_ids = set()
         for attempt in reversed(range(1, ITERATIVE_EVAL_MODE_MAX_ATTEMPTS + 1)):
             cur_output_file = get_cur_output_file_path(attempt)
             if not os.path.exists(cur_output_file):
-                logger.warning(
-                    f'Intermediate output file {cur_output_file} does not exist. Skipping...'
-                )
+                logger.warning(f'Intermediate output file {cur_output_file} does not exist. Skipping...')
                 continue
 
             with open(cur_output_file, 'r') as f:
@@ -967,6 +897,4 @@ if __name__ == '__main__':
                 f'Aggregated instances from {cur_output_file}. Total instances added so far: {len(added_instance_ids)}'
             )
         fout.close()
-        logger.info(
-            f'Done! Total {len(added_instance_ids)} instances added to {output_file}'
-        )
+        logger.info(f'Done! Total {len(added_instance_ids)} instances added to {output_file}')

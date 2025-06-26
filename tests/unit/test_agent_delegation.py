@@ -104,12 +104,8 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
     parent_state = State(
         inputs={},
         metrics=parent_metrics,
-        budget_flag=BudgetControlFlag(
-            current_value=2, limit_increase_amount=10, max_value=10
-        ),
-        iteration_flag=IterationControlFlag(
-            current_value=1, limit_increase_amount=10, max_value=10
-        ),
+        budget_flag=BudgetControlFlag(current_value=2, limit_increase_amount=10, max_value=10),
+        iteration_flag=IterationControlFlag(current_value=1, limit_increase_amount=10, max_value=10),
     )
 
     parent_controller = AgentController(
@@ -137,9 +133,7 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
             mock_event_stream.add_event(microagent_observation, EventSource.ENVIRONMENT)
 
     mock_memory.on_event = on_event
-    mock_event_stream.subscribe(
-        EventStreamSubscriber.MEMORY, mock_memory.on_event, mock_memory
-    )
+    mock_event_stream.subscribe(EventStreamSubscriber.MEMORY, mock_memory.on_event, mock_memory)
 
     # Setup a delegate action from the parent
     delegate_action = AgentDelegateAction(agent='ChildAgent', inputs={'test': True})
@@ -165,9 +159,7 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
     assert any(isinstance(event, AgentDelegateAction) for event in events)
 
     # Verify that a delegate agent controller is created
-    assert parent_controller.delegate is not None, (
-        "Parent's delegate controller was not set."
-    )
+    assert parent_controller.delegate is not None, "Parent's delegate controller was not set."
 
     # The parent's iteration should have incremented
     assert parent_controller.state.iteration_flag.current_value == 2, (
@@ -183,18 +175,14 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
         delegate_controller.agent.step(delegate_controller.state)
         delegate_controller.agent.llm.metrics.add_cost(1.0)
 
-    assert (
-        delegate_controller.state.get_local_step() == 4
-    )  # verify local metrics are accessible via snapshot
+    assert delegate_controller.state.get_local_step() == 4  # verify local metrics are accessible via snapshot
 
     assert (
-        delegate_controller.state.metrics.accumulated_cost
-        == 6  # Make sure delegate tracks global cost
+        delegate_controller.state.metrics.accumulated_cost == 6  # Make sure delegate tracks global cost
     )
 
     assert (
-        delegate_controller.state.get_local_metrics().accumulated_cost
-        == 4  # Delegate spent one dollar per step
+        delegate_controller.state.get_local_metrics().accumulated_cost == 4  # Delegate spent one dollar per step
     )
 
     delegate_controller.state.outputs = {'delegate_result': 'done'}
@@ -205,9 +193,7 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
     await asyncio.sleep(0.5)
 
     # Now the parent's delegate is None
-    assert parent_controller.delegate is None, (
-        'Parent delegate should be None after child finishes.'
-    )
+    assert parent_controller.delegate is None, 'Parent delegate should be None after child finishes.'
 
     # Parent's global iteration is updated from the child
     assert parent_controller.state.iteration_flag.current_value == 7, (
@@ -228,9 +214,7 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
         AgentState.REJECTED,
     ],
 )
-async def test_delegate_step_different_states(
-    mock_parent_agent, mock_event_stream, delegate_state
-):
+async def test_delegate_step_different_states(mock_parent_agent, mock_event_stream, delegate_state):
     """Ensure that delegate is closed or remains open based on the delegate's state."""
     # Create a state with iteration_flag.max_value set to 10
     state = State(inputs={})
@@ -293,9 +277,7 @@ async def test_delegate_step_different_states(
 
 
 @pytest.mark.asyncio
-async def test_delegate_hits_global_limits(
-    mock_child_agent, mock_event_stream, mock_parent_agent
-):
+async def test_delegate_hits_global_limits(mock_child_agent, mock_event_stream, mock_parent_agent):
     """
     Global limits from control flags should apply to delegates
     """
@@ -308,12 +290,8 @@ async def test_delegate_hits_global_limits(
     parent_state = State(
         inputs={},
         metrics=parent_metrics,
-        budget_flag=BudgetControlFlag(
-            current_value=2, limit_increase_amount=10, max_value=10
-        ),
-        iteration_flag=IterationControlFlag(
-            current_value=2, limit_increase_amount=3, max_value=3
-        ),
+        budget_flag=BudgetControlFlag(current_value=2, limit_increase_amount=10, max_value=10),
+        iteration_flag=IterationControlFlag(current_value=2, limit_increase_amount=3, max_value=3),
     )
 
     parent_controller = AgentController(
@@ -341,9 +319,7 @@ async def test_delegate_hits_global_limits(
             mock_event_stream.add_event(microagent_observation, EventSource.ENVIRONMENT)
 
     mock_memory.on_event = on_event
-    mock_event_stream.subscribe(
-        EventStreamSubscriber.MEMORY, mock_memory.on_event, mock_memory
-    )
+    mock_event_stream.subscribe(EventStreamSubscriber.MEMORY, mock_memory.on_event, mock_memory)
 
     # Setup a delegate action from the parent
     delegate_action = AgentDelegateAction(agent='ChildAgent', inputs={'test': True})
@@ -369,9 +345,7 @@ async def test_delegate_hits_global_limits(
     assert any(isinstance(event, AgentDelegateAction) for event in events)
 
     # Verify that a delegate agent controller is created
-    assert parent_controller.delegate is not None, (
-        "Parent's delegate controller was not set."
-    )
+    assert parent_controller.delegate is not None, "Parent's delegate controller was not set."
 
     delegate_controller = parent_controller.delegate
     await delegate_controller.set_agent_state_to(AgentState.RUNNING)
@@ -393,10 +367,7 @@ async def test_delegate_hits_global_limits(
     await asyncio.sleep(0.1)
 
     assert delegate_controller.state.iteration_flag.max_value == 6
-    assert (
-        delegate_controller.state.iteration_flag.max_value
-        == parent_controller.state.iteration_flag.max_value
-    )
+    assert delegate_controller.state.iteration_flag.max_value == parent_controller.state.iteration_flag.max_value
 
     message_action = MessageAction(content='Test message 2')
     message_action._source = EventSource.USER
@@ -405,6 +376,5 @@ async def test_delegate_hits_global_limits(
 
     assert delegate_controller.state.iteration_flag.current_value == 4
     assert (
-        delegate_controller.state.iteration_flag.current_value
-        == parent_controller.state.iteration_flag.current_value
+        delegate_controller.state.iteration_flag.current_value == parent_controller.state.iteration_flag.current_value
     )

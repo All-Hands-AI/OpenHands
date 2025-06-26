@@ -152,9 +152,7 @@ def display_banner(session_id: str) -> None:
 
 
 def display_welcome_message(message: str = '') -> None:
-    print_formatted_text(
-        HTML("<gold>Let's start building!</gold>\n"), style=DEFAULT_STYLE
-    )
+    print_formatted_text(HTML("<gold>Let's start building!</gold>\n"), style=DEFAULT_STYLE)
     if message:
         print_formatted_text(
             HTML(f'{message} <grey>Type /help for help</grey>'),
@@ -379,27 +377,15 @@ def display_help() -> None:
     print_formatted_text(HTML(commands_html))
 
     # Footer
-    print_formatted_text(
-        HTML(
-            '<grey>Learn more at: https://docs.all-hands.dev/usage/getting-started</grey>'
-        )
-    )
+    print_formatted_text(HTML('<grey>Learn more at: https://docs.all-hands.dev/usage/getting-started</grey>'))
 
 
 def display_usage_metrics(usage_metrics: UsageMetrics) -> None:
     cost_str = f'${usage_metrics.metrics.accumulated_cost:.6f}'
-    input_tokens_str = (
-        f'{usage_metrics.metrics.accumulated_token_usage.prompt_tokens:,}'
-    )
-    cache_read_str = (
-        f'{usage_metrics.metrics.accumulated_token_usage.cache_read_tokens:,}'
-    )
-    cache_write_str = (
-        f'{usage_metrics.metrics.accumulated_token_usage.cache_write_tokens:,}'
-    )
-    output_tokens_str = (
-        f'{usage_metrics.metrics.accumulated_token_usage.completion_tokens:,}'
-    )
+    input_tokens_str = f'{usage_metrics.metrics.accumulated_token_usage.prompt_tokens:,}'
+    cache_read_str = f'{usage_metrics.metrics.accumulated_token_usage.cache_read_tokens:,}'
+    cache_write_str = f'{usage_metrics.metrics.accumulated_token_usage.cache_write_tokens:,}'
+    output_tokens_str = f'{usage_metrics.metrics.accumulated_token_usage.completion_tokens:,}'
     total_tokens_str = f'{usage_metrics.metrics.accumulated_token_usage.prompt_tokens + usage_metrics.metrics.accumulated_token_usage.completion_tokens:,}'
 
     labels_and_values = [
@@ -418,10 +404,7 @@ def display_usage_metrics(usage_metrics: UsageMetrics) -> None:
     max_value_width = max(len(value) for _, value in labels_and_values)
 
     # Construct the summary text with aligned columns
-    summary_lines = [
-        f'{label:<{max_label_width}} {value:<{max_value_width}}'
-        for label, value in labels_and_values
-    ]
+    summary_lines = [f'{label:<{max_label_width}} {value:<{max_value_width}}' for label, value in labels_and_values]
     summary_text = '\n'.join(summary_lines)
 
     container = Frame(
@@ -472,19 +455,13 @@ def display_status(usage_metrics: UsageMetrics, session_id: str) -> None:
 
 def display_agent_running_message() -> None:
     print_formatted_text('')
-    print_formatted_text(
-        HTML('<gold>Agent running...</gold> <grey>(Press Ctrl-P to pause)</grey>')
-    )
+    print_formatted_text(HTML('<gold>Agent running...</gold> <grey>(Press Ctrl-P to pause)</grey>'))
 
 
 def display_agent_state_change_message(agent_state: str) -> None:
     if agent_state == AgentState.PAUSED:
         print_formatted_text('')
-        print_formatted_text(
-            HTML(
-                '<gold>Agent paused...</gold> <grey>(Enter /resume to continue)</grey>'
-            )
-        )
+        print_formatted_text(HTML('<gold>Agent paused...</gold> <grey>(Enter /resume to continue)</grey>'))
     elif agent_state == AgentState.FINISHED:
         print_formatted_text('')
         print_formatted_text(HTML('<gold>Task completed...</gold>'))
@@ -501,9 +478,7 @@ class CommandCompleter(Completer):
         super().__init__()
         self.agent_state = agent_state
 
-    def get_completions(
-        self, document: Document, complete_event: CompleteEvent
-    ) -> Generator[Completion, None, None]:
+    def get_completions(self, document: Document, complete_event: CompleteEvent) -> Generator[Completion, None, None]:
         text = document.text_before_cursor.lstrip()
         if text.startswith('/'):
             available_commands = dict(COMMANDS)
@@ -525,14 +500,10 @@ def create_prompt_session(config: OpenHandsConfig) -> PromptSession[str]:
     return PromptSession(style=DEFAULT_STYLE, vi_mode=config.cli.vi_mode)
 
 
-async def read_prompt_input(
-    config: OpenHandsConfig, agent_state: str, multiline: bool = False
-) -> str:
+async def read_prompt_input(config: OpenHandsConfig, agent_state: str, multiline: bool = False) -> str:
     try:
         prompt_session = create_prompt_session(config)
-        prompt_session.completer = (
-            CommandCompleter(agent_state) if not multiline else None
-        )
+        prompt_session.completer = CommandCompleter(agent_state) if not multiline else None
 
         if multiline:
             kb = KeyBindings()
@@ -544,9 +515,7 @@ async def read_prompt_input(
             with patch_stdout():
                 print_formatted_text('')
                 message = await prompt_session.prompt_async(
-                    HTML(
-                        '<gold>Enter your message and press Ctrl-D to finish:</gold>\n'
-                    ),
+                    HTML('<gold>Enter your message and press Ctrl-D to finish:</gold>\n'),
                     multiline=True,
                     key_bindings=kb,
                 )
@@ -590,11 +559,7 @@ async def process_agent_pause(done: asyncio.Event, event_stream: EventStream) ->
 
     def keys_ready() -> None:
         for key_press in input.read_keys():
-            if (
-                key_press.key == Keys.ControlP
-                or key_press.key == Keys.ControlC
-                or key_press.key == Keys.ControlD
-            ):
+            if key_press.key == Keys.ControlP or key_press.key == Keys.ControlC or key_press.key == Keys.ControlD:
                 print_formatted_text('')
                 print_formatted_text(HTML('<gold>Pausing the agent...</gold>'))
                 event_stream.add_event(

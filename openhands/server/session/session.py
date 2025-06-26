@@ -67,9 +67,7 @@ class Session:
             status_callback=self.queue_status_message,
             user_id=user_id,
         )
-        self.agent_session.event_stream.subscribe(
-            EventStreamSubscriber.SERVER, self.on_event, self.sid
-        )
+        self.agent_session.event_stream.subscribe(EventStreamSubscriber.SERVER, self.on_event, self.sid)
         # Copying this means that when we update variables they are not applied to the shared global configuration!
         self.config = deepcopy(config)
         self.loop = asyncio.get_event_loop()
@@ -79,9 +77,7 @@ class Session:
         if self.sio:
             await self.sio.emit(
                 'oh_event',
-                event_to_dict(
-                    AgentStateChangedObservation('', AgentState.STOPPED.value)
-                ),
+                event_to_dict(AgentStateChangedObservation('', AgentState.STOPPED.value)),
                 to=ROOM_KEY.format(sid=self.sid),
             )
         self.is_alive = False
@@ -99,21 +95,15 @@ class Session:
         )
         agent_cls = settings.agent or self.config.default_agent
         self.config.security.confirmation_mode = (
-            self.config.security.confirmation_mode
-            if settings.confirmation_mode is None
-            else settings.confirmation_mode
+            self.config.security.confirmation_mode if settings.confirmation_mode is None else settings.confirmation_mode
         )
-        self.config.security.security_analyzer = (
-            settings.security_analyzer or self.config.security.security_analyzer
-        )
+        self.config.security.security_analyzer = settings.security_analyzer or self.config.security.security_analyzer
         self.config.sandbox.base_container_image = (
-            settings.sandbox_base_container_image
-            or self.config.sandbox.base_container_image
+            settings.sandbox_base_container_image or self.config.sandbox.base_container_image
         )
         self.config.sandbox.runtime_container_image = (
             settings.sandbox_runtime_container_image
-            if settings.sandbox_base_container_image
-            or settings.sandbox_runtime_container_image
+            if settings.sandbox_base_container_image or settings.sandbox_runtime_container_image
             else self.config.sandbox.runtime_container_image
         )
         max_iterations = settings.max_iterations or self.config.max_iterations
@@ -137,14 +127,10 @@ class Session:
             self.config.sandbox.api_key = settings.sandbox_api_key.get_secret_value()
 
         # NOTE: this need to happen AFTER the config is updated with the search_api_key
-        self.config.mcp = settings.mcp_config or MCPConfig(
-            sse_servers=[], stdio_servers=[]
-        )
+        self.config.mcp = settings.mcp_config or MCPConfig(sse_servers=[], stdio_servers=[])
         # Add OpenHands' MCP server by default
-        openhands_mcp_server, openhands_mcp_stdio_servers = (
-            OpenHandsMCPConfigImpl.create_default_mcp_server_config(
-                self.config.mcp_host, self.config, self.user_id
-            )
+        openhands_mcp_server, openhands_mcp_stdio_servers = OpenHandsMCPConfigImpl.create_default_mcp_server_config(
+            self.config.mcp_host, self.config, self.user_id
         )
         if openhands_mcp_server:
             self.config.mcp.shttp_servers.append(openhands_mcp_server)
@@ -164,9 +150,7 @@ class Session:
             default_condenser_config = CondenserPipelineConfig(
                 condensers=[
                     BrowserOutputCondenserConfig(attention_window=2),
-                    LLMSummarizingCondenserConfig(
-                        llm_config=llm.config, keep_first=4, max_size=120
-                    ),
+                    LLMSummarizingCondenserConfig(llm_config=llm.config, keep_first=4, max_size=120),
                 ]
             )
 
@@ -219,9 +203,7 @@ class Session:
             error_message = str(e)
             # For ValueError related to microagents, provide more helpful information
             if 'microagent' in error_message.lower():
-                await self.send_error(
-                    f'Failed to create agent session: {error_message}'
-                )
+                await self.send_error(f'Failed to create agent session: {error_message}')
             else:
                 # For other ValueErrors, just show the error class
                 await self.send_error('Failed to create agent session: ValueError')
@@ -229,9 +211,7 @@ class Session:
         except Exception as e:
             self.logger.exception(f'Error creating agent_session: {e}')
             # For other errors, just show the error class to avoid exposing sensitive information
-            await self.send_error(
-                f'Failed to create agent session: {e.__class__.__name__}'
-            )
+            await self.send_error(f'Failed to create agent session: {e.__class__.__name__}')
             return
 
     def _create_llm(self, agent_cls: str | None) -> LLM:
@@ -244,9 +224,7 @@ class Session:
 
     def _notify_on_llm_retry(self, retries: int, max: int) -> None:
         msg_id = 'STATUS$LLM_RETRY'
-        self.queue_status_message(
-            'info', msg_id, f'Retrying LLM request, {retries} / {max}'
-        )
+        self.queue_status_message('info', msg_id, f'Retrying LLM request, {retries} / {max}')
 
     def on_event(self, event: Event) -> None:
         asyncio.get_event_loop().run_until_complete(self._on_event(event))
@@ -275,10 +253,7 @@ class Session:
             event_dict = event_to_dict(event)
             event_dict['source'] = EventSource.AGENT
             await self.send(event_dict)
-            if (
-                isinstance(event, AgentStateChangedObservation)
-                and event.agent_state == AgentState.ERROR
-            ):
+            if isinstance(event, AgentStateChangedObservation) and event.agent_state == AgentState.ERROR:
                 self.logger.error(
                     f'Agent status error: {event.reason}',
                     extra={'signal': 'agent_status_error'},
@@ -296,9 +271,7 @@ class Session:
             controller = self.agent_session.controller
             if controller:
                 if controller.agent.llm.config.disable_vision:
-                    await self.send_error(
-                        'Support for images is disabled for this model, try without an image.'
-                    )
+                    await self.send_error('Support for images is disabled for this model, try without an image.')
                     return
                 if not controller.agent.llm.vision_is_active():
                     await self.send_error(
@@ -342,12 +315,8 @@ class Session:
                 f'Agent status error: {message}',
                 extra={'signal': 'agent_status_error'},
             )
-        await self.send(
-            {'status_update': True, 'type': msg_type, 'id': id, 'message': message}
-        )
+        await self.send({'status_update': True, 'type': msg_type, 'id': id, 'message': message})
 
     def queue_status_message(self, msg_type: str, id: str, message: str) -> None:
         """Queues a status message to be sent asynchronously."""
-        asyncio.run_coroutine_threadsafe(
-            self._send_status_message(msg_type, id, message), self.loop
-        )
+        asyncio.run_coroutine_threadsafe(self._send_status_message(msg_type, id, message), self.loop)

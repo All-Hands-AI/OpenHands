@@ -18,9 +18,7 @@ async def test_get_convo_link_non_saas_mode():
         mock_config.app_mode = AppMode.OSS
 
         # Call the function
-        result = await get_convo_link(
-            service=mock_service, conversation_id='test-convo-id', body='Original body'
-        )
+        result = await get_convo_link(service=mock_service, conversation_id='test-convo-id', body='Original body')
 
         # Verify the result
         assert result == 'Original body'
@@ -48,9 +46,7 @@ async def test_get_convo_link_saas_mode():
         mock_config.app_mode = AppMode.SAAS
 
         # Call the function
-        result = await get_convo_link(
-            service=mock_service, conversation_id='test-convo-id', body='Original body'
-        )
+        result = await get_convo_link(service=mock_service, conversation_id='test-convo-id', body='Original body')
 
         # Verify the result
         expected_link = '@testuser can click here to [continue refining the PR](https://test.example.com/conversations/test-convo-id)'
@@ -80,9 +76,7 @@ async def test_get_convo_link_empty_body():
         mock_config.app_mode = AppMode.SAAS
 
         # Call the function
-        result = await get_convo_link(
-            service=mock_service, conversation_id='test-convo-id', body=''
-        )
+        result = await get_convo_link(service=mock_service, conversation_id='test-convo-id', body='')
 
         # Verify the result
         expected_link = '@testuser can click here to [continue refining the PR](https://test.example.com/conversations/test-convo-id)'

@@ -123,9 +123,7 @@ def test_create_file_with_empty_content(temp_dir, runtime_cls, run_as_openhands)
 def test_create_with_none_file_text(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
-        new_file = os.path.join(
-            config.workspace_mount_path_in_sandbox, 'none_content.txt'
-        )
+        new_file = os.path.join(config.workspace_mount_path_in_sandbox, 'none_content.txt')
         action = FileEditAction(
             command='create',
             path=new_file,
@@ -133,10 +131,7 @@ def test_create_with_none_file_text(temp_dir, runtime_cls, run_as_openhands):
         )
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert (
-            obs.content
-            == 'ERROR:\nParameter `file_text` is required for command: create.'
-        )
+        assert obs.content == 'ERROR:\nParameter `file_text` is required for command: create.'
     finally:
         _close_test_runtime(runtime)
 
@@ -233,9 +228,7 @@ Review the changes and make sure they are as expected. Edit the file again if ne
         _close_test_runtime(runtime)
 
 
-def test_str_replace_error_multiple_occurrences(
-    temp_dir, runtime_cls, run_as_openhands
-):
+def test_str_replace_error_multiple_occurrences(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
@@ -245,9 +238,7 @@ def test_str_replace_error_multiple_occurrences(
         )
         runtime.run_action(action)
 
-        action = FileEditAction(
-            command='str_replace', path=test_file, old_str='test', new_str='sample'
-        )
+        action = FileEditAction(command='str_replace', path=test_file, old_str='test', new_str='sample')
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert 'Multiple occurrences of old_str `test`' in obs.content
@@ -256,9 +247,7 @@ def test_str_replace_error_multiple_occurrences(
         _close_test_runtime(runtime)
 
 
-def test_str_replace_error_multiple_multiline_occurrences(
-    temp_dir, runtime_cls, run_as_openhands
-):
+def test_str_replace_error_multiple_multiline_occurrences(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')
@@ -307,10 +296,7 @@ def test_str_replace_nonexistent_string(temp_dir, runtime_cls, run_as_openhands)
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert 'No replacement was performed' in obs.content
-        assert (
-            f'old_str `Non-existent Line` did not appear verbatim in {test_file}'
-            in obs.content
-        )
+        assert f'old_str `Non-existent Line` did not appear verbatim in {test_file}' in obs.content
     finally:
         _close_test_runtime(runtime)
 
@@ -550,9 +536,7 @@ def test_undo_edit(temp_dir, runtime_cls, run_as_openhands):
 def test_validate_path_invalid(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
-        invalid_file = os.path.join(
-            config.workspace_mount_path_in_sandbox, 'nonexistent.txt'
-        )
+        invalid_file = os.path.join(config.workspace_mount_path_in_sandbox, 'nonexistent.txt')
         action = FileEditAction(
             command='view',
             path=invalid_file,
@@ -603,10 +587,7 @@ def test_str_replace_missing_old_str(temp_dir, runtime_cls, run_as_openhands):
         )
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert (
-            'No replacement was performed. Multiple occurrences of old_str ``'
-            in obs.content
-        )
+        assert 'No replacement was performed. Multiple occurrences of old_str ``' in obs.content
     finally:
         _close_test_runtime(runtime)
 
@@ -628,10 +609,7 @@ def test_str_replace_new_str_and_old_str_same(temp_dir, runtime_cls, run_as_open
         )
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert (
-            'No replacement was performed. `new_str` and `old_str` must be different.'
-            in obs.content
-        )
+        assert 'No replacement was performed. `new_str` and `old_str` must be different.' in obs.content
     finally:
         _close_test_runtime(runtime)
 
@@ -682,9 +660,7 @@ def test_view_large_file_with_truncation(temp_dir, runtime_cls, run_as_openhands
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create a large file to trigger truncation
-        large_file = os.path.join(
-            config.workspace_mount_path_in_sandbox, 'large_test.txt'
-        )
+        large_file = os.path.join(config.workspace_mount_path_in_sandbox, 'large_test.txt')
         large_content = 'Line 1\n' * 16000  # 16000 lines should trigger truncation
         action = FileWriteAction(
             content=large_content,
@@ -698,10 +674,7 @@ def test_view_large_file_with_truncation(temp_dir, runtime_cls, run_as_openhands
         )
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert (
-            'Due to the max output limit, only part of this file has been shown to you.'
-            in obs.content
-        )
+        assert 'Due to the max output limit, only part of this file has been shown to you.' in obs.content
     finally:
         _close_test_runtime(runtime)
 
@@ -714,9 +687,7 @@ def test_insert_line_string_conversion():
     """
     # Mock the OHEditor
     mock_editor = MagicMock()
-    mock_editor.return_value = MagicMock(
-        error=None, output='Success', old_content=None, new_content=None
-    )
+    mock_editor.return_value = MagicMock(error=None, output='Success', old_content=None, new_content=None)
 
     # Test with string insert_line
     result, _ = _execute_file_editor(

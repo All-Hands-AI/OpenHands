@@ -135,9 +135,7 @@ class Metrics:
 
     def add_response_latency(self, value: float, response_id: str) -> None:
         self._response_latencies.append(
-            ResponseLatency(
-                latency=max(0.0, value), model=self.model_name, response_id=response_id
-            )
+            ResponseLatency(latency=max(0.0, value), model=self.model_name, response_id=response_id)
         )
 
     def add_token_usage(
@@ -192,9 +190,7 @@ class Metrics:
         self.response_latencies += other.response_latencies
 
         # Merge accumulated token usage using the __add__ operator
-        self._accumulated_token_usage = (
-            self.accumulated_token_usage + other.accumulated_token_usage
-        )
+        self._accumulated_token_usage = self.accumulated_token_usage + other.accumulated_token_usage
 
     def get(self) -> dict:
         """Return the metrics in a dictionary."""
@@ -203,9 +199,7 @@ class Metrics:
             'max_budget_per_task': self._max_budget_per_task,
             'accumulated_token_usage': self.accumulated_token_usage.model_dump(),
             'costs': [cost.model_dump() for cost in self._costs],
-            'response_latencies': [
-                latency.model_dump() for latency in self._response_latencies
-            ],
+            'response_latencies': [latency.model_dump() for latency in self._response_latencies],
             'token_usages': [usage.model_dump() for usage in self._token_usages],
         }
 
@@ -240,16 +234,12 @@ class Metrics:
         # Include only costs that were added after the baseline
         if baseline._costs:
             last_baseline_timestamp = baseline._costs[-1].timestamp
-            result._costs = [
-                cost for cost in self._costs if cost.timestamp > last_baseline_timestamp
-            ]
+            result._costs = [cost for cost in self._costs if cost.timestamp > last_baseline_timestamp]
         else:
             result._costs = self._costs.copy()
 
         # Include only response latencies that were added after the baseline
-        result._response_latencies = self._response_latencies[
-            len(baseline._response_latencies) :
-        ]
+        result._response_latencies = self._response_latencies[len(baseline._response_latencies) :]
 
         # Include only token usages that were added after the baseline
         result._token_usages = self._token_usages[len(baseline._token_usages) :]
@@ -261,12 +251,9 @@ class Metrics:
         result._accumulated_token_usage = TokenUsage(
             model=self.model_name,
             prompt_tokens=current_usage.prompt_tokens - base_usage.prompt_tokens,
-            completion_tokens=current_usage.completion_tokens
-            - base_usage.completion_tokens,
-            cache_read_tokens=current_usage.cache_read_tokens
-            - base_usage.cache_read_tokens,
-            cache_write_tokens=current_usage.cache_write_tokens
-            - base_usage.cache_write_tokens,
+            completion_tokens=current_usage.completion_tokens - base_usage.completion_tokens,
+            cache_read_tokens=current_usage.cache_read_tokens - base_usage.cache_read_tokens,
+            cache_write_tokens=current_usage.cache_write_tokens - base_usage.cache_write_tokens,
             context_window=current_usage.context_window,
             per_turn_token=0,
             response_id='',

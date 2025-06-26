@@ -184,10 +184,7 @@ class KubernetesRuntime(ActionExecutionClient):
 
     @property
     def node_selector(self) -> dict[str, str] | None:
-        if (
-            not self._k8s_config.node_selector_key
-            or not self._k8s_config.node_selector_val
-        ):
+        if not self._k8s_config.node_selector_key or not self._k8s_config.node_selector_val:
             return None
         return {self._k8s_config.node_selector_key: self._k8s_config.node_selector_val}
 
@@ -208,9 +205,7 @@ class KubernetesRuntime(ActionExecutionClient):
                 )
                 return None
         except yaml.YAMLError as e:
-            logger.error(
-                f'Error parsing tolerations YAML: {tolerations_yaml_str}. Error: {e}'
-            )
+            logger.error(f'Error parsing tolerations YAML: {tolerations_yaml_str}. Error: {e}')
             return None
         return tolerations
 
@@ -256,9 +251,7 @@ class KubernetesRuntime(ActionExecutionClient):
                 'ERROR$RUNTIME_CONNECTION',
                 f'Failed to connect to runtime: {alive_error}',
             )
-            raise AgentRuntimeDisconnectedError(
-                f'Failed to connect to runtime: {alive_error}'
-            ) from alive_error
+            raise AgentRuntimeDisconnectedError(f'Failed to connect to runtime: {alive_error}') from alive_error
 
         if not self.attach_to_existing:
             self.log('info', 'Runtime is ready.')
@@ -277,17 +270,13 @@ class KubernetesRuntime(ActionExecutionClient):
     def _attach_to_pod(self):
         """Attach to an existing pod."""
         try:
-            pod = self.k8s_client.read_namespaced_pod(
-                name=self.pod_name, namespace=self._k8s_namespace
-            )
+            pod = self.k8s_client.read_namespaced_pod(name=self.pod_name, namespace=self._k8s_namespace)
 
             if pod.status.phase != 'Running':
                 try:
                     self._wait_until_ready()
                 except TimeoutError:
-                    raise AgentRuntimeDisconnectedError(
-                        f'Pod {self.pod_name} exists but failed to become ready.'
-                    )
+                    raise AgentRuntimeDisconnectedError(f'Pod {self.pod_name} exists but failed to become ready.')
 
             self.log('info', f'Successfully attached to pod {self.pod_name}')
             return True
@@ -305,9 +294,7 @@ class KubernetesRuntime(ActionExecutionClient):
     def _wait_until_ready(self):
         """Wait until the runtime server is alive by checking the pod status in Kubernetes."""
         self.log('info', f'Checking if pod {self.pod_name} is ready in Kubernetes')
-        pod = self.k8s_client.read_namespaced_pod(
-            name=self.pod_name, namespace=self._k8s_namespace
-        )
+        pod = self.k8s_client.read_namespaced_pod(name=self.pod_name, namespace=self._k8s_namespace)
         if pod.status.phase == 'Running' and pod.status.conditions:
             for condition in pod.status.conditions:
                 if condition.type == 'Ready' and condition.status == 'True':
@@ -334,9 +321,7 @@ class KubernetesRuntime(ActionExecutionClient):
             raise ex
 
     @staticmethod
-    def _cleanup_k8s_resources(
-        namespace: str, remove_pvc: bool = False, conversation_id: str = ''
-    ):
+    def _cleanup_k8s_resources(namespace: str, remove_pvc: bool = False, conversation_id: str = ''):
         """Clean up Kubernetes resources with our prefix in the namespace.
 
         :param remove_pvc: If True, also remove persistent volume claims (defaults to False).
@@ -373,14 +358,10 @@ class KubernetesRuntime(ActionExecutionClient):
                 )
                 logger.info(f'Deleted service {service_name}')
                 # Delete the vs code service
-                k8s_api.delete_namespaced_service(
-                    name=vscode_service_name, namespace=namespace
-                )
+                k8s_api.delete_namespaced_service(name=vscode_service_name, namespace=namespace)
                 logger.info(f'Deleted service {vscode_service_name}')
 
-                k8s_networking_api.delete_namespaced_ingress(
-                    name=ingress_name, namespace=namespace
-                )
+                k8s_networking_api.delete_namespaced_ingress(name=ingress_name, namespace=namespace)
                 logger.info(f'Deleted ingress {ingress_name}')
             except client.rest.ApiException:
                 # Service might not exist, ignore
@@ -395,14 +376,10 @@ class KubernetesRuntime(ActionExecutionClient):
         pvc = V1PersistentVolumeClaim(
             api_version='v1',
             kind='PersistentVolumeClaim',
-            metadata=V1ObjectMeta(
-                name=self._get_pvc_name(self.pod_name), namespace=self._k8s_namespace
-            ),
+            metadata=V1ObjectMeta(name=self._get_pvc_name(self.pod_name), namespace=self._k8s_namespace),
             spec=V1PersistentVolumeClaimSpec(
                 access_modes=['ReadWriteOnce'],
-                resources=client.V1ResourceRequirements(
-                    requests={'storage': self._k8s_config.pvc_storage_size}
-                ),
+                resources=client.V1ResourceRequirements(requests={'storage': self._k8s_config.pvc_storage_size}),
                 storage_class_name=self._k8s_config.pvc_storage_class,
             ),
         )
@@ -488,9 +465,7 @@ class KubernetesRuntime(ActionExecutionClient):
         ]
 
         if self.vscode_enabled:
-            container_ports.append(
-                V1ContainerPort(container_port=self._vscode_port, name='vscode')
-            )
+            container_ports.append(V1ContainerPort(container_port=self._vscode_port, name='vscode'))
 
         for port in self._app_ports:
             container_ports.append(V1ContainerPort(container_port=port))
@@ -546,13 +521,9 @@ class KubernetesRuntime(ActionExecutionClient):
         # Create the pod definition
         image_pull_secrets = None
         if self._k8s_config.image_pull_secret:
-            image_pull_secrets = [
-                client.V1LocalObjectReference(name=self._k8s_config.image_pull_secret)
-            ]
+            image_pull_secrets = [client.V1LocalObjectReference(name=self._k8s_config.image_pull_secret)]
         pod = V1Pod(
-            metadata=V1ObjectMeta(
-                name=self.pod_name, labels={'app': POD_LABEL, 'session': self.sid}
-            ),
+            metadata=V1ObjectMeta(name=self.pod_name, labels={'app': POD_LABEL, 'session': self.sid}),
             spec=V1PodSpec(
                 containers=[container],
                 volumes=volumes,
@@ -603,9 +574,7 @@ class KubernetesRuntime(ActionExecutionClient):
             api_version='networking.k8s.io/v1',
             metadata=V1ObjectMeta(
                 name=self._get_vscode_ingress_name(self.pod_name),
-                annotations={
-                    'external-dns.alpha.kubernetes.io/hostname': self.ingress_domain
-                },
+                annotations={'external-dns.alpha.kubernetes.io/hostname': self.ingress_domain},
             ),
             spec=ingress_spec,
         )
@@ -645,28 +614,18 @@ class KubernetesRuntime(ActionExecutionClient):
                     namespace=self._k8s_namespace, body=pvc_manifest
                 )
                 self.log('info', f'Created PVC {self._get_pvc_name(self.pod_name)}')
-            self.k8s_client.create_namespaced_pod(
-                namespace=self._k8s_namespace, body=pod
-            )
+            self.k8s_client.create_namespaced_pod(namespace=self._k8s_namespace, body=pod)
             self.log('info', f'Created pod {self.pod_name}.')
             # Create a service to expose the pod for external access
-            self.k8s_client.create_namespaced_service(
-                namespace=self._k8s_namespace, body=service
-            )
+            self.k8s_client.create_namespaced_service(namespace=self._k8s_namespace, body=service)
             self.log('info', f'Created service {self._get_svc_name(self.pod_name)}')
 
             # Create second service service for the vscode server.
-            self.k8s_client.create_namespaced_service(
-                namespace=self._k8s_namespace, body=vscode_service
-            )
-            self.log(
-                'info', f'Created service {self._get_vscode_svc_name(self.pod_name)}'
-            )
+            self.k8s_client.create_namespaced_service(namespace=self._k8s_namespace, body=vscode_service)
+            self.log('info', f'Created service {self._get_vscode_svc_name(self.pod_name)}')
 
             # create the vscode ingress.
-            self.k8s_networking_client.create_namespaced_ingress(
-                namespace=self._k8s_namespace, body=ingress
-            )
+            self.k8s_networking_client.create_namespaced_ingress(namespace=self._k8s_namespace, body=ingress)
             self.log(
                 'info',
                 f'Created ingress {self._get_vscode_ingress_name(self.pod_name)}',
@@ -694,9 +653,7 @@ class KubernetesRuntime(ActionExecutionClient):
 
         # Return early if we should keep the runtime alive or if we're attaching to existing
         if self.config.sandbox.keep_runtime_alive or self.attach_to_existing:
-            self.log(
-                'info', 'Keeping runtime alive due to configuration or attach mode'
-            )
+            self.log('info', 'Keeping runtime alive due to configuration or attach mode')
             return
 
         try:
@@ -723,7 +680,9 @@ class KubernetesRuntime(ActionExecutionClient):
             return None
 
         protocol = 'https' if self._k8s_config.ingress_tls_secret else 'http'
-        vscode_url = f'{protocol}://{self.ingress_domain}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        vscode_url = (
+            f'{protocol}://{self.ingress_domain}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        )
         self.log('info', f'VSCode URL: {vscode_url}')
         return vscode_url
 
@@ -747,6 +706,4 @@ class KubernetesRuntime(ActionExecutionClient):
             )
 
         except Exception as e:
-            logger.error(
-                f'Error deleting resources for conversation {conversation_id}: {e}'
-            )
+            logger.error(f'Error deleting resources for conversation {conversation_id}: {e}')

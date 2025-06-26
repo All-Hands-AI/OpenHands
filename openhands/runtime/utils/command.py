@@ -31,16 +31,10 @@ def get_action_execution_server_startup_command(
     # Browsergym stuffs
     browsergym_args = []
     if sandbox_config.browsergym_eval_env is not None:
-        browsergym_args = [
-            '--browsergym-eval-env'
-        ] + sandbox_config.browsergym_eval_env.split(' ')
+        browsergym_args = ['--browsergym-eval-env'] + sandbox_config.browsergym_eval_env.split(' ')
 
-    username = override_username or (
-        'openhands' if app_config.run_as_openhands else 'root'
-    )
-    user_id = override_user_id or (
-        sandbox_config.user_id if app_config.run_as_openhands else 0
-    )
+    username = override_username or ('openhands' if app_config.run_as_openhands else 'root')
+    user_id = override_user_id or (sandbox_config.user_id if app_config.run_as_openhands else 0)
 
     base_cmd = [
         *python_prefix,

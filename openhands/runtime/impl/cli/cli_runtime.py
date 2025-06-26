@@ -74,14 +74,8 @@ https://docs.all-hands.dev/usage/windows-without-wsl
 After installing .NET SDK, restart your terminal and try again.
 """
         print(friendly_message, file=sys.stderr)
-        logger.error(
-            f'Windows runtime initialization failed: {type(err).__name__}: {str(err)}'
-        )
-        if (
-            isinstance(err, DotNetMissingError)
-            and hasattr(err, 'details')
-            and err.details
-        ):
+        logger.error(f'Windows runtime initialization failed: {type(err).__name__}: {str(err)}')
+        if isinstance(err, DotNetMissingError) and hasattr(err, 'details') and err.details:
             logger.debug(f'Details: {err.details}')
 
         # Exit the program with an error code
@@ -142,9 +136,7 @@ class CLIRuntime(Runtime):
             self._workspace_path = self.config.workspace_base
         else:
             # Create a temporary directory for the workspace
-            self._workspace_path = tempfile.mkdtemp(
-                prefix=f'openhands_workspace_{sid}_'
-            )
+            self._workspace_path = tempfile.mkdtemp(prefix=f'openhands_workspace_{sid}_')
             logger.info(f'Created temporary workspace at {self._workspace_path}')
 
         # Runtime tests rely on this being set correctly.
@@ -203,9 +195,7 @@ class CLIRuntime(Runtime):
             return
 
         # We log only keys to avoid leaking sensitive values like tokens into logs.
-        logger.info(
-            f'[CLIRuntime] Setting environment variables for this session: {list(env_vars.keys())}'
-        )
+        logger.info(f'[CLIRuntime] Setting environment variables for this session: {list(env_vars.keys())}')
 
         for key, value in env_vars.items():
             if isinstance(value, SecretStr):
@@ -230,21 +220,13 @@ class CLIRuntime(Runtime):
         if pid is None:
             return
 
-        group_desc = (
-            'kill process group'
-            if signal_to_send == signal.SIGKILL
-            else 'terminate process group'
-        )
-        process_desc = (
-            'kill process' if signal_to_send == signal.SIGKILL else 'terminate process'
-        )
+        group_desc = 'kill process group' if signal_to_send == signal.SIGKILL else 'terminate process group'
+        process_desc = 'kill process' if signal_to_send == signal.SIGKILL else 'terminate process'
 
         try:
             # Try to terminate/kill the entire process group
             logger.debug(f'[_safe_terminate_process] Original PID to act on: {pid}')
-            pgid_to_kill = os.getpgid(
-                pid
-            )  # This might raise ProcessLookupError if pid is already gone
+            pgid_to_kill = os.getpgid(pid)  # This might raise ProcessLookupError if pid is already gone
             logger.debug(
                 f'[_safe_terminate_process] Attempting to {group_desc} for PID {pid} (PGID: {pgid_to_kill}) with {signal_to_send}.'
             )
@@ -261,9 +243,7 @@ class CLIRuntime(Runtime):
                     process_obj.kill()
                 else:
                     process_obj.terminate()
-                logger.debug(
-                    f'[_safe_terminate_process] Fallback: Terminated {process_desc} (PID: {pid}).'
-                )
+                logger.debug(f'[_safe_terminate_process] Fallback: Terminated {process_desc} (PID: {pid}).')
             except Exception as e_fallback:
                 logger.error(
                     f'[_safe_terminate_process] Fallback: Error during {process_desc} (PID: {pid}): {e_fallback}'
@@ -278,9 +258,7 @@ class CLIRuntime(Runtime):
                     process_obj.kill()
                 else:
                     process_obj.terminate()
-                logger.debug(
-                    f'[_safe_terminate_process] Fallback: Terminated {process_desc} (PID: {pid}).'
-                )
+                logger.debug(f'[_safe_terminate_process] Fallback: Terminated {process_desc} (PID: {pid}).')
             except Exception as e_fallback:
                 logger.error(
                     f'[_safe_terminate_process] Fallback: Error during {process_desc} (PID: {pid}): {e_fallback}'
@@ -290,9 +268,7 @@ class CLIRuntime(Runtime):
         except Exception as e:
             logger.error(f'Error: {e}')
 
-    def _execute_powershell_command(
-        self, command: str, timeout: float
-    ) -> CmdOutputObservation | ErrorObservation:
+    def _execute_powershell_command(self, command: str, timeout: float) -> CmdOutputObservation | ErrorObservation:
         """
         Execute a command using PowerShell session on Windows.
         Args:
@@ -324,9 +300,7 @@ class CLIRuntime(Runtime):
                 error_id='POWERSHELL_EXECUTION_ERROR',
             )
 
-    def _execute_shell_command(
-        self, command: str, timeout: float
-    ) -> CmdOutputObservation:
+    def _execute_shell_command(self, command: str, timeout: float) -> CmdOutputObservation:
         """
         Execute a shell command and stream its output to a callback function.
         Args:
@@ -349,26 +323,17 @@ class CLIRuntime(Runtime):
             universal_newlines=True,
             start_new_session=True,
         )
-        logger.debug(
-            f'[_execute_shell_command] PID of bash -c: {process.pid} for command: "{command}"'
-        )
+        logger.debug(f'[_execute_shell_command] PID of bash -c: {process.pid} for command: "{command}"')
 
         exit_code = None
 
         try:
             if process.stdout:
                 while process.poll() is None:
-                    if (
-                        timeout is not None
-                        and (time.monotonic() - start_time) > timeout
-                    ):
-                        logger.debug(
-                            f'Command "{command}" timed out after {timeout:.1f} seconds. Terminating.'
-                        )
+                    if timeout is not None and (time.monotonic() - start_time) > timeout:
+                        logger.debug(f'Command "{command}" timed out after {timeout:.1f} seconds. Terminating.')
                         # Attempt to terminate the process group (SIGTERM)
-                        self._safe_terminate_process(
-                            process, signal_to_send=signal.SIGTERM
-                        )
+                        self._safe_terminate_process(process, signal_to_send=signal.SIGTERM)
                         timed_out = True
                         break
 
@@ -393,9 +358,7 @@ class CLIRuntime(Runtime):
                             if self._shell_stream_callback:
                                 self._shell_stream_callback(line)
                 except Exception as e:
-                    logger.warning(
-                        f'Error reading directly from stdout after loop for "{command}": {e}'
-                    )
+                    logger.warning(f'Error reading directly from stdout after loop for "{command}": {e}')
 
             exit_code = process.returncode
 
@@ -404,9 +367,7 @@ class CLIRuntime(Runtime):
                 exit_code = -1
 
         except Exception as e:
-            logger.error(
-                f'Outer exception in _execute_shell_command for "{command}": {e}'
-            )
+            logger.error(f'Outer exception in _execute_shell_command for "{command}": {e}')
             if process and process.poll() is None:
                 self._safe_terminate_process(process, signal_to_send=signal.SIGKILL)
             return CmdOutputObservation(
@@ -421,9 +382,7 @@ class CLIRuntime(Runtime):
         )
         obs_metadata = {'working_dir': self._workspace_path}
         if timed_out:
-            obs_metadata['suffix'] = (
-                f'[The command timed out after {timeout:.1f} seconds.]'
-            )
+            obs_metadata['suffix'] = f'[The command timed out after {timeout:.1f} seconds.]'
             # exit_code = -1 # This is already set if timed_out is True
 
         return CmdOutputObservation(
@@ -436,9 +395,7 @@ class CLIRuntime(Runtime):
     def run(self, action: CmdRunAction) -> Observation:
         """Run a command using subprocess."""
         if not self._runtime_initialized:
-            return ErrorObservation(
-                f'Runtime not initialized for command: {action.command}'
-            )
+            return ErrorObservation(f'Runtime not initialized for command: {action.command}')
 
         if action.is_input:
             logger.warning(
@@ -452,11 +409,7 @@ class CLIRuntime(Runtime):
             )
 
         try:
-            effective_timeout = (
-                action.timeout
-                if action.timeout is not None
-                else self.config.sandbox.timeout
-            )
+            effective_timeout = action.timeout if action.timeout is not None else self.config.sandbox.timeout
 
             logger.debug(
                 f'Running command in CLIRuntime: "{action.command}" with effective timeout: {effective_timeout}s'
@@ -464,20 +417,12 @@ class CLIRuntime(Runtime):
 
             # Use PowerShell on Windows if available, otherwise use subprocess
             if self._is_windows and self._powershell_session is not None:
-                return self._execute_powershell_command(
-                    action.command, timeout=effective_timeout
-                )
+                return self._execute_powershell_command(action.command, timeout=effective_timeout)
             else:
-                return self._execute_shell_command(
-                    action.command, timeout=effective_timeout
-                )
+                return self._execute_shell_command(action.command, timeout=effective_timeout)
         except Exception as e:
-            logger.error(
-                f'Error in CLIRuntime.run for command "{action.command}": {str(e)}'
-            )
-            return ErrorObservation(
-                f'Error running command "{action.command}": {str(e)}'
-            )
+            logger.error(f'Error in CLIRuntime.run for command "{action.command}": {str(e)}')
+            return ErrorObservation(f'Error running command "{action.command}": {str(e)}')
 
     def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         """Run a Python code cell.
@@ -492,9 +437,7 @@ class CLIRuntime(Runtime):
             "run_ipython is called on CLIRuntime, but it's not implemented. "
             'Please disable the Jupyter plugin in AgentConfig.'
         )
-        return ErrorObservation(
-            'Executing IPython cells is not implemented in CLIRuntime. '
-        )
+        return ErrorObservation('Executing IPython cells is not implemented in CLIRuntime. ')
 
     def _sanitize_filename(self, filename: str) -> str:
         # if path is absolute, ensure it starts with _workspace_path
@@ -503,9 +446,7 @@ class CLIRuntime(Runtime):
         elif filename.startswith('/workspace/'):
             # Map /workspace/ to the actual workspace path
             # Note: /workspace is widely used, so we map it to allow using it with CLIRuntime
-            actual_filename = os.path.join(
-                self._workspace_path, filename[len('/workspace/') :]
-            )
+            actual_filename = os.path.join(self._workspace_path, filename[len('/workspace/') :])
         elif filename.startswith('/'):
             if not filename.startswith(self._workspace_path):
                 raise LLMMalformedActionError(
@@ -591,15 +532,11 @@ class CLIRuntime(Runtime):
 
     def browse(self, action: BrowseURLAction) -> Observation:
         """Not implemented for CLI runtime."""
-        return ErrorObservation(
-            'Browser functionality is not implemented in CLIRuntime'
-        )
+        return ErrorObservation('Browser functionality is not implemented in CLIRuntime')
 
     def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         """Not implemented for CLI runtime."""
-        return ErrorObservation(
-            'Browser functionality is not implemented in CLIRuntime'
-        )
+        return ErrorObservation('Browser functionality is not implemented in CLIRuntime')
 
     def _execute_file_editor(
         self,
@@ -714,9 +651,7 @@ class CLIRuntime(Runtime):
 
                 # If source and final target are the same, skip.
                 if os.path.realpath(host_src) == os.path.realpath(final_target_dir):
-                    logger.debug(
-                        'Skipping recursive copy: source and target are identical.'
-                    )
+                    logger.debug('Skipping recursive copy: source and target are identical.')
                     pass
                 else:
                     # Ensure parent of final_target_dir exists.
@@ -731,18 +666,14 @@ class CLIRuntime(Runtime):
                 if os.path.isdir(dest) or (sandbox_dest.endswith(('/', os.sep))):
                     target_dir = dest
                     os.makedirs(target_dir, exist_ok=True)
-                    final_target_file_path = os.path.join(
-                        target_dir, os.path.basename(host_src)
-                    )
+                    final_target_file_path = os.path.join(target_dir, os.path.basename(host_src))
                     # Why: Copies file into specified directory.
 
                 # Scenario B: sandbox_dest is likely a new directory (e.g., 'new_dir').
                 elif not os.path.exists(dest) and '.' not in os.path.basename(dest):
                     target_dir = dest
                     os.makedirs(target_dir, exist_ok=True)
-                    final_target_file_path = os.path.join(
-                        target_dir, os.path.basename(host_src)
-                    )
+                    final_target_file_path = os.path.join(target_dir, os.path.basename(host_src))
                     # Why: Creates 'new_dir' and copies file into it.
 
                 # Scenario C: sandbox_dest is a full file path.
@@ -754,18 +685,14 @@ class CLIRuntime(Runtime):
                 shutil.copy2(host_src, final_target_file_path)
 
             else:  # Source is not a valid file or directory.
-                raise FileNotFoundError(
-                    f"Source path '{host_src}' is not a valid file or directory."
-                )
+                raise FileNotFoundError(f"Source path '{host_src}' is not a valid file or directory.")
 
         except FileNotFoundError as e:
             logger.error(f'File not found during copy: {str(e)}')
             raise
         except shutil.SameFileError as e:
             # We can be lenient here, just ignore this error.
-            logger.debug(
-                f'Skipping copy as source and destination are the same: {str(e)}'
-            )
+            logger.debug(f'Skipping copy as source and destination are the same: {str(e)}')
             pass
         except Exception as e:
             logger.error(f'Unexpected error copying file: {str(e)}')
@@ -866,15 +793,11 @@ class CLIRuntime(Runtime):
             ]
         )
 
-    def get_mcp_config(
-        self, extra_stdio_servers: list[MCPStdioServerConfig] | None = None
-    ) -> MCPConfig:
+    def get_mcp_config(self, extra_stdio_servers: list[MCPStdioServerConfig] | None = None) -> MCPConfig:
         # TODO: Load MCP config from a local file
         return MCPConfig()
 
-    def subscribe_to_shell_stream(
-        self, callback: Callable[[str], None] | None = None
-    ) -> bool:
+    def subscribe_to_shell_stream(self, callback: Callable[[str], None] | None = None) -> bool:
         """
         Subscribe to shell command output stream.
 

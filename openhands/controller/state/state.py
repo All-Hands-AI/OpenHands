@@ -80,9 +80,7 @@ class State:
 
     session_id: str = ''
     iteration_flag: IterationControlFlag = field(
-        default_factory=lambda: IterationControlFlag(
-            limit_increase_amount=100, current_value=0, max_value=100
-        )
+        default_factory=lambda: IterationControlFlag(limit_increase_amount=100, current_value=0, max_value=100)
     )
     budget_flag: BudgetControlFlag | None = None
     confirmation_mode: bool = False
@@ -116,16 +114,12 @@ class State:
     local_metrics: Metrics | None = None
     delegates: dict[tuple[int, int], tuple[str, str]] | None = None
 
-    def save_to_session(
-        self, sid: str, file_store: FileStore, user_id: str | None
-    ) -> None:
+    def save_to_session(self, sid: str, file_store: FileStore, user_id: str | None) -> None:
         pickled = pickle.dumps(self)
         logger.debug(f'Saving state to session {sid}:{self.agent_state}')
         encoded = base64.b64encode(pickled).decode('utf-8')
         try:
-            file_store.write(
-                get_conversation_agent_state_filename(sid, user_id), encoded
-            )
+            file_store.write(get_conversation_agent_state_filename(sid, user_id), encoded)
 
             # see if state is in the old directory on saas/remote use cases and delete it.
             if user_id:
@@ -139,18 +133,14 @@ class State:
             raise e
 
     @staticmethod
-    def restore_from_session(
-        sid: str, file_store: FileStore, user_id: str | None = None
-    ) -> 'State':
+    def restore_from_session(sid: str, file_store: FileStore, user_id: str | None = None) -> 'State':
         """
         Restores the state from the previously saved session.
         """
 
         state: State
         try:
-            encoded = file_store.read(
-                get_conversation_agent_state_filename(sid, user_id)
-            )
+            encoded = file_store.read(get_conversation_agent_state_filename(sid, user_id))
             pickled = base64.b64decode(encoded)
             state = pickle.loads(pickled)
         except FileNotFoundError:
@@ -162,9 +152,7 @@ class State:
                 pickled = base64.b64decode(encoded)
                 state = pickle.loads(pickled)
             else:
-                raise FileNotFoundError(
-                    f'Could not restore state from session file for sid: {sid}'
-                )
+                raise FileNotFoundError(f'Could not restore state from session file for sid: {sid}')
         except Exception as e:
             logger.debug(f'Could not restore state from session: {e}')
             raise e
@@ -232,9 +220,7 @@ class State:
 
         # Ensure we have default values for new fields if they're missing
         if not hasattr(self, 'iteration_flag'):
-            self.iteration_flag = IterationControlFlag(
-                limit_increase_amount=100, current_value=0, max_value=100
-            )
+            self.iteration_flag = IterationControlFlag(limit_increase_amount=100, current_value=0, max_value=100)
 
         if not hasattr(self, 'budget_flag'):
             self.budget_flag = None

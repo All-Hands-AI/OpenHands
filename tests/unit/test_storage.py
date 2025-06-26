@@ -70,9 +70,7 @@ class _StorageTest(ABC):
         self.assertEqual(store.list('foo'), ['foo/bar/'])
         file_names = store.list('foo/bar')
         file_names.sort()
-        self.assertEqual(
-            file_names, ['foo/bar/baz.txt', 'foo/bar/quux.txt', 'foo/bar/qux.txt']
-        )
+        self.assertEqual(file_names, ['foo/bar/baz.txt', 'foo/bar/quux.txt', 'foo/bar/qux.txt'])
         store.delete('foo/bar/baz.txt')
         store.delete('foo/bar/qux.txt')
         store.delete('foo/bar/quux.txt')
@@ -118,9 +116,7 @@ class TestLocalFileStore(TestCase, _StorageTest):
             # Use ignore_errors=True to avoid failures if directory is not empty
             shutil.rmtree(self.temp_dir, ignore_errors=True)
         except Exception as e:
-            logging.warning(
-                f'Failed to remove temporary directory {self.temp_dir}: {e}'
-            )
+            logging.warning(f'Failed to remove temporary directory {self.temp_dir}: {e}')
 
 
 class TestInMemoryFileStore(TestCase, _StorageTest):
@@ -191,9 +187,7 @@ class _MockGoogleCloudBlobWriter:
         return self
 
     def write(self, __b):
-        assert (
-            self.content is None
-        )  # We don't support buffered writes in this mock for now, as it is not needed
+        assert self.content is None  # We don't support buffered writes in this mock for now, as it is not needed
         self.content = __b
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -249,11 +243,7 @@ class _MockS3Client:
                 'ListObjectsV2',
             )
         objects = self.objects_by_bucket[Bucket]
-        contents = [
-            {'Key': key}
-            for key in objects.keys()
-            if not Prefix or key.startswith(Prefix)
-        ]
+        contents = [{'Key': key} for key in objects.keys() if not Prefix or key.startswith(Prefix)]
         return {'Contents': contents} if contents else {}
 
     def delete_object(self, Bucket: str, Key: str) -> None:

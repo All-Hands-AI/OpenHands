@@ -60,11 +60,7 @@ def handle_action_deprecated_args(args: dict[str, Any]) -> dict[str, Any]:
 
         # Check if it's a file_editor call using a prefix check for efficiency
         file_editor_prefix = 'print(file_editor(**'
-        if (
-            code is not None
-            and code.startswith(file_editor_prefix)
-            and code.endswith('))')
-        ):
+        if code is not None and code.startswith(file_editor_prefix) and code.endswith('))'):
             try:
                 # Extract and evaluate the dictionary string
                 import ast
@@ -80,9 +76,7 @@ def handle_action_deprecated_args(args: dict[str, Any]) -> dict[str, Any]:
                 pass
 
         if args.get('command') == 'view':
-            args.pop(
-                'command'
-            )  # "view" will be translated to FileReadAction which doesn't have a command argument
+            args.pop('command')  # "view" will be translated to FileReadAction which doesn't have a command argument
 
     return args
 
@@ -130,8 +124,6 @@ def action_from_dict(action: dict) -> Action:
             decoded_action._timestamp = timestamp
 
     except TypeError as e:
-        raise LLMMalformedActionError(
-            f'action={action} has the wrong arguments: {str(e)}'
-        )
+        raise LLMMalformedActionError(f'action={action} has the wrong arguments: {str(e)}')
     assert isinstance(decoded_action, Action)
     return decoded_action

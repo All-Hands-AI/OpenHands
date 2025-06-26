@@ -117,9 +117,7 @@ def test_read_pdf_browse(temp_dir, runtime_cls, run_as_openhands):
 
         # Browse to the PDF file
         pdf_url = f'{server_url}/view?path=/workspace/test_document.pdf'
-        action_browse = BrowseInteractiveAction(
-            browser_actions=f'goto("{pdf_url}")', return_axtree=False
-        )
+        action_browse = BrowseInteractiveAction(browser_actions=f'goto("{pdf_url}")', return_axtree=False)
         logger.info(action_browse, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action_browse)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -129,10 +127,7 @@ def test_read_pdf_browse(temp_dir, runtime_cls, run_as_openhands):
         observation_text = str(obs)
         assert '[Action executed successfully.]' in observation_text
         assert 'Canvas' in observation_text
-        assert (
-            'Screenshot saved to: /workspace/.browser_screenshots/screenshot_'
-            in observation_text
-        )
+        assert 'Screenshot saved to: /workspace/.browser_screenshots/screenshot_' in observation_text
 
         # Check the /workspace/.browser_screenshots folder
         action_cmd = CmdRunAction(command='ls /workspace/.browser_screenshots')
@@ -188,9 +183,7 @@ def test_read_png_browse(temp_dir, runtime_cls, run_as_openhands):
 
         # Browse to the PNG file
         png_url = f'{server_url}/view?path=/workspace/test_image.png'
-        action_browse = BrowseInteractiveAction(
-            browser_actions=f'goto("{png_url}")', return_axtree=False
-        )
+        action_browse = BrowseInteractiveAction(browser_actions=f'goto("{png_url}")', return_axtree=False)
         logger.info(action_browse, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action_browse)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -200,10 +193,7 @@ def test_read_png_browse(temp_dir, runtime_cls, run_as_openhands):
         observation_text = str(obs)
         assert '[Action executed successfully.]' in observation_text
         assert 'File Viewer - test_image.png' in observation_text
-        assert (
-            'Screenshot saved to: /workspace/.browser_screenshots/screenshot_'
-            in observation_text
-        )
+        assert 'Screenshot saved to: /workspace/.browser_screenshots/screenshot_' in observation_text
 
         # Check the /workspace/.browser_screenshots folder
         action_cmd = CmdRunAction(command='ls /workspace/.browser_screenshots')
@@ -312,9 +302,7 @@ def test_download_file(temp_dir, runtime_cls, run_as_openhands):
         assert obs.exit_code == 0
 
         # Start HTTP server
-        action_cmd = CmdRunAction(
-            command='python3 -m http.server 8000 > server.log 2>&1 &'
-        )
+        action_cmd = CmdRunAction(command='python3 -m http.server 8000 > server.log 2>&1 &')
         logger.info(action_cmd, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action_cmd)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})

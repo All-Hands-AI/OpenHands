@@ -126,9 +126,7 @@ Testing nested directory loading.
     repo_agents, knowledge_agents = load_microagents_from_dir(temp_microagents_dir)
 
     # Check that we can find the nested agent (name derived from path: nested/dir/nested.md -> 'nested/dir/nested')
-    assert (
-        len(knowledge_agents) == 2
-    )  # Original ('knowledge') + nested ('nested/dir/nested')
+    assert len(knowledge_agents) == 2  # Original ('knowledge') + nested ('nested/dir/nested')
     agent_n = knowledge_agents['nested/dir/nested']
     assert isinstance(agent_n, KnowledgeMicroagent)
     assert agent_n.type == MicroagentType.KNOWLEDGE  # Check inferred type
@@ -159,9 +157,7 @@ Testing loading with trailing slashes.
     )
 
     # Check that we can find the agent despite trailing slashes (name derived from path: test_knowledge/trailing.md -> 'test_knowledge/trailing')
-    assert (
-        len(knowledge_agents) == 2
-    )  # Original ('knowledge') + trailing ('test_knowledge/trailing')
+    assert len(knowledge_agents) == 2  # Original ('knowledge') + trailing ('test_knowledge/trailing')
     agent_t = knowledge_agents['test_knowledge/trailing']
     assert isinstance(agent_t, KnowledgeMicroagent)
     assert agent_t.type == MicroagentType.KNOWLEDGE  # Check inferred type

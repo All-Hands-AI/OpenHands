@@ -32,9 +32,7 @@ class TestGitHandlerWithRealRepo(unittest.TestCase):
     def _execute_command(self, cmd, cwd=None):
         """Execute a shell command and return the result."""
         try:
-            result = subprocess.run(
-                cmd, shell=True, cwd=cwd, capture_output=True, text=True, check=False
-            )
+            result = subprocess.run(cmd, shell=True, cwd=cwd, capture_output=True, text=True, check=False)
             return CommandResult(result.stdout, result.returncode)
         except Exception as e:
             return CommandResult(str(e), 1)
@@ -43,9 +41,7 @@ class TestGitHandlerWithRealRepo(unittest.TestCase):
         """Set up real git repositories for testing."""
         # Set up origin repository
         self._execute_command('git init --initial-branch=main', self.origin_dir)
-        self._execute_command(
-            "git config user.email 'test@example.com'", self.origin_dir
-        )
+        self._execute_command("git config user.email 'test@example.com'", self.origin_dir)
         self._execute_command("git config user.name 'Test User'", self.origin_dir)
 
         # Create a file and commit it
@@ -57,9 +53,7 @@ class TestGitHandlerWithRealRepo(unittest.TestCase):
 
         # Clone the origin repository to local
         self._execute_command(f'git clone {self.origin_dir} {self.local_dir}')
-        self._execute_command(
-            "git config user.email 'test@example.com'", self.local_dir
-        )
+        self._execute_command("git config user.email 'test@example.com'", self.local_dir)
         self._execute_command("git config user.name 'Test User'", self.local_dir)
 
         # Create a feature branch in the local repository

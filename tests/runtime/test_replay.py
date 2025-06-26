@@ -23,9 +23,7 @@ def _get_config(trajectory_name: str, agent: str = OH_DEFAULT_AGENT):
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,
-        replay_trajectory_path=str(
-            (Path(__file__).parent / 'trajs' / f'{trajectory_name}.json').resolve()
-        ),
+        replay_trajectory_path=str((Path(__file__).parent / 'trajs' / f'{trajectory_name}.json').resolve()),
     )
 
 
@@ -35,9 +33,7 @@ def test_simple_replay(temp_dir, runtime_cls, run_as_openhands):
     (creating a simple 2048 game), using the default agent
     """
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
-    config.replay_trajectory_path = str(
-        (Path(__file__).parent / 'trajs' / 'basic.json').resolve()
-    )
+    config.replay_trajectory_path = str((Path(__file__).parent / 'trajs' / 'basic.json').resolve())
     config.security.confirmation_mode = False
 
     state: State | None = asyncio.run(
@@ -94,9 +90,7 @@ def test_replay_wrong_initial_state(temp_dir, runtime_cls, run_as_openhands):
     meaningless.
     """
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
-    config.replay_trajectory_path = str(
-        (Path(__file__).parent / 'trajs' / 'wrong_initial_state.json').resolve()
-    )
+    config.replay_trajectory_path = str((Path(__file__).parent / 'trajs' / 'wrong_initial_state.json').resolve())
     config.security.confirmation_mode = False
 
     state: State | None = asyncio.run(

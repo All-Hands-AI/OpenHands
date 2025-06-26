@@ -11,9 +11,7 @@ from openhands.mcp.utils import create_mcp_clients
 async def test_create_mcp_clients_timeout_with_invalid_url():
     """Test that create_mcp_clients properly times out when given an invalid URL."""
     # Use a non-existent domain that should cause a connection timeout
-    server = MCPSSEServerConfig(
-        url='http://non-existent-domain-that-will-timeout.invalid'
-    )
+    server = MCPSSEServerConfig(url='http://non-existent-domain-that-will-timeout.invalid')
 
     # Temporarily modify the default timeout for the MCPClient.connect_http method
     original_connect_connect_http = MCPClient.connect_http
@@ -36,9 +34,7 @@ async def test_create_mcp_clients_timeout_with_invalid_url():
 
         # Verify that the operation completed in a reasonable time (less than 5 seconds)
         # This ensures the timeout is working properly
-        assert end_time - start_time < 5.0, (
-            'Operation took too long, timeout may not be working'
-        )
+        assert end_time - start_time < 5.0, 'Operation took too long, timeout may not be working'
     finally:
         # Restore the original method
         MCPClient.connect_http = original_connect_connect_http
@@ -71,9 +67,7 @@ async def test_create_mcp_clients_with_unreachable_host():
         assert len(clients) == 0
 
         # Verify that the operation completed in a reasonable time (less than 5 seconds)
-        assert end_time - start_time < 5.0, (
-            'Operation took too long, timeout may not be working'
-        )
+        assert end_time - start_time < 5.0, 'Operation took too long, timeout may not be working'
     finally:
         # Restore the original method
         MCPClient.connect_http = original_connect_http

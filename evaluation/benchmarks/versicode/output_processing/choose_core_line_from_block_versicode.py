@@ -19,18 +19,14 @@ def process_line_mask(code_snippet, core_token):
 
     for i, line in enumerate(lines):
         if in_multi_line_comment:
-            if ('"""' in line or "'''" in line) and not re.findall(
-                r"'''(.*?)'''|\"\"\"(.*?)\"\"\"", line
-            ):
+            if ('"""' in line or "'''" in line) and not re.findall(r"'''(.*?)'''|\"\"\"(.*?)\"\"\"", line):
                 in_multi_line_comment = False
             continue
         elif line.strip().startswith('#'):
             continue
         elif re.findall(r"'''(.*?)'''|\"\"\"(.*?)\"\"\"", line):
             continue
-        elif ('"""' in line or "'''" in line) and not re.findall(
-            r"'''(.*?)'''|\"\"\"(.*?)\"\"\"", line
-        ):
+        elif ('"""' in line or "'''" in line) and not re.findall(r"'''(.*?)'''|\"\"\"(.*?)\"\"\"", line):
             in_multi_line_comment = True
             continue
         else:

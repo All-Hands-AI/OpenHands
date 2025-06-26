@@ -19,9 +19,7 @@ from openhands.utils.prompt import (
 @pytest.fixture
 def prompt_dir(tmp_path):
     # Copy contents from "openhands/agenthub/codeact_agent" to the temp directory
-    shutil.copytree(
-        'openhands/agenthub/codeact_agent/prompts', tmp_path, dirs_exist_ok=True
-    )
+    shutil.copytree('openhands/agenthub/codeact_agent/prompts', tmp_path, dirs_exist_ok=True)
 
     # Return the temporary directory path
     return tmp_path
@@ -81,9 +79,7 @@ def test_prompt_manager_file_not_found(prompt_dir):
     """Test PromptManager behavior when a template file is not found."""
     # Test with a non-existent template
     with pytest.raises(FileNotFoundError):
-        BaseMicroagent.load(
-            os.path.join(prompt_dir, 'micro', 'non_existent_microagent.md')
-        )
+        BaseMicroagent.load(os.path.join(prompt_dir, 'micro', 'non_existent_microagent.md'))
 
 
 def test_build_microagent_info(prompt_dir):
@@ -162,17 +158,11 @@ def test_add_turns_left_reminder(prompt_dir):
     manager = PromptManager(prompt_dir=prompt_dir)
 
     # Create a State object with specific iteration values
-    state = State(
-        iteration_flag=IterationControlFlag(
-            current_value=3, max_value=10, limit_increase_amount=10
-        )
-    )
+    state = State(iteration_flag=IterationControlFlag(current_value=3, max_value=10, limit_increase_amount=10))
 
     # Create a list of messages with a user message
     user_message = Message(role='user', content=[TextContent(text='User content')])
-    assistant_message = Message(
-        role='assistant', content=[TextContent(text='Assistant content')]
-    )
+    assistant_message = Message(role='assistant', content=[TextContent(text='Assistant content')])
     messages = [assistant_message, user_message]
 
     # Add turns left reminder
@@ -180,10 +170,7 @@ def test_add_turns_left_reminder(prompt_dir):
 
     # Check that the reminder was added to the latest user message
     assert len(user_message.content) == 2
-    assert (
-        'ENVIRONMENT REMINDER: You have 7 turns left to complete the task.'
-        in user_message.content[1].text
-    )
+    assert 'ENVIRONMENT REMINDER: You have 7 turns left to complete the task.' in user_message.content[1].text
 
 
 def test_build_workspace_context_with_repo_and_runtime(prompt_dir):
@@ -282,9 +269,7 @@ def test_prompt_manager_custom_system_prompt_filename(prompt_dir):
         f.write('Default system prompt')
 
     # Test with custom system prompt filename
-    manager = PromptManager(
-        prompt_dir=prompt_dir, system_prompt_filename='custom_system.j2'
-    )
+    manager = PromptManager(prompt_dir=prompt_dir, system_prompt_filename='custom_system.j2')
     system_msg = manager.get_system_message()
     assert 'Custom system prompt:' in system_msg
 

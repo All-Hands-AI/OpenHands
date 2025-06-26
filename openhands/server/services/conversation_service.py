@@ -63,14 +63,9 @@ async def create_new_conversation(
         session_init_args = {**settings.__dict__, **session_init_args}
         # We could use litellm.check_valid_key for a more accurate check,
         # but that would run a tiny inference.
-        if (
-            not settings.llm_api_key
-            or settings.llm_api_key.get_secret_value().isspace()
-        ):
+        if not settings.llm_api_key or settings.llm_api_key.get_secret_value().isspace():
             logger.warning(f'Missing api key for model {settings.llm_model}')
-            raise LLMAuthenticationError(
-                'Error authenticating with the LLM provider. Please check your API key'
-            )
+            raise LLMAuthenticationError('Error authenticating with the LLM provider. Please check your API key')
 
     else:
         logger.warning('Settings not present, not starting conversation')
@@ -177,9 +172,7 @@ async def setup_init_convo_settings(
     if not settings:
         from socketio.exceptions import ConnectionRefusedError
 
-        raise ConnectionRefusedError(
-            'Settings not found', {'msg_id': 'CONFIGURATION$SETTINGS_NOT_FOUND'}
-        )
+        raise ConnectionRefusedError('Settings not found', {'msg_id': 'CONFIGURATION$SETTINGS_NOT_FOUND'})
 
     session_init_args: dict = {}
     session_init_args = {**settings.__dict__, **session_init_args}
@@ -196,6 +189,4 @@ async def setup_init_convo_settings(
 
     convo_init_data = ConversationInitData(**session_init_args)
     # We should recreate the same experiment conditions when restarting a conversation
-    return ExperimentManagerImpl.run_conversation_variant_test(
-        user_id, conversation_id, convo_init_data
-    )
+    return ExperimentManagerImpl.run_conversation_variant_test(user_id, conversation_id, convo_init_data)

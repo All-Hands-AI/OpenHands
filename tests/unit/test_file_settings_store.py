@@ -47,9 +47,7 @@ async def test_store_and_load_data(file_settings_store):
 
     # Verify store called with correct JSON
     expected_json = init_data.model_dump_json(context={'expose_secrets': True})
-    file_settings_store.file_store.write.assert_called_once_with(
-        'settings.json', expected_json
-    )
+    file_settings_store.file_store.write.assert_called_once_with('settings.json', expected_json)
 
     # Setup mock for load
     file_settings_store.file_store.read.return_value = expected_json
@@ -65,10 +63,7 @@ async def test_store_and_load_data(file_settings_store):
     assert loaded_data.llm_model == init_data.llm_model
     assert loaded_data.llm_api_key
     assert init_data.llm_api_key
-    assert (
-        loaded_data.llm_api_key.get_secret_value()
-        == init_data.llm_api_key.get_secret_value()
-    )
+    assert loaded_data.llm_api_key.get_secret_value() == init_data.llm_api_key.get_secret_value()
     assert loaded_data.llm_base_url == init_data.llm_base_url
 
 
@@ -76,9 +71,7 @@ async def test_store_and_load_data(file_settings_store):
 async def test_get_instance():
     config = OpenHandsConfig(file_store='local', file_store_path='/test/path')
 
-    with patch(
-        'openhands.storage.settings.file_settings_store.get_file_store'
-    ) as mock_get_store:
+    with patch('openhands.storage.settings.file_settings_store.get_file_store') as mock_get_store:
         mock_store = MagicMock(spec=FileStore)
         mock_get_store.return_value = mock_store
 

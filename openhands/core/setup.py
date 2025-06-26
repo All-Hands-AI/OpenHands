@@ -57,9 +57,7 @@ def create_runtime(
 
     # set up the security analyzer
     if config.security.security_analyzer:
-        options.SecurityAnalyzers.get(
-            config.security.security_analyzer, SecurityAnalyzer
-        )(event_stream)
+        options.SecurityAnalyzers.get(config.security.security_analyzer, SecurityAnalyzer)(event_stream)
 
     # agent class
     if agent:
@@ -78,16 +76,12 @@ def create_runtime(
         headless_mode=headless_mode,
     )
 
-    logger.debug(
-        f'Runtime created with plugins: {[plugin.name for plugin in runtime.plugins]}'
-    )
+    logger.debug(f'Runtime created with plugins: {[plugin.name for plugin in runtime.plugins]}')
 
     return runtime
 
 
-def initialize_repository_for_runtime(
-    runtime: Runtime, selected_repository: str | None = None
-) -> str | None:
+def initialize_repository_for_runtime(runtime: Runtime, selected_repository: str | None = None) -> str | None:
     """Initialize the repository for the runtime.
 
     Args:
@@ -111,9 +105,7 @@ def initialize_repository_for_runtime(
         bitbucket_token = SecretStr(os.environ['BITBUCKET_TOKEN'])
         provider_tokens[ProviderType.BITBUCKET] = ProviderToken(token=bitbucket_token)
 
-    secret_store = (
-        UserSecrets(provider_tokens=provider_tokens) if provider_tokens else None
-    )
+    secret_store = UserSecrets(provider_tokens=provider_tokens) if provider_tokens else None
     immutable_provider_tokens = secret_store.provider_tokens if secret_store else None
 
     logger.debug(f'Selected repository {selected_repository}.')
@@ -165,9 +157,7 @@ def create_memory(
         memory.set_runtime_info(runtime, {})
 
         # loads microagents from repo/.openhands/microagents
-        microagents: list[BaseMicroagent] = runtime.get_microagents_from_selected_repo(
-            selected_repository
-        )
+        microagents: list[BaseMicroagent] = runtime.get_microagents_from_selected_repo(selected_repository)
         memory.load_user_workspace_microagents(microagents)
 
         if selected_repository and repo_directory:
@@ -199,12 +189,8 @@ def create_controller(
     event_stream = runtime.event_stream
     initial_state = None
     try:
-        logger.debug(
-            f'Trying to restore agent state from session {event_stream.sid} if available'
-        )
-        initial_state = State.restore_from_session(
-            event_stream.sid, event_stream.file_store
-        )
+        logger.debug(f'Trying to restore agent state from session {event_stream.sid} if available')
+        initial_state = State.restore_from_session(event_stream.sid, event_stream.file_store)
     except Exception as e:
         logger.debug(f'Cannot restore agent state: {e}')
 

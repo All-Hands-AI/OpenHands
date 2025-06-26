@@ -125,9 +125,7 @@ def initialize_runtime(
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
-    problem_statement = (
-        instance.declaration + instance.buggy_solution + '\n' + instance.test
-    )
+    problem_statement = instance.declaration + instance.buggy_solution + '\n' + instance.test
     filename = f'{_get_instance_id(instance)}.py'
     with tempfile.TemporaryDirectory() as tmpdir:
         host_script_path = os.path.join(tmpdir, filename)
@@ -212,9 +210,7 @@ def process_instance(
 
     # Create file with HumanEvalFix problem
     # Prompt reference: https://github.com/bigcode-project/bigcode-evaluation-harness/blob/84b96da31b7f840b55c5733325346176140cdb6b/bigcode_eval/tasks/humanevalpack.py#L509
-    problem_statement = (
-        instance.declaration + instance.buggy_solution + '\n' + instance.test
-    )
+    problem_statement = instance.declaration + instance.buggy_solution + '\n' + instance.test
 
     # Prepare instruction
     instruction = (
@@ -240,9 +236,7 @@ def process_instance(
             config=config,
             initial_user_action=MessageAction(content=instruction),
             runtime=runtime,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
-                metadata.agent_class
-            ),
+            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(metadata.agent_class),
         )
     )
 
@@ -274,9 +268,7 @@ if __name__ == '__main__':
 
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenHands's repo
-    dataset = load_dataset(
-        'bigcode/humanevalpack', 'python'
-    )  # TODO: Support other languages
+    dataset = load_dataset('bigcode/humanevalpack', 'python')  # TODO: Support other languages
     hefix_tests = dataset['test'].to_pandas()
     hefix_tests.rename(columns={'task_id': 'instance_id'}, inplace=True)
 

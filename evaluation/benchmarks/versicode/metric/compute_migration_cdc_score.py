@@ -70,10 +70,7 @@ def check_keyword_parameters(function_name, correct_code, test_code):
             for correct_param in correct_param_list:
                 if '=' in correct_param:  # 仅当正确代码中有关键词参数
                     param_name = correct_param.split('=')[0].strip()
-                    if not any(
-                        param_name in test_param and '=' in test_param
-                        for test_param in test_param_list
-                    ):
+                    if not any(param_name in test_param and '=' in test_param for test_param in test_param_list):
                         return False  # 如果对应参数不是关键词参数，则返回False
 
             return True  # 所有关键字参数匹配
@@ -114,13 +111,9 @@ def compute_block_score_k(
         if (
             re.search(rf'\b{re.escape(answer)}\b', code)
             and is_code_valid(model_filled_code[index])
-            and is_correct_parameter_count(
-                answer, core_line_in_core_block, core_line_in_output_clear[index]
-            )
+            and is_correct_parameter_count(answer, core_line_in_core_block, core_line_in_output_clear[index])
             and with_correct(core_line_in_core_block, core_line_in_output_clear[index])
-            and check_keyword_parameters(
-                answer, core_line_in_core_block, core_line_in_output_clear[index]
-            )
+            and check_keyword_parameters(answer, core_line_in_core_block, core_line_in_output_clear[index])
         ):  # block
             # if re.search(rf'\b{re.escape(answer)}\b', code):#block
             c += 1

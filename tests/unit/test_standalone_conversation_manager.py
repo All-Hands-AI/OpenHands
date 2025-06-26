@@ -60,9 +60,7 @@ async def test_init_new_local_session():
         async with StandaloneConversationManager(
             sio, OpenHandsConfig(), InMemoryFileStore(), MonitoringListener()
         ) as conversation_manager:
-            await conversation_manager.maybe_start_agent_loop(
-                'new-session-id', ConversationInitData(), 1
-            )
+            await conversation_manager.maybe_start_agent_loop('new-session-id', ConversationInitData(), 1)
             with (
                 patch(
                     'openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager.is_agent_loop_running',
@@ -104,9 +102,7 @@ async def test_join_local_session():
         async with StandaloneConversationManager(
             sio, OpenHandsConfig(), InMemoryFileStore(), MonitoringListener()
         ) as conversation_manager:
-            await conversation_manager.maybe_start_agent_loop(
-                'new-session-id', ConversationInitData(), None
-            )
+            await conversation_manager.maybe_start_agent_loop('new-session-id', ConversationInitData(), None)
             with (
                 patch(
                     'openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager.is_agent_loop_running',
@@ -152,15 +148,9 @@ async def test_add_to_local_event_stream():
         async with StandaloneConversationManager(
             sio, OpenHandsConfig(), InMemoryFileStore(), MonitoringListener()
         ) as conversation_manager:
-            await conversation_manager.maybe_start_agent_loop(
-                'new-session-id', ConversationInitData(), 1
-            )
-            await conversation_manager.join_conversation(
-                'new-session-id', 'connection-id', ConversationInitData(), 1
-            )
-            await conversation_manager.send_to_event_stream(
-                'connection-id', {'event_type': 'some_event'}
-            )
+            await conversation_manager.maybe_start_agent_loop('new-session-id', ConversationInitData(), 1)
+            await conversation_manager.join_conversation('new-session-id', 'connection-id', ConversationInitData(), 1)
+            await conversation_manager.send_to_event_stream('connection-id', {'event_type': 'some_event'})
     session_instance.dispatch.assert_called_once_with({'event_type': 'some_event'})
 
 

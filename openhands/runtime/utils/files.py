@@ -41,9 +41,7 @@ def resolve_path(
         raise PermissionError(f'File access not permitted: {file_path}')
 
     # Get path relative to the root of the workspace inside the sandbox
-    path_in_workspace = abs_path_in_sandbox.relative_to(
-        Path(workspace_mount_path_in_sandbox)
-    )
+    path_in_workspace = abs_path_in_sandbox.relative_to(Path(workspace_mount_path_in_sandbox))
 
     # Get path relative to host
     path_in_host_workspace = Path(workspace_base) / path_in_workspace
@@ -77,9 +75,7 @@ async def read_file(
     end: int = -1,
 ) -> Observation:
     try:
-        whole_path = resolve_path(
-            path, workdir, workspace_base, workspace_mount_path_in_sandbox
-        )
+        whole_path = resolve_path(path, workdir, workspace_base, workspace_mount_path_in_sandbox)
     except PermissionError:
         return ErrorObservation(
             f"You're not allowed to access this path: {path}. You can only access paths inside the workspace."
@@ -98,9 +94,7 @@ async def read_file(
     return FileReadObservation(path=path, content=code_view)
 
 
-def insert_lines(
-    to_insert: list[str], original: list[str], start: int = 0, end: int = -1
-) -> list[str]:
+def insert_lines(to_insert: list[str], original: list[str], start: int = 0, end: int = -1) -> list[str]:
     """Insert the new content to the original content based on start and end"""
     new_lines = [''] if start == 0 else original[:start]
     new_lines += [i + '\n' for i in to_insert]
@@ -120,9 +114,7 @@ async def write_file(
     insert = content.split('\n')
 
     try:
-        whole_path = resolve_path(
-            path, workdir, workspace_base, workspace_mount_path_in_sandbox
-        )
+        whole_path = resolve_path(path, workdir, workspace_base, workspace_mount_path_in_sandbox)
         if not os.path.exists(os.path.dirname(whole_path)):
             os.makedirs(os.path.dirname(whole_path))
         mode = 'w' if not os.path.exists(whole_path) else 'r+'
@@ -140,9 +132,7 @@ async def write_file(
         except FileNotFoundError:
             return ErrorObservation(f'File not found: {path}')
         except IsADirectoryError:
-            return ErrorObservation(
-                f'Path is a directory: {path}. You can only write to files'
-            )
+            return ErrorObservation(f'Path is a directory: {path}. You can only write to files')
         except UnicodeDecodeError:
             return ErrorObservation(f'File could not be decoded as utf-8: {path}')
     except PermissionError as e:

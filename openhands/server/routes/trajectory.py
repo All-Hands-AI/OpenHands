@@ -9,9 +9,7 @@ from openhands.server.dependencies import get_dependencies
 from openhands.server.session.conversation import ServerConversation
 from openhands.server.utils import get_conversation
 
-app = APIRouter(
-    prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies()
-)
+app = APIRouter(prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies())
 
 
 @app.get('/trajectory')
@@ -30,15 +28,11 @@ async def get_trajectory(
         events.
     """
     try:
-        async_store = AsyncEventStoreWrapper(
-            conversation.event_stream, filter=EventFilter(exclude_hidden=True)
-        )
+        async_store = AsyncEventStoreWrapper(conversation.event_stream, filter=EventFilter(exclude_hidden=True))
         trajectory = []
         async for event in async_store:
             trajectory.append(event_to_trajectory(event))
-        return JSONResponse(
-            status_code=status.HTTP_200_OK, content={'trajectory': trajectory}
-        )
+        return JSONResponse(status_code=status.HTTP_200_OK, content={'trajectory': trajectory})
     except Exception as e:
         logger.error(f'Error getting trajectory: {e}', exc_info=True)
         return JSONResponse(

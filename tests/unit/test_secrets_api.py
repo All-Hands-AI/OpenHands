@@ -52,12 +52,8 @@ async def test_load_custom_secrets_names(test_client, file_secrets_store):
         'API_KEY': CustomSecret(secret=SecretStr('api-key-value')),
         'DB_PASSWORD': CustomSecret(secret=SecretStr('db-password-value')),
     }
-    provider_tokens = {
-        ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))
-    }
-    user_secrets = UserSecrets(
-        custom_secrets=custom_secrets, provider_tokens=provider_tokens
-    )
+    provider_tokens = {ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))}
+    user_secrets = UserSecrets(custom_secrets=custom_secrets, provider_tokens=provider_tokens)
 
     # Store the initial settings
     await file_secrets_store.store(user_secrets)
@@ -76,14 +72,8 @@ async def test_load_custom_secrets_names(test_client, file_secrets_store):
 
     # Verify that the original settings were not modified
     stored_settings = await file_secrets_store.load()
-    assert (
-        stored_settings.custom_secrets['API_KEY'].secret.get_secret_value()
-        == 'api-key-value'
-    )
-    assert (
-        stored_settings.custom_secrets['DB_PASSWORD'].secret.get_secret_value()
-        == 'db-password-value'
-    )
+    assert stored_settings.custom_secrets['API_KEY'].secret.get_secret_value() == 'api-key-value'
+    assert stored_settings.custom_secrets['DB_PASSWORD'].secret.get_secret_value() == 'db-password-value'
     assert ProviderType.GITHUB in stored_settings.provider_tokens
 
 
@@ -91,9 +81,7 @@ async def test_load_custom_secrets_names(test_client, file_secrets_store):
 async def test_load_custom_secrets_names_empty(test_client, file_secrets_store):
     """Test loading custom secrets names when there are no custom secrets."""
     # Create initial settings with no custom secrets
-    provider_tokens = {
-        ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))
-    }
+    provider_tokens = {ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))}
     user_secrets = UserSecrets(provider_tokens=provider_tokens, custom_secrets={})
 
     # Store the initial settings
@@ -114,9 +102,7 @@ async def test_add_custom_secret(test_client, file_secrets_store):
     """Test adding a new custom secret."""
 
     # Create initial settings with provider tokens but no custom secrets
-    provider_tokens = {
-        ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))
-    }
+    provider_tokens = {ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))}
     user_secrets = UserSecrets(provider_tokens=provider_tokens)
 
     # Store the initial settings
@@ -132,16 +118,11 @@ async def test_add_custom_secret(test_client, file_secrets_store):
 
     # Check that the secret was added
     assert 'API_KEY' in stored_settings.custom_secrets
-    assert (
-        stored_settings.custom_secrets['API_KEY'].secret.get_secret_value()
-        == 'api-key-value'
-    )
+    assert stored_settings.custom_secrets['API_KEY'].secret.get_secret_value() == 'api-key-value'
 
 
 @pytest.mark.asyncio
-async def test_create_custom_secret_with_no_existing_secrets(
-    test_client, file_secrets_store
-):
+async def test_create_custom_secret_with_no_existing_secrets(test_client, file_secrets_store):
     """Test creating a custom secret when there are no existing secrets at all."""
 
     # Don't store any initial settings - this simulates a completely new user
@@ -161,10 +142,7 @@ async def test_create_custom_secret_with_no_existing_secrets(
 
     # Check that the secret was added
     assert 'NEW_API_KEY' in stored_settings.custom_secrets
-    assert (
-        stored_settings.custom_secrets['NEW_API_KEY'].secret.get_secret_value()
-        == 'new-api-key-value'
-    )
+    assert stored_settings.custom_secrets['NEW_API_KEY'].secret.get_secret_value() == 'new-api-key-value'
     assert stored_settings.custom_secrets['NEW_API_KEY'].description == 'Test API Key'
 
     # Check that provider_tokens is an empty dict, not None
@@ -177,12 +155,8 @@ async def test_update_existing_custom_secret(test_client, file_secrets_store):
 
     # Create initial settings with a custom secret
     custom_secrets = {'API_KEY': CustomSecret(secret=SecretStr('old-api-key'))}
-    provider_tokens = {
-        ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))
-    }
-    user_secrets = UserSecrets(
-        custom_secrets=custom_secrets, provider_tokens=provider_tokens
-    )
+    provider_tokens = {ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))}
+    user_secrets = UserSecrets(custom_secrets=custom_secrets, provider_tokens=provider_tokens)
 
     # Store the initial settings
     await file_secrets_store.store(user_secrets)
@@ -200,10 +174,7 @@ async def test_update_existing_custom_secret(test_client, file_secrets_store):
 
     # Check that the secret was updated
     assert 'API_KEY' in stored_settings.custom_secrets
-    assert (
-        stored_settings.custom_secrets['API_KEY'].secret.get_secret_value()
-        == 'old-api-key'
-    )
+    assert stored_settings.custom_secrets['API_KEY'].secret.get_secret_value() == 'old-api-key'
 
     # Check that other settings were preserved
     assert ProviderType.GITHUB in stored_settings.provider_tokens
@@ -214,15 +185,9 @@ async def test_add_multiple_custom_secrets(test_client, file_secrets_store):
     """Test adding multiple custom secrets at once."""
 
     # Create initial settings with one custom secret
-    custom_secrets = {
-        'EXISTING_SECRET': CustomSecret(secret=SecretStr('existing-value'))
-    }
-    provider_tokens = {
-        ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))
-    }
-    user_secrets = UserSecrets(
-        custom_secrets=custom_secrets, provider_tokens=provider_tokens
-    )
+    custom_secrets = {'EXISTING_SECRET': CustomSecret(secret=SecretStr('existing-value'))}
+    provider_tokens = {ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))}
+    user_secrets = UserSecrets(custom_secrets=custom_secrets, provider_tokens=provider_tokens)
 
     # Store the initial settings
     await file_secrets_store.store(user_secrets)
@@ -250,22 +215,13 @@ async def test_add_multiple_custom_secrets(test_client, file_secrets_store):
 
     # Check that the new secrets were added
     assert 'API_KEY' in stored_settings.custom_secrets
-    assert (
-        stored_settings.custom_secrets['API_KEY'].secret.get_secret_value()
-        == 'api-key-value'
-    )
+    assert stored_settings.custom_secrets['API_KEY'].secret.get_secret_value() == 'api-key-value'
     assert 'DB_PASSWORD' in stored_settings.custom_secrets
-    assert (
-        stored_settings.custom_secrets['DB_PASSWORD'].secret.get_secret_value()
-        == 'db-password-value'
-    )
+    assert stored_settings.custom_secrets['DB_PASSWORD'].secret.get_secret_value() == 'db-password-value'
 
     # Check that existing secrets were preserved
     assert 'EXISTING_SECRET' in stored_settings.custom_secrets
-    assert (
-        stored_settings.custom_secrets['EXISTING_SECRET'].secret.get_secret_value()
-        == 'existing-value'
-    )
+    assert stored_settings.custom_secrets['EXISTING_SECRET'].secret.get_secret_value() == 'existing-value'
 
     # Check that other settings were preserved
     assert ProviderType.GITHUB in stored_settings.provider_tokens
@@ -280,12 +236,8 @@ async def test_delete_custom_secret(test_client, file_secrets_store):
         'API_KEY': CustomSecret(secret=SecretStr('api-key-value')),
         'DB_PASSWORD': CustomSecret(secret=SecretStr('db-password-value')),
     }
-    provider_tokens = {
-        ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))
-    }
-    user_secrets = UserSecrets(
-        custom_secrets=custom_secrets, provider_tokens=provider_tokens
-    )
+    provider_tokens = {ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))}
+    user_secrets = UserSecrets(custom_secrets=custom_secrets, provider_tokens=provider_tokens)
 
     # Store the initial settings
     await file_secrets_store.store(user_secrets)
@@ -302,10 +254,7 @@ async def test_delete_custom_secret(test_client, file_secrets_store):
 
     # Check that other secrets were preserved
     assert 'DB_PASSWORD' in stored_settings.custom_secrets
-    assert (
-        stored_settings.custom_secrets['DB_PASSWORD'].secret.get_secret_value()
-        == 'db-password-value'
-    )
+    assert stored_settings.custom_secrets['DB_PASSWORD'].secret.get_secret_value() == 'db-password-value'
 
     # Check that other settings were preserved
     assert ProviderType.GITHUB in stored_settings.provider_tokens
@@ -316,15 +265,9 @@ async def test_delete_nonexistent_custom_secret(test_client, file_secrets_store)
     """Test deleting a custom secret that doesn't exist."""
 
     # Create initial settings with a custom secret
-    custom_secrets = {
-        'API_KEY': CustomSecret(secret=SecretStr('api-key-value'), description='')
-    }
-    provider_tokens = {
-        ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))
-    }
-    user_secrets = UserSecrets(
-        custom_secrets=custom_secrets, provider_tokens=provider_tokens
-    )
+    custom_secrets = {'API_KEY': CustomSecret(secret=SecretStr('api-key-value'), description='')}
+    provider_tokens = {ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))}
+    user_secrets = UserSecrets(custom_secrets=custom_secrets, provider_tokens=provider_tokens)
 
     # Store the initial settings
     await file_secrets_store.store(user_secrets)
@@ -338,10 +281,7 @@ async def test_delete_nonexistent_custom_secret(test_client, file_secrets_store)
 
     # Check that the existing secret was preserved
     assert 'API_KEY' in stored_settings.custom_secrets
-    assert (
-        stored_settings.custom_secrets['API_KEY'].secret.get_secret_value()
-        == 'api-key-value'
-    )
+    assert stored_settings.custom_secrets['API_KEY'].secret.get_secret_value() == 'api-key-value'
 
     # Check that other settings were preserved
     assert ProviderType.GITHUB in stored_settings.provider_tokens
@@ -351,9 +291,7 @@ async def test_delete_nonexistent_custom_secret(test_client, file_secrets_store)
 async def test_add_git_providers_with_host(test_client, file_secrets_store):
     """Test adding git providers with host parameter."""
     # Create initial user secrets
-    provider_tokens = {
-        ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))
-    }
+    provider_tokens = {ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'))}
     user_secrets = UserSecrets(provider_tokens=provider_tokens)
     await file_secrets_store.store(user_secrets)
 
@@ -364,9 +302,7 @@ async def test_add_git_providers_with_host(test_client, file_secrets_store):
     ):
         # Add a GitHub provider with a host
         add_provider_data = {
-            'provider_tokens': {
-                'github': {'token': 'new-github-token', 'host': 'github.enterprise.com'}
-            }
+            'provider_tokens': {'github': {'token': 'new-github-token', 'host': 'github.enterprise.com'}}
         }
         response = test_client.post('/api/add-git-providers', json=add_provider_data)
         assert response.status_code == 200
@@ -374,25 +310,15 @@ async def test_add_git_providers_with_host(test_client, file_secrets_store):
         # Verify that the settings were stored with the new provider token and host
         stored_secrets = await file_secrets_store.load()
         assert ProviderType.GITHUB in stored_secrets.provider_tokens
-        assert (
-            stored_secrets.provider_tokens[ProviderType.GITHUB].token.get_secret_value()
-            == 'new-github-token'
-        )
-        assert (
-            stored_secrets.provider_tokens[ProviderType.GITHUB].host
-            == 'github.enterprise.com'
-        )
+        assert stored_secrets.provider_tokens[ProviderType.GITHUB].token.get_secret_value() == 'new-github-token'
+        assert stored_secrets.provider_tokens[ProviderType.GITHUB].host == 'github.enterprise.com'
 
 
 @pytest.mark.asyncio
 async def test_add_git_providers_update_host_only(test_client, file_secrets_store):
     """Test updating only the host for an existing provider token."""
     # Create initial user secrets with a token
-    provider_tokens = {
-        ProviderType.GITHUB: ProviderToken(
-            token=SecretStr('github-token'), host='github.com'
-        )
-    }
+    provider_tokens = {ProviderType.GITHUB: ProviderToken(token=SecretStr('github-token'), host='github.com')}
     user_secrets = UserSecrets(provider_tokens=provider_tokens)
     await file_secrets_store.store(user_secrets)
 
@@ -416,20 +342,12 @@ async def test_add_git_providers_update_host_only(test_client, file_secrets_stor
         # Verify that the host was updated but the token remains the same
         stored_secrets = await file_secrets_store.load()
         assert ProviderType.GITHUB in stored_secrets.provider_tokens
-        assert (
-            stored_secrets.provider_tokens[ProviderType.GITHUB].token.get_secret_value()
-            == 'github-token'
-        )
-        assert (
-            stored_secrets.provider_tokens[ProviderType.GITHUB].host
-            == 'github.enterprise.com'
-        )
+        assert stored_secrets.provider_tokens[ProviderType.GITHUB].token.get_secret_value() == 'github-token'
+        assert stored_secrets.provider_tokens[ProviderType.GITHUB].host == 'github.enterprise.com'
 
 
 @pytest.mark.asyncio
-async def test_add_git_providers_invalid_token_with_host(
-    test_client, file_secrets_store
-):
+async def test_add_git_providers_invalid_token_with_host(test_client, file_secrets_store):
     """Test adding an invalid token with a host."""
     # Create initial user secrets
     user_secrets = UserSecrets()
@@ -441,11 +359,7 @@ async def test_add_git_providers_invalid_token_with_host(
         AsyncMock(return_value=None),
     ):
         # Try to add an invalid GitHub provider with a host
-        add_provider_data = {
-            'provider_tokens': {
-                'github': {'token': 'invalid-token', 'host': 'github.enterprise.com'}
-            }
-        }
+        add_provider_data = {'provider_tokens': {'github': {'token': 'invalid-token', 'host': 'github.enterprise.com'}}}
         response = test_client.post('/api/add-git-providers', json=add_provider_data)
         assert response.status_code == 401
         assert 'Invalid token' in response.json()['error']
@@ -476,21 +390,9 @@ async def test_add_multiple_git_providers_with_hosts(test_client, file_secrets_s
         # Verify that both providers were stored with their respective hosts
         stored_secrets = await file_secrets_store.load()
         assert ProviderType.GITHUB in stored_secrets.provider_tokens
-        assert (
-            stored_secrets.provider_tokens[ProviderType.GITHUB].token.get_secret_value()
-            == 'github-token'
-        )
-        assert (
-            stored_secrets.provider_tokens[ProviderType.GITHUB].host
-            == 'github.enterprise.com'
-        )
+        assert stored_secrets.provider_tokens[ProviderType.GITHUB].token.get_secret_value() == 'github-token'
+        assert stored_secrets.provider_tokens[ProviderType.GITHUB].host == 'github.enterprise.com'
 
         assert ProviderType.GITLAB in stored_secrets.provider_tokens
-        assert (
-            stored_secrets.provider_tokens[ProviderType.GITLAB].token.get_secret_value()
-            == 'gitlab-token'
-        )
-        assert (
-            stored_secrets.provider_tokens[ProviderType.GITLAB].host
-            == 'gitlab.enterprise.com'
-        )
+        assert stored_secrets.provider_tokens[ProviderType.GITLAB].token.get_secret_value() == 'gitlab-token'
+        assert stored_secrets.provider_tokens[ProviderType.GITLAB].host == 'gitlab.enterprise.com'

@@ -69,9 +69,7 @@ These are legacy repository instructions.
     (Path(test_dir) / '.openhands_instructions').write_text(legacy_instructions)
 
 
-def test_load_microagents_with_trailing_slashes(
-    temp_dir, runtime_cls, run_as_openhands
-):
+def test_load_microagents_with_trailing_slashes(temp_dir, runtime_cls, run_as_openhands):
     """Test loading microagents when directory paths have trailing slashes."""
     # Create test files
     _create_test_microagents(temp_dir)
@@ -81,9 +79,7 @@ def test_load_microagents_with_trailing_slashes(
         loaded_agents = runtime.get_microagents_from_selected_repo(None)
 
         # Verify all agents are loaded
-        knowledge_agents = [
-            a for a in loaded_agents if isinstance(a, KnowledgeMicroagent)
-        ]
+        knowledge_agents = [a for a in loaded_agents if isinstance(a, KnowledgeMicroagent)]
         repo_agents = [a for a in loaded_agents if isinstance(a, RepoMicroagent)]
 
         # Check knowledge agents
@@ -113,14 +109,10 @@ def test_load_microagents_with_selected_repo(temp_dir, runtime_cls, run_as_openh
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Load microagents with selected repository
-        loaded_agents = runtime.get_microagents_from_selected_repo(
-            'All-Hands-AI/OpenHands'
-        )
+        loaded_agents = runtime.get_microagents_from_selected_repo('All-Hands-AI/OpenHands')
 
         # Verify all agents are loaded
-        knowledge_agents = [
-            a for a in loaded_agents if isinstance(a, KnowledgeMicroagent)
-        ]
+        knowledge_agents = [a for a in loaded_agents if isinstance(a, KnowledgeMicroagent)]
         repo_agents = [a for a in loaded_agents if isinstance(a, RepoMicroagent)]
 
         # Check knowledge agents
@@ -165,9 +157,7 @@ Repository-specific test instructions.
         loaded_agents = runtime.get_microagents_from_selected_repo(None)
 
         # Verify only repo agent is loaded
-        knowledge_agents = [
-            a for a in loaded_agents if isinstance(a, KnowledgeMicroagent)
-        ]
+        knowledge_agents = [a for a in loaded_agents if isinstance(a, KnowledgeMicroagent)]
         repo_agents = [a for a in loaded_agents if isinstance(a, RepoMicroagent)]
 
         assert len(knowledge_agents) == 0
@@ -361,9 +351,7 @@ def test_default_tools_microagent_exists():
 
     # Check that the default-tools.md file exists
     default_tools_path = os.path.join(microagents_dir, 'default-tools.md')
-    assert os.path.exists(default_tools_path), (
-        f'default-tools.md not found at {default_tools_path}'
-    )
+    assert os.path.exists(default_tools_path), f'default-tools.md not found at {default_tools_path}'
 
     # Read the file and check its content
     with open(default_tools_path, 'r') as f:
@@ -375,9 +363,7 @@ def test_default_tools_microagent_exists():
     # Verify it has the fetch tool configured
     assert 'name: "fetch"' in content, 'default-tools.md should have a fetch tool'
     assert 'command: "uvx"' in content, 'default-tools.md should use uvx command'
-    assert 'args: ["mcp-server-fetch"]' in content, (
-        'default-tools.md should use mcp-server-fetch'
-    )
+    assert 'args: ["mcp-server-fetch"]' in content, 'default-tools.md should use mcp-server-fetch'
 
 
 @pytest.mark.asyncio
@@ -395,9 +381,7 @@ async def test_add_mcp_tools_from_microagents():
     mock_memory = MagicMock()
 
     # Configure the mock memory to return a microagent MCP config
-    mock_stdio_server = MCPStdioServerConfig(
-        name='test-tool', command='test-command', args=['test-arg1', 'test-arg2']
-    )
+    mock_stdio_server = MCPStdioServerConfig(name='test-tool', command='test-command', args=['test-arg1', 'test-arg2'])
     mock_microagent_mcp_config = MCPConfig(stdio_servers=[mock_stdio_server])
     mock_memory.get_microagent_mcp_tools.return_value = [mock_microagent_mcp_config]
 

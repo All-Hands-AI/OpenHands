@@ -52,12 +52,8 @@ class StandaloneConversationManager(ConversationManager):
     monitoring_listener: MonitoringListener = MonitoringListener()
     _local_agent_loops_by_sid: dict[str, Session] = field(default_factory=dict)
     _local_connection_id_to_session_id: dict[str, str] = field(default_factory=dict)
-    _active_conversations: dict[str, tuple[ServerConversation, int]] = field(
-        default_factory=dict
-    )
-    _detached_conversations: dict[str, tuple[ServerConversation, float]] = field(
-        default_factory=dict
-    )
+    _active_conversations: dict[str, tuple[ServerConversation, int]] = field(default_factory=dict)
+    _detached_conversations: dict[str, tuple[ServerConversation, float]] = field(default_factory=dict)
     _conversations_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     _cleanup_task: asyncio.Task | None = None
     _conversation_store_class: type[ConversationStore] | None = None
@@ -71,9 +67,7 @@ class StandaloneConversationManager(ConversationManager):
             self._cleanup_task.cancel()
             self._cleanup_task = None
 
-    async def attach_to_conversation(
-        self, sid: str, user_id: str | None = None
-    ) -> ServerConversation | None:
+    async def attach_to_conversation(self, sid: str, user_id: str | None = None) -> ServerConversation | None:
         start_time = time.time()
         if not await session_exists(sid, self.file_store, user_id=user_id):
             return None
@@ -83,24 +77,18 @@ class StandaloneConversationManager(ConversationManager):
             if sid in self._active_conversations:
                 conversation, count = self._active_conversations[sid]
                 self._active_conversations[sid] = (conversation, count + 1)
-                logger.info(
-                    f'Reusing active conversation {sid}', extra={'session_id': sid}
-                )
+                logger.info(f'Reusing active conversation {sid}', extra={'session_id': sid})
                 return conversation
 
             # Check if we have a detached conversation we can reuse
             if sid in self._detached_conversations:
                 conversation, _ = self._detached_conversations.pop(sid)
                 self._active_conversations[sid] = (conversation, 1)
-                logger.info(
-                    f'Reusing detached conversation {sid}', extra={'session_id': sid}
-                )
+                logger.info(f'Reusing detached conversation {sid}', extra={'session_id': sid})
                 return conversation
 
             # Create new conversation if none exists
-            c = ServerConversation(
-                sid, file_store=self.file_store, config=self.config, user_id=user_id
-            )
+            c = ServerConversation(sid, file_store=self.file_store, config=self.config, user_id=user_id)
             try:
                 await c.connect()
             except AgentRuntimeUnavailableError as e:
@@ -176,9 +164,7 @@ class StandaloneConversationManager(ConversationManager):
                     filter_to_sids=set(sid_to_close)  # get_connections expects a set
                 )
                 connected_sids = {sid for _, sid in connections.items()}
-                sid_to_close = [
-                    sid for sid in sid_to_close if sid not in connected_sids
-                ]
+                sid_to_close = [sid for sid in sid_to_close if sid not in connected_sids]
                 await wait_all(
                     (self._close_session(sid) for sid in sid_to_close),
                     timeout=WAIT_TIME_BEFORE_CLOSE,
@@ -189,9 +175,7 @@ class StandaloneConversationManager(ConversationManager):
                     for conversation, _ in self._detached_conversations.values():
                         await conversation.disconnect()
                     self._detached_conversations.clear()
-                await wait_all(
-                    self._close_session(sid) for sid in self._local_agent_loops_by_sid
-                )
+                await wait_all(self._close_session(sid) for sid in self._local_agent_loops_by_sid)
                 return
             except Exception:
                 logger.error('error_cleaning_stale')
@@ -235,11 +219,7 @@ class StandaloneConversationManager(ConversationManager):
     ) -> dict[str, str]:
         connections = dict(**self._local_connection_id_to_session_id)
         if filter_to_sids is not None:
-            connections = {
-                connection_id: sid
-                for connection_id, sid in connections.items()
-                if sid in filter_to_sids
-            }
+            connections = {connection_id: sid for connection_id, sid in connections.items() if sid in filter_to_sids}
         if user_id:
             for connection_id, sid in list(connections.items()):
                 session = self._local_agent_loops_by_sid.get(sid)
@@ -258,9 +238,7 @@ class StandaloneConversationManager(ConversationManager):
         logger.info(f'maybe_start_agent_loop:{sid}', extra={'session_id': sid})
         session = self._local_agent_loops_by_sid.get(sid)
         if not session:
-            session = await self._start_agent_loop(
-                sid, settings, user_id, initial_user_msg, replay_json
-            )
+            session = await self._start_agent_loop(sid, settings, user_id, initial_user_msg, replay_json)
         return self._agent_loop_info_from_session(session)
 
     async def _start_agent_loop(
@@ -312,9 +290,7 @@ class StandaloneConversationManager(ConversationManager):
             user_id=user_id,
         )
         self._local_agent_loops_by_sid[sid] = session
-        asyncio.create_task(
-            session.initialize_agent(settings, initial_user_msg, replay_json)
-        )
+        asyncio.create_task(session.initialize_agent(settings, initial_user_msg, replay_json))
         # This does not get added when resuming an existing conversation
         try:
             session.agent_session.event_stream.subscribe(
@@ -341,9 +317,7 @@ class StandaloneConversationManager(ConversationManager):
 
     async def disconnect_from_session(self, connection_id: str):
         sid = self._local_connection_id_to_session_id.pop(connection_id, None)
-        logger.info(
-            f'disconnect_from_session:{connection_id}:{sid}', extra={'session_id': sid}
-        )
+        logger.info(f'disconnect_from_session:{connection_id}:{sid}', extra={'session_id': sid})
         if not sid:
             # This can occur if the init action was never run.
             logger.warning(
@@ -457,16 +431,10 @@ class StandaloneConversationManager(ConversationManager):
                 token_usage = metrics.accumulated_token_usage
                 conversation.prompt_tokens = token_usage.prompt_tokens
                 conversation.completion_tokens = token_usage.completion_tokens
-                conversation.total_tokens = (
-                    token_usage.prompt_tokens + token_usage.completion_tokens
-                )
+                conversation.total_tokens = token_usage.prompt_tokens + token_usage.completion_tokens
         default_title = get_default_conversation_title(conversation_id)
-        if (
-            conversation.title == default_title
-        ):  # attempt to autogenerate if default title is in use
-            title = await auto_generate_title(
-                conversation_id, user_id, self.file_store, settings
-            )
+        if conversation.title == default_title:  # attempt to autogenerate if default title is in use
+            title = await auto_generate_title(conversation_id, user_id, self.file_store, settings)
             if title and not title.isspace():
                 conversation.title = title
                 try:
@@ -489,9 +457,7 @@ class StandaloneConversationManager(ConversationManager):
 
         await conversation_store.save_metadata(conversation)
 
-    async def get_agent_loop_info(
-        self, user_id: str | None = None, filter_to_sids: set[str] | None = None
-    ):
+    async def get_agent_loop_info(self, user_id: str | None = None, filter_to_sids: set[str] | None = None):
         results = []
         for session in self._local_agent_loops_by_sid.values():
             if user_id and session.user_id != user_id:
@@ -508,9 +474,7 @@ class StandaloneConversationManager(ConversationManager):
             session_api_key=None,
             event_store=session.agent_session.event_stream,
             status=_get_status_from_session(session),
-            runtime_status=getattr(
-                session.agent_session.runtime, 'runtime_status', None
-            ),
+            runtime_status=getattr(session.agent_session.runtime, 'runtime_status', None),
         )
 
     def _get_conversation_url(self, conversation_id: str):

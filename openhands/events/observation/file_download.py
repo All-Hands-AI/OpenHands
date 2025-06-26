@@ -14,8 +14,5 @@ class FileDownloadObservation(Observation):
         return f'Downloaded the file at location: {self.file_path}'
 
     def __str__(self) -> str:
-        ret = (
-            '**FileDownloadObservation**\n'
-            f'Location of downloaded file: {self.file_path}\n'
-        )
+        ret = f'**FileDownloadObservation**\nLocation of downloaded file: {self.file_path}\n'
         return ret

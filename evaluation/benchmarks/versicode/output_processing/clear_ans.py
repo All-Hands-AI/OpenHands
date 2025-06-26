@@ -22,11 +22,7 @@ for data in data_list:
         if '<start>' in output and '<end>' in output:
             start_index = output.find('<start>') + len('<start>')
             end_index = output.find('<end>')
-            content = (
-                output[start_index:end_index]
-                .replace('```python', '')
-                .replace('```', '')
-            )
+            content = output[start_index:end_index].replace('```python', '').replace('```', '')
         else:
             content = 'no_answer'
 

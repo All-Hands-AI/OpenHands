@@ -43,11 +43,7 @@ def _generate_dockerfile(
     Returns:
     - str: The resulting Dockerfile content
     """
-    env = Environment(
-        loader=FileSystemLoader(
-            searchpath=os.path.join(os.path.dirname(__file__), 'runtime_templates')
-        )
-    )
+    env = Environment(loader=FileSystemLoader(searchpath=os.path.join(os.path.dirname(__file__), 'runtime_templates')))
     template = env.get_template('Dockerfile.j2')
 
     dockerfile_content = template.render(
@@ -70,8 +66,7 @@ def get_runtime_image_repo_and_tag(base_image: str) -> tuple[str, str]:
     """
     if get_runtime_image_repo() in base_image:
         logger.debug(
-            f'The provided image [{base_image}] is already a valid runtime image.\n'
-            f'Will try to reuse it as is.'
+            f'The provided image [{base_image}] is already a valid runtime image.\nWill try to reuse it as is.'
         )
 
         if ':' not in base_image:
@@ -180,9 +175,7 @@ def build_runtime_image_in_folder(
 
     logger.info(f'Building image: {hash_image_name}')
     if force_rebuild:
-        logger.debug(
-            f'Force rebuild: [{runtime_image_repo}:{source_tag}] from scratch.'
-        )
+        logger.debug(f'Force rebuild: [{runtime_image_repo}:{source_tag}] from scratch.')
         prep_build_folder(
             build_folder,
             base_image,
@@ -218,9 +211,7 @@ def build_runtime_image_in_folder(
         build_from = BuildFromImageType.LOCK
         base_image = lock_image_name
     elif runtime_builder.image_exists(versioned_image_name):
-        logger.info(
-            f'Build [{hash_image_name}] from versioned image [{versioned_image_name}]'
-        )
+        logger.info(f'Build [{hash_image_name}] from versioned image [{versioned_image_name}]')
         build_from = BuildFromImageType.VERSIONED
         base_image = versioned_image_name
     else:
@@ -236,9 +227,7 @@ def build_runtime_image_in_folder(
             lock_tag=lock_tag,
             # Only tag the versioned image if we are building from scratch.
             # This avoids too much layers when you lay one image on top of another multiple times
-            versioned_tag=versioned_tag
-            if build_from == BuildFromImageType.SCRATCH
-            else None,
+            versioned_tag=versioned_tag if build_from == BuildFromImageType.SCRATCH else None,
             platform=platform,
             extra_build_args=extra_build_args,
         )
@@ -372,9 +361,7 @@ def _build_sandbox_image(
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--base_image', type=str, default='nikolaik/python-nodejs:python3.12-nodejs22'
-    )
+    parser.add_argument('--base_image', type=str, default='nikolaik/python-nodejs:python3.12-nodejs22')
     parser.add_argument('--build_folder', type=str, default=None)
     parser.add_argument('--force_rebuild', action='store_true', default=False)
     parser.add_argument('--platform', type=str, default=None)
@@ -385,19 +372,11 @@ if __name__ == '__main__':
         # and create a Dockerfile dynamically and place it in the build_folder only. This allows the Docker image to
         # then be created using the Dockerfile (most likely using the containers/build.sh script)
         build_folder = args.build_folder
-        assert os.path.exists(build_folder), (
-            f'Build folder {build_folder} does not exist'
-        )
-        logger.debug(
-            f'Copying the source code and generating the Dockerfile in the build folder: {build_folder}'
-        )
+        assert os.path.exists(build_folder), f'Build folder {build_folder} does not exist'
+        logger.debug(f'Copying the source code and generating the Dockerfile in the build folder: {build_folder}')
 
-        runtime_image_repo, runtime_image_tag = get_runtime_image_repo_and_tag(
-            args.base_image
-        )
-        logger.debug(
-            f'Runtime image repo: {runtime_image_repo} and runtime image tag: {runtime_image_tag}'
-        )
+        runtime_image_repo, runtime_image_tag = get_runtime_image_repo_and_tag(args.base_image)
+        logger.debug(f'Runtime image repo: {runtime_image_repo} and runtime image tag: {runtime_image_tag}')
 
         with tempfile.TemporaryDirectory() as temp_dir:
             # dry_run is true so we only prepare a temp_dir containing the required source code and the Dockerfile. We
@@ -411,39 +390,27 @@ if __name__ == '__main__':
                 platform=args.platform,
             )
 
-            _runtime_image_repo, runtime_image_source_tag = (
-                runtime_image_hash_name.split(':')
-            )
+            _runtime_image_repo, runtime_image_source_tag = runtime_image_hash_name.split(':')
 
             # Move contents of temp_dir to build_folder
             shutil.copytree(temp_dir, build_folder, dirs_exist_ok=True)
-        logger.debug(
-            f'Build folder [{build_folder}] is ready: {os.listdir(build_folder)}'
-        )
+        logger.debug(f'Build folder [{build_folder}] is ready: {os.listdir(build_folder)}')
 
         # We now update the config.sh in the build_folder to contain the required values. This is used in the
         # containers/build.sh script which is called to actually build the Docker image
         with open(os.path.join(build_folder, 'config.sh'), 'a') as file:
             file.write(
-                (
-                    f'\n'
-                    f'DOCKER_IMAGE_TAG={runtime_image_tag}\n'
-                    f'DOCKER_IMAGE_SOURCE_TAG={runtime_image_source_tag}\n'
-                )
+                (f'\nDOCKER_IMAGE_TAG={runtime_image_tag}\nDOCKER_IMAGE_SOURCE_TAG={runtime_image_source_tag}\n')
             )
 
         logger.debug(
             f'`config.sh` is updated with the image repo[{runtime_image_repo}] and tags [{runtime_image_tag}, {runtime_image_source_tag}]'
         )
-        logger.debug(
-            f'Dockerfile, source code and config.sh are ready in {build_folder}'
-        )
+        logger.debug(f'Dockerfile, source code and config.sh are ready in {build_folder}')
     else:
         # If a build_folder is not provided, after copying the required source code and dynamically creating the
         # Dockerfile, we actually build the Docker image
         logger.debug('Building image in a temporary folder')
         docker_builder = DockerRuntimeBuilder(docker.from_env())
-        image_name = build_runtime_image(
-            args.base_image, docker_builder, platform=args.platform
-        )
+        image_name = build_runtime_image(args.base_image, docker_builder, platform=args.platform)
         logger.debug(f'\nBuilt image: {image_name}\n')

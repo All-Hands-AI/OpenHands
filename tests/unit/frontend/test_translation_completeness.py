@@ -11,19 +11,13 @@ class TestTranslationCompleteness(unittest.TestCase):
     def test_translation_completeness_check_runs(self):
         """Test that the translation completeness check script can be executed."""
         frontend_dir = os.path.join(
-            os.path.dirname(
-                os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-            ),
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
             'frontend',
         )
-        script_path = os.path.join(
-            frontend_dir, 'scripts', 'check-translation-completeness.cjs'
-        )
+        script_path = os.path.join(frontend_dir, 'scripts', 'check-translation-completeness.cjs')
 
         # Verify the script exists
-        self.assertTrue(
-            os.path.exists(script_path), f'Script not found at {script_path}'
-        )
+        self.assertTrue(os.path.exists(script_path), f'Script not found at {script_path}')
 
         # Verify the script is executable
         self.assertTrue(

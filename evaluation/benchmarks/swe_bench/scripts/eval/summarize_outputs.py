@@ -23,9 +23,7 @@ ERROR_KEYWORDS = [
 def get_bootstrap_accuracy_error_bars(
     values: float | int | bool, num_samples: int = 1000, p_value=0.05
 ) -> tuple[float, float]:
-    sorted_vals = np.sort(
-        [np.mean(random.sample(values, len(values) // 2)) for _ in range(num_samples)]
-    )
+    sorted_vals = np.sort([np.mean(random.sample(values, len(values) // 2)) for _ in range(num_samples)])
     bottom_idx = int(num_samples * p_value / 2)
     top_idx = int(num_samples * (1.0 - p_value / 2))
     return (sorted_vals[bottom_idx], sorted_vals[top_idx])
@@ -117,9 +115,7 @@ def process_file(file_path):
         'resolved': {
             'count': num_resolved,
             'percentage': (num_resolved / num_lines * 100) if num_lines > 0 else 0,
-            'ci': tuple(
-                x * 100 for x in get_bootstrap_accuracy_error_bars(resolved_arr)
-            ),
+            'ci': tuple(x * 100 for x in get_bootstrap_accuracy_error_bars(resolved_arr)),
         },
         'empty_patches': {
             'count': num_empty_patch,
@@ -127,18 +123,14 @@ def process_file(file_path):
         },
         'unfinished_runs': {
             'count': num_unfinished_runs,
-            'percentage': (num_unfinished_runs / num_lines * 100)
-            if num_lines > 0
-            else 0,
+            'percentage': (num_unfinished_runs / num_lines * 100) if num_lines > 0 else 0,
         },
         'errors': {
             'total': num_error_lines,
             'percentage': (num_error_lines / num_lines * 100) if num_lines > 0 else 0,
             'stuck_in_loop': {
                 'count': num_agent_stuck_in_loop,
-                'percentage': (num_agent_stuck_in_loop / num_lines * 100)
-                if num_lines > 0
-                else 0,
+                'percentage': (num_agent_stuck_in_loop / num_lines * 100) if num_lines > 0 else 0,
             },
             'breakdown': {
                 str(error): {
@@ -158,9 +150,7 @@ def process_file(file_path):
             'costs': {
                 'main_agent': sum(main_agent_cost) / num_lines if num_lines > 0 else 0,
                 'editor': sum(editor_cost) / num_lines if num_lines > 0 else 0,
-                'total': (sum(main_agent_cost) + sum(editor_cost)) / num_lines
-                if num_lines > 0
-                else 0,
+                'total': (sum(main_agent_cost) + sum(editor_cost)) / num_lines if num_lines > 0 else 0,
             },
         },
     }
@@ -189,9 +179,7 @@ def aggregate_directory(input_path) -> pd.DataFrame:
     df = pd.DataFrame(results)
 
     # Extract directory name from file path
-    df['directory'] = df['file_path'].apply(
-        lambda x: os.path.basename(os.path.dirname(x))
-    )
+    df['directory'] = df['file_path'].apply(lambda x: os.path.basename(os.path.dirname(x)))
 
     df['resolve_rate'] = df['resolved'].apply(lambda x: x['percentage'])
     df['resolve_rate_ci'] = df['resolved'].apply(lambda x: x['ci'])
@@ -208,9 +196,7 @@ def aggregate_directory(input_path) -> pd.DataFrame:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        'input_path', type=str, help='The file or directory to summarize'
-    )
+    parser.add_argument('input_path', type=str, help='The file or directory to summarize')
     parser.add_argument(
         '--output',
         type=str,
@@ -234,9 +220,7 @@ if __name__ == '__main__':
         ]
         summary_str = df[columns].to_string(
             float_format=lambda x: '{:.2f}'.format(x),
-            formatters={
-                'directory': lambda x: x[:90]
-            },  # Truncate directory names to 20 chars
+            formatters={'directory': lambda x: x[:90]},  # Truncate directory names to 20 chars
             index=False,
         )
 
@@ -279,18 +263,10 @@ if __name__ == '__main__':
             )
             print(f'Total cost: {result["costs"]["total"]:.2f} USD')
             print('## Statistics')
-            print(
-                f'Avg. num of turns per instance: {result["statistics"]["avg_turns"]:.2f}'
-            )
-            print(
-                f'Avg. agent cost per instance: {result["statistics"]["costs"]["main_agent"]:.2f} USD'
-            )
-            print(
-                f'Avg. editor cost per instance: {result["statistics"]["costs"]["editor"]:.2f} USD'
-            )
-            print(
-                f'Avg. total cost per instance: {result["statistics"]["costs"]["total"]:.2f} USD'
-            )
+            print(f'Avg. num of turns per instance: {result["statistics"]["avg_turns"]:.2f}')
+            print(f'Avg. agent cost per instance: {result["statistics"]["costs"]["main_agent"]:.2f} USD')
+            print(f'Avg. editor cost per instance: {result["statistics"]["costs"]["editor"]:.2f} USD')
+            print(f'Avg. total cost per instance: {result["statistics"]["costs"]["total"]:.2f} USD')
 
             print('## Detailed error breakdown:')
             for error, data in result['errors']['breakdown'].items():

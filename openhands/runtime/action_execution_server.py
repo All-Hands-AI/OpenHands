@@ -208,8 +208,7 @@ class ActionExecutor:
             logger.info('No max memory limit set, using all available system memory')
 
         self.memory_monitor = MemoryMonitor(
-            enable=os.environ.get('RUNTIME_MEMORY_MONITOR', 'False').lower()
-            in ['true', '1', 'yes']
+            enable=os.environ.get('RUNTIME_MEMORY_MONITOR', 'False').lower() in ['true', '1', 'yes']
         )
         self.memory_monitor.start_monitoring()
 
@@ -258,18 +257,14 @@ class ActionExecutor:
             return WindowsPowershellSession(  # type: ignore[name-defined]
                 work_dir=cwd or self._initial_cwd,
                 username=self.username,
-                no_change_timeout_seconds=int(
-                    os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 10)
-                ),
+                no_change_timeout_seconds=int(os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 10)),
                 max_memory_mb=self.max_memory_gb * 1024 if self.max_memory_gb else None,
             )
         else:
             bash_session = BashSession(
                 work_dir=cwd or self._initial_cwd,
                 username=self.username,
-                no_change_timeout_seconds=int(
-                    os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 10)
-                ),
+                no_change_timeout_seconds=int(os.environ.get('NO_CHANGE_TIMEOUT_SECONDS', 10)),
                 max_memory_mb=self.max_memory_gb * 1024 if self.max_memory_gb else None,
             )
             bash_session.initialize()
@@ -297,9 +292,7 @@ class ActionExecutor:
         logger.debug('Initializing AgentSkills')
         if 'agent_skills' in self.plugins and 'jupyter' in self.plugins:
             obs = await self.run_ipython(
-                IPythonRunCellAction(
-                    code='from openhands.runtime.plugins.agent_skills.agentskills import *\n'
-                )
+                IPythonRunCellAction(code='from openhands.runtime.plugins.agent_skills.agentskills import *\n')
             )
             logger.debug(f'AgentSkills initialized: {obs}')
 
@@ -322,9 +315,7 @@ class ActionExecutor:
         if isinstance(plugin, JupyterPlugin):
             # Escape backslashes in Windows path
             cwd = self.bash_session.cwd.replace('\\', '/')
-            await self.run_ipython(
-                IPythonRunCellAction(code=f'import os; os.chdir(r"{cwd}")')
-            )
+            await self.run_ipython(IPythonRunCellAction(code=f'import os; os.chdir(r"{cwd}")'))
 
     async def _init_bash_commands(self):
         INIT_COMMANDS = []
@@ -335,15 +326,9 @@ class ActionExecutor:
         if is_local_runtime:
             if is_windows:
                 # Windows, local - split into separate commands
-                INIT_COMMANDS.append(
-                    'git config --file ./.git_config user.name "openhands"'
-                )
-                INIT_COMMANDS.append(
-                    'git config --file ./.git_config user.email "openhands@all-hands.dev"'
-                )
-                INIT_COMMANDS.append(
-                    '$env:GIT_CONFIG = (Join-Path (Get-Location) ".git_config")'
-                )
+                INIT_COMMANDS.append('git config --file ./.git_config user.name "openhands"')
+                INIT_COMMANDS.append('git config --file ./.git_config user.email "openhands@all-hands.dev"')
+                INIT_COMMANDS.append('$env:GIT_CONFIG = (Join-Path (Get-Location) ".git_config")')
             else:
                 # Linux/macOS, local
                 base_git_config = (
@@ -355,8 +340,7 @@ class ActionExecutor:
         else:
             # Non-local (implies Linux/macOS)
             base_git_config = (
-                'git config --global user.name "openhands" && '
-                'git config --global user.email "openhands@all-hands.dev"'
+                'git config --global user.name "openhands" && git config --global user.email "openhands@all-hands.dev"'
             )
             INIT_COMMANDS.append(base_git_config)
 
@@ -375,9 +359,7 @@ class ActionExecutor:
             logger.debug(f'Executing init command: {command}')
             obs = await self.run(action)
             assert isinstance(obs, CmdOutputObservation)
-            logger.debug(
-                f'Init command outputs (exit code: {obs.exit_code}): {obs.content}'
-            )
+            logger.debug(f'Init command outputs (exit code: {obs.exit_code}): {obs.content}')
             assert obs.exit_code == 0
         logger.debug('Bash init commands completed')
 
@@ -387,9 +369,7 @@ class ActionExecutor:
             observation = await getattr(self, action_type)(action)
             return observation
 
-    async def run(
-        self, action: CmdRunAction
-    ) -> CmdOutputObservation | ErrorObservation:
+    async def run(self, action: CmdRunAction) -> CmdOutputObservation | ErrorObservation:
         try:
             bash_session = self.bash_session
             if action.is_static:
@@ -409,34 +389,24 @@ class ActionExecutor:
             # current working directory in Bash
             jupyter_cwd = getattr(self, '_jupyter_cwd', None)
             if self.bash_session.cwd != jupyter_cwd:
-                logger.debug(
-                    f'{self.bash_session.cwd} != {jupyter_cwd} -> reset Jupyter PWD'
-                )
+                logger.debug(f'{self.bash_session.cwd} != {jupyter_cwd} -> reset Jupyter PWD')
                 # escape windows paths
                 cwd = self.bash_session.cwd.replace('\\', '/')
                 reset_jupyter_cwd_code = f'import os; os.chdir("{cwd}")'
                 _aux_action = IPythonRunCellAction(code=reset_jupyter_cwd_code)
-                _reset_obs: IPythonRunCellObservation = await _jupyter_plugin.run(
-                    _aux_action
-                )
-                logger.debug(
-                    f'Changed working directory in IPython to: {self.bash_session.cwd}. Output: {_reset_obs}'
-                )
+                _reset_obs: IPythonRunCellObservation = await _jupyter_plugin.run(_aux_action)
+                logger.debug(f'Changed working directory in IPython to: {self.bash_session.cwd}. Output: {_reset_obs}')
                 self._jupyter_cwd = self.bash_session.cwd
 
             obs: IPythonRunCellObservation = await _jupyter_plugin.run(action)
             obs.content = obs.content.rstrip()
 
             if action.include_extra:
-                obs.content += (
-                    f'\n[Jupyter current working directory: {self.bash_session.cwd}]'
-                )
+                obs.content += f'\n[Jupyter current working directory: {self.bash_session.cwd}]'
                 obs.content += f'\n[Jupyter Python interpreter: {_jupyter_plugin.python_interpreter_path}]'
             return obs
         else:
-            raise RuntimeError(
-                'JupyterRequirement not found. Unable to run IPython action.'
-            )
+            raise RuntimeError('JupyterRequirement not found. Unable to run IPython action.')
 
     def _resolve_path(self, path: str, working_dir: str) -> str:
         filepath = Path(path)
@@ -500,15 +470,11 @@ class ActionExecutor:
             with open(filepath, 'r', encoding='utf-8') as file:
                 lines = read_lines(file.readlines(), action.start, action.end)
         except FileNotFoundError:
-            return ErrorObservation(
-                f'File not found: {filepath}. Your current working directory is {working_dir}.'
-            )
+            return ErrorObservation(f'File not found: {filepath}. Your current working directory is {working_dir}.')
         except UnicodeDecodeError:
             return ErrorObservation(f'File could not be decoded as utf-8: {filepath}.')
         except IsADirectoryError:
-            return ErrorObservation(
-                f'Path is a directory: {filepath}. You can only read files'
-            )
+            return ErrorObservation(f'Path is a directory: {filepath}. You can only read files')
 
         code_view = ''.join(lines)
         return FileReadObservation(path=filepath, content=code_view)
@@ -544,9 +510,7 @@ class ActionExecutor:
         except FileNotFoundError:
             return ErrorObservation(f'File not found: {filepath}')
         except IsADirectoryError:
-            return ErrorObservation(
-                f'Path is a directory: {filepath}. You can only write to files'
-            )
+            return ErrorObservation(f'Path is a directory: {filepath}. You can only write to files')
         except UnicodeDecodeError:
             return ErrorObservation(f'File could not be decoded as utf-8: {filepath}')
 
@@ -562,9 +526,7 @@ class ActionExecutor:
                 os.chmod(filepath, 0o664)
                 os.chown(filepath, self.user_id, self.user_id)
         except PermissionError as e:
-            return ErrorObservation(
-                f'File {filepath} written, but failed to change ownership and permissions: {e}'
-            )
+            return ErrorObservation(f'File {filepath} written, but failed to change ownership and permissions: {e}')
         return FileWriteObservation(content='', path=filepath)
 
     async def edit(self, action: FileEditAction) -> Observation:
@@ -595,17 +557,13 @@ class ActionExecutor:
 
     async def browse(self, action: BrowseURLAction) -> Observation:
         if self.browser is None:
-            return ErrorObservation(
-                'Browser functionality is not supported on Windows.'
-            )
+            return ErrorObservation('Browser functionality is not supported on Windows.')
         await self._ensure_browser_ready()
         return await browse(action, self.browser, self.initial_cwd)
 
     async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         if self.browser is None:
-            return ErrorObservation(
-                'Browser functionality is not supported on Windows.'
-            )
+            return ErrorObservation('Browser functionality is not supported on Windows.')
         await self._ensure_browser_ready()
         browser_observation = await browse(action, self.browser, self.initial_cwd)
         if not browser_observation.error:
@@ -623,9 +581,7 @@ class ActionExecutor:
                 return browser_observation
             else:
                 # A new file is downloaded in self.downloads_directory, shift file to /workspace
-                src_path = os.path.join(
-                    self.downloads_directory, self.downloaded_files[-1]
-                )
+                src_path = os.path.join(self.downloads_directory, self.downloaded_files[-1])
                 # Guess extension of file using puremagic and add it to tgt_path file name
                 file_ext = ''
                 try:
@@ -637,9 +593,7 @@ class ActionExecutor:
                 except Exception as _:
                     pass
 
-                tgt_path = os.path.join(
-                    '/workspace', f'file_{len(self.downloaded_files)}{file_ext}'
-                )
+                tgt_path = os.path.join('/workspace', f'file_{len(self.downloaded_files)}{file_ext}')
                 shutil.copy(src_path, tgt_path)
                 file_download_obs = FileDownloadObservation(
                     content=f'Execution of the previous action {action.browser_actions} resulted in a file download. The downloaded file is saved at location: {tgt_path}',
@@ -662,9 +616,7 @@ if __name__ == '__main__':
     parser.add_argument('port', type=int, help='Port to listen on')
     parser.add_argument('--working-dir', type=str, help='Working directory')
     parser.add_argument('--plugins', type=str, help='Plugins to initialize', nargs='+')
-    parser.add_argument(
-        '--username', type=str, help='User to run as', default='openhands'
-    )
+    parser.add_argument('--username', type=str, help='User to run as', default='openhands')
     parser.add_argument('--user-id', type=int, help='User ID to run as', default=1000)
     parser.add_argument(
         '--browsergym-eval-env',
@@ -678,9 +630,7 @@ if __name__ == '__main__':
 
     # Start the file viewer server in a separate thread
     logger.info('Starting file viewer server')
-    _file_viewer_port = find_available_tcp_port(
-        min_port=args.port + 1, max_port=min(args.port + 1024, 65535)
-    )
+    _file_viewer_port = find_available_tcp_port(min_port=args.port + 1, max_port=min(args.port + 1024, 65535))
     server_url, _ = start_file_viewer_server(port=_file_viewer_port)
     logger.info(f'File viewer server started at {server_url}')
 
@@ -771,9 +721,7 @@ if __name__ == '__main__':
         return JSONResponse(status_code=exc.status_code, content={'detail': exc.detail})
 
     @app.exception_handler(RequestValidationError)
-    async def validation_exception_handler(
-        request: Request, exc: RequestValidationError
-    ):
+    async def validation_exception_handler(request: Request, exc: RequestValidationError):
         logger.error(f'Validation error occurred: {exc}')
         return JSONResponse(
             status_code=422,
@@ -789,9 +737,7 @@ if __name__ == '__main__':
             try:
                 verify_api_key(request.headers.get('X-Session-API-Key'))
             except HTTPException as e:
-                return JSONResponse(
-                    status_code=e.status_code, content={'detail': e.detail}
-                )
+                return JSONResponse(status_code=e.status_code, content={'detail': e.detail})
         response = await call_next(request)
         return response
 
@@ -837,9 +783,7 @@ if __name__ == '__main__':
 
         if is_windows:
             # On Windows, just return a success response without doing anything
-            logger.info(
-                'MCP server update request received on Windows - skipping as MCP is disabled'
-            )
+            logger.info('MCP server update request received on Windows - skipping as MCP is disabled')
             return JSONResponse(
                 status_code=200,
                 content={
@@ -850,19 +794,13 @@ if __name__ == '__main__':
 
         # Non-Windows implementation
         if mcp_proxy_manager is None:
-            raise HTTPException(
-                status_code=500, detail='MCP Proxy Manager is not initialized'
-            )
+            raise HTTPException(status_code=500, detail='MCP Proxy Manager is not initialized')
 
         # Get the request body
         mcp_tools_to_sync = await request.json()
         if not isinstance(mcp_tools_to_sync, list):
-            raise HTTPException(
-                status_code=400, detail='Request must be a list of MCP tools to sync'
-            )
-        logger.info(
-            f'Updating MCP server with tools: {json.dumps(mcp_tools_to_sync, indent=2)}'
-        )
+            raise HTTPException(status_code=400, detail='Request must be a list of MCP tools to sync')
+        logger.info(f'Updating MCP server with tools: {json.dumps(mcp_tools_to_sync, indent=2)}')
         mcp_tools_to_sync = [MCPStdioServerConfig(**tool) for tool in mcp_tools_to_sync]
         try:
             await mcp_proxy_manager.update_and_remount(app, mcp_tools_to_sync, ['*'])
@@ -881,17 +819,13 @@ if __name__ == '__main__':
         )
 
     @app.post('/upload_file')
-    async def upload_file(
-        file: UploadFile, destination: str = '/', recursive: bool = False
-    ):
+    async def upload_file(file: UploadFile, destination: str = '/', recursive: bool = False):
         assert client is not None
 
         try:
             # Ensure the destination directory exists
             if not os.path.isabs(destination):
-                raise HTTPException(
-                    status_code=400, detail='Destination must be an absolute path'
-                )
+                raise HTTPException(status_code=400, detail='Destination must be an absolute path')
 
             full_dest_path = destination
             if not os.path.exists(full_dest_path):
@@ -900,9 +834,7 @@ if __name__ == '__main__':
             if recursive or file.filename.endswith('.zip'):
                 # For recursive uploads, we expect a zip file
                 if not file.filename.endswith('.zip'):
-                    raise HTTPException(
-                        status_code=400, detail='Recursive uploads must be zip files'
-                    )
+                    raise HTTPException(status_code=400, detail='Recursive uploads must be zip files')
 
                 zip_path = os.path.join(full_dest_path, file.filename)
                 with open(zip_path, 'wb') as buffer:
@@ -912,9 +844,7 @@ if __name__ == '__main__':
                 shutil.unpack_archive(zip_path, full_dest_path)
                 os.remove(zip_path)  # Remove the zip file after extraction
 
-                logger.debug(
-                    f'Uploaded file {file.filename} and extracted to {destination}'
-                )
+                logger.debug(f'Uploaded file {file.filename} and extracted to {destination}')
             else:
                 # For single file uploads
                 file_path = os.path.join(full_dest_path, file.filename)
@@ -939,9 +869,7 @@ if __name__ == '__main__':
         logger.debug('Downloading files')
         try:
             if not os.path.isabs(path):
-                raise HTTPException(
-                    status_code=400, detail='Path must be an absolute path'
-                )
+                raise HTTPException(status_code=400, detail='Path must be an absolute path')
 
             if not os.path.exists(path):
                 raise HTTPException(status_code=404, detail='File not found')
@@ -951,9 +879,7 @@ if __name__ == '__main__':
                     for root, _, files in os.walk(path):
                         for file in files:
                             file_path = os.path.join(root, file)
-                            zipf.write(
-                                file_path, arcname=os.path.relpath(file_path, path)
-                            )
+                            zipf.write(file_path, arcname=os.path.relpath(file_path, path))
                 return FileResponse(
                     path=temp_zip.name,
                     media_type='application/zip',

@@ -41,9 +41,7 @@ from openhands.events.event import FileReadSource
 from openhands.events.tool import ToolCallMetadata
 
 
-def grep_to_cmdrun(
-    pattern: str, path: str | None = None, include: str | None = None
-) -> str:
+def grep_to_cmdrun(pattern: str, path: str | None = None, include: str | None = None) -> str:
     # NOTE: This function currently relies on `rg` (ripgrep).
     # `rg` may not be installed when using CLIRuntime or LocalRuntime.
     # TODO: Implement a fallback to `grep` if `rg` is not available.
@@ -107,9 +105,7 @@ def glob_to_cmdrun(pattern: str, path: str = '.') -> str:
     return echo_cmd + complete_cmd
 
 
-def response_to_actions(
-    response: ModelResponse, mcp_tool_names: list[str] | None = None
-) -> list[Action]:
+def response_to_actions(response: ModelResponse, mcp_tool_names: list[str] | None = None) -> list[Action]:
     actions: list[Action] = []
     assert len(response.choices) == 1, 'Only one choice is supported for now'
     choice = response.choices[0]

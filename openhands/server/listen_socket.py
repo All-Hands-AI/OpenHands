@@ -41,14 +41,10 @@ async def connect(connection_id: str, environ: dict) -> None:
         try:
             latest_event_id = int(latest_event_id_str)
         except ValueError:
-            logger.debug(
-                f'Invalid latest_event_id value: {latest_event_id_str}, defaulting to -1'
-            )
+            logger.debug(f'Invalid latest_event_id value: {latest_event_id_str}, defaulting to -1')
             latest_event_id = -1
         conversation_id = query_params.get('conversation_id', [None])[0]
-        logger.info(
-            f'Socket request for conversation {conversation_id} with connection_id {connection_id}'
-        )
+        logger.info(f'Socket request for conversation {conversation_id} with connection_id {connection_id}')
         raw_list = query_params.get('providers_set', [])
         providers_list = []
         for item in raw_list:
@@ -68,26 +64,16 @@ async def connect(connection_id: str, environ: dict) -> None:
         # Headers in WSGI/ASGI are prefixed with 'HTTP_' and have dashes replaced with underscores
         authorization_header = environ.get('HTTP_AUTHORIZATION', None)
         conversation_validator = create_conversation_validator()
-        user_id = await conversation_validator.validate(
-            conversation_id, cookies_str, authorization_header
-        )
-        logger.info(
-            f'User {user_id} is allowed to connect to conversation {conversation_id}'
-        )
+        user_id = await conversation_validator.validate(conversation_id, cookies_str, authorization_header)
+        logger.info(f'User {user_id} is allowed to connect to conversation {conversation_id}')
 
         try:
-            event_store = EventStore(
-                conversation_id, conversation_manager.file_store, user_id
-            )
+            event_store = EventStore(conversation_id, conversation_manager.file_store, user_id)
         except FileNotFoundError as e:
-            logger.error(
-                f'Failed to create EventStore for conversation {conversation_id}: {e}'
-            )
+            logger.error(f'Failed to create EventStore for conversation {conversation_id}: {e}')
             raise ConnectionRefusedError(f'Failed to access conversation events: {e}')
 
-        logger.info(
-            f'Replaying event stream for conversation {conversation_id} with connection_id {connection_id}...'
-        )
+        logger.info(f'Replaying event stream for conversation {conversation_id} with connection_id {connection_id}...')
         agent_state_changed = None
 
         # Create an async store to replay events
@@ -109,17 +95,11 @@ async def connect(connection_id: str, environ: dict) -> None:
 
         # Send the agent state changed event last if we have one
         if agent_state_changed:
-            await sio.emit(
-                'oh_event', event_to_dict(agent_state_changed), to=connection_id
-            )
+            await sio.emit('oh_event', event_to_dict(agent_state_changed), to=connection_id)
 
-        logger.info(
-            f'Finished replaying event stream for conversation {conversation_id}'
-        )
+        logger.info(f'Finished replaying event stream for conversation {conversation_id}')
 
-        conversation_init_data = await setup_init_convo_settings(
-            user_id, conversation_id, providers_set
-        )
+        conversation_init_data = await setup_init_convo_settings(user_id, conversation_id, providers_set)
 
         agent_loop_info = await conversation_manager.join_conversation(
             conversation_id,
@@ -131,9 +111,7 @@ async def connect(connection_id: str, environ: dict) -> None:
         if agent_loop_info is None:
             raise ConnectionRefusedError('Failed to join conversation')
 
-        logger.info(
-            f'Successfully joined conversation {conversation_id} with connection_id {connection_id}'
-        )
+        logger.info(f'Successfully joined conversation {conversation_id} with connection_id {connection_id}')
     except ConnectionRefusedError:
         # Close the broken connection after sending an error message
         asyncio.create_task(sio.disconnect(connection_id))

@@ -75,17 +75,12 @@ def event_from_dict(data: dict[str, Any]) -> 'Event':
                     for cost in value.get('costs', []):
                         metrics._costs.append(Cost(**cost))
                     metrics.response_latencies = [
-                        ResponseLatency(**latency)
-                        for latency in value.get('response_latencies', [])
+                        ResponseLatency(**latency) for latency in value.get('response_latencies', [])
                     ]
-                    metrics.token_usages = [
-                        TokenUsage(**usage) for usage in value.get('token_usages', [])
-                    ]
+                    metrics.token_usages = [TokenUsage(**usage) for usage in value.get('token_usages', [])]
                     # Set accumulated token usage if available
                     if 'accumulated_token_usage' in value:
-                        metrics._accumulated_token_usage = TokenUsage(
-                            **value.get('accumulated_token_usage', {})
-                        )
+                        metrics._accumulated_token_usage = TokenUsage(**value.get('accumulated_token_usage', {}))
                 value = metrics
             setattr(evt, '_' + key, value)
     return evt
@@ -132,10 +127,7 @@ def event_to_dict(event: 'Event') -> dict:
         # such as CmdOutputMetadata
         # we serialize it along with the rest
         # we also handle the Enum conversion for RecallObservation
-        d['extras'] = {
-            k: (v.value if isinstance(v, Enum) else _convert_pydantic_to_dict(v))
-            for k, v in props.items()
-        }
+        d['extras'] = {k: (v.value if isinstance(v, Enum) else _convert_pydantic_to_dict(v)) for k, v in props.items()}
         # Include success field for CmdOutputObservation
         if hasattr(event, 'success'):
             d['success'] = event.success
@@ -149,9 +141,7 @@ def event_to_trajectory(event: 'Event', include_screenshots: bool = False) -> di
     if 'extras' in d:
         remove_fields(
             d['extras'],
-            DELETE_FROM_TRAJECTORY_EXTRAS
-            if include_screenshots
-            else DELETE_FROM_TRAJECTORY_EXTRAS_AND_SCREENSHOTS,
+            DELETE_FROM_TRAJECTORY_EXTRAS if include_screenshots else DELETE_FROM_TRAJECTORY_EXTRAS_AND_SCREENSHOTS,
         )
     return d
 
@@ -163,8 +153,4 @@ def truncate_content(content: str, max_chars: int | None = None) -> str:
 
     # truncate the middle and include a message to the LLM about it
     half = max_chars // 2
-    return (
-        content[:half]
-        + '\n[... Observation truncated due to length ...]\n'
-        + content[-half:]
-    )
+    return content[:half] + '\n[... Observation truncated due to length ...]\n' + content[-half:]

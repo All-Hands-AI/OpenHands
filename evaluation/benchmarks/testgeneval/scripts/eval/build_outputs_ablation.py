@@ -21,9 +21,7 @@ def insert_line_in_string(input_string, new_str, insert_line):
     file_text_lines = file_text.split('\n')
 
     new_str_lines = new_str.split('\n')
-    new_file_text_lines = (
-        file_text_lines[:insert_line] + new_str_lines + file_text_lines[insert_line:]
-    )
+    new_file_text_lines = file_text_lines[:insert_line] + new_str_lines + file_text_lines[insert_line:]
 
     return '\n'.join(new_file_text_lines)
 
@@ -64,9 +62,7 @@ def parse_json_files(root_dir, output_dir, metadata_objs, preds_objs):
             # Now loop through the JSON files in this subdirectory
             i = 0
             test_suite = preds_objs[subdir] if subdir in preds_objs else ''
-            for file in sorted(
-                os.listdir(subdir_path)
-            ):  # Sorting ensures consistent order
+            for file in sorted(os.listdir(subdir_path)):  # Sorting ensures consistent order
                 metadata_copy = copy.deepcopy(metadata)
                 if file.endswith('.json'):  # Check for JSON files
                     file_path = os.path.join(subdir_path, file)
@@ -74,19 +70,12 @@ def parse_json_files(root_dir, output_dir, metadata_objs, preds_objs):
                         with open(file_path, 'r', encoding='utf-8') as f:
                             data = json.load(f)  # Load JSON data
                             try:
-                                tool_calls = data['response']['choices'][0]['message'][
-                                    'tool_calls'
-                                ]
+                                tool_calls = data['response']['choices'][0]['message']['tool_calls']
                                 if tool_calls is not None:
                                     for tool_call in tool_calls:
-                                        tool_call_dict = eval(
-                                            tool_call['function']['arguments']
-                                        )
+                                        tool_call_dict = eval(tool_call['function']['arguments'])
 
-                                        if (
-                                            tool_call_dict is not None
-                                            and tool_call_dict != {}
-                                        ):
+                                        if tool_call_dict is not None and tool_call_dict != {}:
                                             command = tool_call_dict['command']
                                             if command == 'create':
                                                 test_suite = tool_call_dict['file_text']
@@ -104,12 +93,7 @@ def parse_json_files(root_dir, output_dir, metadata_objs, preds_objs):
                                                 )
                                                 test_suite = test_suite_new
                                             if command == 'str_replace':
-                                                if (
-                                                    test_suite.count(
-                                                        tool_call_dict['old_str']
-                                                    )
-                                                    == 1
-                                                ):
+                                                if test_suite.count(tool_call_dict['old_str']) == 1:
                                                     test_suite_new = test_suite.replace(
                                                         tool_call_dict['old_str'],
                                                         tool_call_dict['new_str'],
@@ -145,12 +129,8 @@ def parse_json_files(root_dir, output_dir, metadata_objs, preds_objs):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Parse JSON file')
     parser.add_argument('--root_dir', type=str, help='Root directory', required=True)
-    parser.add_argument(
-        '--output_dir', type=str, help='Output directory', required=True
-    )
-    parser.add_argument(
-        '--starting_preds_file', type=str, help='Starting predictions', default=None
-    )
+    parser.add_argument('--output_dir', type=str, help='Output directory', required=True)
+    parser.add_argument('--starting_preds_file', type=str, help='Starting predictions', default=None)
     args = parser.parse_args()
 
     output_file = os.path.join(args.output_dir, 'output.jsonl')

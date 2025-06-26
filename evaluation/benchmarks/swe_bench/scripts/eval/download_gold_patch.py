@@ -16,9 +16,7 @@ args = parser.parse_args()
 
 dataset = load_dataset(args.dataset_name, split=args.split)
 output_filepath = args.output_filepath
-print(
-    f'Downloading gold patches from {args.dataset_name} (split: {args.split}) to {output_filepath}'
-)
+print(f'Downloading gold patches from {args.dataset_name} (split: {args.split}) to {output_filepath}')
 patches = [
     {
         'instance_id': row['instance_id'],

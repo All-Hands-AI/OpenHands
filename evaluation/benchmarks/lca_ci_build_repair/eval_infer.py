@@ -57,9 +57,7 @@ config = load_openhands_config()
 
 
 def load_bench_config():
-    script_dir = os.path.dirname(
-        os.path.abspath(__file__)
-    )  # Get the absolute path of the script
+    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the absolute path of the script
     config_path = os.path.join(script_dir, 'config.yaml')
     yaml = ruamel.yaml.YAML(typ='rt')
     with open(config_path, 'r') as file:
@@ -77,9 +75,7 @@ def run_eval(
     obs: CmdOutputObservation
 
     lca_path = bench_config['LCA_PATH']
-    lca_ci_path = os.path.join(
-        lca_path, 'lca-baselines', 'ci-builds-repair', 'ci-builds-repair-benchmark'
-    )
+    lca_ci_path = os.path.join(lca_path, 'lca-baselines', 'ci-builds-repair', 'ci-builds-repair-benchmark')
 
     model_name = bench_config['model_name']
 
@@ -109,9 +105,7 @@ def run_eval(
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
-    script_dir = os.path.dirname(
-        os.path.abspath(__file__)
-    )  # Get the absolute path of the script
+    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the absolute path of the script
     config_path = os.path.join(script_dir, 'config.yaml')
     runtime.copy_to(config_path, lca_ci_path)
 
@@ -201,9 +195,7 @@ if __name__ == '__main__':
     runtime = create_runtime(config)
     call_async_from_sync(runtime.connect)
     logger.info('Converting output.jsonl into output_lca.jsonl')
-    predictions_lca_path = process_predictions(
-        os.path.join(args.predictions_path, 'output.jsonl')
-    )
+    predictions_lca_path = process_predictions(os.path.join(args.predictions_path, 'output.jsonl'))
     runtime.copy_to(predictions_lca_path, '/tmp')
 
     # get results

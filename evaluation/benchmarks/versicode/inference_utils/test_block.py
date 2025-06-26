@@ -63,9 +63,7 @@ def run_inference(model_name, origin_data_list):
 
         temp_data_list[requests_id]['model_output'] = str(temp_ans_list)
 
-    save_folder_path = os.path.join(
-        '../data/result_data/block_completion', model_name.split('/')[-1]
-    )
+    save_folder_path = os.path.join('../data/result_data/block_completion', model_name.split('/')[-1])
     if not os.path.exists(save_folder_path):
         os.makedirs(save_folder_path)
 

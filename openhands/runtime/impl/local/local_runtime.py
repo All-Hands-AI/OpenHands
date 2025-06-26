@@ -76,13 +76,9 @@ def get_user_info() -> tuple[int, str | None]:
 def check_dependencies(code_repo_path: str, poetry_venvs_path: str) -> None:
     ERROR_MESSAGE = 'Please follow the instructions in https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md to install OpenHands.'
     if not os.path.exists(code_repo_path):
-        raise ValueError(
-            f'Code repo path {code_repo_path} does not exist. ' + ERROR_MESSAGE
-        )
+        raise ValueError(f'Code repo path {code_repo_path} does not exist. ' + ERROR_MESSAGE)
     if not os.path.exists(poetry_venvs_path):
-        raise ValueError(
-            f'Poetry venvs path {poetry_venvs_path} does not exist. ' + ERROR_MESSAGE
-        )
+        raise ValueError(f'Poetry venvs path {poetry_venvs_path} does not exist. ' + ERROR_MESSAGE)
     # Check jupyter is installed
     logger.debug('Checking dependencies: Jupyter')
     output = subprocess.check_output(
@@ -175,9 +171,7 @@ class LocalRuntime(ActionExecutionClient):
         self._vscode_port = -1
         self._app_ports: list[int] = []
 
-        self.api_url = (
-            f'{self.config.sandbox.local_runtime_url}:{self._execution_server_port}'
-        )
+        self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._execution_server_port}'
         self.status_callback = status_callback
         self.server_process: subprocess.Popen[str] | None = None
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
@@ -225,18 +219,12 @@ class LocalRuntime(ActionExecutionClient):
             self._vscode_port = server_info.vscode_port
             self._app_ports = server_info.app_ports
             self._temp_workspace = server_info.temp_workspace
-            self.config.workspace_mount_path_in_sandbox = (
-                server_info.workspace_mount_path
-            )
-            self.api_url = (
-                f'{self.config.sandbox.local_runtime_url}:{self._execution_server_port}'
-            )
+            self.config.workspace_mount_path_in_sandbox = server_info.workspace_mount_path
+            self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._execution_server_port}'
         elif self.attach_to_existing:
             # If we're supposed to attach to an existing server but none exists, raise an error
             self.log('error', f'No existing server found for session {self.sid}')
-            raise AgentRuntimeDisconnectedError(
-                f'No existing server found for session {self.sid}'
-            )
+            raise AgentRuntimeDisconnectedError(f'No existing server found for session {self.sid}')
         else:
             # Set up workspace directory
             if self.config.workspace_base is not None:
@@ -249,39 +237,22 @@ class LocalRuntime(ActionExecutionClient):
                 self._temp_workspace = None
             else:
                 # A temporary directory is created for the agent to run in
-                logger.warning(
-                    'Workspace base path is NOT set. Agent will run in a temporary directory.'
-                )
+                logger.warning('Workspace base path is NOT set. Agent will run in a temporary directory.')
                 self._temp_workspace = tempfile.mkdtemp(
                     prefix=f'openhands_workspace_{self.sid}',
                 )
                 self.config.workspace_mount_path_in_sandbox = self._temp_workspace
 
-            logger.info(
-                f'Using workspace directory: {self.config.workspace_mount_path_in_sandbox}'
-            )
+            logger.info(f'Using workspace directory: {self.config.workspace_mount_path_in_sandbox}')
 
             # Start a new server
-            self._execution_server_port = self._find_available_port(
-                EXECUTION_SERVER_PORT_RANGE
-            )
-            self._vscode_port = int(
-                os.getenv('VSCODE_PORT')
-                or str(self._find_available_port(VSCODE_PORT_RANGE))
-            )
+            self._execution_server_port = self._find_available_port(EXECUTION_SERVER_PORT_RANGE)
+            self._vscode_port = int(os.getenv('VSCODE_PORT') or str(self._find_available_port(VSCODE_PORT_RANGE)))
             self._app_ports = [
-                int(
-                    os.getenv('APP_PORT_1')
-                    or str(self._find_available_port(APP_PORT_RANGE_1))
-                ),
-                int(
-                    os.getenv('APP_PORT_2')
-                    or str(self._find_available_port(APP_PORT_RANGE_2))
-                ),
+                int(os.getenv('APP_PORT_1') or str(self._find_available_port(APP_PORT_RANGE_1))),
+                int(os.getenv('APP_PORT_2') or str(self._find_available_port(APP_PORT_RANGE_2))),
             ]
-            self.api_url = (
-                f'{self.config.sandbox.local_runtime_url}:{self._execution_server_port}'
-            )
+            self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._execution_server_port}'
 
             # Start the server process
             cmd = get_action_execution_server_startup_command(
@@ -297,9 +268,7 @@ class LocalRuntime(ActionExecutionClient):
             env = os.environ.copy()
             # Get the code repo path
             code_repo_path = os.path.dirname(os.path.dirname(openhands.__file__))
-            env['PYTHONPATH'] = os.pathsep.join(
-                [code_repo_path, env.get('PYTHONPATH', '')]
-            )
+            env['PYTHONPATH'] = os.pathsep.join([code_repo_path, env.get('PYTHONPATH', '')])
             env['OPENHANDS_REPO_PATH'] = code_repo_path
             env['LOCAL_RUNTIME_MODE'] = '1'
             env['VSCODE_PORT'] = str(self._vscode_port)
@@ -330,9 +299,7 @@ class LocalRuntime(ActionExecutionClient):
             # Start a thread to read and log server output
             def log_output() -> None:
                 if not self.server_process or not self.server_process.stdout:
-                    self.log(
-                        'error', 'Server process or stdout not available for logging.'
-                    )
+                    self.log('error', 'Server process or stdout not available for logging.')
                     return
 
                 try:
@@ -348,16 +315,10 @@ class LocalRuntime(ActionExecutionClient):
                         self.log('info', f'Server: {line.strip()}')
 
                     # Capture any remaining output after the process exits OR if signaled
-                    if (
-                        not self._log_thread_exit_event.is_set()
-                    ):  # Check again before reading remaining
-                        self.log(
-                            'info', 'Server process exited, reading remaining output.'
-                        )
+                    if not self._log_thread_exit_event.is_set():  # Check again before reading remaining
+                        self.log('info', 'Server process exited, reading remaining output.')
                         for line in self.server_process.stdout:
-                            if (
-                                self._log_thread_exit_event.is_set()
-                            ):  # Check inside loop too
+                            if self._log_thread_exit_event.is_set():  # Check inside loop too
                                 self.log(
                                     'info',
                                     'Log thread received exit signal while reading remaining output.',
@@ -369,9 +330,7 @@ class LocalRuntime(ActionExecutionClient):
                     # Log the error, but don't prevent the thread from potentially exiting
                     self.log('error', f'Error reading server output: {e}')
                 finally:
-                    self.log(
-                        'info', 'Log output thread finished.'
-                    )  # Add log for thread exit
+                    self.log('info', 'Log output thread finished.')  # Add log for thread exit
 
             self._log_thread = threading.Thread(target=log_output, daemon=True)
             self._log_thread.start()
@@ -404,9 +363,7 @@ class LocalRuntime(ActionExecutionClient):
             self.set_runtime_status(RuntimeStatus.READY)
         self._runtime_initialized = True
 
-    def _find_available_port(
-        self, port_range: tuple[int, int], max_attempts: int = 5
-    ) -> int:
+    def _find_available_port(self, port_range: tuple[int, int], max_attempts: int = 5) -> int:
         port = port_range[1]
         for _ in range(max_attempts):
             port = find_available_tcp_port(port_range[0], port_range[1])

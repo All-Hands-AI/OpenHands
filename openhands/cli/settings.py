@@ -77,11 +77,7 @@ def display_settings(config: OpenHandsConfig) -> None:
     # Calculate max widths for alignment
     # Ensure values are strings for len() calculation
     str_labels_and_values = [(label, str(value)) for label, value in labels_and_values]
-    max_label_width = (
-        max(len(label) for label, _ in str_labels_and_values)
-        if str_labels_and_values
-        else 0
-    )
+    max_label_width = max(len(label) for label, _ in str_labels_and_values) if str_labels_and_values else 0
 
     # Construct the summary text with aligned columns
     settings_lines = [
@@ -146,9 +142,7 @@ def save_settings_confirmation(config: OpenHandsConfig) -> bool:
     )
 
 
-async def modify_llm_settings_basic(
-    config: OpenHandsConfig, settings_store: FileSettingsStore
-) -> None:
+async def modify_llm_settings_basic(config: OpenHandsConfig, settings_store: FileSettingsStore) -> None:
     model_list = get_supported_llm_models(config)
     organized_models = organize_models_and_providers(model_list)
 
@@ -167,9 +161,7 @@ async def modify_llm_settings_basic(
 
     try:
         # Show the default provider but allow changing it
-        print_formatted_text(
-            HTML(f'\n<grey>Default provider: </grey><green>{provider}</green>')
-        )
+        print_formatted_text(HTML(f'\n<grey>Default provider: </grey><green>{provider}</green>'))
 
         # Show verified providers plus "Select another provider" option
         provider_choices = verified_providers + ['Select another provider']
@@ -195,9 +187,7 @@ async def modify_llm_settings_basic(
             def provider_validator(x):
                 is_valid = x in organized_models
                 if not is_valid:
-                    print_formatted_text(
-                        HTML('<grey>Invalid provider selected: {}</grey>'.format(x))
-                    )
+                    print_formatted_text(HTML('<grey>Invalid provider selected: {}</grey>'.format(x)))
                 return is_valid
 
             provider = await get_validated_input(
@@ -212,27 +202,17 @@ async def modify_llm_settings_basic(
         if provider not in organized_models:
             # If the provider doesn't exist, prefer 'anthropic' if available,
             # otherwise use the first provider
-            provider = (
-                'anthropic'
-                if 'anthropic' in organized_models
-                else next(iter(organized_models.keys()))
-            )
+            provider = 'anthropic' if 'anthropic' in organized_models else next(iter(organized_models.keys()))
 
         provider_models = organized_models[provider]['models']
         if provider == 'openai':
-            provider_models = [
-                m for m in provider_models if m not in VERIFIED_OPENAI_MODELS
-            ]
+            provider_models = [m for m in provider_models if m not in VERIFIED_OPENAI_MODELS]
             provider_models = VERIFIED_OPENAI_MODELS + provider_models
         if provider == 'anthropic':
-            provider_models = [
-                m for m in provider_models if m not in VERIFIED_ANTHROPIC_MODELS
-            ]
+            provider_models = [m for m in provider_models if m not in VERIFIED_ANTHROPIC_MODELS]
             provider_models = VERIFIED_ANTHROPIC_MODELS + provider_models
         if provider == 'mistral':
-            provider_models = [
-                m for m in provider_models if m not in VERIFIED_MISTRAL_MODELS
-            ]
+            provider_models = [m for m in provider_models if m not in VERIFIED_MISTRAL_MODELS]
             provider_models = VERIFIED_MISTRAL_MODELS + provider_models
 
         # Set default model to the best verified model for the provider
@@ -247,14 +227,10 @@ async def modify_llm_settings_basic(
             default_model = VERIFIED_MISTRAL_MODELS[0]
         else:
             # For other providers, use the first model in the list
-            default_model = (
-                provider_models[0] if provider_models else 'claude-sonnet-4-20250514'
-            )
+            default_model = provider_models[0] if provider_models else 'claude-sonnet-4-20250514'
 
         # Show the default model but allow changing it
-        print_formatted_text(
-            HTML(f'\n<grey>Default model: </grey><green>{default_model}</green>')
-        )
+        print_formatted_text(HTML(f'\n<grey>Default model: </grey><green>{default_model}</green>'))
         change_model = (
             cli_confirm(
                 config,
@@ -344,9 +320,7 @@ async def modify_llm_settings_basic(
     await settings_store.store(settings)
 
 
-async def modify_llm_settings_advanced(
-    config: OpenHandsConfig, settings_store: FileSettingsStore
-) -> None:
+async def modify_llm_settings_advanced(config: OpenHandsConfig, settings_store: FileSettingsStore) -> None:
     session = PromptSession(key_bindings=kb_cancel())
 
     custom_model = None

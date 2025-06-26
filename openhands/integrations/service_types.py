@@ -72,9 +72,7 @@ class SuggestedTask(BaseModel):
         issue_number = self.issue_number
         repo = self.repo
 
-        env = Environment(
-            loader=FileSystemLoader('openhands/integrations/templates/suggested_task')
-        )
+        env = Environment(loader=FileSystemLoader('openhands/integrations/templates/suggested_task'))
 
         template = None
         if task_type == TaskType.MERGE_CONFLICTS:
@@ -168,9 +166,7 @@ class BaseGitService(ABC):
             return await client.post(url, headers=headers, json=params)
         return await client.get(url, headers=headers, params=params)
 
-    def handle_http_status_error(
-        self, e: HTTPStatusError
-    ) -> AuthenticationError | RateLimitError | UnknownException:
+    def handle_http_status_error(self, e: HTTPStatusError) -> AuthenticationError | RateLimitError | UnknownException:
         if e.response.status_code == 401:
             return AuthenticationError(f'Invalid {self.provider} token')
         elif e.response.status_code == 429:
@@ -226,9 +222,7 @@ class GitService(Protocol):
         """Get suggested tasks for the authenticated user across all repositories"""
         ...
 
-    async def get_repository_details_from_repo_name(
-        self, repository: str
-    ) -> Repository:
+    async def get_repository_details_from_repo_name(self, repository: str) -> Repository:
         """Gets all repository details from repository name"""
 
     async def get_branches(self, repository: str) -> list[Branch]:

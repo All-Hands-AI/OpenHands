@@ -12,9 +12,7 @@ from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
 
 
-async def generate_conversation_title(
-    message: str, llm_config: LLMConfig, max_length: int = 50
-) -> Optional[str]:
+async def generate_conversation_title(message: str, llm_config: LLMConfig, max_length: int = 50) -> Optional[str]:
     """Generate a concise title for a conversation based on the first user message.
 
     Args:
@@ -117,9 +115,7 @@ async def auto_generate_title(
                     )
 
                     # Try to generate title using LLM
-                    llm_title = await generate_conversation_title(
-                        first_user_message, llm_config
-                    )
+                    llm_title = await generate_conversation_title(first_user_message, llm_config)
                     if llm_title:
                         logger.info(f'Generated title using LLM: {llm_title}')
                         return llm_title

@@ -27,9 +27,7 @@ def test_bash_python_version(temp_dir, runtime_cls, base_container_image):
     ]:
         pytest.skip('This test is only for python-related images')
 
-    runtime, config = _load_runtime(
-        temp_dir, runtime_cls, base_container_image=base_container_image
-    )
+    runtime, config = _load_runtime(temp_dir, runtime_cls, base_container_image=base_container_image)
 
     action = CmdRunAction(command='which python')
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -61,9 +59,7 @@ def test_nodejs_22_version(temp_dir, runtime_cls, base_container_image):
     ]:
         pytest.skip('This test is only for nodejs-related images')
 
-    runtime, config = _load_runtime(
-        temp_dir, runtime_cls, base_container_image=base_container_image
-    )
+    runtime, config = _load_runtime(temp_dir, runtime_cls, base_container_image=base_container_image)
 
     action = CmdRunAction(command='node --version')
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -82,9 +78,7 @@ def test_go_version(temp_dir, runtime_cls, base_container_image):
     ]:
         pytest.skip('This test is only for go-related images')
 
-    runtime, config = _load_runtime(
-        temp_dir, runtime_cls, base_container_image=base_container_image
-    )
+    runtime, config = _load_runtime(temp_dir, runtime_cls, base_container_image=base_container_image)
 
     action = CmdRunAction(command='go version')
     logger.info(action, extra={'msg_type': 'ACTION'})

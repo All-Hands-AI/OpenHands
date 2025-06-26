@@ -3,9 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Generic, TypeVar
 
-T = TypeVar(
-    'T', int, float
-)  # Type for the value (int for iterations, float for budget)
+T = TypeVar('T', int, float)  # Type for the value (int for iterations, float for budget)
 
 
 @dataclass
@@ -90,6 +88,5 @@ class BudgetControlFlag(ControlFlag[float]):
             current_str = f'{self.current_value:.2f}'
             max_str = f'{self.max_value:.2f}'
             raise RuntimeError(
-                f'Agent reached maximum budget for conversation.'
-                f'Current budget: {current_str}, max budget: {max_str}'
+                f'Agent reached maximum budget for conversation.Current budget: {current_str}, max budget: {max_str}'
             )

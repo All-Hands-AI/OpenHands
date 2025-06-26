@@ -86,9 +86,13 @@ class GitHandler:
         default_branch = self._get_default_branch()
 
         ref_current_branch = f'origin/{current_branch}'
-        ref_non_default_branch = f'$(git --no-pager merge-base HEAD "$(git --no-pager rev-parse --abbrev-ref origin/{default_branch})")'
+        ref_non_default_branch = (
+            f'$(git --no-pager merge-base HEAD "$(git --no-pager rev-parse --abbrev-ref origin/{default_branch})")'
+        )
         ref_default_branch = 'origin/' + default_branch
-        ref_new_repo = '$(git --no-pager rev-parse --verify 4b825dc642cb6eb9a060e54bf8d69288fbee4904)'  # compares with empty tree
+        ref_new_repo = (
+            '$(git --no-pager rev-parse --verify 4b825dc642cb6eb9a060e54bf8d69288fbee4904)'  # compares with empty tree
+        )
 
         refs = [
             ref_current_branch,
@@ -156,9 +160,7 @@ class GitHandler:
         diff_cmd = f'git --no-pager diff --name-status {ref}'
         output = self.execute(diff_cmd, self.cwd)
         if output.exit_code != 0:
-            raise RuntimeError(
-                f'Failed to get diff for ref {ref} in {self.cwd}. Command output: {output.content}'
-            )
+            raise RuntimeError(f'Failed to get diff for ref {ref} in {self.cwd}. Command output: {output.content}')
         return output.content.splitlines()
 
     def _get_untracked_files(self) -> list[dict[str, str]]:
@@ -171,11 +173,7 @@ class GitHandler:
         cmd = 'git --no-pager ls-files --others --exclude-standard'
         output = self.execute(cmd, self.cwd)
         obs_list = output.content.splitlines()
-        return (
-            [{'status': 'A', 'path': path} for path in obs_list]
-            if output.exit_code == 0
-            else []
-        )
+        return [{'status': 'A', 'path': path} for path in obs_list] if output.exit_code == 0 else []
 
     def get_git_changes(self) -> list[dict[str, str]] | None:
         """

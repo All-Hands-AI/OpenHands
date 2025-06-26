@@ -40,10 +40,7 @@ def test_view_keeps_non_forgotten_events() -> None:
         set_ids(events)
 
         view = View.from_events(events)
-        assert (
-            view.events
-            == events[:forgotten_event_id] + events[(forgotten_event_id + 1) : 5]
-        )
+        assert view.events == events[:forgotten_event_id] + events[(forgotten_event_id + 1) : 5]
 
 
 def test_view_inserts_summary() -> None:
@@ -51,9 +48,7 @@ def test_view_inserts_summary() -> None:
     for offset in range(5):
         events: list[Event] = [
             *[MessageAction(content=f'Event {i}') for i in range(5)],
-            CondensationAction(
-                forgotten_event_ids=[], summary='My Summary', summary_offset=offset
-            ),
+            CondensationAction(forgotten_event_ids=[], summary='My Summary', summary_offset=offset),
         ]
         set_ids(events)
         view = View.from_events(events)

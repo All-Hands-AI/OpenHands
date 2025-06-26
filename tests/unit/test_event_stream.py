@@ -104,10 +104,7 @@ def test_get_matching_events_type_filter(temp_dir: str):
     # Filter by NullObservation
     events = event_stream.get_matching_events(event_types=(NullObservation,))
     assert len(events) == 1
-    assert (
-        isinstance(events[0], NullObservation)
-        and events[0].observation == ObservationType.NULL
-    )
+    assert isinstance(events[0], NullObservation) and events[0].observation == ObservationType.NULL
 
     # Filter by NullAction and MessageAction
     events = event_stream.get_matching_events(event_types=(NullAction, MessageAction))
@@ -152,17 +149,12 @@ def test_get_matching_events_source_filter(temp_dir: str):
     # Filter by AGENT source
     events = event_stream.get_matching_events(source='agent')
     assert len(events) == 2
-    assert all(
-        isinstance(e, NullObservation) and e.source == EventSource.AGENT for e in events
-    )
+    assert all(isinstance(e, NullObservation) and e.source == EventSource.AGENT for e in events)
 
     # Filter by ENVIRONMENT source
     events = event_stream.get_matching_events(source='environment')
     assert len(events) == 1
-    assert (
-        isinstance(events[0], NullObservation)
-        and events[0].source == EventSource.ENVIRONMENT
-    )
+    assert isinstance(events[0], NullObservation) and events[0].source == EventSource.ENVIRONMENT
 
     # Test that source comparison works correctly with None source
     null_source_event = NullObservation('test4')
@@ -271,9 +263,7 @@ def test_memory_usage_file_operations(temp_dir: str):
         )
         event_stream.add_event(read_action, EventSource.AGENT)
 
-        read_obs = FileReadObservation(
-            path=test_file, impl_source=FileReadSource.DEFAULT, content=test_content
-        )
+        read_obs = FileReadObservation(path=test_file, impl_source=FileReadSource.DEFAULT, content=test_content)
         event_stream.add_event(read_obs, EventSource.ENVIRONMENT)
 
         # 2. Write file
@@ -325,9 +315,7 @@ def test_memory_usage_file_operations(temp_dir: str):
     os.remove(test_file)
 
     # Memory increase should be reasonable (less than 50MB after 20 iterations)
-    assert max_memory_increase < 50, (
-        f'Memory increase of {max_memory_increase:.1f}MB exceeds limit of 50MB'
-    )
+    assert max_memory_increase < 50, f'Memory increase of {max_memory_increase:.1f}MB exceeds limit of 50MB'
 
 
 def test_cache_page_creation(temp_dir: str):
@@ -361,9 +349,7 @@ def test_cache_page_creation(temp_dir: str):
 
         # Verify each event in the cache
         for i, event_data in enumerate(cache_data):
-            assert event_data['content'] == f'test{i}', (
-                f"Event {i} content should be 'test{i}'"
-            )
+            assert event_data['content'] == f'test{i}', f"Event {i} content should be 'test{i}'"
 
 
 def test_cache_page_loading(temp_dir: str):
@@ -390,9 +376,7 @@ def test_cache_page_loading(temp_dir: str):
 
     # Verify the events we did get are in the correct order and format
     for i, event in enumerate(events):
-        assert isinstance(event, NullObservation), (
-            f'Event {i} should be a NullObservation'
-        )
+        assert isinstance(event, NullObservation), f'Event {i} should be a NullObservation'
         assert event.content == f'test{i}', f"Event {i} content should be 'test{i}'"
 
 
@@ -432,9 +416,7 @@ def test_cache_page_performance(temp_dir: str):
     assert len(uncached_events) > 40, 'Uncached stream should return most of the events'
 
     # Log the performance difference
-    logger_message = (
-        f'Cached time: {cached_time:.4f}s, Uncached time: {uncached_time:.4f}s'
-    )
+    logger_message = f'Cached time: {cached_time:.4f}s, Uncached time: {uncached_time:.4f}s'
     print(logger_message)
 
     # We're primarily checking functionality here, not strict performance metrics
@@ -475,9 +457,7 @@ def test_search_events_limit(temp_dir: str):
     event_stream.add_event(NullObservation('filter_me'), EventSource.AGENT)
     event_stream.add_event(NullObservation('filter_me_too'), EventSource.AGENT)
 
-    events = list(
-        event_stream.search_events(filter=EventFilter(query='filter'), limit=1)
-    )
+    events = list(event_stream.search_events(filter=EventFilter(query='filter'), limit=1))
     assert len(events) == 1
     assert events[0].content == 'filter_me'
 
@@ -497,27 +477,19 @@ def test_search_events_limit_with_complex_filters(temp_dir: str):
     event_stream.add_event(NullObservation('hello world'), EventSource.AGENT)  # id 6
 
     # Test limit with type filter
-    events = list(
-        event_stream.search_events(
-            filter=EventFilter(include_types=(NullAction,)), limit=1
-        )
-    )
+    events = list(event_stream.search_events(filter=EventFilter(include_types=(NullAction,)), limit=1))
     assert len(events) == 1
     assert isinstance(events[0], NullAction)
     assert events[0].id == 0
 
     # Test limit with source filter
-    events = list(
-        event_stream.search_events(filter=EventFilter(source='user'), limit=1)
-    )
+    events = list(event_stream.search_events(filter=EventFilter(source='user'), limit=1))
     assert len(events) == 1
     assert events[0].source == EventSource.USER
     assert events[0].id == 2
 
     # Test limit with query filter
-    events = list(
-        event_stream.search_events(filter=EventFilter(query='hello'), limit=2)
-    )
+    events = list(event_stream.search_events(filter=EventFilter(query='hello'), limit=2))
     assert len(events) == 2
     assert [e.id for e in events] == [2, 6]
 
@@ -534,11 +506,7 @@ def test_search_events_limit_with_complex_filters(temp_dir: str):
     assert events[0].id == 1
 
     # Test limit with reverse and filter
-    events = list(
-        event_stream.search_events(
-            filter=EventFilter(source='agent'), reverse=True, limit=2
-        )
-    )
+    events = list(event_stream.search_events(filter=EventFilter(source='agent'), reverse=True, limit=2))
     assert len(events) == 2
     assert [e.id for e in events] == [6, 4]
 
@@ -572,9 +540,7 @@ def test_search_events_limit_edge_cases(temp_dir: str):
     assert len(events) == 1
 
     # Test with empty result set and limit
-    events = list(
-        event_stream.search_events(filter=EventFilter(query='nonexistent'), limit=5)
-    )
+    events = list(event_stream.search_events(filter=EventFilter(query='nonexistent'), limit=5))
     assert len(events) == 0
 
     # Test with start_id beyond available events
@@ -604,9 +570,7 @@ def test_callback_dictionary_modification(temp_dir: str):
         callback_executed[0] = True
         # This callback will add a new callback during iteration
         # Without our fix, this would cause a "dictionary changed size during iteration" error
-        event_stream.subscribe(
-            EventStreamSubscriber.TEST, callback_added_during_iteration, 'callback3'
-        )
+        event_stream.subscribe(EventStreamSubscriber.TEST, callback_added_during_iteration, 'callback3')
 
     # Second callback that will be called
     def callback2(event):
@@ -628,9 +592,7 @@ def test_callback_dictionary_modification(temp_dir: str):
 
     # The third callback should not have been executed for this event
     # since it was added during iteration
-    assert callback_executed[2] is False, (
-        'Third callback should not have been executed for this event'
-    )
+    assert callback_executed[2] is False, 'Third callback should not have been executed for this event'
 
     # Add another event to trigger all callbacks including the newly added one
     callback_executed = [False, False, False]  # Reset execution tracking
@@ -669,9 +631,7 @@ def test_cache_page_partial_retrieval(temp_dir: str):
     # Verify the events we did get are in the correct order
     for i, event in enumerate(events):
         expected_content = f'test{i + 3}'
-        assert event.content == expected_content, (
-            f"Event {i} content should be '{expected_content}'"
-        )
+        assert event.content == expected_content, f"Event {i} content should be '{expected_content}'"
 
     # Test retrieving events in reverse order
     reverse_events = list(event_stream.get_events(start_id=3, end_id=12, reverse=True))
@@ -681,12 +641,10 @@ def test_cache_page_partial_retrieval(temp_dir: str):
 
     # Check the first few events to ensure they're in reverse order
     if len(reverse_events) >= 3:
-        assert reverse_events[0].content.startswith('test1'), (
-            'First reverse event should be near the end of the range'
+        assert reverse_events[0].content.startswith('test1'), 'First reverse event should be near the end of the range'
+        assert int(reverse_events[0].content[4:]) > int(reverse_events[1].content[4:]), (
+            'Events should be in descending order'
         )
-        assert int(reverse_events[0].content[4:]) > int(
-            reverse_events[1].content[4:]
-        ), 'Events should be in descending order'
 
 
 def test_cache_page_with_missing_events(temp_dir: str):
@@ -724,9 +682,7 @@ def test_cache_page_with_missing_events(temp_dir: str):
         events_after_deletion = list(reload_stream.get_events())
 
         # We should have fewer events than before
-        assert len(events_after_deletion) <= initial_count, (
-            'Should have fewer or equal events after deletion'
-        )
+        assert len(events_after_deletion) <= initial_count, 'Should have fewer or equal events after deletion'
 
         # Test that we can still retrieve events successfully
         assert len(events_after_deletion) > 0, 'Should still retrieve some events'

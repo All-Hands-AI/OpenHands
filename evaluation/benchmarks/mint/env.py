@@ -26,9 +26,7 @@ class SimplifiedEnv:
         }
         # check if agent_state has attribute turn_info set
         if hasattr(self.agent_state, 'propose_solution_count'):
-            agent_action_count['propose_solution'] = (
-                self.agent_state.propose_solution_count
-            )
+            agent_action_count['propose_solution'] = self.agent_state.propose_solution_count
 
         self.task_state = TaskState(agent_action_count=agent_action_count)
 
@@ -41,8 +39,7 @@ class SimplifiedEnv:
 
         turn_info = (
             self.task_config['max_iterations'] - self.agent_state.iteration,
-            self.task_config['max_propose_solution']
-            - self.task_state.agent_action_count['propose_solution'],
+            self.task_config['max_propose_solution'] - self.task_state.agent_action_count['propose_solution'],
         )
 
         output = StepOutput(
@@ -51,9 +48,7 @@ class SimplifiedEnv:
             turn_info=turn_info,
         )
 
-        self.agent_state.propose_solution_count = self.task_state.agent_action_count[
-            'propose_solution'
-        ]
+        self.agent_state.propose_solution_count = self.task_state.agent_action_count['propose_solution']
         self.log_output(output)
         return self.task_state
 
@@ -82,12 +77,7 @@ class SimplifiedEnv:
         """Define the parsing logic."""
         lm_output = '\n' + lm_message + '\n'
 
-        answer = '\n'.join(
-            [
-                i.strip()
-                for i in re.findall(r'<solution>(.*?)</solution>', lm_output, re.DOTALL)
-            ]
-        )
+        answer = '\n'.join([i.strip() for i in re.findall(r'<solution>(.*?)</solution>', lm_output, re.DOTALL)])
         if answer == '':
             raise ParseError('No answer found.')
 
@@ -117,8 +107,7 @@ class SimplifiedEnv:
 
         if (
             # propose solution > max output solution
-            self.task_state.agent_action_count['propose_solution']
-            >= self.task_config['max_propose_solution']
+            self.task_state.agent_action_count['propose_solution'] >= self.task_config['max_propose_solution']
         ):
             self.task_state.finished = True
             self.task_state.success = False

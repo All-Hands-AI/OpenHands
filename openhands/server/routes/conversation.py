@@ -13,9 +13,7 @@ from openhands.server.session.conversation import ServerConversation
 from openhands.server.shared import conversation_manager
 from openhands.server.utils import get_conversation
 
-app = APIRouter(
-    prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies()
-)
+app = APIRouter(prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies())
 
 
 @app.get('/config')
@@ -55,9 +53,7 @@ async def get_vscode_url(
         runtime: Runtime = conversation.runtime
         logger.debug(f'Runtime type: {type(runtime)}')
         logger.debug(f'Runtime VSCode URL: {runtime.vscode_url}')
-        return JSONResponse(
-            status_code=status.HTTP_200_OK, content={'vscode_url': runtime.vscode_url}
-        )
+        return JSONResponse(status_code=status.HTTP_200_OK, content={'vscode_url': runtime.vscode_url})
     except Exception as e:
         logger.error(f'Error getting VSCode URL: {e}')
         return JSONResponse(
@@ -125,9 +121,7 @@ async def search_events(
         ValueError: If limit is less than 1 or greater than 100
     """
     if limit < 0 or limit > 100:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail='Invalid limit'
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Invalid limit')
 
     # Get matching events from the stream
     event_stream = conversation.event_stream
@@ -154,9 +148,7 @@ async def search_events(
 
 
 @app.post('/events')
-async def add_event(
-    request: Request, conversation: ServerConversation = Depends(get_conversation)
-):
+async def add_event(request: Request, conversation: ServerConversation = Depends(get_conversation)):
     data = request.json()
     await conversation_manager.send_to_event_stream(conversation.sid, data)
     return JSONResponse({'success': True})
@@ -199,9 +191,7 @@ async def get_microagents(
         if memory is None:
             return JSONResponse(
                 status_code=status.HTTP_404_NOT_FOUND,
-                content={
-                    'error': 'Memory is not yet initialized for this conversation'
-                },
+                content={'error': 'Memory is not yet initialized for this conversation'},
             )
 
         # Prepare the response
@@ -216,9 +206,7 @@ async def get_microagents(
                     content=agent.content,
                     triggers=[],
                     inputs=agent.metadata.inputs,
-                    tools=[
-                        server.name for server in agent.metadata.mcp_tools.stdio_servers
-                    ]
+                    tools=[server.name for server in agent.metadata.mcp_tools.stdio_servers]
                     if agent.metadata.mcp_tools
                     else [],
                 )
@@ -233,9 +221,7 @@ async def get_microagents(
                     content=agent.content,
                     triggers=agent.triggers,
                     inputs=agent.metadata.inputs,
-                    tools=[
-                        server.name for server in agent.metadata.mcp_tools.stdio_servers
-                    ]
+                    tools=[server.name for server in agent.metadata.mcp_tools.stdio_servers]
                     if agent.metadata.mcp_tools
                     else [],
                 )

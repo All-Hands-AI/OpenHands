@@ -76,7 +76,9 @@ def process_instance(
 
     # Prepare instruction
     instruction = encode_question(question, instance['hub'])
-    instruction += 'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
+    instruction += (
+        'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
+    )
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += AGENT_CLS_TO_INST_SUFFIX[metadata.agent_class]
     # logger.info(f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'})
@@ -89,9 +91,7 @@ def process_instance(
             config=config,
             initial_user_action=MessageAction(content=instruction),
             runtime=runtime,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
-                metadata.agent_class
-            ),
+            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(metadata.agent_class),
         )
     )
     # ======= Attempt to evaluate the agent's edits =======
@@ -109,9 +109,7 @@ def process_instance(
     ast_eval_fn = instance['ast_eval']
     correct, hallucination = ast_eval_fn(instance_id, model_answer_raw)
     metrics = state.metrics.get() if state.metrics else None
-    logger.info(
-        f'Final message: {model_answer_raw} | Correctness: {correct} | Hallucination: {hallucination}'
-    )
+    logger.info(f'Final message: {model_answer_raw} | Correctness: {correct} | Hallucination: {hallucination}')
 
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here
@@ -174,9 +172,7 @@ if __name__ == '__main__':
     )
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
 
-    dataset = prepare_dataset(
-        dataset_df, output_file=output_file, eval_n_limit=args.eval_n_limit
-    )
+    dataset = prepare_dataset(dataset_df, output_file=output_file, eval_n_limit=args.eval_n_limit)
 
     file_path = os.path.join(os.path.dirname(__file__), 'my-languages.so')
     # Check if the file exists

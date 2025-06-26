@@ -39,12 +39,8 @@ async def test_create_mcp_clients_success(mock_mcp_client):
     assert mock_mcp_client.call_count == 2
 
     # Check that connect_http was called with correct parameters
-    mock_client_instance.connect_http.assert_any_call(
-        server_configs[0], conversation_id=None
-    )
-    mock_client_instance.connect_http.assert_any_call(
-        server_configs[1], conversation_id=None
-    )
+    mock_client_instance.connect_http.assert_any_call(server_configs[0], conversation_id=None)
+    mock_client_instance.connect_http.assert_any_call(server_configs[1], conversation_id=None)
 
 
 @pytest.mark.asyncio
@@ -102,9 +98,7 @@ def test_convert_mcp_clients_to_tools():
     mock_client2.tools = [mock_tool3]
 
     # Convert to tools
-    tools = openhands.mcp.utils.convert_mcp_clients_to_tools(
-        [mock_client1, mock_client2]
-    )
+    tools = openhands.mcp.utils.convert_mcp_clients_to_tools([mock_client1, mock_client2])
 
     # Verify
     assert len(tools) == 3

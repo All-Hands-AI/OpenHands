@@ -31,9 +31,7 @@ class EventStreamSubscriber(str, Enum):
     TEST = 'test'
 
 
-async def session_exists(
-    sid: str, file_store: FileStore, user_id: str | None = None
-) -> bool:
+async def session_exists(sid: str, file_store: FileStore, user_id: str | None = None) -> bool:
     try:
         await call_sync_from_async(file_store.list, get_conversation_dir(sid, user_id))
         return True
@@ -98,30 +96,20 @@ class EventStream(EventStore):
         if callback_id not in self._subscribers[subscriber_id]:
             logger.warning(f'Callback not found during cleanup: {callback_id}')
             return
-        if (
-            subscriber_id in self._thread_loops
-            and callback_id in self._thread_loops[subscriber_id]
-        ):
+        if subscriber_id in self._thread_loops and callback_id in self._thread_loops[subscriber_id]:
             loop = self._thread_loops[subscriber_id][callback_id]
             current_task = asyncio.current_task(loop)
-            pending = [
-                task for task in asyncio.all_tasks(loop) if task is not current_task
-            ]
+            pending = [task for task in asyncio.all_tasks(loop) if task is not current_task]
             for task in pending:
                 task.cancel()
             try:
                 loop.stop()
                 loop.close()
             except Exception as e:
-                logger.warning(
-                    f'Error closing loop for {subscriber_id}/{callback_id}: {e}'
-                )
+                logger.warning(f'Error closing loop for {subscriber_id}/{callback_id}: {e}')
             del self._thread_loops[subscriber_id][callback_id]
 
-        if (
-            subscriber_id in self._thread_pools
-            and callback_id in self._thread_pools[subscriber_id]
-        ):
+        if subscriber_id in self._thread_pools and callback_id in self._thread_pools[subscriber_id]:
             pool = self._thread_pools[subscriber_id][callback_id]
             pool.shutdown()
             del self._thread_pools[subscriber_id][callback_id]
@@ -141,16 +129,12 @@ class EventStream(EventStore):
             self._thread_pools[subscriber_id] = {}
 
         if callback_id in self._subscribers[subscriber_id]:
-            raise ValueError(
-                f'Callback ID on subscriber {subscriber_id} already exists: {callback_id}'
-            )
+            raise ValueError(f'Callback ID on subscriber {subscriber_id} already exists: {callback_id}')
 
         self._subscribers[subscriber_id][callback_id] = callback
         self._thread_pools[subscriber_id][callback_id] = pool
 
-    def unsubscribe(
-        self, subscriber_id: EventStreamSubscriber, callback_id: str
-    ) -> None:
+    def unsubscribe(self, subscriber_id: EventStreamSubscriber, callback_id: str) -> None:
         if subscriber_id not in self._subscribers:
             logger.warning(f'Subscriber not found during unsubscribe: {subscriber_id}')
             return
@@ -255,13 +239,9 @@ class EventStream(EventStore):
                         callback = callbacks[callback_id]
                         pool = self._thread_pools[key][callback_id]
                         future = pool.submit(callback, event)
-                        future.add_done_callback(
-                            self._make_error_handler(callback_id, key)
-                        )
+                        future.add_done_callback(self._make_error_handler(callback_id, key))
 
-    def _make_error_handler(
-        self, callback_id: str, subscriber_id: str
-    ) -> Callable[[Any], None]:
+    def _make_error_handler(self, callback_id: str, subscriber_id: str) -> Callable[[Any], None]:
         def _handle_callback_error(fut: Any) -> None:
             try:
                 # This will raise any exception that occurred during callback execution

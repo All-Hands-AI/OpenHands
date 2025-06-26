@@ -171,13 +171,8 @@ def test_get_example_for_tools_single_tool():
         }
     ]
     example = get_example_for_tools(tools)
-    assert example.startswith(
-        "Here's a running example of how to perform a task with the provided tools."
-    )
-    assert (
-        'USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000.'
-        in example
-    )
+    assert example.startswith("Here's a running example of how to perform a task with the provided tools.")
+    assert 'USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000.' in example
     assert TOOL_EXAMPLES['execute_bash']['check_dir'] in example
     assert TOOL_EXAMPLES['execute_bash']['run_server'] in example
     assert TOOL_EXAMPLES['execute_bash']['kill_server'] in example
@@ -198,13 +193,8 @@ def test_get_example_for_tools_single_tool_is_finish():
         }
     ]
     example = get_example_for_tools(tools)
-    assert example.startswith(
-        "Here's a running example of how to perform a task with the provided tools."
-    )
-    assert (
-        'USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000.'
-        in example
-    )
+    assert example.startswith("Here's a running example of how to perform a task with the provided tools.")
+    assert 'USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000.' in example
     assert TOOL_EXAMPLES['finish']['task_completed'] in example
     assert TOOL_EXAMPLES['execute_bash']['check_dir'] not in example
     assert TOOL_EXAMPLES['str_replace_editor']['create_file'] not in example
@@ -261,13 +251,8 @@ def test_get_example_for_tools_multiple_tools():
         },
     ]
     example = get_example_for_tools(tools)
-    assert example.startswith(
-        "Here's a running example of how to perform a task with the provided tools."
-    )
-    assert (
-        'USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000.'
-        in example
-    )
+    assert example.startswith("Here's a running example of how to perform a task with the provided tools.")
+    assert 'USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000.' in example
     assert TOOL_EXAMPLES['execute_bash']['check_dir'] in example
     assert TOOL_EXAMPLES['execute_bash']['run_server'] in example
     assert TOOL_EXAMPLES['execute_bash']['kill_server'] in example
@@ -352,13 +337,8 @@ def test_get_example_for_tools_multiple_tools_with_finish():
         },
     ]
     example = get_example_for_tools(tools)
-    assert example.startswith(
-        "Here's a running example of how to perform a task with the provided tools."
-    )
-    assert (
-        'USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000.'
-        in example
-    )
+    assert example.startswith("Here's a running example of how to perform a task with the provided tools.")
+    assert 'USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000.' in example
 
     # Check for execute_bash parts (order matters for get_example_for_tools)
     assert TOOL_EXAMPLES['execute_bash']['check_dir'].strip() in example
@@ -381,13 +361,8 @@ def test_get_example_for_tools_all_tools():
     """Test that get_example_for_tools generates correct example with all tools."""
     tools = FNCALL_TOOLS  # FNCALL_TOOLS already includes 'finish'
     example = get_example_for_tools(tools)
-    assert example.startswith(
-        "Here's a running example of how to perform a task with the provided tools."
-    )
-    assert (
-        'USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000.'
-        in example
-    )
+    assert example.startswith("Here's a running example of how to perform a task with the provided tools.")
+    assert 'USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000.' in example
     assert TOOL_EXAMPLES['execute_bash']['check_dir'] in example
     assert TOOL_EXAMPLES['execute_bash']['run_server'] in example
     assert TOOL_EXAMPLES['execute_bash']['kill_server'] in example
@@ -730,64 +705,42 @@ def test_convert_tool_call_to_string(tool_calls, expected):
 
 
 def test_convert_fncall_messages_to_non_fncall_messages():
-    converted_non_fncall = convert_fncall_messages_to_non_fncall_messages(
-        FNCALL_MESSAGES, FNCALL_TOOLS
-    )
+    converted_non_fncall = convert_fncall_messages_to_non_fncall_messages(FNCALL_MESSAGES, FNCALL_TOOLS)
     assert converted_non_fncall == NON_FNCALL_MESSAGES
 
 
 def test_convert_non_fncall_messages_to_fncall_messages():
-    converted = convert_non_fncall_messages_to_fncall_messages(
-        NON_FNCALL_MESSAGES, FNCALL_TOOLS
-    )
+    converted = convert_non_fncall_messages_to_fncall_messages(NON_FNCALL_MESSAGES, FNCALL_TOOLS)
     print(json.dumps(converted, indent=2))
     assert converted == FNCALL_MESSAGES
 
 
 def test_two_way_conversion_nonfn_to_fn_to_nonfn():
     non_fncall_copy = copy.deepcopy(NON_FNCALL_MESSAGES)
-    converted_fncall = convert_non_fncall_messages_to_fncall_messages(
-        NON_FNCALL_MESSAGES, FNCALL_TOOLS
-    )
-    assert (
-        non_fncall_copy == NON_FNCALL_MESSAGES
-    )  # make sure original messages are not modified
+    converted_fncall = convert_non_fncall_messages_to_fncall_messages(NON_FNCALL_MESSAGES, FNCALL_TOOLS)
+    assert non_fncall_copy == NON_FNCALL_MESSAGES  # make sure original messages are not modified
     assert converted_fncall == FNCALL_MESSAGES
 
     fncall_copy = copy.deepcopy(FNCALL_MESSAGES)
-    converted_non_fncall = convert_fncall_messages_to_non_fncall_messages(
-        FNCALL_MESSAGES, FNCALL_TOOLS
-    )
-    assert (
-        fncall_copy == FNCALL_MESSAGES
-    )  # make sure original messages are not modified
+    converted_non_fncall = convert_fncall_messages_to_non_fncall_messages(FNCALL_MESSAGES, FNCALL_TOOLS)
+    assert fncall_copy == FNCALL_MESSAGES  # make sure original messages are not modified
     assert converted_non_fncall == NON_FNCALL_MESSAGES
 
 
 def test_two_way_conversion_fn_to_nonfn_to_fn():
     fncall_copy = copy.deepcopy(FNCALL_MESSAGES)
-    converted_non_fncall = convert_fncall_messages_to_non_fncall_messages(
-        FNCALL_MESSAGES, FNCALL_TOOLS
-    )
-    assert (
-        fncall_copy == FNCALL_MESSAGES
-    )  # make sure original messages are not modified
+    converted_non_fncall = convert_fncall_messages_to_non_fncall_messages(FNCALL_MESSAGES, FNCALL_TOOLS)
+    assert fncall_copy == FNCALL_MESSAGES  # make sure original messages are not modified
     assert converted_non_fncall == NON_FNCALL_MESSAGES
 
     non_fncall_copy = copy.deepcopy(NON_FNCALL_MESSAGES)
-    converted_fncall = convert_non_fncall_messages_to_fncall_messages(
-        NON_FNCALL_MESSAGES, FNCALL_TOOLS
-    )
-    assert (
-        non_fncall_copy == NON_FNCALL_MESSAGES
-    )  # make sure original messages are not modified
+    converted_fncall = convert_non_fncall_messages_to_fncall_messages(NON_FNCALL_MESSAGES, FNCALL_TOOLS)
+    assert non_fncall_copy == NON_FNCALL_MESSAGES  # make sure original messages are not modified
     assert converted_fncall == FNCALL_MESSAGES
 
 
 def test_infer_fncall_on_noncall_model():
-    messages_for_llm_inference = convert_fncall_messages_to_non_fncall_messages(
-        FNCALL_MESSAGES, FNCALL_TOOLS
-    )
+    messages_for_llm_inference = convert_fncall_messages_to_non_fncall_messages(FNCALL_MESSAGES, FNCALL_TOOLS)
     assert messages_for_llm_inference == NON_FNCALL_MESSAGES
     # Mock LLM inference
     response_message_from_llm_inference = NON_FNCALL_RESPONSE_MESSAGE
@@ -795,9 +748,7 @@ def test_infer_fncall_on_noncall_model():
     # Convert back to fncall messages to hand back to the agent
     # so agent is model-agnostic
     all_nonfncall_messages = NON_FNCALL_MESSAGES + [response_message_from_llm_inference]
-    converted_fncall_messages = convert_non_fncall_messages_to_fncall_messages(
-        all_nonfncall_messages, FNCALL_TOOLS
-    )
+    converted_fncall_messages = convert_non_fncall_messages_to_fncall_messages(all_nonfncall_messages, FNCALL_TOOLS)
     assert converted_fncall_messages == FNCALL_MESSAGES + [FNCALL_RESPONSE_MESSAGE]
     assert converted_fncall_messages[-1] == FNCALL_RESPONSE_MESSAGE
 
@@ -934,9 +885,7 @@ def test_convert_from_multiple_tool_calls_to_single_tool_call_messages():
         },
     ]
 
-    result = convert_from_multiple_tool_calls_to_single_tool_call_messages(
-        input_messages
-    )
+    result = convert_from_multiple_tool_calls_to_single_tool_call_messages(input_messages)
     assert result == expected_output
 
 
@@ -993,9 +942,7 @@ def test_convert_from_multiple_tool_calls_no_changes_needed():
         },
     ]
 
-    result = convert_from_multiple_tool_calls_to_single_tool_call_messages(
-        input_messages
-    )
+    result = convert_from_multiple_tool_calls_to_single_tool_call_messages(input_messages)
     assert result == input_messages
 
 
@@ -1006,9 +953,7 @@ def test_convert_from_multiple_tool_calls_no_tool_calls():
         {'role': 'assistant', 'content': 'Hi there!'},
     ]
 
-    result = convert_from_multiple_tool_calls_to_single_tool_call_messages(
-        input_messages
-    )
+    result = convert_from_multiple_tool_calls_to_single_tool_call_messages(input_messages)
     assert result == input_messages
 
 
@@ -1032,10 +977,7 @@ def test_convert_fncall_messages_with_cache_control():
     assert result[0]['role'] == 'user'
     assert 'cache_control' in result[0]['content'][-1]
     assert result[0]['content'][-1]['cache_control'] == {'type': 'ephemeral'}
-    assert (
-        result[0]['content'][0]['text']
-        == 'EXECUTION RESULT of [test_tool]:\ntest content'
-    )
+    assert result[0]['content'][0]['text'] == 'EXECUTION RESULT of [test_tool]:\ntest content'
 
 
 def test_convert_fncall_messages_without_cache_control():
@@ -1056,10 +998,7 @@ def test_convert_fncall_messages_without_cache_control():
     assert len(result) == 1
     assert result[0]['role'] == 'user'
     assert 'cache_control' not in result[0]['content'][-1]
-    assert (
-        result[0]['content'][0]['text']
-        == 'EXECUTION RESULT of [test_tool]:\ntest content'
-    )
+    assert result[0]['content'][0]['text'] == 'EXECUTION RESULT of [test_tool]:\ntest content'
 
 
 def test_convert_fncall_messages_with_image_url():

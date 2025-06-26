@@ -24,9 +24,7 @@ class LLMAttentionCondenser(RollingCondenser):
 
     def __init__(self, llm: LLM, max_size: int = 100, keep_first: int = 1):
         if keep_first >= max_size // 2:
-            raise ValueError(
-                f'keep_first ({keep_first}) must be less than half of max_size ({max_size})'
-            )
+            raise ValueError(f'keep_first ({keep_first}) must be less than half of max_size ({max_size})')
         if keep_first < 0:
             raise ValueError(f'keep_first ({keep_first}) cannot be negative')
         if max_size < 1:
@@ -78,18 +76,14 @@ class LLMAttentionCondenser(RollingCondenser):
             },
         )
 
-        response_ids = ImportantEventSelection.model_validate_json(
-            response.choices[0].message.content
-        ).ids
+        response_ids = ImportantEventSelection.model_validate_json(response.choices[0].message.content).ids
 
         self.add_metadata('metrics', self.llm.metrics.get())
 
         # Filter out any IDs from the head and trim the results down
-        response_ids = [
-            response_id
-            for response_id in response_ids
-            if response_id not in head_event_ids
-        ][:events_from_tail]
+        response_ids = [response_id for response_id in response_ids if response_id not in head_event_ids][
+            :events_from_tail
+        ]
 
         # If the response IDs aren't _long_ enough, iterate backwards through the events and add any unfound IDs to the list.
         for event in reversed(view):
@@ -101,9 +95,7 @@ class LLMAttentionCondenser(RollingCondenser):
         # Now that we've found the right number of events to keep, convert this into a list of events to forget.
         event = CondensationAction(
             forgotten_event_ids=[
-                event.id
-                for event in view
-                if event.id not in response_ids and event.id not in head_event_ids
+                event.id for event in view if event.id not in response_ids and event.id not in head_event_ids
             ],
         )
 

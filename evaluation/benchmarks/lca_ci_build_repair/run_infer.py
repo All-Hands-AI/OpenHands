@@ -67,9 +67,7 @@ config = load_openhands_config()
 
 
 def load_bench_config():
-    script_dir = os.path.dirname(
-        os.path.abspath(__file__)
-    )  # Get the absolute path of the script
+    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the absolute path of the script
     config_path = os.path.join(script_dir, 'config.yaml')
     yaml = ruamel.yaml.YAML(typ='rt')
     with open(config_path, 'r') as file:
@@ -99,9 +97,7 @@ def initialize_runtime(
     obs: CmdOutputObservation
 
     lca_path = bench_config['LCA_PATH']
-    lca_ci_path = os.path.join(
-        lca_path, 'lca-baselines', 'ci-builds-repair', 'ci-builds-repair-benchmark'
-    )
+    lca_ci_path = os.path.join(lca_path, 'lca-baselines', 'ci-builds-repair', 'ci-builds-repair-benchmark')
 
     repo_name = instance['repo_name']
     repos_path = bench_config['repos_folder']
@@ -135,9 +131,7 @@ def initialize_runtime(
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
-    script_dir = os.path.dirname(
-        os.path.abspath(__file__)
-    )  # Get the absolute path of the script
+    script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the absolute path of the script
     config_path = os.path.join(script_dir, 'config.yaml')
     with open(config_path, 'r') as file:
         config_as_text = file.read()
@@ -158,7 +152,9 @@ def initialize_runtime(
     obs = runtime.run_action(action)
 
     # Set up the task environment
-    commandf = f'poetry run python run_get_datapoint.py --model-name {model_name} --id {instance["id"]} > branch_name.txt'
+    commandf = (
+        f'poetry run python run_get_datapoint.py --model-name {model_name} --id {instance["id"]} > branch_name.txt'
+    )
     action = CmdRunAction(command=commandf)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
@@ -196,9 +192,7 @@ def complete_runtime(
     model_name = bench_config['model_name']
 
     lca_path = bench_config['LCA_PATH']
-    lca_ci_path = os.path.join(
-        lca_path, 'lca-baselines', 'ci-builds-repair', 'ci-builds-repair-benchmark'
-    )
+    lca_ci_path = os.path.join(lca_path, 'lca-baselines', 'ci-builds-repair', 'ci-builds-repair-benchmark')
 
     user_branch_name = bench_config['user_branch_name']
 
@@ -329,9 +323,7 @@ Be thorough in your exploration, testing, and reasoning. It's fine if your think
             config=config,
             initial_user_action=MessageAction(content=instruction_no_oracle),
             runtime=runtime,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
-                metadata.agent_class
-            ),
+            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(metadata.agent_class),
         )
     )
     assert state is not None
@@ -371,9 +363,7 @@ if __name__ == '__main__':
 
     data_split = args.eval_split
 
-    bench = load_dataset(
-        'JetBrains-Research/lca-ci-builds-repair', split=data_split
-    ).to_pandas()
+    bench = load_dataset('JetBrains-Research/lca-ci-builds-repair', split=data_split).to_pandas()
     # todo: see why 126 is giving problems on inference
     # todo: see why 145 is giving problems on eval
     bench = bench[bench['id'] != 126]
@@ -401,6 +391,4 @@ if __name__ == '__main__':
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(bench, output_file, args.eval_n_limit)
 
-    run_evaluation(
-        instances, metadata, output_file, args.eval_num_workers, process_instance
-    )
+    run_evaluation(instances, metadata, output_file, args.eval_num_workers, process_instance)

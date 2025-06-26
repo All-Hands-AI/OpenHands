@@ -7,9 +7,7 @@ from pyke import knowledge_engine
 
 
 class PykeProgram:
-    def __init__(
-        self, logic_program: str, dataset_name='ProntoQA', workspace_mount_path='./'
-    ) -> None:
+    def __init__(self, logic_program: str, dataset_name='ProntoQA', workspace_mount_path='./') -> None:
         self.logic_program = logic_program
         self.flag = self.parse_logic_program()
         self.dataset_name = dataset_name
@@ -112,15 +110,11 @@ class PykeProgram:
 
     def check_specific_predicate(self, subject_name, predicate_name, engine):
         results = []
-        with engine.prove_goal(
-            f'facts.{predicate_name}({subject_name}, $label)'
-        ) as gen:
+        with engine.prove_goal(f'facts.{predicate_name}({subject_name}, $label)') as gen:
             for vars, plan in gen:
                 results.append(vars['label'])
 
-        with engine.prove_goal(
-            f'rules.{predicate_name}({subject_name}, $label)'
-        ) as gen:
+        with engine.prove_goal(f'rules.{predicate_name}({subject_name}, $label)') as gen:
             for vars, plan in gen:
                 results.append(vars['label'])
 
@@ -202,9 +196,7 @@ class LogicInferenceEngine:
             return random.choice(['A', 'B', 'C'])
 
     def safe_execute_program(self, logic_program):
-        program = PykeProgram(
-            logic_program, self.dataset_name, self.workspace_mount_path
-        )
+        program = PykeProgram(logic_program, self.dataset_name, self.workspace_mount_path)
         # cannot parse the program
         if not program.flag:
             answer = self.random_backup()

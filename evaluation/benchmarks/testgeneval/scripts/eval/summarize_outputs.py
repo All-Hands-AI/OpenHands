@@ -91,16 +91,10 @@ if __name__ == '__main__':
 
     # print the error counter (with percentage)
     print(f'Average coverage for {num_lines} ({coverage / num_lines * 100:.2f}%)')
-    print(
-        f'Average mutation score for {num_lines} ({mutation_score / num_lines * 100:.2f}%)'
-    )
+    print(f'Average mutation score for {num_lines} ({mutation_score / num_lines * 100:.2f}%)')
 
-    print(
-        f'Number of empty suite: {num_empty_suite} / {num_lines} ({num_empty_suite / num_lines * 100:.2f}%)'
-    )
-    print(
-        f'Number of error lines: {num_error_lines} / {num_lines} ({num_error_lines / num_lines * 100:.2f}%)'
-    )
+    print(f'Number of empty suite: {num_empty_suite} / {num_lines} ({num_empty_suite / num_lines * 100:.2f}%)')
+    print(f'Number of error lines: {num_error_lines} / {num_lines} ({num_error_lines / num_lines * 100:.2f}%)')
     print(
         f'Number of agent stuck in loop: {num_agent_stuck_in_loop} / {num_lines} ({num_agent_stuck_in_loop / num_lines * 100:.2f}%)'
     )
@@ -111,9 +105,7 @@ if __name__ == '__main__':
     print(f'Avg. num of turns per instance: {sum(num_turns) / num_lines:.2f}')
     print(f'Avg. agent cost per instance: {sum(main_agent_cost) / num_lines:.2f} USD')
     print(f'Avg. editor cost per instance: {sum(editor_cost) / num_lines:.2f} USD')
-    print(
-        f'Avg. total cost per instance: {(sum(main_agent_cost) + sum(editor_cost)) / num_lines:.2f} USD'
-    )
+    print(f'Avg. total cost per instance: {(sum(main_agent_cost) + sum(editor_cost)) / num_lines:.2f} USD')
 
     print('## Detailed error breakdown:')
     for error, count in error_counter.items():

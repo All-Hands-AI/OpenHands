@@ -105,12 +105,8 @@ class DockerRuntime(ActionExecutionClient):
         self._app_ports: list[int] = []
 
         if os.environ.get('DOCKER_HOST_ADDR'):
-            logger.info(
-                f'Using DOCKER_HOST_IP: {os.environ["DOCKER_HOST_ADDR"]} for local_runtime_url'
-            )
-            self.config.sandbox.local_runtime_url = (
-                f'http://{os.environ["DOCKER_HOST_ADDR"]}'
-            )
+            logger.info(f'Using DOCKER_HOST_IP: {os.environ["DOCKER_HOST_ADDR"]} for local_runtime_url')
+            self.config.sandbox.local_runtime_url = f'http://{os.environ["DOCKER_HOST_ADDR"]}'
 
         self.docker_client: docker.DockerClient = self._init_docker_client()
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
@@ -162,9 +158,7 @@ class DockerRuntime(ActionExecutionClient):
                 )
                 raise AgentRuntimeDisconnectedError from e
             self.maybe_build_runtime_container_image()
-            self.log(
-                'info', f'Starting runtime with image: {self.runtime_container_image}'
-            )
+            self.log('info', f'Starting runtime with image: {self.runtime_container_image}')
             await call_sync_from_async(self.init_container)
             self.log(
                 'info',
@@ -199,9 +193,7 @@ class DockerRuntime(ActionExecutionClient):
     def maybe_build_runtime_container_image(self):
         if self.runtime_container_image is None:
             if self.base_container_image is None:
-                raise ValueError(
-                    'Neither runtime container image nor base container image is set'
-                )
+                raise ValueError('Neither runtime container image nor base container image is set')
             self.set_runtime_status(RuntimeStatus.BUILDING_RUNTIME)
             self.runtime_container_image = build_runtime_image(
                 self.base_container_image,
@@ -254,10 +246,7 @@ class DockerRuntime(ActionExecutionClient):
                     )
 
         # Legacy mounting with workspace_* parameters
-        elif (
-            self.config.workspace_mount_path is not None
-            and self.config.workspace_mount_path_in_sandbox is not None
-        ):
+        elif self.config.workspace_mount_path is not None and self.config.workspace_mount_path_in_sandbox is not None:
             mount_mode = 'rw'  # Default mode
 
             # e.g. result would be: {"/home/user/openhands/workspace": {'bind': "/workspace", 'mode': 'rw'}}
@@ -265,9 +254,7 @@ class DockerRuntime(ActionExecutionClient):
                 'bind': self.config.workspace_mount_path_in_sandbox,
                 'mode': mount_mode,
             }
-            logger.debug(
-                f'Mount dir (legacy): {self.config.workspace_mount_path} with mode: {mount_mode}'
-            )
+            logger.debug(f'Mount dir (legacy): {self.config.workspace_mount_path} with mode: {mount_mode}')
 
         return volumes
 
@@ -277,10 +264,7 @@ class DockerRuntime(ActionExecutionClient):
         self._host_port = self._find_available_port(EXECUTION_SERVER_PORT_RANGE)
         self._container_port = self._host_port
         # Use the configured vscode_port if provided, otherwise find an available port
-        self._vscode_port = (
-            self.config.sandbox.vscode_port
-            or self._find_available_port(VSCODE_PORT_RANGE)
-        )
+        self._vscode_port = self.config.sandbox.vscode_port or self._find_available_port(VSCODE_PORT_RANGE)
         self._app_ports = [
             self._find_available_port(APP_PORT_RANGE_1),
             self._find_available_port(APP_PORT_RANGE_2),
@@ -288,9 +272,7 @@ class DockerRuntime(ActionExecutionClient):
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
 
         use_host_network = self.config.sandbox.use_host_network
-        network_mode: typing.Literal['host'] | None = (
-            'host' if use_host_network else None
-        )
+        network_mode: typing.Literal['host'] | None = 'host' if use_host_network else None
 
         # Initialize port mappings
         port_mapping: dict[str, list[dict[str, str]]] | None = None
@@ -350,9 +332,7 @@ class DockerRuntime(ActionExecutionClient):
 
         # If no volumes were configured, set to None
         if not volumes:
-            logger.debug(
-                'Mount dir is not set, will not mount the workspace directory to the container'
-            )
+            logger.debug('Mount dir is not set, will not mount the workspace directory to the container')
             volumes = {}  # Empty dict instead of None to satisfy mypy
         self.log(
             'debug',
@@ -363,9 +343,7 @@ class DockerRuntime(ActionExecutionClient):
         if self.config.sandbox.enable_gpu:
             gpu_ids = self.config.sandbox.cuda_visible_devices
             if gpu_ids is None:
-                device_requests = [
-                    docker.types.DeviceRequest(capabilities=[['gpu']], count=-1)
-                ]
+                device_requests = [docker.types.DeviceRequest(capabilities=[['gpu']], count=-1)]
             else:
                 device_requests = [
                     docker.types.DeviceRequest(
@@ -421,10 +399,7 @@ class DockerRuntime(ActionExecutionClient):
         if exposed_ports:
             for exposed_port in exposed_ports.keys():
                 exposed_port = int(exposed_port.split('/tcp')[0])
-                if (
-                    exposed_port != self._host_port
-                    and exposed_port != self._vscode_port
-                ):
+                if exposed_port != self._host_port and exposed_port != self._vscode_port:
                     self._app_ports.append(exposed_port)
 
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
@@ -443,13 +418,9 @@ class DockerRuntime(ActionExecutionClient):
         try:
             container = self.docker_client.containers.get(self.container_name)
             if container.status == 'exited':
-                raise AgentRuntimeDisconnectedError(
-                    f'Container {self.container_name} has exited.'
-                )
+                raise AgentRuntimeDisconnectedError(f'Container {self.container_name} has exited.')
         except docker.errors.NotFound:
-            raise AgentRuntimeNotFoundError(
-                f'Container {self.container_name} not found.'
-            )
+            raise AgentRuntimeNotFoundError(f'Container {self.container_name} not found.')
 
         self.check_if_alive()
 
@@ -468,9 +439,7 @@ class DockerRuntime(ActionExecutionClient):
 
         if self.config.sandbox.keep_runtime_alive or self.attach_to_existing:
             return
-        close_prefix = (
-            CONTAINER_NAME_PREFIX if rm_all_containers else self.container_name
-        )
+        close_prefix = CONTAINER_NAME_PREFIX if rm_all_containers else self.container_name
         stop_all_containers(close_prefix)
 
     def _is_port_in_use_docker(self, port: int) -> bool:
@@ -481,9 +450,7 @@ class DockerRuntime(ActionExecutionClient):
                 return True
         return False
 
-    def _find_available_port(
-        self, port_range: tuple[int, int], max_attempts: int = 5
-    ) -> int:
+    def _find_available_port(self, port_range: tuple[int, int], max_attempts: int = 5) -> int:
         port = port_range[1]
         for _ in range(max_attempts):
             port = find_available_tcp_port(port_range[0], port_range[1])
@@ -498,7 +465,9 @@ class DockerRuntime(ActionExecutionClient):
         if not token:
             return None
 
-        vscode_url = f'http://localhost:{self._vscode_port}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        vscode_url = (
+            f'http://localhost:{self._vscode_port}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        )
         return vscode_url
 
     @property

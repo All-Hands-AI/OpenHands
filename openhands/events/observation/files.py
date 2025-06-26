@@ -62,12 +62,8 @@ class FileEditObservation(Observation):
     new_content: str | None = None
     observation: str = ObservationType.EDIT
     impl_source: FileEditSource = FileEditSource.LLM_BASED_EDIT
-    diff: str | None = (
-        None  # The raw diff between old and new content, used in OH_ACI mode
-    )
-    _diff_cache: str | None = (
-        None  # Cache for the diff visualization, used in LLM-based editing mode
-    )
+    diff: str | None = None  # The raw diff between old and new content, used in OH_ACI mode
+    _diff_cache: str | None = None  # Cache for the diff visualization, used in LLM-based editing mode
 
     @property
     def message(self) -> str:
@@ -89,9 +85,7 @@ class FileEditObservation(Observation):
         new_lines = self.new_content.split('\n')
         # Borrowed from difflib.unified_diff to directly parse into structured format
         edit_groups: list[dict] = []
-        for group in SequenceMatcher(None, old_lines, new_lines).get_grouped_opcodes(
-            n_context_lines
-        ):
+        for group in SequenceMatcher(None, old_lines, new_lines).get_grouped_opcodes(n_context_lines):
             # Take the max line number in the group
             _indent_pad_size = len(str(group[-1][3])) + 1  # +1 for "*" prefix
             cur_group: dict[str, list[str]] = {
@@ -102,27 +96,19 @@ class FileEditObservation(Observation):
                 if tag == 'equal':
                     for idx, line in enumerate(old_lines[i1:i2]):
                         line_num = i1 + idx + 1
-                        cur_group['before_edits'].append(
-                            f'{line_num:>{_indent_pad_size}}|{line}'
-                        )
+                        cur_group['before_edits'].append(f'{line_num:>{_indent_pad_size}}|{line}')
                     for idx, line in enumerate(new_lines[j1:j2]):
                         line_num = j1 + idx + 1
-                        cur_group['after_edits'].append(
-                            f'{line_num:>{_indent_pad_size}}|{line}'
-                        )
+                        cur_group['after_edits'].append(f'{line_num:>{_indent_pad_size}}|{line}')
                     continue
                 if tag in {'replace', 'delete'}:
                     for idx, line in enumerate(old_lines[i1:i2]):
                         line_num = i1 + idx + 1
-                        cur_group['before_edits'].append(
-                            f'-{line_num:>{_indent_pad_size - 1}}|{line}'
-                        )
+                        cur_group['before_edits'].append(f'-{line_num:>{_indent_pad_size - 1}}|{line}')
                 if tag in {'replace', 'insert'}:
                     for idx, line in enumerate(new_lines[j1:j2]):
                         line_num = j1 + idx + 1
-                        cur_group['after_edits'].append(
-                            f'+{line_num:>{_indent_pad_size - 1}}|{line}'
-                        )
+                        cur_group['after_edits'].append(f'+{line_num:>{_indent_pad_size - 1}}|{line}')
             edit_groups.append(cur_group)
         return edit_groups
 
@@ -186,9 +172,7 @@ class FileEditObservation(Observation):
             return self.content
 
         if not self.prev_exist:
-            assert self.old_content == '', (
-                'old_content should be empty if the file is new (prev_exist=False).'
-            )
+            assert self.old_content == '', 'old_content should be empty if the file is new (prev_exist=False).'
             return f'[New file {self.path} is created with the provided content.]\n'
 
         # Use cached diff if available, otherwise compute it

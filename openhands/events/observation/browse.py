@@ -20,15 +20,9 @@ class BrowserOutputObservation(Observation):
     # do not include in the memory
     open_pages_urls: list[str] = field(default_factory=list)
     active_page_index: int = -1
-    dom_object: dict[str, Any] = field(
-        default_factory=dict, repr=False
-    )  # don't show in repr
-    axtree_object: dict[str, Any] = field(
-        default_factory=dict, repr=False
-    )  # don't show in repr
-    extra_element_properties: dict[str, Any] = field(
-        default_factory=dict, repr=False
-    )  # don't show in repr
+    dom_object: dict[str, Any] = field(default_factory=dict, repr=False)  # don't show in repr
+    axtree_object: dict[str, Any] = field(default_factory=dict, repr=False)  # don't show in repr
+    extra_element_properties: dict[str, Any] = field(default_factory=dict, repr=False)  # don't show in repr
     last_browser_action: str = ''
     last_browser_action_error: str = ''
     focused_element_bid: str = ''

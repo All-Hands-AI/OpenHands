@@ -68,9 +68,7 @@ class Agent(ABC):
 
         try:
             if not self.prompt_manager:
-                logger.warning(
-                    f'[{self.name}] Prompt manager not initialized before getting system message'
-                )
+                logger.warning(f'[{self.name}] Prompt manager not initialized before getting system message')
                 return None
 
             system_message = self.prompt_manager.get_system_message()
@@ -78,9 +76,7 @@ class Agent(ABC):
             # Get tools if available
             tools = getattr(self, 'tools', None)
 
-            system_message_action = SystemMessageAction(
-                content=system_message, tools=tools, agent_class=self.name
-            )
+            system_message_action = SystemMessageAction(content=system_message, tools=tools, agent_class=self.name)
             # Set the source attribute
             system_message_action._source = EventSource.AGENT  # type: ignore
 
@@ -169,9 +165,7 @@ class Agent(ABC):
         for tool in mcp_tools:
             _tool = ChatCompletionToolParam(**tool)
             if _tool['function']['name'] in self.mcp_tools:
-                logger.warning(
-                    f'Tool {_tool["function"]["name"]} already exists, skipping'
-                )
+                logger.warning(f'Tool {_tool["function"]["name"]} already exists, skipping')
                 continue
             self.mcp_tools[_tool['function']['name']] = _tool
             self.tools.append(_tool)

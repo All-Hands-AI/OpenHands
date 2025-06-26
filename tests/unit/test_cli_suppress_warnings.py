@@ -101,9 +101,7 @@ class TestWarningSuppressionCLI:
         # Capture stderr to check if warnings are printed
         captured_output = StringIO()
         with patch('sys.stderr', captured_output):
-            warnings.warn(
-                'Pydantic serializer warnings: test', UserWarning, stacklevel=2
-            )
+            warnings.warn('Pydantic serializer warnings: test', UserWarning, stacklevel=2)
 
         # Should be suppressed (no output to stderr)
         output = captured_output.getvalue()
@@ -124,7 +122,5 @@ class TestWarningSuppressionCLI:
         filter_messages = [f[1] for f in filters if f[1] is not None]
 
         # Check that our specific patterns are in the filters
-        assert any(
-            'Pydantic serializer warnings' in str(msg) for msg in filter_messages
-        )
+        assert any('Pydantic serializer warnings' in str(msg) for msg in filter_messages)
         assert any('deprecated method' in str(msg) for msg in filter_messages)

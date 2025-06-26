@@ -134,9 +134,7 @@ class LLMConfig(BaseModel):
             base_config = cls.model_validate(base_data)
             llm_mapping['llm'] = base_config
         except ValidationError:
-            logger.warning(
-                'Cannot parse [llm] config from toml. Continuing with defaults.'
-            )
+            logger.warning('Cannot parse [llm] config from toml. Continuing with defaults.')
             # If base config fails, create a default one
             base_config = cls()
             # Still add it to the mapping
@@ -150,9 +148,7 @@ class LLMConfig(BaseModel):
                 custom_config = cls.model_validate(merged)
                 llm_mapping[name] = custom_config
             except ValidationError:
-                logger.warning(
-                    f'Cannot parse [{name}] config from toml. This section will be skipped.'
-                )
+                logger.warning(f'Cannot parse [{name}] config from toml. This section will be skipped.')
                 # Skip this custom section but continue with others
                 continue
 

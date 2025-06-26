@@ -61,9 +61,7 @@ def get_token(ans_code: str, output_code: str):
         ans_flag = False
 
     try:
-        tokens_output = tokenize.tokenize(
-            io.BytesIO(output_code.encode('utf-8')).readline
-        )
+        tokens_output = tokenize.tokenize(io.BytesIO(output_code.encode('utf-8')).readline)
     except Exception:
         tokens_output = output_code.splitlines()
         output_flag = False
@@ -126,9 +124,7 @@ def get_ISM(answer_code: str, model_output_list: list, answer_name: str) -> list
         if '```python' in code:
             code = code.replace('```python', '')
             code = code.replace('```', '')
-        if not re.search(rf'\b{re.escape(answer_name)}\b', code) or not is_code_valid(
-            code
-        ):
+        if not re.search(rf'\b{re.escape(answer_name)}\b', code) or not is_code_valid(code):
             score_list.append(0)
             continue
 
@@ -137,9 +133,7 @@ def get_ISM(answer_code: str, model_output_list: list, answer_name: str) -> list
         #     continue
 
         identifiers_ans, identifiers_output = get_token(answer_code, code)
-        max_len, elements = longest_common_prefix_between_lists_with_elements(
-            identifiers_ans, identifiers_output
-        )
+        max_len, elements = longest_common_prefix_between_lists_with_elements(identifiers_ans, identifiers_output)
         if max_len != 0:
             base_element_len = max(len(elements[0]), len(elements[1]))
             temp_score = max_len / base_element_len
@@ -154,9 +148,7 @@ def get_ISM(answer_code: str, model_output_list: list, answer_name: str) -> list
     return score_list
 
 
-def get_ISM_without_verification(
-    answer_code: str, model_output_list: list, answer_name: str
-) -> list:
+def get_ISM_without_verification(answer_code: str, model_output_list: list, answer_name: str) -> list:
     """
     计算ISM，返回一个有序的得分列表
     :return:
@@ -172,9 +164,7 @@ def get_ISM_without_verification(
         #     continue
 
         identifiers_ans, identifiers_output = get_token(answer_code, code)
-        max_len, elements = longest_common_prefix_between_lists_with_elements(
-            identifiers_ans, identifiers_output
-        )
+        max_len, elements = longest_common_prefix_between_lists_with_elements(identifiers_ans, identifiers_output)
         if max_len != 0:
             base_element_len = max(len(elements[0]), len(elements[1]))
             temp_score = max_len / base_element_len
@@ -225,9 +215,7 @@ def get_PM(answer_code: str, model_output_list: list, answer_name: str) -> list:
         if '```python' in code:
             code = code.replace('```python', '')
             code = code.replace('```', '')
-        if not re.search(rf'\b{re.escape(answer_name)}\b', code) or not is_code_valid(
-            code
-        ):
+        if not re.search(rf'\b{re.escape(answer_name)}\b', code) or not is_code_valid(code):
             # if answer_name not in code or is_code_valid(code) == False:
             score_list.append(0)
             continue
@@ -238,9 +226,7 @@ def get_PM(answer_code: str, model_output_list: list, answer_name: str) -> list:
 
         ans_list = get_token_per_line(answer_code)
         output_token_list = get_token_per_line(code)
-        max_len, len1, len2 = longest_common_prefix_with_lengths(
-            ans_list, output_token_list
-        )
+        max_len, len1, len2 = longest_common_prefix_with_lengths(ans_list, output_token_list)
         base_element_len = max(len1, len2)
 
         if base_element_len != 0:

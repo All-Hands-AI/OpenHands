@@ -19,9 +19,7 @@ async def call_sync_from_async(fn: Callable, *args, **kwargs):
     return result
 
 
-def call_async_from_sync(
-    corofn: Callable, timeout: float = GENERAL_TIMEOUT, *args, **kwargs
-):
+def call_async_from_sync(corofn: Callable, timeout: float = GENERAL_TIMEOUT, *args, **kwargs):
     """
     Shorthand for running a coroutine in the default background thread pool executor
     and awaiting the result
@@ -55,16 +53,12 @@ def call_async_from_sync(
     return result
 
 
-async def call_coro_in_bg_thread(
-    corofn: Callable, timeout: float = GENERAL_TIMEOUT, *args, **kwargs
-):
+async def call_coro_in_bg_thread(corofn: Callable, timeout: float = GENERAL_TIMEOUT, *args, **kwargs):
     """Function for running a coroutine in a background thread."""
     await call_sync_from_async(call_async_from_sync, corofn, timeout, *args, **kwargs)
 
 
-async def wait_all(
-    iterable: Iterable[Coroutine], timeout: int = GENERAL_TIMEOUT
-) -> list:
+async def wait_all(iterable: Iterable[Coroutine], timeout: int = GENERAL_TIMEOUT) -> list:
     """
     Shorthand for waiting for all the coroutines in the iterable given in parallel. Creates
     a task for each coroutine.

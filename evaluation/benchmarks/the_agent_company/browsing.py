@@ -77,9 +77,7 @@ class InputAction(BrowserAction):
 
     def __init__(self, selector: Union[str, Selector], value: str):
         super().__init__(ActionType.FILL)
-        self.selector = (
-            selector if isinstance(selector, Selector) else Selector(selector)
-        )
+        self.selector = selector if isinstance(selector, Selector) else Selector(selector)
         self.value = value
 
     def to_instruction(self) -> str:
@@ -92,9 +90,7 @@ class ClickAction(BrowserAction):
 
     def __init__(self, selector: Union[str, Selector]):
         super().__init__(ActionType.CLICK)
-        self.selector = (
-            selector if isinstance(selector, Selector) else Selector(selector)
-        )
+        self.selector = selector if isinstance(selector, Selector) else Selector(selector)
 
     def to_instruction(self) -> str:
         return f'click("{self.selector}")'
@@ -236,9 +232,7 @@ def pre_login(
 
     for website_name, login_actions in all_login_actions:
         if website_name not in services:
-            logger.info(
-                f"Skipping login for {website_name} because it's not in the list of services to reset"
-            )
+            logger.info(f"Skipping login for {website_name} because it's not in the list of services to reset")
             continue
 
         if save_screenshots:
@@ -254,9 +248,7 @@ def pre_login(
 
             if not action:
                 logger.error(f'FAILED TO RESOLVE ACTION, {action}')
-                raise Exception(
-                    'FAILED TO RESOLVE ACTION, maybe the service is not available'
-                )
+                raise Exception('FAILED TO RESOLVE ACTION, maybe the service is not available')
 
             # Convert the action to an instruction string
             instruction = action.to_instruction()
@@ -267,9 +259,7 @@ def pre_login(
             obs: BrowserOutputObservation = runtime.run_action(browser_action)
             logger.debug(obs, extra={'msg_type': 'OBSERVATION'})
             if save_screenshots:
-                image_data = base64.b64decode(
-                    obs.screenshot.replace('data:image/png;base64,', '')
-                )
+                image_data = base64.b64decode(obs.screenshot.replace('data:image/png;base64,', ''))
                 with open(os.path.join(directory, f'{image_id}.png'), 'wb') as file:
                     file.write(image_data)
                     image_id += 1

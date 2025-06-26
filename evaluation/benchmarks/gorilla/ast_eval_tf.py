@@ -27,9 +27,7 @@ def get_all_sub_trees(root_node):
     while len(node_stack) != 0:
         cur_node, cur_depth = node_stack.pop()
         if cur_node.child_count > 0:
-            sub_tree_sexp_list.append(
-                [cur_node.sexp(), cur_depth, cur_node, cur_node.children[0].text]
-            )
+            sub_tree_sexp_list.append([cur_node.sexp(), cur_depth, cur_node, cur_node.children[0].text])
         else:
             sub_tree_sexp_list.append([cur_node.sexp(), cur_depth, cur_node, None])
         for child_node in cur_node.children:
@@ -56,11 +54,7 @@ def get_args(node):
     for child in node.children[0].children[0].children[1].children:
         if 'model=' in child.text.decode() or 'model =' in child.text.decode():
             args_list.append(child.children[2].text)
-        elif (
-            child.text.decode() != '('
-            and child.text.decode() != ')'
-            and child.text.decode() != ','
-        ):
+        elif child.text.decode() != '(' and child.text.decode() != ')' and child.text.decode() != ',':
             args_list.append(child.text)
     return args_list
 

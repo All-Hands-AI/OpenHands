@@ -23,9 +23,7 @@ class AmortizedForgettingCondenser(RollingCondenser):
             ValueError: If keep_first is greater than max_size, keep_first is negative, or max_size is non-positive.
         """
         if keep_first >= max_size // 2:
-            raise ValueError(
-                f'keep_first ({keep_first}) must be less than half of max_size ({max_size})'
-            )
+            raise ValueError(f'keep_first ({keep_first}) must be less than half of max_size ({max_size})')
         if keep_first < 0:
             raise ValueError(f'keep_first ({keep_first}) cannot be negative')
         if max_size < 1:
@@ -57,9 +55,7 @@ class AmortizedForgettingCondenser(RollingCondenser):
         return len(view) > self.max_size
 
     @classmethod
-    def from_config(
-        cls, config: AmortizedForgettingCondenserConfig
-    ) -> AmortizedForgettingCondenser:
+    def from_config(cls, config: AmortizedForgettingCondenserConfig) -> AmortizedForgettingCondenser:
         return AmortizedForgettingCondenser(**config.model_dump(exclude=['type']))
 
 

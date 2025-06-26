@@ -71,19 +71,13 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
     # Prepare instruction
     coverage_command = ' '.join(
         [
-            MAP_REPO_VERSION_TO_SPECS[instance['repo']][instance['version']][
-                'test_cmd'
-            ],
+            MAP_REPO_VERSION_TO_SPECS[instance['repo']][instance['version']]['test_cmd'],
             *get_test_directives(instance),
         ]
     )
 
     # Testing general agents
-    prompt_to_use = (
-        CODEACT_TESTGEN_PROMPT_ITERATE
-        if instance['full_pred'] is not None
-        else CODEACT_TESTGEN_PROMPT
-    )
+    prompt_to_use = CODEACT_TESTGEN_PROMPT_ITERATE if instance['full_pred'] is not None else CODEACT_TESTGEN_PROMPT
     instruction = prompt_to_use.format(
         code_file=os.path.join('/testbed', instance.code_file),
         test_file=os.path.join('/testbed', instance.test_file),
@@ -94,9 +88,7 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
     )
 
     if RUN_WITH_BROWSING:
-        instruction += (
-            '<IMPORTANT!>\nYou SHOULD NEVER attempt to browse the web. </IMPORTANT!>\n'
-        )
+        instruction += '<IMPORTANT!>\nYou SHOULD NEVER attempt to browse the web. </IMPORTANT!>\n'
 
     return instruction
 
@@ -108,9 +100,7 @@ logger.info(f'Using docker image prefix: {DOCKER_IMAGE_PREFIX}')
 
 def get_instance_docker_image(instance_id: str) -> str:
     image_name = 'sweb.eval.x86_64.' + instance_id
-    image_name = image_name.replace(
-        '__', '_s_'
-    )  # to comply with docker image naming convention
+    image_name = image_name.replace('__', '_s_')  # to comply with docker image naming convention
     return DOCKER_IMAGE_PREFIX.rstrip('/') + '/' + image_name
 
 
@@ -140,9 +130,7 @@ def get_config(
             # Add platform to the sandbox config to solve issue 4401
             platform='linux/amd64',
             api_key=os.environ.get('ALLHANDS_API_KEY', None),
-            remote_runtime_api_url=os.environ.get(
-                'SANDBOX_REMOTE_RUNTIME_API_URL', 'http://localhost:8000'
-            ),
+            remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL', 'http://localhost:8000'),
             keep_runtime_alive=False,
             remote_runtime_init_timeout=3600,
         ),
@@ -151,9 +139,7 @@ def get_config(
         workspace_mount_path=None,
     )
     config.set_llm_config(
-        update_llm_config_for_completions_logging(
-            metadata.llm_config, metadata.eval_output_dir, instance['id']
-        )
+        update_llm_config_for_completions_logging(metadata.llm_config, metadata.eval_output_dir, instance['id'])
     )
     agent_config = AgentConfig(
         enable_jupyter=False,
@@ -190,9 +176,7 @@ def initialize_runtime(
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert_and_raise(
-        obs.exit_code == 0, f'Failed to export SWE_INSTANCE_ID: {str(obs)}'
-    )
+    assert_and_raise(obs.exit_code == 0, f'Failed to export SWE_INSTANCE_ID: {str(obs)}')
 
     action = CmdRunAction(command="""export USER=$(whoami); echo USER=${USER} """)
     action.set_hard_timeout(600)
@@ -240,20 +224,14 @@ def initialize_runtime(
             runtime.copy_to(temp_file_path_pred, '/tmp')
 
             # Copy the file to the desired location
-            action = CmdRunAction(
-                command=f'cp /tmp/test_suite.py /testbed/{instance["test_file"]}'
-            )
+            action = CmdRunAction(command=f'cp /tmp/test_suite.py /testbed/{instance["test_file"]}')
             action.set_hard_timeout(600)
             logger.info(action, extra={'msg_type': 'ACTION'})
             obs = runtime.run_action(action)
             logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-            assert_and_raise(
-                obs.exit_code == 0, f'Failed to copy test file: {str(obs)}'
-            )
+            assert_and_raise(obs.exit_code == 0, f'Failed to copy test file: {str(obs)}')
 
-            action = CmdRunAction(
-                command='git -C /testbed add . && git -C /testbed commit -m "Add test file"'
-            )
+            action = CmdRunAction(command='git -C /testbed add . && git -C /testbed commit -m "Add test file"')
             action.set_hard_timeout(600)
             logger.info(action, extra={'msg_type': 'ACTION'})
             obs = runtime.run_action(action)
@@ -308,9 +286,7 @@ def initialize_runtime(
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(obs.exit_code == 0, f'Failed to git reset --hard: {str(obs)}')
 
-    action = CmdRunAction(
-        command='for remote_name in $(git remote); do git remote remove "${remote_name}"; done'
-    )
+    action = CmdRunAction(command='for remote_name in $(git remote); do git remote remove "${remote_name}"; done')
     action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
@@ -410,9 +386,7 @@ def process_instance(
                 config=config,
                 initial_user_action=MessageAction(content=instruction),
                 runtime=runtime,
-                fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
-                    metadata.agent_class
-                ],
+                fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[metadata.agent_class],
             )
         )
 
@@ -423,17 +397,13 @@ def process_instance(
         # ======= THIS IS SWE-Bench specific =======
         return_val = complete_runtime(runtime, instance)
         test_suite = return_val['test_suite']
-        logger.info(
-            f'Got test suite for instance {instance.instance_id}:\n--------\n{test_suite}\n--------'
-        )
+        logger.info(f'Got test suite for instance {instance.instance_id}:\n--------\n{test_suite}\n--------')
     finally:
         runtime.close()
 
     end_time = time.time()
     elapsed_time = end_time - start_time
-    logger.info(
-        f'Evaluation for instance {instance.instance_id} took {elapsed_time:.2f} seconds.'
-    )
+    logger.info(f'Evaluation for instance {instance.instance_id} took {elapsed_time:.2f} seconds.')
 
     # ==========================================
 
@@ -475,9 +445,7 @@ def prepare_dataset_pre(dataset: pd.DataFrame, filter_column: str) -> pd.DataFra
             data = toml.load(file)
             if 'selected_ids' in data:
                 selected_ids = data['selected_ids']
-                logger.info(
-                    f'Filtering {len(selected_ids)} tasks from "selected_ids"...'
-                )
+                logger.info(f'Filtering {len(selected_ids)} tasks from "selected_ids"...')
                 subset = dataset[dataset[filter_column].isin(selected_ids)]
                 logger.info(f'Retained {subset.shape[0]} tasks after filtering')
 
@@ -548,9 +516,7 @@ if __name__ == '__main__':
     details = {}
     _agent_cls = openhands.agenthub.Agent.get_cls(args.agent_cls)
 
-    dataset_descrption = (
-        args.dataset.replace('/', '__') + '-' + args.split.replace('/', '__')
-    )
+    dataset_descrption = args.dataset.replace('/', '__') + '-' + args.split.replace('/', '__')
     metadata = make_metadata(
         llm_config,
         dataset_descrption,
@@ -565,12 +531,6 @@ if __name__ == '__main__':
     instances = prepare_dataset(testgeneval_filepairs, output_file, args.eval_n_limit)
 
     if not instances.empty:
-        instances['full_pred'] = (
-            instances['instance_id']
-            .map(preds_map)
-            .apply(lambda x: x if pd.notna(x) else None)
-        )
+        instances['full_pred'] = instances['instance_id'].map(preds_map).apply(lambda x: x if pd.notna(x) else None)
 
-        run_evaluation(
-            instances, metadata, output_file, args.eval_num_workers, process_instance
-        )
+        run_evaluation(instances, metadata, output_file, args.eval_num_workers, process_instance)

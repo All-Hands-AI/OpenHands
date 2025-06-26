@@ -54,9 +54,7 @@ def add_events(event_stream: EventStream, data: list[tuple[Event, EventSource]])
 async def test_msg(temp_dir: str):
     mock_container = MagicMock()
     mock_container.status = 'running'
-    mock_container.attrs = {
-        'NetworkSettings': {'Ports': {'8000/tcp': [{'HostPort': 34567}]}}
-    }
+    mock_container.attrs = {'NetworkSettings': {'Ports': {'8000/tcp': [{'HostPort': 34567}]}}}
     mock_docker = MagicMock()
     mock_docker.from_env().containers.list.return_value = [mock_container]
 
@@ -67,9 +65,7 @@ async def test_msg(temp_dir: str):
         [],  # First check
         [],  # Second check
         [],  # Third check
-        [
-            'PolicyViolation(Disallow ABC [risk=medium], ranges=[<2 ranges>])'
-        ],  # Fourth check
+        ['PolicyViolation(Disallow ABC [risk=medium], ranges=[<2 ranges>])'],  # Fourth check
     ]
 
     with (
@@ -109,9 +105,7 @@ async def test_msg(temp_dir: str):
 async def test_cmd(cmd, expected_risk, temp_dir: str):
     mock_container = MagicMock()
     mock_container.status = 'running'
-    mock_container.attrs = {
-        'NetworkSettings': {'Ports': {'8000/tcp': [{'HostPort': 34567}]}}
-    }
+    mock_container.attrs = {'NetworkSettings': {'Ports': {'8000/tcp': [{'HostPort': 34567}]}}}
     mock_docker = MagicMock()
     mock_docker.from_env().containers.list.return_value = [mock_container]
 
@@ -163,9 +157,7 @@ async def test_cmd(cmd, expected_risk, temp_dir: str):
 async def test_leak_secrets(code, expected_risk, temp_dir: str):
     mock_container = MagicMock()
     mock_container.status = 'running'
-    mock_container.attrs = {
-        'NetworkSettings': {'Ports': {'8000/tcp': [{'HostPort': 34567}]}}
-    }
+    mock_container.attrs = {'NetworkSettings': {'Ports': {'8000/tcp': [{'HostPort': 34567}]}}}
     mock_docker = MagicMock()
     mock_docker.from_env().containers.list.return_value = [mock_container]
 
@@ -215,9 +207,7 @@ async def test_leak_secrets(code, expected_risk, temp_dir: str):
 async def test_unsafe_python_code(temp_dir: str):
     mock_container = MagicMock()
     mock_container.status = 'running'
-    mock_container.attrs = {
-        'NetworkSettings': {'Ports': {'8000/tcp': [{'HostPort': 34567}]}}
-    }
+    mock_container.attrs = {'NetworkSettings': {'Ports': {'8000/tcp': [{'HostPort': 34567}]}}}
     mock_docker = MagicMock()
     mock_docker.from_env().containers.list.return_value = [mock_container]
 
@@ -226,9 +216,7 @@ async def test_unsafe_python_code(temp_dir: str):
     mock_httpx.post().json.side_effect = [
         {'monitor_id': 'mock-monitor-id'},
         [],
-        [
-            'PolicyViolation(Vulnerability in python code [risk=medium], ranges=[<2 ranges>])'
-        ],
+        ['PolicyViolation(Vulnerability in python code [risk=medium], ranges=[<2 ranges>])'],
     ]
 
     with (
@@ -260,9 +248,7 @@ async def test_unsafe_python_code(temp_dir: str):
 async def test_unsafe_bash_command(temp_dir: str):
     mock_container = MagicMock()
     mock_container.status = 'running'
-    mock_container.attrs = {
-        'NetworkSettings': {'Ports': {'8000/tcp': [{'HostPort': 34567}]}}
-    }
+    mock_container.attrs = {'NetworkSettings': {'Ports': {'8000/tcp': [{'HostPort': 34567}]}}}
     mock_docker = MagicMock()
     mock_docker.from_env().containers.list.return_value = [mock_container]
 
@@ -271,9 +257,7 @@ async def test_unsafe_bash_command(temp_dir: str):
     mock_httpx.post().json.side_effect = [
         {'monitor_id': 'mock-monitor-id'},
         [],
-        [
-            'PolicyViolation(Vulnerability in python code [risk=medium], ranges=[<2 ranges>])'
-        ],
+        ['PolicyViolation(Vulnerability in python code [risk=medium], ranges=[<2 ranges>])'],
     ]
 
     with (
@@ -331,9 +315,7 @@ async def test_unsafe_bash_command(temp_dir: str):
             ],
         ),
         (  # Test AgentFinishAction
-            AgentFinishAction(
-                outputs={'content': 'outputs content'}, thought='finishing action'
-            ),
+            AgentFinishAction(outputs={'content': 'outputs content'}, thought='finishing action'),
             [
                 Message(
                     metadata={},
@@ -359,9 +341,7 @@ async def test_unsafe_bash_command(temp_dir: str):
         (  # Test CmdRunAction
             CmdRunAction(command='ls', thought='running ls'),
             [
-                Message(
-                    metadata={}, role='assistant', content='running ls', tool_calls=None
-                ),
+                Message(metadata={}, role='assistant', content='running ls', tool_calls=None),
                 ToolCall(
                     metadata={},
                     id='1',
@@ -476,19 +456,13 @@ def test_parse_action(action, expected_trace):
     'observation,expected_trace',
     [
         (
-            AgentDelegateObservation(
-                outputs={'content': 'outputs content'}, content='delegate'
-            ),
+            AgentDelegateObservation(outputs={'content': 'outputs content'}, content='delegate'),
             [
-                ToolOutput(
-                    metadata={}, role='tool', content='delegate', tool_call_id=None
-                ),
+                ToolOutput(metadata={}, role='tool', content='delegate', tool_call_id=None),
             ],
         ),
         (
-            AgentStateChangedObservation(
-                content='agent state changed', agent_state=AgentState.RUNNING
-            ),
+            AgentStateChangedObservation(content='agent state changed', agent_state=AgentState.RUNNING),
             [],
         ),
         (
@@ -521,9 +495,7 @@ def test_parse_action(action, expected_trace):
         (
             IPythonRunCellObservation(content='hello', code="print('hello')"),
             [
-                ToolOutput(
-                    metadata={}, role='tool', content='hello', tool_call_id=None
-                ),
+                ToolOutput(metadata={}, role='tool', content='hello', tool_call_id=None),
             ],
         ),
         (NullObservation(content='null'), []),
@@ -566,14 +538,10 @@ def default_config():
 )
 @patch('openhands.llm.llm.litellm_completion', autospec=True)
 @pytest.mark.asyncio
-async def test_check_usertask(
-    mock_litellm_completion, usertask, is_appropriate, default_config, temp_dir: str
-):
+async def test_check_usertask(mock_litellm_completion, usertask, is_appropriate, default_config, temp_dir: str):
     mock_container = MagicMock()
     mock_container.status = 'running'
-    mock_container.attrs = {
-        'NetworkSettings': {'Ports': {'8000/tcp': [{'HostPort': 34567}]}}
-    }
+    mock_container.attrs = {'NetworkSettings': {'Ports': {'8000/tcp': [{'HostPort': 34567}]}}}
     mock_docker = MagicMock()
     mock_docker.from_env().containers.list.return_value = [mock_container]
 
@@ -582,9 +550,7 @@ async def test_check_usertask(
     mock_httpx.post().json.side_effect = [
         {'monitor_id': 'mock-monitor-id'},
         [],
-        [
-            'PolicyViolation(Vulnerability in python code [risk=medium], ranges=[<2 ranges>])'
-        ],
+        ['PolicyViolation(Vulnerability in python code [risk=medium], ranges=[<2 ranges>])'],
     ]
 
     with (
@@ -628,14 +594,10 @@ async def test_check_usertask(
 )
 @patch('openhands.llm.llm.litellm_completion', autospec=True)
 @pytest.mark.asyncio
-async def test_check_fillaction(
-    mock_litellm_completion, fillaction, is_harmful, default_config, temp_dir: str
-):
+async def test_check_fillaction(mock_litellm_completion, fillaction, is_harmful, default_config, temp_dir: str):
     mock_container = MagicMock()
     mock_container.status = 'running'
-    mock_container.attrs = {
-        'NetworkSettings': {'Ports': {'8000/tcp': [{'HostPort': 34567}]}}
-    }
+    mock_container.attrs = {'NetworkSettings': {'Ports': {'8000/tcp': [{'HostPort': 34567}]}}}
     mock_docker = MagicMock()
     mock_docker.from_env().containers.list.return_value = [mock_container]
 
@@ -644,9 +606,7 @@ async def test_check_fillaction(
     mock_httpx.post().json.side_effect = [
         {'monitor_id': 'mock-monitor-id'},
         [],
-        [
-            'PolicyViolation(Vulnerability in python code [risk=medium], ranges=[<2 ranges>])'
-        ],
+        ['PolicyViolation(Vulnerability in python code [risk=medium], ranges=[<2 ranges>])'],
     ]
 
     with (

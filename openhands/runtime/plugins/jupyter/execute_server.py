@@ -58,9 +58,7 @@ class JupyterKernel:
         self.kernel_id: str | None = None
         self.ws: tornado.websocket.WebSocketClientConnection | None = None
         self.convid = convid
-        logging.info(
-            f'Jupyter kernel created for conversation {convid} at {url_suffix}'
-        )
+        logging.info(f'Jupyter kernel created for conversation {convid} at {url_suffix}')
 
         self.heartbeat_interval = 10000  # 10 seconds
         self.heartbeat_callback: PeriodicCallback | None = None
@@ -118,20 +116,14 @@ class JupyterKernel:
             if n_tries == 0:
                 raise ConnectionRefusedError('Failed to connect to kernel')
 
-        ws_req = HTTPRequest(
-            url='{}/api/kernels/{}/channels'.format(
-                self.base_ws_url, url_escape(self.kernel_id)
-            )
-        )
+        ws_req = HTTPRequest(url='{}/api/kernels/{}/channels'.format(self.base_ws_url, url_escape(self.kernel_id)))
         self.ws = await websocket_connect(ws_req)
         logging.info('Connected to kernel websocket')
 
         # Setup heartbeat
         if self.heartbeat_callback:
             self.heartbeat_callback.stop()
-        self.heartbeat_callback = PeriodicCallback(
-            self._send_heartbeat, self.heartbeat_interval
-        )
+        self.heartbeat_callback = PeriodicCallback(self._send_heartbeat, self.heartbeat_interval)
         self.heartbeat_callback.start()
 
     @retry(
@@ -139,9 +131,7 @@ class JupyterKernel:
         stop=stop_after_attempt(3),
         wait=wait_fixed(2),
     )  # type: ignore
-    async def execute(
-        self, code: str, timeout: int = 120
-    ) -> dict[str, list[str] | str]:
+    async def execute(self, code: str, timeout: int = 120) -> dict[str, list[str] | str]:
         if not self.ws or self.ws.stream.closed():
             await self._connect()
 
@@ -190,18 +180,14 @@ class JupyterKernel:
                     continue
 
                 if os.environ.get('DEBUG'):
-                    logging.info(
-                        f'MSG TYPE: {msg_type.upper()} DONE:{execution_done}\nCONTENT: {msg_dict["content"]}'
-                    )
+                    logging.info(f'MSG TYPE: {msg_type.upper()} DONE:{execution_done}\nCONTENT: {msg_dict["content"]}')
 
                 if msg_type == 'error':
                     traceback = '\n'.join(msg_dict['content']['traceback'])
                     outputs.append({'type': 'text', 'content': traceback})
                     execution_done = True
                 elif msg_type == 'stream':
-                    outputs.append(
-                        {'type': 'text', 'content': msg_dict['content']['text']}
-                    )
+                    outputs.append({'type': 'text', 'content': msg_dict['content']['text']})
                 elif msg_type in ['execute_result', 'display_data']:
                     outputs.append(
                         {

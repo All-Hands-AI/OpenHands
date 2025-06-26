@@ -22,9 +22,7 @@ def test_init_failure_handling(mock_container, mock_log_fn):
     streamer = LogStreamer(mock_container, mock_log_fn)
     assert streamer.stdout_thread is None
     assert streamer.log_generator is None
-    mock_log_fn.assert_called_with(
-        'error', 'Failed to initialize log streaming: Test error'
-    )
+    mock_log_fn.assert_called_with('error', 'Failed to initialize log streaming: Test error')
 
 
 def test_stream_logs_without_generator(mock_container, mock_log_fn):
@@ -84,7 +82,5 @@ def test_normal_operation(mock_container, mock_log_fn):
 def test_del_without_thread(mock_container, mock_log_fn):
     """Test that __del__ works even if stdout_thread was not initialized."""
     streamer = LogStreamer(mock_container, mock_log_fn)
-    delattr(
-        streamer, 'stdout_thread'
-    )  # Simulate case where the thread was never created
+    delattr(streamer, 'stdout_thread')  # Simulate case where the thread was never created
     streamer.__del__()  # Should not raise any exceptions

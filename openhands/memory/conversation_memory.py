@@ -135,10 +135,7 @@ class ConversationMemory:
                     'Tool calls should NOT be None when function calling is enabled & the message is considered pending tool call. '
                     f'Pending message: {pending_message}'
                 )
-                if all(
-                    tool_call.id in tool_call_id_to_message
-                    for tool_call in pending_message.tool_calls
-                ):
+                if all(tool_call.id in tool_call_id_to_message for tool_call in pending_message.tool_calls):
                     # If complete:
                     # -- 1. Add the message that **initiated** the tool calls
                     messages_to_add.append(pending_message)
@@ -233,8 +230,7 @@ class ConversationMemory:
         ) or (isinstance(action, CmdRunAction) and action.source == 'agent'):
             tool_metadata = action.tool_call_metadata
             assert tool_metadata is not None, (
-                'Tool call metadata should NOT be None when function calling is enabled. Action: '
-                + str(action)
+                'Tool call metadata should NOT be None when function calling is enabled. Action: ' + str(action)
             )
 
             llm_response: ModelResponse = tool_metadata.model_response
@@ -242,9 +238,7 @@ class ConversationMemory:
 
             # Add the LLM message (assistant) that initiated the tool calls
             # (overwrites any previous message with the same response_id)
-            logger.debug(
-                f'Tool calls type: {type(assistant_msg.tool_calls)}, value: {assistant_msg.tool_calls}'
-            )
+            logger.debug(f'Tool calls type: {type(assistant_msg.tool_calls)}, value: {assistant_msg.tool_calls}')
             pending_tool_call_action_messages[llm_response.id] = Message(
                 role=getattr(assistant_msg, 'role', 'assistant'),
                 # tool call content SHOULD BE a string
@@ -263,9 +257,7 @@ class ConversationMemory:
             tool_metadata = action.tool_call_metadata
             if tool_metadata is not None:
                 # take the response message from the tool call
-                assistant_msg = getattr(
-                    tool_metadata.model_response.choices[0], 'message'
-                )
+                assistant_msg = getattr(tool_metadata.model_response.choices[0], 'message')
                 content = assistant_msg.content or ''
 
                 # save content if any, to thought
@@ -304,9 +296,7 @@ class ConversationMemory:
                 )
             ]
         elif isinstance(action, CmdRunAction) and action.source == 'user':
-            content = [
-                TextContent(text=f'User executed the command:\n{action.command}')
-            ]
+            content = [TextContent(text=f'User executed the command:\n{action.command}')]
             return [
                 Message(
                     role='user',  # Always user for CmdRunAction
@@ -388,9 +378,7 @@ class ConversationMemory:
             splitted = text.split('\n')
             for i, line in enumerate(splitted):
                 if '![image](data:image/png;base64,' in line:
-                    splitted[i] = (
-                        '![image](data:image/png;base64, ...) already displayed to user'
-                    )
+                    splitted[i] = '![image](data:image/png;base64, ...) already displayed to user'
             text = '\n'.join(splitted)
             text = truncate_content(text, max_message_chars)
 
@@ -400,9 +388,7 @@ class ConversationMemory:
             # Add image URLs if available and vision is active
             if vision_is_active and obs.image_urls:
                 # Filter out empty or invalid image URLs
-                valid_image_urls = [
-                    url for url in obs.image_urls if self._is_valid_image_url(url)
-                ]
+                valid_image_urls = [url for url in obs.image_urls if self._is_valid_image_url(url)]
                 invalid_count = len(obs.image_urls) - len(valid_image_urls)
 
                 if valid_image_urls:
@@ -413,9 +399,7 @@ class ConversationMemory:
                             0
                         ].text += f'\n\nNote: {invalid_count} invalid or empty image(s) were filtered from this output. The agent may need to use alternative methods to access visual information.'
                 else:
-                    logger.debug(
-                        'IPython observation has image URLs but none are valid'
-                    )
+                    logger.debug('IPython observation has image URLs but none are valid')
                     # Add text indicating all images were filtered
                     content[
                         0
@@ -456,17 +440,13 @@ class ConversationMemory:
                     logger.debug(f'Vision enabled for browsing, showing {image_type}')
                 else:
                     if image_url:
-                        logger.warning(
-                            f'Invalid image URL format for {image_type}: {image_url[:50]}...'
-                        )
+                        logger.warning(f'Invalid image URL format for {image_type}: {image_url[:50]}...')
                         # Add text indicating the image was filtered
                         content[
                             0
                         ].text += f'\n\nNote: The {image_type} for this webpage was invalid or empty and has been filtered. The agent should use alternative methods to access visual information about the webpage.'
                     else:
-                        logger.debug(
-                            'Vision enabled for browsing, but no valid image available'
-                        )
+                        logger.debug('Vision enabled for browsing, but no valid image available')
                         # Add text indicating no image was available
                         content[
                             0
@@ -502,10 +482,7 @@ class ConversationMemory:
         elif isinstance(obs, FileDownloadObservation):
             text = truncate_content(obs.content, max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
-        elif (
-            isinstance(obs, RecallObservation)
-            and self.agent_config.enable_prompt_extensions
-        ):
+        elif isinstance(obs, RecallObservation) and self.agent_config.enable_prompt_extensions:
             if obs.recall_type == RecallType.WORKSPACE_CONTEXT:
                 # everything is optional, check if they are present
                 if obs.repo_name or obs.repo_directory:
@@ -534,18 +511,12 @@ class ConversationMemory:
                 conversation_instructions = None
 
                 if obs.conversation_instructions:
-                    conversation_instructions = ConversationInstructions(
-                        content=obs.conversation_instructions
-                    )
+                    conversation_instructions = ConversationInstructions(content=obs.conversation_instructions)
 
-                repo_instructions = (
-                    obs.repo_instructions if obs.repo_instructions else ''
-                )
+                repo_instructions = obs.repo_instructions if obs.repo_instructions else ''
 
                 # Have some meaningful content before calling the template
-                has_repo_info = repo_info is not None and (
-                    repo_info.repo_name or repo_info.repo_directory
-                )
+                has_repo_info = repo_info is not None and (repo_info.repo_name or repo_info.repo_directory)
                 has_runtime_info = runtime_info is not None and (
                     runtime_info.date or runtime_info.custom_secrets_descriptions
                 )
@@ -568,28 +539,19 @@ class ConversationMemory:
                 message_content = []
 
                 # Build the workspace context information
-                if (
-                    has_repo_info
-                    or has_runtime_info
-                    or has_repo_instructions
-                    or has_conversation_instructions
-                ):
-                    formatted_workspace_text = (
-                        self.prompt_manager.build_workspace_context(
-                            repository_info=repo_info,
-                            runtime_info=runtime_info,
-                            conversation_instructions=conversation_instructions,
-                            repo_instructions=repo_instructions,
-                        )
+                if has_repo_info or has_runtime_info or has_repo_instructions or has_conversation_instructions:
+                    formatted_workspace_text = self.prompt_manager.build_workspace_context(
+                        repository_info=repo_info,
+                        runtime_info=runtime_info,
+                        conversation_instructions=conversation_instructions,
+                        repo_instructions=repo_instructions,
                     )
                     message_content.append(TextContent(text=formatted_workspace_text))
 
                 # Add microagent knowledge if present
                 if has_microagent_knowledge:
-                    formatted_microagent_text = (
-                        self.prompt_manager.build_microagent_info(
-                            triggered_agents=filtered_agents,
-                        )
+                    formatted_microagent_text = self.prompt_manager.build_microagent_info(
+                        triggered_agents=filtered_agents,
                     )
                     message_content.append(TextContent(text=formatted_microagent_text))
 
@@ -601,17 +563,13 @@ class ConversationMemory:
             elif obs.recall_type == RecallType.KNOWLEDGE:
                 # Use prompt manager to build the microagent info
                 # First, filter out agents that appear in earlier RecallObservations
-                filtered_agents = self._filter_agents_in_microagent_obs(
-                    obs, current_index, events or []
-                )
+                filtered_agents = self._filter_agents_in_microagent_obs(obs, current_index, events or [])
 
                 # Create and return a message if there is microagent knowledge to include
                 if filtered_agents:
                     # Exclude disabled microagents
                     filtered_agents = [
-                        agent
-                        for agent in filtered_agents
-                        if agent.name not in self.agent_config.disabled_microagents
+                        agent for agent in filtered_agents if agent.name not in self.agent_config.disabled_microagents
                     ]
 
                     # Only proceed if we still have agents after filtering out disabled ones
@@ -620,18 +578,11 @@ class ConversationMemory:
                             triggered_agents=filtered_agents,
                         )
 
-                        return [
-                            Message(
-                                role='user', content=[TextContent(text=formatted_text)]
-                            )
-                        ]
+                        return [Message(role='user', content=[TextContent(text=formatted_text)])]
 
                 # Return empty list if no microagents to include or all were disabled
                 return []
-        elif (
-            isinstance(obs, RecallObservation)
-            and not self.agent_config.enable_prompt_extensions
-        ):
+        elif isinstance(obs, RecallObservation) and not self.agent_config.enable_prompt_extensions:
             # If prompt extensions are disabled, we don't add any additional info
             # TODO: test this
             return []
@@ -665,9 +616,7 @@ class ConversationMemory:
         # NOTE: this is only needed for anthropic
         for message in reversed(messages):
             if message.role in ('user', 'tool'):
-                message.content[
-                    -1
-                ].cache_prompt = True  # Last item inside the message content
+                message.content[-1].cache_prompt = True  # Last item inside the message content
                 break
 
     def _filter_agents_in_microagent_obs(
@@ -696,9 +645,7 @@ class ConversationMemory:
 
         return filtered_agents
 
-    def _has_agent_in_earlier_events(
-        self, agent_name: str, current_index: int, events: list[Event]
-    ) -> bool:
+    def _has_agent_in_earlier_events(self, agent_name: str, current_index: int, events: list[Event]) -> bool:
         """Check if an agent appears in any earlier RecallObservation in the event list.
 
         Args:
@@ -712,9 +659,7 @@ class ConversationMemory:
         for event in events[:current_index]:
             # Note that this check includes the WORKSPACE_CONTEXT
             if isinstance(event, RecallObservation):
-                if any(
-                    agent.name == agent_name for agent in event.microagent_knowledge
-                ):
+                if any(agent.name == agent_name for agent in event.microagent_knowledge):
                     return True
         return False
 
@@ -738,9 +683,7 @@ class ConversationMemory:
             if message.role == 'assistant' and tool_call.id
         }
         tool_response_ids = {
-            message.tool_call_id
-            for message in messages
-            if message.role == 'tool' and message.tool_call_id
+            message.tool_call_id for message in messages if message.role == 'tool' and message.tool_call_id
         }
 
         for message in messages:
@@ -751,24 +694,17 @@ class ConversationMemory:
 
             # Remove assistant tool calls with no matching tool response
             elif message.role == 'assistant' and message.tool_calls:
-                all_tool_calls_match = all(
-                    tool_call.id in tool_response_ids
-                    for tool_call in message.tool_calls
-                )
+                all_tool_calls_match = all(tool_call.id in tool_response_ids for tool_call in message.tool_calls)
                 if all_tool_calls_match:
                     yield message
                 else:
                     matched_tool_calls = [
-                        tool_call
-                        for tool_call in message.tool_calls
-                        if tool_call.id in tool_response_ids
+                        tool_call for tool_call in message.tool_calls if tool_call.id in tool_response_ids
                     ]
 
                     if matched_tool_calls:
                         # Keep an updated message if there are tools calls left
-                        yield message.model_copy(
-                            update={'tool_calls': matched_tool_calls}
-                        )
+                        yield message.model_copy(update={'tool_calls': matched_tool_calls})
             else:
                 # Any other case is kept
                 yield message
@@ -776,32 +712,23 @@ class ConversationMemory:
     def _ensure_system_message(self, events: list[Event]) -> None:
         """Checks if a SystemMessageAction exists and adds one if not (for legacy compatibility)."""
         # Check if there's a SystemMessageAction in the events
-        has_system_message = any(
-            isinstance(event, SystemMessageAction) for event in events
-        )
+        has_system_message = any(isinstance(event, SystemMessageAction) for event in events)
 
         # Legacy behavior: If no SystemMessageAction is found, add one
         if not has_system_message:
             logger.debug(
-                '[ConversationMemory] No SystemMessageAction found in events. '
-                'Adding one for backward compatibility. '
+                '[ConversationMemory] No SystemMessageAction found in events. Adding one for backward compatibility. '
             )
             system_prompt = self.prompt_manager.get_system_message()
             if system_prompt:
                 system_message = SystemMessageAction(content=system_prompt)
                 # Insert the system message directly at the beginning of the events list
                 events.insert(0, system_message)
-                logger.info(
-                    '[ConversationMemory] Added SystemMessageAction for backward compatibility'
-                )
+                logger.info('[ConversationMemory] Added SystemMessageAction for backward compatibility')
 
-    def _ensure_initial_user_message(
-        self, events: list[Event], initial_user_action: MessageAction
-    ) -> None:
+    def _ensure_initial_user_message(self, events: list[Event], initial_user_action: MessageAction) -> None:
         """Checks if the second event is a user MessageAction and inserts the provided one if needed."""
-        if (
-            not events
-        ):  # Should have system message from previous step, but safety check
+        if not events:  # Should have system message from previous step, but safety check
             logger.error('Cannot ensure initial user message: event list is empty.')
             # Or raise? Let's log for now, _ensure_system_message should handle this.
             return
@@ -809,16 +736,12 @@ class ConversationMemory:
         # We expect events[0] to be SystemMessageAction after _ensure_system_message
         if len(events) == 1:
             # Only system message exists
-            logger.info(
-                'Initial user message action was missing. Inserting the initial user message.'
-            )
+            logger.info('Initial user message action was missing. Inserting the initial user message.')
             events.insert(1, initial_user_action)
         elif not isinstance(events[1], MessageAction) or events[1].source != 'user':
             # The second event exists but is not the correct initial user message action.
             # We will insert the correct one provided.
-            logger.info(
-                'Second event was not the initial user message action. Inserting correct one at index 1.'
-            )
+            logger.info('Second event was not the initial user message action. Inserting correct one at index 1.')
 
             # Insert the user message event at index 1. This will be the second message as LLM APIs expect
             # but something was wrong with the history, so log all we can.

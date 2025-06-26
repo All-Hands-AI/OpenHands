@@ -42,12 +42,8 @@ PASS_TO_FAIL = 'PASS_TO_FAIL'
 
 TEST_PYTEST = 'coverage run -m pytest --no-header -rA --tb=no -p no:cacheprovider'
 TEST_PYTEST_VERBOSE = 'coverage run -m pytest -rA --tb=long -p no:cacheprovider'
-TEST_ASTROPY_PYTEST = (
-    'coverage run -m pytest -rA -vv -o console_output_style=classic --tb=no'
-)
-TEST_DJANGO = (
-    'coverage run ./tests/runtests.py --verbosity 2 --settings=test_sqlite --parallel 1'
-)
+TEST_ASTROPY_PYTEST = 'coverage run -m pytest -rA -vv -o console_output_style=classic --tb=no'
+TEST_DJANGO = 'coverage run ./tests/runtests.py --verbosity 2 --settings=test_sqlite --parallel 1'
 TEST_DJANGO_NO_PARALLEL = 'coverage run ./tests/runtests.py --verbosity 2'
 TEST_SEABORN = 'coverage run -m pytest --no-header -rA'
 TEST_SEABORN_VERBOSE = 'coverage run -m pytest -rA --tb=long'
@@ -479,9 +475,7 @@ SPECS_MATPLOTLIB.update(
         k: {
             'python': '3.5',
             'install': 'python setup.py build; python setup.py install',
-            'pre_install': [
-                'apt-get -y update && apt-get -y upgrade && && apt-get install -y imagemagick ffmpeg'
-            ],
+            'pre_install': ['apt-get -y update && apt-get -y upgrade && && apt-get install -y imagemagick ffmpeg'],
             'pip_packages': ['pytest'],
             'execute_test_as_nonroot': True,
             'test_cmd': TEST_PYTEST,
@@ -490,9 +484,7 @@ SPECS_MATPLOTLIB.update(
     }
 )
 for k in ['3.8', '3.9']:
-    SPECS_MATPLOTLIB[k]['install'] = (
-        'python -m pip install --no-build-isolation -e ".[dev]"'
-    )
+    SPECS_MATPLOTLIB[k]['install'] = 'python -m pip install --no-build-isolation -e ".[dev]"'
 
 SPECS_SPHINX = {
     k: {
@@ -684,9 +676,7 @@ SPECS_PYLINT = {
     ]
 }
 SPECS_PYLINT['2.8']['pip_packages'] = ['pyenchant==3.2']
-SPECS_PYLINT['2.8']['pre_install'] = [
-    'apt-get update && apt-get install -y libenchant-2-dev hunspell-en-us'
-]
+SPECS_PYLINT['2.8']['pre_install'] = ['apt-get update && apt-get install -y libenchant-2-dev hunspell-en-us']
 SPECS_PYLINT.update(
     {
         k: {
@@ -915,9 +905,7 @@ SPECS_PYDICOM = {
 SPECS_PYDICOM.update({k: {**SPECS_PYDICOM[k], 'python': '3.8'} for k in ['1.4', '2.0']})
 SPECS_PYDICOM.update({k: {**SPECS_PYDICOM[k], 'python': '3.9'} for k in ['2.1', '2.2']})
 SPECS_PYDICOM.update({k: {**SPECS_PYDICOM[k], 'python': '3.10'} for k in ['2.3']})
-SPECS_PYDICOM.update(
-    {k: {**SPECS_PYDICOM[k], 'python': '3.11'} for k in ['2.4', '3.0']}
-)
+SPECS_PYDICOM.update({k: {**SPECS_PYDICOM[k], 'python': '3.11'} for k in ['2.4', '3.0']})
 
 SPECS_HUMANEVAL = {k: {'python': '3.9', 'test_cmd': 'python'} for k in ['1.0']}
 

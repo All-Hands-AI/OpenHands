@@ -94,9 +94,7 @@ data_list = data_dict
 
 for data in data_list:
     if 'model_output' in data:
-        print(
-            f'the {data_list.index(data) + 1} has already been predicted, skipping this data!'
-        )
+        print(f'the {data_list.index(data) + 1} has already been predicted, skipping this data!')
         continue
     try:
         print(f'Predicting {data_list.index(data) + 1} ')
@@ -113,9 +111,7 @@ for data in data_list:
     except Exception as e:
         print(f'error：{e}')
         print('save current data')
-        save_folder_path = os.path.join(
-            '../data/result_data/code_migration', model_name
-        )
+        save_folder_path = os.path.join('../data/result_data/code_migration', model_name)
         if not os.path.exists(save_folder_path):
             os.makedirs(save_folder_path)
         save_json_path = os.path.join(save_folder_path, json_path.split('/')[-1])

@@ -23,9 +23,7 @@ from openhands.server.user_auth import (
 )
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 
-mcp_server = FastMCP(
-    'mcp', stateless_http=True, dependencies=get_dependencies(), mask_error_details=True
-)
+mcp_server = FastMCP('mcp', stateless_http=True, dependencies=get_dependencies(), mask_error_details=True)
 
 HOST = f'https://{os.getenv("WEB_HOST", "app.all-hands.dev").strip()}'
 CONVO_URL = HOST + '/conversations/{}'
@@ -42,20 +40,14 @@ async def get_convo_link(service: GitService, conversation_id: str, body: str) -
     user = await service.get_user()
     username = user.login
     convo_url = CONVO_URL.format(conversation_id)
-    convo_link = (
-        f'@{username} can click here to [continue refining the PR]({convo_url})'
-    )
+    convo_link = f'@{username} can click here to [continue refining the PR]({convo_url})'
     body += f'\n\n{convo_link}'
     return body
 
 
-async def save_pr_metadata(
-    user_id: str | None, conversation_id: str, tool_result: str
-) -> None:
+async def save_pr_metadata(user_id: str | None, conversation_id: str, tool_result: str) -> None:
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
-    conversation: ConversationMetadata = await conversation_store.get_metadata(
-        conversation_id
-    )
+    conversation: ConversationMetadata = await conversation_store.get_metadata(conversation_id)
 
     pull_pattern = r'pull/(\d+)'
     merge_request_pattern = r'merge_requests/(\d+)'
@@ -81,9 +73,7 @@ async def save_pr_metadata(
 
 @mcp_server.tool()
 async def create_pr(
-    repo_name: Annotated[
-        str, Field(description='GitHub repository ({{owner}}/{{repo}})')
-    ],
+    repo_name: Annotated[str, Field(description='GitHub repository ({{owner}}/{{repo}})')],
     source_branch: Annotated[str, Field(description='Source branch on repo')],
     target_branch: Annotated[str, Field(description='Target branch on repo')],
     title: Annotated[str, Field(description='PR Title')],
@@ -102,11 +92,7 @@ async def create_pr(
     access_token = await get_access_token(request)
     user_id = await get_user_id(request)
 
-    github_token = (
-        provider_tokens.get(ProviderType.GITHUB, ProviderToken())
-        if provider_tokens
-        else ProviderToken()
-    )
+    github_token = provider_tokens.get(ProviderType.GITHUB, ProviderToken()) if provider_tokens else ProviderToken()
 
     github_service = GithubServiceImpl(
         user_id=github_token.user_id,
@@ -151,9 +137,7 @@ async def create_mr(
     target_branch: Annotated[str, Field(description='Target branch on repo')],
     title: Annotated[
         str,
-        Field(
-            description='MR Title. Start title with `DRAFT:` or `WIP:` if applicable.'
-        ),
+        Field(description='MR Title. Start title with `DRAFT:` or `WIP:` if applicable.'),
     ],
     description: Annotated[str | None, Field(description='MR description')],
 ) -> str:
@@ -169,11 +153,7 @@ async def create_mr(
     access_token = await get_access_token(request)
     user_id = await get_user_id(request)
 
-    github_token = (
-        provider_tokens.get(ProviderType.GITLAB, ProviderToken())
-        if provider_tokens
-        else ProviderToken()
-    )
+    github_token = provider_tokens.get(ProviderType.GITLAB, ProviderToken()) if provider_tokens else ProviderToken()
 
     gitlab_service = GitLabServiceImpl(
         user_id=github_token.user_id,
@@ -184,9 +164,7 @@ async def create_mr(
     )
 
     try:
-        description = await get_convo_link(
-            gitlab_service, conversation_id, description or ''
-        )
+        description = await get_convo_link(gitlab_service, conversation_id, description or '')
     except Exception as e:
         logger.warning(f'Failed to append convo link: {e}')
 
@@ -211,16 +189,12 @@ async def create_mr(
 
 @mcp_server.tool()
 async def create_bitbucket_pr(
-    repo_name: Annotated[
-        str, Field(description='Bitbucket repository (workspace/repo_slug)')
-    ],
+    repo_name: Annotated[str, Field(description='Bitbucket repository (workspace/repo_slug)')],
     source_branch: Annotated[str, Field(description='Source branch on repo')],
     target_branch: Annotated[str, Field(description='Target branch on repo')],
     title: Annotated[
         str,
-        Field(
-            description='PR Title. Start title with `DRAFT:` or `WIP:` if applicable.'
-        ),
+        Field(description='PR Title. Start title with `DRAFT:` or `WIP:` if applicable.'),
     ],
     description: Annotated[str | None, Field(description='PR description')],
 ) -> str:
@@ -237,9 +211,7 @@ async def create_bitbucket_pr(
     user_id = await get_user_id(request)
 
     bitbucket_token = (
-        provider_tokens.get(ProviderType.BITBUCKET, ProviderToken())
-        if provider_tokens
-        else ProviderToken()
+        provider_tokens.get(ProviderType.BITBUCKET, ProviderToken()) if provider_tokens else ProviderToken()
     )
 
     bitbucket_service = BitBucketServiceImpl(
@@ -251,9 +223,7 @@ async def create_bitbucket_pr(
     )
 
     try:
-        description = await get_convo_link(
-            bitbucket_service, conversation_id, description or ''
-        )
+        description = await get_convo_link(bitbucket_service, conversation_id, description or '')
     except Exception as e:
         logger.warning(f'Failed to append convo link: {e}')
 

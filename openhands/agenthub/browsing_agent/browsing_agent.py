@@ -65,9 +65,7 @@ In order to accomplish my goal I need to send the information asked back to the 
 """
 
 
-def get_prompt(
-    error_prefix: str, cur_url: str, cur_axtree_txt: str, prev_action_str: str
-) -> str:
+def get_prompt(error_prefix: str, cur_url: str, cur_axtree_txt: str, prev_action_str: str) -> str:
     prompt = f"""\
 {error_prefix}
 
@@ -172,10 +170,7 @@ class BrowsingAgent(Agent):
         prev_action_str = '\n'.join(prev_actions)
         # if the final BrowserInteractiveAction exec BrowserGym's send_msg_to_user,
         # we should also send a message back to the user in OpenHands and call it a day
-        if (
-            isinstance(last_action, BrowseInteractiveAction)
-            and last_action.browsergym_send_msg_to_user
-        ):
+        if isinstance(last_action, BrowseInteractiveAction) and last_action.browsergym_send_msg_to_user:
             return MessageAction(last_action.browsergym_send_msg_to_user)
 
         if isinstance(last_obs, BrowserOutputObservation):
@@ -196,9 +191,7 @@ class BrowsingAgent(Agent):
                     filter_visible_only=True,
                 )
             except Exception as e:
-                logger.error(
-                    'Error when trying to process the accessibility tree: %s', e
-                )
+                logger.error('Error when trying to process the accessibility tree: %s', e)
                 return MessageAction('Error encountered when browsing.')
 
         goal, _ = state.get_current_user_intent()

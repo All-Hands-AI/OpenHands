@@ -70,8 +70,6 @@ class View(BaseModel):
         if summary is not None and summary_offset is not None:
             logger.info(f'Inserting summary at offset {summary_offset}')
 
-            kept_events.insert(
-                summary_offset, AgentCondensationObservation(content=summary)
-            )
+            kept_events.insert(summary_offset, AgentCondensationObservation(content=summary))
 
         return View(events=kept_events)

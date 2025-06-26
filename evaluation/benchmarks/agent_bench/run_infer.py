@@ -157,9 +157,7 @@ def complete_runtime(
                 )
             logger.info(f'Running get ground truth cmd: {script_name}')
 
-            action = CmdRunAction(
-                command=f'chmod +x ./{script_name} && ./{script_name}'
-            )
+            action = CmdRunAction(command=f'chmod +x ./{script_name} && ./{script_name}')
             logger.info(action, extra={'msg_type': 'ACTION'})
             obs = runtime.run_action(action)
             logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -200,8 +198,7 @@ def process_instance(
         f'{instance.description}\n\n'
     )
     instruction += (
-        'IMPORTANT: You should ONLY interact with the environment provided '
-        'to you AND NEVER ASK FOR HUMAN HELP.\n'
+        'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
     )
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += INST_SUFFIXES[metadata.agent_class]
@@ -263,9 +260,7 @@ def process_instance(
             agent_answer = agent_answer[0]
 
     comparison_method = instance.comparison_method
-    logger.info(
-        f'Final message: {agent_answer} | Ground truth: {final_ans} | Comparison method: {comparison_method}'
-    )
+    logger.info(f'Final message: {agent_answer} | Ground truth: {final_ans} | Comparison method: {comparison_method}')
     test_result = compare_results(comparison_method, agent_answer, final_ans)
 
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
@@ -319,6 +314,4 @@ if __name__ == '__main__':
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(agent_bench_tests, output_file, args.eval_n_limit)
 
-    run_evaluation(
-        instances, metadata, output_file, args.eval_num_workers, process_instance
-    )
+    run_evaluation(instances, metadata, output_file, args.eval_num_workers, process_instance)

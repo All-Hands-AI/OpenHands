@@ -87,9 +87,7 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
     )
 
     if RUN_WITH_BROWSING:
-        instruction += (
-            '<IMPORTANT!>\nYou SHOULD NEVER attempt to browse the web. </IMPORTANT!>\n'
-        )
+        instruction += '<IMPORTANT!>\nYou SHOULD NEVER attempt to browse the web. </IMPORTANT!>\n'
     return instruction
 
 
@@ -100,9 +98,7 @@ logger.info(f'Using docker image prefix: {DOCKER_IMAGE_PREFIX}')
 
 def get_instance_docker_image(instance_id: str, official_image: bool = False) -> str:
     image_name = 'sweb.eval.x86_64.' + instance_id
-    image_name = image_name.replace(
-        '__', '_s_'
-    )  # to comply with docker image naming convention
+    image_name = image_name.replace('__', '_s_')  # to comply with docker image naming convention
     other_list = [
         'plotly__plotly.py-4083',
         'plotly__plotly.py-2600',
@@ -137,12 +133,8 @@ def get_config(
     metadata: EvalMetadata,
 ) -> OpenHandsConfig:
     # We use a different instance image for the each instance of swe-bench eval
-    use_official_image = bool(
-        'verified' in metadata.dataset.lower() or 'lite' in metadata.dataset.lower()
-    )
-    base_container_image = get_instance_docker_image(
-        instance['instance_id'], use_official_image
-    )
+    use_official_image = bool('verified' in metadata.dataset.lower() or 'lite' in metadata.dataset.lower())
+    base_container_image = get_instance_docker_image(instance['instance_id'], use_official_image)
     logger.info(
         f'Using instance container image: {base_container_image}. '
         f'Please make sure this image exists. '
@@ -208,9 +200,7 @@ def initialize_runtime(
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert_and_raise(
-        obs.exit_code == 0, f'Failed to export SWE_INSTANCE_ID: {str(obs)}'
-    )
+    assert_and_raise(obs.exit_code == 0, f'Failed to export SWE_INSTANCE_ID: {str(obs)}')
 
     action = CmdRunAction(command="""export USER=$(whoami); echo USER=${USER} """)
     action.set_hard_timeout(600)
@@ -296,9 +286,7 @@ def initialize_runtime(
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(obs.exit_code == 0, f'Failed to git reset --hard: {str(obs)}')
 
-    action = CmdRunAction(
-        command='for remote_name in $(git remote); do git remote remove "${remote_name}"; done'
-    )
+    action = CmdRunAction(command='for remote_name in $(git remote); do git remote remove "${remote_name}"; done')
     action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
@@ -411,9 +399,7 @@ def complete_runtime(
     n_retries = 0
     git_patch = None
     while n_retries < 5:
-        action = CmdRunAction(
-            command=f'git diff --no-color --cached {instance["base_commit"]}'
-        )
+        action = CmdRunAction(command=f'git diff --no-color --cached {instance["base_commit"]}')
         action.set_hard_timeout(max(300 + 100 * n_retries, 600))
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
@@ -478,9 +464,7 @@ def process_instance(
                 config=config,
                 initial_user_action=MessageAction(content=instruction),
                 runtime=runtime,
-                fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
-                    metadata.agent_class
-                ],
+                fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[metadata.agent_class],
             )
         )
 
@@ -492,9 +476,7 @@ def process_instance(
         # Get git patch
         return_val = complete_runtime(runtime, instance)
         git_patch = return_val['git_patch']
-        logger.info(
-            f'Got git diff for instance {instance.instance_id}:\n--------\n{git_patch}\n--------'
-        )
+        logger.info(f'Got git diff for instance {instance.instance_id}:\n--------\n{git_patch}\n--------')
     finally:
         runtime.close()
     # ==========================================
@@ -536,9 +518,7 @@ def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
             data = toml.load(file)
             if 'selected_ids' in data:
                 selected_ids = data['selected_ids']
-                logger.info(
-                    f'Filtering {len(selected_ids)} tasks from "selected_ids"...'
-                )
+                logger.info(f'Filtering {len(selected_ids)} tasks from "selected_ids"...')
                 subset = dataset[dataset[filter_column].isin(selected_ids)]
                 logger.info(f'Retained {subset.shape[0]} tasks after filtering')
                 return subset
@@ -583,16 +563,10 @@ if __name__ == '__main__':
     # so we don't need to manage file uploading to OpenHands's repo
     dataset = load_dataset(args.dataset, split=args.split)
     swe_bench_tests = filter_dataset(dataset.to_pandas(), 'instance_id')
-    logger.info(
-        f'Loaded dataset {args.dataset} with split {args.split}: {len(swe_bench_tests)} tasks'
-    )
+    logger.info(f'Loaded dataset {args.dataset} with split {args.split}: {len(swe_bench_tests)} tasks')
     if 'SWE-Gym' in args.dataset:
-        swe_bench_tests = swe_bench_tests[
-            ~swe_bench_tests['instance_id'].isin(SWEGYM_EXCLUDE_IDS)
-        ]
-        logger.info(
-            f'{len(swe_bench_tests)} tasks left after excluding SWE-Gym excluded tasks'
-        )
+        swe_bench_tests = swe_bench_tests[~swe_bench_tests['instance_id'].isin(SWEGYM_EXCLUDE_IDS)]
+        logger.info(f'{len(swe_bench_tests)} tasks left after excluding SWE-Gym excluded tasks')
 
     llm_config = None
     if args.llm_config:
@@ -607,9 +581,7 @@ if __name__ == '__main__':
     details = {}
     _agent_cls = openhands.agenthub.Agent.get_cls(args.agent_cls)
 
-    dataset_descrption = (
-        args.dataset.replace('/', '__') + '-' + args.split.replace('/', '__')
-    )
+    dataset_descrption = args.dataset.replace('/', '__') + '-' + args.split.replace('/', '__')
     metadata = make_metadata(
         llm_config,
         dataset_descrption,
@@ -624,9 +596,7 @@ if __name__ == '__main__':
     print(f'### OUTPUT FILE: {output_file} ###')
     instances = prepare_dataset(swe_bench_tests, output_file, args.eval_n_limit)
 
-    if len(instances) > 0 and not isinstance(
-        instances['PASS_TO_PASS'][instances['PASS_TO_PASS'].index[0]], str
-    ):
+    if len(instances) > 0 and not isinstance(instances['PASS_TO_PASS'][instances['PASS_TO_PASS'].index[0]], str):
         for col in ['PASS_TO_PASS', 'FAIL_TO_PASS']:
             instances[col] = instances[col].apply(lambda x: str(x))
 

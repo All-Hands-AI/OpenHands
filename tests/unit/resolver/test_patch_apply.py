@@ -28,9 +28,7 @@ index b760a53..5071727 100644
     changes = parse_diff(patch)
     print('\nParsed changes:')
     for change in changes:
-        print(
-            f'Change(old={change.old}, new={change.new}, line={repr(change.line)}, hunk={change.hunk})'
-        )
+        print(f'Change(old={change.old}, new={change.new}, line={repr(change.line)}, hunk={change.hunk})')
     diff = diffobj(header=None, changes=changes, text=patch)
 
     # Apply the patch

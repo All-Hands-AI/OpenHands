@@ -49,14 +49,10 @@ def _compress_chunks(
 def compress_string(text: str) -> str:
     """Compress a string by replacing redundant paragraphs and lines with identifiers."""
     # Perform paragraph-level compression
-    def_dict, compressed_text = _compress_chunks(
-        text, identifier='§', skip_list=[], split_regex='\n\n+'
-    )
+    def_dict, compressed_text = _compress_chunks(text, identifier='§', skip_list=[], split_regex='\n\n+')
 
     # Perform line-level compression, skipping any paragraph identifiers
-    line_dict, compressed_text = _compress_chunks(
-        compressed_text, '¶', list(def_dict.keys()), split_regex='\n+'
-    )
+    line_dict, compressed_text = _compress_chunks(compressed_text, '¶', list(def_dict.keys()), split_regex='\n+')
     def_dict.update(line_dict)
 
     # Create a definitions section
@@ -111,9 +107,7 @@ def parse_html_tags_raise(
     merge_multiple: bool = False,
 ) -> dict[str, str]:
     """A version of parse_html_tags that raises an exception if the parsing is not successful."""
-    content_dict, valid, retry_message = parse_html_tags(
-        text, keys, optional_keys, merge_multiple=merge_multiple
-    )
+    content_dict, valid, retry_message = parse_html_tags(text, keys, optional_keys, merge_multiple=merge_multiple)
     if not valid:
         raise ParseError(retry_message)
     return content_dict

@@ -15,9 +15,7 @@ def check_port_available(port: int) -> bool:
         sock.close()
 
 
-def find_available_tcp_port(
-    min_port: int = 30000, max_port: int = 39999, max_attempts: int = 10
-) -> int:
+def find_available_tcp_port(min_port: int = 30000, max_port: int = 39999, max_attempts: int = 10) -> int:
     """Find an available TCP port in a specified range.
 
     Args:

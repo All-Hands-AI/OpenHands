@@ -9,9 +9,7 @@ from openhands.storage.conversation.conversation_store import ConversationStore
 
 
 async def get_conversation_store(request: Request) -> ConversationStore | None:
-    conversation_store: ConversationStore | None = getattr(
-        request.state, 'conversation_store', None
-    )
+    conversation_store: ConversationStore | None = getattr(request.state, 'conversation_store', None)
     if conversation_store:
         return conversation_store
     user_id = await get_user_id(request)
@@ -29,13 +27,9 @@ async def generate_unique_conversation_id(
     return conversation_id
 
 
-async def get_conversation(
-    conversation_id: str, user_id: str | None = Depends(get_user_id)
-):
+async def get_conversation(conversation_id: str, user_id: str | None = Depends(get_user_id)):
     """Grabs conversation id set by middleware. Adds the conversation_id to the openapi schema."""
-    conversation = await conversation_manager.attach_to_conversation(
-        conversation_id, user_id
-    )
+    conversation = await conversation_manager.attach_to_conversation(conversation_id, user_id)
     if not conversation:
         logger.warning(
             f'get_conversation: conversation {conversation_id} not found, attach_to_conversation returned None',

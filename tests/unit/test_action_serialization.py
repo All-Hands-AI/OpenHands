@@ -19,16 +19,10 @@ from openhands.events.serialization import (
 )
 
 
-def serialization_deserialization(
-    original_action_dict, cls, max_message_chars: int = 10000
-):
+def serialization_deserialization(original_action_dict, cls, max_message_chars: int = 10000):
     action_instance = event_from_dict(original_action_dict)
-    assert isinstance(action_instance, Action), (
-        'The action instance should be an instance of Action.'
-    )
-    assert isinstance(action_instance, cls), (
-        f'The action instance should be an instance of {cls.__name__}.'
-    )
+    assert isinstance(action_instance, Action), 'The action instance should be an instance of Action.'
+    assert isinstance(action_instance, cls), f'The action instance should be an instance of {cls.__name__}.'
 
     # event_to_dict is the regular serialization of an event
     serialized_action_dict = event_to_dict(action_instance)
@@ -222,9 +216,7 @@ def test_cmd_run_action_legacy_serialization():
 
     event_dict = event_to_dict(event)
     assert 'keep_prompt' not in event_dict['args']
-    assert (
-        event_dict['args']['confirmation_state'] == ActionConfirmationStatus.CONFIRMED
-    )
+    assert event_dict['args']['confirmation_state'] == ActionConfirmationStatus.CONFIRMED
     assert event_dict['args']['blocking'] is False
     assert event_dict['args']['command'] == 'echo "Hello world"'
     assert event_dict['args']['thought'] == ''
@@ -383,9 +375,7 @@ def test_file_read_action_legacy_serialization():
     assert event.thought == 'Reading the file contents'
     assert event.impl_source == FileReadSource.OH_ACI
     assert not hasattr(event, 'translated_ipython_code')
-    assert not hasattr(
-        event, 'command'
-    )  # FileReadAction should not have command attribute
+    assert not hasattr(event, 'command')  # FileReadAction should not have command attribute
 
     # Read-specific arguments
     assert event.start == 0
@@ -393,9 +383,7 @@ def test_file_read_action_legacy_serialization():
 
     event_dict = event_to_dict(event)
     assert 'translated_ipython_code' not in event_dict['args']
-    assert (
-        'command' not in event_dict['args']
-    )  # command should not be in serialized args
+    assert 'command' not in event_dict['args']  # command should not be in serialized args
 
     # Common arguments in serialized form
     assert event_dict['args']['path'] == '/workspace/test.txt'

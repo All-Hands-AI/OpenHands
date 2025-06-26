@@ -90,9 +90,7 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
 
             if status_response.status_code != 200:
                 logger.error(f'Failed to get build status: {status_response.text}')
-                raise AgentRuntimeBuildError(
-                    f'Failed to get build status: {status_response.text}'
-                )
+                raise AgentRuntimeBuildError(f'Failed to get build status: {status_response.text}')
 
             status_data = status_response.json()
             status = status_data['status']
@@ -108,9 +106,7 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
                 'CANCELLED',
                 'EXPIRED',
             ]:
-                error_message = status_data.get(
-                    'error', f'Build failed with status: {status}. Build ID: {build_id}'
-                )
+                error_message = status_data.get('error', f'Build failed with status: {status}. Build ID: {build_id}')
                 logger.error(error_message)
                 raise AgentRuntimeBuildError(error_message)
 
@@ -131,9 +127,7 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
 
         if response.status_code != 200:
             logger.error(f'Failed to check image existence: {response.text}')
-            raise AgentRuntimeBuildError(
-                f'Failed to check image existence: {response.text}'
-            )
+            raise AgentRuntimeBuildError(f'Failed to check image existence: {response.text}')
 
         result = response.json()
 

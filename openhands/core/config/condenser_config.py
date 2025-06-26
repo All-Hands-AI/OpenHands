@@ -51,9 +51,7 @@ class RecentEventsCondenserConfig(BaseModel):
         description='The number of initial events to condense.',
         ge=0,
     )
-    max_events: int = Field(
-        default=100, description='Maximum number of events to keep.', ge=1
-    )
+    max_events: int = Field(default=100, description='Maximum number of events to keep.', ge=1)
 
     model_config = ConfigDict(extra='forbid')
 
@@ -62,9 +60,7 @@ class LLMSummarizingCondenserConfig(BaseModel):
     """Configuration for LLMCondenser."""
 
     type: Literal['llm'] = Field('llm')
-    llm_config: LLMConfig = Field(
-        ..., description='Configuration for the LLM to use for condensing.'
-    )
+    llm_config: LLMConfig = Field(..., description='Configuration for the LLM to use for condensing.')
 
     # at least one event by default, because the best guess is that it's the user task
     keep_first: int = Field(
@@ -109,9 +105,7 @@ class LLMAttentionCondenserConfig(BaseModel):
     """Configuration for LLMAttentionCondenser."""
 
     type: Literal['llm_attention'] = Field('llm_attention')
-    llm_config: LLMConfig = Field(
-        ..., description='Configuration for the LLM to use for attention.'
-    )
+    llm_config: LLMConfig = Field(..., description='Configuration for the LLM to use for attention.')
     max_size: int = Field(
         default=100,
         description='Maximum size of the condensed history before triggering forgetting.',
@@ -132,9 +126,7 @@ class StructuredSummaryCondenserConfig(BaseModel):
     """Configuration for StructuredSummaryCondenser instances."""
 
     type: Literal['structured'] = Field('structured')
-    llm_config: LLMConfig = Field(
-        ..., description='Configuration for the LLM to use for condensing.'
-    )
+    llm_config: LLMConfig = Field(..., description='Configuration for the LLM to use for condensing.')
 
     # at least one event by default, because the best guess is that it's the user task
     keep_first: int = Field(
@@ -184,9 +176,7 @@ CondenserConfig = (
 )
 
 
-def condenser_config_from_toml_section(
-    data: dict, llm_configs: dict | None = None
-) -> dict[str, CondenserConfig]:
+def condenser_config_from_toml_section(data: dict, llm_configs: dict | None = None) -> dict[str, CondenserConfig]:
     """
     Create a CondenserConfig instance from a toml dictionary representing the [condenser] section.
 
@@ -220,11 +210,7 @@ def condenser_config_from_toml_section(
         condenser_type = data.get('type', 'noop')
 
         # Handle LLM config reference if needed
-        if (
-            condenser_type in ('llm', 'llm_attention')
-            and 'llm_config' in data
-            and isinstance(data['llm_config'], str)
-        ):
+        if condenser_type in ('llm', 'llm_attention') and 'llm_config' in data and isinstance(data['llm_config'], str):
             llm_config_name = data['llm_config']
             if llm_configs and llm_config_name in llm_configs:
                 # Replace the string reference with the actual LLMConfig object
@@ -246,9 +232,7 @@ def condenser_config_from_toml_section(
 
         condenser_mapping['condenser'] = config
     except (ValidationError, ValueError) as e:
-        logger.openhands_logger.warning(
-            f'Invalid condenser configuration: {e}. Using NoOpCondenserConfig.'
-        )
+        logger.openhands_logger.warning(f'Invalid condenser configuration: {e}. Using NoOpCondenserConfig.')
         # Default to NoOpCondenserConfig if config fails
         config = NoOpCondenserConfig(type='noop')
         condenser_mapping['condenser'] = config
@@ -298,6 +282,4 @@ def create_condenser_config(condenser_type: str, data: dict) -> CondenserConfig:
     except ValidationError as e:
         # Just re-raise with a more descriptive message, but don't try to pass the errors
         # which can cause compatibility issues with different pydantic versions
-        raise ValueError(
-            f"Validation failed for condenser type '{condenser_type}': {e}"
-        )
+        raise ValueError(f"Validation failed for condenser type '{condenser_type}': {e}")

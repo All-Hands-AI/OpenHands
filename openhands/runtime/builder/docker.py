@@ -19,16 +19,9 @@ class DockerRuntimeBuilder(RuntimeBuilder):
 
         version_info = self.docker_client.version()
         server_version = version_info.get('Version', '').replace('-', '.')
-        self.is_podman = (
-            version_info.get('Components')[0].get('Name').startswith('Podman')
-        )
-        if (
-            tuple(map(int, server_version.split('.')[:2])) < (18, 9)
-            and not self.is_podman
-        ):
-            raise AgentRuntimeBuildError(
-                'Docker server version must be >= 18.09 to use BuildKit'
-            )
+        self.is_podman = version_info.get('Components')[0].get('Name').startswith('Podman')
+        if tuple(map(int, server_version.split('.')[:2])) < (18, 9) and not self.is_podman:
+            raise AgentRuntimeBuildError('Docker server version must be >= 18.09 to use BuildKit')
 
         if self.is_podman and tuple(map(int, server_version.split('.')[:2])) < (4, 9):
             raise AgentRuntimeBuildError('Podman server version must be >= 4.9.0')
@@ -79,13 +72,9 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         self.docker_client = docker.from_env()
         version_info = self.docker_client.version()
         server_version = version_info.get('Version', '').split('+')[0].replace('-', '.')
-        self.is_podman = (
-            version_info.get('Components')[0].get('Name').startswith('Podman')
-        )
+        self.is_podman = version_info.get('Components')[0].get('Name').startswith('Podman')
         if tuple(map(int, server_version.split('.'))) < (18, 9) and not self.is_podman:
-            raise AgentRuntimeBuildError(
-                'Docker server version must be >= 18.09 to use BuildKit'
-            )
+            raise AgentRuntimeBuildError('Docker server version must be >= 18.09 to use BuildKit')
 
         if self.is_podman and tuple(map(int, server_version.split('.'))) < (4, 9):
             raise AgentRuntimeBuildError('Podman server version must be >= 4.9.0')
@@ -95,9 +84,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             # binary available, in which case we need to download docker binary.
             # since the official openhands app image is built from debian, we use
             # debian way to install docker binary
-            logger.info(
-                'No docker binary available inside openhands-app container, trying to download online...'
-            )
+            logger.info('No docker binary available inside openhands-app container, trying to download online...')
             commands = [
                 'apt-get update',
                 'apt-get install -y ca-certificates curl gnupg',
@@ -113,9 +100,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             ]
             for cmd in commands:
                 try:
-                    subprocess.run(
-                        cmd, shell=True, check=True, stdout=subprocess.DEVNULL
-                    )
+                    subprocess.run(cmd, shell=True, check=True, stdout=subprocess.DEVNULL)
                 except subprocess.CalledProcessError as e:
                     logger.error(f'Image build failed:\n{e}')
                     logger.error(f'Command output:\n{e.output}')
@@ -155,9 +140,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
 
         buildx_cmd.append(path)  # must be last!
 
-        self.rolling_logger.start(
-            f'================ {buildx_cmd[0].upper()} BUILD STARTED ================'
-        )
+        self.rolling_logger.start(f'================ {buildx_cmd[0].upper()} BUILD STARTED ================')
 
         builder_cmd = ['docker', 'buildx', 'use', 'default']
         subprocess.Popen(
@@ -196,9 +179,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             logger.error(f'Image build failed:\n{e}')  # TODO: {e} is empty
             logger.error(f'Command output:\n{e.output}')
             if self.rolling_logger.is_enabled():
-                logger.error(
-                    'Docker build output:\n' + self.rolling_logger.all_lines
-                )  # Show the error
+                logger.error('Docker build output:\n' + self.rolling_logger.all_lines)  # Show the error
             raise
 
         except subprocess.TimeoutExpired:
@@ -210,9 +191,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             raise
 
         except PermissionError as e:
-            logger.error(
-                f'Permission denied when trying to execute the build command:\n{e}'
-            )
+            logger.error(f'Permission denied when trying to execute the build command:\n{e}')
             raise
 
         except Exception as e:
@@ -224,25 +203,15 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         if target_image_tag:
             image = self.docker_client.images.get(target_image_hash_name)
             image.tag(target_image_repo, target_image_tag)
-            logger.info(
-                f'Re-tagged image [{target_image_hash_name}] with more generic tag [{target_image_tag}]'
-            )
+            logger.info(f'Re-tagged image [{target_image_hash_name}] with more generic tag [{target_image_tag}]')
 
         # Check if the image is built successfully
         image = self.docker_client.images.get(target_image_hash_name)
         if image is None:
-            raise AgentRuntimeBuildError(
-                f'Build failed: Image {target_image_hash_name} not found'
-            )
+            raise AgentRuntimeBuildError(f'Build failed: Image {target_image_hash_name} not found')
 
-        tags_str = (
-            f'{target_image_source_tag}, {target_image_tag}'
-            if target_image_tag
-            else target_image_source_tag
-        )
-        logger.info(
-            f'Image {target_image_repo} with tags [{tags_str}] built successfully'
-        )
+        tags_str = f'{target_image_source_tag}, {target_image_tag}' if target_image_tag else target_image_source_tag
+        logger.info(f'Image {target_image_repo} with tags [{tags_str}] built successfully')
         return target_image_hash_name
 
     def image_exists(self, image_name: str, pull_from_repo: bool = True) -> bool:
@@ -265,14 +234,10 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             return True
         except docker.errors.ImageNotFound:
             if not pull_from_repo:
-                logger.debug(
-                    f'Image {image_name} {colorize("not found", TermColor.WARNING)} locally'
-                )
+                logger.debug(f'Image {image_name} {colorize("not found", TermColor.WARNING)} locally')
                 return False
             try:
-                logger.debug(
-                    'Image not found locally. Trying to pull it, please wait...'
-                )
+                logger.debug('Image not found locally. Trying to pull it, please wait...')
 
                 layers: dict[str, dict[str, str]] = {}
                 previous_layer_count = 0
@@ -283,9 +248,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                     image_repo = image_name
                     image_tag = None
 
-                for line in self.docker_client.api.pull(
-                    image_repo, tag=image_tag, stream=True, decode=True
-                ):
+                for line in self.docker_client.api.pull(image_repo, tag=image_tag, stream=True, decode=True):
                     self._output_build_progress(line, layers, previous_layer_count)
                     previous_layer_count = len(layers)
                 logger.debug('Image pulled')
@@ -309,9 +272,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         else:
             self.rolling_logger.add_line(new_line)
 
-    def _output_build_progress(
-        self, current_line: dict, layers: dict, previous_layer_count: int
-    ) -> None:
+    def _output_build_progress(self, current_line: dict, layers: dict, previous_layer_count: int) -> None:
         if 'id' in current_line and 'progressDetail' in current_line:
             layer_id = current_line['id']
             if layer_id not in layers:
@@ -328,13 +289,9 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                 if 'total' in progress_detail and 'current' in progress_detail:
                     total = progress_detail['total']
                     current = progress_detail['current']
-                    percentage = min(
-                        (current / total) * 100, 100
-                    )  # Ensure it doesn't exceed 100%
+                    percentage = min((current / total) * 100, 100)  # Ensure it doesn't exceed 100%
                 else:
-                    percentage = (
-                        100 if layers[layer_id]['status'] == 'Download complete' else 0
-                    )
+                    percentage = 100 if layers[layer_id]['status'] == 'Download complete' else 0
 
             if self.rolling_logger.is_enabled():
                 self.rolling_logger.move_back(previous_layer_count)
@@ -343,23 +300,13 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                     status = layer_data['status']
                     progress = layer_data['progress']
                     if status == 'Download complete':
-                        self.rolling_logger.write_immediately(
-                            f'Layer {lid}: Download complete'
-                        )
+                        self.rolling_logger.write_immediately(f'Layer {lid}: Download complete')
                     elif status == 'Already exists':
-                        self.rolling_logger.write_immediately(
-                            f'Layer {lid}: Already exists'
-                        )
+                        self.rolling_logger.write_immediately(f'Layer {lid}: Already exists')
                     else:
-                        self.rolling_logger.write_immediately(
-                            f'Layer {lid}: {progress} {status}'
-                        )
-            elif percentage != 0 and (
-                percentage - layers[layer_id]['last_logged'] >= 10 or percentage == 100
-            ):
-                logger.debug(
-                    f'Layer {layer_id}: {layers[layer_id]["progress"]} {layers[layer_id]["status"]}'
-                )
+                        self.rolling_logger.write_immediately(f'Layer {lid}: {progress} {status}')
+            elif percentage != 0 and (percentage - layers[layer_id]['last_logged'] >= 10 or percentage == 100):
+                logger.debug(f'Layer {layer_id}: {layers[layer_id]["progress"]} {layers[layer_id]["status"]}')
 
             layers[layer_id]['last_logged'] = percentage
         elif 'status' in current_line:
@@ -407,9 +354,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                 return False
 
         if not os.access(cache_dir, os.W_OK):
-            logger.warning(
-                f'Cache directory {cache_dir} is not writable. Caches will not be used for Docker builds.'
-            )
+            logger.warning(f'Cache directory {cache_dir} is not writable. Caches will not be used for Docker builds.')
             return False
 
         self._prune_old_cache_files(cache_dir)

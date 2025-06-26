@@ -57,9 +57,7 @@ async def create_mcp_clients(
 
     # Skip MCP clients on Windows
     if sys.platform == 'win32':
-        logger.info(
-            'MCP functionality is disabled on Windows, skipping client creation'
-        )
+        logger.info('MCP functionality is disabled on Windows, skipping client creation')
         return []
 
     servers: list[MCPSSEServerConfig | MCPSHTTPServerConfig] = sse_servers.copy()
@@ -73,9 +71,7 @@ async def create_mcp_clients(
     for server in servers:
         is_shttp = isinstance(server, MCPSHTTPServerConfig)
         connection_type = 'SHTTP' if is_shttp else 'SSE'
-        logger.info(
-            f'Initializing MCP agent for {server} with {connection_type} connection...'
-        )
+        logger.info(f'Initializing MCP agent for {server} with {connection_type} connection...')
         client = MCPClient()
 
         try:
@@ -90,9 +86,7 @@ async def create_mcp_clients(
     return mcp_clients
 
 
-async def fetch_mcp_tools_from_config(
-    mcp_config: MCPConfig, conversation_id: str | None = None
-) -> list[dict]:
+async def fetch_mcp_tools_from_config(mcp_config: MCPConfig, conversation_id: str | None = None) -> list[dict]:
     """
     Retrieves the list of MCP tools from the MCP clients.
 
@@ -115,9 +109,7 @@ async def fetch_mcp_tools_from_config(
     try:
         logger.debug(f'Creating MCP clients with config: {mcp_config}')
         # Create clients - this will fetch tools but not maintain active connections
-        mcp_clients = await create_mcp_clients(
-            mcp_config.sse_servers, mcp_config.shttp_servers, conversation_id
-        )
+        mcp_clients = await create_mcp_clients(mcp_config.sse_servers, mcp_config.shttp_servers, conversation_id)
 
         if not mcp_clients:
             logger.debug('No MCP clients were successfully connected')
@@ -198,9 +190,7 @@ async def add_mcp_tools_to_agent(agent: 'Agent', runtime: Runtime, memory: 'Memo
         agent.set_mcp_tools([])
         return
 
-    assert runtime.runtime_initialized, (
-        'Runtime must be initialized before adding MCP tools'
-    )
+    assert runtime.runtime_initialized, 'Runtime must be initialized before adding MCP tools'
 
     extra_stdio_servers = []
 
@@ -208,9 +198,7 @@ async def add_mcp_tools_to_agent(agent: 'Agent', runtime: Runtime, memory: 'Memo
     microagent_mcp_configs = memory.get_microagent_mcp_tools()
     for mcp_config in microagent_mcp_configs:
         if mcp_config.sse_servers:
-            logger.warning(
-                'Microagent MCP config contains SSE servers, it is not yet supported.'
-            )
+            logger.warning('Microagent MCP config contains SSE servers, it is not yet supported.')
 
         if mcp_config.stdio_servers:
             for stdio_server in mcp_config.stdio_servers:
@@ -225,9 +213,7 @@ async def add_mcp_tools_to_agent(agent: 'Agent', runtime: Runtime, memory: 'Memo
     # Fetch the MCP tools
     mcp_tools = await fetch_mcp_tools_from_config(updated_mcp_config)
 
-    logger.info(
-        f'Loaded {len(mcp_tools)} MCP tools: {[tool["function"]["name"] for tool in mcp_tools]}'
-    )
+    logger.info(f'Loaded {len(mcp_tools)} MCP tools: {[tool["function"]["name"] for tool in mcp_tools]}')
 
     # Set the MCP tools on the agent
     agent.set_mcp_tools(mcp_tools)

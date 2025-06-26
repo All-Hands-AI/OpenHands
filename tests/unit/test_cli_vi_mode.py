@@ -38,9 +38,7 @@ class TestCliViMode:
 
         config = OpenHandsConfig(cli=CLIConfig(vi_mode=True))
         with patch('openhands.cli.tui.KeyBindings', MagicMock()) as mock_key_bindings:
-            cli_confirm(
-                config, 'Test question', choices=['Choice 1', 'Choice 2', 'Choice 3']
-            )
+            cli_confirm(config, 'Test question', choices=['Choice 1', 'Choice 2', 'Choice 3'])
             # here we are checking if the key bindings are being created
             assert mock_key_bindings.call_count == 1
 
@@ -55,9 +53,7 @@ class TestCliViMode:
 
         config = OpenHandsConfig(cli=CLIConfig(vi_mode=False))
         with patch('openhands.cli.tui.KeyBindings', MagicMock()) as mock_key_bindings:
-            cli_confirm(
-                config, 'Test question', choices=['Choice 1', 'Choice 2', 'Choice 3']
-            )
+            cli_confirm(config, 'Test question', choices=['Choice 1', 'Choice 2', 'Choice 3'])
             # here we are checking if the key bindings are being created
             assert mock_key_bindings.call_count == 1
 
@@ -84,6 +80,4 @@ class TestCliViMode:
 
         config = OpenHandsConfig()
         load_from_env(config, os.environ)
-        assert config.cli.vi_mode is True, (
-            'vi_mode should be True when CLI_VI_MODE is set'
-        )
+        assert config.cli.vi_mode is True, 'vi_mode should be True when CLI_VI_MODE is set'

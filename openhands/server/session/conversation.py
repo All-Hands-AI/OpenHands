@@ -29,9 +29,9 @@ class ServerConversation:
         self.user_id = user_id
         self.event_stream = EventStream(sid, file_store, user_id)
         if config.security.security_analyzer:
-            self.security_analyzer = options.SecurityAnalyzers.get(
-                config.security.security_analyzer, SecurityAnalyzer
-            )(self.event_stream)
+            self.security_analyzer = options.SecurityAnalyzers.get(config.security.security_analyzer, SecurityAnalyzer)(
+                self.event_stream
+            )
 
         runtime_cls = get_runtime_cls(self.config.runtime)
         self.runtime = runtime_cls(

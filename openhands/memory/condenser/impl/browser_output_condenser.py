@@ -22,15 +22,8 @@ class BrowserOutputCondenser(Condenser):
         results: list[Event] = []
         cnt: int = 0
         for event in reversed(view):
-            if (
-                isinstance(event, BrowserOutputObservation)
-                and cnt >= self.attention_window
-            ):
-                results.append(
-                    AgentCondensationObservation(
-                        f'Visited URL {event.url}\nContent omitted'
-                    )
-                )
+            if isinstance(event, BrowserOutputObservation) and cnt >= self.attention_window:
+                results.append(AgentCondensationObservation(f'Visited URL {event.url}\nContent omitted'))
             else:
                 results.append(event)
                 if isinstance(event, BrowserOutputObservation):
@@ -39,9 +32,7 @@ class BrowserOutputCondenser(Condenser):
         return View(events=list(reversed(results)))
 
     @classmethod
-    def from_config(
-        cls, config: BrowserOutputCondenserConfig
-    ) -> BrowserOutputCondenser:
+    def from_config(cls, config: BrowserOutputCondenserConfig) -> BrowserOutputCondenser:
         return BrowserOutputCondenser(**config.model_dump(exclude=['type']))
 
 

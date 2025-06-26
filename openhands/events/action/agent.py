@@ -150,19 +150,16 @@ class CondensationAction(Action):
         # 1. We're forgetting events based on the list of provided IDs, or
         using_event_ids = self.forgotten_event_ids is not None
         # 2. We're forgetting events based on the range of IDs.
-        using_event_range = (
-            self.forgotten_events_start_id is not None
-            and self.forgotten_events_end_id is not None
-        )
+        using_event_range = self.forgotten_events_start_id is not None and self.forgotten_events_end_id is not None
 
         # Either way, we can only have one of the two valid configurations.
         forgotten_event_configuration = using_event_ids ^ using_event_range
 
         # We also need to check that if the summary is provided, so is the
         # offset (and vice versa).
-        summary_configuration = (
-            self.summary is None and self.summary_offset is None
-        ) or (self.summary is not None and self.summary_offset is not None)
+        summary_configuration = (self.summary is None and self.summary_offset is None) or (
+            self.summary is not None and self.summary_offset is not None
+        )
 
         return forgotten_event_configuration and summary_configuration
 
@@ -186,9 +183,7 @@ class CondensationAction(Action):
         # If we've gotten this far, the start/end IDs are not None.
         assert self.forgotten_events_start_id is not None
         assert self.forgotten_events_end_id is not None
-        return list(
-            range(self.forgotten_events_start_id, self.forgotten_events_end_id + 1)
-        )
+        return list(range(self.forgotten_events_start_id, self.forgotten_events_end_id + 1))
 
     @property
     def message(self) -> str:

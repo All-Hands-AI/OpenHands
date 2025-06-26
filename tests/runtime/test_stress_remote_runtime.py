@@ -71,9 +71,7 @@ def get_config() -> OpenHandsConfig:
             # large enough timeout, since some testcases take very long to run
             timeout=300,
             api_key=os.environ.get('ALLHANDS_API_KEY', None),
-            remote_runtime_api_url=os.environ.get(
-                'SANDBOX_REMOTE_RUNTIME_API_URL', None
-            ),
+            remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL', None),
             keep_runtime_alive=False,
             remote_runtime_resource_factor=1,
         ),
@@ -177,9 +175,7 @@ def test_stress_remote_runtime_eval(n_eval_workers: int = 64):
                     config=config,
                     initial_user_action=MessageAction(content=instruction),
                     runtime=runtime,
-                    fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
-                        metadata.agent_class
-                    ],
+                    fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[metadata.agent_class],
                     agent=agent,
                 )
             )
@@ -233,9 +229,7 @@ def test_stress_remote_runtime_eval(n_eval_workers: int = 64):
     )
 
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
-    instances = prepare_dataset(
-        dummy_instance, output_file, eval_n_limit=len(dummy_instance)
-    )
+    instances = prepare_dataset(dummy_instance, output_file, eval_n_limit=len(dummy_instance))
 
     run_evaluation(instances, metadata, output_file, n_eval_workers, _process_instance)
 
@@ -267,27 +261,19 @@ def test_stress_remote_runtime_long_output_with_soft_and_hard_timeout():
             )
             mem_obs = runtime.run_action(mem_action)
             assert mem_obs.exit_code == 0
-            logger.info(
-                f'System memory usage (iteration {i}): {mem_obs.content.strip()}'
-            )
+            logger.info(f'System memory usage (iteration {i}): {mem_obs.content.strip()}')
             # Parse memory values from output
             mem_parts = mem_obs.content.strip().split(',')
             for part in mem_parts:
                 key, value = part.strip().split(':')
-                iteration_stats[f'memory_{key.lower()}'] = float(
-                    value.replace('MB', '').strip()
-                )
+                iteration_stats[f'memory_{key.lower()}'] = float(value.replace('MB', '').strip())
 
             # Check top memory-consuming processes
-            mem_action = CmdRunAction(
-                'ps aux | awk \'{printf "%8.1f MB  %s\\n", $6/1024, $0}\' | sort -nr | head -n 5'
-            )
+            mem_action = CmdRunAction('ps aux | awk \'{printf "%8.1f MB  %s\\n", $6/1024, $0}\' | sort -nr | head -n 5')
             mem_obs = runtime.run_action(mem_action)
             assert mem_obs.exit_code == 0
             _top_processes = [i.strip() for i in mem_obs.content.strip().split('\n')]
-            logger.info(
-                f'Top 5 memory-consuming processes (iteration {i}):\n{"- " + "\n- ".join(_top_processes)}'
-            )
+            logger.info(f'Top 5 memory-consuming processes (iteration {i}):\n{"- " + "\n- ".join(_top_processes)}')
             iteration_stats['top_processes'] = _top_processes
 
             # Check tmux memory usage (in KB)
@@ -296,9 +282,7 @@ def test_stress_remote_runtime_long_output_with_soft_and_hard_timeout():
             )
             mem_obs = runtime.run_action(mem_action)
             assert mem_obs.exit_code == 0
-            logger.info(
-                f'Tmux memory usage (iteration {i}): {mem_obs.content.strip()} KB'
-            )
+            logger.info(f'Tmux memory usage (iteration {i}): {mem_obs.content.strip()} KB')
             try:
                 iteration_stats['tmux_memory_mb'] = float(mem_obs.content.strip())
             except (ValueError, AttributeError):
@@ -310,13 +294,9 @@ def test_stress_remote_runtime_long_output_with_soft_and_hard_timeout():
             )
             mem_obs = runtime.run_action(mem_action)
             assert mem_obs.exit_code == 0
-            logger.info(
-                f'Action execution server memory usage (iteration {i}): {mem_obs.content.strip()} MB'
-            )
+            logger.info(f'Action execution server memory usage (iteration {i}): {mem_obs.content.strip()} MB')
             try:
-                iteration_stats['action_server_memory_mb'] = float(
-                    mem_obs.content.strip()
-                )
+                iteration_stats['action_server_memory_mb'] = float(mem_obs.content.strip())
             except (ValueError, AttributeError):
                 iteration_stats['action_server_memory_mb'] = None
 
@@ -398,17 +378,13 @@ def test_stress_runtime_memory_limits():
         call_async_from_sync(runtime.connect)
 
         # Install stress-ng
-        action = CmdRunAction(
-            command='sudo apt-get update && sudo apt-get install -y stress-ng'
-        )
+        action = CmdRunAction(command='sudo apt-get update && sudo apt-get install -y stress-ng')
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert obs.exit_code == 0
 
-        action = CmdRunAction(
-            command='stress-ng --vm 1 --vm-bytes 6G --timeout 1m --metrics'
-        )
+        action = CmdRunAction(command='stress-ng --vm 1 --vm-bytes 6G --timeout 1m --metrics')
         action.set_hard_timeout(120)
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
@@ -468,9 +444,7 @@ def test_stress_runtime_memory_limits_with_repeated_file_edit():
                 new_str=f'-content_{i:03d}',
             )
             obs = runtime.run_action(edit_action)
-            assert f'The file {test_file} has been edited' in obs.content, (
-                f'Edit failed at iteration {i}'
-            )
+            assert f'The file {test_file} has been edited' in obs.content, f'Edit failed at iteration {i}'
             logger.info(f'finished iteration {i}')
 
         # Verify final file state using FileEditAction view command

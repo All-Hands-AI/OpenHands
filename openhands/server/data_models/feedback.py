@@ -11,9 +11,7 @@ class FeedbackDataModel(BaseModel):
     version: str
     email: str
     polarity: Literal['positive', 'negative']
-    feedback: Literal[
-        'positive', 'negative'
-    ]  # TODO: remove this, its here for backward compatibility
+    feedback: Literal['positive', 'negative']  # TODO: remove this, its here for backward compatibility
     permissions: Literal['public', 'private']
     trajectory: list[dict[str, Any]] | None
 
@@ -26,9 +24,7 @@ def store_feedback(feedback: FeedbackDataModel) -> dict[str, str]:
     feedback.feedback = feedback.polarity
     display_feedback = feedback.model_dump()
     if 'trajectory' in display_feedback:
-        display_feedback['trajectory'] = (
-            f'elided [length: {len(display_feedback["trajectory"])}'
-        )
+        display_feedback['trajectory'] = f'elided [length: {len(display_feedback["trajectory"])}'
     if 'token' in display_feedback:
         display_feedback['token'] = 'elided'
     logger.debug(f'Got feedback: {display_feedback}')

@@ -72,9 +72,7 @@ class Q20Game:
         # ask for answer
         usr_msg = self.answerer(guesser_question)
 
-        self.guesser_messages.append(
-            {'role': 'user', 'content': f'{usr_msg["content"].strip()}'}
-        )
+        self.guesser_messages.append({'role': 'user', 'content': f'{usr_msg["content"].strip()}'})
 
         if 'bingo' in usr_msg['content'].lower():
             self.guesser_win = True
@@ -139,10 +137,7 @@ class Q20Game:
             temperature=0.2,
         )
         if any(
-            [
-                re.search(rf'(?:^|\W){i.strip().lower()}(?:$|\W)', question.lower())
-                for i in self.item.lower().split('|')
-            ]
+            [re.search(rf'(?:^|\W){i.strip().lower()}(?:$|\W)', question.lower()) for i in self.item.lower().split('|')]
         ):
             response.choices[0].message.content = 'Bingo!'
         return response.choices[0].message.to_dict()

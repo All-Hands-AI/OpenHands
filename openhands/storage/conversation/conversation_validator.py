@@ -46,9 +46,7 @@ class ConversationValidator:
             ConversationStore,
             server_config.conversation_store_class,
         )
-        conversation_store = await conversation_store_class.get_instance(
-            config, user_id
-        )
+        conversation_store = await conversation_store_class.get_instance(config, user_id)
 
         try:
             metadata = await conversation_store.get_metadata(conversation_id)
@@ -75,7 +73,5 @@ def create_conversation_validator() -> ConversationValidator:
         'OPENHANDS_CONVERSATION_VALIDATOR_CLS',
         'openhands.storage.conversation.conversation_validator.ConversationValidator',
     )
-    ConversationValidatorImpl = get_impl(
-        ConversationValidator, conversation_validator_cls
-    )
+    ConversationValidatorImpl = get_impl(ConversationValidator, conversation_validator_cls)
     return ConversationValidatorImpl()

@@ -67,9 +67,7 @@ class EvalOutput(BaseModel):
     # Interaction info
     metadata: EvalMetadata | None = None
     # list[tuple[dict[str, Any], dict[str, Any]]] - for compatibility with the old format
-    history: (
-        list[dict[str, Any]] | list[tuple[dict[str, Any], dict[str, Any]]] | None
-    ) = None
+    history: list[dict[str, Any]] | list[tuple[dict[str, Any], dict[str, Any]]] | None = None
     metrics: dict[str, Any] | None = None
     error: str | None = None
 
@@ -126,11 +124,7 @@ def codeact_user_response(
         # check if the last action has an answer, if so, early exit
         if try_parse is not None:
             last_action = next(
-                (
-                    event
-                    for event in reversed(state.history)
-                    if isinstance(event, Action)
-                ),
+                (event for event in reversed(state.history) if isinstance(event, Action)),
                 None,
             )
             ans = try_parse(last_action)
@@ -138,17 +132,10 @@ def codeact_user_response(
                 return '/exit'
 
         # check if the agent has tried to talk to the user 3 times, if so, let the agent know it can give up
-        user_msgs = [
-            event
-            for event in state.history
-            if isinstance(event, MessageAction) and event.source == 'user'
-        ]
+        user_msgs = [event for event in state.history if isinstance(event, MessageAction) and event.source == 'user']
         if len(user_msgs) >= 2:
             # let the agent know that it can give up when it has tried 3 times
-            return (
-                msg
-                + 'If you want to give up, use the "finish" tool to finish the interaction.\n'
-            )
+            return msg + 'If you want to give up, use the "finish" tool to finish the interaction.\n'
     return msg
 
 
@@ -184,9 +171,7 @@ def make_metadata(
     )
 
     pathlib.Path(eval_output_path).mkdir(parents=True, exist_ok=True)
-    pathlib.Path(os.path.join(eval_output_path, 'logs')).mkdir(
-        parents=True, exist_ok=True
-    )
+    pathlib.Path(os.path.join(eval_output_path, 'logs')).mkdir(parents=True, exist_ok=True)
     logger.info(f'Using evaluation output directory: {eval_output_path}')
 
     metadata = EvalMetadata(
@@ -196,15 +181,11 @@ def make_metadata(
         max_iterations=max_iterations,
         eval_output_dir=eval_output_path,
         start_time=time.strftime('%Y-%m-%d %H:%M:%S'),
-        git_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'])
-        .decode('utf-8')
-        .strip(),
+        git_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('utf-8').strip(),
         dataset=dataset_name,
         data_split=data_split,
         details=details,
-        condenser_config=condenser_config
-        if condenser_config
-        else NoOpCondenserConfig(),
+        condenser_config=condenser_config if condenser_config else NoOpCondenserConfig(),
     )
     metadata_json = metadata.model_dump_json()
     logger.info(f'Metadata: {metadata_json}')
@@ -232,9 +213,7 @@ def prepare_dataset(
             for line in f:
                 data = json.loads(line)
                 finished_ids.add(str(data[id_column]))
-        logger.warning(
-            f'\nOutput file {output_file} already exists. Loaded {len(finished_ids)} finished instances.'
-        )
+        logger.warning(f'\nOutput file {output_file} already exists. Loaded {len(finished_ids)} finished instances.')
 
     if eval_ids:
         eval_ids_converted = [dataset[id_column].dtype.type(id) for id in eval_ids]
@@ -243,25 +222,15 @@ def prepare_dataset(
     elif skip_num and skip_num >= 0:
         skip_num = min(skip_num, len(dataset))
         dataset = dataset.iloc[skip_num:]
-        logger.info(
-            f'Starting evaluation with skipping first {skip_num} instances ({len(dataset)} instances to run).'
-        )
+        logger.info(f'Starting evaluation with skipping first {skip_num} instances ({len(dataset)} instances to run).')
         if eval_n_limit and eval_n_limit > 0:
             # Use fixed random seed 42 for sampling without replacement
-            dataset = dataset.sample(
-                min(eval_n_limit, len(dataset)), random_state=42, replace=False
-            )
-            logger.info(
-                f'Randomly sampling {eval_n_limit} unique instances with random seed 42.'
-            )
+            dataset = dataset.sample(min(eval_n_limit, len(dataset)), random_state=42, replace=False)
+            logger.info(f'Randomly sampling {eval_n_limit} unique instances with random seed 42.')
     elif eval_n_limit and eval_n_limit > 0:
         # Use fixed random seed 42 for sampling without replacement
-        dataset = dataset.sample(
-            min(eval_n_limit, len(dataset)), random_state=42, replace=False
-        )
-        logger.info(
-            f'Randomly sampling {eval_n_limit} unique instances with random seed 42.'
-        )
+        dataset = dataset.sample(min(eval_n_limit, len(dataset)), random_state=42, replace=False)
+        logger.info(f'Randomly sampling {eval_n_limit} unique instances with random seed 42.')
 
     def make_serializable(instance: pd.Series) -> dict:
         import numpy as np
@@ -279,9 +248,7 @@ def prepare_dataset(
         for _, instance in dataset.iterrows()
         if str(instance[id_column]) not in finished_ids
     ]
-    logger.info(
-        f'Finished instances: {len(finished_ids)}, Remaining instances: {len(new_dataset)}'
-    )
+    logger.info(f'Finished instances: {len(finished_ids)}, Remaining instances: {len(new_dataset)}')
 
     return pd.DataFrame(new_dataset)
 
@@ -295,9 +262,7 @@ def update_progress(
     pbar.update(1)
     pbar.set_description(f'Instance {result.instance_id}')
     pbar.set_postfix_str(f'Test Result: {str(result.test_result)[:300]}...')
-    logger.info(
-        f'Finished evaluation for instance {result.instance_id}: {str(result.test_result)[:300]}...\n'
-    )
+    logger.info(f'Finished evaluation for instance {result.instance_id}: {str(result.test_result)[:300]}...\n')
     output_fp.write(result.model_dump_json() + '\n')
     output_fp.flush()
 
@@ -365,9 +330,7 @@ def _process_instance_wrapper(
                 )
                 # Raise an error after all retries & stop the evaluation
                 logger.exception(e)
-                raise RuntimeError(
-                    f'Maximum error retries reached for instance {instance.instance_id}'
-                ) from e
+                raise RuntimeError(f'Maximum error retries reached for instance {instance.instance_id}') from e
             msg = (
                 '-' * 10
                 + '\n'
@@ -400,9 +363,7 @@ def run_evaluation(
     metadata: EvalMetadata | None,
     output_file: str,
     num_workers: int,
-    process_instance_func: Callable[
-        [pd.Series, EvalMetadata, bool], Awaitable[EvalOutput]
-    ],
+    process_instance_func: Callable[[pd.Series, EvalMetadata, bool], Awaitable[EvalOutput]],
     max_retries: int = 5,  # number of retries for each instance
     timeout_seconds: int | None = None,
 ):
@@ -457,9 +418,7 @@ def run_evaluation(
     logger.info('\nEvaluation finished.\n')
 
 
-def reset_logger_for_multiprocessing(
-    logger: logging.Logger, instance_id: str, log_dir: str
-):
+def reset_logger_for_multiprocessing(logger: logging.Logger, instance_id: str, log_dir: str):
     """Reset the logger for multiprocessing.
 
     Save logs to a separate file for each process, instead of trying to write to the
@@ -477,9 +436,7 @@ def reset_logger_for_multiprocessing(
     # add console handler to print ONE line
     console_handler = get_console_handler(log_level=logging.INFO)
     console_handler.setFormatter(
-        logging.Formatter(
-            f'Instance {instance_id} - ' + '%(asctime)s - %(levelname)s - %(message)s'
-        )
+        logging.Formatter(f'Instance {instance_id} - ' + '%(asctime)s - %(levelname)s - %(message)s')
     )
     logger.addHandler(console_handler)
     logger.info(
@@ -492,9 +449,7 @@ def reset_logger_for_multiprocessing(
     # Log INFO and above to file
     os.makedirs(os.path.dirname(log_file), exist_ok=True)
     file_handler = logging.FileHandler(log_file)
-    file_handler.setFormatter(
-        logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    )
+    file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
     file_handler.setLevel(logging.INFO)
     logger.addHandler(file_handler)
 
@@ -506,13 +461,8 @@ def update_llm_config_for_completions_logging(
 ) -> LLMConfig:
     """Update the LLM config for logging completions."""
     if llm_config.log_completions:
-        llm_config.log_completions_folder = os.path.join(
-            eval_output_dir, 'llm_completions', instance_id
-        )
-        logger.info(
-            f'Logging LLM completions for instance {instance_id} to '
-            f'{llm_config.log_completions_folder}'
-        )
+        llm_config.log_completions_folder = os.path.join(eval_output_dir, 'llm_completions', instance_id)
+        logger.info(f'Logging LLM completions for instance {instance_id} to {llm_config.log_completions_folder}')
     return llm_config
 
 

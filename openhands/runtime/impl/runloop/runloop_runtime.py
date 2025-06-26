@@ -111,9 +111,7 @@ class RunloopRuntime(ActionExecutionClient):
             launch_parameters=LaunchParameters(
                 available_ports=[self._sandbox_port, self._vscode_port],
                 resource_size_request='LARGE',
-                launch_commands=[
-                    f'mkdir -p {self.config.workspace_mount_path_in_sandbox}'
-                ],
+                launch_commands=[f'mkdir -p {self.config.workspace_mount_path_in_sandbox}'],
             ),
             metadata={'container-name': self.container_name},
         )
@@ -123,12 +121,8 @@ class RunloopRuntime(ActionExecutionClient):
         self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
 
         if self.attach_to_existing:
-            active_devboxes = self.runloop_api_client.devboxes.list(
-                status='running'
-            ).devboxes
-            self.devbox = next(
-                (devbox for devbox in active_devboxes if devbox.name == self.sid), None
-            )
+            active_devboxes = self.runloop_api_client.devboxes.list(status='running').devboxes
+            self.devbox = next((devbox for devbox in active_devboxes if devbox.name == self.sid), None)
 
         if self.devbox is None:
             self.devbox = self._create_new_devbox()
@@ -151,9 +145,7 @@ class RunloopRuntime(ActionExecutionClient):
         if not self.attach_to_existing:
             self.setup_initial_env()
 
-        logger.info(
-            f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}'
-        )
+        logger.info(f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}')
         self.set_runtime_status(RuntimeStatus.READY)
 
     @tenacity.retry(

@@ -121,9 +121,7 @@ class GitLabService(BaseGitService, GitService):
         except httpx.HTTPError as e:
             raise self.handle_http_error(e)
 
-    async def execute_graphql_query(
-        self, query: str, variables: dict[str, Any] | None = None
-    ) -> Any:
+    async def execute_graphql_query(self, query: str, variables: dict[str, Any] | None = None) -> Any:
         """
         Execute a GraphQL query against the GitLab GraphQL API
 
@@ -147,26 +145,20 @@ class GitLabService(BaseGitService, GitService):
                     'variables': variables if variables is not None else {},
                 }
 
-                response = await client.post(
-                    self.GRAPHQL_URL, headers=gitlab_headers, json=payload
-                )
+                response = await client.post(self.GRAPHQL_URL, headers=gitlab_headers, json=payload)
 
                 if self.refresh and self._has_token_expired(response.status_code):
                     await self.get_latest_token()
                     gitlab_headers = await self._get_gitlab_headers()
                     gitlab_headers['Content-Type'] = 'application/json'
-                    response = await client.post(
-                        self.GRAPHQL_URL, headers=gitlab_headers, json=payload
-                    )
+                    response = await client.post(self.GRAPHQL_URL, headers=gitlab_headers, json=payload)
 
                 response.raise_for_status()
                 result = response.json()
 
                 # Check for GraphQL errors
                 if 'errors' in result:
-                    error_message = result['errors'][0].get(
-                        'message', 'Unknown GraphQL error'
-                    )
+                    error_message = result['errors'][0].get('message', 'Unknown GraphQL error')
                     raise UnknownException(f'GraphQL error: {error_message}')
 
                 return result.get('data')
@@ -335,8 +327,7 @@ class GitLabService(BaseGitService, GitService):
                     task_type = TaskType.MERGE_CONFLICTS
                 elif (
                     mr.get('pipelines', {}).get('nodes', [])
-                    and mr.get('pipelines', {}).get('nodes', [])[0].get('status')
-                    == 'FAILED'
+                    and mr.get('pipelines', {}).get('nodes', [])[0].get('status') == 'FAILED'
                 ):
                     task_type = TaskType.FAILING_CHECKS
                 else:
@@ -373,15 +364,11 @@ class GitLabService(BaseGitService, GitService):
                 'scope': 'assigned_to_me',
             }
 
-            issues_response, _ = await self._make_request(
-                method=RequestMethod.GET, url=url, params=params
-            )
+            issues_response, _ = await self._make_request(method=RequestMethod.GET, url=url, params=params)
 
             # Process issues
             for issue in issues_response:
-                repo_name = (
-                    issue.get('references', {}).get('full', '').split('#')[0].strip()
-                )
+                repo_name = issue.get('references', {}).get('full', '').split('#')[0].strip()
                 issue_number = issue.get('iid')
                 title = issue.get('title', '')
 
@@ -399,9 +386,7 @@ class GitLabService(BaseGitService, GitService):
         except Exception:
             return []
 
-    async def get_repository_details_from_repo_name(
-        self, repository: str
-    ) -> Repository:
+    async def get_repository_details_from_repo_name(self, repository: str) -> Repository:
         encoded_name = repository.replace('/', '%2F')
 
         url = f'{self.BASE_URL}/projects/{encoded_name}'
@@ -493,9 +478,7 @@ class GitLabService(BaseGitService, GitService):
         }
 
         # Make the POST request to create the MR
-        response, _ = await self._make_request(
-            url=url, params=payload, method=RequestMethod.POST
-        )
+        response, _ = await self._make_request(url=url, params=payload, method=RequestMethod.POST)
 
         return response['web_url']
 

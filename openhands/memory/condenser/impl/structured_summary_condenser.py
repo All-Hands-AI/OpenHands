@@ -29,27 +29,17 @@ class StateSummary(BaseModel):
         default='',
         description='Essential user requirements, goals, and clarifications in concise form.',
     )
-    completed_tasks: str = Field(
-        default='', description='List of tasks completed so far with brief results.'
-    )
-    pending_tasks: str = Field(
-        default='', description='List of tasks that still need to be done.'
-    )
+    completed_tasks: str = Field(default='', description='List of tasks completed so far with brief results.')
+    pending_tasks: str = Field(default='', description='List of tasks that still need to be done.')
     current_state: str = Field(
         default='',
         description='Current variables, data structures, or other relevant state information.',
     )
 
     # Code state fields
-    files_modified: str = Field(
-        default='', description='List of files that have been created or modified.'
-    )
-    function_changes: str = Field(
-        default='', description='List of functions that have been created or modified.'
-    )
-    data_structures: str = Field(
-        default='', description='List of key data structures in use or modified.'
-    )
+    files_modified: str = Field(default='', description='List of files that have been created or modified.')
+    function_changes: str = Field(default='', description='List of functions that have been created or modified.')
+    data_structures: str = Field(default='', description='List of key data structures in use or modified.')
 
     # Test status fields
     tests_written: str = Field(
@@ -60,21 +50,15 @@ class StateSummary(BaseModel):
         default='',
         description='Whether all tests are currently passing. True, false, or unknown.',
     )
-    failing_tests: str = Field(
-        default='', description='List of names or descriptions of any failing tests.'
-    )
-    error_messages: str = Field(
-        default='', description='List of key error messages encountered.'
-    )
+    failing_tests: str = Field(default='', description='List of names or descriptions of any failing tests.')
+    error_messages: str = Field(default='', description='List of key error messages encountered.')
 
     # Version control fields
     branch_created: str = Field(
         default='',
         description='Whether a branch has been created for this work. True, false, or unknown.',
     )
-    branch_name: str = Field(
-        default='', description='Name of the current working branch if known.'
-    )
+    branch_name: str = Field(default='', description='Name of the current working branch if known.')
     commits_made: str = Field(
         default='',
         description='Whether any commits have been made. True, false, or unknown.',
@@ -172,18 +156,14 @@ class StructuredSummaryCondenser(RollingCondenser):
         max_event_length: int = 10_000,
     ):
         if keep_first >= max_size // 2:
-            raise ValueError(
-                f'keep_first ({keep_first}) must be less than half of max_size ({max_size})'
-            )
+            raise ValueError(f'keep_first ({keep_first}) must be less than half of max_size ({max_size})')
         if keep_first < 0:
             raise ValueError(f'keep_first ({keep_first}) cannot be negative')
         if max_size < 1:
             raise ValueError(f'max_size ({max_size}) cannot be non-positive')
 
         if not llm.is_function_calling_active():
-            raise ValueError(
-                'LLM must support function calling to use StructuredSummaryCondenser'
-            )
+            raise ValueError('LLM must support function calling to use StructuredSummaryCondenser')
 
         self.max_size = max_size
         self.keep_first = keep_first
@@ -237,9 +217,7 @@ Capture all relevant information, especially:
         # Add the previous summary if it exists. We'll always have a summary
         # event, but the types aren't precise enought to guarantee that it has a
         # message attribute.
-        summary_event_content = self._truncate(
-            summary_event.message if summary_event.message else ''
-        )
+        summary_event_content = self._truncate(summary_event.message if summary_event.message else '')
         prompt += f'<PREVIOUS SUMMARY>\n{summary_event_content}\n</PREVIOUS SUMMARY>\n'
 
         prompt += '\n\n'
@@ -287,9 +265,7 @@ Capture all relevant information, especially:
             summary = StateSummary.model_validate(args_dict)
 
         except (ValueError, AttributeError, KeyError, json.JSONDecodeError) as e:
-            logger.warning(
-                f'Failed to parse summary tool call: {e}. Using empty summary.'
-            )
+            logger.warning(f'Failed to parse summary tool call: {e}. Using empty summary.')
             summary = StateSummary()
 
         self.add_metadata('response', response.model_dump())
@@ -308,9 +284,7 @@ Capture all relevant information, especially:
         return len(view) > self.max_size
 
     @classmethod
-    def from_config(
-        cls, config: StructuredSummaryCondenserConfig
-    ) -> StructuredSummaryCondenser:
+    def from_config(cls, config: StructuredSummaryCondenserConfig) -> StructuredSummaryCondenser:
         # This condenser cannot take advantage of prompt caching. If it happens
         # to be set, we'll pay for the cache writes but never get a chance to
         # save on a read.

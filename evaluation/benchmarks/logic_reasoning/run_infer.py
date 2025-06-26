@@ -47,9 +47,7 @@ def get_config(
 ) -> OpenHandsConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = 'xingyaoww/od-eval-logic-reasoning:v1.0'
-    sandbox_config.runtime_extra_deps = (
-        '$OH_INTERPRETER_PATH -m pip install scitools-pyke'
-    )
+    sandbox_config.runtime_extra_deps = '$OH_INTERPRETER_PATH -m pip install scitools-pyke'
 
     config = OpenHandsConfig(
         default_agent=metadata.agent_class,
@@ -216,9 +214,7 @@ def process_instance(
             config=config,
             initial_user_action=MessageAction(content=instruction),
             runtime=runtime,
-            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
-                metadata.agent_class
-            ),
+            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(metadata.agent_class),
         )
     )
     # ======= Attempt to evaluate the agent's edits =======
@@ -238,13 +234,9 @@ def process_instance(
             break
 
     final_message = final_message.strip("'")
-    logger.info(
-        f'Predicted answer: {final_message}, Ground truth: {instance["answer"]}'
-    )
+    logger.info(f'Predicted answer: {final_message}, Ground truth: {instance["answer"]}')
 
-    test_result = get_test_result(
-        model_answer=final_message, ground_truth=instance['answer']
-    )
+    test_result = get_test_result(model_answer=final_message, ground_truth=instance['answer'])
     test_result['final_message'] = final_message
 
     metrics = state.metrics.get() if state.metrics else None
@@ -306,6 +298,4 @@ if __name__ == '__main__':
     )
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(dataset_df, output_file, args.eval_n_limit)
-    run_evaluation(
-        instances, metadata, output_file, args.eval_num_workers, process_instance
-    )
+    run_evaluation(instances, metadata, output_file, args.eval_num_workers, process_instance)

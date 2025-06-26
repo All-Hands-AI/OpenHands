@@ -16,9 +16,7 @@ from openhands.events.event_filter import EventFilter
 from openhands.events.nested_event_store import NestedEventStore
 
 
-def create_mock_event(
-    id: int, content: str, source: str = 'user', hidden: bool = False
-) -> dict[str, Any]:
+def create_mock_event(id: int, content: str, source: str = 'user', hidden: bool = False) -> dict[str, Any]:
     """Create a properly formatted mock event dictionary."""
     event_dict = {
         'id': id,
@@ -36,9 +34,7 @@ def create_mock_event(
     return event_dict
 
 
-def create_mock_response(
-    events: list[dict[str, Any]], has_more: bool = False
-) -> MagicMock:
+def create_mock_response(events: list[dict[str, Any]], has_more: bool = False) -> MagicMock:
     """Helper function to create a mock HTTP response."""
     mock_response = MagicMock()
     mock_response.json.return_value = {'events': events, 'has_more': has_more}
@@ -342,9 +338,7 @@ class TestNestedEventStore:
         assert len(events) == 1
 
         # Verify the API call has no headers
-        mock_get.assert_called_once_with(
-            'http://test-api.example.com/events?start_id=0&reverse=False', headers={}
-        )
+        mock_get.assert_called_once_with('http://test-api.example.com/events?start_id=0&reverse=False', headers={})
 
     @patch('httpx.get')
     def test_search_events_with_query_filter(self, mock_get, event_store):
