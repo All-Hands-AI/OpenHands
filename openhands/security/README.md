@@ -53,6 +53,20 @@ provides).
 
 ## Implemented Security Analyzers
 
+### LLM Risk Analyzer (Default)
+
+The LLM Risk Analyzer is the default security analyzer that leverages LLM-provided risk assessments. It respects the `safety_risk` attribute that can be set by the LLM when generating actions, allowing for intelligent risk assessment based on the context and content of each action.
+
+Features:
+
+* Uses LLM-provided risk assessments (LOW, MEDIUM, HIGH)
+* Automatically requires confirmation for HIGH-risk actions
+* Respects confirmation mode settings for MEDIUM and LOW-risk actions
+* Lightweight and efficient - no external dependencies
+* Integrates seamlessly with the agent's decision-making process
+
+The LLM Risk Analyzer checks if actions have a `safety_risk` attribute set by the LLM and maps it to the appropriate `ActionSecurityRisk` level. If no risk assessment is provided, it defaults to UNKNOWN.
+
 ### Invariant
 
 It uses the [Invariant Analyzer](https://github.com/invariantlabs-ai/invariant) to analyze traces and detect potential issues with OpenHands's workflow. It uses confirmation mode to ask for user confirmation on potentially risky actions.
