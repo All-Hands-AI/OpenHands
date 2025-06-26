@@ -5,7 +5,9 @@ from typing import Any, Callable
 from openhands.core.exceptions import UserCancelledError
 from openhands.core.logger import openhands_logger as logger
 from openhands.llm.async_llm import LLM_RETRY_EXCEPTIONS, AsyncLLM
-from openhands.llm.llm import REASONING_EFFORT_SUPPORTED_MODELS
+from openhands.llm.llm import (
+    REASONING_EFFORT_SUPPORTED_MODELS,
+)
 
 
 class StreamingLLM(AsyncLLM):
