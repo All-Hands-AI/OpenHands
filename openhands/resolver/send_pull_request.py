@@ -12,6 +12,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.service_types import ProviderType
 from openhands.llm.llm import LLM
 from openhands.resolver.interfaces.azure_devops import AzureDevOpsIssueHandler
+from openhands.resolver.interfaces.bitbucket import BitbucketIssueHandler
 from openhands.resolver.interfaces.github import GithubIssueHandler
 from openhands.resolver.interfaces.gitlab import GitlabIssueHandler
 from openhands.resolver.interfaces.issue import Issue
@@ -261,6 +262,8 @@ def send_pull_request(
             base_domain = 'github.com'
         elif platform == ProviderType.GITLAB:
             base_domain = 'gitlab.com'
+        elif platform == ProviderType.BITBUCKET:
+            base_domain = 'bitbucket.org'
         else:  # platform == ProviderType.AZURE_DEVOPS
             base_domain = 'dev.azure.com'
 
@@ -274,6 +277,13 @@ def send_pull_request(
     elif platform == ProviderType.GITLAB:
         handler = ServiceContextIssue(
             GitlabIssueHandler(issue.owner, issue.repo, token, username, base_domain),
+            None,
+        )
+    elif platform == ProviderType.BITBUCKET:
+        handler = ServiceContextIssue(
+            BitbucketIssueHandler(
+                issue.owner, issue.repo, token, username, base_domain
+            ),
             None,
         )
     elif platform == ProviderType.AZURE_DEVOPS:
@@ -408,7 +418,14 @@ def update_existing_pull_request(
 
     # Determine default base_domain based on platform
     if base_domain is None:
-        base_domain = 'github.com' if platform == ProviderType.GITHUB else 'gitlab.com'
+        if platform == ProviderType.GITHUB:
+            base_domain = 'github.com'
+        elif platform == ProviderType.GITLAB:
+            base_domain = 'gitlab.com'
+        elif platform == ProviderType.BITBUCKET:
+            base_domain = 'bitbucket.org'
+        else:
+            base_domain = 'dev.azure.com'
 
     handler = None
     if platform == ProviderType.GITHUB:
@@ -416,9 +433,23 @@ def update_existing_pull_request(
             GithubIssueHandler(issue.owner, issue.repo, token, username, base_domain),
             llm_config,
         )
-    else:  # platform == Platform.GITLAB
+    elif platform == ProviderType.GITLAB:
         handler = ServiceContextIssue(
             GitlabIssueHandler(issue.owner, issue.repo, token, username, base_domain),
+            llm_config,
+        )
+    elif platform == ProviderType.BITBUCKET:
+        handler = ServiceContextIssue(
+            BitbucketIssueHandler(
+                issue.owner, issue.repo, token, username, base_domain
+            ),
+            llm_config,
+        )
+    else:  # platform == ProviderType.AZURE_DEVOPS
+        handler = ServiceContextIssue(
+            AzureDevOpsIssueHandler(
+                issue.owner, issue.repo, token, username, base_domain
+            ),
             llm_config,
         )
 

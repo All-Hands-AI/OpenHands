@@ -480,6 +480,9 @@ async def test_validate_provider_token_with_empty_tokens():
         patch(
             'openhands.integrations.utils.BitbucketService'
         ) as mock_bitbucket_service,
+        patch(
+            'openhands.integrations.utils.AzureDevOpsServiceImpl'
+        ) as mock_azure_devops_service,
     ):
         # Configure mocks to raise exceptions for invalid tokens
         mock_github_service.return_value.verify_access.side_effect = Exception(
@@ -491,32 +494,38 @@ async def test_validate_provider_token_with_empty_tokens():
         mock_bitbucket_service.return_value.verify_access.side_effect = Exception(
             'Invalid token'
         )
+        mock_azure_devops_service.return_value.verify_access.side_effect = Exception(
+            'Invalid token'
+        )
 
         # Test with an empty token
         token = SecretStr('')
         result = await validate_provider_token(token)
 
-        # Services should be tried but fail with empty tokens
-        mock_github_service.assert_called_once()
-        mock_gitlab_service.assert_called_once()
-        mock_bitbucket_service.assert_called_once()
+        # Services should NOT be tried with empty tokens
+        mock_github_service.assert_not_called()
+        mock_gitlab_service.assert_not_called()
+        mock_bitbucket_service.assert_not_called()
+        mock_azure_devops_service.assert_not_called()
 
-        # Result should be None for invalid tokens
+        # Result should be None for empty tokens
         assert result is None
 
         # Reset mocks for second test
         mock_github_service.reset_mock()
         mock_gitlab_service.reset_mock()
         mock_bitbucket_service.reset_mock()
+        mock_azure_devops_service.reset_mock()
 
         # Test with a whitespace-only token
         token = SecretStr('   ')
         result = await validate_provider_token(token)
 
-        # Services should be tried but fail with whitespace tokens
-        mock_github_service.assert_called_once()
-        mock_gitlab_service.assert_called_once()
-        mock_bitbucket_service.assert_called_once()
+        # Services should NOT be tried with whitespace-only tokens
+        mock_github_service.assert_not_called()
+        mock_gitlab_service.assert_not_called()
+        mock_bitbucket_service.assert_not_called()
+        mock_azure_devops_service.assert_not_called()
 
         # Result should be None for invalid tokens
         assert result is None

@@ -114,6 +114,13 @@ def initialize_repository_for_runtime(
             token=azure_devops_token, host=azure_devops_host
         )
 
+    if 'BITBUCKET_TOKEN' in os.environ:
+        bitbucket_token = SecretStr(os.environ['BITBUCKET_TOKEN'])
+        bitbucket_host = os.environ.get('BITBUCKET_HOST', 'bitbucket.org')
+        provider_tokens[ProviderType.BITBUCKET] = ProviderToken(
+            token=bitbucket_token, host=bitbucket_host
+        )
+
     secret_store = (
         UserSecrets(provider_tokens=provider_tokens) if provider_tokens else None
     )
