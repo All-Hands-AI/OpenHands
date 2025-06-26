@@ -181,6 +181,12 @@ class LLM(RetryMixin, DebugMixin):
             kwargs['max_tokens'] = self.config.max_output_tokens
             kwargs.pop('max_completion_tokens')
 
+        # Add safety settings for models that support them
+        if 'mistral' in self.config.model.lower() and self.config.safety_settings:
+            kwargs['safety_settings'] = self.config.safety_settings
+        elif 'gemini' in self.config.model.lower() and self.config.safety_settings:
+            kwargs['safety_settings'] = self.config.safety_settings
+
         self._completion = partial(
             litellm_completion,
             model=self.config.model,
