@@ -12,19 +12,19 @@ if TYPE_CHECKING:
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
 from openhands.agenthub.codeact_agent.tools.bash import create_cmd_run_tool
 from openhands.agenthub.codeact_agent.tools.browser import BrowserTool
-from openhands.agenthub.codeact_agent.tools.finish import FinishTool
-from openhands.agenthub.codeact_agent.tools.ipython import IPythonTool
-from openhands.agenthub.codeact_agent.tools.llm_based_edit import LLMBasedFileEditTool
-from openhands.agenthub.codeact_agent.tools.str_replace_editor import (
-    create_str_replace_editor_tool,
-)
 from openhands.agenthub.codeact_agent.tools.claude_editor import (
     create_claude_editor_tool,
 )
+from openhands.agenthub.codeact_agent.tools.finish import FinishTool
 from openhands.agenthub.codeact_agent.tools.gemini_edit_tool import (
     create_gemini_edit_tool,
     create_gemini_read_file_tool,
     create_gemini_write_file_tool,
+)
+from openhands.agenthub.codeact_agent.tools.ipython import IPythonTool
+from openhands.agenthub.codeact_agent.tools.llm_based_edit import LLMBasedFileEditTool
+from openhands.agenthub.codeact_agent.tools.str_replace_editor import (
+    create_str_replace_editor_tool,
 )
 from openhands.agenthub.codeact_agent.tools.think import ThinkTool
 from openhands.controller.agent import Agent
@@ -139,29 +139,31 @@ class CodeActAgent(Agent):
             # Add LLM-based editor if enabled
             if self.config.enable_llm_editor:
                 tools.append(LLMBasedFileEditTool)
-            
+
             # Add Claude-style editor if enabled
             if self.config.enable_claude_editor:
                 tools.append(
-                    create_claude_editor_tool(
-                        use_short_description=use_short_tool_desc
-                    )
+                    create_claude_editor_tool(use_short_description=use_short_tool_desc)
                 )
-                
-            # Add legacy str_replace_editor for backward compatibility
-            # This is only added if Claude editor is not enabled and we're not using the new config
-            if not self.config.enable_claude_editor and not hasattr(self.config, 'enable_claude_editor'):
-                tools.append(
-                    create_str_replace_editor_tool(
-                        use_short_description=use_short_tool_desc
-                    )
-                )
-            
+
             # Add Gemini-style editor tools if enabled
             if self.config.enable_gemini_editor:
                 tools.append(create_gemini_edit_tool())
                 tools.append(create_gemini_write_file_tool())
                 tools.append(create_gemini_read_file_tool())
+
+            # Add legacy str_replace_editor for backward compatibility
+            # This is only added if none of the new editors are explicitly enabled
+            if (
+                not self.config.enable_claude_editor
+                and not self.config.enable_gemini_editor
+                and not self.config.enable_llm_editor
+            ):
+                tools.append(
+                    create_str_replace_editor_tool(
+                        use_short_description=use_short_tool_desc
+                    )
+                )
         return tools
 
     def reset(self) -> None:

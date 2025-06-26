@@ -22,13 +22,13 @@ class AgentConfig(BaseModel):
     # Each editor can be enabled or disabled independently
     enable_llm_editor: bool = Field(default=False)
     """Whether to enable LLM-based editor tool (edit_file)"""
-    
-    enable_claude_editor: bool = Field(default=True)
+
+    enable_claude_editor: bool = Field(default=False)
     """Whether to enable Claude-style editor tool (claude_editor)"""
-    
+
     enable_gemini_editor: bool = Field(default=False)
     """Whether to enable Gemini-style editor tools (replace, write_file, read_file)"""
-    
+
     # Legacy configuration (for backward compatibility)
     enable_editor: bool = Field(default=True)
     """Legacy setting. Whether to enable any editor tools. If False, all editor tools will be disabled regardless of their individual settings.
