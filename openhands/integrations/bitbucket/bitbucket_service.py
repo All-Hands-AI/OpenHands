@@ -1,4 +1,5 @@
 import base64
+import os
 from typing import Any
 
 import httpx
@@ -15,9 +16,10 @@ from openhands.integrations.service_types import (
     User,
 )
 from openhands.server.types import AppMode
+from openhands.utils.import_utils import get_impl
 
 
-class BitbucketService(BaseGitService, GitService):
+class BitBucketService(BaseGitService, GitService):
     """Default implementation of GitService for Bitbucket integration.
 
     This is an extension point in OpenHands that allows applications to customize Bitbucket
@@ -147,6 +149,41 @@ class BitbucketService(BaseGitService, GitService):
         # Bitbucket doesn't have a dedicated search endpoint like GitHub
         return []
 
+    async def _fetch_paginated_data(
+        self, url: str, params: dict, max_items: int
+    ) -> list[dict]:
+        """
+        Fetch data with pagination support for Bitbucket API.
+
+        Args:
+            url: The API endpoint URL
+            params: Query parameters for the request
+            max_items: Maximum number of items to fetch
+
+        Returns:
+            List of data items from all pages
+        """
+        all_items: list[dict] = []
+        current_url = url
+
+        while current_url and len(all_items) < max_items:
+            response, _ = await self._make_request(current_url, params)
+
+            # Extract items from response
+            page_items = response.get('values', [])
+            if not page_items:  # No more items
+                break
+
+            all_items.extend(page_items)
+
+            # Get the next page URL from the response
+            current_url = response.get('next')
+
+            # Clear params for subsequent requests since the next URL already contains all parameters
+            params = {}
+
+        return all_items[:max_items]  # Trim to max_items if needed
+
     async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
         """Get repositories for the authenticated user using workspaces endpoint.
 
@@ -155,33 +192,51 @@ class BitbucketService(BaseGitService, GitService):
         This approach is more comprehensive and efficient than the previous implementation
         that made separate calls for public and private repositories.
         """
-        repositories = []
+        MAX_REPOS = 1000
+        PER_PAGE = 100  # Maximum allowed by Bitbucket API
+        repositories: list[Repository] = []
 
-        # Get user's workspaces
+        # Get user's workspaces with pagination
         workspaces_url = f'{self.BASE_URL}/workspaces'
-        workspaces_data, _ = await self._make_request(workspaces_url)
+        workspaces = await self._fetch_paginated_data(workspaces_url, {}, MAX_REPOS)
 
-        for workspace in workspaces_data.get('values', []):
+        for workspace in workspaces:
             workspace_slug = workspace.get('slug')
             if not workspace_slug:
                 continue
 
-            # Get repositories for this workspace
+            # Get repositories for this workspace with pagination
             workspace_repos_url = f'{self.BASE_URL}/repositories/{workspace_slug}'
 
-            # Map sort parameter to Bitbucket API compatible values
+            # Map sort parameter to Bitbucket API compatible values and ensure descending order
+            # to show most recently changed repos at the top
             bitbucket_sort = sort
             if sort == 'pushed':
                 # Bitbucket doesn't support 'pushed', use 'updated_on' instead
-                bitbucket_sort = 'updated_on'
+                bitbucket_sort = (
+                    '-updated_on'  # Use negative prefix for descending order
+                )
+            elif sort == 'updated':
+                bitbucket_sort = '-updated_on'
+            elif sort == 'created':
+                bitbucket_sort = '-created_on'
+            elif sort == 'full_name':
+                bitbucket_sort = 'name'  # Bitbucket uses 'name' not 'full_name'
+            else:
+                # Default to most recently updated first
+                bitbucket_sort = '-updated_on'
 
             params = {
-                'pagelen': 100,
+                'pagelen': PER_PAGE,
                 'sort': bitbucket_sort,
             }
-            repos_data, headers = await self._make_request(workspace_repos_url, params)
 
-            for repo in repos_data.get('values', []):
+            # Fetch all repositories for this workspace with pagination
+            workspace_repos = await self._fetch_paginated_data(
+                workspace_repos_url, params, MAX_REPOS - len(repositories)
+            )
+
+            for repo in workspace_repos:
                 uuid = repo.get('uuid', '')
                 repositories.append(
                     Repository(
@@ -190,10 +245,17 @@ class BitbucketService(BaseGitService, GitService):
                         git_provider=ProviderType.BITBUCKET,
                         is_public=repo.get('is_private', True) is False,
                         stargazers_count=None,  # Bitbucket doesn't have stars
-                        link_header=headers.get('Link', ''),
                         pushed_at=repo.get('updated_on'),
                     )
                 )
+
+                # Stop if we've reached the maximum number of repositories
+                if len(repositories) >= MAX_REPOS:
+                    break
+
+            # Stop if we've reached the maximum number of repositories
+            if len(repositories) >= MAX_REPOS:
+                break
 
         return repositories
 
@@ -238,10 +300,21 @@ class BitbucketService(BaseGitService, GitService):
         repo = parts[-1]
 
         url = f'{self.BASE_URL}/repositories/{owner}/{repo}/refs/branches'
-        data, _ = await self._make_request(url)
+
+        # Set maximum branches to fetch (similar to GitHub/GitLab implementations)
+        MAX_BRANCHES = 1000
+        PER_PAGE = 100
+
+        params = {
+            'pagelen': PER_PAGE,
+            'sort': '-target.date',  # Sort by most recent commit date, descending
+        }
+
+        # Fetch all branches with pagination
+        branch_data = await self._fetch_paginated_data(url, params, MAX_BRANCHES)
 
         branches = []
-        for branch in data.get('values', []):
+        for branch in branch_data:
             branches.append(
                 Branch(
                     name=branch.get('name', ''),
@@ -300,3 +373,10 @@ class BitbucketService(BaseGitService, GitService):
 
         # Return the URL to the pull request
         return data.get('links', {}).get('html', {}).get('href', '')
+
+
+bitbucket_service_cls = os.environ.get(
+    'OPENHANDS_BITBUCKET_SERVICE_CLS',
+    'openhands.integrations.bitbucket.bitbucket_service.BitBucketService',
+)
+BitBucketServiceImpl = get_impl(BitBucketService, bitbucket_service_cls)

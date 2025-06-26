@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
     SecretStr,
     SerializationInfo,
@@ -45,9 +46,9 @@ class Settings(BaseModel):
     email: str | None = None
     email_verified: bool | None = None
 
-    model_config = {
-        'validate_assignment': True,
-    }
+    model_config = ConfigDict(
+        validate_assignment=True,
+    )
 
     @field_serializer('llm_api_key', 'search_api_key')
     def api_key_serializer(self, api_key: SecretStr | None, info: SerializationInfo):

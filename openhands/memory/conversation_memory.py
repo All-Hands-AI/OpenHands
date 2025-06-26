@@ -28,6 +28,7 @@ from openhands.events.observation import (
     AgentThinkObservation,
     BrowserOutputObservation,
     CmdOutputObservation,
+    FileDownloadObservation,
     FileEditObservation,
     FileReadObservation,
     IPythonRunCellObservation,
@@ -288,7 +289,12 @@ class ConversationMemory:
             role = 'user' if action.source == 'user' else 'assistant'
             content = [TextContent(text=action.content or '')]
             if vision_is_active and action.image_urls:
-                content.append(ImageContent(image_urls=action.image_urls))
+                if role == 'user':
+                    for idx, url in enumerate(action.image_urls):
+                        content.append(TextContent(text=f'Image {idx + 1}:'))
+                        content.append(ImageContent(image_urls=[url]))
+                else:
+                    content.append(ImageContent(image_urls=action.image_urls))
             if role not in ('user', 'system', 'assistant', 'tool'):
                 raise ValueError(f'Invalid role: {role}')
             return [
@@ -339,6 +345,7 @@ class ConversationMemory:
         - AgentDelegateObservation: Formats results from delegated agent tasks
         - ErrorObservation: Formats error messages from failed actions
         - UserRejectObservation: Formats user rejection messages
+        - FileDownloadObservation: Formats the result of a browsing action that opened/downloaded a file
 
         In function calling mode, observations with tool_call_metadata are stored in
         tool_call_id_to_message for later processing instead of being returned immediately.
@@ -429,7 +436,7 @@ class ConversationMemory:
                 and enable_som_visual_browsing
                 and vision_is_active
             ):
-                text += 'Image: Current webpage screenshot (Note that only visible portion of webpage is present in the screenshot. You may need to scroll to view the remaining portion of the web-page.)\n'
+                text += 'Image: Current webpage screenshot (Note that only visible portion of webpage is present in the screenshot. However, the Accessibility tree contains information from the entire webpage.)\n'
 
                 # Determine which image to use and validate it
                 image_url = None
@@ -490,6 +497,9 @@ class ConversationMemory:
             text += '\n[Last action has been rejected by the user]'
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, AgentCondensationObservation):
+            text = truncate_content(obs.content, max_message_chars)
+            message = Message(role='user', content=[TextContent(text=text)])
+        elif isinstance(obs, FileDownloadObservation):
             text = truncate_content(obs.content, max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
         elif (
