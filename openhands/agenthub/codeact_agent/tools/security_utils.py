@@ -20,4 +20,3 @@ LLM_BASED_EDIT_RISK_DESC = "The LLM's assessment of the safety risk of this edit
 
 # Risk level enum values - common across all tools
 RISK_LEVELS = ['LOW', 'MEDIUM', 'HIGH']
-
