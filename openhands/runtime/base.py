@@ -194,8 +194,8 @@ class Runtime(FileEditRuntimeMixin):
             self.add_env_vars(self.config.sandbox.runtime_startup_env_vars)
 
     def close(self) -> None:
-        """
-        This should only be called by conversation manager or closing the session.
+        """This should only be called by conversation manager or closing the session.
+
         If called for instance by error handling, it could prevent recovery.
         """
         pass
@@ -301,9 +301,7 @@ class Runtime(FileEditRuntimeMixin):
             asyncio.get_event_loop().run_until_complete(self._handle_action(event))
 
     async def _export_latest_git_provider_tokens(self, event: Action) -> None:
-        """
-        Refresh runtime provider tokens when agent attemps to run action with provider token
-        """
+        """Refresh runtime provider tokens when agent attempts to run action with provider token."""
         if not self.user_id:
             return
 
@@ -597,12 +595,12 @@ fi
         """Get an authenticated git URL for a repository.
 
         Args:
-            repo_path: Repository name (owner/repo)
+            repo_name: Repository name (owner/repo)
+            git_provider_tokens: Provider tokens for authentication
 
         Returns:
             Authenticated git URL if credentials are available, otherwise regular HTTPS URL
         """
-
         try:
             provider_handler = ProviderHandler(
                 git_provider_tokens or MappingProxyType({})
@@ -775,6 +773,7 @@ fi
         self, selected_repository: str | None
     ) -> list[BaseMicroagent]:
         """Load microagents from the selected repository.
+
         If selected_repository is None, load microagents from the current workspace.
         This is the main entry point for loading microagents.
 
@@ -840,6 +839,7 @@ fi
 
     def run_action(self, action: Action) -> Observation:
         """Run an action and return the resulting observation.
+
         If the action is not runnable in any runtime, a NullObservation is returned.
         If the action is not supported by the current runtime, an ErrorObservation is returned.
         """
@@ -978,9 +978,7 @@ fi
     def _execute_shell_fn_git_handler(
         self, command: str, cwd: str | None
     ) -> CommandResult:
-        """
-        This function is used by the GitHandler to execute shell commands.
-        """
+        """This function is used by the GitHandler to execute shell commands."""
         obs = self.run(CmdRunAction(command=command, is_static=True, cwd=cwd))
         exit_code = 0
         content = ''
@@ -1010,8 +1008,8 @@ fi
     def subscribe_to_shell_stream(
         self, callback: Callable[[str], None] | None = None
     ) -> bool:
-        """
-        Subscribe to shell command output stream.
+        """Subscribe to shell command output stream.
+
         This method is meant to be overridden by runtime implementations
         that want to stream shell command output to external consumers.
 
@@ -1025,12 +1023,8 @@ fi
 
     @classmethod
     def setup(cls, config: OpenHandsConfig):
-        """
-        Set up the environment for runtimes to be created.
-        """
+        """Set up the environment for runtimes to be created."""
 
     @classmethod
     def teardown(cls, config: OpenHandsConfig):
-        """
-        Tear down the environment in which runtimes are created
-        """
+        """Tear down the environment in which runtimes are created."""

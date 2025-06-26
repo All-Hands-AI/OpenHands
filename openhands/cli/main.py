@@ -78,7 +78,6 @@ async def cleanup_session(
     controller: AgentController,
 ) -> None:
     """Clean up all resources from the current session."""
-
     event_stream = runtime.event_stream
     end_state = controller.get_state()
     end_state.save_to_session(

@@ -87,9 +87,7 @@ class DockerNestedConversationManager(ConversationManager):
     async def get_running_agent_loops(
         self, user_id: str | None = None, filter_to_sids: set[str] | None = None
     ) -> set[str]:
-        """
-        Get the running agent loops directly from docker.
-        """
+        """Get the running agent loops directly from docker."""
         containers: list[Container] = self.docker_client.containers.list()
         names = (container.name or '' for container in containers)
         conversation_ids = {
@@ -381,8 +379,10 @@ class DockerNestedConversationManager(ConversationManager):
 
     def get_agent_session(self, sid: str):
         """Get the agent session for a given session ID.
+
         Args:
             sid: The session ID.
+
         Returns:
             The agent session, or None if not found.
         """

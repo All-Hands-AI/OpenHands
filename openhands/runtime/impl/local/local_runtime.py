@@ -39,7 +39,6 @@ from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.command import get_action_execution_server_startup_command
-from openhands.storage.memory import InMemoryFileStore
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
@@ -130,6 +129,7 @@ def check_dependencies(code_repo_path: str, poetry_venvs_path: str) -> None:
 
 class LocalRuntime(ActionExecutionClient):
     """This runtime will run the action_execution_server directly on the local machine.
+
     When receiving an event, it will send the event to the server via HTTP.
 
     Args:
@@ -610,7 +610,7 @@ def _create_server(
     plugins: list[PluginRequirement],
     workspace_prefix: str,
 ) -> tuple[ActionExecutionServerInfo, str]:
-    logger.info(f'Creating a server')
+    logger.info('Creating a server')
 
     # Set up workspace directory
     temp_workspace = tempfile.mkdtemp(
@@ -621,18 +621,11 @@ def _create_server(
     # Find available ports
     execution_server_port = find_available_tcp_port(*EXECUTION_SERVER_PORT_RANGE)
     vscode_port = int(
-        os.getenv('VSCODE_PORT')
-        or str(find_available_tcp_port(*VSCODE_PORT_RANGE))
+        os.getenv('VSCODE_PORT') or str(find_available_tcp_port(*VSCODE_PORT_RANGE))
     )
     app_ports = [
-        int(
-            os.getenv('APP_PORT_1')
-            or str(find_available_tcp_port(*APP_PORT_RANGE_1))
-        ),
-        int(
-            os.getenv('APP_PORT_2')
-            or str(find_available_tcp_port(*APP_PORT_RANGE_2))
-        ),
+        int(os.getenv('APP_PORT_1') or str(find_available_tcp_port(*APP_PORT_RANGE_1))),
+        int(os.getenv('APP_PORT_2') or str(find_available_tcp_port(*APP_PORT_RANGE_2))),
     ]
 
     # Get user info
@@ -645,7 +638,7 @@ def _create_server(
         app_config=config,
         python_prefix=['poetry', 'run'],
         override_user_id=user_id,
-        override_username=username
+        override_username=username,
     )
 
     logger.debug(f'Starting server with command: {cmd}')
@@ -703,7 +696,7 @@ def _create_server(
         except Exception as e:
             logger.error(f'Error reading server output: {e}')
         finally:
-            logger.info(f'server log output thread finished.')
+            logger.info('server log output thread finished.')
 
     log_thread = threading.Thread(target=log_output, daemon=True)
     log_thread.start()
@@ -762,9 +755,7 @@ def _create_warm_server(
                 raise
 
         wait_until_alive()
-        logger.info(
-            f'Warm server ready at port {server_info.execution_server_port}'
-        )
+        logger.info(f'Warm server ready at port {server_info.execution_server_port}')
 
         # Add to the warm servers list
         _WARM_SERVERS.append(server_info)
@@ -789,13 +780,16 @@ def _create_warm_server_in_background(
     plugins: list[PluginRequirement],
 ) -> None:
     """Start a new thread to create a warm server."""
-    thread = threading.Thread(target=_create_warm_server, daemon=True, args=(config, plugins))
+    thread = threading.Thread(
+        target=_create_warm_server, daemon=True, args=(config, plugins)
+    )
     thread.start()
 
 
 def _get_plugins(config: OpenHandsConfig) -> list[PluginRequirement]:
     from openhands.controller.agent import Agent
     from openhands.llm.llm import LLM
+
     agent_config = config.get_agent_config(config.default_agent)
     llm = LLM(
         config=config.get_llm_config_from_agent(config.default_agent),
