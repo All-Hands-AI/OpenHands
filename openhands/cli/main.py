@@ -361,8 +361,6 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
             if isinstance(handler, logging.StreamHandler) and handler.stream.name == '<stderr>':
                 handler.setLevel(log_level)
     # Otherwise, use environment LOG_LEVEL (handled by openhands_logger initialization)
-    else:
-        logger.setLevel(logging.WARNING)
 
     # Load config from toml and override with command line arguments
     config: OpenHandsConfig = setup_config_from_args(args)
