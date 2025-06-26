@@ -212,7 +212,9 @@ def response_to_actions(
                     )
                     for key, value in other_kwargs.items():
                         if key in valid_params:
-                            valid_kwargs[key] = value
+                            # Skip safety_risk as it's handled separately
+                            if key != 'safety_risk':
+                                valid_kwargs[key] = value
                         else:
                             raise FunctionCallValidationError(
                                 f'Unexpected argument {key} in tool call {tool_call.function.name}. Allowed arguments are: {valid_params}'
