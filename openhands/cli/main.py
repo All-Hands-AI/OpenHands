@@ -352,7 +352,17 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
     """Runs the agent in CLI mode."""
     args = parse_arguments()
 
-    logger.setLevel(logging.WARNING)
+    # Set log level from command line argument if provided
+    if args.log_level:
+        log_level = getattr(logging, args.log_level.upper())
+        logger.setLevel(log_level)
+        # Also update the console handler level
+        for handler in logger.handlers:
+            if isinstance(handler, logging.StreamHandler) and handler.stream.name == '<stderr>':
+                handler.setLevel(log_level)
+    # Otherwise, use environment LOG_LEVEL (handled by openhands_logger initialization)
+    else:
+        logger.setLevel(logging.WARNING)
 
     # Load config from toml and override with command line arguments
     config: OpenHandsConfig = setup_config_from_args(args)
