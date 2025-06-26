@@ -56,7 +56,7 @@ def create_runtime(
     event_stream = EventStream(session_id, file_store)
 
     # set up the security analyzer
-    if config.security.security_analyzer:
+    if config.security.security_analyzer and config.security.enable_security_analyzer:
         options.SecurityAnalyzers.get(
             config.security.security_analyzer, SecurityAnalyzer
         )(event_stream)

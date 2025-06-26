@@ -126,7 +126,8 @@ class AgentSession:
             custom_secrets=custom_secrets if custom_secrets else {}
         )
         try:
-            self._create_security_analyzer(config.security.security_analyzer)
+            if config.security.enable_security_analyzer:
+                self._create_security_analyzer(config.security.security_analyzer)
             runtime_connected = await self._create_runtime(
                 runtime_name=runtime_name,
                 config=config,

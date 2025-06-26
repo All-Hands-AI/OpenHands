@@ -360,7 +360,7 @@ classpath = "my_package.my_module.MyCustomAgent"
 #security_analyzer = "llm"
 
 # Whether to enable security analyzer
-#enable_security_analyzer = false
+#enable_security_analyzer = true
 
 #################################### Condenser #################################
 # Condensers control how conversation history is managed and compressed when
