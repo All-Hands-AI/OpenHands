@@ -77,12 +77,19 @@ export function ChatInterface() {
 
   const events = parsedEvents.filter(shouldRenderEvent);
 
+  // Filter out environment events (like setup script execution) when determining
+  // which suggestions to show. Environment events are setup/infrastructure related
+  // and shouldn't trigger action suggestions like "Push to Branch"
+  const userAgentEvents = events.filter(
+    (event) => event.source !== "environment",
+  );
+
   const handleSendMessage = async (
     content: string,
     images: File[],
     files: File[],
   ) => {
-    if (events.length === 0) {
+    if (userAgentEvents.length === 0) {
       posthog.capture("initial_query_submitted", {
         entry_point: getEntryPoint(
           selectedRepository !== null,
@@ -93,7 +100,7 @@ export function ChatInterface() {
       });
     } else {
       posthog.capture("user_message_sent", {
-        session_message_count: events.length,
+        session_message_count: userAgentEvents.length,
         current_message_length: content.length,
       });
     }
@@ -167,7 +174,7 @@ export function ChatInterface() {
   return (
     <ScrollProvider value={scrollProviderValue}>
       <div className="h-full flex flex-col justify-between">
-        {events.length === 0 && !optimisticUserMessage && (
+        {userAgentEvents.length === 0 && !optimisticUserMessage && (
           <ChatSuggestions onSuggestionsClick={setMessageToSend} />
         )}
 
@@ -192,7 +199,7 @@ export function ChatInterface() {
           )}
 
           {isWaitingForUserInput &&
-            events.length > 0 &&
+            userAgentEvents.length > 0 &&
             !optimisticUserMessage && (
               <ActionSuggestions
                 onSuggestionsClick={(value) => handleSendMessage(value, [], [])}
