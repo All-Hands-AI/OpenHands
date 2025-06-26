@@ -133,3 +133,10 @@ When using these editors in your code, you can reference them by their tool name
 ## Migrating from Legacy Editor
 
 If you're currently using the legacy `str_replace_editor` tool, you can migrate to the new Claude editor by updating your configuration to explicitly set `enable_claude_editor=True`. The Claude editor provides the same functionality as the legacy editor but with a more consistent naming convention.
+
+## Troubleshooting
+
+If you encounter issues with the editor configuration, make sure that:
+1. You have set the correct configuration options in your `config.toml` file
+2. You are using the correct tool names in your code
+3. The editor you want to use is properly enabled in your configuration
