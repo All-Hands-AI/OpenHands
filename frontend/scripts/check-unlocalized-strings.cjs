@@ -544,10 +544,6 @@ function scanFileForUnlocalizedStrings(filePath) {
     return [];
   }
 
-  if (filePath.includes("task-suggestions.tsx")) {
-
-  }
-
   try {
     const content = fs.readFileSync(filePath, "utf-8");
     const unlocalizedStrings = [];
