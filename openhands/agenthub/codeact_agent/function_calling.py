@@ -18,14 +18,19 @@ from openhands.agenthub.codeact_agent.tools import (
     create_cmd_run_tool,
     create_str_replace_editor_tool,
 )
+from openhands.agenthub.codeact_agent.tools.claude_editor import (
+    create_claude_editor_tool,
+)
 from openhands.agenthub.codeact_agent.tools.gemini_edit_tool import (
     create_gemini_edit_tool,
     create_gemini_write_file_tool,
 )
 from openhands.llm.tool_names import (
+    CLAUDE_EDITOR_TOOL_NAME,
     GEMINI_EDIT_TOOL_NAME,
     GEMINI_READ_FILE_TOOL_NAME,
     GEMINI_WRITE_FILE_TOOL_NAME,
+    STR_REPLACE_EDITOR_TOOL_NAME,
 )
 from openhands.core.exceptions import (
     FunctionCallNotExistsError,
@@ -154,9 +159,68 @@ def response_to_actions(
                         'impl_source', FileEditSource.LLM_BASED_EDIT
                     ),
                 )
+            # ================================================
+            # Claude Editor Tool
+            # ================================================
             elif (
                 tool_call.function.name
-                == create_str_replace_editor_tool()['function']['name']
+                == CLAUDE_EDITOR_TOOL_NAME
+            ):
+                if 'command' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "command" in tool call {tool_call.function.name}'
+                    )
+                if 'path' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "path" in tool call {tool_call.function.name}'
+                    )
+                path = arguments['path']
+                command = arguments['command']
+                other_kwargs = {
+                    k: v for k, v in arguments.items() if k not in ['command', 'path']
+                }
+
+                if command == 'view':
+                    action = FileReadAction(
+                        path=path,
+                        impl_source=FileReadSource.OH_ACI,
+                        view_range=other_kwargs.get('view_range', None),
+                    )
+                else:
+                    if 'view_range' in other_kwargs:
+                        # Remove view_range from other_kwargs since it is not needed for FileEditAction
+                        other_kwargs.pop('view_range')
+
+                    # Filter out unexpected arguments
+                    valid_kwargs = {}
+                    # Get valid parameters from the claude_editor tool definition
+                    claude_editor_tool = create_claude_editor_tool()
+                    valid_params = set(
+                        claude_editor_tool['function']['parameters'][
+                            'properties'
+                        ].keys()
+                    )
+                    for key, value in other_kwargs.items():
+                        if key in valid_params:
+                            valid_kwargs[key] = value
+                        else:
+                            raise FunctionCallValidationError(
+                                f'Unexpected argument {key} in tool call {tool_call.function.name}. Allowed arguments are: {valid_params}'
+                            )
+
+                    action = FileEditAction(
+                        path=path,
+                        command=command,
+                        impl_source=FileEditSource.OH_ACI,
+                        **valid_kwargs,
+                    )
+                    
+            # ================================================
+            # Legacy String Replace Editor Tool
+            # ================================================
+            elif (
+                tool_call.function.name
+                == STR_REPLACE_EDITOR_TOOL_NAME
             ):
                 if 'command' not in arguments:
                     raise FunctionCallValidationError(

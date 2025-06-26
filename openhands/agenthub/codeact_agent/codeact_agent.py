@@ -18,6 +18,9 @@ from openhands.agenthub.codeact_agent.tools.llm_based_edit import LLMBasedFileEd
 from openhands.agenthub.codeact_agent.tools.str_replace_editor import (
     create_str_replace_editor_tool,
 )
+from openhands.agenthub.codeact_agent.tools.claude_editor import (
+    create_claude_editor_tool,
+)
 from openhands.agenthub.codeact_agent.tools.gemini_edit_tool import (
     create_gemini_edit_tool,
     create_gemini_read_file_tool,
@@ -131,20 +134,34 @@ class CodeActAgent(Agent):
                 tools.append(BrowserTool)
         if self.config.enable_jupyter:
             tools.append(IPythonTool)
-        if self.config.enable_llm_editor:
-            tools.append(LLMBasedFileEditTool)
-        elif self.config.enable_editor:
-            # Check if we should use Gemini-style edit tools
-            if getattr(self.config, 'enable_gemini_editor', False):
-                tools.append(create_gemini_edit_tool())
-                tools.append(create_gemini_write_file_tool())
-                tools.append(create_gemini_read_file_tool())
-            else:
+        # Only add editor tools if the legacy enable_editor flag is True
+        if self.config.enable_editor:
+            # Add LLM-based editor if enabled
+            if self.config.enable_llm_editor:
+                tools.append(LLMBasedFileEditTool)
+            
+            # Add Claude-style editor if enabled
+            if self.config.enable_claude_editor:
+                tools.append(
+                    create_claude_editor_tool(
+                        use_short_description=use_short_tool_desc
+                    )
+                )
+                
+            # Add legacy str_replace_editor for backward compatibility
+            # This is only added if Claude editor is not enabled and we're not using the new config
+            if not self.config.enable_claude_editor and not hasattr(self.config, 'enable_claude_editor'):
                 tools.append(
                     create_str_replace_editor_tool(
                         use_short_description=use_short_tool_desc
                     )
                 )
+            
+            # Add Gemini-style editor tools if enabled
+            if self.config.enable_gemini_editor:
+                tools.append(create_gemini_edit_tool())
+                tools.append(create_gemini_write_file_tool())
+                tools.append(create_gemini_read_file_tool())
         return tools
 
     def reset(self) -> None:

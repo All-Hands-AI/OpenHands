@@ -18,14 +18,21 @@ class AgentConfig(BaseModel):
     enable_browsing: bool = Field(default=True)
     """Whether to enable browsing tool.
     Note: If using CLIRuntime, browsing is not implemented and should be disabled."""
+    # Editor configuration
+    # Each editor can be enabled or disabled independently
     enable_llm_editor: bool = Field(default=False)
-    """Whether to enable LLM editor tool"""
-    enable_editor: bool = Field(default=True)
-    """Whether to enable the standard editor tool (str_replace_editor), only has an effect if enable_llm_editor is False.
-    Set this to False to disable the standard editor tool completely."""
+    """Whether to enable LLM-based editor tool (edit_file)"""
+    
+    enable_claude_editor: bool = Field(default=True)
+    """Whether to enable Claude-style editor tool (claude_editor)"""
+    
     enable_gemini_editor: bool = Field(default=False)
-    """Whether to enable Gemini-style editor tools (replace, write_file, read_file), only has an effect if enable_llm_editor is False and enable_editor is True.
-    To use only Gemini-style editor tools and disable the standard editor tool, set enable_editor=True, enable_gemini_editor=True, and modify the agent's tool list to exclude the standard editor tool."""
+    """Whether to enable Gemini-style editor tools (replace, write_file, read_file)"""
+    
+    # Legacy configuration (for backward compatibility)
+    enable_editor: bool = Field(default=True)
+    """Legacy setting. Whether to enable any editor tools. If False, all editor tools will be disabled regardless of their individual settings.
+    For new code, use the specific editor enable flags instead."""
     enable_jupyter: bool = Field(default=True)
     """Whether to enable Jupyter tool.
     Note: If using CLIRuntime, Jupyter use is not implemented and should be disabled."""

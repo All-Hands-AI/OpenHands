@@ -112,6 +112,11 @@ check out our [documentation](https://docs.all-hands.dev/usage/getting-started).
 There you'll find resources on how to use different LLM providers,
 troubleshooting resources, and advanced configuration options.
 
+### Key Documentation Pages:
+
+- [Editor Configuration](./docs/EDITOR_CONFIGURATION.md) - Configure Claude, Gemini, and LLM-based file editing tools
+- [Gemini Edit Tools](./docs/GEMINI_EDIT_TOOLS.md) - Learn about the Gemini-style editing tools
+
 ## 🤝 How to Join the Community
 
 OpenHands is a community-driven project, and we welcome contributions from everyone. We do most of our communication
