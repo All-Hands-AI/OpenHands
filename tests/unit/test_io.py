@@ -1,9 +1,10 @@
+import argparse
 import os
 import tempfile
 from unittest.mock import patch
 
 from openhands.core.config import OpenHandsConfig
-from openhands.io import read_input, read_task_from_file
+from openhands.io import read_input, read_task, read_task_from_file
 
 
 def test_single_line_input():
@@ -30,7 +31,7 @@ def test_multiline_input():
 
 
 def test_read_task_from_file():
-    """Test that read_task_from_file wraps the file content in a prompt."""
+    """Test that read_task_from_file returns the file content."""
     # Create a temporary file with some content
     with tempfile.NamedTemporaryFile(mode='w+', delete=False) as temp_file:
         temp_file.write('This is a test file content.')
@@ -39,6 +40,29 @@ def test_read_task_from_file():
     try:
         # Call the function with the temporary file
         result = read_task_from_file(temp_file_path)
+
+        # Check that the result is exactly the file content
+        assert result == 'This is a test file content.'
+    finally:
+        # Clean up the temporary file
+        os.unlink(temp_file_path)
+
+
+def test_read_task_with_file_option():
+    """Test that read_task enhances file content with a prompt when using the file option."""
+    # Create a temporary file with some content
+    with tempfile.NamedTemporaryFile(mode='w+', delete=False) as temp_file:
+        temp_file.write('This is a test file content.')
+        temp_file_path = temp_file.name
+
+    try:
+        # Create args with file option
+        args = argparse.Namespace()
+        args.file = temp_file_path
+        args.task = None
+
+        # Call the function with the args
+        result = read_task(args, cli_multiline_input=False)
 
         # Check that the result contains the expected prompt structure
         assert f"The user has tagged a file '{temp_file_path}'" in result

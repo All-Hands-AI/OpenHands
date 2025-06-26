@@ -18,25 +18,9 @@ def read_input(cli_multiline_input: bool = False) -> str:
 
 
 def read_task_from_file(file_path: str) -> str:
-    """Read task from the specified file.
-
-    Instead of just returning the file content, this function now wraps the content
-    in a prompt that instructs the agent to read and understand the file first.
-    """
+    """Read task from the specified file."""
     with open(file_path, 'r', encoding='utf-8') as file:
-        file_content = file.read()
-
-    # Create a prompt that instructs the agent to read and understand the file first
-    prompt = f"""The user has tagged a file '{file_path}'.
-Please read and understand the following file content first:
-
-```
-{file_content}
-```
-
-After reviewing the file, please ask the user what they would like to do with it."""
-
-    return prompt
+        return file.read()
 
 
 def read_task(args: argparse.Namespace, cli_multiline_input: bool) -> str:
@@ -47,7 +31,20 @@ def read_task(args: argparse.Namespace, cli_multiline_input: bool) -> str:
     # Determine the task
     task_str = ''
     if args.file:
-        task_str = read_task_from_file(args.file)
+        # For CLI usage, we want to enhance the file content with a prompt
+        # that instructs the agent to read and understand the file first
+        with open(args.file, 'r', encoding='utf-8') as file:
+            file_content = file.read()
+            
+        # Create a prompt that instructs the agent to read and understand the file first
+        task_str = f"""The user has tagged a file '{args.file}'.
+Please read and understand the following file content first:
+
+```
+{file_content}
+```
+
+After reviewing the file, please ask the user what they would like to do with it."""
     elif args.task:
         task_str = args.task
     elif not sys.stdin.isatty():
