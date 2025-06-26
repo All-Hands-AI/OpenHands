@@ -21,17 +21,6 @@ from openhands.agenthub.codeact_agent.tools import (
 from openhands.agenthub.codeact_agent.tools.claude_editor import (
     create_claude_editor_tool,
 )
-from openhands.agenthub.codeact_agent.tools.gemini_edit_tool import (
-    create_gemini_edit_tool,
-    create_gemini_write_file_tool,
-)
-from openhands.llm.tool_names import (
-    CLAUDE_EDITOR_TOOL_NAME,
-    GEMINI_EDIT_TOOL_NAME,
-    GEMINI_READ_FILE_TOOL_NAME,
-    GEMINI_WRITE_FILE_TOOL_NAME,
-    STR_REPLACE_EDITOR_TOOL_NAME,
-)
 from openhands.core.exceptions import (
     FunctionCallNotExistsError,
     FunctionCallValidationError,
@@ -52,6 +41,13 @@ from openhands.events.action import (
 from openhands.events.action.mcp import MCPAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
+from openhands.llm.tool_names import (
+    CLAUDE_EDITOR_TOOL_NAME,
+    GEMINI_EDIT_TOOL_NAME,
+    GEMINI_READ_FILE_TOOL_NAME,
+    GEMINI_WRITE_FILE_TOOL_NAME,
+    STR_REPLACE_EDITOR_TOOL_NAME,
+)
 
 
 def combine_thought(action: Action, thought: str) -> Action:
@@ -162,10 +158,7 @@ def response_to_actions(
             # ================================================
             # Claude Editor Tool
             # ================================================
-            elif (
-                tool_call.function.name
-                == CLAUDE_EDITOR_TOOL_NAME
-            ):
+            elif tool_call.function.name == CLAUDE_EDITOR_TOOL_NAME:
                 if 'command' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "command" in tool call {tool_call.function.name}'
@@ -214,14 +207,11 @@ def response_to_actions(
                         impl_source=FileEditSource.OH_ACI,
                         **valid_kwargs,
                     )
-                    
+
             # ================================================
             # Legacy String Replace Editor Tool
             # ================================================
-            elif (
-                tool_call.function.name
-                == STR_REPLACE_EDITOR_TOOL_NAME
-            ):
+            elif tool_call.function.name == STR_REPLACE_EDITOR_TOOL_NAME:
                 if 'command' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "command" in tool call {tool_call.function.name}'
@@ -285,7 +275,7 @@ def response_to_actions(
                         f'Missing required argument "code" in tool call {tool_call.function.name}'
                     )
                 action = BrowseInteractiveAction(browser_actions=arguments['code'])
-                
+
             # ================================================
             # Gemini Edit Tool
             # ================================================
@@ -302,16 +292,18 @@ def response_to_actions(
                     raise FunctionCallValidationError(
                         f'Missing required argument "new_string" in tool call {tool_call.function.name}'
                     )
-                
-                from openhands.runtime.plugins.agent_skills.gemini_file_editor.gemini_file_editor import GeminiEditAction
-                
+
+                from openhands.runtime.plugins.agent_skills.gemini_file_editor.gemini_file_editor import (
+                    GeminiEditAction,
+                )
+
                 action = GeminiEditAction(
                     file_path=arguments['file_path'],
                     old_string=arguments['old_string'],
                     new_string=arguments['new_string'],
                     expected_replacements=arguments.get('expected_replacements', 1),
                 )
-                
+
             # ================================================
             # Gemini Write File Tool
             # ================================================
@@ -324,14 +316,16 @@ def response_to_actions(
                     raise FunctionCallValidationError(
                         f'Missing required argument "content" in tool call {tool_call.function.name}'
                     )
-                
-                from openhands.runtime.plugins.agent_skills.gemini_file_editor.gemini_file_editor import GeminiWriteFileAction
-                
+
+                from openhands.runtime.plugins.agent_skills.gemini_file_editor.gemini_file_editor import (
+                    GeminiWriteFileAction,
+                )
+
                 action = GeminiWriteFileAction(
                     file_path=arguments['file_path'],
                     content=arguments['content'],
                 )
-                
+
             # ================================================
             # Gemini Read File Tool
             # ================================================
@@ -340,9 +334,11 @@ def response_to_actions(
                     raise FunctionCallValidationError(
                         f'Missing required argument "absolute_path" in tool call {tool_call.function.name}'
                     )
-                
-                from openhands.runtime.plugins.agent_skills.gemini_file_editor.gemini_file_editor import GeminiReadFileAction
-                
+
+                from openhands.runtime.plugins.agent_skills.gemini_file_editor.gemini_file_editor import (
+                    GeminiReadFileAction,
+                )
+
                 action = GeminiReadFileAction(
                     absolute_path=arguments['absolute_path'],
                     offset=arguments.get('offset'),

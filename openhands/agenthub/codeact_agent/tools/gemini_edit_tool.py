@@ -25,6 +25,7 @@ The file_path must be an absolute path (e.g., '/home/user/project/file.txt'). Re
 If the file doesn't exist, it will be created. If it exists, it will be overwritten.
 """
 
+
 def create_gemini_edit_tool() -> ChatCompletionToolParam:
     """Creates a Gemini-style edit tool for replacing text in files."""
     return ChatCompletionToolParam(
@@ -58,6 +59,7 @@ def create_gemini_edit_tool() -> ChatCompletionToolParam:
         ),
     )
 
+
 def create_gemini_write_file_tool() -> ChatCompletionToolParam:
     """Creates a Gemini-style write file tool for writing content to files."""
     return ChatCompletionToolParam(
@@ -82,11 +84,13 @@ def create_gemini_write_file_tool() -> ChatCompletionToolParam:
         ),
     )
 
+
 _GEMINI_READ_FILE_TOOL_DESCRIPTION = """Reads and returns the content of a specified file from the local filesystem.
 For text files, it can read specific line ranges using offset and limit parameters.
 
 The absolute_path must be an absolute path (e.g., '/home/user/project/file.txt'). Relative paths are not supported.
 """
+
 
 def create_gemini_read_file_tool() -> ChatCompletionToolParam:
     """Creates a Gemini-style read file tool for reading content from files."""

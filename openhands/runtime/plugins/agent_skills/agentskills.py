@@ -10,14 +10,21 @@ import_functions(
     module=file_reader, function_names=file_reader.__all__, target_globals=globals()
 )
 
+__all__ = file_ops.__all__ + file_reader.__all__
+
 # Import Gemini file editor
 try:
     from openhands.runtime.plugins.agent_skills import gemini_file_editor
+
+    import_functions(
+        module=gemini_file_editor,
+        function_names=gemini_file_editor.__all__,
+        target_globals=globals(),
+    )
+    __all__ += gemini_file_editor.__all__
 except ImportError:
     # If gemini_file_editor is not available, we just skip importing it.
     pass
-
-__all__ = file_ops.__all__ + file_reader.__all__
 
 try:
     from openhands.runtime.plugins.agent_skills import repo_ops
