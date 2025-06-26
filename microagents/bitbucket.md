@@ -5,7 +5,10 @@ version: 1.0.0
 agent: CodeActAgent
 triggers:
 - bitbucket
+- git
 ---
+
+# Bitbucket Integration
 
 You have access to an environment variable, `BITBUCKET_TOKEN`, which allows you to interact with
 the Bitbucket API.
@@ -16,7 +19,48 @@ ALWAYS use the Bitbucket API for operations instead of a web browser.
 ALWAYS use the `create_bitbucket_pr` tool to open a pull request
 </IMPORTANT>
 
-If you encounter authentication issues when pushing to Bitbucket (such as password prompts or permission errors), the old token may have expired. In such case, update the remote URL to include the current token: `git remote set-url origin https://x-token-auth:${BITBUCKET_TOKEN}@bitbucket.org/username/repo.git`
+## Authentication
+
+The Bitbucket integration supports multiple authentication formats:
+
+1. **Username:Password Format**: If your token contains a colon (`:`) character, it's treated as a username:app_password combination. This is the recommended format for Bitbucket Cloud.
+   - Example: `username:app_password` or `user@example.com:app_password`
+
+2. **Access Token Format**: If your token doesn't contain a colon, it's treated as a bearer token.
+   - Example: `your_access_token`
+
+When using the token for git operations, the format depends on the token type:
+- For username:password tokens: `https://username:app_password@bitbucket.org/workspace/repo.git`
+- For simple access tokens: `https://x-token-auth:your_access_token@bitbucket.org/workspace/repo.git`
+
+If you encounter authentication issues when pushing to Bitbucket (such as password prompts or permission errors), the old token may have expired. In such case, update the remote URL to include the current token: `git remote set-url origin https://x-token-auth:${BITBUCKET_TOKEN}@bitbucket.org/workspace/repo.git`
+
+## Finding Your Bitbucket Username
+
+To find your Bitbucket username:
+1. Log in to Bitbucket
+2. Click on your profile avatar in the bottom left corner
+3. Your username is displayed in your profile information
+4. Alternatively, it's the username in your profile URL: `https://bitbucket.org/username/`
+
+## Repository Structure
+
+Bitbucket repositories follow this structure:
+- Workspace/Repository format: `workspace/repo`
+- Repository URL: `https://bitbucket.org/workspace/repo`
+- API URL: `https://api.bitbucket.org/2.0/repositories/workspace/repo`
+- Clone URL: `https://bitbucket.org/workspace/repo.git`
+
+## Pull Request Creation
+
+To create a pull request in Bitbucket, use the `create_bitbucket_pr` tool with these parameters:
+- `repo_name`: The repository name in the format "workspace/repo"
+- `source_branch`: The source branch name
+- `target_branch`: The target branch name
+- `title`: The title of the pull request
+- `description`: The description of the pull request
+
+## Git Operations
 
 Here are some instructions for pushing, but ONLY do this if the user asks you to:
 * NEVER push directly to the `main` or `master` branch
