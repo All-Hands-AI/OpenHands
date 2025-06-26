@@ -64,12 +64,6 @@ def test_client():
         ),
     ):
         client = TestClient(app)
-        # Add session API key header if required
-        import os
-
-        session_api_key = os.getenv('SESSION_API_KEY')
-        if session_api_key:
-            client.headers.update({'X-Session-API-Key': session_api_key})
         yield client
 
 
