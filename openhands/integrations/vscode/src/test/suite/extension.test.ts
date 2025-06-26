@@ -684,10 +684,10 @@ Please ask the user what they want to do with this selection.`;
 
     // First command to establish the terminal as idle
     await vscode.commands.executeCommand("openhands.startConversation");
-    
+
     // Simulate command completion to mark terminal as idle
     // This would normally happen via the onDidEndTerminalShellExecution event
-    
+
     createTerminalStub.resetHistory();
     executeCommandSpy.resetHistory();
 
