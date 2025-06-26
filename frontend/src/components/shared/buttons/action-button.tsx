@@ -20,7 +20,7 @@ export function ActionButton({
       <button
         onClick={() => handleAction(action)}
         disabled={isDisabled}
-        className="relative overflow-visible cursor-default hover:cursor-pointer group disabled:cursor-not-allowed transition-all duration-300 ease-in-out"
+        className="relative overflow-visible cursor-default hover:cursor-pointer group disabled:cursor-not-allowed transition-all duration-300 ease-in-out bg-gray-200 p-2 rounded-full"
         type="button"
       >
         <span className="relative group-hover:filter group-hover:drop-shadow-[0_0_5px_rgba(255,64,0,0.4)]">
