@@ -1,0 +1,59 @@
+---
+title: Bitbucket Integration
+description: This guide walks you through the process of installing OpenHands Cloud for your Bitbucket repositories. Once set up, it will allow OpenHands to work with your Bitbucket repository.
+---
+
+## Prerequisites
+
+- Signed in to [OpenHands Cloud](https://app.all-hands.dev) with [a Bitbucket account](/usage/cloud/openhands-cloud).
+
+## Authentication Methods
+
+The Bitbucket integration supports multiple authentication formats:
+
+1. **Username:App Password Format**: If your token contains a colon (`:`) character, it's treated as a username:app_password combination. This is the recommended format for Bitbucket Cloud.
+   - Example: `username:app_password` or `user@example.com:app_password`
+
+2. **Access Token Format**: If your token doesn't contain a colon, it's treated as a bearer token.
+   - Example: `your_access_token`
+
+## Finding Your Bitbucket Username
+
+To find your Bitbucket username:
+1. Log in to Bitbucket
+2. Click on your profile avatar in the bottom left corner
+3. Your username is displayed in your profile information
+4. Alternatively, it's the username in your profile URL: `https://bitbucket.org/username/`
+
+## Repository Structure
+
+Bitbucket repositories follow this structure:
+- Workspace/Repository format: `workspace/repo`
+- Repository URL: `https://bitbucket.org/workspace/repo`
+- API URL: `https://api.bitbucket.org/2.0/repositories/workspace/repo`
+- Clone URL: `https://bitbucket.org/workspace/repo.git`
+
+## Working With Bitbucket Repos in OpenHands Cloud
+
+After signing in with a Bitbucket account, use the `select a repo` and `select a branch` dropdowns to select the
+appropriate repository and branch you'd like OpenHands to work on. Then click on `Launch` to start the conversation!
+
+![Connect Repo](/static/img/connect-repo.png)
+
+## Using Tokens with Reduced Scopes
+
+By default, OpenHands requests an API-scoped token during OAuth authentication. To restrict the agent's permissions, you can define a custom secret `BITBUCKET_TOKEN`, which will override the default token assigned to the agent.
+
+## Creating Pull Requests
+
+When working with Bitbucket repositories, OpenHands can create pull requests using the following parameters:
+- Repository name in the format "workspace/repo"
+- Source branch name
+- Target branch name
+- Title of the pull request
+- Description of the pull request
+
+## Next Steps
+
+- [Learn about the Cloud UI](/usage/cloud/cloud-ui).
+- [Use the Cloud API](/usage/cloud/cloud-api) to programmatically interact with OpenHands.
