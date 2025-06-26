@@ -1,5 +1,7 @@
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
+from openhands.agenthub.codeact_agent.tools.security_utils import LLM_BASED_EDIT_RISK_DESC, RISK_LEVELS
+
 _FILE_EDIT_DESCRIPTION = """Edit a file in plain-text format.
 * The assistant can edit files by specifying the file path and providing a draft of the new file content.
 * The draft content doesn't need to be exactly the same as the existing file; the assistant may skip unchanged lines using comments like `# ... existing code ...` to indicate unchanged sections.
@@ -137,6 +139,11 @@ LLMBasedFileEditTool = ChatCompletionToolParam(
                 'end': {
                     'type': 'integer',
                     'description': 'The ending line number for the edit (1-indexed, inclusive). Default is -1 (end of file).',
+                },
+                'safety_risk': {
+                    'type': 'string',
+                    'description': LLM_BASED_EDIT_RISK_DESC,
+                    'enum': RISK_LEVELS,
                 },
             },
             'required': ['path', 'content'],

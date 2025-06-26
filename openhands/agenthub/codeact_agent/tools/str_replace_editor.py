@@ -1,5 +1,6 @@
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
+from openhands.agenthub.codeact_agent.tools.security_utils import RISK_LEVELS, STR_REPLACE_EDITOR_RISK_DESC
 from openhands.llm.tool_names import STR_REPLACE_EDITOR_TOOL_NAME
 
 _DETAILED_STR_REPLACE_EDITOR_DESCRIPTION = """Custom editing tool for viewing, creating and editing files in plain-text format
@@ -102,8 +103,8 @@ def create_str_replace_editor_tool(
                     },
                     'safety_risk': {
                         'type': 'string',
-                        'description': "The LLM's assessment of the safety risk of this file operation. This helps the security analyzer determine whether user confirmation is needed.",
-                        'enum': ['LOW', 'MEDIUM', 'HIGH'],
+                        'description': STR_REPLACE_EDITOR_RISK_DESC,
+                        'enum': RISK_LEVELS,
                     },
                 },
                 'required': ['command', 'path'],

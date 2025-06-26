@@ -1,6 +1,7 @@
 from browsergym.core.action.highlevel import HighLevelActionSet
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
+from openhands.agenthub.codeact_agent.tools.security_utils import BROWSER_RISK_DESC, RISK_LEVELS
 from openhands.llm.tool_names import BROWSER_TOOL_NAME
 
 # from browsergym/core/action/highlevel.py
@@ -157,8 +158,8 @@ BrowserTool = ChatCompletionToolParam(
                 },
                 'safety_risk': {
                     'type': 'string',
-                    'description': "The LLM's assessment of the safety risk of this browser action. This helps the security analyzer determine whether user confirmation is needed.",
-                    'enum': ['LOW', 'MEDIUM', 'HIGH'],
+                    'description': BROWSER_RISK_DESC,
+                    'enum': RISK_LEVELS,
                 },
             },
             'required': ['code'],
