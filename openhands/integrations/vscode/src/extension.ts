@@ -107,11 +107,15 @@ function executeOpenHandsCommand(
     const disposable = vscode.window.onDidEndTerminalShellExecution((event) => {
       if (event.execution === execution) {
         if (event.exitCode === 0) {
-          console.log("OpenHands command completed successfully");
+          outputChannel.appendLine(
+            "DEBUG: OpenHands command completed successfully",
+          );
           // Mark terminal as idle when command completes successfully
           markTerminalAsIdle(terminal.name);
         } else if (event.exitCode !== undefined) {
-          console.log(`OpenHands command exited with code ${event.exitCode}`);
+          outputChannel.appendLine(
+            `DEBUG: OpenHands command exited with code ${event.exitCode}`,
+          );
           // Mark terminal as idle even if command failed (user can reuse it)
           markTerminalAsIdle(terminal.name);
         }
@@ -157,6 +161,64 @@ function detectVirtualEnvironment(): string {
     `DEBUG: No venv found in workspace ${workspaceFolder.uri.fsPath}`,
   );
   return "";
+}
+
+/**
+ * Creates a contextual task message for file content
+ * @param filePath The file path (or "Untitled" for unsaved files)
+ * @param content The file content
+ * @param languageId The programming language ID
+ * @returns string A descriptive task message
+ */
+function createFileContextMessage(
+  filePath: string,
+  content: string,
+  languageId?: string,
+): string {
+  const fileName =
+    filePath === "Untitled" ? "an untitled file" : `file ${filePath}`;
+  const langInfo = languageId ? ` (${languageId})` : "";
+
+  return `User opened ${fileName}${langInfo}. Here's the content:
+
+\`\`\`${languageId || ""}
+${content}
+\`\`\`
+
+Please ask the user what they want to do with this file.`;
+}
+
+/**
+ * Creates a contextual task message for selected text
+ * @param filePath The file path (or "Untitled" for unsaved files)
+ * @param content The selected content
+ * @param startLine 1-based start line number
+ * @param endLine 1-based end line number
+ * @param languageId The programming language ID
+ * @returns string A descriptive task message
+ */
+function createSelectionContextMessage(
+  filePath: string,
+  content: string,
+  startLine: number,
+  endLine: number,
+  languageId?: string,
+): string {
+  const fileName =
+    filePath === "Untitled" ? "an untitled file" : `file ${filePath}`;
+  const langInfo = languageId ? ` (${languageId})` : "";
+  const lineInfo =
+    startLine === endLine
+      ? `line ${startLine}`
+      : `lines ${startLine}-${endLine}`;
+
+  return `User selected ${lineInfo} in ${fileName}${langInfo}. Here's the selected content:
+
+\`\`\`${languageId || ""}
+${content}
+\`\`\`
+
+Please ask the user what they want to do with this selection.`;
 }
 
 /**
@@ -254,9 +316,17 @@ export function activate(context: vscode.ExtensionContext) {
           startOpenHandsInTerminal({});
           return;
         }
-        startOpenHandsInTerminal({ task: fileContent });
+        // Create contextual message for untitled file
+        const contextualTask = createFileContextMessage(
+          "Untitled",
+          fileContent,
+          editor.document.languageId,
+        );
+        startOpenHandsInTerminal({ task: contextualTask });
       } else {
         const filePath = editor.document.uri.fsPath;
+        // For saved files, we can still use --file flag for better performance,
+        // but we could also create a contextual message if preferred
         startOpenHandsInTerminal({ filePath });
       }
     },
@@ -281,8 +351,24 @@ export function activate(context: vscode.ExtensionContext) {
         startOpenHandsInTerminal({});
         return;
       }
+
       const selectedText = editor.document.getText(editor.selection);
-      startOpenHandsInTerminal({ task: selectedText });
+      const startLine = editor.selection.start.line + 1; // Convert to 1-based
+      const endLine = editor.selection.end.line + 1; // Convert to 1-based
+      const filePath = editor.document.isUntitled
+        ? "Untitled"
+        : editor.document.uri.fsPath;
+
+      // Create contextual message with line numbers and file info
+      const contextualTask = createSelectionContextMessage(
+        filePath,
+        selectedText,
+        startLine,
+        endLine,
+        editor.document.languageId,
+      );
+
+      startOpenHandsInTerminal({ task: contextualTask });
     },
   );
   context.subscriptions.push(startWithSelectionContextDisposable);

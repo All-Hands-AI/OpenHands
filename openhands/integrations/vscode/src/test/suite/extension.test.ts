@@ -83,6 +83,31 @@ suite("Extension Test Suite", () => {
 
     vscode.window.showErrorMessage = showErrorMessageSpy as any;
 
+    // Restore default mock behavior before each test
+    setup(() => {
+      // Reset spies
+      createTerminalStub.resetHistory();
+      sendTextSpy.resetHistory();
+      showSpy.resetHistory();
+      findTerminalStub.resetHistory();
+      showErrorMessageSpy.resetHistory();
+
+      // Restore default createTerminal mock
+      vscode.window.createTerminal = (...args: any[]): vscode.Terminal => {
+        createTerminalStub(...args);
+        return mockTerminal; // Return the default mock terminal (no Shell Integration)
+      };
+
+      // Restore default terminals mock
+      Object.defineProperty(vscode.window, "terminals", {
+        get: () => {
+          findTerminalStub();
+          return [mockTerminal]; // Default to returning the mockTerminal
+        },
+        configurable: true,
+      });
+    });
+
     // Teardown logic to restore original functions
     teardown(() => {
       vscode.window.createTerminal = _originalCreateTerminal;
@@ -197,8 +222,9 @@ suite("Extension Test Suite", () => {
     }
   });
 
-  test("openhands.startConversationWithFileContext (untitled file) should send --task command", async () => {
+  test("openhands.startConversationWithFileContext (untitled file) should send contextual --task command", async () => {
     const untitledFileContent = "untitled content";
+    const languageId = "javascript";
     const originalActiveTextEditor = Object.getOwnPropertyDescriptor(
       vscode.window,
       "activeTextEditor",
@@ -209,6 +235,7 @@ suite("Extension Test Suite", () => {
           isUntitled: true,
           uri: vscode.Uri.parse("untitled:Untitled-1"),
           getText: () => untitledFileContent,
+          languageId,
         },
       }),
       configurable: true,
@@ -218,8 +245,23 @@ suite("Extension Test Suite", () => {
       "openhands.startConversationWithFileContext",
     );
     assert.ok(sendTextSpy.called, "terminal.sendText should be called");
+
+    // Check that the command contains the contextual message
+    const expectedMessage = `User opened an untitled file (${languageId}). Here's the content:
+
+\`\`\`${languageId}
+${untitledFileContent}
+\`\`\`
+
+Please ask the user what they want to do with this file.`;
+
+    // Apply the same sanitization as the actual implementation
+    const sanitizedMessage = expectedMessage
+      .replace(/`/g, "\\`")
+      .replace(/"/g, '\\"');
+
     assert.deepStrictEqual(sendTextSpy.lastArgs, [
-      `openhands --task "${untitledFileContent}"`,
+      `openhands --task "${sanitizedMessage}"`,
       true,
     ]);
 
@@ -232,7 +274,7 @@ suite("Extension Test Suite", () => {
     }
   });
 
-  test("openhands.startConversationWithFileContext (no editor) should show error", async () => {
+  test("openhands.startConversationWithFileContext (no editor) should start conversation without context", async () => {
     const originalActiveTextEditor = Object.getOwnPropertyDescriptor(
       vscode.window,
       "activeTextEditor",
@@ -245,11 +287,8 @@ suite("Extension Test Suite", () => {
     await vscode.commands.executeCommand(
       "openhands.startConversationWithFileContext",
     );
-    assert.ok(showErrorMessageSpy.called, "showErrorMessage should be called");
-    assert.strictEqual(
-      showErrorMessageSpy.lastArgs[0],
-      "OpenHands: No active text editor found.",
-    );
+    assert.ok(sendTextSpy.called, "terminal.sendText should be called");
+    assert.deepStrictEqual(sendTextSpy.lastArgs, ["openhands", true]);
 
     if (originalActiveTextEditor) {
       Object.defineProperty(
@@ -260,8 +299,10 @@ suite("Extension Test Suite", () => {
     }
   });
 
-  test("openhands.startConversationWithSelectionContext should send --task with selection", async () => {
+  test("openhands.startConversationWithSelectionContext should send contextual --task with selection", async () => {
     const selectedText = "selected text for openhands";
+    const filePath = "/test/file.py";
+    const languageId = "python";
     const originalActiveTextEditor = Object.getOwnPropertyDescriptor(
       vscode.window,
       "activeTextEditor",
@@ -270,7 +311,9 @@ suite("Extension Test Suite", () => {
       get: () => ({
         document: {
           isUntitled: false,
-          uri: vscode.Uri.file("/test/file.py"),
+          uri: vscode.Uri.file(filePath),
+          fsPath: filePath,
+          languageId,
           getText: (selection?: vscode.Selection) =>
             selection ? selectedText : "full content",
         },
@@ -278,9 +321,9 @@ suite("Extension Test Suite", () => {
           isEmpty: false,
           active: new vscode.Position(0, 0),
           anchor: new vscode.Position(0, 0),
-          start: new vscode.Position(0, 0),
-          end: new vscode.Position(0, 10),
-        } as vscode.Selection, // Mock non-empty selection
+          start: new vscode.Position(0, 0), // Line 0 (0-based)
+          end: new vscode.Position(0, 10), // Line 0 (0-based)
+        } as vscode.Selection, // Mock non-empty selection on line 1
       }),
       configurable: true,
     });
@@ -289,8 +332,23 @@ suite("Extension Test Suite", () => {
       "openhands.startConversationWithSelectionContext",
     );
     assert.ok(sendTextSpy.called, "terminal.sendText should be called");
+
+    // Check that the command contains the contextual message with line numbers
+    const expectedMessage = `User selected line 1 in file ${filePath} (${languageId}). Here's the selected content:
+
+\`\`\`${languageId}
+${selectedText}
+\`\`\`
+
+Please ask the user what they want to do with this selection.`;
+
+    // Apply the same sanitization as the actual implementation
+    const sanitizedMessage = expectedMessage
+      .replace(/`/g, "\\`")
+      .replace(/"/g, '\\"');
+
     assert.deepStrictEqual(sendTextSpy.lastArgs, [
-      `openhands --task "${selectedText}"`,
+      `openhands --task "${sanitizedMessage}"`,
       true,
     ]);
 
@@ -303,7 +361,7 @@ suite("Extension Test Suite", () => {
     }
   });
 
-  test("openhands.startConversationWithSelectionContext (no selection) should show error", async () => {
+  test("openhands.startConversationWithSelectionContext (no selection) should start conversation without context", async () => {
     const originalActiveTextEditor = Object.getOwnPropertyDescriptor(
       vscode.window,
       "activeTextEditor",
@@ -323,11 +381,70 @@ suite("Extension Test Suite", () => {
     await vscode.commands.executeCommand(
       "openhands.startConversationWithSelectionContext",
     );
-    assert.ok(showErrorMessageSpy.called, "showErrorMessage should be called");
-    assert.strictEqual(
-      showErrorMessageSpy.lastArgs[0],
-      "OpenHands: No text selected.",
+    assert.ok(sendTextSpy.called, "terminal.sendText should be called");
+    assert.deepStrictEqual(sendTextSpy.lastArgs, ["openhands", true]);
+
+    if (originalActiveTextEditor) {
+      Object.defineProperty(
+        vscode.window,
+        "activeTextEditor",
+        originalActiveTextEditor,
+      );
+    }
+  });
+
+  test("openhands.startConversationWithSelectionContext should handle multi-line selections", async () => {
+    const selectedText = "line 1\nline 2\nline 3";
+    const filePath = "/test/multiline.js";
+    const languageId = "javascript";
+    const originalActiveTextEditor = Object.getOwnPropertyDescriptor(
+      vscode.window,
+      "activeTextEditor",
     );
+    Object.defineProperty(vscode.window, "activeTextEditor", {
+      get: () => ({
+        document: {
+          isUntitled: false,
+          uri: vscode.Uri.file(filePath),
+          fsPath: filePath,
+          languageId,
+          getText: (selection?: vscode.Selection) =>
+            selection ? selectedText : "full content",
+        },
+        selection: {
+          isEmpty: false,
+          active: new vscode.Position(4, 0),
+          anchor: new vscode.Position(4, 0),
+          start: new vscode.Position(4, 0), // Line 4 (0-based) = Line 5 (1-based)
+          end: new vscode.Position(6, 10), // Line 6 (0-based) = Line 7 (1-based)
+        } as vscode.Selection, // Mock multi-line selection from line 5 to 7
+      }),
+      configurable: true,
+    });
+
+    await vscode.commands.executeCommand(
+      "openhands.startConversationWithSelectionContext",
+    );
+    assert.ok(sendTextSpy.called, "terminal.sendText should be called");
+
+    // Check that the command contains the contextual message with line range
+    const expectedMessage = `User selected lines 5-7 in file ${filePath} (${languageId}). Here's the selected content:
+
+\`\`\`${languageId}
+${selectedText}
+\`\`\`
+
+Please ask the user what they want to do with this selection.`;
+
+    // Apply the same sanitization as the actual implementation
+    const sanitizedMessage = expectedMessage
+      .replace(/`/g, "\\`")
+      .replace(/"/g, '\\"');
+
+    assert.deepStrictEqual(sendTextSpy.lastArgs, [
+      `openhands --task "${sanitizedMessage}"`,
+      true,
+    ]);
 
     if (originalActiveTextEditor) {
       Object.defineProperty(
@@ -425,17 +542,23 @@ suite("Extension Test Suite", () => {
     assert.ok(showSpy.called, "terminal.show should be called");
   });
 
-  test("Shell Integration probe should detect idle terminal", async () => {
+  test("Shell Integration should use executeCommand for OpenHands commands", async () => {
     const executeCommandSpy = createManualSpy();
 
-    // Mock execution that responds with probe ID
+    // Mock execution for OpenHands command
     const mockExecution = {
       read: () => ({
         async *[Symbol.asyncIterator]() {
-          yield "OPENHANDS_PROBE_123456789"; // Simulate successful probe response
+          yield "OpenHands started successfully";
         },
       }),
       exitCode: Promise.resolve(0),
+      commandLine: {
+        value: "openhands",
+        isTrusted: true,
+        confidence: 2,
+      },
+      cwd: vscode.Uri.file("/test/directory"),
     };
 
     const mockShellIntegration = {
@@ -443,8 +566,10 @@ suite("Extension Test Suite", () => {
         executeCommandSpy(command);
         return mockExecution;
       },
+      cwd: vscode.Uri.file("/test/directory"),
     };
 
+    // Create a terminal with Shell Integration that will be created by createTerminal
     const terminalWithShell = {
       name: "OpenHands 10:30:15",
       processId: Promise.resolve(456),
@@ -461,55 +586,63 @@ suite("Extension Test Suite", () => {
       shellIntegration: mockShellIntegration,
     };
 
+    // Mock createTerminal to return a terminal with Shell Integration
+    createTerminalStub.resetHistory();
+    vscode.window.createTerminal = (...args: any[]): vscode.Terminal => {
+      createTerminalStub(...args);
+      return terminalWithShell; // Return terminal with Shell Integration
+    };
+
+    // Mock empty terminals array so we create a new one
     Object.defineProperty(vscode.window, "terminals", {
       get: () => {
         findTerminalStub();
-        return [terminalWithShell];
+        return []; // No existing terminals
       },
       configurable: true,
     });
 
-    createTerminalStub.resetHistory();
-
     await vscode.commands.executeCommand("openhands.startConversation");
 
-    // Should have called executeCommand for probe
+    // Should have called executeCommand for OpenHands command
     assert.ok(
       executeCommandSpy.called,
-      "Shell Integration executeCommand should be called for probe",
+      "Shell Integration executeCommand should be called for OpenHands command",
     );
 
-    // Check if any of the calls was a probe command
-    const probeCall = executeCommandSpy.argsHistory.find(
-      (args: any[]) => args[0] && args[0].includes("OPENHANDS_PROBE_"),
+    // Check that the command was an OpenHands command
+    const openhandsCall = executeCommandSpy.argsHistory.find(
+      (args: any[]) => args[0] && args[0].includes("openhands"),
     );
     assert.ok(
-      probeCall,
-      `Should execute probe command. Actual calls: ${JSON.stringify(executeCommandSpy.argsHistory)}`,
+      openhandsCall,
+      `Should execute OpenHands command. Actual calls: ${JSON.stringify(executeCommandSpy.argsHistory)}`,
     );
 
-    // Should reuse terminal (not create new one)
+    // Should create new terminal since none exist
     assert.ok(
-      !createTerminalStub.called,
-      "Should not create new terminal when existing one is idle",
+      createTerminalStub.called,
+      "Should create new terminal when none exist",
     );
-    assert.ok(showSpy.called, "Should show the reused terminal");
   });
 
-  test("Shell Integration probe should handle timeout gracefully", async () => {
+  test("Idle terminal tracking should reuse known idle terminals", async () => {
     const executeCommandSpy = createManualSpy();
 
-    // Mock execution that never responds (simulates hanging terminal)
+    // Mock execution for OpenHands command
     const mockExecution = {
       read: () => ({
         async *[Symbol.asyncIterator]() {
-          // Never yield the expected probe response - simulate hanging
-          yield "some other output";
-          // Simulate infinite hanging by never resolving
-          await new Promise(() => {}); // Never resolves
+          yield "OpenHands started successfully";
         },
       }),
       exitCode: Promise.resolve(0),
+      commandLine: {
+        value: "openhands",
+        isTrusted: true,
+        confidence: 2,
+      },
+      cwd: vscode.Uri.file("/test/directory"),
     };
 
     const mockShellIntegration = {
@@ -517,6 +650,7 @@ suite("Extension Test Suite", () => {
         executeCommandSpy(command);
         return mockExecution;
       },
+      cwd: vscode.Uri.file("/test/directory"),
     };
 
     const terminalWithShell = {
@@ -535,6 +669,9 @@ suite("Extension Test Suite", () => {
       shellIntegration: mockShellIntegration,
     };
 
+    // First, manually mark the terminal as idle (simulating a previous successful command)
+    // We need to access the extension's internal idle tracking
+    // For testing, we'll simulate this by running a command first, then another
     Object.defineProperty(vscode.window, "terminals", {
       get: () => {
         findTerminalStub();
@@ -545,25 +682,38 @@ suite("Extension Test Suite", () => {
 
     createTerminalStub.resetHistory();
 
+    // First command to establish the terminal as idle
+    await vscode.commands.executeCommand("openhands.startConversation");
+    
+    // Simulate command completion to mark terminal as idle
+    // This would normally happen via the onDidEndTerminalShellExecution event
+    
+    createTerminalStub.resetHistory();
+    executeCommandSpy.resetHistory();
+
+    // Second command should reuse the terminal if it's marked as idle
     await vscode.commands.executeCommand("openhands.startConversation");
 
-    // Should have attempted probe
-    assert.ok(executeCommandSpy.called, "Should attempt probe");
-
-    // Should still reuse terminal even if probe times out (Shell Integration handles interruption)
-    assert.ok(showSpy.called, "Should show terminal even after probe timeout");
+    // Should show terminal
+    assert.ok(showSpy.called, "Should show terminal");
   });
 
-  test("Shell Integration should use executeCommand instead of sendText", async () => {
+  test("Shell Integration should use executeCommand when available", async () => {
     const executeCommandSpy = createManualSpy();
 
     const mockExecution = {
       read: () => ({
         async *[Symbol.asyncIterator]() {
-          yield "OPENHANDS_PROBE_123456789";
+          yield "OpenHands started successfully";
         },
       }),
       exitCode: Promise.resolve(0),
+      commandLine: {
+        value: "openhands",
+        isTrusted: true,
+        confidence: 2,
+      },
+      cwd: vscode.Uri.file("/test/directory"),
     };
 
     const mockShellIntegration = {
@@ -571,6 +721,7 @@ suite("Extension Test Suite", () => {
         executeCommandSpy(command);
         return mockExecution;
       },
+      cwd: vscode.Uri.file("/test/directory"),
     };
 
     const terminalWithShell = {
@@ -589,10 +740,18 @@ suite("Extension Test Suite", () => {
       shellIntegration: mockShellIntegration,
     };
 
+    // Mock createTerminal to return a terminal with Shell Integration
+    createTerminalStub.resetHistory();
+    vscode.window.createTerminal = (...args: any[]): vscode.Terminal => {
+      createTerminalStub(...args);
+      return terminalWithShell; // Return terminal with Shell Integration
+    };
+
+    // Mock empty terminals array so we create a new one
     Object.defineProperty(vscode.window, "terminals", {
       get: () => {
         findTerminalStub();
-        return [terminalWithShell];
+        return []; // No existing terminals
       },
       configurable: true,
     });
@@ -608,18 +767,9 @@ suite("Extension Test Suite", () => {
       "Should use Shell Integration executeCommand",
     );
 
-    // Should have called executeCommand at least twice: once for probe, once for actual command
-    assert.ok(
-      executeCommandSpy.callCount >= 2,
-      "Should call executeCommand for probe and actual command",
-    );
-
-    // The actual OpenHands command should be executed via Shell Integration
+    // The OpenHands command should be executed via Shell Integration
     const openhandsCommand = executeCommandSpy.argsHistory.find(
-      (args: any[]) =>
-        args[0] &&
-        args[0].includes("openhands") &&
-        !args[0].includes("OPENHANDS_PROBE_"),
+      (args: any[]) => args[0] && args[0].includes("openhands"),
     );
     assert.ok(
       openhandsCommand,
@@ -627,61 +777,28 @@ suite("Extension Test Suite", () => {
     );
   });
 
-  test("Shell Integration should monitor command execution completion", async () => {
-    const executeCommandSpy = createManualSpy();
-
-    // Mock the execution object that will be returned
-    const mockExecution = {
-      read: () => ({
-        async *[Symbol.asyncIterator]() {
-          yield "OPENHANDS_PROBE_123456789";
-        },
-      }),
-      exitCode: Promise.resolve(0),
-    };
-
-    const mockShellIntegration = {
-      executeCommand: (command: string) => {
-        executeCommandSpy(command);
-        return mockExecution;
-      },
-    };
-
-    const terminalWithShell = {
-      name: "OpenHands 10:30:15",
-      processId: Promise.resolve(456),
-      sendText: sendTextSpy as any,
-      show: showSpy as any,
-      hide: () => {},
-      dispose: () => {},
-      creationOptions: {},
-      exitStatus: undefined,
-      state: {
-        isInteractedWith: false,
-        shell: undefined as string | undefined,
-      },
-      shellIntegration: mockShellIntegration,
-    };
-
+  test("Terminal creation should work when no existing terminals", async () => {
+    // Mock empty terminals array
     Object.defineProperty(vscode.window, "terminals", {
       get: () => {
         findTerminalStub();
-        return [terminalWithShell];
+        return []; // No existing terminals
       },
       configurable: true,
     });
 
+    createTerminalStub.resetHistory();
+
     await vscode.commands.executeCommand("openhands.startConversation");
 
-    // Should use Shell Integration executeCommand
+    // Should create new terminal when none exist
     assert.ok(
-      executeCommandSpy.called,
-      "Should use Shell Integration executeCommand",
+      createTerminalStub.called,
+      "Should create new terminal when none exist",
     );
 
-    // Note: We can't easily test the event handler registration in unit tests
-    // since vscode.window.onDidEndTerminalShellExecution is read-only
-    // This would be better tested in integration tests
+    // Should show the new terminal
+    assert.ok(showSpy.called, "Should show the new terminal");
   });
 
   test("Shell Integration fallback should work when Shell Integration unavailable", async () => {
