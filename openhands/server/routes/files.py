@@ -219,6 +219,11 @@ async def uploadImageFile(request: Request, data: UploadFileRequest):
         )
     if isinstance(observation, FileReadObservation):
         file_content = observation.content
+        if not file_content:
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content={'error': 'File not found'},
+            )
         try:
             # Handle different content formats
             if file_content.startswith('data:image/'):
@@ -273,8 +278,8 @@ async def uploadImageFile(request: Request, data: UploadFileRequest):
         )
     else:
         return JSONResponse(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={'error': 'Failed to read image data'},
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={'error': 'File not found'},
         )
 
 
