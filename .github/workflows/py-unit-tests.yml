@@ -20,6 +20,7 @@ jobs:
   test-on-linux:
     name: Python Unit Tests on Linux
     runs-on: blacksmith-4vcpu-ubuntu-2204
+    timeout-minutes: 60
     env:
       INSTALL_DOCKER: '0' # Set to '0' to skip Docker installation
     strategy:
@@ -56,6 +57,7 @@ jobs:
   test-on-windows:
     name: Python Tests on Windows
     runs-on: windows-latest
+    timeout-minutes: 90
     strategy:
       matrix:
         python-version: ['3.12']
@@ -77,7 +79,8 @@ jobs:
         env:
           DEBUG: "1"
       - name: Run Windows runtime tests with LocalRuntime
-        run: $env:TEST_RUNTIME="local"; poetry run pytest -svv tests/runtime/test_bash.py
+        run: $env:TEST_RUNTIME="local"; poetry run pytest -svv tests/runtime/test_bash.py --timeout=1800
         env:
           TEST_RUNTIME: local
           DEBUG: "1"
+        timeout-minutes: 45
