@@ -356,7 +356,8 @@ classpath = "my_package.my_module.MyCustomAgent"
 #confirmation_mode = false
 
 # The security analyzer to use (For Headless / CLI only -  In Web this is overridden by Session Init)
-#security_analyzer = ""
+# Available options: 'llm' (default), 'invariant'
+#security_analyzer = "llm"
 
 # Whether to enable security analyzer
 #enable_security_analyzer = false
