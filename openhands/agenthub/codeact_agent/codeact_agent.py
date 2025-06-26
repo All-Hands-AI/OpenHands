@@ -30,6 +30,7 @@ from openhands.llm.llm import LLM
 from openhands.llm.llm_utils import check_tools
 from openhands.memory.condenser import Condenser
 from openhands.memory.condenser.condenser import Condensation, View
+from openhands.memory.condenser.impl.token_aware_condenser import TokenAwareCondenser
 from openhands.memory.conversation_memory import ConversationMemory
 from openhands.runtime.plugins import (
     AgentSkillsRequirement,
@@ -88,6 +89,15 @@ class CodeActAgent(Agent):
         self.conversation_memory = ConversationMemory(self.config, self.prompt_manager)
 
         self.condenser = Condenser.from_config(self.config.condenser)
+
+        # We need to use the *agent* LLM's max_input_tokens and metrics
+        if (
+            isinstance(self.condenser, TokenAwareCondenser)
+            and self.llm.config.max_input_tokens
+        ):
+            self.condenser.max_input_tokens = self.llm.config.max_input_tokens
+            self.condenser.agent_llm = self.llm
+
         logger.debug(f'Using condenser: {type(self.condenser)}')
 
     @property
