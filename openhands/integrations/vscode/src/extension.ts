@@ -175,24 +175,17 @@ function createFileContextMessage(
   content: string,
   languageId?: string,
 ): string {
-  if (filePath === "Untitled") {
-    // For untitled files, use more natural language
-    const langInfo = languageId ? ` (${languageId})` : "";
-    return `User opened an untitled file${langInfo}. Here's the content:
+  const fileName =
+    filePath === "Untitled" ? "an untitled file" : `file ${filePath}`;
+  const langInfo = languageId ? ` (${languageId})` : "";
+
+  return `User opened ${fileName}${langInfo}. Here's the content:
 
 \`\`\`${languageId || ""}
 ${content}
 \`\`\`
 
 Please ask the user what they want to do with this file.`;
-  }
-  // For saved files, use the "tagged a file" format
-  return `The user has tagged a file '${filePath}'.
-Please read and understand the following file content first:
-\`\`\`${languageId || ""}
-${content}
-\`\`\`
-After reviewing the file, please ask the user what they would like to do with it.`;
 }
 
 /**
@@ -332,15 +325,9 @@ export function activate(context: vscode.ExtensionContext) {
         startOpenHandsInTerminal({ task: contextualTask });
       } else {
         const filePath = editor.document.uri.fsPath;
-        const fileContent = editor.document.getText();
-
-        // Create contextual message for saved files too
-        const contextualTask = createFileContextMessage(
-          filePath,
-          fileContent,
-          editor.document.languageId,
-        );
-        startOpenHandsInTerminal({ task: contextualTask });
+        // For saved files, we can still use --file flag for better performance,
+        // but we could also create a contextual message if preferred
+        startOpenHandsInTerminal({ filePath });
       }
     },
   );

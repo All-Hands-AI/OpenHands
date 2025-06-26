@@ -184,11 +184,8 @@ suite("Extension Test Suite", () => {
     );
   });
 
-  test("openhands.startConversationWithFileContext (saved file) should send contextual --task command", async () => {
+  test("openhands.startConversationWithFileContext (saved file) should send --file command", async () => {
     const testFilePath = "/test/file.py";
-    const fileContent = "print('Hello, World!')";
-    const languageId = "python";
-
     // Mock activeTextEditor for a saved file
     const originalActiveTextEditor = Object.getOwnPropertyDescriptor(
       vscode.window,
@@ -199,9 +196,8 @@ suite("Extension Test Suite", () => {
         document: {
           isUntitled: false,
           uri: vscode.Uri.file(testFilePath),
-          fsPath: testFilePath,
-          languageId,
-          getText: () => fileContent,
+          fsPath: testFilePath, // fsPath is often used
+          getText: () => "file content", // Not used for saved files but good to have
         },
       }),
       configurable: true,
@@ -211,22 +207,8 @@ suite("Extension Test Suite", () => {
       "openhands.startConversationWithFileContext",
     );
     assert.ok(sendTextSpy.called, "terminal.sendText should be called");
-
-    // Check that the command contains the contextual message
-    const expectedMessage = `The user has tagged a file '${testFilePath}'.
-Please read and understand the following file content first:
-\`\`\`${languageId}
-${fileContent}
-\`\`\`
-After reviewing the file, please ask the user what they would like to do with it.`;
-
-    // Apply the same sanitization as the actual implementation
-    const sanitizedMessage = expectedMessage
-      .replace(/`/g, "\\`")
-      .replace(/"/g, '\\"');
-
     assert.deepStrictEqual(sendTextSpy.lastArgs, [
-      `openhands --task "${sanitizedMessage}"`,
+      `openhands --file ${testFilePath.includes(" ") ? `"${testFilePath}"` : testFilePath}`,
       true,
     ]);
 
