@@ -1,10 +1,10 @@
 """Gemini-style file editor implementation for OpenHands."""
 
 import os
-import re
-from typing import Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
-from openhands.core.logger import openhands_logger as logger
+from openhands_aci.utils.diff import get_diff  # type: ignore
+
 from openhands.events.action import Action
 from openhands.events.observation import (
     ErrorObservation,
@@ -18,10 +18,7 @@ from openhands.llm.tool_names import (
     GEMINI_READ_FILE_TOOL_NAME,
     GEMINI_WRITE_FILE_TOOL_NAME,
 )
-from openhands.runtime.plugins.agent_skills.file_editor import file_editor
-from openhands.runtime.plugins.agent_skills.file_reader import file_readers
 from openhands.runtime.utils.edit import FileEditRuntimeMixin
-from openhands_aci.utils.diff import get_diff  # type: ignore
 
 
 class GeminiEditAction(Action):
@@ -48,13 +45,13 @@ class GeminiEditAction(Action):
         self.new_string = new_string
         self.expected_replacements = expected_replacements
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Convert the action to a dictionary."""
         return {
-            "file_path": self.file_path,
-            "old_string": self.old_string,
-            "new_string": self.new_string,
-            "expected_replacements": self.expected_replacements,
+            'file_path': self.file_path,
+            'old_string': self.old_string,
+            'new_string': self.new_string,
+            'expected_replacements': self.expected_replacements,
         }
 
 
@@ -72,16 +69,20 @@ class GeminiWriteFileAction(Action):
         self.file_path = file_path
         self.content = content
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict:
         """Convert the action to a dictionary."""
         return {
-            "file_path": self.file_path,
-            "content": self.content,
+            'file_path': self.file_path,
+            'content': self.content,
         }
 
 
 class GeminiReadFileAction(Action):
     """Action for Gemini-style read file operations."""
+
+    absolute_path: str
+    offset: Optional[int]
+    limit: Optional[int]
 
     def __init__(
         self,
@@ -101,15 +102,15 @@ class GeminiReadFileAction(Action):
         self.offset = offset
         self.limit = limit
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> dict[str, Any]:
         """Convert the action to a dictionary."""
-        result = {
-            "absolute_path": self.absolute_path,
+        result: dict[str, Any] = {
+            'absolute_path': self.absolute_path,
         }
         if self.offset is not None:
-            result["offset"] = self.offset
+            result['offset'] = self.offset
         if self.limit is not None:
-            result["limit"] = self.limit
+            result['limit'] = self.limit
         return result
 
 
@@ -137,9 +138,7 @@ class GeminiFileEditor(FileEditRuntimeMixin):
         elif isinstance(action, GeminiReadFileAction):
             return self.handle_read_file_action(action)
         else:
-            return ErrorObservation(
-                f"Unsupported action type: {type(action).__name__}"
-            )
+            return ErrorObservation(f'Unsupported action type: {type(action).__name__}')
 
     def handle_edit_action(self, action: GeminiEditAction) -> Observation:
         """Handle a Gemini-style edit action.
@@ -152,53 +151,49 @@ class GeminiFileEditor(FileEditRuntimeMixin):
         """
         # Validate file path
         if not os.path.isabs(action.file_path):
-            return ErrorObservation(
-                f"File path must be absolute: {action.file_path}"
-            )
+            return ErrorObservation(f'File path must be absolute: {action.file_path}')
 
         # Read the file
         read_obs = self.read_file(action.file_path)
         if isinstance(read_obs, ErrorObservation):
-            if "File not found" in read_obs.content:
+            if 'File not found' in read_obs.content:
                 # If old_string is empty, create a new file with new_string
-                if action.old_string == "":
+                if action.old_string == '':
                     return self.write_file(action.file_path, action.new_string)
                 else:
                     return ErrorObservation(
-                        f"File not found. Cannot apply edit. Use an empty old_string to create a new file."
+                        'File not found. Cannot apply edit. Use an empty old_string to create a new file.'
                     )
+            # Return other error observations as-is
             return read_obs
 
-        if not isinstance(read_obs, FileReadObservation):
-            return ErrorObservation(
-                f"Unexpected observation type: {type(read_obs).__name__}"
-            )
+        # At this point, read_obs must be a FileReadObservation
 
         # Get the file content
         file_content = read_obs.content
 
         # Check if old_string is empty (create new file)
-        if action.old_string == "":
+        if action.old_string == '':
             return ErrorObservation(
-                f"Failed to edit. Attempted to create a file that already exists."
+                'Failed to edit. Attempted to create a file that already exists.'
             )
 
         # Find occurrences of old_string
         occurrences = file_content.count(action.old_string)
-        
+
         if occurrences == 0:
             return ErrorObservation(
-                f"Failed to edit, could not find the string to replace."
+                'Failed to edit, could not find the string to replace.'
             )
-        
+
         if occurrences != action.expected_replacements:
             return ErrorObservation(
-                f"Failed to edit, expected {action.expected_replacements} occurrence(s) but found {occurrences}."
+                f'Failed to edit, expected {action.expected_replacements} occurrence(s) but found {occurrences}.'
             )
 
         # Replace the old_string with new_string
         new_content = file_content.replace(action.old_string, action.new_string)
-        
+
         # Write the new content
         write_obs = self.write_file(action.file_path, new_content)
         if isinstance(write_obs, ErrorObservation):
@@ -206,7 +201,7 @@ class GeminiFileEditor(FileEditRuntimeMixin):
 
         # Generate diff
         diff = get_diff(file_content, new_content, action.file_path)
-        
+
         return FileEditObservation(
             content=diff,
             path=action.file_path,
@@ -226,14 +221,12 @@ class GeminiFileEditor(FileEditRuntimeMixin):
         """
         # Validate file path
         if not os.path.isabs(action.file_path):
-            return ErrorObservation(
-                f"File path must be absolute: {action.file_path}"
-            )
+            return ErrorObservation(f'File path must be absolute: {action.file_path}')
 
         # Check if file exists
         file_exists = os.path.exists(action.file_path)
-        original_content = ""
-        
+        original_content = ''
+
         if file_exists:
             # Read the existing file
             read_obs = self.read_file(action.file_path)
@@ -249,7 +242,7 @@ class GeminiFileEditor(FileEditRuntimeMixin):
 
         # Generate diff
         diff = get_diff(original_content, action.content, action.file_path)
-        
+
         return FileEditObservation(
             content=diff,
             path=action.file_path,
@@ -268,15 +261,17 @@ class GeminiFileEditor(FileEditRuntimeMixin):
             An observation of the file content or an error.
         """
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
             return FileReadObservation(content=content, path=file_path)
         except FileNotFoundError:
-            return ErrorObservation(f"File not found: {file_path}")
+            return ErrorObservation(f'File not found: {file_path}')
         except Exception as e:
-            return ErrorObservation(f"Error reading file: {str(e)}")
+            return ErrorObservation(f'Error reading file: {str(e)}')
 
-    def write_file(self, file_path: str, content: str) -> Union[FileWriteObservation, ErrorObservation]:
+    def write_file(
+        self, file_path: str, content: str
+    ) -> Union[FileWriteObservation, ErrorObservation]:
         """Write content to a file.
 
         Args:
@@ -289,12 +284,12 @@ class GeminiFileEditor(FileEditRuntimeMixin):
         try:
             # Create parent directories if they don't exist
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            
-            with open(file_path, "w", encoding="utf-8") as f:
+
+            with open(file_path, 'w', encoding='utf-8') as f:
                 f.write(content)
-            return FileWriteObservation(path=file_path)
+            return FileWriteObservation(path=file_path, content=content)
         except Exception as e:
-            return ErrorObservation(f"Error writing file: {str(e)}")
+            return ErrorObservation(f'Error writing file: {str(e)}')
 
     def handle_read_file_action(self, action: GeminiReadFileAction) -> Observation:
         """Handle a Gemini-style read file action.
@@ -308,66 +303,70 @@ class GeminiFileEditor(FileEditRuntimeMixin):
         # Validate file path
         if not os.path.isabs(action.absolute_path):
             return ErrorObservation(
-                f"File path must be absolute: {action.absolute_path}"
+                f'File path must be absolute: {action.absolute_path}'
             )
 
         # Check if file exists
         if not os.path.exists(action.absolute_path):
-            return ErrorObservation(f"File not found: {action.absolute_path}")
+            return ErrorObservation(f'File not found: {action.absolute_path}')
 
         # Read the file
         try:
-            with open(action.absolute_path, "r", encoding="utf-8") as f:
+            with open(action.absolute_path, 'r', encoding='utf-8') as f:
                 content = f.read()
         except Exception as e:
-            return ErrorObservation(f"Error reading file: {str(e)}")
+            return ErrorObservation(f'Error reading file: {str(e)}')
 
         # Handle offset and limit if provided
         if action.offset is not None or action.limit is not None:
             lines = content.splitlines()
-            
+
             offset = action.offset or 0
             if offset < 0:
-                return ErrorObservation(f"Offset must be non-negative: {offset}")
-            
+                return ErrorObservation(f'Offset must be non-negative: {offset}')
+
             if offset >= len(lines):
                 return ErrorObservation(
-                    f"Offset {offset} is out of range for file with {len(lines)} lines"
+                    f'Offset {offset} is out of range for file with {len(lines)} lines'
                 )
-            
+
             if action.limit is not None:
                 if action.limit <= 0:
-                    return ErrorObservation(f"Limit must be positive: {action.limit}")
-                
+                    return ErrorObservation(f'Limit must be positive: {action.limit}')
+
                 end = min(offset + action.limit, len(lines))
                 lines = lines[offset:end]
-                content = "\n".join(lines)
-                
+                content = '\n'.join(lines)
+
                 # Add a note if we truncated the file
                 if end < len(lines):
-                    content += f"\n\n[Note: Showing lines {offset}-{end-1} of {len(lines)} total lines]"
+                    content += f'\n\n[Note: Showing lines {offset}-{end - 1} of {len(lines)} total lines]'
             else:
                 lines = lines[offset:]
-                content = "\n".join(lines)
-                
+                content = '\n'.join(lines)
+
                 # Add a note if we started from a non-zero offset
                 if offset > 0:
-                    content += f"\n\n[Note: Showing lines {offset}-{len(lines)-1} of {len(lines)} total lines]"
+                    content += f'\n\n[Note: Showing lines {offset}-{len(lines) - 1} of {len(lines)} total lines]'
 
         return FileReadObservation(content=content, path=action.absolute_path)
 
     @classmethod
-    def get_supported_tool_names(cls) -> List[str]:
+    def get_supported_tool_names(cls) -> list[str]:
         """Get the names of tools supported by this skill.
 
         Returns:
             A list of supported tool names.
         """
-        return [GEMINI_EDIT_TOOL_NAME, GEMINI_READ_FILE_TOOL_NAME, GEMINI_WRITE_FILE_TOOL_NAME]
+        return [
+            GEMINI_EDIT_TOOL_NAME,
+            GEMINI_READ_FILE_TOOL_NAME,
+            GEMINI_WRITE_FILE_TOOL_NAME,
+        ]
 
     @classmethod
     def create_action_from_tool_call(
-        cls, tool_name: str, tool_args: Dict
+        cls, tool_name: str, tool_args: dict
     ) -> Optional[Action]:
         """Create an action from a tool call.
 
@@ -380,20 +379,20 @@ class GeminiFileEditor(FileEditRuntimeMixin):
         """
         if tool_name == GEMINI_EDIT_TOOL_NAME:
             return GeminiEditAction(
-                file_path=tool_args["file_path"],
-                old_string=tool_args["old_string"],
-                new_string=tool_args["new_string"],
-                expected_replacements=tool_args.get("expected_replacements", 1),
+                file_path=tool_args['file_path'],
+                old_string=tool_args['old_string'],
+                new_string=tool_args['new_string'],
+                expected_replacements=tool_args.get('expected_replacements', 1),
             )
         elif tool_name == GEMINI_WRITE_FILE_TOOL_NAME:
             return GeminiWriteFileAction(
-                file_path=tool_args["file_path"],
-                content=tool_args["content"],
+                file_path=tool_args['file_path'],
+                content=tool_args['content'],
             )
         elif tool_name == GEMINI_READ_FILE_TOOL_NAME:
             return GeminiReadFileAction(
-                absolute_path=tool_args["absolute_path"],
-                offset=tool_args.get("offset"),
-                limit=tool_args.get("limit"),
+                absolute_path=tool_args['absolute_path'],
+                offset=tool_args.get('offset'),
+                limit=tool_args.get('limit'),
             )
         return None
