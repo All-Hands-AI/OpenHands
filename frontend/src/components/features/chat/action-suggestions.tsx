@@ -34,7 +34,7 @@ export function ActionSuggestions({
   const terms = {
     pr,
     prShort,
-    pushToBranch: `Please push the changes to a remote branch on ${getProviderName()}, but do NOT create a ${pr}. Check your current branch name first - if it's 'main' or 'master', create a new branch with a descriptive name related to your changes. Otherwise, use the exact SAME branch name as the one you are currently on.`,
+    pushToBranch: `Please push the changes to a remote branch on ${getProviderName()}, but do NOT create a ${pr}. Check your current branch name first - if it's main, master, deploy, or another common default branch name, create a new branch with a descriptive name related to your changes. Otherwise, use the exact SAME branch name as the one you are currently on.`,
     createPR: `Please push the changes to ${getProviderName()} and open a ${pr}. Please create a meaningful branch name that describes the changes. If a ${pr} template exists in the repository, please follow it when creating the ${prShort} description.`,
     pushToPR: `Please push the latest changes to the existing ${pr}.`,
   };
