@@ -455,6 +455,11 @@ class Runtime(FileEditRuntimeMixin):
         )
         action.set_hard_timeout(600)
 
+        # Add the action to the event stream with ENVIRONMENT source before running it
+        # This ensures the action will have the correct source
+        if self.event_stream:
+            self.event_stream.add_event(action, EventSource.ENVIRONMENT)
+
         # Mark setup script as executed to prevent duplicate execution
         # Set this before running the action to ensure it's not executed twice
         # even if there's an error during execution
