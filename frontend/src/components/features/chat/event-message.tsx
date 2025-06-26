@@ -141,6 +141,7 @@ export function EventMessage({
           details={<MCPObservationContent event={event} />}
           success={getObservationResult(event)}
           eventId={event.id}
+          event={event}
         />
         {shouldShowConfirmationButtons && <ConfirmationButtons />}
       </div>
@@ -162,6 +163,7 @@ export function EventMessage({
             : undefined
         }
         eventId={event.id}
+        event={event}
       />
 
       {shouldShowConfirmationButtons && <ConfirmationButtons />}

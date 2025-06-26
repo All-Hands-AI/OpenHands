@@ -123,6 +123,10 @@ def event_to_dict(event: 'Event') -> dict:
         props.pop('security_risk')
     if 'confirmation_state' in props and props['confirmation_state'] is None:
         props.pop('confirmation_state')
+    # Include security_risk if it exists
+    if hasattr(event, 'security_risk') and getattr(event, 'security_risk') is not None:
+        d['security_risk'] = getattr(event, 'security_risk').value
+
     if 'action' in d:
         d['args'] = props
         if event.timeout is not None:

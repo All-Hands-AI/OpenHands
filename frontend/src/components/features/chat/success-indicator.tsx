@@ -12,15 +12,21 @@ import { I18nKey } from "#/i18n/declaration";
 interface SuccessIndicatorProps {
   status: ObservationResultStatus;
   eventId?: number; // Optional event ID to match with security logs
+  event?: any; // Optional event object
 }
 
-export function SuccessIndicator({ status, eventId }: SuccessIndicatorProps) {
+export function SuccessIndicator({ status, eventId, event }: SuccessIndicatorProps) {
   const { t } = useTranslation();
   const { logs } = useSelector((state: RootState) => state.securityAnalyzer);
 
   // Find the security log for this event if eventId is provided
   const securityLog = eventId
     ? logs.find((log) => log.id === eventId)
+    : undefined;
+    
+  // Get security risk from the event if available
+  const eventSecurityRisk = event?.security_risk !== undefined 
+    ? event.security_risk 
     : undefined;
 
   // Get risk level text based on the security risk
@@ -40,9 +46,15 @@ export function SuccessIndicator({ status, eventId }: SuccessIndicatorProps) {
 
   // Determine tooltip content based on status and security risk
   const getTooltipContent = () => {
+    // First try to get risk from the event
+    if (status === "success" && eventSecurityRisk !== undefined) {
+      return getRiskText(eventSecurityRisk);
+    }
+    // Then try to get risk from security log
     if (status === "success" && securityLog) {
       return getRiskText(securityLog.security_risk);
     }
+    // Default messages
     if (status === "success") {
       return t(I18nKey.ACTION$SUCCESS);
     }

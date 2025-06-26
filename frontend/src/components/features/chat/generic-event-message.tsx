@@ -13,6 +13,7 @@ interface GenericEventMessageProps {
   details: string | React.ReactNode;
   success?: ObservationResultStatus;
   eventId?: number; // Add event ID to props
+  event?: any; // Add the event object
 }
 
 export function GenericEventMessage({
@@ -20,6 +21,7 @@ export function GenericEventMessage({
   details,
   success,
   eventId,
+  event,
 }: GenericEventMessageProps) {
   const [showDetails, setShowDetails] = React.useState(false);
 
@@ -43,7 +45,7 @@ export function GenericEventMessage({
           )}
         </div>
 
-        {success && <SuccessIndicator status={success} eventId={eventId} />}
+        {success && <SuccessIndicator status={success} eventId={eventId} event={event} />}
       </div>
 
       {showDetails &&
