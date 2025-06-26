@@ -299,4 +299,4 @@ def test_setup_script_failure_events_added_to_stream(
     )
     assert setup_observation.source == EventSource.ENVIRONMENT
     assert setup_observation.exit_code != 0, 'Setup script should have failed'
-    assert 'Setup failed' in setup_observation.content
+    assert setup_observation is not None and 'Setup failed' in setup_observation.content

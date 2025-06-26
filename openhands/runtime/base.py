@@ -455,15 +455,13 @@ class Runtime(FileEditRuntimeMixin):
         )
         action.set_hard_timeout(600)
 
-        # Add the action to the event stream so it's visible in the UI
-        if self.event_stream:
-            self.event_stream.add_event(action, EventSource.ENVIRONMENT)
-
         # Mark setup script as executed to prevent duplicate execution
         # Set this before running the action to ensure it's not executed twice
         # even if there's an error during execution
         self._setup_script_executed = True
 
+        # Run the action - the action will be added to the event stream by run_action
+        # We don't need to add it explicitly here
         obs = self.run_action(action)
 
         # Add the observation to the event stream so the result is visible in the UI
