@@ -11,7 +11,7 @@ export interface AgentStateChangeObservation
 }
 
 export interface CommandObservation extends OpenHandsObservationEvent<"run"> {
-  source: "agent" | "user";
+  source: "agent" | "user" | "environment";
   extras: {
     command: string;
     hidden?: boolean;
