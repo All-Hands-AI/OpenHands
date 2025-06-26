@@ -119,13 +119,16 @@ def event_to_dict(event: 'Event') -> dict:
         if key == 'llm_metrics' and 'llm_metrics' in d:
             d['llm_metrics'] = d['llm_metrics'].get()
         props.pop(key, None)
-    if 'security_risk' in props and props['security_risk'] is None:
-        props.pop('security_risk')
+    # Handle security_risk
+    if 'security_risk' in props:
+        if props['security_risk'] is None:
+            props.pop('security_risk')
+        else:
+            d['security_risk'] = props['security_risk'].value
+            props.pop('security_risk')
+            
     if 'confirmation_state' in props and props['confirmation_state'] is None:
         props.pop('confirmation_state')
-    # Include security_risk if it exists
-    if hasattr(event, 'security_risk') and getattr(event, 'security_risk') is not None:
-        d['security_risk'] = getattr(event, 'security_risk').value
 
     if 'action' in d:
         d['args'] = props
