@@ -10,7 +10,7 @@ class SecurityConfig(BaseModel):
     """
 
     confirmation_mode: bool = Field(default=False)
-    security_analyzer: str | None = Field(default=None)
+    security_analyzer: str | None = Field(default='llm')
 
     model_config = ConfigDict(extra='forbid')
 
