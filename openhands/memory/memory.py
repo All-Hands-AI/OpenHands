@@ -273,17 +273,13 @@ class Memory:
         repo_agents_dict, knowledge_agents_dict = load_microagents_from_dir(
             GLOBAL_MICROAGENTS_DIR
         )
-        for name, agent_obj in knowledge_agents_dict.items():
+        # See https://github.com/python/mypy/issues/18440 for type narrowing issue with dict items
+        for name, agent_obj in knowledge_agents_dict.items():  # type: ignore[assignment]
             if isinstance(agent_obj, KnowledgeMicroagent):
-                # Create a temporary variable with explicit type annotation
-                # This helps mypy understand the type narrowing
-                knowledge_agent: KnowledgeMicroagent = agent_obj
-                self.knowledge_microagents[name] = knowledge_agent
+                self.knowledge_microagents[name] = agent_obj
+        # See https://github.com/python/mypy/issues/18440 for type narrowing issue with dict items
         for name, agent_obj in repo_agents_dict.items():  # type: ignore[assignment]
-            # Only add to repo_microagents if it's a RepoMicroagent
             if isinstance(agent_obj, RepoMicroagent):
-                # We've verified this is a RepoMicroagent with isinstance
-                # but mypy still has trouble with the type narrowing
                 self.repo_microagents[name] = agent_obj
 
     def _load_user_microagents(self) -> None:
@@ -302,19 +298,16 @@ class Memory:
 
             # Add user microagents to the collections
             # User microagents can override global ones with the same name
-            for name, agent_obj in knowledge_agents_dict.items():
+            # See https://github.com/python/mypy/issues/18440 for type narrowing issue with dict items
+            for name, agent_obj in knowledge_agents_dict.items():  # type: ignore[assignment]
                 if isinstance(agent_obj, KnowledgeMicroagent):
-                    # Create a temporary variable with explicit type annotation
-                    # This helps mypy understand the type narrowing
-                    knowledge_agent: KnowledgeMicroagent = agent_obj
-                    self.knowledge_microagents[name] = knowledge_agent
+                    self.knowledge_microagents[name] = agent_obj
                     logger.debug(f'Loaded user knowledge microagent: {name}')
 
             # Process repo agents
+            # See https://github.com/python/mypy/issues/18440 for type narrowing issue with dict items
             for name, agent_obj in repo_agents_dict.items():  # type: ignore[assignment]
                 if isinstance(agent_obj, RepoMicroagent):
-                    # We've verified this is a RepoMicroagent with isinstance
-                    # but mypy still has trouble with the type narrowing
                     self.repo_microagents[name] = agent_obj
                     logger.debug(f'Loaded user repo microagent: {name}')
 
