@@ -1,10 +1,14 @@
 import asyncio
 import importlib.resources
+import json
 import logging
 import os
 import pathlib
 import subprocess
 import sys
+import tempfile
+import urllib.request
+from urllib.error import URLError
 
 from prompt_toolkit import print_formatted_text
 from prompt_toolkit.formatted_text import HTML
@@ -350,11 +354,92 @@ async def run_setup_flow(config: OpenHandsConfig, settings_store: FileSettingsSt
     await modify_llm_settings_basic(config, settings_store)
 
 
+def download_latest_vsix_from_github() -> str | None:
+    """Download latest .vsix from GitHub releases.
+
+    Returns:
+        Path to downloaded .vsix file, or None if failed
+    """
+    api_url = 'https://api.github.com/repos/All-Hands-AI/OpenHands/releases'
+    try:
+        with urllib.request.urlopen(api_url, timeout=10) as response:
+            if response.status != 200:
+                logger.warning(
+                    f'GitHub API request failed with status: {response.status}'
+                )
+                return None
+            releases = json.loads(response.read().decode())
+            for release in releases:
+                if release.get('tag_name', '').startswith('ext-v'):
+                    for asset in release.get('assets', []):
+                        if asset.get('name', '').endswith('.vsix'):
+                            download_url = asset.get('browser_download_url')
+                            if not download_url:
+                                continue
+                            with urllib.request.urlopen(
+                                download_url, timeout=30
+                            ) as download_response:
+                                if download_response.status != 200:
+                                    logger.warning(
+                                        f'Failed to download .vsix with status: {download_response.status}'
+                                    )
+                                    continue
+                                with tempfile.NamedTemporaryFile(
+                                    delete=False, suffix='.vsix'
+                                ) as tmp_file:
+                                    tmp_file.write(download_response.read())
+                                    return tmp_file.name
+                    # Found the latest extension release but no .vsix asset
+                    return None
+    except (URLError, TimeoutError, json.JSONDecodeError) as e:
+        logger.warning(f'Failed to download from GitHub releases: {e}')
+        return None
+    return None
+
+
 def attempt_vscode_extension_install():
     """
     Checks if running in VS Code/Windsurf and attempts to install the OpenHands companion extension.
     This is a best-effort, one-time attempt.
     """
+    # Attempt 0: Download from GitHub Releases
+    vsix_path_from_github = download_latest_vsix_from_github()
+    if vsix_path_from_github:
+        try:
+            editor_command = 'code'
+            is_windsurf = 'windsurf' in os.environ.get('TERM_PROGRAM', '')
+            if is_windsurf:
+                editor_command = 'surf'
+
+            process = subprocess.run(
+                [
+                    editor_command,
+                    '--install-extension',
+                    vsix_path_from_github,
+                    '--force',
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            if process.returncode == 0:
+                print(
+                    'INFO: OpenHands VS Code extension installed successfully from GitHub.'
+                )
+                # Mark as attempted and return
+                flag_dir = pathlib.Path.home() / '.openhands'
+                flag_file = flag_dir / '.vscode_extension_install_attempted'
+                try:
+                    flag_dir.mkdir(parents=True, exist_ok=True)
+                    flag_file.touch()
+                except OSError:
+                    pass  # If we can't write the flag, we'll just try again next time.
+                return
+            else:
+                logger.warning(f'Failed to install .vsix from GitHub: {process.stderr}')
+        finally:
+            os.remove(vsix_path_from_github)
+
     # Detect if we're in VSCode or Windsurf
     is_vscode_like = os.environ.get('TERM_PROGRAM') == 'vscode'
     is_windsurf = (
