@@ -275,10 +275,10 @@ class Memory:
         )
         for name, k_agent in knowledge_agents.items():
             if isinstance(k_agent, KnowledgeMicroagent):
-                self.knowledge_microagents[name] = k_agent
+                self.knowledge_microagents[name] = k_agent  # type: ignore
         for name, r_agent in repo_agents.items():
             if isinstance(r_agent, RepoMicroagent):
-                self.repo_microagents[name] = r_agent
+                self.repo_microagents[name] = r_agent  # type: ignore
 
     def _load_user_microagents(self) -> None:
         """
@@ -298,12 +298,12 @@ class Memory:
             # User microagents can override global ones with the same name
             for name, agent in knowledge_agents.items():
                 if isinstance(agent, KnowledgeMicroagent):
-                    self.knowledge_microagents[name] = agent
+                    self.knowledge_microagents[name] = agent  # type: ignore
                     logger.debug(f'Loaded user knowledge microagent: {name}')
 
-            for name, agent in repo_agents.items():
+            for name, agent in repo_agents.items():  # type: ignore
                 if isinstance(agent, RepoMicroagent):
-                    self.repo_microagents[name] = agent
+                    self.repo_microagents[name] = agent  # type: ignore
                     logger.debug(f'Loaded user repo microagent: {name}')
 
             if repo_agents or knowledge_agents:
