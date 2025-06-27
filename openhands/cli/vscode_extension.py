@@ -25,6 +25,8 @@ def download_latest_vsix_from_github() -> str | None:
                 )
                 return None
             releases = json.loads(response.read().decode())
+            # The GitHub API returns releases in reverse chronological order (newest first).
+            # We iterate through them and use the first one that matches our extension prefix.
             for release in releases:
                 if release.get('tag_name', '').startswith('ext-v'):
                     for asset in release.get('assets', []):
