@@ -45,4 +45,4 @@ If you need to install it manually:
 
 ## Contributing
 
-We welcome contributions! If you're interested in developing the extension, please see our [**DEVELOPMENT.md**](DEVELOPMENT.md) guide for instructions on how to get started.
+We welcome contributions! If you're interested in developing the extension, please see the `DEVELOPMENT.md` file in our source repository for instructions on how to get started.
