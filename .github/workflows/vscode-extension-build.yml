@@ -106,7 +106,7 @@ jobs:
             ---
             *Built from commit ${{ github.sha }}*`;
 
-            // Check if we already commented on this PR
+            // Check if we already commented on this PR and delete it
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -119,22 +119,20 @@ jobs:
             );
 
             if (botComment) {
-              // Update existing comment
-              await github.rest.issues.updateComment({
+              await github.rest.issues.deleteComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 comment_id: botComment.id,
-                body: comment
-              });
-            } else {
-              // Create new comment
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body: comment
               });
             }
+
+            // Create a new comment
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: comment
+            });
 
   release:
     name: Create GitHub Release
