@@ -1839,7 +1839,7 @@ async def test_pending_action_warning_suppressed_in_headless_mode(
 
     # Create a mock action and set it as pending with a timestamp from 70 seconds ago
     mock_action = CmdRunAction(command='test')
-    mock_action.id = 'test-action-id'
+    mock_action._id = 40  # Set the private _id attribute (must be an integer)
     old_time = time.time() - 70.0  # 70 seconds ago (> 60 second threshold)
     controller._pending_action_info = (mock_action, old_time)
 
@@ -1874,7 +1874,7 @@ async def test_pending_action_warning_suppressed_in_headless_mode(
         # Verify that log WAS called (warning shown in GUI mode)
         mock_log.assert_called_once_with(
             'warning',
-            'Pending action active for 70.00s: CmdRunAction (id=test-action-id)',
+            'Pending action active for 70.00s: CmdRunAction (id=40)',
             extra={'msg_type': 'PENDING_ACTION_TIMEOUT'},
         )
 
