@@ -8,6 +8,14 @@ import userEvent from "@testing-library/user-event";
 import { HomeHeader } from "#/components/features/home/home-header";
 import OpenHands from "#/api/open-hands";
 
+const mockUseIsCreatingConversation = vi.fn();
+
+mockUseIsCreatingConversation.mockReturnValue(false);
+
+vi.mock("#/hooks/use-is-creating-conversation", () => ({
+  useIsCreatingConversation: () => mockUseIsCreatingConversation(),
+}));
+
 // Mock the translation function
 vi.mock("react-i18next", async () => {
   const actual = await vi.importActual("react-i18next");
@@ -89,5 +97,23 @@ describe("HomeHeader", () => {
 
     expect(launchButton).toHaveTextContent(/Loading.../i);
     expect(launchButton).toBeDisabled();
+  });
+
+  it("should disable launch button but not show loading text for global conversation creation", async () => {
+    // Mock global conversation creation happening elsewhere (e.g., from repo selection form)
+    mockUseIsCreatingConversation.mockReturnValue(true);
+
+    renderHomeHeader();
+
+    const launchButton = screen.getByRole("button", {
+      name: /Launch from Scratch/i,
+    });
+
+    // The button should be disabled due to global conversation creation
+    expect(launchButton).toBeDisabled();
+
+    // But it should NOT show "Loading..." text - it should still show "Launch from Scratch"
+    expect(launchButton).toHaveTextContent(/Launch from Scratch/i);
+    expect(launchButton).not.toHaveTextContent(/Loading.../i);
   });
 });

@@ -256,4 +256,41 @@ describe("RepositorySelectionForm", () => {
       MOCK_SEARCH_REPOS[0].full_name,
     );
   });
+
+  it("should disable launch button but not show loading text for global conversation creation", async () => {
+    // Mock repositories data to enable the launch button
+    const MOCK_REPOS: GitRepository[] = [
+      {
+        id: "1",
+        full_name: "user/repo1",
+        git_provider: "github",
+        is_public: true,
+      },
+    ];
+
+    const retrieveUserGitRepositoriesSpy = vi.spyOn(
+      OpenHands,
+      "retrieveUserGitRepositories",
+    );
+    retrieveUserGitRepositoriesSpy.mockResolvedValue(MOCK_REPOS);
+
+    // Simulate global conversation creation (e.g., from home header)
+    mockUseIsCreatingConversation.mockReturnValue(true);
+
+    renderForm();
+
+    // Wait for repositories to load and select one
+    const repoDropdown = await screen.findByTestId("repo-dropdown");
+    await userEvent.click(repoDropdown);
+
+    const repoOption = screen.getByText("user/repo1");
+    await userEvent.click(repoOption);
+
+    // The launch button should NOT be affected by global conversation creation
+    // It should still show "Launch" and be enabled
+    const launchButton = screen.getByTestId("repo-launch-button");
+    expect(launchButton).toBeDisabled();
+    expect(launchButton).toHaveTextContent(/Launch/i);
+    expect(launchButton).not.toHaveTextContent(/Loading.../i);
+  });
 });
