@@ -27,7 +27,6 @@ interface OpenHandsBaseEvent {
   source: OpenHandsSourceType;
   message: string;
   timestamp: string; // ISO 8601
-  security_risk?: string; // Security risk level
 }
 
 export interface OpenHandsActionEvent<T extends OpenHandsEventType>
