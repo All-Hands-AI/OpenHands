@@ -103,6 +103,126 @@ def test_extension_already_installed_detected(mock_env_and_dependencies):
     mock_env_and_dependencies['download'].assert_not_called()
 
 
+def test_extension_detection_in_middle_of_list(mock_env_and_dependencies):
+    """Should detect extension even when it's not the first in the list."""
+    os.environ['TERM_PROGRAM'] = 'vscode'
+    mock_env_and_dependencies['exists'].return_value = False
+    
+    # Extension is in the middle of the list
+    mock_env_and_dependencies['subprocess'].return_value = subprocess.CompletedProcess(
+        returncode=0, args=[], stdout='first.extension\nopenhands.openhands-vscode\nlast.extension', stderr=''
+    )
+
+    vscode_extension.attempt_vscode_extension_install()
+
+    mock_env_and_dependencies['print'].assert_any_call(
+        'INFO: OpenHands VS Code extension is already installed.'
+    )
+    mock_env_and_dependencies['touch'].assert_called_once()
+
+
+def test_extension_detection_partial_match_ignored(mock_env_and_dependencies):
+    """Should not match partial extension IDs."""
+    os.environ['TERM_PROGRAM'] = 'vscode'
+    mock_env_and_dependencies['exists'].return_value = False
+    
+    # Partial match should not trigger detection
+    mock_env_and_dependencies['subprocess'].side_effect = [
+        subprocess.CompletedProcess(returncode=0, args=[], stdout='other.openhands-vscode-fork\nsome.extension', stderr=''),
+        subprocess.CompletedProcess(returncode=0, args=[], stdout='', stderr=''),  # GitHub install succeeds
+    ]
+    mock_env_and_dependencies['download'].return_value = '/fake/path/to/github.vsix'
+
+    with mock.patch('os.remove'), mock.patch('os.path.exists', return_value=True):
+        vscode_extension.attempt_vscode_extension_install()
+
+    # Should proceed with installation since exact match not found
+    assert mock_env_and_dependencies['subprocess'].call_count == 2
+    mock_env_and_dependencies['download'].assert_called_once()
+
+
+def test_list_extensions_fails_continues_installation(mock_env_and_dependencies):
+    """Should continue with installation if --list-extensions fails."""
+    os.environ['TERM_PROGRAM'] = 'vscode'
+    mock_env_and_dependencies['exists'].return_value = False
+    
+    # --list-extensions fails, but GitHub install succeeds
+    mock_env_and_dependencies['subprocess'].side_effect = [
+        subprocess.CompletedProcess(returncode=1, args=[], stdout='', stderr='Command failed'),
+        subprocess.CompletedProcess(returncode=0, args=[], stdout='', stderr=''),  # GitHub install succeeds
+    ]
+    mock_env_and_dependencies['download'].return_value = '/fake/path/to/github.vsix'
+
+    with mock.patch('os.remove'), mock.patch('os.path.exists', return_value=True):
+        vscode_extension.attempt_vscode_extension_install()
+
+    # Should proceed with installation
+    assert mock_env_and_dependencies['subprocess'].call_count == 2
+    mock_env_and_dependencies['download'].assert_called_once()
+
+
+def test_list_extensions_exception_continues_installation(mock_env_and_dependencies):
+    """Should continue with installation if --list-extensions throws exception."""
+    os.environ['TERM_PROGRAM'] = 'vscode'
+    mock_env_and_dependencies['exists'].return_value = False
+    
+    # --list-extensions throws exception, but GitHub install succeeds
+    mock_env_and_dependencies['subprocess'].side_effect = [
+        FileNotFoundError('code command not found'),
+        subprocess.CompletedProcess(returncode=0, args=[], stdout='', stderr=''),  # GitHub install succeeds
+    ]
+    mock_env_and_dependencies['download'].return_value = '/fake/path/to/github.vsix'
+
+    with mock.patch('os.remove'), mock.patch('os.path.exists', return_value=True):
+        vscode_extension.attempt_vscode_extension_install()
+
+    # Should proceed with installation
+    assert mock_env_and_dependencies['subprocess'].call_count == 2
+    mock_env_and_dependencies['download'].assert_called_once()
+
+
+def test_mark_installation_successful_os_error(mock_env_and_dependencies):
+    """Should log error but continue if flag file creation fails."""
+    os.environ['TERM_PROGRAM'] = 'vscode'
+    mock_env_and_dependencies['exists'].return_value = False
+    mock_env_and_dependencies['subprocess'].side_effect = [
+        subprocess.CompletedProcess(returncode=0, args=[], stdout='', stderr=''),  # --list-extensions (empty)
+        subprocess.CompletedProcess(returncode=0, args=[], stdout='', stderr=''),  # GitHub install succeeds
+    ]
+    mock_env_and_dependencies['download'].return_value = '/fake/path/to/github.vsix'
+    mock_env_and_dependencies['touch'].side_effect = OSError('Permission denied')
+
+    with mock.patch('os.remove'), mock.patch('os.path.exists', return_value=True):
+        vscode_extension.attempt_vscode_extension_install()
+
+    # Should still complete installation
+    mock_env_and_dependencies['download'].assert_called_once()
+    mock_env_and_dependencies['touch'].assert_called_once()
+    # Should log the error
+    mock_env_and_dependencies['logger'].assert_any_call(
+        'Could not create VS Code extension success flag file: Permission denied'
+    )
+
+
+def test_installation_failure_no_flag_created(mock_env_and_dependencies):
+    """Should NOT create flag when all installation methods fail (allow retry)."""
+    os.environ['TERM_PROGRAM'] = 'vscode'
+    mock_env_and_dependencies['exists'].return_value = False
+    mock_env_and_dependencies['subprocess'].return_value = subprocess.CompletedProcess(
+        returncode=0, args=[], stdout='', stderr=''  # --list-extensions (empty)
+    )
+    mock_env_and_dependencies['download'].return_value = None  # GitHub fails
+    mock_env_and_dependencies['as_file'].side_effect = FileNotFoundError  # Bundled fails
+
+    vscode_extension.attempt_vscode_extension_install()
+
+    # Should NOT create flag file - this is the key behavior change
+    mock_env_and_dependencies['touch'].assert_not_called()
+    mock_env_and_dependencies['print'].assert_any_call(
+        'INFO: Will retry installation next time you run OpenHands in VS Code.'
+    )
+
+
 def test_install_succeeds_from_github(mock_env_and_dependencies):
     """Should successfully install from GitHub on the first try."""
     os.environ['TERM_PROGRAM'] = 'vscode'
@@ -234,7 +354,7 @@ def test_windsurf_detection_and_install(mock_env_and_dependencies):
     # Only one subprocess call for --list-extensions, no installation attempts
     assert mock_env_and_dependencies['subprocess'].call_count == 1
     mock_env_and_dependencies['subprocess'].assert_called_with(
-        ['windsurf', '--list-extensions'],
+        ['surf', '--list-extensions'],
         capture_output=True,
         text=True,
         check=False,
