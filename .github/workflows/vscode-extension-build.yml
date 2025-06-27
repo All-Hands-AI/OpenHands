@@ -23,7 +23,7 @@ jobs:
   validate-vscode-extension:
     name: Validate VSCode Extension Build
     runs-on: blacksmith-4vcpu-ubuntu-2204
-    
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
