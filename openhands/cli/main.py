@@ -353,12 +353,15 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
     args = parse_arguments()
 
     # Set log level from command line argument if provided
-    if args.log_level:
-        log_level = getattr(logging, args.log_level.upper())
+    if args.log_level and isinstance(args.log_level, str):
+        log_level = getattr(logging, str(args.log_level).upper())
         logger.setLevel(log_level)
-        # Also update the console handler level
+            # Also update the console handler level
         for handler in logger.handlers:
-            if isinstance(handler, logging.StreamHandler) and handler.stream.name == '<stderr>':
+            if (
+                isinstance(handler, logging.StreamHandler)
+                and handler.stream.name == '<stderr>'
+            ):
                 handler.setLevel(log_level)
     # Otherwise, use environment LOG_LEVEL (handled by openhands_logger initialization)
 
