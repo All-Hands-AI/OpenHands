@@ -183,16 +183,11 @@ def display_initial_user_prompt(prompt: str) -> None:
 def display_event(event: Event, config: OpenHandsConfig) -> None:
     global streaming_output_text_area
     with print_lock:
-        if isinstance(event, Action):
-            if hasattr(event, 'thought'):
-                display_message(event.thought)
-            if hasattr(event, 'final_thought'):
-                display_message(event.final_thought)
-        if isinstance(event, MessageAction):
-            if event.source == EventSource.AGENT:
-                display_message(event.content)
-
         if isinstance(event, CmdRunAction):
+            # For CmdRunAction, display thought first, then command
+            if hasattr(event, 'thought') and event.thought:
+                display_message(event.thought)
+
             # Only display the command if it's not already confirmed
             # Commands are always shown when AWAITING_CONFIRMATION, so we don't need to show them again when CONFIRMED
             if event.confirmation_state != ActionConfirmationStatus.CONFIRMED:
@@ -200,6 +195,16 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
 
             if event.confirmation_state == ActionConfirmationStatus.CONFIRMED:
                 initialize_streaming_output()
+        elif isinstance(event, Action):
+            # For other actions, display thoughts normally
+            if hasattr(event, 'thought') and event.thought:
+                display_message(event.thought)
+            if hasattr(event, 'final_thought') and event.final_thought:
+                display_message(event.final_thought)
+
+        if isinstance(event, MessageAction):
+            if event.source == EventSource.AGENT:
+                display_message(event.content)
         elif isinstance(event, CmdOutputObservation):
             display_command_output(event.content)
         elif isinstance(event, FileEditObservation):
