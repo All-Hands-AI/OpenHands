@@ -273,12 +273,10 @@ class Memory:
         repo_agents, knowledge_agents = load_microagents_from_dir(
             GLOBAL_MICROAGENTS_DIR
         )
-        for name, k_agent in knowledge_agents.items():
-            if isinstance(k_agent, KnowledgeMicroagent):
-                self.knowledge_microagents[name] = k_agent
-        for name, r_agent in repo_agents.items():
-            if isinstance(r_agent, RepoMicroagent):
-                self.repo_microagents[name] = r_agent
+        for name, agent_knowledge in knowledge_agents.items():
+            self.knowledge_microagents[name] = agent_knowledge
+        for name, agent_repo in repo_agents.items():
+            self.repo_microagents[name] = agent_repo
 
     def _load_user_microagents(self) -> None:
         """
@@ -294,22 +292,11 @@ class Memory:
                 USER_MICROAGENTS_DIR
             )
 
-            # Add user microagents to the collections
-            # User microagents can override global ones with the same name
-            for name, agent in knowledge_agents.items():
-                if isinstance(agent, KnowledgeMicroagent):
-                    self.knowledge_microagents[name] = agent
-                    logger.debug(f'Loaded user knowledge microagent: {name}')
+            for name, agent_knowledge in knowledge_agents.items():
+                self.knowledge_microagents[name] = agent_knowledge
+            for name, agent_repo in repo_agents.items():
+                self.repo_microagents[name] = agent_repo
 
-            for name, agent in repo_agents.items():
-                if isinstance(agent, RepoMicroagent):
-                    self.repo_microagents[name] = agent
-                    logger.debug(f'Loaded user repo microagent: {name}')
-
-            if repo_agents or knowledge_agents:
-                logger.info(
-                    f'Loaded {len(repo_agents) + len(knowledge_agents)} user microagents from {USER_MICROAGENTS_DIR}'
-                )
         except Exception as e:
             logger.warning(
                 f'Failed to load user microagents from {USER_MICROAGENTS_DIR}: {str(e)}'
