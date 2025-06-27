@@ -103,6 +103,7 @@ def attempt_vscode_extension_install():
         # Attempt 1: Download from GitHub Releases (the new primary method)
         vsix_path_from_github = download_latest_vsix_from_github()
         if vsix_path_from_github:
+            github_success = False
             try:
                 process = subprocess.run(
                     [
@@ -119,7 +120,7 @@ def attempt_vscode_extension_install():
                     print(
                         f'INFO: OpenHands {editor_name} extension installed successfully from GitHub.'
                     )
-                    return  # Success! We are done.
+                    github_success = True
                 else:
                     logger.debug(
                         f'Failed to install .vsix from GitHub: {process.stderr.strip()}'
@@ -133,6 +134,9 @@ def attempt_vscode_extension_install():
                         logger.debug(
                             f'Failed to delete temporary file {vsix_path_from_github}: {e}'
                         )
+
+            if github_success:
+                return  # Success! We are done.
 
         # If GitHub download failed, fall back to the original methods.
         extension_id = 'openhands.openhands-vscode'

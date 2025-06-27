@@ -85,7 +85,7 @@ def test_install_succeeds_from_github(mock_env_and_dependencies):
         returncode=0, args=[], stdout='', stderr=''
     )
 
-    with mock.patch('os.remove') as mock_os_remove:
+    with mock.patch('os.remove') as mock_os_remove, mock.patch('os.path.exists', return_value=True) as mock_os_path_exists:
         vscode_extension.attempt_vscode_extension_install()
 
         mock_env_and_dependencies['download'].assert_called_once()
