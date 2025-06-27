@@ -87,14 +87,16 @@ def test_runtime_import_exception_handling_behavior():
     # Test the exception handling logic by simulating the exact code from runtime init
     import logging
     from io import StringIO
+    from openhands.core.logger import openhands_logger as logger
     
     # Create a string buffer to capture log output
     log_capture = StringIO()
     handler = logging.StreamHandler(log_capture)
     handler.setLevel(logging.WARNING)
     
-    logger = logging.getLogger('openhands.runtime')
+    # Add our test handler to the OpenHands logger
     logger.addHandler(handler)
+    original_level = logger.level
     logger.setLevel(logging.WARNING)
     
     try:
@@ -115,6 +117,7 @@ def test_runtime_import_exception_handling_behavior():
             pass
         except Exception as e:
             # Other exceptions mean the library is present but broken, which should be logged
+            # This is the exact code from runtime init
             logger.warning(f"Failed to import third-party runtime {module_path}: {e}")
             
         # Check the captured log output
@@ -128,6 +131,7 @@ def test_runtime_import_exception_handling_behavior():
         
     finally:
         logger.removeHandler(handler)
+        logger.setLevel(original_level)
 
 
 def test_import_error_handled_silently(caplog):
