@@ -266,11 +266,9 @@ class Memory:
             GLOBAL_MICROAGENTS_DIR
         )
         for name, agent in knowledge_agents.items():
-            if isinstance(agent, KnowledgeMicroagent):
-                self.knowledge_microagents[name] = agent
+            self.knowledge_microagents[name] = agent
         for name, agent in repo_agents.items():
-            if isinstance(agent, RepoMicroagent):
-                self.repo_microagents[name] = agent
+            self.repo_microagents[name] = agent
 
     def get_microagent_mcp_tools(self) -> list[MCPConfig]:
         """
