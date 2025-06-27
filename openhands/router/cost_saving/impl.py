@@ -14,7 +14,7 @@ from openhands.utils.trajectory import format_trajectory
 class ThresholdBasedCostSavingRouter(BaseRouter):
     WEAK_MODEL_CONFIG_NAME = 'weak_model'
     ROUTER_MODEL_CONFIG_NAME = 'classifier_model'
-    TOKENIZER_NAME = "Qwen/Qwen2.5-Coder-1.5B-Instruct"
+    TOKENIZER_NAME = "ryanhoangt/qwen2.5-coder-1.5b-it-seq-clsf-router-sonnet-4-devstral-lite-128k"
 
     def __init__(
         self,

@@ -43,6 +43,7 @@ LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (
     litellm.Timeout,
     litellm.InternalServerError,
     LLMNoResponseError,
+    httpx.RemoteProtocolError,
 )
 
 # cache prompt supporting models
