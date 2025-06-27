@@ -85,7 +85,10 @@ def test_install_succeeds_from_github(mock_env_and_dependencies):
         returncode=0, args=[], stdout='', stderr=''
     )
 
-    with mock.patch('os.remove') as mock_os_remove, mock.patch('os.path.exists', return_value=True) as mock_os_path_exists:
+    with (
+        mock.patch('os.remove') as mock_os_remove,
+        mock.patch('os.path.exists', return_value=True),
+    ):
         vscode_extension.attempt_vscode_extension_install()
 
         mock_env_and_dependencies['download'].assert_called_once()
@@ -142,9 +145,11 @@ def test_all_methods_fail(mock_env_and_dependencies):
 
     mock_env_and_dependencies['download'].assert_called_once()
     mock_env_and_dependencies['as_file'].assert_called_once()
-    assert mock_env_and_dependencies['subprocess'].call_count == 0  # No marketplace attempt
+    assert (
+        mock_env_and_dependencies['subprocess'].call_count == 0
+    )  # No marketplace attempt
     mock_env_and_dependencies['print'].assert_any_call(
-        "INFO: Automatic installation failed. Please check the OpenHands documentation for manual installation instructions."
+        'INFO: Automatic installation failed. Please check the OpenHands documentation for manual installation instructions.'
     )
     mock_env_and_dependencies['touch'].assert_called_once()
 
@@ -248,7 +253,7 @@ def test_install_attempt_code_command_fails(mock_env_and_dependencies):
     # No subprocess calls should be made since marketplace installation is disabled
     assert mock_env_and_dependencies['subprocess'].call_count == 0
     mock_env_and_dependencies['print'].assert_any_call(
-        "INFO: Automatic installation failed. Please check the OpenHands documentation for manual installation instructions."
+        'INFO: Automatic installation failed. Please check the OpenHands documentation for manual installation instructions.'
     )
 
 
@@ -264,7 +269,7 @@ def test_install_attempt_code_not_found(mock_env_and_dependencies):
     # No subprocess calls should be made since marketplace installation is disabled
     assert mock_env_and_dependencies['subprocess'].call_count == 0
     mock_env_and_dependencies['print'].assert_any_call(
-        "INFO: Automatic installation failed. Please check the OpenHands documentation for manual installation instructions."
+        'INFO: Automatic installation failed. Please check the OpenHands documentation for manual installation instructions.'
     )
 
 
@@ -322,7 +327,12 @@ def test_bundled_vsix_installation_failure_fallback_to_marketplace(
     ].return_value.__enter__.return_value = mock_vsix_path
 
     mock_env_and_dependencies['subprocess'].return_value = subprocess.CompletedProcess(
-        args=['code', '--install-extension', '/mock/path/openhands-vscode-0.0.1.vsix', '--force'],
+        args=[
+            'code',
+            '--install-extension',
+            '/mock/path/openhands-vscode-0.0.1.vsix',
+            '--force',
+        ],
         returncode=1,
         stdout='Installation failed',
         stderr='Error installing extension',
@@ -457,7 +467,12 @@ def test_both_bundled_and_marketplace_fail(mock_env_and_dependencies):
     ].return_value.__enter__.return_value = mock_vsix_path
 
     mock_env_and_dependencies['subprocess'].return_value = subprocess.CompletedProcess(
-        args=['code', '--install-extension', '/mock/path/openhands-vscode-0.0.1.vsix', '--force'],
+        args=[
+            'code',
+            '--install-extension',
+            '/mock/path/openhands-vscode-0.0.1.vsix',
+            '--force',
+        ],
         returncode=1,
         stdout='Bundled installation failed',
         stderr='Error installing bundled extension',
@@ -468,5 +483,5 @@ def test_both_bundled_and_marketplace_fail(mock_env_and_dependencies):
     # Only one subprocess call for bundled VSIX, no marketplace attempt
     assert mock_env_and_dependencies['subprocess'].call_count == 1
     mock_env_and_dependencies['print'].assert_any_call(
-        "INFO: Automatic installation failed. Please check the OpenHands documentation for manual installation instructions."
+        'INFO: Automatic installation failed. Please check the OpenHands documentation for manual installation instructions.'
     )
