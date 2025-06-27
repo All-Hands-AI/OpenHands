@@ -30,6 +30,7 @@ class LocalhostCORSMiddleware(CORSMiddleware):
         super().__init__(
             app,
             allow_origins=allow_origins,
+            allow_origin_regex=os.getenv('PERMITTED_CORS_REGEX'),
             allow_credentials=True,
             allow_methods=['*'],
             allow_headers=['*'],
