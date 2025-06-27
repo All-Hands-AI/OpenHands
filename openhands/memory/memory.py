@@ -2,6 +2,7 @@ import asyncio
 import os
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Callable
 
 import openhands
@@ -33,6 +34,8 @@ GLOBAL_MICROAGENTS_DIR = os.path.join(
     'microagents',
 )
 
+USER_MICROAGENTS_DIR = Path.home() / '.openhands' / 'microagents'
+
 
 class Memory:
     """
@@ -44,6 +47,8 @@ class Memory:
     event_stream: EventStream
     status_callback: Callable | None
     loop: asyncio.AbstractEventLoop | None
+    repo_microagents: dict[str, RepoMicroagent]
+    knowledge_microagents: dict[str, KnowledgeMicroagent]
 
     def __init__(
         self,
@@ -63,8 +68,8 @@ class Memory:
         )
 
         # Additional placeholders to store user workspace microagents
-        self.repo_microagents: dict[str, RepoMicroagent] = {}
-        self.knowledge_microagents: dict[str, KnowledgeMicroagent] = {}
+        self.repo_microagents = {}
+        self.knowledge_microagents = {}
 
         # Store repository / runtime info to send them to the templating later
         self.repository_info: RepositoryInfo | None = None
@@ -74,6 +79,9 @@ class Memory:
         # Load global microagents (Knowledge + Repo)
         # from typically OpenHands/microagents (i.e., the PUBLIC microagents)
         self._load_global_microagents()
+
+        # Load user microagents from ~/.openhands/microagents/
+        self._load_user_microagents()
 
     def on_event(self, event: Event):
         """Handle an event from the event stream."""
@@ -265,12 +273,47 @@ class Memory:
         repo_agents, knowledge_agents = load_microagents_from_dir(
             GLOBAL_MICROAGENTS_DIR
         )
-        for name, agent in knowledge_agents.items():
-            if isinstance(agent, KnowledgeMicroagent):
-                self.knowledge_microagents[name] = agent
-        for name, agent in repo_agents.items():
-            if isinstance(agent, RepoMicroagent):
-                self.repo_microagents[name] = agent
+        for name, k_agent in knowledge_agents.items():
+            if isinstance(k_agent, KnowledgeMicroagent):
+                self.knowledge_microagents[name] = k_agent
+        for name, r_agent in repo_agents.items():
+            if isinstance(r_agent, RepoMicroagent):
+                self.repo_microagents[name] = r_agent
+
+    def _load_user_microagents(self) -> None:
+        """
+        Loads microagents from the user's home directory (~/.openhands/microagents/)
+        Creates the directory if it doesn't exist.
+        """
+        try:
+            # Create the user microagents directory if it doesn't exist
+            os.makedirs(USER_MICROAGENTS_DIR, exist_ok=True)
+
+            # Load microagents from user directory
+            repo_agents, knowledge_agents = load_microagents_from_dir(
+                USER_MICROAGENTS_DIR
+            )
+
+            # Add user microagents to the collections
+            # User microagents can override global ones with the same name
+            for name, agent in knowledge_agents.items():
+                if isinstance(agent, KnowledgeMicroagent):
+                    self.knowledge_microagents[name] = agent
+                    logger.debug(f'Loaded user knowledge microagent: {name}')
+
+            for name, agent in repo_agents.items():
+                if isinstance(agent, RepoMicroagent):
+                    self.repo_microagents[name] = agent
+                    logger.debug(f'Loaded user repo microagent: {name}')
+
+            if repo_agents or knowledge_agents:
+                logger.info(
+                    f'Loaded {len(repo_agents) + len(knowledge_agents)} user microagents from {USER_MICROAGENTS_DIR}'
+                )
+        except Exception as e:
+            logger.warning(
+                f'Failed to load user microagents from {USER_MICROAGENTS_DIR}: {str(e)}'
+            )
 
     def get_microagent_mcp_tools(self) -> list[MCPConfig]:
         """
