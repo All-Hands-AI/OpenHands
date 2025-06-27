@@ -23,10 +23,7 @@ jobs:
   validate-vscode-extension:
     name: Validate VSCode Extension Build
     runs-on: blacksmith-4vcpu-ubuntu-2204
-    strategy:
-      matrix:
-        node-version: [18, 20, 22]
-      fail-fast: false
+    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,7 +31,7 @@ jobs:
       - name: Set up Node.js
         uses: useblacksmith/setup-node@v5
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: '22'
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -72,12 +69,12 @@ jobs:
       - name: Upload VSCode extension artifact
         uses: actions/upload-artifact@v4
         with:
-          name: vscode-extension-node${{ matrix.node-version }}
+          name: vscode-extension
           path: openhands/integrations/vscode/openhands-vscode-0.0.1.vsix
           retention-days: 7
 
       - name: Comment on PR with artifact link
-        if: github.event_name == 'pull_request' && matrix.node-version == '18'
+        if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |
@@ -100,7 +97,7 @@ jobs:
             2. In VSCode: \`Ctrl+Shift+P\` → "Extensions: Install from VSIX..."
             3. Select the downloaded \`.vsix\` file
 
-            **✅ Tested with**: Node.js 18, 20, 22
+            **✅ Tested with**: Node.js 22
             **🔍 Validation**: File structure and integrity verified
 
             ---
