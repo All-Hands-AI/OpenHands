@@ -877,9 +877,7 @@ class AgentController:
 
         # Log if the pending action has been active for a long time (but don't clear it)
         # Skip this warning in headless mode (CLI) as it's not useful for users
-        if (
-            elapsed_time > 60.0 and not self.headless_mode
-        ):  # 1 minute - just for logging purposes
+        if elapsed_time > 60.0:  # 1 minute - just for logging purposes
             action_id = getattr(action, 'id', 'unknown')
             action_type = type(action).__name__
             self.log(
