@@ -69,7 +69,9 @@ try:
             if runtime_class:
                 _THIRD_PARTY_RUNTIME_CLASSES[runtime_name] = runtime_class
 
-        except ImportError:
+        except Exception:
+            # Catch all exceptions (ImportError, AttributeError, etc.) to prevent
+            # broken third-party runtime dependencies from breaking the entire system
             pass
 
 except ImportError:
