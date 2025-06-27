@@ -503,7 +503,7 @@ class DockerNestedConversationManager(ConversationManager):
 
         # Set up mounted volume for conversation directory within workspace
         # TODO: Check if we are using the standard event store and file store
-        volumes = config.sandbox.volumes
+        volumes: list[str | None]
         if not config.sandbox.volumes:
             volumes = []
         else:
@@ -513,7 +513,7 @@ class DockerNestedConversationManager(ConversationManager):
         volumes.append(
             f'{config.file_store_path}/{conversation_dir}:/root/.openhands/file_store/{conversation_dir}:rw'
         )
-        config.sandbox.volumes = ','.join(volumes)
+        config.sandbox.volumes = ','.join([v for v in volumes if v is not None])
         if not config.sandbox.runtime_container_image:
             config.sandbox.runtime_container_image = self._runtime_container_image
 
