@@ -139,7 +139,6 @@ def attempt_vscode_extension_install():
                 return  # Success! We are done.
 
         # If GitHub download failed, fall back to the original methods.
-        extension_id = 'openhands.openhands-vscode'
 
         # Attempt 2: Install from bundled .vsix
         try:
@@ -171,39 +170,14 @@ def attempt_vscode_extension_install():
                             f'Bundled .vsix installation failed: {process.stderr.strip()}'
                         )
         except Exception as e:
-            logger.debug(
-                f'Could not locate bundled .vsix: {e}. Falling back to Marketplace.'
-            )
+            logger.debug(f'Could not locate bundled .vsix: {e}.')
 
-        # Attempt 3: Install from Marketplace
-        try:
-            process = subprocess.run(
-                [editor_command, '--install-extension', extension_id, '--force'],
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            if process.returncode == 0:
-                print(
-                    f'INFO: {editor_name} extension installed successfully from the Marketplace.'
-                )
-                return  # Success!
-            else:
-                logger.debug(
-                    f'Marketplace installation failed: {process.stderr.strip()}'
-                )
-        except FileNotFoundError:
-            print(
-                f"INFO: To complete {editor_name} integration, please ensure the '{editor_command}' command-line tool is in your PATH."
-            )
-        except Exception as e:
-            logger.debug(
-                f'An unexpected error occurred trying to install from the Marketplace: {e}'
-            )
+        # TODO: Attempt 3: Install from Marketplace (when extension is published)
+        # _attempt_marketplace_install(editor_command, editor_name, extension_id)
 
         # If all attempts failed, inform the user.
         print(
-            f"INFO: Automatic installation failed. Please install '{extension_id}' manually from the {editor_name} Marketplace."
+            'INFO: Automatic installation failed. Please check the OpenHands documentation for manual installation instructions.'
         )
 
     finally:
@@ -214,3 +188,48 @@ def attempt_vscode_extension_install():
             logger.debug(
                 f'Could not create {editor_name} extension attempt flag file: {e}'
             )
+
+
+def _attempt_marketplace_install(
+    editor_command: str, editor_name: str, extension_id: str
+) -> bool:
+    """
+    Attempt to install the extension from the marketplace.
+
+    This method is currently unused as the OpenHands extension is not yet published
+    to the VS Code/Windsurf marketplace. It's kept here for future use when the
+    extension becomes available.
+
+    Args:
+        editor_command: The command to use ('code' or 'surf')
+        editor_name: Human-readable editor name ('VS Code' or 'Windsurf')
+        extension_id: The extension ID to install
+
+    Returns:
+        True if installation succeeded, False otherwise
+    """
+    try:
+        process = subprocess.run(
+            [editor_command, '--install-extension', extension_id, '--force'],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if process.returncode == 0:
+            print(
+                f'INFO: {editor_name} extension installed successfully from the Marketplace.'
+            )
+            return True
+        else:
+            logger.debug(f'Marketplace installation failed: {process.stderr.strip()}')
+            return False
+    except FileNotFoundError:
+        print(
+            f"INFO: To complete {editor_name} integration, please ensure the '{editor_command}' command-line tool is in your PATH."
+        )
+        return False
+    except Exception as e:
+        logger.debug(
+            f'An unexpected error occurred trying to install from the Marketplace: {e}'
+        )
+        return False
