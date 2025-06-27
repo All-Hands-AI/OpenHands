@@ -75,7 +75,8 @@ try:
         except Exception as e:
             # Other exceptions mean the library is present but broken, which should be logged
             from openhands.core.logger import openhands_logger as logger
-            logger.warning(f"Failed to import third-party runtime {module_path}: {e}")
+
+            logger.warning(f'Failed to import third-party runtime {module_path}: {e}')
             pass
 
 except ImportError:

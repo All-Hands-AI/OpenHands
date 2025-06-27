@@ -8,7 +8,6 @@ OpenHands CLI and system.
 
 import logging
 import sys
-from unittest.mock import patch
 
 import pytest
 
@@ -26,6 +25,7 @@ def test_cli_import_with_broken_third_party_runtime():
     # This should not raise an exception even if third-party runtimes have broken dependencies
     try:
         import openhands.cli.main  # noqa: F401
+
         assert True
     except Exception as e:
         pytest.fail(f'CLI import failed: {e}')
@@ -42,6 +42,7 @@ def test_runtime_import_robustness():
     # Import the runtime module - should succeed even with broken third-party runtimes
     try:
         import openhands.runtime  # noqa: F401
+
         assert True
     except Exception as e:
         pytest.fail(f'Runtime import failed: {e}')
@@ -83,22 +84,22 @@ def test_runtime_exception_handling():
 
 def test_runtime_import_exception_handling_behavior():
     """Test that runtime import handles ImportError silently but logs other exceptions."""
-    
+
     # Test the exception handling logic by simulating the exact code from runtime init
-    import logging
     from io import StringIO
+
     from openhands.core.logger import openhands_logger as logger
-    
+
     # Create a string buffer to capture log output
     log_capture = StringIO()
     handler = logging.StreamHandler(log_capture)
     handler.setLevel(logging.WARNING)
-    
+
     # Add our test handler to the OpenHands logger
     logger.addHandler(handler)
     original_level = logger.level
     logger.setLevel(logging.WARNING)
-    
+
     try:
         # Test 1: ImportError should be handled silently (no logging)
         module_path = 'third_party.runtime.impl.missing.missing_runtime'
@@ -107,28 +108,30 @@ def test_runtime_import_exception_handling_behavior():
         except ImportError:
             # This is the exact code from runtime init: just pass, no logging
             pass
-        
+
         # Test 2: Other exceptions should be logged
         module_path = 'third_party.runtime.impl.runloop.runloop_runtime'
         try:
-            raise AttributeError("module 'httpx_aiohttp' has no attribute 'HttpxAiohttpClient'")
+            raise AttributeError(
+                "module 'httpx_aiohttp' has no attribute 'HttpxAiohttpClient'"
+            )
         except ImportError:
             # ImportError means the library is not installed (expected for optional dependencies)
             pass
         except Exception as e:
             # Other exceptions mean the library is present but broken, which should be logged
             # This is the exact code from runtime init
-            logger.warning(f"Failed to import third-party runtime {module_path}: {e}")
-            
+            logger.warning(f'Failed to import third-party runtime {module_path}: {e}')
+
         # Check the captured log output
         log_output = log_capture.getvalue()
-        
+
         # Should contain the AttributeError warning
         assert 'Failed to import third-party runtime' in log_output
         assert 'HttpxAiohttpClient' in log_output
         # Should NOT contain the ImportError message
         assert 'missing_library' not in log_output
-        
+
     finally:
         logger.removeHandler(handler)
         logger.setLevel(original_level)
@@ -136,12 +139,10 @@ def test_runtime_import_exception_handling_behavior():
 
 def test_import_error_handled_silently(caplog):
     """Test that ImportError is handled silently (no logging) as it means library is not installed."""
-    
-    import logging
-    
+
     # Simulate the exact code path for ImportError
-    logger = logging.getLogger('openhands.runtime')
-    
+    logging.getLogger('openhands.runtime')
+
     with caplog.at_level(logging.WARNING):
         # Simulate ImportError handling - this should NOT log anything
         try:
@@ -149,7 +150,11 @@ def test_import_error_handled_silently(caplog):
         except ImportError:
             # This is the exact code from runtime init: just pass, no logging
             pass
-        
+
     # Check that NO warning was logged for ImportError
-    warning_records = [record for record in caplog.records if record.levelname == 'WARNING']
-    assert len(warning_records) == 0, f"ImportError should not generate warnings, but got: {warning_records}"
+    warning_records = [
+        record for record in caplog.records if record.levelname == 'WARNING'
+    ]
+    assert len(warning_records) == 0, (
+        f'ImportError should not generate warnings, but got: {warning_records}'
+    )
