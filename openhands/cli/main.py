@@ -120,6 +120,7 @@ async def run_session(
     sid = generate_sid(config, session_name)
     is_loaded = asyncio.Event()
     is_paused = asyncio.Event()  # Event to track agent pause requests
+    pause_task: asyncio.Task | None = None  # No more than one pause task
     always_confirm_mode = False  # Flag to enable always confirm mode
 
     # Show runtime initialization message
@@ -235,9 +236,11 @@ async def run_session(
 
             if event.agent_state == AgentState.RUNNING:
                 display_agent_running_message()
-                loop.create_task(
-                    process_agent_pause(is_paused, event_stream)
-                )  # Create a task to track agent pause requests from the user
+                nonlocal pause_task
+                if pause_task is None or pause_task.done():
+                    pause_task = loop.create_task(
+                        process_agent_pause(is_paused, event_stream)
+                    )  # Create a task to track agent pause requests from the user
 
     def on_event(event: Event) -> None:
         loop.create_task(on_event_async(event))
