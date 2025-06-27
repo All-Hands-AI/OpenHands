@@ -10,18 +10,7 @@
 # General core configurations
 ##############################################################################
 [core]
-# API key for E2B
-#e2b_api_key = ""
-
-# API key for Modal
-#modal_api_token_id = ""
-#modal_api_token_secret = ""
-
-# API key for Daytona
-#daytona_api_key = ""
-
-# Daytona Target
-#daytona_target = ""
+# API keys and configuration for core services
 
 # Base path for the workspace
 #workspace_base = "./workspace"

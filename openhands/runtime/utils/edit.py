@@ -394,7 +394,7 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
         return ret_obs
 
     def check_retry_num(self, retry_num):
-        correct_num = self.draft_editor_llm.config.correct_num
+        correct_num = self.draft_editor_llm.config.correct_num  # type: ignore[attr-defined]
         return correct_num < retry_num
 
     def correct_edit(

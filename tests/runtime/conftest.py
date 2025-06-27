@@ -12,11 +12,9 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.cli.cli_runtime import CLIRuntime
-from openhands.runtime.impl.daytona.daytona_runtime import DaytonaRuntime
 from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
 from openhands.runtime.impl.local.local_runtime import LocalRuntime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
-from openhands.runtime.impl.runloop.runloop_runtime import RunloopRuntime
 from openhands.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from openhands.storage import get_file_store
 from openhands.utils.async_utils import call_async_from_sync
@@ -130,10 +128,6 @@ def get_runtime_classes() -> list[type[Runtime]]:
         return [LocalRuntime]
     elif runtime.lower() == 'remote':
         return [RemoteRuntime]
-    elif runtime.lower() == 'runloop':
-        return [RunloopRuntime]
-    elif runtime.lower() == 'daytona':
-        return [DaytonaRuntime]
     elif runtime.lower() == 'cli':
         return [CLIRuntime]
     else:

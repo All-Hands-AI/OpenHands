@@ -74,7 +74,7 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
-from openhands.llm.metrics import Metrics, TokenUsage
+from openhands.llm.metrics import Metrics
 from openhands.storage.files import FileStore
 
 # note: RESUME is only available on web GUI
@@ -985,7 +985,7 @@ class AgentController:
         agent_metrics = self.state.metrics
 
         # Get metrics from condenser LLM if it exists
-        condenser_metrics: TokenUsage | None = None
+        condenser_metrics: Metrics | None = None
         if hasattr(self.agent, 'condenser') and hasattr(self.agent.condenser, 'llm'):
             condenser_metrics = self.agent.condenser.llm.metrics
 

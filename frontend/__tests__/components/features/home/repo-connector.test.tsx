@@ -128,7 +128,7 @@ describe("RepoConnector", () => {
 
     renderRepoConnector();
 
-    await screen.findByText("Add GitHub repos");
+    await screen.findByText("HOME$ADD_GITHUB_REPOS");
   });
 
   it("should not render the 'add git(hub|lab) repos' links if oss mode", async () => {
