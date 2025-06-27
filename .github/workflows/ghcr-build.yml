@@ -11,6 +11,8 @@ on:
       - main
     tags:
       - '*'
+    tags-ignore:
+      - 'ext-v**'
   pull_request:
   workflow_dispatch:
     inputs:
