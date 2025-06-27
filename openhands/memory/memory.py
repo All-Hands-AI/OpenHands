@@ -288,19 +288,15 @@ class Memory:
             os.makedirs(USER_MICROAGENTS_DIR, exist_ok=True)
 
             # Load microagents from user directory
-            repo_agents_dict, knowledge_agents_dict = load_microagents_from_dir(
+            repo_agents, knowledge_agents = load_microagents_from_dir(
                 USER_MICROAGENTS_DIR
             )
 
-            for name, agent_knowledge in knowledge_agents_dict.items():
+            for name, agent_knowledge in knowledge_agents.items():
                 self.knowledge_microagents[name] = agent_knowledge
-            for name, agent_repo in repo_agents_dict.items():
+            for name, agent_repo in repo_agents.items():
                 self.repo_microagents[name] = agent_repo
 
-            if repo_agents_dict or knowledge_agents_dict:
-                logger.info(
-                    f'Loaded {len(repo_agents_dict) + len(knowledge_agents_dict)} user microagents from {USER_MICROAGENTS_DIR}'
-                )
         except Exception as e:
             logger.warning(
                 f'Failed to load user microagents from {USER_MICROAGENTS_DIR}: {str(e)}'
