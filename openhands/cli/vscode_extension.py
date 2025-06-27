@@ -80,51 +80,97 @@ def attempt_vscode_extension_install():
     else:
         editor_command, editor_name, flag_suffix = 'code', 'VS Code', 'vscode'
 
-    # 3. Check if we've already attempted installation. If so, do nothing.
+    # 3. Check if we've already successfully installed the extension.
     flag_dir = pathlib.Path.home() / '.openhands'
-    flag_file = flag_dir / f'.{flag_suffix}_extension_install_attempted'
+    flag_file = flag_dir / f'.{flag_suffix}_extension_installed'
+    extension_id = 'openhands.openhands-vscode'
+
     try:
         flag_dir.mkdir(parents=True, exist_ok=True)
         if flag_file.exists():
-            return  # Already attempted, exit.
+            return  # Already successfully installed, exit.
     except OSError as e:
         logger.debug(
             f'Could not create or check {editor_name} extension flag directory: {e}'
         )
         return  # Don't proceed if we can't manage the flag.
 
-    # If we've reached here, it's our first attempt.
-    # From now on, we create the flag file at the end, regardless of success.
+    # 4. Check if the extension is already installed (even without our flag).
+    if _is_extension_installed(editor_command, extension_id):
+        print(f'INFO: OpenHands {editor_name} extension is already installed.')
+        # Create flag to avoid future checks
+        _mark_installation_successful(flag_file, editor_name)
+        return
+
+    # 5. Extension is not installed, attempt installation.
+    print(
+        f'INFO: First-time setup: attempting to install the OpenHands {editor_name} extension...'
+    )
+
+    # Attempt 1: Download from GitHub Releases (the new primary method)
+    if _attempt_github_install(editor_command, editor_name):
+        _mark_installation_successful(flag_file, editor_name)
+        return  # Success! We are done.
+
+    # Attempt 2: Install from bundled .vsix
+    if _attempt_bundled_install(editor_command, editor_name):
+        _mark_installation_successful(flag_file, editor_name)
+        return  # Success! We are done.
+
+    # TODO: Attempt 3: Install from Marketplace (when extension is published)
+    # if _attempt_marketplace_install(editor_command, editor_name, extension_id):
+    #     _mark_installation_successful(flag_file, editor_name)
+    #     return  # Success! We are done.
+
+    # If all attempts failed, inform the user (but don't create flag - allow retry).
+    print(
+        'INFO: Automatic installation failed. Please check the OpenHands documentation for manual installation instructions.'
+    )
+    print(
+        f'INFO: Will retry installation next time you run OpenHands in {editor_name}.'
+    )
+
+
+def _mark_installation_successful(flag_file: pathlib.Path, editor_name: str) -> None:
+    """
+    Mark the extension installation as successful by creating the flag file.
+
+    Args:
+        flag_file: Path to the flag file to create
+        editor_name: Human-readable name of the editor for logging
+    """
     try:
-        print(
-            f'INFO: First-time setup: attempting to install the OpenHands {editor_name} extension...'
+        flag_file.touch()
+        logger.debug(f'{editor_name} extension installation marked as successful.')
+    except OSError as e:
+        logger.debug(f'Could not create {editor_name} extension success flag file: {e}')
+
+
+def _is_extension_installed(editor_command: str, extension_id: str) -> bool:
+    """
+    Check if the OpenHands extension is already installed.
+
+    Args:
+        editor_command: The command to run the editor (e.g., 'code', 'windsurf')
+        extension_id: The extension ID to check for
+
+    Returns:
+        bool: True if extension is already installed, False otherwise
+    """
+    try:
+        process = subprocess.run(
+            [editor_command, '--list-extensions'],
+            capture_output=True,
+            text=True,
+            check=False,
         )
+        if process.returncode == 0:
+            installed_extensions = process.stdout.strip().split('\n')
+            return extension_id in installed_extensions
+    except Exception as e:
+        logger.debug(f'Could not check installed extensions: {e}')
 
-        # Attempt 1: Download from GitHub Releases (the new primary method)
-        if _attempt_github_install(editor_command, editor_name):
-            return  # Success! We are done.
-
-        # Attempt 2: Install from bundled .vsix
-        if _attempt_bundled_install(editor_command, editor_name):
-            return  # Success! We are done.
-
-        # TODO: Attempt 3: Install from Marketplace (when extension is published)
-        # if _attempt_marketplace_install(editor_command, editor_name, extension_id):
-        #     return  # Success! We are done.
-
-        # If all attempts failed, inform the user.
-        print(
-            'INFO: Automatic installation failed. Please check the OpenHands documentation for manual installation instructions.'
-        )
-
-    finally:
-        # 4. Create the flag file AFTER all attempts are made, ensuring we only try this whole process once.
-        try:
-            flag_file.touch()
-        except OSError as e:
-            logger.debug(
-                f'Could not create {editor_name} extension attempt flag file: {e}'
-            )
+    return False
 
 
 def _attempt_github_install(editor_command: str, editor_name: str) -> bool:

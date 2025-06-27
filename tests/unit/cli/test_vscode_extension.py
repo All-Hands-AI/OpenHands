@@ -76,14 +76,44 @@ def test_already_attempted_flag_prevents_execution(mock_env_and_dependencies):
     mock_env_and_dependencies['subprocess'].assert_not_called()
 
 
+def test_extension_already_installed_detected(mock_env_and_dependencies):
+    """Should detect already installed extension and create flag."""
+    os.environ['TERM_PROGRAM'] = 'vscode'
+    mock_env_and_dependencies['exists'].return_value = False
+    
+    # Mock subprocess call for --list-extensions (returns extension as installed)
+    mock_env_and_dependencies['subprocess'].return_value = subprocess.CompletedProcess(
+        returncode=0, args=[], stdout='openhands.openhands-vscode\nother.extension', stderr=''
+    )
+
+    vscode_extension.attempt_vscode_extension_install()
+
+    # Should only call --list-extensions, no installation attempts
+    assert mock_env_and_dependencies['subprocess'].call_count == 1
+    mock_env_and_dependencies['subprocess'].assert_called_with(
+        ['code', '--list-extensions'],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    mock_env_and_dependencies['print'].assert_any_call(
+        'INFO: OpenHands VS Code extension is already installed.'
+    )
+    mock_env_and_dependencies['touch'].assert_called_once()
+    mock_env_and_dependencies['download'].assert_not_called()
+
+
 def test_install_succeeds_from_github(mock_env_and_dependencies):
     """Should successfully install from GitHub on the first try."""
     os.environ['TERM_PROGRAM'] = 'vscode'
     mock_env_and_dependencies['exists'].return_value = False
     mock_env_and_dependencies['download'].return_value = '/fake/path/to/github.vsix'
-    mock_env_and_dependencies['subprocess'].return_value = subprocess.CompletedProcess(
-        returncode=0, args=[], stdout='', stderr=''
-    )
+    
+    # Mock subprocess calls: first --list-extensions (returns empty), then install
+    mock_env_and_dependencies['subprocess'].side_effect = [
+        subprocess.CompletedProcess(returncode=0, args=[], stdout='', stderr=''),  # --list-extensions
+        subprocess.CompletedProcess(returncode=0, args=[], stdout='', stderr=''),  # --install-extension
+    ]
 
     with (
         mock.patch('os.remove') as mock_os_remove,
@@ -92,7 +122,15 @@ def test_install_succeeds_from_github(mock_env_and_dependencies):
         vscode_extension.attempt_vscode_extension_install()
 
         mock_env_and_dependencies['download'].assert_called_once()
-        mock_env_and_dependencies['subprocess'].assert_called_once_with(
+        # Should have two subprocess calls: list-extensions and install-extension
+        assert mock_env_and_dependencies['subprocess'].call_count == 2
+        mock_env_and_dependencies['subprocess'].assert_any_call(
+            ['code', '--list-extensions'],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        mock_env_and_dependencies['subprocess'].assert_any_call(
             ['code', '--install-extension', '/fake/path/to/github.vsix', '--force'],
             capture_output=True,
             text=True,
@@ -117,15 +155,26 @@ def test_github_fails_falls_back_to_bundled(mock_env_and_dependencies):
     mock_env_and_dependencies[
         'as_file'
     ].return_value.__enter__.return_value = mock_vsix_path
-    mock_env_and_dependencies['subprocess'].return_value = subprocess.CompletedProcess(
-        returncode=0, args=[], stdout='', stderr=''
-    )
+    
+    # Mock subprocess calls: first --list-extensions (returns empty), then install
+    mock_env_and_dependencies['subprocess'].side_effect = [
+        subprocess.CompletedProcess(returncode=0, args=[], stdout='', stderr=''),  # --list-extensions
+        subprocess.CompletedProcess(returncode=0, args=[], stdout='', stderr=''),  # --install-extension
+    ]
 
     vscode_extension.attempt_vscode_extension_install()
 
     mock_env_and_dependencies['download'].assert_called_once()
     mock_env_and_dependencies['as_file'].assert_called_once()
-    mock_env_and_dependencies['subprocess'].assert_called_once_with(
+    # Should have two subprocess calls: list-extensions and install-extension
+    assert mock_env_and_dependencies['subprocess'].call_count == 2
+    mock_env_and_dependencies['subprocess'].assert_any_call(
+        ['code', '--list-extensions'],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    mock_env_and_dependencies['subprocess'].assert_any_call(
         ['code', '--install-extension', '/fake/path/to/bundled.vsix', '--force'],
         capture_output=True,
         text=True,
@@ -140,18 +189,32 @@ def test_all_methods_fail(mock_env_and_dependencies):
     mock_env_and_dependencies['exists'].return_value = False
     mock_env_and_dependencies['download'].return_value = None
     mock_env_and_dependencies['as_file'].side_effect = FileNotFoundError
+    
+    # Mock subprocess call for --list-extensions (returns empty, extension not installed)
+    mock_env_and_dependencies['subprocess'].return_value = subprocess.CompletedProcess(
+        returncode=0, args=[], stdout='', stderr=''
+    )
 
     vscode_extension.attempt_vscode_extension_install()
 
     mock_env_and_dependencies['download'].assert_called_once()
     mock_env_and_dependencies['as_file'].assert_called_once()
-    assert (
-        mock_env_and_dependencies['subprocess'].call_count == 0
-    )  # No marketplace attempt
+    # Only one subprocess call for --list-extensions, no installation attempts
+    assert mock_env_and_dependencies['subprocess'].call_count == 1
+    mock_env_and_dependencies['subprocess'].assert_called_with(
+        ['code', '--list-extensions'],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
     mock_env_and_dependencies['print'].assert_any_call(
         'INFO: Automatic installation failed. Please check the OpenHands documentation for manual installation instructions.'
     )
-    mock_env_and_dependencies['touch'].assert_called_once()
+    mock_env_and_dependencies['print'].assert_any_call(
+        'INFO: Will retry installation next time you run OpenHands in VS Code.'
+    )
+    # Should NOT create flag file on failure - that's the point of our new approach
+    mock_env_and_dependencies['touch'].assert_not_called()
 
 
 def test_windsurf_detection_and_install(mock_env_and_dependencies):
@@ -160,15 +223,30 @@ def test_windsurf_detection_and_install(mock_env_and_dependencies):
     mock_env_and_dependencies['exists'].return_value = False
     mock_env_and_dependencies['download'].return_value = None
     mock_env_and_dependencies['as_file'].side_effect = FileNotFoundError
+    
+    # Mock subprocess call for --list-extensions (returns empty, extension not installed)
+    mock_env_and_dependencies['subprocess'].return_value = subprocess.CompletedProcess(
+        returncode=0, args=[], stdout='', stderr=''
+    )
 
     vscode_extension.attempt_vscode_extension_install()
 
-    # No subprocess calls should be made since marketplace installation is disabled
-    assert mock_env_and_dependencies['subprocess'].call_count == 0
+    # Only one subprocess call for --list-extensions, no installation attempts
+    assert mock_env_and_dependencies['subprocess'].call_count == 1
+    mock_env_and_dependencies['subprocess'].assert_called_with(
+        ['windsurf', '--list-extensions'],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
     mock_env_and_dependencies['print'].assert_any_call(
         'INFO: Automatic installation failed. Please check the OpenHands documentation for manual installation instructions.'
     )
-    mock_env_and_dependencies['touch'].assert_called_once()
+    mock_env_and_dependencies['print'].assert_any_call(
+        'INFO: Will retry installation next time you run OpenHands in Windsurf.'
+    )
+    # Should NOT create flag file on failure
+    mock_env_and_dependencies['touch'].assert_not_called()
 
 
 def test_os_error_on_mkdir(mock_env_and_dependencies):
