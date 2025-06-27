@@ -240,7 +240,12 @@ function buildOpenHandsCommand(
       : options.filePath;
     commandToSend = `${activationCommand}openhands --file ${safeFilePath}`;
   } else if (options.task) {
-    commandToSend = `${activationCommand}openhands --task "${options.task}"`;
+    // Sanitize task string for command line (basic sanitization)
+    // Replace backticks and double quotes that might break the command
+    const sanitizedTask = options.task
+      .replace(/`/g, "\\`")
+      .replace(/"/g, '\\"');
+    commandToSend = `${activationCommand}openhands --task "${sanitizedTask}"`;
   }
 
   return commandToSend;
