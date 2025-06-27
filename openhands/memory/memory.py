@@ -270,17 +270,13 @@ class Memory:
         """
         Loads microagents from the global microagents_dir
         """
-        repo_agents_dict, knowledge_agents_dict = load_microagents_from_dir(
+        repo_agents, knowledge_agents = load_microagents_from_dir(
             GLOBAL_MICROAGENTS_DIR
         )
-        # See https://github.com/python/mypy/issues/18440 for type narrowing issue with dict items
-        for name, agent_obj in knowledge_agents_dict.items():  # type: ignore[assignment]
-            if isinstance(agent_obj, KnowledgeMicroagent):
-                self.knowledge_microagents[name] = agent_obj
-        # See https://github.com/python/mypy/issues/18440 for type narrowing issue with dict items
-        for name, agent_obj in repo_agents_dict.items():  # type: ignore[assignment]
-            if isinstance(agent_obj, RepoMicroagent):
-                self.repo_microagents[name] = agent_obj
+        for name, agent_knowledge in knowledge_agents.items():
+            self.knowledge_microagents[name] = agent_knowledge
+        for name, agent_repo in repo_agents.items():
+            self.repo_microagents[name] = agent_repo
 
     def _load_user_microagents(self) -> None:
         """
