@@ -1,80 +1,48 @@
 # OpenHands VS Code Extension
 
-Start OpenHands conversations directly from VS Code with your current file or selected text.
+The official OpenHands companion extension for Visual Studio Code.
 
-## What it does
+This extension seamlessly integrates OpenHands into your VSCode workflow, allowing you to start coding sessions with your AI agent directly from your editor.
 
-- **Start conversation**: Opens OpenHands in a terminal (safely reuses idle terminals or creates new ones)
-- **Send current file**: Starts OpenHands with your active file
-- **Send selection**: Starts OpenHands with selected text
-- **Safe terminal management**: Never interrupts running processes; creates new terminals when needed
-
-Access commands via Command Palette (Ctrl+Shift+P) or right-click menu.
+![OpenHands VSCode Extension Demo](https://raw.githubusercontent.com/All-Hands-AI/OpenHands/main/assets/images/vscode-extension-demo.gif)
 
 ## Features
 
-### Safe Terminal Management
-- **Non-Intrusive**: Never interrupts running processes in existing terminals
-- **Smart Reuse**: Only reuses terminals that have completed OpenHands commands
-- **Safe Fallback**: Creates new terminals when existing ones may be busy
-- **Shell Integration**: Uses VS Code's Shell Integration API when available for better command tracking
-- **Conservative Approach**: When in doubt, creates a new terminal to avoid conflicts
+- **Start a New Conversation**: Launch OpenHands in a new terminal with a single command.
+- **Use Your Current File**: Automatically send the content of your active file to OpenHands to start a task.
+- **Use a Selection**: Send only the highlighted text from your editor to OpenHands for focused tasks.
+- **Safe Terminal Management**: The extension intelligently reuses idle terminals or creates new ones, ensuring it never interrupts an active process.
+- **Automatic Virtual Environment Detection**: Finds and uses your project's Python virtual environment (`.venv`, `venv`, etc.) automatically.
 
-### Virtual Environment Support
-- **Auto-Detection**: Automatically finds and activates Python virtual environments
-- **Multiple Patterns**: Supports `.venv`, `venv`, and `.virtualenv` directories
-- **Cross-Platform**: Works on Windows, macOS, and Linux
+## How to Use
 
-## Setup
+You can access the extension's commands in two ways:
 
-1. Install OpenHands: `pip install openhands`
-2. Run `openhands` from VS Code terminal (extension installs automatically)
+1.  **Command Palette**:
+    - Open the Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`).
+    - Type `OpenHands` to see the available commands.
+    - Select the command you want to run.
+
+2.  **Editor Context Menu**:
+    - Right-click anywhere in your text editor.
+    - The OpenHands commands will appear in the context menu.
+
+## Installation
+
+For the best experience, the OpenHands CLI will attempt to install the extension for you automatically the first time you run it inside VSCode.
+
+If you need to install it manually:
+1.  Download the latest `.vsix` file from the [GitHub Releases page](https://github.com/All-Hands-AI/OpenHands/releases).
+2.  In VSCode, open the Command Palette (`Ctrl+Shift+P`).
+3.  Run the **"Extensions: Install from VSIX..."** command.
+4.  Select the `.vsix` file you downloaded.
 
 ## Requirements
 
-- OpenHands CLI in your PATH
-- VS Code 1.98.2+
-- Compatible shell for optimal terminal reuse (bash, zsh, PowerShell, fish)
+- **OpenHands CLI**: You must have `openhands` installed and available in your system's PATH.
+- **VS Code**: Version 1.98.2 or newer.
+- **Shell**: For the best terminal reuse experience, a shell with [Shell Integration](https://code.visualstudio.com/docs/terminal/shell-integration) is recommended (e.g., modern versions of bash, zsh, PowerShell, or fish).
 
-## Development
+## Contributing
 
-### Setup
-```bash
-npm install
-```
-
-### Building the Extension
-
-The VS Code extension is automatically built during OpenHands installation. The build process:
-
-1. **Automatic Build**: When installing OpenHands via `pip install`, the extension is built automatically
-2. **Pre-built Extension**: A pre-built `.vsix` file is included for systems with older Node.js versions
-3. **Node.js Requirements**: Building from source requires Node.js >= 18 (aligned with frontend)
-
-#### Build Options
-
-- **Skip Build**: Set `SKIP_VSCODE_BUILD=1` to skip building and use the pre-built extension
-- **Force Rebuild**: Delete the `.vsix` file to force a rebuild on next install
-
-#### Manual Build
-```bash
-# Package the extension manually
-npm run package-vsix
-```
-
-### Code Quality
-```bash
-# Run linting with fixes
-npm run lint:fix
-
-# Type checking
-npm run typecheck
-
-# Compile TypeScript
-npm run compile
-
-# Run tests
-npm run test
-```
-
-The extension uses ESLint and Prettier for code quality, adapted from the main OpenHands frontend configuration.
+We welcome contributions! If you're interested in developing the extension, please see our [**DEVELOPMENT.md**](DEVELOPMENT.md) guide for instructions on how to get started.
