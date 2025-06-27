@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 
 class SecurityConfig(BaseModel):
@@ -12,7 +12,7 @@ class SecurityConfig(BaseModel):
     confirmation_mode: bool = Field(default=False)
     security_analyzer: str | None = Field(default=None)
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
     @classmethod
     def from_toml_section(cls, data: dict) -> dict[str, 'SecurityConfig']:

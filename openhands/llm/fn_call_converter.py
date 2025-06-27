@@ -794,17 +794,19 @@ def convert_non_fncall_messages_to_fncall_messages(
                 )
 
             if tool_result_match:
-                if not (
-                    isinstance(content, str)
-                    or (
-                        isinstance(content, list)
-                        and len(content) == 1
-                        and content[0].get('type') == 'text'
-                    )
-                ):
+                if isinstance(content, list):
+                    text_content_items = [
+                        item for item in content if item.get('type') == 'text'
+                    ]
+                    if not text_content_items:
+                        raise FunctionCallConversionError(
+                            f'Could not find text content in message with tool result. Content: {content}'
+                        )
+                elif not isinstance(content, str):
                     raise FunctionCallConversionError(
-                        f'Expected str or list with one text item when tool result is present in the message. Content: {content}'
+                        f'Unexpected content type {type(content)}. Expected str or list. Content: {content}'
                     )
+
                 tool_name = tool_result_match.group(1)
                 tool_result = tool_result_match.group(2).strip()
 

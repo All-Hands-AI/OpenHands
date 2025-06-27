@@ -70,7 +70,7 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
-from openhands.llm.metrics import Metrics, TokenUsage
+from openhands.llm.metrics import Metrics
 from openhands.memory.view import View
 from openhands.storage.files import FileStore
 
@@ -821,6 +821,11 @@ class AgentController:
                     or 'input length and `max_tokens` exceed context limit' in error_str
                     or 'please reduce the length of either one'
                     in error_str  # For OpenRouter context window errors
+                    or (
+                        'sambanovaexception' in error_str
+                        and 'maximum context length' in error_str
+                    )
+                    # For SambaNova context window errors - only match when both patterns are present
                     or isinstance(e, ContextWindowExceededError)
                 ):
                     if self.agent.config.enable_history_truncation:
@@ -1147,7 +1152,7 @@ class AgentController:
         agent_metrics = self.state.metrics
 
         # Get metrics from condenser LLM if it exists
-        condenser_metrics: TokenUsage | None = None
+        condenser_metrics: Metrics | None = None
         if hasattr(self.agent, 'condenser') and hasattr(self.agent.condenser, 'llm'):
             condenser_metrics = self.agent.condenser.llm.metrics
 

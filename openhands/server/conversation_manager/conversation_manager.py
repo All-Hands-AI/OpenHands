@@ -108,6 +108,10 @@ class ConversationManager(ABC):
         """Send data to an event stream."""
 
     @abstractmethod
+    async def send_event_to_conversation(self, sid: str, data: dict):
+        """Send an event to a conversation."""
+
+    @abstractmethod
     async def disconnect_from_session(self, connection_id: str):
         """Disconnect from a session."""
 

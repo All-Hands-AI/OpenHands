@@ -23,6 +23,7 @@ import { isCustomModel } from "#/utils/is-custom-model";
 import { LlmSettingsInputsSkeleton } from "#/components/features/settings/llm-settings/llm-settings-inputs-skeleton";
 import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
 import { DEFAULT_SETTINGS } from "#/services/settings";
+import { getProviderId } from "#/utils/map-provider";
 
 function LlmSettingsScreen() {
   const { t } = useTranslation();
@@ -93,13 +94,15 @@ function LlmSettingsScreen() {
   };
 
   const basicFormAction = (formData: FormData) => {
-    const provider = formData.get("llm-provider-input")?.toString();
+    const providerDisplay = formData.get("llm-provider-input")?.toString();
+    const provider = providerDisplay
+      ? getProviderId(providerDisplay)
+      : undefined;
     const model = formData.get("llm-model-input")?.toString();
     const apiKey = formData.get("llm-api-key-input")?.toString();
     const searchApiKey = formData.get("search-api-key-input")?.toString();
 
-    const fullLlmModel =
-      provider && model && `${provider}/${model}`.toLowerCase();
+    const fullLlmModel = provider && model && `${provider}/${model}`;
 
     saveSettings(
       {
@@ -315,7 +318,7 @@ function LlmSettingsScreen() {
                 className="w-full max-w-[680px]"
                 defaultValue={settings.SEARCH_API_KEY || ""}
                 onChange={handleSearchApiKeyIsDirty}
-                placeholder="sk-tavily-..."
+                placeholder={t(I18nKey.API$TAVILY_KEY_EXAMPLE)}
                 startContent={
                   settings.SEARCH_API_KEY_SET && (
                     <KeyStatusIcon isSet={settings.SEARCH_API_KEY_SET} />
@@ -390,7 +393,7 @@ function LlmSettingsScreen() {
                 className="w-full max-w-[680px]"
                 defaultValue={settings.SEARCH_API_KEY || ""}
                 onChange={handleSearchApiKeyIsDirty}
-                placeholder="tvly-..."
+                placeholder={t(I18nKey.API$TVLY_KEY_EXAMPLE)}
                 startContent={
                   settings.SEARCH_API_KEY_SET && (
                     <KeyStatusIcon isSet={settings.SEARCH_API_KEY_SET} />

@@ -11,6 +11,8 @@ accordingly. However, they are applied to all repositories belonging to the orga
 Add a `.openhands` repository under the organization or user and create a `microagents` directory and place the
 microagents in that directory.
 
+For GitLab organizations, use `openhands-config` as the repository name instead of `.openhands`, since GitLab doesn't support repository names starting with non-alphanumeric characters.
+
 ## Example
 
 General microagent file example for organization `Great-Co` located inside the `.openhands` repository:
@@ -20,3 +22,5 @@ General microagent file example for organization `Great-Co` located inside the `
 * Document interfaces and public APIs; use implementation comments only for non-obvious logic.
 * Follow the same naming convention for variables, classes, constants, etc. already used in each repository.
 ```
+
+For GitLab organizations, the same microagent would be located inside the `openhands-config` repository.

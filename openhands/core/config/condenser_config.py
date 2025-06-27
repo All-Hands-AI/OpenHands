@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Literal, cast
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from openhands.core import logger
 from openhands.core.config.llm_config import LLMConfig
@@ -11,28 +11,28 @@ from openhands.core.config.llm_config import LLMConfig
 class NoOpCondenserConfig(BaseModel):
     """Configuration for NoOpCondenser."""
 
-    type: Literal['noop'] = Field('noop')
+    type: Literal['noop'] = 'noop'
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
 
 class ObservationMaskingCondenserConfig(BaseModel):
     """Configuration for ObservationMaskingCondenser."""
 
-    type: Literal['observation_masking'] = Field('observation_masking')
+    type: Literal['observation_masking'] = 'observation_masking'
     attention_window: int = Field(
         default=100,
         description='The number of most-recent events where observations will not be masked.',
         ge=1,
     )
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
 
 class BrowserOutputCondenserConfig(BaseModel):
     """Configuration for the BrowserOutputCondenser."""
 
-    type: Literal['browser_output_masking'] = Field('browser_output_masking')
+    type: Literal['browser_output_masking'] = 'browser_output_masking'
     attention_window: int = Field(
         default=1,
         description='The number of most recent browser output observations that will not be masked.',
@@ -43,7 +43,7 @@ class BrowserOutputCondenserConfig(BaseModel):
 class RecentEventsCondenserConfig(BaseModel):
     """Configuration for RecentEventsCondenser."""
 
-    type: Literal['recent'] = Field('recent')
+    type: Literal['recent'] = 'recent'
 
     # at least one event by default, because the best guess is that it is the user task
     keep_first: int = Field(
@@ -55,13 +55,13 @@ class RecentEventsCondenserConfig(BaseModel):
         default=100, description='Maximum number of events to keep.', ge=1
     )
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
 
 class LLMSummarizingCondenserConfig(BaseModel):
     """Configuration for LLMCondenser."""
 
-    type: Literal['llm'] = Field('llm')
+    type: Literal['llm'] = 'llm'
     llm_config: LLMConfig = Field(
         ..., description='Configuration for the LLM to use for condensing.'
     )
@@ -82,13 +82,13 @@ class LLMSummarizingCondenserConfig(BaseModel):
         description='Maximum length of the event representations to be passed to the LLM.',
     )
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
 
 class AmortizedForgettingCondenserConfig(BaseModel):
     """Configuration for AmortizedForgettingCondenser."""
 
-    type: Literal['amortized'] = Field('amortized')
+    type: Literal['amortized'] = 'amortized'
     max_size: int = Field(
         default=100,
         description='Maximum size of the condensed history before triggering forgetting.',
@@ -102,13 +102,13 @@ class AmortizedForgettingCondenserConfig(BaseModel):
         ge=0,
     )
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
 
 class LLMAttentionCondenserConfig(BaseModel):
     """Configuration for LLMAttentionCondenser."""
 
-    type: Literal['llm_attention'] = Field('llm_attention')
+    type: Literal['llm_attention'] = 'llm_attention'
     llm_config: LLMConfig = Field(
         ..., description='Configuration for the LLM to use for attention.'
     )
@@ -125,13 +125,13 @@ class LLMAttentionCondenserConfig(BaseModel):
         ge=0,
     )
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
 
 class StructuredSummaryCondenserConfig(BaseModel):
     """Configuration for StructuredSummaryCondenser instances."""
 
-    type: Literal['structured'] = Field('structured')
+    type: Literal['structured'] = 'structured'
     llm_config: LLMConfig = Field(
         ..., description='Configuration for the LLM to use for condensing.'
     )
@@ -152,7 +152,7 @@ class StructuredSummaryCondenserConfig(BaseModel):
         description='Maximum length of the event representations to be passed to the LLM.',
     )
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
 
 class CondenserPipelineConfig(BaseModel):
@@ -161,13 +161,13 @@ class CondenserPipelineConfig(BaseModel):
     Not currently supported by the TOML or ENV_VAR configuration strategies.
     """
 
-    type: Literal['pipeline'] = Field('pipeline')
+    type: Literal['pipeline'] = 'pipeline'
     condensers: list[CondenserConfig] = Field(
         default_factory=list,
         description='List of condenser configurations to be used in the pipeline.',
     )
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
 
 # Type alias for convenience
