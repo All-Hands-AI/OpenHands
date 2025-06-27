@@ -51,7 +51,7 @@ Implement GitHub releases download as the primary method for VSCode extension in
 ```python
 def download_latest_vsix_from_github() -> str | None:
     """Download latest .vsix from GitHub releases.
-    
+
     Returns:
         Path to downloaded .vsix file, or None if failed
     """
