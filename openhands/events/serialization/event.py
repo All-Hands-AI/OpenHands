@@ -126,7 +126,7 @@ def event_to_dict(event: 'Event') -> dict:
         else:
             d['security_risk'] = props['security_risk'].value
             props.pop('security_risk')
-            
+
     if 'confirmation_state' in props and props['confirmation_state'] is None:
         props.pop('confirmation_state')
 
