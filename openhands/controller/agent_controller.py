@@ -887,7 +887,7 @@ class AgentController:
             action_id = getattr(action, 'id', 'unknown')
             action_type = type(action).__name__
             self.log(
-                'warning',
+                'info',
                 f'Pending action active for {elapsed_time:.2f}s: {action_type} (id={action_id})',
                 extra={'msg_type': 'PENDING_ACTION_TIMEOUT'},
             )
