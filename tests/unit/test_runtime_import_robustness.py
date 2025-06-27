@@ -23,6 +23,7 @@ def test_cli_import_with_broken_third_party_runtime():
 
     # This should not raise an exception even if third-party runtimes have broken dependencies
     try:
+        import openhands.cli.main  # noqa: F401
         assert True
     except Exception as e:
         pytest.fail(f'CLI import failed: {e}')
@@ -38,6 +39,7 @@ def test_runtime_import_robustness():
 
     # Import the runtime module - should succeed even with broken third-party runtimes
     try:
+        import openhands.runtime  # noqa: F401
         assert True
     except Exception as e:
         pytest.fail(f'Runtime import failed: {e}')
