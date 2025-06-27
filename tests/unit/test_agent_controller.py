@@ -1817,3 +1817,65 @@ async def test_sambanova_generic_exception_not_handled_as_context_error(
     )
 
     await controller.close()
+
+
+@pytest.mark.asyncio
+async def test_pending_action_warning_suppressed_in_headless_mode(
+    mock_agent, mock_event_stream
+):
+    """Test that pending action timeout warnings are suppressed in headless mode (CLI)."""
+    import time
+    from unittest.mock import patch
+
+    # Test with headless_mode=True (CLI mode) - warning should be suppressed
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=mock_event_stream,
+        iteration_delta=10,
+        sid='test',
+        confirmation_mode=False,
+        headless_mode=True,
+    )
+
+    # Create a mock action and set it as pending with a timestamp from 70 seconds ago
+    mock_action = CmdRunAction(command='test')
+    mock_action.id = 'test-action-id'
+    old_time = time.time() - 70.0  # 70 seconds ago (> 60 second threshold)
+    controller._pending_action_info = (mock_action, old_time)
+
+    # Mock the log method to capture calls
+    with patch.object(controller, 'log') as mock_log:
+        # Access the pending action property to trigger the warning check
+        _ = controller._pending_action
+
+        # Verify that log was NOT called (warning suppressed in headless mode)
+        mock_log.assert_not_called()
+
+    await controller.close()
+
+    # Test with headless_mode=False (GUI mode) - warning should be shown
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=mock_event_stream,
+        iteration_delta=10,
+        sid='test',
+        confirmation_mode=False,
+        headless_mode=False,
+    )
+
+    # Set the same pending action
+    controller._pending_action_info = (mock_action, old_time)
+
+    # Mock the log method to capture calls
+    with patch.object(controller, 'log') as mock_log:
+        # Access the pending action property to trigger the warning check
+        _ = controller._pending_action
+
+        # Verify that log WAS called (warning shown in GUI mode)
+        mock_log.assert_called_once_with(
+            'warning',
+            'Pending action active for 70.00s: CmdRunAction (id=test-action-id)',
+            extra={'msg_type': 'PENDING_ACTION_TIMEOUT'},
+        )
+
+    await controller.close()
