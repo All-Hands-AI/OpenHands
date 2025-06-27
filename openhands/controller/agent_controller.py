@@ -52,8 +52,11 @@ from openhands.events.action import (
     AgentDelegateAction,
     AgentFinishAction,
     AgentRejectAction,
+    BrowseInteractiveAction,
     ChangeAgentStateAction,
     CmdRunAction,
+    FileEditAction,
+    FileReadAction,
     IPythonRunCellAction,
     MessageAction,
     NullAction,
@@ -838,11 +841,22 @@ class AgentController:
 
         if action.runnable:
             if self.state.confirmation_mode and (
-                type(action) is CmdRunAction or type(action) is IPythonRunCellAction
+                type(action) is CmdRunAction
+                or type(action) is IPythonRunCellAction
+                or type(action) is BrowseInteractiveAction
+                or type(action) is FileEditAction
+                or type(action) is FileReadAction
             ):
-                action.confirmation_state = (
-                    ActionConfirmationStatus.AWAITING_CONFIRMATION
-                )
+                # Check if the action has a safety_risk attribute set by the LLM
+                safety_risk = getattr(action, 'safety_risk', None)
+
+                # If safety_risk is HIGH, always require confirmation
+                # If safety_risk is MEDIUM or LOW, follow the confirmation_mode setting
+                # If safety_risk is not set, follow the confirmation_mode setting
+                if safety_risk == 'HIGH' or self.state.confirmation_mode:
+                    action.confirmation_state = (
+                        ActionConfirmationStatus.AWAITING_CONFIRMATION
+                    )
             self._pending_action = action
 
         if not isinstance(action, NullAction):

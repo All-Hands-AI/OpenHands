@@ -1,4 +1,5 @@
-from openhands.events.action import MessageAction
+from openhands.events.action import CmdRunAction, MessageAction
+from openhands.events.action.action import ActionSecurityRisk
 from openhands.events.observation import CmdOutputMetadata, CmdOutputObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.llm.metrics import Cost, Metrics, ResponseLatency, TokenUsage
@@ -121,3 +122,22 @@ def test_metrics_none_serialization():
     # Test deserialization
     deserialized = event_from_dict(serialized)
     assert deserialized.llm_metrics is None
+
+
+def test_security_risk_serialization():
+    # Test action with security risk
+    action = CmdRunAction(command='rm -rf /tmp/test')
+    action.security_risk = ActionSecurityRisk.HIGH
+
+    # Test serialization
+    serialized = event_to_dict(action)
+    assert 'security_risk' in serialized
+    assert serialized['security_risk'] == ActionSecurityRisk.HIGH.value
+
+    # Test action with no security risk
+    action = CmdRunAction(command='ls')
+    # Don't set security_risk
+
+    # Test serialization
+    serialized = event_to_dict(action)
+    assert 'security_risk' not in serialized

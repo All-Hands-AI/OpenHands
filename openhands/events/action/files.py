@@ -22,6 +22,7 @@ class FileReadAction(Action):
     security_risk: ActionSecurityRisk | None = None
     impl_source: FileReadSource = FileReadSource.DEFAULT
     view_range: list[int] | None = None  # ONLY used in OH_ACI mode
+    confirmation_state: str | None = None
 
     @property
     def message(self) -> str:
@@ -113,6 +114,7 @@ class FileEditAction(Action):
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None
     impl_source: FileEditSource = FileEditSource.OH_ACI
+    confirmation_state: str | None = None
 
     def __repr__(self) -> str:
         ret = '**FileEditAction**\n'

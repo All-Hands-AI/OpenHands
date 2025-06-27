@@ -35,6 +35,7 @@ class BrowseInteractiveAction(Action):
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None
     return_axtree: bool = False
+    confirmation_state: str | None = None
 
     @property
     def message(self) -> str:
