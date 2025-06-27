@@ -49,17 +49,18 @@ class TestSetupScript(unittest.TestCase):
         # Call the method under test
         self.original_method(self.runtime)
 
-        # Verify that add_event was called with EventSource.ENVIRONMENT
-        # First call should be for the action
-        first_call = self.event_stream.add_event.call_args_list[0]
-        self.assertEqual(first_call[0][1], EventSource.ENVIRONMENT)
-
-        # Second call should be for the observation
-        second_call = self.event_stream.add_event.call_args_list[1]
-        self.assertEqual(second_call[0][1], EventSource.ENVIRONMENT)
-
-        # Verify that run_action was called
+        # Verify that the action's source was set to ENVIRONMENT
         self.runtime.run_action.assert_called_once()
+        action = self.runtime.run_action.call_args[0][0]
+        self.assertEqual(action._source, EventSource.ENVIRONMENT)
+
+        # Verify that the observation's source was set to ENVIRONMENT
+        self.assertEqual(mock_observation._source, EventSource.ENVIRONMENT)
+
+        # Verify that add_event was called with EventSource.ENVIRONMENT for the observation
+        self.event_stream.add_event.assert_called_with(
+            mock_observation, EventSource.ENVIRONMENT
+        )
 
     def test_setup_script_not_executed_multiple_times(self):
         """Test that setup script is not executed multiple times."""
