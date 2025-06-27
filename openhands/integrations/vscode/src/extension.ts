@@ -146,15 +146,14 @@ function detectVirtualEnvironment(): string {
     const venvFullPath = path.join(workspaceFolder.uri.fsPath, venvPath);
     if (fs.existsSync(venvFullPath)) {
       outputChannel.appendLine(`DEBUG: Found venv at ${venvFullPath}`);
-      if (process.platform === 'win32') {
+      if (process.platform === "win32") {
         // For Windows, the activation command is different and typically doesn't use 'source'
         // It's often a script that needs to be executed.
         // This is a simplified version. A more robust solution might need to check for PowerShell, cmd, etc.
-        return `& "${path.join(venvFullPath, 'Scripts', 'Activate.ps1')}" && `;
-      } else {
-        // For POSIX-like shells
-        return `source "${path.join(venvFullPath, 'bin', 'activate')}" && `;
+        return `& "${path.join(venvFullPath, "Scripts", "Activate.ps1")}" && `;
       }
+      // For POSIX-like shells
+      return `source "${path.join(venvFullPath, "bin", "activate")}" && `;
     }
   }
 
