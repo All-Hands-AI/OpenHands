@@ -26,7 +26,7 @@ async def validate_provider_token(
     """
     # Skip validation for empty tokens
     if token is None:
-        return None
+        return None  # type: ignore[unreachable]
 
     # Try GitHub first
     github_error = None
