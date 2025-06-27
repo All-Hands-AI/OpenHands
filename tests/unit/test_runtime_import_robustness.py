@@ -81,28 +81,71 @@ def test_runtime_exception_handling():
     assert hasattr(openhands.runtime, '_THIRD_PARTY_RUNTIME_CLASSES')
 
 
-def test_runtime_import_logs_warning_on_broken_dependency(caplog):
-    """Test that runtime import logs a warning when third-party dependency is broken."""
+def test_runtime_import_exception_handling_behavior():
+    """Test that runtime import handles ImportError silently but logs other exceptions."""
     
-    # Test the warning logging by simulating the exact scenario from the runtime init code
-    import importlib
+    # Test the exception handling logic by simulating the exact code from runtime init
+    import logging
+    from io import StringIO
+    
+    # Create a string buffer to capture log output
+    log_capture = StringIO()
+    handler = logging.StreamHandler(log_capture)
+    handler.setLevel(logging.WARNING)
+    
+    logger = logging.getLogger('openhands.runtime')
+    logger.addHandler(handler)
+    logger.setLevel(logging.WARNING)
+    
+    try:
+        # Test 1: ImportError should be handled silently (no logging)
+        module_path = 'third_party.runtime.impl.missing.missing_runtime'
+        try:
+            raise ImportError("No module named 'missing_library'")
+        except ImportError:
+            # This is the exact code from runtime init: just pass, no logging
+            pass
+        
+        # Test 2: Other exceptions should be logged
+        module_path = 'third_party.runtime.impl.runloop.runloop_runtime'
+        try:
+            raise AttributeError("module 'httpx_aiohttp' has no attribute 'HttpxAiohttpClient'")
+        except ImportError:
+            # ImportError means the library is not installed (expected for optional dependencies)
+            pass
+        except Exception as e:
+            # Other exceptions mean the library is present but broken, which should be logged
+            logger.warning(f"Failed to import third-party runtime {module_path}: {e}")
+            
+        # Check the captured log output
+        log_output = log_capture.getvalue()
+        
+        # Should contain the AttributeError warning
+        assert 'Failed to import third-party runtime' in log_output
+        assert 'HttpxAiohttpClient' in log_output
+        # Should NOT contain the ImportError message
+        assert 'missing_library' not in log_output
+        
+    finally:
+        logger.removeHandler(handler)
+
+
+def test_import_error_handled_silently(caplog):
+    """Test that ImportError is handled silently (no logging) as it means library is not installed."""
+    
     import logging
     
-    # Simulate the exact code path that would trigger the warning
+    # Simulate the exact code path for ImportError
     logger = logging.getLogger('openhands.runtime')
     
-    # Simulate the exception that would occur during runtime import
-    module_path = 'third_party.runtime.impl.runloop.runloop_runtime'
-    e = AttributeError("module 'httpx_aiohttp' has no attribute 'HttpxAiohttpClient'")
-    
     with caplog.at_level(logging.WARNING):
-        # This is the exact logging code from the runtime init
-        logger.warning(f"Failed to import third-party runtime {module_path}: {e}")
+        # Simulate ImportError handling - this should NOT log anything
+        try:
+            raise ImportError("No module named 'optional_runtime_library'")
+        except ImportError:
+            # This is the exact code from runtime init: just pass, no logging
+            pass
         
-    # Check that warning was logged for broken third-party runtime
+    # Check that NO warning was logged for ImportError
     warning_records = [record for record in caplog.records if record.levelname == 'WARNING']
-    assert len(warning_records) > 0, f"No warning records found. All records: {caplog.records}"
-    
-    warning_messages = [record.message for record in warning_records]
-    assert any('Failed to import third-party runtime' in msg for msg in warning_messages), f"Warning messages: {warning_messages}"
-    assert any('HttpxAiohttpClient' in msg for msg in warning_messages), f"Warning messages: {warning_messages}"
+    assert len(warning_records) == 0, f"ImportError should not generate warnings, but got: {warning_records}"

@@ -69,9 +69,11 @@ try:
             if runtime_class:
                 _THIRD_PARTY_RUNTIME_CLASSES[runtime_name] = runtime_class
 
+        except ImportError:
+            # ImportError means the library is not installed (expected for optional dependencies)
+            pass
         except Exception as e:
-            # Catch all exceptions (ImportError, AttributeError, etc.) to prevent
-            # broken third-party runtime dependencies from breaking the entire system
+            # Other exceptions mean the library is present but broken, which should be logged
             import logging
             logger = logging.getLogger(__name__)
             logger.warning(f"Failed to import third-party runtime {module_path}: {e}")
