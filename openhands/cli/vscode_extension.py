@@ -100,7 +100,7 @@ def attempt_vscode_extension_install():
             f'INFO: First-time setup: attempting to install the OpenHands {editor_name} extension...'
         )
 
-        # Attempt 0: Download from GitHub Releases (the new primary method)
+        # Attempt 1: Download from GitHub Releases (the new primary method)
         vsix_path_from_github = download_latest_vsix_from_github()
         if vsix_path_from_github:
             try:
@@ -125,12 +125,19 @@ def attempt_vscode_extension_install():
                         f'Failed to install .vsix from GitHub: {process.stderr.strip()}'
                     )
             finally:
-                os.remove(vsix_path_from_github)
+                # Clean up the downloaded file
+                if os.path.exists(vsix_path_from_github):
+                    try:
+                        os.remove(vsix_path_from_github)
+                    except OSError as e:
+                        logger.debug(
+                            f'Failed to delete temporary file {vsix_path_from_github}: {e}'
+                        )
 
         # If GitHub download failed, fall back to the original methods.
         extension_id = 'openhands.openhands-vscode'
 
-        # Attempt 1: Install from bundled .vsix
+        # Attempt 2: Install from bundled .vsix
         try:
             vsix_filename = 'openhands-vscode-0.0.1.vsix'
             with importlib.resources.as_file(
@@ -164,7 +171,7 @@ def attempt_vscode_extension_install():
                 f'Could not locate bundled .vsix: {e}. Falling back to Marketplace.'
             )
 
-        # Attempt 2: Install from Marketplace
+        # Attempt 3: Install from Marketplace
         try:
             process = subprocess.run(
                 [editor_command, '--install-extension', extension_id, '--force'],
