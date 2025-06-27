@@ -31,17 +31,7 @@ def read_task(args: argparse.Namespace, cli_multiline_input: bool) -> str:
     # Determine the task
     task_str = ''
     if args.file:
-        file_content = read_task_from_file(args.file)
-        # For CLI usage, enhance the file content with a prompt
-        # that instructs the agent to read and understand the file first
-        task_str = f"""The user has tagged a file '{args.file}'.
-Please read and understand the following file content first:
-
-```
-{file_content}
-```
-
-After reviewing the file, please ask the user what they would like to do with it."""
+        task_str = read_task_from_file(args.file)
     elif args.task:
         task_str = args.task
     elif not sys.stdin.isatty():
