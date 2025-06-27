@@ -144,16 +144,17 @@ function detectVirtualEnvironment(): string {
   const venvPaths = [".venv", "venv", ".virtualenv"];
   for (const venvPath of venvPaths) {
     const venvFullPath = path.join(workspaceFolder.uri.fsPath, venvPath);
-    try {
-      if (fs.existsSync(venvFullPath)) {
-        const isWindows = process.platform === "win32";
-        const activateScript = isWindows ? "Scripts\\activate" : "bin/activate";
-        const activationCommand = `source "${venvFullPath}/${activateScript}" && `;
-        outputChannel.appendLine(`DEBUG: Found venv at ${venvFullPath}`);
-        return activationCommand;
+    if (fs.existsSync(venvFullPath)) {
+      outputChannel.appendLine(`DEBUG: Found venv at ${venvFullPath}`);
+      if (process.platform === 'win32') {
+        // For Windows, the activation command is different and typically doesn't use 'source'
+        // It's often a script that needs to be executed.
+        // This is a simplified version. A more robust solution might need to check for PowerShell, cmd, etc.
+        return `& "${path.join(venvFullPath, 'Scripts', 'Activate.ps1')}" && `;
+      } else {
+        // For POSIX-like shells
+        return `source "${path.join(venvFullPath, 'bin', 'activate')}" && `;
       }
-    } catch (error) {
-      // Virtual environment doesn't exist, continue checking
     }
   }
 
