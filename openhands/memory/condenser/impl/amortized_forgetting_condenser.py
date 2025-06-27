@@ -60,7 +60,7 @@ class AmortizedForgettingCondenser(RollingCondenser):
     def from_config(
         cls, config: AmortizedForgettingCondenserConfig
     ) -> AmortizedForgettingCondenser:
-        return AmortizedForgettingCondenser(**config.model_dump(exclude=['type']))
+        return AmortizedForgettingCondenser(**config.model_dump(exclude={'type'}))
 
 
 AmortizedForgettingCondenser.register_config(AmortizedForgettingCondenserConfig)
