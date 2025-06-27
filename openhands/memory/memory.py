@@ -292,20 +292,10 @@ class Memory:
                 USER_MICROAGENTS_DIR
             )
 
-            # Add user microagents to the collections
-            # User microagents can override global ones with the same name
-            # See https://github.com/python/mypy/issues/18440 for type narrowing issue with dict items
-            for name, agent_obj in knowledge_agents_dict.items():  # type: ignore[assignment]
-                if isinstance(agent_obj, KnowledgeMicroagent):
-                    self.knowledge_microagents[name] = agent_obj
-                    logger.debug(f'Loaded user knowledge microagent: {name}')
-
-            # Process repo agents
-            # See https://github.com/python/mypy/issues/18440 for type narrowing issue with dict items
-            for name, agent_obj in repo_agents_dict.items():  # type: ignore[assignment]
-                if isinstance(agent_obj, RepoMicroagent):
-                    self.repo_microagents[name] = agent_obj
-                    logger.debug(f'Loaded user repo microagent: {name}')
+            for name, agent_knowledge in knowledge_agents_dict.items():
+                self.knowledge_microagents[name] = agent_knowledge
+            for name, agent_repo in repo_agents_dict.items():
+                self.repo_microagents[name] = agent_repo
 
             if repo_agents_dict or knowledge_agents_dict:
                 logger.info(
