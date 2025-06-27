@@ -1,8 +1,4 @@
 ---
-name: agent_memory
-type: knowledge
-version: 1.0.0
-agent: CodeActAgent
 triggers:
 - /remember
 ---

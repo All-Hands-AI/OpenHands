@@ -40,6 +40,11 @@ class BaseMicroagent(BaseModel):
         derived_name = None
         if microagent_dir is not None:
             derived_name = str(path.relative_to(microagent_dir).with_suffix(''))
+        else:
+            derived_name = path.with_suffix('').name
+            logger.warning(
+                f'No microagent_dir provided. Microagent name will be the file name: {derived_name}'
+            )
 
         # Only load directly from path if file_content is not provided
         if file_content is None:
@@ -95,6 +100,16 @@ class BaseMicroagent(BaseModel):
             MicroagentType.TASK: TaskMicroagent,
         }
 
+        # We will always use derived_name if available
+        assert derived_name is not None
+        agent_name = derived_name
+        if metadata.name is not None:
+            logger.warning(
+                f'Detected `name:` field in frontmatter for microagent {metadata.name}. '
+                "This is deprecated. Microagent's name will use the file name "
+                f'({derived_name}) instead.'
+            )
+
         # Infer the agent type:
         # 1. If inputs exist -> TASK
         # 2. If triggers exist -> KNOWLEDGE
@@ -102,8 +117,7 @@ class BaseMicroagent(BaseModel):
         inferred_type: MicroagentType
         if metadata.inputs:
             inferred_type = MicroagentType.TASK
-            # Add a trigger for the agent name if not already present
-            trigger = f'/{metadata.name}'
+            trigger = f'/{agent_name}'
             if not metadata.triggers or trigger not in metadata.triggers:
                 if not metadata.triggers:
                     metadata.triggers = [trigger]
@@ -119,9 +133,6 @@ class BaseMicroagent(BaseModel):
         if inferred_type not in subclass_map:
             # This should theoretically not happen with the logic above
             raise ValueError(f'Could not determine microagent type for: {path}')
-
-        # Use derived_name if available (from relative path), otherwise fallback to metadata.name
-        agent_name = derived_name if derived_name is not None else metadata.name
 
         agent_class = subclass_map[inferred_type]
         return agent_class(

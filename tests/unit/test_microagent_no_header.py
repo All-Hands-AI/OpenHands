@@ -7,7 +7,7 @@ from openhands.microagent.types import MicroagentType
 def test_load_markdown_without_frontmatter():
     """Test loading a markdown file without frontmatter."""
     content = '# Test Content\nThis is a test markdown file without frontmatter.'
-    path = Path('test.md')
+    path = Path('default.md')
 
     # Load the agent from content using keyword argument
     agent = BaseMicroagent.load(path=path, file_content=content)
@@ -26,7 +26,7 @@ def test_load_markdown_with_empty_frontmatter():
     content = (
         '---\n---\n# Test Content\nThis is a test markdown file with empty frontmatter.'
     )
-    path = Path('test.md')
+    path = Path('default.md')
 
     # Load the agent from content using keyword argument
     agent = BaseMicroagent.load(path=path, file_content=content)
@@ -50,12 +50,12 @@ name: custom_name
 ---
 # Test Content
 This is a test markdown file with partial frontmatter."""
-    path = Path('test.md')
+    path = Path('custom_name.md')
 
     # Load the agent from content using keyword argument
     agent = BaseMicroagent.load(path=path, file_content=content)
 
-    # Verify it uses provided name but default values for other fields
+    # Verify it uses filename instead of provided name (filename takes precedence)
     assert isinstance(agent, RepoMicroagent)
     assert agent.name == 'custom_name'
     assert (
@@ -77,12 +77,12 @@ version: 2.0.0
 ---
 # Test Content
 This is a test markdown file with full frontmatter."""
-    path = Path('test.md')
+    path = Path('test_agent.md')
 
     # Load the agent from content using keyword argument
     agent = BaseMicroagent.load(path=path, file_content=content)
 
-    # Verify all provided values are used
+    # Verify filename is used for name but other metadata values are preserved
     assert isinstance(agent, RepoMicroagent)
     assert agent.name == 'test_agent'
     assert (
