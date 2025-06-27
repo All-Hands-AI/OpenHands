@@ -101,79 +101,16 @@ def attempt_vscode_extension_install():
         )
 
         # Attempt 1: Download from GitHub Releases (the new primary method)
-        vsix_path_from_github = download_latest_vsix_from_github()
-        if vsix_path_from_github:
-            github_success = False
-            try:
-                process = subprocess.run(
-                    [
-                        editor_command,
-                        '--install-extension',
-                        vsix_path_from_github,
-                        '--force',
-                    ],
-                    capture_output=True,
-                    text=True,
-                    check=False,
-                )
-                if process.returncode == 0:
-                    print(
-                        f'INFO: OpenHands {editor_name} extension installed successfully from GitHub.'
-                    )
-                    github_success = True
-                else:
-                    logger.debug(
-                        f'Failed to install .vsix from GitHub: {process.stderr.strip()}'
-                    )
-            finally:
-                # Clean up the downloaded file
-                if os.path.exists(vsix_path_from_github):
-                    try:
-                        os.remove(vsix_path_from_github)
-                    except OSError as e:
-                        logger.debug(
-                            f'Failed to delete temporary file {vsix_path_from_github}: {e}'
-                        )
-
-            if github_success:
-                return  # Success! We are done.
-
-        # If GitHub download failed, fall back to the original methods.
+        if _attempt_github_install(editor_command, editor_name):
+            return  # Success! We are done.
 
         # Attempt 2: Install from bundled .vsix
-        try:
-            vsix_filename = 'openhands-vscode-0.0.1.vsix'
-            with importlib.resources.as_file(
-                importlib.resources.files('openhands').joinpath(
-                    'integrations', 'vscode', vsix_filename
-                )
-            ) as vsix_path:
-                if vsix_path.exists():
-                    process = subprocess.run(
-                        [
-                            editor_command,
-                            '--install-extension',
-                            str(vsix_path),
-                            '--force',
-                        ],
-                        capture_output=True,
-                        text=True,
-                        check=False,
-                    )
-                    if process.returncode == 0:
-                        print(
-                            f'INFO: Bundled {editor_name} extension installed successfully.'
-                        )
-                        return  # Success!
-                    else:
-                        logger.debug(
-                            f'Bundled .vsix installation failed: {process.stderr.strip()}'
-                        )
-        except Exception as e:
-            logger.debug(f'Could not locate bundled .vsix: {e}.')
+        if _attempt_bundled_install(editor_command, editor_name):
+            return  # Success! We are done.
 
         # TODO: Attempt 3: Install from Marketplace (when extension is published)
-        # _attempt_marketplace_install(editor_command, editor_name, extension_id)
+        # if _attempt_marketplace_install(editor_command, editor_name, extension_id):
+        #     return  # Success! We are done.
 
         # If all attempts failed, inform the user.
         print(
@@ -188,6 +125,106 @@ def attempt_vscode_extension_install():
             logger.debug(
                 f'Could not create {editor_name} extension attempt flag file: {e}'
             )
+
+
+def _attempt_github_install(editor_command: str, editor_name: str) -> bool:
+    """
+    Attempt to install the extension from GitHub Releases.
+
+    Downloads the latest VSIX file from GitHub releases and attempts to install it.
+    Ensures proper cleanup of temporary files.
+
+    Args:
+        editor_command: The command to run the editor (e.g., 'code', 'windsurf')
+        editor_name: Human-readable name of the editor (e.g., 'VS Code', 'Windsurf')
+
+    Returns:
+        bool: True if installation succeeded, False otherwise
+    """
+    vsix_path_from_github = download_latest_vsix_from_github()
+    if not vsix_path_from_github:
+        return False
+
+    github_success = False
+    try:
+        process = subprocess.run(
+            [
+                editor_command,
+                '--install-extension',
+                vsix_path_from_github,
+                '--force',
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if process.returncode == 0:
+            print(
+                f'INFO: OpenHands {editor_name} extension installed successfully from GitHub.'
+            )
+            github_success = True
+        else:
+            logger.debug(
+                f'Failed to install .vsix from GitHub: {process.stderr.strip()}'
+            )
+    finally:
+        # Clean up the downloaded file
+        if os.path.exists(vsix_path_from_github):
+            try:
+                os.remove(vsix_path_from_github)
+            except OSError as e:
+                logger.debug(
+                    f'Failed to delete temporary file {vsix_path_from_github}: {e}'
+                )
+
+    return github_success
+
+
+def _attempt_bundled_install(editor_command: str, editor_name: str) -> bool:
+    """
+    Attempt to install the extension from the bundled VSIX file.
+
+    Uses the VSIX file packaged with the OpenHands installation.
+
+    Args:
+        editor_command: The command to run the editor (e.g., 'code', 'windsurf')
+        editor_name: Human-readable name of the editor (e.g., 'VS Code', 'Windsurf')
+
+    Returns:
+        bool: True if installation succeeded, False otherwise
+    """
+    try:
+        vsix_filename = 'openhands-vscode-0.0.1.vsix'
+        with importlib.resources.as_file(
+            importlib.resources.files('openhands').joinpath(
+                'integrations', 'vscode', vsix_filename
+            )
+        ) as vsix_path:
+            if vsix_path.exists():
+                process = subprocess.run(
+                    [
+                        editor_command,
+                        '--install-extension',
+                        str(vsix_path),
+                        '--force',
+                    ],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                if process.returncode == 0:
+                    print(
+                        f'INFO: Bundled {editor_name} extension installed successfully.'
+                    )
+                    return True
+                else:
+                    logger.debug(
+                        f'Bundled .vsix installation failed: {process.stderr.strip()}'
+                    )
+    except Exception as e:
+        logger.debug(f'Could not locate bundled .vsix: {e}.')
+
+    return False
 
 
 def _attempt_marketplace_install(
