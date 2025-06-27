@@ -6,7 +6,7 @@
 
 ### A. Extension Detection Edge Cases - ✅ COMPLETE:
 1. ✅ `--list-extensions` returns non-zero exit code → continues with installation
-2. ✅ `--list-extensions` throws exception → continues with installation  
+2. ✅ `--list-extensions` throws exception → continues with installation
 3. ✅ Extension ID found in middle of list → detects correctly
 4. ✅ Empty stdout from `--list-extensions` → continues with installation
 5. ✅ Extension ID partially matches → does not match (exact match only)
@@ -56,7 +56,7 @@
 
 ### New Tests Added:
 1. ✅ `test_extension_detection_in_middle_of_list`
-2. ✅ `test_extension_detection_partial_match_ignored`  
+2. ✅ `test_extension_detection_partial_match_ignored`
 3. ✅ `test_list_extensions_fails_continues_installation`
 4. ✅ `test_list_extensions_exception_continues_installation`
 5. ✅ `test_mark_installation_successful_os_error`
@@ -71,7 +71,7 @@
 
 ### Missing Coverage (Non-Critical):
 - Lines 19-55: Early exit conditions and environment detection
-- Lines 213, 221-222: Some error handling paths  
+- Lines 213, 221-222: Some error handling paths
 - Lines 294-318: Helper functions in edge cases
 
 ## 🎯 MISSION ACCOMPLISHED
