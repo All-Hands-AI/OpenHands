@@ -19,7 +19,7 @@ packages = [
   { include = "poetry.lock", to = "openhands" },
 ]
 include = [
-  "openhands/integrations/vscode/*.vsix",
+  "openhands/integrations/vscode/openhands-vscode-0.0.1.vsix",
 ]
 build = "build.py" # Build VSCode extension during Poetry build
 
