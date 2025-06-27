@@ -81,6 +81,12 @@ def response_to_actions(
             and assistant_msg.reasoning_content
         ):
             reasoning_content = str(assistant_msg.reasoning_content)
+        elif isinstance(assistant_msg.content, list):
+            # Check if reasoning content is embedded in content list (for consistency with thought extraction)
+            for msg in assistant_msg.content:
+                if isinstance(msg, dict) and msg.get('type') == 'reasoning':
+                    reasoning_content = msg.get('content', '')
+                    break
 
         # Process each tool call to OpenHands action
         for i, tool_call in enumerate(assistant_msg.tool_calls):
@@ -261,6 +267,12 @@ def response_to_actions(
             and assistant_msg.reasoning_content
         ):
             reasoning_content = str(assistant_msg.reasoning_content)
+        elif isinstance(assistant_msg.content, list):
+            # Check if reasoning content is embedded in content list (for consistency with thought extraction)
+            for msg in assistant_msg.content:
+                if isinstance(msg, dict) and msg.get('type') == 'reasoning':
+                    reasoning_content = msg.get('content', '')
+                    break
 
         actions.append(
             MessageAction(
