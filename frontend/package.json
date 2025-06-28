@@ -1,6 +1,6 @@
 {
   "name": "openhands-frontend",
-  "version": "0.45.0",
+  "version": "0.47.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -87,7 +87,7 @@
     "@playwright/test": "^1.53.1",
     "@react-router/dev": "^7.6.2",
     "@tailwindcss/typography": "^0.5.16",
-    "@tanstack/eslint-plugin-query": "^5.78.0",
+    "@tanstack/eslint-plugin-query": "^5.81.2",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.1",
     "@testing-library/react": "^16.3.0",
@@ -107,9 +107,9 @@
     "eslint-config-airbnb": "^19.0.4",
     "eslint-config-airbnb-typescript": "^18.0.0",
     "eslint-config-prettier": "^10.1.5",
-    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-jsx-a11y": "^6.10.2",
-    "eslint-plugin-prettier": "^5.5.0",
+    "eslint-plugin-prettier": "^5.5.1",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^4.6.2",
     "eslint-plugin-unused-imports": "^4.1.4",

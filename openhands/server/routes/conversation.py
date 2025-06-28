@@ -208,35 +208,37 @@ async def get_microagents(
         microagents = []
 
         # Add repo microagents
-        for name, agent in memory.repo_microagents.items():
+        for name, r_agent in memory.repo_microagents.items():
             microagents.append(
                 MicroagentResponse(
                     name=name,
                     type='repo',
-                    content=agent.content,
+                    content=r_agent.content,
                     triggers=[],
-                    inputs=agent.metadata.inputs,
+                    inputs=r_agent.metadata.inputs,
                     tools=[
-                        server.name for server in agent.metadata.mcp_tools.stdio_servers
+                        server.name
+                        for server in r_agent.metadata.mcp_tools.stdio_servers
                     ]
-                    if agent.metadata.mcp_tools
+                    if r_agent.metadata.mcp_tools
                     else [],
                 )
             )
 
         # Add knowledge microagents
-        for name, agent in memory.knowledge_microagents.items():
+        for name, k_agent in memory.knowledge_microagents.items():
             microagents.append(
                 MicroagentResponse(
                     name=name,
                     type='knowledge',
-                    content=agent.content,
-                    triggers=agent.triggers,
-                    inputs=agent.metadata.inputs,
+                    content=k_agent.content,
+                    triggers=k_agent.triggers,
+                    inputs=k_agent.metadata.inputs,
                     tools=[
-                        server.name for server in agent.metadata.mcp_tools.stdio_servers
+                        server.name
+                        for server in k_agent.metadata.mcp_tools.stdio_servers
                     ]
-                    if agent.metadata.mcp_tools
+                    if k_agent.metadata.mcp_tools
                     else [],
                 )
             )
