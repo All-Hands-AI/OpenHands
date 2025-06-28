@@ -475,38 +475,13 @@ class Runtime(FileEditRuntimeMixin):
         # Set the source for the action
         action._source = EventSource.ENVIRONMENT  # type: ignore[attr-defined]
 
-        # Run the action to get the result
-        obs = self.run_action(action)
-
-        # Make sure the observation has the correct source
-        obs._source = EventSource.ENVIRONMENT  # type: ignore[attr-defined]
-
-        # Add both the action and observation to the event stream so they're visible in the UI
-        # This is necessary because run_action doesn't add ENVIRONMENT events to the stream
+        # Add the action to the event stream, which will trigger execution via on_event -> _handle_action
+        # This ensures the action appears in the UI and is executed exactly once
         if self.event_stream:
             self.event_stream.add_event(action, EventSource.ENVIRONMENT)
-            # Set the observation's cause after the action has been added and has an ID
-            obs._cause = action.id  # type: ignore[attr-defined]
-            self.event_stream.add_event(obs, EventSource.ENVIRONMENT)
 
-        if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
-            self.log('error', f'Setup script failed: {obs.content}')
-            if self.status_callback:
-                self.status_callback(
-                    'error',
-                    'STATUS$SETUP_SCRIPT_FAILED',
-                    'Setup script execution failed. Check the terminal output for details.',
-                )
-        else:
-            self.log('info', 'Setup script completed successfully')
-            # Create a lock file to prevent duplicate execution in future sessions
-            self.write(FileWriteAction(path=lock_file, content='Setup script executed'))
-            if self.status_callback:
-                self.status_callback(
-                    'info',
-                    'STATUS$SETUP_SCRIPT_SUCCESS',
-                    'Setup script completed successfully.',
-                )
+        # Note: We can't easily check the result here since the execution is asynchronous
+        # The status callback will be called from the action execution if there are errors
 
     @property
     def workspace_root(self) -> Path:
