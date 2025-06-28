@@ -1000,10 +1000,9 @@ def test_max_output_tokens_in_config():
     assert llm.config.max_output_tokens == 4096
 
 
-def test_max_tokens_default_initialization():
-    """Test that max_output_tokens and max_input_tokens are correctly initialized to None when not specified."""
-    # Create LLM instance with minimal config (no max_output_tokens or max_input_tokens specified)
-    # Use a non-existent model to avoid litellm having model info for it
+def test_unknown_model_token_limits():
+    """Test that models without known token limits get None for both max_output_tokens and max_input_tokens."""
+    # Create LLM instance with a non-existent model to avoid litellm having model info for it
     config = LLMConfig(model='non-existent-model', api_key='test_key')
     llm = LLM(config)
 
@@ -1049,18 +1048,6 @@ def test_verified_anthropic_model_max_output_tokens():
     assert llm.config.max_input_tokens == 200000
 
 
-def test_non_claude_model_max_output_tokens():
-    """Test that non-Claude models get the default None values for max_output_tokens and max_input_tokens."""
-    # Create LLM instance with a non-existent model to avoid litellm having model info for it
-    config = LLMConfig(model='non-existent-model-2', api_key='test_key')
-    llm = LLM(config)
-
-    # Verify max_output_tokens is set to None (default value)
-    assert llm.config.max_output_tokens is None
-    # Verify max_input_tokens is set to None (default value)
-    assert llm.config.max_input_tokens is None
-
-
 def test_sambanova_deepseek_model_max_output_tokens():
     """Test that SambaNova DeepSeek-V3-0324 model gets the correct max_output_tokens value."""
     # Create LLM instance with SambaNova DeepSeek model
@@ -1070,16 +1057,6 @@ def test_sambanova_deepseek_model_max_output_tokens():
     # SambaNova DeepSeek model has specific token limits
     # This is the expected value from litellm
     assert llm.config.max_output_tokens == 32768
-
-
-def test_non_existent_model_no_token_info():
-    """Test that a non-existent model gets None for max_output_tokens."""
-    # Create LLM instance with a non-existent model
-    config = LLMConfig(model='non-existent-model-sambanova', api_key='test_key')
-    llm = LLM(config)
-
-    # Verify max_output_tokens is None when no token info is available
-    assert llm.config.max_output_tokens is None
 
 
 def test_max_output_tokens_override_in_config():
