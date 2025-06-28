@@ -783,12 +783,11 @@ def test_browser_file_upload(temp_dir, runtime_cls, run_as_openhands):
         axtree_elements = parse_axtree_content(obs.content)
         # File inputs often show up as buttons in axtree, try multiple strategies
         file_input_bid = (
-            find_element_by_text(axtree_elements, 'Choose Files')
-            or find_element_by_text(axtree_elements, 'file')
+            find_element_by_text(axtree_elements, 'Choose File')
+            or find_element_by_text(axtree_elements, 'No file chosen')
             or find_element_by_text(axtree_elements, 'Browse')
-            or find_element_by_text(
-                axtree_elements, 'fileinput'
-            )  # Common browser pattern
+            or find_element_by_text(axtree_elements, 'file')
+            or find_element_by_id(axtree_elements, 'file-input')
         )
 
         # Also look for button near the file input (Upload File button)
