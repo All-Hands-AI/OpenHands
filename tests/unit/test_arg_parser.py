@@ -137,13 +137,14 @@ def test_help_message(capsys):
         '--config-file CONFIG_FILE',
         '--no-auto-continue',
         '--selected-repo SELECTED_REPO',
+        '--override-cli-mode OVERRIDE_CLI_MODE',
     ]
 
     for element in expected_elements:
         assert element in help_output, f"Expected '{element}' to be in the help message"
 
     option_count = help_output.count('  -')
-    assert option_count == 19, f'Expected 19 options, found {option_count}'
+    assert option_count == 20, f'Expected 20 options, found {option_count}'
 
 
 def test_selected_repo_format():

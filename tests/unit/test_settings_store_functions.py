@@ -1,3 +1,4 @@
+import os
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -28,6 +29,8 @@ async def get_settings_store(request):
 def test_client():
     # Create a test client
     with (
+        patch.dict(os.environ, {'SESSION_API_KEY': ''}, clear=False),
+        patch('openhands.server.dependencies._SESSION_API_KEY', None),
         patch(
             'openhands.server.routes.secrets.check_provider_tokens',
             AsyncMock(return_value=''),
@@ -60,13 +63,16 @@ async def test_check_provider_tokens_valid():
     provider_token = ProviderToken(token=SecretStr('valid-token'))
     providers = POSTProviderModel(provider_tokens={ProviderType.GITHUB: provider_token})
 
+    # Empty existing provider tokens
+    existing_provider_tokens = {}
+
     # Mock the validate_provider_token function to return GITHUB for valid tokens
     with patch(
         'openhands.server.routes.secrets.validate_provider_token'
     ) as mock_validate:
         mock_validate.return_value = ProviderType.GITHUB
 
-        result = await check_provider_tokens(providers)
+        result = await check_provider_tokens(providers, existing_provider_tokens)
 
         # Should return empty string for valid token
         assert result == ''
@@ -79,13 +85,16 @@ async def test_check_provider_tokens_invalid():
     provider_token = ProviderToken(token=SecretStr('invalid-token'))
     providers = POSTProviderModel(provider_tokens={ProviderType.GITHUB: provider_token})
 
+    # Empty existing provider tokens
+    existing_provider_tokens = {}
+
     # Mock the validate_provider_token function to return None for invalid tokens
     with patch(
         'openhands.server.routes.secrets.validate_provider_token'
     ) as mock_validate:
         mock_validate.return_value = None
 
-        result = await check_provider_tokens(providers)
+        result = await check_provider_tokens(providers, existing_provider_tokens)
 
         # Should return error message for invalid token
         assert 'Invalid token' in result
@@ -98,7 +107,11 @@ async def test_check_provider_tokens_wrong_type():
     # We can't test with an unsupported provider type directly since the model enforces valid types
     # Instead, we'll test with an empty provider_tokens dictionary
     providers = POSTProviderModel(provider_tokens={})
-    result = await check_provider_tokens(providers)
+
+    # Empty existing provider tokens
+    existing_provider_tokens = {}
+
+    result = await check_provider_tokens(providers, existing_provider_tokens)
 
     # Should return empty string for no providers
     assert result == ''
@@ -109,7 +122,10 @@ async def test_check_provider_tokens_no_tokens():
     """Test check_provider_tokens with no tokens."""
     providers = POSTProviderModel(provider_tokens={})
 
-    result = await check_provider_tokens(providers)
+    # Empty existing provider tokens
+    existing_provider_tokens = {}
+
+    result = await check_provider_tokens(providers, existing_provider_tokens)
 
     # Should return empty string when no tokens provided
     assert result == ''

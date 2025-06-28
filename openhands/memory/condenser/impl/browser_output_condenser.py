@@ -28,7 +28,7 @@ class BrowserOutputCondenser(Condenser):
             ):
                 results.append(
                     AgentCondensationObservation(
-                        f'Current URL: {event.url}\nContent Omitted'
+                        f'Visited URL {event.url}\nContent omitted'
                     )
                 )
             else:
@@ -42,7 +42,7 @@ class BrowserOutputCondenser(Condenser):
     def from_config(
         cls, config: BrowserOutputCondenserConfig
     ) -> BrowserOutputCondenser:
-        return BrowserOutputCondenser(**config.model_dump(exclude=['type']))
+        return BrowserOutputCondenser(**config.model_dump(exclude={'type'}))
 
 
 BrowserOutputCondenser.register_config(BrowserOutputCondenserConfig)

@@ -14,6 +14,7 @@ class RuntimeInfo:
     date: str
     available_hosts: dict[str, int] = field(default_factory=dict)
     additional_agent_instructions: str = ''
+    custom_secrets_descriptions: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -22,6 +23,20 @@ class RepositoryInfo:
 
     repo_name: str | None = None
     repo_directory: str | None = None
+
+
+@dataclass
+class ConversationInstructions:
+    """
+    Optional instructions the agent must follow throughout the conversation while addressing the user's initial task
+
+    Examples include
+
+        1. Resolver instructions: you're responding to GitHub issue #1234, make sure to open a PR when you are done
+        2. Slack instructions: make sure to check whether any of the context attached is relevant to the task <context_messages>
+    """
+
+    content: str = ''
 
 
 class PromptManager:
@@ -37,12 +52,32 @@ class PromptManager:
     def __init__(
         self,
         prompt_dir: str,
+        system_prompt_filename: str = 'system_prompt.j2',
     ):
         self.prompt_dir: str = prompt_dir
-        self.system_template: Template = self._load_template('system_prompt')
+        self.system_template: Template = self._load_system_template(
+            system_prompt_filename
+        )
         self.user_template: Template = self._load_template('user_prompt')
         self.additional_info_template: Template = self._load_template('additional_info')
         self.microagent_info_template: Template = self._load_template('microagent_info')
+
+    def _load_system_template(self, system_prompt_filename: str) -> Template:
+        """Load the system prompt template using the specified filename."""
+        # Remove .j2 extension if present to use with _load_template
+        template_name = system_prompt_filename
+        if template_name.endswith('.j2'):
+            template_name = template_name[:-3]
+
+        try:
+            return self._load_template(template_name)
+        except FileNotFoundError:
+            # Provide a more specific error message for system prompt files
+            template_path = os.path.join(self.prompt_dir, f'{template_name}.j2')
+            raise FileNotFoundError(
+                f'System prompt file "{system_prompt_filename}" not found at {template_path}. '
+                f'Please ensure the file exists in the prompt directory: {self.prompt_dir}'
+            )
 
     def _load_template(self, template_name: str) -> Template:
         if self.prompt_dir is None:
@@ -73,6 +108,7 @@ class PromptManager:
         self,
         repository_info: RepositoryInfo | None,
         runtime_info: RuntimeInfo | None,
+        conversation_instructions: ConversationInstructions | None,
         repo_instructions: str = '',
     ) -> str:
         """Renders the additional info template with the stored repository/runtime info."""
@@ -80,6 +116,7 @@ class PromptManager:
             repository_info=repository_info,
             repository_instructions=repo_instructions,
             runtime_info=runtime_info,
+            conversation_instructions=conversation_instructions,
         ).strip()
 
     def build_microagent_info(
@@ -110,5 +147,5 @@ class PromptManager:
             None,
         )
         if latest_user_message:
-            reminder_text = f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
+            reminder_text = f'\n\nENVIRONMENT REMINDER: You have {state.iteration_flag.max_value - state.iteration_flag.current_value} turns left to complete the task. When finished reply with <finish></finish>.'
             latest_user_message.content.append(TextContent(text=reminder_text))

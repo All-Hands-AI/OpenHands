@@ -9,8 +9,12 @@ import httpcore
 import httpx
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
-from openhands.core.config import AppConfig
-from openhands.core.config.mcp_config import MCPConfig, MCPSSEServerConfig
+from openhands.core.config import OpenHandsConfig
+from openhands.core.config.mcp_config import (
+    MCPConfig,
+    MCPSSEServerConfig,
+    MCPStdioServerConfig,
+)
 from openhands.core.exceptions import (
     AgentRuntimeTimeoutError,
 )
@@ -61,7 +65,7 @@ class ActionExecutionClient(Runtime):
 
     def __init__(
         self,
-        config: AppConfig,
+        config: OpenHandsConfig,
         event_stream: EventStream,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
@@ -74,9 +78,9 @@ class ActionExecutionClient(Runtime):
     ):
         self.session = HttpSession()
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
-        self._runtime_initialized: bool = False
         self._runtime_closed: bool = False
         self._vscode_token: str | None = None  # initial dummy value
+        self._last_updated_mcp_stdio_servers: list[MCPStdioServerConfig] = []
         super().__init__(
             config,
             event_stream,
@@ -93,10 +97,6 @@ class ActionExecutionClient(Runtime):
     @property
     def action_execution_server_url(self) -> str:
         raise NotImplementedError('Action execution server URL is not implemented')
-
-    @property
-    def runtime_initialized(self) -> bool:
-        return self._runtime_initialized
 
     @retry(
         retry=retry_if_exception(_is_retryable_error),
@@ -158,7 +158,6 @@ class ActionExecutionClient(Runtime):
 
     def copy_from(self, path: str) -> Path:
         """Zip all files in the sandbox and return as a stream of bytes."""
-
         try:
             params = {'path': path}
             with self.session.stream(
@@ -183,25 +182,44 @@ class ActionExecutionClient(Runtime):
         if not os.path.exists(host_src):
             raise FileNotFoundError(f'Source file {host_src} does not exist')
 
+        temp_zip_path: str | None = None  # Define temp_zip_path outside the try block
+
         try:
+            params = {'destination': sandbox_dest, 'recursive': str(recursive).lower()}
+            file_to_upload = None
+            upload_data = {}
+
             if recursive:
+                # Create and write the zip file inside the try block
                 with tempfile.NamedTemporaryFile(
                     suffix='.zip', delete=False
                 ) as temp_zip:
                     temp_zip_path = temp_zip.name
 
-                with ZipFile(temp_zip_path, 'w') as zipf:
-                    for root, _, files in os.walk(host_src):
-                        for file in files:
-                            file_path = os.path.join(root, file)
-                            arcname = os.path.relpath(
-                                file_path, os.path.dirname(host_src)
-                            )
-                            zipf.write(file_path, arcname)
+                try:
+                    with ZipFile(temp_zip_path, 'w') as zipf:
+                        for root, _, files in os.walk(host_src):
+                            for file in files:
+                                file_path = os.path.join(root, file)
+                                arcname = os.path.relpath(
+                                    file_path, os.path.dirname(host_src)
+                                )
+                                zipf.write(file_path, arcname)
 
-                upload_data = {'file': open(temp_zip_path, 'rb')}
+                    self.log(
+                        'debug',
+                        f'Opening temporary zip file for upload: {temp_zip_path}',
+                    )
+                    file_to_upload = open(temp_zip_path, 'rb')
+                    upload_data = {'file': file_to_upload}
+                except Exception as e:
+                    # Ensure temp file is cleaned up if zipping fails
+                    if temp_zip_path and os.path.exists(temp_zip_path):
+                        os.unlink(temp_zip_path)
+                    raise e  # Re-raise the exception after cleanup attempt
             else:
-                upload_data = {'file': open(host_src, 'rb')}
+                file_to_upload = open(host_src, 'rb')
+                upload_data = {'file': file_to_upload}
 
             params = {'destination': sandbox_dest, 'recursive': str(recursive).lower()}
 
@@ -217,11 +235,18 @@ class ActionExecutionClient(Runtime):
                 f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}. Response: {response.text}',
             )
         finally:
-            if recursive:
-                os.unlink(temp_zip_path)
-            self.log(
-                'debug', f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}'
-            )
+            if file_to_upload:
+                file_to_upload.close()
+
+            # Cleanup the temporary zip file if it was created
+            if temp_zip_path and os.path.exists(temp_zip_path):
+                try:
+                    os.unlink(temp_zip_path)
+                except Exception as e:
+                    self.log(
+                        'error',
+                        f'Failed to delete temporary zip file {temp_zip_path}: {e}',
+                    )
 
     def get_vscode_token(self) -> str:
         if self.vscode_enabled and self.runtime_initialized:
@@ -326,59 +351,126 @@ class ActionExecutionClient(Runtime):
     def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         return self.send_action_for_execution(action)
 
-    def get_updated_mcp_config(self) -> MCPConfig:
+    def get_mcp_config(
+        self, extra_stdio_servers: list[MCPStdioServerConfig] | None = None
+    ) -> MCPConfig:
+        import sys
+
+        # Check if we're on Windows - MCP is disabled on Windows
+        if sys.platform == 'win32':
+            # Return empty MCP config on Windows
+            self.log('debug', 'MCP is disabled on Windows, returning empty config')
+            return MCPConfig(sse_servers=[], stdio_servers=[])
+
         # Add the runtime as another MCP server
         updated_mcp_config = self.config.mcp.model_copy()
-        # Send a request to the action execution server to updated MCP config
-        stdio_tools = [
-            server.model_dump(mode='json')
-            for server in updated_mcp_config.stdio_servers
-        ]
-        self.log('debug', f'Updating MCP server to: {stdio_tools}')
-        response = self._send_action_server_request(
-            'POST',
-            f'{self.action_execution_server_url}/update_mcp_server',
-            json=stdio_tools,
-            timeout=10,
-        )
-        if response.status_code != 200:
-            raise RuntimeError(f'Failed to update MCP server: {response.text}')
 
-        # No API key by default. Child runtime can override this when appropriate
-        updated_mcp_config.sse_servers.append(
-            MCPSSEServerConfig(
-                url=self.action_execution_server_url.rstrip('/') + '/sse', api_key=None
-            )
+        # Get current stdio servers
+        current_stdio_servers: list[MCPStdioServerConfig] = list(
+            updated_mcp_config.stdio_servers
         )
+        if extra_stdio_servers:
+            current_stdio_servers.extend(extra_stdio_servers)
+
+        # Check if there are any new servers using the __eq__ operator
+        new_servers = [
+            server
+            for server in current_stdio_servers
+            if server not in self._last_updated_mcp_stdio_servers
+        ]
+
         self.log(
             'debug',
-            f'Updated MCP config by adding runtime as another server: {updated_mcp_config}',
+            f'adding {len(new_servers)} new stdio servers to MCP config: {new_servers}',
         )
+
+        # Only send update request if there are new servers
+        if new_servers:
+            # Use a union of current servers and last updated servers for the update
+            # This ensures we don't lose any servers that might be missing from either list
+            combined_servers = current_stdio_servers.copy()
+            for server in self._last_updated_mcp_stdio_servers:
+                if server not in combined_servers:
+                    combined_servers.append(server)
+
+            stdio_tools = [
+                server.model_dump(mode='json') for server in combined_servers
+            ]
+            stdio_tools.sort(key=lambda x: x.get('name', ''))  # Sort by server name
+
+            self.log(
+                'debug',
+                f'Updating MCP server with {len(new_servers)} new stdio servers (total: {len(combined_servers)})',
+            )
+            response = self._send_action_server_request(
+                'POST',
+                f'{self.action_execution_server_url}/update_mcp_server',
+                json=stdio_tools,
+                timeout=60,
+            )
+            result = response.json()
+            if response.status_code != 200:
+                self.log('warning', f'Failed to update MCP server: {response.text}')
+            else:
+                if result.get('router_error_log'):
+                    self.log(
+                        'warning',
+                        f'Some MCP servers failed to be added: {result["router_error_log"]}',
+                    )
+
+                # Update our cached list with combined servers after successful update
+                self._last_updated_mcp_stdio_servers = combined_servers.copy()
+                self.log(
+                    'debug',
+                    f'Successfully updated MCP stdio servers, now tracking {len(combined_servers)} servers',
+                )
+            self.log(
+                'info',
+                f'Updated MCP config: {updated_mcp_config.sse_servers}',
+            )
+        else:
+            self.log('debug', 'No new stdio servers to update')
+
+        if len(self._last_updated_mcp_stdio_servers) > 0:
+            # We should always include the runtime as an MCP server whenever there's > 0 stdio servers
+            updated_mcp_config.sse_servers.append(
+                MCPSSEServerConfig(
+                    url=self.action_execution_server_url.rstrip('/') + '/mcp/sse',
+                    api_key=self.session_api_key,
+                )
+            )
+
         return updated_mcp_config
 
     async def call_tool_mcp(self, action: MCPAction) -> Observation:
+        import sys
+
+        from openhands.events.observation import ErrorObservation
+
+        # Check if we're on Windows - MCP is disabled on Windows
+        if sys.platform == 'win32':
+            self.log('info', 'MCP functionality is disabled on Windows')
+            return ErrorObservation('MCP functionality is not available on Windows')
+
         # Import here to avoid circular imports
         from openhands.mcp.utils import call_tool_mcp as call_tool_mcp_handler
         from openhands.mcp.utils import create_mcp_clients
 
         # Get the updated MCP config
-        updated_mcp_config = self.get_updated_mcp_config()
+        updated_mcp_config = self.get_mcp_config()
         self.log(
             'debug',
             f'Creating MCP clients with servers: {updated_mcp_config.sse_servers}',
         )
 
         # Create clients for this specific operation
-        mcp_clients = await create_mcp_clients(updated_mcp_config.sse_servers)
+        mcp_clients = await create_mcp_clients(
+            updated_mcp_config.sse_servers, updated_mcp_config.shttp_servers, self.sid
+        )
 
         # Call the tool and return the result
         # No need for try/finally since disconnect() is now just resetting state
         result = await call_tool_mcp_handler(mcp_clients, action)
-
-        # Reset client state (no active connections to worry about)
-        for client in mcp_clients:
-            await client.disconnect()
-
         return result
 
     def close(self) -> None:

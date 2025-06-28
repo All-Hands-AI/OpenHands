@@ -22,7 +22,7 @@ from evaluation.utils.shared import (
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
-    AppConfig,
+    OpenHandsConfig,
     get_llm_config_arg,
     parse_arguments,
 )
@@ -55,12 +55,12 @@ FILE_EXT_MAP = {
 
 def get_config(
     metadata: EvalMetadata,
-) -> AppConfig:
+) -> OpenHandsConfig:
     BIOCODER_BENCH_CONTAINER_IMAGE = 'public.ecr.aws/i5g0m1f6/eval_biocoder:v1.0'
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = BIOCODER_BENCH_CONTAINER_IMAGE
 
-    config = AppConfig(
+    config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         runtime='docker',
@@ -84,7 +84,7 @@ def initialize_runtime(
 
     This function is called before the runtime is used to run the agent.
     """
-    logger.info(f"{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} BEGIN Runtime Initialization Fn {"-" * 50}')
     obs: CmdOutputObservation
 
     file_ext = FILE_EXT_MAP[instance.language.lower()]
@@ -128,7 +128,7 @@ def initialize_runtime(
     assert obs.exit_code == 0
 
     # download repository archive
-    repository_url = f"https://biocoder.lilbillbiscuit.com/repos/{instance.repository.split('/')[1]}.zip"
+    repository_url = f'https://biocoder.lilbillbiscuit.com/repos/{instance.repository.split("/")[1]}.zip'
     action = CmdRunAction(command='wget -O repo.zip ' + repository_url)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
@@ -160,7 +160,7 @@ def initialize_runtime(
     obs = runtime.run_action(action)
     assert obs.exit_code == 0, f'Failed to remove the code: {obs.content}'
 
-    logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} END Runtime Initialization Fn {"-" * 50}')
 
 
 def complete_runtime(
@@ -173,7 +173,7 @@ def complete_runtime(
     If you need to do something in the sandbox to get the correctness metric after
     the agent has run, modify this function.
     """
-    logger.info(f"{'-' * 50} BEGIN Runtime Completion Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} BEGIN Runtime Completion Fn {"-" * 50}')
     obs: CmdOutputObservation
 
     test_result = {'result': {}, 'metadata': {}}
@@ -233,7 +233,7 @@ def complete_runtime(
         test_result['metadata']['2_run_test_success'] = False
         test_result['metadata']['2_run_test_result'] = str(obs.content)
 
-    logger.info(f"{'-' * 50} END Runtime Completion Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} END Runtime Completion Fn {"-" * 50}')
     return test_result
 
 
@@ -258,7 +258,7 @@ def process_instance(
     instruction = (
         f'Please complete the function "{instance.signature}" in the file /workspace/{instance.repository.split("/")[1]}/{instance.filePath}.\n'
         f'The environment has been set up for you to start working. You may assume all necessary tools are installed.\n'
-        f'To complete the task, you must directly modify the file and fill in the function, keeping in mind that the function signature is on line {instance.lineStart-1}\n\n'
+        f'To complete the task, you must directly modify the file and fill in the function, keeping in mind that the function signature is on line {instance.lineStart - 1}\n\n'
         f'The function should do the following:\n'
         f'{instance.promptSummaryOnly}\n\n'
     )

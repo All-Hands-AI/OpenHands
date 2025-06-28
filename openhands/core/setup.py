@@ -1,7 +1,7 @@
 import hashlib
 import os
 import uuid
-from typing import Callable, Tuple, Type
+from typing import Callable
 
 from pydantic import SecretStr
 
@@ -10,7 +10,7 @@ from openhands.controller import AgentController
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import (
-    AppConfig,
+    OpenHandsConfig,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
@@ -28,7 +28,7 @@ from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
 
 
 def create_runtime(
-    config: AppConfig,
+    config: OpenHandsConfig,
     sid: str | None = None,
     headless_mode: bool = True,
     agent: Agent | None = None,
@@ -101,18 +101,18 @@ def initialize_repository_for_runtime(
     provider_tokens = {}
     if 'GITHUB_TOKEN' in os.environ:
         github_token = SecretStr(os.environ['GITHUB_TOKEN'])
-        provider_tokens[ProviderType.GITHUB] = ProviderToken(
-            token=SecretStr(github_token)
-        )
+        provider_tokens[ProviderType.GITHUB] = ProviderToken(token=github_token)
 
     if 'GITLAB_TOKEN' in os.environ:
         gitlab_token = SecretStr(os.environ['GITLAB_TOKEN'])
-        provider_tokens[ProviderType.GITLAB] = ProviderToken(
-            token=SecretStr(gitlab_token)
-        )
+        provider_tokens[ProviderType.GITLAB] = ProviderToken(token=gitlab_token)
+
+    if 'BITBUCKET_TOKEN' in os.environ:
+        bitbucket_token = SecretStr(os.environ['BITBUCKET_TOKEN'])
+        provider_tokens[ProviderType.BITBUCKET] = ProviderToken(token=bitbucket_token)
 
     secret_store = (
-        UserSecrets(provider_tokens=provider_tokens) if provider_tokens else None
+        UserSecrets(provider_tokens=provider_tokens) if provider_tokens else None  # type: ignore[arg-type]
     )
     immutable_provider_tokens = secret_store.provider_tokens if secret_store else None
 
@@ -126,6 +126,8 @@ def initialize_repository_for_runtime(
     )
     # Run setup script if it exists
     runtime.maybe_run_setup_script()
+    # Set up git hooks if pre-commit.sh exists
+    runtime.maybe_setup_git_hooks()
 
     return repo_directory
 
@@ -137,6 +139,7 @@ def create_memory(
     selected_repository: str | None = None,
     repo_directory: str | None = None,
     status_callback: Callable | None = None,
+    conversation_instructions: str | None = None,
 ) -> Memory:
     """Create a memory for the agent to use.
 
@@ -147,6 +150,7 @@ def create_memory(
         selected_repository: The repository to clone and start with, if any.
         repo_directory: The repository directory, if any.
         status_callback: Optional callback function to handle status updates.
+        conversation_instructions: Optional instructions that are passed to the agent
     """
     memory = Memory(
         event_stream=event_stream,
@@ -154,9 +158,11 @@ def create_memory(
         status_callback=status_callback,
     )
 
+    memory.set_conversation_instructions(conversation_instructions)
+
     if runtime:
         # sets available hosts
-        memory.set_runtime_info(runtime)
+        memory.set_runtime_info(runtime, {})
 
         # loads microagents from repo/.openhands/microagents
         microagents: list[BaseMicroagent] = runtime.get_microagents_from_selected_repo(
@@ -170,8 +176,8 @@ def create_memory(
     return memory
 
 
-def create_agent(config: AppConfig) -> Agent:
-    agent_cls: Type[Agent] = Agent.get_cls(config.default_agent)
+def create_agent(config: OpenHandsConfig) -> Agent:
+    agent_cls: type[Agent] = Agent.get_cls(config.default_agent)
     agent_config = config.get_agent_config(config.default_agent)
     llm_config = config.get_llm_config_from_agent(config.default_agent)
 
@@ -186,10 +192,10 @@ def create_agent(config: AppConfig) -> Agent:
 def create_controller(
     agent: Agent,
     runtime: Runtime,
-    config: AppConfig,
+    config: OpenHandsConfig,
     headless_mode: bool = True,
     replay_events: list[Event] | None = None,
-) -> Tuple[AgentController, State | None]:
+) -> tuple[AgentController, State | None]:
     event_stream = runtime.event_stream
     initial_state = None
     try:
@@ -204,8 +210,8 @@ def create_controller(
 
     controller = AgentController(
         agent=agent,
-        max_iterations=config.max_iterations,
-        max_budget_per_task=config.max_budget_per_task,
+        iteration_delta=config.max_iterations,
+        budget_per_task_delta=config.max_budget_per_task,
         agent_to_llm_config=config.get_agent_to_llm_config_map(),
         event_stream=event_stream,
         initial_state=initial_state,
@@ -216,7 +222,7 @@ def create_controller(
     return (controller, initial_state)
 
 
-def generate_sid(config: AppConfig, session_name: str | None = None) -> str:
+def generate_sid(config: OpenHandsConfig, session_name: str | None = None) -> str:
     """Generate a session id based on the session name and the jwt secret."""
     session_name = session_name or str(uuid.uuid4())
     jwt_secret = config.jwt_secret

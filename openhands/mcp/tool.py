@@ -1,6 +1,5 @@
-from typing import Dict
-
 from mcp.types import Tool
+from pydantic import ConfigDict
 
 
 class MCPClientTool(Tool):
@@ -11,10 +10,9 @@ class MCPClientTool(Tool):
     by the MCPClient for each operation.
     """
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    def to_param(self) -> Dict:
+    def to_param(self) -> dict:
         """Convert tool to function call format."""
         return {
             'type': 'function',

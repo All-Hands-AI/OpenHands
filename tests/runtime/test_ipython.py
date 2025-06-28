@@ -1,5 +1,7 @@
 """Test the DockerRuntime, which connects to the ActionExecutor running in the sandbox."""
 
+import os
+
 import pytest
 from conftest import (
     TEST_IN_CI,
@@ -27,6 +29,10 @@ from openhands.events.observation import (
 # ============================================================================================================================
 
 
+@pytest.mark.skipif(
+    os.environ.get('TEST_RUNTIME') == 'cli',
+    reason='CLIRuntime does not support full IPython/Jupyter kernel features or return IPythonRunCellObservation',
+)
 def test_simple_cmd_ipython_and_fileop(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
 
@@ -77,9 +83,9 @@ def test_simple_cmd_ipython_and_fileop(temp_dir, runtime_cls, run_as_openhands):
     action_read = FileReadAction(path='hello.sh')
     logger.info(action_read, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action_read)
-    assert isinstance(
-        obs, FileReadObservation
-    ), 'The observation should be a FileReadObservation.'
+    assert isinstance(obs, FileReadObservation), (
+        'The observation should be a FileReadObservation.'
+    )
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
     assert obs.content == 'echo "Hello, World!"\n'
@@ -98,6 +104,10 @@ def test_simple_cmd_ipython_and_fileop(temp_dir, runtime_cls, run_as_openhands):
 @pytest.mark.skipif(
     TEST_IN_CI != 'True',
     reason='This test is not working in WSL (file ownership)',
+)
+@pytest.mark.skipif(
+    os.environ.get('TEST_RUNTIME') == 'cli',
+    reason='CLIRuntime does not support full IPython/Jupyter kernel features or return IPythonRunCellObservation',
 )
 def test_ipython_multi_user(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
@@ -171,6 +181,10 @@ def test_ipython_multi_user(temp_dir, runtime_cls, run_as_openhands):
     _close_test_runtime(runtime)
 
 
+@pytest.mark.skipif(
+    os.environ.get('TEST_RUNTIME') == 'cli',
+    reason='CLIRuntime does not support full IPython/Jupyter kernel features or return IPythonRunCellObservation',
+)
 def test_ipython_simple(temp_dir, runtime_cls):
     runtime, config = _load_runtime(temp_dir, runtime_cls)
 
@@ -194,6 +208,60 @@ def test_ipython_simple(temp_dir, runtime_cls):
     _close_test_runtime(runtime)
 
 
+@pytest.mark.skipif(
+    os.environ.get('TEST_RUNTIME') == 'cli',
+    reason='CLIRuntime does not support full IPython/Jupyter kernel features or return IPythonRunCellObservation',
+)
+def test_ipython_chdir(temp_dir, runtime_cls):
+    """Test that os.chdir correctly handles paths with slashes."""
+    runtime, config = _load_runtime(temp_dir, runtime_cls)
+
+    # Create a test directory and get its absolute path
+    test_code = """
+import os
+os.makedirs('test_dir', exist_ok=True)
+abs_path = os.path.abspath('test_dir')
+print(abs_path)
+"""
+    action_ipython = IPythonRunCellAction(code=test_code)
+    logger.info(action_ipython, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action_ipython)
+    assert isinstance(obs, IPythonRunCellObservation)
+    test_dir_path = obs.content.split('\n')[0].strip()
+    logger.info(f'test_dir_path: {test_dir_path}')
+    assert test_dir_path  # Verify we got a valid path
+
+    # Change to the test directory using its absolute path
+    test_code = f"""
+import os
+os.chdir(r'{test_dir_path}')
+print(os.getcwd())
+"""
+    action_ipython = IPythonRunCellAction(code=test_code)
+    logger.info(action_ipython, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action_ipython)
+    assert isinstance(obs, IPythonRunCellObservation)
+    current_dir = obs.content.split('\n')[0].strip()
+    assert current_dir == test_dir_path  # Verify we changed to the correct directory
+
+    # Clean up
+    test_code = """
+import os
+import shutil
+shutil.rmtree('test_dir', ignore_errors=True)
+"""
+    action_ipython = IPythonRunCellAction(code=test_code)
+    logger.info(action_ipython, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action_ipython)
+    assert isinstance(obs, IPythonRunCellObservation)
+
+    _close_test_runtime(runtime)
+
+
+@pytest.mark.skipif(
+    os.environ.get('TEST_RUNTIME') == 'cli',
+    reason='CLIRuntime does not support IPython magics like %pip or return IPythonRunCellObservation',
+)
 def test_ipython_package_install(temp_dir, runtime_cls, run_as_openhands):
     """Make sure that cd in bash also update the current working directory in ipython."""
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
@@ -229,6 +297,10 @@ def test_ipython_package_install(temp_dir, runtime_cls, run_as_openhands):
     _close_test_runtime(runtime)
 
 
+@pytest.mark.skipif(
+    os.environ.get('TEST_RUNTIME') == 'cli',
+    reason='CLIRuntime does not support sudo with password prompts if the user has not enabled passwordless sudo',
+)
 def test_ipython_file_editor_permissions_as_openhands(temp_dir, runtime_cls):
     """Test file editor permission behavior when running as different users."""
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands=True)

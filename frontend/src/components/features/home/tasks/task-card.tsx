@@ -6,6 +6,7 @@ import { cn } from "#/utils/utils";
 import { useUserRepositories } from "#/hooks/query/use-user-repositories";
 import { TaskIssueNumber } from "./task-issue-number";
 import { Provider } from "#/types/settings";
+import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
 
 const getTaskTypeMap = (
   t: (key: string) => string,
@@ -21,6 +22,7 @@ interface TaskCardProps {
 }
 
 export function TaskCard({ task }: TaskCardProps) {
+  const { setOptimisticUserMessage } = useOptimisticUserMessage();
   const { data: repositories } = useUserRepositories();
   const { mutate: createConversation, isPending } = useCreateConversation();
   const isCreatingConversation = useIsCreatingConversation();
@@ -38,9 +40,9 @@ export function TaskCard({ task }: TaskCardProps) {
 
   const handleLaunchConversation = () => {
     const repo = getRepo(task.repo, task.git_provider);
+    setOptimisticUserMessage(t("TASK$ADDRESSING_TASK"));
 
     return createConversation({
-      conversation_trigger: "suggested_task",
       selectedRepository: repo,
       suggested_task: task,
     });
@@ -52,6 +54,10 @@ export function TaskCard({ task }: TaskCardProps) {
     const issueType =
       task.task_type === "OPEN_ISSUE" ? "issues" : "merge_requests";
     href = `https://gitlab.com/${task.repo}/-/${issueType}/${task.issue_number}`;
+  } else if (task.git_provider === "bitbucket") {
+    const issueType =
+      task.task_type === "OPEN_ISSUE" ? "issues" : "pull-requests";
+    href = `https://bitbucket.org/${task.repo}/${issueType}/${task.issue_number}`;
   } else {
     const hrefType = task.task_type === "OPEN_ISSUE" ? "issues" : "pull";
     href = `https://github.com/${task.repo}/${hrefType}/${task.issue_number}`;

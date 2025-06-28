@@ -23,6 +23,7 @@ import { isCustomModel } from "#/utils/is-custom-model";
 import { LlmSettingsInputsSkeleton } from "#/components/features/settings/llm-settings/llm-settings-inputs-skeleton";
 import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
 import { DEFAULT_SETTINGS } from "#/services/settings";
+import { getProviderId } from "#/utils/map-provider";
 
 function LlmSettingsScreen() {
   const { t } = useTranslation();
@@ -40,6 +41,7 @@ function LlmSettingsScreen() {
   const [dirtyInputs, setDirtyInputs] = React.useState({
     model: false,
     apiKey: false,
+    searchApiKey: false,
     baseUrl: false,
     agent: false,
     confirmationMode: false,
@@ -77,6 +79,7 @@ function LlmSettingsScreen() {
     setDirtyInputs({
       model: false,
       apiKey: false,
+      searchApiKey: false,
       baseUrl: false,
       agent: false,
       confirmationMode: false,
@@ -91,17 +94,21 @@ function LlmSettingsScreen() {
   };
 
   const basicFormAction = (formData: FormData) => {
-    const provider = formData.get("llm-provider-input")?.toString();
+    const providerDisplay = formData.get("llm-provider-input")?.toString();
+    const provider = providerDisplay
+      ? getProviderId(providerDisplay)
+      : undefined;
     const model = formData.get("llm-model-input")?.toString();
     const apiKey = formData.get("llm-api-key-input")?.toString();
+    const searchApiKey = formData.get("search-api-key-input")?.toString();
 
-    const fullLlmModel =
-      provider && model && `${provider}/${model}`.toLowerCase();
+    const fullLlmModel = provider && model && `${provider}/${model}`;
 
     saveSettings(
       {
         LLM_MODEL: fullLlmModel,
         llm_api_key: apiKey || null,
+        SEARCH_API_KEY: searchApiKey || "",
 
         // reset advanced settings
         LLM_BASE_URL: DEFAULT_SETTINGS.LLM_BASE_URL,
@@ -121,6 +128,7 @@ function LlmSettingsScreen() {
     const model = formData.get("llm-custom-model-input")?.toString();
     const baseUrl = formData.get("base-url-input")?.toString();
     const apiKey = formData.get("llm-api-key-input")?.toString();
+    const searchApiKey = formData.get("search-api-key-input")?.toString();
     const agent = formData.get("agent-input")?.toString();
     const confirmationMode =
       formData.get("enable-confirmation-mode-switch")?.toString() === "on";
@@ -135,6 +143,7 @@ function LlmSettingsScreen() {
         LLM_MODEL: model,
         LLM_BASE_URL: baseUrl,
         llm_api_key: apiKey || null,
+        SEARCH_API_KEY: searchApiKey || "",
         AGENT: agent,
         CONFIRMATION_MODE: confirmationMode,
         ENABLE_DEFAULT_CONDENSER: enableDefaultCondenser,
@@ -158,6 +167,7 @@ function LlmSettingsScreen() {
     setDirtyInputs({
       model: false,
       apiKey: false,
+      searchApiKey: false,
       baseUrl: false,
       agent: false,
       confirmationMode: false,
@@ -181,6 +191,14 @@ function LlmSettingsScreen() {
     setDirtyInputs((prev) => ({
       ...prev,
       apiKey: apiKeyIsDirty,
+    }));
+  };
+
+  const handleSearchApiKeyIsDirty = (searchApiKey: string) => {
+    const searchApiKeyIsDirty = searchApiKey !== settings?.SEARCH_API_KEY;
+    setDirtyInputs((prev) => ({
+      ...prev,
+      searchApiKey: searchApiKeyIsDirty,
     }));
   };
 
@@ -264,7 +282,7 @@ function LlmSettingsScreen() {
                 <ModelSelector
                   models={modelsAndProviders}
                   currentModel={
-                    settings.LLM_MODEL || "anthropic/claude-3-5-sonnet-20241022"
+                    settings.LLM_MODEL || "anthropic/claude-sonnet-4-20250514"
                   }
                   onChange={handleModelIsDirty}
                 />
@@ -275,7 +293,7 @@ function LlmSettingsScreen() {
                 name="llm-api-key-input"
                 label={t(I18nKey.SETTINGS_FORM$API_KEY)}
                 type="password"
-                className="w-[680px]"
+                className="w-full max-w-[680px]"
                 placeholder={settings.LLM_API_KEY_SET ? "<hidden>" : ""}
                 onChange={handleApiKeyIsDirty}
                 startContent={
@@ -289,7 +307,30 @@ function LlmSettingsScreen() {
                 testId="llm-api-key-help-anchor"
                 text={t(I18nKey.SETTINGS$DONT_KNOW_API_KEY)}
                 linkText={t(I18nKey.SETTINGS$CLICK_FOR_INSTRUCTIONS)}
-                href="https://docs.all-hands.dev/modules/usage/installation#getting-an-api-key"
+                href="https://docs.all-hands.dev/usage/local-setup#getting-an-api-key"
+              />
+
+              <SettingsInput
+                testId="search-api-key-input"
+                name="search-api-key-input"
+                label={t(I18nKey.SETTINGS$SEARCH_API_KEY)}
+                type="password"
+                className="w-full max-w-[680px]"
+                defaultValue={settings.SEARCH_API_KEY || ""}
+                onChange={handleSearchApiKeyIsDirty}
+                placeholder={t(I18nKey.API$TAVILY_KEY_EXAMPLE)}
+                startContent={
+                  settings.SEARCH_API_KEY_SET && (
+                    <KeyStatusIcon isSet={settings.SEARCH_API_KEY_SET} />
+                  )
+                }
+              />
+
+              <HelpLink
+                testId="search-api-key-help-anchor"
+                text={t(I18nKey.SETTINGS$SEARCH_API_KEY_OPTIONAL)}
+                linkText={t(I18nKey.SETTINGS$SEARCH_API_KEY_INSTRUCTIONS)}
+                href="https://tavily.com/"
               />
             </div>
           )}
@@ -304,11 +345,11 @@ function LlmSettingsScreen() {
                 name="llm-custom-model-input"
                 label={t(I18nKey.SETTINGS$CUSTOM_MODEL)}
                 defaultValue={
-                  settings.LLM_MODEL || "anthropic/claude-3-5-sonnet-20241022"
+                  settings.LLM_MODEL || "anthropic/claude-sonnet-4-20250514"
                 }
-                placeholder="anthropic/claude-3-5-sonnet-20241022"
+                placeholder="anthropic/claude-sonnet-4-20250514"
                 type="text"
-                className="w-[680px]"
+                className="w-full max-w-[680px]"
                 onChange={handleCustomModelIsDirty}
               />
 
@@ -319,7 +360,7 @@ function LlmSettingsScreen() {
                 defaultValue={settings.LLM_BASE_URL}
                 placeholder="https://api.openai.com"
                 type="text"
-                className="w-[680px]"
+                className="w-full max-w-[680px]"
                 onChange={handleBaseUrlIsDirty}
               />
 
@@ -328,7 +369,7 @@ function LlmSettingsScreen() {
                 name="llm-api-key-input"
                 label={t(I18nKey.SETTINGS_FORM$API_KEY)}
                 type="password"
-                className="w-[680px]"
+                className="w-full max-w-[680px]"
                 placeholder={settings.LLM_API_KEY_SET ? "<hidden>" : ""}
                 onChange={handleApiKeyIsDirty}
                 startContent={
@@ -338,10 +379,33 @@ function LlmSettingsScreen() {
                 }
               />
               <HelpLink
-                testId="llm-api-key-help-anchor"
+                testId="llm-api-key-help-anchor-advanced"
                 text={t(I18nKey.SETTINGS$DONT_KNOW_API_KEY)}
                 linkText={t(I18nKey.SETTINGS$CLICK_FOR_INSTRUCTIONS)}
-                href="https://docs.all-hands.dev/modules/usage/installation#getting-an-api-key"
+                href="https://docs.all-hands.dev/usage/local-setup#getting-an-api-key"
+              />
+
+              <SettingsInput
+                testId="search-api-key-input"
+                name="search-api-key-input"
+                label={t(I18nKey.SETTINGS$SEARCH_API_KEY)}
+                type="password"
+                className="w-full max-w-[680px]"
+                defaultValue={settings.SEARCH_API_KEY || ""}
+                onChange={handleSearchApiKeyIsDirty}
+                placeholder={t(I18nKey.API$TVLY_KEY_EXAMPLE)}
+                startContent={
+                  settings.SEARCH_API_KEY_SET && (
+                    <KeyStatusIcon isSet={settings.SEARCH_API_KEY_SET} />
+                  )
+                }
+              />
+
+              <HelpLink
+                testId="search-api-key-help-anchor"
+                text={t(I18nKey.SETTINGS$SEARCH_API_KEY_OPTIONAL)}
+                linkText={t(I18nKey.SETTINGS$SEARCH_API_KEY_INSTRUCTIONS)}
+                href="https://tavily.com/"
               />
 
               <SettingsDropdownInput
@@ -357,7 +421,7 @@ function LlmSettingsScreen() {
                 defaultSelectedKey={settings.AGENT}
                 isClearable={false}
                 onInputChange={handleAgentIsDirty}
-                wrapperClassName="w-[680px]"
+                wrapperClassName="w-full max-w-[680px]"
               />
 
               {config?.APP_MODE === "saas" && (
@@ -370,11 +434,11 @@ function LlmSettingsScreen() {
                       <a href="mailto:contact@all-hands.dev">
                         {t(I18nKey.SETTINGS$GET_IN_TOUCH)}
                       </a>
-                      )
                     </>
                   }
                   items={[]}
                   isDisabled
+                  wrapperClassName="w-full max-w-[680px]"
                 />
               )}
 
@@ -408,11 +472,14 @@ function LlmSettingsScreen() {
                       label: analyzer,
                     })) || []
                   }
+                  placeholder={t(
+                    I18nKey.SETTINGS$SECURITY_ANALYZER_PLACEHOLDER,
+                  )}
                   defaultSelectedKey={settings.SECURITY_ANALYZER}
                   isClearable
                   showOptionalTag
                   onInputChange={handleSecurityAnalyzerIsDirty}
-                  wrapperClassName="w-[680px]"
+                  wrapperClassName="w-full max-w-[680px]"
                 />
               )}
             </div>

@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
-from openhands.core.config.app_config import AppConfig
+from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.storage import get_file_store
 from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.files import FileStore
@@ -20,6 +20,12 @@ class FileSecretsStore(SecretsStore):
         try:
             json_str = await call_sync_from_async(self.file_store.read, self.path)
             kwargs = json.loads(json_str)
+            provider_tokens = {
+                k: v
+                for k, v in (kwargs.get('provider_tokens') or {}).items()
+                if v.get('token')
+            }
+            kwargs['provider_tokens'] = provider_tokens
             secrets = UserSecrets(**kwargs)
             return secrets
         except FileNotFoundError:
@@ -31,7 +37,12 @@ class FileSecretsStore(SecretsStore):
 
     @classmethod
     async def get_instance(
-        cls, config: AppConfig, user_id: str | None
+        cls, config: OpenHandsConfig, user_id: str | None
     ) -> FileSecretsStore:
-        file_store = get_file_store(config.file_store, config.file_store_path)
+        file_store = file_store = get_file_store(
+            config.file_store,
+            config.file_store_path,
+            config.file_store_web_hook_url,
+            config.file_store_web_hook_headers,
+        )
         return FileSecretsStore(file_store)

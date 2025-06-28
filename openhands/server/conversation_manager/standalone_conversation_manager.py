@@ -2,27 +2,32 @@ import asyncio
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Callable, Iterable, Type
+from typing import Callable, Iterable
 
 import socketio
 
-from openhands.core.config.app_config import AppConfig
+from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import MessageAction
-from openhands.events.event_store import EventStore
 from openhands.events.stream import EventStreamSubscriber, session_exists
 from openhands.server.config.server_config import ServerConfig
+from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.monitoring import MonitoringListener
-from openhands.server.session.agent_session import WAIT_TIME_BEFORE_CLOSE
-from openhands.server.session.conversation import Conversation
+from openhands.server.session.agent_session import WAIT_TIME_BEFORE_CLOSE, AgentSession
+from openhands.server.session.conversation import ServerConversation
 from openhands.server.session.session import ROOM_KEY, Session
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
+from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync, wait_all
+from openhands.utils.conversation_summary import (
+    auto_generate_title,
+    get_default_conversation_title,
+)
 from openhands.utils.import_utils import get_impl
 from openhands.utils.shutdown_listener import should_continue
 
@@ -34,25 +39,28 @@ UPDATED_AT_CALLBACK_ID = 'updated_at_callback_id'
 
 @dataclass
 class StandaloneConversationManager(ConversationManager):
-    """Manages conversations in standalone mode (single server instance)."""
+    """Default implementation of ConversationManager for single-server deployments.
+
+    See ConversationManager for extensibility details.
+    """
 
     sio: socketio.AsyncServer
-    config: AppConfig
+    config: OpenHandsConfig
     file_store: FileStore
     server_config: ServerConfig
     # Defaulting monitoring_listener for temp backward compatibility.
     monitoring_listener: MonitoringListener = MonitoringListener()
     _local_agent_loops_by_sid: dict[str, Session] = field(default_factory=dict)
     _local_connection_id_to_session_id: dict[str, str] = field(default_factory=dict)
-    _active_conversations: dict[str, tuple[Conversation, int]] = field(
+    _active_conversations: dict[str, tuple[ServerConversation, int]] = field(
         default_factory=dict
     )
-    _detached_conversations: dict[str, tuple[Conversation, float]] = field(
+    _detached_conversations: dict[str, tuple[ServerConversation, float]] = field(
         default_factory=dict
     )
     _conversations_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     _cleanup_task: asyncio.Task | None = None
-    _conversation_store_class: Type | None = None
+    _conversation_store_class: type[ConversationStore] | None = None
 
     async def __aenter__(self):
         self._cleanup_task = asyncio.create_task(self._cleanup_stale())
@@ -65,7 +73,7 @@ class StandaloneConversationManager(ConversationManager):
 
     async def attach_to_conversation(
         self, sid: str, user_id: str | None = None
-    ) -> Conversation | None:
+    ) -> ServerConversation | None:
         start_time = time.time()
         if not await session_exists(sid, self.file_store, user_id=user_id):
             return None
@@ -90,7 +98,7 @@ class StandaloneConversationManager(ConversationManager):
                 return conversation
 
             # Create new conversation if none exists
-            c = Conversation(
+            c = ServerConversation(
                 sid, file_store=self.file_store, config=self.config, user_id=user_id
             )
             try:
@@ -104,7 +112,8 @@ class StandaloneConversationManager(ConversationManager):
                 return None
             end_time = time.time()
             logger.info(
-                f'Conversation {c.sid} connected in {end_time - start_time} seconds'
+                f'ServerConversation {c.sid} connected in {end_time - start_time} seconds',
+                extra={'session_id': sid},
             )
             self._active_conversations[sid] = (c, 1)
             return c
@@ -115,26 +124,17 @@ class StandaloneConversationManager(ConversationManager):
         connection_id: str,
         settings: Settings,
         user_id: str | None,
-        github_user_id: str | None,
-    ) -> EventStore:
+    ) -> AgentLoopInfo:
         logger.info(
             f'join_conversation:{sid}:{connection_id}',
             extra={'session_id': sid, 'user_id': user_id},
         )
         await self.sio.enter_room(connection_id, ROOM_KEY.format(sid=sid))
         self._local_connection_id_to_session_id[connection_id] = sid
-        event_stream = await self.maybe_start_agent_loop(
-            sid, settings, user_id, github_user_id=github_user_id
-        )
-        if not event_stream:
-            logger.error(
-                f'No event stream after joining conversation: {sid}',
-                extra={'session_id': sid},
-            )
-            raise RuntimeError(f'no_event_stream:{sid}')
-        return event_stream
+        agent_loop_info = await self.maybe_start_agent_loop(sid, settings, user_id)
+        return agent_loop_info
 
-    async def detach_from_conversation(self, conversation: Conversation):
+    async def detach_from_conversation(self, conversation: ServerConversation):
         sid = conversation.sid
         async with self._conversations_lock:
             if sid in self._active_conversations:
@@ -155,6 +155,10 @@ class StandaloneConversationManager(ConversationManager):
                     for sid, (conversation, detach_time) in items:
                         await conversation.disconnect()
                         self._detached_conversations.pop(sid, None)
+
+                # Implies disconnected sandboxes stay open indefinitely
+                if not self.config.sandbox.close_delay:
+                    return
 
                 close_threshold = time.time() - self.config.sandbox.close_delay
                 running_loops = list(self._local_agent_loops_by_sid.items())
@@ -193,13 +197,11 @@ class StandaloneConversationManager(ConversationManager):
                 logger.error('error_cleaning_stale')
                 await asyncio.sleep(_CLEANUP_INTERVAL)
 
-    async def _get_conversation_store(
-        self, user_id: str | None, github_user_id: str | None
-    ) -> ConversationStore:
+    async def _get_conversation_store(self, user_id: str | None) -> ConversationStore:
         conversation_store_class = self._conversation_store_class
         if not conversation_store_class:
             self._conversation_store_class = conversation_store_class = get_impl(
-                ConversationStore,  # type: ignore
+                ConversationStore,
                 self.server_config.conversation_store_class,
             )
         store = await conversation_store_class.get_instance(self.config, user_id)
@@ -252,22 +254,14 @@ class StandaloneConversationManager(ConversationManager):
         user_id: str | None,
         initial_user_msg: MessageAction | None = None,
         replay_json: str | None = None,
-        github_user_id: str | None = None,
-    ) -> EventStore:
+    ) -> AgentLoopInfo:
         logger.info(f'maybe_start_agent_loop:{sid}', extra={'session_id': sid})
-        if not await self.is_agent_loop_running(sid):
-            await self._start_agent_loop(
-                sid, settings, user_id, initial_user_msg, replay_json, github_user_id
+        session = self._local_agent_loops_by_sid.get(sid)
+        if not session:
+            session = await self._start_agent_loop(
+                sid, settings, user_id, initial_user_msg, replay_json
             )
-
-        event_store = await self._get_event_store(sid, user_id)
-        if not event_store:
-            logger.error(
-                f'No event stream after starting agent loop: {sid}',
-                extra={'session_id': sid},
-            )
-            raise RuntimeError(f'no_event_stream:{sid}')
-        return event_store
+        return self._agent_loop_info_from_session(session)
 
     async def _start_agent_loop(
         self,
@@ -276,27 +270,24 @@ class StandaloneConversationManager(ConversationManager):
         user_id: str | None,
         initial_user_msg: MessageAction | None = None,
         replay_json: str | None = None,
-        github_user_id: str | None = None,
     ) -> Session:
         logger.info(f'starting_agent_loop:{sid}', extra={'session_id': sid})
 
         response_ids = await self.get_running_agent_loops(user_id)
         if len(response_ids) >= self.config.max_concurrent_conversations:
             logger.info(
-                f'too_many_sessions_for:{user_id or ''}',
+                f'too_many_sessions_for:{user_id or ""}',
                 extra={'session_id': sid, 'user_id': user_id},
             )
             # Get the conversations sorted (oldest first)
-            conversation_store = await self._get_conversation_store(
-                user_id, github_user_id
-            )
+            conversation_store = await self._get_conversation_store(user_id)
             conversations = await conversation_store.get_all_metadata(response_ids)
             conversations.sort(key=_last_updated_at_key, reverse=True)
 
             while len(conversations) >= self.config.max_concurrent_conversations:
                 oldest_conversation_id = conversations.pop().conversation_id
                 logger.debug(
-                    f'closing_from_too_many_sessions:{user_id or ''}:{oldest_conversation_id}',
+                    f'closing_from_too_many_sessions:{user_id or ""}:{oldest_conversation_id}',
                     extra={'session_id': oldest_conversation_id, 'user_id': user_id},
                 )
                 # Send status message to client and close session.
@@ -328,41 +319,25 @@ class StandaloneConversationManager(ConversationManager):
         try:
             session.agent_session.event_stream.subscribe(
                 EventStreamSubscriber.SERVER,
-                self._create_conversation_update_callback(user_id, github_user_id, sid),
+                self._create_conversation_update_callback(user_id, sid, settings),
                 UPDATED_AT_CALLBACK_ID,
             )
         except ValueError:
             pass  # Already subscribed - take no action
         return session
 
-    async def _get_event_store(
-        self, sid: str, user_id: str | None
-    ) -> EventStore | None:
-        logger.info(f'_get_event_store:{sid}', extra={'session_id': sid})
-        session = self._local_agent_loops_by_sid.get(sid)
-        if session:
-            logger.info(f'found_local_agent_loop:{sid}', extra={'session_id': sid})
-            event_stream = session.agent_session.event_stream
-            return EventStore(
-                event_stream.sid,
-                event_stream.file_store,
-                event_stream.user_id,
-                event_stream.cur_id,
-            )
-        return None
-
     async def send_to_event_stream(self, connection_id: str, data: dict):
         # If there is a local session running, send to that
         sid = self._local_connection_id_to_session_id.get(connection_id)
         if not sid:
             raise RuntimeError(f'no_connected_session:{connection_id}')
+        await self.send_event_to_conversation(sid, data)
 
+    async def send_event_to_conversation(self, sid: str, data: dict):
         session = self._local_agent_loops_by_sid.get(sid)
-        if session:
-            await session.dispatch(data)
-            return
-
-        raise RuntimeError(f'no_connected_session:{connection_id}:{sid}')
+        if not session:
+            raise RuntimeError(f'no_conversation:{sid}')
+        await session.dispatch(data)
 
     async def disconnect_from_session(self, connection_id: str):
         sid = self._local_connection_id_to_session_id.pop(connection_id, None)
@@ -382,6 +357,20 @@ class StandaloneConversationManager(ConversationManager):
         if session:
             await self._close_session(sid)
 
+    def get_agent_session(self, sid: str) -> AgentSession | None:
+        """Get the agent session for a given session ID.
+
+        Args:
+            sid: The session ID.
+
+        Returns:
+            The agent session, or None if not found.
+        """
+        session = self._local_agent_loops_by_sid.get(sid)
+        if session:
+            return session.agent_session
+        return None
+
     async def _close_session(self, sid: str):
         logger.info(f'_close_session:{sid}', extra={'session_id': sid})
 
@@ -395,7 +384,9 @@ class StandaloneConversationManager(ConversationManager):
             f'removing connections: {connection_ids_to_remove}',
             extra={'session_id': sid},
         )
+        # Perform a graceful shutdown of each connection
         for connection_id in connection_ids_to_remove:
+            await self.sio.disconnect(connection_id)
             self._local_connection_id_to_session_id.pop(connection_id, None)
 
         session = self._local_agent_loops_by_sid.pop(sid, None)
@@ -411,7 +402,7 @@ class StandaloneConversationManager(ConversationManager):
     def get_instance(
         cls,
         sio: socketio.AsyncServer,
-        config: AppConfig,
+        config: OpenHandsConfig,
         file_store: FileStore,
         server_config: ServerConfig,
         monitoring_listener: MonitoringListener | None,
@@ -425,24 +416,31 @@ class StandaloneConversationManager(ConversationManager):
         )
 
     def _create_conversation_update_callback(
-        self, user_id: str | None, github_user_id: str | None, conversation_id: str
+        self,
+        user_id: str | None,
+        conversation_id: str,
+        settings: Settings,
     ) -> Callable:
         def callback(event, *args, **kwargs):
             call_async_from_sync(
                 self._update_conversation_for_event,
                 GENERAL_TIMEOUT,
                 user_id,
-                github_user_id,
                 conversation_id,
+                settings,
                 event,
             )
 
         return callback
 
     async def _update_conversation_for_event(
-        self, user_id: str, github_user_id: str, conversation_id: str, event=None
+        self,
+        user_id: str,
+        conversation_id: str,
+        settings: Settings,
+        event=None,
     ):
-        conversation_store = await self._get_conversation_store(user_id, github_user_id)
+        conversation_store = await self._get_conversation_store(user_id)
         conversation = await conversation_store.get_metadata(conversation_id)
         conversation.last_updated_at = datetime.now(timezone.utc)
 
@@ -462,8 +460,68 @@ class StandaloneConversationManager(ConversationManager):
                 conversation.total_tokens = (
                     token_usage.prompt_tokens + token_usage.completion_tokens
                 )
+        default_title = get_default_conversation_title(conversation_id)
+        if (
+            conversation.title == default_title
+        ):  # attempt to autogenerate if default title is in use
+            title = await auto_generate_title(
+                conversation_id, user_id, self.file_store, settings
+            )
+            if title and not title.isspace():
+                conversation.title = title
+                try:
+                    # Emit a status update to the client with the new title
+                    status_update_dict = {
+                        'status_update': True,
+                        'type': 'info',
+                        'message': conversation_id,
+                        'conversation_title': conversation.title,
+                    }
+                    await self.sio.emit(
+                        'oh_event',
+                        status_update_dict,
+                        to=ROOM_KEY.format(sid=conversation_id),
+                    )
+                except Exception as e:
+                    logger.error(f'Error emitting title update event: {e}')
+            else:
+                conversation.title = default_title
 
         await conversation_store.save_metadata(conversation)
+
+    async def get_agent_loop_info(
+        self, user_id: str | None = None, filter_to_sids: set[str] | None = None
+    ):
+        results = []
+        for session in self._local_agent_loops_by_sid.values():
+            if user_id and session.user_id != user_id:
+                continue
+            if filter_to_sids and session.sid not in filter_to_sids:
+                continue
+            results.append(self._agent_loop_info_from_session(session))
+        return results
+
+    def _agent_loop_info_from_session(self, session: Session):
+        return AgentLoopInfo(
+            conversation_id=session.sid,
+            url=self._get_conversation_url(session.sid),
+            session_api_key=None,
+            event_store=session.agent_session.event_stream,
+            status=_get_status_from_session(session),
+            runtime_status=getattr(
+                session.agent_session.runtime, 'runtime_status', None
+            ),
+        )
+
+    def _get_conversation_url(self, conversation_id: str):
+        return f'/api/conversations/{conversation_id}'
+
+
+def _get_status_from_session(session: Session) -> ConversationStatus:
+    agent_session = session.agent_session
+    if agent_session.runtime and agent_session.runtime.runtime_initialized:
+        return ConversationStatus.RUNNING
+    return ConversationStatus.STARTING
 
 
 def _last_updated_at_key(conversation: ConversationMetadata) -> float:

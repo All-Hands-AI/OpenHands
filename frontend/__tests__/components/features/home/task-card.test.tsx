@@ -7,7 +7,6 @@ import { createRoutesStub } from "react-router";
 import { setupStore } from "test-utils";
 import { SuggestedTask } from "#/components/features/home/tasks/task.types";
 import OpenHands from "#/api/open-hands";
-import { AuthProvider } from "#/context/auth-context";
 import { TaskCard } from "#/components/features/home/tasks/task-card";
 import { GitRepository } from "#/types/git";
 
@@ -20,10 +19,10 @@ const MOCK_TASK_1: SuggestedTask = {
 };
 
 const MOCK_RESPOSITORIES: GitRepository[] = [
-  { id: 1, full_name: "repo1", git_provider: "github", is_public: true },
-  { id: 2, full_name: "repo2", git_provider: "github", is_public: true },
-  { id: 3, full_name: "repo3", git_provider: "gitlab", is_public: true },
-  { id: 4, full_name: "repo4", git_provider: "gitlab", is_public: true },
+  { id: "1", full_name: "repo1", git_provider: "github", is_public: true },
+  { id: "2", full_name: "repo2", git_provider: "github", is_public: true },
+  { id: "3", full_name: "repo3", git_provider: "gitlab", is_public: true },
+  { id: "4", full_name: "repo4", git_provider: "gitlab", is_public: true },
 ];
 
 const renderTaskCard = (task = MOCK_TASK_1) => {
@@ -41,11 +40,9 @@ const renderTaskCard = (task = MOCK_TASK_1) => {
   return render(<RouterStub />, {
     wrapper: ({ children }) => (
       <Provider store={setupStore()}>
-        <AuthProvider initialProvidersAreSet>
-          <QueryClientProvider client={new QueryClient()}>
-            {children}
-          </QueryClientProvider>
-        </AuthProvider>
+        <QueryClientProvider client={new QueryClient()}>
+          {children}
+        </QueryClientProvider>
       </Provider>
     ),
   });
@@ -88,13 +85,13 @@ describe("TaskCard", () => {
       await userEvent.click(launchButton);
 
       expect(createConversationSpy).toHaveBeenCalledWith(
-        "suggested_task",
         MOCK_RESPOSITORIES[0].full_name,
         MOCK_RESPOSITORIES[0].git_provider,
         undefined,
         [],
         undefined,
         MOCK_TASK_1,
+        undefined,
       );
     });
   });

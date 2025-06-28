@@ -6,13 +6,16 @@ import asyncio
 import sys
 import threading
 import time
+from typing import Generator
 
 from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.application import Application
-from prompt_toolkit.completion import Completer, Completion
+from prompt_toolkit.completion import CompleteEvent, Completer, Completion
+from prompt_toolkit.document import Document
 from prompt_toolkit.formatted_text import HTML, FormattedText, StyleAndTextTuples
 from prompt_toolkit.input import create_input
 from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from prompt_toolkit.keys import Keys
 from prompt_toolkit.layout.containers import HSplit, Window
 from prompt_toolkit.layout.controls import FormattedTextControl
@@ -24,7 +27,7 @@ from prompt_toolkit.styles import Style
 from prompt_toolkit.widgets import Frame, TextArea
 
 from openhands import __version__
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.schema import AgentState
 from openhands.events import EventSource, EventStream
 from openhands.events.action import (
@@ -32,17 +35,22 @@ from openhands.events.action import (
     ActionConfirmationStatus,
     ChangeAgentStateAction,
     CmdRunAction,
-    FileEditAction,
     MessageAction,
 )
 from openhands.events.event import Event
 from openhands.events.observation import (
     AgentStateChangedObservation,
     CmdOutputObservation,
+    ErrorObservation,
     FileEditObservation,
     FileReadObservation,
 )
 from openhands.llm.metrics import Metrics
+
+ENABLE_STREAMING = False  # FIXME: this doesn't work
+
+# Global TextArea for streaming output
+streaming_output_text_area: TextArea | None = None
 
 # Color and styling constants
 COLOR_GOLD = '#FFD700'
@@ -69,7 +77,7 @@ print_lock = threading.Lock()
 
 
 class UsageMetrics:
-    def __init__(self):
+    def __init__(self) -> None:
         self.metrics: Metrics = Metrics()
         self.session_init_time: float = time.time()
 
@@ -77,7 +85,7 @@ class UsageMetrics:
 class CustomDiffLexer(Lexer):
     """Custom lexer for the specific diff format."""
 
-    def lex_document(self, document) -> StyleAndTextTuples:
+    def lex_document(self, document: Document) -> StyleAndTextTuples:
         lines = document.lines
 
         def get_line(lineno: int) -> StyleAndTextTuples:
@@ -97,7 +105,7 @@ class CustomDiffLexer(Lexer):
 
 
 # CLI initialization and startup display functions
-def display_runtime_initialization_message(runtime: str):
+def display_runtime_initialization_message(runtime: str) -> None:
     print_formatted_text('')
     if runtime == 'local':
         print_formatted_text(HTML('<grey>⚙️ Starting local runtime...</grey>'))
@@ -106,7 +114,7 @@ def display_runtime_initialization_message(runtime: str):
     print_formatted_text('')
 
 
-def display_initialization_animation(text, is_loaded: asyncio.Event):
+def display_initialization_animation(text: str, is_loaded: asyncio.Event) -> None:
     ANIMATION_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
 
     i = 0
@@ -123,7 +131,7 @@ def display_initialization_animation(text, is_loaded: asyncio.Event):
     sys.stdout.flush()
 
 
-def display_banner(session_id: str):
+def display_banner(session_id: str) -> None:
     print_formatted_text(
         HTML(r"""<gold>
      ___                    _   _                 _
@@ -143,17 +151,23 @@ def display_banner(session_id: str):
     print_formatted_text('')
 
 
-def display_welcome_message():
+def display_welcome_message(message: str = '') -> None:
     print_formatted_text(
         HTML("<gold>Let's start building!</gold>\n"), style=DEFAULT_STYLE
     )
-    print_formatted_text(
-        HTML('What do you want to build? <grey>Type /help for help</grey>'),
-        style=DEFAULT_STYLE,
-    )
+    if message:
+        print_formatted_text(
+            HTML(f'{message} <grey>Type /help for help</grey>'),
+            style=DEFAULT_STYLE,
+        )
+    else:
+        print_formatted_text(
+            HTML('What do you want to build? <grey>Type /help for help</grey>'),
+            style=DEFAULT_STYLE,
+        )
 
 
-def display_initial_user_prompt(prompt: str):
+def display_initial_user_prompt(prompt: str) -> None:
     print_formatted_text(
         FormattedText(
             [
@@ -166,52 +180,79 @@ def display_initial_user_prompt(prompt: str):
 
 
 # Prompt output display functions
-def display_event(event: Event, config: AppConfig) -> None:
+def display_event(event: Event, config: OpenHandsConfig) -> None:
+    global streaming_output_text_area
     with print_lock:
         if isinstance(event, Action):
             if hasattr(event, 'thought'):
                 display_message(event.thought)
+            if hasattr(event, 'final_thought'):
+                display_message(event.final_thought)
         if isinstance(event, MessageAction):
             if event.source == EventSource.AGENT:
                 display_message(event.content)
+
         if isinstance(event, CmdRunAction):
-            display_command(event)
-        if isinstance(event, CmdOutputObservation):
+            # Only display the command if it's not already confirmed
+            # Commands are always shown when AWAITING_CONFIRMATION, so we don't need to show them again when CONFIRMED
+            if event.confirmation_state != ActionConfirmationStatus.CONFIRMED:
+                display_command(event)
+
+            if event.confirmation_state == ActionConfirmationStatus.CONFIRMED:
+                initialize_streaming_output()
+        elif isinstance(event, CmdOutputObservation):
             display_command_output(event.content)
-        if isinstance(event, FileEditAction):
+        elif isinstance(event, FileEditObservation):
             display_file_edit(event)
-        if isinstance(event, FileEditObservation):
-            display_file_edit(event)
-        if isinstance(event, FileReadObservation):
+        elif isinstance(event, FileReadObservation):
             display_file_read(event)
-        if isinstance(event, AgentStateChangedObservation):
-            display_agent_paused_message(event.agent_state)
+        elif isinstance(event, AgentStateChangedObservation):
+            display_agent_state_change_message(event.agent_state)
+        elif isinstance(event, ErrorObservation):
+            display_error(event.content)
 
 
-def display_message(message: str):
+def display_message(message: str) -> None:
     message = message.strip()
 
     if message:
         print_formatted_text(f'\n{message}')
 
 
-def display_command(event: CmdRunAction):
-    if event.confirmation_state == ActionConfirmationStatus.AWAITING_CONFIRMATION:
+def display_error(error: str) -> None:
+    error = error.strip()
+
+    if error:
         container = Frame(
             TextArea(
-                text=f'$ {event.command}',
+                text=error,
                 read_only=True,
-                style=COLOR_GREY,
+                style='ansired',
                 wrap_lines=True,
             ),
-            title='Action',
+            title='Error',
             style='ansired',
         )
         print_formatted_text('')
         print_container(container)
 
 
-def display_command_output(output: str):
+def display_command(event: CmdRunAction) -> None:
+    container = Frame(
+        TextArea(
+            text=f'$ {event.command}',
+            read_only=True,
+            style=COLOR_GREY,
+            wrap_lines=True,
+        ),
+        title='Command',
+        style='ansiblue',
+    )
+    print_formatted_text('')
+    print_container(container)
+
+
+def display_command_output(output: str) -> None:
     lines = output.split('\n')
     formatted_lines = []
     for line in lines:
@@ -232,33 +273,33 @@ def display_command_output(output: str):
             style=COLOR_GREY,
             wrap_lines=True,
         ),
-        title='Action Output',
+        title='Command Output',
         style=f'fg:{COLOR_GREY}',
     )
     print_formatted_text('')
     print_container(container)
 
 
-def display_file_edit(event: FileEditAction | FileEditObservation):
-    if isinstance(event, FileEditObservation):
-        container = Frame(
-            TextArea(
-                text=event.visualize_diff(n_context_lines=4),
-                read_only=True,
-                wrap_lines=True,
-                lexer=CustomDiffLexer(),
-            ),
-            title='File Edit',
-            style=f'fg:{COLOR_GREY}',
-        )
-        print_formatted_text('')
-        print_container(container)
-
-
-def display_file_read(event: FileReadObservation):
+def display_file_edit(event: FileEditObservation) -> None:
     container = Frame(
         TextArea(
-            text=f'{event}',
+            text=event.visualize_diff(n_context_lines=4),
+            read_only=True,
+            wrap_lines=True,
+            lexer=CustomDiffLexer(),
+        ),
+        title='File Edit',
+        style=f'fg:{COLOR_GREY}',
+    )
+    print_formatted_text('')
+    print_container(container)
+
+
+def display_file_read(event: FileReadObservation) -> None:
+    content = event.content.replace('\t', ' ')
+    container = Frame(
+        TextArea(
+            text=content,
             read_only=True,
             style=COLOR_GREY,
             wrap_lines=True,
@@ -270,8 +311,38 @@ def display_file_read(event: FileReadObservation):
     print_container(container)
 
 
+def initialize_streaming_output():
+    """Initialize the streaming output TextArea."""
+    if not ENABLE_STREAMING:
+        return
+    global streaming_output_text_area
+    streaming_output_text_area = TextArea(
+        text='',
+        read_only=True,
+        style=COLOR_GREY,
+        wrap_lines=True,
+    )
+    container = Frame(
+        streaming_output_text_area,
+        title='Streaming Output',
+        style=f'fg:{COLOR_GREY}',
+    )
+    print_formatted_text('')
+    print_container(container)
+
+
+def update_streaming_output(text: str):
+    """Update the streaming output TextArea with new text."""
+    global streaming_output_text_area
+
+    # Append the new text to the existing content
+    if streaming_output_text_area is not None:
+        current_text = streaming_output_text_area.text
+        streaming_output_text_area.text = current_text + text
+
+
 # Interactive command output display functions
-def display_help():
+def display_help() -> None:
     # Version header and introduction
     print_formatted_text(
         HTML(
@@ -310,12 +381,12 @@ def display_help():
     # Footer
     print_formatted_text(
         HTML(
-            '<grey>Learn more at: https://docs.all-hands.dev/modules/usage/getting-started</grey>'
+            '<grey>Learn more at: https://docs.all-hands.dev/usage/getting-started</grey>'
         )
     )
 
 
-def display_usage_metrics(usage_metrics: UsageMetrics):
+def display_usage_metrics(usage_metrics: UsageMetrics) -> None:
     cost_str = f'${usage_metrics.metrics.accumulated_cost:.6f}'
     input_tokens_str = (
         f'{usage_metrics.metrics.accumulated_token_usage.prompt_tokens:,}'
@@ -376,7 +447,7 @@ def get_session_duration(session_init_time: float) -> str:
     return f'{int(hours)}h {int(minutes)}m {int(seconds)}s'
 
 
-def display_shutdown_message(usage_metrics: UsageMetrics, session_id: str):
+def display_shutdown_message(usage_metrics: UsageMetrics, session_id: str) -> None:
     duration_str = get_session_duration(usage_metrics.session_init_time)
 
     print_formatted_text(HTML('<grey>Closing current conversation...</grey>'))
@@ -389,7 +460,7 @@ def display_shutdown_message(usage_metrics: UsageMetrics, session_id: str):
     print_formatted_text('')
 
 
-def display_status(usage_metrics: UsageMetrics, session_id: str):
+def display_status(usage_metrics: UsageMetrics, session_id: str) -> None:
     duration_str = get_session_duration(usage_metrics.session_init_time)
 
     print_formatted_text('')
@@ -399,31 +470,40 @@ def display_status(usage_metrics: UsageMetrics, session_id: str):
     display_usage_metrics(usage_metrics)
 
 
-def display_agent_running_message():
+def display_agent_running_message() -> None:
     print_formatted_text('')
     print_formatted_text(
         HTML('<gold>Agent running...</gold> <grey>(Press Ctrl-P to pause)</grey>')
     )
 
 
-def display_agent_paused_message(agent_state: str):
-    if agent_state != AgentState.PAUSED:
-        return
-    print_formatted_text('')
-    print_formatted_text(
-        HTML('<gold>Agent paused...</gold> <grey>(Enter /resume to continue)</grey>')
-    )
+def display_agent_state_change_message(agent_state: str) -> None:
+    if agent_state == AgentState.PAUSED:
+        print_formatted_text('')
+        print_formatted_text(
+            HTML(
+                '<gold>Agent paused...</gold> <grey>(Enter /resume to continue)</grey>'
+            )
+        )
+    elif agent_state == AgentState.FINISHED:
+        print_formatted_text('')
+        print_formatted_text(HTML('<gold>Task completed...</gold>'))
+    elif agent_state == AgentState.AWAITING_USER_INPUT:
+        print_formatted_text('')
+        print_formatted_text(HTML('<gold>Agent is waiting for your input...</gold>'))
 
 
 # Common input functions
 class CommandCompleter(Completer):
     """Custom completer for commands."""
 
-    def __init__(self, agent_state: str):
+    def __init__(self, agent_state: str) -> None:
         super().__init__()
         self.agent_state = agent_state
 
-    def get_completions(self, document, complete_event):
+    def get_completions(
+        self, document: Document, complete_event: CompleteEvent
+    ) -> Generator[Completion, None, None]:
         text = document.text_before_cursor.lstrip()
         if text.startswith('/'):
             available_commands = dict(COMMANDS)
@@ -440,13 +520,16 @@ class CommandCompleter(Completer):
                     )
 
 
-def create_prompt_session():
-    return PromptSession(style=DEFAULT_STYLE)
+def create_prompt_session(config: OpenHandsConfig) -> PromptSession[str]:
+    """Creates a prompt session with VI mode enabled if specified in the config."""
+    return PromptSession(style=DEFAULT_STYLE, vi_mode=config.cli.vi_mode)
 
 
-async def read_prompt_input(agent_state: str, multiline=False):
+async def read_prompt_input(
+    config: OpenHandsConfig, agent_state: str, multiline: bool = False
+) -> str:
     try:
-        prompt_session = create_prompt_session()
+        prompt_session = create_prompt_session(config)
         prompt_session.completer = (
             CommandCompleter(agent_state) if not multiline else None
         )
@@ -455,7 +538,7 @@ async def read_prompt_input(agent_state: str, multiline=False):
             kb = KeyBindings()
 
             @kb.add('c-d')
-            def _(event):
+            def _(event: KeyPressEvent) -> None:
                 event.current_buffer.validate_and_handle()
 
             with patch_stdout():
@@ -478,28 +561,40 @@ async def read_prompt_input(agent_state: str, multiline=False):
         return '/exit'
 
 
-async def read_confirmation_input() -> bool:
+async def read_confirmation_input(config: OpenHandsConfig) -> str:
     try:
-        prompt_session = create_prompt_session()
+        prompt_session = create_prompt_session(config)
 
         with patch_stdout():
             print_formatted_text('')
             confirmation: str = await prompt_session.prompt_async(
-                HTML('<gold>Proceed with action? (y)es/(n)o > </gold>'),
+                HTML('<gold>Proceed with action? (y)es/(n)o/(a)lways > </gold>'),
             )
 
             confirmation = '' if confirmation is None else confirmation.strip().lower()
-            return confirmation in ['y', 'yes']
+
+            if confirmation in ['y', 'yes']:
+                return 'yes'
+            elif confirmation in ['n', 'no']:
+                return 'no'
+            elif confirmation in ['a', 'always']:
+                return 'always'
+            else:
+                return 'no'
     except (KeyboardInterrupt, EOFError):
-        return False
+        return 'no'
 
 
 async def process_agent_pause(done: asyncio.Event, event_stream: EventStream) -> None:
     input = create_input()
 
-    def keys_ready():
+    def keys_ready() -> None:
         for key_press in input.read_keys():
-            if key_press.key == Keys.ControlP:
+            if (
+                key_press.key == Keys.ControlP
+                or key_press.key == Keys.ControlC
+                or key_press.key == Keys.ControlD
+            ):
                 print_formatted_text('')
                 print_formatted_text(HTML('<gold>Pausing the agent...</gold>'))
                 event_stream.add_event(
@@ -514,24 +609,25 @@ async def process_agent_pause(done: asyncio.Event, event_stream: EventStream) ->
 
 
 def cli_confirm(
-    question: str = 'Are you sure?', choices: list[str] | None = None
+    config: OpenHandsConfig,
+    question: str = 'Are you sure?',
+    choices: list[str] | None = None,
 ) -> int:
-    """
-    Display a confirmation prompt with the given question and choices.
+    """Display a confirmation prompt with the given question and choices.
+
     Returns the index of the selected choice.
     """
-
     if choices is None:
         choices = ['Yes', 'No']
     selected = [0]  # Using list to allow modification in closure
 
-    def get_choice_text():
+    def get_choice_text() -> list:
         return [
             ('class:question', f'{question}\n\n'),
         ] + [
             (
                 'class:selected' if i == selected[0] else 'class:unselected',
-                f"{'> ' if i == selected[0] else '  '}{choice}\n",
+                f'{"> " if i == selected[0] else "  "}{choice}\n',
             )
             for i, choice in enumerate(choices)
         ]
@@ -539,15 +635,27 @@ def cli_confirm(
     kb = KeyBindings()
 
     @kb.add('up')
-    def _(event):
+    def _handle_up(event: KeyPressEvent) -> None:
         selected[0] = (selected[0] - 1) % len(choices)
 
+    if config.cli.vi_mode:
+
+        @kb.add('k')
+        def _handle_k(event: KeyPressEvent) -> None:
+            selected[0] = (selected[0] - 1) % len(choices)
+
     @kb.add('down')
-    def _(event):
+    def _handle_down(event: KeyPressEvent) -> None:
         selected[0] = (selected[0] + 1) % len(choices)
 
+    if config.cli.vi_mode:
+
+        @kb.add('j')
+        def _handle_j(event: KeyPressEvent) -> None:
+            selected[0] = (selected[0] + 1) % len(choices)
+
     @kb.add('enter')
-    def _(event):
+    def _handle_enter(event: KeyPressEvent) -> None:
         event.app.exit(result=selected[0])
 
     style = Style.from_dict({'selected': COLOR_GOLD, 'unselected': ''})
@@ -574,12 +682,12 @@ def cli_confirm(
     return app.run(in_thread=True)
 
 
-def kb_cancel():
+def kb_cancel() -> KeyBindings:
     """Custom key bindings to handle ESC as a user cancellation."""
     bindings = KeyBindings()
 
     @bindings.add('escape')
-    def _(event):
+    def _(event: KeyPressEvent) -> None:
         event.app.exit(exception=UserCancelledError, style='class:aborting')
 
     return bindings

@@ -47,6 +47,7 @@ const SCAN_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"];
 
 // Attributes that typically don't contain user-facing text
 const NON_TEXT_ATTRIBUTES = [
+  "allow",
   "className",
   "i18nKey",
   "testId",
@@ -55,8 +56,6 @@ const NON_TEXT_ATTRIBUTES = [
   "type",
   "href",
   "src",
-  "alt",
-  "placeholder",
   "rel",
   "target",
   "style",
@@ -64,11 +63,11 @@ const NON_TEXT_ATTRIBUTES = [
   "onChange",
   "onSubmit",
   "data-testid",
-  "aria-label",
   "aria-labelledby",
   "aria-describedby",
   "aria-hidden",
   "role",
+  "sandbox",
 ];
 
 function shouldIgnorePath(filePath) {
@@ -111,13 +110,33 @@ const EXCLUDED_TECHNICAL_STRINGS = [
   "GitLab API", // Git provider specific terminology
   "Pull Request", // Git provider specific terminology
   "GitHub API", // Git provider specific terminology
+  "add-secret-form", // Test ID for secret form
+  "edit-secret-form", // Test ID for secret form
+  "search-api-key-input", // Input name for search API key
+  "noopener,noreferrer", // Options for window.open
+  "STATUS$READY",
+  "STATUS$STOPPED",
+  "STATUS$ERROR",
 ];
 
 function isExcludedTechnicalString(str) {
   return EXCLUDED_TECHNICAL_STRINGS.includes(str);
 }
 
+function isLikelyCode(str) {
+  // A string with no spaces and at least one underscore or colon is likely a code.
+  // (e.g.: "browser_interactive" or "error:")
+  if (str.includes(" ")) {
+    return false
+  }
+  if (str.includes(":") || str.includes("_")){
+    return true
+  }
+  return false
+}
+
 function isCommonDevelopmentString(str) {
+
   // Technical patterns that are definitely not UI strings
   const technicalPatterns = [
     // URLs and paths
@@ -170,7 +189,7 @@ function isCommonDevelopmentString(str) {
 
   // CSS units and values
   const cssUnitsPattern =
-    /(px|rem|em|vh|vw|vmin|vmax|ch|ex|fr|deg|rad|turn|grad|ms|s)$/;
+    /\b\d+(px|rem|em|vh|vw|vmin|vmax|ch|ex|fr|deg|rad|turn|grad|ms|s)$|^(px|rem|em|vh|vw|vmin|vmax|ch|ex|fr|deg|rad|turn|grad|ms|s)$/;
   const cssValuesPattern =
     /(rgb|rgba|hsl|hsla|#[0-9a-fA-F]+|solid|absolute|relative|sticky|fixed|static|block|inline|flex|grid|none|auto|hidden|visible)/;
 
@@ -373,6 +392,7 @@ function isCommonDevelopmentString(str) {
 }
 
 function isLikelyUserFacingText(str) {
+
   // Basic validation - skip very short strings or strings without letters
   if (!str || str.length <= 2 || !/[a-zA-Z]/.test(str)) {
     return false;
@@ -381,6 +401,11 @@ function isLikelyUserFacingText(str) {
   // Check if it's a specifically excluded technical string
   if (isExcludedTechnicalString(str)) {
     return false;
+  }
+
+  // Check if it looks like a code rather than a key
+  if (isLikelyCode(str)) {
+    return false
   }
 
   // Check if it's a raw translation key that should be wrapped in t()
@@ -514,8 +539,8 @@ function isInTranslationContext(path) {
 }
 
 function scanFileForUnlocalizedStrings(filePath) {
-  // Skip all suggestion files as they contain special strings
-  if (filePath.includes("suggestions")) {
+  // Skip suggestion content files as they contain special strings that are already properly localized
+  if (filePath.includes("utils/suggestions/") || filePath.includes("mocks/task-suggestions-handlers.ts")) {
     return [];
   }
 

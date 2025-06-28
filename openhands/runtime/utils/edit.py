@@ -6,7 +6,7 @@ from typing import Any
 
 from openhands_aci.utils.diff import get_diff  # type: ignore
 
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     FileEditAction,
@@ -26,39 +26,65 @@ from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics
 from openhands.utils.chunk_localizer import Chunk, get_top_k_chunk_matches
 
-SYS_MSG = """Your job is to produce a new version of the file based on the old version and the
-provided draft of the new version. The provided draft may be incomplete (it may skip lines) and/or incorrectly indented. You should try to apply the changes present in the draft to the old version, and output a new version of the file.
-NOTE:
-- The output file should be COMPLETE and CORRECTLY INDENTED. Do not omit any lines, and do not change any lines that are not part of the changes.
-- You should output the new version of the file by wrapping the new version of the file content in a ``` block.
-- If there's no explicit comment to remove the existing code, we should keep them and append the new code to the end of the file.
-- If there's placeholder comments like `# no changes before` or `# no changes here`, we should replace these comments with the original code near the placeholder comments.
-"""
-
 USER_MSG = """
-HERE IS THE OLD VERSION OF THE FILE:
+Code changes will be provided in the form of a draft. You will need to apply the draft to the original code.
+The original code will be enclosed within `<original_code>` tags.
+The draft will be enclosed within `<update_snippet>` tags.
+You need to output the update code within `<updated_code>` tags.
+
+Within the `<updated_code>` tag, include only the final code after updation. Do not include any explanations or other content within these tags.
+
+<original_code>{old_contents}</original_code>
+
+<update_snippet>{draft_changes}</update_snippet>
+    """
+
+CORRECT_SYS_MSG = """You are a code repair assistant. Now you have an original file content and error information from a static code checking tool (lint tool). Your task is to automatically modify and return the repaired complete code based on these error messages and refer to the current file content.
+
+The following are the specific task steps you need to complete:
+
+Carefully read the current file content to ensure that you fully understand its code structure.
+
+According to the lint error prompt, accurately locate and analyze the cause of the problem.
+
+Modify the original file content and fix all errors prompted by the lint tool.
+
+Return complete, runnable, and error-fixed code, paying attention to maintaining the overall style and specifications of the original code.
+
+Please note:
+
+Please strictly follow the lint error prompts to make modifications and do not miss any problems.
+
+The modified code must be complete and cannot introduce new errors or bugs.
+
+The modified code must maintain the original code function and logic, and no changes unrelated to error repair should be made."""
+
+CORRECT_USER_MSG = """
+THE FOLLOWING ARE THE ORIGINAL FILE CONTENTS AND THE ERROR INFORMATION REPORTED BY THE LINT TOOL
+
+# CURRENT FILE CONTENT:
 ```
-{old_contents}
+{file_content}
 ```
 
-HERE IS THE DRAFT OF THE NEW VERSION OF THE FILE:
+# ERROR MESSAGE FROM STATIC CODE CHECKING TOOL:
 ```
-{draft_changes}
+{lint_error}
 ```
-
-GIVE ME THE NEW VERSION OF THE FILE.
-IMPORTANT:
-- There should be NO placeholder comments like `# no changes before` or `# no changes here`. They should be replaced with the original code near the placeholder comments.
-- The output file should be COMPLETE and CORRECTLY INDENTED. Do not omit any lines, and do not change any lines that are not part of the changes.
 """.strip()
 
 
 def _extract_code(string: str) -> str | None:
-    pattern = r'```(?:\w*\n)?(.*?)```'
+    pattern = r'<updated_code>(.*?)</updated_code>'
     matches = re.findall(pattern, string, re.DOTALL)
     if not matches:
         return None
-    return str(matches[0])
+
+    content = str(matches[0])
+    if content.startswith('#EDIT:'):
+        # Remove first line
+        content = content[content.find('\n') + 1 :]
+    return content
 
 
 def get_new_file_contents(
@@ -66,7 +92,6 @@ def get_new_file_contents(
 ) -> str | None:
     while num_retries > 0:
         messages = [
-            {'role': 'system', 'content': SYS_MSG},
             {
                 'role': 'user',
                 'content': USER_MSG.format(
@@ -83,7 +108,7 @@ def get_new_file_contents(
 
 
 class FileEditRuntimeInterface(ABC):
-    config: AppConfig
+    config: OpenHandsConfig
 
     @abstractmethod
     def read(self, action: FileReadAction) -> Observation:
@@ -205,7 +230,7 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
                 return ErrorObservation(error_message)
         return None
 
-    def llm_based_edit(self, action: FileEditAction) -> Observation:
+    def llm_based_edit(self, action: FileEditAction, retry_num: int = 0) -> Observation:
         obs = self.read(FileReadAction(path=action.path))
         if (
             isinstance(obs, ErrorObservation)
@@ -262,7 +287,14 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
                     diff,
                 )
                 if error_obs is not None:
-                    return error_obs
+                    self.write(
+                        FileWriteAction(path=action.path, content=updated_content)
+                    )
+                    return self.correct_edit(
+                        file_content=updated_content,
+                        error_obs=error_obs,
+                        retry_num=retry_num,
+                    )
 
             obs = self.write(FileWriteAction(path=action.path, content=updated_content))
             return FileEditObservation(
@@ -289,7 +321,8 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             error_msg = (
                 f'[Edit error: The range of lines to edit is too long.]\n'
                 f'[The maximum number of lines allowed to edit at once is {self.MAX_LINES_TO_EDIT}. '
-                f'Got (L{start_idx + 1}-L{end_idx}) {length_of_range} lines.]\n'  # [start_idx, end_idx), so no need to + 1
+                f'Got (L{start_idx + 1}-L{end_idx}) {length_of_range} lines.]\n'
+                # [start_idx, end_idx), so no need to + 1
             )
             # search for relevant ranges to hint the agent
             topk_chunks: list[Chunk] = get_top_k_chunk_matches(
@@ -314,7 +347,6 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             return ErrorObservation(error_msg)
 
         content_to_edit = '\n'.join(old_file_lines[start_idx:end_idx])
-        self.draft_editor_llm.reset()
         _edited_content = get_new_file_contents(
             self.draft_editor_llm, content_to_edit, action.content
         )
@@ -343,7 +375,12 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             )
             if error_obs is not None:
                 error_obs.llm_metrics = self.draft_editor_llm.metrics
-                return error_obs
+                self.write(FileWriteAction(path=action.path, content=updated_content))
+                return self.correct_edit(
+                    file_content=updated_content,
+                    error_obs=error_obs,
+                    retry_num=retry_num,
+                )
 
         obs = self.write(FileWriteAction(path=action.path, content=updated_content))
         ret_obs = FileEditObservation(
@@ -355,3 +392,40 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
         )
         ret_obs.llm_metrics = self.draft_editor_llm.metrics
         return ret_obs
+
+    def check_retry_num(self, retry_num):
+        correct_num = self.draft_editor_llm.config.correct_num  # type: ignore[attr-defined]
+        return correct_num < retry_num
+
+    def correct_edit(
+        self, file_content: str, error_obs: ErrorObservation, retry_num: int = 0
+    ) -> Observation:
+        import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
+        from openhands.agenthub.codeact_agent.tools import LLMBasedFileEditTool
+        from openhands.llm.llm_utils import check_tools
+
+        _retry_num = retry_num + 1
+        if self.check_retry_num(_retry_num):
+            return error_obs
+        tools = check_tools([LLMBasedFileEditTool], self.draft_editor_llm.config)
+        messages = [
+            {'role': 'system', 'content': CORRECT_SYS_MSG},
+            {
+                'role': 'user',
+                'content': CORRECT_USER_MSG.format(
+                    file_content=file_content, lint_error=error_obs.content
+                ),
+            },
+        ]
+        params: dict = {'messages': messages, 'tools': tools}
+        try:
+            response = self.draft_editor_llm.completion(**params)
+            actions = codeact_function_calling.response_to_actions(response)
+            if len(actions) != 1:
+                return error_obs
+            for action in actions:
+                if isinstance(action, FileEditAction):
+                    return self.llm_based_edit(action, _retry_num)
+        except Exception as e:
+            logger.error(f'correct lint error is failed: {e}')
+        return error_obs

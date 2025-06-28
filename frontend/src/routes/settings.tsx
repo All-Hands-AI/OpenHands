@@ -15,25 +15,30 @@ function SettingsScreen() {
   const isSaas = config?.APP_MODE === "saas";
 
   const saasNavItems = [
-    { to: "/settings/git", text: t("SETTINGS$NAV_GIT") },
+    { to: "/settings/user", text: t("SETTINGS$NAV_USER") },
+    { to: "/settings/integrations", text: t("SETTINGS$NAV_INTEGRATIONS") },
     { to: "/settings/app", text: t("SETTINGS$NAV_APPLICATION") },
     { to: "/settings/billing", text: t("SETTINGS$NAV_CREDITS") },
+    { to: "/settings/secrets", text: t("SETTINGS$NAV_SECRETS") },
     { to: "/settings/api-keys", text: t("SETTINGS$NAV_API_KEYS") },
   ];
 
   const ossNavItems = [
     { to: "/settings", text: t("SETTINGS$NAV_LLM") },
-    { to: "/settings/git", text: t("SETTINGS$NAV_GIT") },
+    { to: "/settings/mcp", text: t("SETTINGS$NAV_MCP") },
+    { to: "/settings/integrations", text: t("SETTINGS$NAV_INTEGRATIONS") },
     { to: "/settings/app", text: t("SETTINGS$NAV_APPLICATION") },
+    { to: "/settings/secrets", text: t("SETTINGS$NAV_SECRETS") },
   ];
 
   React.useEffect(() => {
     if (isSaas) {
       if (pathname === "/settings") {
-        navigate("/settings/git");
+        navigate("/settings/user");
       }
     } else {
       const noEnteringPaths = [
+        "/settings/user",
         "/settings/billing",
         "/settings/credits",
         "/settings/api-keys",

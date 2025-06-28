@@ -30,7 +30,7 @@ from evaluation.utils.shared import (
 from openhands.controller.state.state import State
 from openhands.core.config import (
     AgentConfig,
-    AppConfig,
+    OpenHandsConfig,
     get_llm_config_arg,
     get_parser,
 )
@@ -103,21 +103,21 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
             f'<issue_description>\n'
             f'{instance.problem_statement}\n'
             '</issue_description>\n\n'
-            "Can you help me implement the necessary changes to the repository so that the requirements specified in the <issue_description> are met?\n"
+            'Can you help me implement the necessary changes to the repository so that the requirements specified in the <issue_description> are met?\n'
             "I've already taken care of all changes to any of the test files described in the <issue_description>. This means you DON'T have to modify the testing logic or any of the tests in any way!\n"
             "Also the development Java environment is already set up for you (i.e., all dependencies already installed), so you don't need to install other packages.\n"
-            "Your task is to make the minimal changes to non-test files in the /workspace directory to ensure the <issue_description> is satisfied.\n"
-            "Follow these steps to resolve the issue:\n"
-            "1. As a first step, it might be a good idea to explore the repo to familiarize yourself with its structure.\n"
+            'Your task is to make the minimal changes to non-test files in the /workspace directory to ensure the <issue_description> is satisfied.\n'
+            'Follow these steps to resolve the issue:\n'
+            '1. As a first step, it might be a good idea to explore the repo to familiarize yourself with its structure.\n'
             '2. Create a Java class to reproduce the error and execute it by first compiling with `javac <classname>.java` and then running with `java <classname>` using the BashTool, to confirm the error\n'
-            "3. Edit the sourcecode of the repo to resolve the issue.\n"
-            "4. Rerun your reproduce script or class and confirm that the error is fixed!\n"
-            "5. Think about edgecases, add comprehensive tests for them in your reproduce class or script, and run them to make sure your fix handles these cases as well.\n"
-            f"6. Once you are done with the initial implementation, please carefully re-read the problem description and check the difference between the current code and the base commit {instance['base_commit']}. Do you think that the issue has been completely and comprehensively solved? Write tests to check the correctness of the solution, specifically focusing on tests that may point out any remaining problems that are not yet solved. Run all of the tests in the repo and check if any of them fail, and if they do fix the code. Repeat this process of carefully reading the problem description and current implementation, testing, and fixing any problems until you are confident that the current implementation is correct. Find and run any tests in the repo that are related to:\n"
-            "   - The issue you are fixing\n"
-            "   - The files you modified\n"
-            "   - The functions or classes you changed\n"
-            "   Make sure all these tests pass with your changes.\n"
+            '3. Edit the sourcecode of the repo to resolve the issue.\n'
+            '4. Rerun your reproduce script or class and confirm that the error is fixed!\n'
+            '5. Think about edgecases, add comprehensive tests for them in your reproduce class or script, and run them to make sure your fix handles these cases as well.\n'
+            f'6. Once you are done with the initial implementation, please carefully re-read the problem description and check the difference between the current code and the base commit {instance["base_commit"]}. Do you think that the issue has been completely and comprehensively solved? Write tests to check the correctness of the solution, specifically focusing on tests that may point out any remaining problems that are not yet solved. Run all of the tests in the repo and check if any of them fail, and if they do fix the code. Repeat this process of carefully reading the problem description and current implementation, testing, and fixing any problems until you are confident that the current implementation is correct. Find and run any tests in the repo that are related to:\n'
+            '   - The issue you are fixing\n'
+            '   - The files you modified\n'
+            '   - The functions or classes you changed\n'
+            '   Make sure all these tests pass with your changes.\n'
             "Your thinking should be thorough and so it's fine if it's very long.\n"
         ),
         'go': (
@@ -275,9 +275,7 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
 
     if instruction and RUN_WITH_BROWSING:
         instruction += (
-            '<IMPORTANT!>\n'
-            'You SHOULD NEVER attempt to browse the web. '
-            '</IMPORTANT!>\n'
+            '<IMPORTANT!>\nYou SHOULD NEVER attempt to browse the web. </IMPORTANT!>\n'
         )
     return instruction
 
@@ -316,7 +314,7 @@ def get_instance_docker_image(instance: pd.Series):
 def get_config(
     instance: pd.Series,
     metadata: EvalMetadata,
-) -> AppConfig:
+) -> OpenHandsConfig:
     SWE_BENCH_CONTAINER_IMAGE = 'ghcr.io/opendevin/eval-swe-bench:full-v1.2.1'
     if USE_INSTANCE_IMAGE:
         # We use a different instance image for the each instance of swe-bench eval
@@ -342,7 +340,7 @@ def get_config(
         instance_id=instance['instance_id'],
     )
 
-    config = AppConfig(
+    config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         max_iterations=metadata.max_iterations,
