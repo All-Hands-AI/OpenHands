@@ -2,6 +2,8 @@ import os
 
 from pydantic import BaseModel, Field, ValidationError, model_validator
 
+from openhands.runtime.container_reuse_strategy import ContainerReuseStrategy
+
 
 class SandboxConfig(BaseModel):
     """Configuration for the sandbox.
@@ -78,7 +80,7 @@ class SandboxConfig(BaseModel):
         description='The delay in seconds before closing the sandbox after the agent is done.',
     )
     container_reuse_strategy: str = Field(
-        default='pause',
+        default='none',
         description='Strategy for container reuse: "none" (always create new), "pause" (pause/resume containers), "keep_alive" (keep containers running)',
     )
     remote_runtime_resource_factor: int = Field(default=1)
@@ -123,7 +125,7 @@ class SandboxConfig(BaseModel):
 
     @model_validator(mode='after')
     def validate_container_reuse_strategy(self) -> 'SandboxConfig':
-        valid_strategies = {'none', 'pause', 'keep_alive'}
+        valid_strategies = {strategy.value for strategy in ContainerReuseStrategy}
         if self.container_reuse_strategy not in valid_strategies:
             raise ValueError(
                 f'Invalid container_reuse_strategy: {self.container_reuse_strategy}. '

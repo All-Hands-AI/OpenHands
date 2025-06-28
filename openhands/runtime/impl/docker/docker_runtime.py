@@ -516,7 +516,7 @@ class DockerRuntime(ActionExecutionClient):
         # This is already handled by add_env_vars in base.py
 
         # Use appropriate pause method based on strategy
-        strategy = getattr(self.config.sandbox, 'container_reuse_strategy', 'pause')
+        strategy = getattr(self.config.sandbox, 'container_reuse_strategy', 'none')
 
         if strategy == 'keep_alive':
             # Keep container running but clean workspace
@@ -538,7 +538,7 @@ class DockerRuntime(ActionExecutionClient):
                 self.container.stop()
                 self.log('debug', f'Container {self.container_name} stopped')
         else:
-            # Default behavior - stop container
+            # Strategy 'none' - stop container (original behavior)
             self.container.stop()
             self.log('debug', f'Container {self.container_name} stopped')
 
@@ -548,7 +548,7 @@ class DockerRuntime(ActionExecutionClient):
         if not self.container:
             raise RuntimeError('Container not initialized')
 
-        strategy = getattr(self.config.sandbox, 'container_reuse_strategy', 'pause')
+        strategy = getattr(self.config.sandbox, 'container_reuse_strategy', 'none')
 
         if strategy == 'keep_alive':
             # Container should already be running, just verify it's healthy
@@ -566,7 +566,7 @@ class DockerRuntime(ActionExecutionClient):
                 self.container.start()
                 self.log('debug', f'Container {self.container_name} started')
         else:
-            # Default behavior - start container
+            # Strategy 'none' - start container (original behavior)
             self.container.start()
             self.log('debug', f'Container {self.container_name} started')
 
@@ -609,7 +609,7 @@ class DockerRuntime(ActionExecutionClient):
         Returns:
             bool: True if a container was successfully reused, False otherwise
         """
-        strategy = getattr(self.config.sandbox, 'container_reuse_strategy', 'pause')
+        strategy = getattr(self.config.sandbox, 'container_reuse_strategy', 'none')
 
         if strategy == 'none':
             return False
