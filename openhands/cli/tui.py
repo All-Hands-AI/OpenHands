@@ -3,8 +3,6 @@
 # CLI Settings are handled separately in cli_settings.py
 
 import asyncio
-import os
-import signal
 import sys
 import threading
 import time
@@ -603,9 +601,8 @@ async def process_agent_pause(done: asyncio.Event, event_stream: EventStream) ->
                     # Double Ctrl+C within 2 seconds - force quit
                     print_formatted_text('')
                     print_formatted_text(HTML('<red>Force quitting...</red>'))
-                    # Trigger global shutdown via proper signal mechanism
-                    os.kill(os.getpid(), signal.SIGTERM)
-                    done.set()
+                    # Let the CLI main function handle the KeyboardInterrupt properly
+                    raise KeyboardInterrupt()
                 else:
                     # First Ctrl+C - stop agent gracefully
                     ctrl_c_pressed_time = current_time
