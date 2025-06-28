@@ -22,6 +22,8 @@ You'll need to be sure to set your model, API key, and other settings via enviro
 
 You can specify a repository for OpenHands to work with using `--selected-repo` or the `SANDBOX_SELECTED_REPO` environment variable:
 
+> **Note**: Currently, authentication tokens (GITHUB_TOKEN, GITLAB_TOKEN, or BITBUCKET_TOKEN) are required for all repository operations, including public repositories. This is a known limitation that may be addressed in future versions to allow tokenless access to public repositories.
+
 ```bash
 # Using command-line argument
 poetry run python -m openhands.core.main \
@@ -32,10 +34,11 @@ poetry run python -m openhands.core.main \
 export SANDBOX_SELECTED_REPO="owner/repo-name"
 poetry run python -m openhands.core.main -t "fix any linting issues"
 
-# For the agent to act on GitHub, or for access to private repositories, set authentication tokens
+# Authentication tokens are currently required for ALL repository operations (public and private)
+# This includes GitHub, GitLab, and Bitbucket repositories
 export GITHUB_TOKEN="your-token"  # or GITLAB_TOKEN, BITBUCKET_TOKEN
 poetry run python -m openhands.core.main \
-  --selected-repo "owner/private-repo" \
+  --selected-repo "owner/repo-name" \
   -t "review the security implementation"
 
 # Using task files instead of inline task
@@ -52,8 +55,8 @@ Set environment variables and run the Docker command:
 export SANDBOX_VOLUMES="/path/to/workspace"  # See SANDBOX_VOLUMES docs for details
 export LLM_MODEL="anthropic/claude-sonnet-4-20250514"
 export LLM_API_KEY="your-api-key"
-export SANDBOX_SELECTED_REPO="owner/repo-name"  # Optional
-export GITHUB_TOKEN="your-token"
+export SANDBOX_SELECTED_REPO="owner/repo-name"  # Optional: requires GITHUB_TOKEN
+export GITHUB_TOKEN="your-token"  # Required for repository operations
 
 # Run OpenHands
 docker run -it \
