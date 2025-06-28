@@ -491,8 +491,8 @@ class LLM(RetryMixin, DebugMixin):
             ):
                 self.config.max_input_tokens = self.model_info['max_input_tokens']
             else:
-                # Safe fallback for any potentially viable model
-                self.config.max_input_tokens = 4096
+                # Default to None, will be determined by the model
+                self.config.max_input_tokens = None
 
         if self.config.max_output_tokens is None:
             # Default to None, will be determined by the model
