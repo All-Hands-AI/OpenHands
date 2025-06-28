@@ -1,8 +1,10 @@
-from openhands.core.schema.exit_reason import ExitReason
-import pytest
-from unittest.mock import MagicMock
-from openhands.cli.commands import handle_commands
 import time
+from unittest.mock import MagicMock
+
+import pytest
+
+from openhands.cli.commands import handle_commands
+from openhands.core.schema.exit_reason import ExitReason
 
 
 def test_exit_reason_enum_values():
@@ -24,7 +26,7 @@ def test_exit_reason_str_representation():
 
 @pytest.mark.asyncio
 async def test_handle_exit_command_returns_intentional(monkeypatch):
-    monkeypatch.setattr("openhands.cli.commands.cli_confirm", lambda *a, **k: 0)
+    monkeypatch.setattr('openhands.cli.commands.cli_confirm', lambda *a, **k: 0)
 
     mock_usage_metrics = MagicMock()
     mock_usage_metrics.session_init_time = time.time() - 3600
@@ -36,14 +38,19 @@ async def test_handle_exit_command_returns_intentional(monkeypatch):
     mock_usage_metrics.metrics.accumulated_token_usage.cache_write_tokens = 9012
     mock_usage_metrics.metrics.accumulated_token_usage.completion_tokens = 3456
 
-    close_repl, reload_microagents, new_session_requested, exit_reason = await handle_commands(
-        "/exit",
+    (
+        close_repl,
+        reload_microagents,
+        new_session_requested,
+        exit_reason,
+    ) = await handle_commands(
+        '/exit',
         MagicMock(),
         mock_usage_metrics,
-        "test-session",
+        'test-session',
         MagicMock(),
-        "/tmp/test",
-        MagicMock()
+        '/tmp/test',
+        MagicMock(),
     )
 
     assert exit_reason == ExitReason.INTENTIONAL
