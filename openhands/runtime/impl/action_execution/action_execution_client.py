@@ -32,6 +32,11 @@ from openhands.events.action import (
 )
 from openhands.events.action.action import Action
 from openhands.events.action.files import FileEditSource
+from openhands.events.action.gemini_file_editor import (
+    GeminiEditAction,
+    GeminiReadFileAction,
+    GeminiWriteFileAction,
+)
 from openhands.events.action.mcp import MCPAction
 from openhands.events.observation import (
     AgentThinkObservation,
@@ -39,11 +44,6 @@ from openhands.events.observation import (
     NullObservation,
     Observation,
     UserRejectObservation,
-)
-from openhands.events.action.gemini_file_editor import (
-    GeminiEditAction,
-    GeminiReadFileAction,
-    GeminiWriteFileAction,
 )
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS

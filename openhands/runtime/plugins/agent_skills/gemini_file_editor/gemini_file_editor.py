@@ -1,7 +1,7 @@
 """Gemini-style file editor implementation for OpenHands."""
 
 import os
-from typing import Any, Optional, Union
+from typing import Optional, Union
 
 from openhands_aci.utils.diff import get_diff  # type: ignore
 
@@ -38,19 +38,19 @@ class GeminiFileEditor(FileEditRuntimeMixin):
         """Required abstract method implementation."""
         # This is for compatibility with FileEditRuntimeMixin
         # We don't use this method directly
-        return ErrorObservation("Use handle_read_file_action instead")
+        return ErrorObservation('Use handle_read_file_action instead')
 
     def write(self, action) -> Observation:
         """Required abstract method implementation."""
         # This is for compatibility with FileEditRuntimeMixin
         # We don't use this method directly
-        return ErrorObservation("Use handle_write_file_action instead")
+        return ErrorObservation('Use handle_write_file_action instead')
 
     def run_ipython(self, action) -> Observation:
         """Required abstract method implementation."""
         # This is for compatibility with FileEditRuntimeMixin
         # We don't use this method directly
-        return ErrorObservation("IPython not supported in GeminiFileEditor")
+        return ErrorObservation('IPython not supported in GeminiFileEditor')
 
     def handle_action(self, action: Action) -> Observation:
         """Handle a file edit action.
