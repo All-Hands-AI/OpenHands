@@ -77,6 +77,13 @@ export function ChatInterface() {
 
   const events = parsedEvents.filter(shouldRenderEvent);
 
+  // Check if there are any non-environment events
+  const hasNonEnvironmentEvents = React.useMemo(() => {
+    return parsedEvents.some((event) =>
+      event.source !== "environment"
+    );
+  }, [parsedEvents]);
+
   const handleSendMessage = async (
     content: string,
     images: File[],
@@ -167,7 +174,7 @@ export function ChatInterface() {
   return (
     <ScrollProvider value={scrollProviderValue}>
       <div className="h-full flex flex-col justify-between">
-        {events.length === 0 && !optimisticUserMessage && (
+        {(!hasNonEnvironmentEvents && !optimisticUserMessage) && (
           <ChatSuggestions onSuggestionsClick={setMessageToSend} />
         )}
 
@@ -192,7 +199,7 @@ export function ChatInterface() {
           )}
 
           {isWaitingForUserInput &&
-            events.length > 0 &&
+            hasNonEnvironmentEvents &&
             !optimisticUserMessage && (
               <ActionSuggestions
                 onSuggestionsClick={(value) => handleSendMessage(value, [], [])}
