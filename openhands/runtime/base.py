@@ -446,7 +446,21 @@ class Runtime(FileEditRuntimeMixin):
             f'chmod +x {setup_script} && source {setup_script}', blocking=True
         )
         action.set_hard_timeout(600)
-        obs = self.run_action(action)
+
+        # Add the action to the event stream if available
+        if hasattr(self, 'event_stream') and self.event_stream:
+            source = EventSource.AGENT  # Use AGENT as the source
+            self.event_stream.add_event(action, source)
+            obs = self.run_action(action)
+            # Add the observation to the event stream
+            if not isinstance(obs, NullObservation):
+                # Set the cause using setattr to avoid mypy errors
+                setattr(obs, '_cause', action.id)
+                self.event_stream.add_event(obs, source)
+        else:
+            # Fall back to direct execution if no event stream is available
+            obs = self.run_action(action)
+
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
             self.log('error', f'Setup script failed: {obs.content}')
 
