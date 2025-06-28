@@ -1070,10 +1070,6 @@ def test_max_output_tokens_override_in_config():
     # Verify the config has the overridden max_output_tokens value
     assert llm.config.max_output_tokens == 2048
 
-    # Verify that the value is different from the default Claude value
-    assert llm.config.max_output_tokens != 64000
-    assert llm.config.max_output_tokens != 4096
-
 
 def test_azure_model_default_max_tokens():
     """Test that Azure models have the default max_output_tokens value."""
