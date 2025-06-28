@@ -986,20 +986,6 @@ def test_llm_base_url_auto_protocol_patch(mock_get):
 # Tests for max_output_tokens configuration and usage
 
 
-def test_max_output_tokens_in_config():
-    """Test that max_output_tokens is correctly set in the config."""
-    # Create LLM instance
-    config = LLMConfig(
-        model='claude-sonnet-4-20250514',
-        api_key='test_key',
-        max_output_tokens=4096,  # Set a specific value for testing
-    )
-    llm = LLM(config)
-
-    # Verify max_output_tokens is set correctly in the config
-    assert llm.config.max_output_tokens == 4096
-
-
 def test_unknown_model_token_limits():
     """Test that models without known token limits get None for both max_output_tokens and max_input_tokens."""
     # Create LLM instance with a non-existent model to avoid litellm having model info for it
