@@ -144,7 +144,7 @@ class CmdOutputObservation(Observation):
             max_size: Maximum size before truncation. Defaults to MAX_CMD_OUTPUT_SIZE.
 
         Returns:
-            Truncated content or original if small enough
+            Original content if not too large, or truncated content otherwise
         """
 
         if len(content) <= max_size:
