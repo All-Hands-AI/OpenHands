@@ -9721,15 +9721,13 @@ typing_extensions = {version = ">=4.5.0", markers = "python_version >= \"3.7\""}
 
 [[package]]
 name = "swebench"
-version = "3.0.17"
+version = "4.0.3"
 description = "The official SWE-bench package - a benchmark for evaluating LMs on software engineering"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.10"
 groups = ["evaluation"]
-files = [
-    {file = "swebench-3.0.17-py3-none-any.whl", hash = "sha256:5a2f6c6d6df164d81474e6901275e73802dc5817905c82902438928544c593b3"},
-    {file = "swebench-3.0.17.tar.gz", hash = "sha256:4b86d02d7bdeb2113b3c1f7759ea2992d905f0e4053be39a6d6f4573d71c9bde"},
-]
+files = []
+develop = false
 
 [package.dependencies]
 beautifulsoup4 = "*"
@@ -9749,9 +9747,15 @@ unidiff = "*"
 
 [package.extras]
 datasets = ["anthropic", "jedi", "openai", "protobuf", "sentencepiece", "tiktoken", "transformers"]
-docs = ["griffe-pydantic", "mike", "mkdocs", "mkdocs-glightbox", "mkdocs-include-markdown-plugin", "mkdocs-material", "mkdocstrings", "mkdocstrings-python", "pymdown-extensions"]
+docs = ["mike", "mkdocs", "mkdocs-glightbox", "mkdocs-include-markdown-plugin", "mkdocs-material", "mkdocstrings", "mkdocstrings-python", "pymdown-extensions"]
 inference = ["anthropic", "flash_attn", "jedi", "openai", "peft", "protobuf", "requests", "sentencepiece", "tiktoken", "torch", "transformers", "triton"]
 test = ["pytest", "pytest-cov"]
+
+[package.source]
+type = "git"
+url = "https://github.com/ryanhoangt/SWE-bench.git"
+reference = "fix-modal-patch-eval"
+resolved_reference = "b8ffb7b48a9113de25155653de38ed6f9e54f68c"
 
 [[package]]
 name = "swegym"
@@ -11795,4 +11799,4 @@ third-party-runtimes = ["daytona", "e2b", "modal", "runloop-api-client"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12,<3.14"
-content-hash = "653c4cda22ec5ff95420d305386c53ba440714fe7c59a9f7f240fdf86b698031"
+content-hash = "de8f45fdd525059f1c021767c7f24ef4eaf9eb00b57772c7017a86ae534c040d"
