@@ -586,21 +586,36 @@ async def read_confirmation_input(config: OpenHandsConfig) -> str:
 
 
 async def process_agent_pause(done: asyncio.Event, event_stream: EventStream) -> None:
+    import time
+
     input = create_input()
+    ctrl_c_pressed_time = None
 
     def keys_ready() -> None:
+        nonlocal ctrl_c_pressed_time
+
         for key_press in input.read_keys():
             if key_press.key == Keys.ControlC:
-                # Ctrl+C should stop the application cleanly
-                print_formatted_text('')
-                print_formatted_text(
-                    HTML('<red>Keyboard interrupt, shutting down...</red>')
-                )
-                event_stream.add_event(
-                    ChangeAgentStateAction(AgentState.STOPPED),
-                    EventSource.USER,
-                )
-                done.set()
+                current_time = time.time()
+                if ctrl_c_pressed_time and (current_time - ctrl_c_pressed_time) < 2.0:
+                    # Double Ctrl+C within 2 seconds - force quit
+                    print_formatted_text('')
+                    print_formatted_text(HTML('<red>Force quitting...</red>'))
+                    raise KeyboardInterrupt()
+                else:
+                    # First Ctrl+C - stop agent gracefully
+                    ctrl_c_pressed_time = current_time
+                    print_formatted_text('')
+                    print_formatted_text(
+                        HTML(
+                            '<yellow>Stopping agent... (press Ctrl+C again within 2 seconds to force quit)</yellow>'
+                        )
+                    )
+                    event_stream.add_event(
+                        ChangeAgentStateAction(AgentState.STOPPED),
+                        EventSource.USER,
+                    )
+                    done.set()
             elif key_press.key == Keys.ControlP or key_press.key == Keys.ControlD:
                 print_formatted_text('')
                 print_formatted_text(HTML('<gold>Pausing the agent...</gold>'))
