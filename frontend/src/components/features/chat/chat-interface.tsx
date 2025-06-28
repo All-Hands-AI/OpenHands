@@ -10,6 +10,7 @@ import { createChatMessage } from "#/services/chat-service";
 import { InteractiveChatBox } from "./interactive-chat-box";
 import { RootState } from "#/store";
 import { AgentState } from "#/types/agent-state";
+import { isOpenHandsAction } from "#/types/core/guards";
 import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
 import { FeedbackModal } from "../feedback/feedback-modal";
 import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
@@ -77,10 +78,10 @@ export function ChatInterface() {
 
   const events = parsedEvents.filter(shouldRenderEvent);
 
-  // Check if there are any non-environment events
-  const hasNonEnvironmentEvents = React.useMemo(() => {
+  // Check if there are any non-environment actions
+  const hasNonEnvironmentActions = React.useMemo(() => {
     return parsedEvents.some((event) =>
-      event.source !== "environment"
+      isOpenHandsAction(event) && event.source !== "environment"
     );
   }, [parsedEvents]);
 
@@ -174,7 +175,7 @@ export function ChatInterface() {
   return (
     <ScrollProvider value={scrollProviderValue}>
       <div className="h-full flex flex-col justify-between">
-        {(!hasNonEnvironmentEvents && !optimisticUserMessage) && (
+        {(!hasNonEnvironmentActions && !optimisticUserMessage) && (
           <ChatSuggestions onSuggestionsClick={setMessageToSend} />
         )}
 
@@ -199,7 +200,7 @@ export function ChatInterface() {
           )}
 
           {isWaitingForUserInput &&
-            hasNonEnvironmentEvents &&
+            hasNonEnvironmentActions &&
             !optimisticUserMessage && (
               <ActionSuggestions
                 onSuggestionsClick={(value) => handleSendMessage(value, [], [])}
