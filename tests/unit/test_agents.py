@@ -71,6 +71,7 @@ def test_agent_with_default_config_has_default_tools():
     codeact_agent = CodeActAgent(llm=LLM(LLMConfig()), config=config)
     assert len(codeact_agent.tools) > 0
     default_tool_names = [tool['function']['name'] for tool in codeact_agent.tools]
+    # With default config, claude_editor is enabled and gemini_editor is disabled
     assert {
         'browser',
         'execute_bash',
@@ -79,6 +80,10 @@ def test_agent_with_default_config_has_default_tools():
         'claude_editor',
         'think',
     }.issubset(default_tool_names)
+    # Gemini editor tools should not be in the default tools
+    assert 'replace' not in default_tool_names
+    assert 'write_file' not in default_tool_names
+    assert 'read_file' not in default_tool_names
 
 
 @pytest.fixture
