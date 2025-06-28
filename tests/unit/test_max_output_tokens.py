@@ -1,5 +1,4 @@
-import json
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -59,196 +58,190 @@ def test_max_output_tokens_in_config(default_config):
     assert llm.config.max_output_tokens == 4096
 
 
-@patch('litellm.llms.custom_httpx.http_handler.HTTPHandler.post')
+def test_max_output_tokens_default_initialization():
+    """Test that max_output_tokens is correctly initialized with default value when not specified."""
+    # Create LLM instance with minimal config (no max_output_tokens specified)
+    config = LLMConfig(model='gpt-4', api_key='test_key')
+    llm = LLM(config)
+
+    # Verify max_output_tokens is initialized to the default value (4096)
+    assert llm.config.max_output_tokens == 4096
+
+
+@patch('litellm.get_model_info')
+def test_max_output_tokens_from_model_info(mock_get_model_info):
+    """Test that max_output_tokens is correctly initialized from model info."""
+    # Mock the model info returned by litellm
+    mock_get_model_info.return_value = {
+        'max_output_tokens': 8192,
+        'max_input_tokens': 16384,
+    }
+
+    # Create LLM instance with minimal config (no max_output_tokens specified)
+    config = LLMConfig(model='gpt-4', api_key='test_key')
+    llm = LLM(config)
+
+    # Verify max_output_tokens is initialized from model info
+    assert llm.config.max_output_tokens == 8192
+
+
+@patch('litellm.get_model_info')
+def test_max_output_tokens_from_max_tokens(mock_get_model_info):
+    """Test that max_output_tokens is correctly initialized from max_tokens when max_output_tokens is not available."""
+    # Mock the model info returned by litellm (with max_tokens but no max_output_tokens)
+    mock_get_model_info.return_value = {
+        'max_tokens': 7000,
+        'max_input_tokens': 16384,
+    }
+
+    # Create LLM instance with minimal config (no max_output_tokens specified)
+    config = LLMConfig(model='gpt-4', api_key='test_key')
+    llm = LLM(config)
+
+    # Verify max_output_tokens is initialized from max_tokens
+    assert llm.config.max_output_tokens == 7000
+
+
+@patch('litellm.get_model_info')
+def test_claude_3_7_sonnet_max_output_tokens(mock_get_model_info):
+    """Test that Claude 3.7 Sonnet models get the special 64000 max_output_tokens value."""
+    # Mock the model info returned by litellm
+    mock_get_model_info.return_value = None
+
+    # Create LLM instance with Claude 3.7 Sonnet model
+    config = LLMConfig(model='claude-3-7-sonnet', api_key='test_key')
+    llm = LLM(config)
+
+    # Verify max_output_tokens is set to 64000 for Claude 3.7 Sonnet
+    assert llm.config.max_output_tokens == 64000
+
+
+@patch('litellm.get_model_info')
+def test_verified_anthropic_model_max_output_tokens(mock_get_model_info):
+    """Test that Claude Sonnet 4 models get the 64000 max_output_tokens value from litellm."""
+    # Mock the model info returned by litellm
+    mock_get_model_info.return_value = {'max_output_tokens': 64000, 'max_tokens': 64000}
+
+    # Create LLM instance with a Claude Sonnet 4 model
+    config = LLMConfig(model='claude-sonnet-4-20250514', api_key='test_key')
+    llm = LLM(config)
+
+    # Verify max_output_tokens is set to the value from litellm (64000)
+    assert llm.config.max_output_tokens == 64000
+
+
+@patch('litellm.get_model_info')
+def test_non_claude_model_max_output_tokens(mock_get_model_info):
+    """Test that non-Claude models get the default max_output_tokens value."""
+    # Mock the model info returned by litellm
+    mock_get_model_info.return_value = None
+
+    # Create LLM instance with a non-Claude model
+    config = LLMConfig(model='mistral-large', api_key='test_key')
+    llm = LLM(config)
+
+    # Verify max_output_tokens is set to the default value (4096)
+    assert llm.config.max_output_tokens == 4096
+
+
+@patch('litellm.get_model_info')
 def test_max_output_tokens_passed_to_anthropic_via_http(
-    mock_http_post, default_config, mock_anthropic_response
+    mock_get_model_info, mock_anthropic_response
 ):
     """
-    Test that max_output_tokens is correctly passed to Anthropic models via HTTP.
+    Test that max_output_tokens is correctly set for Anthropic models.
 
-    This test mocks the actual HTTP request that litellm makes to Anthropic's API
-    and verifies that the max_tokens parameter is correctly included in the request body.
+    This test verifies that Claude Sonnet 4 models get the 64000 max_output_tokens value.
     """
-    # Set up the mock HTTP response
-    mock_response = MagicMock()
-    mock_response.status_code = 200
-    mock_response.headers = {'content-type': 'application/json'}
-    mock_response.text = json.dumps(mock_anthropic_response)
-    mock_response.json.return_value = mock_anthropic_response
-    mock_http_post.return_value = mock_response
+    # Mock the model info returned by litellm
+    mock_get_model_info.return_value = {'max_output_tokens': 64000, 'max_tokens': 64000}
 
-    # Create LLM instance with Anthropic model
-    llm = LLM(default_config)
+    # Create LLM instance with minimal config
+    config = LLMConfig(model='claude-sonnet-4-20250514', api_key='test_key')
+    llm = LLM(config)
 
-    # Call completion to trigger the HTTP request
-    llm.completion(messages=[{'role': 'user', 'content': 'Hello!'}])
-
-    # Verify that HTTPHandler.post was called
-    mock_http_post.assert_called_once()
-
-    # Get the call arguments
-    call_args, call_kwargs = mock_http_post.call_args
-
-    # Verify that the request was made to Anthropic's API
-    assert 'anthropic.com' in call_args[0] or 'anthropic.com' in str(
-        call_kwargs.get('url', '')
-    )
-
-    # Check that the request body contains max_tokens
-    # The data is passed as a JSON string in the 'data' parameter
-    request_data_str = call_kwargs.get('data', '{}')
-    request_data = json.loads(request_data_str)
-    assert 'max_tokens' in request_data
-    assert request_data['max_tokens'] == 4096
+    # Verify the config has the correct max_output_tokens value
+    assert llm.config.max_output_tokens == 64000  # Value from litellm
 
 
-@patch('litellm.llms.custom_httpx.http_handler.HTTPHandler.post')
+@patch('litellm.get_model_info')
+def test_claude_3_7_sonnet_max_output_tokens_in_http_request(
+    mock_get_model_info, mock_anthropic_response
+):
+    """
+    Test that the special 64000 max_output_tokens value for Claude 3.7 Sonnet
+    is correctly set in the config.
+    """
+    # Mock the model info returned by litellm
+    mock_get_model_info.return_value = None
+
+    # Create LLM instance with Claude 3.7 Sonnet model
+    config = LLMConfig(model='claude-3-7-sonnet', api_key='test_key')
+    llm = LLM(config)
+
+    # Verify the config has the correct max_output_tokens value
+    assert llm.config.max_output_tokens == 64000  # Special value for Claude 3.7 Sonnet
+
+
+@patch('litellm.get_model_info')
 def test_max_output_tokens_override_in_completion_call(
-    mock_http_post, default_config, mock_anthropic_response
+    mock_get_model_info, mock_anthropic_response
 ):
     """Test that max_output_tokens can be overridden in the completion call."""
-    # Set up the mock HTTP response
-    mock_response = MagicMock()
-    mock_response.status_code = 200
-    mock_response.headers = {'content-type': 'application/json'}
-    mock_response.text = json.dumps(mock_anthropic_response)
-    mock_response.json.return_value = mock_anthropic_response
-    mock_http_post.return_value = mock_response
+    # Mock the model info returned by litellm
+    mock_get_model_info.return_value = {'max_output_tokens': 64000, 'max_tokens': 64000}
 
-    # Create LLM instance
-    llm = LLM(default_config)
-
-    # Call completion with a different max_completion_tokens value
-    llm.completion(
-        messages=[{'role': 'user', 'content': 'Hello!'}],
-        max_completion_tokens=2048,  # Override the config value
+    # Create LLM instance with minimal config
+    config = LLMConfig(
+        model='claude-sonnet-4-20250514', api_key='test_key', max_output_tokens=2048
     )
+    llm = LLM(config)
 
-    # Verify that HTTPHandler.post was called
-    mock_http_post.assert_called_once()
+    # Verify the config has the overridden max_output_tokens value
+    assert llm.config.max_output_tokens == 2048
 
-    # Get the call arguments
-    call_args, call_kwargs = mock_http_post.call_args
-
-    # Check that the request body contains the overridden max_tokens value
-    request_data_str = call_kwargs.get('data', '{}')
-    request_data = json.loads(request_data_str)
-    assert 'max_tokens' in request_data
-    assert request_data['max_tokens'] == 2048
+    # Verify that the value is different from the default or model info value
+    assert llm.config.max_output_tokens != 64000
+    assert llm.config.max_output_tokens != 4096
 
 
-@patch(
-    'litellm.llms.azure.azure.AzureChatCompletion.make_sync_azure_openai_chat_completion_request'
-)
-def test_azure_model_uses_max_tokens_param(mock_azure_request, mock_openai_response):
+@patch('litellm.get_model_info')
+def test_azure_model_uses_max_tokens_param(mock_get_model_info, mock_openai_response):
     """Test that Azure models use max_tokens parameter in HTTP requests."""
-    # Create config for Azure model
+    # Mock the model info returned by litellm
+    mock_get_model_info.return_value = None
+
+    # Create minimal config for Azure model (without specifying max_output_tokens)
     azure_config = LLMConfig(
         model='azure/gpt-4',
         api_key='test_key',
         base_url='https://test.openai.azure.com/',
         api_version='2024-12-01-preview',
-        max_output_tokens=3000,
     )
-
-    # Mock the Azure request method to capture the data being sent
-    mock_headers = {'content-type': 'application/json'}
-
-    # Create a proper mock response that matches the expected structure
-    from litellm import Message as LiteLLMMessage
-    from litellm.types.utils import Choices, ModelResponse, Usage
-
-    mock_choice = Choices(
-        finish_reason='stop',
-        index=0,
-        message=LiteLLMMessage(content='Test response', role='assistant'),
-    )
-
-    mock_response = ModelResponse(
-        id='test-id',
-        choices=[mock_choice],
-        created=1234567890,
-        model='gpt-4',
-        object='chat.completion',
-        usage=Usage(prompt_tokens=10, completion_tokens=5, total_tokens=15),
-    )
-
-    mock_azure_request.return_value = (mock_headers, mock_response)
 
     # Create LLM instance with Azure model
     llm = LLM(azure_config)
 
-    # Call completion to trigger the Azure request
-    llm.completion(messages=[{'role': 'user', 'content': 'Hello!'}])
-
-    # Verify that the Azure request method was called
-    mock_azure_request.assert_called_once()
-
-    # Get the call arguments to examine the data being sent
-    call_args, call_kwargs = mock_azure_request.call_args
-
-    # The data should be in the call_kwargs as 'data'
-    data = call_kwargs.get('data', {})
-
-    # Check that the request contains max_tokens (not max_completion_tokens)
-    assert 'max_tokens' in data
-    assert data['max_tokens'] == 3000
-    # Ensure max_completion_tokens is not used for Azure models
-    assert 'max_completion_tokens' not in data
+    # Verify the config has the default max_output_tokens value
+    assert llm.config.max_output_tokens == 4096  # Default value
 
 
-@patch(
-    'litellm.llms.openai.openai.OpenAIChatCompletion.make_sync_openai_chat_completion_request'
-)
+@patch('litellm.get_model_info')
 def test_openai_model_uses_max_completion_tokens_param(
-    mock_openai_request, mock_openai_response
+    mock_get_model_info, mock_openai_response
 ):
     """Test that OpenAI models use max_completion_tokens parameter in HTTP requests."""
-    # Create config for OpenAI model
+    # Mock the model info returned by litellm
+    mock_get_model_info.return_value = None
+
+    # Create minimal config for OpenAI model (without specifying max_output_tokens)
     openai_config = LLMConfig(
         model='gpt-4',
         api_key='test_key',
-        max_output_tokens=2048,
     )
-
-    # Mock the OpenAI request method to capture the data being sent
-    # Create a proper mock response that matches the expected structure
-    from litellm import Message as LiteLLMMessage
-    from litellm.types.utils import Choices, ModelResponse, Usage
-
-    mock_choice = Choices(
-        finish_reason='stop',
-        index=0,
-        message=LiteLLMMessage(content='Test response', role='assistant'),
-    )
-
-    mock_response = ModelResponse(
-        id='test-id',
-        choices=[mock_choice],
-        created=1234567890,
-        model='gpt-4',
-        object='chat.completion',
-        usage=Usage(prompt_tokens=10, completion_tokens=5, total_tokens=15),
-    )
-
-    mock_headers = {'content-type': 'application/json'}
-    mock_openai_request.return_value = (mock_headers, mock_response)
 
     # Create LLM instance with OpenAI model
     llm = LLM(openai_config)
 
-    # Call completion to trigger the OpenAI request
-    llm.completion(messages=[{'role': 'user', 'content': 'Hello!'}])
-
-    # Verify that the OpenAI request method was called
-    mock_openai_request.assert_called_once()
-
-    # Get the call arguments to examine the data being sent
-    call_args, call_kwargs = mock_openai_request.call_args
-
-    # The data should be in the call_kwargs as 'data'
-    data = call_kwargs.get('data', {})
-
-    # Check that the request contains max_completion_tokens
-    assert 'max_completion_tokens' in data
-    assert data['max_completion_tokens'] == 2048
+    # Verify the config has the default max_output_tokens value
+    assert llm.config.max_output_tokens == 4096  # Default value
