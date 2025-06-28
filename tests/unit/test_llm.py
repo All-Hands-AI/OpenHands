@@ -985,6 +985,7 @@ def test_llm_base_url_auto_protocol_patch(mock_get):
 
 # Tests for max_output_tokens configuration and usage
 
+
 def test_max_output_tokens_in_config():
     """Test that max_output_tokens is correctly set in the config."""
     # Create LLM instance
