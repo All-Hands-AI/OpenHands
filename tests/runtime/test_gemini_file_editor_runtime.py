@@ -3,7 +3,6 @@
 import os
 
 import pytest
-from conftest import TEST_RUNTIME, _close_test_runtime, _load_runtime
 
 from openhands.events.observation import (
     ErrorObservation,
@@ -15,6 +14,8 @@ from openhands.runtime.plugins.agent_skills.gemini_file_editor.gemini_file_edito
     GeminiReadFileAction,
     GeminiWriteFileAction,
 )
+
+from .conftest import TEST_RUNTIME, _close_test_runtime, _load_runtime
 
 
 @pytest.mark.skipif(TEST_RUNTIME != 'docker', reason='Test requires Docker runtime')

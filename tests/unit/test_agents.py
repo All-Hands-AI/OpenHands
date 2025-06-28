@@ -76,7 +76,7 @@ def test_agent_with_default_config_has_default_tools():
         'execute_bash',
         'execute_ipython_cell',
         'finish',
-        'str_replace_editor',
+        'claude_editor',
         'think',
     }.issubset(default_tool_names)
 

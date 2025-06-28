@@ -40,6 +40,11 @@ from openhands.events.observation import (
     Observation,
     UserRejectObservation,
 )
+from openhands.events.action.gemini_file_editor import (
+    GeminiEditAction,
+    GeminiReadFileAction,
+    GeminiWriteFileAction,
+)
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
@@ -349,6 +354,15 @@ class ActionExecutionClient(Runtime):
         return self.send_action_for_execution(action)
 
     def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
+        return self.send_action_for_execution(action)
+
+    def replace(self, action: GeminiEditAction) -> Observation:
+        return self.send_action_for_execution(action)
+
+    def write_file(self, action: GeminiWriteFileAction) -> Observation:
+        return self.send_action_for_execution(action)
+
+    def read_file(self, action: GeminiReadFileAction) -> Observation:
         return self.send_action_for_execution(action)
 
     def get_mcp_config(

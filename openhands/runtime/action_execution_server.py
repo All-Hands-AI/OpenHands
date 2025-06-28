@@ -48,6 +48,11 @@ from openhands.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
+from openhands.events.action.gemini_file_editor import (
+    GeminiEditAction,
+    GeminiReadFileAction,
+    GeminiWriteFileAction,
+)
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.observation import (
     CmdOutputObservation,
@@ -67,6 +72,9 @@ from openhands.runtime.file_viewer_server import start_file_viewer_server
 # Import our custom MCP Proxy Manager
 from openhands.runtime.mcp.proxy import MCPProxyManager
 from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCodePlugin
+from openhands.runtime.plugins.agent_skills.gemini_file_editor.gemini_file_editor import (
+    GeminiFileEditor,
+)
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.bash import BashSession
 from openhands.runtime.utils.files import insert_lines, read_lines
@@ -188,6 +196,7 @@ class ActionExecutor:
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
         self.file_editor = OHEditor(workspace_root=self._initial_cwd)
+        self.gemini_file_editor = GeminiFileEditor()
         self.browser: BrowserEnv | None = None
         self.browser_init_task: asyncio.Task | None = None
         self.browsergym_eval_env = browsergym_eval_env
@@ -646,6 +655,18 @@ class ActionExecutor:
                     file_path=tgt_path,
                 )
                 return file_download_obs
+
+    async def replace(self, action: GeminiEditAction) -> Observation:
+        """Handle Gemini-style edit action."""
+        return self.gemini_file_editor.handle_edit_action(action)
+
+    async def write_file(self, action: GeminiWriteFileAction) -> Observation:
+        """Handle Gemini-style write file action."""
+        return self.gemini_file_editor.handle_write_file_action(action)
+
+    async def read_file(self, action: GeminiReadFileAction) -> Observation:
+        """Handle Gemini-style read file action."""
+        return self.gemini_file_editor.handle_read_file_action(action)
 
     def close(self):
         self.memory_monitor.stop_monitoring()

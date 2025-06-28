@@ -6,6 +6,11 @@ from typing import Any, Optional, Union
 from openhands_aci.utils.diff import get_diff  # type: ignore
 
 from openhands.events.action import Action
+from openhands.events.action.gemini_file_editor import (
+    GeminiEditAction,
+    GeminiReadFileAction,
+    GeminiWriteFileAction,
+)
 from openhands.events.observation import (
     ErrorObservation,
     FileEditObservation,
@@ -21,99 +26,6 @@ from openhands.llm.tool_names import (
 from openhands.runtime.utils.edit import FileEditRuntimeMixin
 
 
-class GeminiEditAction(Action):
-    """Action for Gemini-style edit operations."""
-
-    def __init__(
-        self,
-        file_path: str,
-        old_string: str,
-        new_string: str,
-        expected_replacements: int = 1,
-    ):
-        """Initialize a GeminiEditAction.
-
-        Args:
-            file_path: The absolute path to the file to modify.
-            old_string: The exact literal text to replace.
-            new_string: The exact literal text to replace old_string with.
-            expected_replacements: Number of replacements expected. Defaults to 1.
-        """
-        super().__init__()
-        self.file_path = file_path
-        self.old_string = old_string
-        self.new_string = new_string
-        self.expected_replacements = expected_replacements
-
-    def to_dict(self) -> dict:
-        """Convert the action to a dictionary."""
-        return {
-            'file_path': self.file_path,
-            'old_string': self.old_string,
-            'new_string': self.new_string,
-            'expected_replacements': self.expected_replacements,
-        }
-
-
-class GeminiWriteFileAction(Action):
-    """Action for Gemini-style write file operations."""
-
-    def __init__(self, file_path: str, content: str):
-        """Initialize a GeminiWriteFileAction.
-
-        Args:
-            file_path: The absolute path to the file to write to.
-            content: The content to write to the file.
-        """
-        super().__init__()
-        self.file_path = file_path
-        self.content = content
-
-    def to_dict(self) -> dict:
-        """Convert the action to a dictionary."""
-        return {
-            'file_path': self.file_path,
-            'content': self.content,
-        }
-
-
-class GeminiReadFileAction(Action):
-    """Action for Gemini-style read file operations."""
-
-    absolute_path: str
-    offset: Optional[int]
-    limit: Optional[int]
-
-    def __init__(
-        self,
-        absolute_path: str,
-        offset: Optional[int] = None,
-        limit: Optional[int] = None,
-    ):
-        """Initialize a GeminiReadFileAction.
-
-        Args:
-            absolute_path: The absolute path to the file to read.
-            offset: The line number to start reading from (0-based). Optional.
-            limit: The maximum number of lines to read. Optional.
-        """
-        super().__init__()
-        self.absolute_path = absolute_path
-        self.offset = offset
-        self.limit = limit
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert the action to a dictionary."""
-        result: dict[str, Any] = {
-            'absolute_path': self.absolute_path,
-        }
-        if self.offset is not None:
-            result['offset'] = self.offset
-        if self.limit is not None:
-            result['limit'] = self.limit
-        return result
-
-
 class GeminiFileEditor(FileEditRuntimeMixin):
     """Gemini-style file editor implementation."""
 
@@ -121,6 +33,24 @@ class GeminiFileEditor(FileEditRuntimeMixin):
         """Initialize the GeminiFileEditor."""
         super().__init__(*args, **kwargs)
         # No need to initialize file_reader as we'll use file_readers directly
+
+    def read(self, action) -> Observation:
+        """Required abstract method implementation."""
+        # This is for compatibility with FileEditRuntimeMixin
+        # We don't use this method directly
+        return ErrorObservation("Use handle_read_file_action instead")
+
+    def write(self, action) -> Observation:
+        """Required abstract method implementation."""
+        # This is for compatibility with FileEditRuntimeMixin
+        # We don't use this method directly
+        return ErrorObservation("Use handle_write_file_action instead")
+
+    def run_ipython(self, action) -> Observation:
+        """Required abstract method implementation."""
+        # This is for compatibility with FileEditRuntimeMixin
+        # We don't use this method directly
+        return ErrorObservation("IPython not supported in GeminiFileEditor")
 
     def handle_action(self, action: Action) -> Observation:
         """Handle a file edit action.
