@@ -240,7 +240,7 @@ export function AgentSettings() {
             type="text"
             className="w-full max-w-[680px]"
             defaultValue={settings.DISABLED_MICROAGENTS.join(", ")}
-            placeholder={t(I18nKey.SETTINGS$DISABLED_MICROAGENTS_PLACEHOLDER)}
+            placeholder="github, npm, docker"
             onChange={(value: string) => {
               const currentArray = value
                 .split(",")
