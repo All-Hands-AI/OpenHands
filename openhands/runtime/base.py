@@ -459,16 +459,18 @@ class Runtime(FileEditRuntimeMixin):
         # even if there's an error during execution
         self._setup_script_executed = True
 
-        # Run the action - the action will be added to the event stream by run_action
-        # with the default source, so we need to set the source explicitly
-        action._source = EventSource.ENVIRONMENT  # type: ignore[attr-defined]
+        # Run the action first to get the result
         obs = self.run_action(action)
 
-        # Ensure the observation has the correct source
+        # Set the source for the action and observation
+        action._source = EventSource.ENVIRONMENT  # type: ignore[attr-defined]
         obs._source = EventSource.ENVIRONMENT  # type: ignore[attr-defined]
 
-        # Add the observation to the event stream so the result is visible in the UI
+        # Add both the action and observation to the event stream so they're visible in the UI
         if self.event_stream:
+            self.event_stream.add_event(action, EventSource.ENVIRONMENT)
+            # Set the observation's cause after the action has been added and has an ID
+            obs._cause = action.id  # type: ignore[attr-defined]
             self.event_stream.add_event(obs, EventSource.ENVIRONMENT)
 
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:

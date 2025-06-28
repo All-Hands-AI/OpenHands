@@ -218,18 +218,18 @@ def test_setup_script_not_executed_multiple_times(
     all_events = list(runtime.event_stream.search_events())
     new_events = all_events[initial_event_count:]
 
-    # Count how many times the setup command appears in the events
-    setup_command_count = 0
+    # Count how many times the setup command appears as an action (actual execution)
+    setup_action_count = 0
     for event in new_events:
         if (
-            hasattr(event, 'command')
+            isinstance(event, CmdRunAction)
             and 'chmod +x .openhands/setup.sh && source .openhands/setup.sh'
             in event.command
         ):
-            setup_command_count += 1
+            setup_action_count += 1
 
     # The setup script should only be executed once, even if called multiple times
-    assert setup_command_count == 1
+    assert setup_action_count == 1
 
 
 def test_setup_script_failure_events_added_to_stream(
