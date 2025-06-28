@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 
+from openhands.core.config import load_openhands_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
@@ -64,12 +65,16 @@ async def load_settings(
 
         settings_data = settings.model_dump(exclude={'secrets_store'})
         # Ensure LLM parameters have default values if None
+        # Load the default llm_config to get its defaults
+        app_config = load_openhands_config()
+        llm_config = app_config.get_llm_config()
+
         if settings_data.get('temperature') is None:
-            settings_data['temperature'] = 0.0
+            settings_data['temperature'] = llm_config.temperature
         if settings_data.get('top_p') is None:
-            settings_data['top_p'] = 1.0
+            settings_data['top_p'] = llm_config.top_p
         if settings_data.get('max_message_chars') is None:
-            settings_data['max_message_chars'] = 30_000
+            settings_data['max_message_chars'] = llm_config.max_message_chars
 
         settings_with_token_data = GETSettingsModel(
             **settings_data,
