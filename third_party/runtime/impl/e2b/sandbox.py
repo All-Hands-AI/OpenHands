@@ -19,11 +19,16 @@ class E2BBox:
     def __init__(
         self,
         config: SandboxConfig,
-        e2b_api_key: str,
         template: str = 'openhands',
     ):
         self.config = copy.deepcopy(config)
         self.initialize_plugins: bool = config.initialize_plugins
+        
+        # Read API key from environment variable
+        e2b_api_key = os.getenv('E2B_API_KEY')
+        if not e2b_api_key:
+            raise ValueError('E2B_API_KEY environment variable is required for E2B runtime')
+        
         self.sandbox = E2BSandbox(
             api_key=e2b_api_key,
             template=template,
@@ -112,3 +117,7 @@ class E2BBox:
 
     def get_working_directory(self):
         return self.sandbox.cwd
+
+
+# Alias for backward compatibility
+E2BSandbox = E2BBox

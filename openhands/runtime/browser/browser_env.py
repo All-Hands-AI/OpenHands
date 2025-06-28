@@ -94,6 +94,9 @@ class BrowserEnv:
                 headless=True,
                 disable_env_checker=True,
                 tags_to_mark='all',
+                timeout=100000,
+                pw_context_kwargs={'accept_downloads': True},
+                pw_chromium_kwargs={'downloads_path': '/workspace/.downloads/'},
             )
         obs, info = env.reset()
 
@@ -105,6 +108,7 @@ class BrowserEnv:
         if self.eval_mode:
             self.eval_goal = obs['goal']
             if 'goal_object' in obs:
+                obs['goal_object'] = list(obs['goal_object'])
                 if len(obs['goal_object']) > 0:
                     self.eval_goal = obs['goal_object'][0]['text']
                 for message in obs['goal_object']:
@@ -182,7 +186,7 @@ class BrowserEnv:
                     pass
                 return
 
-    def step(self, action_str: str, timeout: float = 100) -> dict:
+    def step(self, action_str: str, timeout: float = 120) -> dict:
         """Execute an action in the browser environment and return the observation."""
         unique_request_id = str(uuid.uuid4())
         self.agent_side.send((unique_request_id, {'action': action_str}))
