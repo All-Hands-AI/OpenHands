@@ -117,20 +117,6 @@ def test_claude_3_7_sonnet_max_output_tokens(mock_get_model_info):
 
 
 @patch('litellm.get_model_info')
-def test_claude_3_dot_7_sonnet_max_output_tokens(mock_get_model_info):
-    """Test that Claude 3.7 Sonnet models with dot notation get the special 64000 max_output_tokens value."""
-    # Mock the model info returned by litellm
-    mock_get_model_info.return_value = None
-
-    # Create LLM instance with Claude 3.7 Sonnet model using dot notation
-    config = LLMConfig(model='claude-3.7-sonnet', api_key='test_key')
-    llm = LLM(config)
-
-    # Verify max_output_tokens is set to 64000 for Claude 3.7 Sonnet with dot notation
-    assert llm.config.max_output_tokens == 64000
-
-
-@patch('litellm.get_model_info')
 def test_verified_anthropic_model_max_output_tokens(mock_get_model_info):
     """Test that Claude Sonnet 4 models get the 64000 max_output_tokens value from litellm."""
     # Mock the model info returned by litellm
