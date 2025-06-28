@@ -436,48 +436,70 @@ fill("{textarea_bid}", "This is a test message")
             )
 
         # Test select_option action with real bid
-        if select_bid:
-            action_browse = BrowseInteractiveAction(
-                browser_actions=f'select_option("{select_bid}", "option2")',
-                return_axtree=True,
-            )
-            logger.info(action_browse, extra={'msg_type': 'ACTION'})
-            obs = runtime.run_action(action_browse)
-            logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        action_browse = BrowseInteractiveAction(
+            browser_actions=f'select_option("{select_bid}", "option2")',
+            return_axtree=True,
+        )
+        logger.info(action_browse, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action_browse)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
-            assert isinstance(obs, BrowserOutputObservation)
-        else:
-            logger.warning(
-                f'Could not find select element bid: select_bid={select_bid}'
+        assert isinstance(obs, BrowserOutputObservation)
+        assert not obs.error, (
+            f'Select option action failed: {obs.last_browser_action_error}'
+        )
+
+        # Verify that option2 is now selected
+        updated_axtree_elements = parse_axtree_content(obs.content)
+        if select_bid in updated_axtree_elements:
+            select_desc = updated_axtree_elements[select_bid]
+            # The selected option should be reflected in the select element description
+            assert 'option2' in select_desc or 'Option 2' in select_desc, (
+                f"Select element should show 'option2' as selected but description is: {select_desc}"
             )
 
         # Test click action with real bid
-        if button_bid:
-            action_browse = BrowseInteractiveAction(
-                browser_actions=f'click("{button_bid}")', return_axtree=True
-            )
-            logger.info(action_browse, extra={'msg_type': 'ACTION'})
-            obs = runtime.run_action(action_browse)
-            logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        action_browse = BrowseInteractiveAction(
+            browser_actions=f'click("{button_bid}")', return_axtree=True
+        )
+        obs = runtime.run_action(action_browse)
+        assert isinstance(obs, BrowserOutputObservation)
+        assert not obs.error, f'Click action failed: {obs.last_browser_action_error}'
 
-            assert isinstance(obs, BrowserOutputObservation)
-        else:
-            logger.warning(f'Could not find button bid: button_bid={button_bid}')
+        # Verify that the button click triggered the JavaScript and updated the result div
+        updated_axtree_elements = parse_axtree_content(obs.content)
+        # Look for the "Button clicked!" text that should appear in the result div
+        result_found = any(
+            'Button clicked!' in desc for desc in updated_axtree_elements.values()
+        )
+        assert result_found, (
+            f"Button click should have triggered JavaScript to show 'Button clicked!' but not found in: {dict(list(updated_axtree_elements.items())[:10])}"
+        )
 
         # Test clear action with real bid
-        if text_input_bid:
-            action_browse = BrowseInteractiveAction(
-                browser_actions=f'clear("{text_input_bid}")', return_axtree=True
-            )
-            logger.info(action_browse, extra={'msg_type': 'ACTION'})
-            obs = runtime.run_action(action_browse)
-            logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        action_browse = BrowseInteractiveAction(
+            browser_actions=f'clear("{text_input_bid}")', return_axtree=True
+        )
+        obs = runtime.run_action(action_browse)
+        assert isinstance(obs, BrowserOutputObservation)
+        assert not obs.error, f'Clear action failed: {obs.last_browser_action_error}'
 
-            assert isinstance(obs, BrowserOutputObservation)
-        else:
-            logger.warning(
-                f'Could not find text input bid for clear action: text_input_bid={text_input_bid}'
-            )
+        # Verify that the text input is now empty/cleared
+        updated_axtree_elements = parse_axtree_content(obs.content)
+        assert text_input_bid in updated_axtree_elements
+        text_input_desc = updated_axtree_elements[text_input_bid]
+        # After clearing, the input should not contain the previous text
+        assert 'Hello World' not in text_input_desc, (
+            f'Text input should be cleared but still contains text: {text_input_desc}'
+        )
+        # Check that it's back to showing placeholder text or is empty
+        assert (
+            'Enter text' in text_input_desc  # placeholder text
+            or 'textbox' in text_input_desc.lower()  # generic textbox description
+            or text_input_desc.strip() == ''  # empty description
+        ), (
+            f'Cleared text input should show placeholder or be empty but description is: {text_input_desc}'
+        )
 
         # Clean up
         action_cmd = CmdRunAction(command='pkill -f "python3 -m http.server" || true')
