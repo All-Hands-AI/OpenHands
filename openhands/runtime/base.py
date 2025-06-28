@@ -116,7 +116,9 @@ class Runtime(FileEditRuntimeMixin):
     status_callback: Callable[[str, str, str], None] | None
     runtime_status: RuntimeStatus | None
     _runtime_initialized: bool = False
-    _setup_script_executed: bool = False
+
+    # Class variable to track setup script execution across all runtime instances
+    _setup_script_executed = False
 
     def __init__(
         self,
@@ -432,20 +434,29 @@ class Runtime(FileEditRuntimeMixin):
 
     def maybe_run_setup_script(self):
         """Run .openhands/setup.sh if it exists in the workspace or repository."""
-        # Check if setup script has already been executed
-        if self._setup_script_executed:
-            logger.debug("Setup script already executed, skipping")
+        # Check if setup script has already been executed (class variable)
+        if Runtime._setup_script_executed:
+            logger.debug('Setup script already executed, skipping')
             return
 
         # Mark setup script as executed to prevent duplicate execution
         # Set this at the very beginning to ensure it's not executed twice
         # even if there's an error during execution
-        self._setup_script_executed = True
+        Runtime._setup_script_executed = True
+
+        # Also check for a lock file as an additional safeguard
+        lock_file = '.openhands/.setup_script_executed'
+        lock_check = self.read(FileReadAction(path=lock_file))
+        if not isinstance(lock_check, ErrorObservation):
+            logger.debug(
+                f'Setup script lock file found at {lock_file}, skipping execution'
+            )
+            return
 
         setup_script = '.openhands/setup.sh'
         read_obs = self.read(FileReadAction(path=setup_script))
         if isinstance(read_obs, ErrorObservation):
-            logger.debug(f"Setup script not found at {setup_script}")
+            logger.debug(f'Setup script not found at {setup_script}')
             return
 
         if self.status_callback:
@@ -461,19 +472,15 @@ class Runtime(FileEditRuntimeMixin):
         )
         action.set_hard_timeout(600)
 
-        # Run the action first to get the result
+        # Set the source for the action
+        action._source = EventSource.ENVIRONMENT  # type: ignore[attr-defined]
+
+        # Run the action to get the result
+        # This will automatically add both the action and observation to the event stream
         obs = self.run_action(action)
 
-        # Set the source for the action and observation
-        action._source = EventSource.ENVIRONMENT  # type: ignore[attr-defined]
+        # Make sure the observation has the correct source
         obs._source = EventSource.ENVIRONMENT  # type: ignore[attr-defined]
-
-        # Add both the action and observation to the event stream so they're visible in the UI
-        if self.event_stream:
-            self.event_stream.add_event(action, EventSource.ENVIRONMENT)
-            # Set the observation's cause after the action has been added and has an ID
-            obs._cause = action.id  # type: ignore[attr-defined]
-            self.event_stream.add_event(obs, EventSource.ENVIRONMENT)
 
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
             self.log('error', f'Setup script failed: {obs.content}')
@@ -485,6 +492,8 @@ class Runtime(FileEditRuntimeMixin):
                 )
         else:
             self.log('info', 'Setup script completed successfully')
+            # Create a lock file to prevent duplicate execution in future sessions
+            self.write(FileWriteAction(path=lock_file, content='Setup script executed'))
             if self.status_callback:
                 self.status_callback(
                     'info',

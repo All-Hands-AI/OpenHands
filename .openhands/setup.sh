@@ -1,5 +1,6 @@
-#! /bin/bash
+#!/bin/bash
 
+echo "=== SETUP SCRIPT EXECUTION STARTED ==="
 echo "Setting up the environment..."
 
 # Install pre-commit package
@@ -11,3 +12,5 @@ if [ -d ".git" ]; then
     pre-commit install
     make install-pre-commit-hooks
 fi
+
+echo "=== SETUP SCRIPT EXECUTION COMPLETED ==="
