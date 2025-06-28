@@ -78,11 +78,14 @@ export function ChatInterface() {
 
   const events = parsedEvents.filter(shouldRenderEvent);
 
-  // Check if there are any non-environment actions
-  const hasNonEnvironmentActions = React.useMemo(
+  // Check if there are any substantive agent actions (not just system messages)
+  const hasSubstantiveAgentActions = React.useMemo(
     () =>
       parsedEvents.some(
-        (event) => isOpenHandsAction(event) && event.source !== "environment",
+        (event) =>
+          isOpenHandsAction(event) &&
+          event.source === "agent" &&
+          event.action !== "system",
       ),
     [parsedEvents],
   );
@@ -177,7 +180,7 @@ export function ChatInterface() {
   return (
     <ScrollProvider value={scrollProviderValue}>
       <div className="h-full flex flex-col justify-between">
-        {!hasNonEnvironmentActions && !optimisticUserMessage && (
+        {!hasSubstantiveAgentActions && !optimisticUserMessage && (
           <ChatSuggestions onSuggestionsClick={setMessageToSend} />
         )}
 
@@ -202,7 +205,7 @@ export function ChatInterface() {
           )}
 
           {isWaitingForUserInput &&
-            hasNonEnvironmentActions &&
+            hasSubstantiveAgentActions &&
             !optimisticUserMessage && (
               <ActionSuggestions
                 onSuggestionsClick={(value) => handleSendMessage(value, [], [])}
