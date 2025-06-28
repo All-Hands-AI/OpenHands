@@ -591,8 +591,16 @@ async def process_agent_pause(done: asyncio.Event, event_stream: EventStream) ->
     def keys_ready() -> None:
         for key_press in input.read_keys():
             if key_press.key == Keys.ControlC:
-                # Ctrl+C should interrupt the application, not pause it
-                raise KeyboardInterrupt()
+                # Ctrl+C should stop the application cleanly
+                print_formatted_text('')
+                print_formatted_text(
+                    HTML('<red>Keyboard interrupt, shutting down...</red>')
+                )
+                event_stream.add_event(
+                    ChangeAgentStateAction(AgentState.STOPPED),
+                    EventSource.USER,
+                )
+                done.set()
             elif key_press.key == Keys.ControlP or key_press.key == Keys.ControlD:
                 print_formatted_text('')
                 print_formatted_text(HTML('<gold>Pausing the agent...</gold>'))
