@@ -68,23 +68,23 @@ Download and install the LM Studio desktop app from [lmstudio.ai](https://lmstud
 1. Check [the installation guide](/usage/local-setup) and ensure all prerequisites are met before running OpenHands, then run:
 
 ```bash
-docker pull docker.all-hands.dev/all-hands-ai/runtime:0.45-nikolaik
+docker pull docker.all-hands.dev/all-hands-ai/runtime:0.47-nikolaik
 
 docker run -it --rm --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.45-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.47-nikolaik \
     -e LOG_ALL_EVENTS=true \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v ~/.openhands:/.openhands \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app \
-    docker.all-hands.dev/all-hands-ai/openhands:0.45
+    docker.all-hands.dev/all-hands-ai/openhands:0.47
 ```
 
 2. Wait until the server is running (see log below):
 ```
 Digest: sha256:e72f9baecb458aedb9afc2cd5bc935118d1868719e55d50da73190d3a85c674f
-Status: Image is up to date for docker.all-hands.dev/all-hands-ai/openhands:0.45
+Status: Image is up to date for docker.all-hands.dev/all-hands-ai/openhands:0.47
 Starting OpenHands...
 Running OpenHands as root
 14:22:13 - openhands:INFO: server_config.py:50 - Using config class None
@@ -119,7 +119,7 @@ When started for the first time, OpenHands will prompt you to set up the LLM pro
 
 That's it! You can now start using OpenHands with the local LLM server.
 
-If you encounter any issues, let us know on [Slack](https://join.slack.com/t/openhands-ai/shared_invite/zt-34zm4j0gj-Qz5kRHoca8DFCbqXPS~f_A) or [Discord](https://discord.gg/ESHStjSjD4).
+If you encounter any issues, let us know on [Slack](https://join.slack.com/t/openhands-ai/shared_invite/zt-3847of6xi-xuYJIPa6YIPg4ElbDWbtSA) or [Discord](https://discord.gg/ESHStjSjD4).
 
 ## Advanced: Alternative LLM Backends
 

@@ -10,18 +10,7 @@
 # General core configurations
 ##############################################################################
 [core]
-# API key for E2B
-#e2b_api_key = ""
-
-# API key for Modal
-#modal_api_token_id = ""
-#modal_api_token_secret = ""
-
-# API key for Daytona
-#daytona_api_key = ""
-
-# Daytona Target
-#daytona_target = ""
+# API keys and configuration for core services
 
 # Base path for the workspace
 #workspace_base = "./workspace"
@@ -200,6 +189,7 @@ model = "gpt-4o"
 # https://github.com/All-Hands-AI/OpenHands/pull/4711
 #native_tool_calling = None
 
+
 # Safety settings for models that support them (e.g., Mistral AI, Gemini)
 # Example for Mistral AI:
 # safety_settings = [
@@ -218,6 +208,9 @@ model = "gpt-4o"
 # ]
 #safety_settings = []
 
+[llm.draft_editor]
+# The number of times llm_editor tries to fix an error when editing.
+correct_num = 5
 
 [llm.gpt4o-mini]
 api_key = ""
@@ -266,6 +259,9 @@ enable_finish = true
 # Whether history should be truncated to continue the session when hitting LLM context
 # length limit
 enable_history_truncation = true
+
+# Whether the condensation request tool is enabled
+enable_condensation_request = false
 
 [agent.RepoExplorerAgent]
 # Example: use a cheaper model for RepoExplorerAgent to reduce cost, especially
@@ -334,6 +330,9 @@ classpath = "my_package.my_module.MyCustomAgent"
 
 # Enable GPU support in the runtime
 #enable_gpu = false
+
+# When there are multiple cards, you can specify the GPU by ID
+#cuda_visible_devices = ''
 
 # Additional Docker runtime kwargs
 #docker_runtime_kwargs = {}

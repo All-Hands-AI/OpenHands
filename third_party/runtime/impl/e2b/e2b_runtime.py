@@ -16,8 +16,8 @@ from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
-from openhands.runtime.impl.e2b.filestore import E2BFileStore
-from openhands.runtime.impl.e2b.sandbox import E2BSandbox
+from third_party.runtime.impl.e2b.filestore import E2BFileStore
+from third_party.runtime.impl.e2b.sandbox import E2BSandbox
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.files import insert_lines, read_lines
 
@@ -50,7 +50,7 @@ class E2BRuntime(ActionExecutionClient):
             git_provider_tokens,
         )
         if sandbox is None:
-            self.sandbox = E2BSandbox()
+            self.sandbox = E2BSandbox(config.sandbox)
         if not isinstance(self.sandbox, E2BSandbox):
             raise ValueError('E2BRuntime requires an E2BSandbox')
         self.file_store = E2BFileStore(self.sandbox.filesystem)
