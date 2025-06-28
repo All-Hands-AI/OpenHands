@@ -238,6 +238,29 @@ test-frontend:
 	@echo "$(YELLOW)Running tests for frontend...$(RESET)"
 	@cd frontend && npm run test
 
+test-lint:
+	@echo "$(YELLOW)Running Python and Frontend lint...$(RESET)"
+	@echo "$(BLUE)Running Python lint (pre-commit)...$(RESET)"
+	@pre-commit run --all-files --config ./dev_config/python/.pre-commit-config.yaml
+	@echo "$(BLUE)Running Frontend lint...$(RESET)"
+	@cd frontend && npm run lint && npm run check-translation-completeness
+	@echo "$(GREEN)Lint checks passed!$(RESET)"
+
+test-unit:
+	@echo "$(YELLOW)Running Python unit tests...$(RESET)"
+	@poetry run pytest --forked -n auto -svv ./tests/unit
+	@echo "$(GREEN)Python unit tests completed!$(RESET)"
+
+test-runtime:
+	@echo "$(YELLOW)Running runtime tests (CLI)...$(RESET)"
+	@TEST_RUNTIME=cli poetry run pytest -svv tests/runtime/test_bash.py
+	@echo "$(GREEN)Runtime tests completed!$(RESET)"
+
+test-all: test-lint test-unit test-runtime
+	@echo "$(GREEN)🎉 All local tests completed!$(RESET)"
+	@echo "$(BLUE)Note: Some tests may fail due to missing dependencies or environment differences.$(RESET)"
+	@echo "$(BLUE)This is expected and these failures should be resolved in the CI environment.$(RESET)"
+
 test:
 	@$(MAKE) -s test-frontend
 
@@ -356,6 +379,11 @@ help:
 	@echo "Targets:"
 	@echo "  $(GREEN)build$(RESET)               - Build project, including environment setup and dependencies."
 	@echo "  $(GREEN)lint$(RESET)                - Run linters on the project."
+	@echo "  $(GREEN)test-all$(RESET)            - Run all tests: lint, unit tests, and runtime tests."
+	@echo "  $(GREEN)test-lint$(RESET)           - Run Python and Frontend linting."
+	@echo "  $(GREEN)test-unit$(RESET)           - Run Python unit tests."
+	@echo "  $(GREEN)test-runtime$(RESET)        - Run basic runtime tests with CLI runtime."
+	@echo "  $(GREEN)test-frontend$(RESET)       - Run frontend tests."
 	@echo "  $(GREEN)setup-config$(RESET)        - Setup the configuration for OpenHands by providing LLM API key,"
 	@echo "                        LLM Model name, and workspace directory."
 	@echo "  $(GREEN)start-backend$(RESET)       - Start the backend server for the OpenHands project."
@@ -367,5 +395,5 @@ help:
 	@echo "  $(GREEN)help$(RESET)                - Display this help message, providing information on available targets."
 
 # Phony targets
-.PHONY: build check-dependencies check-system check-python check-npm check-nodejs check-docker check-poetry install-python-dependencies install-frontend-dependencies install-pre-commit-hooks lint-backend lint-frontend lint test-frontend test build-frontend start-backend start-frontend _run_setup run run-wsl setup-config setup-config-prompts setup-config-basic openhands-cloud-run docker-dev docker-run clean help
+.PHONY: build check-dependencies check-system check-python check-npm check-nodejs check-docker check-poetry install-python-dependencies install-frontend-dependencies install-pre-commit-hooks lint-backend lint-frontend lint test-frontend test test-all test-lint test-unit test-runtime build-frontend start-backend start-frontend _run_setup run run-wsl setup-config setup-config-prompts setup-config-basic openhands-cloud-run docker-dev docker-run clean help
 .PHONY: kind

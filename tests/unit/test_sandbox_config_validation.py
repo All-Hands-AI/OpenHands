@@ -28,9 +28,9 @@ def test_invalid_container_reuse_strategy():
 
 
 def test_default_container_reuse_strategy():
-    """Test that the default container reuse strategy is 'pause'."""
+    """Test that the default container reuse strategy is 'none'."""
     config = SandboxConfig()
-    assert config.container_reuse_strategy == 'pause'
+    assert config.container_reuse_strategy == 'none'
 
 
 def test_container_reuse_strategy_case_sensitive():

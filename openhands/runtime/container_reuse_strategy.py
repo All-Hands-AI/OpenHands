@@ -1,9 +1,5 @@
-from enum import Enum
+# This file has been moved to openhands.core.config.container_reuse_strategy
+# Import from there to avoid circular dependencies
+from openhands.core.config.container_reuse_strategy import ContainerReuseStrategy
 
-
-class ContainerReuseStrategy(Enum):
-    """Strategy for reusing containers between runtime sessions."""
-
-    NONE = 'none'
-    PAUSE = 'pause'
-    KEEP_ALIVE = 'keep_alive'
+__all__ = ['ContainerReuseStrategy']

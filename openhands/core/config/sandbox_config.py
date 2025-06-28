@@ -2,7 +2,7 @@ import os
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
-from openhands.runtime.container_reuse_strategy import ContainerReuseStrategy
+from openhands.core.config.container_reuse_strategy import ContainerReuseStrategy
 
 
 class SandboxConfig(BaseModel):

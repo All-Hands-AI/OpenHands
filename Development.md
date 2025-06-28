@@ -141,13 +141,41 @@ make help
 
 ### 8. Testing
 
-To run tests, refer to the following:
-
-#### Unit tests
+#### Quick Test Commands
 
 ```bash
-poetry run pytest ./tests/unit/test_*.py
+# Run all tests and linters locally
+make test-all
+
+# Individual test categories
+make test-lint      # Python and frontend linting
+make test-unit      # Python unit tests
+make test-runtime   # Basic runtime tests
+make test-frontend  # Frontend tests
+
+# Or run specific tests
+poetry run pytest ./tests/unit/test_specific.py
+TEST_RUNTIME=docker poetry run pytest tests/runtime/test_bash.py
 ```
+
+#### Local Test Environment Setup
+
+For comprehensive setup instructions, including dependencies, troubleshooting, and CI equivalence, see [LOCAL_TEST_SETUP.md](./LOCAL_TEST_SETUP.md).
+
+#### Test Categories
+
+- **Unit Tests** (`tests/unit/`): Fast, isolated component testing with mocking
+- **Runtime Tests** (`tests/runtime/`): Integration testing with actual runtime environments
+- **Frontend Tests**: JavaScript/TypeScript testing and linting
+- **Linting**: Code style and quality checks for Python and frontend code
+
+#### Environment Variables for Testing
+
+- `TEST_RUNTIME=cli` - Use CLI runtime (safest for local development)
+- `TEST_RUNTIME=docker` - Use Docker runtime (requires Docker daemon)
+- `TEST_RUNTIME=local` - Use local runtime
+- `RUN_AS_OPENHANDS=True` - Run as openhands user (default)
+- `TEST_IN_CI=False` - Indicate not running in CI environment
 
 ### 9. Add or update dependency
 
