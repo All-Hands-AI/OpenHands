@@ -196,7 +196,7 @@ class ActionExecutor:
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
         self.file_editor = OHEditor(workspace_root=self._initial_cwd)
-        self.gemini_file_editor = GeminiFileEditor()
+        self.gemini_file_editor = GeminiFileEditor(enable_llm_editor=False)
         self.browser: BrowserEnv | None = None
         self.browser_init_task: asyncio.Task | None = None
         self.browsergym_eval_env = browsergym_eval_env
