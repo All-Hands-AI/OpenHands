@@ -499,7 +499,7 @@ fill("{textarea_bid}", "This is a test message")
     reason='CLIRuntime does not support browsing actions',
 )
 def test_browser_interactive_actions(temp_dir, runtime_cls, run_as_openhands):
-    """Test browser interactive actions: scroll, hover, press, focus."""
+    """Test browser interactive actions: scroll, hover, fill, press, focus."""
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create a test page with scrollable content
@@ -627,9 +627,29 @@ def test_browser_interactive_actions(temp_dir, runtime_cls, run_as_openhands):
             f'Expected focused element to be {focus_input_bid}, but got {obs.focused_element_bid}'
         )
 
-        # Test press action (type in focused input) with real bid
+        # Test fill action (type in focused input) with real bid
         action_browse = BrowseInteractiveAction(
-            browser_actions=f'press("{focus_input_bid}", "TestValue123")',
+            browser_actions=f'fill("{focus_input_bid}", "TestValue123")',
+            return_axtree=True,
+        )
+        logger.info(action_browse, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action_browse)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+        assert isinstance(obs, BrowserOutputObservation)
+        assert not obs.error, f'Fill action failed: {obs.last_browser_action_error}'
+
+        # Verify that the text was actually entered
+        updated_axtree_elements = parse_axtree_content(obs.content)
+        if focus_input_bid in updated_axtree_elements:
+            input_desc = updated_axtree_elements[focus_input_bid]
+            assert 'TestValue123' in input_desc or "'TestValue123'" in input_desc, (
+                f"Input should contain 'TestValue123' but description is: {input_desc}"
+            )
+
+        # Test press action (for pressing individual keys) with real bid
+        action_browse = BrowseInteractiveAction(
+            browser_actions=f'press("{focus_input_bid}", "Backspace")',
             return_axtree=True,
         )
         logger.info(action_browse, extra={'msg_type': 'ACTION'})
@@ -639,12 +659,12 @@ def test_browser_interactive_actions(temp_dir, runtime_cls, run_as_openhands):
         assert isinstance(obs, BrowserOutputObservation)
         assert not obs.error, f'Press action failed: {obs.last_browser_action_error}'
 
-        # Verify that the text was actually entered
+        # Verify the backspace removed the last character (3 from TestValue123)
         updated_axtree_elements = parse_axtree_content(obs.content)
         if focus_input_bid in updated_axtree_elements:
             input_desc = updated_axtree_elements[focus_input_bid]
-            assert 'TestValue123' in input_desc or "'TestValue123'" in input_desc, (
-                f"Input should contain 'TestValue123' but description is: {input_desc}"
+            assert 'TestValue12' in input_desc or "'TestValue12'" in input_desc, (
+                f"Input should contain 'TestValue12' after backspace but description is: {input_desc}"
             )
 
         # Test multiple actions in sequence
