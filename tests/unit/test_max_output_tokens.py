@@ -145,6 +145,62 @@ def test_non_claude_model_max_output_tokens(mock_get_model_info):
 
 
 @patch('litellm.get_model_info')
+def test_sambanova_deepseek_model_max_output_tokens(mock_get_model_info):
+    """Test that SambaNova DeepSeek-V3-0324 model gets the correct max_output_tokens value from litellm."""
+    # Mock the model info returned by litellm
+    mock_get_model_info.return_value = {
+        'max_tokens': 32768,
+        'max_input_tokens': 32768,
+        'max_output_tokens': 32768,
+        'litellm_provider': 'sambanova',
+        'supports_function_calling': True,
+    }
+
+    # Create LLM instance with SambaNova DeepSeek model
+    config = LLMConfig(model='sambanova/DeepSeek-V3-0324', api_key='test_key')
+    llm = LLM(config)
+
+    # Verify max_output_tokens is set to the value from litellm
+    assert llm.config.max_output_tokens == 32768
+
+
+@patch('litellm.get_model_info')
+def test_sambanova_model_max_tokens_fallback(mock_get_model_info):
+    """Test that SambaNova model falls back to max_tokens when max_output_tokens is not available."""
+    # Mock the model info returned by litellm with only max_tokens (no max_output_tokens)
+    mock_get_model_info.return_value = {
+        'max_tokens': 32768,
+        'max_input_tokens': 32768,
+        'litellm_provider': 'sambanova',
+        'supports_function_calling': True,
+    }
+
+    # Create LLM instance with SambaNova model
+    config = LLMConfig(model='sambanova/DeepSeek-V3-0324', api_key='test_key')
+    llm = LLM(config)
+
+    # Verify max_output_tokens falls back to the max_tokens value
+    assert llm.config.max_output_tokens == 32768
+
+
+@patch('litellm.get_model_info')
+def test_sambanova_model_no_token_info(mock_get_model_info):
+    """Test that SambaNova model with no token info in litellm gets None for max_output_tokens."""
+    # Mock the model info returned by litellm with no token information
+    mock_get_model_info.return_value = {
+        'litellm_provider': 'sambanova',
+        'supports_function_calling': True,
+    }
+
+    # Create LLM instance with SambaNova model
+    config = LLMConfig(model='sambanova/DeepSeek-V3-0324', api_key='test_key')
+    llm = LLM(config)
+
+    # Verify max_output_tokens is None when no token info is available
+    assert llm.config.max_output_tokens is None
+
+
+@patch('litellm.get_model_info')
 def test_max_output_tokens_passed_to_anthropic_via_http(
     mock_get_model_info, mock_anthropic_response
 ):
