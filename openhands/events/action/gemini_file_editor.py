@@ -12,7 +12,7 @@ from openhands.llm.tool_names import (
 
 class GeminiEditAction(Action):
     """Action for Gemini-style edit operations."""
-    
+
     action = GEMINI_EDIT_TOOL_NAME
 
     def __init__(
@@ -45,11 +45,9 @@ class GeminiEditAction(Action):
         }
 
 
-
-
 class GeminiWriteFileAction(Action):
     """Action for Gemini-style write file operations."""
-    
+
     action = GEMINI_WRITE_FILE_TOOL_NAME
 
     def __init__(self, file_path: str, content: str):
@@ -70,11 +68,9 @@ class GeminiWriteFileAction(Action):
         }
 
 
-
-
 class GeminiReadFileAction(Action):
     """Action for Gemini-style read file operations."""
-    
+
     action = GEMINI_READ_FILE_TOOL_NAME
 
     def __init__(
@@ -104,4 +100,3 @@ class GeminiReadFileAction(Action):
         if self.limit is not None:
             result['limit'] = self.limit
         return result
-
