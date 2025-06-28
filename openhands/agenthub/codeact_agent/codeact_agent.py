@@ -15,6 +15,9 @@ from openhands.agenthub.codeact_agent.tools.browser import BrowserTool
 from openhands.agenthub.codeact_agent.tools.claude_editor import (
     create_claude_editor_tool,
 )
+from openhands.agenthub.codeact_agent.tools.condensation_request import (
+    CondensationRequestTool,
+)
 from openhands.agenthub.codeact_agent.tools.finish import FinishTool
 from openhands.agenthub.codeact_agent.tools.gemini_edit_tool import (
     create_gemini_edit_tool,
@@ -127,6 +130,8 @@ class CodeActAgent(Agent):
             tools.append(ThinkTool)
         if self.config.enable_finish:
             tools.append(FinishTool)
+        if self.config.enable_condensation_request:
+            tools.append(CondensationRequestTool)
         if self.config.enable_browsing:
             if sys.platform == 'win32':
                 logger.warning('Windows runtime does not support browsing yet')

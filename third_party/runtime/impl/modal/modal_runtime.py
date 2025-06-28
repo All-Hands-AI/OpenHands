@@ -57,16 +57,22 @@ class ModalRuntime(ActionExecutionClient):
         user_id: str | None = None,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
     ):
-        assert config.modal_api_token_id, 'Modal API token id is required'
-        assert config.modal_api_token_secret, 'Modal API token secret is required'
+        # Read Modal API credentials from environment variables
+        modal_token_id = os.getenv('MODAL_TOKEN_ID')
+        modal_token_secret = os.getenv('MODAL_TOKEN_SECRET')
+        
+        if not modal_token_id:
+            raise ValueError('MODAL_TOKEN_ID environment variable is required for Modal runtime')
+        if not modal_token_secret:
+            raise ValueError('MODAL_TOKEN_SECRET environment variable is required for Modal runtime')
 
         self.config = config
         self.sandbox = None
         self.sid = sid
 
         self.modal_client = modal.Client.from_credentials(
-            config.modal_api_token_id.get_secret_value(),
-            config.modal_api_token_secret.get_secret_value(),
+            modal_token_id,
+            modal_token_secret,
         )
         self.app = modal.App.lookup(
             'openhands', create_if_missing=True, client=self.modal_client
