@@ -274,11 +274,9 @@ class Memory:
             GLOBAL_MICROAGENTS_DIR
         )
         for name, agent_knowledge in knowledge_agents.items():
-            if isinstance(agent_knowledge, KnowledgeMicroagent):
-                self.knowledge_microagents[name] = agent_knowledge  # type: ignore
+            self.knowledge_microagents[name] = agent_knowledge
         for name, agent_repo in repo_agents.items():
-            if isinstance(agent_repo, RepoMicroagent):
-                self.repo_microagents[name] = agent_repo  # type: ignore
+            self.repo_microagents[name] = agent_repo
 
     def _load_user_microagents(self) -> None:
         """
@@ -294,22 +292,10 @@ class Memory:
                 USER_MICROAGENTS_DIR
             )
 
-            # Add user microagents to the collections
-            # User microagents can override global ones with the same name
             for name, agent_knowledge in knowledge_agents.items():
-                if isinstance(agent_knowledge, KnowledgeMicroagent):
-                    self.knowledge_microagents[name] = agent_knowledge  # type: ignore
-                    logger.debug(f'Loaded user knowledge microagent: {name}')
-
+                self.knowledge_microagents[name] = agent_knowledge
             for name, agent_repo in repo_agents.items():
-                if isinstance(agent_repo, RepoMicroagent):
-                    self.repo_microagents[name] = agent_repo  # type: ignore
-                    logger.debug(f'Loaded user repo microagent: {name}')
-
-            if repo_agents or knowledge_agents:
-                logger.info(
-                    f'Loaded {len(repo_agents) + len(knowledge_agents)} user microagents from {USER_MICROAGENTS_DIR}'
-                )
+                self.repo_microagents[name] = agent_repo
         except Exception as e:
             logger.warning(
                 f'Failed to load user microagents from {USER_MICROAGENTS_DIR}: {str(e)}'
