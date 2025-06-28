@@ -6,10 +6,6 @@ import time
 from pathlib import Path
 
 import pytest
-from conftest import (
-    _close_test_runtime,
-    _load_runtime,
-)
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction
@@ -17,6 +13,10 @@ from openhands.events.observation import CmdOutputObservation, ErrorObservation
 from openhands.runtime.impl.cli.cli_runtime import CLIRuntime
 from openhands.runtime.impl.local.local_runtime import LocalRuntime
 from openhands.runtime.utils.bash_constants import TIMEOUT_MESSAGE_TEMPLATE
+from tests.runtime.conftest import (
+    _close_test_runtime,
+    _load_runtime,
+)
 
 
 def get_timeout_suffix(timeout_seconds):
