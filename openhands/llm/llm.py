@@ -482,24 +482,26 @@ class LLM(RetryMixin, DebugMixin):
             )
             self.config.top_p = 0.9 if self.config.top_p == 1 else self.config.top_p
 
-        # Set the max tokens in an LM-specific way if not set
-        if self.config.max_input_tokens is None:
-            if (
-                self.model_info is not None
-                and 'max_input_tokens' in self.model_info
-                and isinstance(self.model_info['max_input_tokens'], int)
-            ):
-                self.config.max_input_tokens = self.model_info['max_input_tokens']
-            else:
-                # Default to None, will be determined by the model
-                self.config.max_input_tokens = None
+        # Set max_input_tokens from model info if not explicitly set
+        if (
+            self.config.max_input_tokens is None
+            and self.model_info is not None
+            and 'max_input_tokens' in self.model_info
+            and isinstance(self.model_info['max_input_tokens'], int)
+        ):
+            self.config.max_input_tokens = self.model_info['max_input_tokens']
 
+        # Set max_output_tokens from model info if not explicitly set
         if self.config.max_output_tokens is None:
-            # Default to None, will be determined by the model
-            self.config.max_output_tokens = None
-            if self.model_info is not None:
-                # max_output_tokens has precedence over max_tokens, if either exists.
-                # litellm has models with both, one or none of these 2 parameters!
+            # Special case for Claude 3.7 Sonnet models
+            if any(
+                model in self.config.model
+                for model in ['claude-3-7-sonnet', 'claude-3.7-sonnet']
+            ):
+                self.config.max_output_tokens = 64000  # litellm set max to 128k, but that requires a header to be set
+            # Try to get from model info
+            elif self.model_info is not None:
+                # max_output_tokens has precedence over max_tokens
                 if 'max_output_tokens' in self.model_info and isinstance(
                     self.model_info['max_output_tokens'], int
                 ):
@@ -508,11 +510,6 @@ class LLM(RetryMixin, DebugMixin):
                     self.model_info['max_tokens'], int
                 ):
                     self.config.max_output_tokens = self.model_info['max_tokens']
-            if any(
-                model in self.config.model
-                for model in ['claude-3-7-sonnet', 'claude-3.7-sonnet']
-            ):
-                self.config.max_output_tokens = 64000  # litellm set max to 128k, but that requires a header to be set
 
         # Initialize function calling capability
         # Check if model name is in our supported list
