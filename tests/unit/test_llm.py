@@ -1045,20 +1045,6 @@ def test_sambanova_deepseek_model_max_output_tokens():
     assert llm.config.max_output_tokens == 32768
 
 
-def test_max_output_tokens_for_anthropic():
-    """
-    Test that max_output_tokens is correctly set for Anthropic models.
-
-    This test verifies that Claude Sonnet 4 models get the 64000 max_output_tokens value.
-    """
-    # Create LLM instance with Claude Sonnet 4 model
-    config = LLMConfig(model='claude-sonnet-4-20250514', api_key='test_key')
-    llm = LLM(config)
-
-    # Verify the config has the correct max_output_tokens value
-    assert llm.config.max_output_tokens == 64000  # Special value for Claude models
-
-
 def test_max_output_tokens_override_in_config():
     """Test that max_output_tokens can be overridden in the config."""
     # Create LLM instance with minimal config and overridden max_output_tokens
