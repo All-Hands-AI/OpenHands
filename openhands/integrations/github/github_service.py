@@ -72,7 +72,9 @@ class GitHubService(BaseGitService, GitService):
     async def _get_github_headers(self) -> dict:
         """Retrieve the GH Token from settings store to construct the headers."""
         if not self.token:
-            self.token = await self.get_latest_token()
+            latest_token = await self.get_latest_token()
+            if latest_token:
+                self.token = latest_token
 
         return {
             'Authorization': f'Bearer {self.token.get_secret_value() if self.token else ""}',
@@ -229,8 +231,8 @@ class GitHubService(BaseGitService, GitService):
         # Convert to Repository objects
         return [
             Repository(
-                id=str(repo.get('id')),
-                full_name=repo.get('full_name'),
+                id=str(repo.get('id')),  # type: ignore[arg-type]
+                full_name=repo.get('full_name'),  # type: ignore[arg-type]
                 stargazers_count=repo.get('stargazers_count'),
                 git_provider=ProviderType.GITHUB,
                 is_public=not repo.get('private', True),
