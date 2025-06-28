@@ -1051,13 +1051,10 @@ def test_max_tokens_from_model_info():
     config = LLMConfig(model='gpt-4', api_key='test_key')
     llm = LLM(config)
 
-    # Verify max_output_tokens and max_input_tokens are initialized
-    # GPT-4 has specific token limits, but we don't hardcode the exact values
-    # since they might change in the future
-    assert isinstance(llm.config.max_output_tokens, int)
-    assert isinstance(llm.config.max_input_tokens, int)
-    assert llm.config.max_output_tokens > 0
-    assert llm.config.max_input_tokens > 0
+    # GPT-4 has specific token limits
+    # These are the expected values from litellm
+    assert llm.config.max_output_tokens == 4096
+    assert llm.config.max_input_tokens == 8192
 
 
 def test_max_tokens_from_max_tokens():
@@ -1066,11 +1063,10 @@ def test_max_tokens_from_max_tokens():
     config = LLMConfig(model='gpt-4', api_key='test_key')
     llm = LLM(config)
 
-    # Verify max_output_tokens and max_input_tokens are initialized
-    assert isinstance(llm.config.max_output_tokens, int)
-    assert isinstance(llm.config.max_input_tokens, int)
-    assert llm.config.max_output_tokens > 0
-    assert llm.config.max_input_tokens > 0
+    # GPT-4 has specific token limits
+    # These are the expected values from litellm
+    assert llm.config.max_output_tokens == 4096
+    assert llm.config.max_input_tokens == 8192
 
 
 def test_claude_3_7_sonnet_max_output_tokens():
@@ -1117,9 +1113,9 @@ def test_sambanova_deepseek_model_max_output_tokens():
     config = LLMConfig(model='sambanova/DeepSeek-V3-0324', api_key='test_key')
     llm = LLM(config)
 
-    # Verify max_output_tokens is set to a value
-    assert isinstance(llm.config.max_output_tokens, int)
-    assert llm.config.max_output_tokens > 0
+    # SambaNova DeepSeek model has specific token limits
+    # This is the expected value from litellm
+    assert llm.config.max_output_tokens == 32768
 
 
 def test_sambanova_model_max_tokens_fallback():
@@ -1128,9 +1124,9 @@ def test_sambanova_model_max_tokens_fallback():
     config = LLMConfig(model='sambanova/DeepSeek-V3-0324', api_key='test_key')
     llm = LLM(config)
 
-    # Verify max_output_tokens is set to a value
-    assert isinstance(llm.config.max_output_tokens, int)
-    assert llm.config.max_output_tokens > 0
+    # SambaNova DeepSeek model has specific token limits
+    # This is the expected value from litellm
+    assert llm.config.max_output_tokens == 32768
 
 
 def test_non_existent_model_no_token_info():
