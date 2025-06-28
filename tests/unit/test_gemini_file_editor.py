@@ -1,15 +1,17 @@
 """Unit tests for Gemini-style file editing tools."""
 
+from openhands.events.action.gemini_file_editor import (
+    GeminiEditAction,
+    GeminiReadFileAction,
+    GeminiWriteFileAction,
+)
 from openhands.llm.tool_names import (
     GEMINI_EDIT_TOOL_NAME,
     GEMINI_READ_FILE_TOOL_NAME,
     GEMINI_WRITE_FILE_TOOL_NAME,
 )
 from openhands.runtime.plugins.agent_skills.gemini_file_editor.gemini_file_editor import (
-    GeminiEditAction,
     GeminiFileEditor,
-    GeminiReadFileAction,
-    GeminiWriteFileAction,
 )
 
 

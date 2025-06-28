@@ -35,15 +35,16 @@ class GeminiEditAction(Action):
         self.new_string = new_string
         self.expected_replacements = expected_replacements
 
-    def to_dict(self) -> dict:
-        """Convert the action to a dictionary."""
+    def to_dict(self) -> dict[str, Any]:
+        """Convert the action to a dictionary for unit tests."""
         return {
-            'action': self.action,
             'file_path': self.file_path,
             'old_string': self.old_string,
             'new_string': self.new_string,
             'expected_replacements': self.expected_replacements,
         }
+
+
 
 
 class GeminiWriteFileAction(Action):
@@ -61,13 +62,14 @@ class GeminiWriteFileAction(Action):
         self.file_path = file_path
         self.content = content
 
-    def to_dict(self) -> dict:
-        """Convert the action to a dictionary."""
+    def to_dict(self) -> dict[str, Any]:
+        """Convert the action to a dictionary for unit tests."""
         return {
-            'action': self.action,
             'file_path': self.file_path,
             'content': self.content,
         }
+
+
 
 
 class GeminiReadFileAction(Action):
@@ -93,9 +95,8 @@ class GeminiReadFileAction(Action):
         self.limit = limit
 
     def to_dict(self) -> dict[str, Any]:
-        """Convert the action to a dictionary."""
+        """Convert the action to a dictionary for unit tests."""
         result: dict[str, Any] = {
-            'action': self.action,
             'absolute_path': self.absolute_path,
         }
         if self.offset is not None:
@@ -103,3 +104,4 @@ class GeminiReadFileAction(Action):
         if self.limit is not None:
             result['limit'] = self.limit
         return result
+
