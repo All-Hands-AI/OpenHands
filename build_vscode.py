@@ -97,7 +97,7 @@ def build(setup_kwargs):
     This function is called by Poetry during the build process.
     `setup_kwargs` is a dictionary that will be passed to `setuptools.setup()`.
     """
-    print('--- Running custom Poetry build script (build.py) ---')
+    print('--- Running custom Poetry build script (build_vscode.py) ---')
 
     # Build the VS Code extension and place the .vsix file
     build_vscode_extension()
@@ -105,10 +105,10 @@ def build(setup_kwargs):
     # Poetry will handle including files based on pyproject.toml `include` patterns.
     # Ensure openhands/integrations/vscode/*.vsix is included there.
 
-    print('--- Custom Poetry build script (build.py) finished ---')
+    print('--- Custom Poetry build script (build_vscode.py) finished ---')
 
 
 if __name__ == '__main__':
-    print('Running build.py directly for testing VS Code extension packaging...')
+    print('Running build_vscode.py directly for testing VS Code extension packaging...')
     build_vscode_extension()
-    print('Direct execution of build.py finished.')
+    print('Direct execution of build_vscode.py finished.')

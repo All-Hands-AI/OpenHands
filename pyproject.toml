@@ -21,7 +21,7 @@ packages = [
 include = [
   "openhands/integrations/vscode/openhands-vscode-0.0.1.vsix",
 ]
-build = "build.py" # Build VSCode extension during Poetry build
+build = "build_vscode.py" # Build VSCode extension during Poetry build
 
 [tool.poetry.dependencies]
 python = "^3.12,<3.14"

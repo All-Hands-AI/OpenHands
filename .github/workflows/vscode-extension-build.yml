@@ -13,7 +13,7 @@ on:
   pull_request:
     paths:
       - 'openhands/integrations/vscode/**'
-      - 'build.py'
+      - 'build_vscode.py'
       - '.github/workflows/vscode-extension-build.yml'
 
 # If triggered by a PR, it will be in the same group. However, each commit on main will be in its own unique group
@@ -45,8 +45,8 @@ jobs:
         working-directory: ./openhands/integrations/vscode
         run: npm ci
 
-      - name: Build VSCode extension via build.py
-        run: python build.py
+      - name: Build VSCode extension via build_vscode.py
+        run: python build_vscode.py
         env:
           # Ensure we don't skip the build
           SKIP_VSCODE_BUILD: ""
