@@ -434,11 +434,18 @@ class Runtime(FileEditRuntimeMixin):
         """Run .openhands/setup.sh if it exists in the workspace or repository."""
         # Check if setup script has already been executed
         if self._setup_script_executed:
+            logger.debug("Setup script already executed, skipping")
             return
+
+        # Mark setup script as executed to prevent duplicate execution
+        # Set this at the very beginning to ensure it's not executed twice
+        # even if there's an error during execution
+        self._setup_script_executed = True
 
         setup_script = '.openhands/setup.sh'
         read_obs = self.read(FileReadAction(path=setup_script))
         if isinstance(read_obs, ErrorObservation):
+            logger.debug(f"Setup script not found at {setup_script}")
             return
 
         if self.status_callback:
@@ -453,11 +460,6 @@ class Runtime(FileEditRuntimeMixin):
             thought='Running setup script to configure the workspace environment.',
         )
         action.set_hard_timeout(600)
-
-        # Mark setup script as executed to prevent duplicate execution
-        # Set this before running the action to ensure it's not executed twice
-        # even if there's an error during execution
-        self._setup_script_executed = True
 
         # Run the action first to get the result
         obs = self.run_action(action)

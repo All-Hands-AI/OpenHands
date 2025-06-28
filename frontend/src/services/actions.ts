@@ -28,6 +28,7 @@ export function handleActionMessage(message: ActionMessage) {
     store.dispatch(setMetrics(metrics));
   }
 
+  // Add commands to the terminal for both regular and environment source actions
   if (message.action === ActionType.RUN) {
     store.dispatch(appendInput(message.args.command));
   }

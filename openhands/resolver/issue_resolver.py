@@ -295,9 +295,8 @@ class IssueResolver:
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
             raise RuntimeError(f'Failed to set git config.\n{obs}')
 
-        # Run setup script if it exists
-        logger.info('Checking for .openhands/setup.sh script...')
-        runtime.maybe_run_setup_script()
+        # Note: Setup script is run in agent_session.py after cloning the repository
+        # We don't need to run it again here
 
         # Setup git hooks if they exist
         logger.info('Checking for .openhands/pre-commit.sh script...')

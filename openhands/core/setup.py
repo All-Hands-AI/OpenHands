@@ -124,8 +124,7 @@ def initialize_repository_for_runtime(
         selected_repository,
         None,
     )
-    # Run setup script if it exists
-    runtime.maybe_run_setup_script()
+    # Note: Setup script is run in agent_session.py after cloning the repository
     # Set up git hooks if pre-commit.sh exists
     runtime.maybe_setup_git_hooks()
 
