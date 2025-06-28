@@ -253,7 +253,12 @@ class TestCliCommandsPauseResume:
         mock_handle_resume.return_value = (False, False)
 
         # Call handle_commands
-        close_repl, reload_microagents, new_session_requested, _ = await handle_commands(
+        (
+            close_repl,
+            reload_microagents,
+            new_session_requested,
+            _,
+        ) = await handle_commands(
             message,
             event_stream,
             usage_metrics,

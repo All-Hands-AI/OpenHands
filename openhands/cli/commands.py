@@ -1,8 +1,6 @@
 import asyncio
 from pathlib import Path
 
-from openhands.core.schema.exit_reason import ExitReason
-
 from prompt_toolkit import print_formatted_text
 from prompt_toolkit.shortcuts import clear, print_container
 from prompt_toolkit.widgets import Frame, TextArea
@@ -30,6 +28,7 @@ from openhands.core.config import (
     OpenHandsConfig,
 )
 from openhands.core.schema import AgentState
+from openhands.core.schema.exit_reason import ExitReason
 from openhands.events import EventSource
 from openhands.events.action import (
     ChangeAgentStateAction,

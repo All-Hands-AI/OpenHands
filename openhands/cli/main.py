@@ -9,7 +9,6 @@ from prompt_toolkit.shortcuts import clear
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 import openhands.cli.suppress_warnings  # noqa: F401
-from openhands.core.schema.exit_reason import ExitReason
 from openhands.cli.commands import (
     check_folder_security_agreement,
     handle_commands,
@@ -44,6 +43,7 @@ from openhands.core.config.mcp_config import OpenHandsMCPConfigImpl
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.loop import run_agent_until_done
 from openhands.core.schema import AgentState
+from openhands.core.schema.exit_reason import ExitReason
 from openhands.core.setup import (
     create_agent,
     create_controller,
@@ -334,9 +334,9 @@ async def run_session(
     await cleanup_session(loop, agent, runtime, controller)
 
     if exit_reason == ExitReason.INTENTIONAL:
-        print_formatted_text("✅ Session terminated successfully.\n")
+        print_formatted_text('✅ Session terminated successfully.\n')
     else:
-        print_formatted_text(f"⚠️ Session was interrupted: {exit_reason.value}\n")
+        print_formatted_text(f'⚠️ Session was interrupted: {exit_reason.value}\n')
 
     return new_session_requested
 
@@ -486,7 +486,7 @@ def main():
     try:
         loop.run_until_complete(main_with_loop(loop))
     except KeyboardInterrupt:
-        print_formatted_text("⚠️ Session was interrupted: interrupted\n")
+        print_formatted_text('⚠️ Session was interrupted: interrupted\n')
     except ConnectionRefusedError as e:
         print(f'Connection refused: {e}')
         sys.exit(1)
