@@ -365,7 +365,21 @@ class DockerRuntime(ActionExecutionClient):
         )
 
         command = self.get_action_execution_server_startup_command()
-
+        if self.config.sandbox.enable_gpu:
+            gpu_ids = self.config.sandbox.cuda_visible_devices
+            if gpu_ids is None:
+                device_requests = [
+                    docker.types.DeviceRequest(capabilities=[['gpu']], count=-1)
+                ]
+            else:
+                device_requests = [
+                    docker.types.DeviceRequest(
+                        capabilities=[['gpu']],
+                        device_ids=[str(i) for i in gpu_ids.split(',')],
+                    )
+                ]
+        else:
+            device_requests = None
         try:
             if self.runtime_container_image is None:
                 raise ValueError('Runtime container image is not set')
@@ -381,11 +395,7 @@ class DockerRuntime(ActionExecutionClient):
                 detach=True,
                 environment=environment,
                 volumes=volumes,  # type: ignore
-                device_requests=(
-                    [docker.types.DeviceRequest(capabilities=[['gpu']], count=-1)]
-                    if self.config.sandbox.enable_gpu
-                    else None
-                ),
+                device_requests=device_requests,
                 **(self.config.sandbox.docker_runtime_kwargs or {}),
             )
             self.log('debug', f'Container started. Server url: {self.api_url}')

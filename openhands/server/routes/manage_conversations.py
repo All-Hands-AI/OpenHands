@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from jinja2 import Environment, FileSystemLoader
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
@@ -88,7 +88,7 @@ class InitSessionRequest(BaseModel):
     if os.getenv('ALLOW_SET_CONVERSATION_ID', '0') == '1':
         conversation_id: str = Field(default_factory=lambda: uuid.uuid4().hex)
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
 
 class ConversationResponse(BaseModel):
@@ -322,7 +322,7 @@ async def get_prompt(
         raise ValueError('Settings not found')
 
     llm_config = LLMConfig(
-        model=settings.llm_model,
+        model=settings.llm_model or '',
         api_key=settings.llm_api_key,
         base_url=settings.llm_base_url,
     )

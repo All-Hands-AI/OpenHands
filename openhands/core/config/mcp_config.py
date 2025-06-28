@@ -2,7 +2,7 @@ import os
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
-from pydantic import BaseModel, Field, ValidationError, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 if TYPE_CHECKING:
     from openhands.core.config.openhands_config import OpenHandsConfig
@@ -72,7 +72,7 @@ class MCPConfig(BaseModel):
     stdio_servers: list[MCPStdioServerConfig] = Field(default_factory=list)
     shttp_servers: list[MCPSHTTPServerConfig] = Field(default_factory=list)
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
     @staticmethod
     def _normalize_servers(servers_data: list[dict | str]) -> list[dict]:
@@ -131,7 +131,9 @@ class MCPConfig(BaseModel):
             # Convert all entries in sse_servers to MCPSSEServerConfig objects
             if 'sse_servers' in data:
                 data['sse_servers'] = cls._normalize_servers(data['sse_servers'])
-                servers = []
+                servers: list[
+                    MCPSSEServerConfig | MCPStdioServerConfig | MCPSHTTPServerConfig
+                ] = []
                 for server in data['sse_servers']:
                     servers.append(MCPSSEServerConfig(**server))
                 data['sse_servers'] = servers

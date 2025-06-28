@@ -1,7 +1,7 @@
 from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.integrations.bitbucket.bitbucket_service import BitbucketService
+from openhands.integrations.bitbucket.bitbucket_service import BitBucketService
 from openhands.integrations.github.github_service import GitHubService
 from openhands.integrations.gitlab.gitlab_service import GitLabService
 from openhands.integrations.provider import ProviderType
@@ -26,7 +26,7 @@ async def validate_provider_token(
     """
     # Skip validation for empty tokens
     if token is None:
-        return None
+        return None  # type: ignore[unreachable]
 
     # Try GitHub first
     github_error = None
@@ -49,7 +49,7 @@ async def validate_provider_token(
     # Try Bitbucket last
     bitbucket_error = None
     try:
-        bitbucket_service = BitbucketService(token=token, base_domain=base_domain)
+        bitbucket_service = BitBucketService(token=token, base_domain=base_domain)
         await bitbucket_service.get_user()
         return ProviderType.BITBUCKET
     except Exception as e:
