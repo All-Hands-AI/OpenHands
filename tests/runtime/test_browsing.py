@@ -719,10 +719,6 @@ scroll(0, 400)
         _close_test_runtime(runtime)
 
 
-@pytest.mark.skipif(
-    os.environ.get('TEST_RUNTIME') == 'cli',
-    reason='CLIRuntime does not support browsing actions',
-)
 def test_browser_file_upload(temp_dir, runtime_cls, run_as_openhands):
     """Test browser file upload action."""
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
@@ -879,10 +875,6 @@ def test_browser_file_upload(temp_dir, runtime_cls, run_as_openhands):
         _close_test_runtime(runtime)
 
 
-@pytest.mark.skipif(
-    os.environ.get('TEST_RUNTIME') == 'cli',
-    reason='CLIRuntime does not support browsing actions',
-)
 def test_read_pdf_browse(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
@@ -1022,10 +1014,6 @@ def test_read_png_browse(temp_dir, runtime_cls, run_as_openhands):
         _close_test_runtime(runtime)
 
 
-@pytest.mark.skipif(
-    os.environ.get('TEST_RUNTIME') == 'cli',
-    reason='CLIRuntime does not support browsing actions',
-)
 def test_download_file(temp_dir, runtime_cls, run_as_openhands):
     """Test downloading a file using the browser."""
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
