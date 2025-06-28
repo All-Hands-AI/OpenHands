@@ -1034,39 +1034,41 @@ def test_max_output_tokens_in_config():
 
 
 @patch('litellm.get_model_info')
-def test_max_output_tokens_default_initialization(mock_get_model_info):
-    """Test that max_output_tokens is correctly initialized with default value when not specified."""
+def test_max_tokens_default_initialization(mock_get_model_info):
+    """Test that max_output_tokens and max_input_tokens are correctly initialized to None when not specified."""
     # Mock the model info returned by litellm
     mock_get_model_info.return_value = None
     
-    # Create LLM instance with minimal config (no max_output_tokens specified)
+    # Create LLM instance with minimal config (no max_output_tokens or max_input_tokens specified)
     config = LLMConfig(model='gpt-4', api_key='test_key')
     llm = LLM(config)
 
-    # Verify max_output_tokens is initialized to None (default value)
+    # Verify max_output_tokens and max_input_tokens are initialized to None (default value)
     assert llm.config.max_output_tokens is None
+    assert llm.config.max_input_tokens is None
 
 
 @patch('litellm.get_model_info')
-def test_max_output_tokens_from_model_info(mock_get_model_info):
-    """Test that max_output_tokens is correctly initialized from model info."""
+def test_max_tokens_from_model_info(mock_get_model_info):
+    """Test that max_output_tokens and max_input_tokens are correctly initialized from model info."""
     # Mock the model info returned by litellm
     mock_get_model_info.return_value = {
         'max_output_tokens': 8192,
         'max_input_tokens': 16384,
     }
 
-    # Create LLM instance with minimal config (no max_output_tokens specified)
+    # Create LLM instance with minimal config (no max_output_tokens or max_input_tokens specified)
     config = LLMConfig(model='gpt-4', api_key='test_key')
     llm = LLM(config)
 
-    # Verify max_output_tokens is initialized from model info
+    # Verify max_output_tokens and max_input_tokens are initialized from model info
     assert llm.config.max_output_tokens == 8192
+    assert llm.config.max_input_tokens == 16384
 
 
 @patch('litellm.get_model_info')
-def test_max_output_tokens_from_max_tokens(mock_get_model_info):
-    """Test that max_output_tokens is correctly initialized from max_tokens when max_output_tokens is not available."""
+def test_max_tokens_from_max_tokens(mock_get_model_info):
+    """Test that max_output_tokens is initialized from max_tokens and max_input_tokens from model info."""
     # Mock the model info returned by litellm (with max_tokens but no max_output_tokens)
     mock_get_model_info.return_value = {
         'max_tokens': 7000,
@@ -1079,11 +1081,13 @@ def test_max_output_tokens_from_max_tokens(mock_get_model_info):
 
     # Verify max_output_tokens is initialized from max_tokens
     assert llm.config.max_output_tokens == 7000
+    # Verify max_input_tokens is initialized from model info
+    assert llm.config.max_input_tokens == 16384
 
 
 @patch('litellm.get_model_info')
 def test_claude_3_7_sonnet_max_output_tokens(mock_get_model_info):
-    """Test that Claude 3.7 Sonnet models get the special 64000 max_output_tokens value."""
+    """Test that Claude 3.7 Sonnet models get the special 64000 max_output_tokens value and default max_input_tokens."""
     # Mock the model info returned by litellm
     mock_get_model_info.return_value = None
 
@@ -1093,13 +1097,19 @@ def test_claude_3_7_sonnet_max_output_tokens(mock_get_model_info):
 
     # Verify max_output_tokens is set to 64000 for Claude 3.7 Sonnet
     assert llm.config.max_output_tokens == 64000
+    # Verify max_input_tokens is set to None (default value)
+    assert llm.config.max_input_tokens is None
 
 
 @patch('litellm.get_model_info')
 def test_verified_anthropic_model_max_output_tokens(mock_get_model_info):
-    """Test that Claude Sonnet 4 models get the 64000 max_output_tokens value from litellm."""
+    """Test that Claude Sonnet 4 models get the correct max_output_tokens and max_input_tokens values from litellm."""
     # Mock the model info returned by litellm
-    mock_get_model_info.return_value = {'max_output_tokens': 64000, 'max_tokens': 64000}
+    mock_get_model_info.return_value = {
+        'max_output_tokens': 64000, 
+        'max_tokens': 64000,
+        'max_input_tokens': 200000
+    }
 
     # Create LLM instance with a Claude Sonnet 4 model
     config = LLMConfig(model='claude-sonnet-4-20250514', api_key='test_key')
@@ -1107,11 +1117,13 @@ def test_verified_anthropic_model_max_output_tokens(mock_get_model_info):
 
     # Verify max_output_tokens is set to the value from litellm (64000)
     assert llm.config.max_output_tokens == 64000
+    # Verify max_input_tokens is set to the value from litellm
+    assert llm.config.max_input_tokens == 200000
 
 
 @patch('litellm.get_model_info')
 def test_non_claude_model_max_output_tokens(mock_get_model_info):
-    """Test that non-Claude models get the default max_output_tokens value."""
+    """Test that non-Claude models get the default None values for max_output_tokens and max_input_tokens."""
     # Mock the model info returned by litellm
     mock_get_model_info.return_value = None
 
@@ -1121,6 +1133,8 @@ def test_non_claude_model_max_output_tokens(mock_get_model_info):
 
     # Verify max_output_tokens is set to None (default value)
     assert llm.config.max_output_tokens is None
+    # Verify max_input_tokens is set to None (default value)
+    assert llm.config.max_input_tokens is None
 
 
 @patch('litellm.get_model_info')
