@@ -46,6 +46,7 @@ from openhands.events.observation import (
     FileReadObservation,
 )
 from openhands.llm.metrics import Metrics
+from openhands.utils import shutdown_listener
 
 ENABLE_STREAMING = False  # FIXME: this doesn't work
 
@@ -601,7 +602,9 @@ async def process_agent_pause(done: asyncio.Event, event_stream: EventStream) ->
                     # Double Ctrl+C within 2 seconds - force quit
                     print_formatted_text('')
                     print_formatted_text(HTML('<red>Force quitting...</red>'))
-                    raise KeyboardInterrupt()
+                    # Trigger global shutdown instead of KeyboardInterrupt
+                    shutdown_listener._should_exit = True
+                    done.set()
                 else:
                     # First Ctrl+C - stop agent gracefully
                     ctrl_c_pressed_time = current_time
