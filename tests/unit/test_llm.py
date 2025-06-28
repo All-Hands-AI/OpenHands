@@ -1033,14 +1033,11 @@ def test_max_output_tokens_in_config():
     assert llm.config.max_output_tokens == 4096
 
 
-@patch('litellm.get_model_info')
-def test_max_tokens_default_initialization(mock_get_model_info):
+def test_max_tokens_default_initialization():
     """Test that max_output_tokens and max_input_tokens are correctly initialized to None when not specified."""
-    # Mock the model info returned by litellm
-    mock_get_model_info.return_value = None
-    
     # Create LLM instance with minimal config (no max_output_tokens or max_input_tokens specified)
-    config = LLMConfig(model='gpt-4', api_key='test_key')
+    # Use a non-existent model to avoid litellm having model info for it
+    config = LLMConfig(model='non-existent-model', api_key='test_key')
     llm = LLM(config)
 
     # Verify max_output_tokens and max_input_tokens are initialized to None (default value)
