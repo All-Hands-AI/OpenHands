@@ -19,6 +19,7 @@ from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
     RateLimitError,
+    ServiceUnavailableError,
 )
 from litellm.types.utils import CostPerToken, ModelResponse, Usage
 from litellm.utils import create_pretrained_tokenizer
@@ -40,6 +41,7 @@ __all__ = ['LLM']
 # tuple of exceptions to retry on
 LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (
     RateLimitError,
+    ServiceUnavailableError,
     litellm.Timeout,
     litellm.InternalServerError,
     LLMNoResponseError,
