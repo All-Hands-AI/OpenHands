@@ -417,23 +417,23 @@ fill("{textarea_bid}", "This is a test message")
         updated_axtree_elements = parse_axtree_content(obs.content)
 
         # Check that the text input now contains our text
-        if text_input_bid in updated_axtree_elements:
-            text_input_desc = updated_axtree_elements[text_input_bid]
-            # The filled value should appear in the element description (axtree shows values differently)
-            assert (
-                'Hello World' in text_input_desc or "'Hello World'" in text_input_desc
-            ), (
-                f"Text input should contain 'Hello World' but description is: {text_input_desc}"
-            )
+        assert text_input_bid in updated_axtree_elements, (
+            f'Text input element {text_input_bid} should be present in updated axtree. Available elements: {list(updated_axtree_elements.keys())[:10]}'
+        )
+        text_input_desc = updated_axtree_elements[text_input_bid]
+        # The filled value should appear in the element description (axtree shows values differently)
+        assert 'Hello World' in text_input_desc or "'Hello World'" in text_input_desc, (
+            f"Text input should contain 'Hello World' but description is: {text_input_desc}"
+        )
 
-        if textarea_bid in updated_axtree_elements:
-            textarea_desc = updated_axtree_elements[textarea_bid]
-            assert (
-                'This is a test message' in textarea_desc
-                or "'This is a test message'" in textarea_desc
-            ), (
-                f'Textarea should contain test message but description is: {textarea_desc}'
-            )
+        assert textarea_bid in updated_axtree_elements, (
+            f'Textarea element {textarea_bid} should be present in updated axtree. Available elements: {list(updated_axtree_elements.keys())[:10]}'
+        )
+        textarea_desc = updated_axtree_elements[textarea_bid]
+        assert (
+            'This is a test message' in textarea_desc
+            or "'This is a test message'" in textarea_desc
+        ), f'Textarea should contain test message but description is: {textarea_desc}'
 
         # Test select_option action with real bid
         action_browse = BrowseInteractiveAction(
@@ -451,12 +451,14 @@ fill("{textarea_bid}", "This is a test message")
 
         # Verify that option2 is now selected
         updated_axtree_elements = parse_axtree_content(obs.content)
-        if select_bid in updated_axtree_elements:
-            select_desc = updated_axtree_elements[select_bid]
-            # The selected option should be reflected in the select element description
-            assert 'option2' in select_desc or 'Option 2' in select_desc, (
-                f"Select element should show 'option2' as selected but description is: {select_desc}"
-            )
+        assert select_bid in updated_axtree_elements, (
+            f'Select element {select_bid} should be present in updated axtree. Available elements: {list(updated_axtree_elements.keys())[:10]}'
+        )
+        select_desc = updated_axtree_elements[select_bid]
+        # The selected option should be reflected in the select element description
+        assert 'option2' in select_desc or 'Option 2' in select_desc, (
+            f"Select element should show 'option2' as selected but description is: {select_desc}"
+        )
 
         # Test click action with real bid
         action_browse = BrowseInteractiveAction(
@@ -654,11 +656,13 @@ def test_browser_interactive_actions(temp_dir, runtime_cls, run_as_openhands):
 
         # Verify that the text was actually entered
         updated_axtree_elements = parse_axtree_content(obs.content)
-        if focus_input_bid in updated_axtree_elements:
-            input_desc = updated_axtree_elements[focus_input_bid]
-            assert 'TestValue123' in input_desc or "'TestValue123'" in input_desc, (
-                f"Input should contain 'TestValue123' but description is: {input_desc}"
-            )
+        assert focus_input_bid in updated_axtree_elements, (
+            f'Focus input element {focus_input_bid} should be present in updated axtree. Available elements: {list(updated_axtree_elements.keys())[:10]}'
+        )
+        input_desc = updated_axtree_elements[focus_input_bid]
+        assert 'TestValue123' in input_desc or "'TestValue123'" in input_desc, (
+            f"Input should contain 'TestValue123' but description is: {input_desc}"
+        )
 
         # Test press action (for pressing individual keys) with real bid
         action_browse = BrowseInteractiveAction(
@@ -674,11 +678,13 @@ def test_browser_interactive_actions(temp_dir, runtime_cls, run_as_openhands):
 
         # Verify the backspace removed the last character (3 from TestValue123)
         updated_axtree_elements = parse_axtree_content(obs.content)
-        if focus_input_bid in updated_axtree_elements:
-            input_desc = updated_axtree_elements[focus_input_bid]
-            assert 'TestValue12' in input_desc or "'TestValue12'" in input_desc, (
-                f"Input should contain 'TestValue12' after backspace but description is: {input_desc}"
-            )
+        assert focus_input_bid in updated_axtree_elements, (
+            f'Focus input element {focus_input_bid} should be present in updated axtree. Available elements: {list(updated_axtree_elements.keys())[:10]}'
+        )
+        input_desc = updated_axtree_elements[focus_input_bid]
+        assert 'TestValue12' in input_desc or "'TestValue12'" in input_desc, (
+            f"Input should contain 'TestValue12' after backspace but description is: {input_desc}"
+        )
 
         # Test multiple actions in sequence
         action_browse = BrowseInteractiveAction(
@@ -826,16 +832,16 @@ def test_browser_file_upload(temp_dir, runtime_cls, run_as_openhands):
 
         # Verify the file input now shows the selected file
         updated_axtree_elements = parse_axtree_content(obs.content)
-        if file_input_bid in updated_axtree_elements:
-            file_input_desc = updated_axtree_elements[file_input_bid]
-            # File inputs typically show the filename when a file is selected
-            assert (
-                'upload_test.txt' in file_input_desc
-                or 'upload_test' in file_input_desc
-                or 'txt' in file_input_desc
-            ), (
-                f'File input should show selected file but description is: {file_input_desc}'
-            )
+        assert file_input_bid in updated_axtree_elements, (
+            f'File input element {file_input_bid} should be present in updated axtree. Available elements: {list(updated_axtree_elements.keys())[:10]}'
+        )
+        file_input_desc = updated_axtree_elements[file_input_bid]
+        # File inputs typically show the filename when a file is selected
+        assert (
+            'upload_test.txt' in file_input_desc
+            or 'upload_test' in file_input_desc
+            or 'txt' in file_input_desc
+        ), f'File input should show selected file but description is: {file_input_desc}'
 
         # Test clicking the upload button to trigger the JavaScript function
         if upload_button_bid:
