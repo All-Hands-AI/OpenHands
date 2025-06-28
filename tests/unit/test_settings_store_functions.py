@@ -1,3 +1,4 @@
+import os
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -28,6 +29,8 @@ async def get_settings_store(request):
 def test_client():
     # Create a test client
     with (
+        patch.dict(os.environ, {'SESSION_API_KEY': ''}, clear=False),
+        patch('openhands.server.dependencies._SESSION_API_KEY', None),
         patch(
             'openhands.server.routes.secrets.check_provider_tokens',
             AsyncMock(return_value=''),
