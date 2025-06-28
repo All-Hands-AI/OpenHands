@@ -447,16 +447,10 @@ class Runtime(FileEditRuntimeMixin):
         )
         action.set_hard_timeout(600)
 
-        # If event stream is available, add the action to it and let the agent controller execute it
-        if hasattr(self, 'event_stream') and self.event_stream:
-            source = EventSource.AGENT
-            self.event_stream.add_event(action, source)
-            # The agent controller will execute this action and add the observation to the event stream
-        else:
-            # Fall back to direct execution if no event stream is available
-            obs = self.run_action(action)
-            if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
-                self.log('error', f'Setup script failed: {obs.content}')
+        # Add the action to the event stream and let the agent controller execute it
+        source = EventSource.AGENT
+        self.event_stream.add_event(action, source)
+        # The agent controller will execute this action and add the observation to the event stream
 
     @property
     def workspace_root(self) -> Path:
