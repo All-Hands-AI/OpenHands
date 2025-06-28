@@ -985,40 +985,6 @@ def test_llm_base_url_auto_protocol_patch(mock_get):
 
 # Tests for max_output_tokens configuration and usage
 
-@pytest.fixture
-def mock_anthropic_response():
-    """Create a mock response that looks like what Anthropic's API returns."""
-    return {
-        'id': 'msg_test123',
-        'type': 'message',
-        'role': 'assistant',
-        'content': [{'type': 'text', 'text': 'Test response'}],
-        'model': 'claude-sonnet-4-20250514',
-        'stop_reason': 'end_turn',
-        'stop_sequence': None,
-        'usage': {'input_tokens': 10, 'output_tokens': 5},
-    }
-
-
-@pytest.fixture
-def mock_openai_response():
-    """Create a mock response that looks like what OpenAI's API returns."""
-    return {
-        'id': 'chatcmpl-test123',
-        'object': 'chat.completion',
-        'created': 1234567890,
-        'model': 'gpt-4',
-        'choices': [
-            {
-                'index': 0,
-                'message': {'role': 'assistant', 'content': 'Test response'},
-                'finish_reason': 'stop',
-            }
-        ],
-        'usage': {'prompt_tokens': 10, 'completion_tokens': 5, 'total_tokens': 15},
-    }
-
-
 def test_max_output_tokens_in_config():
     """Test that max_output_tokens is correctly set in the config."""
     # Create LLM instance
@@ -1057,18 +1023,6 @@ def test_max_tokens_from_model_info():
     assert llm.config.max_input_tokens == 8192
 
 
-def test_max_tokens_from_max_tokens():
-    """Test that max_output_tokens is initialized from max_tokens when available."""
-    # Create LLM instance with a model that has known token limits
-    config = LLMConfig(model='gpt-4', api_key='test_key')
-    llm = LLM(config)
-
-    # GPT-4 has specific token limits
-    # These are the expected values from litellm
-    assert llm.config.max_output_tokens == 4096
-    assert llm.config.max_input_tokens == 8192
-
-
 def test_claude_3_7_sonnet_max_output_tokens():
     """Test that Claude 3.7 Sonnet models get the special 64000 max_output_tokens value and default max_input_tokens."""
     # Create LLM instance with Claude 3.7 Sonnet model
@@ -1089,10 +1043,9 @@ def test_verified_anthropic_model_max_output_tokens():
 
     # Verify max_output_tokens is set to the expected value
     assert llm.config.max_output_tokens == 64000
-    # Verify max_input_tokens is set to the expected value or None
-    # Note: This might vary depending on what litellm returns for this model
-    # We're not asserting a specific value here since we're not mocking get_model_info
-    assert llm.config.max_input_tokens is not None
+    # Verify max_input_tokens is set to the expected value
+    # For Claude models, we expect a specific value from litellm
+    assert llm.config.max_input_tokens == 200000
 
 
 def test_non_claude_model_max_output_tokens():
@@ -1110,17 +1063,6 @@ def test_non_claude_model_max_output_tokens():
 def test_sambanova_deepseek_model_max_output_tokens():
     """Test that SambaNova DeepSeek-V3-0324 model gets the correct max_output_tokens value."""
     # Create LLM instance with SambaNova DeepSeek model
-    config = LLMConfig(model='sambanova/DeepSeek-V3-0324', api_key='test_key')
-    llm = LLM(config)
-
-    # SambaNova DeepSeek model has specific token limits
-    # This is the expected value from litellm
-    assert llm.config.max_output_tokens == 32768
-
-
-def test_sambanova_model_max_tokens_fallback():
-    """Test that SambaNova model has appropriate max_output_tokens value."""
-    # Create LLM instance with SambaNova model
     config = LLMConfig(model='sambanova/DeepSeek-V3-0324', api_key='test_key')
     llm = LLM(config)
 
@@ -1197,21 +1139,3 @@ def test_azure_model_default_max_tokens():
 
     # Verify the config has the default max_output_tokens value
     assert llm.config.max_output_tokens is None  # Default value
-
-
-def test_openai_model_uses_max_completion_tokens_param(
-    mock_openai_response
-):
-    """Test that OpenAI models use max_completion_tokens parameter in HTTP requests."""
-    # Create minimal config for OpenAI model (without specifying max_output_tokens)
-    openai_config = LLMConfig(
-        model='gpt-4',
-        api_key='test_key',
-    )
-
-    # Create LLM instance with OpenAI model
-    llm = LLM(openai_config)
-
-    # For this test, we're only concerned with the HTTP request parameters
-    # which are tested via the mock_openai_response fixture
-    # We don't need to assert anything about max_output_tokens here
