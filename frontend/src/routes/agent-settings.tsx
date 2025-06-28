@@ -24,7 +24,6 @@ export function AgentSettings() {
     const enableBrowsing = formData.get("enable-browsing") === "on";
     const enableLlmEditor = formData.get("enable-llm-editor") === "on";
     const enableEditor = formData.get("enable-editor") === "on";
-    const enableJupyter = formData.get("enable-jupyter") === "on";
     const enableCmd = formData.get("enable-cmd") === "on";
     const enableThink = formData.get("enable-think") === "on";
     const enableFinish = formData.get("enable-finish") === "on";
@@ -47,7 +46,6 @@ export function AgentSettings() {
       ENABLE_BROWSING: enableBrowsing,
       ENABLE_LLM_EDITOR: enableLlmEditor,
       ENABLE_EDITOR: enableEditor,
-      ENABLE_JUPYTER: enableJupyter,
       ENABLE_CMD: enableCmd,
       ENABLE_THINK: enableThink,
       ENABLE_FINISH: enableFinish,
@@ -93,24 +91,6 @@ export function AgentSettings() {
           </SettingsSwitch>
           <div className="text-sm text-neutral-400">
             {t(I18nKey.SETTINGS$ENABLE_BROWSING_HELP)}
-          </div>
-
-          <SettingsSwitch
-            testId="enable-jupyter-switch"
-            name="enable-jupyter"
-            defaultIsToggled={settings.ENABLE_JUPYTER}
-            onToggle={(checked: boolean) => {
-              const isJupyterDirty = checked !== settings.ENABLE_JUPYTER;
-              setDirtyInputs((prev) => ({
-                ...prev,
-                enableJupyter: isJupyterDirty,
-              }));
-            }}
-          >
-            {t(I18nKey.SETTINGS$ENABLE_JUPYTER)}
-          </SettingsSwitch>
-          <div className="text-sm text-neutral-400">
-            {t(I18nKey.SETTINGS$ENABLE_JUPYTER_HELP)}
           </div>
 
           <SettingsSwitch
@@ -260,7 +240,7 @@ export function AgentSettings() {
             type="text"
             className="w-full max-w-[680px]"
             defaultValue={settings.DISABLED_MICROAGENTS.join(", ")}
-            placeholder="github, npm, docker"
+            placeholder={t(I18nKey.SETTINGS$DISABLED_MICROAGENTS_PLACEHOLDER)}
             onChange={(value: string) => {
               const currentArray = value
                 .split(",")

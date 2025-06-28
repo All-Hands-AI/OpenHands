@@ -863,6 +863,22 @@
         "de": "Liste der zu deaktivierenden Mikroagent-Namen (z.B. github, npm, docker)",
         "uk": "Список імен мікроагентів для відключення (наприклад: github, npm, docker)"
     },
+    "SETTINGS$DISABLED_MICROAGENTS_PLACEHOLDER": {
+        "en": "github, npm, docker",
+        "ja": "github, npm, docker",
+        "zh-CN": "github, npm, docker",
+        "zh-TW": "github, npm, docker",
+        "ko-KR": "github, npm, docker",
+        "no": "github, npm, docker",
+        "it": "github, npm, docker",
+        "pt": "github, npm, docker",
+        "es": "github, npm, docker",
+        "ar": "github, npm, docker",
+        "fr": "github, npm, docker",
+        "tr": "github, npm, docker",
+        "de": "github, npm, docker",
+        "uk": "github, npm, docker"
+    },
     "SETTINGS$ENABLE_HISTORY_TRUNCATION": {
         "en": "Enable History Truncation",
         "ja": "履歴の切り詰めを有効化",
