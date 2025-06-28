@@ -447,10 +447,9 @@ class Runtime(FileEditRuntimeMixin):
         )
         action.set_hard_timeout(600)
 
-        # Add the action to the event stream and let the agent controller execute it
-        source = EventSource.AGENT
+        # Add the action to the event stream as an ENVIRONMENT event
+        source = EventSource.ENVIRONMENT
         self.event_stream.add_event(action, source)
-        # The agent controller will execute this action and add the observation to the event stream
 
     @property
     def workspace_root(self) -> Path:

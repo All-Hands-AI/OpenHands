@@ -5,6 +5,8 @@ import { SuggestionItem } from "#/components/features/suggestions/suggestion-ite
 import { I18nKey } from "#/i18n/declaration";
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
+import { useWsClient } from "#/context/ws-client-provider";
+import { OpenHandsBaseEvent } from "#/types/core/base";
 
 interface ActionSuggestionsProps {
   onSuggestionsClick: (value: string) => void;
@@ -16,11 +18,19 @@ export function ActionSuggestions({
   const { t } = useTranslation();
   const { providers } = useUserProviders();
   const { data: conversation } = useActiveConversation();
+  const { parsedEvents } = useWsClient();
   const [hasPullRequest, setHasPullRequest] = React.useState(false);
 
   const providersAreSet = providers.length > 0;
   const isGitLab = providers.includes("gitlab");
   const isBitbucket = providers.includes("bitbucket");
+
+  // Check if there are any non-environment events
+  const hasNonEnvironmentEvents = React.useMemo(() => {
+    return parsedEvents.some((event: OpenHandsBaseEvent) =>
+      event.source !== "environment"
+    );
+  }, [parsedEvents]);
 
   const pr = isGitLab ? "merge request" : "pull request";
   const prShort = isGitLab ? "MR" : "PR";
@@ -41,7 +51,7 @@ export function ActionSuggestions({
 
   return (
     <div className="flex flex-col gap-2 mb-2">
-      {providersAreSet && conversation?.selected_repository && (
+      {providersAreSet && conversation?.selected_repository && hasNonEnvironmentEvents && (
         <div className="flex flex-row gap-2 justify-center w-full">
           {!hasPullRequest ? (
             <>
