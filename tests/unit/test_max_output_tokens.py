@@ -140,8 +140,8 @@ def test_non_claude_model_max_output_tokens(mock_get_model_info):
     config = LLMConfig(model='mistral-large', api_key='test_key')
     llm = LLM(config)
 
-    # Verify max_output_tokens is set to the default value (4096)
-    assert llm.config.max_output_tokens == 4096
+    # Verify max_output_tokens is set to None (default value)
+    assert llm.config.max_output_tokens is None
 
 
 @patch('litellm.get_model_info')
@@ -223,7 +223,7 @@ def test_azure_model_uses_max_tokens_param(mock_get_model_info, mock_openai_resp
     llm = LLM(azure_config)
 
     # Verify the config has the default max_output_tokens value
-    assert llm.config.max_output_tokens == 4096  # Default value
+    assert llm.config.max_output_tokens is None  # Default value
 
 
 @patch('litellm.get_model_info')
@@ -244,4 +244,4 @@ def test_openai_model_uses_max_completion_tokens_param(
     llm = LLM(openai_config)
 
     # Verify the config has the default max_output_tokens value
-    assert llm.config.max_output_tokens == 4096  # Default value
+    assert llm.config.max_output_tokens is None  # Default value

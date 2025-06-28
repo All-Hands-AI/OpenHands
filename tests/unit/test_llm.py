@@ -141,7 +141,7 @@ def test_llm_init_without_model_info(mock_get_model_info, default_config):
     llm = LLM(default_config)
     llm.init_model_info()
     assert llm.config.max_input_tokens == 4096
-    assert llm.config.max_output_tokens == 4096
+    assert llm.config.max_output_tokens is None
 
 
 def test_llm_init_with_custom_config():
