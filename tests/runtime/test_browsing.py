@@ -24,6 +24,13 @@ from openhands.events.observation import (
 # ============================================================================================================================
 
 
+# Skip all tests in this module for CLI runtime
+pytestmark = pytest.mark.skipif(
+    os.environ.get('TEST_RUNTIME') == 'cli',
+    reason='CLIRuntime does not support browsing actions',
+)
+
+
 def parse_axtree_content(content: str) -> dict[str, str]:
     """Parse the accessibility tree content to extract bid -> element description mapping."""
     elements = {}
@@ -115,10 +122,6 @@ def find_element_by_tag_and_attributes(
     return None
 
 
-@pytest.mark.skipif(
-    os.environ.get('TEST_RUNTIME') == 'cli',
-    reason='CLIRuntime does not support browsing actions',
-)
 def test_simple_browse(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
 
@@ -163,10 +166,6 @@ def test_simple_browse(temp_dir, runtime_cls, run_as_openhands):
     _close_test_runtime(runtime)
 
 
-@pytest.mark.skipif(
-    os.environ.get('TEST_RUNTIME') == 'cli',
-    reason='CLIRuntime does not support browsing actions',
-)
 def test_browser_navigation_actions(temp_dir, runtime_cls, run_as_openhands):
     """Test browser navigation actions: goto, go_back, go_forward, noop."""
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
@@ -300,10 +299,6 @@ def test_browser_navigation_actions(temp_dir, runtime_cls, run_as_openhands):
         _close_test_runtime(runtime)
 
 
-@pytest.mark.skipif(
-    os.environ.get('TEST_RUNTIME') == 'cli',
-    reason='CLIRuntime does not support browsing actions',
-)
 def test_browser_form_interactions(temp_dir, runtime_cls, run_as_openhands):
     """Test browser form interaction actions: fill, click, select_option, clear."""
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
@@ -494,10 +489,6 @@ fill("{textarea_bid}", "This is a test message")
         _close_test_runtime(runtime)
 
 
-@pytest.mark.skipif(
-    os.environ.get('TEST_RUNTIME') == 'cli',
-    reason='CLIRuntime does not support browsing actions',
-)
 def test_browser_interactive_actions(temp_dir, runtime_cls, run_as_openhands):
     """Test browser interactive actions: scroll, hover, fill, press, focus."""
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
@@ -936,10 +927,6 @@ def test_read_pdf_browse(temp_dir, runtime_cls, run_as_openhands):
         _close_test_runtime(runtime)
 
 
-@pytest.mark.skipif(
-    os.environ.get('TEST_RUNTIME') == 'cli',
-    reason='CLIRuntime does not support browsing actions',
-)
 def test_read_png_browse(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
