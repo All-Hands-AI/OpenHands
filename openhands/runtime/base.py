@@ -447,31 +447,16 @@ class Runtime(FileEditRuntimeMixin):
         )
         action.set_hard_timeout(600)
 
-        # Execute the action directly
-        obs = self.run_action(action)
-
-        # Add the action and observation to the event stream if available
-        # Mark the action as already executed so the agent controller doesn't execute it again
+        # If event stream is available, add the action to it and let the agent controller execute it
         if hasattr(self, 'event_stream') and self.event_stream:
-            source = EventSource.AGENT  # Use AGENT as the source
-
-            # Create a copy of the action with runnable=False
-            # This prevents the agent controller from executing it again
-            action_copy = copy.deepcopy(action)
-            # Use setattr to avoid mypy error about assigning to class variable via instance
-            setattr(action_copy, 'runnable', False)
-
-            # Add the action to the event stream
-            self.event_stream.add_event(action_copy, source)
-
-            # Add the observation to the event stream
-            if not isinstance(obs, NullObservation):
-                # Set the cause using setattr to avoid mypy errors
-                setattr(obs, '_cause', action_copy.id)
-                self.event_stream.add_event(obs, source)
-
-        if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
-            self.log('error', f'Setup script failed: {obs.content}')
+            source = EventSource.AGENT
+            self.event_stream.add_event(action, source)
+            # The agent controller will execute this action and add the observation to the event stream
+        else:
+            # Fall back to direct execution if no event stream is available
+            obs = self.run_action(action)
+            if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
+                self.log('error', f'Setup script failed: {obs.content}')
 
     @property
     def workspace_root(self) -> Path:
