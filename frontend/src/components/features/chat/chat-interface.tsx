@@ -79,11 +79,13 @@ export function ChatInterface() {
   const events = parsedEvents.filter(shouldRenderEvent);
 
   // Check if there are any non-environment actions
-  const hasNonEnvironmentActions = React.useMemo(() => {
-    return parsedEvents.some((event) =>
-      isOpenHandsAction(event) && event.source !== "environment"
-    );
-  }, [parsedEvents]);
+  const hasNonEnvironmentActions = React.useMemo(
+    () =>
+      parsedEvents.some(
+        (event) => isOpenHandsAction(event) && event.source !== "environment",
+      ),
+    [parsedEvents],
+  );
 
   const handleSendMessage = async (
     content: string,
@@ -175,7 +177,7 @@ export function ChatInterface() {
   return (
     <ScrollProvider value={scrollProviderValue}>
       <div className="h-full flex flex-col justify-between">
-        {(!hasNonEnvironmentActions && !optimisticUserMessage) && (
+        {!hasNonEnvironmentActions && !optimisticUserMessage && (
           <ChatSuggestions onSuggestionsClick={setMessageToSend} />
         )}
 
