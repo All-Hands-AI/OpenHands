@@ -275,7 +275,20 @@ class AgentController:
                 err_id = 'STATUS$ERROR_LLM_CONTENT_POLICY_VIOLATION'
                 self.state.last_error = err_id
             elif isinstance(e, RateLimitError):
-                await self.set_agent_state_to(AgentState.RATE_LIMITED)
+                # Check if this is the final retry attempt
+                if (
+                    hasattr(e, 'retry_attempt')
+                    and hasattr(e, 'max_retries')
+                    and e.retry_attempt >= e.max_retries
+                ):
+                    # All retries exhausted, set to ERROR state with a special message
+                    self.state.last_error = (
+                        'CHAT_INTERFACE$AGENT_RATE_LIMITED_STOPPED_MESSAGE'
+                    )
+                    await self.set_agent_state_to(AgentState.ERROR)
+                else:
+                    # Still retrying, set to RATE_LIMITED state
+                    await self.set_agent_state_to(AgentState.RATE_LIMITED)
                 return
             self.status_callback('error', err_id, self.state.last_error)
 
