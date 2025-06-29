@@ -370,7 +370,7 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
         # Set default log level to WARNING if no LOG_LEVEL environment variable is set
         # (command line argument takes precedence over environment variable)
         env_log_level = os.getenv('LOG_LEVEL')
-        if env_log_level is None:
+        if not env_log_level:
             logger.setLevel(logging.WARNING)
 
     # Load config from toml and override with command line arguments
