@@ -5,7 +5,6 @@ import dataclasses
 import json
 import os
 import pathlib
-import shutil
 import subprocess
 from argparse import Namespace
 from typing import Any
@@ -394,7 +393,7 @@ class IssueResolver:
     async def process_issue(
         self,
         issue: Issue,
-        base_commit: str,
+        branch_to_checkout: str | None,
         issue_handler: ServiceContextIssue | ServiceContextPR,
         reset_logger: bool = False,
     ) -> ResolverOutput:
@@ -405,13 +404,44 @@ class IssueResolver:
         else:
             logger.info(f'Starting fixing issue {issue.number}.')
 
-        # write the repo to the workspace
-        if os.path.exists(self.workspace_base):
-            shutil.rmtree(self.workspace_base)
-        shutil.copytree(os.path.join(self.output_dir, 'repo'), self.workspace_base)
-
+        # create runtime and clone repo using standard pattern
         runtime = create_runtime(self.app_config)
         await runtime.connect()
+
+        # clone repo directly into runtime workspace
+        from openhands.core.setup import initialize_repository_for_runtime
+
+        initialize_repository_for_runtime(runtime, self.issue_handler.get_clone_url())
+
+        # checkout to PR branch if needed
+        if branch_to_checkout:
+            logger.info(f'Checking out to PR branch {branch_to_checkout}')
+            # Fetch the branch first to ensure it exists locally
+            fetch_cmd = ['git', 'fetch', 'origin', branch_to_checkout]
+            subprocess.check_output(fetch_cmd, cwd=runtime.workspace_root)  # noqa: ASYNC101
+
+            # Checkout the branch
+            checkout_cmd = ['git', 'checkout', branch_to_checkout]
+            subprocess.check_output(checkout_cmd, cwd=runtime.workspace_root)  # noqa: ASYNC101
+
+        # get the commit id of current repo for reproducibility
+        base_commit = (
+            subprocess.check_output(
+                ['git', 'rev-parse', 'HEAD'], cwd=runtime.workspace_root
+            )  # noqa: ASYNC101
+            .decode('utf-8')
+            .strip()
+        )
+        logger.info(f'Base commit: {base_commit}')
+
+        # Check for .openhands_instructions file in the workspace directory
+        if self.repo_instruction is None:
+            openhands_instructions_path = os.path.join(
+                runtime.workspace_root, '.openhands_instructions'
+            )
+            if os.path.exists(openhands_instructions_path):
+                with open(openhands_instructions_path, 'r') as f:  # noqa: ASYNC101
+                    self.repo_instruction = f.read()
 
         def on_event(evt: Event) -> None:
             logger.info(evt)
@@ -565,36 +595,10 @@ class IssueResolver:
         )
         logger.info(f'Using output directory: {self.output_dir}')
 
-        # checkout the repo
-        repo_dir = os.path.join(self.output_dir, 'repo')
-        if not os.path.exists(repo_dir):
-            checkout_output = subprocess.check_output(  # noqa: ASYNC101
-                [
-                    'git',
-                    'clone',
-                    self.issue_handler.get_clone_url(),
-                    f'{self.output_dir}/repo',
-                ]
-            ).decode('utf-8')
-            if 'fatal' in checkout_output:
-                raise RuntimeError(f'Failed to clone repository: {checkout_output}')
+        # repo will be cloned later in process_issue using standard pattern
+        # base_commit will be captured after cloning
 
-        # get the commit id of current repo for reproducibility
-        base_commit = (
-            subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)  # noqa: ASYNC101
-            .decode('utf-8')
-            .strip()
-        )
-        logger.info(f'Base commit: {base_commit}')
-
-        if self.repo_instruction is None:
-            # Check for .openhands_instructions file in the workspace directory
-            openhands_instructions_path = os.path.join(
-                repo_dir, '.openhands_instructions'
-            )
-            if os.path.exists(openhands_instructions_path):
-                with open(openhands_instructions_path, 'r') as f:  # noqa: ASYNC101
-                    self.repo_instruction = f.read()
+        # .openhands_instructions will be read after repo is cloned in process_issue
 
         # OUTPUT FILE
         output_file = os.path.join(self.output_dir, 'output.jsonl')
@@ -618,39 +622,19 @@ class IssueResolver:
         )
 
         try:
-            # checkout to pr branch if needed
+            # determine branch to use for PR
+            branch_to_use = None
             if self.issue_type == 'pr':
                 branch_to_use = issue.head_branch
                 logger.info(
-                    f'Checking out to PR branch {branch_to_use} for issue {issue.number}'
+                    f'Will checkout to PR branch {branch_to_use} for issue {issue.number}'
                 )
-
                 if not branch_to_use:
                     raise ValueError('Branch name cannot be None')
 
-                # Fetch the branch first to ensure it exists locally
-                fetch_cmd = ['git', 'fetch', 'origin', branch_to_use]
-                subprocess.check_output(  # noqa: ASYNC101
-                    fetch_cmd,
-                    cwd=repo_dir,
-                )
-
-                # Checkout the branch
-                checkout_cmd = ['git', 'checkout', branch_to_use]
-                subprocess.check_output(  # noqa: ASYNC101
-                    checkout_cmd,
-                    cwd=repo_dir,
-                )
-
-                base_commit = (
-                    subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)  # noqa: ASYNC101
-                    .decode('utf-8')
-                    .strip()
-                )
-
             output = await self.process_issue(
                 issue,
-                base_commit,
+                branch_to_use,  # pass branch instead of base_commit
                 self.issue_handler,
                 reset_logger,
             )
