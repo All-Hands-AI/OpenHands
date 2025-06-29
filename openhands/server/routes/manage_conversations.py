@@ -322,7 +322,7 @@ async def get_prompt(
         raise ValueError('Settings not found')
 
     llm_config = LLMConfig(
-        model=settings.llm_model,
+        model=settings.llm_model or '',
         api_key=settings.llm_api_key,
         base_url=settings.llm_base_url,
     )

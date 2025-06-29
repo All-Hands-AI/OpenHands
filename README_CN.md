@@ -12,7 +12,7 @@
   <a href="https://github.com/All-Hands-AI/OpenHands/stargazers"><img src="https://img.shields.io/github/stars/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" alt="Stargazers"></a>
   <a href="https://github.com/All-Hands-AI/OpenHands/blob/main/LICENSE"><img src="https://img.shields.io/github/license/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" alt="MIT License"></a>
   <br/>
-  <a href="https://join.slack.com/t/openhands-ai/shared_invite/zt-34zm4j0gj-Qz5kRHoca8DFCbqXPS~f_A"><img src="https://img.shields.io/badge/Slack-Join%20Us-red?logo=slack&logoColor=white&style=for-the-badge" alt="加入我们的Slack社区"></a>
+  <a href="https://join.slack.com/t/openhands-ai/shared_invite/zt-3847of6xi-xuYJIPa6YIPg4ElbDWbtSA"><img src="https://img.shields.io/badge/Slack-Join%20Us-red?logo=slack&logoColor=white&style=for-the-badge" alt="加入我们的Slack社区"></a>
   <a href="https://discord.gg/ESHStjSjD4"><img src="https://img.shields.io/badge/Discord-Join%20Us-purple?logo=discord&logoColor=white&style=for-the-badge" alt="加入我们的Discord社区"></a>
   <a href="https://github.com/All-Hands-AI/OpenHands/blob/main/CREDITS.md"><img src="https://img.shields.io/badge/Project-Credits-blue?style=for-the-badge&color=FFE165&logo=github&logoColor=white" alt="致谢"></a>
   <br/>
@@ -51,17 +51,17 @@ OpenHands也可以使用Docker在本地系统上运行。
 
 
 ```bash
-docker pull docker.all-hands.dev/all-hands-ai/runtime:0.46-nikolaik
+docker pull docker.all-hands.dev/all-hands-ai/runtime:0.47-nikolaik
 
 docker run -it --rm --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.46-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.47-nikolaik \
     -e LOG_ALL_EVENTS=true \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v ~/.openhands:/.openhands \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app \
-    docker.all-hands.dev/all-hands-ai/openhands:0.46
+    docker.all-hands.dev/all-hands-ai/openhands:0.47
 ```
 
 > **注意**: 如果您在0.44版本之前使用过OpenHands，您可能需要运行 `mv ~/.openhands-state ~/.openhands` 来将对话历史迁移到新位置。
@@ -107,7 +107,7 @@ docker run -it --rm --pull=always \
 OpenHands是一个社区驱动的项目，我们欢迎每个人的贡献。我们大部分沟通
 通过Slack进行，因此这是开始的最佳场所，但我们也很乐意您通过Discord或Github与我们联系：
 
-- [加入我们的Slack工作空间](https://join.slack.com/t/openhands-ai/shared_invite/zt-34zm4j0gj-Qz5kRHoca8DFCbqXPS~f_A) - 这里我们讨论研究、架构和未来发展。
+- [加入我们的Slack工作空间](https://join.slack.com/t/openhands-ai/shared_invite/zt-3847of6xi-xuYJIPa6YIPg4ElbDWbtSA) - 这里我们讨论研究、架构和未来发展。
 - [加入我们的Discord服务器](https://discord.gg/ESHStjSjD4) - 这是一个社区运营的服务器，用于一般讨论、问题和反馈。
 - [阅读或发布Github问题](https://github.com/All-Hands-AI/OpenHands/issues) - 查看我们正在处理的问题，或添加您自己的想法。
 

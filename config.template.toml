@@ -10,18 +10,7 @@
 # General core configurations
 ##############################################################################
 [core]
-# API key for E2B
-#e2b_api_key = ""
-
-# API key for Modal
-#modal_api_token_id = ""
-#modal_api_token_secret = ""
-
-# API key for Daytona
-#daytona_api_key = ""
-
-# Daytona Target
-#daytona_target = ""
+# API keys and configuration for core services
 
 # Base path for the workspace
 #workspace_base = "./workspace"
@@ -270,6 +259,9 @@ enable_finish = true
 # Whether history should be truncated to continue the session when hitting LLM context
 # length limit
 enable_history_truncation = true
+
+# Whether the condensation request tool is enabled
+enable_condensation_request = false
 
 [agent.RepoExplorerAgent]
 # Example: use a cheaper model for RepoExplorerAgent to reduce cost, especially

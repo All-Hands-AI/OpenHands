@@ -100,11 +100,10 @@ class Runtime(FileEditRuntimeMixin):
 
     Built-in implementations include:
     - DockerRuntime: Containerized environment using Docker
-    - E2BRuntime: Secure sandbox using E2B
     - RemoteRuntime: Remote execution environment
-    - ModalRuntime: Scalable cloud environment using Modal
     - LocalRuntime: Local execution for development
-    - DaytonaRuntime: Cloud development environment using Daytona
+    - KubernetesRuntime: Kubernetes-based execution environment
+    - CLIRuntime: Command-line interface runtime
 
     Args:
         sid: Session ID that uniquely identifies the current user session

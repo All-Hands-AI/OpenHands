@@ -53,7 +53,7 @@ describe("TaskSuggestions", () => {
   it("should render an empty message if there are no tasks", async () => {
     getSuggestedTasksSpy.mockResolvedValue([]);
     renderTaskSuggestions();
-    await screen.findByText(/No tasks available/i);
+    await screen.findByText("TASKS$NO_TASKS_AVAILABLE");
   });
 
   it("should render the task groups with the correct titles", async () => {
