@@ -382,12 +382,12 @@ class LocEvaluator:
                 },
                 "turn_idx": {
                     "file": {
-                        "micro": max(self.agent_loc["turn index"]["file"]),
-                        "macro": min(self.agent_loc["turn index"]["file"]),
+                        "micro": min(self.agent_loc["turn index"]["file"]),
+                        "macro": max(self.agent_loc["turn index"]["file"]),
                     },
                     "function": {
-                        "micro": max(self.agent_loc["turn index"]["function"]),
-                        "macro": min(self.agent_loc["turn index"]["function"]),
+                        "micro": min(self.agent_loc["turn index"]["function"]),
+                        "macro": max(self.agent_loc["turn index"]["function"]),
                     },
                 },
                 "details": {
