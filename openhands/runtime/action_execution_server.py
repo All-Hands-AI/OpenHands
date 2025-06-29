@@ -398,8 +398,17 @@ class ActionExecutor:
                 observation = await method(action)
                 return observation
             except AttributeError:
-                # If the method doesn't exist, log an error and return an error observation
-                logger.error(f'Method {action_type} not found in ActionExecutionServer')
+                # Check if this is a Gemini file editor action
+                if action_type == 'replace':
+                    return self.gemini_file_editor.handle_edit_action(action)
+                elif action_type == 'write_file':
+                    return self.gemini_file_editor.handle_write_file_action(action)
+                elif action_type == 'read_file':
+                    return self.gemini_file_editor.handle_read_file_action(action)
+
+                # If the method doesn't exist and it's not a Gemini file editor action,
+                # log an error and return an error observation
+                logger.error(f'Method {action_type} not found in ActionExecutor')
                 return ErrorObservation(
                     f'Action {action_type} is not supported in the current runtime.'
                 )
