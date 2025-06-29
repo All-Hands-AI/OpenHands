@@ -23,9 +23,10 @@ from openhands.cli.tui import (
     display_initialization_animation,
     display_runtime_initialization_message,
     display_welcome_message,
-    process_agent_pause,
     read_confirmation_input,
     read_prompt_input,
+    start_pause_listener,
+    stop_pause_listener,
     update_streaming_output,
 )
 from openhands.cli.utils import (
@@ -122,7 +123,6 @@ async def run_session(
     sid = generate_sid(config, session_name)
     is_loaded = asyncio.Event()
     is_paused = asyncio.Event()  # Event to track agent pause requests
-    pause_task: asyncio.Task | None = None  # No more than one pause task
     always_confirm_mode = False  # Flag to enable always confirm mode
 
     # Show runtime initialization message
@@ -187,6 +187,10 @@ async def run_session(
         update_usage_metrics(event, usage_metrics)
 
         if isinstance(event, AgentStateChangedObservation):
+            if event.agent_state not in [AgentState.RUNNING, AgentState.PAUSED]:
+                await stop_pause_listener()
+
+        if isinstance(event, AgentStateChangedObservation):
             if event.agent_state in [
                 AgentState.AWAITING_USER_INPUT,
                 AgentState.FINISHED,
@@ -239,11 +243,7 @@ async def run_session(
 
             if event.agent_state == AgentState.RUNNING:
                 display_agent_running_message()
-                nonlocal pause_task
-                if pause_task is None or pause_task.done():
-                    pause_task = loop.create_task(
-                        process_agent_pause(is_paused, event_stream)
-                    )  # Create a task to track agent pause requests from the user
+                start_pause_listener(loop, is_paused, event_stream)
 
     def on_event(event: Event) -> None:
         loop.create_task(on_event_async(event))
