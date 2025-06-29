@@ -60,6 +60,17 @@ by implementing the [interface specified here](https://github.com/All-Hands-AI/O
 When you write code, it is also good to write tests. Please navigate to the [`./tests`](./tests) folder to see existing test suites.
 At the moment, we have two kinds of tests: [`unit`](./tests/unit) and [`integration`](./evaluation/integration_tests). Please refer to the README for each test suite. These tests also run on GitHub's continuous integration to ensure quality of the project.
 
+#### Running Tests Locally
+For comprehensive local test environment setup, including dependencies, troubleshooting, and step-by-step instructions, see [LOCAL_TEST_SETUP.md](./LOCAL_TEST_SETUP.md). For quick testing, you can use:
+
+```bash
+# Run all tests and linters
+make test-all
+
+# Run individual test categories
+make test-lint test-unit test-runtime
+```
+
 ## Sending Pull Requests to OpenHands
 
 You'll need to fork our repository to send us a Pull Request. You can learn more
