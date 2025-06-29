@@ -127,7 +127,9 @@ def mock_config():
 
     # Mock sandbox with volumes attribute to prevent finalize_config issues
     config.sandbox = MagicMock()
-    config.sandbox.volumes = None  # This prevents finalize_config from overriding workspace_base
+    config.sandbox.volumes = (
+        None  # This prevents finalize_config from overriding workspace_base
+    )
 
     return config
 
