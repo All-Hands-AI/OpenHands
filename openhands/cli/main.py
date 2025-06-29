@@ -43,6 +43,7 @@ from openhands.core.config.mcp_config import OpenHandsMCPConfigImpl
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.loop import run_agent_until_done
 from openhands.core.schema import AgentState
+from openhands.core.schema.exit_reason import ExitReason
 from openhands.core.setup import (
     create_agent,
     create_controller,
@@ -116,6 +117,7 @@ async def run_session(
 ) -> bool:
     reload_microagents = False
     new_session_requested = False
+    exit_reason = ExitReason.INTENTIONAL
 
     sid = generate_sid(config, session_name)
     is_loaded = asyncio.Event()
@@ -152,7 +154,7 @@ async def run_session(
     usage_metrics = UsageMetrics()
 
     async def prompt_for_next_task(agent_state: str) -> None:
-        nonlocal reload_microagents, new_session_requested
+        nonlocal reload_microagents, new_session_requested, exit_reason
         while True:
             next_message = await read_prompt_input(
                 config, agent_state, multiline=config.cli_multiline_input
@@ -165,6 +167,7 @@ async def run_session(
                 close_repl,
                 reload_microagents,
                 new_session_requested,
+                exit_reason,
             ) = await handle_commands(
                 next_message,
                 event_stream,
@@ -330,6 +333,11 @@ async def run_session(
 
     await cleanup_session(loop, agent, runtime, controller)
 
+    if exit_reason == ExitReason.INTENTIONAL:
+        print_formatted_text('✅ Session terminated successfully.\n')
+    else:
+        print_formatted_text(f'⚠️ Session was interrupted: {exit_reason.value}\n')
+
     return new_session_requested
 
 
@@ -478,7 +486,7 @@ def main():
     try:
         loop.run_until_complete(main_with_loop(loop))
     except KeyboardInterrupt:
-        print('Received keyboard interrupt, shutting down...')
+        print_formatted_text('⚠️ Session was interrupted: interrupted\n')
     except ConnectionRefusedError as e:
         print(f'Connection refused: {e}')
         sys.exit(1)
