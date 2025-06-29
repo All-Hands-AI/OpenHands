@@ -244,8 +244,8 @@ class LocEvaluator:
         """Get the max agent turn for current instance"""
         history_idx = 1
         self.agent_turn_num = 0
-        while history_idx < len(self.trajectory):
-            if (self.trajectory[history_idx]["source"] == "agent") and ("action" in self.trajectory[history_idx].keys()):
+        while history_idx < len(self.trajectory)-1:
+            if (self.trajectory[history_idx]["source"] == "agent") and ("action" in self.trajectory[history_idx].keys()) and (self.trajectory[history_idx]["action"] != "system"):
                 self.agent_turn_num += 1
             history_idx += 1
 
@@ -367,7 +367,7 @@ class LocEvaluator:
 
         # Task success
         agent_trajectory["final_eval"] = {
-            "total turn": turn_idx + 1,
+            "total turn": self.agent_turn_num,
             "max turn": self.max_agent_turn,
             "localization": {
                 "loc_acc (%)": {
