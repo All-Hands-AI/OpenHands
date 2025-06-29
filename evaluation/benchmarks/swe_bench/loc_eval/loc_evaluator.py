@@ -105,7 +105,9 @@ class LocEvaluator:
         macro_la_file, micro_la_file = 0, 0
         macro_la_func, micro_la_func = 0, 0
         resolve_rate = 0
-        avg_file_idx, avg_func_idx, avg_resolve_idx = 0, 0, 0
+        macro_avg_file_idx, macro_avg_func_idx = 0, 0
+        micro_avg_file_idx, micro_avg_func_idx = 0, 0
+        avg_resolve_idx = 0
         total_instance_num = len(self.all_eval_results)
 
         for instance_id in self.all_eval_results:
@@ -114,12 +116,14 @@ class LocEvaluator:
             # File
             macro_la_file += curr_eval_result["localization"]["loc_acc (%)"]["la_file (%)"]["la_file_macro"]
             micro_la_file += curr_eval_result["localization"]["loc_acc (%)"]["la_file (%)"]["la_file_micro"]
-            avg_file_idx += curr_eval_result["localization"]["turn_idx"]["file"]
+            macro_avg_file_idx += curr_eval_result["localization"]["turn_idx"]["file"]["macro"]
+            micro_avg_file_idx += curr_eval_result["localization"]["turn_idx"]["file"]["micro"]
 
             # Function
             macro_la_func += curr_eval_result["localization"]["loc_acc (%)"]["la_func (%)"]["la_func_macro"]
             micro_la_func += curr_eval_result["localization"]["loc_acc (%)"]["la_func (%)"]["la_func_micro"]
-            avg_func_idx += curr_eval_result["localization"]["turn_idx"]["function"]
+            macro_avg_func_idx += curr_eval_result["localization"]["turn_idx"]["function"]["macro"]
+            micro_avg_func_idx += curr_eval_result["localization"]["turn_idx"]["function"]["micro"]
 
             if self.eval_task_success:
                 if curr_eval_result["task_success"]["resolved"]:
@@ -133,8 +137,10 @@ class LocEvaluator:
         micro_la_file = micro_la_file / total_instance_num
         macro_la_func = macro_la_func / total_instance_num
         micro_la_func = micro_la_func / total_instance_num
-        avg_file_idx = avg_file_idx / total_instance_num
-        avg_func_idx = avg_func_idx / total_instance_num
+        macro_avg_file_idx = macro_avg_file_idx / total_instance_num
+        micro_avg_file_idx = micro_avg_file_idx / total_instance_num
+        macro_avg_func_idx = macro_avg_func_idx / total_instance_num
+        micro_avg_func_idx = micro_avg_func_idx / total_instance_num
 
         if self.eval_task_success:
             resolve_rate = resolve_rate / total_instance_num * 100
@@ -152,8 +158,8 @@ class LocEvaluator:
             "la_file (%)": {"macro": macro_la_file, "micro": micro_la_file},
             "la_func (%)": {"macro": macro_la_func, "micro": micro_la_func},
             "resolve_rate (%)": resolve_rate if self.eval_task_success else None,
-            "loc_file_idx (turn idx)": avg_file_idx,
-            "loc_func_idx (turn idx)": avg_func_idx,
+            "loc_file_idx (turn idx)": {"macro": macro_avg_file_idx, "micro": micro_avg_file_idx},
+            "loc_func_idx (turn idx)": {"macro": macro_avg_func_idx, "micro": micro_avg_func_idx},
             "resolve_idx (turn idx)": avg_resolve_idx if self.eval_task_success else None,
             "max_turn_limit": self.max_agent_turn,
             "total_instance_num": total_instance_num,

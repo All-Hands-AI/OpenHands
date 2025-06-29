@@ -130,19 +130,16 @@ if [ ! -d "$INFER_DIR" ]; then
     exit 1
 fi
 
-# Only check EVAL_DIR if it was provided and is not empty
-if [ -n "$EVAL_DIR" ] && [ "$EVAL_DIR" != "" ] && [ ! -d "$EVAL_DIR" ]; then
-    print_error "Evaluation directory not found: $EVAL_DIR"
-    exit 1
-fi
+# Evaluation outputs
+EVAL_DIR="$INFER_DIR/eval_outputs"
 
 # Display configuration
 print_header "Starting Localization Evaluation with the following configuration:"
-echo "  Inference Directory:   $INFER_DIR"
-if [ -n "$EVAL_DIR" ] && [ "$EVAL_DIR" != "" ]; then
+echo "  Inference Directory:  $INFER_DIR"
+if [ -d "$EVAL_DIR" ]; then
     echo "  Evaluation Directory:  $EVAL_DIR"
 else
-    echo "  Evaluation Directory:  (not provided)"
+    echo "  Evaluation Directory:  None (evaluation outputs doesn't exist)"
 fi
 echo "  Output Directory:      $INFER_DIR/loc_eval"
 echo "  Split:                 $SPLIT"
@@ -174,6 +171,9 @@ else:
     print_warning "Please install required packages: pip install pandas"
     exit 1
 }
+
+# Create log directory if doesn't exists
+mkdir -p "$INFER_DIR/loc_eval"
 
 # Set up logging
 LOG_FILE="$INFER_DIR/loc_eval/loc_evaluation_$(date +%Y%m%d_%H%M%S).log"
