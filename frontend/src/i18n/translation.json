@@ -4064,7 +4064,7 @@
         "uk": "Зупинено"
     },
     "CHAT_INTERFACE$INITIALIZING_AGENT_LOADING_MESSAGE": {
-        "en": "Initializing Agent...",
+        "en": "Initializing agent...",
         "de": "Agent wird initialisiert...",
         "zh-CN": "正在初始化智能体...",
         "zh-TW": "正在初始化智能體...",
