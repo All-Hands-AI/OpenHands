@@ -79,6 +79,8 @@ docker run -it \
 
 > **Note**: If you used OpenHands before version 0.44, run `mv ~/.openhands-state ~/.openhands` to migrate your conversation history.
 
+The `-e SANDBOX_USER_ID=$(id -u)` is passed to the Docker command to ensure the sandbox user matches the host user’s
+
 ## Additional Options
 
 Common command-line options:
