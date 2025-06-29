@@ -50,30 +50,10 @@ Access launcher commands via Command Palette (Ctrl+Shift+P) or right-click menu.
 
 ## Requirements
 
-- OpenHands CLI in your PATH
-- VS Code 1.98.2+
-- Compatible shell for optimal terminal reuse (bash, zsh, PowerShell, fish)
+- **OpenHands CLI**: You must have `openhands` installed and available in your system's PATH.
+- **VS Code**: Version 1.98.2 or newer.
+- **Shell**: For the best terminal reuse experience, a shell with [Shell Integration](https://code.visualstudio.com/docs/terminal/shell-integration) is recommended (e.g., modern versions of bash, zsh, PowerShell, or fish).
 
-## Development
+## Contributing
 
-### Setup
-```bash
-npm install
-```
-
-### Code Quality
-```bash
-# Run linting with fixes
-npm run lint:fix
-
-# Type checking
-npm run typecheck
-
-# Compile TypeScript
-npm run compile
-
-# Run tests
-npm run test
-```
-
-The extension uses ESLint and Prettier for code quality, adapted from the main OpenHands frontend configuration.
+We welcome contributions! If you're interested in developing the extension, please see the `DEVELOPMENT.md` file in our source repository for instructions on how to get started.
