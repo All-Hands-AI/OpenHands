@@ -393,8 +393,16 @@ class ActionExecutor:
     async def run_action(self, action) -> Observation:
         async with self.lock:
             action_type = action.action
-            observation = await getattr(self, action_type)(action)
-            return observation
+            try:
+                method = getattr(self, action_type)
+                observation = await method(action)
+                return observation
+            except AttributeError:
+                # If the method doesn't exist, log an error and return an error observation
+                logger.error(f'Method {action_type} not found in ActionExecutionServer')
+                return ErrorObservation(
+                    f'Action {action_type} is not supported in the current runtime.'
+                )
 
     async def run(
         self, action: CmdRunAction
