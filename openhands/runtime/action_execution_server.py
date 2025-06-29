@@ -399,11 +399,15 @@ class ActionExecutor:
                 return observation
             except AttributeError:
                 # Check if this is a Gemini file editor action
-                if action_type == 'replace':
+                if action_type == 'replace' and isinstance(action, GeminiEditAction):
                     return self.gemini_file_editor.handle_edit_action(action)
-                elif action_type == 'write_file':
+                elif action_type == 'write_file' and isinstance(
+                    action, GeminiWriteFileAction
+                ):
                     return self.gemini_file_editor.handle_write_file_action(action)
-                elif action_type == 'read_file':
+                elif action_type == 'read_file' and isinstance(
+                    action, GeminiReadFileAction
+                ):
                     return self.gemini_file_editor.handle_read_file_action(action)
 
                 # If the method doesn't exist and it's not a Gemini file editor action,
