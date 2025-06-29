@@ -367,7 +367,7 @@ class LocEvaluator:
 
         # Task success
         agent_trajectory["final_eval"] = {
-            "total turn": turn_idx,
+            "total turn": turn_idx + 1,
             "max turn": self.max_agent_turn,
             "localization": {
                 "loc_acc (%)": {
