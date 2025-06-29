@@ -399,17 +399,27 @@ def finalize_config(cfg: OpenHandsConfig) -> None:
             )
         )
 
-    # If CLIRuntime is selected, disable Jupyter for all agents
-    # Assuming 'cli' is the identifier for CLIRuntime
+    # If CLIRuntime is selected, disable Jupyter and browsing for all agents
+    # since CLIRuntime does not support IPython execution or browsing
     if cfg.runtime and cfg.runtime.lower() == 'cli':
-        for age_nt_name, agent_config in cfg.agents.items():
+        # Disable for existing agent configs
+        for agent_name, agent_config in cfg.agents.items():
             if agent_config.enable_jupyter:
                 agent_config.enable_jupyter = False
             if agent_config.enable_browsing:
                 agent_config.enable_browsing = False
+
+        # Also ensure the default agent config has these disabled
+        # This handles the case where no explicit agent configs are defined
+        default_agent_config = cfg.get_agent_config()
+        if default_agent_config.enable_jupyter:
+            default_agent_config.enable_jupyter = False
+        if default_agent_config.enable_browsing:
+            default_agent_config.enable_browsing = False
+
         logger.openhands_logger.debug(
             'Automatically disabled Jupyter plugin and browsing for all agents '
-            'because CLIRuntime is selected and does not support IPython execution.'
+            'because CLIRuntime is selected and does not support IPython execution or browsing.'
         )
 
 

@@ -17,14 +17,14 @@ class AgentConfig(BaseModel):
     """Filename of the system prompt template file within the agent's prompt directory. Defaults to 'system_prompt.j2'."""
     enable_browsing: bool = Field(default=True)
     """Whether to enable browsing tool.
-    Note: If using CLIRuntime, browsing is not implemented and should be disabled."""
+    Note: If using CLIRuntime, browsing is not implemented and will be automatically disabled."""
     enable_llm_editor: bool = Field(default=False)
     """Whether to enable LLM editor tool"""
     enable_editor: bool = Field(default=True)
     """Whether to enable the standard editor tool (str_replace_editor), only has an effect if enable_llm_editor is False."""
     enable_jupyter: bool = Field(default=True)
     """Whether to enable Jupyter tool.
-    Note: If using CLIRuntime, Jupyter use is not implemented and should be disabled."""
+    Note: If using CLIRuntime, Jupyter use is not implemented and will be automatically disabled."""
     enable_cmd: bool = Field(default=True)
     """Whether to enable bash tool"""
     enable_think: bool = Field(default=True)
