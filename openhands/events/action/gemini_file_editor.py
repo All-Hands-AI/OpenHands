@@ -1,6 +1,6 @@
 """Gemini-style file editor actions."""
 
-from typing import Any, Optional
+from typing import Any, ClassVar, Optional
 
 from openhands.events.action.action import Action
 from openhands.llm.tool_names import (
@@ -14,6 +14,7 @@ class GeminiEditAction(Action):
     """Action for Gemini-style edit operations."""
 
     action = GEMINI_EDIT_TOOL_NAME
+    runnable: ClassVar[bool] = True
 
     def __init__(
         self,
@@ -49,6 +50,7 @@ class GeminiWriteFileAction(Action):
     """Action for Gemini-style write file operations."""
 
     action = GEMINI_WRITE_FILE_TOOL_NAME
+    runnable: ClassVar[bool] = True
 
     def __init__(self, file_path: str, content: str):
         """Initialize a GeminiWriteFileAction.
@@ -72,6 +74,7 @@ class GeminiReadFileAction(Action):
     """Action for Gemini-style read file operations."""
 
     action = GEMINI_READ_FILE_TOOL_NAME
+    runnable: ClassVar[bool] = True
 
     def __init__(
         self,
