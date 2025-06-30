@@ -462,6 +462,7 @@ class GitLabService(BaseGitService, GitService):
         target_branch: str,
         title: str,
         description: str | None = None,
+        labels: list[str] | None = None,
     ) -> str:
         """
         Creates a merge request in GitLab
@@ -472,6 +473,7 @@ class GitLabService(BaseGitService, GitService):
             target_branch: The name of the branch you want the changes merged into
             title: The title of the merge request (optional, defaults to a generic title)
             description: The description of the merge request (optional)
+            labels: A list of labels to apply to the merge request (optional)
 
         Returns:
             - MR URL when successful
@@ -493,6 +495,10 @@ class GitLabService(BaseGitService, GitService):
             'title': title,
             'description': description,
         }
+
+        # Add labels if provided
+        if labels and len(labels) > 0:
+            payload['labels'] = ','.join(labels)
 
         # Make the POST request to create the MR
         response, _ = await self._make_request(
