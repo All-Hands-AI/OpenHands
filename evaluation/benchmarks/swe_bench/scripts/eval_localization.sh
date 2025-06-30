@@ -10,10 +10,11 @@ usage() {
     echo "  --split SPLIT           SWE-Bench dataset split selection"
     echo "  --dataset DATASET       Dataset name"
     echo "  --max-infer-turn NUM    Max number of turns for coding agent"
+    echo "  --align-with-max BOOL   Align failed instance indices with max iteration (true/false)"
     echo "  -h, --help              Display this help message"
     echo ""
     echo "Example:"
-    echo "  $0 --infer-dir ./inference_outputs --split test"
+    echo "  $0 --infer-dir ./inference_outputs --split test --align-with-max false"
 }
 
 # Check if no arguments were provided
@@ -39,6 +40,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --max-infer-turn)
             MAX_TURN="$2"
+            shift 2
+            ;;
+        --align-with-max)
+            ALIGN_WITH_MAX="$2"
             shift 2
             ;;
         -h|--help)
@@ -74,6 +79,17 @@ fi
 if [ -z "$MAX_TURN" ]; then
     MAX_TURN=20
     echo "Max inference turn not specified, using default: $MAX_TURN"
+fi
+
+if [ -z "$ALIGN_WITH_MAX" ]; then
+    ALIGN_WITH_MAX="true"
+    echo "Align with max not specified, using default: $ALIGN_WITH_MAX"
+fi
+
+# Validate align-with-max value
+if [ "$ALIGN_WITH_MAX" != "true" ] && [ "$ALIGN_WITH_MAX" != "false" ]; then
+    print_error "Invalid value for --align-with-max: $ALIGN_WITH_MAX. Must be 'true' or 'false'"
+    exit 1
 fi
 
 # Color codes for output
@@ -145,6 +161,7 @@ echo "  Output Directory:      $INFER_DIR/loc_eval"
 echo "  Split:                 $SPLIT"
 echo "  Dataset:               $DATASET"
 echo "  Max Turns:             $MAX_TURN"
+echo "  Align with Max:        $ALIGN_WITH_MAX"
 echo "  Python Command:        $PYTHON_CMD"
 echo ""
 
@@ -184,7 +201,8 @@ CMD_ARGS="\"$SCRIPT_NAME\" \
     --infer-dir \"$INFER_DIR\" \
     --split \"$SPLIT\" \
     --dataset \"$DATASET\" \
-    --max-infer-turn \"$MAX_TURN\""
+    --max-infer-turn \"$MAX_TURN\" \
+    --align-with-max \"$ALIGN_WITH_MAX\""
 
 # Run the Python script
 print_header "Running localization evaluation..."

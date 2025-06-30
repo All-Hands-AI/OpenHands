@@ -31,6 +31,7 @@ class LocEvaluator:
         self.sandbox_root = "/workspace"
         self.agent_turn_num = -1
         self.max_agent_turn = args.max_infer_turn
+        self.align_failed_with_max_iter = args.align_with_max
 
         # Data
         self.instance = None
@@ -459,7 +460,11 @@ class LocEvaluator:
         eval_report = self.read_from_json(report_pth)
         if self.instance.instance_id in eval_report.keys():
             self.task_success = eval_report[self.instance.instance_id]["resolved"]
-        return {"resolved": self.task_success, "resolve_index": self.agent_turn_num}
+
+        if self.align_failed_with_max_iter:
+            return {"resolved": self.task_success, "resolve_index": self.max_agent_turn}
+        else:
+            return {"resolved": self.task_success, "resolve_index": self.agent_turn_num}
 
     def eval_agent_trajectory(self):
         """Evaluate agent's localization at current state"""
@@ -600,9 +605,10 @@ class LocEvaluator:
                 
 
         # Init agent loc accordingly
+        init_turn = self.max_agent_turn if self.align_failed_with_max_iter else self.agent_turn_num
         self.agent_loc["gold loc"] = {"file": self.gold_loc["file"], "function": self.gold_loc["function"]}
-        self.agent_loc["turn index"]["file"] = [self.agent_turn_num for i in range(len(self.gold_loc["file"]))]
-        self.agent_loc["turn index"]["function"] = [self.agent_turn_num for i in range(len(self.gold_loc["function"]))]
+        self.agent_loc["turn index"]["file"] = [init_turn for i in range(len(self.gold_loc["file"]))]
+        self.agent_loc["turn index"]["function"] = [init_turn for i in range(len(self.gold_loc["function"]))]
         self.agent_loc["loc progress"]["file"] = [False for i in range(len(self.gold_loc["file"]))]
         self.agent_loc["loc progress"]["function"] = [False for i in range(len(self.gold_loc["function"]))]
 
@@ -777,8 +783,18 @@ if __name__ == '__main__':
         default=None,
         help="Max number of turns allowed for coding agent."
     )
+    parser.add_argument(
+        "--align-with-max",
+        type=str,
+        choices=['true', 'false'],
+        default='true',
+        help="Whether to align failed instances with max iteration count (true/false)"
+    )
 
     args = parser.parse_args()
+
+    # Convert args.align_with_max str to bool
+    args.align_with_max = args.align_with_max.lower() == 'true'
 
     # Eval infer and loc
     args.save_dir = f"{args.infer_dir}/loc_eval"
