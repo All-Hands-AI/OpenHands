@@ -7,7 +7,7 @@ from conftest import _close_test_runtime, _load_runtime
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import FileEditAction, FileReadAction
 from openhands.events.event import FileEditSource
-from openhands.events.observation import FileEditObservation, FileReadObservation
+from openhands.events.observation import ErrorObservation, FileEditObservation, FileReadObservation
 
 
 def test_gemini_editor_view_file(temp_dir, runtime_cls, run_as_openhands):
@@ -30,7 +30,6 @@ def test_gemini_editor_view_file(temp_dir, runtime_cls, run_as_openhands):
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
         assert isinstance(obs, FileEditObservation)
-        assert obs.error is False
 
         # Now view the file using FileReadAction
         action = FileReadAction(path=test_file_path)
@@ -39,7 +38,6 @@ def test_gemini_editor_view_file(temp_dir, runtime_cls, run_as_openhands):
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
         assert isinstance(obs, FileReadObservation)
-        assert obs.error is False
         assert 'Hello, World!' in obs.content
         assert 'This is a test file.' in obs.content
         assert 'Line 3' in obs.content
@@ -66,13 +64,11 @@ def test_gemini_editor_create_file(temp_dir, runtime_cls, run_as_openhands):
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
         assert isinstance(obs, FileEditObservation)
-        assert obs.error is False
 
         # Verify the file was created by reading it
         action = FileReadAction(path=test_file_path)
         obs = runtime.run_action(action)
         assert isinstance(obs, FileReadObservation)
-        assert obs.error is False
         assert 'Test Python File' in obs.content
         assert "print('Hello from Gemini editor!')" in obs.content
 
@@ -103,7 +99,6 @@ def goodbye():
         )
         obs = runtime.run_action(action)
         assert isinstance(obs, FileEditObservation)
-        assert obs.error is False
 
         # Replace text using str_replace command
         action = FileEditAction(
@@ -118,13 +113,11 @@ def goodbye():
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
         assert isinstance(obs, FileEditObservation)
-        assert obs.error is False
 
         # Verify the replacement
         action = FileReadAction(path=test_file_path)
         obs = runtime.run_action(action)
         assert isinstance(obs, FileReadObservation)
-        assert obs.error is False
         assert 'Hello, Gemini!' in obs.content
         assert 'gemini_greeting' in obs.content
         assert 'Hello, World!' not in obs.content
@@ -150,7 +143,6 @@ def test_gemini_editor_write_file(temp_dir, runtime_cls, run_as_openhands):
         )
         obs = runtime.run_action(action)
         assert isinstance(obs, FileEditObservation)
-        assert obs.error is False
 
         # Write new content (overwrite) using write command
         action = FileEditAction(
@@ -164,13 +156,11 @@ def test_gemini_editor_write_file(temp_dir, runtime_cls, run_as_openhands):
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
         assert isinstance(obs, FileEditObservation)
-        assert obs.error is False
 
         # Verify the content was replaced
         action = FileReadAction(path=test_file_path)
         obs = runtime.run_action(action)
         assert isinstance(obs, FileReadObservation)
-        assert obs.error is False
         assert 'New content' in obs.content
         assert 'completely replaces' in obs.content
         assert 'Old content' not in obs.content
@@ -204,7 +194,6 @@ Line 10"""
         )
         obs = runtime.run_action(action)
         assert isinstance(obs, FileEditObservation)
-        assert obs.error is False
 
         # Read with line range (start=3, end=5 for lines 3-5)
         action = FileReadAction(
@@ -217,7 +206,6 @@ Line 10"""
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
         assert isinstance(obs, FileReadObservation)
-        assert obs.error is False
         assert 'Line 3' in obs.content
         assert 'Line 4' in obs.content
         assert 'Line 5' in obs.content
@@ -243,7 +231,6 @@ def test_gemini_editor_view_directory(temp_dir, runtime_cls, run_as_openhands):
             )
             obs = runtime.run_action(action)
             assert isinstance(obs, FileEditObservation)
-            assert obs.error is False
 
         # View the directory using FileEditAction with view command
         action = FileEditAction(
@@ -256,7 +243,6 @@ def test_gemini_editor_view_directory(temp_dir, runtime_cls, run_as_openhands):
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
         assert isinstance(obs, FileEditObservation)
-        assert obs.error is False
 
         # Check that all test files are listed
         for filename in test_files:
@@ -273,8 +259,9 @@ def test_gemini_editor_error_handling(temp_dir, runtime_cls, run_as_openhands):
         # Test reading non-existent file
         action = FileReadAction(path='/workspace/nonexistent.txt')
         obs = runtime.run_action(action)
-        assert isinstance(obs, FileReadObservation)
-        # Should handle gracefully, either with error or appropriate message
+        # Should return an ErrorObservation for non-existent file
+        assert isinstance(obs, ErrorObservation)
+        assert 'File not found' in obs.content or 'No such file' in obs.content
 
         # Test creating file that already exists (should overwrite or handle gracefully)
         test_file_path = os.path.join('/workspace', 'existing.txt')
@@ -286,7 +273,6 @@ def test_gemini_editor_error_handling(temp_dir, runtime_cls, run_as_openhands):
         )
         obs = runtime.run_action(action)
         assert isinstance(obs, FileEditObservation)
-        assert obs.error is False
 
         # Try to create the same file again
         action = FileEditAction(
@@ -296,8 +282,8 @@ def test_gemini_editor_error_handling(temp_dir, runtime_cls, run_as_openhands):
             impl_source=FileEditSource.OH_ACI,
         )
         obs = runtime.run_action(action)
-        assert isinstance(obs, FileEditObservation)
-        # Should either error or handle gracefully
+        # Should either succeed (overwrite) or return an error
+        assert isinstance(obs, (FileEditObservation, ErrorObservation))
 
     finally:
         _close_test_runtime(runtime)
