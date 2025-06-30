@@ -4735,6 +4735,38 @@
         "de": "Löschen bestätigen",
         "uk": "Підтвердити видалення"
     },
+    "CONVERSATION$CONFIRM_STOP": {
+        "en": "Confirm Stop",
+        "ja": "停止の確認",
+        "zh-CN": "确认停止",
+        "zh-TW": "確認停止",
+        "ko-KR": "중지 확인",
+        "no": "Bekreft stopp",
+        "it": "Conferma arresto",
+        "pt": "Confirmar parada",
+        "es": "Confirmar detención",
+        "ar": "تأكيد الإيقاف",
+        "fr": "Confirmer l'arrêt",
+        "tr": "Durdurmayı Onayla",
+        "de": "Stopp bestätigen",
+        "uk": "Підтвердити зупинку"
+    },
+    "CONVERSATION$STOP_WARNING": {
+        "en": "Are you sure you want to stop this conversation?",
+        "ja": "この会話を停止してもよろしいですか？",
+        "zh-CN": "您确定要停止此对话吗？",
+        "zh-TW": "您確定要停止此對話嗎？",
+        "ko-KR": "이 대화를 중지하시겠습니까?",
+        "no": "Er du sikker på at du vil stoppe denne samtalen?",
+        "it": "Sei sicuro di voler fermare questa conversazione?",
+        "pt": "Tem certeza de que deseja parar esta conversa?",
+        "es": "¿Está seguro de que desea detener esta conversación?",
+        "ar": "هل أنت متأكد أنك تريد إيقاف هذه المحادثة؟",
+        "fr": "Êtes-vous sûr de vouloir arrêter cette conversation ?",
+        "tr": "Bu konuşmayı durdurmak istediğinizden emin misiniz?",
+        "de": "Sind Sie sicher, dass Sie dieses Gespräch stoppen möchten?",
+        "uk": "Ви впевнені, що хочете зупинити цю розмову?"
+    },
     "CONVERSATION$METRICS_INFO": {
         "en": "Conversation Metrics",
         "ja": "会話メトリクス",
