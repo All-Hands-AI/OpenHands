@@ -48,7 +48,7 @@ class LocEvaluator:
         }
 
         # Task success tracking
-        self.task_success = False
+        self.task_resolved = False
 
         # Cost
         self.cost_summary = {"total_cost": 0.0, "avg_cost": 0.0, "details": {}}
@@ -75,7 +75,7 @@ class LocEvaluator:
         }
 
         # Task success tracking
-        self.task_success = False
+        self.task_resolved = False
 
     def _init_dir(self, directory_path):
         """
@@ -455,16 +455,19 @@ class LocEvaluator:
 
     def _add_task_success_metric(self) -> bool:
         """Task success evaluation result"""
-        self.task_success = False
+        self.task_resolved = False
         report_pth = os.path.join(self.eval_dir, self.instance.instance_id, "report.json")
         eval_report = self.read_from_json(report_pth)
         if self.instance.instance_id in eval_report.keys():
-            self.task_success = eval_report[self.instance.instance_id]["resolved"]
+            self.task_resolved = eval_report[self.instance.instance_id]["resolved"]
+
+        if self.task_resolved:
+            return {"resolved": self.task_resolved, "resolve_index": self.agent_turn_num}
 
         if self.align_failed_with_max_iter:
-            return {"resolved": self.task_success, "resolve_index": self.max_agent_turn}
+            return {"resolved": self.task_resolved, "resolve_index": self.max_agent_turn}
         else:
-            return {"resolved": self.task_success, "resolve_index": self.agent_turn_num}
+            return {"resolved": self.task_resolved, "resolve_index": self.agent_turn_num}
 
     def eval_agent_trajectory(self):
         """Evaluate agent's localization at current state"""
@@ -566,13 +569,19 @@ class LocEvaluator:
             agent_trajectory["final_eval"]["task_success"] = self._add_task_success_metric()
 
         # Align loc with success
-        if self.task_success:
+        if self.task_resolved:
             if agent_trajectory["final_eval"]["localization"]["loc_acc (%)"] != {"la_file (%)": {"la_file_micro": 100.0, "la_file_macro": 100.0}, "la_func (%)": {"la_func_micro": 100.0, "la_func_macro": 100.0}}:
                 agent_trajectory["final_eval"]["localization"]["loc_acc (%)"] = {"la_file (%)": {"la_file_micro": 100.0, "la_file_macro": 100.0}, "la_func (%)": {"la_func_micro": 100.0, "la_func_macro": 100.0}}
                 agent_trajectory["final_eval"]["localization"]["details"] = {
                     "loc_file": [True for i in range(len(self.agent_loc["loc progress"]["file"]))],
                     "loc_func": [True for i in range(len(self.agent_loc["loc progress"]["function"]))],
                 }
+                
+            if self.align_failed_with_max_iter:
+                for level1 in agent_trajectory["final_eval"]["localization"]["turn_idx"]:
+                    for level2 in agent_trajectory["final_eval"]["localization"]["turn_idx"][level1]:
+                        if agent_trajectory["final_eval"]["localization"]["turn_idx"][level1][level2] > self.agent_turn_num:
+                            agent_trajectory["final_eval"]["localization"]["turn_idx"][level1][level2] = self.agent_turn_num
 
         # Save
         self._save_to_eval_dicts(agent_trajectory)
