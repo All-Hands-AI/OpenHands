@@ -5551,6 +5551,22 @@
         "de": "Einstellungen gespeichert",
         "uk": "Налаштування збережено"
     },
+    "SETTINGS$SAVED_WARNING": {
+        "en": "Settings saved. For old conversations, you will need to stop and restart the conversation to see the changes.",
+        "ja": "設定が保存されました。古い会話では、変更を確認するために会話を停止して再開する必要があります。",
+        "zh-CN": "设置已保存。对于旧对话，您需要停止并重新开始对话才能看到更改。",
+        "zh-TW": "設置已保存。對於舊對話，您需要停止並重新開始對話才能看到更改。",
+        "ko-KR": "설정이 저장되었습니다. 기존 대화의 경우 변경사항을 보려면 대화를 중지하고 다시 시작해야 합니다.",
+        "no": "Innstillinger lagret. For gamle samtaler må du stoppe og starte samtalen på nytt for å se endringene.",
+        "it": "Impostazioni salvate. Per le conversazioni precedenti, dovrai fermare e riavviare la conversazione per vedere le modifiche.",
+        "pt": "Configurações salvas. Para conversas antigas, você precisará parar e reiniciar a conversa para ver as alterações.",
+        "es": "Configuración guardada. Para conversaciones antiguas, necesitarás detener y reiniciar la conversación para ver los cambios.",
+        "ar": "تم حفظ الإعدادات. بالنسبة للمحادثات القديمة، ستحتاج إلى إيقاف وإعادة تشغيل المحادثة لرؤية التغييرات.",
+        "fr": "Paramètres enregistrés. Pour les anciennes conversations, vous devrez arrêter et redémarrer la conversation pour voir les changements.",
+        "tr": "Ayarlar kaydedildi. Eski konuşmalar için değişiklikleri görmek üzere konuşmayı durdurup yeniden başlatmanız gerekecek.",
+        "de": "Einstellungen gespeichert. Für alte Gespräche müssen Sie das Gespräch stoppen und neu starten, um die Änderungen zu sehen.",
+        "uk": "Налаштування збережено. Для старих розмов вам потрібно буде зупинити та перезапустити розмову, щоб побачити зміни."
+    },
     "SETTINGS$RESET": {
         "en": "Settings reset",
         "ja": "設定がリセットされました",
