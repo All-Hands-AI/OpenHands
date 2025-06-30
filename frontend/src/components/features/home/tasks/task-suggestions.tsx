@@ -33,6 +33,7 @@ export function TaskSuggestions({ filterFor }: TaskSuggestionsProps) {
           ariaLabel={t(I18nKey.TASKS$TASK_SUGGESTIONS_INFO)}
           className="text-[#9099AC] hover:text-white"
           placement="bottom"
+          tooltipClassName="max-w-[348px]"
         >
           <FaInfoCircle size={16} />
         </TooltipButton>

@@ -12,6 +12,7 @@ export interface TooltipButtonProps {
   ariaLabel: string;
   testId?: string;
   className?: React.HTMLAttributes<HTMLButtonElement>["className"];
+  tooltipClassName?: React.HTMLAttributes<HTMLDivElement>["className"];
   disabled?: boolean;
   placement?: TooltipProps["placement"];
 }
@@ -25,6 +26,7 @@ export function TooltipButton({
   ariaLabel,
   testId,
   className,
+  tooltipClassName,
   disabled = false,
   placement = "right",
 }: TooltipButtonProps) {
@@ -120,7 +122,12 @@ export function TooltipButton({
   }
 
   return (
-    <Tooltip content={tooltip} closeDelay={100} placement={placement}>
+    <Tooltip
+      content={tooltip}
+      closeDelay={100}
+      placement={placement}
+      className={tooltipClassName}
+    >
       {content}
     </Tooltip>
   );
