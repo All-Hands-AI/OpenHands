@@ -118,6 +118,15 @@ class Repository(BaseModel):
     link_header: str | None = None
     pushed_at: str | None = None  # ISO 8601 format date string
 
+    @property
+    def directory_name(self) -> str:
+        """Get the directory name for cloning (last part of the path)."""
+        return self.full_name.split('/')[-1]
+
+    def is_gitlab(self) -> bool:
+        """Check if this is a GitLab repository."""
+        return self.git_provider == ProviderType.GITLAB
+
 
 class AuthenticationError(ValueError):
     """Raised when there is an issue with GitHub authentication."""

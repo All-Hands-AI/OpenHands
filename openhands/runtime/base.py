@@ -80,39 +80,6 @@ def _default_env_vars(sandbox_config: SandboxConfig) -> dict[str, str]:
     return ret
 
 
-class RepositoryInfo:
-    """Container for repository information including provider details."""
-
-    def __init__(
-        self, repository_string: str, repository_obj: Repository | None = None
-    ):
-        self.repository_string = repository_string
-        self.repository_obj = repository_obj
-
-    @property
-    def provider(self) -> ProviderType | None:
-        """Get the provider type if available."""
-        return self.repository_obj.git_provider if self.repository_obj else None
-
-    @property
-    def full_name(self) -> str:
-        """Get the full repository name."""
-        return (
-            self.repository_obj.full_name
-            if self.repository_obj
-            else self.repository_string
-        )
-
-    @property
-    def directory_name(self) -> str:
-        """Get the directory name for cloning (last part of the path)."""
-        return self.full_name.split('/')[-1]
-
-    def is_gitlab(self) -> bool:
-        """Check if this is a GitLab repository."""
-        return self.provider == ProviderType.GITLAB if self.provider else False
-
-
 class Runtime(FileEditRuntimeMixin):
     """Abstract base class for agent runtime environments.
 
@@ -403,7 +370,7 @@ class Runtime(FileEditRuntimeMixin):
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
         selected_repository: str | None,
         selected_branch: str | None,
-    ) -> RepositoryInfo:
+    ) -> Repository | None:
         if not selected_repository:
             # In SaaS mode (indicated by user_id being set), always run git init
             # In OSS mode, only run git init if workspace_base is not set
@@ -419,7 +386,7 @@ class Runtime(FileEditRuntimeMixin):
                 logger.info(
                     'In workspace mount mode, not initializing a new git repository.'
                 )
-            return RepositoryInfo('')
+            return None
 
         (
             remote_repo_url,
@@ -436,8 +403,7 @@ class Runtime(FileEditRuntimeMixin):
                 'info', 'STATUS$SETTING_UP_WORKSPACE', 'Setting up workspace...'
             )
 
-        repo_info = RepositoryInfo(selected_repository, repository_obj)
-        dir_name = repo_info.directory_name
+        dir_name = repository_obj.directory_name
 
         # Generate a random branch name to avoid conflicts
         random_str = ''.join(
@@ -464,7 +430,7 @@ class Runtime(FileEditRuntimeMixin):
         action = cd_checkout_action
         self.log('info', f'Cloning repo: {selected_repository}')
         self.run_action(action)
-        return repo_info
+        return repository_obj
 
     def maybe_run_setup_script(self):
         """Run .openhands/setup.sh if it exists in the workspace or repository."""
@@ -691,7 +657,7 @@ fi
         return remote_url, repository
 
     def get_microagents_from_org_or_user(
-        self, repository_info: RepositoryInfo
+        self, repository: Repository
     ) -> list[BaseMicroagent]:
         """Load microagents from the organization or user level repository.
 
@@ -704,14 +670,14 @@ fi
         characters.
 
         Args:
-            repository_info: The repository information including provider details
+            repository: The repository object including provider details
 
         Returns:
             A list of loaded microagents from the org/user level repository
         """
         loaded_microagents: list[BaseMicroagent] = []
 
-        repo_parts = repository_info.repository_string.split('/')
+        repo_parts = repository.full_name.split('/')
         if len(repo_parts) < 2:
             return loaded_microagents
 
@@ -720,7 +686,7 @@ fi
 
         # For GitLab, use openhands-config (since .openhands is not a valid repo name)
         # For other providers, use .openhands
-        if repository_info.is_gitlab():
+        if repository.is_gitlab():
             org_openhands_repo = f'{org_name}/openhands-config'
         else:
             org_openhands_repo = f'{org_name}/.openhands'
@@ -782,10 +748,10 @@ fi
         return loaded_microagents
 
     def get_microagents_from_selected_repo(
-        self, repository_info: RepositoryInfo | None
+        self, repository: Repository | None
     ) -> list[BaseMicroagent]:
         """Load microagents from the selected repository.
-        If repository_info is None, load microagents from the current workspace.
+        If repository is None, load microagents from the current workspace.
         This is the main entry point for loading microagents.
 
         This method also checks for user/org level microagents stored in a repository.
@@ -801,18 +767,18 @@ fi
         repo_root = None
 
         # Check for user/org level microagents if a repository is selected
-        if repository_info and repository_info.repository_string:
+        if repository:
             # Load microagents from the org/user level repository
-            org_microagents = self.get_microagents_from_org_or_user(repository_info)
+            org_microagents = self.get_microagents_from_org_or_user(repository)
             loaded_microagents.extend(org_microagents)
 
             # Continue with repository-specific microagents
-            repo_root = self.workspace_root / repository_info.directory_name
+            repo_root = self.workspace_root / repository.directory_name
             microagents_dir = repo_root / '.openhands' / 'microagents'
 
         self.log(
             'info',
-            f'Selected repo: {repository_info.repository_string if repository_info else None}, loading microagents from {microagents_dir} (inside runtime)',
+            f'Selected repo: {repository.full_name if repository else None}, loading microagents from {microagents_dir} (inside runtime)',
         )
 
         # Legacy Repo Instructions

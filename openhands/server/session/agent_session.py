@@ -25,7 +25,7 @@ from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime import get_runtime_cls
-from openhands.runtime.base import RepositoryInfo, Runtime
+from openhands.runtime.base import Runtime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage.data_models.user_secrets import UserSecrets
@@ -138,12 +138,8 @@ class AgentSession:
             )
 
             repo_directory = None
-            repository_info = None
             if self.runtime and runtime_connected and selected_repository:
                 repo_directory = selected_repository.split('/')[-1]
-                # Create a basic RepositoryInfo for backward compatibility
-                # The actual repository info with provider details will be available after clone_or_init_repo
-                repository_info = RepositoryInfo(selected_repository)
 
             if git_provider_tokens:
                 provider_handler = ProviderHandler(provider_tokens=git_provider_tokens)
@@ -153,7 +149,7 @@ class AgentSession:
                 custom_secrets_handler.set_event_stream_secrets(self.event_stream)
 
             self.memory = await self._create_memory(
-                repository_info=repository_info,
+                selected_repository=selected_repository,
                 repo_directory=repo_directory,
                 conversation_instructions=conversation_instructions,
                 custom_secrets_descriptions=custom_secrets_handler.get_custom_secrets_descriptions(),
@@ -459,7 +455,7 @@ class AgentSession:
 
     async def _create_memory(
         self,
-        repository_info: RepositoryInfo | None,
+        selected_repository: str | None,
         repo_directory: str | None,
         conversation_instructions: str | None,
         custom_secrets_descriptions: dict[str, str],
@@ -478,14 +474,12 @@ class AgentSession:
             # loads microagents from repo/.openhands/microagents
             microagents: list[BaseMicroagent] = await call_sync_from_async(
                 self.runtime.get_microagents_from_selected_repo,
-                repository_info,
+                None,  # We'll pass the Repository object after clone_or_init_repo
             )
             memory.load_user_workspace_microagents(microagents)
 
-            if repository_info and repository_info.repository_string and repo_directory:
-                memory.set_repository_info(
-                    repository_info.repository_string, repo_directory
-                )
+            if selected_repository and repo_directory:
+                memory.set_repository_info(selected_repository, repo_directory)
         return memory
 
     def _maybe_restore_state(self) -> State | None:
