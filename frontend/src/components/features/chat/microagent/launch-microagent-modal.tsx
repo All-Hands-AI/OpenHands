@@ -93,7 +93,7 @@ export function LaunchMicroagentModal({
                   data-testid="query-input"
                   name="query-input"
                   defaultValue={prompt}
-                  placeholder="Describe what you want to add to the Microagent..."
+                  placeholder={t("MICROAGENT$DESCRIBE_WHAT_TO_ADD")}
                   rows={6}
                   className={cn(
                     "bg-tertiary border border-[#717888] w-full rounded p-2 placeholder:italic placeholder:text-tertiary-alt resize-none",
@@ -107,7 +107,7 @@ export function LaunchMicroagentModal({
               testId="target-input"
               name="target-input"
               label={t("MICROAGENT$WHERE_TO_PUT")}
-              placeholder="Select a microagent file or enter a custom value"
+              placeholder={t("MICROAGENT$SELECT_FILE_OR_CUSTOM")}
               required
               allowsCustomValue
               isLoading={microagentsIsLoading}
@@ -136,14 +136,14 @@ export function LaunchMicroagentModal({
               <BadgeInput
                 name="trigger-input"
                 value={triggers}
-                placeholder="Type a trigger and press Space to add it"
+                placeholder={t("MICROAGENT$TYPE_TRIGGER_SPACE")}
                 onChange={setTriggers}
               />
             </label>
 
             <div className="flex items-center justify-end gap-2">
               <BrandButton type="button" variant="secondary" onClick={onClose}>
-                Cancel
+                {t("MICROAGENT$CANCEL")}
               </BrandButton>
               <BrandButton
                 type="submit"
@@ -152,7 +152,7 @@ export function LaunchMicroagentModal({
                   isLoading || promptIsLoading || microagentsIsLoading
                 }
               >
-                Launch
+                {t("MICROAGENT$LAUNCH")}
               </BrandButton>
             </div>
           </form>
