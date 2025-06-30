@@ -92,7 +92,7 @@ def main():
         args.swt = os.path.abspath(args.swt)
         eval_note = Path(args.swt).resolve().parent.name
         swt_converted = args.swt.removesuffix(".jsonl") + "_swt_converted.jsonl"
-        convert = f'python3 evaluation/benchmarks/swe_bench/scripts/swtbench/convert.py --prediction_file {args.swt} > {swt_converted}' 
+        convert = f'python3 evaluation/benchmarks/swe_bench/scripts/swtbench/convert.py --prediction_file {args.swt} > {swt_converted}'
         inner_report = f' python3 -m src.main --dataset_name princeton-nlp/SWE-bench_Verified --predictions_path {swt_converted} --max_workers 12 --run_id {eval_note} --patch_types vanilla  --build_mode api'
         report =  f'(pushd ./evaluation/benchmarks/versabench/versabench_cache/swt-bench && source .venv/bin/activate && {inner_report} && popd)'
         eval_benchmark("swt", f"{convert} ; {report}")
@@ -110,4 +110,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
