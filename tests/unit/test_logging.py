@@ -6,7 +6,11 @@ from unittest.mock import patch
 import pytest
 
 from openhands.core.config import LLMConfig, OpenHandsConfig
-from openhands.core.logger import OpenHandsLoggerAdapter, json_log_handler
+from openhands.core.logger import (
+    LOG_JSON_LEVEL_KEY,
+    OpenHandsLoggerAdapter,
+    json_log_handler,
+)
 from openhands.core.logger import openhands_logger as openhands_logger
 
 
@@ -139,7 +143,7 @@ class TestJsonOutput:
         output = json.loads(string_io.getvalue())
         assert 'timestamp' in output
         del output['timestamp']
-        assert output == {'message': 'Test message', 'level': 'INFO'}
+        assert output == {'message': 'Test message', LOG_JSON_LEVEL_KEY: 'INFO'}
 
     def test_error(self, json_handler):
         logger, string_io = json_handler
@@ -147,7 +151,7 @@ class TestJsonOutput:
         logger.error('Test message')
         output = json.loads(string_io.getvalue())
         del output['timestamp']
-        assert output == {'message': 'Test message', 'level': 'ERROR'}
+        assert output == {'message': 'Test message', LOG_JSON_LEVEL_KEY: 'ERROR'}
 
     def test_extra_fields(self, json_handler):
         logger, string_io = json_handler
@@ -158,7 +162,7 @@ class TestJsonOutput:
         assert output == {
             'key': '..val..',
             'message': 'Test message',
-            'level': 'INFO',
+            LOG_JSON_LEVEL_KEY: 'INFO',
         }
 
     def test_extra_fields_from_adapter(self, json_handler):
@@ -171,7 +175,7 @@ class TestJsonOutput:
             'context_field': '..val..',
             'log_fied': '..val..',
             'message': 'Test message',
-            'level': 'INFO',
+            LOG_JSON_LEVEL_KEY: 'INFO',
         }
 
     def test_extra_fields_from_adapter_can_override(self, json_handler):
@@ -183,5 +187,5 @@ class TestJsonOutput:
         assert output == {
             'override': 'b',
             'message': 'Test message',
-            'level': 'INFO',
+            LOG_JSON_LEVEL_KEY: 'INFO',
         }

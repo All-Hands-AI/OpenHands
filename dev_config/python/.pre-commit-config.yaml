@@ -40,7 +40,7 @@ repos:
     hooks:
       - id: mypy
         additional_dependencies:
-          [types-requests, types-setuptools, types-pyyaml, types-toml, types-docker, lxml]
+          [types-requests, types-setuptools, types-pyyaml, types-toml, types-docker, pydantic, lxml]
         # To see gaps add `--html-report mypy-report/`
         entry: mypy --config-file dev_config/python/mypy.ini openhands/
         always_run: true

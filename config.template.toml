@@ -260,6 +260,9 @@ enable_finish = true
 # length limit
 enable_history_truncation = true
 
+# Whether the condensation request tool is enabled
+enable_condensation_request = false
+
 [agent.RepoExplorerAgent]
 # Example: use a cheaper model for RepoExplorerAgent to reduce cost, especially
 # useful when an agent doesn't demand high quality but uses a lot of tokens
