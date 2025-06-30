@@ -5,6 +5,7 @@ from typing import Annotated, Any, Coroutine, Literal, overload
 
 from pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
     SecretStr,
     WithJsonSchema,
@@ -14,7 +15,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import Action
 from openhands.events.action.commands import CmdRunAction
 from openhands.events.stream import EventStream
-from openhands.integrations.bitbucket.bitbucket_service import BitbucketService
+from openhands.integrations.bitbucket.bitbucket_service import BitBucketServiceImpl
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.service_types import (
@@ -34,10 +35,10 @@ class ProviderToken(BaseModel):
     user_id: str | None = Field(default=None)
     host: str | None = Field(default=None)
 
-    model_config = {
-        'frozen': True,  # Makes the entire model immutable
-        'validate_assignment': True,
-    }
+    model_config = ConfigDict(
+        frozen=True,  # Makes the entire model immutable
+        validate_assignment=True,
+    )
 
     @classmethod
     def from_value(cls, token_value: ProviderToken | dict[str, str]) -> ProviderToken:
@@ -49,7 +50,7 @@ class ProviderToken(BaseModel):
             # Override with emtpy string if it was set to None
             # Cannot pass None to SecretStr
             if token_str is None:
-                token_str = ''
+                token_str = ''  # type: ignore[unreachable]
             user_id = token_value.get('user_id')
             host = token_value.get('host')
             return cls(token=SecretStr(token_str), user_id=user_id, host=host)
@@ -62,10 +63,10 @@ class CustomSecret(BaseModel):
     secret: SecretStr = Field(default_factory=lambda: SecretStr(''))
     description: str = Field(default='')
 
-    model_config = {
-        'frozen': True,  # Makes the entire model immutable
-        'validate_assignment': True,
-    }
+    model_config = ConfigDict(
+        frozen=True,  # Makes the entire model immutable
+        validate_assignment=True,
+    )
 
     @classmethod
     def from_value(cls, secret_value: CustomSecret | dict[str, str]) -> CustomSecret:
@@ -73,8 +74,8 @@ class CustomSecret(BaseModel):
         if isinstance(secret_value, CustomSecret):
             return secret_value
         elif isinstance(secret_value, dict):
-            secret = secret_value.get('secret')
-            description = secret_value.get('description')
+            secret = secret_value.get('secret', '')
+            description = secret_value.get('description', '')
             return cls(secret=SecretStr(secret), description=description)
 
         else:
@@ -109,7 +110,7 @@ class ProviderHandler:
         self.service_class_map: dict[ProviderType, type[GitService]] = {
             ProviderType.GITHUB: GithubServiceImpl,
             ProviderType.GITLAB: GitLabServiceImpl,
-            ProviderType.BITBUCKET: BitbucketService,
+            ProviderType.BITBUCKET: BitBucketServiceImpl,
         }
 
         self.external_auth_id = external_auth_id

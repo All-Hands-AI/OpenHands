@@ -38,6 +38,7 @@ import OpenHands from "#/api/open-hands";
 import { TabContent } from "#/components/layout/tab-content";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { ConversationSubscriptionsProvider } from "#/context/conversation-subscriptions-provider";
+import { useUserProviders } from "#/hooks/use-user-providers";
 
 function AppContent() {
   useConversationConfig();
@@ -46,6 +47,7 @@ function AppContent() {
   const { conversationId } = useConversationId();
   const { data: conversation, isFetched, refetch } = useActiveConversation();
   const { data: isAuthed } = useIsAuthed();
+  const { providers } = useUserProviders();
 
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const dispatch = useDispatch();
@@ -64,11 +66,11 @@ function AppContent() {
       navigate("/");
     } else if (conversation?.status === "STOPPED") {
       // start the conversation if the state is stopped on initial load
-      OpenHands.startConversation(conversation.conversation_id).then(() =>
-        refetch(),
+      OpenHands.startConversation(conversation.conversation_id, providers).then(
+        () => refetch(),
       );
     }
-  }, [conversation?.conversation_id, isFetched, isAuthed]);
+  }, [conversation?.conversation_id, isFetched, isAuthed, providers]);
 
   React.useEffect(() => {
     dispatch(clearTerminal());

@@ -70,6 +70,8 @@ def event_from_dict(data: dict[str, Any]) -> 'Event':
                 metrics = Metrics()
                 if isinstance(value, dict):
                     metrics.accumulated_cost = value.get('accumulated_cost', 0.0)
+                    # Set max_budget_per_task if available
+                    metrics.max_budget_per_task = value.get('max_budget_per_task')
                     for cost in value.get('costs', []):
                         metrics._costs.append(Cost(**cost))
                     metrics.response_latencies = [

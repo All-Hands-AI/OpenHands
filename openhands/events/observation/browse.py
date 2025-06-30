@@ -32,6 +32,7 @@ class BrowserOutputObservation(Observation):
     last_browser_action: str = ''
     last_browser_action_error: str = ''
     focused_element_bid: str = ''
+    filter_visible_only: bool = False
 
     @property
     def message(self) -> str:

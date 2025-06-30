@@ -185,7 +185,7 @@ function GitSettingsScreen() {
                 !isGitHubTokenSet && !isGitLabTokenSet && !isBitbucketTokenSet
               }
             >
-              Disconnect Tokens
+              {t(I18nKey.GIT$DISCONNECT_TOKENS)}
             </BrandButton>
             <BrandButton
               testId="submit-button"

@@ -217,6 +217,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(
                 },
               },
             ]}
+            isInLast10Actions={messages.length - 1 - index < 10}
           />
         ))}
 

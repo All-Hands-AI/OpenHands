@@ -44,6 +44,7 @@ interface EventMessageProps {
     icon: React.ReactNode;
     onClick: () => void;
   }>;
+  isInLast10Actions: boolean;
 }
 
 export function EventMessage({
@@ -55,17 +56,42 @@ export function EventMessage({
   microagentConversationId,
   microagentPRUrl,
   actions,
+  isInLast10Actions,
 }: EventMessageProps) {
   const shouldShowConfirmationButtons =
     isLastMessage && event.source === "agent" && isAwaitingUserConfirmation;
 
   const { data: config } = useConfig();
 
-  // Use our query hook to check if feedback exists and get rating/reason
   const {
     data: feedbackData = { exists: false },
     isLoading: isCheckingFeedback,
-  } = useFeedbackExists(isFinishAction(event) ? event.id : undefined);
+  } = useFeedbackExists(event.id);
+
+  const renderLikertScale = () => {
+    if (config?.APP_MODE !== "saas" || isCheckingFeedback) {
+      return null;
+    }
+
+    // For error observations, show if in last 10 actions
+    // For other events, show only if it's the last message
+    const shouldShow = isErrorObservation(event)
+      ? isInLast10Actions
+      : isLastMessage;
+
+    if (!shouldShow) {
+      return null;
+    }
+
+    return (
+      <LikertScale
+        eventId={event.id}
+        initiallySubmitted={feedbackData.exists}
+        initialRating={feedbackData.rating}
+        initialReason={feedbackData.reason}
+      />
+    );
+  };
 
   if (isErrorObservation(event)) {
     return (
@@ -81,6 +107,7 @@ export function EventMessage({
             prUrl={microagentPRUrl}
           />
         )}
+        {renderLikertScale()}
       </div>
     );
   }
@@ -113,12 +140,6 @@ export function EventMessage({
     ) : null;
   }
 
-  const showLikertScale =
-    config?.APP_MODE === "saas" &&
-    isFinishAction(event) &&
-    isLastMessage &&
-    !isCheckingFeedback;
-
   if (isFinishAction(event)) {
     return (
       <>
@@ -134,14 +155,7 @@ export function EventMessage({
             prUrl={microagentPRUrl}
           />
         )}
-        {showLikertScale && (
-          <LikertScale
-            eventId={event.id}
-            initiallySubmitted={feedbackData.exists}
-            initialRating={feedbackData.rating}
-            initialReason={feedbackData.reason}
-          />
-        )}
+        {renderLikertScale()}
       </>
     );
   }
@@ -167,6 +181,9 @@ export function EventMessage({
             prUrl={microagentPRUrl}
           />
         )}
+        {isAssistantMessage(event) &&
+          event.action === "message" &&
+          renderLikertScale()}
       </div>
     );
   }

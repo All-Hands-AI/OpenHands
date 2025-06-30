@@ -9,6 +9,7 @@ from openhands.events.action.agent import (
     AgentThinkAction,
     ChangeAgentStateAction,
     CondensationAction,
+    CondensationRequestAction,
     RecallAction,
 )
 from openhands.events.action.browse import BrowseInteractiveAction, BrowseURLAction
@@ -43,6 +44,7 @@ actions = (
     MessageAction,
     SystemMessageAction,
     CondensationAction,
+    CondensationRequestAction,
     MCPAction,
 )
 

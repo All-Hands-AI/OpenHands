@@ -349,6 +349,7 @@ export function WsClientProvider({
     conversation?.url,
     conversation?.status,
     conversation?.runtime_status,
+    providers,
   ]);
 
   React.useEffect(

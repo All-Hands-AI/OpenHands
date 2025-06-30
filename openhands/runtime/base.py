@@ -100,11 +100,10 @@ class Runtime(FileEditRuntimeMixin):
 
     Built-in implementations include:
     - DockerRuntime: Containerized environment using Docker
-    - E2BRuntime: Secure sandbox using E2B
     - RemoteRuntime: Remote execution environment
-    - ModalRuntime: Scalable cloud environment using Modal
     - LocalRuntime: Local execution for development
-    - DaytonaRuntime: Cloud development environment using Daytona
+    - KubernetesRuntime: Kubernetes-based execution environment
+    - CLIRuntime: Command-line interface runtime
 
     Args:
         sid: Session ID that uniquely identifies the current user session
@@ -653,14 +652,42 @@ fi
 
         return remote_url
 
+    def _is_gitlab_repository(self, repo_name: str) -> bool:
+        """Check if a repository is hosted on GitLab.
+
+        Args:
+            repo_name: Repository name (e.g., "gitlab.com/org/repo" or "org/repo")
+
+        Returns:
+            True if the repository is hosted on GitLab, False otherwise
+        """
+        try:
+            provider_handler = ProviderHandler(
+                self.git_provider_tokens or MappingProxyType({})
+            )
+            repository = call_async_from_sync(
+                provider_handler.verify_repo_provider,
+                GENERAL_TIMEOUT,
+                repo_name,
+            )
+            return repository.git_provider == ProviderType.GITLAB
+        except Exception:
+            # If we can't determine the provider, assume it's not GitLab
+            # This is a safe fallback since we'll just use the default .openhands
+            return False
+
     def get_microagents_from_org_or_user(
         self, selected_repository: str
     ) -> list[BaseMicroagent]:
-        """Load microagents from the organization or user level .openhands repository.
+        """Load microagents from the organization or user level repository.
 
         For example, if the repository is github.com/acme-co/api, this will check if
         github.com/acme-co/.openhands exists. If it does, it will clone it and load
         the microagents from the ./microagents/ folder.
+
+        For GitLab repositories, it will use openhands-config instead of .openhands
+        since GitLab doesn't support repository names starting with non-alphanumeric
+        characters.
 
         Args:
             selected_repository: The repository path (e.g., "github.com/acme-co/api")
@@ -677,15 +704,22 @@ fi
         # Extract the domain and org/user name
         org_name = repo_parts[-2]
 
-        # Construct the org-level .openhands repo path
-        org_openhands_repo = f'{org_name}/.openhands'
+        # Determine if this is a GitLab repository
+        is_gitlab = self._is_gitlab_repository(selected_repository)
+
+        # For GitLab, use openhands-config (since .openhands is not a valid repo name)
+        # For other providers, use .openhands
+        if is_gitlab:
+            org_openhands_repo = f'{org_name}/openhands-config'
+        else:
+            org_openhands_repo = f'{org_name}/.openhands'
 
         self.log(
             'info',
             f'Checking for org-level microagents at {org_openhands_repo}',
         )
 
-        # Try to clone the org-level .openhands repo
+        # Try to clone the org-level repo
         try:
             # Create a temporary directory for the org-level repo
             org_repo_dir = self.workspace_root / f'org_openhands_{org_name}'
@@ -720,7 +754,8 @@ fi
                 )
 
                 # Clean up the org repo directory
-                shutil.rmtree(org_repo_dir)
+                action = CmdRunAction(f'rm -rf {org_repo_dir}')
+                self.run_action(action)
             else:
                 self.log(
                     'info',
@@ -728,7 +763,10 @@ fi
                 )
 
         except Exception as e:
-            self.log('error', f'Error loading org-level microagents: {str(e)}')
+            self.log(
+                'debug',
+                f'Error loading org-level microagents from {org_openhands_repo}: {str(e)}',
+            )
 
         return loaded_microagents
 
@@ -739,9 +777,13 @@ fi
         If selected_repository is None, load microagents from the current workspace.
         This is the main entry point for loading microagents.
 
-        This method also checks for user/org level microagents stored in a .openhands repository.
+        This method also checks for user/org level microagents stored in a repository.
         For example, if the repository is github.com/acme-co/api, it will also check for
         github.com/acme-co/.openhands and load microagents from there if it exists.
+
+        For GitLab repositories, it will use openhands-config instead of .openhands
+        since GitLab doesn't support repository names starting with non-alphanumeric
+        characters.
         """
         loaded_microagents: list[BaseMicroagent] = []
         microagents_dir = self.workspace_root / '.openhands' / 'microagents'
