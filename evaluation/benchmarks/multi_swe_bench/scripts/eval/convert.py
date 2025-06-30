@@ -1,13 +1,10 @@
 import json
 import re
+import argparse
 
-IN_FILE = 'output.jsonl'
-OUT_FILE = 'patch.jsonl'
-
-
-def main():
-    with open(IN_FILE, 'r') as fin:
-        with open(OUT_FILE, 'w') as fout:
+def main(input_file, output_file):
+    with open(input_file, 'r') as fin:
+        with open(output_file, 'w') as fout:
             for line in fin:
                 data = json.loads(line)
                 groups = re.match(r'(.*)__(.*)-(.*)', data['instance_id'])
@@ -20,4 +17,8 @@ def main():
                 fout.write(json.dumps(patch) + '\n')
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--input', required=True, help='Input .jsonl file path')
+    parser.add_argument('--output', required=True, help='Output .jsonl file path')
+    args = parser.parse_args()
+    main(args.input, args.output)

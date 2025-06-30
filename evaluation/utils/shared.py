@@ -7,6 +7,7 @@ import signal
 import subprocess
 import time
 import traceback
+import toml
 from contextlib import contextmanager
 from inspect import signature
 from typing import Any, Awaitable, Callable, TextIO
@@ -686,3 +687,22 @@ def get_default_sandbox_config_for_eval() -> SandboxConfig:
         remote_runtime_enable_retries=True,
         remote_runtime_class='sysbox',
     )
+
+def filter_dataset(dataset: pd.DataFrame, filter_column: str, run_infer_path) -> pd.DataFrame:
+    file_path = os.path.join(run_infer_path, 'config.toml')
+    if os.path.exists(file_path):
+        with open(file_path, 'r') as file:
+            data = toml.load(file)
+            if 'selected_ids' in data:
+                selected_ids = data['selected_ids']
+                logger.info(
+                    f'Filtering {len(selected_ids)} tasks from "selected_ids"...'
+                )
+                subset = dataset[dataset[filter_column].isin(selected_ids)]
+                logger.info(f'Retained {subset.shape[0]} tasks after filtering')
+                return subset
+    skip_ids = os.environ.get('SKIP_IDS', '').split(',')
+    if len(skip_ids) > 0:
+        logger.info(f'Filtering {len(skip_ids)} tasks from "SKIP_IDS"...')
+        return dataset[~dataset[filter_column].isin(skip_ids)]
+    return dataset

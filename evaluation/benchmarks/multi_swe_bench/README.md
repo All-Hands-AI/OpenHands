@@ -10,7 +10,7 @@ Please download the [**Multi-SWE-Bench** dataset](https://huggingface.co/dataset
 And change the dataset following [script](scripts/data/data_change.py).
 
 ```bash
-python evaluation/benchmarks/multi_swe_bench/scripts/data/data_change.py
+python evaluation/benchmarks/multi_swe_bench/scripts/data/data_change.py --input input.jsonl --output output.jsonl
 ```
 
 ## Docker image download

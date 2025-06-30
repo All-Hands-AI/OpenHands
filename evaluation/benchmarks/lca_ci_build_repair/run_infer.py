@@ -26,6 +26,7 @@ from evaluation.utils.shared import (
     prepare_dataset,
     reset_logger_for_multiprocessing,
     run_evaluation,
+    filter_dataset,
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
@@ -382,6 +383,7 @@ if __name__ == '__main__':
     # bench = bench.iloc[0:56]
     # add column instnace_id for compatibility with oh repo, old id column must be kept for lca repo
     bench['instance_id'] = bench['id'].astype(str)
+    bench = filter_dataset(bench, 'instance_id',os.path.dirname(os.path.abspath(__file__)))
 
     llm_config = None
     if args.llm_config:

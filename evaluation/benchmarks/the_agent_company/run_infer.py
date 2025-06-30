@@ -6,8 +6,11 @@ import asyncio
 import base64
 import json
 import os
+import sys
 import shutil
 import tempfile
+import pandas as pd
+
 
 import yaml
 from browsing import pre_login
@@ -260,6 +263,7 @@ if __name__ == '__main__':
         raise ValueError('LLM API key is not set for evaluation environment')
 
     task_short_name = args.task_image_name.split('/')[-1].split(':')[0]
+
     logger.info(
         f'Task image name is {args.task_image_name}, short name is {task_short_name}'
     )
