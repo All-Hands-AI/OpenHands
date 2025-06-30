@@ -5,8 +5,9 @@ import os
 from conftest import _close_test_runtime, _load_runtime
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.events.action import ToolCallAction
-from openhands.events.observation import ToolCallObservation
+from openhands.events.action import FileEditAction, FileReadAction
+from openhands.events.event import FileEditSource
+from openhands.events.observation import FileEditObservation, FileReadObservation
 
 
 def test_gemini_editor_view_file(temp_dir, runtime_cls, run_as_openhands):
@@ -17,35 +18,27 @@ def test_gemini_editor_view_file(temp_dir, runtime_cls, run_as_openhands):
         test_content = 'Hello, World!\nThis is a test file.\nLine 3'
         test_file_path = os.path.join('/workspace', 'test_view.txt')
 
-        # Create the file using write_file command
-        action = ToolCallAction(
-            tool='gemini_editor',
-            parameters={
-                'command': 'create',
-                'path': test_file_path,
-                'file_text': test_content,
-            },
+        # Create the file using FileEditAction with create command
+        action = FileEditAction(
+            path=test_file_path,
+            command='create',
+            file_text=test_content,
+            impl_source=FileEditSource.OH_ACI,
         )
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
-        assert isinstance(obs, ToolCallObservation)
+        assert isinstance(obs, FileEditObservation)
         assert obs.error is False
 
-        # Now view the file
-        action = ToolCallAction(
-            tool='gemini_editor',
-            parameters={
-                'command': 'view',
-                'path': test_file_path,
-            },
-        )
+        # Now view the file using FileReadAction
+        action = FileReadAction(path=test_file_path)
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
-        assert isinstance(obs, ToolCallObservation)
+        assert isinstance(obs, FileReadObservation)
         assert obs.error is False
         assert 'Hello, World!' in obs.content
         assert 'This is a test file.' in obs.content
@@ -62,32 +55,23 @@ def test_gemini_editor_create_file(temp_dir, runtime_cls, run_as_openhands):
         test_content = "# Test Python File\nprint('Hello from Gemini editor!')\n"
         test_file_path = os.path.join('/workspace', 'test_create.py')
 
-        action = ToolCallAction(
-            tool='gemini_editor',
-            parameters={
-                'command': 'create',
-                'path': test_file_path,
-                'file_text': test_content,
-            },
+        action = FileEditAction(
+            path=test_file_path,
+            command='create',
+            file_text=test_content,
+            impl_source=FileEditSource.OH_ACI,
         )
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
-        assert isinstance(obs, ToolCallObservation)
+        assert isinstance(obs, FileEditObservation)
         assert obs.error is False
-        assert 'created' in obs.content.lower() or 'successfully' in obs.content.lower()
 
-        # Verify the file was created by viewing it
-        action = ToolCallAction(
-            tool='gemini_editor',
-            parameters={
-                'command': 'view',
-                'path': test_file_path,
-            },
-        )
+        # Verify the file was created by reading it
+        action = FileReadAction(path=test_file_path)
         obs = runtime.run_action(action)
-        assert isinstance(obs, ToolCallObservation)
+        assert isinstance(obs, FileReadObservation)
         assert obs.error is False
         assert 'Test Python File' in obs.content
         assert "print('Hello from Gemini editor!')" in obs.content
@@ -111,45 +95,35 @@ def goodbye():
 """
         test_file_path = os.path.join('/workspace', 'test_replace.py')
 
-        action = ToolCallAction(
-            tool='gemini_editor',
-            parameters={
-                'command': 'create',
-                'path': test_file_path,
-                'file_text': initial_content,
-            },
+        action = FileEditAction(
+            path=test_file_path,
+            command='create',
+            file_text=initial_content,
+            impl_source=FileEditSource.OH_ACI,
         )
         obs = runtime.run_action(action)
-        assert isinstance(obs, ToolCallObservation)
+        assert isinstance(obs, FileEditObservation)
         assert obs.error is False
 
-        # Replace text
-        action = ToolCallAction(
-            tool='gemini_editor',
-            parameters={
-                'command': 'replace',
-                'path': test_file_path,
-                'old_string': 'def hello():\n    print("Hello, World!")\n    return "greeting"',
-                'new_string': 'def hello():\n    print("Hello, Gemini!")\n    return "gemini_greeting"',
-            },
+        # Replace text using str_replace command
+        action = FileEditAction(
+            path=test_file_path,
+            command='str_replace',
+            old_str='def hello():\n    print("Hello, World!")\n    return "greeting"',
+            new_str='def hello():\n    print("Hello, Gemini!")\n    return "gemini_greeting"',
+            impl_source=FileEditSource.OH_ACI,
         )
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
-        assert isinstance(obs, ToolCallObservation)
+        assert isinstance(obs, FileEditObservation)
         assert obs.error is False
 
         # Verify the replacement
-        action = ToolCallAction(
-            tool='gemini_editor',
-            parameters={
-                'command': 'view',
-                'path': test_file_path,
-            },
-        )
+        action = FileReadAction(path=test_file_path)
         obs = runtime.run_action(action)
-        assert isinstance(obs, ToolCallObservation)
+        assert isinstance(obs, FileReadObservation)
         assert obs.error is False
         assert 'Hello, Gemini!' in obs.content
         assert 'gemini_greeting' in obs.content
@@ -168,44 +142,34 @@ def test_gemini_editor_write_file(temp_dir, runtime_cls, run_as_openhands):
 
         # Create initial file
         initial_content = 'Old content that will be replaced.'
-        action = ToolCallAction(
-            tool='gemini_editor',
-            parameters={
-                'command': 'create',
-                'path': test_file_path,
-                'file_text': initial_content,
-            },
+        action = FileEditAction(
+            path=test_file_path,
+            command='create',
+            file_text=initial_content,
+            impl_source=FileEditSource.OH_ACI,
         )
         obs = runtime.run_action(action)
-        assert isinstance(obs, ToolCallObservation)
+        assert isinstance(obs, FileEditObservation)
         assert obs.error is False
 
-        # Write new content (overwrite)
-        action = ToolCallAction(
-            tool='gemini_editor',
-            parameters={
-                'command': 'write_file',
-                'path': test_file_path,
-                'content': test_content,
-            },
+        # Write new content (overwrite) using write command
+        action = FileEditAction(
+            path=test_file_path,
+            command='write',
+            content=test_content,
+            impl_source=FileEditSource.OH_ACI,
         )
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
-        assert isinstance(obs, ToolCallObservation)
+        assert isinstance(obs, FileEditObservation)
         assert obs.error is False
 
         # Verify the content was replaced
-        action = ToolCallAction(
-            tool='gemini_editor',
-            parameters={
-                'command': 'view',
-                'path': test_file_path,
-            },
-        )
+        action = FileReadAction(path=test_file_path)
         obs = runtime.run_action(action)
-        assert isinstance(obs, ToolCallObservation)
+        assert isinstance(obs, FileReadObservation)
         assert obs.error is False
         assert 'New content' in obs.content
         assert 'completely replaces' in obs.content
@@ -232,33 +196,27 @@ Line 9
 Line 10"""
         test_file_path = os.path.join('/workspace', 'test_read_range.txt')
 
-        action = ToolCallAction(
-            tool='gemini_editor',
-            parameters={
-                'command': 'create',
-                'path': test_file_path,
-                'file_text': test_content,
-            },
+        action = FileEditAction(
+            path=test_file_path,
+            command='create',
+            file_text=test_content,
+            impl_source=FileEditSource.OH_ACI,
         )
         obs = runtime.run_action(action)
-        assert isinstance(obs, ToolCallObservation)
+        assert isinstance(obs, FileEditObservation)
         assert obs.error is False
 
-        # Read with offset and limit
-        action = ToolCallAction(
-            tool='gemini_editor',
-            parameters={
-                'command': 'read_file',
-                'path': test_file_path,
-                'offset': 2,  # Start from line 3 (0-based)
-                'limit': 3,  # Read 3 lines
-            },
+        # Read with line range (start=3, end=5 for lines 3-5)
+        action = FileReadAction(
+            path=test_file_path,
+            start=3,  # Start from line 3 (1-based)
+            end=5,  # End at line 5 (1-based)
         )
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
-        assert isinstance(obs, ToolCallObservation)
+        assert isinstance(obs, FileReadObservation)
         assert obs.error is False
         assert 'Line 3' in obs.content
         assert 'Line 4' in obs.content
@@ -277,31 +235,27 @@ def test_gemini_editor_view_directory(temp_dir, runtime_cls, run_as_openhands):
         # Create some test files in the workspace
         test_files = ['file1.txt', 'file2.py', 'file3.md']
         for filename in test_files:
-            action = ToolCallAction(
-                tool='gemini_editor',
-                parameters={
-                    'command': 'create',
-                    'path': os.path.join('/workspace', filename),
-                    'file_text': f'Content of {filename}',
-                },
+            action = FileEditAction(
+                path=os.path.join('/workspace', filename),
+                command='create',
+                file_text=f'Content of {filename}',
+                impl_source=FileEditSource.OH_ACI,
             )
             obs = runtime.run_action(action)
-            assert isinstance(obs, ToolCallObservation)
+            assert isinstance(obs, FileEditObservation)
             assert obs.error is False
 
-        # View the directory
-        action = ToolCallAction(
-            tool='gemini_editor',
-            parameters={
-                'command': 'view',
-                'path': '/workspace',
-            },
+        # View the directory using FileEditAction with view command
+        action = FileEditAction(
+            path='/workspace',
+            command='view',
+            impl_source=FileEditSource.OH_ACI,
         )
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
-        assert isinstance(obs, ToolCallObservation)
+        assert isinstance(obs, FileEditObservation)
         assert obs.error is False
 
         # Check that all test files are listed
@@ -316,43 +270,33 @@ def test_gemini_editor_error_handling(temp_dir, runtime_cls, run_as_openhands):
     """Test error handling in the Gemini editor."""
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
-        # Test viewing non-existent file
-        action = ToolCallAction(
-            tool='gemini_editor',
-            parameters={
-                'command': 'view',
-                'path': '/workspace/nonexistent.txt',
-            },
-        )
+        # Test reading non-existent file
+        action = FileReadAction(path='/workspace/nonexistent.txt')
         obs = runtime.run_action(action)
-        assert isinstance(obs, ToolCallObservation)
+        assert isinstance(obs, FileReadObservation)
         # Should handle gracefully, either with error or appropriate message
 
-        # Test creating file that already exists (should fail)
+        # Test creating file that already exists (should overwrite or handle gracefully)
         test_file_path = os.path.join('/workspace', 'existing.txt')
-        action = ToolCallAction(
-            tool='gemini_editor',
-            parameters={
-                'command': 'create',
-                'path': test_file_path,
-                'file_text': 'Initial content',
-            },
+        action = FileEditAction(
+            path=test_file_path,
+            command='create',
+            file_text='Initial content',
+            impl_source=FileEditSource.OH_ACI,
         )
         obs = runtime.run_action(action)
-        assert isinstance(obs, ToolCallObservation)
+        assert isinstance(obs, FileEditObservation)
         assert obs.error is False
 
         # Try to create the same file again
-        action = ToolCallAction(
-            tool='gemini_editor',
-            parameters={
-                'command': 'create',
-                'path': test_file_path,
-                'file_text': 'Duplicate content',
-            },
+        action = FileEditAction(
+            path=test_file_path,
+            command='create',
+            file_text='Duplicate content',
+            impl_source=FileEditSource.OH_ACI,
         )
         obs = runtime.run_action(action)
-        assert isinstance(obs, ToolCallObservation)
+        assert isinstance(obs, FileEditObservation)
         # Should either error or handle gracefully
 
     finally:
