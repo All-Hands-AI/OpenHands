@@ -16,6 +16,7 @@ from openhands.cli.tui import (
     display_usage_metrics,
     display_welcome_message,
     get_session_duration,
+    process_agent_pause,
     read_confirmation_input,
 )
 from openhands.core.config import OpenHandsConfig
@@ -385,3 +386,200 @@ class TestReadConfirmationInput:
 
         result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
         assert result == 'no'
+
+
+class TestProcessAgentPause:
+    @pytest.mark.asyncio
+    @patch('openhands.cli.tui.create_input')
+    @patch('openhands.cli.tui.print_formatted_text')
+    async def test_single_ctrl_c_stops_agent(self, mock_print, mock_create_input):
+        """Test that a single Ctrl+C stops the agent gracefully."""
+        import asyncio
+
+        from prompt_toolkit.keys import Keys
+
+        # Mock the input to simulate a single Ctrl+C
+        mock_input = Mock()
+        mock_key_press = Mock()
+        mock_key_press.key = Keys.ControlC
+        mock_input.read_keys.return_value = [mock_key_press]
+
+        # Mock the context managers and simulate immediate key press
+        mock_input.raw_mode.return_value.__enter__ = Mock(return_value=None)
+        mock_input.raw_mode.return_value.__exit__ = Mock(return_value=None)
+
+        # Mock attach to immediately call the keys_ready function
+        def mock_attach(keys_ready_func):
+            # Simulate the key press by calling the function immediately
+            keys_ready_func()
+            # Return a mock context manager
+            mock_context = Mock()
+            mock_context.__enter__ = Mock(return_value=None)
+            mock_context.__exit__ = Mock(return_value=None)
+            return mock_context
+
+        mock_input.attach.side_effect = mock_attach
+        mock_create_input.return_value = mock_input
+
+        # Mock event stream
+        mock_event_stream = Mock()
+        mock_event_stream.add_event = Mock()
+
+        # Create done event
+        done = asyncio.Event()
+
+        # Run the function
+        await process_agent_pause(done, mock_event_stream)
+
+        # Verify agent was stopped gracefully
+        mock_event_stream.add_event.assert_called_once()
+        call_args = mock_event_stream.add_event.call_args[0]
+        assert call_args[0].agent_state.value == 'stopped'
+
+        # Verify the helpful message was displayed
+        mock_print.assert_called()
+        print_calls = [call.args[0] for call in mock_print.call_args_list]
+        helpful_message_found = any(
+            'Stopping agent' in str(call) and 'press Ctrl+C again' in str(call)
+            for call in print_calls
+        )
+        assert helpful_message_found, (
+            f'Expected helpful message not found in: {print_calls}'
+        )
+
+        # Verify done event was set
+        assert done.is_set()
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.tui.create_input')
+    @patch('openhands.cli.tui.print_formatted_text')
+    async def test_double_ctrl_c_raises_keyboard_interrupt(
+        self, mock_print, mock_create_input
+    ):
+        """Test that double Ctrl+C within 2 seconds raises KeyboardInterrupt."""
+        import asyncio
+
+        from prompt_toolkit.keys import Keys
+
+        # Mock the input to simulate double Ctrl+C
+        mock_input = Mock()
+        mock_key_press = Mock()
+        mock_key_press.key = Keys.ControlC
+
+        # Simulate two Ctrl+C presses within 2 seconds
+        call_count = 0
+
+        def mock_read_keys():
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                # First call returns first Ctrl+C
+                return [mock_key_press]
+            elif call_count == 2:
+                # Second call returns second Ctrl+C (within 2 seconds)
+                return [mock_key_press]
+            else:
+                # Subsequent calls return empty to avoid infinite loop
+                return []
+
+        mock_input.read_keys.side_effect = mock_read_keys
+
+        # Mock the context managers and simulate double key press
+        mock_input.raw_mode.return_value.__enter__ = Mock(return_value=None)
+        mock_input.raw_mode.return_value.__exit__ = Mock(return_value=None)
+
+        # Mock attach to call the keys_ready function twice (simulating double Ctrl+C)
+        def mock_attach(keys_ready_func):
+            # Simulate first Ctrl+C
+            keys_ready_func()
+            # Simulate second Ctrl+C immediately (within 2 seconds)
+            keys_ready_func()
+            # Return a mock context manager
+            mock_context = Mock()
+            mock_context.__enter__ = Mock(return_value=None)
+            mock_context.__exit__ = Mock(return_value=None)
+            return mock_context
+
+        mock_input.attach.side_effect = mock_attach
+        mock_create_input.return_value = mock_input
+
+        # Mock event stream
+        mock_event_stream = Mock()
+        mock_event_stream.add_event = Mock()
+
+        # Create done event
+        done = asyncio.Event()
+
+        # Run the function and expect KeyboardInterrupt
+        with pytest.raises(KeyboardInterrupt):
+            await process_agent_pause(done, mock_event_stream)
+
+        # Verify force quit message was displayed
+        mock_print.assert_called()
+        print_calls = [call.args[0] for call in mock_print.call_args_list]
+        force_quit_message_found = any(
+            'Force quitting' in str(call) for call in print_calls
+        )
+        assert force_quit_message_found, (
+            f'Expected force quit message not found in: {print_calls}'
+        )
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.tui.create_input')
+    @patch('openhands.cli.tui.print_formatted_text')
+    async def test_ctrl_p_pauses_agent(self, mock_print, mock_create_input):
+        """Test that Ctrl+P pauses the agent."""
+        import asyncio
+
+        from prompt_toolkit.keys import Keys
+
+        # Mock the input to simulate Ctrl+P
+        mock_input = Mock()
+        mock_key_press = Mock()
+        mock_key_press.key = Keys.ControlP
+        mock_input.read_keys.return_value = [mock_key_press]
+
+        # Mock the context managers and simulate immediate key press
+        mock_input.raw_mode.return_value.__enter__ = Mock(return_value=None)
+        mock_input.raw_mode.return_value.__exit__ = Mock(return_value=None)
+
+        # Mock attach to immediately call the keys_ready function
+        def mock_attach(keys_ready_func):
+            # Simulate the key press by calling the function immediately
+            keys_ready_func()
+            # Return a mock context manager
+            mock_context = Mock()
+            mock_context.__enter__ = Mock(return_value=None)
+            mock_context.__exit__ = Mock(return_value=None)
+            return mock_context
+
+        mock_input.attach.side_effect = mock_attach
+        mock_create_input.return_value = mock_input
+
+        # Mock event stream
+        mock_event_stream = Mock()
+        mock_event_stream.add_event = Mock()
+
+        # Create done event
+        done = asyncio.Event()
+
+        # Run the function
+        await process_agent_pause(done, mock_event_stream)
+
+        # Verify agent was paused
+        mock_event_stream.add_event.assert_called_once()
+        call_args = mock_event_stream.add_event.call_args[0]
+        assert call_args[0].agent_state.value == 'paused'
+
+        # Verify the pause message was displayed
+        mock_print.assert_called()
+        print_calls = [call.args[0] for call in mock_print.call_args_list]
+        pause_message_found = any(
+            'Pausing the agent' in str(call) for call in print_calls
+        )
+        assert pause_message_found, (
+            f'Expected pause message not found in: {print_calls}'
+        )
+
+        # Verify done event was set
+        assert done.is_set()
