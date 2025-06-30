@@ -451,6 +451,9 @@ class Runtime(FileEditRuntimeMixin):
         source = EventSource.ENVIRONMENT
         self.event_stream.add_event(action, source)
 
+        # Execute the action
+        self.run_action(action)
+
     @property
     def workspace_root(self) -> Path:
         """Return the workspace root path."""
