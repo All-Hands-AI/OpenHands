@@ -41,6 +41,7 @@ from openhands.core.config import (
 )
 from openhands.core.config.condenser_config import NoOpCondenserConfig
 from openhands.core.config.mcp_config import OpenHandsMCPConfigImpl
+from openhands.core.config.utils import finalize_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.loop import run_agent_until_done
 from openhands.core.schema import AgentState
@@ -432,6 +433,10 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
         if not config.workspace_base:
             config.workspace_base = os.getcwd()
         config.security.confirmation_mode = True
+
+        # Need to finalize config again after setting runtime to 'cli'
+        # This ensures Jupyter plugin is disabled for CLI runtime
+        finalize_config(config)
 
     # TODO: Set working directory from config or use current working directory?
     current_dir = config.workspace_base
