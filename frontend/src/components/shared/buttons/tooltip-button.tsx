@@ -1,4 +1,4 @@
-import { Tooltip } from "@heroui/react";
+import { Tooltip, TooltipProps } from "@heroui/react";
 import React, { ReactNode } from "react";
 import { NavLink } from "react-router";
 import { cn } from "#/utils/utils";
@@ -13,6 +13,7 @@ export interface TooltipButtonProps {
   testId?: string;
   className?: React.HTMLAttributes<HTMLButtonElement>["className"];
   disabled?: boolean;
+  placement?: TooltipProps["placement"];
 }
 
 export function TooltipButton({
@@ -25,6 +26,7 @@ export function TooltipButton({
   testId,
   className,
   disabled = false,
+  placement = "right",
 }: TooltipButtonProps) {
   const handleClick = (e: React.MouseEvent) => {
     if (onClick && !disabled) {
@@ -118,7 +120,7 @@ export function TooltipButton({
   }
 
   return (
-    <Tooltip content={tooltip} closeDelay={100} placement="right">
+    <Tooltip content={tooltip} closeDelay={100} placement={placement}>
       {content}
     </Tooltip>
   );
