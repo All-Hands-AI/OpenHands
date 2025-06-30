@@ -95,7 +95,7 @@ async def auto_generate_title(
 
         # Find the first user message
         first_user_message = None
-        for event in event_stream.get_events():
+        for event in event_stream.search_events():
             if (
                 event.source == EventSource.USER
                 and isinstance(event, MessageAction)

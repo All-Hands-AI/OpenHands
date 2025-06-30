@@ -11,6 +11,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.azure_devops.azure_devops_service import (
     AzureDevOpsServiceImpl,
 )
+from openhands.integrations.bitbucket.bitbucket_service import BitBucketServiceImpl
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.provider import ProviderToken
@@ -30,7 +31,7 @@ mcp_server = FastMCP(
 )
 
 HOST = f'https://{os.getenv("WEB_HOST", "app.all-hands.dev").strip()}'
-CONVO_URL = HOST + '/{}'
+CONVO_URL = HOST + '/conversations/{}'
 
 
 async def get_convo_link(service: GitService, conversation_id: str, body: str) -> str:
@@ -212,19 +213,23 @@ async def create_mr(
 
 
 @mcp_server.tool()
-async def create_azure_devops_pr(
+async def create_bitbucket_pr(
     repo_name: Annotated[
-        str, Field(description='Azure DevOps repository ({{project}}/{{repo}})')
+        str, Field(description='Bitbucket repository (workspace/repo_slug)')
     ],
     source_branch: Annotated[str, Field(description='Source branch on repo')],
     target_branch: Annotated[str, Field(description='Target branch on repo')],
-    title: Annotated[str, Field(description='PR Title')],
-    body: Annotated[str | None, Field(description='PR body')],
-    draft: Annotated[bool, Field(description='Whether PR opened is a draft')] = True,
+    title: Annotated[
+        str,
+        Field(
+            description='PR Title. Start title with `DRAFT:` or `WIP:` if applicable.'
+        ),
+    ],
+    description: Annotated[str | None, Field(description='PR description')],
 ) -> str:
-    """Open a PR in Azure DevOps"""
+    """Open a PR in Bitbucket"""
 
-    logger.info('Calling OpenHands MCP create_azure_devops_pr')
+    logger.info('Calling OpenHands MCP create_bitbucket_pr')
 
     request = get_http_request()
     headers = request.headers
@@ -236,38 +241,42 @@ async def create_azure_devops_pr(
 
     azure_devops_token = (
         provider_tokens.get(ProviderType.AZURE_DEVOPS, ProviderToken())
+            bitbucket_token = (
+        provider_tokens.get(ProviderType.BITBUCKET, ProviderToken())
         if provider_tokens
         else ProviderToken()
     )
 
-    azure_devops_service = AzureDevOpsServiceImpl(
-        user_id=azure_devops_token.user_id,
+    bitbucket_service = BitBucketServiceImpl(
+        user_id=bitbucket_token.user_id,
         external_auth_id=user_id,
         external_auth_token=access_token,
-        token=azure_devops_token.token,
-        base_domain=azure_devops_token.host,
+        token=bitbucket_token.token,
+        base_domain=bitbucket_token.host,
     )
 
     try:
-        body = await get_convo_link(azure_devops_service, conversation_id, body or '')
+        description = await get_convo_link(
+            bitbucket_service, conversation_id, description or ''
+        )
     except Exception as e:
         logger.warning(f'Failed to append convo link: {e}')
 
     try:
-        response = await azure_devops_service.create_pr(
+        response = await bitbucket_service.create_pr(
             repo_name=repo_name,
             source_branch=source_branch,
             target_branch=target_branch,
             title=title,
-            body=body,
-            draft=draft,
+            body=description,
         )
 
-        if conversation_id:
+        if conversation_id and user_id:
             await save_pr_metadata(user_id, conversation_id, response)
 
     except Exception as e:
-        error = f'Error creating Azure DevOps pull request: {e}'
+        error = f'Error creating pull request: {e}'
+        logger.error(error)
         raise ToolError(str(error))
 
     return response

@@ -116,7 +116,7 @@ def get_token_per_line(code: str):
     return identifiers_per_line
 
 
-def get_ISM(answer_code: str, model_output_list: list, asnwer_name: str) -> list:
+def get_ISM(answer_code: str, model_output_list: list, answer_name: str) -> list:
     """
     计算ISM，返回一个有序的得分列表
     :return:
@@ -126,13 +126,13 @@ def get_ISM(answer_code: str, model_output_list: list, asnwer_name: str) -> list
         if '```python' in code:
             code = code.replace('```python', '')
             code = code.replace('```', '')
-        if not re.search(rf'\b{re.escape(asnwer_name)}\b', code) or not is_code_valid(
+        if not re.search(rf'\b{re.escape(answer_name)}\b', code) or not is_code_valid(
             code
         ):
             score_list.append(0)
             continue
 
-        # if asnwer_name not in code:
+        # if answer_name not in code:
         #     score_list.append(0)
         #     continue
 
@@ -155,7 +155,7 @@ def get_ISM(answer_code: str, model_output_list: list, asnwer_name: str) -> list
 
 
 def get_ISM_without_verification(
-    answer_code: str, model_output_list: list, asnwer_name: str
+    answer_code: str, model_output_list: list, answer_name: str
 ) -> list:
     """
     计算ISM，返回一个有序的得分列表
@@ -163,11 +163,11 @@ def get_ISM_without_verification(
     """
     score_list = []
     for code in model_output_list:
-        if asnwer_name not in code:
+        if answer_name not in code:
             score_list.append(0)
             continue
 
-        # if asnwer_name not in code:
+        # if answer_name not in code:
         #     score_list.append(0)
         #     continue
 
@@ -215,7 +215,7 @@ def longest_common_prefix_with_lengths(list1, list2):
     return max_length, len_list1, len_list2
 
 
-def get_PM(answer_code: str, model_output_list: list, asnwer_name: str) -> list:
+def get_PM(answer_code: str, model_output_list: list, answer_name: str) -> list:
     """
     计算PM，返回一个有序的得分列表
     :return:
@@ -225,14 +225,14 @@ def get_PM(answer_code: str, model_output_list: list, asnwer_name: str) -> list:
         if '```python' in code:
             code = code.replace('```python', '')
             code = code.replace('```', '')
-        if not re.search(rf'\b{re.escape(asnwer_name)}\b', code) or not is_code_valid(
+        if not re.search(rf'\b{re.escape(answer_name)}\b', code) or not is_code_valid(
             code
         ):
-            # if asnwer_name not in code or is_code_valid(code) == False:
+            # if answer_name not in code or is_code_valid(code) == False:
             score_list.append(0)
             continue
 
-        # if asnwer_name not in code:
+        # if answer_name not in code:
         #     score_list.append(0)
         #     continue
 

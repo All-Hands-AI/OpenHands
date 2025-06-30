@@ -4,6 +4,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.azure_devops.azure_devops_service import (
     AzureDevOpsServiceImpl,
 )
+from openhands.integrations.bitbucket.bitbucket_service import BitBucketService
 from openhands.integrations.github.github_service import GitHubService
 from openhands.integrations.gitlab.gitlab_service import GitLabService
 from openhands.integrations.provider import ProviderType
@@ -13,7 +14,7 @@ async def validate_provider_token(
     token: SecretStr, base_domain: str | None = None
 ) -> ProviderType | None:
     """
-    Determine whether a token is for GitHub, GitLab, or Azure DevOps by attempting to get user info
+    Determine whether a token is for GitHub, GitLab, Bitbucket, or Azure DevOps by attempting to get user info
     from the services.
 
     Args:
@@ -23,6 +24,7 @@ async def validate_provider_token(
     Returns:
         'github' if it's a GitHub token
         'gitlab' if it's a GitLab token
+        'bitbucket' if it's a Bitbucket token
         'azure_devops' if it's an Azure DevOps token
         None if the token is invalid for all services
     """
@@ -47,6 +49,15 @@ async def validate_provider_token(
     except Exception as e:
         gitlab_error = e
 
+    # Try Bitbucket next
+    bitbucket_error = None
+    try:
+        bitbucket_service = BitBucketService(token=token, base_domain=base_domain)
+        await bitbucket_service.get_user()
+        return ProviderType.BITBUCKET
+    except Exception as e:
+        bitbucket_error = e
+
     # Try Azure DevOps last
     azure_devops_error = None
     try:
@@ -59,7 +70,7 @@ async def validate_provider_token(
         azure_devops_error = e
 
     logger.debug(
-        f'Failed to validate token: {github_error} \n {gitlab_error} \n {azure_devops_error}'
+        f'Failed to validate token: {github_error} \n {gitlab_error} \n {bitbucket_error} \n {azure_devops_error}'
     )
 
     return None

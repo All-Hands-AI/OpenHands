@@ -107,6 +107,10 @@ def initialize_repository_for_runtime(
         gitlab_token = SecretStr(os.environ['GITLAB_TOKEN'])
         provider_tokens[ProviderType.GITLAB] = ProviderToken(token=gitlab_token)
 
+    if 'BITBUCKET_TOKEN' in os.environ:
+        bitbucket_token = SecretStr(os.environ['BITBUCKET_TOKEN'])
+        provider_tokens[ProviderType.BITBUCKET] = ProviderToken(token=bitbucket_token)
+
     if 'AZURE_DEVOPS_TOKEN' in os.environ:
         azure_devops_token = SecretStr(os.environ['AZURE_DEVOPS_TOKEN'])
         azure_devops_host = os.environ.get('AZURE_DEVOPS_HOST')
@@ -115,7 +119,7 @@ def initialize_repository_for_runtime(
         )
 
     secret_store = (
-        UserSecrets(provider_tokens=provider_tokens) if provider_tokens else None
+        UserSecrets(provider_tokens=provider_tokens) if provider_tokens else None  # type: ignore[arg-type]
     )
     immutable_provider_tokens = secret_store.provider_tokens if secret_store else None
 
@@ -213,8 +217,8 @@ def create_controller(
 
     controller = AgentController(
         agent=agent,
-        max_iterations=config.max_iterations,
-        max_budget_per_task=config.max_budget_per_task,
+        iteration_delta=config.max_iterations,
+        budget_per_task_delta=config.max_budget_per_task,
         agent_to_llm_config=config.get_agent_to_llm_config_map(),
         event_stream=event_stream,
         initial_state=initial_state,

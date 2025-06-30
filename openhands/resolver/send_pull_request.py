@@ -12,6 +12,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.service_types import ProviderType
 from openhands.llm.llm import LLM
 from openhands.resolver.interfaces.azure_devops import AzureDevOpsIssueHandler
+from openhands.resolver.interfaces.bitbucket import BitbucketIssueHandler
 from openhands.resolver.interfaces.github import GithubIssueHandler
 from openhands.resolver.interfaces.gitlab import GitlabIssueHandler
 from openhands.resolver.interfaces.issue import Issue
@@ -236,7 +237,7 @@ def send_pull_request(
     pr_title: str | None = None,
     base_domain: str | None = None,
 ) -> str:
-    """Send a pull request to a GitHub, GitLab, or Azure DevOps repository.
+    """Send a pull request to a GitHub, GitLab, Bitbucket, or Azure DevOps repository.
 
     Args:
         issue: The issue to send the pull request for
@@ -250,7 +251,7 @@ def send_pull_request(
         target_branch: The target branch to create the pull request against (defaults to repository default branch)
         reviewer: The username of the reviewer to assign
         pr_title: Custom title for the pull request (optional)
-        base_domain: The base domain for the git server (defaults to "github.com" for GitHub, "gitlab.com" for GitLab, and "dev.azure.com" for Azure DevOps)
+        base_domain: The base domain for the git server (defaults to "github.com" for GitHub, "gitlab.com" for GitLab, and "bitbucket.org" for Bitbucket)
     """
     if pr_type not in ['branch', 'draft', 'ready']:
         raise ValueError(f'Invalid pr_type: {pr_type}')
@@ -263,6 +264,8 @@ def send_pull_request(
             base_domain = 'gitlab.com'
         else:  # platform == ProviderType.AZURE_DEVOPS
             base_domain = 'dev.azure.com'
+            else:  # platform == ProviderType.BITBUCKET
+            base_domain = 'bitbucket.org'
 
     # Create the appropriate handler based on platform
     handler = None
@@ -279,6 +282,9 @@ def send_pull_request(
     elif platform == ProviderType.AZURE_DEVOPS:
         handler = ServiceContextIssue(
             AzureDevOpsIssueHandler(
+            elif platform == ProviderType.BITBUCKET:
+        handler = ServiceContextIssue(
+            BitbucketIssueHandler(
                 issue.owner, issue.repo, token, username, base_domain
             ),
             None,

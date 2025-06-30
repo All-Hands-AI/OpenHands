@@ -6,6 +6,7 @@ export interface UserMessageAction extends OpenHandsActionEvent<"message"> {
   args: {
     content: string;
     image_urls: string[];
+    file_urls: string[];
   };
 }
 
@@ -36,6 +37,7 @@ export interface AssistantMessageAction
   args: {
     thought: string;
     image_urls: string[] | null;
+    file_urls: string[];
     wait_for_response: boolean;
   };
 }

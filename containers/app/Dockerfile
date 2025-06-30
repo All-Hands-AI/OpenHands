@@ -1,5 +1,5 @@
 ARG OPENHANDS_BUILD_VERSION=dev
-FROM node:22.16.0-bookworm-slim AS frontend-builder
+FROM node:24.3.0-bookworm-slim AS frontend-builder
 
 WORKDIR /app
 
@@ -44,7 +44,7 @@ ENV WORKSPACE_BASE=/opt/workspace_base
 ENV OPENHANDS_BUILD_VERSION=$OPENHANDS_BUILD_VERSION
 ENV SANDBOX_USER_ID=0
 ENV FILE_STORE=local
-ENV FILE_STORE_PATH=/.openhands-state
+ENV FILE_STORE_PATH=/.openhands
 RUN mkdir -p $FILE_STORE_PATH
 RUN mkdir -p $WORKSPACE_BASE
 

@@ -5,6 +5,14 @@ This repository contains the code for OpenHands, an automated AI software engine
 To set up the entire repo, including frontend and backend, run `make build`.
 You don't need to do this unless the user asks you to, or if you're trying to run the entire application.
 
+## Running OpenHands with OpenHands:
+To run the full application to debug issues:
+```bash
+export INSTALL_DOCKER=0
+export RUNTIME=local
+make build && make run FRONTEND_PORT=12000 FRONTEND_HOST=0.0.0.0 BACKEND_HOST=0.0.0.0 &> /tmp/openhands-log.txt &
+```
+
 IMPORTANT: Before making any changes to the codebase, ALWAYS run `make install-pre-commit-hooks` to ensure pre-commit hooks are properly installed.
 
 Before pushing any changes, you MUST ensure that any lint errors or simple test errors have been fixed.
@@ -59,6 +67,29 @@ If you are starting a pull request (PR), please follow the template in `.github/
 ## Implementation Details
 
 These details may or may not be useful for your current task.
+
+### Microagents
+
+Microagents are specialized prompts that enhance OpenHands with domain-specific knowledge and task-specific workflows. They are Markdown files that can include frontmatter for configuration.
+
+#### Types:
+- **Public Microagents**: Located in `microagents/`, available to all users
+- **Repository Microagents**: Located in `.openhands/microagents/`, specific to this repository
+
+#### Loading Behavior:
+- **Without frontmatter**: Always loaded into LLM context
+- **With triggers in frontmatter**: Only loaded when user's message matches the specified trigger keywords
+
+#### Structure:
+```yaml
+---
+triggers:
+- keyword1
+- keyword2
+---
+# Microagent Content
+Your specialized knowledge and instructions here...
+```
 
 ### Frontend
 

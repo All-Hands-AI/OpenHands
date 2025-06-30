@@ -119,14 +119,14 @@ class DummyAgent(Agent):
         ]
 
     def step(self, state: State) -> Action:
-        if state.iteration >= len(self.steps):
+        if state.iteration_flag.current_value >= len(self.steps):
             return AgentFinishAction()
 
-        current_step = self.steps[state.iteration]
+        current_step = self.steps[state.iteration_flag.current_value]
         action = current_step['action']
 
-        if state.iteration > 0:
-            prev_step = self.steps[state.iteration - 1]
+        if state.iteration_flag.current_value > 0:
+            prev_step = self.steps[state.iteration_flag.current_value - 1]
 
             if 'observations' in prev_step and prev_step['observations']:
                 expected_observations = prev_step['observations']

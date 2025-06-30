@@ -66,7 +66,9 @@ class GitLabService(BaseGitService, GitService):
         Retrieve the GitLab Token to construct the headers
         """
         if not self.token:
-            self.token = await self.get_latest_token()
+            latest_token = await self.get_latest_token()
+            if latest_token:
+                self.token = latest_token
 
         return {
             'Authorization': f'Bearer {self.token.get_secret_value()}',
@@ -184,13 +186,12 @@ class GitLabService(BaseGitService, GitService):
         avatar_url = response.get('avatar_url') or ''
 
         return User(
-            id=response.get('id'),
-            username=response.get('username'),
+            id=str(response.get('id', '')),
+            login=response.get('username'),  # type: ignore[call-arg]
             avatar_url=avatar_url,
             name=response.get('name'),
             email=response.get('email'),
             company=response.get('organization'),
-            login=response.get('username'),
         )
 
     async def search_repositories(
@@ -208,7 +209,7 @@ class GitLabService(BaseGitService, GitService):
         response, _ = await self._make_request(url, params)
         repos = [
             Repository(
-                id=repo.get('id'),
+                id=str(repo.get('id')),
                 full_name=repo.get('path_with_namespace'),
                 stargazers_count=repo.get('star_count'),
                 git_provider=ProviderType.GITLAB,
@@ -259,8 +260,8 @@ class GitLabService(BaseGitService, GitService):
         all_repos = all_repos[:MAX_REPOS]
         return [
             Repository(
-                id=repo.get('id'),
-                full_name=repo.get('path_with_namespace'),
+                id=str(repo.get('id')),  # type: ignore[arg-type]
+                full_name=repo.get('path_with_namespace'),  # type: ignore[arg-type]
                 stargazers_count=repo.get('star_count'),
                 git_provider=ProviderType.GITLAB,
                 is_public=repo.get('visibility') == 'public',
@@ -409,7 +410,7 @@ class GitLabService(BaseGitService, GitService):
         repo, _ = await self._make_request(url)
 
         return Repository(
-            id=repo.get('id'),
+            id=str(repo.get('id')),
             full_name=repo.get('path_with_namespace'),
             stargazers_count=repo.get('star_count'),
             git_provider=ProviderType.GITLAB,

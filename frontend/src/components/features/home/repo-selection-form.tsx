@@ -93,9 +93,7 @@ export function RepositorySelectionForm({
   }));
 
   const handleRepoSelection = (key: React.Key | null) => {
-    const selectedRepo = allRepositories?.find(
-      (repo) => repo.id.toString() === key,
-    );
+    const selectedRepo = allRepositories?.find((repo) => repo.id === key);
 
     if (selectedRepo) onRepoSelection(selectedRepo.full_name);
     setSelectedRepository(selectedRepo || null);

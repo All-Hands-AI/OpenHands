@@ -14,6 +14,7 @@ class ProviderType(Enum):
     GITHUB = 'github'
     GITLAB = 'gitlab'
     AZURE_DEVOPS = 'azure_devops'
+    BITBUCKET = 'bitbucket'
 
 
 class TaskType(str, Enum):
@@ -64,6 +65,16 @@ class SuggestedTask(BaseModel):
                 'work item': 'work item',
                 'repository': 'repository',
                 'pull request': 'pull request',
+            }
+        elif self.git_provider == ProviderType.BITBUCKET:
+            return {
+                'requestType': 'Pull Request',
+                'requestTypeShort': 'PR',
+                'apiName': 'Bitbucket API',
+                'tokenEnvVar': 'BITBUCKET_TOKEN',
+                'ciSystem': 'Bitbucket Pipelines',
+                'ciProvider': 'Bitbucket',
+                'requestVerb': 'pull request',
             }
 
         raise ValueError(f'Provider {self.git_provider} for suggested task prompts')

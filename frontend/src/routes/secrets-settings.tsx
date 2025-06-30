@@ -13,6 +13,7 @@ import { BrandButton } from "#/components/features/settings/brand-button";
 import { ConfirmationModal } from "#/components/shared/modals/confirmation-modal";
 import { GetSecretsResponse } from "#/api/secrets-service.types";
 import { useUserProviders } from "#/hooks/use-user-providers";
+import { I18nKey } from "#/i18n/declaration";
 import { useConfig } from "#/hooks/query/use-config";
 
 function SecretsSettingsScreen() {
@@ -84,9 +85,13 @@ function SecretsSettingsScreen() {
       )}
 
       {shouldRenderConnectToGitButton && (
-        <Link to="/settings/git" data-testid="connect-git-button" type="button">
+        <Link
+          to="/settings/integrations"
+          data-testid="connect-git-button"
+          type="button"
+        >
           <BrandButton type="button" variant="secondary">
-            Connect a Git provider to manage secrets
+            {t(I18nKey.SECRETS$CONNECT_GIT_PROVIDER)}
           </BrandButton>
         </Link>
       )}

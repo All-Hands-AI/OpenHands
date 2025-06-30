@@ -8,6 +8,7 @@ import { I18nKey } from "#/i18n/declaration";
 interface ConversationCardContextMenuProps {
   onClose: () => void;
   onDelete?: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  onStop?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onEdit?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onDisplayCost?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onShowAgentTools?: (event: React.MouseEvent<HTMLButtonElement>) => void;
@@ -19,6 +20,7 @@ interface ConversationCardContextMenuProps {
 export function ConversationCardContextMenu({
   onClose,
   onDelete,
+  onStop,
   onEdit,
   onDisplayCost,
   onShowAgentTools,
@@ -42,6 +44,11 @@ export function ConversationCardContextMenu({
       {onDelete && (
         <ContextMenuListItem testId="delete-button" onClick={onDelete}>
           Delete
+        </ContextMenuListItem>
+      )}
+      {onStop && (
+        <ContextMenuListItem testId="stop-button" onClick={onStop}>
+          Stop
         </ContextMenuListItem>
       )}
       {onEdit && (

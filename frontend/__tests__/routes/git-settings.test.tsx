@@ -35,13 +35,13 @@ const queryClient = new QueryClient();
 const GitSettingsRouterStub = createRoutesStub([
   {
     Component: GitSettingsScreen,
-    path: "/settings/github",
+    path: "/settings/integrations",
   },
 ]);
 
 const renderGitSettingsScreen = () => {
   const { rerender, ...rest } = render(
-    <GitSettingsRouterStub initialEntries={["/settings/github"]} />,
+    <GitSettingsRouterStub initialEntries={["/settings/integrations"]} />,
     {
       wrapper: ({ children }) => (
         <QueryClientProvider client={queryClient}>
@@ -54,7 +54,7 @@ const renderGitSettingsScreen = () => {
   const rerenderGitSettingsScreen = () =>
     rerender(
       <QueryClientProvider client={queryClient}>
-        <GitSettingsRouterStub initialEntries={["/settings/github"]} />
+        <GitSettingsRouterStub initialEntries={["/settings/integrations"]} />
       </QueryClientProvider>,
     );
 
@@ -89,8 +89,8 @@ describe("Content", () => {
     await screen.findByTestId("gitlab-token-input");
     await screen.findByTestId("gitlab-token-help-anchor");
 
-    await screen.findByTestId("azure-devops-token-input");
-    await screen.findByTestId("azure-devops-token-help-anchor");
+    await screen.findByTestId("bitbucket-token-input");
+    await screen.findByTestId("bitbucket-token-help-anchor");
 
     getConfigSpy.mockResolvedValue(VALID_SAAS_CONFIG);
     queryClient.invalidateQueries();
@@ -112,10 +112,10 @@ describe("Content", () => {
       ).not.toBeInTheDocument();
 
       expect(
-        screen.queryByTestId("azure-devops-token-input"),
+        screen.queryByTestId("bitbucket-token-input"),
       ).not.toBeInTheDocument();
       expect(
-        screen.queryByTestId("azure-devops-token-help-anchor"),
+        screen.queryByTestId("bitbucket-token-help-anchor"),
       ).not.toBeInTheDocument();
     });
   });
@@ -259,6 +259,7 @@ describe("Content", () => {
 describe("Form submission", () => {
   it("should save the GitHub token", async () => {
     const saveProvidersSpy = vi.spyOn(SecretsService, "addGitProvider");
+    saveProvidersSpy.mockImplementation(() => Promise.resolve(true));
     const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
     getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
 
@@ -273,7 +274,8 @@ describe("Form submission", () => {
     expect(saveProvidersSpy).toHaveBeenCalledWith({
       github: { token: "test-token", host: "" },
       gitlab: { token: "", host: "" },
-      azure_devops: { token: "", host: "" },
+      bitbucket,
+  azure_devops: { token: "", host: "" },
     });
   });
 
@@ -293,7 +295,8 @@ describe("Form submission", () => {
     expect(saveProvidersSpy).toHaveBeenCalledWith({
       github: { token: "", host: "" },
       gitlab: { token: "test-token", host: "" },
-      azure_devops: { token: "", host: "" },
+      bitbucket,
+  azure_devops: { token: "", host: "" },
     });
   });
 
@@ -304,18 +307,17 @@ describe("Form submission", () => {
 
     renderGitSettingsScreen();
 
-    const azureDevOpsInput = await screen.findByTestId("azure-devops-token-input");
-    const azureDevOpsHostInput = await screen.findByTestId("azure-devops-host-input");
+    const bitbucketInput = await screen.findByTestId("bitbucket-token-input");
     const submit = await screen.findByTestId("submit-button");
 
-    await userEvent.type(azureDevOpsInput, "test-token");
-    await userEvent.type(azureDevOpsHostInput, "https://dev.azure.com/test-org");
+    await userEvent.type(bitbucketInput, "test-token");
     await userEvent.click(submit);
 
     expect(saveProvidersSpy).toHaveBeenCalledWith({
       github: { token: "", host: "" },
       gitlab: { token: "", host: "" },
-      azure_devops: { token: "test-token", host: "https://dev.azure.com/test-org" },
+      bitbucket,
+  azure_devops: { token: "test-token", host: "https://dev.azure.com/test-org" },
     });
   });
 

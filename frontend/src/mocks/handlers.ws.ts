@@ -19,7 +19,6 @@ const chat = ws.link(`ws://${window?.location.host}/socket.io`);
 
 export const handlers: WebSocketHandler[] = [
   chat.addEventListener("connection", (connection) => {
-    // @ts-expect-error - MSW v2 type incompatibility
     const io = toSocketIo(connection);
     // @ts-expect-error - accessing private property for testing purposes
     const { url }: { url: URL } = io.client.connection;

@@ -7,7 +7,7 @@ import { ModalBody } from "#/components/shared/modals/modal-body";
 import { BrandButton } from "../settings/brand-button";
 import GitHubLogo from "#/assets/branding/github-logo.svg?react";
 import GitLabLogo from "#/assets/branding/gitlab-logo.svg?react";
-import AzureDevOpsLogo from "#/assets/branding/azure-devops-logo.svg?react";
+import BitbucketLogo from "#/assets/branding/bitbucket-logo.svg?react";
 import { useAuthUrl } from "#/hooks/use-auth-url";
 import { GetConfigResponse } from "#/api/open-hands.types";
 
@@ -26,7 +26,8 @@ export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
 
   const azureDevOpsAuthUrl = useAuthUrl({
     appMode: appMode || null,
-    identityProvider: "azure_devops",
+    identityProvider: "bitbucket,
+  azure_devops",
   });
 
   const handleGitHubAuth = () => {
@@ -43,10 +44,10 @@ export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
     }
   };
 
-  const handleAzureDevOpsAuth = () => {
-    if (azureDevOpsAuthUrl) {
+  const handleBitbucketAuth = () => {
+    if (bitbucketAuthUrl) {
       // Always start the OIDC flow, let the backend handle TOS check
-      window.location.href = azureDevOpsAuthUrl;
+      window.location.href = bitbucketAuthUrl;
     }
   };
 
@@ -90,6 +91,11 @@ export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
           >
             {t(I18nKey.AZURE_DEVOPS$CONNECT_TO_AZURE_DEVOPS) ||
               "Connect to Azure DevOps"}
+            onClick={handleBitbucketAuth}
+            className="w-full"
+            startContent={<BitbucketLogo width={20} height={20} />}
+          >
+            {t(I18nKey.BITBUCKET$CONNECT_TO_BITBUCKET)}
           </BrandButton>
         </div>
       </ModalBody>

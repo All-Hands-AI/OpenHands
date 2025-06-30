@@ -4,6 +4,10 @@ from openhands.resolver.interfaces.azure_devops import (
     AzureDevOpsIssueHandler,
     AzureDevOpsPRHandler,
 )
+from openhands.resolver.interfaces.bitbucket import (
+    BitbucketIssueHandler,
+    BitbucketPRHandler,
+)
 from openhands.resolver.interfaces.github import GithubIssueHandler, GithubPRHandler
 from openhands.resolver.interfaces.gitlab import GitlabIssueHandler, GitlabPRHandler
 from openhands.resolver.interfaces.issue_definitions import (
@@ -57,6 +61,17 @@ class IssueHandlerFactory:
                     ),
                     self.llm_config,
                 )
+            elif self.platform == ProviderType.BITBUCKET:
+                return ServiceContextIssue(
+                    BitbucketIssueHandler(
+                        self.owner,
+                        self.repo,
+                        self.token,
+                        self.username,
+                        self.base_domain,
+                    ),
+                    self.llm_config,
+                )
             elif self.platform == ProviderType.AZURE_DEVOPS:
                 return ServiceContextIssue(
                     AzureDevOpsIssueHandler(
@@ -85,6 +100,17 @@ class IssueHandlerFactory:
             elif self.platform == ProviderType.GITLAB:
                 return ServiceContextPR(
                     GitlabPRHandler(
+                        self.owner,
+                        self.repo,
+                        self.token,
+                        self.username,
+                        self.base_domain,
+                    ),
+                    self.llm_config,
+                )
+            elif self.platform == ProviderType.BITBUCKET:
+                return ServiceContextPR(
+                    BitbucketPRHandler(
                         self.owner,
                         self.repo,
                         self.token,

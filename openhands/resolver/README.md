@@ -1,9 +1,9 @@
-# OpenHands Github, Gitlab & Azure DevOps Issue Resolver 🙌
+# OpenHands GitHub, GitLab, Bitbucket & Azure DevOps Issue Resolver 🙌
 
-Need help resolving issues in GitHub, GitLab, or Azure DevOps but don't have the time to do it yourself? Let an AI agent help you out!
+Need help resolving issues in GitHub, GitLab, Bitbucket, or Azure DevOps but don't have the time to do it yourself? Let an AI agent help you out!
 
 This tool allows you to use open-source AI agents based on [OpenHands](https://github.com/all-hands-ai/openhands)
-to attempt to resolve issues automatically. While it can handle multiple issues, it's primarily designed
+to attempt to resolve GitHub, GitLab, Bitbucket, and Azure DevOps issues automatically. While it can handle multiple issues, it's primarily designed
 to help you resolve one issue at a time with high quality.
 
 Getting started is simple - just follow the instructions below.
@@ -74,7 +74,7 @@ If you prefer to run the resolver programmatically instead of using GitHub Actio
 pip install openhands-ai
 ```
 
-2. Create an access token for your platform:
+2. Create a GitHub, GitLab, Bitbucket, or Azure DevOps access token:
    - Create a GitHub access token
       - Visit [GitHub's token settings](https://github.com/settings/personal-access-tokens/new)
       - Create a fine-grained token with these scopes:
@@ -93,13 +93,15 @@ pip install openhands-ai
       - 'read_repository'
       - 'write_repository'
 
-   - Create an Azure DevOps access token
-      - Visit [Azure DevOps Personal Access Tokens](https://dev.azure.com/your-organization/_usersSettings/tokens)
-      - Create a token with these scopes:
-      - "Code (Read & Write)"
-      - "Work Items (Read & Write)"
-      - "Pull Request Threads (Read & Write)"
-      - "Pull Request Contribute"
+   - Create a Bitbucket access token
+      - Visit [Bitbucket's app passwords settings](https://bitbucket.org/account/settings/app-passwords/)
+      - Create an app password with these scopes:
+      - 'Repositories: Read'
+      - 'Repositories: Write'
+      - 'Pull requests: Read'
+      - 'Pull requests: Write'
+      - 'Issues: Read'
+      - 'Issues: Write'
 
 3. Set up environment variables:
 
@@ -113,9 +115,10 @@ export GIT_USERNAME="your-github-username"  # Optional, defaults to token owner
 export GITLAB_TOKEN="your-gitlab-token"
 export GIT_USERNAME="your-gitlab-username"  # Optional, defaults to token owner
 
-# Azure DevOps credentials if you're using Azure DevOps repo
-export AZURE_DEVOPS_TOKEN="your-azure-devops-token"
-export GIT_USERNAME="your-azure-devops-username"  # Optional, defaults to token owner
+# Bitbucket credentials if you're using Bitbucket repo
+
+export BITBUCKET_TOKEN="your-bitbucket-token"
+export GIT_USERNAME="your-bitbucket-username"  # Optional, defaults to token owner
 
 # LLM configuration
 
@@ -182,13 +185,13 @@ There are three ways you can upload:
 3. `ready` - create a non-draft PR that's ready for review
 
 ```bash
-python -m openhands.resolver.send_pull_request --issue-number ISSUE_NUMBER --username YOUR_GITHUB_OR_GITLAB_USERNAME --pr-type draft
+python -m openhands.resolver.send_pull_request --issue-number ISSUE_NUMBER --username YOUR_GIT_USERNAME --pr-type draft
 ```
 
 If you want to upload to a fork, you can do so by specifying the `fork-owner`:
 
 ```bash
-python -m openhands.resolver.send_pull_request --issue-number ISSUE_NUMBER --username YOUR_GITHUB_OR_GITLAB_USERNAME --pr-type draft --fork-owner YOUR_GITHUB_OR_GITLAB_USERNAME
+python -m openhands.resolver.send_pull_request --issue-number ISSUE_NUMBER --username YOUR_GIT_USERNAME --pr-type draft --fork-owner YOUR_GIT_USERNAME
 ```
 
 ## Providing Custom Instructions
@@ -197,5 +200,5 @@ You can customize how the AI agent approaches issue resolution by adding a repos
 
 ## Troubleshooting
 
-If you have any issues, please open an issue on this github or gitlab repo, we're happy to help!
+If you have any issues, please open an issue on this GitHub, GitLab, or Bitbucket repo, we're happy to help!
 Alternatively, you can [email us](mailto:contact@all-hands.dev) or join the OpenHands Slack workspace (see [the README](/README.md) for an invite link).

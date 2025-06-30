@@ -6,8 +6,9 @@ import { BrandButton } from "#/components/features/settings/brand-button";
 import { useLogout } from "#/hooks/mutation/use-logout";
 import { GitHubTokenInput } from "#/components/features/settings/git-settings/github-token-input";
 import { GitLabTokenInput } from "#/components/features/settings/git-settings/gitlab-token-input";
-import { AzureDevOpsTokenInput } from "#/components/features/settings/git-settings/azure-devops-token-input";
+import { BitbucketTokenInput } from "#/components/features/settings/git-settings/bitbucket-token-input";
 import { ConfigureGitHubRepositoriesAnchor } from "#/components/features/settings/git-settings/configure-github-repositories-anchor";
+import { InstallSlackAppAnchor } from "#/components/features/settings/git-settings/install-slack-app-anchor";
 import { I18nKey } from "#/i18n/declaration";
 import {
   displayErrorToast,
@@ -33,24 +34,26 @@ function GitSettingsScreen() {
     React.useState(false);
   const [gitlabTokenInputHasValue, setGitlabTokenInputHasValue] =
     React.useState(false);
-  const [azureDevOpsTokenInputHasValue, setAzureDevOpsTokenInputHasValue] =
+  const [bitbucketTokenInputHasValue, setBitbucketTokenInputHasValue] =
     React.useState(false);
 
   const [githubHostInputHasValue, setGithubHostInputHasValue] =
     React.useState(false);
   const [gitlabHostInputHasValue, setGitlabHostInputHasValue] =
     React.useState(false);
-  const [azureDevOpsHostInputHasValue, setAzureDevOpsHostInputHasValue] =
+  const [bitbucketHostInputHasValue, setBitbucketHostInputHasValue] =
     React.useState(false);
 
   const existingGithubHost = settings?.PROVIDER_TOKENS_SET.github;
   const existingGitlabHost = settings?.PROVIDER_TOKENS_SET.gitlab;
-  const existingAzureDevOpsHost = settings?.PROVIDER_TOKENS_SET.azure_devops;
+  const existingAzureDevOpsHost = settings?.PROVIDER_TOKENS_SET.bitbucket,
+  azure_devops;
 
   const isSaas = config?.APP_MODE === "saas";
   const isGitHubTokenSet = providers.includes("github");
   const isGitLabTokenSet = providers.includes("gitlab");
-  const isAzureDevOpsTokenSet = providers.includes("azure_devops");
+  const isAzureDevOpsTokenSet = providers.includes("bitbucket,
+  azure_devops");
 
   const formAction = async (formData: FormData) => {
     const disconnectButtonClicked =
@@ -89,7 +92,8 @@ function GitSettingsScreen() {
         providers: {
           github: { token: githubToken, host: githubHost },
           gitlab: { token: gitlabToken, host: gitlabHost },
-          azure_devops: { token: azureDevOpsToken, host: azureDevOpsHost },
+          bitbucket,
+  azure_devops: { token: azureDevOpsToken, host: azureDevOpsHost },
         },
       },
       {
@@ -103,10 +107,10 @@ function GitSettingsScreen() {
         onSettled: () => {
           setGithubTokenInputHasValue(false);
           setGitlabTokenInputHasValue(false);
-          setAzureDevOpsTokenInputHasValue(false);
+          setBitbucketTokenInputHasValue(false);
           setGithubHostInputHasValue(false);
           setGitlabHostInputHasValue(false);
-          setAzureDevOpsHostInputHasValue(false);
+          setBitbucketHostInputHasValue(false);
         },
       },
     );
@@ -115,10 +119,10 @@ function GitSettingsScreen() {
   const formIsClean =
     !githubTokenInputHasValue &&
     !gitlabTokenInputHasValue &&
-    !azureDevOpsTokenInputHasValue &&
+    !bitbucketTokenInputHasValue &&
     !githubHostInputHasValue &&
     !gitlabHostInputHasValue &&
-    !azureDevOpsHostInputHasValue;
+    !bitbucketHostInputHasValue;
   const shouldRenderExternalConfigureButtons = isSaas && config.APP_SLUG;
 
   return (
@@ -131,6 +135,10 @@ function GitSettingsScreen() {
         <div className="p-9 flex flex-col gap-12">
           {shouldRenderExternalConfigureButtons && !isLoading && (
             <ConfigureGitHubRepositoriesAnchor slug={config.APP_SLUG!} />
+          )}
+
+          {shouldRenderExternalConfigureButtons && !isLoading && (
+            <InstallSlackAppAnchor />
           )}
 
           {!isSaas && (
@@ -162,16 +170,16 @@ function GitSettingsScreen() {
           )}
 
           {!isSaas && (
-            <AzureDevOpsTokenInput
-              name="azure-devops-token-input"
-              isAzureDevOpsTokenSet={isAzureDevOpsTokenSet}
+            <BitbucketTokenInput
+              name="bitbucket-token-input"
+              isBitbucketTokenSet={isBitbucketTokenSet}
               onChange={(value) => {
-                setAzureDevOpsTokenInputHasValue(!!value);
+                setBitbucketTokenInputHasValue(!!value);
               }}
-              onAzureDevOpsHostChange={(value) => {
-                setAzureDevOpsHostInputHasValue(!!value);
+              onBitbucketHostChange={(value) => {
+                setBitbucketHostInputHasValue(!!value);
               }}
-              azureDevOpsHostSet={existingAzureDevOpsHost}
+              bitbucketHostSet={existingBitbucketHost}
             />
           )}
         </div>
@@ -188,10 +196,10 @@ function GitSettingsScreen() {
               type="submit"
               variant="secondary"
               isDisabled={
-                !isGitHubTokenSet && !isGitLabTokenSet && !isAzureDevOpsTokenSet
+                !isGitHubTokenSet && !isGitLabTokenSet && !isBitbucketTokenSet
               }
             >
-              Disconnect Tokens
+              {t(I18nKey.GIT$DISCONNECT_TOKENS)}
             </BrandButton>
             <BrandButton
               testId="submit-button"

@@ -254,10 +254,10 @@ async def create_custom_secret(
 
         # Create a new UserSecrets that preserves provider tokens
         updated_user_secrets = UserSecrets(
-            custom_secrets=custom_secrets,
+            custom_secrets=custom_secrets,  # type: ignore[arg-type]
             provider_tokens=existing_secrets.provider_tokens
             if existing_secrets
-            else {},
+            else {},  # type: ignore[arg-type]
         )
 
         await secrets_store.store(updated_user_secrets)
@@ -308,7 +308,7 @@ async def update_custom_secret(
             )
 
             updated_secrets = UserSecrets(
-                custom_secrets=custom_secrets,
+                custom_secrets=custom_secrets,  # type: ignore[arg-type]
                 provider_tokens=existing_secrets.provider_tokens,
             )
 
@@ -349,7 +349,7 @@ async def delete_custom_secret(
 
             # Create a new UserSecrets that preserves provider tokens and remaining secrets
             updated_secrets = UserSecrets(
-                custom_secrets=custom_secrets,
+                custom_secrets=custom_secrets,  # type: ignore[arg-type]
                 provider_tokens=existing_secrets.provider_tokens,
             )
 

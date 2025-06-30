@@ -28,7 +28,8 @@ export const useAutoLogin = () => {
 
   const azureDevOpsAuthUrl = useAuthUrl({
     appMode: config?.APP_MODE || null,
-    identityProvider: "azure_devops",
+    identityProvider: "bitbucket,
+  azure_devops",
   });
 
   useEffect(() => {
@@ -60,6 +61,8 @@ export const useAutoLogin = () => {
       authUrl = gitlabAuthUrl;
     } else if (loginMethod === LoginMethod.AZURE_DEVOPS) {
       authUrl = azureDevOpsAuthUrl;
+    } else if (loginMethod === LoginMethod.BITBUCKET) {
+      authUrl = bitbucketAuthUrl;
     }
 
     // If we have an auth URL, redirect to it
@@ -79,6 +82,6 @@ export const useAutoLogin = () => {
     loginMethod,
     githubAuthUrl,
     gitlabAuthUrl,
-    azureDevOpsAuthUrl,
+    bitbucketAuthUrl,
   ]);
 };

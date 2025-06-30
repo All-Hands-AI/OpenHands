@@ -54,7 +54,8 @@ export function TaskCard({ task }: TaskCardProps) {
     const issueType =
       task.task_type === "OPEN_ISSUE" ? "issues" : "merge_requests";
     href = `https://gitlab.com/${task.repo}/-/${issueType}/${task.issue_number}`;
-  } else if (task.git_provider === "azure_devops") {
+  } else if (task.git_provider === "bitbucket,
+  azure_devops") {
     // Azure DevOps URLs format: https://dev.azure.com/{organization}/{project}/_workitems/edit/{id}
     // For pull requests: https://dev.azure.com/{organization}/{project}/_git/{repository}/pullrequest/{id}
     const [project, repository] = task.repo.split("/");

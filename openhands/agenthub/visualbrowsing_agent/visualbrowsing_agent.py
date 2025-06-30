@@ -176,9 +176,9 @@ Note:
         self.reset()
 
     def reset(self) -> None:
-        """Resets the VisualBrowsingAgent."""
+        """Resets the VisualBrowsingAgent's internal state."""
         super().reset()
-        self.cost_accumulator = 0
+        # Reset agent-specific counters but not LLM metrics
         self.error_accumulator = 0
 
     def step(self, state: State) -> Action:

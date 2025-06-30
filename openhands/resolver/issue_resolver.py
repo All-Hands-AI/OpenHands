@@ -81,7 +81,7 @@ class IssueResolver:
             args.token
             or os.getenv('GITHUB_TOKEN')
             or os.getenv('GITLAB_TOKEN')
-            or os.getenv('AZURE_DEVOPS_TOKEN')
+            or os.getenv('BITBUCKET_TOKEN')
         )
         username = args.username if args.username else os.getenv('GIT_USERNAME')
         if not username:
@@ -130,7 +130,7 @@ class IssueResolver:
                 if platform == ProviderType.GITHUB
                 else 'gitlab.com'
                 if platform == ProviderType.GITLAB
-                else 'dev.azure.com'
+                else 'bitbucket.org'
             )
 
         self.output_dir = args.output_dir
