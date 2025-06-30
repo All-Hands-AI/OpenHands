@@ -23,9 +23,10 @@ from openhands.cli.tui import (
     display_initialization_animation,
     display_runtime_initialization_message,
     display_welcome_message,
-    process_agent_pause,
     read_confirmation_input,
     read_prompt_input,
+    start_pause_listener,
+    stop_pause_listener,
     update_streaming_output,
 )
 from openhands.cli.utils import (
@@ -40,6 +41,7 @@ from openhands.core.config import (
 )
 from openhands.core.config.condenser_config import NoOpCondenserConfig
 from openhands.core.config.mcp_config import OpenHandsMCPConfigImpl
+from openhands.core.config.utils import finalize_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.loop import run_agent_until_done
 from openhands.core.schema import AgentState
@@ -122,7 +124,6 @@ async def run_session(
     sid = generate_sid(config, session_name)
     is_loaded = asyncio.Event()
     is_paused = asyncio.Event()  # Event to track agent pause requests
-    pause_task: asyncio.Task | None = None  # No more than one pause task
     always_confirm_mode = False  # Flag to enable always confirm mode
 
     # Show runtime initialization message
@@ -187,6 +188,10 @@ async def run_session(
         update_usage_metrics(event, usage_metrics)
 
         if isinstance(event, AgentStateChangedObservation):
+            if event.agent_state not in [AgentState.RUNNING, AgentState.PAUSED]:
+                await stop_pause_listener()
+
+        if isinstance(event, AgentStateChangedObservation):
             if event.agent_state in [
                 AgentState.AWAITING_USER_INPUT,
                 AgentState.FINISHED,
@@ -239,11 +244,7 @@ async def run_session(
 
             if event.agent_state == AgentState.RUNNING:
                 display_agent_running_message()
-                nonlocal pause_task
-                if pause_task is None or pause_task.done():
-                    pause_task = loop.create_task(
-                        process_agent_pause(is_paused, event_stream)
-                    )  # Create a task to track agent pause requests from the user
+                start_pause_listener(loop, is_paused, event_stream)
 
     def on_event(event: Event) -> None:
         loop.create_task(on_event_async(event))
@@ -432,6 +433,10 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
         if not config.workspace_base:
             config.workspace_base = os.getcwd()
         config.security.confirmation_mode = True
+
+        # Need to finalize config again after setting runtime to 'cli'
+        # This ensures Jupyter plugin is disabled for CLI runtime
+        finalize_config(config)
 
     # TODO: Set working directory from config or use current working directory?
     current_dir = config.workspace_base

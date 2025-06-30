@@ -125,6 +125,12 @@ def mock_config():
     )
     config.search_api_key = search_api_key_mock
 
+    # Mock sandbox with volumes attribute to prevent finalize_config issues
+    config.sandbox = MagicMock()
+    config.sandbox.volumes = (
+        None  # This prevents finalize_config from overriding workspace_base
+    )
+
     return config
 
 
@@ -327,7 +333,9 @@ async def test_run_session_with_initial_action(
 @patch('openhands.cli.main.run_session')
 @patch('openhands.cli.main.LLMSummarizingCondenserConfig')
 @patch('openhands.cli.main.NoOpCondenserConfig')
+@patch('openhands.cli.main.finalize_config')
 async def test_main_without_task(
+    mock_finalize_config,
     mock_noop_condenser,
     mock_llm_condenser,
     mock_run_session,
@@ -411,7 +419,9 @@ async def test_main_without_task(
 @patch('openhands.cli.main.run_session')
 @patch('openhands.cli.main.LLMSummarizingCondenserConfig')
 @patch('openhands.cli.main.NoOpCondenserConfig')
+@patch('openhands.cli.main.finalize_config')
 async def test_main_with_task(
+    mock_finalize_config,
     mock_noop_condenser,
     mock_llm_condenser,
     mock_run_session,
@@ -506,7 +516,9 @@ async def test_main_with_task(
 @patch('openhands.cli.main.run_session')
 @patch('openhands.cli.main.LLMSummarizingCondenserConfig')
 @patch('openhands.cli.main.NoOpCondenserConfig')
+@patch('openhands.cli.main.finalize_config')
 async def test_main_with_session_name_passes_name_to_run_session(
+    mock_finalize_config,
     mock_noop_condenser,
     mock_llm_condenser,
     mock_run_session,
@@ -600,7 +612,9 @@ async def test_main_with_session_name_passes_name_to_run_session(
 @patch('openhands.cli.main.display_initialization_animation')  # Cosmetic
 @patch('openhands.cli.main.initialize_repository_for_runtime')  # Cosmetic / setup
 @patch('openhands.cli.main.display_initial_user_prompt')  # Cosmetic
+@patch('openhands.cli.main.finalize_config')
 async def test_run_session_with_name_attempts_state_restore(
+    mock_finalize_config,
     mock_display_initial_user_prompt,
     mock_initialize_repo,
     mock_display_init_anim,
@@ -684,11 +698,17 @@ async def test_run_session_with_name_attempts_state_restore(
 @patch('openhands.cli.main.setup_config_from_args')
 @patch('openhands.cli.main.FileSettingsStore.get_instance')
 @patch('openhands.cli.main.check_folder_security_agreement')
+@patch('openhands.cli.main.read_task')
+@patch('openhands.cli.main.run_session')
 @patch('openhands.cli.main.LLMSummarizingCondenserConfig')
 @patch('openhands.cli.main.NoOpCondenserConfig')
+@patch('openhands.cli.main.finalize_config')
 async def test_main_security_check_fails(
+    mock_finalize_config,
     mock_noop_condenser,
     mock_llm_condenser,
+    mock_run_session,
+    mock_read_task,
     mock_check_security,
     mock_get_settings_store,
     mock_setup_config,
@@ -743,7 +763,9 @@ async def test_main_security_check_fails(
 @patch('openhands.cli.main.run_session')
 @patch('openhands.cli.main.LLMSummarizingCondenserConfig')
 @patch('openhands.cli.main.NoOpCondenserConfig')
+@patch('openhands.cli.main.finalize_config')
 async def test_config_loading_order(
+    mock_finalize_config,
     mock_noop_condenser,
     mock_llm_condenser,
     mock_run_session,
@@ -841,15 +863,19 @@ async def test_config_loading_order(
 @patch('openhands.cli.main.setup_config_from_args')
 @patch('openhands.cli.main.FileSettingsStore.get_instance')
 @patch('openhands.cli.main.check_folder_security_agreement')
+@patch('openhands.cli.main.read_task')
 @patch('openhands.cli.main.run_session')
 @patch('openhands.cli.main.LLMSummarizingCondenserConfig')
 @patch('openhands.cli.main.NoOpCondenserConfig')
+@patch('openhands.cli.main.finalize_config')
 @patch('builtins.open', new_callable=MagicMock)
 async def test_main_with_file_option(
     mock_open,
+    mock_finalize_config,
     mock_noop_condenser,
     mock_llm_condenser,
     mock_run_session,
+    mock_read_task,
     mock_check_security,
     mock_get_settings_store,
     mock_setup_config,
