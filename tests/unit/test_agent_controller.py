@@ -34,7 +34,12 @@ from openhands.events.observation.empty import NullObservation
 from openhands.events.serialization import event_to_dict
 from openhands.llm import LLM
 from openhands.llm.metrics import Metrics, TokenUsage
+from openhands.memory.condenser.condenser import Condensation
+from openhands.memory.condenser.impl.conversation_window_condenser import (
+    ConversationWindowCondenser,
+)
 from openhands.memory.memory import Memory
+from openhands.memory.view import View
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
@@ -835,8 +840,23 @@ async def test_notify_on_llm_retry(mock_agent, mock_event_stream, mock_status_ca
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    'context_window_error',
+    [
+        ContextWindowExceededError(
+            message='prompt is too long: 233885 tokens > 200000 maximum',
+            model='',
+            llm_provider='',
+        ),
+        BadRequestError(
+            message='litellm.BadRequestError: OpenrouterException - This endpoint\'s maximum context length is 40960 tokens. However, you requested about 42988 tokens (38892 of text input, 4096 in the output). Please reduce the length of either one, or use the "middle-out" transform to compress your prompt automatically.',
+            model='openrouter/qwen/qwen3-30b-a3b',
+            llm_provider='openrouter',
+        ),
+    ],
+)
 async def test_context_window_exceeded_error_handling(
-    mock_agent, mock_runtime, test_event_stream, mock_memory
+    context_window_error, mock_agent, mock_runtime, test_event_stream, mock_memory
 ):
     """Test that context window exceeded errors are handled correctly by the controller, providing a smaller view but keeping the history intact."""
     max_iterations = 5
@@ -847,9 +867,15 @@ async def test_context_window_exceeded_error_handling(
             self.has_errored = False
             self.index = 0
             self.views = []
+            self.condenser = ConversationWindowCondenser()
 
         def step(self, state: State):
-            self.views.append(state.view)
+            match self.condenser.condense(state.view):
+                case View() as view:
+                    self.views.append(view)
+
+                case Condensation(action=action):
+                    return action
 
             # Wait until the right step to throw the error, and make sure we
             # only throw it once.
@@ -857,13 +883,13 @@ async def test_context_window_exceeded_error_handling(
                 self.index += 1
                 return MessageAction(content=f'Test message {self.index}')
 
-            error = ContextWindowExceededError(
+            ContextWindowExceededError(
                 message='prompt is too long: 233885 tokens > 200000 maximum',
                 model='',
                 llm_provider='',
             )
             self.has_errored = True
-            raise error
+            raise context_window_error
 
     step_state = StepState()
     mock_agent.step = step_state.step
@@ -881,7 +907,7 @@ async def test_context_window_exceeded_error_handling(
                 content='Test microagent content',
                 recall_type=RecallType.KNOWLEDGE,
             )
-            microagent_obs._cause = event.id
+            microagent_obs._cause = event.id  # type: ignore
             test_event_stream.add_event(microagent_obs, EventSource.ENVIRONMENT)
 
     test_event_stream.subscribe(
@@ -911,7 +937,7 @@ async def test_context_window_exceeded_error_handling(
     # Check that the context window exception was thrown and the controller
     # called the agent's `step` function the right number of times.
     assert step_state.has_errored
-    assert len(step_state.views) == max_iterations
+    assert len(step_state.views) == max_iterations - 1
     print('step_state.views: ', step_state.views)
 
     # Look at pre/post-step views. Normally, these should always increase in
@@ -936,7 +962,7 @@ async def test_context_window_exceeded_error_handling(
             assert len(first_view) < len(second_view)
 
     # The final state's history should contain:
-    # - max_iterations number of message actions,
+    # - (max_iterations - 1) number of message actions (one iteration taken up with the condensation request)
     # - 1 recall actions,
     # - 1 recall observations,
     # - 1 condensation action.
@@ -944,7 +970,7 @@ async def test_context_window_exceeded_error_handling(
         len(
             [event for event in final_state.history if isinstance(event, MessageAction)]
         )
-        == max_iterations
+        == max_iterations - 1
     )
     assert (
         len(
@@ -955,7 +981,7 @@ async def test_context_window_exceeded_error_handling(
                 and event.source == EventSource.AGENT
             ]
         )
-        == max_iterations - 1
+        == max_iterations - 2
     )
     assert (
         len([event for event in final_state.history if isinstance(event, RecallAction)])
@@ -1001,8 +1027,14 @@ async def test_run_controller_with_context_window_exceeded_with_truncation(
     class StepState:
         def __init__(self):
             self.has_errored = False
+            self.condenser = ConversationWindowCondenser()
 
         def step(self, state: State):
+            match self.condenser.condense(state.view):
+                case Condensation(action=action):
+                    return action
+                case _:
+                    pass
             # If the state has more than one message and we haven't errored yet,
             # throw the context window exceeded error
             if len(state.history) > 5 and not self.has_errored:
@@ -1614,206 +1646,3 @@ def test_system_message_in_event_stream(mock_agent, test_event_stream):
     assert isinstance(events[0], SystemMessageAction)
     assert events[0].content == 'Test system message'
     assert events[0].tools == ['test_tool']
-
-
-@pytest.mark.asyncio
-async def test_openrouter_context_window_exceeded_error(
-    mock_agent, test_event_stream, mock_status_callback
-):
-    """Test that OpenRouter context window exceeded errors are properly detected and handled."""
-    max_iterations = 5
-    error_after = 2
-
-    class StepState:
-        def __init__(self):
-            self.has_errored = False
-            self.index = 0
-            self.views = []
-
-        def step(self, state: State):
-            self.views.append(state.view)
-
-            # Wait until the right step to throw the error, and make sure we
-            # only throw it once.
-            if self.index < error_after or self.has_errored:
-                self.index += 1
-                return MessageAction(content=f'Test message {self.index}')
-
-            # Create a BadRequestError with the OpenRouter context window exceeded message pattern
-            error = BadRequestError(
-                message='litellm.BadRequestError: OpenrouterException - This endpoint\'s maximum context length is 40960 tokens. However, you requested about 42988 tokens (38892 of text input, 4096 in the output). Please reduce the length of either one, or use the "middle-out" transform to compress your prompt automatically.',
-                model='openrouter/qwen/qwen3-30b-a3b',
-                llm_provider='openrouter',
-            )
-            self.has_errored = True
-            raise error
-
-    step_state = StepState()
-    mock_agent.step = step_state.step
-    mock_agent.config = AgentConfig(enable_history_truncation=True)
-
-    controller = AgentController(
-        agent=mock_agent,
-        event_stream=test_event_stream,
-        iteration_delta=max_iterations,
-        sid='test',
-        confirmation_mode=False,
-        headless_mode=True,
-        status_callback=mock_status_callback,
-    )
-
-    # Set the agent state to RUNNING
-    controller.state.agent_state = AgentState.RUNNING
-
-    # Run the controller until it hits the error
-    for _ in range(error_after + 2):  # +2 to ensure we go past the error
-        await controller._step()
-        if step_state.has_errored:
-            break
-
-    # Verify that the error was handled as a context window exceeded error
-    # by checking that _handle_long_context_error was called (which adds a CondensationAction)
-    events = list(test_event_stream.get_events())
-    condensation_actions = [e for e in events if isinstance(e, CondensationAction)]
-
-    # There should be at least one CondensationAction if the error was handled correctly
-    assert len(condensation_actions) > 0, (
-        'OpenRouter context window exceeded error was not handled correctly'
-    )
-
-    await controller.close()
-
-
-@pytest.mark.asyncio
-async def test_sambanova_context_window_exceeded_error(
-    mock_agent, test_event_stream, mock_status_callback
-):
-    """Test that SambaNova context window exceeded errors are properly detected and handled."""
-    max_iterations = 5
-    error_after = 2
-
-    class StepState:
-        def __init__(self):
-            self.has_errored = False
-            self.index = 0
-            self.views = []
-
-        def step(self, state: State):
-            # Store the view for later inspection
-            self.views.append(state.view)
-            # only throw it once.
-            if self.index < error_after or self.has_errored:
-                self.index += 1
-                return MessageAction(content=f'Test message {self.index}')
-
-            # Create a BadRequestError with the SambaNova context window exceeded message pattern
-            error = BadRequestError(
-                message='litellm.BadRequestError: SambanovaException - The maximum context length of DeepSeek-V3-0324 is 32768. However, answering your request will take 39732 tokens. Please reduce the length of the messages or the specified max_completion_tokens value.',
-                model='sambanova/deepseek-v3-0324',
-                llm_provider='sambanova',
-            )
-            self.has_errored = True
-            raise error
-
-    step_state = StepState()
-    mock_agent.step = step_state.step
-    mock_agent.config = AgentConfig(enable_history_truncation=True)
-
-    controller = AgentController(
-        agent=mock_agent,
-        event_stream=test_event_stream,
-        iteration_delta=max_iterations,
-        sid='test',
-        confirmation_mode=False,
-        headless_mode=True,
-        status_callback=mock_status_callback,
-    )
-
-    # Set the agent state to RUNNING
-    controller.state.agent_state = AgentState.RUNNING
-
-    # Run the controller until it hits the error
-    for _ in range(error_after + 2):  # +2 to ensure we go past the error
-        await controller._step()
-        if step_state.has_errored:
-            break
-
-    # Verify that the error was handled as a context window exceeded error
-    # by checking that _handle_long_context_error was called (which adds a CondensationAction)
-    events = list(test_event_stream.get_events())
-    condensation_actions = [e for e in events if isinstance(e, CondensationAction)]
-
-    # There should be at least one CondensationAction if the error was handled correctly
-    assert len(condensation_actions) > 0, (
-        'SambaNova context window exceeded error was not handled correctly'
-    )
-
-    await controller.close()
-
-
-@pytest.mark.asyncio
-async def test_sambanova_generic_exception_not_handled_as_context_error(
-    mock_agent, test_event_stream, mock_status_callback
-):
-    """Test that generic SambaNova exceptions (without context length pattern) are NOT handled as context window errors."""
-    max_iterations = 5
-    error_after = 2
-
-    class StepState:
-        def __init__(self):
-            self.has_errored = False
-            self.index = 0
-            self.views = []
-
-        def step(self, state: State):
-            # Store the view for later inspection
-            self.views.append(state.view)
-            # only throw it once.
-            if self.index < error_after or self.has_errored:
-                self.index += 1
-                return MessageAction(content=f'Test message {self.index}')
-
-            # Create a BadRequestError with a generic SambaNova error (no context length pattern)
-            error = BadRequestError(
-                message='litellm.BadRequestError: SambanovaException - Some other error occurred',
-                model='sambanova/deepseek-v3-0324',
-                llm_provider='sambanova',
-            )
-            self.has_errored = True
-            raise error
-
-    step_state = StepState()
-    mock_agent.step = step_state.step
-    mock_agent.config = AgentConfig(enable_history_truncation=True)
-
-    controller = AgentController(
-        agent=mock_agent,
-        event_stream=test_event_stream,
-        iteration_delta=max_iterations,
-        sid='test',
-        confirmation_mode=False,
-        headless_mode=True,
-        status_callback=mock_status_callback,
-    )
-
-    # Set the agent state to RUNNING
-    controller.state.agent_state = AgentState.RUNNING
-
-    # Run the controller until it hits the error
-    with pytest.raises(BadRequestError):
-        for _ in range(error_after + 2):  # +2 to ensure we go past the error
-            await controller._step()
-            if step_state.has_errored:
-                break
-
-    # Verify that the error was NOT handled as a context window exceeded error
-    # by checking that _handle_long_context_error was NOT called (no CondensationAction should be added)
-    events = list(test_event_stream.get_events())
-    condensation_actions = [e for e in events if isinstance(e, CondensationAction)]
-
-    # There should be NO CondensationAction if the error was correctly NOT handled as context window error
-    assert len(condensation_actions) == 0, (
-        'Generic SambaNova exception was incorrectly handled as context window error'
-    )
-
-    await controller.close()

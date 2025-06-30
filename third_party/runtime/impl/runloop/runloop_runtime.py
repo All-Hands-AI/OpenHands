@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import Callable
 
 import tenacity
@@ -40,11 +41,15 @@ class RunloopRuntime(ActionExecutionClient):
         user_id: str | None = None,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
     ):
-        assert config.runloop_api_key is not None, 'Runloop API key is required'
+        # Read Runloop API key from environment variable
+        runloop_api_key = os.getenv('RUNLOOP_API_KEY')
+        if not runloop_api_key:
+            raise ValueError('RUNLOOP_API_KEY environment variable is required for Runloop runtime')
+            
         self.devbox: DevboxView | None = None
         self.config = config
         self.runloop_api_client = Runloop(
-            bearer_token=config.runloop_api_key.get_secret_value(),
+            bearer_token=runloop_api_key,
         )
         self.container_name = CONTAINER_NAME_PREFIX + sid
         super().__init__(

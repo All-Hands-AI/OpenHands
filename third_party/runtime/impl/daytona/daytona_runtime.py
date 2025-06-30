@@ -1,3 +1,4 @@
+import os
 from typing import Callable
 
 import httpx
@@ -45,7 +46,13 @@ class DaytonaRuntime(ActionExecutionClient):
         user_id: str | None = None,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
     ):
-        assert config.daytona_api_key, 'Daytona API key is required'
+        # Read Daytona configuration from environment variables
+        daytona_api_key = os.getenv('DAYTONA_API_KEY')
+        if not daytona_api_key:
+            raise ValueError('DAYTONA_API_KEY environment variable is required for Daytona runtime')
+        
+        daytona_api_url = os.getenv('DAYTONA_API_URL', 'https://app.daytona.io/api')
+        daytona_target = os.getenv('DAYTONA_TARGET', 'eu')
 
         self.config = config
         self.sid = sid
@@ -53,9 +60,9 @@ class DaytonaRuntime(ActionExecutionClient):
         self._vscode_url: str | None = None
 
         daytona_config = DaytonaConfig(
-            api_key=config.daytona_api_key.get_secret_value(),
-            server_url=config.daytona_api_url,
-            target=config.daytona_target,
+            api_key=daytona_api_key,
+            server_url=daytona_api_url,
+            target=daytona_target,
         )
         self.daytona = Daytona(daytona_config)
 
