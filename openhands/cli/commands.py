@@ -129,7 +129,7 @@ async def handle_init_command(
     close_repl = False
     reload_microagents = False
 
-    if config.runtime == 'local' or config.runtime == 'cli':
+    if config.runtime in ('local', 'cli'):
         init_repo = await init_repository(config, current_dir)
         if init_repo:
             event_stream.add_event(
