@@ -6,7 +6,7 @@ To install dependencies:
 bun install
 ```
 
-To run:
+To run storybook:
 
 ```bash
 bun run sb
