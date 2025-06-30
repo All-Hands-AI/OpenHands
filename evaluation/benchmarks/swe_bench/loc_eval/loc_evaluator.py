@@ -1,5 +1,6 @@
 import os
 import re
+import ast
 import json
 import copy
 import argparse
@@ -249,27 +250,148 @@ class LocEvaluator:
                 self.agent_turn_num += 1
             history_idx += 1
 
-    def _parse_string_to_dict(self, dict_string):
+    def _parse_string_to_dict(self, dict_string) -> Dict:
         """
-        Parse a string representation of a dictionary to a real dictionary.
+        Convert a string representation of a dictionary to an actual dictionary.
         
         Args:
             dict_string (str): String representation of a dictionary
             
         Returns:
-            dict: Parsed dictionary object
-            
-        Raises:
-            json.JSONDecodeError: If the string is not valid JSON
-            TypeError: If input is not a string
+            dict or None: The parsed dictionary if successful, None if failed
         """
         if not isinstance(dict_string, str):
-            raise TypeError("Input must be a string")
+            return None
         
+        dict_string = dict_string.strip()
+        
+        # (1) Try JSON parsing
         try:
             return json.loads(dict_string)
-        except json.JSONDecodeError as e:
-            raise json.JSONDecodeError(f"Invalid JSON string: {e}")
+        except (json.JSONDecodeError, ValueError):
+            pass
+        
+        # (1) Try ast parsing
+        try:
+            result = ast.literal_eval(dict_string)
+            if isinstance(result, dict):
+                return result
+            else:
+                return None
+        except (ValueError, SyntaxError):
+            pass
+        
+        # If both methods fail, return None
+        return None
+
+    def _parse_value_from_args(self, argument_str: str, key: str) -> str:
+        """
+        Parse a specific key's value from argument string.
+        
+        Args:
+            argument_str (str): The argument string containing key-value pairs
+            key (str): The key to extract (e.g., "path", "new_str", "old_str")
+            
+        Returns:
+            str: The extracted value, or empty string if not found
+        """
+        if not isinstance(argument_str, str) or not isinstance(key, str):
+            return ""
+        
+        try:
+            
+            json_pattern = rf'"{re.escape(key)}"\s*:\s*"((?:[^"\\]|\\.)*)"`'
+            match = re.search(json_pattern, argument_str, re.DOTALL)
+            if match:
+                value = match.group(1)
+                value = value.replace('\\"', '"').replace('\\n', '\n').replace('\\t', '\t').replace('\\\\', '\\')
+                return value
+            
+            python_pattern = rf"'{re.escape(key)}'\s*:\s*'((?:[^'\\]|\\.)*)'"
+            match = re.search(python_pattern, argument_str, re.DOTALL)
+            if match:
+                value = match.group(1)
+                value = value.replace("\\'", "'").replace('\\n', '\n').replace('\\t', '\t').replace('\\\\', '\\')
+                return value
+            
+            if key in argument_str:
+                parts = argument_str.split(f'"{key}"', 1)
+                if len(parts) == 1:
+                    parts = argument_str.split(f"'{key}'", 1)
+                
+                if len(parts) > 1:
+                    remainder = parts[1].strip()
+                    
+                    for quote_char in ['"', "'"]:
+                        pattern = f'\\s*:\\s*{quote_char}((?:[^{quote_char}\\\\]|\\\\.)*)(?:{quote_char}|$)'
+                        match = re.search(pattern, remainder, re.DOTALL)
+                        if match:
+                            value = match.group(1)
+                            if quote_char == '"':
+                                value = value.replace('\\"', '"').replace('\\n', '\n').replace('\\t', '\t').replace('\\\\', '\\')
+                            else:
+                                value = value.replace("\\'", "'").replace('\\n', '\n').replace('\\t', '\t').replace('\\\\', '\\')
+                            return value
+                    
+                    if key == "path":
+                        path_pattern = r'/[^\s,}"\']*'
+                        match = re.search(path_pattern, remainder)
+                        if match:
+                            return match.group(0)
+            
+            return ""
+            
+        except Exception:
+            return ""
+
+    def _parse_path_from_args(self, argument_str: str) -> str:
+        """
+        Parse path from argument string.
+        
+        Args:
+            argument_str (str): The argument string containing path information
+            
+        Returns:
+            str: The extracted file path, or empty string if not found
+        """
+        return self._parse_value_from_args(argument_str, "path")
+
+
+    def _parse_func_names_from_str(self, code_patch) -> list:
+        """
+        Parse function names from the new_str code patch.
+        
+        Args:
+            code_patch: Either a string (argument string) or already extracted new_str code
+            
+        Returns:
+            list: List of function names found in the code patch
+        """        
+        if not code_patch:
+            return []
+        
+        try:
+            # Look for "def function_name(" patterns
+            # This pattern matches:
+            # - "def" followed by whitespace
+            # - function name (letters, numbers, underscores, also handle special methods like __len__)
+            # - opening parenthesis
+            func_pattern = r'\bdef\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\('
+            
+            matches = re.findall(func_pattern, code_patch)
+            
+            # Remove duplicates while preserving order
+            seen = set()
+            unique_funcs = []
+            for func_name in matches:
+                if func_name not in seen:
+                    seen.add(func_name)
+                    unique_funcs.append(func_name)
+            
+            return unique_funcs
+            
+        except Exception:
+            return []
 
     def _parse_loc_from_history(self, action_history: Dict) -> List:
         """Parse function name and file path"""
@@ -283,14 +405,50 @@ class LocEvaluator:
             return curr_turn_agent_loc
 
         agent_msg_list = action_history["tool_call_metadata"]["model_response"]["choices"]
+        agent_edit = {
+            "create": ["file_text"],
+            "str_replace": ["old_str", "new_str"],
+        }
+
         for cho in agent_msg_list:
             for func_dict in cho["message"]["tool_calls"]:
-                func_name = func_dict["function"]["name"]
-                func_path_str = func_dict["function"]["arguments"]
+                edit_args = func_dict["function"]["arguments"]
+                edit_dict = self._parse_string_to_dict(edit_args)
 
-                for gt_file in self.gold_loc["file"]:
-                    if (gt_file in func_path_str) and (gt_file not in curr_turn_agent_loc):
-                            curr_turn_agent_loc[gt_file] = func_name
+                if edit_dict:
+                    curr_command = edit_dict["command"]
+                    agent_acts = agent_edit[curr_command]
+
+                    file_path = edit_dict.get("path", None)
+                    func_names = []
+
+                    for act in agent_acts:
+                        code_patch = edit_dict.get(act, None)
+                        func_names.extend(self._parse_func_names_from_str(code_patch))
+                    func_names = list(set(func_names))
+
+                else:
+                    for new_act in list(agent_edit.values()):
+                        if new_act in edit_args:
+                            agent_acts = new_act
+                            break
+
+                    file_path = self._parse_path_from_args(edit_args)
+                    func_names = []
+
+                    for act in agent_acts:
+                        code_patch = edit_args.split(agent_acts)[-1].strip()
+                        func_names.extend(self._parse_func_names_from_str(code_patch))
+                    func_names = list(set(func_names))
+
+                if file_path and len(file_path) > 0:
+                    if func_names:
+                        if file_path in curr_turn_agent_loc:
+                            curr_turn_agent_loc[file_path].extend(func_names)
+                        else:
+                            curr_turn_agent_loc[file_path] = func_names
+                    else:
+                        curr_turn_agent_loc[file_path] = []
         
         return curr_turn_agent_loc
 
