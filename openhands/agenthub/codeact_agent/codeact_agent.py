@@ -138,7 +138,7 @@ class CodeActAgent(Agent):
             tools.append(LLMBasedFileEditTool)
         elif self.config.enable_editor:
             # Check if gemini editor is enabled
-            if os.environ.get('ENABLE_GEMINI_EDITOR', '').lower() == 'true':
+            if self.config.enable_gemini_editor:
                 tools.append(
                     create_gemini_editor_tool(use_short_description=use_short_tool_desc)
                 )

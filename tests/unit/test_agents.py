@@ -82,6 +82,15 @@ def test_agent_with_default_config_has_default_tools():
     }.issubset(default_tool_names)
 
 
+def test_agent_with_gemini_editor_config():
+    config = AgentConfig(enable_gemini_editor=True)
+    codeact_agent = CodeActAgent(llm=LLM(LLMConfig()), config=config)
+    assert len(codeact_agent.tools) > 0
+    tool_names = [tool['function']['name'] for tool in codeact_agent.tools]
+    assert 'gemini_editor' in tool_names
+    assert 'str_replace_editor' not in tool_names
+
+
 @pytest.fixture
 def mock_state() -> State:
     state = Mock(spec=State)
