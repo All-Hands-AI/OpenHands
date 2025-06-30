@@ -443,7 +443,9 @@ class Runtime(FileEditRuntimeMixin):
 
         # setup scripts time out after 10 minutes
         action = CmdRunAction(
-            f'chmod +x {setup_script} && source {setup_script}', blocking=True, hidden=True
+            f'chmod +x {setup_script} && source {setup_script}',
+            blocking=True,
+            hidden=True,
         )
         action.set_hard_timeout(600)
 
