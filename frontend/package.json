@@ -7,7 +7,7 @@
     "node": ">=20.0.0"
   },
   "dependencies": {
-    "@heroui/react": "^2.8.0-beta.10",
+    "@heroui/react": "^2.8.0-beta.11",
     "@microlink/react-json-view": "^1.26.2",
     "@monaco-editor/react": "^4.7.0-rc.0",
     "@react-router/node": "^7.6.3",
@@ -18,14 +18,14 @@
     "@stripe/stripe-js": "^7.4.0",
     "@tailwindcss/postcss": "^4.1.11",
     "@tailwindcss/vite": "^4.1.11",
-    "@tanstack/react-query": "^5.81.4",
+    "@tanstack/react-query": "^5.81.5",
     "@vitejs/plugin-react": "^4.6.0",
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/xterm": "^5.4.0",
     "axios": "^1.10.0",
     "clsx": "^2.1.1",
     "eslint-config-airbnb-typescript": "^18.0.0",
-    "framer-motion": "^12.19.2",
+    "framer-motion": "^12.20.1",
     "i18next": "^25.2.1",
     "i18next-browser-languagedetector": "^8.2.0",
     "i18next-http-backend": "^3.0.2",
@@ -51,7 +51,7 @@
     "tailwind-merge": "^3.3.1",
     "vite": "^7.0.0",
     "web-vitals": "^5.0.3",
-    "ws": "^8.18.2"
+    "ws": "^8.18.3"
   },
   "scripts": {
     "dev": "npm run make-i18n && cross-env VITE_MOCK_API=false react-router dev",
@@ -92,7 +92,7 @@
     "@testing-library/jest-dom": "^6.6.1",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
-    "@types/node": "^24.0.5",
+    "@types/node": "^24.0.7",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@types/react-highlight": "^0.12.8",
