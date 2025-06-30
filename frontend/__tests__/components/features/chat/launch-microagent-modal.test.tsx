@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { LaunchMicroagentModal } from "#/components/features/chat/microagent/launch-microagent-modal";
 import { MemoryService } from "#/api/memory-service/memory-service.api";
 import { FileService } from "#/api/file-service/file-service.api";
+import { I18nKey } from "#/i18n/declaration";
 
 vi.mock("react-router", async () => ({
   useParams: vi.fn().mockReturnValue({
@@ -30,6 +31,31 @@ vi.mock("#/hooks/query/use-get-microagents", () => ({
   useGetMicroagents: vi.fn().mockReturnValue({
     data: ["file1", "file2"]
   }),
+}));
+
+// Mock the useTranslation hook
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string) => {
+      const translations: Record<string, string> = {
+        [I18nKey.MICROAGENT$ADD_TO_MICROAGENT]: "Add to Microagent",
+        [I18nKey.MICROAGENT$WHAT_TO_REMEMBER]: "What would you like your microagent to remember?",
+        [I18nKey.MICROAGENT$WHERE_TO_PUT]: "Where should we put it?",
+        [I18nKey.MICROAGENT$ADD_TRIGGERS]: "Add triggers for the microagent",
+        [I18nKey.MICROAGENT$DESCRIBE_WHAT_TO_ADD]: "Describe what you want to add to the Microagent...",
+        [I18nKey.MICROAGENT$SELECT_FILE_OR_CUSTOM]: "Select a microagent file or enter a custom value",
+        [I18nKey.MICROAGENT$TYPE_TRIGGER_SPACE]: "Type a trigger and press Space to add it",
+        [I18nKey.MICROAGENT$LOADING_PROMPT]: "Loading prompt...",
+        [I18nKey.MICROAGENT$CANCEL]: "Cancel",
+        [I18nKey.MICROAGENT$LAUNCH]: "Launch"
+      };
+      return translations[key] || key;
+    },
+    i18n: {
+      changeLanguage: vi.fn(),
+    },
+  }),
+  Trans: ({ i18nKey }: { i18nKey: string }) => i18nKey,
 }));
 
 describe("LaunchMicroagentModal", () => {
