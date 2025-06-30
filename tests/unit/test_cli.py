@@ -790,6 +790,7 @@ async def test_config_loading_order(
     mock_args.llm_config = None  # This should allow settings to be used
     # Add a file property to avoid file I/O errors
     mock_args.file = None
+    mock_args.log_level = 'INFO'
     mock_parse_args.return_value = mock_args
 
     # Mock read_task to return a dummy task
