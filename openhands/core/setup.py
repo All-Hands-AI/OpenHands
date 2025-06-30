@@ -20,7 +20,7 @@ from openhands.llm.llm import LLM
 from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime import get_runtime_cls
-from openhands.runtime.base import Runtime
+from openhands.runtime.base import RepositoryInfo, Runtime
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage import get_file_store
 from openhands.storage.data_models.user_secrets import UserSecrets
@@ -117,13 +117,14 @@ def initialize_repository_for_runtime(
     immutable_provider_tokens = secret_store.provider_tokens if secret_store else None
 
     logger.debug(f'Selected repository {selected_repository}.')
-    repo_directory = call_async_from_sync(
+    repository_info = call_async_from_sync(
         runtime.clone_or_init_repo,
         GENERAL_TIMEOUT,
         immutable_provider_tokens,
         selected_repository,
         None,
     )
+    repo_directory = repository_info.directory_name
     # Run setup script if it exists
     runtime.maybe_run_setup_script()
     # Set up git hooks if pre-commit.sh exists
@@ -165,8 +166,9 @@ def create_memory(
         memory.set_runtime_info(runtime, {})
 
         # loads microagents from repo/.openhands/microagents
+        repo_info = RepositoryInfo(selected_repository) if selected_repository else None
         microagents: list[BaseMicroagent] = runtime.get_microagents_from_selected_repo(
-            selected_repository
+            repo_info
         )
         memory.load_user_workspace_microagents(microagents)
 
