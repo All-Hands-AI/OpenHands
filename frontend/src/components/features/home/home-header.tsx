@@ -15,8 +15,7 @@ export function HomeHeader() {
 
   // We check for isSuccess because the app might require time to render
   // into the new conversation screen after the conversation is created.
-  const isCreatingConversation =
-    isPending || isSuccess || isCreatingConversationElsewhere;
+  const isCreatingConversation = isPending || isSuccess;
 
   return (
     <header className="flex flex-col gap-5">
@@ -29,7 +28,7 @@ export function HomeHeader() {
           variant="primary"
           type="button"
           onClick={() => createConversation({})}
-          isDisabled={isCreatingConversation}
+          isDisabled={isCreatingConversation || isCreatingConversationElsewhere}
         >
           {!isCreatingConversation && t("HOME$LAUNCH_FROM_SCRATCH")}
           {isCreatingConversation && t("HOME$LOADING")}

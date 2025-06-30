@@ -78,8 +78,7 @@ export function RepositorySelectionForm({
 
   // We check for isSuccess because the app might require time to render
   // into the new conversation screen after the conversation is created.
-  const isCreatingConversation =
-    isPending || isSuccess || isCreatingConversationElsewhere;
+  const isCreatingConversation = isPending || isSuccess;
 
   const allRepositories = repositories?.concat(searchedRepos || []);
   const repositoriesItems = allRepositories?.map((repo) => ({
@@ -206,7 +205,8 @@ export function RepositorySelectionForm({
           !selectedRepository ||
           isCreatingConversation ||
           isLoadingRepositories ||
-          isRepositoriesError
+          isRepositoriesError ||
+          isCreatingConversationElsewhere
         }
         onClick={() =>
           createConversation({
