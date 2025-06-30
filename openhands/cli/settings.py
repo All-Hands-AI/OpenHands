@@ -71,6 +71,10 @@ def display_settings(config: OpenHandsConfig) -> None:
                 '   Memory Condensation',
                 'Enabled' if config.enable_default_condenser else 'Disabled',
             ),
+            (
+                '   Configuration File',
+                '~/.openhands/settings.json',
+            ),
         ]
     )
 
