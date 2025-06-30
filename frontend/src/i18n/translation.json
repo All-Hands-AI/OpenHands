@@ -9791,6 +9791,38 @@
         "de": "Keine Aufgaben verfügbar",
         "uk": "Немає доступних завдань"
     },
+    "TASKS$TASK_SUGGESTIONS_INFO": {
+        "en": "Task suggestions information",
+        "ja": "タスク提案情報",
+        "zh-CN": "任务建议信息",
+        "zh-TW": "任務建議資訊",
+        "ko-KR": "작업 제안 정보",
+        "no": "Oppgaveforslag informasjon",
+        "it": "Informazioni sui suggerimenti di attività",
+        "pt": "Informações de sugestões de tarefas",
+        "es": "Información de sugerencias de tareas",
+        "ar": "معلومات اقتراحات المهام",
+        "fr": "Informations sur les suggestions de tâches",
+        "tr": "Görev önerisi bilgileri",
+        "de": "Aufgabenvorschlag-Informationen",
+        "uk": "Інформація про пропозиції завдань"
+    },
+    "TASKS$TASK_SUGGESTIONS_TOOLTIP": {
+        "en": "These are AI-curated task suggestions to help you get started with common development activities and best practices for your repository.",
+        "ja": "これらは、リポジトリの一般的な開発活動とベストプラクティスを始めるのに役立つAIによってキュレーションされたタスク提案です。",
+        "zh-CN": "这些是AI策划的任务建议，帮助您开始进行常见的开发活动和存储库的最佳实践。",
+        "zh-TW": "這些是AI策劃的任務建議，幫助您開始進行常見的開發活動和存儲庫的最佳實踐。",
+        "ko-KR": "이것은 저장소의 일반적인 개발 활동과 모범 사례를 시작할 수 있도록 도와주는 AI가 선별한 작업 제안입니다.",
+        "no": "Dette er AI-kuraterte oppgaveforslag som hjelper deg å komme i gang med vanlige utviklingsaktiviteter og beste praksis for ditt depot.",
+        "it": "Questi sono suggerimenti di attività curati dall'IA per aiutarti a iniziare con le attività di sviluppo comuni e le migliori pratiche per il tuo repository.",
+        "pt": "Estas são sugestões de tarefas curadas por IA para ajudá-lo a começar com atividades de desenvolvimento comuns e melhores práticas para seu repositório.",
+        "es": "Estas son sugerencias de tareas curadas por IA para ayudarte a comenzar con actividades de desarrollo comunes y mejores prácticas para tu repositorio.",
+        "ar": "هذه اقتراحات مهام منسقة بواسطة الذكاء الاصطناعي لمساعدتك على البدء بأنشطة التطوير الشائعة وأفضل الممارسات لمستودعك.",
+        "fr": "Ce sont des suggestions de tâches curées par l'IA pour vous aider à commencer avec les activités de développement courantes et les meilleures pratiques pour votre dépôt.",
+        "tr": "Bunlar, deponuz için yaygın geliştirme faaliyetleri ve en iyi uygulamalarla başlamanıza yardımcı olmak için AI tarafından düzenlenmiş görev önerileridir.",
+        "de": "Dies sind KI-kuratierte Aufgabenvorschläge, die Ihnen helfen, mit gängigen Entwicklungsaktivitäten und bewährten Praktiken für Ihr Repository zu beginnen.",
+        "uk": "Це AI-курировані пропозиції завдань, які допоможуть вам розпочати з поширеними діяльностями розробки та найкращими практиками для вашого репозиторію."
+    },
     "PAYMENT$SPECIFY_AMOUNT_USD": {
         "en": "Specify an amount in USD to add - min $10",
         "ja": "追加するUSD金額を指定してください - 最小$10",
