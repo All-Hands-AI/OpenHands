@@ -561,7 +561,7 @@ fi
         loaded_microagents: list[BaseMicroagent] = []
 
         self.log(
-            'debug',
+            'info',
             f'Attempting to list files in {source_description} microagents directory: {microagents_dir}',
         )
 
@@ -569,7 +569,7 @@ fi
 
         if not files:
             self.log(
-                'debug',
+                'warning',
                 f'No files found in {source_description} microagents directory: {microagents_dir}',
             )
             return loaded_microagents
@@ -713,14 +713,10 @@ fi
         )
 
         repo_parts = selected_repository.split('/')
-        self.log(
-            'debug',
-            f'Repository parts: {repo_parts} (length: {len(repo_parts)})',
-        )
 
         if len(repo_parts) < 2:
             self.log(
-                'debug',
+                'warning',
                 f'Repository path has insufficient parts ({len(repo_parts)} < 2), skipping org-level microagents',
             )
             return loaded_microagents
@@ -728,7 +724,7 @@ fi
         # Extract the domain and org/user name
         org_name = repo_parts[-2]
         self.log(
-            'debug',
+            'info',
             f'Extracted org/user name: {org_name}',
         )
 
@@ -762,23 +758,15 @@ fi
 
             # Get authenticated URL and do a shallow clone (--depth 1) for efficiency
             try:
-                self.log(
-                    'debug',
-                    f'Attempting to get authenticated URL for {org_openhands_repo}',
-                )
                 remote_url = call_async_from_sync(
                     self._get_authenticated_git_url,
                     GENERAL_TIMEOUT,
                     org_openhands_repo,
                     self.git_provider_tokens,
                 )
-                self.log(
-                    'debug',
-                    f'Successfully obtained authenticated URL for {org_openhands_repo}',
-                )
             except Exception as e:
                 self.log(
-                    'debug',
+                    'error',
                     f'Failed to get authenticated URL for {org_openhands_repo}: {str(e)}',
                 )
                 raise Exception(str(e))
@@ -787,8 +775,8 @@ fi
                 f'GIT_TERMINAL_PROMPT=0 git clone --depth 1 {remote_url} {org_repo_dir}'
             )
             self.log(
-                'debug',
-                'Executing clone command for org-level repo (URL redacted for security)',
+                'info',
+                'Executing clone command for org-level repo',
             )
 
             action = CmdRunAction(command=clone_cmd)
@@ -803,7 +791,7 @@ fi
                 # Load microagents from the org-level repo
                 org_microagents_dir = org_repo_dir / 'microagents'
                 self.log(
-                    'debug',
+                    'info',
                     f'Looking for microagents in directory: {org_microagents_dir}',
                 )
 
