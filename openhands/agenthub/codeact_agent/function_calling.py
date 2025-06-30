@@ -17,6 +17,7 @@ from openhands.agenthub.codeact_agent.tools import (
     LLMBasedFileEditTool,
     ThinkTool,
     create_cmd_run_tool,
+    create_gemini_editor_tool,
     create_str_replace_editor_tool,
 )
 from openhands.core.exceptions import (
@@ -150,6 +151,8 @@ def response_to_actions(
             elif (
                 tool_call.function.name
                 == create_str_replace_editor_tool()['function']['name']
+                or tool_call.function.name
+                == create_gemini_editor_tool()['function']['name']
             ):
                 if 'command' not in arguments:
                     raise FunctionCallValidationError(
@@ -178,12 +181,17 @@ def response_to_actions(
 
                     # Filter out unexpected arguments
                     valid_kwargs = {}
-                    # Get valid parameters from the str_replace_editor tool definition
-                    str_replace_editor_tool = create_str_replace_editor_tool()
+                    # Get valid parameters from the appropriate editor tool definition
+                    if (
+                        tool_call.function.name
+                        == create_gemini_editor_tool()['function']['name']
+                    ):
+                        editor_tool = create_gemini_editor_tool()
+                    else:
+                        editor_tool = create_str_replace_editor_tool()
+
                     valid_params = set(
-                        str_replace_editor_tool['function']['parameters'][
-                            'properties'
-                        ].keys()
+                        editor_tool['function']['parameters']['properties'].keys()
                     )
                     for key, value in other_kwargs.items():
                         if key in valid_params:

@@ -14,6 +14,7 @@ from openhands.agenthub.codeact_agent.tools import (
     LLMBasedFileEditTool,
     ThinkTool,
     create_cmd_run_tool,
+    create_gemini_editor_tool,
     create_str_replace_editor_tool,
 )
 from openhands.agenthub.codeact_agent.tools.browser import (
@@ -172,6 +173,26 @@ def test_str_replace_editor_tool():
     assert 'insert_line' in properties
 
     assert StrReplaceEditorTool['function']['parameters']['required'] == [
+        'command',
+        'path',
+    ]
+
+
+def test_gemini_editor_tool():
+    GeminiEditorTool = create_gemini_editor_tool()
+    assert GeminiEditorTool['type'] == 'function'
+    assert GeminiEditorTool['function']['name'] == 'gemini_editor'
+
+    properties = GeminiEditorTool['function']['parameters']['properties']
+    assert 'command' in properties
+    assert 'path' in properties
+    assert 'file_text' in properties
+    assert 'old_str' in properties
+    assert 'new_str' in properties
+    assert 'expected_replacements' in properties
+    assert 'insert_line' in properties
+
+    assert GeminiEditorTool['function']['parameters']['required'] == [
         'command',
         'path',
     ]

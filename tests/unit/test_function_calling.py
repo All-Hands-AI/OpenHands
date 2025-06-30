@@ -171,6 +171,53 @@ def test_str_replace_editor_missing_required():
     assert 'Missing required argument "path"' in str(exc_info.value)
 
 
+def test_gemini_editor_valid():
+    """Test gemini_editor with valid arguments."""
+    # Test view command
+    response = create_mock_response(
+        'gemini_editor', {'command': 'view', 'path': '/path/to/file'}
+    )
+    actions = response_to_actions(response)
+    assert len(actions) == 1
+    assert isinstance(actions[0], FileReadAction)
+    assert actions[0].path == '/path/to/file'
+    assert actions[0].impl_source == FileReadSource.OH_ACI
+
+    # Test replace command
+    response = create_mock_response(
+        'gemini_editor',
+        {
+            'command': 'replace',
+            'path': '/path/to/file',
+            'old_str': 'old',
+            'new_str': 'new',
+            'expected_replacements': 2,
+        },
+    )
+    actions = response_to_actions(response)
+    assert len(actions) == 1
+    assert isinstance(actions[0], FileEditAction)
+    assert actions[0].path == '/path/to/file'
+    assert actions[0].impl_source == FileEditSource.OH_ACI
+    assert actions[0].command == 'replace'
+    assert actions[0].expected_replacements == 2
+
+
+def test_gemini_editor_missing_required():
+    """Test gemini_editor with missing required arguments."""
+    # Missing command
+    response = create_mock_response('gemini_editor', {'path': '/path/to/file'})
+    with pytest.raises(FunctionCallValidationError) as exc_info:
+        response_to_actions(response)
+    assert 'Missing required argument "command"' in str(exc_info.value)
+
+    # Missing path
+    response = create_mock_response('gemini_editor', {'command': 'view'})
+    with pytest.raises(FunctionCallValidationError) as exc_info:
+        response_to_actions(response)
+    assert 'Missing required argument "path"' in str(exc_info.value)
+
+
 def test_browser_valid():
     """Test browser with valid arguments."""
     response = create_mock_response('browser', {'code': "click('button-1')"})

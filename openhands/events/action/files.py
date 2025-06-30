@@ -71,9 +71,10 @@ class FileEditAction(Action):
         OH_ACI only arguments:
             command (str): The editing command to be performed (view, create, str_replace, insert, undo_edit, write).
             file_text (str): The content of the file to be created (used with 'create' command in OH_ACI mode).
-            old_str (str): The string to be replaced (used with 'str_replace' command in OH_ACI mode).
-            new_str (str): The string to replace old_str (used with 'str_replace' and 'insert' commands in OH_ACI mode).
+            old_str (str): The string to be replaced (used with 'str_replace' and 'replace' commands in OH_ACI mode).
+            new_str (str): The string to replace old_str (used with 'str_replace', 'replace', and 'insert' commands in OH_ACI mode).
             insert_line (int): The line number after which to insert new_str (used with 'insert' command in OH_ACI mode).
+            expected_replacements (int): The expected number of replacements (used with 'replace' command in gemini_editor).
         LLM-based editing arguments:
             content (str): The content to be written or edited in the file (used in LLM-based editing and 'write' command).
             start (int): The starting line for editing (1-indexed, inclusive). Default is 1.
@@ -101,6 +102,7 @@ class FileEditAction(Action):
     old_str: str | None = None
     new_str: str | None = None
     insert_line: int | None = None
+    expected_replacements: int | None = None  # For gemini_editor tool
 
     # LLM-based editing arguments
     content: str = ''
@@ -134,5 +136,10 @@ class FileEditAction(Action):
                 ret += f'New String: ```\n{self.new_str}\n```\n'
             elif self.command == 'undo_edit':
                 ret += 'Undo Edit\n'
+            elif self.command == 'replace':  # For gemini_editor
+                ret += f'Old String: ```\n{self.old_str}\n```\n'
+                ret += f'New String: ```\n{self.new_str}\n```\n'
+                if self.expected_replacements is not None:
+                    ret += f'Expected Replacements: {self.expected_replacements}\n'
             # We ignore "view" command because it will be mapped to a FileReadAction
         return ret
