@@ -209,6 +209,7 @@ def create_runtime_and_config(
     docker_runtime_kwargs: dict[str, str] | None = None,
     override_mcp_config: MCPConfig | None = None,
 ) -> tuple[Runtime, OpenHandsConfig]:
+    """Create a new runtime for use in tests"""
     sid = 'rt_' + str(random.randint(100000, 999999))
 
     # AgentSkills need to be initialized **before** Jupyter
