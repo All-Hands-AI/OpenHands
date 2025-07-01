@@ -36,10 +36,10 @@ def test_gemini_editor_integration_with_codeact_agent():
     assert gemini_tool['type'] == 'function'
     assert gemini_tool['function']['name'] == GEMINI_EDITOR_TOOL_NAME
 
-    # Verify all expected commands are available
+    # Verify all expected commands are available (updated for Gemini CLI alignment)
     params = gemini_tool['function']['parameters']
     command_enum = params['properties']['command']['enum']
-    expected_commands = ['view', 'create', 'replace', 'write_file', 'read_file']
+    expected_commands = ['read_file', 'write_file', 'replace', 'list_directory']
 
     for cmd in expected_commands:
         assert cmd in command_enum, f"Command '{cmd}' should be available"
@@ -116,28 +116,35 @@ def test_gemini_editor_parameter_validation():
     params = gemini_tool['function']['parameters']
     properties = params['properties']
 
-    # Test required parameters
-    assert params['required'] == ['command', 'path']
+    # Test required parameters (updated for Gemini CLI alignment)
+    assert params['required'] == ['command']
 
-    # Test parameter types
+    # Test parameter types (updated for Gemini CLI alignment)
     assert properties['command']['type'] == 'string'
-    assert properties['path']['type'] == 'string'
-    assert properties['file_text']['type'] == 'string'
+    assert properties['absolute_path']['type'] == 'string'  # read_file parameter
+    assert (
+        properties['file_path']['type'] == 'string'
+    )  # write_file and replace parameter
+    assert properties['path']['type'] == 'string'  # list_directory parameter
     assert properties['old_string']['type'] == 'string'
     assert properties['new_string']['type'] == 'string'
     assert properties['content']['type'] == 'string'
-    assert properties['expected_replacements']['type'] == 'integer'
-    assert properties['offset']['type'] == 'integer'
-    assert properties['limit']['type'] == 'integer'
-    assert properties['view_range']['type'] == 'array'
+    assert (
+        properties['expected_replacements']['type'] == 'number'
+    )  # Gemini CLI uses 'number'
+    assert properties['offset']['type'] == 'number'  # Gemini CLI uses 'number'
+    assert properties['limit']['type'] == 'number'  # Gemini CLI uses 'number'
+    assert properties['ignore']['type'] == 'array'  # list_directory parameter
+    assert (
+        properties['respect_git_ignore']['type'] == 'boolean'
+    )  # list_directory parameter
 
-    # Test minimum values
+    # Test minimum values (updated for Gemini CLI alignment)
     assert properties['expected_replacements']['minimum'] == 1
-    assert properties['offset']['minimum'] == 0
-    assert properties['limit']['minimum'] == 1
+    # Note: offset and limit don't have minimum constraints in Gemini CLI
 
     # Test array item type
-    assert properties['view_range']['items']['type'] == 'integer'
+    assert properties['ignore']['items']['type'] == 'string'
 
 
 def test_all_editor_types_mutually_exclusive():

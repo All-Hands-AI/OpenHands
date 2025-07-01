@@ -1,53 +1,72 @@
+"""
+Gemini-style editing tool for OpenHands.
+
+This implementation is based on the Gemini CLI tools from Google LLC.
+Original source: https://github.com/google-gemini/gemini-cli
+
+Copyright 2025 Google LLC
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+Modifications made for OpenHands integration:
+- Adapted tool signatures to match OpenHands ChatCompletionToolParam format
+- Combined multiple tools into a single unified interface
+- Added OpenHands-specific configuration and integration
+"""
+
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
 from openhands.llm.tool_names import GEMINI_EDITOR_TOOL_NAME
 
 _DETAILED_GEMINI_EDITOR_DESCRIPTION = """Gemini-style editing tool for viewing, creating and editing files
 * State is persistent across command calls and discussions with the user
-* If `path` is a text file, `view` displays the result of applying `cat -n`. If `path` is a directory, `view` lists non-hidden files and directories up to 2 levels deep
+* This tool provides Gemini CLI-style file editing capabilities based on the official Google Gemini CLI tools
 * The following binary file extensions can be viewed in Markdown format: [".xlsx", ".pptx", ".wav", ".mp3", ".m4a", ".flac", ".pdf", ".docx"]. IT DOES NOT HANDLE IMAGES.
-* The `create` command cannot be used if the specified `path` already exists as a file
 * If a `command` generates a long output, it will be truncated and marked with `<response clipped>`
-* This tool provides Gemini CLI-style file editing capabilities
 
-Available commands:
-- `view`: Display file contents or directory listing
-- `create`: Create a new file with specified content
-- `replace`: Replace text within a file (similar to Gemini CLI's replace tool)
-- `write_file`: Write content to a file (overwrites entire file)
-- `read_file`: Read file content with optional line ranges
+Available commands (matching Gemini CLI tool signatures):
+- `read_file`: Reads and returns the content of a specified file from the local filesystem. Handles text, images, and PDF files. For text files, it can read specific line ranges.
+- `write_file`: Writes content to a specified file in the local filesystem. Creates new files or overwrites existing ones.
+- `replace`: Replaces text within a file. By default, replaces a single occurrence, but can replace multiple occurrences when `expected_replacements` is specified.
+- `list_directory`: Lists the names of files and subdirectories directly within a specified directory path. Can optionally ignore entries matching provided glob patterns.
 
 Before using this tool:
-1. Use the view tool to understand the file's contents and context
-2. Verify the directory path is correct (only applicable when creating new files):
-   - Use the view tool to verify the parent directory exists and is the correct location
+1. Use the read_file or list_directory commands to understand the file's contents and context
+2. Verify the directory path is correct when creating new files
+3. Always use absolute file paths (starting with /)
 
 When making edits:
    - Ensure the edit results in idiomatic, correct code
    - Do not leave the code in a broken state
-   - Always use absolute file paths (starting with /)
+   - For replace operations, include sufficient context (3-5 lines) before and after the target text
 
 CRITICAL REQUIREMENTS FOR USING THE REPLACE COMMAND:
 
-1. EXACT MATCHING: The `old_string` parameter must match EXACTLY one or more consecutive lines from the file, including all whitespace and indentation. The tool will fail if `old_string` matches multiple locations or doesn't match exactly with the file content.
+1. EXACT MATCHING: The `old_string` parameter must match EXACTLY one or more consecutive lines from the file, including all whitespace and indentation.
 
-2. UNIQUENESS: The `old_string` must uniquely identify a single instance in the file:
-   - Include sufficient context before and after the change point (3-5 lines recommended)
-   - If not unique, the replacement will not be performed
+2. UNIQUENESS: The `old_string` must uniquely identify a single instance in the file unless `expected_replacements` is specified.
 
-3. REPLACEMENT: The `new_string` parameter should contain the edited lines that replace the `old_string`. Both strings must be different.
+3. REPLACEMENT: The `new_string` parameter should contain the edited lines that replace the `old_string`.
 
-4. EXPECTED REPLACEMENTS: Use `expected_replacements` parameter when you want to replace multiple occurrences of the same text.
+4. MULTIPLE REPLACEMENTS: Use `expected_replacements` parameter when you want to replace multiple occurrences of the same text.
 
 Remember: when making multiple file edits in a row to the same file, you should prefer to send all edits in a single message with multiple calls to this tool, rather than multiple messages with a single call each.
 """
 
 _SHORT_GEMINI_EDITOR_DESCRIPTION = """Gemini-style editing tool for viewing, creating and editing files
 * State is persistent across command calls and discussions with the user
-* If `path` is a file, `view` displays the result of applying `cat -n`. If `path` is a directory, `view` lists non-hidden files and directories up to 2 levels deep
-* The `create` command cannot be used if the specified `path` already exists as a file
+* Based on official Google Gemini CLI tools with exact tool signature matching
 * If a `command` generates a long output, it will be truncated and marked with `<response clipped>`
-* Provides Gemini CLI-style editing capabilities including replace, write_file, and read_file commands
+* Provides read_file, write_file, replace, and list_directory commands matching Gemini CLI
 Notes for using the `replace` command:
 * The `old_string` parameter should match EXACTLY one or more consecutive lines from the original file. Be mindful of whitespaces!
 * If the `old_string` parameter is not unique in the file, the replacement will not be performed. Make sure to include enough context in `old_string` to make it unique
@@ -73,58 +92,70 @@ def create_gemini_editor_tool(
                 'type': 'object',
                 'properties': {
                     'command': {
-                        'description': 'The commands to run. Allowed options are: `view`, `create`, `replace`, `write_file`, `read_file`.',
+                        'description': 'The commands to run. Allowed options are: `read_file`, `write_file`, `replace`, `list_directory`.',
                         'enum': [
-                            'view',
-                            'create',
-                            'replace',
-                            'write_file',
                             'read_file',
+                            'write_file',
+                            'replace',
+                            'list_directory',
                         ],
                         'type': 'string',
                     },
-                    'path': {
-                        'description': 'Absolute path to file or directory, e.g. `/workspace/file.py` or `/workspace`.',
+                    # read_file parameters (matching ReadFileTool from Gemini CLI)
+                    'absolute_path': {
+                        'description': "The absolute path to the file to read (e.g., '/home/user/project/file.txt'). Relative paths are not supported. You must provide an absolute path. Required for read_file command.",
+                        'type': 'string',
+                        'pattern': '^/',
+                    },
+                    'offset': {
+                        'description': "Optional: For text files, the 0-based line number to start reading from. Requires 'limit' to be set. Use for paginating through large files. For read_file command.",
+                        'type': 'number',
+                    },
+                    'limit': {
+                        'description': "Optional: For text files, maximum number of lines to read. Use with 'offset' to paginate through large files. If omitted, reads the entire file (if feasible, up to a default limit). For read_file command.",
+                        'type': 'number',
+                    },
+                    # write_file parameters (matching WriteFileTool from Gemini CLI)
+                    'file_path': {
+                        'description': "The absolute path to the file to write to (e.g., '/home/user/project/file.txt'). Relative paths are not supported. Required for write_file and replace commands.",
                         'type': 'string',
                     },
-                    'file_text': {
-                        'description': 'Required parameter of `create` command, with the content of the file to be created.',
+                    'content': {
+                        'description': 'The content to write to the file. Required for write_file command.',
                         'type': 'string',
                     },
+                    # replace parameters (matching EditTool from Gemini CLI)
                     'old_string': {
-                        'description': 'Required parameter of `replace` command containing the string in `path` to replace.',
+                        'description': 'The exact literal text to replace, preferably unescaped. For single replacements (default), include at least 3 lines of context BEFORE and AFTER the target text, matching whitespace and indentation precisely. For multiple replacements, specify expected_replacements parameter. If this string is not the exact literal text (i.e. you escaped it) or does not match exactly, the tool will fail. Required for replace command.',
                         'type': 'string',
                     },
                     'new_string': {
-                        'description': 'Required parameter of `replace` command containing the new string to replace `old_string` with.',
+                        'description': 'The exact literal text to replace `old_string` with, preferably unescaped. Provide the EXACT text. Ensure the resulting code is correct and idiomatic. Required for replace command.',
                         'type': 'string',
                     },
                     'expected_replacements': {
-                        'description': 'Optional parameter of `replace` command. Number of replacements expected. Defaults to 1 if not specified. Use when you want to replace multiple occurrences.',
-                        'type': 'integer',
+                        'description': 'Number of replacements expected. Defaults to 1 if not specified. Use when you want to replace multiple occurrences. For replace command.',
+                        'type': 'number',
                         'minimum': 1,
                     },
-                    'content': {
-                        'description': 'Required parameter of `write_file` command, with the content to write to the file.',
+                    # list_directory parameters (matching LSTool from Gemini CLI)
+                    'path': {
+                        'description': 'The absolute path to the directory to list (must be absolute, not relative). Required for list_directory command.',
                         'type': 'string',
                     },
-                    'offset': {
-                        'description': 'Optional parameter of `read_file` command. The 0-based line number to start reading from. Requires `limit` to be set.',
-                        'type': 'integer',
-                        'minimum': 0,
-                    },
-                    'limit': {
-                        'description': 'Optional parameter of `read_file` command. Maximum number of lines to read. Use with `offset` to paginate through large files.',
-                        'type': 'integer',
-                        'minimum': 1,
-                    },
-                    'view_range': {
-                        'description': 'Optional parameter of `view` command when `path` points to a file. If none is given, the full file is shown. If provided, the file will be shown in the indicated line number range, e.g. [11, 12] will show lines 11 and 12. Indexing at 1 to start. Setting `[start_line, -1]` shows all lines from `start_line` to the end of the file.',
-                        'items': {'type': 'integer'},
+                    'ignore': {
+                        'description': 'List of glob patterns to ignore. Optional for list_directory command.',
+                        'items': {
+                            'type': 'string',
+                        },
                         'type': 'array',
                     },
+                    'respect_git_ignore': {
+                        'description': 'Optional: Whether to respect .gitignore patterns when listing files. Only available in git repositories. Defaults to true. For list_directory command.',
+                        'type': 'boolean',
+                    },
                 },
-                'required': ['command', 'path'],
+                'required': ['command'],
             },
         ),
     )
