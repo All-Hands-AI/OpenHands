@@ -37,7 +37,7 @@ def create_gemini_write_file_tool(detailed: bool = True) -> dict[str, Any]:
         Tool specification dictionary matching Gemini CLI WriteFile tool
     """
     description = (
-        'Writes content to a specified file in the local filesystem. \n\n'
+        'Writes content to a specified file in the local filesystem. \n      \n      '
         'The user has the ability to modify `content`. If modified, this will be stated in the response.'
         if detailed
         else 'Write content to a file'

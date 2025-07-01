@@ -37,7 +37,7 @@ def create_gemini_replace_tool(detailed: bool = True) -> dict[str, Any]:
         Tool specification dictionary matching Gemini CLI Edit tool
     """
     description = (
-        "Replaces text within a file. By default, replaces a single occurrence, but can replace multiple occurrences when `expected_replacements` is specified. This tool requires providing significant context around the change to ensure precise targeting. Always use the read_file tool to examine the file's current content before attempting a text replacement.\n\n"
+        "Replaces text within a file. By default, replaces a single occurrence, but can replace multiple occurrences when `expected_replacements` is specified. This tool requires providing significant context around the change to ensure precise targeting. Always use the read_file tool to examine the file's current content before attempting a text replacement.\n\n      "
         'The user has the ability to modify the `new_string` content. If modified, this will be stated in the response.\n\n'
         'Expectation for required parameters:\n'
         '1. `file_path` MUST be an absolute path; otherwise an error will be thrown.\n'
