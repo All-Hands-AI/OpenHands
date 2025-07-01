@@ -75,7 +75,7 @@ function LlmSettingsScreen() {
   }, [settings, resources]);
 
   const handleSuccessfulMutation = () => {
-    displaySuccessToast(t(I18nKey.SETTINGS$SAVED));
+    displaySuccessToast(t(I18nKey.SETTINGS$SAVED_WARNING));
     setDirtyInputs({
       model: false,
       apiKey: false,
