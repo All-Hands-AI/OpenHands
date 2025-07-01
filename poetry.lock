@@ -2545,28 +2545,26 @@ devel = ["colorama", "json-spec", "jsonschema", "pylint", "pytest", "pytest-benc
 
 [[package]]
 name = "fastmcp"
-version = "2.9.0"
+version = "2.6.1"
 description = "The fast, Pythonic way to build MCP servers."
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "fastmcp-2.9.0-py3-none-any.whl", hash = "sha256:e5b00e5fcea2d216d96f7cfb8b67836bd58fc3cd57147e0d89043d905a84334f"},
-    {file = "fastmcp-2.9.0.tar.gz", hash = "sha256:3f1dc97c409193729b4aa8ad240ad396fe767a982c55c3a3e788f422b1278dd6"},
+    {file = "fastmcp-2.6.1-py3-none-any.whl", hash = "sha256:d83a2fcffa721cbb91b29c738d39de20b54e1b1ebef5be652d6a4956ecac7ad3"},
+    {file = "fastmcp-2.6.1.tar.gz", hash = "sha256:212f15a4edf8289e5c3c70796910dc612ef891f84df3257a277457bb761d1362"},
 ]
 
 [package.dependencies]
 authlib = ">=1.5.2"
 exceptiongroup = ">=1.2.2"
 httpx = ">=0.28.1"
-mcp = ">=1.9.4,<2.0.0"
+mcp = ">=1.9.2,<2.0.0"
 openapi-pydantic = ">=0.5.1"
 python-dotenv = ">=1.1.0"
 rich = ">=13.9.4"
 typer = ">=0.15.2"
-
-[package.extras]
-websockets = ["websockets (>=15.0.1)"]
+websockets = ">=14.0"
 
 [[package]]
 name = "filelock"
