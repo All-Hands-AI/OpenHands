@@ -27,7 +27,7 @@ from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChun
 
 from openhands.llm.tool_names import GEMINI_EDITOR_TOOL_NAME
 
-_DETAILED_GEMINI_EDITOR_DESCRIPTION = """Unified file editing tool with Gemini CLI-compatible commands
+_DETAILED_GEMINI_EDITOR_DESCRIPTION = """File editing tool for reading, writing, and modifying files
 
 This tool provides access to the following file operations:
 - `read_file`: Read content from files
@@ -35,7 +35,6 @@ This tool provides access to the following file operations:
 - `replace`: Replace text within files
 - `list_directory`: List directory contents
 
-Each command matches the exact signature of the corresponding Gemini CLI tool.
 Use absolute file paths (starting with /) for all operations.
 
 For the `replace` command:
@@ -45,9 +44,9 @@ For the `replace` command:
 - Use `expected_replacements` parameter for multiple replacements
 """
 
-_SHORT_GEMINI_EDITOR_DESCRIPTION = """Unified file tool with Gemini CLI commands
+_SHORT_GEMINI_EDITOR_DESCRIPTION = """File operations tool
 
-Provides read_file, write_file, replace, and list_directory commands with exact Gemini CLI signatures.
+Provides read_file, write_file, replace, and list_directory commands.
 Use absolute paths for all operations.
 
 For replace operations:
