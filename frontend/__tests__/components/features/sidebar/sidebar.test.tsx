@@ -34,7 +34,7 @@ describe("Sidebar", () => {
   });
 });
 
-describe.only("UserActions", () => {
+describe("UserActions", () => {
   const user = userEvent.setup();
   const onLogoutMock = vi.fn();
 
