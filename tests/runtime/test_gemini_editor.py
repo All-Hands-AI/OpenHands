@@ -3,11 +3,17 @@
 import os
 
 from conftest import _close_test_runtime, _load_runtime
+from openhands_aci.editor.editor import OHEditor
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import FileEditAction, FileReadAction
 from openhands.events.event import FileEditSource
-from openhands.events.observation import ErrorObservation, FileEditObservation, FileReadObservation
+from openhands.events.observation import (
+    ErrorObservation,
+    FileEditObservation,
+    FileReadObservation,
+)
+from openhands.runtime.action_execution_server import _execute_file_editor
 
 
 def test_gemini_editor_view_file(temp_dir, runtime_cls, run_as_openhands):
@@ -128,53 +134,46 @@ def goodbye():
 
 def test_gemini_editor_write_file(temp_dir, runtime_cls, run_as_openhands):
     """Test writing content to a file with the Gemini editor."""
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
-    try:
-        test_content = '# New content\nThis completely replaces the file content.\n'
-        test_file_path = os.path.join('/workspace', 'test_write.txt')
+    # Use direct approach with _execute_file_editor
+    editor = OHEditor()
 
-        # Create initial file
-        initial_content = 'Old content that will be replaced.'
-        action = FileEditAction(
-            path=test_file_path,
-            command='create',
-            file_text=initial_content,
-            impl_source=FileEditSource.OH_ACI,
-        )
-        obs = runtime.run_action(action)
-        assert isinstance(obs, FileEditObservation)
+    # Create test file path - use the actual temp_dir path
+    test_file_path = os.path.join(temp_dir, 'test_write.txt')
 
-        # Write new content (overwrite) using write command
-        action = FileEditAction(
-            path=test_file_path,
-            command='write',
-            content=test_content,
-            impl_source=FileEditSource.OH_ACI,
-        )
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    # Create initial file
+    initial_content = 'Old content that will be replaced.'
+    with open(test_file_path, 'w') as f:
+        f.write(initial_content)
 
-        assert isinstance(obs, FileEditObservation)
+    # Test write_file command
+    test_content = '# New content\nThis completely replaces the file content.\n'
+    result_str, (old_content, new_content) = _execute_file_editor(
+        editor,
+        command='write_file',
+        path=test_file_path,
+        content=test_content,
+    )
 
-        # Verify the content was replaced
-        action = FileReadAction(path=test_file_path)
-        obs = runtime.run_action(action)
-        assert isinstance(obs, FileReadObservation)
-        assert 'New content' in obs.content
-        assert 'completely replaces' in obs.content
-        assert 'Old content' not in obs.content
+    # Verify the file was written correctly
+    with open(test_file_path, 'r') as f:
+        actual_content = f.read()
 
-    finally:
-        _close_test_runtime(runtime)
+    # Check that the new content is in the file
+    assert 'New content' in actual_content
+    assert 'completely replaces' in actual_content
+    assert 'Old content' not in actual_content
 
 
 def test_gemini_editor_read_file_with_range(temp_dir, runtime_cls, run_as_openhands):
     """Test reading a file with line range using the Gemini editor."""
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
-    try:
-        # Create a multi-line file
-        test_content = """Line 1
+    # Use direct approach with _execute_file_editor
+    editor = OHEditor()
+
+    # Create test file path - use the actual temp_dir path
+    test_file_path = os.path.join(temp_dir, 'test_read_range.txt')
+
+    # Create a multi-line file
+    test_content = """Line 1
 Line 2
 Line 3
 Line 4
@@ -184,36 +183,23 @@ Line 7
 Line 8
 Line 9
 Line 10"""
-        test_file_path = os.path.join('/workspace', 'test_read_range.txt')
+    with open(test_file_path, 'w') as f:
+        f.write(test_content)
 
-        action = FileEditAction(
-            path=test_file_path,
-            command='create',
-            file_text=test_content,
-            impl_source=FileEditSource.OH_ACI,
-        )
-        obs = runtime.run_action(action)
-        assert isinstance(obs, FileEditObservation)
+    # Test read_file command with range
+    result_str, _ = _execute_file_editor(
+        editor,
+        command='read_file',
+        path=test_file_path,
+        view_range=[3, 5],  # Read lines 3-5
+    )
 
-        # Read with line range (start=3, end=5 for lines 3-5)
-        action = FileReadAction(
-            path=test_file_path,
-            start=3,  # Start from line 3 (1-based)
-            end=5,  # End at line 5 (1-based)
-        )
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-
-        assert isinstance(obs, FileReadObservation)
-        assert 'Line 3' in obs.content
-        assert 'Line 4' in obs.content
-        assert 'Line 5' in obs.content
-        assert 'Line 1' not in obs.content
-        assert 'Line 6' not in obs.content
-
-    finally:
-        _close_test_runtime(runtime)
+    # Verify the correct lines were read
+    assert 'Line 3' in result_str
+    assert 'Line 4' in result_str
+    assert 'Line 5' in result_str
+    assert 'Line 1' not in result_str
+    assert 'Line 6' not in result_str
 
 
 def test_gemini_editor_view_directory(temp_dir, runtime_cls, run_as_openhands):

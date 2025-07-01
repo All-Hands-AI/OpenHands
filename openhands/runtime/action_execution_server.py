@@ -105,6 +105,7 @@ def _execute_file_editor(
     new_str: str | None = None,
     insert_line: int | str | None = None,
     enable_linting: bool = False,
+    content: str | None = None,  # Added for write_file command
 ) -> tuple[str, tuple[str | None, str | None]]:
     """Execute file editor command and handle exceptions.
 
@@ -118,6 +119,7 @@ def _execute_file_editor(
         new_str: Optional replacement string
         insert_line: Optional line number for insertion (can be int or str)
         enable_linting: Whether to enable linting
+        content: Optional content for write_file command
 
     Returns:
         tuple: A tuple containing the output string and a tuple of old and new file content
@@ -134,6 +136,39 @@ def _execute_file_editor(
                 (None, None),
             )
 
+    # Handle read_file and write_file commands directly
+    if command == 'read_file':
+        try:
+            # Extract start and end lines from view_range if provided
+            start_line = None
+            end_line = None
+            if view_range and len(view_range) == 2:
+                start_line = view_range[0]
+                end_line = view_range[1]
+
+            # Use the read_file method directly
+            file_content = editor.read_file(Path(path), start_line, end_line)
+            return (file_content, (None, None))
+        except Exception as e:
+            return (f'ERROR:\n{str(e)}', (None, None))
+
+    elif command == 'write_file':
+        try:
+            # Get the current content for diff
+            old_content = None
+            try:
+                old_content = editor.read_file(Path(path))
+            except Exception:
+                pass  # File might not exist yet
+
+            # Use the write_file method directly
+            editor.write_file(Path(path), content or '')
+
+            return (f'File written successfully: {path}', (old_content, content))
+        except Exception as e:
+            return (f'ERROR:\n{str(e)}', (None, None))
+
+    # For standard commands, use the editor call method
     try:
         result = editor(
             command=command,
@@ -578,6 +613,7 @@ class ActionExecutor:
             new_str=action.new_str,
             insert_line=action.insert_line,
             enable_linting=False,
+            content=action.content,  # Pass content for write_file command
         )
 
         return FileEditObservation(
