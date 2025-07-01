@@ -11,6 +11,7 @@ import { ConfirmStopModal } from "./confirm-stop-modal";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { ExitConversationModal } from "./exit-conversation-modal";
 import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
+import { Provider } from "#/types/settings";
 
 interface ConversationPanelProps {
   onClose: () => void;
@@ -117,7 +118,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
               selectedRepository={{
                 selected_repository: project.selected_repository,
                 selected_branch: project.selected_branch,
-                git_provider: project.git_provider,
+                git_provider: project.git_provider as Provider,
               }}
               lastUpdatedAt={project.last_updated_at}
               createdAt={project.created_at}

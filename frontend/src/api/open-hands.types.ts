@@ -74,7 +74,7 @@ export interface AuthenticateResponse {
 export interface RepositorySelection {
   selected_repository: string | null;
   selected_branch: string | null;
-  git_provider: Provider;
+  git_provider: Provider | null;
 }
 
 export type ConversationTrigger = "resolver" | "gui" | "suggested_task";
