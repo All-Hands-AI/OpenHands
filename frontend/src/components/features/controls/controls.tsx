@@ -29,7 +29,11 @@ export function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
         showOptions
         title={conversation?.title ?? ""}
         lastUpdatedAt={conversation?.created_at ?? ""}
-        selectedRepository={conversation?.selected_repository ?? null}
+        selectedRepository={{
+          selected_repository: conversation?.selected_repository ?? null,
+          selected_branch: conversation?.selected_branch ?? null,
+          git_provider: conversation?.git_provider ?? null,
+        }}
         conversationStatus={conversation?.status}
         conversationId={conversation?.conversation_id}
       />

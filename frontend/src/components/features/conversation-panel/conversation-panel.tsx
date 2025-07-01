@@ -114,7 +114,11 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
               onDelete={() => handleDeleteProject(project.conversation_id)}
               onStop={() => handleStopConversation(project.conversation_id)}
               title={project.title}
-              selectedRepository={project.selected_repository}
+              selectedRepository={{
+                selected_repository: project.selected_repository,
+                selected_branch: project.selected_branch,
+                git_provider: project.git_provider,
+              }}
               lastUpdatedAt={project.last_updated_at}
               createdAt={project.created_at}
               conversationStatus={project.status}

@@ -70,6 +70,12 @@ export interface AuthenticateResponse {
   error?: string;
 }
 
+export interface SelectedRepository {
+  selected_repository: string | null;
+  selected_branch: string | null;
+  git_provider: string | null;
+}
+
 export type ConversationTrigger = "resolver" | "gui" | "suggested_task";
 
 export interface Conversation {
