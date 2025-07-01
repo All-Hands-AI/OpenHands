@@ -99,8 +99,13 @@ describe("ChatInterface", () => {
     const environmentEvent: OpenHandsAction = {
       id: 1,
       source: "environment",
-      action: "run",
-      args: { command: "source .openhands/setup.sh" },
+      action: "system",
+      args: {
+        content: "source .openhands/setup.sh",
+        tools: null,
+        openhands_version: null,
+        agent_class: null,
+      },
       message: "Running setup script",
       timestamp: "2025-07-01T00:00:00Z",
     };
@@ -122,7 +127,11 @@ describe("ChatInterface", () => {
       id: 1,
       source: "user",
       action: "message",
-      args: { content: "Hello" },
+      args: {
+        content: "Hello",
+        image_urls: [],
+        file_urls: [],
+      },
       message: "Hello",
       timestamp: "2025-07-01T00:00:00Z",
     };
