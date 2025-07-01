@@ -11,6 +11,7 @@ import { FILE_SERVICE_HANDLERS } from "./file-service-handlers";
 import { GitRepository, GitUser } from "#/types/git";
 import { TASK_SUGGESTIONS_HANDLERS } from "./task-suggestions-handlers";
 import { SECRETS_HANDLERS } from "./secrets-handlers";
+import { ORG_HANDLERS } from "./org-handlers";
 
 export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   llm_model: DEFAULT_SETTINGS.LLM_MODEL,
@@ -134,6 +135,7 @@ const openHandsHandlers = [
 ];
 
 export const handlers = [
+  ...ORG_HANDLERS,
   ...STRIPE_BILLING_HANDLERS,
   ...FILE_SERVICE_HANDLERS,
   ...TASK_SUGGESTIONS_HANDLERS,

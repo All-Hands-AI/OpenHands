@@ -3,11 +3,10 @@ import ReactDOM from "react-dom";
 import { useNavigate } from "react-router";
 import { useLogout } from "#/hooks/mutation/use-logout";
 import { CreateNewOrganizationModal } from "../org/create-new-organization-modal";
-
-type UserRole = "user" | "admin" | "superadmin";
+import { OrganizationUserRole } from "#/types/org";
 
 interface UserContextMenuProps {
-  type: UserRole;
+  type: OrganizationUserRole;
 }
 
 export function UserContextMenu({ type }: UserContextMenuProps) {

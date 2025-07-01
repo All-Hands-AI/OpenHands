@@ -1,0 +1,120 @@
+import { describe, expect, it, vi } from "vitest";
+import { render, screen, within } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import userEvent from "@testing-library/user-event";
+import test from "node:test";
+import { organizationService } from "#/api/organization-service/organization-service.api";
+import { MOCK_ORG_MEMBERS } from "#/mocks/org-handlers";
+import { ManageTeam } from "#/routes/manage-team";
+
+function ManageTeamWithPortalRoot() {
+  return (
+    <div>
+      <ManageTeam />
+      <div data-testid="portal-root" id="portal-root" />
+    </div>
+  );
+}
+
+const renderManageTeam = () =>
+  render(<ManageTeamWithPortalRoot />, {
+    wrapper: ({ children }) => (
+      <QueryClientProvider client={new QueryClient()}>
+        {children}
+      </QueryClientProvider>
+    ),
+  });
+
+describe("Manage Team Route", () => {
+  it("should render the list of team members", async () => {
+    const getOrganizationMembersSpy = vi.spyOn(
+      organizationService,
+      "getOrganizationMembers",
+    );
+
+    renderManageTeam();
+    expect(getOrganizationMembersSpy).toHaveBeenCalledOnce();
+
+    const memberListItems = await screen.findAllByTestId("member-item");
+    expect(memberListItems).toHaveLength(MOCK_ORG_MEMBERS.length);
+
+    MOCK_ORG_MEMBERS.forEach((member) => {
+      expect(screen.getByText(member.email)).toBeInTheDocument();
+      expect(screen.getByText(member.role)).toBeInTheDocument();
+    });
+  });
+
+  test.todo("an admin should be able to change the role of a team member");
+
+  describe("Inviting Team Members", () => {
+    it("should render an invite team member button", () => {
+      renderManageTeam();
+
+      const inviteButton = screen.getByRole("button", {
+        name: /invite team/i,
+      });
+      expect(inviteButton).toBeInTheDocument();
+    });
+
+    it("should render a modal when the invite button is clicked", async () => {
+      renderManageTeam();
+
+      expect(screen.queryByTestId("invite-modal")).not.toBeInTheDocument();
+      const inviteButton = screen.getByRole("button", {
+        name: /invite team/i,
+      });
+      await userEvent.click(inviteButton);
+
+      const portalRoot = screen.getByTestId("portal-root");
+      expect(
+        within(portalRoot).getByTestId("invite-modal"),
+      ).toBeInTheDocument();
+    });
+
+    it("should close the modal when the close button is clicked", async () => {
+      renderManageTeam();
+
+      const inviteButton = screen.getByRole("button", {
+        name: /invite team/i,
+      });
+      await userEvent.click(inviteButton);
+
+      const modal = screen.getByTestId("invite-modal");
+      const closeButton = within(modal).getByRole("button", {
+        name: /close/i,
+      });
+      await userEvent.click(closeButton);
+
+      expect(screen.queryByTestId("invite-modal")).not.toBeInTheDocument();
+    });
+
+    it("should call the API to invite a new team member when the form is submitted", async () => {
+      const inviteMemberSpy = vi.spyOn(organizationService, "inviteMember");
+
+      renderManageTeam();
+
+      const inviteButton = screen.getByRole("button", {
+        name: /invite team/i,
+      });
+      await userEvent.click(inviteButton);
+
+      const modal = screen.getByTestId("invite-modal");
+      expect(modal).toBeInTheDocument();
+
+      const emailInput = within(modal).getByTestId("email-input");
+      await userEvent.type(emailInput, "someone@acme.org");
+      expect(emailInput).toHaveValue("someone@acme.org");
+
+      const submitButton = within(modal).getByRole("button", {
+        name: /submit/i,
+      });
+      await userEvent.click(submitButton);
+
+      expect(inviteMemberSpy).toHaveBeenCalledExactlyOnceWith({
+        email: "someone@acme.org",
+      });
+    });
+
+    it.todo("should render the new member in the list after inviting");
+  });
+});
