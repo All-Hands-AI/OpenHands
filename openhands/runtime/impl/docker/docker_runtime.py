@@ -498,8 +498,13 @@ class DockerRuntime(ActionExecutionClient):
         if not token:
             return None
 
-        base_url = self.config.local_runtime_url.rstrip('/')
-        vscode_url = f'{base_url}:{self._vscode_port}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        web_host = os.environ.get('WEB_HOST', 'localhost')
+        if web_host != 'localhost':
+          # Use external domain with proxy path
+          vscode_url = f'https://{web_host}/api/vscode-proxy/{self.runtime_id}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+        else:
+          # Local development - use localhost with direct port
+          vscode_url = f'http://localhost:{self._vscode_port}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
         return vscode_url
 
     @property
