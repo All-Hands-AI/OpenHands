@@ -2,7 +2,9 @@
 
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 from openhands.core.config.agent_config import AgentConfig
-from openhands.llm.tool_names import GEMINI_EDITOR_TOOL_NAME
+
+# Gemini CLI tool names
+GEMINI_TOOL_NAMES = ['read_file', 'write_file', 'replace', 'list_directory']
 
 
 class MockLLM:
@@ -23,26 +25,22 @@ def test_gemini_editor_integration_with_codeact_agent():
     agent = CodeActAgent(MockLLM(), config)
     tools = agent._get_tools()
 
-    # Find the Gemini editor tool
-    gemini_tool = None
-    for tool in tools:
-        if tool['function']['name'] == GEMINI_EDITOR_TOOL_NAME:
-            gemini_tool = tool
-            break
+    # Find all Gemini tools
+    tool_names = [tool['function']['name'] for tool in tools]
 
-    assert gemini_tool is not None, 'Gemini editor tool should be included'
+    # Verify all four Gemini CLI tools are included
+    for tool_name in GEMINI_TOOL_NAMES:
+        assert tool_name in tool_names, f'Gemini tool {tool_name} should be included'
 
-    # Verify tool structure
-    assert gemini_tool['type'] == 'function'
-    assert gemini_tool['function']['name'] == GEMINI_EDITOR_TOOL_NAME
+    # Verify tool structures
+    gemini_tools = [
+        tool for tool in tools if tool['function']['name'] in GEMINI_TOOL_NAMES
+    ]
+    assert len(gemini_tools) == 4, 'All four Gemini CLI tools should be included'
 
-    # Verify all expected commands are available (updated for Gemini CLI alignment)
-    params = gemini_tool['function']['parameters']
-    command_enum = params['properties']['command']['enum']
-    expected_commands = ['read_file', 'write_file', 'replace', 'list_directory']
-
-    for cmd in expected_commands:
-        assert cmd in command_enum, f"Command '{cmd}' should be available"
+    for tool in gemini_tools:
+        assert tool['type'] == 'function'
+        assert tool['function']['name'] in GEMINI_TOOL_NAMES
 
 
 def test_gemini_editor_priority_over_standard_editor():
@@ -58,7 +56,11 @@ def test_gemini_editor_priority_over_standard_editor():
 
     tool_names = [tool['function']['name'] for tool in tools]
 
-    assert GEMINI_EDITOR_TOOL_NAME in tool_names
+    # Verify all Gemini tools are present
+    for tool_name in GEMINI_TOOL_NAMES:
+        assert tool_name in tool_names, f'Gemini tool {tool_name} should be included'
+
+    # Verify standard editor is not included
     assert 'str_replace_editor' not in tool_names
 
 
@@ -69,17 +71,16 @@ def test_gemini_editor_with_short_description():
     agent = CodeActAgent(MockLLM('gpt-4'), config)
     tools = agent._get_tools()
 
-    gemini_tool = None
-    for tool in tools:
-        if tool['function']['name'] == GEMINI_EDITOR_TOOL_NAME:
-            gemini_tool = tool
-            break
+    # Find Gemini tools
+    gemini_tools = [
+        tool for tool in tools if tool['function']['name'] in GEMINI_TOOL_NAMES
+    ]
+    assert len(gemini_tools) == 4, 'All four Gemini CLI tools should be included'
 
-    assert gemini_tool is not None
-
-    # The description should be shorter for GPT models
-    description = gemini_tool['function']['description']
-    assert len(description) < 2000  # Short description should be much shorter
+    # The descriptions should be shorter for GPT models
+    for tool in gemini_tools:
+        description = tool['function']['description']
+        assert len(description) < 2000  # Short description should be much shorter
 
 
 def test_gemini_editor_disabled():
@@ -95,71 +96,81 @@ def test_gemini_editor_disabled():
 
     tool_names = [tool['function']['name'] for tool in tools]
 
-    assert GEMINI_EDITOR_TOOL_NAME not in tool_names
+    # Verify no Gemini tools are present
+    for tool_name in GEMINI_TOOL_NAMES:
+        assert tool_name not in tool_names, (
+            f'Gemini tool {tool_name} should not be included'
+        )
+
     assert 'str_replace_editor' in tool_names  # Standard editor should be used
 
 
 def test_gemini_editor_parameter_validation():
-    """Test that the Gemini editor tool has correct parameter validation."""
+    """Test that the Gemini editor tools have correct parameter validation."""
     config = AgentConfig(enable_gemini_editor=True, enable_editor=False)
     agent = CodeActAgent(MockLLM(), config)
     tools = agent._get_tools()
 
-    gemini_tool = None
-    for tool in tools:
-        if tool['function']['name'] == GEMINI_EDITOR_TOOL_NAME:
-            gemini_tool = tool
-            break
+    # Find all Gemini tools
+    gemini_tools = {
+        tool['function']['name']: tool
+        for tool in tools
+        if tool['function']['name'] in GEMINI_TOOL_NAMES
+    }
+    assert len(gemini_tools) == 4, 'All four Gemini CLI tools should be included'
 
-    assert gemini_tool is not None
+    # Test read_file tool
+    read_file_tool = gemini_tools['read_file']
+    read_params = read_file_tool['function']['parameters']
+    read_props = read_params['properties']
+    assert read_params['required'] == ['absolute_path']
+    assert read_props['absolute_path']['type'] == 'string'
+    assert read_props['offset']['type'] == 'number'
+    assert read_props['limit']['type'] == 'number'
 
-    params = gemini_tool['function']['parameters']
-    properties = params['properties']
+    # Test write_file tool
+    write_file_tool = gemini_tools['write_file']
+    write_params = write_file_tool['function']['parameters']
+    write_props = write_params['properties']
+    assert write_params['required'] == ['file_path', 'content']
+    assert write_props['file_path']['type'] == 'string'
+    assert write_props['content']['type'] == 'string'
 
-    # Test required parameters (updated for Gemini CLI alignment)
-    assert params['required'] == ['command']
+    # Test replace tool
+    replace_tool = gemini_tools['replace']
+    replace_params = replace_tool['function']['parameters']
+    replace_props = replace_params['properties']
+    assert replace_params['required'] == ['file_path', 'old_string', 'new_string']
+    assert replace_props['file_path']['type'] == 'string'
+    assert replace_props['old_string']['type'] == 'string'
+    assert replace_props['new_string']['type'] == 'string'
+    assert replace_props['expected_replacements']['type'] == 'number'
+    assert replace_props['expected_replacements']['minimum'] == 1
 
-    # Test parameter types (updated for Gemini CLI alignment)
-    assert properties['command']['type'] == 'string'
-    assert properties['absolute_path']['type'] == 'string'  # read_file parameter
-    assert (
-        properties['file_path']['type'] == 'string'
-    )  # write_file and replace parameter
-    assert properties['path']['type'] == 'string'  # list_directory parameter
-    assert properties['old_string']['type'] == 'string'
-    assert properties['new_string']['type'] == 'string'
-    assert properties['content']['type'] == 'string'
-    assert (
-        properties['expected_replacements']['type'] == 'number'
-    )  # Gemini CLI uses 'number'
-    assert properties['offset']['type'] == 'number'  # Gemini CLI uses 'number'
-    assert properties['limit']['type'] == 'number'  # Gemini CLI uses 'number'
-    assert properties['ignore']['type'] == 'array'  # list_directory parameter
-    assert (
-        properties['respect_git_ignore']['type'] == 'boolean'
-    )  # list_directory parameter
-
-    # Test minimum values (updated for Gemini CLI alignment)
-    assert properties['expected_replacements']['minimum'] == 1
-    # Note: offset and limit don't have minimum constraints in Gemini CLI
-
-    # Test array item type
-    assert properties['ignore']['items']['type'] == 'string'
+    # Test list_directory tool
+    list_dir_tool = gemini_tools['list_directory']
+    list_params = list_dir_tool['function']['parameters']
+    list_props = list_params['properties']
+    assert list_params['required'] == ['path']
+    assert list_props['path']['type'] == 'string'
+    assert list_props['ignore']['type'] == 'array'
+    assert list_props['ignore']['items']['type'] == 'string'
+    assert list_props['respect_git_ignore']['type'] == 'boolean'
 
 
 def test_all_editor_types_mutually_exclusive():
     """Test that only one editor type is active at a time."""
     # Test all combinations to ensure mutual exclusivity
     test_cases = [
-        # (llm, gemini, standard) -> expected_tool
-        (True, True, True, 'edit_file'),  # LLM has highest priority
-        (True, True, False, 'edit_file'),  # LLM has highest priority
-        (True, False, True, 'edit_file'),  # LLM has highest priority
-        (True, False, False, 'edit_file'),  # LLM has highest priority
-        (False, True, True, GEMINI_EDITOR_TOOL_NAME),  # Gemini has second priority
-        (False, True, False, GEMINI_EDITOR_TOOL_NAME),  # Gemini has second priority
-        (False, False, True, 'str_replace_editor'),  # Standard has lowest priority
-        (False, False, False, None),  # No editor
+        # (llm, gemini, standard) -> expected_tools
+        (True, True, True, ['edit_file']),  # LLM has highest priority
+        (True, True, False, ['edit_file']),  # LLM has highest priority
+        (True, False, True, ['edit_file']),  # LLM has highest priority
+        (True, False, False, ['edit_file']),  # LLM has highest priority
+        (False, True, True, GEMINI_TOOL_NAMES),  # Gemini has second priority
+        (False, True, False, GEMINI_TOOL_NAMES),  # Gemini has second priority
+        (False, False, True, ['str_replace_editor']),  # Standard has lowest priority
+        (False, False, False, []),  # No editor
     ]
 
     for llm, gemini, standard, expected in test_cases:
@@ -172,21 +183,18 @@ def test_all_editor_types_mutually_exclusive():
         agent = CodeActAgent(MockLLM(), config)
         tools = agent._get_tools()
 
+        all_editor_tools = ['edit_file'] + GEMINI_TOOL_NAMES + ['str_replace_editor']
         editor_tools = [
             tool['function']['name']
             for tool in tools
-            if tool['function']['name']
-            in ['edit_file', GEMINI_EDITOR_TOOL_NAME, 'str_replace_editor']
+            if tool['function']['name'] in all_editor_tools
         ]
 
-        if expected is None:
+        if not expected:
             assert len(editor_tools) == 0, (
                 f'No editor should be active for config {(llm, gemini, standard)}'
             )
         else:
-            assert len(editor_tools) == 1, (
-                f'Exactly one editor should be active for config {(llm, gemini, standard)}'
-            )
-            assert editor_tools[0] == expected, (
-                f'Expected {expected} for config {(llm, gemini, standard)}, got {editor_tools[0]}'
+            assert set(editor_tools) == set(expected), (
+                f'Expected {expected} for config {(llm, gemini, standard)}, got {editor_tools}'
             )

@@ -103,55 +103,55 @@ def create_gemini_editor_tool(
                     },
                     # read_file parameters (matching ReadFileTool from Gemini CLI)
                     'absolute_path': {
-                        'description': "The absolute path to the file to read (e.g., '/home/user/project/file.txt'). Relative paths are not supported. You must provide an absolute path. Required for read_file command.",
+                        'description': "The absolute path to the file to read (e.g., '/home/user/project/file.txt'). Relative paths are not supported. You must provide an absolute path.",
                         'type': 'string',
                         'pattern': '^/',
                     },
                     'offset': {
-                        'description': "Optional: For text files, the 0-based line number to start reading from. Requires 'limit' to be set. Use for paginating through large files. For read_file command.",
+                        'description': "Optional: For text files, the 0-based line number to start reading from. Requires 'limit' to be set. Use for paginating through large files.",
                         'type': 'number',
                     },
                     'limit': {
-                        'description': "Optional: For text files, maximum number of lines to read. Use with 'offset' to paginate through large files. If omitted, reads the entire file (if feasible, up to a default limit). For read_file command.",
+                        'description': "Optional: For text files, maximum number of lines to read. Use with 'offset' to paginate through large files. If omitted, reads the entire file (if feasible, up to a default limit).",
                         'type': 'number',
                     },
                     # write_file parameters (matching WriteFileTool from Gemini CLI)
                     'file_path': {
-                        'description': "The absolute path to the file to write to (e.g., '/home/user/project/file.txt'). Relative paths are not supported. Required for write_file and replace commands.",
+                        'description': "The absolute path to the file to write to (e.g., '/home/user/project/file.txt'). Relative paths are not supported.",
                         'type': 'string',
                     },
                     'content': {
-                        'description': 'The content to write to the file. Required for write_file command.',
+                        'description': 'The content to write to the file.',
                         'type': 'string',
                     },
                     # replace parameters (matching EditTool from Gemini CLI)
                     'old_string': {
-                        'description': 'The exact literal text to replace, preferably unescaped. For single replacements (default), include at least 3 lines of context BEFORE and AFTER the target text, matching whitespace and indentation precisely. For multiple replacements, specify expected_replacements parameter. If this string is not the exact literal text (i.e. you escaped it) or does not match exactly, the tool will fail. Required for replace command.',
+                        'description': 'The exact literal text to replace, preferably unescaped. For single replacements (default), include at least 3 lines of context BEFORE and AFTER the target text, matching whitespace and indentation precisely. For multiple replacements, specify expected_replacements parameter. If this string is not the exact literal text (i.e. you escaped it) or does not match exactly, the tool will fail.',
                         'type': 'string',
                     },
                     'new_string': {
-                        'description': 'The exact literal text to replace `old_string` with, preferably unescaped. Provide the EXACT text. Ensure the resulting code is correct and idiomatic. Required for replace command.',
+                        'description': 'The exact literal text to replace `old_string` with, preferably unescaped. Provide the EXACT text. Ensure the resulting code is correct and idiomatic.',
                         'type': 'string',
                     },
                     'expected_replacements': {
-                        'description': 'Number of replacements expected. Defaults to 1 if not specified. Use when you want to replace multiple occurrences. For replace command.',
+                        'description': 'Number of replacements expected. Defaults to 1 if not specified. Use when you want to replace multiple occurrences.',
                         'type': 'number',
                         'minimum': 1,
                     },
                     # list_directory parameters (matching LSTool from Gemini CLI)
                     'path': {
-                        'description': 'The absolute path to the directory to list (must be absolute, not relative). Required for list_directory command.',
+                        'description': 'The absolute path to the directory to list (must be absolute, not relative)',
                         'type': 'string',
                     },
                     'ignore': {
-                        'description': 'List of glob patterns to ignore. Optional for list_directory command.',
+                        'description': 'List of glob patterns to ignore',
                         'items': {
                             'type': 'string',
                         },
                         'type': 'array',
                     },
                     'respect_git_ignore': {
-                        'description': 'Optional: Whether to respect .gitignore patterns when listing files. Only available in git repositories. Defaults to true. For list_directory command.',
+                        'description': 'Optional: Whether to respect .gitignore patterns when listing files. Only available in git repositories. Defaults to true.',
                         'type': 'boolean',
                     },
                 },

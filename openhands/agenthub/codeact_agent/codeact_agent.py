@@ -16,8 +16,17 @@ from openhands.agenthub.codeact_agent.tools.condensation_request import (
     CondensationRequestTool,
 )
 from openhands.agenthub.codeact_agent.tools.finish import FinishTool
-from openhands.agenthub.codeact_agent.tools.gemini_editor import (
-    create_gemini_editor_tool,
+from openhands.agenthub.codeact_agent.tools.gemini_list_directory import (
+    create_gemini_list_directory_tool,
+)
+from openhands.agenthub.codeact_agent.tools.gemini_read_file import (
+    create_gemini_read_file_tool,
+)
+from openhands.agenthub.codeact_agent.tools.gemini_replace import (
+    create_gemini_replace_tool,
+)
+from openhands.agenthub.codeact_agent.tools.gemini_write_file import (
+    create_gemini_write_file_tool,
 )
 from openhands.agenthub.codeact_agent.tools.ipython import IPythonTool
 from openhands.agenthub.codeact_agent.tools.llm_based_edit import LLMBasedFileEditTool
@@ -137,8 +146,14 @@ class CodeActAgent(Agent):
         if self.config.enable_llm_editor:
             tools.append(LLMBasedFileEditTool)
         elif self.config.enable_gemini_editor:
-            tools.append(
-                create_gemini_editor_tool(use_short_description=use_short_tool_desc)
+            # Add all four Gemini CLI tools separately
+            tools.extend(
+                [
+                    create_gemini_read_file_tool(detailed=not use_short_tool_desc),
+                    create_gemini_write_file_tool(detailed=not use_short_tool_desc),
+                    create_gemini_replace_tool(detailed=not use_short_tool_desc),
+                    create_gemini_list_directory_tool(detailed=not use_short_tool_desc),
+                ]
             )
         elif self.config.enable_editor:
             tools.append(

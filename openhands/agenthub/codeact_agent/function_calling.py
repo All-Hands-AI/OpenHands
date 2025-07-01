@@ -19,6 +19,18 @@ from openhands.agenthub.codeact_agent.tools import (
     create_cmd_run_tool,
     create_str_replace_editor_tool,
 )
+from openhands.agenthub.codeact_agent.tools.gemini_list_directory import (
+    create_gemini_list_directory_tool,
+)
+from openhands.agenthub.codeact_agent.tools.gemini_read_file import (
+    create_gemini_read_file_tool,
+)
+from openhands.agenthub.codeact_agent.tools.gemini_replace import (
+    create_gemini_replace_tool,
+)
+from openhands.agenthub.codeact_agent.tools.gemini_write_file import (
+    create_gemini_write_file_tool,
+)
 from openhands.core.exceptions import (
     FunctionCallNotExistsError,
     FunctionCallValidationError,
@@ -220,6 +232,99 @@ def response_to_actions(
                         f'Missing required argument "code" in tool call {tool_call.function.name}'
                     )
                 action = BrowseInteractiveAction(browser_actions=arguments['code'])
+
+            # ================================================
+            # Gemini Tools
+            # ================================================
+            elif (
+                tool_call.function.name
+                == create_gemini_read_file_tool()['function']['name']
+            ):
+                if 'absolute_path' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "absolute_path" in tool call {tool_call.function.name}'
+                    )
+
+                # Convert to FileReadAction
+                view_range = None
+                if 'offset' in arguments and 'limit' in arguments:
+                    offset = int(arguments['offset'])
+                    limit = int(arguments['limit'])
+                    view_range = [
+                        offset + 1,
+                        offset + limit,
+                    ]  # Convert to 1-based indexing
+                elif 'offset' in arguments:
+                    offset = int(arguments['offset'])
+                    view_range = [offset + 1, -1]  # From offset to end
+
+                action = FileReadAction(
+                    path=arguments['absolute_path'],
+                    view_range=view_range,
+                    impl_source=FileReadSource.OH_ACI,
+                )
+
+            elif (
+                tool_call.function.name
+                == create_gemini_write_file_tool()['function']['name']
+            ):
+                if 'file_path' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "file_path" in tool call {tool_call.function.name}'
+                    )
+                if 'content' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "content" in tool call {tool_call.function.name}'
+                    )
+
+                # Convert to FileEditAction with create command
+                action = FileEditAction(
+                    path=arguments['file_path'],
+                    command='create',
+                    file_text=arguments['content'],
+                    impl_source=FileEditSource.OH_ACI,
+                )
+
+            elif (
+                tool_call.function.name
+                == create_gemini_replace_tool()['function']['name']
+            ):
+                if 'file_path' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "file_path" in tool call {tool_call.function.name}'
+                    )
+                if 'old_string' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "old_string" in tool call {tool_call.function.name}'
+                    )
+                if 'new_string' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "new_string" in tool call {tool_call.function.name}'
+                    )
+
+                # Convert to FileEditAction with str_replace command
+                action = FileEditAction(
+                    path=arguments['file_path'],
+                    command='str_replace',
+                    old_str=arguments['old_string'],
+                    new_str=arguments['new_string'],
+                    impl_source=FileEditSource.OH_ACI,
+                )
+
+            elif (
+                tool_call.function.name
+                == create_gemini_list_directory_tool()['function']['name']
+            ):
+                if 'path' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "path" in tool call {tool_call.function.name}'
+                    )
+
+                # Convert to FileReadAction with view command for directory listing
+                action = FileReadAction(
+                    path=arguments['path'],
+                    impl_source=FileReadSource.OH_ACI,
+                )
 
             # ================================================
             # MCPAction (MCP)
