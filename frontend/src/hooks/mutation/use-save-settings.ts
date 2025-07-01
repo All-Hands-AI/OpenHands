@@ -6,6 +6,7 @@ import { PostSettings, PostApiSettings } from "#/types/settings";
 import { useSettings } from "../query/use-settings";
 
 const saveSettingsMutationFn = async (settings: Partial<PostSettings>) => {
+  // Create a base settings object without search_api_key
   const apiSettings: Partial<PostApiSettings> = {
     llm_model: settings.LLM_MODEL,
     llm_base_url: settings.LLM_BASE_URL,
@@ -25,9 +26,13 @@ const saveSettingsMutationFn = async (settings: Partial<PostSettings>) => {
     mcp_config: settings.MCP_CONFIG,
     enable_proactive_conversation_starters:
       settings.ENABLE_PROACTIVE_CONVERSATION_STARTERS,
-    search_api_key: settings.SEARCH_API_KEY?.trim() || "",
     max_budget_per_task: settings.MAX_BUDGET_PER_TASK,
   };
+
+  // Only include search_api_key if it's explicitly provided in the settings
+  if (Object.prototype.hasOwnProperty.call(settings, "SEARCH_API_KEY")) {
+    apiSettings.search_api_key = settings.SEARCH_API_KEY?.trim() || "";
+  }
 
   await OpenHands.saveSettings(apiSettings);
 };
