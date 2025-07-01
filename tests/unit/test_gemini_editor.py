@@ -1,87 +1,79 @@
-"""Unit tests for the Gemini editor tool."""
+"""Unit tests for the Gemini editor tools."""
 
-from openhands.agenthub.codeact_agent.tools.gemini_editor import (
-    create_gemini_editor_tool,
+from openhands.agenthub.codeact_agent.tools.gemini_edit_tools import (
+    create_gemini_list_directory_tool,
+    create_gemini_read_file_tool,
+    create_gemini_replace_tool,
+    create_gemini_write_file_tool,
 )
-from openhands.llm.tool_names import GEMINI_EDITOR_TOOL_NAME
 
 
-def test_create_gemini_editor_tool_detailed():
-    """Test creating the Gemini editor tool with detailed description."""
-    tool = create_gemini_editor_tool(use_short_description=False)
+def test_create_gemini_read_file_tool_detailed():
+    """Test creating the Gemini read_file tool with detailed description."""
+    tool = create_gemini_read_file_tool(detailed=True)
 
     assert tool['type'] == 'function'
-    assert tool['function']['name'] == GEMINI_EDITOR_TOOL_NAME
-    assert 'Gemini-style editing tool' in tool['function']['description']
-    assert 'replace' in tool['function']['description']
-    assert 'write_file' in tool['function']['description']
-    assert 'read_file' in tool['function']['description']
-    assert 'list_directory' in tool['function']['description']
+    assert tool['function']['name'] == 'read_file'
+    assert 'Reads and returns the content' in tool['function']['description']
+    assert 'text files' in tool['function']['description']
+    assert 'line ranges' in tool['function']['description']
 
-    # Check parameters (updated for Gemini CLI alignment)
+    # Check parameters
     params = tool['function']['parameters']
     assert params['type'] == 'object'
-    assert 'command' in params['properties']
-
-    # Check Gemini CLI-aligned parameters
-    assert 'absolute_path' in params['properties']  # read_file parameter
-    assert 'file_path' in params['properties']  # write_file and replace parameter
-    assert 'path' in params['properties']  # list_directory parameter
-    assert 'old_string' in params['properties']
-    assert 'new_string' in params['properties']
-    assert 'expected_replacements' in params['properties']
-    assert 'content' in params['properties']
+    assert 'absolute_path' in params['properties']
     assert 'offset' in params['properties']
     assert 'limit' in params['properties']
-    assert 'ignore' in params['properties']  # list_directory parameter
-    assert 'respect_git_ignore' in params['properties']  # list_directory parameter
 
-    # Check command enum (updated for Gemini CLI alignment)
-    command_enum = params['properties']['command']['enum']
-    expected_commands = ['read_file', 'write_file', 'replace', 'list_directory']
-    assert all(cmd in command_enum for cmd in expected_commands)
+    # Check required parameters
+    assert params['required'] == ['absolute_path']
 
-    # Check required parameters (only command is required, others are conditional)
-    assert params['required'] == ['command']
+    # Check parameter types
+    assert params['properties']['absolute_path']['type'] == 'string'
+    assert params['properties']['offset']['type'] == 'number'
+    assert params['properties']['limit']['type'] == 'number'
 
 
-def test_create_gemini_editor_tool_short():
-    """Test creating the Gemini editor tool with short description."""
-    tool = create_gemini_editor_tool(use_short_description=True)
+def test_create_gemini_write_file_tool_short():
+    """Test creating the Gemini write_file tool with short description."""
+    tool = create_gemini_write_file_tool(detailed=False)
 
     assert tool['type'] == 'function'
-    assert tool['function']['name'] == GEMINI_EDITOR_TOOL_NAME
-    assert 'Gemini-style editing tool' in tool['function']['description']
+    assert tool['function']['name'] == 'write_file'
+    assert 'Write content to a file' in tool['function']['description']
 
     # Short description should be shorter than detailed
-    detailed_tool = create_gemini_editor_tool(use_short_description=False)
+    detailed_tool = create_gemini_write_file_tool(detailed=True)
     assert len(tool['function']['description']) < len(
         detailed_tool['function']['description']
     )
 
 
-def test_gemini_editor_tool_parameter_types():
-    """Test that the Gemini editor tool has correct parameter types."""
-    tool = create_gemini_editor_tool()
+def test_gemini_replace_tool_parameter_types():
+    """Test that the Gemini replace tool has correct parameter types."""
+    tool = create_gemini_replace_tool()
     params = tool['function']['parameters']['properties']
 
-    # Check string parameters (updated for Gemini CLI alignment)
-    string_params = [
-        'command',
-        'absolute_path',  # read_file parameter
-        'file_path',  # write_file and replace parameter
-        'path',  # list_directory parameter
-        'old_string',
-        'new_string',
-        'content',
-    ]
+    # Check string parameters
+    string_params = ['file_path', 'old_string', 'new_string']
     for param in string_params:
         assert params[param]['type'] == 'string'
 
     # Check number parameters (Gemini CLI uses 'number' not 'integer')
-    number_params = ['expected_replacements', 'offset', 'limit']
-    for param in number_params:
-        assert params[param]['type'] == 'number'
+    assert params['expected_replacements']['type'] == 'number'
+    assert params['expected_replacements']['minimum'] == 1
+
+    # Check required parameters
+    assert tool['function']['parameters']['required'] == ['file_path', 'old_string', 'new_string']
+
+
+def test_gemini_list_directory_tool_parameter_types():
+    """Test that the Gemini list_directory tool has correct parameter types."""
+    tool = create_gemini_list_directory_tool()
+    params = tool['function']['parameters']['properties']
+
+    # Check string parameter
+    assert params['path']['type'] == 'string'
 
     # Check array parameter
     assert params['ignore']['type'] == 'array'
@@ -90,21 +82,5 @@ def test_gemini_editor_tool_parameter_types():
     # Check boolean parameter
     assert params['respect_git_ignore']['type'] == 'boolean'
 
-    # Check minimum values for number parameters
-    assert params['expected_replacements']['minimum'] == 1
-    # Note: offset doesn't have minimum in Gemini CLI (can be 0)
-    # Note: limit doesn't have minimum in Gemini CLI
-
-
-def test_gemini_editor_tool_command_descriptions():
-    """Test that command descriptions are appropriate."""
-    tool = create_gemini_editor_tool()
-    command_desc = tool['function']['parameters']['properties']['command'][
-        'description'
-    ]
-
-    # Check for Gemini CLI-aligned commands
-    assert 'read_file' in command_desc
-    assert 'write_file' in command_desc
-    assert 'replace' in command_desc
-    assert 'list_directory' in command_desc
+    # Check required parameters
+    assert tool['function']['parameters']['required'] == ['path']

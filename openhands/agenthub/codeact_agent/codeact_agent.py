@@ -16,16 +16,10 @@ from openhands.agenthub.codeact_agent.tools.condensation_request import (
     CondensationRequestTool,
 )
 from openhands.agenthub.codeact_agent.tools.finish import FinishTool
-from openhands.agenthub.codeact_agent.tools.gemini_list_directory import (
+from openhands.agenthub.codeact_agent.tools.gemini_edit_tools import (
     create_gemini_list_directory_tool,
-)
-from openhands.agenthub.codeact_agent.tools.gemini_read_file import (
     create_gemini_read_file_tool,
-)
-from openhands.agenthub.codeact_agent.tools.gemini_replace import (
     create_gemini_replace_tool,
-)
-from openhands.agenthub.codeact_agent.tools.gemini_write_file import (
     create_gemini_write_file_tool,
 )
 from openhands.agenthub.codeact_agent.tools.ipython import IPythonTool
