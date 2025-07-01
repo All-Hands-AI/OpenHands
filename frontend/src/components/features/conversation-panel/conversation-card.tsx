@@ -19,7 +19,7 @@ import OpenHands from "#/api/open-hands";
 import { useWsClient } from "#/context/ws-client-provider";
 import { isSystemMessage } from "#/types/core/guards";
 import { ConversationStatus } from "#/types/conversation-status";
-import { SelectedRepository } from "#/api/open-hands.types";
+import { RepositorySelection } from "#/api/open-hands.types";
 
 interface ConversationCardProps {
   onClick?: () => void;
@@ -29,7 +29,7 @@ interface ConversationCardProps {
   showOptions?: boolean;
   isActive?: boolean;
   title: string;
-  selectedRepository: SelectedRepository | null;
+  selectedRepository: RepositorySelection | null;
   lastUpdatedAt: string; // ISO 8601
   createdAt?: string; // ISO 8601
   conversationStatus?: ConversationStatus;

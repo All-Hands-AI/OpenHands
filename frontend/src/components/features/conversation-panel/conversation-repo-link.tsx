@@ -1,9 +1,9 @@
 import { useTranslation } from "react-i18next";
-import { SelectedRepository } from "#/api/open-hands.types";
+import { RepositorySelection } from "#/api/open-hands.types";
 import { I18nKey } from "#/i18n/declaration";
 
 interface ConversationRepoLinkProps {
-  selectedRepository: SelectedRepository;
+  selectedRepository: RepositorySelection;
   variant: "compact" | "default";
 }
 

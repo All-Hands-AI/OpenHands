@@ -1,5 +1,6 @@
 import { ConversationStatus } from "#/types/conversation-status";
 import { RuntimeStatus } from "#/types/runtime-status";
+import { Provider } from "#/types/settings";
 
 export interface ErrorResponse {
   error: string;
@@ -70,10 +71,10 @@ export interface AuthenticateResponse {
   error?: string;
 }
 
-export interface SelectedRepository {
+export interface RepositorySelection {
   selected_repository: string | null;
   selected_branch: string | null;
-  git_provider: string | null;
+  git_provider: Provider;
 }
 
 export type ConversationTrigger = "resolver" | "gui" | "suggested_task";
