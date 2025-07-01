@@ -182,10 +182,10 @@ export function ChatInterface() {
       <div className="h-full flex flex-col justify-between">
         {!hasSubstantiveAgentActions &&
           !optimisticUserMessage &&
-          events.length === 0 && (
-            <ChatSuggestions onSuggestionsClick={setMessageToSend} />
-          )}
-        {/* Note: We only show chat suggestions when there are no events */}
+          !events.some(
+            (event) => isOpenHandsAction(event) && event.source === "user",
+          ) && <ChatSuggestions onSuggestionsClick={setMessageToSend} />}
+        {/* Note: We only hide chat suggestions when there's a user message */}
 
         <div
           ref={scrollRef}
