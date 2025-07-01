@@ -231,7 +231,12 @@ async def connect(connection_id: str, environ):
             logger.debug(f'oh_event: {event.__class__.__name__}')
             if isinstance(
                 event,
-                (NullAction, NullObservation, RecallAction, StreamingMessageAction),
+                (
+                    NullAction,
+                    NullObservation,
+                    RecallAction,
+                    StreamingMessageAction,
+                ),
             ):
                 continue
             elif isinstance(event, AgentStateChangedObservation):
