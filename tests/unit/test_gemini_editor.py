@@ -65,7 +65,11 @@ def test_gemini_replace_tool_parameter_types():
     assert params['expected_replacements']['minimum'] == 1
 
     # Check required parameters
-    assert tool['function']['parameters']['required'] == ['file_path', 'old_string', 'new_string']
+    assert tool['function']['parameters']['required'] == [
+        'file_path',
+        'old_string',
+        'new_string',
+    ]
 
 
 def test_gemini_list_directory_tool_parameter_types():
