@@ -1,6 +1,6 @@
 import * as icons from "react-bootstrap-icons";
 
-export type IconProps = icons.IconProps & {
+export type IconProps = Omit<icons.IconProps, "name"> & {
   icon: keyof typeof icons;
 };
 
