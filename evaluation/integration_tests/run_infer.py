@@ -21,7 +21,7 @@ from evaluation.utils.shared import (
 from openhands.controller.state.state import State
 from openhands.core.config import (
     AgentConfig,
-    AppConfig,
+    OpenHandsConfig,
     get_llm_config_arg,
     parse_arguments,
 )
@@ -41,10 +41,10 @@ FAKE_RESPONSES = {
 def get_config(
     metadata: EvalMetadata,
     instance_id: str,
-) -> AppConfig:
+) -> OpenHandsConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.platform = 'linux/amd64'
-    config = AppConfig(
+    config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         runtime=os.environ.get('RUNTIME', 'docker'),

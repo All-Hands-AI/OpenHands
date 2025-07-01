@@ -12,6 +12,9 @@ if TYPE_CHECKING:
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
 from openhands.agenthub.codeact_agent.tools.bash import create_cmd_run_tool
 from openhands.agenthub.codeact_agent.tools.browser import BrowserTool
+from openhands.agenthub.codeact_agent.tools.condensation_request import (
+    CondensationRequestTool,
+)
 from openhands.agenthub.codeact_agent.tools.finish import FinishTool
 from openhands.agenthub.codeact_agent.tools.ipython import IPythonTool
 from openhands.agenthub.codeact_agent.tools.llm_based_edit import LLMBasedFileEditTool
@@ -95,6 +98,7 @@ class CodeActAgent(Agent):
         if self._prompt_manager is None:
             self._prompt_manager = PromptManager(
                 prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
+                system_prompt_filename=self.config.system_prompt_filename,
             )
 
         return self._prompt_manager
@@ -118,6 +122,8 @@ class CodeActAgent(Agent):
             tools.append(ThinkTool)
         if self.config.enable_finish:
             tools.append(FinishTool)
+        if self.config.enable_condensation_request:
+            tools.append(CondensationRequestTool)
         if self.config.enable_browsing:
             if sys.platform == 'win32':
                 logger.warning('Windows runtime does not support browsing yet')
@@ -136,8 +142,9 @@ class CodeActAgent(Agent):
         return tools
 
     def reset(self) -> None:
-        """Resets the CodeAct Agent."""
+        """Resets the CodeAct Agent's internal state."""
         super().reset()
+        # Only clear pending actions, not LLM metrics
         self.pending_actions.clear()
 
     def step(self, state: State) -> 'Action':
@@ -266,5 +273,6 @@ class CodeActAgent(Agent):
 
     def response_to_actions(self, response: 'ModelResponse') -> list['Action']:
         return codeact_function_calling.response_to_actions(
-            response, mcp_tool_names=list(self.mcp_tools.keys()),
+            response,
+            mcp_tool_names=list(self.mcp_tools.keys()),
         )

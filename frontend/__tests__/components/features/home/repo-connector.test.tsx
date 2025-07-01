@@ -31,7 +31,7 @@ const renderRepoConnector = () => {
         },
         {
           Component: () => <div data-testid="git-settings-screen" />,
-          path: "/settings/git",
+          path: "/settings/integrations",
         },
       ],
     },
@@ -50,13 +50,13 @@ const renderRepoConnector = () => {
 
 const MOCK_RESPOSITORIES: GitRepository[] = [
   {
-    id: 1,
+    id: "1",
     full_name: "rbren/polaris",
     git_provider: "github",
     is_public: true,
   },
   {
-    id: 2,
+    id: "2",
     full_name: "All-Hands-AI/OpenHands",
     git_provider: "github",
     is_public: true,
@@ -128,7 +128,7 @@ describe("RepoConnector", () => {
 
     renderRepoConnector();
 
-    await screen.findByText("Add GitHub repos");
+    await screen.findByText("HOME$ADD_GITHUB_REPOS");
   });
 
   it("should not render the 'add git(hub|lab) repos' links if oss mode", async () => {

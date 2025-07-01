@@ -16,7 +16,7 @@ export function ReplaySuggestionBox({ onChange }: ReplaySuggestionBoxProps) {
           htmlFor="import-trajectory"
           className="w-full flex justify-center"
         >
-          <span className="border-2 border-dashed border-neutral-600 rounded px-2 py-1 cursor-pointer">
+          <span className="border-2 border-dashed border-neutral-600 rounded-sm px-2 py-1 cursor-pointer">
             {t(I18nKey.LANDING$UPLOAD_TRAJECTORY)}
           </span>
           <input

@@ -30,6 +30,7 @@ export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   enable_proactive_conversation_starters:
     DEFAULT_SETTINGS.ENABLE_PROACTIVE_CONVERSATION_STARTERS,
   user_consents_to_analytics: DEFAULT_SETTINGS.USER_CONSENTS_TO_ANALYTICS,
+  max_budget_per_task: DEFAULT_SETTINGS.MAX_BUDGET_PER_TASK,
 };
 
 const MOCK_USER_PREFERENCES: {
@@ -52,9 +53,12 @@ const conversations: Conversation[] = [
     conversation_id: "1",
     title: "My New Project",
     selected_repository: null,
+    git_provider: null,
+    selected_branch: null,
     last_updated_at: new Date().toISOString(),
     created_at: new Date().toISOString(),
     status: "RUNNING",
+    runtime_status: "STATUS$READY",
     url: null,
     session_api_key: null,
   },
@@ -62,12 +66,15 @@ const conversations: Conversation[] = [
     conversation_id: "2",
     title: "Repo Testing",
     selected_repository: "octocat/hello-world",
+    git_provider: "github",
+    selected_branch: null,
     // 2 days ago
     last_updated_at: new Date(
       Date.now() - 2 * 24 * 60 * 60 * 1000,
     ).toISOString(),
     created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     status: "STOPPED",
+    runtime_status: null,
     url: null,
     session_api_key: null,
   },
@@ -75,12 +82,15 @@ const conversations: Conversation[] = [
     conversation_id: "3",
     title: "Another Project",
     selected_repository: "octocat/earth",
+    git_provider: null,
+    selected_branch: "main",
     // 5 days ago
     last_updated_at: new Date(
       Date.now() - 5 * 24 * 60 * 60 * 1000,
     ).toISOString(),
     created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
     status: "STOPPED",
+    runtime_status: null,
     url: null,
     session_api_key: null,
   },
@@ -101,6 +111,7 @@ const openHandsHandlers = [
       "gpt-4o-mini",
       "anthropic/claude-3.5",
       "anthropic/claude-sonnet-4-20250514",
+      "sambanova/Meta-Llama-3.1-8B-Instruct",
     ]),
   ),
 
@@ -131,13 +142,13 @@ export const handlers = [
   http.get("/api/user/repositories", () => {
     const data: GitRepository[] = [
       {
-        id: 1,
+        id: "1",
         full_name: "octocat/hello-world",
         git_provider: "github",
         is_public: true,
       },
       {
-        id: 2,
+        id: "2",
         full_name: "octocat/earth",
         git_provider: "github",
         is_public: true,
@@ -148,7 +159,7 @@ export const handlers = [
   }),
   http.get("/api/user/info", () => {
     const user: GitUser = {
-      id: 1,
+      id: "1",
       login: "octocat",
       avatar_url: "https://avatars.githubusercontent.com/u/583231?v=4",
       company: "GitHub",
@@ -271,9 +282,12 @@ export const handlers = [
       conversation_id: (Math.random() * 100).toString(),
       title: "New Conversation",
       selected_repository: null,
+      git_provider: null,
+      selected_branch: null,
       last_updated_at: new Date().toISOString(),
       created_at: new Date().toISOString(),
       status: "RUNNING",
+      runtime_status: "STATUS$READY",
       url: null,
       session_api_key: null,
     };

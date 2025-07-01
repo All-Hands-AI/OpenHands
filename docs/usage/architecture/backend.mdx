@@ -1,0 +1,56 @@
+---
+title: Backend Architecture
+---
+
+<div style={{ textAlign: 'center' }}>
+  <img src="https://github.com/All-Hands-AI/OpenHands/assets/16201837/97d747e3-29d8-4ccb-8d34-6ad1adb17f38" alt="OpenHands System Architecture Diagram Jul 4 2024" />
+  <p><em>OpenHands System Architecture Diagram (July 4, 2024)</em></p>
+</div>
+
+This is a high-level overview of the system architecture. The system is divided into two main components: the frontend and the backend. The frontend is responsible for handling user interactions and displaying the results. The backend is responsible for handling the business logic and executing the agents.
+
+# Frontend architecture
+
+![system_architecture.svg](/static/img/system_architecture.svg)
+
+This Overview is simplified to show the main components and their interactions. For a more detailed view of the backend architecture, see the Backend Architecture section below.
+
+# Backend Architecture
+
+_**Disclaimer**: The backend architecture is a work in progress and is subject to change. The following diagram shows the current architecture of the backend based on the commit that is shown in the footer of the diagram._
+
+![backend_architecture.svg](/static/img/backend_architecture.svg)
+
+<details>
+  <summary>Updating this Diagram</summary>
+  <div>
+    The generation of the backend architecture diagram is partially automated.
+    The diagram is generated from the type hints in the code using the py2puml
+    tool. The diagram is then manually reviewed, adjusted and exported to PNG
+    and SVG.
+
+    ## Prerequisites
+
+    - Running python environment in which openhands is executable
+    (according to the instructions in the README.md file in the root of the repository)
+    - [py2puml](https://github.com/lucsorel/py2puml) installed
+
+## Steps
+
+1.  Autogenerate the diagram by running the following command from the root of the repository:
+    `py2puml openhands openhands > docs/architecture/backend_architecture.puml`
+
+2.  Open the generated file in a PlantUML editor, e.g. Visual Studio Code with the PlantUML extension or [PlantText](https://www.planttext.com/)
+
+3.  Review the generated PUML and make all necessary adjustments to the diagram (add missing parts, fix mistakes, improve positioning).
+    _py2puml creates the diagram based on the type hints in the code, so missing or incorrect type hints may result in an incomplete or incorrect diagram._
+
+4.  Review the diff between the new and the previous diagram and manually check if the changes are correct.
+    _Make sure not to remove parts that were manually added to the diagram in the past and are still relevant._
+
+5.  Add the commit hash of the commit that was used to generate the diagram to the diagram footer.
+
+6.  Export the diagram as PNG and SVG files and replace the existing diagrams in the `docs/architecture` directory. This can be done with (e.g. [PlantText](https://www.planttext.com/))
+
+  </div>
+</details>

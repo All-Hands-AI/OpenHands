@@ -5,7 +5,9 @@ import { I18nKey } from "#/i18n/declaration";
 import { ConversationCard } from "./conversation-card";
 import { useUserConversations } from "#/hooks/query/use-user-conversations";
 import { useDeleteConversation } from "#/hooks/mutation/use-delete-conversation";
+import { useStopConversation } from "#/hooks/mutation/use-stop-conversation";
 import { ConfirmDeleteModal } from "./confirm-delete-modal";
+import { ConfirmStopModal } from "./confirm-stop-modal";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { ExitConversationModal } from "./exit-conversation-modal";
 import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
@@ -22,6 +24,8 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
 
   const [confirmDeleteModalVisible, setConfirmDeleteModalVisible] =
     React.useState(false);
+  const [confirmStopModalVisible, setConfirmStopModalVisible] =
+    React.useState(false);
   const [
     confirmExitConversationModalVisible,
     setConfirmExitConversationModalVisible,
@@ -33,15 +37,36 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
   const { data: conversations, isFetching, error } = useUserConversations();
 
   const { mutate: deleteConversation } = useDeleteConversation();
+  const { mutate: stopConversation } = useStopConversation();
 
   const handleDeleteProject = (conversationId: string) => {
     setConfirmDeleteModalVisible(true);
     setSelectedConversationId(conversationId);
   };
 
+  const handleStopConversation = (conversationId: string) => {
+    setConfirmStopModalVisible(true);
+    setSelectedConversationId(conversationId);
+  };
+
   const handleConfirmDelete = () => {
     if (selectedConversationId) {
       deleteConversation(
+        { conversationId: selectedConversationId },
+        {
+          onSuccess: () => {
+            if (selectedConversationId === currentConversationId) {
+              navigate("/");
+            }
+          },
+        },
+      );
+    }
+  };
+
+  const handleConfirmStop = () => {
+    if (selectedConversationId) {
+      stopConversation(
         { conversationId: selectedConversationId },
         {
           onSuccess: () => {
@@ -87,11 +112,12 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
             <ConversationCard
               isActive={isActive}
               onDelete={() => handleDeleteProject(project.conversation_id)}
+              onStop={() => handleStopConversation(project.conversation_id)}
               title={project.title}
               selectedRepository={project.selected_repository}
               lastUpdatedAt={project.last_updated_at}
               createdAt={project.created_at}
-              status={project.status}
+              conversationStatus={project.status}
               conversationId={project.conversation_id}
             />
           )}
@@ -105,6 +131,16 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
             setConfirmDeleteModalVisible(false);
           }}
           onCancel={() => setConfirmDeleteModalVisible(false)}
+        />
+      )}
+
+      {confirmStopModalVisible && (
+        <ConfirmStopModal
+          onConfirm={() => {
+            handleConfirmStop();
+            setConfirmStopModalVisible(false);
+          }}
+          onCancel={() => setConfirmStopModalVisible(false)}
         />
       )}
 

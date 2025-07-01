@@ -1,7 +1,7 @@
 import os
 import re
 
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.shared import config as shared_config
 
@@ -30,7 +30,7 @@ def sanitize_filename(filename: str) -> str:
 
 
 def load_file_upload_config(
-    config: AppConfig = shared_config,
+    config: OpenHandsConfig = shared_config,
 ) -> tuple[int, bool, list[str]]:
     """Load file upload configuration from the config object.
 
@@ -111,3 +111,29 @@ def is_extension_allowed(filename: str) -> bool:
         or file_ext in (ext.lower() for ext in ALLOWED_EXTENSIONS)
         or (file_ext == '' and '.' in ALLOWED_EXTENSIONS)
     )
+
+
+def get_unique_filename(filename: str, folder_path: str) -> str:
+    """Returns unique filename on given folder_path. By checking if the given
+     filename exists. If it doesn't, filename is simply returned.
+     Otherwise, it append copy(#number) until the filename is unique.
+
+    Args:
+        filename (str): The name of the file to check.
+        folder_path (str): directory path in which file name check is performed.
+
+    Returns:
+        string: unique filename.
+    """
+    name, ext = os.path.splitext(filename)
+    filename_candidate = filename
+    copy_index = 0
+
+    while os.path.exists(os.path.join(folder_path, filename_candidate)):
+        if copy_index == 0:
+            filename_candidate = f'{name} copy{ext}'
+        else:
+            filename_candidate = f'{name} copy({copy_index}){ext}'
+        copy_index += 1
+
+    return filename_candidate

@@ -12,12 +12,13 @@ from browsergym.utils.obs import flatten_dom_to_str, overlay_som
 
 from openhands.core.exceptions import BrowserInitException
 from openhands.core.logger import openhands_logger as logger
+from openhands.runtime.browser.base64 import image_to_png_base64_url
 from openhands.utils.shutdown_listener import should_continue, should_exit
 from openhands.utils.tenacity_stop import stop_if_should_exit
-from openhands.runtime.browser.base64 import image_to_png_base64_url
 
 BROWSER_EVAL_GET_GOAL_ACTION = 'GET_EVAL_GOAL'
 BROWSER_EVAL_GET_REWARDS_ACTION = 'GET_EVAL_REWARDS'
+
 
 class BrowserEnv:
     def __init__(self, browsergym_eval_env: str | None = None):
@@ -93,6 +94,9 @@ class BrowserEnv:
                 headless=True,
                 disable_env_checker=True,
                 tags_to_mark='all',
+                timeout=100000,
+                pw_context_kwargs={'accept_downloads': True},
+                pw_chromium_kwargs={'downloads_path': '/workspace/.downloads/'},
             )
         obs, info = env.reset()
 
@@ -104,6 +108,7 @@ class BrowserEnv:
         if self.eval_mode:
             self.eval_goal = obs['goal']
             if 'goal_object' in obs:
+                obs['goal_object'] = list(obs['goal_object'])
                 if len(obs['goal_object']) > 0:
                     self.eval_goal = obs['goal_object'][0]['text']
                 for message in obs['goal_object']:
@@ -181,7 +186,7 @@ class BrowserEnv:
                     pass
                 return
 
-    def step(self, action_str: str, timeout: float = 100) -> dict:
+    def step(self, action_str: str, timeout: float = 120) -> dict:
         """Execute an action in the browser environment and return the observation."""
         unique_request_id = str(uuid.uuid4())
         self.agent_side.send((unique_request_id, {'action': action_str}))

@@ -261,6 +261,7 @@ class SensitiveDataFilter(logging.Filter):
             'modal_api_token_secret',
             'llm_api_key',
             'sandbox_env_github_token',
+            'runloop_api_key',
             'daytona_api_key',
         ]
 
@@ -385,10 +386,22 @@ if LOG_TO_FILE:
     )  # default log to project root
     openhands_logger.debug(f'Logging to file in: {LOG_DIR}')
 
-# Exclude LiteLLM from logging output
+# Exclude LiteLLM from logging output as it can leak keys
 logging.getLogger('LiteLLM').disabled = True
 logging.getLogger('LiteLLM Router').disabled = True
 logging.getLogger('LiteLLM Proxy').disabled = True
+
+# Exclude loquacious loggers
+LOQUACIOUS_LOGGERS = [
+    'engineio',
+    'engineio.server',
+    'socketio',
+    'socketio.client',
+    'socketio.server',
+]
+
+for logger_name in LOQUACIOUS_LOGGERS:
+    logging.getLogger(logger_name).setLevel('WARNING')
 
 
 class LlmFileHandler(logging.FileHandler):

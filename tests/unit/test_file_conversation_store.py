@@ -108,7 +108,7 @@ async def test_search_pagination():
                         'conversation_id': f'conv{i}',
                         'user_id': '123',
                         'selected_repository': 'repo1',
-                        'title': f'Conversation {i}',
+                        'title': f'ServerConversation {i}',
                         'created_at': f'2025-01-{15 + i}T19:51:04Z',
                     }
                 )

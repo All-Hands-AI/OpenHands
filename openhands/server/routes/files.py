@@ -1,13 +1,7 @@
 import os
 from typing import Any
 
-from fastapi import (
-    APIRouter,
-    Depends,
-    HTTPException,
-    Request,
-    status,
-)
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse, JSONResponse
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
@@ -18,28 +12,24 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     FileReadAction,
 )
+from openhands.events.action.files import FileWriteAction
 from openhands.events.observation import (
     ErrorObservation,
     FileReadObservation,
 )
 from openhands.runtime.base import Runtime
-from openhands.server.data_models.conversation_info import ConversationInfo
-from openhands.server.file_config import (
-    FILES_TO_IGNORE,
-)
-from openhands.server.shared import (
-    ConversationStoreImpl,
-    config,
-    conversation_manager,
-)
+from openhands.server.dependencies import get_dependencies
+from openhands.server.file_config import FILES_TO_IGNORE
+from openhands.server.files import POSTUploadFilesModel
+from openhands.server.session.conversation import ServerConversation
 from openhands.server.user_auth import get_user_id
-from openhands.server.utils import get_conversation_store
+from openhands.server.utils import get_conversation, get_conversation_store
 from openhands.storage.conversation.conversation_store import ConversationStore
-from openhands.storage.data_models.conversation_metadata import ConversationMetadata
-from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.utils.async_utils import call_sync_from_async
 
-app = APIRouter(prefix='/api/conversations/{conversation_id}')
+app = APIRouter(
+    prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies()
+)
 
 
 @app.get(
@@ -51,7 +41,8 @@ app = APIRouter(prefix='/api/conversations/{conversation_id}')
     },
 )
 async def list_files(
-    request: Request, path: str | None = None
+    conversation: ServerConversation = Depends(get_conversation),
+    path: str | None = None,
 ) -> list[str] | JSONResponse:
     """List files in the specified path.
 
@@ -73,13 +64,13 @@ async def list_files(
     Raises:
         HTTPException: If there's an error listing the files.
     """
-    if not request.state.conversation.runtime:
+    if not conversation.runtime:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content={'error': 'Runtime not yet initialized'},
         )
 
-    runtime: Runtime = request.state.conversation.runtime
+    runtime: Runtime = conversation.runtime
     try:
         file_list = await call_sync_from_async(runtime.list_files, path)
     except AgentRuntimeUnavailableError as e:
@@ -133,7 +124,9 @@ async def list_files(
         415: {'description': 'Unsupported media type', 'model': dict},
     },
 )
-async def select_file(file: str, request: Request) -> FileResponse | JSONResponse:
+async def select_file(
+    file: str, conversation: ServerConversation = Depends(get_conversation)
+) -> FileResponse | JSONResponse:
     """Retrieve the content of a specified file.
 
     To select a file:
@@ -152,7 +145,7 @@ async def select_file(file: str, request: Request) -> FileResponse | JSONRespons
     Raises:
         HTTPException: If there's an error opening the file.
     """
-    runtime: Runtime = request.state.conversation.runtime
+    runtime: Runtime = conversation.runtime
 
     file = os.path.join(runtime.config.workspace_mount_path_in_sandbox, file)
     read_action = FileReadAction(file)
@@ -197,10 +190,12 @@ async def select_file(file: str, request: Request) -> FileResponse | JSONRespons
         500: {'description': 'Error zipping workspace', 'model': dict},
     },
 )
-def zip_current_workspace(request: Request) -> FileResponse | JSONResponse:
+def zip_current_workspace(
+    conversation: ServerConversation = Depends(get_conversation),
+) -> FileResponse | JSONResponse:
     try:
         logger.debug('Zipping workspace')
-        runtime: Runtime = request.state.conversation.runtime
+        runtime: Runtime = conversation.runtime
         path = runtime.config.workspace_mount_path_in_sandbox
         try:
             zip_file_path = runtime.copy_from(path)
@@ -233,19 +228,15 @@ def zip_current_workspace(request: Request) -> FileResponse | JSONResponse:
     },
 )
 async def git_changes(
-    request: Request,
-    conversation_id: str,
+    conversation: ServerConversation = Depends(get_conversation),
+    conversation_store: ConversationStore = Depends(get_conversation_store),
     user_id: str = Depends(get_user_id),
 ) -> list[dict[str, str]] | JSONResponse:
-    runtime: Runtime = request.state.conversation.runtime
-    conversation_store = await ConversationStoreImpl.get_instance(
-        config,
-        user_id,
-    )
+    runtime: Runtime = conversation.runtime
 
     cwd = await get_cwd(
         conversation_store,
-        conversation_id,
+        conversation.sid,
         runtime.config.workspace_mount_path_in_sandbox,
     )
     logger.info(f'Getting git changes in {cwd}')
@@ -278,16 +269,15 @@ async def git_changes(
     responses={500: {'description': 'Error getting diff', 'model': dict}},
 )
 async def git_diff(
-    request: Request,
     path: str,
-    conversation_id: str,
     conversation_store: Any = Depends(get_conversation_store),
+    conversation: ServerConversation = Depends(get_conversation),
 ) -> dict[str, Any] | JSONResponse:
-    runtime: Runtime = request.state.conversation.runtime
+    runtime: Runtime = conversation.runtime
 
     cwd = await get_cwd(
         conversation_store,
-        conversation_id,
+        conversation.sid,
         runtime.config.workspace_mount_path_in_sandbox,
     )
 
@@ -314,3 +304,37 @@ async def get_cwd(
         cwd = os.path.join(cwd, repo_dir)
 
     return cwd
+
+
+@app.post('/upload-files', response_model=POSTUploadFilesModel)
+async def upload_files(
+    files: list[UploadFile],
+    conversation: ServerConversation = Depends(get_conversation),
+):
+    uploaded_files = []
+    skipped_files = []
+    runtime: Runtime = conversation.runtime
+
+    for file in files:
+        file_path = os.path.join(
+            runtime.config.workspace_mount_path_in_sandbox, str(file.filename)
+        )
+        try:
+            file_content = await file.read()
+            write_action = FileWriteAction(
+                # TODO: DISCUSS UTF8 encoding here
+                path=file_path,
+                content=file_content.decode('utf-8', errors='replace'),
+            )
+            # TODO: DISCUSS file name unique issues
+            await call_sync_from_async(runtime.run_action, write_action)
+            uploaded_files.append(file_path)
+        except Exception as e:
+            skipped_files.append({'name': file.filename, 'reason': str(e)})
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            'uploaded_files': uploaded_files,
+            'skipped_files': skipped_files,
+        },
+    )

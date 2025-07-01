@@ -3,6 +3,7 @@
 # CLI Settings are handled separately in cli_settings.py
 
 import asyncio
+import contextlib
 import sys
 import threading
 import time
@@ -27,7 +28,7 @@ from prompt_toolkit.styles import Style
 from prompt_toolkit.widgets import Frame, TextArea
 
 from openhands import __version__
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.schema import AgentState
 from openhands.events import EventSource, EventStream
 from openhands.events.action import (
@@ -74,6 +75,8 @@ COMMANDS = {
 }
 
 print_lock = threading.Lock()
+
+pause_task: asyncio.Task | None = None  # No more than one pause task
 
 
 class UsageMetrics:
@@ -180,7 +183,7 @@ def display_initial_user_prompt(prompt: str) -> None:
 
 
 # Prompt output display functions
-def display_event(event: Event, config: AppConfig) -> None:
+def display_event(event: Event, config: OpenHandsConfig) -> None:
     global streaming_output_text_area
     with print_lock:
         if isinstance(event, Action):
@@ -191,19 +194,24 @@ def display_event(event: Event, config: AppConfig) -> None:
         if isinstance(event, MessageAction):
             if event.source == EventSource.AGENT:
                 display_message(event.content)
+
         if isinstance(event, CmdRunAction):
-            display_command(event)
+            # Only display the command if it's not already confirmed
+            # Commands are always shown when AWAITING_CONFIRMATION, so we don't need to show them again when CONFIRMED
+            if event.confirmation_state != ActionConfirmationStatus.CONFIRMED:
+                display_command(event)
+
             if event.confirmation_state == ActionConfirmationStatus.CONFIRMED:
                 initialize_streaming_output()
-        if isinstance(event, CmdOutputObservation):
+        elif isinstance(event, CmdOutputObservation):
             display_command_output(event.content)
-        if isinstance(event, FileEditObservation):
+        elif isinstance(event, FileEditObservation):
             display_file_edit(event)
-        if isinstance(event, FileReadObservation):
+        elif isinstance(event, FileReadObservation):
             display_file_read(event)
-        if isinstance(event, AgentStateChangedObservation):
+        elif isinstance(event, AgentStateChangedObservation):
             display_agent_state_change_message(event.agent_state)
-        if isinstance(event, ErrorObservation):
+        elif isinstance(event, ErrorObservation):
             display_error(event.content)
 
 
@@ -376,7 +384,7 @@ def display_help() -> None:
     # Footer
     print_formatted_text(
         HTML(
-            '<grey>Learn more at: https://docs.all-hands.dev/modules/usage/getting-started</grey>'
+            '<grey>Learn more at: https://docs.all-hands.dev/usage/getting-started</grey>'
         )
     )
 
@@ -515,13 +523,16 @@ class CommandCompleter(Completer):
                     )
 
 
-def create_prompt_session() -> PromptSession[str]:
-    return PromptSession(style=DEFAULT_STYLE)
+def create_prompt_session(config: OpenHandsConfig) -> PromptSession[str]:
+    """Creates a prompt session with VI mode enabled if specified in the config."""
+    return PromptSession(style=DEFAULT_STYLE, vi_mode=config.cli.vi_mode)
 
 
-async def read_prompt_input(agent_state: str, multiline: bool = False) -> str:
+async def read_prompt_input(
+    config: OpenHandsConfig, agent_state: str, multiline: bool = False
+) -> str:
     try:
-        prompt_session = create_prompt_session()
+        prompt_session = create_prompt_session(config)
         prompt_session.completer = (
             CommandCompleter(agent_state) if not multiline else None
         )
@@ -553,9 +564,9 @@ async def read_prompt_input(agent_state: str, multiline: bool = False) -> str:
         return '/exit'
 
 
-async def read_confirmation_input() -> str:
+async def read_confirmation_input(config: OpenHandsConfig) -> str:
     try:
-        prompt_session = create_prompt_session()
+        prompt_session = create_prompt_session(config)
 
         with patch_stdout():
             print_formatted_text('')
@@ -577,6 +588,28 @@ async def read_confirmation_input() -> str:
         return 'no'
 
 
+def start_pause_listener(
+    loop: asyncio.AbstractEventLoop,
+    done_event: asyncio.Event,
+    event_stream,
+) -> None:
+    global pause_task
+    if pause_task is None or pause_task.done():
+        pause_task = loop.create_task(
+            process_agent_pause(done_event, event_stream)
+        )  # Create a task to track agent pause requests from the user
+
+
+async def stop_pause_listener() -> None:
+    global pause_task
+    if pause_task and not pause_task.done():
+        pause_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await pause_task
+        await asyncio.sleep(0)
+    pause_task = None
+
+
 async def process_agent_pause(done: asyncio.Event, event_stream: EventStream) -> None:
     input = create_input()
 
@@ -595,13 +628,18 @@ async def process_agent_pause(done: asyncio.Event, event_stream: EventStream) ->
                 )
                 done.set()
 
-    with input.raw_mode():
-        with input.attach(keys_ready):
-            await done.wait()
+    try:
+        with input.raw_mode():
+            with input.attach(keys_ready):
+                await done.wait()
+    finally:
+        input.close()
 
 
 def cli_confirm(
-    question: str = 'Are you sure?', choices: list[str] | None = None
+    config: OpenHandsConfig,
+    question: str = 'Are you sure?',
+    choices: list[str] | None = None,
 ) -> int:
     """Display a confirmation prompt with the given question and choices.
 
@@ -625,15 +663,27 @@ def cli_confirm(
     kb = KeyBindings()
 
     @kb.add('up')
-    def _(event: KeyPressEvent) -> None:
+    def _handle_up(event: KeyPressEvent) -> None:
         selected[0] = (selected[0] - 1) % len(choices)
 
+    if config.cli.vi_mode:
+
+        @kb.add('k')
+        def _handle_k(event: KeyPressEvent) -> None:
+            selected[0] = (selected[0] - 1) % len(choices)
+
     @kb.add('down')
-    def _(event: KeyPressEvent) -> None:
+    def _handle_down(event: KeyPressEvent) -> None:
         selected[0] = (selected[0] + 1) % len(choices)
 
+    if config.cli.vi_mode:
+
+        @kb.add('j')
+        def _handle_j(event: KeyPressEvent) -> None:
+            selected[0] = (selected[0] + 1) % len(choices)
+
     @kb.add('enter')
-    def _(event: KeyPressEvent) -> None:
+    def _handle_enter(event: KeyPressEvent) -> None:
         event.app.exit(result=selected[0])
 
     style = Style.from_dict({'selected': COLOR_GOLD, 'unselected': ''})

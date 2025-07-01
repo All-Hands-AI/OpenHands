@@ -35,7 +35,7 @@ from evaluation.utils.shared import (
 from openhands.controller.state.state import State
 from openhands.core.config import (
     AgentConfig,
-    AppConfig,
+    OpenHandsConfig,
     SandboxConfig,
     get_llm_config_arg,
     get_parser,
@@ -117,7 +117,7 @@ def get_instance_docker_image(instance_id: str) -> str:
 def get_config(
     instance: pd.Series,
     metadata: EvalMetadata,
-) -> AppConfig:
+) -> OpenHandsConfig:
     # We use a different instance image for the each instance of TestGenEval
     base_container_image = get_instance_docker_image(instance['instance_id_swebench'])
     logger.info(
@@ -126,7 +126,7 @@ def get_config(
         f'Submit an issue on https://github.com/All-Hands-AI/OpenHands if you run into any issues.'
     )
 
-    config = AppConfig(
+    config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         max_iterations=metadata.max_iterations,
@@ -539,7 +539,7 @@ if __name__ == '__main__':
     if args.llm_config:
         llm_config = get_llm_config_arg(args.llm_config)
         llm_config.log_completions = True
-        # modify_params must be False for evaluation purpose, for reproducibility and accurancy of results
+        # modify_params must be False for evaluation purpose, for reproducibility and accuracy of results
         llm_config.modify_params = False
 
     if llm_config is None:

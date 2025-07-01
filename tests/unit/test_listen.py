@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 
 
 # Mock StaticFiles
@@ -20,7 +20,7 @@ with (
 
 
 def test_load_file_upload_config():
-    config = AppConfig(
+    config = OpenHandsConfig(
         file_uploads_max_file_size_mb=10,
         file_uploads_restrict_file_types=True,
         file_uploads_allowed_extensions=['.txt', '.pdf'],
@@ -33,7 +33,7 @@ def test_load_file_upload_config():
 
 
 def test_load_file_upload_config_invalid_max_size():
-    config = AppConfig(
+    config = OpenHandsConfig(
         file_uploads_max_file_size_mb=-5,
         file_uploads_restrict_file_types=False,
         file_uploads_allowed_extensions=[],

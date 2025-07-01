@@ -1,1 +1,1 @@
-TROUBLESHOOTING_URL = 'https://docs.all-hands.dev/modules/usage/troubleshooting'
+TROUBLESHOOTING_URL = 'https://docs.all-hands.dev/usage/troubleshooting'

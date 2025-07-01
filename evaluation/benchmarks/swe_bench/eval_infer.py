@@ -24,8 +24,8 @@ from evaluation.utils.shared import (
     run_evaluation,
 )
 from openhands.core.config import (
-    AppConfig,
     LLMConfig,
+    OpenHandsConfig,
     get_parser,
 )
 from openhands.core.logger import openhands_logger as logger
@@ -69,7 +69,7 @@ def process_git_patch(patch):
     return patch
 
 
-def get_config(metadata: EvalMetadata, instance: pd.Series) -> AppConfig:
+def get_config(metadata: EvalMetadata, instance: pd.Series) -> OpenHandsConfig:
     # We use a different instance image for the each instance of swe-bench eval
     base_container_image = get_instance_docker_image(instance['instance_id'])
     logger.info(
@@ -83,7 +83,7 @@ def get_config(metadata: EvalMetadata, instance: pd.Series) -> AppConfig:
         dataset_name=metadata.dataset,
         instance_id=instance['instance_id'],
     )
-    config = AppConfig(
+    config = OpenHandsConfig(
         run_as_openhands=False,
         runtime=os.environ.get('RUNTIME', 'docker'),
         sandbox=sandbox_config,

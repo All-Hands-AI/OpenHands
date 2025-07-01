@@ -30,7 +30,7 @@ from evaluation.utils.shared import (
 from openhands.controller.state.state import State
 from openhands.core.config import (
     AgentConfig,
-    AppConfig,
+    OpenHandsConfig,
     get_llm_config_arg,
     get_parser,
 )
@@ -135,7 +135,7 @@ def get_instance_docker_image(instance_id: str, official_image: bool = False) ->
 def get_config(
     instance: pd.Series,
     metadata: EvalMetadata,
-) -> AppConfig:
+) -> OpenHandsConfig:
     # We use a different instance image for the each instance of swe-bench eval
     use_official_image = bool(
         'verified' in metadata.dataset.lower() or 'lite' in metadata.dataset.lower()
@@ -160,7 +160,7 @@ def get_config(
         instance_id=instance['instance_id'],
     )
 
-    config = AppConfig(
+    config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         max_iterations=metadata.max_iterations,

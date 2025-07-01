@@ -1,6 +1,6 @@
 import asyncio
 
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.events.stream import EventStream
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
@@ -9,7 +9,7 @@ from openhands.storage.files import FileStore
 from openhands.utils.async_utils import call_sync_from_async
 
 
-class Conversation:
+class ServerConversation:
     sid: str
     file_store: FileStore
     event_stream: EventStream
@@ -17,7 +17,11 @@ class Conversation:
     user_id: str | None
 
     def __init__(
-        self, sid: str, file_store: FileStore, config: AppConfig, user_id: str | None
+        self,
+        sid: str,
+        file_store: FileStore,
+        config: OpenHandsConfig,
+        user_id: str | None,
     ):
         self.sid = sid
         self.config = config

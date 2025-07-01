@@ -59,7 +59,9 @@ def test_view_directory(temp_dir, runtime_cls, run_as_openhands):
             obs.content
             == f"""Here's the files and directories up to 2 levels deep in {config.workspace_mount_path_in_sandbox}, excluding hidden items:
 {config.workspace_mount_path_in_sandbox}/
-{config.workspace_mount_path_in_sandbox}/test.txt"""
+{config.workspace_mount_path_in_sandbox}/test.txt
+
+1 hidden files/directories in this directory are excluded. You can use 'ls -la /workspace' to see them."""  # The hidden dir is the /workspace/.downloads
         )
 
     finally:

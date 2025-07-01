@@ -22,7 +22,7 @@ class ServerConfig(ServerConfigInterface):
         'openhands.storage.conversation.file_conversation_store.FileConversationStore'
     )
     conversation_manager_class: str = os.environ.get(
-        "CONVERSATION_MANAGER_CLASS",
+        'CONVERSATION_MANAGER_CLASS',
         'openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager',
     )
     monitoring_listener_class: str = 'openhands.server.monitoring.MonitoringListener'
@@ -48,12 +48,12 @@ class ServerConfig(ServerConfigInterface):
         return config
 
 
-def load_server_config():
+def load_server_config() -> ServerConfig:
     config_cls = os.environ.get('OPENHANDS_CONFIG_CLS', None)
     logger.info(f'Using config class {config_cls}')
 
     server_config_cls = get_impl(ServerConfig, config_cls)
-    server_config = server_config_cls()
+    server_config: ServerConfig = server_config_cls()
     server_config.verify_config()
 
     return server_config

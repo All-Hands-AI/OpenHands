@@ -14,7 +14,7 @@ vi.mock("react-i18next", async () => {
     useTranslation: () => ({
       t: (key: string) => {
         const translations: Record<string, string> = {
-          SETTINGS$NAV_GIT: "Git",
+          SETTINGS$NAV_INTEGRATIONS: "Integrations",
           SETTINGS$NAV_APPLICATION: "Application",
           SETTINGS$NAV_CREDITS: "Credits",
           SETTINGS$NAV_API_KEYS: "API Keys",
@@ -49,7 +49,7 @@ describe("Settings Screen", () => {
         },
         {
           Component: () => <div data-testid="git-settings-screen" />,
-          path: "/settings/git",
+          path: "/settings/integrations",
         },
         {
           Component: () => <div data-testid="application-settings-screen" />,
@@ -79,7 +79,7 @@ describe("Settings Screen", () => {
   };
 
   it("should render the navbar", async () => {
-    const sectionsToInclude = ["llm", "git", "application", "secrets"];
+    const sectionsToInclude = ["llm", "integrations", "application", "secrets"];
     const sectionsToExclude = ["api keys", "credits"];
     const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
     // @ts-expect-error - only return app mode
@@ -111,7 +111,7 @@ describe("Settings Screen", () => {
       APP_MODE: "saas",
     });
     const sectionsToInclude = [
-      "git",
+      "integrations",
       "application",
       "credits",
       "secrets",

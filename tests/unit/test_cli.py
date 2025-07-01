@@ -125,6 +125,12 @@ def mock_config():
     )
     config.search_api_key = search_api_key_mock
 
+    # Mock sandbox with volumes attribute to prevent finalize_config issues
+    config.sandbox = MagicMock()
+    config.sandbox.volumes = (
+        None  # This prevents finalize_config from overriding workspace_base
+    )
+
     return config
 
 
@@ -208,9 +214,7 @@ async def test_run_session_without_initial_action(
     mock_display_runtime_init.assert_called_once_with('local')
     mock_display_animation.assert_called_once()
     mock_create_agent.assert_called_once_with(mock_config)
-    mock_add_mcp_tools.assert_called_once_with(
-        mock_agent, mock_runtime, mock_memory, mock_config
-    )
+    mock_add_mcp_tools.assert_called_once_with(mock_agent, mock_runtime, mock_memory)
     mock_create_runtime.assert_called_once()
     mock_create_controller.assert_called_once()
     mock_create_memory.assert_called_once()
@@ -329,7 +333,9 @@ async def test_run_session_with_initial_action(
 @patch('openhands.cli.main.run_session')
 @patch('openhands.cli.main.LLMSummarizingCondenserConfig')
 @patch('openhands.cli.main.NoOpCondenserConfig')
+@patch('openhands.cli.main.finalize_config')
 async def test_main_without_task(
+    mock_finalize_config,
     mock_noop_condenser,
     mock_llm_condenser,
     mock_run_session,
@@ -347,6 +353,7 @@ async def test_main_without_task(
     mock_args.agent_cls = None
     mock_args.llm_config = None
     mock_args.name = None
+    mock_args.file = None
     mock_parse_args.return_value = mock_args
 
     # Mock config
@@ -381,7 +388,7 @@ async def test_main_without_task(
     mock_run_session.return_value = False
 
     # Run the function
-    await cli.main(loop)
+    await cli.main_with_loop(loop)
 
     # Assertions
     mock_parse_args.assert_called_once()
@@ -393,7 +400,13 @@ async def test_main_without_task(
 
     # Check that run_session was called with expected arguments
     mock_run_session.assert_called_once_with(
-        loop, mock_config, mock_settings_store, '/test/dir', None, session_name=None
+        loop,
+        mock_config,
+        mock_settings_store,
+        '/test/dir',
+        None,
+        session_name=None,
+        skip_banner=False,
     )
 
 
@@ -406,7 +419,9 @@ async def test_main_without_task(
 @patch('openhands.cli.main.run_session')
 @patch('openhands.cli.main.LLMSummarizingCondenserConfig')
 @patch('openhands.cli.main.NoOpCondenserConfig')
+@patch('openhands.cli.main.finalize_config')
 async def test_main_with_task(
+    mock_finalize_config,
     mock_noop_condenser,
     mock_llm_condenser,
     mock_run_session,
@@ -423,6 +438,7 @@ async def test_main_with_task(
     mock_args = MagicMock()
     mock_args.agent_cls = 'custom-agent'
     mock_args.llm_config = 'custom-config'
+    mock_args.file = None
     mock_parse_args.return_value = mock_args
 
     # Mock config
@@ -458,7 +474,7 @@ async def test_main_with_task(
     mock_run_session.side_effect = [True, False]
 
     # Run the function
-    await cli.main(loop)
+    await cli.main_with_loop(loop)
 
     # Assertions
     mock_parse_args.assert_called_once()
@@ -500,7 +516,9 @@ async def test_main_with_task(
 @patch('openhands.cli.main.run_session')
 @patch('openhands.cli.main.LLMSummarizingCondenserConfig')
 @patch('openhands.cli.main.NoOpCondenserConfig')
+@patch('openhands.cli.main.finalize_config')
 async def test_main_with_session_name_passes_name_to_run_session(
+    mock_finalize_config,
     mock_noop_condenser,
     mock_llm_condenser,
     mock_run_session,
@@ -519,6 +537,7 @@ async def test_main_with_session_name_passes_name_to_run_session(
     mock_args.agent_cls = None
     mock_args.llm_config = None
     mock_args.name = test_session_name  # Set the session name
+    mock_args.file = None
     mock_parse_args.return_value = mock_args
 
     # Mock config
@@ -553,7 +572,7 @@ async def test_main_with_session_name_passes_name_to_run_session(
     mock_run_session.return_value = False
 
     # Run the function
-    await cli.main(loop)
+    await cli.main_with_loop(loop)
 
     # Assertions
     mock_parse_args.assert_called_once()
@@ -571,6 +590,7 @@ async def test_main_with_session_name_passes_name_to_run_session(
         '/test/dir',
         None,
         session_name=test_session_name,
+        skip_banner=False,
     )
 
 
@@ -592,7 +612,9 @@ async def test_main_with_session_name_passes_name_to_run_session(
 @patch('openhands.cli.main.display_initialization_animation')  # Cosmetic
 @patch('openhands.cli.main.initialize_repository_for_runtime')  # Cosmetic / setup
 @patch('openhands.cli.main.display_initial_user_prompt')  # Cosmetic
+@patch('openhands.cli.main.finalize_config')
 async def test_run_session_with_name_attempts_state_restore(
+    mock_finalize_config,
     mock_display_initial_user_prompt,
     mock_initialize_repo,
     mock_display_init_anim,
@@ -676,11 +698,17 @@ async def test_run_session_with_name_attempts_state_restore(
 @patch('openhands.cli.main.setup_config_from_args')
 @patch('openhands.cli.main.FileSettingsStore.get_instance')
 @patch('openhands.cli.main.check_folder_security_agreement')
+@patch('openhands.cli.main.read_task')
+@patch('openhands.cli.main.run_session')
 @patch('openhands.cli.main.LLMSummarizingCondenserConfig')
 @patch('openhands.cli.main.NoOpCondenserConfig')
+@patch('openhands.cli.main.finalize_config')
 async def test_main_security_check_fails(
+    mock_finalize_config,
     mock_noop_condenser,
     mock_llm_condenser,
+    mock_run_session,
+    mock_read_task,
     mock_check_security,
     mock_get_settings_store,
     mock_setup_config,
@@ -713,7 +741,7 @@ async def test_main_security_check_fails(
     mock_check_security.return_value = False
 
     # Run the function
-    await cli.main(loop)
+    await cli.main_with_loop(loop)
 
     # Assertions
     mock_parse_args.assert_called_once()
@@ -735,7 +763,9 @@ async def test_main_security_check_fails(
 @patch('openhands.cli.main.run_session')
 @patch('openhands.cli.main.LLMSummarizingCondenserConfig')
 @patch('openhands.cli.main.NoOpCondenserConfig')
+@patch('openhands.cli.main.finalize_config')
 async def test_config_loading_order(
+    mock_finalize_config,
     mock_noop_condenser,
     mock_llm_condenser,
     mock_run_session,
@@ -796,7 +826,7 @@ async def test_config_loading_order(
     mock_run_session.return_value = False  # No new session requested
 
     # Run the function
-    await cli.main(loop)
+    await cli.main_with_loop(loop)
 
     # Assertions for argument parsing and config setup
     mock_parse_args.assert_called_once()
@@ -826,3 +856,97 @@ async def test_config_loading_order(
 
     # Verify that run_session was called with the correct arguments
     mock_run_session.assert_called_once()
+
+
+@pytest.mark.asyncio
+@patch('openhands.cli.main.parse_arguments')
+@patch('openhands.cli.main.setup_config_from_args')
+@patch('openhands.cli.main.FileSettingsStore.get_instance')
+@patch('openhands.cli.main.check_folder_security_agreement')
+@patch('openhands.cli.main.read_task')
+@patch('openhands.cli.main.run_session')
+@patch('openhands.cli.main.LLMSummarizingCondenserConfig')
+@patch('openhands.cli.main.NoOpCondenserConfig')
+@patch('openhands.cli.main.finalize_config')
+@patch('builtins.open', new_callable=MagicMock)
+async def test_main_with_file_option(
+    mock_open,
+    mock_finalize_config,
+    mock_noop_condenser,
+    mock_llm_condenser,
+    mock_run_session,
+    mock_read_task,
+    mock_check_security,
+    mock_get_settings_store,
+    mock_setup_config,
+    mock_parse_args,
+):
+    """Test main function with a file option."""
+    loop = asyncio.get_running_loop()
+
+    # Mock arguments
+    mock_args = MagicMock()
+    mock_args.agent_cls = None
+    mock_args.llm_config = None
+    mock_args.name = None
+    mock_args.file = '/path/to/test/file.txt'
+    mock_args.task = None
+    mock_parse_args.return_value = mock_args
+
+    # Mock config
+    mock_config = MagicMock()
+    mock_config.workspace_base = '/test/dir'
+    mock_config.cli_multiline_input = False
+    mock_setup_config.return_value = mock_config
+
+    # Mock settings store
+    mock_settings_store = AsyncMock()
+    mock_settings = MagicMock()
+    mock_settings.agent = 'test-agent'
+    mock_settings.llm_model = 'test-model'
+    mock_settings.llm_api_key = 'test-api-key'
+    mock_settings.llm_base_url = 'test-base-url'
+    mock_settings.confirmation_mode = True
+    mock_settings.enable_default_condenser = True
+    mock_settings_store.load.return_value = mock_settings
+    mock_get_settings_store.return_value = mock_settings_store
+
+    # Mock condenser config to return a mock instead of validating
+    mock_llm_condenser_instance = MagicMock()
+    mock_llm_condenser.return_value = mock_llm_condenser_instance
+
+    # Mock security check
+    mock_check_security.return_value = True
+
+    # Mock file open
+    mock_file = MagicMock()
+    mock_file.__enter__.return_value.read.return_value = 'This is a test file content.'
+    mock_open.return_value = mock_file
+
+    # Mock run_session to return False (no new session requested)
+    mock_run_session.return_value = False
+
+    # Run the function
+    await cli.main_with_loop(loop)
+
+    # Assertions
+    mock_parse_args.assert_called_once()
+    mock_setup_config.assert_called_once_with(mock_args)
+    mock_get_settings_store.assert_called_once()
+    mock_settings_store.load.assert_called_once()
+    mock_check_security.assert_called_once_with(mock_config, '/test/dir')
+
+    # Verify file was opened
+    mock_open.assert_called_once_with('/path/to/test/file.txt', 'r', encoding='utf-8')
+
+    # Check that run_session was called with expected arguments
+    mock_run_session.assert_called_once()
+    # Extract the task_str from the call
+    task_str = mock_run_session.call_args[0][4]
+    assert "The user has tagged a file '/path/to/test/file.txt'" in task_str
+    assert 'Please read and understand the following file content first:' in task_str
+    assert 'This is a test file content.' in task_str
+    assert (
+        'After reviewing the file, please ask the user what they would like to do with it.'
+        in task_str
+    )

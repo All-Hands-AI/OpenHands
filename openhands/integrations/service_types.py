@@ -13,6 +13,7 @@ from openhands.server.types import AppMode
 class ProviderType(Enum):
     GITHUB = 'github'
     GITLAB = 'gitlab'
+    BITBUCKET = 'bitbucket'
 
 
 class TaskType(str, Enum):
@@ -51,6 +52,16 @@ class SuggestedTask(BaseModel):
                 'ciProvider': 'GitHub',
                 'requestVerb': 'pull request',
             }
+        elif self.git_provider == ProviderType.BITBUCKET:
+            return {
+                'requestType': 'Pull Request',
+                'requestTypeShort': 'PR',
+                'apiName': 'Bitbucket API',
+                'tokenEnvVar': 'BITBUCKET_TOKEN',
+                'ciSystem': 'Bitbucket Pipelines',
+                'ciProvider': 'Bitbucket',
+                'requestVerb': 'pull request',
+            }
 
         raise ValueError(f'Provider {self.git_provider} for suggested task prompts')
 
@@ -83,7 +94,7 @@ class SuggestedTask(BaseModel):
 
 
 class User(BaseModel):
-    id: int
+    id: str
     login: str
     avatar_url: str
     company: str | None = None
@@ -99,7 +110,7 @@ class Branch(BaseModel):
 
 
 class Repository(BaseModel):
-    id: int
+    id: str
     full_name: str
     git_provider: ProviderType
     is_public: bool
@@ -167,11 +178,11 @@ class BaseGitService(ABC):
             return RateLimitError('GitHub API rate limit exceeded')
 
         logger.warning(f'Status error on {self.provider} API: {e}')
-        return UnknownException('Unknown error')
+        return UnknownException(f'Unknown error: {e}')
 
     def handle_http_error(self, e: HTTPError) -> UnknownException:
         logger.warning(f'HTTP error on {self.provider} API: {type(e).__name__} : {e}')
-        return UnknownException(f'HTTP error {type(e).__name__}')
+        return UnknownException(f'HTTP error {type(e).__name__} : {e}')
 
 
 class GitService(Protocol):
@@ -184,6 +195,7 @@ class GitService(Protocol):
         external_auth_id: str | None = None,
         external_auth_token: SecretStr | None = None,
         external_token_manager: bool = False,
+        base_domain: str | None = None,
     ) -> None:
         """Initialize the service with authentication details"""
         ...

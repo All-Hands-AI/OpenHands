@@ -1,5 +1,4 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router";
 import posthog from "posthog-js";
 import OpenHands from "#/api/open-hands";
 import { useConfig } from "../query/use-config";
@@ -8,7 +7,6 @@ import { clearLoginData } from "#/utils/local-storage";
 export const useLogout = () => {
   const queryClient = useQueryClient();
   const { data: config } = useConfig();
-  const navigate = useNavigate();
 
   return useMutation({
     mutationFn: () => OpenHands.logout(config?.APP_MODE ?? "oss"),
@@ -24,7 +22,6 @@ export const useLogout = () => {
       }
 
       posthog.reset();
-      await navigate("/");
 
       // Refresh the page after all logout logic is completed
       window.location.reload();

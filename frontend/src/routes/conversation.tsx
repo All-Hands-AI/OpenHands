@@ -36,13 +36,17 @@ import { useDocumentTitleFromState } from "#/hooks/use-document-title-from-state
 import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
 import OpenHands from "#/api/open-hands";
 import { TabContent } from "#/components/layout/tab-content";
+import { useIsAuthed } from "#/hooks/query/use-is-authed";
+import { useUserProviders } from "#/hooks/use-user-providers";
 
 function AppContent() {
   useConversationConfig();
   const { t } = useTranslation();
   const { data: settings } = useSettings();
   const { conversationId } = useConversationId();
-  const { data: conversation, isFetched } = useActiveConversation();
+  const { data: conversation, isFetched, refetch } = useActiveConversation();
+  const { data: isAuthed } = useIsAuthed();
+  const { providers } = useUserProviders();
 
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const dispatch = useDispatch();
@@ -54,13 +58,18 @@ function AppContent() {
   const [width, setWidth] = React.useState(window.innerWidth);
 
   React.useEffect(() => {
-    if (isFetched && !conversation) {
+    if (isFetched && !conversation && isAuthed) {
       displayErrorToast(
         "This conversation does not exist, or you do not have permission to access it.",
       );
       navigate("/");
+    } else if (conversation?.status === "STOPPED") {
+      // start the conversation if the state is stopped on initial load
+      OpenHands.startConversation(conversation.conversation_id, providers).then(
+        () => refetch(),
+      );
     }
-  }, [conversation, isFetched]);
+  }, [conversation?.conversation_id, isFetched, isAuthed, providers]);
 
   React.useEffect(() => {
     dispatch(clearTerminal());

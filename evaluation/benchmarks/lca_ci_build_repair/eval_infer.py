@@ -19,10 +19,10 @@ from evaluation.utils.shared import (
     make_metadata,
 )
 from openhands.core.config import (
-    AppConfig,
     LLMConfig,
+    OpenHandsConfig,
     get_parser,
-    load_app_config,
+    load_openhands_config,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime
@@ -34,10 +34,10 @@ from openhands.utils.async_utils import call_async_from_sync
 
 def get_config(
     metadata: EvalMetadata,
-) -> AppConfig:
+) -> OpenHandsConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = 'python:3.12-bookworm'
-    config = AppConfig(
+    config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         runtime='docker',
@@ -53,7 +53,7 @@ def get_config(
     return config
 
 
-config = load_app_config()
+config = load_openhands_config()
 
 
 def load_bench_config():

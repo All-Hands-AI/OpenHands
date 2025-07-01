@@ -1,12 +1,12 @@
 from unittest.mock import patch
 
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.io import read_input
 
 
 def test_single_line_input():
     """Test that single line input works when cli_multiline_input is False"""
-    config = AppConfig()
+    config = OpenHandsConfig()
     config.cli_multiline_input = False
 
     with patch('builtins.input', return_value='hello world'):
@@ -16,7 +16,7 @@ def test_single_line_input():
 
 def test_multiline_input():
     """Test that multiline input works when cli_multiline_input is True"""
-    config = AppConfig()
+    config = OpenHandsConfig()
     config.cli_multiline_input = True
 
     # Simulate multiple lines of input followed by /exit

@@ -115,9 +115,11 @@ def test_default_activated_tools():
     )
     with open(mcp_config_path, 'r') as f:
         mcp_config = json.load(f)
-    assert 'default' in mcp_config
+    assert 'mcpServers' in mcp_config
+    assert 'default' in mcp_config['mcpServers']
+    assert 'tools' in mcp_config
     # no tools are always activated yet
-    assert len(mcp_config['default']) == 0
+    assert len(mcp_config['tools']) == 0
 
 
 @pytest.mark.asyncio
@@ -155,13 +157,20 @@ async def test_fetch_mcp_via_stdio(temp_dir, runtime_cls, run_as_openhands):
             'The observation should be a MCPObservation.'
         )
 
+        mcp_action = MCPAction(name='fetch', arguments={'url': 'http://localhost:8000'})
+        obs = await runtime.call_tool_mcp(mcp_action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert isinstance(obs, MCPObservation), (
+            'The observation should be a MCPObservation.'
+        )
+
         result_json = json.loads(obs.content)
         assert not result_json['isError']
         assert len(result_json['content']) == 1
         assert result_json['content'][0]['type'] == 'text'
         assert (
             result_json['content'][0]['text']
-            == 'Contents of http://localhost:8000/:\n---\n\n* <server.log>\n\n---'
+            == 'Contents of http://localhost:8000/:\n---\n\n* <.downloads/>\n* <server.log>\n\n---'
         )
     finally:
         close_test_runtime(runtime)
@@ -250,7 +259,11 @@ async def test_both_stdio_and_sse_mcp(
         assert obs_cat.exit_code == 0
 
         mcp_action_fetch = MCPAction(
-            name='fetch', arguments={'url': 'http://localhost:8000'}
+            # NOTE: the tool name is `fetch_fetch` because the tool name is `fetch`
+            # And FastMCP Proxy will pre-pend the server name (in this case, `fetch`)
+            # to the tool name, so the full tool name becomes `fetch_fetch`
+            name='fetch',
+            arguments={'url': 'http://localhost:8000'},
         )
         obs_fetch = await runtime.call_tool_mcp(mcp_action_fetch)
         logger.info(obs_fetch, extra={'msg_type': 'OBSERVATION'})
@@ -264,7 +277,7 @@ async def test_both_stdio_and_sse_mcp(
         assert result_json['content'][0]['type'] == 'text'
         assert (
             result_json['content'][0]['text']
-            == 'Contents of http://localhost:8000/:\n---\n\n* <server.log>\n\n---'
+            == 'Contents of http://localhost:8000/:\n---\n\n* <.downloads/>\n* <server.log>\n\n---'
         )
     finally:
         close_test_runtime(runtime)
@@ -302,7 +315,9 @@ async def test_microagent_and_one_stdio_mcp_in_config(
         logger.info(f'updated_config: {updated_config}')
 
         # ======= Test the stdio server in the config =======
-        mcp_action_sse = MCPAction(name='list_directory', arguments={'path': '/'})
+        mcp_action_sse = MCPAction(
+            name='filesystem_list_directory', arguments={'path': '/'}
+        )
         obs_sse = await runtime.call_tool_mcp(mcp_action_sse)
         logger.info(obs_sse, extra={'msg_type': 'OBSERVATION'})
         assert isinstance(obs_sse, MCPObservation), (
@@ -330,7 +345,7 @@ async def test_microagent_and_one_stdio_mcp_in_config(
         assert obs_cat.exit_code == 0
 
         mcp_action_fetch = MCPAction(
-            name='fetch', arguments={'url': 'http://localhost:8000'}
+            name='fetch_fetch', arguments={'url': 'http://localhost:8000'}
         )
         obs_fetch = await runtime.call_tool_mcp(mcp_action_fetch)
         logger.info(obs_fetch, extra={'msg_type': 'OBSERVATION'})
@@ -344,7 +359,7 @@ async def test_microagent_and_one_stdio_mcp_in_config(
         assert result_json['content'][0]['type'] == 'text'
         assert (
             result_json['content'][0]['text']
-            == 'Contents of http://localhost:8000/:\n---\n\n* <server.log>\n\n---'
+            == 'Contents of http://localhost:8000/:\n---\n\n* <.downloads/>\n* <server.log>\n\n---'
         )
     finally:
         close_test_runtime(runtime)

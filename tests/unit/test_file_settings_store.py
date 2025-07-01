@@ -2,7 +2,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from openhands.core.config.app_config import AppConfig
+from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
 from openhands.storage.settings.file_settings_store import FileSettingsStore
@@ -21,8 +21,8 @@ def file_settings_store(mock_file_store):
 @pytest.mark.asyncio
 async def test_load_nonexistent_data(file_settings_store):
     with patch(
-        'openhands.storage.data_models.settings.load_app_config',
-        MagicMock(return_value=AppConfig()),
+        'openhands.storage.data_models.settings.load_openhands_config',
+        MagicMock(return_value=OpenHandsConfig()),
     ):
         file_settings_store.file_store.read.side_effect = FileNotFoundError()
         assert await file_settings_store.load() is None
@@ -74,7 +74,7 @@ async def test_store_and_load_data(file_settings_store):
 
 @pytest.mark.asyncio
 async def test_get_instance():
-    config = AppConfig(file_store='local', file_store_path='/test/path')
+    config = OpenHandsConfig(file_store='local', file_store_path='/test/path')
 
     with patch(
         'openhands.storage.settings.file_settings_store.get_file_store'
@@ -86,4 +86,4 @@ async def test_get_instance():
 
         assert isinstance(store, FileSettingsStore)
         assert store.file_store == mock_store
-        mock_get_store.assert_called_once_with('local', '/test/path')
+        mock_get_store.assert_called_once_with('local', '/test/path', None, None)

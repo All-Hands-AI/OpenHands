@@ -2,6 +2,7 @@ import asyncio
 
 import pytest
 
+from openhands.core.config.mcp_config import MCPSSEServerConfig
 from openhands.mcp.client import MCPClient
 from openhands.mcp.utils import create_mcp_clients
 
@@ -10,22 +11,24 @@ from openhands.mcp.utils import create_mcp_clients
 async def test_create_mcp_clients_timeout_with_invalid_url():
     """Test that create_mcp_clients properly times out when given an invalid URL."""
     # Use a non-existent domain that should cause a connection timeout
-    invalid_url = 'http://non-existent-domain-that-will-timeout.invalid'
+    server = MCPSSEServerConfig(
+        url='http://non-existent-domain-that-will-timeout.invalid'
+    )
 
-    # Temporarily modify the default timeout for the MCPClient.connect_sse method
-    original_connect_sse = MCPClient.connect_sse
+    # Temporarily modify the default timeout for the MCPClient.connect_http method
+    original_connect_connect_http = MCPClient.connect_http
 
     # Create a wrapper that calls the original method but with a shorter timeout
-    async def connect_sse_with_short_timeout(self, server_url, timeout=30.0):
-        return await original_connect_sse(self, server_url, timeout=0.5)
+    async def connect_http_with_short_timeout(self, server_url, timeout=30.0):
+        return await original_connect_connect_http(self, server_url, timeout=0.5)
 
     try:
         # Replace the method with our wrapper
-        MCPClient.connect_sse = connect_sse_with_short_timeout
+        MCPClient.connect_http = connect_http_with_short_timeout
 
         # Call create_mcp_clients with the invalid URL
         start_time = asyncio.get_event_loop().time()
-        clients = await create_mcp_clients([invalid_url])
+        clients = await create_mcp_clients([server], [])
         end_time = asyncio.get_event_loop().time()
 
         # Verify that no clients were successfully connected
@@ -38,7 +41,7 @@ async def test_create_mcp_clients_timeout_with_invalid_url():
         )
     finally:
         # Restore the original method
-        MCPClient.connect_sse = original_connect_sse
+        MCPClient.connect_http = original_connect_connect_http
 
 
 @pytest.mark.asyncio
@@ -48,20 +51,20 @@ async def test_create_mcp_clients_with_unreachable_host():
     # This IP is in the TEST-NET-1 range (192.0.2.0/24) reserved for documentation and examples
     unreachable_url = 'http://192.0.2.1:8080'
 
-    # Temporarily modify the default timeout for the MCPClient.connect_sse method
-    original_connect_sse = MCPClient.connect_sse
+    # Temporarily modify the default timeout for the MCPClient.connect_http method
+    original_connect_http = MCPClient.connect_http
 
     # Create a wrapper that calls the original method but with a shorter timeout
-    async def connect_sse_with_short_timeout(self, server_url, timeout=30.0):
-        return await original_connect_sse(self, server_url, timeout=1.0)
+    async def connect_http_with_short_timeout(self, server_url, timeout=30.0):
+        return await original_connect_http(self, server_url, timeout=1.0)
 
     try:
         # Replace the method with our wrapper
-        MCPClient.connect_sse = connect_sse_with_short_timeout
+        MCPClient.connect_http = connect_http_with_short_timeout
 
         # Call create_mcp_clients with the unreachable URL
         start_time = asyncio.get_event_loop().time()
-        clients = await create_mcp_clients([unreachable_url])
+        clients = await create_mcp_clients([unreachable_url], [])
         end_time = asyncio.get_event_loop().time()
 
         # Verify that no clients were successfully connected
@@ -73,4 +76,4 @@ async def test_create_mcp_clients_with_unreachable_host():
         )
     finally:
         # Restore the original method
-        MCPClient.connect_sse = original_connect_sse
+        MCPClient.connect_http = original_connect_http

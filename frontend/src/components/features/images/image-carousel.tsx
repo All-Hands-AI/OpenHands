@@ -60,7 +60,7 @@ export function ImageCarousel({
             key={index}
             size={size}
             src={src}
-            onRemove={onRemove && (() => onRemove(index))}
+            onRemove={onRemove ? () => onRemove?.(index) : undefined}
           />
         ))}
       </div>

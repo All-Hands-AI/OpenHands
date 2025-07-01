@@ -33,10 +33,10 @@ from evaluation.utils.shared import (
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
-    AppConfig,
+    OpenHandsConfig,
     get_llm_config_arg,
     get_parser,
-    load_app_config,
+    load_openhands_config,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
@@ -45,7 +45,7 @@ from openhands.events.observation import CmdOutputObservation
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
 
-config = load_app_config()
+config = load_openhands_config()
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
@@ -76,10 +76,10 @@ ID2CONDA = {
 
 def get_config(
     metadata: EvalMetadata,
-) -> AppConfig:
+) -> OpenHandsConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = 'public.ecr.aws/i5g0m1f6/ml-bench'
-    config = AppConfig(
+    config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         runtime='docker',

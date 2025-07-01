@@ -525,7 +525,10 @@ async def test_process_issue(
         patch(
             'openhands.resolver.issue_resolver.SandboxConfig', return_value=MagicMock()
         ),
-        patch('openhands.resolver.issue_resolver.AppConfig', return_value=MagicMock()),
+        patch(
+            'openhands.resolver.issue_resolver.OpenHandsConfig',
+            return_value=MagicMock(),
+        ),
     ):
         # Call the process_issue method
         result = await resolver.process_issue(issue, base_commit, handler_instance)

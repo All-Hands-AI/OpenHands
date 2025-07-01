@@ -5,12 +5,10 @@ import socketio
 from openhands.server.app import app as base_app
 from openhands.server.listen_socket import sio
 from openhands.server.middleware import (
-    AttachConversationMiddleware,
     CacheControlMiddleware,
     InMemoryRateLimiter,
     LocalhostCORSMiddleware,
     RateLimitMiddleware,
-    SessionApiKeyMiddleware,
 )
 from openhands.server.static import SPAStaticFiles
 
@@ -25,10 +23,5 @@ base_app.add_middleware(
     RateLimitMiddleware,
     rate_limiter=InMemoryRateLimiter(requests=10, seconds=1),
 )
-base_app.middleware('http')(AttachConversationMiddleware(base_app))
-
-session_api_key = os.getenv('SESSION_API_KEY')
-if session_api_key:
-    base_app.middleware('http')(SessionApiKeyMiddleware(session_api_key))
 
 app = socketio.ASGIApp(sio, other_asgi_app=base_app)

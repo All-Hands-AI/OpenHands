@@ -11,12 +11,12 @@ from argparse import Namespace
 from typing import Any
 from uuid import uuid4
 
-from pydantic import SecretStr
 from termcolor import colored
 
 import openhands
 from openhands.controller.state.state import State
-from openhands.core.config import AgentConfig, AppConfig, LLMConfig, SandboxConfig
+from openhands.core.config import AgentConfig, OpenHandsConfig, SandboxConfig
+from openhands.core.config.utils import load_openhands_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import CmdRunAction, MessageAction
@@ -44,7 +44,7 @@ from openhands.resolver.utils import (
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
 
-# Don't make this confgurable for now, unless we have other competitive agents
+# Don't make this configurable for now, unless we have other competitive agents
 AGENT_CLASS = 'CodeActAgent'
 
 
@@ -71,19 +71,17 @@ class IssueResolver:
             base_domain: The base domain for the git server.
         """
 
-        # Setup and validate container images
-        self.sandbox_config = self._setup_sandbox_config(
-            args.base_container_image,
-            args.runtime_container_image,
-            args.is_experimental,
-        )
-
         parts = args.selected_repo.rsplit('/', 1)
         if len(parts) < 2:
             raise ValueError('Invalid repository format. Expected owner/repo')
         owner, repo = parts
 
-        token = args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
+        token = (
+            args.token
+            or os.getenv('GITHUB_TOKEN')
+            or os.getenv('GITLAB_TOKEN')
+            or os.getenv('BITBUCKET_TOKEN')
+        )
         username = args.username if args.username else os.getenv('GIT_USERNAME')
         if not username:
             raise ValueError('Username is required.')
@@ -97,32 +95,6 @@ class IssueResolver:
             token,
             args.base_domain,
         )
-
-        api_key = args.llm_api_key or os.environ['LLM_API_KEY']
-        model = args.llm_model or os.environ['LLM_MODEL']
-        base_url = args.llm_base_url or os.environ.get('LLM_BASE_URL', None)
-        api_version = os.environ.get('LLM_API_VERSION', None)
-        llm_num_retries = int(os.environ.get('LLM_NUM_RETRIES', '4'))
-        llm_retry_min_wait = int(os.environ.get('LLM_RETRY_MIN_WAIT', '5'))
-        llm_retry_max_wait = int(os.environ.get('LLM_RETRY_MAX_WAIT', '30'))
-        llm_retry_multiplier = int(os.environ.get('LLM_RETRY_MULTIPLIER', 2))
-        llm_timeout = int(os.environ.get('LLM_TIMEOUT', 0))
-
-        # Create LLMConfig instance
-        llm_config = LLMConfig(
-            model=model,
-            api_key=SecretStr(api_key) if api_key else None,
-            base_url=base_url,
-            num_retries=llm_num_retries,
-            retry_min_wait=llm_retry_min_wait,
-            retry_max_wait=llm_retry_max_wait,
-            retry_multiplier=llm_retry_multiplier,
-            timeout=llm_timeout,
-        )
-
-        # Only set api_version if it was explicitly provided, otherwise let LLMConfig handle it
-        if api_version is not None:
-            llm_config.api_version = api_version
 
         repo_instruction = None
         if args.repo_instruction_file:
@@ -153,22 +125,40 @@ class IssueResolver:
         base_domain = args.base_domain
         if base_domain is None:
             base_domain = (
-                'github.com' if platform == ProviderType.GITHUB else 'gitlab.com'
+                'github.com'
+                if platform == ProviderType.GITHUB
+                else 'gitlab.com'
+                if platform == ProviderType.GITLAB
+                else 'bitbucket.org'
             )
+
+        self.output_dir = args.output_dir
+        self.issue_type = issue_type
+        self.issue_number = args.issue_number
+
+        self.workspace_base = self.build_workspace_base(
+            self.output_dir, self.issue_type, self.issue_number
+        )
+
+        self.max_iterations = args.max_iterations
+
+        self.app_config = self.update_openhands_config(
+            load_openhands_config(),
+            self.max_iterations,
+            self.workspace_base,
+            args.base_container_image,
+            args.runtime_container_image,
+            args.is_experimental,
+        )
 
         self.owner = owner
         self.repo = repo
         self.platform = platform
-        self.max_iterations = args.max_iterations
-        self.output_dir = args.output_dir
-        self.llm_config = llm_config
         self.user_instructions_prompt_template = user_instructions_prompt_template
         self.conversation_instructions_prompt_template = (
             conversation_instructions_prompt_template
         )
-        self.issue_type = issue_type
         self.repo_instruction = repo_instruction
-        self.issue_number = args.issue_number
         self.comment_id = args.comment_id
 
         factory = IssueHandlerFactory(
@@ -179,17 +169,47 @@ class IssueResolver:
             platform=self.platform,
             base_domain=base_domain,
             issue_type=self.issue_type,
-            llm_config=self.llm_config,
+            llm_config=self.app_config.get_llm_config(),
         )
         self.issue_handler = factory.create()
 
     @classmethod
-    def _setup_sandbox_config(
+    def update_openhands_config(
         cls,
+        config: OpenHandsConfig,
+        max_iterations: int,
+        workspace_base: str,
         base_container_image: str | None,
         runtime_container_image: str | None,
         is_experimental: bool,
-    ) -> SandboxConfig:
+    ) -> OpenHandsConfig:
+        config.default_agent = 'CodeActAgent'
+        config.runtime = 'docker'
+        config.max_budget_per_task = 4
+        config.max_iterations = max_iterations
+
+        # do not mount workspace
+        config.workspace_base = workspace_base
+        config.workspace_mount_path = workspace_base
+        config.agents = {'CodeActAgent': AgentConfig(disabled_microagents=['github'])}
+
+        cls.update_sandbox_config(
+            config,
+            base_container_image,
+            runtime_container_image,
+            is_experimental,
+        )
+
+        return config
+
+    @classmethod
+    def update_sandbox_config(
+        cls,
+        openhands_config: OpenHandsConfig,
+        base_container_image: str | None,
+        runtime_container_image: str | None,
+        is_experimental: bool,
+    ) -> None:
         if runtime_container_image is not None and base_container_image is not None:
             raise ValueError('Cannot provide both runtime and base container images.')
 
@@ -229,7 +249,17 @@ class IssueResolver:
             if user_id == 0:
                 sandbox_config.user_id = get_unique_uid()
 
-        return sandbox_config
+        openhands_config.sandbox.base_container_image = (
+            sandbox_config.base_container_image
+        )
+        openhands_config.sandbox.runtime_container_image = (
+            sandbox_config.runtime_container_image
+        )
+        openhands_config.sandbox.enable_auto_lint = sandbox_config.enable_auto_lint
+        openhands_config.sandbox.use_host_network = sandbox_config.use_host_network
+        openhands_config.sandbox.timeout = sandbox_config.timeout
+        openhands_config.sandbox.local_runtime_url = sandbox_config.local_runtime_url
+        openhands_config.sandbox.user_id = sandbox_config.user_id
 
     def initialize_runtime(
         self,
@@ -352,6 +382,15 @@ class IssueResolver:
         logger.info('-' * 30)
         return {'git_patch': git_patch}
 
+    @staticmethod
+    def build_workspace_base(
+        output_dir: str, issue_type: str, issue_number: int
+    ) -> str:
+        workspace_base = os.path.join(
+            output_dir, 'workspace', f'{issue_type}_{issue_number}'
+        )
+        return os.path.abspath(workspace_base)
+
     async def process_issue(
         self,
         issue: Issue,
@@ -366,31 +405,12 @@ class IssueResolver:
         else:
             logger.info(f'Starting fixing issue {issue.number}.')
 
-        workspace_base = os.path.join(
-            self.output_dir, 'workspace', f'{issue_handler.issue_type}_{issue.number}'
-        )
-
-        # Get the absolute path of the workspace base
-        workspace_base = os.path.abspath(workspace_base)
         # write the repo to the workspace
-        if os.path.exists(workspace_base):
-            shutil.rmtree(workspace_base)
-        shutil.copytree(os.path.join(self.output_dir, 'repo'), workspace_base)
+        if os.path.exists(self.workspace_base):
+            shutil.rmtree(self.workspace_base)
+        shutil.copytree(os.path.join(self.output_dir, 'repo'), self.workspace_base)
 
-        config = AppConfig(
-            default_agent='CodeActAgent',
-            runtime='docker',
-            max_budget_per_task=4,
-            max_iterations=self.max_iterations,
-            sandbox=self.sandbox_config,
-            # do not mount workspace
-            workspace_base=workspace_base,
-            workspace_mount_path=workspace_base,
-            agents={'CodeActAgent': AgentConfig(disabled_microagents=['github'])},
-        )
-        config.set_llm_config(self.llm_config)
-
-        runtime = create_runtime(config)
+        runtime = create_runtime(self.app_config)
         await runtime.connect()
 
         def on_event(evt: Event) -> None:
@@ -414,7 +434,7 @@ class IssueResolver:
         action = MessageAction(content=instruction, image_urls=images_urls)
         try:
             state: State | None = await run_controller(
-                config=config,
+                config=self.app_config,
                 initial_user_action=action,
                 runtime=runtime,
                 fake_user_response_fn=codeact_user_response,
@@ -492,16 +512,7 @@ class IssueResolver:
         )
         return output
 
-    async def resolve_issue(
-        self,
-        reset_logger: bool = False,
-    ) -> None:
-        """Resolve a single issue.
-
-        Args:
-            reset_logger: Whether to reset the logger for multiprocessing.
-        """
-
+    def extract_issue(self) -> Issue:
         # Load dataset
         issues: list[Issue] = self.issue_handler.get_converted_issues(
             issue_numbers=[self.issue_number], comment_id=self.comment_id
@@ -515,7 +526,19 @@ class IssueResolver:
                 f'3. The repository name is spelled correctly'
             )
 
-        issue = issues[0]
+        return issues[0]
+
+    async def resolve_issue(
+        self,
+        reset_logger: bool = False,
+    ) -> None:
+        """Resolve a single issue.
+
+        Args:
+            reset_logger: Whether to reset the logger for multiprocessing.
+        """
+
+        issue = self.extract_issue()
 
         if self.comment_id is not None:
             if (
@@ -534,7 +557,7 @@ class IssueResolver:
                 )
 
         # TEST METADATA
-        model_name = self.llm_config.model.split('/')[-1]
+        model_name = self.app_config.get_llm_config().model.split('/')[-1]
 
         pathlib.Path(self.output_dir).mkdir(parents=True, exist_ok=True)
         pathlib.Path(os.path.join(self.output_dir, 'infer_logs')).mkdir(

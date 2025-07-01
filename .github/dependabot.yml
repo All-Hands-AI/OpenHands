@@ -16,7 +16,6 @@ updates:
       mcp-packages:
         patterns:
           - "mcp"
-          - "mcpm"
       security-all:
         applies-to: "security-updates"
         patterns:
@@ -71,5 +70,11 @@ updates:
 
   - package-ecosystem: "github-actions"
     directory: "/"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "docker"
+    directories:
+      - "containers/*"
     schedule:
       interval: "weekly"

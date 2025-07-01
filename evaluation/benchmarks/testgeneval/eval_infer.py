@@ -41,7 +41,7 @@ from evaluation.utils.shared import (
     reset_logger_for_multiprocessing,
     run_evaluation,
 )
-from openhands.core.config import AppConfig, SandboxConfig, get_parser
+from openhands.core.config import OpenHandsConfig, SandboxConfig, get_parser
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime
 from openhands.events.action import CmdRunAction
@@ -52,13 +52,13 @@ DOCKER_IMAGE_PREFIX = os.environ.get('EVAL_DOCKER_IMAGE_PREFIX', 'docker.io/kdja
 logger.info(f'Using docker image prefix: {DOCKER_IMAGE_PREFIX}')
 
 
-def get_config(instance: pd.Series) -> AppConfig:
+def get_config(instance: pd.Series) -> OpenHandsConfig:
     base_container_image = get_instance_docker_image(instance['instance_id_swebench'])
     assert base_container_image, (
         f'Invalid container image for instance {instance["instance_id_swebench"]}.'
     )
     logger.info(f'Using instance container image: {base_container_image}.')
-    return AppConfig(
+    return OpenHandsConfig(
         run_as_openhands=False,
         runtime=os.environ.get('RUNTIME', 'eventstream'),
         sandbox=SandboxConfig(

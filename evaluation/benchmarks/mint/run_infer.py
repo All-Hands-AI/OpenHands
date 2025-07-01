@@ -22,7 +22,7 @@ from evaluation.utils.shared import (
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
-    AppConfig,
+    OpenHandsConfig,
     get_llm_config_arg,
     get_parser,
 )
@@ -102,14 +102,14 @@ def load_incontext_example(task_name: str, with_tool: bool = True):
 
 def get_config(
     metadata: EvalMetadata,
-) -> AppConfig:
+) -> OpenHandsConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = 'xingyaoww/od-eval-mint:v1.0'
     sandbox_config.runtime_extra_deps = (
         f'$OH_INTERPRETER_PATH -m pip install {" ".join(MINT_DEPENDENCIES)}'
     )
 
-    config = AppConfig(
+    config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         runtime='docker',

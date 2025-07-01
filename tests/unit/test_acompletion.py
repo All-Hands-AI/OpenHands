@@ -4,13 +4,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from openhands.core.config import load_app_config
+from openhands.core.config import load_openhands_config
 from openhands.core.exceptions import UserCancelledError
 from openhands.llm.async_llm import AsyncLLM
 from openhands.llm.llm import LLM
 from openhands.llm.streaming_llm import StreamingLLM
 
-config = load_app_config()
+config = load_openhands_config()
 
 
 @pytest.fixture
