@@ -1,4 +1,4 @@
-# **SWE-Bench Evaluation with Localization Evaluation**
+# **Localization Evaluation for SWE-Bench**
 
 This folder implements localization evaluation at both file and function levels to complementing the assessment of agent inference on [SWE-Bench](https://www.swebench.com/).
 
@@ -29,7 +29,7 @@ This folder implements localization evaluation at both file and function levels 
         - `split`: SWE-Bench dataset split to use
         - `dataset`: SWE-Bench dataset name
         - `max-infer-turn`: the maximum number of iterations the agent took to run inference
-        - `align-with-max`: whether to align the failure indices with `max_iter`
+        - `align-with-max`: whether to align failure indices (e.g., incorrect localization, unresolved tasks) with `max_iter`
 
     - Example: 
         ```bash
