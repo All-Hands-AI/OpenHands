@@ -180,9 +180,12 @@ export function ChatInterface() {
   return (
     <ScrollProvider value={scrollProviderValue}>
       <div className="h-full flex flex-col justify-between">
-        {!hasSubstantiveAgentActions && !optimisticUserMessage && (
-          <ChatSuggestions onSuggestionsClick={setMessageToSend} />
-        )}
+        {!hasSubstantiveAgentActions &&
+          !optimisticUserMessage &&
+          events.length === 0 && (
+            <ChatSuggestions onSuggestionsClick={setMessageToSend} />
+          )}
+        {/* Note: We only show chat suggestions when there are no events */}
 
         <div
           ref={scrollRef}
