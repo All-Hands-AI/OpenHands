@@ -18,6 +18,7 @@ from openhands.server.user_auth import (
     get_user_settings,
     get_user_settings_store,
 )
+from openhands.server.user_auth.admin import get_admin_user_settings, requires_admin
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.secrets.secrets_store import SecretsStore
 from openhands.storage.settings.settings_store import SettingsStore
@@ -176,6 +177,21 @@ async def store_settings(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={'error': 'Something went wrong storing settings'},
         )
+
+
+@app.get('/dependency-hello')
+def dependency_hello(name: str | None = None, settings = Depends(get_admin_user_settings)) -> str:
+    if name:
+        return f"Hello {name} from {settings.email}!"
+    return f"Hello from {settings.email}!"
+
+
+@app.get('/wrapper-hello')
+@requires_admin
+def wrapper_hello(name: str | None = None) -> str:
+    if name:
+        return f"Hello {name}!"
+    return "Hello there!"
 
 
 def convert_to_settings(settings_with_token_data: Settings) -> Settings:
