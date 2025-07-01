@@ -23,6 +23,7 @@ import { ConversationStatus } from "#/types/conversation-status";
 interface ConversationCardProps {
   onClick?: () => void;
   onDelete?: () => void;
+  onStop?: () => void;
   onChangeTitle?: (title: string) => void;
   showOptions?: boolean;
   isActive?: boolean;
@@ -40,6 +41,7 @@ const MAX_TIME_BETWEEN_CREATION_AND_UPDATE = 1000 * 60 * 30; // 30 minutes
 export function ConversationCard({
   onClick,
   onDelete,
+  onStop,
   onChangeTitle,
   showOptions,
   isActive,
@@ -98,6 +100,13 @@ export function ConversationCard({
     event.preventDefault();
     event.stopPropagation();
     onDelete?.();
+    setContextMenuVisible(false);
+  };
+
+  const handleStop = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    onStop?.();
     setContextMenuVisible(false);
   };
 
@@ -224,6 +233,11 @@ export function ConversationCard({
                 <ConversationCardContextMenu
                   onClose={() => setContextMenuVisible(false)}
                   onDelete={onDelete && handleDelete}
+                  onStop={
+                    conversationStatus !== "STOPPED"
+                      ? onStop && handleStop
+                      : undefined
+                  }
                   onEdit={onChangeTitle && handleEdit}
                   onDownloadViaVSCode={
                     conversationId && showOptions
