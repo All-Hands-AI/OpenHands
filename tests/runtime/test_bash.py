@@ -515,19 +515,23 @@ def test_run_as_user_correct_home_dir(temp_dir, runtime_cls, run_as_openhands):
         close_test_runtime(runtime)
 
 
-def test_multi_cmd_run_in_single_line(reusable_runtime, reusable_config):
-    if is_windows():
-        # Windows PowerShell version using semicolon
-        obs = _run_cmd_action(reusable_runtime, 'Get-Location && Get-ChildItem')
-        assert obs.exit_code == 0
-        assert str(reusable_config.workspace_mount_path_in_sandbox) in obs.content
-        assert '.git_config' in obs.content
-    else:
-        # Original Linux version using &&
-        obs = _run_cmd_action(reusable_runtime, 'pwd && ls -l')
-        assert obs.exit_code == 0
-        assert reusable_config.workspace_mount_path_in_sandbox in obs.content
-        assert 'total 0' in obs.content
+def test_multi_cmd_run_in_single_line(temp_dir, runtime_cls):
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls)
+    try:
+        if is_windows():
+            # Windows PowerShell version using semicolon
+            obs = _run_cmd_action(runtime, 'Get-Location && Get-ChildItem')
+            assert obs.exit_code == 0
+            assert str(config.workspace_mount_path_in_sandbox) in obs.content
+            assert '.git_config' in obs.content
+        else:
+            # Original Linux version using &&
+            obs = _run_cmd_action(runtime, 'pwd && ls -l')
+            assert obs.exit_code == 0
+            assert config.workspace_mount_path_in_sandbox in obs.content
+            assert 'total 0' in obs.content
+    finally:
+        close_test_runtime(runtime)
 
 
 def test_stateful_cmd(temp_dir, runtime_cls):
