@@ -27,51 +27,33 @@ from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChun
 
 from openhands.llm.tool_names import GEMINI_EDITOR_TOOL_NAME
 
-_DETAILED_GEMINI_EDITOR_DESCRIPTION = """Gemini-style editing tool for viewing, creating and editing files
-* State is persistent across command calls and discussions with the user
-* This tool provides Gemini CLI-style file editing capabilities based on the official Google Gemini CLI tools
-* The following binary file extensions can be viewed in Markdown format: [".xlsx", ".pptx", ".wav", ".mp3", ".m4a", ".flac", ".pdf", ".docx"]. IT DOES NOT HANDLE IMAGES.
-* If a `command` generates a long output, it will be truncated and marked with `<response clipped>`
+_DETAILED_GEMINI_EDITOR_DESCRIPTION = """Unified file editing tool with Gemini CLI-compatible commands
 
-Available commands (matching Gemini CLI tool signatures):
-- `read_file`: Reads and returns the content of a specified file from the local filesystem. Handles text, images, and PDF files. For text files, it can read specific line ranges.
-- `write_file`: Writes content to a specified file in the local filesystem. Creates new files or overwrites existing ones.
-- `replace`: Replaces text within a file. By default, replaces a single occurrence, but can replace multiple occurrences when `expected_replacements` is specified.
-- `list_directory`: Lists the names of files and subdirectories directly within a specified directory path. Can optionally ignore entries matching provided glob patterns.
+This tool provides access to the following file operations:
+- `read_file`: Read content from files
+- `write_file`: Write content to files
+- `replace`: Replace text within files
+- `list_directory`: List directory contents
 
-Before using this tool:
-1. Use the read_file or list_directory commands to understand the file's contents and context
-2. Verify the directory path is correct when creating new files
-3. Always use absolute file paths (starting with /)
+Each command matches the exact signature of the corresponding Gemini CLI tool.
+Use absolute file paths (starting with /) for all operations.
 
-When making edits:
-   - Ensure the edit results in idiomatic, correct code
-   - Do not leave the code in a broken state
-   - For replace operations, include sufficient context (3-5 lines) before and after the target text
-
-CRITICAL REQUIREMENTS FOR USING THE REPLACE COMMAND:
-
-1. EXACT MATCHING: The `old_string` parameter must match EXACTLY one or more consecutive lines from the file, including all whitespace and indentation.
-
-2. UNIQUENESS: The `old_string` must uniquely identify a single instance in the file unless `expected_replacements` is specified.
-
-3. REPLACEMENT: The `new_string` parameter should contain the edited lines that replace the `old_string`.
-
-4. MULTIPLE REPLACEMENTS: Use `expected_replacements` parameter when you want to replace multiple occurrences of the same text.
-
-Remember: when making multiple file edits in a row to the same file, you should prefer to send all edits in a single message with multiple calls to this tool, rather than multiple messages with a single call each.
+For the `replace` command:
+- The `old_string` must match EXACTLY, including whitespace and indentation
+- Include sufficient context (3-5 lines) to ensure uniqueness
+- The `new_string` should contain the complete replacement text
+- Use `expected_replacements` parameter for multiple replacements
 """
 
-_SHORT_GEMINI_EDITOR_DESCRIPTION = """Gemini-style editing tool for viewing, creating and editing files
-* State is persistent across command calls and discussions with the user
-* Based on official Google Gemini CLI tools with exact tool signature matching
-* If a `command` generates a long output, it will be truncated and marked with `<response clipped>`
-* Provides read_file, write_file, replace, and list_directory commands matching Gemini CLI
-Notes for using the `replace` command:
-* The `old_string` parameter should match EXACTLY one or more consecutive lines from the original file. Be mindful of whitespaces!
-* If the `old_string` parameter is not unique in the file, the replacement will not be performed. Make sure to include enough context in `old_string` to make it unique
-* The `new_string` parameter should contain the edited lines that should replace the `old_string`
-* Use `expected_replacements` parameter when replacing multiple occurrences
+_SHORT_GEMINI_EDITOR_DESCRIPTION = """Unified file tool with Gemini CLI commands
+
+Provides read_file, write_file, replace, and list_directory commands with exact Gemini CLI signatures.
+Use absolute paths for all operations.
+
+For replace operations:
+- Match text exactly (including whitespace)
+- Include context to ensure uniqueness
+- Provide complete replacement text
 """
 
 
