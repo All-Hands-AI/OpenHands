@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, RefreshCw } from "lucide-react";
 import { BaseModalTitle } from "#/components/shared/modals/confirmation-modals/base-modal";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModalBody } from "#/components/shared/modals/modal-body";
 import { I18nKey } from "#/i18n/declaration";
 import { useConversationMicroagents } from "#/hooks/query/use-conversation-microagents";
+import { BrandButton } from "../settings/brand-button";
 
 interface MicroagentsModalProps {
   onClose: () => void;
@@ -20,11 +21,13 @@ export function MicroagentsModal({
   const [expandedAgents, setExpandedAgents] = useState<Record<string, boolean>>(
     {},
   );
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const {
     data: microagents,
     isLoading,
     isError,
+    refetch,
   } = useConversationMicroagents({
     conversationId,
     enabled: true,
@@ -37,6 +40,15 @@ export function MicroagentsModal({
     }));
   };
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   return (
     <ModalBackdrop onClose={onClose}>
       <ModalBody
@@ -45,8 +57,28 @@ export function MicroagentsModal({
         testID="microagents-modal"
       >
         <div className="flex flex-col gap-6 w-full">
-          <BaseModalTitle title={t(I18nKey.MICROAGENTS_MODAL$TITLE)} />
+          <div className="flex items-center justify-between w-full">
+            <BaseModalTitle title={t(I18nKey.MICROAGENTS_MODAL$TITLE)} />
+            <BrandButton
+              testId="refresh-microagents"
+              type="button"
+              variant="primary"
+              className="flex items-center gap-2"
+              onClick={handleRefresh}
+              isDisabled={isLoading || isRefreshing}
+            >
+              <RefreshCw
+                size={16}
+                className={`${isRefreshing ? "animate-spin" : ""}`}
+              />
+              {t(I18nKey.BUTTON$REFRESH)}
+            </BrandButton>
+          </div>
         </div>
+
+        <span className="text-sm text-gray-400">
+          {t(I18nKey.MICROAGENTS_MODAL$WARNING)}
+        </span>
 
         <div className="w-full h-[60vh] overflow-auto rounded-md">
           {isLoading && (

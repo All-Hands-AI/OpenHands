@@ -9039,6 +9039,22 @@
         "tr": "Kullanılabilir mikro ajanlar",
         "uk": "Доступні мікроагенти"
     },
+    "MICROAGENTS_MODAL$WARNING": {
+        "en": "If you update the microagents, you will need to stop the conversation and then click on the refresh button to see the changes.",
+        "ja": "マイクロエージェントを更新する場合、会話を停止してから更新ボタンをクリックして変更を確認する必要があります。",
+        "zh-CN": "如果您更新微代理，您需要停止对话，然后点击刷新按钮以查看更改。",
+        "zh-TW": "如果您更新微代理，您需要停止對話，然後點擊重新整理按鈕以查看更改。",
+        "ko-KR": "마이크로에이전트를 업데이트하는 경우 대화를 중지한 후 새로고침 버튼을 클릭하여 변경사항을 확인해야 합니다.",
+        "no": "Hvis du oppdaterer mikroagentene, må du stoppe samtalen og deretter klikke på oppdater-knappen for å se endringene.",
+        "ar": "إذا قمت بتحديث الوكلاء المصغرين، فستحتاج إلى إيقاف المحادثة ثم النقر على زر التحديث لرؤية التغييرات.",
+        "de": "Wenn Sie die Mikroagenten aktualisieren, müssen Sie das Gespräch beenden und dann auf die Aktualisieren-Schaltfläche klicken, um die Änderungen zu sehen.",
+        "fr": "Si vous mettez à jour les micro-agents, vous devrez arrêter la conversation puis cliquer sur le bouton actualiser pour voir les changements.",
+        "it": "Se aggiorni i microagenti, dovrai fermare la conversazione e poi cliccare sul pulsante aggiorna per vedere le modifiche.",
+        "pt": "Se você atualizar os microagentes, precisará parar a conversa e depois clicar no botão atualizar para ver as alterações.",
+        "es": "Si actualiza los microagentes, necesitará detener la conversación y luego hacer clic en el botón actualizar para ver los cambios.",
+        "tr": "Mikro ajanları güncellerseniz, konuşmayı durdurmanız ve ardından değişiklikleri görmek için yenile düğmesine tıklamanız gerekecektir.",
+        "uk": "Якщо ви оновите мікроагенти, вам потрібно буде зупинити розмову, а потім натиснути кнопку оновлення, щоб побачити зміни."
+    },
     "MICROAGENTS_MODAL$TRIGGERS": {
         "en": "Triggers",
         "ja": "トリガー",
