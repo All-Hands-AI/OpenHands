@@ -45,6 +45,8 @@ class AsyncLLM(LLM):
             retry_min_wait=self.config.retry_min_wait,
             retry_max_wait=self.config.retry_max_wait,
             retry_multiplier=self.config.retry_multiplier,
+            retry_listener=self.retry_listener,
+            rate_limit_callback=self.rate_limit_callback,
         )
         async def async_completion_wrapper(*args: Any, **kwargs: Any) -> Any:
             """Wrapper for the litellm acompletion function that adds logging and cost tracking."""

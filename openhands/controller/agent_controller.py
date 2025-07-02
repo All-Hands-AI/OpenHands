@@ -178,8 +178,8 @@ class AgentController:
         # replay-related
         self._replay_manager = ReplayManager(replay_events)
 
-        # Set up retry listener to update state immediately when retries begin
-        self._setup_retry_listener()
+        # Set up rate limit callback to update state immediately when rate limiting occurs
+        self._setup_rate_limit_callback()
 
         # Add the system message to the event stream
         self._add_system_message()
@@ -210,43 +210,27 @@ class AgentController:
             logger.debug(f'System message: {preview}')
             self.event_stream.add_event(system_message, EventSource.AGENT)
 
-    def _setup_retry_listener(self):
-        """Set up a retry listener to update agent state immediately when retries begin."""
+    def _setup_rate_limit_callback(self):
+        """Set up a rate limit callback to update agent state immediately when rate limiting occurs."""
 
-        def on_retry_attempt(attempt_number: int, max_retries: int) -> None:
-            """Called when a retry attempt is made.
+        def on_rate_limit() -> None:
+            """Called immediately when rate limiting is detected during the first retry attempt.
 
             This immediately updates the agent state to RATE_LIMITED so the UI
             shows "Agent is Rate Limited. Retrying..." from the first retry attempt,
             not just after all retries are exhausted.
             """
-            if attempt_number == 1:  # First retry attempt
-                self.log(
-                    'info',
-                    f'Rate limiting detected, starting retry attempts (attempt {attempt_number}/{max_retries})',
-                )
-                # Set state to RATE_LIMITED immediately when retries begin
-                # This is safe to call synchronously as it just updates the state
-                asyncio.create_task(self.set_agent_state_to(AgentState.RATE_LIMITED))
-            else:
-                self.log(
-                    'info',
-                    f'Continuing retry attempts due to rate limiting (attempt {attempt_number}/{max_retries})',
-                )
+            self.log(
+                'info',
+                'Rate limiting detected, updating UI state immediately',
+            )
+            # Set state to RATE_LIMITED immediately when rate limiting is detected
+            # This is safe to call synchronously as it just updates the state
+            asyncio.create_task(self.set_agent_state_to(AgentState.RATE_LIMITED))
 
-        # Set the retry listener on the agent's LLM
-        if hasattr(self.agent, 'llm') and hasattr(self.agent.llm, 'retry_listener'):
-            # Store the original retry listener if it exists
-            original_retry_listener = self.agent.llm.retry_listener
-
-            def combined_retry_listener(attempt_number: int, max_retries: int) -> None:
-                # Call our retry listener first
-                on_retry_attempt(attempt_number, max_retries)
-                # Then call the original retry listener if it exists
-                if original_retry_listener:
-                    original_retry_listener(attempt_number, max_retries)
-
-            self.agent.llm.retry_listener = combined_retry_listener
+        # Set the rate limit callback on the agent's LLM
+        if hasattr(self.agent, 'llm') and hasattr(self.agent.llm, 'rate_limit_callback'):
+            self.agent.llm.rate_limit_callback = on_rate_limit
 
     async def close(self, set_stop_state: bool = True) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
