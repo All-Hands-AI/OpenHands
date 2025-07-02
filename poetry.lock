@@ -6497,14 +6497,14 @@ pydantic = ">=1.8"
 
 [[package]]
 name = "openhands-aci"
-version = "0.3.0"
+version = "0.3.1"
 description = "An Agent-Computer Interface (ACI) designed for software development agents OpenHands."
 optional = false
 python-versions = "<4.0,>=3.12"
 groups = ["main"]
 files = [
-    {file = "openhands_aci-0.3.0-py3-none-any.whl", hash = "sha256:4f060aa1c2ae11a14f08eb72e9bf09f81db916766aab10ccea6df3bc52faafd1"},
-    {file = "openhands_aci-0.3.0.tar.gz", hash = "sha256:9a154853e9734f38cf103e07a35d59de2660ea409d93fb8462a5df54954cd7d8"},
+    {file = "openhands_aci-0.3.1-py3-none-any.whl", hash = "sha256:d1d9d5379388bc0119c6722b8dacf63f7c747788ac5b6c26263601b2001d11c3"},
+    {file = "openhands_aci-0.3.1.tar.gz", hash = "sha256:125c4773b3fd2729ec0c74d005095dad21aa0f7a1e8733e5f33f3f71466f6df9"},
 ]
 
 [package.dependencies]
@@ -11799,4 +11799,4 @@ third-party-runtimes = ["daytona", "e2b", "modal", "runloop-api-client"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12,<3.14"
-content-hash = "de8f45fdd525059f1c021767c7f24ef4eaf9eb00b57772c7017a86ae534c040d"
+content-hash = "88202de1a1251cd1e7f7d7edbd3efcd877f828fa081b7048370832127ed5aa8d"
