@@ -4,6 +4,7 @@ import { OrganizationMember, OrganizationUserRole } from "#/types/org";
 interface OrganizationMemberListItemProps {
   email: OrganizationMember["email"];
   role: OrganizationMember["role"];
+  hasPermissionToChangeRole: boolean;
 
   onRoleChange: (role: OrganizationUserRole) => void;
 }
@@ -11,6 +12,7 @@ interface OrganizationMemberListItemProps {
 export function OrganizationMemberListItem({
   email,
   role,
+  hasPermissionToChangeRole,
   onRoleChange,
 }: OrganizationMemberListItemProps) {
   const [roleSelectionOpen, setRoleSelectionOpen] = React.useState(false);
@@ -25,7 +27,7 @@ export function OrganizationMemberListItem({
       <span>{email}</span>
       <span onClick={() => setRoleSelectionOpen(true)}>{role}</span>
 
-      {roleSelectionOpen && (
+      {hasPermissionToChangeRole && roleSelectionOpen && (
         <ul data-testid="role-dropdown">
           <li>
             <span onClick={() => handleRoleSelectionClick("admin")}>admin</span>

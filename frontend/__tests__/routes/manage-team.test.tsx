@@ -5,6 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { organizationService } from "#/api/organization-service/organization-service.api";
 import { INITIAL_MOCK_ORG_MEMBERS } from "#/mocks/org-handlers";
 import { ManageTeam } from "#/routes/manage-team";
+import { userService } from "#/api/user-service/user-service.api";
 
 function ManageTeamWithPortalRoot() {
   return (
@@ -44,10 +45,18 @@ describe("Manage Team Route", () => {
   });
 
   test("an admin should be able to change the role of a team member", async () => {
+    const getUserSpy = vi.spyOn(userService, "getUser");
     const updateMemberRoleSpy = vi.spyOn(
       organizationService,
       "updateMemberRole",
     );
+
+    getUserSpy.mockResolvedValue({
+      id: "some-user-id",
+      email: "user@acme.org",
+      role: "admin",
+      status: "active",
+    });
 
     renderManageTeam();
 
@@ -91,6 +100,37 @@ describe("Manage Team Route", () => {
     // Verify the role has been reverted in the UI
     userCombobox = within(userRoleMember).getByText(/user/i);
     expect(userCombobox).toBeInTheDocument();
+  });
+
+  test("a user should not be able to change other team members' roles", async () => {
+    const getUserSpy = vi.spyOn(userService, "getUser");
+    const updateMemberRoleSpy = vi.spyOn(
+      organizationService,
+      "updateMemberRole",
+    );
+
+    getUserSpy.mockResolvedValue({
+      id: "some-user-id",
+      email: "user@acme.org",
+      role: "user",
+      status: "active",
+    });
+
+    renderManageTeam();
+
+    const memberListItems = await screen.findAllByTestId("member-item");
+    const adminRoleMember = memberListItems[1]; // first member is "admin"
+
+    const userCombobox = within(adminRoleMember).getByText(/admin/i);
+    expect(userCombobox).toBeInTheDocument();
+    await userEvent.click(userCombobox);
+
+    // Verify that the dropdown does not open for superadmin
+    expect(
+      within(adminRoleMember).queryByTestId("role-dropdown"),
+    ).not.toBeInTheDocument();
+
+    expect(updateMemberRoleSpy).not.toHaveBeenCalled();
   });
 
   describe("Inviting Team Members", () => {

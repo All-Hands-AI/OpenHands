@@ -5,9 +5,11 @@ import { useOrganizationMembers } from "#/hooks/query/use-organization-members";
 import { OrganizationUserRole } from "#/types/org";
 import { OrganizationMemberListItem } from "#/components/features/org/organization-member-list-item";
 import { useUpdateMemberRole } from "#/hooks/mutation/use-update-member-role";
+import { useMe } from "#/hooks/query/use-me";
 
 export function ManageTeam() {
   const { data: organizationMembers } = useOrganizationMembers();
+  const { data: user } = useMe();
   const { mutate: updateMemberRole } = useUpdateMemberRole();
 
   const [inviteModalOpen, setInviteModalOpen] = React.useState(false);
@@ -37,6 +39,7 @@ export function ManageTeam() {
               <OrganizationMemberListItem
                 email={member.email}
                 role={member.role}
+                hasPermissionToChangeRole={user?.role !== "user"}
                 onRoleChange={(role) =>
                   handleRoleSelectionClick(member.id, role)
                 }

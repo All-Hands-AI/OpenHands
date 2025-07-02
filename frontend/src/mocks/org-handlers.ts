@@ -27,6 +27,15 @@ const orgMembers = new Map(
 );
 
 export const ORG_HANDLERS = [
+  http.get("/api/users/me", () =>
+    HttpResponse.json({
+      id: "some-user-id",
+      email: "user@acme.org",
+      role: "superadmin",
+      status: "active",
+    } satisfies OrganizationMember),
+  ),
+
   http.get("/api/organizations/members", () => {
     const members = Array.from(orgMembers.values());
     return HttpResponse.json(members);
