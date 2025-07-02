@@ -10,6 +10,7 @@ import { createChatMessage } from "#/services/chat-service";
 import { InteractiveChatBox } from "./interactive-chat-box";
 import { RootState } from "#/store";
 import { AgentState } from "#/types/agent-state";
+import { isOpenHandsAction } from "#/types/core/guards";
 import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
 import { FeedbackModal } from "../feedback/feedback-modal";
 import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
@@ -76,6 +77,18 @@ export function ChatInterface() {
   const errorMessage = getErrorMessage();
 
   const events = parsedEvents.filter(shouldRenderEvent);
+
+  // Check if there are any substantive agent actions (not just system messages)
+  const hasSubstantiveAgentActions = React.useMemo(
+    () =>
+      parsedEvents.some(
+        (event) =>
+          isOpenHandsAction(event) &&
+          event.source === "agent" &&
+          event.action !== "system",
+      ),
+    [parsedEvents],
+  );
 
   const handleSendMessage = async (
     content: string,
@@ -167,9 +180,12 @@ export function ChatInterface() {
   return (
     <ScrollProvider value={scrollProviderValue}>
       <div className="h-full flex flex-col justify-between">
-        {events.length === 0 && !optimisticUserMessage && (
-          <ChatSuggestions onSuggestionsClick={setMessageToSend} />
-        )}
+        {!hasSubstantiveAgentActions &&
+          !optimisticUserMessage &&
+          !events.some(
+            (event) => isOpenHandsAction(event) && event.source === "user",
+          ) && <ChatSuggestions onSuggestionsClick={setMessageToSend} />}
+        {/* Note: We only hide chat suggestions when there's a user message */}
 
         <div
           ref={scrollRef}
@@ -192,7 +208,7 @@ export function ChatInterface() {
           )}
 
           {isWaitingForUserInput &&
-            events.length > 0 &&
+            hasSubstantiveAgentActions &&
             !optimisticUserMessage && (
               <ActionSuggestions
                 onSuggestionsClick={(value) => handleSendMessage(value, [], [])}
