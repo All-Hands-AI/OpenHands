@@ -110,6 +110,15 @@ export function ChatInterface() {
         current_message_length: content.length,
       });
     }
+
+    // Check for large files that might cause WebSocket disconnection
+    const MAX_SAFE_FILE_SIZE = 8 * 1024 * 1024; // 8MB (considering the 10MB buffer size and base64 encoding overhead)
+    const largeFiles = [...images, ...files].filter(file => file.size > MAX_SAFE_FILE_SIZE);
+    if (largeFiles.length > 0) {
+      const fileNames = largeFiles.map(f => f.name).join(", ");
+      displayErrorToast(`Warning: Large files may cause connection issues: ${fileNames}`);
+    }
+
     const promises = images.map((image) => convertImageToBase64(image));
     const imageUrls = await Promise.all(promises);
 

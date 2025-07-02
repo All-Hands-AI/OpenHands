@@ -311,6 +311,11 @@ async def upload_files(
     files: list[UploadFile],
     conversation: ServerConversation = Depends(get_conversation),
 ):
+    """Upload files to the workspace.
+
+    Note: The WebSocket connection has a buffer size limit (configured in shared.py).
+    If files are too large, the WebSocket connection may disconnect.
+    """
     uploaded_files = []
     skipped_files = []
     runtime: Runtime = conversation.runtime
