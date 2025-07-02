@@ -3,13 +3,7 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import OpenHands from "#/api/open-hands";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
-
-// Mock the useSettings hook
-vi.mock("#/hooks/query/use-settings", () => ({
-  useSettings: () => ({
-    data: {},
-  }),
-}));
+import * as useSettingsModule from "#/hooks/query/use-settings";
 
 describe("useSaveSettings", () => {
   let saveSettingsSpy: any;
@@ -18,6 +12,11 @@ describe("useSaveSettings", () => {
   beforeEach(() => {
     queryClient = new QueryClient();
     saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings").mockResolvedValue(true);
+    
+    // Default mock for useSettings
+    vi.spyOn(useSettingsModule, "useSettings").mockReturnValue({
+      data: {},
+    } as any);
   });
 
   it("should send an empty string for llm_api_key if an empty string is passed, otherwise undefined", async () => {
@@ -49,7 +48,14 @@ describe("useSaveSettings", () => {
     });
   });
 
-  it("should only include search_api_key in the request when explicitly provided", async () => {
+  it("should preserve search_api_key when saving settings", async () => {
+    // Mock the useSettings hook to return settings with a search API key
+    vi.spyOn(useSettingsModule, "useSettings").mockReturnValue({
+      data: {
+        SEARCH_API_KEY: "existing-api-key",
+      },
+    } as any);
+
     const { result } = renderHook(() => useSaveSettings(), {
       wrapper: ({ children }) => (
         <QueryClientProvider client={queryClient}>
@@ -59,22 +65,22 @@ describe("useSaveSettings", () => {
     });
 
     // When SEARCH_API_KEY is provided, it should be included in the request
-    result.current.mutate({ SEARCH_API_KEY: "test-api-key" });
+    result.current.mutate({ SEARCH_API_KEY: "new-api-key" });
     await waitFor(() => {
       expect(saveSettingsSpy).toHaveBeenCalledWith(
         expect.objectContaining({
-          search_api_key: "test-api-key",
+          search_api_key: "new-api-key",
         }),
       );
     });
 
-    // When SEARCH_API_KEY is not provided, it should not be included in the request
+    // When SEARCH_API_KEY is not provided, the existing value should be preserved
     saveSettingsSpy.mockClear();
     result.current.mutate({ LLM_MODEL: "test-model" });
     await waitFor(() => {
       expect(saveSettingsSpy).toHaveBeenCalled();
       const callArg = saveSettingsSpy.mock.calls[0][0];
-      expect(callArg.search_api_key).toBeUndefined();
+      expect(callArg.search_api_key).toBe("existing-api-key");
     });
   });
 });
