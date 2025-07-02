@@ -313,8 +313,9 @@ async def upload_files(
 ):
     """Upload files to the workspace.
 
-    Note: The WebSocket connection has a buffer size limit (configured in shared.py).
-    If files are too large, the WebSocket connection may disconnect.
+    Note: The WebSocket connection has a buffer size limit of 4MB (configured in shared.py).
+    The frontend enforces a maximum file size of 3MB to account for base64 encoding overhead.
+    Files larger than 3MB will be rejected by the frontend.
     """
     uploaded_files = []
     skipped_files = []

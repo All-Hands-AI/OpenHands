@@ -92,9 +92,12 @@ export function ChatInterface() {
 
   const handleSendMessage = async (
     content: string,
-    images: File[],
-    files: File[],
+    originalImages: File[],
+    originalFiles: File[],
   ) => {
+    // Create mutable copies of the arrays
+    let images = [...originalImages];
+    let files = [...originalFiles];
     if (events.length === 0) {
       posthog.capture("initial_query_submitted", {
         entry_point: getEntryPoint(
@@ -111,12 +114,24 @@ export function ChatInterface() {
       });
     }
 
-    // Check for large files that might cause WebSocket disconnection
-    const MAX_SAFE_FILE_SIZE = 8 * 1024 * 1024; // 8MB (considering the 10MB buffer size and base64 encoding overhead)
-    const largeFiles = [...images, ...files].filter(file => file.size > MAX_SAFE_FILE_SIZE);
-    if (largeFiles.length > 0) {
-      const fileNames = largeFiles.map(f => f.name).join(", ");
-      displayErrorToast(`Warning: Large files may cause connection issues: ${fileNames}`);
+    // Check for files exceeding the maximum allowed size
+    const MAX_FILE_SIZE = 3 * 1024 * 1024; // 3MB maximum file size
+    const oversizedFiles = [...images, ...files].filter(file => file.size > MAX_FILE_SIZE);
+    if (oversizedFiles.length > 0) {
+      const fileNames = oversizedFiles.map(f => f.name).join(", ");
+      displayErrorToast(`Error: Files exceeding 3MB are not allowed: ${fileNames}`);
+      // Remove oversized files from the arrays
+      const validImages = images.filter(file => file.size <= MAX_FILE_SIZE);
+      const validFiles = files.filter(file => file.size <= MAX_FILE_SIZE);
+      
+      // If all files were oversized, stop processing
+      if (validImages.length === 0 && validFiles.length === 0 && (images.length > 0 || files.length > 0)) {
+        return;
+      }
+      
+      // Continue with only valid files
+      images = validImages;
+      files = validFiles;
     }
 
     const promises = images.map((image) => convertImageToBase64(image));
