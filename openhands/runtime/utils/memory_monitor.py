@@ -1,8 +1,7 @@
 """Memory monitoring utilities for the runtime."""
 
 import threading
-
-from memory_profiler import memory_usage
+from typing import Any, Callable
 
 from openhands.core.logger import openhands_logger as logger
 
@@ -25,6 +24,20 @@ class MemoryMonitor:
         self._stop_monitoring = threading.Event()
         self.log_stream = LogStream()
         self.enable = enable
+        self.memory_usage: Callable[..., Any] | None = None
+
+        # Try to import memory_profiler only if monitoring is enabled
+        if self.enable:
+            try:
+                from memory_profiler import memory_usage  # type: ignore
+                self.memory_usage = memory_usage
+                logger.debug('memory_profiler imported successfully')
+            except ImportError:
+                logger.warning(
+                    'memory_profiler not installed. Memory monitoring will be disabled. '
+                    'Install with: pip install memory-profiler'
+                )
+                self.enable = False
 
     def start_monitoring(self) -> None:
         """Start monitoring memory usage."""
@@ -36,8 +49,13 @@ class MemoryMonitor:
 
         def monitor_process() -> None:
             try:
+                # Check if memory_usage is available
+                if self.memory_usage is None:
+                    logger.error('Memory monitoring requested but memory_profiler not available')
+                    return
+
                 # Use memory_usage's built-in monitoring loop
-                mem_usage = memory_usage(
+                mem_usage = self.memory_usage(
                     -1,  # Monitor current process
                     interval=0.1,  # Check every second
                     timeout=3600,  # Run indefinitely
