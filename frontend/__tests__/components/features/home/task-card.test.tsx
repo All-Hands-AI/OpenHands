@@ -88,9 +88,14 @@ describe("TaskCard", () => {
         MOCK_RESPOSITORIES[0].full_name,
         MOCK_RESPOSITORIES[0].git_provider,
         undefined,
-        [],
+        {
+          git_provider: "github",
+          issue_number: 123,
+          repo: "repo1",
+          task_type: "MERGE_CONFLICTS",
+          title: "Task 1",
+        },
         undefined,
-        MOCK_TASK_1,
         undefined,
       );
     });

@@ -84,7 +84,7 @@ export interface Conversation {
   title: string;
   selected_repository: string | null;
   selected_branch: string | null;
-  git_provider: string | null;
+  git_provider: Provider | null;
   last_updated_at: string;
   created_at: string;
   status: ConversationStatus;
