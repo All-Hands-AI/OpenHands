@@ -97,8 +97,8 @@ export function ChatInterface() {
     originalFiles: File[],
   ) => {
     // Create mutable copies of the arrays
-    let images = [...originalImages];
-    let files = [...originalFiles];
+    const images = [...originalImages];
+    const files = [...originalFiles];
     if (events.length === 0) {
       posthog.capture("initial_query_submitted", {
         entry_point: getEntryPoint(
@@ -118,7 +118,7 @@ export function ChatInterface() {
     // Validate file sizes before any processing
     const allFiles = [...images, ...files];
     const validation = validateFiles(allFiles);
-    
+
     if (!validation.isValid) {
       displayErrorToast(`Error: ${validation.errorMessage}`);
       return; // Stop processing if validation fails

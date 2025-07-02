@@ -31,16 +31,16 @@ export function InteractiveChatBox({
   const handleUpload = (selectedFiles: File[]) => {
     // Validate files before adding them
     const validation = validateFiles(selectedFiles, [...images, ...files]);
-    
+
     if (!validation.isValid) {
       displayErrorToast(`Error: ${validation.errorMessage}`);
       return; // Don't add any files if validation fails
     }
-    
+
     // Filter valid files by type
     const validFiles = selectedFiles.filter((f) => !isFileImage(f));
     const validImages = selectedFiles.filter((f) => isFileImage(f));
-    
+
     setFiles((prevFiles) => [...prevFiles, ...validFiles]);
     setImages((prevImages) => [...prevImages, ...validImages]);
   };

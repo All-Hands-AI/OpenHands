@@ -10,18 +10,20 @@ export interface FileValidationResult {
 /**
  * Validates individual file sizes
  */
-export function validateIndividualFileSizes(files: File[]): FileValidationResult {
-  const oversizedFiles = files.filter(file => file.size > MAX_FILE_SIZE);
-  
+export function validateIndividualFileSizes(
+  files: File[],
+): FileValidationResult {
+  const oversizedFiles = files.filter((file) => file.size > MAX_FILE_SIZE);
+
   if (oversizedFiles.length > 0) {
-    const fileNames = oversizedFiles.map(f => f.name);
+    const fileNames = oversizedFiles.map((f) => f.name);
     return {
       isValid: false,
       errorMessage: `Files exceeding 3MB are not allowed: ${fileNames.join(", ")}`,
       oversizedFiles: fileNames,
     };
   }
-  
+
   return { isValid: true };
 }
 
@@ -30,12 +32,15 @@ export function validateIndividualFileSizes(files: File[]): FileValidationResult
  */
 export function validateTotalFileSize(
   newFiles: File[],
-  existingFiles: File[] = []
+  existingFiles: File[] = [],
 ): FileValidationResult {
-  const currentTotalSize = existingFiles.reduce((sum, file) => sum + file.size, 0);
+  const currentTotalSize = existingFiles.reduce(
+    (sum, file) => sum + file.size,
+    0,
+  );
   const newFilesSize = newFiles.reduce((sum, file) => sum + file.size, 0);
   const totalSize = currentTotalSize + newFilesSize;
-  
+
   if (totalSize > MAX_TOTAL_SIZE) {
     const totalSizeMB = (totalSize / (1024 * 1024)).toFixed(1);
     return {
@@ -43,7 +48,7 @@ export function validateTotalFileSize(
       errorMessage: `Total file size would be ${totalSizeMB}MB, exceeding the 3MB limit. Please select fewer or smaller files.`,
     };
   }
-  
+
   return { isValid: true };
 }
 
@@ -52,14 +57,14 @@ export function validateTotalFileSize(
  */
 export function validateFiles(
   newFiles: File[],
-  existingFiles: File[] = []
+  existingFiles: File[] = [],
 ): FileValidationResult {
   // First check individual file sizes
   const individualValidation = validateIndividualFileSizes(newFiles);
   if (!individualValidation.isValid) {
     return individualValidation;
   }
-  
+
   // Then check total size
   return validateTotalFileSize(newFiles, existingFiles);
 }

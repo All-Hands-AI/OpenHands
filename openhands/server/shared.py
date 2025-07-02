@@ -46,7 +46,8 @@ sio = socketio.AsyncServer(
     async_mode='asgi',
     cors_allowed_origins='*',
     client_manager=client_manager,
-    max_http_buffer_size=4 * 1024 * 1024,  # Increase buffer size to 4MB (to handle 3MB files with base64 overhead)
+    # Increase buffer size to 4MB (to handle 3MB files with base64 overhead)
+    max_http_buffer_size=4 * 1024 * 1024,
 )
 
 MonitoringListenerImpl = get_impl(
