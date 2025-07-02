@@ -261,7 +261,8 @@ async def test_retry_listener_updates_state_immediately(
         and controller.agent.llm.retry_listener
     ):
         # Call the retry listener as if a retry attempt is starting
-        controller.agent.llm.retry_listener(1, 5)  # First attempt out of 5 max retries
+        rate_limit_error = RateLimitError("Rate limit exceeded")
+        controller.agent.llm.retry_listener(1, 5, rate_limit_error)  # First attempt out of 5 max retries
 
         # Give the async task a moment to complete
         await asyncio.sleep(0.1)
@@ -335,7 +336,8 @@ async def test_end_to_end_rate_limiting_behavior(
         and controller.agent.llm.retry_listener
     ):
         # This simulates the first retry attempt
-        controller.agent.llm.retry_listener(1, 8)  # First attempt out of 8 max retries
+        rate_limit_error = RateLimitError("Rate limit exceeded")
+        controller.agent.llm.retry_listener(1, 8, rate_limit_error)  # First attempt out of 8 max retries
 
         # Give the async task a moment to complete
         await asyncio.sleep(0.1)
@@ -345,7 +347,7 @@ async def test_end_to_end_rate_limiting_behavior(
 
         # Simulate subsequent retry attempts (these should not change the state)
         for attempt in range(2, 8):
-            controller.agent.llm.retry_listener(attempt, 8)
+            controller.agent.llm.retry_listener(attempt, 8, rate_limit_error)
             await asyncio.sleep(0.01)
             # State should remain RATE_LIMITED
             assert controller.get_agent_state() == AgentState.RATE_LIMITED

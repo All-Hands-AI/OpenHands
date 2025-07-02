@@ -116,8 +116,7 @@ class LLM(RetryMixin, DebugMixin):
         self,
         config: LLMConfig,
         metrics: Metrics | None = None,
-        retry_listener: Callable[[int, int], None] | None = None,
-        rate_limit_callback: Callable[[], None] | None = None,
+        retry_listener: Callable[[int, int, Exception], None] | None = None,
     ) -> None:
         """Initializes the LLM. If LLMConfig is passed, its values will be the fallback.
 
@@ -136,7 +135,6 @@ class LLM(RetryMixin, DebugMixin):
 
         self.model_info: ModelInfo | None = None
         self.retry_listener = retry_listener
-        self.rate_limit_callback = rate_limit_callback
         if self.config.log_completions:
             if self.config.log_completions_folder is None:
                 raise RuntimeError(
@@ -216,7 +214,6 @@ class LLM(RetryMixin, DebugMixin):
             retry_max_wait=self.config.retry_max_wait,
             retry_multiplier=self.config.retry_multiplier,
             retry_listener=self.retry_listener,
-            rate_limit_callback=self.rate_limit_callback,
         )
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             """Wrapper for the litellm completion function. Logs the input and output of the completion function."""

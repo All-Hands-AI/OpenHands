@@ -32,24 +32,14 @@ class RetryMixin:
         retry_max_wait = kwargs.get('retry_max_wait')
         retry_multiplier = kwargs.get('retry_multiplier')
         retry_listener = kwargs.get('retry_listener')
-        rate_limit_callback = kwargs.get('rate_limit_callback')
 
         def before_sleep(retry_state: Any) -> None:
             self.log_retry_attempt(retry_state)
             
-            # Check the type of exception to handle specific retry scenarios
+            # Call the retry listener with exception information
             exception = retry_state.outcome.exception()
-            
-            # Handle rate limiting immediately - call special callback for UI updates
-            if rate_limit_callback:
-                from litellm.exceptions import RateLimitError
-                if isinstance(exception, RateLimitError) and retry_state.attempt_number == 1:
-                    # On first retry attempt for rate limiting, immediately update UI state
-                    rate_limit_callback()
-            
-            # Call the general retry listener
             if retry_listener:
-                retry_listener(retry_state.attempt_number, num_retries)
+                retry_listener(retry_state.attempt_number, num_retries, exception)
 
             # Check if the exception is LLMNoResponseError
             if isinstance(exception, LLMNoResponseError):
