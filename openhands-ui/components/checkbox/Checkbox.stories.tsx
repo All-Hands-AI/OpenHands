@@ -21,7 +21,6 @@ const CheckboxComponent = (props: CheckboxProps) => {
     <Checkbox
       {...props}
       checked={checked}
-      disabled
       onChange={(e) => setChecked(e.target.checked)}
     />
   );

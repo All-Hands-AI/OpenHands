@@ -25,6 +25,8 @@ export const buttonStyles: Record<ComponentVariant, ButtonStyle> = {
       "text-primary-500",
       // hover modifier
       "group-enabled:group-hover:font-semibold",
+      // focus modifier
+      "group-enabled:group-focus:font-semibold",
     ]),
   },
   secondary: {
@@ -44,7 +46,8 @@ export const buttonStyles: Record<ComponentVariant, ButtonStyle> = {
       "text-light-neutral-300",
       // hover modifier
       "group-enabled:group-hover:font-semibold",
-      "group-enabled:group-hover:light-neutral-15",
+      // focus modifier
+      "group-enabled:group-focus:font-semibold",
     ]),
   },
   tertiary: {
@@ -53,7 +56,7 @@ export const buttonStyles: Record<ComponentVariant, ButtonStyle> = {
       // hover modifier
       "enabled:hover:bg-grey-900",
       // focus modifier
-      "enabled:hover:bg-grey-900",
+      "enabled:focus:bg-grey-900",
       // active modifier
       "enabled:active:bg-grey-970",
       // disabled modifier
@@ -64,6 +67,9 @@ export const buttonStyles: Record<ComponentVariant, ButtonStyle> = {
       "text-primary-500 underline",
       // hover modifier
       "group-enabled:group-hover:font-semibold",
+      // focus modifier
+      "group-enabled:group-focus:font-semibold",
+
       // disabled modifier
       "group-disabled:no-underline",
     ]),

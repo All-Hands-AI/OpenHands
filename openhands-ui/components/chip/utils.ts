@@ -1,3 +1,4 @@
+export type ChipVariant = "pill" | "corner";
 export type ChipColor =
   | "primaryDark"
   | "primaryLight"

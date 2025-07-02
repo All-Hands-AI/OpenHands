@@ -31,6 +31,7 @@ const ChipComponent = (props: ChipProps) => {
 export const Main: Story = {
   args: {
     color: "aqua",
+    variant: "pill",
   },
   render: ChipComponent,
 };

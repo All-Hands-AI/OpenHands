@@ -20,6 +20,8 @@ const ToggleComponent = (props: ToggleProps) => {
   return (
     <Toggle
       {...props}
+      onText="ON"
+      offText="OFF"
       checked={checked}
       onChange={(e) => setChecked(e.target.checked)}
     />

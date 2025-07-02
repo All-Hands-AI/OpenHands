@@ -15,8 +15,8 @@ export type InputProps = Omit<
   "label" | "aria-invalid" | "checked"
 > & {
   label: string;
-  lead?: ReactElement<HTMLProps<"svg">>;
-  trail?: ReactElement<HTMLProps<"svg">>;
+  start?: ReactElement<HTMLProps<"svg">>;
+  end?: ReactElement<HTMLProps<"svg">>;
   error?: string;
   hint?: string;
 };
@@ -28,8 +28,8 @@ export const Input = ({
   disabled,
   value,
   onChange,
-  lead,
-  trail,
+  start,
+  end,
   error,
   type,
   hint,
@@ -75,7 +75,7 @@ export const Input = ({
             disabled && "hover:bg-light-neutral-950"
           )}
         >
-          {cloneIcon(lead, {
+          {cloneIcon(start, {
             className: iconCss,
           })}
           <input
@@ -93,7 +93,7 @@ export const Input = ({
             )}
             {...props}
           />
-          {cloneIcon(trail, {
+          {cloneIcon(end, {
             className: iconCss,
           })}
         </div>

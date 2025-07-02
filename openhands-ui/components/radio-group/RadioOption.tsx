@@ -59,10 +59,10 @@ export const RadioOption = ({
             "peer-hover:peer-checked:peer-enabled:border-primary-500",
 
             // focus modifier
-            "peer-hover:peer-enabled:bg-light-neutral-900",
-            "peer-hover:peer-enabled:border-light-neutral-200",
-            "peer-hover:peer-checked:peer-enabled:bg-light-neutral-985",
-            "peer-hover:peer-checked:peer-enabled:border-primary-500"
+            "peer-focus:peer-enabled:bg-light-neutral-900",
+            "peer-focus:peer-enabled:border-light-neutral-200",
+            "peer-focus:peer-checked:peer-enabled:bg-light-neutral-985",
+            "peer-focus:peer-checked:peer-enabled:border-primary-500"
           )}
         />
         <div
@@ -80,8 +80,8 @@ export const RadioOption = ({
         />
       </div>
       <Typography.Text
-        fontSize="xxs"
-        fontWeight={500}
+        fontSize="m"
+        fontWeight={400}
         className={cn(labelClassName, disabled && "opacity-50")}
       >
         {label}

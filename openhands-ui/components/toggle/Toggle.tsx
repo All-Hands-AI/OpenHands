@@ -2,11 +2,16 @@ import { useId } from "react";
 import type { HTMLProps } from "../../shared/types";
 import { cn } from "../../shared/utils/cn";
 import { Typography } from "../typography/Typography";
+import { invariant } from "../../shared/utils/invariant";
+
+type ToggleTextProps =
+  | { onText: string; offText: string }
+  | { onText?: undefined; offText?: undefined };
 
 export type ToggleProps = HTMLProps<"input"> & {
   label?: React.ReactNode;
   labelClassName?: string;
-};
+} & ToggleTextProps;
 
 export const Toggle = ({
   className,
@@ -16,15 +21,25 @@ export const Toggle = ({
   disabled,
   checked,
   onChange,
+  onText,
+  offText,
   ...props
 }: ToggleProps) => {
+  invariant(
+    (onText == null && offText == null) || onText != null || offText != null,
+    "Both onText and offText must be either defined or undefined"
+  );
+
   const generatedId = useId();
   const id = propId ?? generatedId;
 
   return (
     <label
       htmlFor={id}
-      className={cn(disabled ? "cursor-not-allowed" : "cursor-pointer")}
+      className={cn(
+        "flex flex-row items-center gap-x-1",
+        disabled ? "cursor-not-allowed" : "cursor-pointer"
+      )}
     >
       <div className="relative">
         <input
@@ -76,6 +91,15 @@ export const Toggle = ({
           )}
         />
       </div>
+      {onText && (
+        <Typography.Text
+          fontSize="xxs"
+          fontWeight={500}
+          className={cn("mr-5", disabled && "opacity-50")}
+        >
+          {checked ? onText : offText}
+        </Typography.Text>
+      )}
       {label && (
         <Typography.Text
           fontSize="xxs"

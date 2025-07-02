@@ -9,8 +9,8 @@ import { cloneIcon } from "../../shared/utils/clone-icon";
 export type ButtonProps = Omit<HTMLProps<"button">, "aria-disabled"> & {
   size?: "small" | "large";
   variant?: ComponentVariant;
-  lead?: ReactElement<HTMLProps<"svg">>;
-  trail?: ReactElement<HTMLProps<"svg">>;
+  start?: ReactElement<HTMLProps<"svg">>;
+  end?: ReactElement<HTMLProps<"svg">>;
 };
 
 export const Button = ({
@@ -18,15 +18,15 @@ export const Button = ({
   variant = "primary",
   className,
   children,
-  lead,
-  trail,
+  start,
+  end,
   ...props
 }: PropsWithChildren<ButtonProps>) => {
   invariant(typeof children === "string", "Children must be string");
   const buttonClassNames = buttonStyles[variant];
 
   const iconCss = "w-6 h-6";
-  const hasIcons = lead || trail;
+  const hasIcons = start || end;
 
   return (
     <button
@@ -40,7 +40,7 @@ export const Button = ({
         buttonClassNames.button
       )}
     >
-      {cloneIcon(lead, {
+      {cloneIcon(start, {
         className: cn(iconCss, buttonClassNames.icon),
       })}
 
@@ -53,7 +53,7 @@ export const Button = ({
       >
         {children}
       </Typography.Text>
-      {cloneIcon(trail, {
+      {cloneIcon(end, {
         className: cn(iconCss, buttonClassNames.icon),
       })}
     </button>

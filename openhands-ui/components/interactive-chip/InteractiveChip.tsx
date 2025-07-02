@@ -15,23 +15,23 @@ export type InteractiveChipProps = Omit<
   HTMLProps<"div">,
   "label" | "aria-disabled" | "tabIndex"
 > & {
-  lead?: ReactElement<HTMLProps<"svg">>;
-  onLeadClick?: React.MouseEventHandler<HTMLButtonElement>;
-  trail?: ReactElement<HTMLProps<"svg">>;
-  onTrailClick?: React.MouseEventHandler<HTMLButtonElement>;
+  start?: ReactElement<HTMLProps<"svg">>;
+  onStartClick?: React.MouseEventHandler<HTMLButtonElement>;
+  end?: ReactElement<HTMLProps<"svg">>;
+  onEndClick?: React.MouseEventHandler<HTMLButtonElement>;
   type?: InteractiveChipType;
   disabled?: boolean;
 };
 
 export const InteractiveChip = ({
   className,
-  lead,
-  trail,
+  start,
+  end,
   type = "elevated",
   children,
   disabled = false,
-  onLeadClick,
-  onTrailClick,
+  onStartClick,
+  onEndClick,
   ...props
 }: PropsWithChildren<InteractiveChipProps>) => {
   invariant(typeof children === "string", "Children must be string");
@@ -53,13 +53,13 @@ export const InteractiveChip = ({
         className
       )}
     >
-      {lead && isValidElement(lead) ? (
+      {start && isValidElement(start) ? (
         <button
           tabIndex={disabled ? -1 : 0}
-          onClick={onLeadClick}
+          onClick={onStartClick}
           className={cn(buttonCss)}
         >
-          {cloneElement(lead, {
+          {cloneElement(start, {
             className: iconCss,
           })}
         </button>
@@ -68,13 +68,13 @@ export const InteractiveChip = ({
         {children}
       </Typography.Text>
 
-      {trail && isValidElement(trail) ? (
+      {end && isValidElement(end) ? (
         <button
           tabIndex={disabled ? -1 : 0}
-          onClick={onTrailClick}
+          onClick={onEndClick}
           className={cn(buttonCss)}
         >
-          {cloneElement(trail, {
+          {cloneElement(end, {
             className: iconCss,
           })}
         </button>

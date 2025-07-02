@@ -19,8 +19,8 @@ const InteractiveChipComponent = (props: InteractiveChipProps) => {
   return (
     <InteractiveChip
       {...props}
-      lead={<Icon icon="Check" />}
-      trail={<Icon icon="X" />}
+      start={<Icon icon="Check" />}
+      end={<Icon icon="X" />}
     >
       Click me
     </InteractiveChip>

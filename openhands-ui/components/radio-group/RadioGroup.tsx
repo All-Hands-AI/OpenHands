@@ -25,6 +25,7 @@ export const RadioGroup = <T extends string>({
 }: RadioGroupProps<T>) => {
   const generatedId = useId();
   const id = propId ?? generatedId;
+
   return (
     <div className={cn("flex flex-col gap-y-1", className)}>
       {options.map((o) => (

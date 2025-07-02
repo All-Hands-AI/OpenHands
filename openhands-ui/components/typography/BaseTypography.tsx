@@ -1,11 +1,16 @@
 import type { PropsWithChildren } from "react";
-import { fontSizes, fontWeights, type FontWeight } from "./utils";
+import {
+  fontSizes,
+  fontWeights,
+  type FontSize,
+  type FontWeight,
+} from "./utils";
 import { cn } from "../../shared/utils/cn";
 
 type SupportedReactNodes = "h6" | "h5" | "h4" | "h3" | "h2" | "h1" | "span";
 
 export type BaseTypographyProps = React.HTMLAttributes<HTMLElement> & {
-  fontSize?: "xxs" | "xs" | "s" | "m" | "l" | "xl" | "xxl" | "xxxl";
+  fontSize?: FontSize;
   fontWeight?: FontWeight;
   as: SupportedReactNodes;
 };

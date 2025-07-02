@@ -22,8 +22,8 @@ const InputComponent = (props: InputProps) => {
     <Input
       {...props}
       value={value}
-      lead={<Icon icon="HeartFill" />}
-      trail={<Icon icon="Heart" />}
+      start={<Icon icon="HeartFill" />}
+      end={<Icon icon="Heart" />}
       placeholder="abc"
       onChange={(e) => setValue(e.target.value)}
     />
