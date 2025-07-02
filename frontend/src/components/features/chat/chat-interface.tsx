@@ -32,6 +32,7 @@ import { ErrorMessageBanner } from "./error-message-banner";
 import { shouldRenderEvent } from "./event-content-helpers/should-render-event";
 import { useUploadFiles } from "#/hooks/mutation/use-upload-files";
 import { useConfig } from "#/hooks/query/use-config";
+import { validateFiles } from "#/utils/file-validation";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -114,24 +115,13 @@ export function ChatInterface() {
       });
     }
 
-    // Check for files exceeding the maximum allowed size
-    const MAX_FILE_SIZE = 3 * 1024 * 1024; // 3MB maximum file size
-    const oversizedFiles = [...images, ...files].filter(file => file.size > MAX_FILE_SIZE);
-    if (oversizedFiles.length > 0) {
-      const fileNames = oversizedFiles.map(f => f.name).join(", ");
-      displayErrorToast(`Error: Files exceeding 3MB are not allowed: ${fileNames}`);
-      // Remove oversized files from the arrays
-      const validImages = images.filter(file => file.size <= MAX_FILE_SIZE);
-      const validFiles = files.filter(file => file.size <= MAX_FILE_SIZE);
-      
-      // If all files were oversized, stop processing
-      if (validImages.length === 0 && validFiles.length === 0 && (images.length > 0 || files.length > 0)) {
-        return;
-      }
-      
-      // Continue with only valid files
-      images = validImages;
-      files = validFiles;
+    // Validate file sizes before any processing
+    const allFiles = [...images, ...files];
+    const validation = validateFiles(allFiles);
+    
+    if (!validation.isValid) {
+      displayErrorToast(`Error: ${validation.errorMessage}`);
+      return; // Stop processing if validation fails
     }
 
     const promises = images.map((image) => convertImageToBase64(image));
