@@ -248,11 +248,35 @@ class Session:
             retry_listener=self._notify_on_llm_retry,
         )
 
-    def _notify_on_llm_retry(self, retries: int, max: int) -> None:
+    def _notify_on_llm_retry(
+        self, attempt_number: int, max_retries: int, exception: Exception
+    ) -> None:
+        """Called when a retry attempt is made.
+
+        This handles both general retry notifications and immediate rate limiting state updates.
+        """
+        from litellm.exceptions import RateLimitError
+
+        # General retry notification
         msg_id = 'STATUS$LLM_RETRY'
         self.queue_status_message(
-            'info', msg_id, f'Retrying LLM request, {retries} / {max}'
+            'info', msg_id, f'Retrying LLM request, {attempt_number} / {max_retries}'
         )
+
+        # Rate limiting specific handling
+        if isinstance(exception, RateLimitError) and attempt_number == 1:
+            # First retry attempt for rate limiting - update UI immediately
+            self.logger.info(
+                f'Rate limiting detected, updating UI state immediately (attempt {attempt_number}/{max_retries})'
+            )
+            # Notify the UI about rate limiting
+            self.queue_status_message(
+                'info', 'STATUS$RATE_LIMITED', 'Agent is Rate Limited. Retrying...'
+            )
+        elif isinstance(exception, RateLimitError):
+            self.logger.info(
+                f'Continuing retry attempts due to rate limiting (attempt {attempt_number}/{max_retries})'
+            )
 
     def on_event(self, event: Event) -> None:
         asyncio.get_event_loop().run_until_complete(self._on_event(event))

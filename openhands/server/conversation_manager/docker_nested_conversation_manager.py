@@ -21,7 +21,6 @@ from openhands.events.action import MessageAction
 from openhands.events.nested_event_store import NestedEventStore
 from openhands.events.stream import EventStream
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
-from openhands.llm.llm import LLM
 from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.conversation_manager.conversation_manager import (
@@ -476,11 +475,6 @@ class DockerNestedConversationManager(ConversationManager):
             user_id=user_id,
         )
         agent_cls = settings.agent or self.config.default_agent
-        agent_name = agent_cls if agent_cls is not None else 'agent'
-        llm = LLM(
-            config=self.config.get_llm_config_from_agent(agent_name),
-            retry_listener=session._notify_on_llm_retry,
-        )
         llm = session._create_llm(agent_cls)
         agent_config = self.config.get_agent_config(agent_cls)
         agent = Agent.get_cls(agent_cls)(llm, agent_config)

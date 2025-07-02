@@ -97,8 +97,9 @@ async def run_controller(
     """
     sid = sid or generate_sid(config)
 
+    set_controller_func = None
     if agent is None:
-        agent = create_agent(config)
+        agent, set_controller_func = create_agent(config)
 
     # when the runtime is created, it will be connected and clone the selected repository
     repo_directory = None
@@ -153,7 +154,11 @@ async def run_controller(
         )
 
     controller, initial_state = create_controller(
-        agent, runtime, config, replay_events=replay_events
+        agent,
+        runtime,
+        config,
+        replay_events=replay_events,
+        set_controller_func=set_controller_func,
     )
 
     assert isinstance(initial_user_action, Action), (

@@ -27,6 +27,59 @@ from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
 
 
+def create_rate_limit_retry_listener():
+    """Create a retry listener that can be populated with an AgentController later.
+
+    Returns:
+        A tuple of (retry_listener_function, set_controller_function)
+    """
+    from typing import TYPE_CHECKING
+
+    if TYPE_CHECKING:
+        pass
+
+    controller_ref: list['AgentController | None'] = [
+        None
+    ]  # Use list for mutable reference
+
+    def retry_listener(
+        attempt_number: int, max_retries: int, exception: Exception
+    ) -> None:
+        """Called when a retry attempt is made."""
+        import asyncio
+
+        from litellm.exceptions import RateLimitError
+
+        from openhands.core.schema import AgentState
+
+        controller = controller_ref[0]
+        if controller and isinstance(exception, RateLimitError) and attempt_number == 1:
+            # First retry attempt for rate limiting - update UI immediately
+            controller.log(
+                'info',
+                f'Rate limiting detected, updating UI state immediately (attempt {attempt_number}/{max_retries})',
+            )
+            # Set state to RATE_LIMITED immediately when rate limiting is detected
+            try:
+                asyncio.create_task(
+                    controller.set_agent_state_to(AgentState.RATE_LIMITED)
+                )
+            except RuntimeError:
+                # No event loop running, skip state update
+                pass
+        elif controller and isinstance(exception, RateLimitError):
+            controller.log(
+                'info',
+                f'Continuing retry attempts due to rate limiting (attempt {attempt_number}/{max_retries})',
+            )
+
+    def set_controller(controller):
+        """Set the controller reference for the retry listener."""
+        controller_ref[0] = controller
+
+    return retry_listener, set_controller
+
+
 def create_runtime(
     config: OpenHandsConfig,
     sid: str | None = None,
@@ -176,17 +229,26 @@ def create_memory(
     return memory
 
 
-def create_agent(config: OpenHandsConfig) -> Agent:
+def create_agent(config: OpenHandsConfig) -> tuple[Agent, Callable]:
+    """Create an agent with a rate limit retry listener.
+
+    Returns:
+        A tuple of (agent, set_controller_function) where set_controller_function
+        can be called to populate the retry listener with the controller reference.
+    """
     agent_cls: type[Agent] = Agent.get_cls(config.default_agent)
     agent_config = config.get_agent_config(config.default_agent)
     llm_config = config.get_llm_config_from_agent(config.default_agent)
 
+    # Create the retry listener with controller slot
+    retry_listener, set_controller = create_rate_limit_retry_listener()
+
     agent = agent_cls(
-        llm=LLM(config=llm_config),
+        llm=LLM(config=llm_config, retry_listener=retry_listener),
         config=agent_config,
     )
 
-    return agent
+    return agent, set_controller
 
 
 def create_controller(
@@ -195,6 +257,7 @@ def create_controller(
     config: OpenHandsConfig,
     headless_mode: bool = True,
     replay_events: list[Event] | None = None,
+    set_controller_func: Callable | None = None,
 ) -> tuple[AgentController, State | None]:
     event_stream = runtime.event_stream
     initial_state = None
@@ -219,6 +282,11 @@ def create_controller(
         confirmation_mode=config.security.confirmation_mode,
         replay_events=replay_events,
     )
+
+    # Populate the retry listener with the controller reference
+    if set_controller_func:
+        set_controller_func(controller)
+
     return (controller, initial_state)
 
 

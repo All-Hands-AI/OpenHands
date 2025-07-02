@@ -178,8 +178,7 @@ class AgentController:
         # replay-related
         self._replay_manager = ReplayManager(replay_events)
 
-        # Set up retry listener to update state immediately when rate limiting occurs
-        self._setup_retry_listener()
+        # Note: Rate limiting retry listener is set up during agent creation in setup.py
 
         # Add the system message to the event stream
         self._add_system_message()
@@ -209,71 +208,6 @@ class AgentController:
             )
             logger.debug(f'System message: {preview}')
             self.event_stream.add_event(system_message, EventSource.AGENT)
-
-    def _setup_retry_listener(self):
-        """Set up a retry listener to update agent state immediately when rate limiting occurs."""
-        
-        # Set the retry listener on the agent's LLM if it doesn't already have one
-        if hasattr(self.agent, 'llm') and hasattr(self.agent.llm, 'retry_listener'):
-            if self.agent.llm.retry_listener is None:
-                # No existing retry listener, create one that gets controller reference when needed
-                self.agent.llm.retry_listener = self._create_rate_limit_retry_listener(lambda: self)
-            else:
-                # There's already a retry listener, so we need to combine them
-                original_retry_listener = self.agent.llm.retry_listener
-                rate_limit_listener = self._create_rate_limit_retry_listener(lambda: self)
-                
-                def combined_retry_listener(attempt_number: int, max_retries: int, exception: Exception) -> None:
-                    # Call our rate limit listener first
-                    rate_limit_listener(attempt_number, max_retries, exception)
-                    # Then call the original retry listener
-                    original_retry_listener(attempt_number, max_retries, exception)
-
-                self.agent.llm.retry_listener = combined_retry_listener
-
-    @staticmethod
-    def _create_rate_limit_retry_listener(get_controller: Callable[[], 'AgentController']) -> Callable[[int, int, Exception], None]:
-        """Create a retry listener that can update agent state when rate limiting occurs.
-        
-        Args:
-            get_controller: A function that returns the AgentController when called
-            
-        Returns:
-            A retry listener function that detects rate limiting and updates the agent state
-        """
-        def on_retry_attempt(attempt_number: int, max_retries: int, exception: Exception) -> None:
-            """Called when a retry attempt is made.
-
-            This immediately updates the agent state to RATE_LIMITED when rate limiting
-            is detected, so the UI shows "Agent is Rate Limited. Retrying..." from the 
-            first retry attempt, not just after all retries are exhausted.
-            """
-            from litellm.exceptions import RateLimitError
-            
-            try:
-                controller = get_controller()
-                if not controller:
-                    return
-            except Exception:
-                # Controller not available yet, skip
-                return
-            
-            if isinstance(exception, RateLimitError) and attempt_number == 1:
-                # First retry attempt for rate limiting - update UI immediately
-                controller.log(
-                    'info',
-                    f'Rate limiting detected, updating UI state immediately (attempt {attempt_number}/{max_retries})',
-                )
-                # Set state to RATE_LIMITED immediately when rate limiting is detected
-                # This is safe to call synchronously as it just updates the state
-                asyncio.create_task(controller.set_agent_state_to(AgentState.RATE_LIMITED))
-            elif isinstance(exception, RateLimitError):
-                controller.log(
-                    'info',
-                    f'Continuing retry attempts due to rate limiting (attempt {attempt_number}/{max_retries})',
-                )
-
-        return on_retry_attempt
 
     async def close(self, set_stop_state: bool = True) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.

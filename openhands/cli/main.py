@@ -134,7 +134,7 @@ async def run_session(
         None, display_initialization_animation, 'Initializing...', is_loaded
     )
 
-    agent = create_agent(config)
+    agent, set_controller_func = create_agent(config)
     runtime = create_runtime(
         config,
         sid=sid,
@@ -148,7 +148,9 @@ async def run_session(
 
     runtime.subscribe_to_shell_stream(stream_to_console)
 
-    controller, initial_state = create_controller(agent, runtime, config)
+    controller, initial_state = create_controller(
+        agent, runtime, config, set_controller_func=set_controller_func
+    )
 
     event_stream = runtime.event_stream
 
