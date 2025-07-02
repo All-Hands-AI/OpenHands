@@ -1,6 +1,5 @@
-import { useTranslation } from "react-i18next";
+import { FaBitbucket, FaGithub, FaGitlab } from "react-icons/fa6";
 import { RepositorySelection } from "#/api/open-hands.types";
-import { I18nKey } from "#/i18n/declaration";
 
 interface ConversationRepoLinkProps {
   selectedRepository: RepositorySelection;
@@ -11,8 +10,6 @@ export function ConversationRepoLink({
   selectedRepository,
   variant = "default",
 }: ConversationRepoLinkProps) {
-  const { t } = useTranslation();
-
   if (variant === "compact") {
     return (
       <span
@@ -25,27 +22,23 @@ export function ConversationRepoLink({
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex items-center gap-1">
+      {selectedRepository.git_provider === "github" && <FaGithub size={14} />}
+      {selectedRepository.git_provider === "gitlab" && <FaGitlab />}
+      {selectedRepository.git_provider === "bitbucket" && <FaBitbucket />}
+
       <span
         data-testid="conversation-card-selected-repository"
         className="text-xs text-neutral-400"
       >
-        {t(I18nKey.CONVERSATION$REPOSITORY)}:{" "}
         {selectedRepository.selected_repository}
       </span>
-      <span
+      <code
         data-testid="conversation-card-selected-branch"
-        className="text-xs text-neutral-400"
+        className="text-xs text-neutral-400 border border-neutral-700 rounded px-1 py-0.5 w-fit bg-neutral-800"
       >
-        {t(I18nKey.CONVERSATION$BRANCH)}: {selectedRepository.selected_branch}
-      </span>
-      <span
-        data-testid="conversation-card-selected-git-provider"
-        className="text-xs text-neutral-400"
-      >
-        {t(I18nKey.CONVERSATION$GIT_PROVIDER)}:{" "}
-        {selectedRepository.git_provider}
-      </span>
+        {selectedRepository.selected_branch}
+      </code>
     </div>
   );
 }
