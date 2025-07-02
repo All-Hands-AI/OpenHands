@@ -1,4 +1,4 @@
-import { OrganizationMember } from "#/types/org";
+import { OrganizationMember, OrganizationUserRole } from "#/types/org";
 import { openHands } from "../open-hands-axios";
 
 export const organizationService = {
@@ -24,6 +24,21 @@ export const organizationService = {
         email,
       },
     );
+
+    return data;
+  },
+
+  updateMemberRole: async ({
+    userId,
+    role,
+  }: {
+    userId: string;
+    role: OrganizationUserRole;
+  }) => {
+    const { data } = await openHands.post("/api/organizations/members", {
+      userId,
+      role,
+    });
 
     return data;
   },

@@ -1,10 +1,9 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, test } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
-import test from "node:test";
 import { organizationService } from "#/api/organization-service/organization-service.api";
-import { MOCK_ORG_MEMBERS } from "#/mocks/org-handlers";
+import { INITIAL_MOCK_ORG_MEMBERS } from "#/mocks/org-handlers";
 import { ManageTeam } from "#/routes/manage-team";
 
 function ManageTeamWithPortalRoot() {
@@ -36,15 +35,63 @@ describe("Manage Team Route", () => {
     expect(getOrganizationMembersSpy).toHaveBeenCalledOnce();
 
     const memberListItems = await screen.findAllByTestId("member-item");
-    expect(memberListItems).toHaveLength(MOCK_ORG_MEMBERS.length);
+    expect(memberListItems).toHaveLength(INITIAL_MOCK_ORG_MEMBERS.length);
 
-    MOCK_ORG_MEMBERS.forEach((member) => {
+    INITIAL_MOCK_ORG_MEMBERS.forEach((member) => {
       expect(screen.getByText(member.email)).toBeInTheDocument();
       expect(screen.getByText(member.role)).toBeInTheDocument();
     });
   });
 
-  test.todo("an admin should be able to change the role of a team member");
+  test("an admin should be able to change the role of a team member", async () => {
+    const updateMemberRoleSpy = vi.spyOn(
+      organizationService,
+      "updateMemberRole",
+    );
+
+    renderManageTeam();
+
+    const memberListItems = await screen.findAllByTestId("member-item");
+    const userRoleMember = memberListItems[2]; // third member is "user"
+
+    let userCombobox = within(userRoleMember).getByText(/user/i);
+    expect(userCombobox).toBeInTheDocument();
+    await userEvent.click(userCombobox);
+
+    const dropdown = within(userRoleMember).getByTestId("role-dropdown");
+    const adminOption = within(dropdown).getByText(/admin/i);
+    expect(adminOption).toBeInTheDocument();
+    await userEvent.click(adminOption);
+
+    expect(updateMemberRoleSpy).toHaveBeenCalledExactlyOnceWith({
+      userId: "3", // assuming the third member is the one being updated
+      role: "admin",
+    });
+    expect(
+      within(userRoleMember).queryByTestId("role-dropdown"),
+    ).not.toBeInTheDocument();
+
+    // Verify the role has been updated in the UI
+    userCombobox = within(userRoleMember).getByText(/admin/i);
+    expect(userCombobox).toBeInTheDocument();
+
+    // revert the role back to user
+    await userEvent.click(userCombobox);
+    const userOption = within(
+      within(userRoleMember).getByTestId("role-dropdown"),
+    ).getByText(/user/i);
+    expect(userOption).toBeInTheDocument();
+    await userEvent.click(userOption);
+
+    expect(updateMemberRoleSpy).toHaveBeenNthCalledWith(2, {
+      userId: "3",
+      role: "user",
+    });
+
+    // Verify the role has been reverted in the UI
+    userCombobox = within(userRoleMember).getByText(/user/i);
+    expect(userCombobox).toBeInTheDocument();
+  });
 
   describe("Inviting Team Members", () => {
     it("should render an invite team member button", () => {
