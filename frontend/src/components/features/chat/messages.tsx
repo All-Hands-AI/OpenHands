@@ -1,6 +1,5 @@
 import React from "react";
 import { createPortal } from "react-dom";
-import { FaBrain } from "react-icons/fa6";
 import { OpenHandsAction } from "#/types/core/actions";
 import { OpenHandsObservation } from "#/types/core/observations";
 import {
@@ -23,6 +22,7 @@ import {
 } from "#/types/microagent-status";
 import { AgentState } from "#/types/agent-state";
 import { getFirstPRUrl } from "#/utils/parse-pr-url";
+import MemmoryIcon from "#/icons/memory_icon.svg?react";
 
 interface MessagesProps {
   messages: (OpenHandsAction | OpenHandsObservation)[];
@@ -208,15 +208,21 @@ export const Messages: React.FC<MessagesProps> = React.memo(
               message.id,
             )}
             microagentPRUrl={getMicroagentPRUrlForEvent(message.id)}
-            actions={[
-              {
-                icon: <FaBrain className="w-[14px] h-[14px]" />,
-                onClick: () => {
-                  setSelectedEventId(message.id);
-                  setShowLaunchMicroagentModal(true);
-                },
-              },
-            ]}
+            actions={
+              conversation?.selected_repository
+                ? [
+                    {
+                      icon: (
+                        <MemmoryIcon className="w-[14px] h-[14px] text-white" />
+                      ),
+                      onClick: () => {
+                        setSelectedEventId(message.id);
+                        setShowLaunchMicroagentModal(true);
+                      },
+                    },
+                  ]
+                : undefined
+            }
             isInLast10Actions={messages.length - 1 - index < 10}
           />
         ))}
