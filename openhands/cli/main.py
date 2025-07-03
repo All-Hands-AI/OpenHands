@@ -294,7 +294,13 @@ async def run_session(
     if not skip_banner:
         display_banner(session_id=sid)
 
-    welcome_message = 'What do you want to build?'  # from the application
+    welcome_message = ''
+
+    # Display number of MCP servers configured
+    if agent.config.enable_mcp:
+        welcome_message += f'Using {len(runtime.config.mcp.stdio_servers)} stdio MCP servers, {len(runtime.config.mcp.sse_servers)} SSE MCP servers and {len(runtime.config.mcp.shttp_servers)} SHTTP MCP servers.\n\n'
+
+    welcome_message += 'What do you want to build?'  # from the application
     initial_message = ''  # from the user
 
     if task_content:
