@@ -279,13 +279,20 @@ function LlmSettingsScreen() {
               className="flex flex-col gap-6"
             >
               {!isLoading && !isFetching && (
-                <ModelSelector
-                  models={modelsAndProviders}
-                  currentModel={
-                    settings.LLM_MODEL || "anthropic/claude-sonnet-4-20250514"
-                  }
-                  onChange={handleModelIsDirty}
-                />
+                <>
+                  <ModelSelector
+                    models={modelsAndProviders}
+                    currentModel={
+                      settings.LLM_MODEL || "openhands/claude-sonnet-4-20250514"
+                    }
+                    onChange={handleModelIsDirty}
+                  />
+                  {settings.LLM_MODEL?.startsWith("openhands/") && (
+                    <div className="mt-2 text-sm text-blue-400">
+                      {t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP)}
+                    </div>
+                  )}
+                </>
               )}
 
               <SettingsInput
@@ -345,13 +352,18 @@ function LlmSettingsScreen() {
                 name="llm-custom-model-input"
                 label={t(I18nKey.SETTINGS$CUSTOM_MODEL)}
                 defaultValue={
-                  settings.LLM_MODEL || "anthropic/claude-sonnet-4-20250514"
+                  settings.LLM_MODEL || "openhands/claude-sonnet-4-20250514"
                 }
-                placeholder="anthropic/claude-sonnet-4-20250514"
+                placeholder="openhands/claude-sonnet-4-20250514"
                 type="text"
                 className="w-full max-w-[680px]"
                 onChange={handleCustomModelIsDirty}
               />
+              {settings.LLM_MODEL?.startsWith("openhands/") && (
+                <div className="mt-2 text-sm text-blue-400">
+                  {t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP)}
+                </div>
+              )}
 
               <SettingsInput
                 testId="base-url-input"

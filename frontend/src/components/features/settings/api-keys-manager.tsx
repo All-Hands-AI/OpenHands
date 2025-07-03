@@ -9,10 +9,12 @@ import { CreateApiKeyModal } from "./create-api-key-modal";
 import { DeleteApiKeyModal } from "./delete-api-key-modal";
 import { NewApiKeyModal } from "./new-api-key-modal";
 import { useApiKeys } from "#/hooks/query/use-api-keys";
+import { useLlmApiKey } from "#/hooks/query/use-llm-api-key";
 
 export function ApiKeysManager() {
   const { t } = useTranslation();
   const { data: apiKeys = [], isLoading, error } = useApiKeys();
+  const { data: llmApiKey, isLoading: isLoadingLlmKey } = useLlmApiKey();
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [keyToDelete, setKeyToDelete] = useState<ApiKey | null>(null);
@@ -80,6 +82,36 @@ export function ApiKeysManager() {
             }}
           />
         </p>
+
+        {!isLoadingLlmKey && llmApiKey && (
+          <div className="border border-tertiary rounded-md p-4 bg-base-tertiary">
+            <h3 className="text-lg font-medium mb-2">LLM API Key</h3>
+            <p className="text-sm mb-4">
+              This is your OpenHands LLM API key that can be used in the LLM
+              settings.
+            </p>
+            <div className="flex items-center gap-2">
+              <input
+                type="password"
+                value={llmApiKey.key || ""}
+                readOnly
+                className="bg-tertiary border border-[#717888] h-10 w-full rounded-sm p-2 text-sm"
+              />
+              <button
+                type="button"
+                className="px-3 py-2 bg-blue-600 text-white rounded-sm text-sm"
+                onClick={() => {
+                  if (llmApiKey.key) {
+                    navigator.clipboard.writeText(llmApiKey.key);
+                    displayErrorToast("API key copied to clipboard");
+                  }
+                }}
+              >
+                Copy
+              </button>
+            </div>
+          </div>
+        )}
 
         {isLoading && (
           <div className="flex justify-center p-4">
