@@ -4,9 +4,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { organizationService } from "#/api/organization-service/organization-service.api";
 import { INITIAL_MOCK_ORG_MEMBERS } from "#/mocks/org-handlers";
-import { ManageTeam } from "#/routes/manage-team";
 import { userService } from "#/api/user-service/user-service.api";
 import OpenHands from "#/api/open-hands";
+import ManageTeam from "#/routes/manage-team";
 
 function ManageTeamWithPortalRoot() {
   return (
@@ -36,6 +36,8 @@ describe("Manage Team Route", () => {
   });
 
   it.todo("should navigate away from the page if not saas");
+  it.todo("should not allow an admin to change the superadmin's role");
+  it.todo("should have a 'me' badge for the current user");
 
   it("should render the list of team members", async () => {
     const getOrganizationMembersSpy = vi.spyOn(
@@ -179,14 +181,14 @@ describe("Manage Team Route", () => {
 
       const modal = screen.getByTestId("invite-modal");
       const closeButton = within(modal).getByRole("button", {
-        name: /close/i,
+        name: /skip/i,
       });
       await userEvent.click(closeButton);
 
       expect(screen.queryByTestId("invite-modal")).not.toBeInTheDocument();
     });
 
-    it("should call the API to invite a new team member when the form is submitted", async () => {
+    it("should call the API to invite a new team member when the form is submitted (and pop a toast)", async () => {
       const inviteMemberSpy = vi.spyOn(organizationService, "inviteMember");
 
       renderManageTeam();
@@ -204,15 +206,20 @@ describe("Manage Team Route", () => {
       expect(emailInput).toHaveValue("someone@acme.org");
 
       const submitButton = within(modal).getByRole("button", {
-        name: /submit/i,
+        name: /next/i,
       });
       await userEvent.click(submitButton);
 
       expect(inviteMemberSpy).toHaveBeenCalledExactlyOnceWith({
         email: "someone@acme.org",
       });
-    });
+      expect(screen.queryByTestId("invite-modal")).not.toBeInTheDocument();
+      expect(screen.getAllByTestId("member-item")).toHaveLength(
+        INITIAL_MOCK_ORG_MEMBERS.length + 1,
+      );
+      expect(screen.getByText("someone@acme.org")).toBeInTheDocument();
 
-    it.todo("should render the new member in the list after inviting");
+      // TODO - verify that a toast is shown
+    });
   });
 });

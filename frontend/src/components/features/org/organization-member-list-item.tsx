@@ -1,4 +1,5 @@
 import React from "react";
+import { ChevronDown } from "lucide-react";
 import { OrganizationMember, OrganizationUserRole } from "#/types/org";
 
 interface OrganizationMemberListItemProps {
@@ -23,9 +24,15 @@ export function OrganizationMemberListItem({
   };
 
   return (
-    <div>
-      <span>{email}</span>
-      <span onClick={() => setRoleSelectionOpen(true)}>{role}</span>
+    <div className="flex items-center justify-between py-4">
+      <span className="text-sm font-semibold">{email}</span>
+      <span
+        onClick={() => setRoleSelectionOpen(true)}
+        className="text-xs text-gray-400 uppercase flex items-center gap-1 cursor-pointer"
+      >
+        {role}
+        {hasPermissionToChangeRole && <ChevronDown size={14} />}
+      </span>
 
       {hasPermissionToChangeRole && roleSelectionOpen && (
         <ul data-testid="role-dropdown">

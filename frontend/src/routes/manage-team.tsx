@@ -1,13 +1,15 @@
 import React from "react";
 import ReactDOM from "react-dom";
+import { Plus } from "lucide-react";
 import { InviteOrganizationMemberModal } from "#/components/features/org/invite-organization-member-modal";
 import { useOrganizationMembers } from "#/hooks/query/use-organization-members";
 import { OrganizationUserRole } from "#/types/org";
 import { OrganizationMemberListItem } from "#/components/features/org/organization-member-list-item";
 import { useUpdateMemberRole } from "#/hooks/mutation/use-update-member-role";
 import { useMe } from "#/hooks/query/use-me";
+import { BrandButton } from "#/components/features/settings/brand-button";
 
-export function ManageTeam() {
+function ManageTeam() {
   const { data: organizationMembers } = useOrganizationMembers();
   const { data: user } = useMe();
   const { mutate: updateMemberRole } = useUpdateMemberRole();
@@ -19,10 +21,16 @@ export function ManageTeam() {
   };
 
   return (
-    <div>
-      <button type="button" onClick={() => setInviteModalOpen(true)}>
+    <div className="p-4 flex flex-col gap-2">
+      <BrandButton
+        type="button"
+        variant="secondary"
+        onClick={() => setInviteModalOpen(true)}
+        className="flex items-center gap-1"
+      >
+        <Plus size={14} />
         Invite Team
-      </button>
+      </BrandButton>
 
       {inviteModalOpen &&
         ReactDOM.createPortal(
@@ -35,7 +43,11 @@ export function ManageTeam() {
       {organizationMembers && (
         <ul>
           {organizationMembers.map((member) => (
-            <li key={member.id} data-testid="member-item">
+            <li
+              key={member.id}
+              data-testid="member-item"
+              className="border-b border-tertiary"
+            >
               <OrganizationMemberListItem
                 email={member.email}
                 role={member.role}
@@ -51,3 +63,5 @@ export function ManageTeam() {
     </div>
   );
 }
+
+export default ManageTeam;

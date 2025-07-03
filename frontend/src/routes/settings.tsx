@@ -21,6 +21,7 @@ function SettingsScreen() {
     { to: "/settings/billing", text: t("SETTINGS$NAV_CREDITS") },
     { to: "/settings/secrets", text: t("SETTINGS$NAV_SECRETS") },
     { to: "/settings/api-keys", text: t("SETTINGS$NAV_API_KEYS") },
+    { to: "/settings/team", text: "Team" },
   ];
 
   const ossNavItems = [
