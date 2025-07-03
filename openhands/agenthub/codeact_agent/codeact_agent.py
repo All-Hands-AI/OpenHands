@@ -139,6 +139,7 @@ class CodeActAgent(Agent):
             tools.append(IPythonTool)
         if self.config.enable_llm_editor:
             tools.append(LLMBasedFileEditTool)
+            logger.info('LLMBasedFileEditTool is enabled')
         elif self.config.enable_gemini_editor:
             # Add all four Gemini CLI tools separately
             tools.extend(
@@ -149,12 +150,16 @@ class CodeActAgent(Agent):
                     create_gemini_list_directory_tool(detailed=not use_short_tool_desc),
                 ]
             )
+            logger.info('Gemini CLI tools are enabled')
         elif self.config.enable_editor:
             tools.append(
                 create_str_replace_editor_tool(
                     use_short_description=use_short_tool_desc
                 )
             )
+            logger.info('StrReplaceEditorTool is enabled')
+        else:
+            logger.warning('No editor is enabled')
         return tools
 
     def reset(self) -> None:
