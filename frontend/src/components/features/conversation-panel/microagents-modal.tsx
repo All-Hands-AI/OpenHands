@@ -58,7 +58,7 @@ export function MicroagentsModal({
         <div className="flex flex-col gap-6 w-full">
           <div className="flex items-center justify-between w-full">
             <BaseModalTitle title={t(I18nKey.MICROAGENTS_MODAL$TITLE)} />
-            {!isAgentReady && (
+            {isAgentReady && (
               <BrandButton
                 testId="refresh-microagents"
                 type="button"
@@ -77,7 +77,7 @@ export function MicroagentsModal({
           </div>
         </div>
 
-        {!isAgentReady && (
+        {isAgentReady && (
           <span className="text-sm text-gray-400">
             {t(I18nKey.MICROAGENTS_MODAL$WARNING)}
           </span>
