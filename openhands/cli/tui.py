@@ -54,7 +54,7 @@ ENABLE_STREAMING = False  # FIXME: this doesn't work
 streaming_output_text_area: TextArea | None = None
 
 # Track recent thoughts to prevent duplicate display
-recent_thoughts = []
+recent_thoughts: list[str] = []
 MAX_RECENT_THOUGHTS = 5
 
 # Color and styling constants
