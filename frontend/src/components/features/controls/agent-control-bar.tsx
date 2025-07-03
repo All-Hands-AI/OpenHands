@@ -41,7 +41,7 @@ export function AgentControlBar() {
         handleAction={handleAction}
         className={
           curAgentState === AgentState.RUNNING
-            ? "bg-gray-500/20 ring-2 ring-gray-400/30"
+            ? "bg-blue-500/20 ring-2 ring-blue-400/50"
             : ""
         }
       >
