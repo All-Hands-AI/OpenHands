@@ -1,9 +1,12 @@
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 import { cn } from "#/utils/utils";
 import { ContextMenu } from "../context-menu/context-menu";
 import { ContextMenuListItem } from "../context-menu/context-menu-list-item";
 import { I18nKey } from "#/i18n/declaration";
+import { RootState } from "#/store";
+import { AgentState } from "#/types/agent-state";
 
 interface ConversationCardContextMenuProps {
   onClose: () => void;
@@ -28,8 +31,11 @@ export function ConversationCardContextMenu({
   onDownloadViaVSCode,
   position = "bottom",
 }: ConversationCardContextMenuProps) {
+  const { curAgentState } = useSelector((state: RootState) => state.agent);
   const { t } = useTranslation();
   const ref = useClickOutsideElement<HTMLUListElement>(onClose);
+
+  console.log("curAgentState", curAgentState);
 
   return (
     <ContextMenu
@@ -80,14 +86,16 @@ export function ConversationCardContextMenu({
           Show Agent Tools & Metadata
         </ContextMenuListItem>
       )}
-      {onShowMicroagents && (
-        <ContextMenuListItem
-          testId="show-microagents-button"
-          onClick={onShowMicroagents}
-        >
-          {t(I18nKey.CONVERSATION$SHOW_MICROAGENTS)}
-        </ContextMenuListItem>
-      )}
+      {onShowMicroagents &&
+        curAgentState !== AgentState.INIT &&
+        curAgentState !== AgentState.LOADING && (
+          <ContextMenuListItem
+            testId="show-microagents-button"
+            onClick={onShowMicroagents}
+          >
+            {t(I18nKey.CONVERSATION$SHOW_MICROAGENTS)}
+          </ContextMenuListItem>
+        )}
     </ContextMenu>
   );
 }
