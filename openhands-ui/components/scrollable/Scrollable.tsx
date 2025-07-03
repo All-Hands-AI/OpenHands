@@ -38,8 +38,8 @@ export const Scrollable = ({
       tabIndex={tabIndex ?? 0}
       {...props}
       className={cn(
-        "scrollbar-thin scrollbar-thumb-light-neutral-700 scrollbar-track-grey-985",
-        "scrollbar-thumb-rounded-md scrollbar-track-rounded-md",
+        "scrollbar-thin scrollbar-thumb-light-neutral-700",
+        "scrollbar-thumb-rounded-md scrollbar-track-transparent",
         style,
         className
       )}
