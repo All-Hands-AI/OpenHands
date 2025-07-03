@@ -714,7 +714,11 @@ class CLIRuntime(Runtime):
             # Get the MCP config for this runtime
             mcp_config = self.get_mcp_config()
 
-            if not mcp_config.sse_servers and not mcp_config.shttp_servers and not mcp_config.stdio_servers:
+            if (
+                not mcp_config.sse_servers
+                and not mcp_config.shttp_servers
+                and not mcp_config.stdio_servers
+            ):
                 self.log('warning', 'No MCP servers configured')
                 return ErrorObservation('No MCP servers configured')
 
@@ -722,7 +726,7 @@ class CLIRuntime(Runtime):
                 'debug',
                 f'Creating MCP clients for action {action.name} with servers: '
                 f'SSE={len(mcp_config.sse_servers)}, SHTTP={len(mcp_config.shttp_servers)}, '
-                f'stdio={len(mcp_config.stdio_servers)}'
+                f'stdio={len(mcp_config.stdio_servers)}',
             )
 
             # Create clients for this specific operation
@@ -735,10 +739,15 @@ class CLIRuntime(Runtime):
 
             if not mcp_clients:
                 self.log('warning', 'No MCP clients could be created')
-                return ErrorObservation('No MCP clients could be created - check server configurations')
+                return ErrorObservation(
+                    'No MCP clients could be created - check server configurations'
+                )
 
             # Call the tool and return the result
-            self.log('debug', f'Executing MCP tool: {action.name} with arguments: {action.arguments}')
+            self.log(
+                'debug',
+                f'Executing MCP tool: {action.name} with arguments: {action.arguments}',
+            )
             result = await call_tool_mcp_handler(mcp_clients, action)
             self.log('debug', f'MCP tool {action.name} executed successfully')
             return result
@@ -957,7 +966,7 @@ class CLIRuntime(Runtime):
             'debug',
             f'CLI MCP config: {len(mcp_config.sse_servers)} SSE servers, '
             f'{len(mcp_config.stdio_servers)} stdio servers, '
-            f'{len(mcp_config.shttp_servers)} SHTTP servers'
+            f'{len(mcp_config.shttp_servers)} SHTTP servers',
         )
 
         return mcp_config
