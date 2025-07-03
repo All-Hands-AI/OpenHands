@@ -275,6 +275,18 @@ class DockerNestedConversationManager(ConversationManager):
         # Not supported - clients should connect directly to the nested server!
         raise ValueError('unsupported_operation')
 
+    async def send_event_to_conversation(self, sid, data):
+        async with httpx.AsyncClient(
+            headers={
+                'X-Session-API-Key': self._get_session_api_key_for_conversation(sid)
+            }
+        ) as client:
+            nested_url = self._get_nested_url(sid)
+            response = await client.post(
+                f'{nested_url}/api/conversations/{sid}/events', json=data
+            )
+            response.raise_for_status()
+
     async def disconnect_from_session(self, connection_id: str):
         # Not supported - clients should connect directly to the nested server!
         raise ValueError('unsupported_operation')
@@ -491,7 +503,7 @@ class DockerNestedConversationManager(ConversationManager):
 
         # Set up mounted volume for conversation directory within workspace
         # TODO: Check if we are using the standard event store and file store
-        volumes = config.sandbox.volumes
+        volumes: list[str | None]
         if not config.sandbox.volumes:
             volumes = []
         else:
@@ -501,7 +513,7 @@ class DockerNestedConversationManager(ConversationManager):
         volumes.append(
             f'{config.file_store_path}/{conversation_dir}:/root/.openhands/file_store/{conversation_dir}:rw'
         )
-        config.sandbox.volumes = ','.join(volumes)
+        config.sandbox.volumes = ','.join([v for v in volumes if v is not None])
         if not config.sandbox.runtime_container_image:
             config.sandbox.runtime_container_image = self._runtime_container_image
 

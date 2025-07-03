@@ -119,16 +119,46 @@ describe("RepoConnector", () => {
     expect(launchButton).toBeEnabled();
   });
 
-  it("should render the 'add git(hub|lab) repos' links if saas mode", async () => {
+  it("should render the 'add github repos' link if saas mode and github provider is set", async () => {
     const getConfiSpy = vi.spyOn(OpenHands, "getConfig");
     // @ts-expect-error - only return the APP_MODE
     getConfiSpy.mockResolvedValue({
       APP_MODE: "saas",
     });
 
+    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    getSettingsSpy.mockResolvedValue({
+      ...MOCK_DEFAULT_USER_SETTINGS,
+      provider_tokens_set: {
+        github: "some-token",
+        gitlab: null,
+      },
+    });
+
     renderRepoConnector();
 
-    await screen.findByText("Add GitHub repos");
+    await screen.findByText("HOME$ADD_GITHUB_REPOS");
+  });
+
+  it("should not render the 'add github repos' link if github provider is not set", async () => {
+    const getConfiSpy = vi.spyOn(OpenHands, "getConfig");
+    // @ts-expect-error - only return the APP_MODE
+    getConfiSpy.mockResolvedValue({
+      APP_MODE: "saas",
+    });
+
+    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    getSettingsSpy.mockResolvedValue({
+      ...MOCK_DEFAULT_USER_SETTINGS,
+      provider_tokens_set: {
+        gitlab: "some-token",
+        github: null,
+      },
+    });
+
+    renderRepoConnector();
+
+    expect(screen.queryByText("HOME$ADD_GITHUB_REPOS")).not.toBeInTheDocument();
   });
 
   it("should not render the 'add git(hub|lab) repos' links if oss mode", async () => {
