@@ -87,8 +87,7 @@ export function ConversationCardContextMenu({
         </ContextMenuListItem>
       )}
       {onShowMicroagents &&
-        curAgentState !== AgentState.INIT &&
-        curAgentState !== AgentState.LOADING && (
+        ![AgentState.INIT, AgentState.LOADING].includes(curAgentState) && (
           <ContextMenuListItem
             testId="show-microagents-button"
             onClick={onShowMicroagents}
