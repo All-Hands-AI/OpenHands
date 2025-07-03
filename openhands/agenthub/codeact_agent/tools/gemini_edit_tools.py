@@ -21,17 +21,17 @@ via the function calling translation layer.
 Original code from: https://github.com/google-gemini/gemini-cli
 """
 
-from typing import Any
+from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
 
-def create_gemini_read_file_tool(detailed: bool = True) -> dict[str, Any]:
+def create_gemini_read_file_tool(detailed: bool = True) -> ChatCompletionToolParam:
     """Create the Gemini ReadFile tool specification.
 
     Args:
         detailed: Whether to include detailed descriptions
 
     Returns:
-        Tool specification dictionary matching Gemini CLI ReadFile tool
+        Tool specification matching Gemini CLI ReadFile tool
     """
     description = (
         'Reads and returns the content of a specified file from the local filesystem. Handles text, images (PNG, JPG, GIF, WEBP, SVG, BMP), and PDF files. For text files, it can read specific line ranges.'
@@ -39,9 +39,9 @@ def create_gemini_read_file_tool(detailed: bool = True) -> dict[str, Any]:
         else 'Read file content with optional line range'
     )
 
-    return dict(
+    return ChatCompletionToolParam(
         type='function',
-        function=dict(
+        function=ChatCompletionToolParamFunctionChunk(
             name='read_file',
             description=description,
             parameters={
@@ -67,14 +67,14 @@ def create_gemini_read_file_tool(detailed: bool = True) -> dict[str, Any]:
     )
 
 
-def create_gemini_write_file_tool(detailed: bool = True) -> dict[str, Any]:
+def create_gemini_write_file_tool(detailed: bool = True) -> ChatCompletionToolParam:
     """Create the Gemini WriteFile tool specification.
 
     Args:
         detailed: Whether to include detailed descriptions
 
     Returns:
-        Tool specification dictionary matching Gemini CLI WriteFile tool
+        Tool specification matching Gemini CLI WriteFile tool
     """
     description = (
         'Writes content to a specified file in the local filesystem. \n      \n      '
@@ -83,9 +83,9 @@ def create_gemini_write_file_tool(detailed: bool = True) -> dict[str, Any]:
         else 'Write content to a file'
     )
 
-    return dict(
+    return ChatCompletionToolParam(
         type='function',
-        function=dict(
+        function=ChatCompletionToolParamFunctionChunk(
             name='write_file',
             description=description,
             parameters={
@@ -106,14 +106,14 @@ def create_gemini_write_file_tool(detailed: bool = True) -> dict[str, Any]:
     )
 
 
-def create_gemini_replace_tool(detailed: bool = True) -> dict[str, Any]:
+def create_gemini_replace_tool(detailed: bool = True) -> ChatCompletionToolParam:
     """Create the Gemini Replace (Edit) tool specification.
 
     Args:
         detailed: Whether to include detailed descriptions
 
     Returns:
-        Tool specification dictionary matching Gemini CLI Edit tool
+        Tool specification matching Gemini CLI Edit tool
     """
     description = (
         "Replaces text within a file. By default, replaces a single occurrence, but can replace multiple occurrences when `expected_replacements` is specified. This tool requires providing significant context around the change to ensure precise targeting. Always use the read_file tool to examine the file's current content before attempting a text replacement.\n\n      "
@@ -129,9 +129,9 @@ def create_gemini_replace_tool(detailed: bool = True) -> dict[str, Any]:
         else 'Replace text within a file with precise targeting'
     )
 
-    return dict(
+    return ChatCompletionToolParam(
         type='function',
-        function=dict(
+        function=ChatCompletionToolParamFunctionChunk(
             name='replace',
             description=description,
             parameters={
@@ -161,14 +161,14 @@ def create_gemini_replace_tool(detailed: bool = True) -> dict[str, Any]:
     )
 
 
-def create_gemini_list_directory_tool(detailed: bool = True) -> dict[str, Any]:
+def create_gemini_list_directory_tool(detailed: bool = True) -> ChatCompletionToolParam:
     """Create the Gemini ListDirectory (ReadFolder) tool specification.
 
     Args:
         detailed: Whether to include detailed descriptions
 
     Returns:
-        Tool specification dictionary matching Gemini CLI ReadFolder tool
+        Tool specification matching Gemini CLI ReadFolder tool
     """
     description = (
         'Lists the names of files and subdirectories directly within a specified directory path. Can optionally ignore entries matching provided glob patterns.'
@@ -176,9 +176,9 @@ def create_gemini_list_directory_tool(detailed: bool = True) -> dict[str, Any]:
         else 'List directory contents with optional filtering'
     )
 
-    return dict(
+    return ChatCompletionToolParam(
         type='function',
-        function=dict(
+        function=ChatCompletionToolParamFunctionChunk(
             name='list_directory',
             description=description,
             parameters={
