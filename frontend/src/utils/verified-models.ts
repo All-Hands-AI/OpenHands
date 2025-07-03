@@ -1,5 +1,11 @@
 // Here are the list of verified models and providers that we know work well with OpenHands.
-export const VERIFIED_PROVIDERS = ["openai", "azure", "anthropic", "deepseek", "openhands"];
+export const VERIFIED_PROVIDERS = [
+  "openai",
+  "azure",
+  "anthropic",
+  "deepseek",
+  "openhands",
+];
 export const VERIFIED_MODELS = [
   "o3-mini-2025-01-31",
   "o3-2025-04-16",
