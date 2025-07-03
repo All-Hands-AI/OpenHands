@@ -157,7 +157,7 @@ async def search_events(
 async def add_event(
     request: Request, conversation: ServerConversation = Depends(get_conversation)
 ):
-    data = request.json()
+    data = await request.json()
     await conversation_manager.send_event_to_conversation(conversation.sid, data)
     return JSONResponse({'success': True})
 
