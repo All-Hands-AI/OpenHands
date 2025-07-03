@@ -1,5 +1,8 @@
 {
   "name": "@openhands/ui",
+  "publishConfig": {
+    "access": "public"
+  },
   "license": "MIT",
   "authors": [
     {
@@ -11,7 +14,7 @@
       "email": "stephan@all-hands.dev"
     }
   ],
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0-beta.2",
   "description": "OpenHands UI Components",
   "keywords": [
     "openhands",
