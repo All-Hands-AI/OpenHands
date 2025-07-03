@@ -22,12 +22,15 @@ class ServerConversation:
         file_store: FileStore,
         config: OpenHandsConfig,
         user_id: str | None,
+        event_stream: EventStream | None
     ):
         self.sid = sid
         self.config = config
         self.file_store = file_store
         self.user_id = user_id
-        self.event_stream = EventStream(sid, file_store, user_id)
+        if event_stream is None:
+            event_stream = EventStream(sid, file_store, user_id)
+        self.event_stream = event_stream
         if config.security.security_analyzer:
             self.security_analyzer = options.SecurityAnalyzers.get(
                 config.security.security_analyzer, SecurityAnalyzer
