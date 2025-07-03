@@ -40,9 +40,9 @@ export function SecretListItem({
 
       <td
         className="w-1/2 truncate overflow-hidden whitespace-nowrap text-sm text-content-2 opacity-80 italic"
-        title={description || "-"}
+        title={description || ""}
       >
-        {description || "-"}
+        {description || ""}
       </td>
 
       <td className="w-1/4 flex items-center justify-end gap-4">
