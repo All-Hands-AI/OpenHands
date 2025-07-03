@@ -67,7 +67,7 @@ export const Toggle = ({
         <div
           className={cn(
             "rounded-full",
-            "absolute top-0.75 left-0.75 w-5 h-5 ",
+            "absolute top-1 left-1 w-4.5 h-4.5",
             "transition duration-300 ease-in-out",
             // base
             "bg-light-neutral-500 scale-100",
