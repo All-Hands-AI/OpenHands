@@ -16,7 +16,10 @@
   "keywords": [
     "openhands",
     "ui",
-    "components"
+    "components",
+    "react",
+    "typescript",
+    "tailwindcss"
   ],
   "type": "module",
   "main": "./dist/index.js",
@@ -36,6 +39,15 @@
   "sideEffects": [
     "**/*.css"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/All-Hands-AI/OpenHands.git",
+    "directory": "openhands-ui"
+  },
+  "homepage": "https://www.all-hands.dev/",
+  "bugs": {
+    "url": "https://github.com/All-Hands-AI/OpenHands/issues"
+  },
   "devDependencies": {
     "@chromatic-com/storybook": "^4.0.0",
     "@storybook/addon-a11y": "^9.0.12",
