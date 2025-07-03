@@ -29,7 +29,7 @@ describe("handleActionMessage", () => {
 
   it("should handle RUN actions by adding input to terminal", async () => {
     const { handleActionMessage } = await import("#/services/actions");
-    
+
     const runAction: ActionMessage = {
       id: 1,
       source: "agent",
@@ -51,7 +51,7 @@ describe("handleActionMessage", () => {
 
   it("should handle RUN_IPYTHON actions by adding input to Jupyter", async () => {
     const { handleActionMessage } = await import("#/services/actions");
-    
+
     const ipythonAction: ActionMessage = {
       id: 2,
       source: "agent",
@@ -73,7 +73,7 @@ describe("handleActionMessage", () => {
 
   it("should not process hidden actions", async () => {
     const { handleActionMessage } = await import("#/services/actions");
-    
+
     const hiddenAction: ActionMessage = {
       id: 3,
       source: "agent",
