@@ -11,6 +11,7 @@ import {
 } from "#/types/message";
 import { handleObservationMessage } from "./observations";
 import { appendInput } from "#/state/command-slice";
+import { appendJupyterInput } from "#/state/jupyter-slice";
 import { queryClient } from "#/query-client-config";
 
 export function handleActionMessage(message: ActionMessage) {
@@ -30,6 +31,10 @@ export function handleActionMessage(message: ActionMessage) {
 
   if (message.action === ActionType.RUN) {
     store.dispatch(appendInput(message.args.command));
+  }
+
+  if (message.action === ActionType.RUN_IPYTHON) {
+    store.dispatch(appendJupyterInput(message.args.code));
   }
 
   if ("args" in message && "security_risk" in message.args) {
