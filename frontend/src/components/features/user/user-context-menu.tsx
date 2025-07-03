@@ -1,25 +1,94 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import { useNavigate } from "react-router";
+import {
+  IoCardOutline,
+  IoLogOutOutline,
+  IoPersonOutline,
+} from "react-icons/io5";
+import { FaCog } from "react-icons/fa";
+import { FaPlus } from "react-icons/fa6";
 import { useLogout } from "#/hooks/mutation/use-logout";
 import { CreateNewOrganizationModal } from "../org/create-new-organization-modal";
 import { OrganizationUserRole } from "#/types/org";
+import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
+import { cn } from "#/utils/utils";
+
+interface TempButtonProps {
+  start: React.ReactNode;
+  onClick: () => void;
+}
+
+function TempButton({
+  start,
+  children,
+  onClick,
+}: React.PropsWithChildren<TempButtonProps>) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex items-center gap-1 cursor-pointer hover:text-white w-full"
+    >
+      {start}
+      {children}
+    </button>
+  );
+}
+
+function TempDivider() {
+  return <div className="h-[1px] w-full bg-tertiary my-1.5" />;
+}
 
 interface UserContextMenuProps {
   type: OrganizationUserRole;
+  onClose: () => void;
 }
 
-export function UserContextMenu({ type }: UserContextMenuProps) {
+export function UserContextMenu({ type, onClose }: UserContextMenuProps) {
   const navigate = useNavigate();
   const { mutate: logout } = useLogout();
+  const ref = useClickOutsideElement<HTMLDivElement>(onClose);
 
   const [orgModalIsOpen, setOrgModalIsOpen] = React.useState(false);
 
   const isUser = type === "user";
   const isSuperAdmin = type === "superadmin";
 
+  const handleLogout = () => {
+    logout();
+    onClose();
+  };
+
+  const handleSettingsClick = () => {
+    navigate("/settings");
+    onClose();
+  };
+
+  const handleManageTeamClick = () => {
+    navigate("/settings/team");
+    onClose();
+  };
+
+  const handleManageAccountClick = () => {
+    navigate("/settings/org");
+    onClose();
+  };
+
+  const handleCreateNewOrgClick = () => {
+    setOrgModalIsOpen(true);
+    onClose();
+  };
+
   return (
-    <div>
+    <div
+      data-testid="user-context-menu"
+      ref={ref}
+      className={cn(
+        "w-full flex flex-col gap-3 bg-base border border-tertiary rounded-xl p-6",
+        "text-sm text-basic",
+      )}
+    >
       {orgModalIsOpen &&
         ReactDOM.createPortal(
           <CreateNewOrganizationModal
@@ -28,27 +97,51 @@ export function UserContextMenu({ type }: UserContextMenuProps) {
           document.getElementById("root-outlet") || document.body,
         )}
 
-      <button type="button" onClick={() => logout()}>
-        Logout
-      </button>
-      <button type="button" onClick={() => navigate("/settings")}>
-        Settings
-      </button>
-      {!isUser && (
-        <>
-          <button type="button" onClick={() => navigate("/settings/team")}>
-            Manage Team
-          </button>
-          <button type="button" onClick={() => navigate("/settings/org")}>
-            Manage Account
-          </button>
-        </>
-      )}
-      {isSuperAdmin && (
-        <button type="button" onClick={() => setOrgModalIsOpen(true)}>
-          Create New Organization
-        </button>
-      )}
+      <h3 className="text-lg font-semibold text-white">Account</h3>
+
+      <div className="flex flex-col items-start gap-2">
+        {!isUser && (
+          <>
+            <TempButton
+              onClick={handleManageAccountClick}
+              start={<IoCardOutline className="text-white" size={14} />}
+            >
+              Manage Account
+            </TempButton>
+            <TempButton
+              onClick={handleManageTeamClick}
+              start={<IoPersonOutline className="text-white" size={14} />}
+            >
+              Manage Team
+            </TempButton>
+          </>
+        )}
+
+        <TempDivider />
+
+        <TempButton
+          onClick={handleSettingsClick}
+          start={<FaCog className="text-white" size={14} />}
+        >
+          Settings
+        </TempButton>
+
+        {isSuperAdmin && (
+          <TempButton
+            onClick={handleCreateNewOrgClick}
+            start={<FaPlus className="text-white" size={14} />}
+          >
+            Create New Organization
+          </TempButton>
+        )}
+
+        <TempButton
+          onClick={handleLogout}
+          start={<IoLogOutOutline className="text-white" size={14} />}
+        >
+          Logout
+        </TempButton>
+      </div>
     </div>
   );
 }

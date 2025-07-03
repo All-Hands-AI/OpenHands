@@ -11,7 +11,6 @@ import { SettingsModal } from "#/components/shared/modals/settings/settings-moda
 import { useSettings } from "#/hooks/query/use-settings";
 import { ConversationPanel } from "../conversation-panel/conversation-panel";
 import { ConversationPanelWrapper } from "../conversation-panel/conversation-panel-wrapper";
-import { useLogout } from "#/hooks/mutation/use-logout";
 import { useConfig } from "#/hooks/query/use-config";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 
@@ -25,7 +24,6 @@ export function Sidebar() {
     isError: settingsIsError,
     isFetching: isFetchingSettings,
   } = useSettings();
-  const { mutate: logout } = useLogout();
 
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
 
@@ -88,7 +86,6 @@ export function Sidebar() {
               user={
                 user.data ? { avatar_url: user.data.avatar_url } : undefined
               }
-              onLogout={logout}
               isLoading={user.isFetching}
             />
           </div>

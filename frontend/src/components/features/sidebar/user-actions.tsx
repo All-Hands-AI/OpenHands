@@ -1,14 +1,15 @@
 import React from "react";
 import { UserAvatar } from "./user-avatar";
-import { AccountSettingsContextMenu } from "../context-menu/account-settings-context-menu";
+import { UserContextMenu } from "../user/user-context-menu";
+import { useMe } from "#/hooks/query/use-me";
 
 interface UserActionsProps {
-  onLogout: () => void;
   user?: { avatar_url: string };
   isLoading?: boolean;
 }
 
-export function UserActions({ onLogout, user, isLoading }: UserActionsProps) {
+export function UserActions({ user, isLoading }: UserActionsProps) {
+  const { data: me } = useMe();
   const [accountContextMenuIsVisible, setAccountContextMenuIsVisible] =
     React.useState(false);
 
@@ -20,11 +21,6 @@ export function UserActions({ onLogout, user, isLoading }: UserActionsProps) {
     setAccountContextMenuIsVisible(false);
   };
 
-  const handleLogout = () => {
-    onLogout();
-    closeAccountMenu();
-  };
-
   return (
     <div data-testid="user-actions" className="w-8 h-8 relative cursor-pointer">
       <UserAvatar
@@ -34,10 +30,12 @@ export function UserActions({ onLogout, user, isLoading }: UserActionsProps) {
       />
 
       {accountContextMenuIsVisible && !!user && (
-        <AccountSettingsContextMenu
-          onLogout={handleLogout}
-          onClose={closeAccountMenu}
-        />
+        <div className="w-sm absolute left-[calc(100%+12px)] bottom-0 z-10">
+          <UserContextMenu
+            type={me?.role || "user"}
+            onClose={closeAccountMenu}
+          />
+        </div>
       )}
     </div>
   );
