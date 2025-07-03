@@ -689,8 +689,64 @@ class CLIRuntime(Runtime):
         )
 
     async def call_tool_mcp(self, action: MCPAction) -> Observation:
-        """Not implemented for CLI runtime."""
-        return ErrorObservation('MCP functionality is not implemented in CLIRuntime')
+        """Execute an MCP tool action in CLI runtime.
+
+        Args:
+            action: The MCP action to execute
+
+        Returns:
+            Observation: The result of the MCP tool execution
+        """
+        import sys
+
+        from openhands.events.observation import ErrorObservation
+
+        # Check if we're on Windows - MCP is disabled on Windows
+        if sys.platform == 'win32':
+            self.log('info', 'MCP functionality is disabled on Windows')
+            return ErrorObservation('MCP functionality is not available on Windows')
+
+        # Import here to avoid circular imports
+        from openhands.mcp.utils import call_tool_mcp as call_tool_mcp_handler
+        from openhands.mcp.utils import create_mcp_clients
+
+        try:
+            # Get the MCP config for this runtime
+            mcp_config = self.get_mcp_config()
+
+            if not mcp_config.sse_servers and not mcp_config.shttp_servers and not mcp_config.stdio_servers:
+                self.log('warning', 'No MCP servers configured')
+                return ErrorObservation('No MCP servers configured')
+
+            self.log(
+                'debug',
+                f'Creating MCP clients for action {action.name} with servers: '
+                f'SSE={len(mcp_config.sse_servers)}, SHTTP={len(mcp_config.shttp_servers)}, '
+                f'stdio={len(mcp_config.stdio_servers)}'
+            )
+
+            # Create clients for this specific operation
+            mcp_clients = await create_mcp_clients(
+                mcp_config.sse_servers,
+                mcp_config.shttp_servers,
+                self.sid,
+                mcp_config.stdio_servers,
+            )
+
+            if not mcp_clients:
+                self.log('warning', 'No MCP clients could be created')
+                return ErrorObservation('No MCP clients could be created - check server configurations')
+
+            # Call the tool and return the result
+            self.log('debug', f'Executing MCP tool: {action.name} with arguments: {action.arguments}')
+            result = await call_tool_mcp_handler(mcp_clients, action)
+            self.log('debug', f'MCP tool {action.name} executed successfully')
+            return result
+
+        except Exception as e:
+            error_msg = f'Error executing MCP tool {action.name}: {str(e)}'
+            self.log('error', error_msg)
+            return ErrorObservation(error_msg)
 
     @property
     def workspace_root(self) -> Path:
@@ -869,8 +925,42 @@ class CLIRuntime(Runtime):
     def get_mcp_config(
         self, extra_stdio_servers: list[MCPStdioServerConfig] | None = None
     ) -> MCPConfig:
-        # TODO: Load MCP config from a local file
-        return MCPConfig()
+        """Get MCP configuration for CLI runtime.
+
+        Args:
+            extra_stdio_servers: Additional stdio servers to include in the config
+
+        Returns:
+            MCPConfig: The MCP configuration with stdio servers and any configured SSE/SHTTP servers
+        """
+        import sys
+
+        # Check if we're on Windows - MCP is disabled on Windows
+        if sys.platform == 'win32':
+            self.log('debug', 'MCP is disabled on Windows, returning empty config')
+            return MCPConfig(sse_servers=[], stdio_servers=[], shttp_servers=[])
+
+        # Start with the base MCP config from the runtime configuration
+        mcp_config = self.config.mcp.model_copy()
+
+        # Add any extra stdio servers
+        if extra_stdio_servers:
+            current_stdio_servers = list(mcp_config.stdio_servers)
+            for extra_server in extra_stdio_servers:
+                # Check if this stdio server is already in the config
+                if extra_server not in current_stdio_servers:
+                    current_stdio_servers.append(extra_server)
+                    self.log('info', f'Added extra stdio server: {extra_server.name}')
+            mcp_config.stdio_servers = current_stdio_servers
+
+        self.log(
+            'debug',
+            f'CLI MCP config: {len(mcp_config.sse_servers)} SSE servers, '
+            f'{len(mcp_config.stdio_servers)} stdio servers, '
+            f'{len(mcp_config.shttp_servers)} SHTTP servers'
+        )
+
+        return mcp_config
 
     def subscribe_to_shell_stream(
         self, callback: Callable[[str], None] | None = None

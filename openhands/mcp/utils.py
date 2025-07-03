@@ -9,6 +9,7 @@ from openhands.core.config.mcp_config import (
     MCPConfig,
     MCPSHTTPServerConfig,
     MCPSSEServerConfig,
+    MCPStdioServerConfig,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.mcp import MCPAction
@@ -17,6 +18,7 @@ from openhands.events.observation.observation import Observation
 from openhands.mcp.client import MCPClient
 from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
+from openhands.runtime.impl.cli.cli_runtime import CLIRuntime
 
 
 def convert_mcp_clients_to_tools(mcp_clients: list[MCPClient] | None) -> list[dict]:
@@ -52,6 +54,7 @@ async def create_mcp_clients(
     sse_servers: list[MCPSSEServerConfig],
     shttp_servers: list[MCPSHTTPServerConfig],
     conversation_id: str | None = None,
+    stdio_servers: list[MCPStdioServerConfig] | None = None,
 ) -> list[MCPClient]:
     import sys
 
@@ -62,9 +65,13 @@ async def create_mcp_clients(
         )
         return []
 
-    servers: list[MCPSSEServerConfig | MCPSHTTPServerConfig] = [
+    if stdio_servers is None:
+        stdio_servers = []
+
+    servers: list[MCPSSEServerConfig | MCPSHTTPServerConfig | MCPStdioServerConfig] = [
         *sse_servers,
         *shttp_servers,
+        *stdio_servers,
     ]
 
     if not servers:
@@ -73,6 +80,16 @@ async def create_mcp_clients(
     mcp_clients = []
 
     for server in servers:
+        if isinstance(server, MCPStdioServerConfig):
+            logger.info(f'Initializing MCP agent for {server} with stdio connection...')
+            client = MCPClient()
+            try:
+                await client.connect_stdio(server)
+                mcp_clients.append(client)
+            except Exception as e:
+                logger.error(f'Failed to connect to {server}: {str(e)}', exc_info=True)
+            continue
+
         is_shttp = isinstance(server, MCPSHTTPServerConfig)
         connection_type = 'SHTTP' if is_shttp else 'SSE'
         logger.info(
@@ -93,7 +110,7 @@ async def create_mcp_clients(
 
 
 async def fetch_mcp_tools_from_config(
-    mcp_config: MCPConfig, conversation_id: str | None = None
+    mcp_config: MCPConfig, conversation_id: str | None = None, use_stdio: bool = False
 ) -> list[dict]:
     """
     Retrieves the list of MCP tools from the MCP clients.
@@ -101,6 +118,7 @@ async def fetch_mcp_tools_from_config(
     Args:
         mcp_config: The MCP configuration
         conversation_id: Optional conversation ID to associate with the MCP clients
+        use_stdio: Whether to use stdio servers for MCP clients, set to True when running from a CLI runtime
 
     Returns:
         A list of tool dictionaries. Returns an empty list if no connections could be established.
@@ -118,7 +136,10 @@ async def fetch_mcp_tools_from_config(
         logger.debug(f'Creating MCP clients with config: {mcp_config}')
         # Create clients - this will fetch tools but not maintain active connections
         mcp_clients = await create_mcp_clients(
-            mcp_config.sse_servers, mcp_config.shttp_servers, conversation_id
+            mcp_config.sse_servers,
+            mcp_config.shttp_servers,
+            conversation_id,
+            mcp_config.stdio_servers if use_stdio else [],
         )
 
         if not mcp_clients:
@@ -225,7 +246,10 @@ async def add_mcp_tools_to_agent(agent: 'Agent', runtime: Runtime, memory: 'Memo
     updated_mcp_config = runtime.get_mcp_config(extra_stdio_servers)
 
     # Fetch the MCP tools
-    mcp_tools = await fetch_mcp_tools_from_config(updated_mcp_config)
+    # Only use stdio if run from a CLI runtime
+    mcp_tools = await fetch_mcp_tools_from_config(
+        updated_mcp_config, use_stdio=isinstance(runtime, CLIRuntime)
+    )
 
     logger.info(
         f'Loaded {len(mcp_tools)} MCP tools: {[tool["function"]["name"] for tool in mcp_tools]}'

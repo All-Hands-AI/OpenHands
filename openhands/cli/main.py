@@ -365,6 +365,15 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
 
     logger.setLevel(logging.WARNING)
 
+    # If `config.toml` does not exist in current directory, use the file under home directory
+    if not os.path.exists(args.config_file):
+        logger.info(
+            f'Config file {args.config_file} does not exist, using default config file in home directory.'
+        )
+        args.config_file = os.path.join(
+            os.path.expanduser('~'), '.openhands', 'config.toml'
+        )
+
     # Load config from toml and override with command line arguments
     config: OpenHandsConfig = setup_config_from_args(args)
 

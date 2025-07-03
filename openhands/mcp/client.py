@@ -1,12 +1,20 @@
 from typing import Optional
 
 from fastmcp import Client
-from fastmcp.client.transports import SSETransport, StreamableHttpTransport
+from fastmcp.client.transports import (
+    SSETransport,
+    StdioTransport,
+    StreamableHttpTransport,
+)
 from mcp import McpError
 from mcp.types import CallToolResult
 from pydantic import BaseModel, ConfigDict, Field
 
-from openhands.core.config.mcp_config import MCPSHTTPServerConfig, MCPSSEServerConfig
+from openhands.core.config.mcp_config import (
+    MCPSHTTPServerConfig,
+    MCPSSEServerConfig,
+    MCPStdioServerConfig,
+)
 from openhands.core.logger import openhands_logger as logger
 from openhands.mcp.tool import MCPClientTool
 
@@ -96,6 +104,11 @@ class MCPClient(BaseModel):
         except Exception as e:
             logger.error(f'Error connecting to {server_url}: {e}')
             raise
+
+    async def connect_stdio(self, server: MCPStdioServerConfig, timeout: float = 30.0):
+        transport = StdioTransport(command=server.command, args=server.args or [])
+        self.client = Client(transport, timeout=timeout)
+        await self._initialize_and_list_tools()
 
     async def call_tool(self, tool_name: str, args: dict) -> CallToolResult:
         """Call a tool on the MCP server."""
