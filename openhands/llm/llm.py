@@ -170,6 +170,15 @@ class LLM(RetryMixin, DebugMixin):
             # litellm will handle it a bit differently than the openai-compatible params
             kwargs['top_k'] = self.config.top_k
 
+        # Handle OpenHands provider - rewrite to litellm_proxy
+        if self.config.model.startswith('openhands/'):
+            model_name = self.config.model.removeprefix('openhands/')
+            self.config.model = f'litellm_proxy/{model_name}'
+            self.config.base_url = 'https://llm-proxy.app.all-hands.dev/'
+            logger.debug(
+                f'Rewrote openhands/{model_name} to {self.config.model} with base URL {self.config.base_url}'
+            )
+
         if (
             self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS
             or self.config.model.split('/')[-1] in REASONING_EFFORT_SUPPORTED_MODELS
