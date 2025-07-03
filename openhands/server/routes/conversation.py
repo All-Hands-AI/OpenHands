@@ -158,7 +158,7 @@ async def add_event(
     request: Request, conversation: ServerConversation = Depends(get_conversation)
 ):
     data = request.json()
-    await conversation_manager.send_to_event_stream(conversation.sid, data)
+    await conversation_manager.send_event_to_conversation(conversation.sid, data)
     return JSONResponse({'success': True})
 
 

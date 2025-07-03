@@ -296,7 +296,6 @@ class Memory:
                 self.knowledge_microagents[name] = agent_knowledge
             for name, agent_repo in repo_agents.items():
                 self.repo_microagents[name] = agent_repo
-
         except Exception as e:
             logger.warning(
                 f'Failed to load user microagents from {USER_MICROAGENTS_DIR}: {str(e)}'

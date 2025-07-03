@@ -28,6 +28,7 @@ from openhands.core.config import (
     OpenHandsConfig,
 )
 from openhands.core.schema import AgentState
+from openhands.core.schema.exit_reason import ExitReason
 from openhands.events import EventSource
 from openhands.events.action import (
     ChangeAgentStateAction,
@@ -45,10 +46,11 @@ async def handle_commands(
     config: OpenHandsConfig,
     current_dir: str,
     settings_store: FileSettingsStore,
-) -> tuple[bool, bool, bool]:
+) -> tuple[bool, bool, bool, ExitReason]:
     close_repl = False
     reload_microagents = False
     new_session_requested = False
+    exit_reason = ExitReason.ERROR
 
     if command == '/exit':
         close_repl = handle_exit_command(
@@ -57,6 +59,8 @@ async def handle_commands(
             usage_metrics,
             sid,
         )
+        if close_repl:
+            exit_reason = ExitReason.INTENTIONAL
     elif command == '/help':
         handle_help_command()
     elif command == '/init':
@@ -69,6 +73,8 @@ async def handle_commands(
         close_repl, new_session_requested = handle_new_command(
             config, event_stream, usage_metrics, sid
         )
+        if close_repl:
+            exit_reason = ExitReason.INTENTIONAL
     elif command == '/settings':
         await handle_settings_command(config, settings_store)
     elif command == '/resume':
@@ -78,7 +84,7 @@ async def handle_commands(
         action = MessageAction(content=command)
         event_stream.add_event(action, EventSource.USER)
 
-    return close_repl, reload_microagents, new_session_requested
+    return close_repl, reload_microagents, new_session_requested, exit_reason
 
 
 def handle_exit_command(
@@ -123,7 +129,7 @@ async def handle_init_command(
     close_repl = False
     reload_microagents = False
 
-    if config.runtime == 'local':
+    if config.runtime in ('local', 'cli'):
         init_repo = await init_repository(config, current_dir)
         if init_repo:
             event_stream.add_event(
@@ -134,7 +140,7 @@ async def handle_init_command(
             close_repl = True
     else:
         print_formatted_text(
-            '\nRepository initialization through the CLI is only supported for local runtime.\n'
+            '\nRepository initialization through the CLI is only supported for CLI and local runtimes.\n'
         )
 
     return close_repl, reload_microagents
