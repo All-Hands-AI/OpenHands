@@ -224,3 +224,85 @@ def read_file(file_path: str | Path) -> str:
 def write_to_file(file_path: str | Path, content: str) -> None:
     with open(file_path, 'w') as f:
         f.write(content)
+
+
+def is_first_time_user() -> bool:
+    """Check if this is the first time the user is running OpenHands CLI.
+
+    Returns:
+        True if the ~/.openhands directory doesn't exist, False otherwise.
+    """
+    openhands_dir = Path.home() / '.openhands'
+    return not openhands_dir.exists()
+
+
+def get_bash_profile_path() -> Path:
+    """Get the path to the user's bash profile file.
+
+    Returns:
+        Path to the bash profile file (prefers .bashrc, falls back to .bash_profile).
+    """
+    home = Path.home()
+    bashrc = home / '.bashrc'
+    bash_profile = home / '.bash_profile'
+
+    # Prefer .bashrc if it exists, otherwise use .bash_profile
+    if bashrc.exists():
+        return bashrc
+    return bash_profile
+
+
+def add_aliases_to_bash_profile() -> bool:
+    """Add OpenHands aliases to the user's bash profile.
+
+    Returns:
+        True if aliases were added successfully, False otherwise.
+    """
+    try:
+        profile_path = get_bash_profile_path()
+
+        # Define the aliases to add
+        alias_lines = [
+            '',
+            '# OpenHands CLI aliases',
+            'alias openhands="uvx --python 3.12 --from openhands-ai openhands"',
+            'alias oh="uvx --python 3.12 --from openhands-ai openhands"',
+            '',
+        ]
+
+        # Check if aliases already exist
+        if profile_path.exists():
+            with open(profile_path, 'r') as f:
+                content = f.read()
+                if 'alias openhands=' in content or 'alias oh=' in content:
+                    return True  # Aliases already exist
+
+        # Append aliases to the profile
+        with open(profile_path, 'a') as f:
+            f.write('\n'.join(alias_lines))
+
+        return True
+    except Exception:
+        return False
+
+
+def mark_alias_setup_completed() -> None:
+    """Mark that the alias setup has been completed by creating a marker file."""
+    try:
+        openhands_dir = Path.home() / '.openhands'
+        openhands_dir.mkdir(parents=True, exist_ok=True)
+
+        marker_file = openhands_dir / '.alias_setup_completed'
+        marker_file.touch()
+    except Exception:
+        pass  # Silently fail if we can't create the marker
+
+
+def has_alias_setup_been_completed() -> bool:
+    """Check if the alias setup has been completed before.
+
+    Returns:
+        True if the alias setup marker file exists, False otherwise.
+    """
+    marker_file = Path.home() / '.openhands' / '.alias_setup_completed'
+    return marker_file.exists()
