@@ -13,6 +13,8 @@ import { TASK_SUGGESTIONS_HANDLERS } from "./task-suggestions-handlers";
 import { SECRETS_HANDLERS } from "./secrets-handlers";
 import { ORG_HANDLERS } from "./org-handlers";
 
+const IS_MOCK_SAAS = import.meta.env.VITE_MOCK_SAAS === "true";
+
 export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   llm_model: DEFAULT_SETTINGS.LLM_MODEL,
   llm_base_url: DEFAULT_SETTINGS.LLM_BASE_URL,
@@ -37,7 +39,12 @@ export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
 const MOCK_USER_PREFERENCES: {
   settings: ApiSettings | PostApiSettings | null;
 } = {
-  settings: null,
+  settings: IS_MOCK_SAAS
+    ? {
+        ...MOCK_DEFAULT_USER_SETTINGS,
+        provider_tokens_set: { github: "asd", gitlab: "def" },
+      }
+    : null,
 };
 
 /**
@@ -178,16 +185,14 @@ export const handlers = [
     HttpResponse.json(null, { status: 200 }),
   ),
   http.get("/api/options/config", () => {
-    const mockSaas = import.meta.env.VITE_MOCK_SAAS === "true";
-
     const config: GetConfigResponse = {
-      APP_MODE: mockSaas ? "saas" : "oss",
+      APP_MODE: IS_MOCK_SAAS ? "saas" : "oss",
       GITHUB_CLIENT_ID: "fake-github-client-id",
       POSTHOG_CLIENT_KEY: "fake-posthog-client-key",
       STRIPE_PUBLISHABLE_KEY: "",
       FEATURE_FLAGS: {
         ENABLE_BILLING: false,
-        HIDE_LLM_SETTINGS: mockSaas,
+        HIDE_LLM_SETTINGS: IS_MOCK_SAAS,
       },
     };
 
@@ -199,9 +204,6 @@ export const handlers = [
     const { settings } = MOCK_USER_PREFERENCES;
 
     if (!settings) return HttpResponse.json(null, { status: 404 });
-
-    if (Object.keys(settings.provider_tokens_set).length > 0)
-      settings.provider_tokens_set = {};
 
     return HttpResponse.json(settings);
   }),

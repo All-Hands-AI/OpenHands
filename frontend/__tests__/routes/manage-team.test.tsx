@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, test } from "vitest";
+import { describe, expect, it, vi, test, beforeAll } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
@@ -6,6 +6,7 @@ import { organizationService } from "#/api/organization-service/organization-ser
 import { INITIAL_MOCK_ORG_MEMBERS } from "#/mocks/org-handlers";
 import { ManageTeam } from "#/routes/manage-team";
 import { userService } from "#/api/user-service/user-service.api";
+import OpenHands from "#/api/open-hands";
 
 function ManageTeamWithPortalRoot() {
   return (
@@ -26,6 +27,16 @@ const renderManageTeam = () =>
   });
 
 describe("Manage Team Route", () => {
+  beforeAll(() => {
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    // @ts-expect-error - only return APP_MODE for these tests
+    getConfigSpy.mockResolvedValue({
+      APP_MODE: "saas",
+    });
+  });
+
+  it.todo("should navigate away from the page if not saas");
+
   it("should render the list of team members", async () => {
     const getOrganizationMembersSpy = vi.spyOn(
       organizationService,
@@ -45,7 +56,7 @@ describe("Manage Team Route", () => {
   });
 
   test("an admin should be able to change the role of a team member", async () => {
-    const getUserSpy = vi.spyOn(userService, "getUser");
+    const getUserSpy = vi.spyOn(userService, "getMe");
     const updateMemberRoleSpy = vi.spyOn(
       organizationService,
       "updateMemberRole",
@@ -103,7 +114,7 @@ describe("Manage Team Route", () => {
   });
 
   test("a user should not be able to change other team members' roles", async () => {
-    const getUserSpy = vi.spyOn(userService, "getUser");
+    const getUserSpy = vi.spyOn(userService, "getMe");
     const updateMemberRoleSpy = vi.spyOn(
       organizationService,
       "updateMemberRole",
