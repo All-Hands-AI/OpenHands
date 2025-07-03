@@ -5,6 +5,8 @@ import { ImageCarousel } from "../images/image-carousel";
 import { UploadImageInput } from "../images/upload-image-input";
 import { FileList } from "../files/file-list";
 import { isFileImage } from "#/utils/is-file-image";
+import { displayErrorToast } from "#/utils/custom-toast-handlers";
+import { validateFiles } from "#/utils/file-validation";
 
 interface InteractiveChatBoxProps {
   isDisabled?: boolean;
@@ -27,14 +29,20 @@ export function InteractiveChatBox({
   const [files, setFiles] = React.useState<File[]>([]);
 
   const handleUpload = (selectedFiles: File[]) => {
-    setFiles((prevFiles) => [
-      ...prevFiles,
-      ...selectedFiles.filter((f) => !isFileImage(f)),
-    ]);
-    setImages((prevImages) => [
-      ...prevImages,
-      ...selectedFiles.filter((f) => isFileImage(f)),
-    ]);
+    // Validate files before adding them
+    const validation = validateFiles(selectedFiles, [...images, ...files]);
+
+    if (!validation.isValid) {
+      displayErrorToast(`Error: ${validation.errorMessage}`);
+      return; // Don't add any files if validation fails
+    }
+
+    // Filter valid files by type
+    const validFiles = selectedFiles.filter((f) => !isFileImage(f));
+    const validImages = selectedFiles.filter((f) => isFileImage(f));
+
+    setFiles((prevFiles) => [...prevFiles, ...validFiles]);
+    setImages((prevImages) => [...prevImages, ...validImages]);
   };
 
   const removeElementByIndex = (array: Array<File>, index: number) => {

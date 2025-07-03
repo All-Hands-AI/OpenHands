@@ -129,7 +129,7 @@ async def handle_init_command(
     close_repl = False
     reload_microagents = False
 
-    if config.runtime == 'local':
+    if config.runtime in ('local', 'cli'):
         init_repo = await init_repository(config, current_dir)
         if init_repo:
             event_stream.add_event(
@@ -140,7 +140,7 @@ async def handle_init_command(
             close_repl = True
     else:
         print_formatted_text(
-            '\nRepository initialization through the CLI is only supported for local runtime.\n'
+            '\nRepository initialization through the CLI is only supported for CLI and local runtimes.\n'
         )
 
     return close_repl, reload_microagents
