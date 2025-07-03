@@ -88,7 +88,7 @@ export function ApiKeysManager() {
             <h3 className="text-lg font-medium mb-2">LLM API Key</h3>
             <p className="text-sm mb-4">
               This is your OpenHands LLM API key that can be used in the LLM
-              settings.
+              settings of OpenHands self-deploy and CLI.
             </p>
             <div className="flex items-center gap-2">
               <input
