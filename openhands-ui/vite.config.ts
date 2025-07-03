@@ -29,6 +29,6 @@ export default defineConfig({
         },
       },
     },
-    cssCodeSplit: false,
+    cssCodeSplit: false, // Bundle all CSS into a single index.css file
   },
 });
