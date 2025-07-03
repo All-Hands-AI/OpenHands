@@ -82,7 +82,8 @@
     "dev": "storybook dev -p 6006",
     "build:sb": "storybook build",
     "clean": "rm -rf dist",
-    "build": "vite build"
+    "build": "vite build",
+    "prepublishOnly": "bun run clean && bun run build"
   },
   "engines": {
     "bun": ">=1.2.0",
