@@ -86,8 +86,7 @@ def check_dependencies(code_repo_path: str, poetry_venvs_path: str) -> None:
     # Check jupyter is installed
     logger.debug('Checking dependencies: Jupyter')
     output = subprocess.check_output(
-        'poetry run jupyter --version',
-        shell=True,
+        ['poetry', 'run', 'jupyter', '--version'],
         text=True,
         cwd=code_repo_path,
     )
