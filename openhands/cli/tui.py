@@ -53,6 +53,10 @@ ENABLE_STREAMING = False  # FIXME: this doesn't work
 # Global TextArea for streaming output
 streaming_output_text_area: TextArea | None = None
 
+# Track recent thoughts to prevent duplicate display
+recent_thoughts: list[str] = []
+MAX_RECENT_THOUGHTS = 5
+
 # Color and styling constants
 COLOR_GOLD = '#FFD700'
 COLOR_GREY = '#808080'
@@ -183,19 +187,27 @@ def display_initial_user_prompt(prompt: str) -> None:
 
 
 # Prompt output display functions
+def display_thought_if_new(thought: str) -> None:
+    """Display a thought only if it hasn't been displayed recently."""
+    global recent_thoughts
+    if thought and thought.strip():
+        # Check if this thought was recently displayed
+        if thought not in recent_thoughts:
+            display_message(thought)
+            recent_thoughts.append(thought)
+            # Keep only the most recent thoughts
+            if len(recent_thoughts) > MAX_RECENT_THOUGHTS:
+                recent_thoughts.pop(0)
+
+
 def display_event(event: Event, config: OpenHandsConfig) -> None:
     global streaming_output_text_area
     with print_lock:
-        if isinstance(event, Action):
-            if hasattr(event, 'thought'):
-                display_message(event.thought)
-            if hasattr(event, 'final_thought'):
-                display_message(event.final_thought)
-        if isinstance(event, MessageAction):
-            if event.source == EventSource.AGENT:
-                display_message(event.content)
-
         if isinstance(event, CmdRunAction):
+            # For CmdRunAction, display thought first, then command
+            if hasattr(event, 'thought') and event.thought:
+                display_message(event.thought)
+
             # Only display the command if it's not already confirmed
             # Commands are always shown when AWAITING_CONFIRMATION, so we don't need to show them again when CONFIRMED
             if event.confirmation_state != ActionConfirmationStatus.CONFIRMED:
@@ -203,6 +215,17 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
 
             if event.confirmation_state == ActionConfirmationStatus.CONFIRMED:
                 initialize_streaming_output()
+        elif isinstance(event, Action):
+            # For other actions, display thoughts normally
+            if hasattr(event, 'thought') and event.thought:
+                display_message(event.thought)
+            if hasattr(event, 'final_thought') and event.final_thought:
+                display_message(event.final_thought)
+
+        if isinstance(event, MessageAction):
+            if event.source == EventSource.AGENT:
+                # Check if this message content is a duplicate thought
+                display_thought_if_new(event.content)
         elif isinstance(event, CmdOutputObservation):
             display_command_output(event.content)
         elif isinstance(event, FileEditObservation):
