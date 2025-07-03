@@ -22,7 +22,7 @@ export function UserActions({ user, isLoading }: UserActionsProps) {
   };
 
   return (
-    <div data-testid="user-actions" className="w-8 h-8 relative cursor-pointer">
+    <div data-testid="user-actions" className="w-8 h-8 relative">
       <UserAvatar
         avatarUrl={user?.avatar_url}
         onClick={toggleAccountMenu}
