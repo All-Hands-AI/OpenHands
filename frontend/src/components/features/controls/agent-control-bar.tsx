@@ -39,6 +39,11 @@ export function AgentControlBar() {
             : AgentState.PAUSED
         }
         handleAction={handleAction}
+        className={
+          curAgentState === AgentState.RUNNING
+            ? "bg-gray-500/20 ring-2 ring-gray-400/30"
+            : ""
+        }
       >
         {curAgentState === AgentState.PAUSED ? <PlayIcon /> : <PauseIcon />}
       </ActionButton>
