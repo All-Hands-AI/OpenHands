@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from fastapi import Request
 from pydantic import SecretStr
 
+from openhands.core.config.mcp_config import MCPConfig
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.server import shared
 from openhands.server.settings import Settings
@@ -52,7 +53,41 @@ class DefaultUserAuth(UserAuth):
             return settings
         settings_store = await self.get_user_settings_store()
         settings = await settings_store.load()
+
+        # Merge config.toml settings with stored settings
+        if settings:
+            settings = self._merge_with_config_settings(settings)
+
         self._settings = settings
+        return settings
+
+    def _merge_with_config_settings(self, settings: Settings) -> Settings:
+        """Merge config.toml settings with stored settings.
+
+        Config.toml takes priority for MCP settings, but they are merged rather than replaced.
+        """
+        # Get config.toml settings
+        config_settings = Settings.from_config()
+        if not config_settings or not config_settings.mcp_config:
+            return settings
+
+        # If stored settings don't have MCP config, use config.toml MCP config
+        if not settings.mcp_config:
+            settings.mcp_config = config_settings.mcp_config
+            return settings
+
+        # Both have MCP config - merge them with config.toml taking priority
+        merged_mcp = MCPConfig(
+            sse_servers=list(config_settings.mcp_config.sse_servers)
+            + list(settings.mcp_config.sse_servers),
+            stdio_servers=list(config_settings.mcp_config.stdio_servers)
+            + list(settings.mcp_config.stdio_servers),
+            shttp_servers=list(config_settings.mcp_config.shttp_servers)
+            + list(settings.mcp_config.shttp_servers),
+        )
+
+        # Create new settings with merged MCP config
+        settings.mcp_config = merged_mcp
         return settings
 
     async def get_secrets_store(self) -> SecretsStore:
