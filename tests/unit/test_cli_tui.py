@@ -9,6 +9,8 @@ from openhands.cli.tui import (
     display_banner,
     display_command,
     display_event,
+    display_mcp_action,
+    display_mcp_observation,
     display_message,
     display_runtime_initialization_message,
     display_shutdown_message,
@@ -24,12 +26,14 @@ from openhands.events.action import (
     Action,
     ActionConfirmationStatus,
     CmdRunAction,
+    MCPAction,
     MessageAction,
 )
 from openhands.events.observation import (
     CmdOutputObservation,
     FileEditObservation,
     FileReadObservation,
+    MCPObservation,
 )
 from openhands.llm.metrics import Metrics
 
@@ -146,6 +150,71 @@ class TestDisplayFunctions:
         display_event(action, config)
 
         mock_display_message.assert_called_once_with('Thinking about this...')
+
+    @patch('openhands.cli.tui.display_mcp_action')
+    def test_display_event_mcp_action(self, mock_display_mcp_action):
+        config = MagicMock(spec=OpenHandsConfig)
+        mcp_action = MCPAction(name='test_tool', arguments={'param': 'value'})
+
+        display_event(mcp_action, config)
+
+        mock_display_mcp_action.assert_called_once_with(mcp_action)
+
+    @patch('openhands.cli.tui.display_mcp_observation')
+    def test_display_event_mcp_observation(self, mock_display_mcp_observation):
+        config = MagicMock(spec=OpenHandsConfig)
+        mcp_observation = MCPObservation(
+            content='Tool result', name='test_tool', arguments={'param': 'value'}
+        )
+
+        display_event(mcp_observation, config)
+
+        mock_display_mcp_observation.assert_called_once_with(mcp_observation)
+
+    @patch('openhands.cli.tui.print_container')
+    def test_display_mcp_action(self, mock_print_container):
+        mcp_action = MCPAction(name='test_tool', arguments={'param': 'value'})
+
+        display_mcp_action(mcp_action)
+
+        mock_print_container.assert_called_once()
+        container = mock_print_container.call_args[0][0]
+        assert 'test_tool' in container.body.text
+        assert 'param' in container.body.text
+
+    @patch('openhands.cli.tui.print_container')
+    def test_display_mcp_action_no_args(self, mock_print_container):
+        mcp_action = MCPAction(name='test_tool')
+
+        display_mcp_action(mcp_action)
+
+        mock_print_container.assert_called_once()
+        container = mock_print_container.call_args[0][0]
+        assert 'test_tool' in container.body.text
+        assert 'Arguments' not in container.body.text
+
+    @patch('openhands.cli.tui.print_container')
+    def test_display_mcp_observation(self, mock_print_container):
+        mcp_observation = MCPObservation(
+            content='Tool result', name='test_tool', arguments={'param': 'value'}
+        )
+
+        display_mcp_observation(mcp_observation)
+
+        mock_print_container.assert_called_once()
+        container = mock_print_container.call_args[0][0]
+        assert 'test_tool' in container.body.text
+        assert 'Tool result' in container.body.text
+
+    @patch('openhands.cli.tui.print_container')
+    def test_display_mcp_observation_no_content(self, mock_print_container):
+        mcp_observation = MCPObservation(content='', name='test_tool')
+
+        display_mcp_observation(mcp_observation)
+
+        mock_print_container.assert_called_once()
+        container = mock_print_container.call_args[0][0]
+        assert 'No output' in container.body.text
 
     @patch('openhands.cli.tui.print_formatted_text')
     def test_display_message(self, mock_print):

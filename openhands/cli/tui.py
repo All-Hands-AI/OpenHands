@@ -36,6 +36,7 @@ from openhands.events.action import (
     ActionConfirmationStatus,
     ChangeAgentStateAction,
     CmdRunAction,
+    MCPAction,
     MessageAction,
 )
 from openhands.events.event import Event
@@ -45,6 +46,7 @@ from openhands.events.observation import (
     ErrorObservation,
     FileEditObservation,
     FileReadObservation,
+    MCPObservation,
 )
 from openhands.llm.metrics import Metrics
 
@@ -203,12 +205,16 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
 
             if event.confirmation_state == ActionConfirmationStatus.CONFIRMED:
                 initialize_streaming_output()
+        elif isinstance(event, MCPAction):
+            display_mcp_action(event)
         elif isinstance(event, CmdOutputObservation):
             display_command_output(event.content)
         elif isinstance(event, FileEditObservation):
             display_file_edit(event)
         elif isinstance(event, FileReadObservation):
             display_file_read(event)
+        elif isinstance(event, MCPObservation):
+            display_mcp_observation(event)
         elif isinstance(event, AgentStateChangedObservation):
             display_agent_state_change_message(event.agent_state)
         elif isinstance(event, ErrorObservation):
@@ -308,6 +314,70 @@ def display_file_read(event: FileReadObservation) -> None:
             wrap_lines=True,
         ),
         title='File Read',
+        style=f'fg:{COLOR_GREY}',
+    )
+    print_formatted_text('')
+    print_container(container)
+
+
+def display_mcp_action(event: MCPAction) -> None:
+    """Display an MCP action in the CLI."""
+    # Format the arguments for display
+    args_text = ''
+    if event.arguments:
+        import json
+
+        try:
+            args_text = json.dumps(event.arguments, indent=2)
+        except (TypeError, ValueError):
+            args_text = str(event.arguments)
+
+    # Create the display text
+    display_text = f'Tool: {event.name}'
+    if args_text:
+        display_text += f'\n\nArguments:\n{args_text}'
+
+    container = Frame(
+        TextArea(
+            text=display_text,
+            read_only=True,
+            style='ansiblue',
+            wrap_lines=True,
+        ),
+        title='MCP Tool Call',
+        style='ansiblue',
+    )
+    print_formatted_text('')
+    print_container(container)
+
+
+def display_mcp_observation(event: MCPObservation) -> None:
+    """Display an MCP observation in the CLI."""
+    # Format the content for display
+    content = event.content.strip() if event.content else 'No output'
+
+    # Add tool name and arguments info if available
+    display_text = content
+    if event.name:
+        header = f'Tool: {event.name}'
+        if event.arguments:
+            import json
+
+            try:
+                args_text = json.dumps(event.arguments, indent=2)
+                header += f'\nArguments: {args_text}'
+            except (TypeError, ValueError):
+                header += f'\nArguments: {event.arguments}'
+        display_text = f'{header}\n\nResult:\n{content}'
+
+    container = Frame(
+        TextArea(
+            text=display_text,
+            read_only=True,
+            style=COLOR_GREY,
+            wrap_lines=True,
+        ),
+        title='MCP Tool Result',
         style=f'fg:{COLOR_GREY}',
     )
     print_formatted_text('')
