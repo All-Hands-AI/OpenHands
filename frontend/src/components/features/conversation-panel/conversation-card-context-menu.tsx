@@ -8,6 +8,7 @@ import { I18nKey } from "#/i18n/declaration";
 interface ConversationCardContextMenuProps {
   onClose: () => void;
   onDelete?: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  onStop?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onEdit?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onDisplayCost?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onShowAgentTools?: (event: React.MouseEvent<HTMLButtonElement>) => void;
@@ -19,6 +20,7 @@ interface ConversationCardContextMenuProps {
 export function ConversationCardContextMenu({
   onClose,
   onDelete,
+  onStop,
   onEdit,
   onDisplayCost,
   onShowAgentTools,
@@ -41,12 +43,17 @@ export function ConversationCardContextMenu({
     >
       {onDelete && (
         <ContextMenuListItem testId="delete-button" onClick={onDelete}>
-          Delete
+          {t(I18nKey.BUTTON$DELETE)}
+        </ContextMenuListItem>
+      )}
+      {onStop && (
+        <ContextMenuListItem testId="stop-button" onClick={onStop}>
+          {t(I18nKey.BUTTON$STOP)}
         </ContextMenuListItem>
       )}
       {onEdit && (
         <ContextMenuListItem testId="edit-button" onClick={onEdit}>
-          Edit Title
+          {t(I18nKey.BUTTON$EDIT_TITLE)}
         </ContextMenuListItem>
       )}
       {onDownloadViaVSCode && (
@@ -54,7 +61,7 @@ export function ConversationCardContextMenu({
           testId="download-vscode-button"
           onClick={onDownloadViaVSCode}
         >
-          Download via VS Code
+          {t(I18nKey.BUTTON$DOWNLOAD_VIA_VSCODE)}
         </ContextMenuListItem>
       )}
       {onDisplayCost && (
@@ -62,7 +69,7 @@ export function ConversationCardContextMenu({
           testId="display-cost-button"
           onClick={onDisplayCost}
         >
-          Display Cost
+          {t(I18nKey.BUTTON$DISPLAY_COST)}
         </ContextMenuListItem>
       )}
       {onShowAgentTools && (
@@ -70,7 +77,7 @@ export function ConversationCardContextMenu({
           testId="show-agent-tools-button"
           onClick={onShowAgentTools}
         >
-          Show Agent Tools & Metadata
+          {t(I18nKey.BUTTON$SHOW_AGENT_TOOLS_AND_METADATA)}
         </ContextMenuListItem>
       )}
       {onShowMicroagents && (

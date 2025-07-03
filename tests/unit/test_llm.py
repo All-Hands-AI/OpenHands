@@ -132,7 +132,7 @@ def test_llm_init_with_model_info(mock_get_model_info, default_config):
     llm = LLM(default_config)
     llm.init_model_info()
     assert llm.config.max_input_tokens == 8000
-    assert llm.config.max_output_tokens is None
+    assert llm.config.max_output_tokens == 2000
 
 
 @patch('openhands.llm.llm.litellm.get_model_info')
@@ -140,7 +140,7 @@ def test_llm_init_without_model_info(mock_get_model_info, default_config):
     mock_get_model_info.side_effect = Exception('Model info not available')
     llm = LLM(default_config)
     llm.init_model_info()
-    assert llm.config.max_input_tokens == 4096
+    assert llm.config.max_input_tokens is None
     assert llm.config.max_output_tokens is None
 
 
@@ -260,7 +260,7 @@ def test_llm_init_with_openrouter_model(mock_get_model_info, default_config):
     llm = LLM(default_config)
     llm.init_model_info()
     assert llm.config.max_input_tokens == 7000
-    assert llm.config.max_output_tokens is None
+    assert llm.config.max_output_tokens == 1500
     mock_get_model_info.assert_called_once_with('openrouter:gpt-4o-mini')
 
 
@@ -981,3 +981,94 @@ def test_llm_base_url_auto_protocol_patch(mock_get):
 
     called_url = mock_get.call_args[0][0]
     assert called_url.startswith('http://') or called_url.startswith('https://')
+
+
+# Tests for max_output_tokens configuration and usage
+
+
+def test_unknown_model_token_limits():
+    """Test that models without known token limits get None for both max_output_tokens and max_input_tokens."""
+    # Create LLM instance with a non-existent model to avoid litellm having model info for it
+    config = LLMConfig(model='non-existent-model', api_key='test_key')
+    llm = LLM(config)
+
+    # Verify max_output_tokens and max_input_tokens are initialized to None (default value)
+    assert llm.config.max_output_tokens is None
+    assert llm.config.max_input_tokens is None
+
+
+def test_max_tokens_from_model_info():
+    """Test that max_output_tokens and max_input_tokens are correctly initialized from model info."""
+    # Create LLM instance with GPT-4 model which has known token limits
+    config = LLMConfig(model='gpt-4', api_key='test_key')
+    llm = LLM(config)
+
+    # GPT-4 has specific token limits
+    # These are the expected values from litellm
+    assert llm.config.max_output_tokens == 4096
+    assert llm.config.max_input_tokens == 8192
+
+
+def test_claude_3_7_sonnet_max_output_tokens():
+    """Test that Claude 3.7 Sonnet models get the special 64000 max_output_tokens value and default max_input_tokens."""
+    # Create LLM instance with Claude 3.7 Sonnet model
+    config = LLMConfig(model='claude-3-7-sonnet', api_key='test_key')
+    llm = LLM(config)
+
+    # Verify max_output_tokens is set to 64000 for Claude 3.7 Sonnet
+    assert llm.config.max_output_tokens == 64000
+    # Verify max_input_tokens is set to None (default value)
+    assert llm.config.max_input_tokens is None
+
+
+def test_claude_sonnet_4_max_output_tokens():
+    """Test that Claude Sonnet 4 models get the correct max_output_tokens and max_input_tokens values."""
+    # Create LLM instance with a Claude Sonnet 4 model
+    config = LLMConfig(model='claude-sonnet-4-20250514', api_key='test_key')
+    llm = LLM(config)
+
+    # Verify max_output_tokens is set to the expected value
+    assert llm.config.max_output_tokens == 64000
+    # Verify max_input_tokens is set to the expected value
+    # For Claude models, we expect a specific value from litellm
+    assert llm.config.max_input_tokens == 200000
+
+
+def test_sambanova_deepseek_model_max_output_tokens():
+    """Test that SambaNova DeepSeek-V3-0324 model gets the correct max_output_tokens value."""
+    # Create LLM instance with SambaNova DeepSeek model
+    config = LLMConfig(model='sambanova/DeepSeek-V3-0324', api_key='test_key')
+    llm = LLM(config)
+
+    # SambaNova DeepSeek model has specific token limits
+    # This is the expected value from litellm
+    assert llm.config.max_output_tokens == 32768
+
+
+def test_max_output_tokens_override_in_config():
+    """Test that max_output_tokens can be overridden in the config."""
+    # Create LLM instance with minimal config and overridden max_output_tokens
+    config = LLMConfig(
+        model='claude-sonnet-4-20250514', api_key='test_key', max_output_tokens=2048
+    )
+    llm = LLM(config)
+
+    # Verify the config has the overridden max_output_tokens value
+    assert llm.config.max_output_tokens == 2048
+
+
+def test_azure_model_default_max_tokens():
+    """Test that Azure models have the default max_output_tokens value."""
+    # Create minimal config for Azure model (without specifying max_output_tokens)
+    azure_config = LLMConfig(
+        model='azure/non-existent-model',  # Use a non-existent model to avoid litellm having model info for it
+        api_key='test_key',
+        base_url='https://test.openai.azure.com/',
+        api_version='2024-12-01-preview',
+    )
+
+    # Create LLM instance with Azure model
+    llm = LLM(azure_config)
+
+    # Verify the config has the default max_output_tokens value
+    assert llm.config.max_output_tokens is None  # Default value

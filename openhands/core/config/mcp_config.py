@@ -131,7 +131,9 @@ class MCPConfig(BaseModel):
             # Convert all entries in sse_servers to MCPSSEServerConfig objects
             if 'sse_servers' in data:
                 data['sse_servers'] = cls._normalize_servers(data['sse_servers'])
-                servers = []
+                servers: list[
+                    MCPSSEServerConfig | MCPStdioServerConfig | MCPSHTTPServerConfig
+                ] = []
                 for server in data['sse_servers']:
                     servers.append(MCPSSEServerConfig(**server))
                 data['sse_servers'] = servers

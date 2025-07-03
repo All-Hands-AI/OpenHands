@@ -3,6 +3,7 @@
 # CLI Settings are handled separately in cli_settings.py
 
 import asyncio
+import contextlib
 import sys
 import threading
 import time
@@ -74,6 +75,8 @@ COMMANDS = {
 }
 
 print_lock = threading.Lock()
+
+pause_task: asyncio.Task | None = None  # No more than one pause task
 
 
 class UsageMetrics:
@@ -565,24 +568,56 @@ async def read_confirmation_input(config: OpenHandsConfig) -> str:
     try:
         prompt_session = create_prompt_session(config)
 
-        with patch_stdout():
-            print_formatted_text('')
-            confirmation: str = await prompt_session.prompt_async(
-                HTML('<gold>Proceed with action? (y)es/(n)o/(a)lways > </gold>'),
-            )
+        while True:
+            with patch_stdout():
+                print_formatted_text('')
+                confirmation: str = await prompt_session.prompt_async(
+                    HTML('<gold>Proceed with action? (y)es/(n)o/(a)lways > </gold>'),
+                )
 
-            confirmation = '' if confirmation is None else confirmation.strip().lower()
+                confirmation = (
+                    '' if confirmation is None else confirmation.strip().lower()
+                )
 
-            if confirmation in ['y', 'yes']:
-                return 'yes'
-            elif confirmation in ['n', 'no']:
-                return 'no'
-            elif confirmation in ['a', 'always']:
-                return 'always'
-            else:
-                return 'no'
+                if confirmation in ['y', 'yes']:
+                    return 'yes'
+                elif confirmation in ['n', 'no']:
+                    return 'no'
+                elif confirmation in ['a', 'always']:
+                    return 'always'
+                else:
+                    # Display error message for invalid input
+                    print_formatted_text('')
+                    print_formatted_text(
+                        HTML(
+                            '<ansired>Invalid input. Please enter (y)es, (n)o, or (a)lways.</ansired>'
+                        )
+                    )
+                    # Continue the loop to re-prompt
     except (KeyboardInterrupt, EOFError):
         return 'no'
+
+
+def start_pause_listener(
+    loop: asyncio.AbstractEventLoop,
+    done_event: asyncio.Event,
+    event_stream,
+) -> None:
+    global pause_task
+    if pause_task is None or pause_task.done():
+        pause_task = loop.create_task(
+            process_agent_pause(done_event, event_stream)
+        )  # Create a task to track agent pause requests from the user
+
+
+async def stop_pause_listener() -> None:
+    global pause_task
+    if pause_task and not pause_task.done():
+        pause_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await pause_task
+        await asyncio.sleep(0)
+    pause_task = None
 
 
 async def process_agent_pause(done: asyncio.Event, event_stream: EventStream) -> None:
@@ -603,9 +638,12 @@ async def process_agent_pause(done: asyncio.Event, event_stream: EventStream) ->
                 )
                 done.set()
 
-    with input.raw_mode():
-        with input.attach(keys_ready):
-            await done.wait()
+    try:
+        with input.raw_mode():
+            with input.attach(keys_ready):
+                await done.wait()
+    finally:
+        input.close()
 
 
 def cli_confirm(
