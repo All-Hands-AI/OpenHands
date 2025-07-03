@@ -131,6 +131,13 @@ async def search_events(
 
     # Get matching events from the stream
     event_stream = conversation.event_stream
+    logger.info('search_events', extra={
+        'start_id': start_id,
+        'end_id': end_id,
+        'reverse': reverse,
+        'filter': filter.__class__.__name__,
+        'cur_id': getattr(event_stream, 'cur_id', None),
+    })
     events = list(
         event_stream.search_events(
             start_id=start_id,
