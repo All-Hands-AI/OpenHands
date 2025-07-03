@@ -20,7 +20,7 @@ Before using this tool:
 When making edits:
    - Ensure the edit results in idiomatic, correct code
    - Do not leave the code in a broken state
-   - Always use absolute file paths (starting with /)
+   - Always use absolute file paths (Unix: starting with /, Windows: starting with drive letter like D:\\, E:\\, etc.)
 
 CRITICAL REQUIREMENTS FOR USING THIS TOOL:
 
@@ -76,7 +76,7 @@ def create_str_replace_editor_tool(
                         'type': 'string',
                     },
                     'path': {
-                        'description': 'Absolute path to file or directory, e.g. `/workspace/file.py` or `/workspace`.',
+                        'description': 'Absolute path to file or directory, e.g. `/workspace/file.py` or `/workspace` (Unix), `D:\\workspace\\file.py` or `E:\\workspace` (Windows).',
                         'type': 'string',
                     },
                     'file_text': {

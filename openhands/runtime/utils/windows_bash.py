@@ -926,22 +926,7 @@ class WindowsPowershellSession:
                     )
                 )
             statements = ast.EndBlock.Statements
-            if statements.Count > 1:
-                logger.error(
-                    f'Detected {statements.Count} statements in the command. Only one is allowed.'
-                )
-                # Align error message with bash.py
-                splited_cmds = [
-                    str(s.Extent.Text) for s in statements
-                ]  # Try to get text
-                return ErrorObservation(
-                    content=(
-                        f'ERROR: Cannot execute multiple commands at once.\n'
-                        f'Please run each command separately OR chain them into a single command via PowerShell operators (e.g., ; or |).\n'
-                        f'Detected commands:\n{"\n".join(f"({i + 1}) {cmd}" for i, cmd in enumerate(splited_cmds))}'
-                    )
-                )
-            elif statements.Count == 0 and not command.strip().startswith('#'):
+            if statements.Count == 0 and not command.strip().startswith('#'):
                 logger.warning(
                     'Received command that resulted in zero executable statements (likely whitespace or comment).'
                 )

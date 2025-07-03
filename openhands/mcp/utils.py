@@ -62,7 +62,7 @@ async def create_mcp_clients(
         )
         return []
 
-    servers: list[MCPSSEServerConfig | MCPSHTTPServerConfig] = [
+    servers: list[MCPSSEServerConfig | MCPSHTTPServerConfig] = [  # type: ignore[unreachable]
         *sse_servers,
         *shttp_servers,
     ]
@@ -112,7 +112,7 @@ async def fetch_mcp_tools_from_config(
         logger.info('MCP functionality is disabled on Windows, skipping tool fetching')
         return []
 
-    mcp_clients = []
+    mcp_clients = []  # type: ignore[unreachable]
     mcp_tools = []
     try:
         logger.debug(f'Creating MCP clients with config: {mcp_config}')
@@ -156,7 +156,7 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
         logger.info('MCP functionality is disabled on Windows')
         return ErrorObservation('MCP functionality is not available on Windows')
 
-    if not mcp_clients:
+    if not mcp_clients:  # type: ignore[unreachable]
         raise ValueError('No MCP clients found')
 
     logger.debug(f'MCP action received: {action}')
@@ -200,7 +200,7 @@ async def add_mcp_tools_to_agent(agent: 'Agent', runtime: Runtime, memory: 'Memo
         agent.set_mcp_tools([])
         return
 
-    assert runtime.runtime_initialized, (
+    assert runtime.runtime_initialized, (  # type: ignore[unreachable]
         'Runtime must be initialized before adding MCP tools'
     )
 

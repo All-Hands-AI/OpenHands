@@ -46,7 +46,7 @@ def init_user_and_working_directory(
 
     # if username is CURRENT_USER, then we don't need to do anything
     # This is specific to the local runtime
-    if username == os.getenv('USER') and username not in ['root', 'openhands']:
+    if username == os.getenv('USER') and username not in ['root', 'openhands']:  # type: ignore[unreachable]
         return None
 
     # First create the working directory, independent of the user

@@ -363,7 +363,7 @@ class ActionExecutionClient(Runtime):
             return MCPConfig(sse_servers=[], stdio_servers=[])
 
         # Add the runtime as another MCP server
-        updated_mcp_config = self.config.mcp.model_copy()
+        updated_mcp_config = self.config.mcp.model_copy()  # type: ignore[unreachable]
 
         # Get current stdio servers
         current_stdio_servers: list[MCPStdioServerConfig] = list(
@@ -453,7 +453,7 @@ class ActionExecutionClient(Runtime):
             return ErrorObservation('MCP functionality is not available on Windows')
 
         # Import here to avoid circular imports
-        from openhands.mcp.utils import call_tool_mcp as call_tool_mcp_handler
+        from openhands.mcp.utils import call_tool_mcp as call_tool_mcp_handler  # type: ignore[unreachable]
         from openhands.mcp.utils import create_mcp_clients
 
         # Get the updated MCP config

@@ -1,4 +1,4 @@
-from .bash import create_cmd_run_tool
+from .cmd import create_cmd_run_tool
 from .browser import BrowserTool
 from .condensation_request import CondensationRequestTool
 from .finish import FinishTool

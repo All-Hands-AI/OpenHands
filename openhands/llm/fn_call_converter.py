@@ -9,7 +9,6 @@ We follow format from: https://docs.litellm.ai/docs/completion/function_call
 import copy
 import json
 import re
-import sys
 from typing import Iterable
 
 from litellm import ChatCompletionToolParam
@@ -21,6 +20,7 @@ from openhands.core.exceptions import (
 from openhands.llm.tool_names import (
     BROWSER_TOOL_NAME,
     EXECUTE_BASH_TOOL_NAME,
+    EXECUTE_POWERSHELL_TOOL_NAME,
     FINISH_TOOL_NAME,
     LLM_BASED_EDIT_TOOL_NAME,
     STR_REPLACE_EDITOR_TOOL_NAME,
@@ -56,16 +56,139 @@ Reminder:
 STOP_WORDS = ['</function']
 
 
-def refine_prompt(prompt: str) -> str:
-    if sys.platform == 'win32':
-        return prompt.replace('bash', 'powershell')
-    return prompt
-
-
 # NOTE: we need to make sure these examples are always in-sync with the tool interface designed in openhands/agenthub/codeact_agent/function_calling.py
 
 # Example snippets for each tool
 TOOL_EXAMPLES = {
+    'execute_powershell': {
+        'check_dir': """
+ASSISTANT: Sure! Let me first check the current directory:
+<function=execute_powershell>
+<parameter=command>
+Get-Location; Get-ChildItem
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [execute_powershell]:
+C:\\workspace
+openhands@runtime:~/workspace$
+""",
+        'run_server': """
+ASSISTANT:
+Let me run the Python file for you:
+<function=execute_powershell>
+<parameter=command>
+Start-Process python -ArgumentList "app.py" -RedirectStandardOutput "server.log" -RedirectStandardError "server.log" -PassThru
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [execute_powershell]:
+Id     Name            PSJobName   State         HasMoreData     Location             Command
+--     ----            ---------   -----         -----------     --------             -------
+121    python                      Running       True            localhost            python app.py
+
+ASSISTANT:
+Looks like the server was running with PID 121 then crashed. Let me check the server log:
+<function=execute_powershell>
+<parameter=command>
+Get-Content server.log
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [execute_powershell]:
+Traceback (most recent call last):
+  File "C:\\workspace\\app.py", line 2, in <module>
+    from flask import Flask
+ModuleNotFoundError: No module named 'flask'
+
+ASSISTANT:
+Looks like the server crashed because the `flask` module is not installed. Let me install the `flask` module for you:
+<function=execute_powershell>
+<parameter=command>
+pip install flask
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [execute_powershell]:
+Defaulting to user installation because normal site-packages is not writeable
+Collecting flask
+  Using cached flask-3.0.3-py3-none-any.whl (101 kB)
+Collecting blinker>=1.6.2
+  Using cached blinker-1.7.0-py3-none-any.whl (13 kB)
+Collecting Werkzeug>=3.0.0
+  Using cached werkzeug-3.0.2-py3-none-any.whl (226 kB)
+Collecting click>=8.1.3
+  Using cached click-8.1.7-py3-none-any.whl (97 kB)
+Collecting itsdangerous>=2.1.2
+  Using cached itsdangerous-2.2.0-py3-none-any.whl (16 kB)
+Requirement already satisfied: Jinja2>=3.1.2 in C:\\Users\\openhands\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.10_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python310\\site-packages (from flask) (3.1.3)
+Requirement already satisfied: MarkupSafe>=2.0 in C:\\Users\\openhands\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.10_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python310\\site-packages (from Jinja2>=3.1.2->flask) (2.1.5)
+Installing collected packages: Werkzeug, itsdangerous, click, blinker, flask
+Successfully installed Werkzeug-3.0.2 blinker-1.7.0 click-8.1.7 flask-3.0.3 itsdangerous-2.2.0
+
+ASSISTANT:
+The `flask` module is installed successfully. Let me run the Python file again:
+<function=execute_powershell>
+<parameter=command>
+Start-Process python -ArgumentList "app.py" -RedirectStandardOutput "server.log" -RedirectStandardError "server.log" -PassThru
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [execute_powershell]:
+Id     Name            PSJobName   State         HasMoreData     Location             Command
+--     ----            ---------   -----         -----------     --------             -------
+124    python                      Running       True            localhost            python app.py
+
+ASSISTANT:
+Let me check the server log again:
+<function=execute_powershell>
+<parameter=command>
+Get-Content server.log
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [execute_powershell]:
+* Serving Flask app 'app'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:5000
+Press CTRL+C to quit
+
+ASSISTANT:
+The server is running on port 5000 with PID 124. You can access the list of numbers by visiting http://127.0.0.1:5000. If you have any further questions, feel free to ask!
+""",
+        'kill_server': """
+USER: Now kill the server, make it display the numbers in a table format.
+
+ASSISTANT:
+Sure! Let me stop the server first:
+<function=execute_powershell>
+<parameter=command>
+Stop-Process -Id 124
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [execute_powershell]:
+Process with Id 124 has been terminated.
+""",
+        'run_server_again': """
+ASSISTANT:
+Running the updated file:
+<function=execute_powershell>
+<parameter=command>
+Start-Process python -ArgumentList "app.py" -RedirectStandardOutput "server.log" -RedirectStandardError "server.log" -PassThru
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [execute_powershell]:
+Id     Name            PSJobName   State         HasMoreData     Location             Command
+--     ----            ---------   -----         -----------     --------             -------
+126    python                      Running       True            localhost            python app.py
+
+ASSISTANT:
+The server is running on port 5000 with PID 126. You can access the list of numbers in a table format by visiting http://127.0.0.1:5000.
+""",
+    },
     'execute_bash': {
         'check_dir': """
 ASSISTANT: Sure! Let me first check the current directory:
@@ -326,6 +449,8 @@ def get_example_for_tools(tools: list[dict]) -> str:
             name = tool['function']['name']
             if name == EXECUTE_BASH_TOOL_NAME:
                 available_tools.add('execute_bash')
+            elif name == EXECUTE_POWERSHELL_TOOL_NAME:
+                available_tools.add('execute_powershell')
             elif name == STR_REPLACE_EDITOR_TOOL_NAME:
                 available_tools.add('str_replace_editor')
             elif name == BROWSER_TOOL_NAME:
@@ -347,30 +472,37 @@ USER: Create a list of numbers from 1 to 10, and display them in a web page at p
 """
 
     # Build example based on available tools
-    if 'execute_bash' in available_tools:
-        example += TOOL_EXAMPLES['execute_bash']['check_dir']
+    # Prefer PowerShell examples if available, otherwise use bash
+    shell_tool = None
+    if 'execute_powershell' in available_tools:
+        shell_tool = 'execute_powershell'
+    elif 'execute_bash' in available_tools:
+        shell_tool = 'execute_bash'
+
+    if shell_tool:
+        example += TOOL_EXAMPLES[shell_tool]['check_dir']
 
     if 'str_replace_editor' in available_tools:
         example += TOOL_EXAMPLES['str_replace_editor']['create_file']
     elif 'edit_file' in available_tools:
         example += TOOL_EXAMPLES['edit_file']['create_file']
 
-    if 'execute_bash' in available_tools:
-        example += TOOL_EXAMPLES['execute_bash']['run_server']
+    if shell_tool:
+        example += TOOL_EXAMPLES[shell_tool]['run_server']
 
     if 'browser' in available_tools:
         example += TOOL_EXAMPLES['browser']['view_page']
 
-    if 'execute_bash' in available_tools:
-        example += TOOL_EXAMPLES['execute_bash']['kill_server']
+    if shell_tool:
+        example += TOOL_EXAMPLES[shell_tool]['kill_server']
 
     if 'str_replace_editor' in available_tools:
         example += TOOL_EXAMPLES['str_replace_editor']['edit_file']
     elif 'edit_file' in available_tools:
         example += TOOL_EXAMPLES['edit_file']['edit_file']
 
-    if 'execute_bash' in available_tools:
-        example += TOOL_EXAMPLES['execute_bash']['run_server_again']
+    if shell_tool:
+        example += TOOL_EXAMPLES[shell_tool]['run_server_again']
 
     if 'finish' in available_tools:
         example += TOOL_EXAMPLES['finish']['task_completed']

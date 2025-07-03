@@ -73,7 +73,15 @@ class Agent(ABC):
                 )
                 return None
 
-            system_message = self.prompt_manager.get_system_message()
+            # Get shell type from config and resolve to actual shell type
+            shell_config = getattr(self.config, 'shell', None)
+            # Import here to avoid circular imports
+            from openhands.agenthub.codeact_agent.tools.cmd import get_shell_type
+
+            shell_type = get_shell_type(shell_config)
+            system_message = self.prompt_manager.get_system_message(
+                shell_type=shell_type
+            )
 
             # Get tools if available
             tools = getattr(self, 'tools', None)

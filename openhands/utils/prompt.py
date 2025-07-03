@@ -88,8 +88,8 @@ class PromptManager:
         with open(template_path, 'r') as file:
             return Template(file.read())
 
-    def get_system_message(self) -> str:
-        return self.system_template.render().strip()
+    def get_system_message(self, shell_type: str | None = None) -> str:
+        return self.system_template.render(shell_type=shell_type).strip()
 
     def get_example_user_message(self) -> str:
         """This is an initial user message that can be provided to the agent
