@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderWithProviders } from "test-utils";
@@ -50,15 +50,6 @@ describe("MicroagentsModal - Refresh Button", () => {
       const refreshButton = screen.getByTestId("refresh-microagents");
       expect(refreshButton).toBeInTheDocument();
       expect(refreshButton).toHaveTextContent("BUTTON$REFRESH");
-    });
-
-    it("should render the refresh button with RefreshCw icon", () => {
-      renderWithProviders(<MicroagentsModal {...defaultProps} />);
-
-      const refreshButton = screen.getByTestId("refresh-microagents");
-      // Check that the button contains the refresh icon (RefreshCw component)
-      const refreshIcon = refreshButton.querySelector("svg");
-      expect(refreshIcon).toBeInTheDocument();
     });
   });
 

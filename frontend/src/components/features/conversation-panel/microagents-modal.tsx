@@ -21,13 +21,12 @@ export function MicroagentsModal({
   const [expandedAgents, setExpandedAgents] = useState<Record<string, boolean>>(
     {},
   );
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
   const {
     data: microagents,
     isLoading,
     isError,
     refetch,
+    isRefetching,
   } = useConversationMicroagents({
     conversationId,
     enabled: true,
@@ -38,15 +37,6 @@ export function MicroagentsModal({
       ...prev,
       [agentName]: !prev[agentName],
     }));
-  };
-
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      await refetch();
-    } finally {
-      setIsRefreshing(false);
-    }
   };
 
   return (
@@ -64,12 +54,12 @@ export function MicroagentsModal({
               type="button"
               variant="primary"
               className="flex items-center gap-2"
-              onClick={handleRefresh}
-              isDisabled={isLoading || isRefreshing}
+              onClick={refetch}
+              isDisabled={isLoading || isRefetching}
             >
               <RefreshCw
                 size={16}
-                className={`${isRefreshing ? "animate-spin" : ""}`}
+                className={`${isRefetching ? "animate-spin" : ""}`}
               />
               {t(I18nKey.BUTTON$REFRESH)}
             </BrandButton>
