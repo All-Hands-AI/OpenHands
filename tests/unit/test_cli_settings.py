@@ -1,3 +1,4 @@
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -620,3 +621,38 @@ class TestModifyLLMSettingsAdvanced:
         # Verify settings were not changed
         app_config.set_llm_config.assert_not_called()
         settings_store.store.assert_not_called()
+
+
+class TestSettingsCommandShowsConfigFilePath:
+    """openhands settings` should print the JSON settings-file location."""
+
+    @pytest.fixture()
+    def dummy_config(self, tmp_path):
+        """Return a minimal stub OpenHandsConfig whose file_store_path
+        points to a temp directory."""
+        cfg = MagicMock()
+        cfg.file_store_path = tmp_path
+
+        # Provide the attributes display_settings touches
+        llm_cfg = MagicMock()
+        llm_cfg.base_url = None
+        llm_cfg.provider = 'openai'
+        cfg.get_llm_config.return_value = llm_cfg
+        cfg.security = MagicMock()
+        cfg.get_agent_config.return_value = MagicMock()
+        cfg.cli_multiline_input = False
+        return cfg
+
+    # -- Tests ---------------------------------------------------------------
+
+    def test_settings_contains_configuration_file(self, dummy_config):
+        expected_path = Path(dummy_config.file_store_path) / 'settings.json'
+
+        # Intercept the rich-TUI container so we can inspect the text
+        with patch('openhands.cli.settings.print_container') as mock_print:
+            display_settings(dummy_config)
+
+        # first (and only) call arg is the TextArea-inside-a-Frame container
+        settings_text = mock_print.call_args[0][0].body.text
+        assert 'Configuration File' in settings_text
+        assert str(expected_path) in settings_text
