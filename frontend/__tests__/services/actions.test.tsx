@@ -31,6 +31,8 @@ describe("handleActionMessage", () => {
     const { handleActionMessage } = await import("#/services/actions");
     
     const runAction: ActionMessage = {
+      id: 1,
+      source: "agent",
       action: ActionType.RUN,
       args: {
         command: "ls -la",
@@ -51,6 +53,8 @@ describe("handleActionMessage", () => {
     const { handleActionMessage } = await import("#/services/actions");
     
     const ipythonAction: ActionMessage = {
+      id: 2,
+      source: "agent",
       action: ActionType.RUN_IPYTHON,
       args: {
         code: "print('Hello from Jupyter!')",
@@ -71,10 +75,12 @@ describe("handleActionMessage", () => {
     const { handleActionMessage } = await import("#/services/actions");
     
     const hiddenAction: ActionMessage = {
+      id: 3,
+      source: "agent",
       action: ActionType.RUN,
       args: {
         command: "secret command",
-        hidden: true,
+        hidden: "true",
       },
       message: "Running command: secret command",
       timestamp: "2023-01-01T00:00:00Z",
