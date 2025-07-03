@@ -53,4 +53,13 @@ def get_supported_llm_models(config: OpenHandsConfig) -> list[str]:
             except httpx.HTTPError as e:
                 logger.error(f'Error getting OLLAMA models: {e}')
 
+    # Add OpenHands provider models
+    openhands_models = [
+        'openhands/claude-sonnet-4-20250514',
+        'openhands/claude-opus-4-20250514',
+        'openhands/gemini-2.5-pro',
+        'openhands/o4-mini',
+    ]
+    model_list.extend(openhands_models)
+
     return list(sorted(set(model_list)))
