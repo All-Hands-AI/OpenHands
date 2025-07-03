@@ -568,22 +568,32 @@ async def read_confirmation_input(config: OpenHandsConfig) -> str:
     try:
         prompt_session = create_prompt_session(config)
 
-        with patch_stdout():
-            print_formatted_text('')
-            confirmation: str = await prompt_session.prompt_async(
-                HTML('<gold>Proceed with action? (y)es/(n)o/(a)lways > </gold>'),
-            )
+        while True:
+            with patch_stdout():
+                print_formatted_text('')
+                confirmation: str = await prompt_session.prompt_async(
+                    HTML('<gold>Proceed with action? (y)es/(n)o/(a)lways > </gold>'),
+                )
 
-            confirmation = '' if confirmation is None else confirmation.strip().lower()
+                confirmation = (
+                    '' if confirmation is None else confirmation.strip().lower()
+                )
 
-            if confirmation in ['y', 'yes']:
-                return 'yes'
-            elif confirmation in ['n', 'no']:
-                return 'no'
-            elif confirmation in ['a', 'always']:
-                return 'always'
-            else:
-                return 'no'
+                if confirmation in ['y', 'yes']:
+                    return 'yes'
+                elif confirmation in ['n', 'no']:
+                    return 'no'
+                elif confirmation in ['a', 'always']:
+                    return 'always'
+                else:
+                    # Display error message for invalid input
+                    print_formatted_text('')
+                    print_formatted_text(
+                        HTML(
+                            '<ansired>Invalid input. Please enter (y)es, (n)o, or (a)lways.</ansired>'
+                        )
+                    )
+                    # Continue the loop to re-prompt
     except (KeyboardInterrupt, EOFError):
         return 'no'
 

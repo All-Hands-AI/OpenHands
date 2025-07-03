@@ -591,6 +591,8 @@ fi
 
             loaded_microagents.extend(repo_agents.values())
             loaded_microagents.extend(knowledge_agents.values())
+        except Exception as e:
+            self.log('error', f'Failed to load agents from {source_description}: {e}')
         finally:
             shutil.rmtree(microagent_folder)
 
