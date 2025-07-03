@@ -183,6 +183,13 @@ class EventStream(EventStore):
             # If the page is full, create a new page for future events / other threads to use
             if len(current_write_page) == self.cache_size:
                 self._write_page_cache = []
+        logger.info(
+            'EventStream::add_event',
+            extra={
+                'self_id': id(self),
+                'cur_id': self.cur_id,
+            },
+        )
 
         if event.id is not None:
             # Write the event to the store - this can take some time
