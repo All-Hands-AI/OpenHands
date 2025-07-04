@@ -94,3 +94,6 @@ class ActionType(str, Enum):
 
     CONDENSATION_REQUEST = 'condensation_request'
     """Request for condensation of a list of events."""
+
+    TOOL_USE = 'tool_use'
+    """Use a tool with specified arguments."""
