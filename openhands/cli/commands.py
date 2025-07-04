@@ -343,7 +343,7 @@ def handle_mcp_command(config: OpenHandsConfig) -> None:
 
     if total_count == 0:
         print_formatted_text(
-            'No MCP servers configured. Opening documentation in your browser:\n'
+            'No MCP servers configured. See the documentation to learn more:\n'
             '  https://docs.all-hands.dev/usage/how-to/cli-mode#using-mcp-servers\n'
         )
     else:
