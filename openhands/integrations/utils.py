@@ -1,6 +1,9 @@
 from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.integrations.azure_devops.azure_devops_service import (
+    AzureDevOpsServiceImpl,
+)
 from openhands.integrations.bitbucket.bitbucket_service import BitBucketService
 from openhands.integrations.github.github_service import GitHubService
 from openhands.integrations.gitlab.gitlab_service import GitLabService
@@ -11,7 +14,7 @@ async def validate_provider_token(
     token: SecretStr, base_domain: str | None = None
 ) -> ProviderType | None:
     """
-    Determine whether a token is for GitHub, GitLab, or Bitbucket by attempting to get user info
+    Determine whether a token is for GitHub, GitLab, Bitbucket, or Azure DevOps by attempting to get user info
     from the services.
 
     Args:
@@ -22,12 +25,12 @@ async def validate_provider_token(
         'github' if it's a GitHub token
         'gitlab' if it's a GitLab token
         'bitbucket' if it's a Bitbucket token
+        'azure_devops' if it's an Azure DevOps token
         None if the token is invalid for all services
     """
     # Skip validation for empty tokens
-    if token is None:
-        return None  # type: ignore[unreachable]
-
+    if token is None or not token.get_secret_value().strip():
+        return None
     # Try GitHub first
     github_error = None
     try:
@@ -46,7 +49,7 @@ async def validate_provider_token(
     except Exception as e:
         gitlab_error = e
 
-    # Try Bitbucket last
+    # Try Bitbucket next
     bitbucket_error = None
     try:
         bitbucket_service = BitBucketService(token=token, base_domain=base_domain)
@@ -55,8 +58,19 @@ async def validate_provider_token(
     except Exception as e:
         bitbucket_error = e
 
+    # Try Azure DevOps last
+    azure_devops_error = None
+    try:
+        azure_devops_service = AzureDevOpsServiceImpl(
+            token=token, base_domain=base_domain
+        )
+        await azure_devops_service.get_user()
+        return ProviderType.AZURE_DEVOPS
+    except Exception as e:
+        azure_devops_error = e
+
     logger.debug(
-        f'Failed to validate token: {github_error} \n {gitlab_error} \n {bitbucket_error}'
+        f'Failed to validate token: {github_error} \n {gitlab_error} \n {bitbucket_error} \n {azure_devops_error}'
     )
 
     return None

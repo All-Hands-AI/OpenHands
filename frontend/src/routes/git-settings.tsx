@@ -46,12 +46,14 @@ function GitSettingsScreen() {
 
   const existingGithubHost = settings?.PROVIDER_TOKENS_SET.github;
   const existingGitlabHost = settings?.PROVIDER_TOKENS_SET.gitlab;
-  const existingBitbucketHost = settings?.PROVIDER_TOKENS_SET.bitbucket;
+  const existingAzureDevOpsHost = settings?.PROVIDER_TOKENS_SET.bitbucket,
+  azure_devops;
 
   const isSaas = config?.APP_MODE === "saas";
   const isGitHubTokenSet = providers.includes("github");
   const isGitLabTokenSet = providers.includes("gitlab");
-  const isBitbucketTokenSet = providers.includes("bitbucket");
+  const isAzureDevOpsTokenSet = providers.includes("bitbucket,
+  azure_devops");
 
   const formAction = async (formData: FormData) => {
     const disconnectButtonClicked =
@@ -64,23 +66,35 @@ function GitSettingsScreen() {
 
     const githubToken = formData.get("github-token-input")?.toString() || "";
     const gitlabToken = formData.get("gitlab-token-input")?.toString() || "";
-    const bitbucketToken =
-      formData.get("bitbucket-token-input")?.toString() || "";
+    const azureDevOpsToken =
+      formData.get("azure-devops-token-input")?.toString() || "";
     const githubHost = formData.get("github-host-input")?.toString() || "";
     const gitlabHost = formData.get("gitlab-host-input")?.toString() || "";
-    const bitbucketHost =
-      formData.get("bitbucket-host-input")?.toString() || "";
+    const azureDevOpsHost =
+      formData.get("azure-devops-host-input")?.toString() || "";
 
-    // Create providers object with all tokens
-    const providerTokens: Record<string, { token: string; host: string }> = {
-      github: { token: githubToken, host: githubHost },
-      gitlab: { token: gitlabToken, host: gitlabHost },
-      bitbucket: { token: bitbucketToken, host: bitbucketHost },
-    };
+    // Validate Azure DevOps token and host dependency
+    const hasAzureDevOpsToken = azureDevOpsToken.trim() !== "";
+    const hasAzureDevOpsHost = azureDevOpsHost.trim() !== "";
+
+    if (hasAzureDevOpsToken && !hasAzureDevOpsHost) {
+      displayErrorToast(t(I18nKey.AZURE_DEVOPS$HOST_REQUIRED_ERROR));
+      return;
+    }
+
+    if (hasAzureDevOpsHost && !hasAzureDevOpsToken) {
+      displayErrorToast(t(I18nKey.AZURE_DEVOPS$TOKEN_REQUIRED_ERROR));
+      return;
+    }
 
     saveGitProviders(
       {
-        providers: providerTokens,
+        providers: {
+          github: { token: githubToken, host: githubHost },
+          gitlab: { token: gitlabToken, host: gitlabHost },
+          bitbucket,
+  azure_devops: { token: azureDevOpsToken, host: azureDevOpsHost },
+        },
       },
       {
         onSuccess: () => {

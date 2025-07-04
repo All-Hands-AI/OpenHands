@@ -20,10 +20,26 @@ export function ActionSuggestions({
 
   const providersAreSet = providers.length > 0;
   const isGitLab = providers.includes("gitlab");
-  const isBitbucket = providers.includes("bitbucket");
+  const isAzureDevOps = providers.includes("bitbucket,
+  azure_devops");
 
-  const pr = isGitLab ? "merge request" : "pull request";
-  const prShort = isGitLab ? "MR" : "PR";
+  // Determine the correct terminology based on the provider
+  let pr;
+  let prShort;
+  let providerName;
+  if (isGitLab) {
+    pr = "merge request";
+    prShort = "MR";
+    providerName = "GitLab";
+  } else if (isAzureDevOps) {
+    pr = "pull request";
+    prShort = "PR";
+    providerName = "Azure DevOps";
+  } else {
+    pr = "pull request";
+    prShort = "PR";
+    providerName = "GitHub";
+  }
 
   const getProviderName = () => {
     if (isGitLab) return "GitLab";

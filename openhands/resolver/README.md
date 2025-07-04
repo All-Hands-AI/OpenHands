@@ -1,9 +1,9 @@
-# OpenHands GitHub, GitLab & Bitbucket Issue Resolver 🙌
+# OpenHands GitHub, GitLab, Bitbucket & Azure DevOps Issue Resolver 🙌
 
-Need help resolving a GitHub, GitLab, or Bitbucket issue but don't have the time to do it yourself? Let an AI agent help you out!
+Need help resolving issues in GitHub, GitLab, Bitbucket, or Azure DevOps but don't have the time to do it yourself? Let an AI agent help you out!
 
 This tool allows you to use open-source AI agents based on [OpenHands](https://github.com/all-hands-ai/openhands)
-to attempt to resolve GitHub, GitLab, and Bitbucket issues automatically. While it can handle multiple issues, it's primarily designed
+to attempt to resolve GitHub, GitLab, Bitbucket, and Azure DevOps issues automatically. While it can handle multiple issues, it's primarily designed
 to help you resolve one issue at a time with high quality.
 
 Getting started is simple - just follow the instructions below.
@@ -74,7 +74,7 @@ If you prefer to run the resolver programmatically instead of using GitHub Actio
 pip install openhands-ai
 ```
 
-2. Create a GitHub, GitLab, or Bitbucket access token:
+2. Create a GitHub, GitLab, Bitbucket, or Azure DevOps access token:
    - Create a GitHub access token
       - Visit [GitHub's token settings](https://github.com/settings/personal-access-tokens/new)
       - Create a fine-grained token with these scopes:
@@ -108,12 +108,10 @@ pip install openhands-ai
 ```bash
 
 # GitHub credentials
-
 export GITHUB_TOKEN="your-github-token"
 export GIT_USERNAME="your-github-username"  # Optional, defaults to token owner
 
 # GitLab credentials if you're using GitLab repo
-
 export GITLAB_TOKEN="your-gitlab-token"
 export GIT_USERNAME="your-gitlab-username"  # Optional, defaults to token owner
 

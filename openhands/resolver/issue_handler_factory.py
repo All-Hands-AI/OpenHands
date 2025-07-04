@@ -1,5 +1,9 @@
 from openhands.core.config import LLMConfig
 from openhands.integrations.provider import ProviderType
+from openhands.resolver.interfaces.azure_devops import (
+    AzureDevOpsIssueHandler,
+    AzureDevOpsPRHandler,
+)
 from openhands.resolver.interfaces.bitbucket import (
     BitbucketIssueHandler,
     BitbucketPRHandler,
@@ -68,6 +72,17 @@ class IssueHandlerFactory:
                     ),
                     self.llm_config,
                 )
+            elif self.platform == ProviderType.AZURE_DEVOPS:
+                return ServiceContextIssue(
+                    AzureDevOpsIssueHandler(
+                        self.owner,
+                        self.repo,
+                        self.token,
+                        self.username,
+                        self.base_domain,
+                    ),
+                    self.llm_config,
+                )
             else:
                 raise ValueError(f'Unsupported platform: {self.platform}')
         elif self.issue_type == 'pr':
@@ -96,6 +111,17 @@ class IssueHandlerFactory:
             elif self.platform == ProviderType.BITBUCKET:
                 return ServiceContextPR(
                     BitbucketPRHandler(
+                        self.owner,
+                        self.repo,
+                        self.token,
+                        self.username,
+                        self.base_domain,
+                    ),
+                    self.llm_config,
+                )
+            elif self.platform == ProviderType.AZURE_DEVOPS:
+                return ServiceContextPR(
+                    AzureDevOpsPRHandler(
                         self.owner,
                         self.repo,
                         self.token,
