@@ -15,6 +15,7 @@ from openhands.cli.tui import (
     UsageMetrics,
     cli_confirm,
     display_help,
+    display_mcp_errors,
     display_shutdown_message,
     display_status,
 )
@@ -79,6 +80,10 @@ async def handle_commands(
         await handle_settings_command(config, settings_store)
     elif command == '/resume':
         close_repl, new_session_requested = await handle_resume_command(event_stream)
+    elif command == '/mcp':
+        handle_mcp_command(config)
+    elif command == '/mcp-errors':
+        handle_mcp_errors_command()
     else:
         close_repl = True
         action = MessageAction(content=command)
@@ -327,3 +332,54 @@ def check_folder_security_agreement(config: OpenHandsConfig, current_dir: str) -
         return confirm
 
     return True
+
+
+def handle_mcp_command(config: OpenHandsConfig) -> None:
+    """Display MCP server configuration information."""
+    mcp_config = config.mcp
+
+    # Count the different types of servers
+    sse_count = len(mcp_config.sse_servers)
+    stdio_count = len(mcp_config.stdio_servers)
+    shttp_count = len(mcp_config.shttp_servers)
+    total_count = sse_count + stdio_count + shttp_count
+
+    if total_count == 0:
+        print_formatted_text(
+            'No custom MCP servers configured. See the documentation to learn more:\n'
+            '  https://docs.all-hands.dev/usage/how-to/cli-mode#using-mcp-servers\n'
+        )
+    else:
+        print_formatted_text(
+            f'Configured MCP servers:\n'
+            f'  • SSE servers: {sse_count}\n'
+            f'  • Stdio servers: {stdio_count}\n'
+            f'  • SHTTP servers: {shttp_count}\n'
+            f'  • Total: {total_count}\n'
+        )
+
+        # Show details for each type if they exist
+        if sse_count > 0:
+            print_formatted_text('SSE Servers:')
+            for idx, sse_server in enumerate(mcp_config.sse_servers, 1):
+                print_formatted_text(f'  {idx}. {sse_server.url}')
+            print_formatted_text('')
+
+        if stdio_count > 0:
+            print_formatted_text('Stdio Servers:')
+            for idx, stdio_server in enumerate(mcp_config.stdio_servers, 1):
+                print_formatted_text(
+                    f'  {idx}. {stdio_server.name} ({stdio_server.command})'
+                )
+            print_formatted_text('')
+
+        if shttp_count > 0:
+            print_formatted_text('SHTTP Servers:')
+            for idx, shttp_server in enumerate(mcp_config.shttp_servers, 1):
+                print_formatted_text(f'  {idx}. {shttp_server.url}')
+            print_formatted_text('')
+
+
+def handle_mcp_errors_command() -> None:
+    """Display MCP connection errors."""
+    display_mcp_errors()
