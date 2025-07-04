@@ -970,3 +970,4 @@ if __name__ == '__main__':
         logger.info(
             f'Done! Total {len(added_instance_ids)} instances added to {output_file}'
         )
+        
