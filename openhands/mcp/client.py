@@ -106,7 +106,9 @@ class MCPClient(BaseModel):
             raise
 
     async def connect_stdio(self, server: MCPStdioServerConfig, timeout: float = 30.0):
-        transport = StdioTransport(command=server.command, args=server.args or [])
+        transport = StdioTransport(
+            command=server.command, args=server.args or [], env=server.env
+        )
         self.client = Client(transport, timeout=timeout)
         await self._initialize_and_list_tools()
 

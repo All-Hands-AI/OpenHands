@@ -209,7 +209,9 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
     )
 
 
-async def add_mcp_tools_to_agent(agent: 'Agent', runtime: Runtime, memory: 'Memory'):
+async def add_mcp_tools_to_agent(
+    agent: 'Agent', runtime: Runtime, memory: 'Memory'
+) -> MCPConfig:
     """
     Add MCP tools to an agent.
     """
@@ -240,7 +242,9 @@ async def add_mcp_tools_to_agent(agent: 'Agent', runtime: Runtime, memory: 'Memo
                 # Check if this stdio server is already in the config
                 if stdio_server not in extra_stdio_servers:
                     extra_stdio_servers.append(stdio_server)
-                    logger.info(f'Added microagent stdio server: {stdio_server.name}')
+                    logger.warning(
+                        f'Added microagent stdio server: {stdio_server.name}'
+                    )
 
     # Add the runtime as another MCP server
     updated_mcp_config = runtime.get_mcp_config(extra_stdio_servers)
@@ -257,3 +261,5 @@ async def add_mcp_tools_to_agent(agent: 'Agent', runtime: Runtime, memory: 'Memo
 
     # Set the MCP tools on the agent
     agent.set_mcp_tools(mcp_tools)
+
+    return updated_mcp_config

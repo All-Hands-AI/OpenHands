@@ -949,8 +949,8 @@ class CLIRuntime(Runtime):
             self.log('debug', 'MCP is disabled on Windows, returning empty config')
             return MCPConfig(sse_servers=[], stdio_servers=[], shttp_servers=[])
 
-        # Start with the base MCP config from the runtime configuration
-        mcp_config = self.config.mcp.model_copy()
+        # Note: we update the self.config.mcp directly for CLI runtime, which is different from other runtimes.
+        mcp_config = self.config.mcp
 
         # Add any extra stdio servers
         if extra_stdio_servers:
