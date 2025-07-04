@@ -298,7 +298,13 @@ async def run_session(
 
     # Display number of MCP servers configured
     if agent.config.enable_mcp:
-        welcome_message += f'Using {len(runtime.config.mcp.stdio_servers)} stdio MCP servers, {len(runtime.config.mcp.sse_servers)} SSE MCP servers and {len(runtime.config.mcp.shttp_servers)} SHTTP MCP servers.\n\n'
+        total_mcp_servers = (
+            len(runtime.config.mcp.stdio_servers)
+            + len(runtime.config.mcp.sse_servers)
+            + len(runtime.config.mcp.shttp_servers)
+        )
+        if total_mcp_servers > 0:
+            welcome_message += f'Using {len(runtime.config.mcp.stdio_servers)} stdio MCP servers, {len(runtime.config.mcp.sse_servers)} SSE MCP servers and {len(runtime.config.mcp.shttp_servers)} SHTTP MCP servers.\n\n'
 
     welcome_message += 'What do you want to build?'  # from the application
     initial_message = ''  # from the user
