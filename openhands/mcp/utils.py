@@ -95,14 +95,8 @@ async def create_mcp_clients(
                 await client.connect_stdio(server)
                 mcp_clients.append(client)
             except Exception as e:
-                error_msg = f'Failed to connect to {server}: {str(e)}'
-                logger.error(error_msg, exc_info=True)
-                mcp_error_collector.add_error(
-                    server_name=getattr(server, 'name', str(server)),
-                    server_type='stdio',
-                    error_message=error_msg,
-                    exception_details=str(e),
-                )
+                # Error is already logged and collected in client.connect_stdio()
+                logger.error(f'Failed to connect to {server}: {str(e)}', exc_info=True)
             continue
 
         is_shttp = isinstance(server, MCPSHTTPServerConfig)
@@ -119,14 +113,8 @@ async def create_mcp_clients(
             mcp_clients.append(client)
 
         except Exception as e:
-            error_msg = f'Failed to connect to {server}: {str(e)}'
-            logger.error(error_msg, exc_info=True)
-            mcp_error_collector.add_error(
-                server_name=getattr(server, 'url', str(server)),
-                server_type=connection_type.lower(),
-                error_message=error_msg,
-                exception_details=str(e),
-            )
+            # Error is already logged and collected in client.connect_http()
+            logger.error(f'Failed to connect to {server}: {str(e)}', exc_info=True)
 
     return mcp_clients
 

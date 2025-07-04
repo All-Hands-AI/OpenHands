@@ -77,30 +77,33 @@ class TestDisplayFunctions:
         assert "Let's start building" in str(args[0])
 
     @patch('openhands.cli.tui.print_formatted_text')
-    def test_display_welcome_message_with_mcp_errors(self, mock_print):
-        display_welcome_message(has_mcp_errors=True)
+    def test_display_welcome_message_with_message(self, mock_print):
+        message = 'Test message'
+        display_welcome_message(message)
         assert mock_print.call_count == 2
         # Check the first call contains the welcome message
         args, kwargs = mock_print.call_args_list[0]
         message_text = str(args[0])
         assert "Let's start building" in message_text
-        # Check the second call contains the error indicator
+        # Check the second call contains the custom message
         args, kwargs = mock_print.call_args_list[1]
         message_text = str(args[0])
-        assert '✗ MCP errors detected' in message_text
+        assert 'Test message' in message_text
+        assert 'Type /help for help' in message_text
 
     @patch('openhands.cli.tui.print_formatted_text')
-    def test_display_welcome_message_without_mcp_errors(self, mock_print):
-        display_welcome_message(has_mcp_errors=False)
+    def test_display_welcome_message_without_message(self, mock_print):
+        display_welcome_message()
         assert mock_print.call_count == 2
         # Check the first call contains the welcome message
         args, kwargs = mock_print.call_args_list[0]
         message_text = str(args[0])
         assert "Let's start building" in message_text
-        # Check the second call does not contain error indicator
+        # Check the second call contains the default message
         args, kwargs = mock_print.call_args_list[1]
         message_text = str(args[0])
-        assert '✗ MCP' not in message_text
+        assert 'What do you want to build?' in message_text
+        assert 'Type /help for help' in message_text
 
     @patch('openhands.cli.tui.display_message')
     def test_display_event_message_action(self, mock_display_message):

@@ -312,7 +312,13 @@ async def run_session(
             + len(runtime.config.mcp.shttp_servers)
         )
         if total_mcp_servers > 0:
-            welcome_message += f'Using {len(runtime.config.mcp.stdio_servers)} stdio MCP servers, {len(runtime.config.mcp.sse_servers)} SSE MCP servers and {len(runtime.config.mcp.shttp_servers)} SHTTP MCP servers.\n\n'
+            mcp_line = f'Using {len(runtime.config.mcp.stdio_servers)} stdio MCP servers, {len(runtime.config.mcp.sse_servers)} SSE MCP servers and {len(runtime.config.mcp.shttp_servers)} SHTTP MCP servers.'
+
+            # Check for MCP errors and add indicator to the same line
+            if agent.config.enable_mcp and mcp_error_collector.has_errors():
+                mcp_line += ' ✗ MCP errors detected (type /mcp-errors to view)'
+
+            welcome_message += mcp_line + '\n\n'
 
     welcome_message += 'What do you want to build?'  # from the application
     initial_message = ''  # from the user
@@ -335,11 +341,8 @@ async def run_session(
             initial_message = ''
             welcome_message += '\nLoading previous conversation.'
 
-    # Check for MCP errors
-    has_mcp_errors = agent.config.enable_mcp and mcp_error_collector.has_errors()
-
     # Show OpenHands welcome
-    display_welcome_message(welcome_message, has_mcp_errors=has_mcp_errors)
+    display_welcome_message(welcome_message)
 
     # The prompt_for_next_task will be triggered if the agent enters AWAITING_USER_INPUT.
     # If the restored state is already AWAITING_USER_INPUT, on_event_async will handle it.

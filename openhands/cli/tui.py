@@ -158,28 +158,19 @@ def display_banner(session_id: str) -> None:
     print_formatted_text('')
 
 
-def display_welcome_message(message: str = '', has_mcp_errors: bool = False) -> None:
+def display_welcome_message(message: str = '') -> None:
     print_formatted_text(
         HTML("<gold>Let's start building!</gold>\n"), style=DEFAULT_STYLE
     )
 
-    # Add MCP error indicator if there are errors
-    error_indicator = ''
-    if has_mcp_errors:
-        error_indicator = (
-            ' <ansired>✗ MCP errors detected (type /mcp-errors to view)</ansired>'
-        )
-
     if message:
         print_formatted_text(
-            HTML(f'{message} <grey>Type /help for help</grey>{error_indicator}'),
+            HTML(f'{message} <grey>Type /help for help</grey>'),
             style=DEFAULT_STYLE,
         )
     else:
         print_formatted_text(
-            HTML(
-                f'What do you want to build? <grey>Type /help for help</grey>{error_indicator}'
-            ),
+            HTML('What do you want to build? <grey>Type /help for help</grey>'),
             style=DEFAULT_STYLE,
         )
 
