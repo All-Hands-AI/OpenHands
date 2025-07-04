@@ -133,6 +133,15 @@ class MCPClient(BaseModel):
             self.client = Client(transport, timeout=timeout)
             await self._initialize_and_list_tools()
         except Exception as e:
+            # Clean up the client if initialization failed
+            if self.client:
+                try:
+                    await self.client.close()
+                except Exception as cleanup_error:
+                    logger.debug(f'Error during client cleanup: {cleanup_error}')
+                finally:
+                    self.client = None
+
             server_name = getattr(
                 server, 'name', f'{server.command} {" ".join(server.args or [])}'
             )
@@ -156,3 +165,15 @@ class MCPClient(BaseModel):
 
         async with self.client:
             return await self.client.call_tool_mcp(name=tool_name, arguments=args)
+
+    async def close(self) -> None:
+        """Close the MCP client and clean up resources."""
+        if self.client:
+            try:
+                await self.client.close()
+            except Exception as e:
+                logger.debug(f'Error closing MCP client: {e}')
+            finally:
+                self.client = None
+                self.tools.clear()
+                self.tool_map.clear()

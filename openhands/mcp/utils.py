@@ -169,6 +169,13 @@ async def fetch_mcp_tools_from_config(
             exception_details=str(e),
         )
         return []
+    finally:
+        # Clean up MCP clients after extracting tools
+        for client in mcp_clients:
+            try:
+                await client.close()
+            except Exception as cleanup_error:
+                logger.debug(f'Error cleaning up MCP client: {cleanup_error}')
 
     logger.debug(f'MCP tools: {mcp_tools}')
     return mcp_tools
