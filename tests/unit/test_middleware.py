@@ -46,24 +46,21 @@ def test_localhost_cors_middleware_init_without_env_var():
 
 
 def test_localhost_cors_middleware_is_allowed_origin_localhost(app):
-    """Test that localhost origins are allowed regardless of port."""
-    app.add_middleware(LocalhostCORSMiddleware)
-    client = TestClient(app)
+    """Test that localhost origins are allowed regardless of port when no explicit CORS settings are provided."""
+    # The middleware only allows localhost origins if both allow_origins and allow_origin_regex are empty
+    with patch.dict(
+        os.environ, {}, clear=True
+    ):  # Ensure no environment variables are set
+        middleware = LocalhostCORSMiddleware(app)
 
-    # Test with localhost
-    response = client.get('/test', headers={'Origin': 'http://localhost:8000'})
-    assert response.status_code == 200
-    assert response.headers['access-control-allow-origin'] == 'http://localhost:8000'
+        # Test with localhost
+        assert middleware.is_allowed_origin('http://localhost:8000') is True
 
-    # Test with different port
-    response = client.get('/test', headers={'Origin': 'http://localhost:3000'})
-    assert response.status_code == 200
-    assert response.headers['access-control-allow-origin'] == 'http://localhost:3000'
+        # Test with different port
+        assert middleware.is_allowed_origin('http://localhost:3000') is True
 
-    # Test with 127.0.0.1
-    response = client.get('/test', headers={'Origin': 'http://127.0.0.1:8000'})
-    assert response.status_code == 200
-    assert response.headers['access-control-allow-origin'] == 'http://127.0.0.1:8000'
+        # Test with 127.0.0.1
+        assert middleware.is_allowed_origin('http://127.0.0.1:8000') is True
 
 
 def test_localhost_cors_middleware_is_allowed_origin_non_localhost(app):
@@ -118,3 +115,63 @@ def test_localhost_cors_middleware_cors_parameters():
         assert kwargs['allow_credentials'] is True
         assert kwargs['allow_methods'] == ['*']
         assert kwargs['allow_headers'] == ['*']
+
+
+def test_localhost_cors_middleware_with_regex():
+    """Test that the middleware correctly uses the regex pattern from the environment variable."""
+    regex_pattern = r'.*\.staging\.all-hands\.dev'
+
+    with patch.dict(os.environ, {'PERMITTED_CORS_REGEX': regex_pattern}):
+        app = FastAPI()
+        LocalhostCORSMiddleware(app)
+
+        # Check that the regex pattern was correctly passed to the parent class
+        with patch('fastapi.middleware.cors.CORSMiddleware.__init__') as mock_init:
+            mock_init.return_value = None
+            app = FastAPI()
+            LocalhostCORSMiddleware(app)
+
+            # Check that the parent class was initialized with the correct regex
+            _, kwargs = mock_init.call_args
+            assert kwargs['allow_origin_regex'] == regex_pattern
+
+
+def test_localhost_cors_middleware_is_allowed_origin_with_regex(app):
+    """Test that origins matching the regex pattern are allowed."""
+    regex_pattern = r'.*\.staging\.all-hands\.dev'
+
+    with patch.dict(os.environ, {'PERMITTED_CORS_REGEX': regex_pattern}):
+        middleware = LocalhostCORSMiddleware(app)
+
+        # Test with an origin that matches the regex pattern
+        assert (
+            middleware.is_allowed_origin('https://example.staging.all-hands.dev')
+            is True
+        )
+
+        # Test with another origin that matches the regex pattern
+        assert middleware.is_allowed_origin('http://test.staging.all-hands.dev') is True
+
+        # Test with an origin that doesn't match the regex pattern
+        assert (
+            middleware.is_allowed_origin('https://example.prod.all-hands.dev') is False
+        )
+        assert middleware.is_allowed_origin('https://all-hands.dev') is False
+
+
+def test_localhost_cors_middleware_regex_prioritized_over_localhost(app):
+    """Test that when a regex pattern is set, localhost origins are not automatically allowed."""
+    regex_pattern = r'.*\.staging\.all-hands\.dev'
+
+    with patch.dict(os.environ, {'PERMITTED_CORS_REGEX': regex_pattern}):
+        middleware = LocalhostCORSMiddleware(app)
+
+        # Localhost origins should not be automatically allowed when a regex pattern is set
+        assert middleware.is_allowed_origin('http://localhost:8000') is False
+        assert middleware.is_allowed_origin('http://127.0.0.1:3000') is False
+
+        # But origins matching the regex pattern are still allowed
+        assert (
+            middleware.is_allowed_origin('https://example.staging.all-hands.dev')
+            is True
+        )
