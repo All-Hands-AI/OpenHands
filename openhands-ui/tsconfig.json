@@ -25,5 +25,15 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false
-  }
+  },
+
+  "include": ["index.ts", "components/**/*", "shared/**/*"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.stories.tsx",
+    "**/*.test.tsx",
+    "vitest.config.ts",
+    "vite.config.ts"
+  ]
 }
