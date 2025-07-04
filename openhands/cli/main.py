@@ -16,6 +16,7 @@ from openhands.cli.commands import (
 from openhands.cli.settings import modify_llm_settings_basic
 from openhands.cli.tui import (
     UsageMetrics,
+    cli_confirm,
     display_agent_running_message,
     display_banner,
     display_event,
@@ -30,6 +31,10 @@ from openhands.cli.tui import (
     update_streaming_output,
 )
 from openhands.cli.utils import (
+    add_aliases_to_bash_profile,
+    has_alias_setup_been_completed,
+    is_first_time_user,
+    mark_alias_setup_completed,
     update_usage_metrics,
 )
 from openhands.cli.vscode_extension import attempt_vscode_extension_install
@@ -360,6 +365,81 @@ async def run_setup_flow(config: OpenHandsConfig, settings_store: FileSettingsSt
     await modify_llm_settings_basic(config, settings_store)
 
 
+def run_alias_setup_flow(config: OpenHandsConfig) -> None:
+    """Run the alias setup flow to configure shell aliases.
+
+    Prompts the user to set up aliases for 'openhands' and 'oh' commands.
+    """
+    print_formatted_text('')
+    print_formatted_text(HTML('<gold>🚀 Welcome to OpenHands CLI!</gold>'))
+    print_formatted_text('')
+    print_formatted_text(
+        HTML('<grey>Would you like to set up convenient shell aliases?</grey>')
+    )
+    print_formatted_text('')
+    print_formatted_text(
+        HTML('<grey>This will add the following aliases to your bash profile:</grey>')
+    )
+    print_formatted_text(
+        HTML(
+            '<grey>  • <b>openhands</b> → uvx --python 3.12 --from openhands-ai openhands</grey>'
+        )
+    )
+    print_formatted_text(
+        HTML(
+            '<grey>  • <b>oh</b> → uvx --python 3.12 --from openhands-ai openhands</grey>'
+        )
+    )
+    print_formatted_text('')
+    print_formatted_text(
+        HTML(
+            '<ansiyellow>⚠️  Note: This requires uv to be installed first.</ansiyellow>'
+        )
+    )
+    print_formatted_text(
+        HTML(
+            '<ansiyellow>   Installation guide: https://docs.astral.sh/uv/getting-started/installation</ansiyellow>'
+        )
+    )
+    print_formatted_text('')
+
+    # Use cli_confirm to get user choice
+    choice = cli_confirm(
+        config, 'Set up shell aliases?', ['Yes, set up aliases', 'No, skip this step']
+    )
+
+    if choice == 0:  # User chose "Yes"
+        success = add_aliases_to_bash_profile()
+        if success:
+            print_formatted_text('')
+            print_formatted_text(
+                HTML('<ansigreen>✅ Aliases added successfully!</ansigreen>')
+            )
+            print_formatted_text(
+                HTML(
+                    '<grey>Run <b>source ~/.bashrc</b> (or restart your terminal) to use the new aliases.</grey>'
+                )
+            )
+        else:
+            print_formatted_text('')
+            print_formatted_text(
+                HTML(
+                    '<ansired>❌ Failed to add aliases. You can set them up manually later.</ansired>'
+                )
+            )
+    else:  # User chose "No"
+        print_formatted_text('')
+        print_formatted_text(
+            HTML(
+                '<grey>Skipped alias setup. You can run this setup again anytime.</grey>'
+            )
+        )
+
+    # Mark that we've shown the alias setup (regardless of user choice)
+    mark_alias_setup_completed()
+    print_formatted_text('')
+
+
 async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
     """Runs the agent in CLI mode."""
     args = parse_arguments()
@@ -441,6 +521,16 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
         # Need to finalize config again after setting runtime to 'cli'
         # This ensures Jupyter plugin is disabled for CLI runtime
         finalize_config(config)
+
+    # Check if we should show the alias setup flow
+    # Only show it if this is the first time or if the user hasn't seen it before
+    if is_first_time_user() or not has_alias_setup_been_completed():
+        # Clear the terminal if we haven't shown a banner yet
+        if not banner_shown:
+            clear()
+
+        run_alias_setup_flow(config)
+        banner_shown = True
 
     # TODO: Set working directory from config or use current working directory?
     current_dir = config.workspace_base
