@@ -230,7 +230,17 @@ class CLIRuntime(Runtime):
         if pid is None:
             return
 
-        group_desc = (
+        # On Windows, use different approach since Unix signals don't exist
+        if sys.platform == 'win32':
+            try:
+                process_obj.terminate()
+                logger.debug(f'[_safe_terminate_process] Terminated Windows process (PID: {pid}).')
+            except Exception as e:
+                logger.error(f'[_safe_terminate_process] Error terminating Windows process (PID: {pid}): {e}')
+            return
+
+        # Unix-specific signal handling
+        group_desc = (  # type: ignore[unreachable]
             'kill process group'
             if signal_to_send == signal.SIGKILL
             else 'terminate process group'
@@ -239,7 +249,7 @@ class CLIRuntime(Runtime):
             'kill process' if signal_to_send == signal.SIGKILL else 'terminate process'
         )
 
-        try:
+        try:  # type: ignore[unreachable]
             # Try to terminate/kill the entire process group
             logger.debug(f'[_safe_terminate_process] Original PID to act on: {pid}')
             pgid_to_kill = os.getpgid(
@@ -408,7 +418,9 @@ class CLIRuntime(Runtime):
                 f'Outer exception in _execute_shell_command for "{command}": {e}'
             )
             if process and process.poll() is None:
-                self._safe_terminate_process(process, signal_to_send=signal.SIGKILL)
+                # Use SIGKILL on Unix, terminate() on Windows (handled in _safe_terminate_process)
+                kill_signal = getattr(signal, 'SIGKILL', signal.SIGTERM)
+                self._safe_terminate_process(process, signal_to_send=kill_signal)
             return CmdOutputObservation(
                 command=command,
                 content=''.join(output_lines) + f'\nError during execution: {e}',

@@ -223,7 +223,7 @@ class ActionExecutor:
             logger.warning('Browser environment not supported on windows')
             return
 
-        logger.debug('Initializing browser asynchronously')
+        logger.debug('Initializing browser asynchronously')  # type: ignore[unreachable]
         try:
             self.browser = BrowserEnv(self.browsergym_eval_env)
             logger.debug('Browser initialized asynchronously')
@@ -550,21 +550,22 @@ class ActionExecutor:
         except UnicodeDecodeError:
             return ErrorObservation(f'File could not be decoded as utf-8: {filepath}')
 
-        # Attempt to handle file permissions
-        try:
-            if file_exists:
-                assert file_stat is not None
-                # restore the original file permissions if the file already exists
-                os.chmod(filepath, file_stat.st_mode)
-                os.chown(filepath, file_stat.st_uid, file_stat.st_gid)
-            else:
-                # set the new file permissions if the file is new
-                os.chmod(filepath, 0o664)
-                os.chown(filepath, self.user_id, self.user_id)
-        except PermissionError as e:
-            return ErrorObservation(
-                f'File {filepath} written, but failed to change ownership and permissions: {e}'
-            )
+        # Attempt to handle file permissions (Unix systems only)
+        if sys.platform != 'win32':
+            try:
+                if file_exists:
+                    assert file_stat is not None
+                    # restore the original file permissions if the file already exists
+                    os.chmod(filepath, file_stat.st_mode)
+                    os.chown(filepath, file_stat.st_uid, file_stat.st_gid)
+                else:
+                    # set the new file permissions if the file is new
+                    os.chmod(filepath, 0o664)
+                    os.chown(filepath, self.user_id, self.user_id)
+            except PermissionError as e:
+                return ErrorObservation(
+                    f'File {filepath} written, but failed to change ownership and permissions: {e}'
+                )
         return FileWriteObservation(content='', path=filepath)
 
     async def edit(self, action: FileEditAction) -> Observation:

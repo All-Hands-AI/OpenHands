@@ -303,6 +303,11 @@ The agent configuration options are defined in the `[agent]` and `[agent.<agent_
   - Default: `true`
   - Description: Whether history should be truncated to continue the session when hitting LLM context length limit
 
+- `shell`
+  - Type: `str`
+  - Default: Auto-detected based on operating system
+  - Description: Shell to use for command execution. If not specified, defaults to 'powershell' on Windows and 'bash' on other systems. Supported values are 'bash' and 'powershell'.
+
 ### Microagent Usage
 - `enable_prompt_extensions`
   - Type: `bool`
