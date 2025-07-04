@@ -4,8 +4,20 @@ A modern React component library built with TypeScript and Tailwind CSS.
 
 ## Installation
 
+Choose your preferred package manager:
+
 ```bash
+# npm
 npm install @openhands/ui
+
+# yarn
+yarn add @openhands/ui
+
+# pnpm
+pnpm add @openhands/ui
+
+# bun
+bun add @openhands/ui
 ```
 
 ## Quick Start
@@ -43,6 +55,8 @@ function App() {
 | `Typography`      | Text components (H1-H6, Text, Code)       |
 
 ## Development
+
+Use your preferred package manager to install dependencies and run the development server. We recommend using [Bun](https://bun.sh) for a fast development experience.
 
 ```bash
 # Install dependencies
