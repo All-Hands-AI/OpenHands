@@ -134,9 +134,28 @@ project details and structure. Use this when onboarding the agent to a new codeb
 You can pause the agent while it is running by pressing `Ctrl-P`. To continue the conversation after pausing, simply
 type `/resume` at the prompt.
 
-#### Using MCP servers
+## Using MCP servers
 
 To configure Model Context Protocol (MCP) servers, you can follow the documentation on [MCP servers](../mcp) and add them under the `[mcp]` section in the global `~/.openhands/config.toml` file.
+
+### Example
+
+```toml
+[mcp]
+stdio_servers = [
+    {name="fetch", command="uvx", args=["mcp-server-fetch"]},
+]
+
+sse_servers = [
+    # Basic SSE server with just a URL
+    "http://example.com:8080/sse",
+]
+
+shttp_servers = [
+    # Streamable HTTP server with API key authentication
+    {url="https://secure-example.com/mcp", api_key="your-api-key"}
+]
+```
 
 ## Tips and Troubleshooting
 
