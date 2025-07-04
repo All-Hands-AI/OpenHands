@@ -7,6 +7,7 @@ from openhands.cli.commands import (
     handle_exit_command,
     handle_help_command,
     handle_init_command,
+    handle_mcp_command,
     handle_new_command,
     handle_resume_command,
     handle_settings_command,
@@ -144,6 +145,18 @@ class TestHandleCommands:
         assert new_session is False
 
     @pytest.mark.asyncio
+    @patch('openhands.cli.commands.handle_mcp_command')
+    async def test_handle_mcp_command(self, mock_handle_mcp, mock_dependencies):
+        close_repl, reload_microagents, new_session, _ = await handle_commands(
+            '/mcp', **mock_dependencies
+        )
+
+        mock_handle_mcp.assert_called_once_with(mock_dependencies['config'])
+        assert close_repl is False
+        assert reload_microagents is False
+        assert new_session is False
+
+    @pytest.mark.asyncio
     async def test_handle_unknown_command(self, mock_dependencies):
         user_message = 'Hello, this is not a command'
 
@@ -217,6 +230,54 @@ class TestHandleHelpCommand:
     def test_help_command(self, mock_display_help):
         handle_help_command()
         mock_display_help.assert_called_once()
+
+
+class TestHandleMcpCommand:
+    @patch('openhands.cli.commands.print_formatted_text')
+    def test_mcp_command_no_servers(self, mock_print):
+        from openhands.core.config.mcp_config import MCPConfig
+
+        config = MagicMock(spec=OpenHandsConfig)
+        config.mcp = MCPConfig()  # Empty config with no servers
+
+        handle_mcp_command(config)
+
+        mock_print.assert_called_once()
+        call_args = mock_print.call_args[0][0]
+        assert 'No MCP servers configured' in call_args
+        assert (
+            'https://docs.all-hands.dev/usage/how-to/cli-mode#using-mcp-servers'
+            in call_args
+        )
+
+    @patch('openhands.cli.commands.print_formatted_text')
+    def test_mcp_command_with_servers(self, mock_print):
+        from openhands.core.config.mcp_config import (
+            MCPConfig,
+            MCPSHTTPServerConfig,
+            MCPSSEServerConfig,
+            MCPStdioServerConfig,
+        )
+
+        config = MagicMock(spec=OpenHandsConfig)
+        config.mcp = MCPConfig(
+            sse_servers=[MCPSSEServerConfig(url='https://example.com/sse')],
+            stdio_servers=[MCPStdioServerConfig(name='tavily', command='npx')],
+            shttp_servers=[MCPSHTTPServerConfig(url='http://localhost:3000/mcp')],
+        )
+
+        handle_mcp_command(config)
+
+        # Should be called multiple times for different sections
+        assert mock_print.call_count >= 4
+
+        # Check that the summary is printed
+        first_call = mock_print.call_args_list[0][0][0]
+        assert 'Configured MCP servers:' in first_call
+        assert 'SSE servers: 1' in first_call
+        assert 'Stdio servers: 1' in first_call
+        assert 'SHTTP servers: 1' in first_call
+        assert 'Total: 3' in first_call
 
 
 class TestHandleStatusCommand:
