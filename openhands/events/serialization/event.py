@@ -121,6 +121,8 @@ def event_to_dict(event: 'Event') -> dict:
         props.pop(key, None)
     if 'security_risk' in props and props['security_risk'] is None:
         props.pop('security_risk')
+    if 'reasoning_content' in props and props['reasoning_content'] is None:
+        props.pop('reasoning_content')
     if 'action' in d:
         d['args'] = props
         if event.timeout is not None:
