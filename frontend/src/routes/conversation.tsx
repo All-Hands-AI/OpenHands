@@ -101,10 +101,85 @@ function AppContent() {
   function renderMain() {
     const basePath = `/conversations/${conversationId}`;
 
-    if (width <= 640) {
+    if (width <= 1024) {
       return (
-        <div className="rounded-xl overflow-hidden border border-neutral-600 w-full bg-base-secondary">
-          <ChatInterface />
+        <div className="flex flex-col gap-3 overflow-auto">
+          <div className="rounded-xl overflow-hidden border border-neutral-600 w-full bg-base-secondary min-h-[494px]">
+            <ChatInterface />
+          </div>
+          <div className="h-full w-full min-h-[494px]">
+            <Container
+              className="h-full w-full"
+              labels={[
+                {
+                  label: "Changes",
+                  to: "",
+                  icon: <DiGit className="w-6 h-6" />,
+                },
+                {
+                  label: (
+                    <div className="flex items-center gap-1">
+                      {t(I18nKey.VSCODE$TITLE)}
+                    </div>
+                  ),
+                  to: "vscode",
+                  icon: <VscCode className="w-5 h-5" />,
+                  rightContent: !RUNTIME_INACTIVE_STATES.includes(
+                    curAgentState,
+                  ) ? (
+                    <FaExternalLinkAlt
+                      className="w-3 h-3 text-neutral-400 cursor-pointer"
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (conversationId) {
+                          try {
+                            const data =
+                              await OpenHands.getVSCodeUrl(conversationId);
+                            if (data.vscode_url) {
+                              const transformedUrl = transformVSCodeUrl(
+                                data.vscode_url,
+                              );
+                              if (transformedUrl) {
+                                window.open(transformedUrl, "_blank");
+                              }
+                            }
+                          } catch (err) {
+                            // Silently handle the error
+                          }
+                        }
+                      }}
+                    />
+                  ) : null,
+                },
+                {
+                  label: t(I18nKey.WORKSPACE$TERMINAL_TAB_LABEL),
+                  to: "terminal",
+                  icon: <TerminalIcon />,
+                },
+                { label: "Jupyter", to: "jupyter", icon: <JupyterIcon /> },
+                {
+                  label: <ServedAppLabel />,
+                  to: "served",
+                  icon: <FaServer />,
+                },
+                {
+                  label: (
+                    <div className="flex items-center gap-1">
+                      {t(I18nKey.BROWSER$TITLE)}
+                    </div>
+                  ),
+                  to: "browser",
+                  icon: <GlobeIcon />,
+                },
+              ]}
+            >
+              {/* Use both Outlet and TabContent */}
+              <div className="h-full w-full">
+                <TabContent conversationPath={basePath} />
+              </div>
+            </Container>
+          </div>
         </div>
       );
     }
