@@ -244,7 +244,7 @@ class TestHandleMcpCommand:
 
         mock_print.assert_called_once()
         call_args = mock_print.call_args[0][0]
-        assert 'No MCP servers configured' in call_args
+        assert 'No custom MCP servers configured' in call_args
         assert (
             'https://docs.all-hands.dev/usage/how-to/cli-mode#using-mcp-servers'
             in call_args
