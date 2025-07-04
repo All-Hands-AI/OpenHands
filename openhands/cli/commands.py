@@ -15,6 +15,7 @@ from openhands.cli.tui import (
     UsageMetrics,
     cli_confirm,
     display_help,
+    display_mcp_errors,
     display_shutdown_message,
     display_status,
 )
@@ -81,6 +82,8 @@ async def handle_commands(
         close_repl, new_session_requested = await handle_resume_command(event_stream)
     elif command == '/mcp':
         handle_mcp_command(config)
+    elif command == '/mcp-errors':
+        handle_mcp_errors_command()
     else:
         close_repl = True
         action = MessageAction(content=command)
@@ -375,3 +378,8 @@ def handle_mcp_command(config: OpenHandsConfig) -> None:
             for idx, shttp_server in enumerate(mcp_config.shttp_servers, 1):
                 print_formatted_text(f'  {idx}. {shttp_server.url}')
             print_formatted_text('')
+
+
+def handle_mcp_errors_command() -> None:
+    """Display MCP connection errors."""
+    display_mcp_errors()

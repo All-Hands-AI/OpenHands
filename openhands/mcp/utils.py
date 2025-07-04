@@ -16,6 +16,7 @@ from openhands.events.action.mcp import MCPAction
 from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
 from openhands.mcp.client import MCPClient
+from openhands.mcp.error_collector import mcp_error_collector
 from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.cli.cli_runtime import CLIRuntime
@@ -45,7 +46,14 @@ def convert_mcp_clients_to_tools(mcp_clients: list[MCPClient] | None) -> list[di
                 mcp_tools = tool.to_param()
                 all_mcp_tools.append(mcp_tools)
     except Exception as e:
-        logger.error(f'Error in convert_mcp_clients_to_tools: {e}')
+        error_msg = f'Error in convert_mcp_clients_to_tools: {e}'
+        logger.error(error_msg)
+        mcp_error_collector.add_error(
+            server_name='general',
+            server_type='conversion',
+            error_message=error_msg,
+            exception_details=str(e),
+        )
         return []
     return all_mcp_tools
 
@@ -87,7 +95,14 @@ async def create_mcp_clients(
                 await client.connect_stdio(server)
                 mcp_clients.append(client)
             except Exception as e:
-                logger.error(f'Failed to connect to {server}: {str(e)}', exc_info=True)
+                error_msg = f'Failed to connect to {server}: {str(e)}'
+                logger.error(error_msg, exc_info=True)
+                mcp_error_collector.add_error(
+                    server_name=getattr(server, 'name', str(server)),
+                    server_type='stdio',
+                    error_message=error_msg,
+                    exception_details=str(e),
+                )
             continue
 
         is_shttp = isinstance(server, MCPSHTTPServerConfig)
@@ -104,7 +119,14 @@ async def create_mcp_clients(
             mcp_clients.append(client)
 
         except Exception as e:
-            logger.error(f'Failed to connect to {server}: {str(e)}', exc_info=True)
+            error_msg = f'Failed to connect to {server}: {str(e)}'
+            logger.error(error_msg, exc_info=True)
+            mcp_error_collector.add_error(
+                server_name=getattr(server, 'url', str(server)),
+                server_type=connection_type.lower(),
+                error_message=error_msg,
+                exception_details=str(e),
+            )
 
     return mcp_clients
 
@@ -150,7 +172,14 @@ async def fetch_mcp_tools_from_config(
         mcp_tools = convert_mcp_clients_to_tools(mcp_clients)
 
     except Exception as e:
-        logger.error(f'Error fetching MCP tools: {str(e)}')
+        error_msg = f'Error fetching MCP tools: {str(e)}'
+        logger.error(error_msg)
+        mcp_error_collector.add_error(
+            server_name='general',
+            server_type='fetch',
+            error_message=error_msg,
+            exception_details=str(e),
+        )
         return []
 
     logger.debug(f'MCP tools: {mcp_tools}')

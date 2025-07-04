@@ -16,6 +16,7 @@ from openhands.core.config.mcp_config import (
     MCPStdioServerConfig,
 )
 from openhands.core.logger import openhands_logger as logger
+from openhands.mcp.error_collector import mcp_error_collector
 from openhands.mcp.tool import MCPClientTool
 
 
@@ -98,11 +99,29 @@ class MCPClient(BaseModel):
 
             await self._initialize_and_list_tools()
         except McpError as e:
-            logger.error(f'McpError connecting to {server_url}: {e}')
+            error_msg = f'McpError connecting to {server_url}: {e}'
+            logger.error(error_msg)
+            mcp_error_collector.add_error(
+                server_name=server_url,
+                server_type='shttp'
+                if isinstance(server, MCPSHTTPServerConfig)
+                else 'sse',
+                error_message=error_msg,
+                exception_details=str(e),
+            )
             raise  # Re-raise the error
 
         except Exception as e:
-            logger.error(f'Error connecting to {server_url}: {e}')
+            error_msg = f'Error connecting to {server_url}: {e}'
+            logger.error(error_msg)
+            mcp_error_collector.add_error(
+                server_name=server_url,
+                server_type='shttp'
+                if isinstance(server, MCPSHTTPServerConfig)
+                else 'sse',
+                error_message=error_msg,
+                exception_details=str(e),
+            )
             raise
 
     async def connect_stdio(self, server: MCPStdioServerConfig, timeout: float = 30.0):

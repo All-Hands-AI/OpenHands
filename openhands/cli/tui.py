@@ -75,6 +75,7 @@ COMMANDS = {
     '/settings': 'Display and modify current settings',
     '/resume': 'Resume the agent when paused',
     '/mcp': 'Display MCP server configuration',
+    '/mcp-errors': 'Display MCP connection errors',
 }
 
 print_lock = threading.Lock()
@@ -157,18 +158,28 @@ def display_banner(session_id: str) -> None:
     print_formatted_text('')
 
 
-def display_welcome_message(message: str = '') -> None:
+def display_welcome_message(message: str = '', has_mcp_errors: bool = False) -> None:
     print_formatted_text(
         HTML("<gold>Let's start building!</gold>\n"), style=DEFAULT_STYLE
     )
+
+    # Add MCP error indicator if there are errors
+    error_indicator = ''
+    if has_mcp_errors:
+        error_indicator = (
+            ' <ansired>✗ MCP errors detected (type /mcp-errors to view)</ansired>'
+        )
+
     if message:
         print_formatted_text(
-            HTML(f'{message} <grey>Type /help for help</grey>'),
+            HTML(f'{message} <grey>Type /help for help</grey>{error_indicator}'),
             style=DEFAULT_STYLE,
         )
     else:
         print_formatted_text(
-            HTML('What do you want to build? <grey>Type /help for help</grey>'),
+            HTML(
+                f'What do you want to build? <grey>Type /help for help</grey>{error_indicator}'
+            ),
             style=DEFAULT_STYLE,
         )
 
@@ -183,6 +194,52 @@ def display_initial_user_prompt(prompt: str) -> None:
             ]
         )
     )
+
+
+def display_mcp_errors() -> None:
+    """Display collected MCP errors."""
+    import datetime
+
+    from openhands.mcp.error_collector import mcp_error_collector
+
+    errors = mcp_error_collector.get_errors()
+
+    if not errors:
+        print_formatted_text(HTML('<ansigreen>✓ No MCP errors detected</ansigreen>\n'))
+        return
+
+    print_formatted_text(
+        HTML(
+            f'<ansired>✗ {len(errors)} MCP error(s) detected during startup:</ansired>\n'
+        )
+    )
+
+    for i, error in enumerate(errors, 1):
+        # Format timestamp
+        timestamp = datetime.datetime.fromtimestamp(error.timestamp).strftime(
+            '%H:%M:%S'
+        )
+
+        # Create error display text
+        error_text = (
+            f'[{timestamp}] {error.server_type.upper()} Server: {error.server_name}\n'
+        )
+        error_text += f'Error: {error.error_message}\n'
+        if error.exception_details:
+            error_text += f'Details: {error.exception_details}'
+
+        container = Frame(
+            TextArea(
+                text=error_text,
+                read_only=True,
+                style='ansired',
+                wrap_lines=True,
+            ),
+            title=f'MCP Error #{i}',
+            style='ansired',
+        )
+        print_container(container)
+        print_formatted_text('')  # Add spacing between errors
 
 
 # Prompt output display functions

@@ -65,6 +65,7 @@ from openhands.events.observation import (
 )
 from openhands.io import read_task
 from openhands.mcp import add_mcp_tools_to_agent
+from openhands.mcp.error_collector import mcp_error_collector
 from openhands.memory.condenser.impl.llm_summarizing_condenser import (
     LLMSummarizingCondenserConfig,
 )
@@ -273,6 +274,10 @@ async def run_session(
 
     # Add MCP tools to the agent
     if agent.config.enable_mcp:
+        # Clear any previous errors and enable collection
+        mcp_error_collector.clear_errors()
+        mcp_error_collector.enable_collection()
+
         # Add OpenHands' MCP server by default
         _, openhands_mcp_stdio_servers = (
             OpenHandsMCPConfigImpl.create_default_mcp_server_config(
@@ -283,6 +288,9 @@ async def run_session(
         runtime.config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
 
         await add_mcp_tools_to_agent(agent, runtime, memory)
+
+        # Disable collection after startup
+        mcp_error_collector.disable_collection()
 
     # Clear loading animation
     is_loaded.set()
@@ -327,8 +335,11 @@ async def run_session(
             initial_message = ''
             welcome_message += '\nLoading previous conversation.'
 
+    # Check for MCP errors
+    has_mcp_errors = agent.config.enable_mcp and mcp_error_collector.has_errors()
+
     # Show OpenHands welcome
-    display_welcome_message(welcome_message)
+    display_welcome_message(welcome_message, has_mcp_errors=has_mcp_errors)
 
     # The prompt_for_next_task will be triggered if the agent enters AWAITING_USER_INPUT.
     # If the restored state is already AWAITING_USER_INPUT, on_event_async will handle it.
