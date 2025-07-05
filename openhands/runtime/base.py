@@ -443,12 +443,18 @@ class Runtime(FileEditRuntimeMixin):
 
         # setup scripts time out after 10 minutes
         action = CmdRunAction(
-            f'chmod +x {setup_script} && source {setup_script}', blocking=True
+            f'chmod +x {setup_script} && source {setup_script}',
+            blocking=True,
+            hidden=True,
         )
         action.set_hard_timeout(600)
-        obs = self.run_action(action)
-        if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
-            self.log('error', f'Setup script failed: {obs.content}')
+
+        # Add the action to the event stream as an ENVIRONMENT event
+        source = EventSource.ENVIRONMENT
+        self.event_stream.add_event(action, source)
+
+        # Execute the action
+        self.run_action(action)
 
     @property
     def workspace_root(self) -> Path:
@@ -585,6 +591,8 @@ fi
 
             loaded_microagents.extend(repo_agents.values())
             loaded_microagents.extend(knowledge_agents.values())
+        except Exception as e:
+            self.log('error', f'Failed to load agents from {source_description}: {e}')
         finally:
             shutil.rmtree(microagent_folder)
 

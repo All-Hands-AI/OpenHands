@@ -280,7 +280,7 @@ class TestCliCommandsPauseResume:
 class TestAgentStatePauseResume:
     @pytest.mark.asyncio
     @patch('openhands.cli.main.display_agent_running_message')
-    @patch('openhands.cli.main.process_agent_pause')
+    @patch('openhands.cli.tui.process_agent_pause')
     async def test_agent_running_enables_pause(
         self, mock_process_agent_pause, mock_display_message
     ):

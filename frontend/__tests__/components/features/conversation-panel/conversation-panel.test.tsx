@@ -295,4 +295,238 @@ describe("ConversationPanel", () => {
     const newCards = await screen.findAllByTestId("conversation-card");
     expect(newCards).toHaveLength(3);
   });
+
+  it("should cancel stopping a conversation", async () => {
+    const user = userEvent.setup();
+
+    // Create mock data with a RUNNING conversation
+    const mockRunningConversations: Conversation[] = [
+      {
+        conversation_id: "1",
+        title: "Running Conversation",
+        selected_repository: null,
+        git_provider: null,
+        selected_branch: null,
+        last_updated_at: "2021-10-01T12:00:00Z",
+        created_at: "2021-10-01T12:00:00Z",
+        status: "RUNNING" as const,
+        runtime_status: null,
+        url: null,
+        session_api_key: null,
+      },
+      {
+        conversation_id: "2",
+        title: "Starting Conversation",
+        selected_repository: null,
+        git_provider: null,
+        selected_branch: null,
+        last_updated_at: "2021-10-02T12:00:00Z",
+        created_at: "2021-10-02T12:00:00Z",
+        status: "STARTING" as const,
+        runtime_status: null,
+        url: null,
+        session_api_key: null,
+      },
+      {
+        conversation_id: "3",
+        title: "Stopped Conversation",
+        selected_repository: null,
+        git_provider: null,
+        selected_branch: null,
+        last_updated_at: "2021-10-03T12:00:00Z",
+        created_at: "2021-10-03T12:00:00Z",
+        status: "STOPPED" as const,
+        runtime_status: null,
+        url: null,
+        session_api_key: null,
+      },
+    ];
+
+    const getUserConversationsSpy = vi.spyOn(OpenHands, "getUserConversations");
+    getUserConversationsSpy.mockResolvedValue(mockRunningConversations);
+
+    renderConversationPanel();
+
+    const cards = await screen.findAllByTestId("conversation-card");
+    expect(cards).toHaveLength(3);
+
+    // Click ellipsis on the first card (RUNNING status)
+    const ellipsisButton = within(cards[0]).getByTestId("ellipsis-button");
+    await user.click(ellipsisButton);
+
+    // Stop button should be available for RUNNING conversation
+    const stopButton = screen.getByTestId("stop-button");
+    expect(stopButton).toBeInTheDocument();
+
+    // Click the stop button
+    await user.click(stopButton);
+
+    // Cancel the stopping action
+    const cancelButton = screen.getByRole("button", { name: /cancel/i });
+    await user.click(cancelButton);
+
+    expect(
+      screen.queryByRole("button", { name: /cancel/i }),
+    ).not.toBeInTheDocument();
+
+    // Ensure the conversation status hasn't changed
+    const updatedCards = await screen.findAllByTestId("conversation-card");
+    expect(updatedCards).toHaveLength(3);
+  });
+
+  it("should stop a conversation", async () => {
+    const user = userEvent.setup();
+
+    const mockData: Conversation[] = [
+      {
+        conversation_id: "1",
+        title: "Running Conversation",
+        selected_repository: null,
+        git_provider: null,
+        selected_branch: null,
+        last_updated_at: "2021-10-01T12:00:00Z",
+        created_at: "2021-10-01T12:00:00Z",
+        status: "RUNNING" as const,
+        runtime_status: null,
+        url: null,
+        session_api_key: null,
+      },
+      {
+        conversation_id: "2",
+        title: "Starting Conversation",
+        selected_repository: null,
+        git_provider: null,
+        selected_branch: null,
+        last_updated_at: "2021-10-02T12:00:00Z",
+        created_at: "2021-10-02T12:00:00Z",
+        status: "STARTING" as const,
+        runtime_status: null,
+        url: null,
+        session_api_key: null,
+      },
+    ];
+
+    const getUserConversationsSpy = vi.spyOn(OpenHands, "getUserConversations");
+    getUserConversationsSpy.mockImplementation(async () => mockData);
+
+    const stopConversationSpy = vi.spyOn(OpenHands, "stopConversation");
+    stopConversationSpy.mockImplementation(async (id: string) => {
+      const conversation = mockData.find((conv) => conv.conversation_id === id);
+      if (conversation) {
+        conversation.status = "STOPPED";
+        return conversation;
+      }
+      return null;
+    });
+
+    renderConversationPanel();
+
+    const cards = await screen.findAllByTestId("conversation-card");
+    expect(cards).toHaveLength(2);
+
+    // Click ellipsis on the first card (RUNNING status)
+    const ellipsisButton = within(cards[0]).getByTestId("ellipsis-button");
+    await user.click(ellipsisButton);
+
+    const stopButton = screen.getByTestId("stop-button");
+
+    // Click the stop button
+    await user.click(stopButton);
+
+    // Confirm the stopping action
+    const confirmButton = screen.getByRole("button", { name: /confirm/i });
+    await user.click(confirmButton);
+
+    expect(
+      screen.queryByRole("button", { name: /confirm/i }),
+    ).not.toBeInTheDocument();
+
+    // Verify the API was called
+    expect(stopConversationSpy).toHaveBeenCalledWith("1");
+    expect(stopConversationSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("should only show stop button for STARTING or RUNNING conversations", async () => {
+    const user = userEvent.setup();
+
+    const mockMixedStatusConversations: Conversation[] = [
+      {
+        conversation_id: "1",
+        title: "Running Conversation",
+        selected_repository: null,
+        git_provider: null,
+        selected_branch: null,
+        last_updated_at: "2021-10-01T12:00:00Z",
+        created_at: "2021-10-01T12:00:00Z",
+        status: "RUNNING" as const,
+        runtime_status: null,
+        url: null,
+        session_api_key: null,
+      },
+      {
+        conversation_id: "2",
+        title: "Starting Conversation",
+        selected_repository: null,
+        git_provider: null,
+        selected_branch: null,
+        last_updated_at: "2021-10-02T12:00:00Z",
+        created_at: "2021-10-02T12:00:00Z",
+        status: "STARTING" as const,
+        runtime_status: null,
+        url: null,
+        session_api_key: null,
+      },
+      {
+        conversation_id: "3",
+        title: "Stopped Conversation",
+        selected_repository: null,
+        git_provider: null,
+        selected_branch: null,
+        last_updated_at: "2021-10-03T12:00:00Z",
+        created_at: "2021-10-03T12:00:00Z",
+        status: "STOPPED" as const,
+        runtime_status: null,
+        url: null,
+        session_api_key: null,
+      },
+    ];
+
+    const getUserConversationsSpy = vi.spyOn(OpenHands, "getUserConversations");
+    getUserConversationsSpy.mockResolvedValue(mockMixedStatusConversations);
+
+    renderConversationPanel();
+
+    const cards = await screen.findAllByTestId("conversation-card");
+    expect(cards).toHaveLength(3);
+
+    // Test RUNNING conversation - should show stop button
+    const runningEllipsisButton = within(cards[0]).getByTestId(
+      "ellipsis-button",
+    );
+    await user.click(runningEllipsisButton);
+
+    expect(screen.getByTestId("stop-button")).toBeInTheDocument();
+
+    // Click outside to close the menu
+    await user.click(document.body);
+
+    // Test STARTING conversation - should show stop button
+    const startingEllipsisButton = within(cards[1]).getByTestId(
+      "ellipsis-button",
+    );
+    await user.click(startingEllipsisButton);
+
+    expect(screen.getByTestId("stop-button")).toBeInTheDocument();
+
+    // Click outside to close the menu
+    await user.click(document.body);
+
+    // Test STOPPED conversation - should NOT show stop button
+    const stoppedEllipsisButton = within(cards[2]).getByTestId(
+      "ellipsis-button",
+    );
+    await user.click(stoppedEllipsisButton);
+
+    expect(screen.queryByTestId("stop-button")).not.toBeInTheDocument();
+  });
 });
