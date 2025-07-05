@@ -283,7 +283,8 @@ class LocalRuntime(ActionExecutionClient):
                 server_port=self._execution_server_port,
                 plugins=self.plugins,
                 app_config=self.config,
-                python_prefix=['poetry', 'run'],
+                python_prefix=[],
+                python_executable=sys.executable,
                 override_user_id=self._user_id,
                 override_username=self._username,
             )
