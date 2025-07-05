@@ -56,6 +56,10 @@ else
   mkdir -p /home/enduser/.cache/huggingface/hub/
 
   usermod -aG $DOCKER_SOCKET_GID enduser
+  # --- FIX:9543 ---
+  if [ -n "$WORKSPACE_MOUNT_PATH" ] && [ -d "$WORKSPACE_MOUNT_PATH" ]; then
+    chown -R $SANDBOX_USER_ID:app "$WORKSPACE_MOUNT_PATH" || true
+  fi
   echo "Running as enduser"
   su enduser /bin/bash -c "${*@Q}" # This magically runs any arguments passed to the script as a command
 fi
