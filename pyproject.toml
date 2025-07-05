@@ -92,6 +92,7 @@ boto3 = "*"
 kubernetes = "^33.1.0"
 pyyaml = "^6.0.2"
 memory-profiler = "^0.61.0"
+jupyter_kernel_gateway = "*"
 
 # Third-party runtime dependencies (optional)
 e2b = { version = ">=1.0.5,<1.6.0", optional = true }
@@ -133,7 +134,6 @@ optional = true
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
 notebook = "*"
-jupyter_kernel_gateway = "*"
 flake8 = "*"
 
 [tool.poetry.group.evaluation]
