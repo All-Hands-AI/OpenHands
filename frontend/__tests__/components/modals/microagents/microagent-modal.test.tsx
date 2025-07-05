@@ -4,6 +4,20 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderWithProviders } from "test-utils";
 import { MicroagentsModal } from "#/components/features/conversation-panel/microagents-modal";
 import OpenHands from "#/api/open-hands";
+import { AgentState } from "#/types/agent-state";
+
+vi.mock("react-redux", async () => {
+  const actual = await vi.importActual("react-redux");
+  return {
+    ...actual,
+    useDispatch: () => vi.fn(),
+    useSelector: () => ({
+      agent: {
+        curAgentState: AgentState.AWAITING_USER_INPUT,
+      },
+    }),
+  };
+});
 
 describe("MicroagentsModal - Refresh Button", () => {
   const mockOnClose = vi.fn();
