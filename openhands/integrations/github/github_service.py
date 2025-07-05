@@ -470,6 +470,7 @@ class GitHubService(BaseGitService, GitService):
         title: str,
         body: str | None = None,
         draft: bool = True,
+        labels: list[str] | None = None,
     ) -> str:
         """
         Creates a PR using user credentials
@@ -481,6 +482,7 @@ class GitHubService(BaseGitService, GitService):
             title: The title of the pull request (optional, defaults to a generic title)
             body: The body/description of the pull request (optional)
             draft: Whether to create the PR as a draft (optional, defaults to False)
+            labels: A list of labels to apply to the pull request (optional)
 
         Returns:
             - PR URL when successful
@@ -506,6 +508,15 @@ class GitHubService(BaseGitService, GitService):
         response, _ = await self._make_request(
             url=url, params=payload, method=RequestMethod.POST
         )
+
+        # Add labels if provided (PRs are a type of issue in GitHub's API)
+        if labels and len(labels) > 0:
+            pr_number = response['number']
+            labels_url = f'{self.BASE_URL}/repos/{repo_name}/issues/{pr_number}/labels'
+            labels_payload = {'labels': labels}
+            await self._make_request(
+                url=labels_url, params=labels_payload, method=RequestMethod.POST
+            )
 
         # Return the HTML URL of the created PR
         return response['html_url']
