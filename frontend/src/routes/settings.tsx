@@ -58,12 +58,12 @@ function SettingsScreen() {
     >
       <header className="px-3 py-1.5 border-b border-b-tertiary flex items-center gap-2">
         <SettingsIcon width={16} height={16} />
-        <h1 className="text-sm leading-6">{t(I18nKey.SETTINGS$TITLE)}</h1>
+        <h1 className="text-sm leading-6 ">{t(I18nKey.SETTINGS$TITLE)}</h1>
       </header>
 
       <nav
         data-testid="settings-navbar"
-        className="flex items-end gap-6 px-9 border-b border-tertiary"
+        className="flex items-end gap-1 px-4 border-b border-tertiary md:gap-6 md:px-9"
       >
         {navItems.map(({ to, text }) => (
           <NavLink
@@ -72,7 +72,7 @@ function SettingsScreen() {
             to={to}
             className={({ isActive }) =>
               cn(
-                "border-b-2 border-transparent py-2.5 px-4 min-w-[40px] flex items-center justify-center",
+                "border-b-2 border-transparent py-2.5 px-4 min-w-[45px] flex items-center justify-center",
                 isActive && "border-primary",
               )
             }
