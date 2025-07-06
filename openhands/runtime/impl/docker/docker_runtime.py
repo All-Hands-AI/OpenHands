@@ -360,6 +360,8 @@ class DockerRuntime(ActionExecutionClient):
         )
 
         command = self.get_action_execution_server_startup_command()
+        self.log('info', f'Starting server with command: {command}')
+
         if self.config.sandbox.enable_gpu:
             gpu_ids = self.config.sandbox.cuda_visible_devices
             if gpu_ids is None:
