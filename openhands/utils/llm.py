@@ -61,6 +61,6 @@ def get_supported_llm_models(config: OpenHandsConfig) -> list[str]:
         'openhands/o4-mini',
         'openhands/devstral-small-2505',
     ]
-    model_list.extend(openhands_models)
+    model_list = openhands_models + model_list
 
     return list(sorted(set(model_list)))

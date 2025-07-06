@@ -147,7 +147,7 @@ def organize_models_and_providers(
     return result_dict
 
 
-VERIFIED_PROVIDERS = ['anthropic', 'openai', 'mistral', 'openhands']
+VERIFIED_PROVIDERS = ['openhands', 'anthropic', 'openai', 'mistral']
 
 VERIFIED_OPENAI_MODELS = [
     'o4-mini',
