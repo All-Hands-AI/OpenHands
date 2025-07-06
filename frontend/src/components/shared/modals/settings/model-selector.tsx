@@ -110,7 +110,7 @@ export function ModelSelector({
           </AutocompleteSection>
           {Object.keys(models).some(
             (provider) => !VERIFIED_PROVIDERS.includes(provider),
-          ) && (
+          ) ? (
             <AutocompleteSection title={t(I18nKey.MODEL_SELECTOR$OTHERS)}>
               {Object.keys(models)
                 .filter((provider) => !VERIFIED_PROVIDERS.includes(provider))
@@ -120,7 +120,7 @@ export function ModelSelector({
                   </AutocompleteItem>
                 ))}
             </AutocompleteSection>
-          )}
+          ) : null}
         </Autocomplete>
       </fieldset>
 
@@ -159,7 +159,7 @@ export function ModelSelector({
           </AutocompleteSection>
           {models[selectedProvider || ""]?.models?.some(
             (model) => !VERIFIED_MODELS.includes(model),
-          ) && (
+          ) ? (
             <AutocompleteSection title={t(I18nKey.MODEL_SELECTOR$OTHERS)}>
               {models[selectedProvider || ""]?.models
                 .filter((model) => !VERIFIED_MODELS.includes(model))
@@ -172,7 +172,7 @@ export function ModelSelector({
                   </AutocompleteItem>
                 ))}
             </AutocompleteSection>
-          )}
+          ) : null}
         </Autocomplete>
       </fieldset>
     </div>
