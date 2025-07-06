@@ -111,7 +111,6 @@ pre-commit = "4.2.0"
 build = "*"
 types-setuptools = "*"
 pytest = "^8.4.0"
-pytest-asyncio = "*"
 
 [tool.poetry.group.test]
 optional = true
