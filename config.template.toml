@@ -116,7 +116,7 @@ api_key = ""
 # API version
 #api_version = ""
 
-# Reasoning effort for o1 models (low, medium, high, or not set)
+# Reasoning effort for OpenAI o-series models (low, medium, high, or not set)
 #reasoning_effort = "medium"
 
 # Cost per input token
