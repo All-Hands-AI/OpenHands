@@ -1,5 +1,5 @@
 import React from "react";
-import { useTranslation } from "react-i18next";
+import { useTranslation, Trans } from "react-i18next";
 import { AxiosError } from "axios";
 import { ModelSelector } from "#/components/shared/modals/settings/model-selector";
 import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers";
@@ -289,7 +289,21 @@ function LlmSettingsScreen() {
                   />
                   {settings.LLM_MODEL?.startsWith("openhands/") && (
                     <div className="mt-2 text-sm text-blue-400">
-                      {t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP)}
+                      <Trans
+                        i18nKey={I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP}
+                        components={{
+                          a: (
+                            <a
+                              href="https://app.all-hands.dev/settings/api-keys"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-400 hover:underline"
+                            >
+                              API Keys
+                            </a>
+                          ),
+                        }}
+                      />
                     </div>
                   )}
                 </>
@@ -361,7 +375,21 @@ function LlmSettingsScreen() {
               />
               {settings.LLM_MODEL?.startsWith("openhands/") && (
                 <div className="mt-2 text-sm text-blue-400">
-                  {t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP)}
+                  <Trans
+                    i18nKey={I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP}
+                    components={{
+                      a: (
+                        <a
+                          href="https://app.all-hands.dev/settings/api-keys"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-400 hover:underline"
+                        >
+                          API Keys
+                        </a>
+                      ),
+                    }}
+                  />
                 </div>
               )}
 
