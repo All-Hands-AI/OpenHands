@@ -31,7 +31,7 @@ from openhands.cli.tui import (
     update_streaming_output,
 )
 from openhands.cli.utils import (
-    add_aliases_to_bash_profile,
+    add_aliases_to_shell_config,
     has_alias_setup_been_completed,
     is_first_time_user,
     mark_alias_setup_completed,
@@ -409,15 +409,29 @@ def run_alias_setup_flow(config: OpenHandsConfig) -> None:
     )
 
     if choice == 0:  # User chose "Yes"
-        success = add_aliases_to_bash_profile()
+        success = add_aliases_to_shell_config()
         if success:
             print_formatted_text('')
             print_formatted_text(
                 HTML('<ansigreen>✅ Aliases added successfully!</ansigreen>')
             )
+
+            # Get the detected shell config path to provide accurate instructions
+            from openhands.cli.utils import get_shell_config_path
+
+            config_path = get_shell_config_path()
+
+            if '.zshrc' in str(config_path):
+                reload_cmd = 'source ~/.zshrc'
+            elif 'fish' in str(config_path):
+                reload_cmd = 'source ~/.config/fish/config.fish'
+            else:
+                # Default to bash-like shells
+                reload_cmd = f'source {config_path}'
+
             print_formatted_text(
                 HTML(
-                    '<grey>Run <b>source ~/.bashrc</b> (or restart your terminal) to use the new aliases.</grey>'
+                    f'<grey>Run <b>{reload_cmd}</b> (or restart your terminal) to use the new aliases.</grey>'
                 )
             )
         else:

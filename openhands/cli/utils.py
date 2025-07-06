@@ -236,13 +236,47 @@ def is_first_time_user() -> bool:
     return not openhands_dir.exists()
 
 
-def get_bash_profile_path() -> Path:
-    """Get the path to the user's bash profile file.
+def get_shell_config_path() -> Path:
+    """Get the path to the user's shell configuration file based on their default shell.
+
+    Uses shellingham to detect the current shell and returns the appropriate config file path.
 
     Returns:
-        Path to the bash profile file (prefers .bashrc, falls back to .bash_profile).
+        Path to the shell configuration file.
     """
     home = Path.home()
+
+    # Default config paths for different shells
+    shell_configs = {
+        'bash': ['.bashrc', '.bash_profile'],
+        'zsh': ['.zshrc'],
+        'fish': ['.config/fish/config.fish'],
+        'csh': ['.cshrc'],
+        'tcsh': ['.tcshrc'],
+        'ksh': ['.kshrc'],
+        'powershell': ['.config/powershell/Microsoft.PowerShell_profile.ps1'],
+    }
+
+    # Try to detect the shell using shellingham
+    try:
+        import shellingham
+
+        shell_name, _ = shellingham.detect_shell()
+
+        # Get config files for the detected shell
+        if shell_name in shell_configs:
+            for config_file in shell_configs[shell_name]:
+                config_path = home / config_file
+                if config_path.exists():
+                    return config_path
+
+            # If no existing config file found, return the first one in the list
+            return home / shell_configs[shell_name][0]
+    except Exception:
+        # Fallback to bash if shell detection fails
+        pass
+
+    # Fallback to bash config files
     bashrc = home / '.bashrc'
     bash_profile = home / '.bash_profile'
 
@@ -252,23 +286,47 @@ def get_bash_profile_path() -> Path:
     return bash_profile
 
 
-def add_aliases_to_bash_profile() -> bool:
-    """Add OpenHands aliases to the user's bash profile.
+def add_aliases_to_shell_config() -> bool:
+    """Add OpenHands aliases to the user's shell configuration file.
+
+    Detects the user's shell and adds appropriate aliases to the corresponding config file.
 
     Returns:
         True if aliases were added successfully, False otherwise.
     """
     try:
-        profile_path = get_bash_profile_path()
+        profile_path = get_shell_config_path()
 
-        # Define the aliases to add
-        alias_lines = [
-            '',
-            '# OpenHands CLI aliases',
-            'alias openhands="uvx --python 3.12 --from openhands-ai openhands"',
-            'alias oh="uvx --python 3.12 --from openhands-ai openhands"',
-            '',
-        ]
+        # Create parent directories if they don't exist
+        profile_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Determine the shell type from the config path
+        shell_type = 'default'
+        if '.zshrc' in str(profile_path):
+            shell_type = 'zsh'
+        elif 'fish' in str(profile_path):
+            shell_type = 'fish'
+        elif '.bashrc' in str(profile_path) or '.bash_profile' in str(profile_path):
+            shell_type = 'bash'
+
+        # Define the aliases based on shell type
+        if shell_type == 'fish':
+            alias_lines = [
+                '',
+                '# OpenHands CLI aliases',
+                'alias openhands="uvx --python 3.12 --from openhands-ai openhands"',
+                'alias oh="uvx --python 3.12 --from openhands-ai openhands"',
+                '',
+            ]
+        else:
+            # Default format works for bash, zsh, and most other shells
+            alias_lines = [
+                '',
+                '# OpenHands CLI aliases',
+                'alias openhands="uvx --python 3.12 --from openhands-ai openhands"',
+                'alias oh="uvx --python 3.12 --from openhands-ai openhands"',
+                '',
+            ]
 
         # Check if aliases already exist
         if profile_path.exists():
