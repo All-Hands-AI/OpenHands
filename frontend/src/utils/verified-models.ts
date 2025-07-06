@@ -17,6 +17,7 @@ export const VERIFIED_MODELS = [
   "gemini-2.5-pro",
   "o4-mini",
   "deepseek-chat",
+  "devstral-small-2505",
 ];
 
 // LiteLLM does not return OpenAI models with the provider, so we list them here to set them ourselves for consistency
