@@ -23,11 +23,13 @@ class ServerConversation:
         config: OpenHandsConfig,
         user_id: str | None,
         event_stream: EventStream | None,
+        runtime: Runtime | None,
     ):
         self.sid = sid
         self.config = config
         self.file_store = file_store
         self.user_id = user_id
+        # reusing an event stream but not a runtime causes problems...
         if event_stream is None:
             event_stream = EventStream(sid, file_store, user_id)
         self.event_stream = event_stream
@@ -36,14 +38,16 @@ class ServerConversation:
                 config.security.security_analyzer, SecurityAnalyzer
             )(self.event_stream)
 
-        runtime_cls = get_runtime_cls(self.config.runtime)
-        self.runtime = runtime_cls(
-            config=config,
-            event_stream=self.event_stream,
-            sid=self.sid,
-            attach_to_existing=True,
-            headless_mode=False,
-        )
+        if runtime is None:
+            runtime_cls = get_runtime_cls(self.config.runtime)
+            runtime = runtime_cls(
+                config=config,
+                event_stream=self.event_stream,
+                sid=self.sid,
+                attach_to_existing=True,
+                headless_mode=False,
+            )
+        self.runtime = runtime
 
     async def connect(self) -> None:
         await self.runtime.connect()

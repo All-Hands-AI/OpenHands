@@ -99,9 +99,11 @@ class StandaloneConversationManager(ConversationManager):
 
             # Get the event stream for the conversation - required to keep the cur_id up to date
             event_stream = None
+            runtime = None
             session = self._local_agent_loops_by_sid.get(sid)
             if session:
                 event_stream = session.agent_session.event_stream
+                runtime = session.agent_session.runtime
 
             # Create new conversation if none exists
             c = ServerConversation(
@@ -110,6 +112,7 @@ class StandaloneConversationManager(ConversationManager):
                 config=self.config,
                 user_id=user_id,
                 event_stream=event_stream,
+                runtime=runtime,
             )
             try:
                 await c.connect()
