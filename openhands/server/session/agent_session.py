@@ -474,7 +474,7 @@ class AgentSession:
             # loads microagents from repo/.openhands/microagents
             microagents: list[BaseMicroagent] = await call_sync_from_async(
                 self.runtime.get_microagents_from_selected_repo,
-                selected_repository or None,
+                None,  # We'll pass the Repository object after clone_or_init_repo
             )
             memory.load_user_workspace_microagents(microagents)
 
