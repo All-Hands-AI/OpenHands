@@ -149,3 +149,9 @@ docker run # ...
 ```
 
 Then all sandbox instances will have to access a shared redis instance at `openhandsredis:6379`.
+
+#### Docker Compose gotcha
+
+Note that Docker Compose adds a prefix (a scope) by default to created networks, which is not taken into account by the additional networks config. Therefore when using docker compose you have to either:
+- specify a network name via the `name` field to remove the scoping (https://docs.docker.com/reference/compose-file/networks/#name) 
+- or provide the scope within the given config (e.g. `SANDBOX_ADDITIONAL_NETWORKS: '["myscope_openhands-sccache"]'` where `myscope` is the docker-compose assigned prefix). 
