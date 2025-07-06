@@ -15,6 +15,7 @@ from openhands.events.action import (
 from openhands.events.observation import (
     BrowserOutputObservation,
     CmdOutputObservation,
+    ErrorObservation,
     FileDownloadObservation,
 )
 
@@ -120,6 +121,26 @@ def find_element_by_tag_and_attributes(
             return bid
 
     return None
+
+
+def test_browser_disabled(temp_dir, runtime_cls, run_as_openhands):
+    runtime, _ = _load_runtime(
+        temp_dir, runtime_cls, run_as_openhands, enable_browser=False
+    )
+
+    action_cmd = CmdRunAction(command='python3 -m http.server 8000 > server.log 2>&1 &')
+    logger.info(action_cmd, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action_cmd)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+    action_browse = BrowseURLAction(url='http://localhost:8000', return_axtree=False)
+    logger.info(action_browse, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action_browse)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, ErrorObservation)
+    assert 'Browser functionality is not supported or disabled' in obs.content
+
+    _close_test_runtime(runtime)
 
 
 def test_simple_browse(temp_dir, runtime_cls, run_as_openhands):
