@@ -97,16 +97,16 @@ export function ModelSelector({
           }}
         >
           <AutocompleteSection title={t(I18nKey.MODEL_SELECTOR$VERIFIED)}>
-            {Object.keys(models)
-              .filter((provider) => VERIFIED_PROVIDERS.includes(provider))
-              .map((provider) => (
+            {VERIFIED_PROVIDERS.filter((provider) => models[provider]).map(
+              (provider) => (
                 <AutocompleteItem
                   data-testid={`provider-item-${provider}`}
                   key={provider}
                 >
                   {mapProvider(provider)}
                 </AutocompleteItem>
-              ))}
+              ),
+            )}
           </AutocompleteSection>
           {Object.keys(models).some(
             (provider) => !VERIFIED_PROVIDERS.includes(provider),
@@ -151,11 +151,11 @@ export function ModelSelector({
           }}
         >
           <AutocompleteSection title={t(I18nKey.MODEL_SELECTOR$VERIFIED)}>
-            {models[selectedProvider || ""]?.models
-              .filter((model) => VERIFIED_MODELS.includes(model))
-              .map((model) => (
-                <AutocompleteItem key={model}>{model}</AutocompleteItem>
-              ))}
+            {VERIFIED_MODELS.filter((model) =>
+              models[selectedProvider || ""]?.models?.includes(model),
+            ).map((model) => (
+              <AutocompleteItem key={model}>{model}</AutocompleteItem>
+            ))}
           </AutocompleteSection>
           {models[selectedProvider || ""]?.models?.some(
             (model) => !VERIFIED_MODELS.includes(model),
