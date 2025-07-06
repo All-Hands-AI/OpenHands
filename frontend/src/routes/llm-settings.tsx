@@ -49,6 +49,11 @@ function LlmSettingsScreen() {
     securityAnalyzer: false,
   });
 
+  // Track the currently selected model to show help text
+  const [currentSelectedModel, setCurrentSelectedModel] = React.useState<
+    string | null
+  >(null);
+
   const modelsAndProviders = organizeModelsAndProviders(
     resources?.models || [],
   );
@@ -73,6 +78,13 @@ function LlmSettingsScreen() {
     if (userSettingsIsAdvanced) setView("advanced");
     else setView("basic");
   }, [settings, resources]);
+
+  // Initialize currentSelectedModel with the current settings
+  React.useEffect(() => {
+    if (settings?.LLM_MODEL) {
+      setCurrentSelectedModel(settings.LLM_MODEL);
+    }
+  }, [settings?.LLM_MODEL]);
 
   const handleSuccessfulMutation = () => {
     displaySuccessToast(t(I18nKey.SETTINGS$SAVED_WARNING));
@@ -184,6 +196,9 @@ function LlmSettingsScreen() {
       ...prev,
       model: modelIsDirty,
     }));
+
+    // Track the currently selected model for help text display
+    setCurrentSelectedModel(model);
   };
 
   const handleApiKeyIsDirty = (apiKey: string) => {
@@ -208,6 +223,9 @@ function LlmSettingsScreen() {
       ...prev,
       model: modelIsDirty,
     }));
+
+    // Track the currently selected model for help text display
+    setCurrentSelectedModel(model);
   };
 
   const handleBaseUrlIsDirty = (baseUrl: string) => {
@@ -287,7 +305,8 @@ function LlmSettingsScreen() {
                     }
                     onChange={handleModelIsDirty}
                   />
-                  {settings.LLM_MODEL?.startsWith("openhands/") && (
+                  {(settings.LLM_MODEL?.startsWith("openhands/") ||
+                    currentSelectedModel?.startsWith("openhands/")) && (
                     <div className="mt-2 text-sm text-blue-400">
                       <Trans
                         i18nKey={I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP}
@@ -299,7 +318,7 @@ function LlmSettingsScreen() {
                               rel="noopener noreferrer"
                               className="text-blue-400 hover:underline"
                             >
-                              API Keys
+                              {/* Content will be filled by Trans component */}
                             </a>
                           ),
                         }}
@@ -373,7 +392,8 @@ function LlmSettingsScreen() {
                 className="w-full max-w-[680px]"
                 onChange={handleCustomModelIsDirty}
               />
-              {settings.LLM_MODEL?.startsWith("openhands/") && (
+              {(settings.LLM_MODEL?.startsWith("openhands/") ||
+                currentSelectedModel?.startsWith("openhands/")) && (
                 <div className="mt-2 text-sm text-blue-400">
                   <Trans
                     i18nKey={I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP}
@@ -385,7 +405,7 @@ function LlmSettingsScreen() {
                           rel="noopener noreferrer"
                           className="text-blue-400 hover:underline"
                         >
-                          API Keys
+                          {/* Content will be filled by Trans component */}
                         </a>
                       ),
                     }}
