@@ -364,3 +364,68 @@ def has_alias_setup_been_completed() -> bool:
     """
     marker_file = Path.home() / '.openhands' / '.alias_setup_completed'
     return marker_file.exists()
+
+
+def aliases_exist_in_shell_config() -> bool:
+    """Check if OpenHands aliases already exist in the shell configuration.
+
+    Returns:
+        True if aliases exist, False otherwise.
+    """
+    try:
+        profile_path = get_shell_config_path()
+        if not profile_path.exists():
+            return False
+
+        with open(profile_path, 'r') as f:
+            content = f.read()
+            return 'alias openhands=' in content or 'alias oh=' in content
+    except Exception:
+        return False
+
+
+def remove_aliases_from_shell_config() -> bool:
+    """Remove OpenHands aliases from the user's shell configuration file.
+
+    Returns:
+        True if aliases were removed successfully, False otherwise.
+    """
+    try:
+        profile_path = get_shell_config_path()
+        if not profile_path.exists():
+            return True  # Nothing to remove
+
+        with open(profile_path, 'r') as f:
+            lines = f.readlines()
+
+        # Filter out OpenHands alias lines
+        filtered_lines = []
+        skip_next_empty = False
+
+        for line in lines:
+            line_stripped = line.strip()
+
+            # Skip OpenHands-related lines
+            if (
+                line_stripped == '# OpenHands CLI aliases'
+                or line_stripped.startswith('alias openhands=')
+                or line_stripped.startswith('alias oh=')
+            ):
+                skip_next_empty = True
+                continue
+
+            # Skip empty lines immediately after OpenHands sections
+            if skip_next_empty and line_stripped == '':
+                skip_next_empty = False
+                continue
+
+            skip_next_empty = False
+            filtered_lines.append(line)
+
+        # Write back the filtered content
+        with open(profile_path, 'w') as f:
+            f.writelines(filtered_lines)
+
+        return True
+    except Exception:
+        return False

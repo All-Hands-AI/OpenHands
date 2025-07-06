@@ -32,9 +32,11 @@ from openhands.cli.tui import (
 )
 from openhands.cli.utils import (
     add_aliases_to_shell_config,
+    aliases_exist_in_shell_config,
     has_alias_setup_been_completed,
     is_first_time_user,
     mark_alias_setup_completed,
+    remove_aliases_from_shell_config,
     update_usage_metrics,
 )
 from openhands.cli.vscode_extension import attempt_vscode_extension_install
@@ -369,85 +371,139 @@ def run_alias_setup_flow(config: OpenHandsConfig) -> None:
     """Run the alias setup flow to configure shell aliases.
 
     Prompts the user to set up aliases for 'openhands' and 'oh' commands.
+    Handles existing aliases by offering to keep or remove them.
     """
     print_formatted_text('')
     print_formatted_text(HTML('<gold>🚀 Welcome to OpenHands CLI!</gold>'))
     print_formatted_text('')
-    print_formatted_text(
-        HTML('<grey>Would you like to set up convenient shell aliases?</grey>')
-    )
-    print_formatted_text('')
-    print_formatted_text(
-        HTML('<grey>This will add the following aliases to your bash profile:</grey>')
-    )
-    print_formatted_text(
-        HTML(
-            '<grey>  • <b>openhands</b> → uvx --python 3.12 --from openhands-ai openhands</grey>'
-        )
-    )
-    print_formatted_text(
-        HTML(
-            '<grey>  • <b>oh</b> → uvx --python 3.12 --from openhands-ai openhands</grey>'
-        )
-    )
-    print_formatted_text('')
-    print_formatted_text(
-        HTML(
-            '<ansiyellow>⚠️  Note: This requires uv to be installed first.</ansiyellow>'
-        )
-    )
-    print_formatted_text(
-        HTML(
-            '<ansiyellow>   Installation guide: https://docs.astral.sh/uv/getting-started/installation</ansiyellow>'
-        )
-    )
-    print_formatted_text('')
 
-    # Use cli_confirm to get user choice
-    choice = cli_confirm(
-        config, 'Set up shell aliases?', ['Yes, set up aliases', 'No, skip this step']
-    )
-
-    if choice == 0:  # User chose "Yes"
-        success = add_aliases_to_shell_config()
-        if success:
-            print_formatted_text('')
-            print_formatted_text(
-                HTML('<ansigreen>✅ Aliases added successfully!</ansigreen>')
+    # Check if aliases already exist
+    if aliases_exist_in_shell_config():
+        print_formatted_text(
+            HTML(
+                '<grey>We detected existing OpenHands aliases in your shell configuration.</grey>'
             )
-
-            # Get the detected shell config path to provide accurate instructions
-            from openhands.cli.utils import get_shell_config_path
-
-            config_path = get_shell_config_path()
-
-            if '.zshrc' in str(config_path):
-                reload_cmd = 'source ~/.zshrc'
-            elif 'fish' in str(config_path):
-                reload_cmd = 'source ~/.config/fish/config.fish'
-            else:
-                # Default to bash-like shells
-                reload_cmd = f'source {config_path}'
-
-            print_formatted_text(
-                HTML(
-                    f'<grey>Run <b>{reload_cmd}</b> (or restart your terminal) to use the new aliases.</grey>'
-                )
-            )
-        else:
-            print_formatted_text('')
-            print_formatted_text(
-                HTML(
-                    '<ansired>❌ Failed to add aliases. You can set them up manually later.</ansired>'
-                )
-            )
-    else:  # User chose "No"
+        )
         print_formatted_text('')
         print_formatted_text(
             HTML(
-                '<grey>Skipped alias setup. You can run this setup again anytime.</grey>'
+                '<grey>  • <b>openhands</b> → uvx --python 3.12 --from openhands-ai openhands</grey>'
             )
         )
+        print_formatted_text(
+            HTML(
+                '<grey>  • <b>oh</b> → uvx --python 3.12 --from openhands-ai openhands</grey>'
+            )
+        )
+        print_formatted_text('')
+
+        # Ask user what to do with existing aliases
+        choice = cli_confirm(
+            config,
+            'What would you like to do with the existing aliases?',
+            ['Keep existing aliases', 'Remove aliases'],
+        )
+
+        if choice == 0:  # Keep existing aliases
+            print_formatted_text('')
+            print_formatted_text(
+                HTML('<ansigreen>✅ Keeping existing aliases.</ansigreen>')
+            )
+        else:  # Remove aliases
+            success = remove_aliases_from_shell_config()
+            if success:
+                print_formatted_text('')
+                print_formatted_text(
+                    HTML('<ansigreen>✅ Aliases removed successfully!</ansigreen>')
+                )
+            else:
+                print_formatted_text('')
+                print_formatted_text(
+                    HTML(
+                        '<ansired>❌ Failed to remove aliases. You may need to remove them manually.</ansired>'
+                    )
+                )
+    else:
+        # No existing aliases, show the normal setup flow
+        print_formatted_text(
+            HTML('<grey>Would you like to set up convenient shell aliases?</grey>')
+        )
+        print_formatted_text('')
+        print_formatted_text(
+            HTML(
+                '<grey>This will add the following aliases to your shell profile:</grey>'
+            )
+        )
+        print_formatted_text(
+            HTML(
+                '<grey>  • <b>openhands</b> → uvx --python 3.12 --from openhands-ai openhands</grey>'
+            )
+        )
+        print_formatted_text(
+            HTML(
+                '<grey>  • <b>oh</b> → uvx --python 3.12 --from openhands-ai openhands</grey>'
+            )
+        )
+        print_formatted_text('')
+        print_formatted_text(
+            HTML(
+                '<ansiyellow>⚠️  Note: This requires uv to be installed first.</ansiyellow>'
+            )
+        )
+        print_formatted_text(
+            HTML(
+                '<ansiyellow>   Installation guide: https://docs.astral.sh/uv/getting-started/installation</ansiyellow>'
+            )
+        )
+        print_formatted_text('')
+
+        # Use cli_confirm to get user choice
+        choice = cli_confirm(
+            config,
+            'Set up shell aliases?',
+            ['Yes, set up aliases', 'No, skip this step'],
+        )
+
+        if choice == 0:  # User chose "Yes"
+            success = add_aliases_to_shell_config()
+            if success:
+                print_formatted_text('')
+                print_formatted_text(
+                    HTML('<ansigreen>✅ Aliases added successfully!</ansigreen>')
+                )
+
+                # Get the detected shell config path to provide accurate instructions
+                from openhands.cli.utils import get_shell_config_path
+
+                config_path = get_shell_config_path()
+
+                if '.zshrc' in str(config_path):
+                    reload_cmd = 'source ~/.zshrc'
+                elif 'fish' in str(config_path):
+                    reload_cmd = 'source ~/.config/fish/config.fish'
+                else:
+                    # Default to bash-like shells
+                    reload_cmd = f'source {config_path}'
+
+                print_formatted_text(
+                    HTML(
+                        f'<grey>Run <b>{reload_cmd}</b> (or restart your terminal) to use the new aliases.</grey>'
+                    )
+                )
+            else:
+                print_formatted_text('')
+                print_formatted_text(
+                    HTML(
+                        '<ansired>❌ Failed to add aliases. You can set them up manually later.</ansired>'
+                    )
+                )
+        else:  # User chose "No"
+            print_formatted_text('')
+            print_formatted_text(
+                HTML(
+                    '<grey>Skipped alias setup. You can run this setup again anytime.</grey>'
+                )
+            )
 
     # Mark that we've shown the alias setup (regardless of user choice)
     mark_alias_setup_completed()

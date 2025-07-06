@@ -6,10 +6,12 @@ from unittest.mock import patch
 
 from openhands.cli.utils import (
     add_aliases_to_shell_config,
+    aliases_exist_in_shell_config,
     get_shell_config_path,
     has_alias_setup_been_completed,
     is_first_time_user,
     mark_alias_setup_completed,
+    remove_aliases_from_shell_config,
 )
 
 
@@ -207,3 +209,98 @@ class TestAliasSetup:
                 # Marker file should exist
                 marker_file = openhands_dir / '.alias_setup_completed'
                 assert marker_file.exists()
+
+    def test_aliases_exist_in_shell_config_no_file(self):
+        """Test alias detection when no shell config exists."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with patch('openhands.cli.utils.Path.home', return_value=Path(temp_dir)):
+                # Mock shellingham to return bash
+                with patch('shellingham.detect_shell', return_value=('bash', 'bash')):
+                    assert aliases_exist_in_shell_config() is False
+
+    def test_aliases_exist_in_shell_config_no_aliases(self):
+        """Test alias detection when shell config exists but has no aliases."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with patch('openhands.cli.utils.Path.home', return_value=Path(temp_dir)):
+                # Mock shellingham to return bash
+                with patch('shellingham.detect_shell', return_value=('bash', 'bash')):
+                    # Create bash profile with other content
+                    profile_path = get_shell_config_path()
+                    with open(profile_path, 'w') as f:
+                        f.write('export PATH=$PATH:/usr/local/bin\n')
+
+                    assert aliases_exist_in_shell_config() is False
+
+    def test_aliases_exist_in_shell_config_with_aliases(self):
+        """Test alias detection when aliases exist."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with patch('openhands.cli.utils.Path.home', return_value=Path(temp_dir)):
+                # Mock shellingham to return bash
+                with patch('shellingham.detect_shell', return_value=('bash', 'bash')):
+                    # Add aliases first
+                    add_aliases_to_shell_config()
+
+                    assert aliases_exist_in_shell_config() is True
+
+    def test_remove_aliases_from_shell_config(self):
+        """Test removing aliases from shell config."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with patch('openhands.cli.utils.Path.home', return_value=Path(temp_dir)):
+                # Mock shellingham to return bash
+                with patch('shellingham.detect_shell', return_value=('bash', 'bash')):
+                    # Add aliases first
+                    add_aliases_to_shell_config()
+
+                    # Verify aliases exist
+                    assert aliases_exist_in_shell_config() is True
+
+                    # Remove aliases
+                    success = remove_aliases_from_shell_config()
+                    assert success is True
+
+                    # Verify aliases are gone
+                    assert aliases_exist_in_shell_config() is False
+
+    def test_remove_aliases_preserves_other_content(self):
+        """Test that removing aliases preserves other shell config content."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with patch('openhands.cli.utils.Path.home', return_value=Path(temp_dir)):
+                # Mock shellingham to return bash
+                with patch('shellingham.detect_shell', return_value=('bash', 'bash')):
+                    profile_path = get_shell_config_path()
+
+                    # Add some initial content
+                    initial_content = (
+                        'export PATH=$PATH:/usr/local/bin\nalias ll="ls -la"\n'
+                    )
+                    with open(profile_path, 'w') as f:
+                        f.write(initial_content)
+
+                    # Add OpenHands aliases
+                    add_aliases_to_shell_config()
+
+                    # Verify aliases exist
+                    assert aliases_exist_in_shell_config() is True
+
+                    # Remove aliases
+                    success = remove_aliases_from_shell_config()
+                    assert success is True
+
+                    # Verify aliases are gone but other content remains
+                    assert aliases_exist_in_shell_config() is False
+                    with open(profile_path, 'r') as f:
+                        content = f.read()
+                        assert 'export PATH=$PATH:/usr/local/bin' in content
+                        assert 'alias ll="ls -la"' in content
+                        assert 'alias openhands=' not in content
+                        assert 'alias oh=' not in content
+
+    def test_remove_aliases_no_file(self):
+        """Test removing aliases when no shell config exists."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with patch('openhands.cli.utils.Path.home', return_value=Path(temp_dir)):
+                # Mock shellingham to return bash
+                with patch('shellingham.detect_shell', return_value=('bash', 'bash')):
+                    # Should succeed even if no file exists
+                    success = remove_aliases_from_shell_config()
+                    assert success is True
