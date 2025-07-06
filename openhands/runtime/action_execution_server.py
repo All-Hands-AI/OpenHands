@@ -680,7 +680,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--enable-browser',
         action=argparse.BooleanOptionalAction,
-        default=False,
+        default=True,
         help='Enable the browser environment',
     )
     parser.add_argument(
