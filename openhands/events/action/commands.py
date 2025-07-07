@@ -24,6 +24,7 @@ class CmdRunAction(Action):
     runnable: ClassVar[bool] = True
     confirmation_state: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED
     security_risk: ActionSecurityRisk | None = None
+    reasoning_content: str | None = None
 
     @property
     def message(self) -> str:
@@ -31,6 +32,8 @@ class CmdRunAction(Action):
 
     def __str__(self) -> str:
         ret = f'**CmdRunAction (source={self.source}, is_input={self.is_input})**\n'
+        if self.reasoning_content:
+            ret += f'REASONING: {self.reasoning_content}\n'
         if self.thought:
             ret += f'THOUGHT: {self.thought}\n'
         ret += f'COMMAND:\n{self.command}'
@@ -49,9 +52,12 @@ class IPythonRunCellAction(Action):
     confirmation_state: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED
     security_risk: ActionSecurityRisk | None = None
     kernel_init_code: str = ''  # code to run in the kernel (if the kernel is restarted)
+    reasoning_content: str | None = None
 
     def __str__(self) -> str:
         ret = '**IPythonRunCellAction**\n'
+        if self.reasoning_content:
+            ret += f'REASONING: {self.reasoning_content}\n'
         if self.thought:
             ret += f'THOUGHT: {self.thought}\n'
         ret += f'CODE:\n{self.code}'

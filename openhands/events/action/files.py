@@ -22,10 +22,20 @@ class FileReadAction(Action):
     security_risk: ActionSecurityRisk | None = None
     impl_source: FileReadSource = FileReadSource.DEFAULT
     view_range: list[int] | None = None  # ONLY used in OH_ACI mode
+    reasoning_content: str | None = None
 
     @property
     def message(self) -> str:
         return f'Reading file: {self.path}'
+
+    def __repr__(self) -> str:
+        ret = '**FileReadAction**\n'
+        ret += f'Path: {self.path}\n'
+        ret += f'Range: [L{self.start}:L{self.end}]\n'
+        if self.reasoning_content:
+            ret += f'Reasoning: {self.reasoning_content}\n'
+        ret += f'Thought: {self.thought}\n'
+        return ret
 
 
 @dataclass
@@ -43,19 +53,21 @@ class FileWriteAction(Action):
     action: str = ActionType.WRITE
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None
+    reasoning_content: str | None = None
 
     @property
     def message(self) -> str:
         return f'Writing file: {self.path}'
 
     def __repr__(self) -> str:
-        return (
-            f'**FileWriteAction**\n'
-            f'Path: {self.path}\n'
-            f'Range: [L{self.start}:L{self.end}]\n'
-            f'Thought: {self.thought}\n'
-            f'Content:\n```\n{self.content}\n```\n'
-        )
+        ret = '**FileWriteAction**\n'
+        ret += f'Path: {self.path}\n'
+        ret += f'Range: [L{self.start}:L{self.end}]\n'
+        if self.reasoning_content:
+            ret += f'Reasoning: {self.reasoning_content}\n'
+        ret += f'Thought: {self.thought}\n'
+        ret += f'Content:\n```\n{self.content}\n```\n'
+        return ret
 
 
 @dataclass
@@ -113,10 +125,13 @@ class FileEditAction(Action):
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None
     impl_source: FileEditSource = FileEditSource.OH_ACI
+    reasoning_content: str | None = None
 
     def __repr__(self) -> str:
         ret = '**FileEditAction**\n'
         ret += f'Path: [{self.path}]\n'
+        if self.reasoning_content:
+            ret += f'Reasoning: {self.reasoning_content}\n'
         ret += f'Thought: {self.thought}\n'
 
         if self.impl_source == FileEditSource.LLM_BASED_EDIT:
