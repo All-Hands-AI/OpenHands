@@ -85,12 +85,6 @@ export function ConversationSubscriptionsProvider({
       // Store the current sockets in a local variable to avoid closure issues
       const socketsToDisconnect = { ...conversationSockets };
 
-      if (Object.keys(socketsToDisconnect).length > 0) {
-        console.warn(
-          `Cleaning up ${Object.keys(socketsToDisconnect).length} socket connections`,
-        );
-      }
-
       Object.values(socketsToDisconnect).forEach((socketData) => {
         if (socketData.socket) {
           socketData.socket.removeAllListeners();
@@ -103,8 +97,6 @@ export function ConversationSubscriptionsProvider({
 
   const unsubscribeFromConversation = useCallback(
     (conversationId: string) => {
-      console.warn(`Unsubscribing from conversation ${conversationId}`);
-
       // Get a local reference to the socket data to avoid race conditions
       const socketData = conversationSockets[conversationId];
 
@@ -113,20 +105,11 @@ export function ConversationSubscriptionsProvider({
         const handler = eventHandlersRef.current[conversationId];
 
         if (socket) {
-          // First remove specific event handlers
           if (handler) {
             socket.off("oh_event", handler);
           }
-
-          // Then remove all listeners to be safe
           socket.removeAllListeners();
-
-          // Finally disconnect the socket
           socket.disconnect();
-
-          console.warn(
-            `Socket for conversation ${conversationId} disconnected`,
-          );
         }
 
         // Update state to remove the socket
@@ -161,13 +144,9 @@ export function ConversationSubscriptionsProvider({
 
       // If already subscribed, don't create a new subscription
       if (conversationSockets[conversationId]) {
-        console.warn(`Already subscribed to conversation ${conversationId}`);
         return;
       }
 
-      console.warn(`Subscribing to conversation ${conversationId}`);
-
-      // Create event handler for this subscription
       const handleOhEvent = (event: unknown) => {
         // Call the custom event handler if provided
         if (onEvent) {
@@ -232,7 +211,6 @@ export function ConversationSubscriptionsProvider({
 
         // Set up event listeners
         socket.on("connect", () => {
-          console.warn(`Socket for conversation ${conversationId} CONNECTED!`);
           setConversationSockets((prev) => {
             // Make sure the conversation still exists in our state
             if (!prev[conversationId]) return prev;
@@ -289,15 +267,7 @@ export function ConversationSubscriptionsProvider({
         setActiveConversationIds((prev) =>
           prev.includes(conversationId) ? prev : [...prev, conversationId],
         );
-
-        console.warn(
-          `Successfully subscribed to conversation ${conversationId}`,
-        );
       } catch (error) {
-        console.error(
-          `Error subscribing to conversation ${conversationId}:`,
-          error,
-        );
         // Clean up the event handler if there was an error
         delete eventHandlersRef.current[conversationId];
       }
