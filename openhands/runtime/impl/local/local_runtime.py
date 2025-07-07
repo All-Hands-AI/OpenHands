@@ -73,7 +73,7 @@ def get_user_info() -> tuple[int, str | None]:
         return os.getuid(), username
 
 
-def check_dependencies(code_repo_path: str, env_root_path: str) -> None:
+def check_dependencies(code_repo_path: str, check_browser: bool) -> None:
     ERROR_MESSAGE = 'Please follow the instructions in https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md to install OpenHands.'
     if not os.path.exists(code_repo_path):
         raise ValueError(
@@ -91,7 +91,6 @@ def check_dependencies(code_repo_path: str, env_root_path: str) -> None:
         raise ValueError('Jupyter is not properly installed. ' + ERROR_MESSAGE)
 
     # Check libtmux is installed (skip on Windows)
-
     if sys.platform != 'win32':
         logger.debug('Checking dependencies: libtmux')
         import libtmux
@@ -108,15 +107,12 @@ def check_dependencies(code_repo_path: str, env_root_path: str) -> None:
         if 'test' not in pane_output:
             raise ValueError('libtmux is not properly installed. ' + ERROR_MESSAGE)
 
-    # Skip browser environment check on Windows
-    if sys.platform != 'win32':
+    if check_browser:
         logger.debug('Checking dependencies: browser')
         from openhands.runtime.browser.browser_env import BrowserEnv
 
         browser = BrowserEnv()
         browser.close()
-    else:
-        logger.warning('Running on Windows - browser environment check skipped.')
 
 
 class LocalRuntime(ActionExecutionClient):
@@ -289,7 +285,7 @@ class LocalRuntime(ActionExecutionClient):
                 override_username=self._username,
             )
 
-            self.log('debug', f'Starting server with command: {cmd}')
+            self.log('info', f'Starting server with command: {cmd}')
             env = os.environ.copy()
             # Get the code repo path
             code_repo_path = os.path.dirname(os.path.dirname(openhands.__file__))
@@ -303,7 +299,6 @@ class LocalRuntime(ActionExecutionClient):
             # Derive environment paths using sys.executable
             interpreter_path = sys.executable
             python_bin_path = os.path.dirname(interpreter_path)
-            env_root_path = os.path.dirname(python_bin_path)
 
             # Prepend the interpreter's bin directory to PATH for subprocesses
             env['PATH'] = f'{python_bin_path}{os.pathsep}{env.get("PATH", "")}'
@@ -311,7 +306,8 @@ class LocalRuntime(ActionExecutionClient):
 
             # Check dependencies using the derived env_root_path if not skipped
             if os.getenv('SKIP_DEPENDENCY_CHECK', '') != '1':
-                check_dependencies(code_repo_path, env_root_path)
+                check_browser = self.config.enable_browser and sys.platform != 'win32'
+                check_dependencies(code_repo_path, check_browser)
 
             self.server_process = subprocess.Popen(  # noqa: S603
                 cmd,

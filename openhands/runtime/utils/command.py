@@ -60,4 +60,7 @@ def get_action_execution_server_startup_command(
         *browsergym_args,
     ]
 
+    if not app_config.enable_browser:
+        base_cmd.append('--no-enable-browser')
+
     return base_cmd
