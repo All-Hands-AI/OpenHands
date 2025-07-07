@@ -40,19 +40,22 @@ export const clientLoader = async ({ request }: Route.ClientLoaderArgs) => {
   let config = queryClient.getQueryData<GetConfigResponse>(["config"]);
   if (!config) {
     config = await OpenHands.getConfig();
+    queryClient.setQueryData<GetConfigResponse>(["config"], config);
   }
 
   const isSaas = config?.APP_MODE === "saas";
 
   if (isSaas && pathname === "/settings") {
     // no llm settings in saas mode, so redirect to user settings
-    redirect("/settings/user");
-  } else if (SAAS_ONLY_PATHS.includes(pathname)) {
-    // if in OSS mode, do not allow access to saas-only paths
-    redirect("/settings");
+    return redirect("/settings/user");
   }
 
-  queryClient.setQueryData<GetConfigResponse>(["config"], config);
+  if (!isSaas && SAAS_ONLY_PATHS.includes(pathname)) {
+    // if in OSS mode, do not allow access to saas-only paths
+    return redirect("/settings");
+  }
+
+  return null;
 };
 
 function SettingsScreen() {
