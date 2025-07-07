@@ -23,8 +23,8 @@ class ServerConversation:
         file_store: FileStore,
         config: OpenHandsConfig,
         user_id: str | None,
-        event_stream: EventStream | None,
-        runtime: Runtime | None,
+        event_stream: EventStream | None = None,
+        runtime: Runtime | None = None,
     ):
         self.sid = sid
         self.config = config
