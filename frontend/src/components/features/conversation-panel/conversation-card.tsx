@@ -19,6 +19,7 @@ import OpenHands from "#/api/open-hands";
 import { useWsClient } from "#/context/ws-client-provider";
 import { isSystemMessage } from "#/types/core/guards";
 import { ConversationStatus } from "#/types/conversation-status";
+import { RepositorySelection } from "#/api/open-hands.types";
 
 interface ConversationCardProps {
   onClick?: () => void;
@@ -28,7 +29,7 @@ interface ConversationCardProps {
   showOptions?: boolean;
   isActive?: boolean;
   title: string;
-  selectedRepository: string | null;
+  selectedRepository: RepositorySelection | null;
   lastUpdatedAt: string; // ISO 8601
   createdAt?: string; // ISO 8601
   conversationStatus?: ConversationStatus;
@@ -180,7 +181,7 @@ export function ConversationCard({
         data-testid="conversation-card"
         onClick={onClick}
         className={cn(
-          "h-[100px] w-full px-[18px] py-4 border-b border-neutral-600 cursor-pointer",
+          "h-auto w-full px-[18px] py-4 border-b border-neutral-600 cursor-pointer",
           variant === "compact" &&
             "md:w-fit h-auto rounded-xl border border-[#525252]",
         )}
@@ -264,11 +265,14 @@ export function ConversationCard({
 
         <div
           className={cn(
-            variant === "compact" && "flex items-center justify-between mt-1",
+            variant === "compact" && "flex flex-col justify-between mt-1",
           )}
         >
-          {selectedRepository && (
-            <ConversationRepoLink selectedRepository={selectedRepository} />
+          {selectedRepository?.selected_repository && (
+            <ConversationRepoLink
+              selectedRepository={selectedRepository}
+              variant={variant}
+            />
           )}
           <p className="text-xs text-neutral-400">
             <span>{t(I18nKey.CONVERSATION$CREATED)} </span>
