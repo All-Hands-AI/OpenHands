@@ -71,7 +71,7 @@ class A2aRequestHandler:
 
     async def on_message_send(
         self, params: MessageSendParams, context
-    ) -> Message | Task:
+    ) -> A2aMessage | Task:
         task_id = self._params_get_task_id(params)
         conversation_init_data = await self._conversation_init_data_set(params)
         if task_id in A2aRequestHandler._task_id_to_sessions:
@@ -210,7 +210,7 @@ class A2aRequestHandler:
 
             messages = []
             for response in responses:
-                message = Message(
+                message = A2aMessage(
                     role=Role.agent,
                     parts=[{"kind": "text", "text": response['message']}],
                     messageId=response['message_id'],
@@ -288,7 +288,7 @@ class A2aRequestHandler:
 
     def _server_preparation(self, task_id, params):
 
-        message = Message(
+        message = A2aMessage(
             role=Role.agent,
             parts=[{"kind": "text", "text": "server is preparation"}],
             messageId=params.message.messageId,
