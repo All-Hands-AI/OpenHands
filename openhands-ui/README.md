@@ -92,18 +92,6 @@ npm install path/to/openhands-ui-x.x.x.tgz
 
 This package is automatically published to npm when changes are merged to the main branch. See [PUBLISHING.md](./PUBLISHING.md) for detailed information about the publishing process.
 
-### Quick Publishing Guide
-
-1. Update the version in `package.json`:
-
-   ```bash
-   npm version patch  # or minor/major
-   ```
-
-2. Commit and create a PR with your changes
-
-3. Merge the PR - the package will be automatically published
-
 ## License
 
 MIT
