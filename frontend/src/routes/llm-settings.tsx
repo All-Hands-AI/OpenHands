@@ -12,10 +12,7 @@ import { I18nKey } from "#/i18n/declaration";
 import { SettingsInput } from "#/components/features/settings/settings-input";
 import { HelpLink } from "#/components/features/settings/help-link";
 import { BrandButton } from "#/components/features/settings/brand-button";
-import {
-  displayErrorToast,
-  displaySuccessToast,
-} from "#/utils/custom-toast-handlers";
+import toast from "#/utils/toast";
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 import { SettingsDropdownInput } from "#/components/features/settings/settings-dropdown-input";
 import { useConfig } from "#/hooks/query/use-config";
@@ -75,7 +72,7 @@ function LlmSettingsScreen() {
   }, [settings, resources]);
 
   const handleSuccessfulMutation = () => {
-    displaySuccessToast(t(I18nKey.SETTINGS$SAVED_WARNING));
+    toast.settingsChanged(t(I18nKey.SETTINGS$SAVED_WARNING));
     setDirtyInputs({
       model: false,
       apiKey: false,
@@ -90,7 +87,7 @@ function LlmSettingsScreen() {
 
   const handleErrorMutation = (error: AxiosError) => {
     const errorMessage = retrieveAxiosErrorMessage(error);
-    displayErrorToast(errorMessage || t(I18nKey.ERROR$GENERIC));
+    toast.error("error", errorMessage || t(I18nKey.ERROR$GENERIC));
   };
 
   const basicFormAction = (formData: FormData) => {
