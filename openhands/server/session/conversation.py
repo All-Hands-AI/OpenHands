@@ -58,7 +58,7 @@ class ServerConversation:
             await self.runtime.connect()
 
     async def disconnect(self) -> None:
-        if not self._attach_to_existing:
+        if self._attach_to_existing:
             return
         if self.event_stream:
             self.event_stream.close()
