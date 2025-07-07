@@ -22,7 +22,7 @@ import {
 } from "#/types/microagent-status";
 import { AgentState } from "#/types/agent-state";
 import { getFirstPRUrl } from "#/utils/parse-pr-url";
-import MemmoryIcon from "#/icons/memory_icon.svg?react";
+import MemoryIcon from "#/icons/memory_icon.svg?react";
 
 interface MessagesProps {
   messages: (OpenHandsAction | OpenHandsObservation)[];
@@ -213,7 +213,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(
                 ? [
                     {
                       icon: (
-                        <MemmoryIcon className="w-[14px] h-[14px] text-white" />
+                        <MemoryIcon className="w-[14px] h-[14px] text-white" />
                       ),
                       onClick: () => {
                         setSelectedEventId(message.id);
