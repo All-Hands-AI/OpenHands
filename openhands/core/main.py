@@ -6,7 +6,6 @@ from typing import Callable, Protocol
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 import openhands.cli.suppress_warnings  # noqa: F401
-from openhands.controller.agent import Agent
 from openhands.controller.replay import ReplayManager
 from openhands.controller.state.state import State
 from openhands.core.config import (
@@ -52,7 +51,6 @@ async def run_controller(
     initial_user_action: Action,
     sid: str | None = None,
     runtime: Runtime | None = None,
-    agent: Agent | None = None,
     exit_on_message: bool = False,
     fake_user_response_fn: FakeUserResponseFunc | None = None,
     headless_mode: bool = True,
@@ -69,7 +67,6 @@ async def run_controller(
         sid: (optional) The session id. IMPORTANT: please don't set this unless you know what you're doing.
             Set it to incompatible value will cause unexpected behavior on RemoteRuntime.
         runtime: (optional) A runtime for the agent to run on.
-        agent: (optional) A agent to run.
         exit_on_message: quit if agent asks for a message from user (optional)
         fake_user_response_fn: An optional function that receives the current state
             (could be None) and returns a fake user response.
@@ -96,9 +93,7 @@ async def run_controller(
         >>> state = await run_controller(config=config, initial_user_action=action)
     """
     sid = sid or generate_sid(config)
-
-    if agent is None:
-        agent = create_agent(config)
+    agent = create_agent(config)
 
     # when the runtime is created, it will be connected and clone the selected repository
     repo_directory = None

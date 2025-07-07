@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from openhands.core.config.condenser_config import LLMAttentionCondenserConfig
 from openhands.events.action.agent import CondensationAction
 from openhands.llm.llm import LLM
+from openhands.llm.metrics_registry import MetricsRegistry
 from openhands.memory.condenser.condenser import (
     Condensation,
     RollingCondenser,
@@ -113,7 +114,9 @@ class LLMAttentionCondenser(RollingCondenser):
         return len(view) > self.max_size
 
     @classmethod
-    def from_config(cls, config: LLMAttentionCondenserConfig) -> LLMAttentionCondenser:
+    def from_config(
+        cls, config: LLMAttentionCondenserConfig, metrics_registry: MetricsRegistry
+    ) -> LLMAttentionCondenser:
         # This condenser cannot take advantage of prompt caching. If it happens
         # to be set, we'll pay for the cache writes but never get a chance to
         # save on a read.
@@ -121,7 +124,7 @@ class LLMAttentionCondenser(RollingCondenser):
         llm_config.caching_prompt = False
 
         return LLMAttentionCondenser(
-            llm=LLM(config=llm_config),
+            llm=LLM(config=llm_config, metrics_registry=metrics_registry),
             max_size=config.max_size,
             keep_first=config.keep_first,
         )

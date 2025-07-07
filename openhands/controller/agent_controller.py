@@ -649,7 +649,7 @@ class AgentController:
         llm = LLM(
             config=llm_config,
             retry_listener=self.agent.llm.retry_listener,
-            metrics=self.state.metrics,
+            metrics_registry=self.state.metrics_registry,
         )
         delegate_agent = agent_cls(llm=llm, config=agent_config)
 

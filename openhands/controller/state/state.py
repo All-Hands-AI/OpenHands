@@ -117,7 +117,6 @@ class State:
     local_metrics: Metrics | None = None
     delegates: dict[tuple[int, int], tuple[str, str]] | None = None
 
-    # global metrics for the current task
     metrics: Metrics = field(default_factory=Metrics)
 
     def save_to_session(
