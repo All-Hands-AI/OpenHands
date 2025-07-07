@@ -7,7 +7,7 @@ from uuid import uuid4
 
 from a2a.server.events import Event
 from a2a.types import (
-    Message,
+    Message as A2aMessage,
     MessageSendParams,
     Role,
     Task,
