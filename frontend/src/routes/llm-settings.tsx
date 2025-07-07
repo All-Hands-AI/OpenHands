@@ -317,8 +317,9 @@ function LlmSettingsScreen() {
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-blue-400 hover:underline"
+                              aria-label={t(I18nKey.SETTINGS$NAV_API_KEYS)}
                             >
-                              {/* Content will be filled by Trans component */}
+                              {t(I18nKey.SETTINGS$NAV_API_KEYS)}
                             </a>
                           ),
                         }}
@@ -404,8 +405,9 @@ function LlmSettingsScreen() {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-blue-400 hover:underline"
+                          aria-label={t(I18nKey.SETTINGS$NAV_API_KEYS)}
                         >
-                          {/* Content will be filled by Trans component */}
+                          {t(I18nKey.SETTINGS$NAV_API_KEYS)}
                         </a>
                       ),
                     }}
