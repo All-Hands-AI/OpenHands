@@ -54,6 +54,7 @@ jobs:
   ghcr_build_app:
     name: Build App Image
     runs-on: blacksmith-4vcpu-ubuntu-2204
+    if: "!(github.event_name == 'push' && startsWith(github.ref, 'refs/tags/ext-v'))"
     permissions:
       contents: read
       packages: write
@@ -103,6 +104,7 @@ jobs:
   ghcr_build_runtime:
     name: Build Image
     runs-on: blacksmith-4vcpu-ubuntu-2204
+    if: "!(github.event_name == 'push' && startsWith(github.ref, 'refs/tags/ext-v'))"
     permissions:
       contents: read
       packages: write

@@ -179,6 +179,23 @@ If you are interested in further improved inference speed, you can also try Snow
 of vLLM, [ArcticInference](https://www.snowflake.com/en/engineering-blog/fast-speculative-decoding-vllm-arctic/),
 which can achieve up to 2x speedup in some cases.
 
+1. Install the Arctic Inference library that automatically patches vLLM:
+
+```bash
+pip install git+https://github.com/snowflakedb/ArcticInference.git
+```
+
+2. Run the launch command with speculative decoding enabled:
+
+```bash
+vllm serve mistralai/Devstral-Small-2505 \
+    --host 0.0.0.0 --port 8000 \
+    --api-key mykey \
+    --tensor-parallel-size 2 \
+    --served-model-name Devstral-Small-2505 \
+    --speculative-config '{"method": "suffix"}'
+```
+
 ### Run OpenHands (Alternative Backends)
 
 #### Using Docker
