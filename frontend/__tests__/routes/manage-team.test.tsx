@@ -151,9 +151,25 @@ describe("Manage Team Route", () => {
     expect(updateMemberRoleSpy).not.toHaveBeenCalled();
   });
 
+  it("should not allow a user to invite a new team member", async () => {
+    const getUserSpy = vi.spyOn(userService, "getMe");
+    getUserSpy.mockResolvedValue({
+      id: "some-user-id",
+      email: "someone@acme.org",
+      role: "user",
+      status: "active",
+    });
+
+    renderManageTeam();
+
+    const inviteButton = screen.queryByRole("button", {
+      name: /invite team/i,
+    });
+    expect(inviteButton).not.toBeInTheDocument();
+  });
+
   it("should not allow an admin to change the superadmin's role", async () => {
     const getUserSpy = vi.spyOn(userService, "getMe");
-
     getUserSpy.mockResolvedValue({
       id: "some-user-id",
       email: "user@acme.org",
@@ -176,10 +192,10 @@ describe("Manage Team Route", () => {
   });
 
   describe("Inviting Team Members", () => {
-    it("should render an invite team member button", () => {
+    it("should render an invite team member button", async () => {
       renderManageTeam();
 
-      const inviteButton = screen.getByRole("button", {
+      const inviteButton = await screen.findByRole("button", {
         name: /invite team/i,
       });
       expect(inviteButton).toBeInTheDocument();
@@ -189,7 +205,7 @@ describe("Manage Team Route", () => {
       renderManageTeam();
 
       expect(screen.queryByTestId("invite-modal")).not.toBeInTheDocument();
-      const inviteButton = screen.getByRole("button", {
+      const inviteButton = await screen.findByRole("button", {
         name: /invite team/i,
       });
       await userEvent.click(inviteButton);
@@ -203,7 +219,7 @@ describe("Manage Team Route", () => {
     it("should close the modal when the close button is clicked", async () => {
       renderManageTeam();
 
-      const inviteButton = screen.getByRole("button", {
+      const inviteButton = await screen.findByRole("button", {
         name: /invite team/i,
       });
       await userEvent.click(inviteButton);
@@ -222,7 +238,7 @@ describe("Manage Team Route", () => {
 
       renderManageTeam();
 
-      const inviteButton = screen.getByRole("button", {
+      const inviteButton = await screen.findByRole("button", {
         name: /invite team/i,
       });
       await userEvent.click(inviteButton);

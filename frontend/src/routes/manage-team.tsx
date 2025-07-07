@@ -9,24 +9,28 @@ import { useUpdateMemberRole } from "#/hooks/mutation/use-update-member-role";
 import { useMe } from "#/hooks/query/use-me";
 import { BrandButton } from "#/components/features/settings/brand-button";
 
-type PermissiomTopic = "change_user_role";
-type ChangeUserRolePermission = `${PermissiomTopic}:${OrganizationUserRole}`;
+type UserRoleChangePermissionKey = "change_user_role";
+type InviteUserToOrganizationKey = "invite_user_to_organization";
 
-const superadminPerms: ChangeUserRolePermission[] = [
+type ChangeUserRolePermission =
+  `${UserRoleChangePermissionKey}:${OrganizationUserRole}`;
+
+type UserPermission = InviteUserToOrganizationKey | ChangeUserRolePermission;
+
+const superadminPerms: UserPermission[] = [
+  "invite_user_to_organization",
   "change_user_role:superadmin",
   "change_user_role:admin",
   "change_user_role:user",
 ];
-const adminPerms: ChangeUserRolePermission[] = [
+const adminPerms: UserPermission[] = [
+  "invite_user_to_organization",
   "change_user_role:admin",
   "change_user_role:user",
 ];
-const userPerms: ChangeUserRolePermission[] = [];
+const userPerms: UserPermission[] = [];
 
-const rolePermissions: Record<
-  OrganizationUserRole,
-  ChangeUserRolePermission[]
-> = {
+const rolePermissions: Record<OrganizationUserRole, UserPermission[]> = {
   superadmin: superadminPerms,
   admin: adminPerms,
   user: userPerms,
@@ -38,6 +42,11 @@ function ManageTeam() {
   const { mutate: updateMemberRole } = useUpdateMemberRole();
 
   const [inviteModalOpen, setInviteModalOpen] = React.useState(false);
+
+  const currentUserRole = user?.role || "user";
+  const hasPermissionToInvite = rolePermissions[currentUserRole].includes(
+    "invite_user_to_organization",
+  );
 
   const handleRoleSelectionClick = (id: string, role: OrganizationUserRole) => {
     updateMemberRole({ userId: id, role });
@@ -54,15 +63,17 @@ function ManageTeam() {
 
   return (
     <div className="p-4 flex flex-col gap-2">
-      <BrandButton
-        type="button"
-        variant="secondary"
-        onClick={() => setInviteModalOpen(true)}
-        className="flex items-center gap-1"
-      >
-        <Plus size={14} />
-        Invite Team
-      </BrandButton>
+      {hasPermissionToInvite && (
+        <BrandButton
+          type="button"
+          variant="secondary"
+          onClick={() => setInviteModalOpen(true)}
+          className="flex items-center gap-1"
+        >
+          <Plus size={14} />
+          Invite Team
+        </BrandButton>
+      )}
 
       {inviteModalOpen &&
         ReactDOM.createPortal(
