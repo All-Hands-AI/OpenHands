@@ -64,6 +64,7 @@ class StandaloneConversationManager(ConversationManager):
     _loop: asyncio.AbstractEventLoop | None = None
 
     async def __aenter__(self):
+        # Grab a reference to the main event loop. This is the loop in which `await sio.emit` must be called
         self._loop = asyncio.get_event_loop()
         self._cleanup_task = asyncio.create_task(self._cleanup_stale())
         return self
