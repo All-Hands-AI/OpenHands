@@ -12,7 +12,6 @@ export { Scrollable } from "./components/scrollable/Scrollable";
 export { Toggle } from "./components/toggle/Toggle";
 export { Tooltip } from "./components/tooltip/Tooltip";
 export { Typography } from "./components/typography/Typography";
-export { BaseTypography } from "./components/typography/BaseTypography";
 
 // Styles
 import "./index.css";
