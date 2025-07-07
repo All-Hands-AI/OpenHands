@@ -1,6 +1,7 @@
 from enum import Enum
+
 from openhands.llm.metrics import Metrics
-from openhands.core.logger import openhands_logger as logger
+
 
 class LLMService(Enum):
     AGENT = 'AGENT'
@@ -11,26 +12,18 @@ class LLMService(Enum):
 class MetricsRegistry:
     global_metrics: dict[LLMService, Metrics]
 
-    def register_llm(self, service: LLMService):
+    def register_llm(self, service: LLMService, model_name: str = 'default'):
         if service in self.global_metrics:
-            logger.warning(f'Service {service} is already registered')
-            return
+            return self.global_metrics[service]
 
-        self.global_metrics[service] = Metrics()
-
-    def accumulate_metrics(self, service: LLMService, metrics: Metrics):
-        if service not in self.global_metrics:
-            logger.error(f'Service {service} does not exist in metrics registry')
-
-        self.global_metrics[service].merge(metrics)
+        self.global_metrics[service] = Metrics(model_name=model_name)
+        return self.global_metrics[service]
 
     def save_metrics(self):
         pass
 
-
     def restore_metrics(self):
         pass
-
 
     def get_combined_metrics(self) -> Metrics:
         total_metrics = Metrics()
@@ -38,4 +31,3 @@ class MetricsRegistry:
             total_metrics.merge(self.global_metrics[service])
 
         return total_metrics
-

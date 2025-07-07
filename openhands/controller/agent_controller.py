@@ -996,6 +996,7 @@ class AgentController:
         """
         # Get metrics from agent LLM
         agent_metrics = self.state.metrics
+        agent_metrics = self.state.metrics_registry.get_combined_metrics()
 
         # Get metrics from condenser LLM if it exists
         condenser_metrics: Metrics | None = None
