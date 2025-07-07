@@ -23,7 +23,12 @@ from openhands.storage.data_models.conversation_metadata import ConversationMeta
 from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
-from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync, run_in_loop, wait_all
+from openhands.utils.async_utils import (
+    GENERAL_TIMEOUT,
+    call_async_from_sync,
+    run_in_loop,
+    wait_all,
+)
 from openhands.utils.conversation_summary import (
     auto_generate_title,
     get_default_conversation_title,
