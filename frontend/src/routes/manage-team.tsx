@@ -9,11 +9,24 @@ import { useUpdateMemberRole } from "#/hooks/mutation/use-update-member-role";
 import { useMe } from "#/hooks/query/use-me";
 import { BrandButton } from "#/components/features/settings/brand-button";
 
-const superadminPerms = ["superadmin", "admin", "user"];
-const adminPerms = ["admin", "user"];
-const userPerms: string[] = [];
+type PermissiomTopic = "change_user_role";
+type ChangeUserRolePermission = `${PermissiomTopic}:${OrganizationUserRole}`;
 
-const rolePermissions: Record<OrganizationUserRole, string[]> = {
+const superadminPerms: ChangeUserRolePermission[] = [
+  "change_user_role:superadmin",
+  "change_user_role:admin",
+  "change_user_role:user",
+];
+const adminPerms: ChangeUserRolePermission[] = [
+  "change_user_role:admin",
+  "change_user_role:user",
+];
+const userPerms: ChangeUserRolePermission[] = [];
+
+const rolePermissions: Record<
+  OrganizationUserRole,
+  ChangeUserRolePermission[]
+> = {
   superadmin: superadminPerms,
   admin: adminPerms,
   user: userPerms,
@@ -35,10 +48,8 @@ function ManageTeam() {
   ) => {
     if (!user) return false;
 
-    const userRole = user.role;
-    const userPermissions = rolePermissions[userRole] || [];
-
-    return userPermissions.includes(memberRole);
+    const userPermissions = rolePermissions[user.role];
+    return userPermissions.includes(`change_user_role:${memberRole}`);
   };
 
   return (
