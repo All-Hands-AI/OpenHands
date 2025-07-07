@@ -31,6 +31,7 @@ from openhands.events.action.action import Action
 from openhands.events.event import Event
 from openhands.events.observation import AgentStateChangedObservation
 from openhands.io import read_input, read_task
+from openhands.llm.metrics_registry import MetricsRegistry
 from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
@@ -93,7 +94,7 @@ async def run_controller(
         >>> state = await run_controller(config=config, initial_user_action=action)
     """
     sid = sid or generate_sid(config)
-    agent = create_agent(config)
+    agent = create_agent(config, metrics_registry=MetricsRegistry())
 
     # when the runtime is created, it will be connected and clone the selected repository
     repo_directory = None

@@ -6,12 +6,14 @@ from typing import Callable, Iterable
 
 import socketio
 
+from openhands.controller.state.state import State
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import MessageAction
 from openhands.events.stream import EventStreamSubscriber, session_exists
+from openhands.llm.metrics_registry import MetricsRegistry
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.monitoring import MonitoringListener
@@ -304,10 +306,21 @@ class StandaloneConversationManager(ConversationManager):
                 )
                 await self.close_session(oldest_conversation_id)
 
+        restored_state = None
+        try:
+            restored_state = State.restore_from_session(sid, self.file_store, user_id)
+            logger.debug(f'Restored state from session, sid: {sid}')
+        except Exception:
+            logger.debug('No events found, no state to restore')
+
+        metrics_registry = (
+            restored_state.metrics_registry if restored_state else MetricsRegistry()
+        )
         session = Session(
             sid=sid,
             file_store=self.file_store,
             config=self.config,
+            metrics_registry=metrics_registry,  # assign registry for session
             sio=self.sio,
             user_id=user_id,
         )
@@ -319,7 +332,9 @@ class StandaloneConversationManager(ConversationManager):
         try:
             session.agent_session.event_stream.subscribe(
                 EventStreamSubscriber.SERVER,
-                self._create_conversation_update_callback(user_id, sid, settings),
+                self._create_conversation_update_callback(
+                    user_id, sid, settings, session.metrics_registry
+                ),
                 UPDATED_AT_CALLBACK_ID,
             )
         except ValueError:
@@ -420,6 +435,7 @@ class StandaloneConversationManager(ConversationManager):
         user_id: str | None,
         conversation_id: str,
         settings: Settings,
+        metrics_registry: MetricsRegistry,
     ) -> Callable:
         def callback(event, *args, **kwargs):
             call_async_from_sync(
@@ -428,6 +444,7 @@ class StandaloneConversationManager(ConversationManager):
                 user_id,
                 conversation_id,
                 settings,
+                metrics_registry,
                 event,
             )
 
@@ -438,6 +455,7 @@ class StandaloneConversationManager(ConversationManager):
         user_id: str,
         conversation_id: str,
         settings: Settings,
+        metrics_registry: MetricsRegistry,
         event=None,
     ):
         conversation_store = await self._get_conversation_store(user_id)
@@ -465,7 +483,7 @@ class StandaloneConversationManager(ConversationManager):
             conversation.title == default_title
         ):  # attempt to autogenerate if default title is in use
             title = await auto_generate_title(
-                conversation_id, user_id, self.file_store, settings
+                conversation_id, user_id, self.file_store, settings, metrics_registry
             )
             if title and not title.isspace():
                 conversation.title = title

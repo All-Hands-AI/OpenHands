@@ -7,6 +7,7 @@ class LLMService(Enum):
     AGENT = 'AGENT'
     CONDENSER = 'CONDENSER'
     DRAFT_LLM = 'DRAFT_LLM'
+    CONVO_TITLE_CREATOR = 'CONVO_TITLE_CREATOR'
 
 
 class MetricsRegistry:
@@ -20,9 +21,6 @@ class MetricsRegistry:
         return self.global_metrics[service]
 
     def save_metrics(self):
-        pass
-
-    def restore_metrics(self):
         pass
 
     def get_combined_metrics(self) -> Metrics:

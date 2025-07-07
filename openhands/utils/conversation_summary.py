@@ -8,12 +8,16 @@ from openhands.events.action.message import MessageAction
 from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
 from openhands.llm.llm import LLM
+from openhands.llm.metrics_registry import LLMService, MetricsRegistry
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
 
 
 async def generate_conversation_title(
-    message: str, llm_config: LLMConfig, max_length: int = 50
+    message: str,
+    llm_config: LLMConfig,
+    metrics_registry: MetricsRegistry,
+    max_length: int = 50,
 ) -> Optional[str]:
     """Generate a concise title for a conversation based on the first user message.
 
@@ -35,7 +39,11 @@ async def generate_conversation_title(
         truncated_message = message
 
     try:
-        llm = LLM(llm_config)
+        llm = LLM(
+            llm_config,
+            metrics_registry=metrics_registry,
+            llm_service=LLMService.CONVO_TITLE_CREATOR,
+        )
 
         # Create a simple prompt for the LLM to generate a title
         messages = [
@@ -76,7 +84,11 @@ def get_default_conversation_title(conversation_id: str) -> str:
 
 
 async def auto_generate_title(
-    conversation_id: str, user_id: str | None, file_store: FileStore, settings: Settings
+    conversation_id: str,
+    user_id: str | None,
+    file_store: FileStore,
+    settings: Settings,
+    metrics_registry: MetricsRegistry,
 ) -> str:
     """
     Auto-generate a title for a conversation based on the first user message.
@@ -118,7 +130,7 @@ async def auto_generate_title(
 
                     # Try to generate title using LLM
                     llm_title = await generate_conversation_title(
-                        first_user_message, llm_config
+                        first_user_message, llm_config, metrics_registry
                     )
                     if llm_title:
                         logger.info(f'Generated title using LLM: {llm_title}')

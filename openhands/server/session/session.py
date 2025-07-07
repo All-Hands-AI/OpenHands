@@ -29,6 +29,7 @@ from openhands.events.observation.error import ErrorObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
+from openhands.llm.metrics_registry import MetricsRegistry
 from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.storage.data_models.settings import Settings
@@ -45,6 +46,7 @@ class Session:
     agent_session: AgentSession
     loop: asyncio.AbstractEventLoop
     config: OpenHandsConfig
+    metrics_registry: MetricsRegistry
     file_store: FileStore
     user_id: str | None
     logger: LoggerAdapter
@@ -53,6 +55,7 @@ class Session:
         self,
         sid: str,
         config: OpenHandsConfig,
+        metrics_registry: MetricsRegistry,
         file_store: FileStore,
         sio: socketio.AsyncServer | None,
         user_id: str | None = None,
@@ -62,6 +65,7 @@ class Session:
         self.last_active_ts = int(time.time())
         self.file_store = file_store
         self.logger = OpenHandsLoggerAdapter(extra={'session_id': sid})
+        self.metrics_registry = metrics_registry
         self.agent_session = AgentSession(
             sid,
             file_store,
