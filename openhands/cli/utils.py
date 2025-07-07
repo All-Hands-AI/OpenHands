@@ -153,10 +153,11 @@ VERIFIED_OPENAI_MODELS = [
     'gpt-4o-mini',
     'gpt-4-32k',
     'gpt-4.1',
+    'gpt-4.1-2025-04-14',
     'o1-mini',
     'o3',
     'o3-mini',
-    'codex-mini',
+    'codex-mini-latest',
 ]
 
 VERIFIED_ANTHROPIC_MODELS = [
