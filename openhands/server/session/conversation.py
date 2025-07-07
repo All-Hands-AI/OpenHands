@@ -15,6 +15,7 @@ class ServerConversation:
     event_stream: EventStream
     runtime: Runtime
     user_id: str | None
+    _attach_to_existing: bool = False
 
     def __init__(
         self,
@@ -39,7 +40,9 @@ class ServerConversation:
                 config.security.security_analyzer, SecurityAnalyzer
             )(self.event_stream)
 
-        if runtime is None:
+        if runtime:
+            self._attach_to_existing = True
+        else:
             runtime_cls = get_runtime_cls(self.config.runtime)
             runtime = runtime_cls(
                 config=config,
@@ -51,9 +54,12 @@ class ServerConversation:
         self.runtime = runtime
 
     async def connect(self) -> None:
-        await self.runtime.connect()
+        if not self._attach_to_existing:
+            await self.runtime.connect()
 
     async def disconnect(self) -> None:
+        if not self._attach_to_existing:
+            return
         if self.event_stream:
             self.event_stream.close()
         asyncio.create_task(call_sync_from_async(self.runtime.close))
