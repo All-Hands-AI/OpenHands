@@ -135,9 +135,7 @@ class Runtime(FileEditRuntimeMixin):
         )
         self.sid = sid
         self.event_stream = event_stream
-        if event_stream and not event_stream.has_subscriber(
-            EventStreamSubscriber.RUNTIME, self.sid
-        ):
+        if event_stream:
             event_stream.subscribe(
                 EventStreamSubscriber.RUNTIME, self.on_event, self.sid
             )

@@ -128,12 +128,6 @@ class EventStream(EventStore):
 
         del self._subscribers[subscriber_id][callback_id]
 
-    def has_subscriber(
-        self, subscriber_id: EventStreamSubscriber, callback_id: str
-    ) -> bool:
-        subscriber = self._subscribers.get(subscriber_id) or {}
-        return callback_id in subscriber
-
     def subscribe(
         self,
         subscriber_id: EventStreamSubscriber,
