@@ -6,7 +6,7 @@ skill = AgentSkill(
     id='openhands_agents',
     name='openhands_agents',
     description="An integration layer that allows agents defined in OpenHands' agenthub to be accessible and operable via the A2A protocol.",
-    tags=['code', 'execution', 'python', 'llm', 'browsing', 'contains'],
+    tags=['code', 'execution', 'python', 'browsing', 'SWE'],
     examples=[
         'When sending a request using A2A,',
         'include the following metadata in the "message" parameter:',
