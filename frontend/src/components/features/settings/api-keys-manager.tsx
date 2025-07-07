@@ -108,7 +108,12 @@ export function ApiKeysManager() {
               <tbody>
                 {apiKeys.map((key) => (
                   <tr key={key.id} className="border-t border-tertiary">
-                    <td className="p-3 text-sm">{key.name}</td>
+                    <td
+                      className="p-3 text-sm truncate max-w-[160px]"
+                      title={key.name}
+                    >
+                      {key.name}
+                    </td>
                     <td className="p-3 text-sm">
                       {formatDate(key.created_at)}
                     </td>

@@ -49,6 +49,9 @@
 # Maximum file size for uploads, in megabytes
 #file_uploads_max_file_size_mb = 0
 
+# Enable the browser environment
+#enable_browser = true
+
 # Maximum budget per task, 0.0 means no limit
 #max_budget_per_task = 0.0
 
@@ -226,6 +229,7 @@ model = "gpt-4o"
 [agent]
 
 # Whether the browsing tool is enabled
+# Note: when this is set to true, enable_browser in the core config must also be true
 enable_browsing = true
 
 # Whether the LLM draft editor is enabled
