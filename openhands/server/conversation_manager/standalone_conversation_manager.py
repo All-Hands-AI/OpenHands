@@ -306,7 +306,7 @@ class StandaloneConversationManager(ConversationManager):
                         status_update_dict,
                         to=ROOM_KEY.format(sid=oldest_conversation_id),
                     ),
-                    self._loop  # type:ignore
+                    self._loop,  # type:ignore
                 )
                 await self.close_session(oldest_conversation_id)
 
