@@ -58,6 +58,8 @@ function App() {
 
 Use your preferred package manager to install dependencies and run the development server. We recommend using [Bun](https://bun.sh) for a fast development experience.
 
+**Note**: If you plan to make dependency changes and submit a PR, you must use Bun during development.
+
 ```bash
 # Install dependencies
 bun install
@@ -67,6 +69,23 @@ bun run dev
 
 # Build package
 bun run build
+```
+
+### Testing Locally Without Publishing
+
+To test the package in another project without publishing to npm:
+
+```bash
+# Build the package:
+bun run build
+
+# Create a local package:
+# This generates a `.tgz` file in the current directory.
+bun pm pack
+
+# Install in your target project:
+# Replace `path/to/openhands-ui-x.x.x.tgz` with the actual path to the generated `.tgz` file.
+npm install path/to/openhands-ui-x.x.x.tgz
 ```
 
 ## License
