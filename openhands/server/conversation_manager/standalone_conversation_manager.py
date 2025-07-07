@@ -23,7 +23,12 @@ from openhands.storage.data_models.conversation_metadata import ConversationMeta
 from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
-from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync, wait_all
+from openhands.utils.async_utils import (
+    GENERAL_TIMEOUT,
+    call_async_from_sync,
+    run_in_loop,
+    wait_all,
+)
 from openhands.utils.conversation_summary import (
     auto_generate_title,
     get_default_conversation_title,
@@ -61,8 +66,11 @@ class StandaloneConversationManager(ConversationManager):
     _conversations_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     _cleanup_task: asyncio.Task | None = None
     _conversation_store_class: type[ConversationStore] | None = None
+    _loop: asyncio.AbstractEventLoop | None = None
 
     async def __aenter__(self):
+        # Grab a reference to the main event loop. This is the loop in which `await sio.emit` must be called
+        self._loop = asyncio.get_event_loop()
         self._cleanup_task = asyncio.create_task(self._cleanup_stale())
         return self
 
@@ -297,10 +305,13 @@ class StandaloneConversationManager(ConversationManager):
                     'id': 'AGENT_ERROR$TOO_MANY_CONVERSATIONS',
                     'message': 'Too many conversations at once. If you are still using this one, try reactivating it by prompting the agent to continue',
                 }
-                await self.sio.emit(
-                    'oh_event',
-                    status_update_dict,
-                    to=ROOM_KEY.format(sid=oldest_conversation_id),
+                await run_in_loop(
+                    self.sio.emit(
+                        'oh_event',
+                        status_update_dict,
+                        to=ROOM_KEY.format(sid=oldest_conversation_id),
+                    ),
+                    self._loop,  # type:ignore
                 )
                 await self.close_session(oldest_conversation_id)
 
@@ -477,10 +488,13 @@ class StandaloneConversationManager(ConversationManager):
                         'message': conversation_id,
                         'conversation_title': conversation.title,
                     }
-                    await self.sio.emit(
-                        'oh_event',
-                        status_update_dict,
-                        to=ROOM_KEY.format(sid=conversation_id),
+                    await run_in_loop(
+                        self.sio.emit(
+                            'oh_event',
+                            status_update_dict,
+                            to=ROOM_KEY.format(sid=conversation_id),
+                        ),
+                        self._loop,  # type:ignore
                     )
                 except Exception as e:
                     logger.error(f'Error emitting title update event: {e}')
