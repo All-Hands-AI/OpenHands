@@ -22,8 +22,6 @@ export const VERIFIED_OPENAI_MODELS = [
   "o1-mini",
   "o3",
   "o3-2025-04-16",
-  "o3-mini",
-  "o3-mini-2025-01-31",
   "o4-mini",
   "o4-mini-2025-04-16",
   "codex-mini-latest",

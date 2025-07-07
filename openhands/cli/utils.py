@@ -156,7 +156,6 @@ VERIFIED_OPENAI_MODELS = [
     'gpt-4.1-2025-04-14',
     'o1-mini',
     'o3',
-    'o3-mini',
     'codex-mini-latest',
 ]
 
