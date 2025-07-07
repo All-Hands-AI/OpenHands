@@ -1,6 +1,13 @@
 import { http, HttpResponse } from "msw";
 import { OrganizationMember, OrganizationUserRole } from "#/types/org";
 
+const MOCK_ME: OrganizationMember = {
+  id: "99",
+  email: "me@acme.org",
+  role: "admin",
+  status: "active",
+};
+
 export const INITIAL_MOCK_ORG_MEMBERS: OrganizationMember[] = [
   {
     id: "1",
@@ -18,23 +25,22 @@ export const INITIAL_MOCK_ORG_MEMBERS: OrganizationMember[] = [
     id: "3",
     email: "charlie@acme.org",
     role: "user",
-    status: "invited",
+    status: "active",
   },
 ];
 
-const orgMembers = new Map(
+let orgMembers = new Map(
   INITIAL_MOCK_ORG_MEMBERS.map((member) => [member.id, member]),
 );
 
+export const resetOrgMembers = () => {
+  orgMembers = new Map(
+    INITIAL_MOCK_ORG_MEMBERS.map((member) => [member.id, member]),
+  );
+};
+
 export const ORG_HANDLERS = [
-  http.get("/api/users/me", () =>
-    HttpResponse.json({
-      id: "some-user-id",
-      email: "user@acme.org",
-      role: "superadmin",
-      status: "active",
-    } satisfies OrganizationMember),
-  ),
+  http.get("/api/users/me", () => HttpResponse.json(MOCK_ME)),
 
   http.get("/api/organizations/members", () => {
     const members = Array.from(orgMembers.values());

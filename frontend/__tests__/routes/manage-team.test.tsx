@@ -1,9 +1,12 @@
-import { describe, expect, it, vi, test, beforeAll } from "vitest";
+import { describe, expect, it, vi, test, beforeAll, beforeEach } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { organizationService } from "#/api/organization-service/organization-service.api";
-import { INITIAL_MOCK_ORG_MEMBERS } from "#/mocks/org-handlers";
+import {
+  INITIAL_MOCK_ORG_MEMBERS,
+  resetOrgMembers,
+} from "#/mocks/org-handlers";
 import { userService } from "#/api/user-service/user-service.api";
 import OpenHands from "#/api/open-hands";
 import ManageTeam from "#/routes/manage-team";
@@ -35,9 +38,11 @@ describe("Manage Team Route", () => {
     });
   });
 
+  beforeEach(() => {
+    resetOrgMembers();
+  });
+
   it.todo("should navigate away from the page if not saas");
-  it.todo("should not allow an admin to change the superadmin's role");
-  it.todo("should have a 'me' badge for the current user");
 
   it("should render the list of team members", async () => {
     const getOrganizationMembersSpy = vi.spyOn(
@@ -146,6 +151,30 @@ describe("Manage Team Route", () => {
     expect(updateMemberRoleSpy).not.toHaveBeenCalled();
   });
 
+  it("should not allow an admin to change the superadmin's role", async () => {
+    const getUserSpy = vi.spyOn(userService, "getMe");
+
+    getUserSpy.mockResolvedValue({
+      id: "some-user-id",
+      email: "user@acme.org",
+      role: "admin",
+      status: "active",
+    });
+
+    renderManageTeam();
+
+    const memberListItems = await screen.findAllByTestId("member-item");
+    const superAdminMember = memberListItems[0]; // first member is "superadmin
+    const userCombobox = within(superAdminMember).getByText(/superadmin/i);
+    expect(userCombobox).toBeInTheDocument();
+    await userEvent.click(userCombobox);
+
+    // Verify that the dropdown does not open for superadmin
+    expect(
+      within(superAdminMember).queryByTestId("role-dropdown"),
+    ).not.toBeInTheDocument();
+  });
+
   describe("Inviting Team Members", () => {
     it("should render an invite team member button", () => {
       renderManageTeam();
@@ -220,6 +249,44 @@ describe("Manage Team Route", () => {
       expect(screen.getByText("someone@acme.org")).toBeInTheDocument();
 
       // TODO - verify that a toast is shown
+    });
+
+    it("should render a list item in an invited state when a the user is is invited", async () => {
+      const getUserSpy = vi.spyOn(userService, "getMe");
+      const getOrganizationMembersSpy = vi.spyOn(
+        organizationService,
+        "getOrganizationMembers",
+      );
+
+      getUserSpy.mockResolvedValue({
+        id: "some-user-id",
+        email: "user@acme.org",
+        role: "admin",
+        status: "active",
+      });
+      getOrganizationMembersSpy.mockResolvedValue([
+        {
+          id: "4",
+          email: "tom@acme.org",
+          role: "user",
+          status: "invited",
+        },
+      ]);
+
+      renderManageTeam();
+
+      const invitedMember = (await screen.findAllByTestId("member-item"))[0];
+      expect(invitedMember).toBeInTheDocument();
+
+      // should have an "invited" badge
+      const invitedBadge = within(invitedMember).getByText(/invited/i);
+      expect(invitedBadge).toBeInTheDocument();
+
+      // should not have a role combobox
+      await userEvent.click(within(invitedMember).getByText(/user/i));
+      expect(
+        within(invitedMember).queryByTestId("role-dropdown"),
+      ).not.toBeInTheDocument();
     });
   });
 });

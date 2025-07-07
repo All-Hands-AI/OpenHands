@@ -9,6 +9,16 @@ import { useUpdateMemberRole } from "#/hooks/mutation/use-update-member-role";
 import { useMe } from "#/hooks/query/use-me";
 import { BrandButton } from "#/components/features/settings/brand-button";
 
+const superadminPerms = ["superadmin", "admin", "user"];
+const adminPerms = ["admin", "user"];
+const userPerms: string[] = [];
+
+const rolePermissions: Record<OrganizationUserRole, string[]> = {
+  superadmin: superadminPerms,
+  admin: adminPerms,
+  user: userPerms,
+};
+
 function ManageTeam() {
   const { data: organizationMembers } = useOrganizationMembers();
   const { data: user } = useMe();
@@ -18,6 +28,17 @@ function ManageTeam() {
 
   const handleRoleSelectionClick = (id: string, role: OrganizationUserRole) => {
     updateMemberRole({ userId: id, role });
+  };
+
+  const checkIfUserHasPermissionToChangeRole = (
+    memberRole: OrganizationUserRole,
+  ) => {
+    if (!user) return false;
+
+    const userRole = user.role;
+    const userPermissions = rolePermissions[userRole] || [];
+
+    return userPermissions.includes(memberRole);
   };
 
   return (
@@ -51,7 +72,10 @@ function ManageTeam() {
               <OrganizationMemberListItem
                 email={member.email}
                 role={member.role}
-                hasPermissionToChangeRole={user?.role !== "user"}
+                status={member.status}
+                hasPermissionToChangeRole={checkIfUserHasPermissionToChangeRole(
+                  member.role,
+                )}
                 onRoleChange={(role) =>
                   handleRoleSelectionClick(member.id, role)
                 }
