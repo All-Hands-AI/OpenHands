@@ -107,6 +107,86 @@ MODELS_WITHOUT_STOP_WORDS = [
 ]
 
 
+def _extract_bedrock_model_name(model_name: str) -> str:
+    """Extract the actual model name from a Bedrock-formatted model ID.
+
+    Bedrock model IDs have the format: 'provider.model-name-version:revision'
+    For example: 'anthropic.claude-3-5-sonnet-20241022-v2:0'
+
+    Args:
+        model_name: The Bedrock-formatted model ID
+
+    Returns:
+        The extracted model name (e.g., 'claude-3-5-sonnet-20241022')
+    """
+    # Extract provider prefix for context
+    provider = None
+    if '.' in model_name:
+        provider = model_name.split('.', 1)[0]
+        model_name = model_name.split('.', 1)[1]
+
+    # Remove revision suffix (e.g., ':0')
+    if ':' in model_name:
+        model_name = model_name.split(':', 1)[0]
+
+    # Remove deployment version suffix only for Anthropic models
+    # For Anthropic, deployment versions are like -v1, -v2, -v10, etc.
+    # For other providers, version numbers are part of the model name
+    if provider == 'anthropic' and '-v' in model_name:
+        parts = model_name.rsplit('-v', 1)  # Split from the right to get the last -v
+        if len(parts) == 2 and parts[1].isdigit():
+            # Remove deployment version for Anthropic models
+            model_name = parts[0]
+
+    return model_name
+
+
+def _is_model_supported(
+    model_name: str,
+    supported_models: list[str],
+    allow_substring_match: bool = False
+) -> bool:
+    """Check if a model is supported by comparing against a list of supported models.
+
+    This function handles various model naming formats including:
+    - Direct model names (e.g., 'claude-3-5-sonnet-20241022')
+    - Provider-prefixed names (e.g., 'anthropic/claude-3-5-sonnet-20241022')
+    - Bedrock-formatted IDs (e.g., 'anthropic.claude-3-5-sonnet-20241022-v2:0')
+
+    Args:
+        model_name: The model name to check
+        supported_models: List of supported model names to check against
+        allow_substring_match: If True, also check if any supported model name
+                             is a substring of the given model name
+
+    Returns:
+        True if the model is supported, False otherwise
+    """
+    # Handle bedrock/ prefix
+    if model_name.startswith('bedrock/'):
+        bedrock_model_id = model_name.removeprefix('bedrock/')
+        extracted_name = _extract_bedrock_model_name(bedrock_model_id)
+        return _is_model_supported(extracted_name, supported_models, allow_substring_match)
+
+    # Direct check against full model name
+    if model_name in supported_models:
+        return True
+
+    # Check the last part after '/' (for provider-prefixed models)
+    model_name_parts = model_name.split('/')
+    if len(model_name_parts) > 1:
+        last_part = model_name_parts[-1]
+        if last_part in supported_models:
+            return True
+
+    # Optional substring matching (used for function calling)
+    if allow_substring_match:
+        if any(supported_model in model_name for supported_model in supported_models):
+            return True
+
+    return False
+
+
 class LLM(RetryMixin, DebugMixin):
     """The LLM class represents a Language Model instance.
 
@@ -515,10 +595,10 @@ class LLM(RetryMixin, DebugMixin):
 
         # Initialize function calling capability
         # Check if model name is in our supported list
-        model_name_supported = (
-            self.config.model in FUNCTION_CALLING_SUPPORTED_MODELS
-            or self.config.model.split('/')[-1] in FUNCTION_CALLING_SUPPORTED_MODELS
-            or any(m in self.config.model for m in FUNCTION_CALLING_SUPPORTED_MODELS)
+        model_name_supported = _is_model_supported(
+            self.config.model,
+            FUNCTION_CALLING_SUPPORTED_MODELS,
+            allow_substring_match=True
         )
 
         # Handle native_tool_calling user-defined configuration
@@ -560,10 +640,7 @@ class LLM(RetryMixin, DebugMixin):
         """
         return (
             self.config.caching_prompt is True
-            and (
-                self.config.model in CACHE_PROMPT_SUPPORTED_MODELS
-                or self.config.model.split('/')[-1] in CACHE_PROMPT_SUPPORTED_MODELS
-            )
+            and _is_model_supported(self.config.model, CACHE_PROMPT_SUPPORTED_MODELS)
             # We don't need to look-up model_info, because only Anthropic models needs the explicit caching breakpoint
         )
 

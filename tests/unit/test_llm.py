@@ -12,7 +12,7 @@ from litellm.exceptions import (
 from openhands.core.config import LLMConfig
 from openhands.core.exceptions import LLMNoResponseError, OperationCancelled
 from openhands.core.message import Message, TextContent
-from openhands.llm.llm import LLM
+from openhands.llm.llm import LLM, _extract_bedrock_model_name, _is_model_supported, CACHE_PROMPT_SUPPORTED_MODELS, FUNCTION_CALLING_SUPPORTED_MODELS
 from openhands.llm.metrics import Metrics, TokenUsage
 
 
@@ -1072,3 +1072,198 @@ def test_azure_model_default_max_tokens():
 
     # Verify the config has the default max_output_tokens value
     assert llm.config.max_output_tokens is None  # Default value
+
+
+# Tests for refactored model support functions
+
+
+def test_extract_bedrock_model_name():
+    """Test the _extract_bedrock_model_name function with various Bedrock model ID formats."""
+    # Test cases: (input, expected_output)
+    test_cases = [
+        # Standard Bedrock format (Anthropic models - remove deployment versions)
+        ('anthropic.claude-3-5-sonnet-20241022-v2:0', 'claude-3-5-sonnet-20241022'),
+        ('anthropic.claude-3-7-sonnet-20250219-v1:0', 'claude-3-7-sonnet-20250219'),
+        ('anthropic.claude-3-haiku-20240307-v1:0', 'claude-3-haiku-20240307'),
+        # Different deployment version numbers for Anthropic
+        ('anthropic.claude-3-5-sonnet-20241022-v10:0', 'claude-3-5-sonnet-20241022'),
+        ('anthropic.claude-3-5-sonnet-20241022-v999:0', 'claude-3-5-sonnet-20241022'),
+        # Without deployment version suffix
+        ('anthropic.claude-3-5-sonnet-20241022:0', 'claude-3-5-sonnet-20241022'),
+        # Other providers - keep version numbers as part of model name
+        ('amazon.titan-text-express-v1:0', 'titan-text-express-v1'),
+        ('cohere.command-text-v14:0', 'command-text-v14'),
+        # Model names without provider prefix (no deployment version removal)
+        ('claude-3-5-sonnet-20241022-v2:0', 'claude-3-5-sonnet-20241022-v2'),
+        ('claude-3-5-sonnet-20241022:0', 'claude-3-5-sonnet-20241022'),
+        # Model names without version or revision
+        ('anthropic.claude-3-5-sonnet-20241022', 'claude-3-5-sonnet-20241022'),
+        ('claude-3-5-sonnet-20241022', 'claude-3-5-sonnet-20241022'),
+    ]
+
+    for input_model, expected_output in test_cases:
+        result = _extract_bedrock_model_name(input_model)
+        assert result == expected_output, f"Failed for {input_model}: expected {expected_output}, got {result}"
+
+
+def test_is_model_supported_direct_match():
+    """Test _is_model_supported with direct model name matches."""
+    # Test with function calling supported models
+    assert _is_model_supported('claude-3-5-sonnet-20241022', FUNCTION_CALLING_SUPPORTED_MODELS) is True
+    assert _is_model_supported('gpt-4o', FUNCTION_CALLING_SUPPORTED_MODELS) is True
+    assert _is_model_supported('unsupported-model', FUNCTION_CALLING_SUPPORTED_MODELS) is False
+
+    # Test with cache prompt supported models
+    assert _is_model_supported('claude-3-5-sonnet-20241022', CACHE_PROMPT_SUPPORTED_MODELS) is True
+    assert _is_model_supported('claude-3-7-sonnet-20250219', CACHE_PROMPT_SUPPORTED_MODELS) is True
+    assert _is_model_supported('gpt-4o', CACHE_PROMPT_SUPPORTED_MODELS) is False
+
+
+def test_is_model_supported_provider_prefix():
+    """Test _is_model_supported with provider-prefixed model names."""
+    # Test with function calling supported models
+    assert _is_model_supported('anthropic/claude-3-5-sonnet-20241022', FUNCTION_CALLING_SUPPORTED_MODELS) is True
+    assert _is_model_supported('openai/gpt-4o', FUNCTION_CALLING_SUPPORTED_MODELS) is True
+    assert _is_model_supported('some-provider/unsupported-model', FUNCTION_CALLING_SUPPORTED_MODELS) is False
+
+    # Test with cache prompt supported models
+    assert _is_model_supported('anthropic/claude-3-5-sonnet-20241022', CACHE_PROMPT_SUPPORTED_MODELS) is True
+    assert _is_model_supported('anthropic/claude-3-7-sonnet-20250219', CACHE_PROMPT_SUPPORTED_MODELS) is True
+    assert _is_model_supported('openai/gpt-4o', CACHE_PROMPT_SUPPORTED_MODELS) is False
+
+
+def test_is_model_supported_bedrock_format():
+    """Test _is_model_supported with Bedrock-formatted model IDs."""
+    # Test with function calling supported models
+    assert _is_model_supported('bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0', FUNCTION_CALLING_SUPPORTED_MODELS) is True
+    assert _is_model_supported('bedrock/anthropic.claude-3-7-sonnet-20250219-v1:0', FUNCTION_CALLING_SUPPORTED_MODELS) is True
+    assert _is_model_supported('bedrock/anthropic.claude-3-haiku-20240307-v1:0', FUNCTION_CALLING_SUPPORTED_MODELS) is True
+    assert _is_model_supported('bedrock/amazon.unsupported-model-v1:0', FUNCTION_CALLING_SUPPORTED_MODELS) is False
+
+    # Test with cache prompt supported models
+    assert _is_model_supported('bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0', CACHE_PROMPT_SUPPORTED_MODELS) is True
+    assert _is_model_supported('bedrock/anthropic.claude-3-7-sonnet-20250219-v1:0', CACHE_PROMPT_SUPPORTED_MODELS) is True
+    assert _is_model_supported('bedrock/anthropic.claude-3-haiku-20240307-v1:0', CACHE_PROMPT_SUPPORTED_MODELS) is True
+    assert _is_model_supported('bedrock/amazon.unsupported-model-v1:0', CACHE_PROMPT_SUPPORTED_MODELS) is False
+
+
+def test_is_model_supported_substring_match():
+    """Test _is_model_supported with substring matching enabled."""
+    # Create a simple test list
+    test_models = ['claude-3-5-sonnet', 'gpt-4o']
+
+    # Test with allow_substring_match=True
+    assert _is_model_supported('claude-3-5-sonnet-20241022', test_models, allow_substring_match=True) is True
+    assert _is_model_supported('my-custom-gpt-4o-model', test_models, allow_substring_match=True) is True
+    assert _is_model_supported('completely-different-model', test_models, allow_substring_match=True) is False
+
+    # Test with allow_substring_match=False (default)
+    assert _is_model_supported('claude-3-5-sonnet-20241022', test_models, allow_substring_match=False) is False
+    assert _is_model_supported('my-custom-gpt-4o-model', test_models, allow_substring_match=False) is False
+    assert _is_model_supported('claude-3-5-sonnet', test_models, allow_substring_match=False) is True
+
+
+def test_is_model_supported_bedrock_with_substring_match():
+    """Test _is_model_supported with Bedrock format and substring matching."""
+    # Test that Bedrock format works with substring matching
+    test_models = ['claude-3-5-sonnet']
+
+    # Should match because extracted name contains the substring
+    assert _is_model_supported('bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0', test_models, allow_substring_match=True) is True
+    assert _is_model_supported('bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0', test_models, allow_substring_match=False) is False
+
+
+def test_is_model_supported_edge_cases():
+    """Test _is_model_supported with edge cases."""
+    test_models = ['claude-3-5-sonnet-20241022', 'gpt-4o']
+
+    # Empty model name
+    assert _is_model_supported('', test_models) is False
+
+    # Model name with only bedrock/ prefix
+    assert _is_model_supported('bedrock/', test_models) is False
+
+    # Model name with only provider prefix
+    assert _is_model_supported('anthropic/', test_models) is False
+
+    # Complex nested provider prefixes
+    assert _is_model_supported('provider1/provider2/claude-3-5-sonnet-20241022', test_models) is True
+
+    # Bedrock format without proper structure
+    assert _is_model_supported('bedrock/invalid-format', test_models) is False
+
+
+@pytest.mark.parametrize('model_name,expected_function_calling,expected_caching', [
+    # Direct model names
+    ('claude-3-5-sonnet-20241022', True, True),
+    ('claude-3-7-sonnet-20250219', True, True),
+    ('gpt-4o', True, False),
+    ('unsupported-model', False, False),
+    # Provider-prefixed names
+    ('anthropic/claude-3-5-sonnet-20241022', True, True),
+    ('openai/gpt-4o', True, False),
+    ('provider/unsupported-model', False, False),
+    # Bedrock format
+    ('bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0', True, True),
+    ('bedrock/anthropic.claude-3-7-sonnet-20250219-v1:0', True, True),
+    ('bedrock/amazon.unsupported-model-v1:0', False, False),
+])
+def test_is_model_supported_parametrized(model_name, expected_function_calling, expected_caching):
+    """Parametrized test for _is_model_supported with various model name formats."""
+    # Test function calling support
+    result_fc = _is_model_supported(model_name, FUNCTION_CALLING_SUPPORTED_MODELS, allow_substring_match=True)
+    assert result_fc == expected_function_calling, f"Function calling failed for {model_name}"
+
+    # Test caching support
+    result_cache = _is_model_supported(model_name, CACHE_PROMPT_SUPPORTED_MODELS)
+    assert result_cache == expected_caching, f"Caching failed for {model_name}"
+
+
+def test_llm_function_calling_support_with_bedrock():
+    """Test that LLM correctly identifies function calling support for Bedrock models."""
+    # Test with Bedrock Claude model that should support function calling
+    config = LLMConfig(
+        model='bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0',
+        api_key='test_key',
+        native_tool_calling=None  # Let it be auto-detected
+    )
+    llm = LLM(config)
+
+    # Should detect function calling support
+    assert llm.is_function_calling_active() is True
+
+    # Test with unsupported Bedrock model
+    config_unsupported = LLMConfig(
+        model='bedrock/amazon.unsupported-model-v1:0',
+        api_key='test_key',
+        native_tool_calling=None
+    )
+    llm_unsupported = LLM(config_unsupported)
+
+    # Should not detect function calling support
+    assert llm_unsupported.is_function_calling_active() is False
+
+
+def test_llm_caching_support_with_bedrock():
+    """Test that LLM correctly identifies caching support for Bedrock models."""
+    # Test with Bedrock Claude model that should support caching
+    config = LLMConfig(
+        model='bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0',
+        api_key='test_key',
+        caching_prompt=True
+    )
+    llm = LLM(config)
+
+    # Should detect caching support
+    assert llm.is_caching_prompt_active() is True
+
+    # Test with unsupported Bedrock model
+    config_unsupported = LLMConfig(
+        model='bedrock/amazon.unsupported-model-v1:0',
+        api_key='test_key',
+        caching_prompt=True
+    )
+    llm_unsupported = LLM(config_unsupported)
+
+    # Should not detect caching support
+    assert llm_unsupported.is_caching_prompt_active() is False
