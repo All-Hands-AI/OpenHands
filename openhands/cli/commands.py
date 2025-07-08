@@ -1,6 +1,7 @@
 import asyncio
 from pathlib import Path
 
+import toml
 from prompt_toolkit import print_formatted_text
 from prompt_toolkit.shortcuts import clear, print_container
 from prompt_toolkit.widgets import Frame, TextArea
@@ -18,6 +19,7 @@ from openhands.cli.tui import (
     display_mcp_errors,
     display_shutdown_message,
     display_status,
+    read_prompt_input,
 )
 from openhands.cli.utils import (
     add_local_config_trusted_dir,
@@ -81,7 +83,7 @@ async def handle_commands(
     elif command == '/resume':
         close_repl, new_session_requested = await handle_resume_command(event_stream)
     elif command == '/mcp':
-        handle_mcp_command(config)
+        await handle_mcp_command(config)
     elif command == '/mcp-errors':
         handle_mcp_errors_command()
     else:
@@ -334,7 +336,24 @@ def check_folder_security_agreement(config: OpenHandsConfig, current_dir: str) -
     return True
 
 
-def handle_mcp_command(config: OpenHandsConfig) -> None:
+async def handle_mcp_command(config: OpenHandsConfig) -> None:
+    """Handle MCP command with interactive menu."""
+    action = cli_confirm(
+        config,
+        'MCP Server Configuration',
+        ['List configured servers', 'Add new server', 'Remove server', 'Go back'],
+    )
+
+    if action == 0:  # List
+        display_mcp_servers(config)
+    elif action == 1:  # Add
+        await add_mcp_server(config)
+    elif action == 2:  # Remove
+        remove_mcp_server(config)
+    # action == 3 is "Go back", do nothing
+
+
+def display_mcp_servers(config: OpenHandsConfig) -> None:
     """Display MCP server configuration information."""
     mcp_config = config.mcp
 
@@ -383,3 +402,273 @@ def handle_mcp_command(config: OpenHandsConfig) -> None:
 def handle_mcp_errors_command() -> None:
     """Display MCP connection errors."""
     display_mcp_errors()
+
+
+def get_config_file_path() -> Path:
+    """Get the path to the config file."""
+    return Path.home() / '.openhands' / 'config.toml'
+
+
+def load_config_file() -> dict:
+    """Load the config file, creating it if it doesn't exist."""
+    config_path = get_config_file_path()
+
+    if config_path.exists():
+        try:
+            with open(config_path, 'r') as f:
+                return toml.load(f)
+        except Exception:
+            pass
+
+    # Create directory if it doesn't exist
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    return {}
+
+
+def save_config_file(config_data: dict) -> None:
+    """Save the config file."""
+    config_path = get_config_file_path()
+    with open(config_path, 'w') as f:
+        toml.dump(config_data, f)
+
+
+async def add_mcp_server(config: OpenHandsConfig) -> None:
+    """Add a new MCP server configuration."""
+    # Choose transport type
+    transport_type = cli_confirm(
+        config,
+        'Select MCP server transport type:',
+        [
+            'SSE (Server-Sent Events)',
+            'Stdio (Standard Input/Output)',
+            'SHTTP (Streamable HTTP)',
+            'Cancel',
+        ],
+    )
+
+    if transport_type == 3:  # Cancel
+        return
+
+    try:
+        if transport_type == 0:  # SSE
+            await add_sse_server(config)
+        elif transport_type == 1:  # Stdio
+            await add_stdio_server(config)
+        elif transport_type == 2:  # SHTTP
+            await add_shttp_server(config)
+    except Exception as e:
+        print_formatted_text(f'Error adding MCP server: {e}\n')
+
+
+async def add_sse_server(config: OpenHandsConfig) -> None:
+    """Add an SSE MCP server."""
+    print_formatted_text('Adding SSE MCP Server\n')
+
+    # Get URL
+    print_formatted_text('Enter server URL:')
+    url = await read_prompt_input(config, '', multiline=False)
+    if not url.strip():
+        print_formatted_text('URL is required. Server not added.\n')
+        return
+
+    print_formatted_text('Enter API key (optional, press Enter to skip):')
+    api_key_input = await read_prompt_input(config, '', multiline=False)
+    api_key = api_key_input.strip() if api_key_input.strip() else None
+
+    # Create server config
+    server_config = {
+        'url': url.strip(),
+    }
+    if api_key:
+        server_config['api_key'] = api_key
+
+    # Save to config file
+    config_data = load_config_file()
+    if 'mcp' not in config_data:
+        config_data['mcp'] = {}
+    if 'sse_servers' not in config_data['mcp']:
+        config_data['mcp']['sse_servers'] = []
+
+    config_data['mcp']['sse_servers'].append(server_config)
+    save_config_file(config_data)
+
+    print_formatted_text(f'✓ SSE MCP server added: {url}\n')
+
+
+async def add_stdio_server(config: OpenHandsConfig) -> None:
+    """Add a Stdio MCP server."""
+    print_formatted_text('Adding Stdio MCP Server\n')
+
+    # Get name
+    print_formatted_text('Enter server name:')
+    name = await read_prompt_input(config, '', multiline=False)
+    if not name.strip():
+        print_formatted_text('Name is required. Server not added.\n')
+        return
+
+    # Get command
+    print_formatted_text('Enter command:')
+    command = await read_prompt_input(config, '', multiline=False)
+    if not command.strip():
+        print_formatted_text('Command is required. Server not added.\n')
+        return
+
+    # Get args (optional)
+    print_formatted_text('Enter arguments (comma-separated, optional):')
+    args_input = await read_prompt_input(config, '', multiline=False)
+    args: list[str] = []
+    if args_input.strip():
+        args = [arg.strip() for arg in args_input.split(',') if arg.strip()]
+
+    # Get environment variables (optional)
+    print_formatted_text(
+        'Enter environment variables (KEY=VALUE format, comma-separated, optional):'
+    )
+    env_input = await read_prompt_input(config, '', multiline=False)
+    env: dict[str, str] = {}
+    if env_input.strip():
+        for env_pair in env_input.split(','):
+            env_pair = env_pair.strip()
+            if '=' in env_pair:
+                key, value = env_pair.split('=', 1)
+                env[key.strip()] = value.strip()
+
+    # Create server config
+    server_config: dict[str, str | list[str] | dict[str, str]] = {
+        'name': name.strip(),
+        'command': command.strip(),
+    }
+    if args:
+        server_config['args'] = args
+    if env:
+        server_config['env'] = env
+
+    # Save to config file
+    config_data = load_config_file()
+    if 'mcp' not in config_data:
+        config_data['mcp'] = {}
+    if 'stdio_servers' not in config_data['mcp']:
+        config_data['mcp']['stdio_servers'] = []
+
+    config_data['mcp']['stdio_servers'].append(server_config)
+    save_config_file(config_data)
+
+    print_formatted_text(f'✓ Stdio MCP server added: {name}\n')
+
+
+async def add_shttp_server(config: OpenHandsConfig) -> None:
+    """Add an SHTTP MCP server."""
+    print_formatted_text('Adding SHTTP MCP Server\n')
+
+    # Get URL
+    print_formatted_text('Enter server URL:')
+    url = await read_prompt_input(config, '', multiline=False)
+    if not url.strip():
+        print_formatted_text('URL is required. Server not added.\n')
+        return
+
+    print_formatted_text('Enter API key (optional, press Enter to skip):')
+    api_key_input = await read_prompt_input(config, '', multiline=False)
+    api_key = api_key_input.strip() if api_key_input.strip() else None
+
+    # Create server config
+    server_config = {
+        'url': url.strip(),
+    }
+    if api_key:
+        server_config['api_key'] = api_key
+
+    # Save to config file
+    config_data = load_config_file()
+    if 'mcp' not in config_data:
+        config_data['mcp'] = {}
+    if 'shttp_servers' not in config_data['mcp']:
+        config_data['mcp']['shttp_servers'] = []
+
+    config_data['mcp']['shttp_servers'].append(server_config)
+    save_config_file(config_data)
+
+    print_formatted_text(f'✓ SHTTP MCP server added: {url}\n')
+
+
+def remove_mcp_server(config: OpenHandsConfig) -> None:
+    """Remove an MCP server configuration."""
+    mcp_config = config.mcp
+
+    # Collect all servers with their types
+    servers: list[tuple[str, str, object]] = []
+
+    # Add SSE servers
+    for sse_server in mcp_config.sse_servers:
+        servers.append(('SSE', sse_server.url, sse_server))
+
+    # Add Stdio servers
+    for stdio_server in mcp_config.stdio_servers:
+        servers.append(('Stdio', stdio_server.name, stdio_server))
+
+    # Add SHTTP servers
+    for shttp_server in mcp_config.shttp_servers:
+        servers.append(('SHTTP', shttp_server.url, shttp_server))
+
+    if not servers:
+        print_formatted_text('No MCP servers configured to remove.\n')
+        return
+
+    # Create choices for the user
+    choices = []
+    for server_type, identifier, _ in servers:
+        choices.append(f'{server_type}: {identifier}')
+    choices.append('Cancel')
+
+    # Let user choose which server to remove
+    choice = cli_confirm(config, 'Select MCP server to remove:', choices)
+
+    if choice == len(choices) - 1:  # Cancel
+        return
+
+    # Remove the selected server
+    server_type, identifier, _ = servers[choice]
+
+    # Confirm removal
+    confirm = cli_confirm(
+        config,
+        f'Are you sure you want to remove {server_type} server "{identifier}"?',
+        ['Yes, remove', 'Cancel'],
+    )
+
+    if confirm == 1:  # Cancel
+        return
+
+    # Load config file and remove the server
+    config_data = load_config_file()
+
+    if 'mcp' not in config_data:
+        print_formatted_text('No MCP configuration found.\n')
+        return
+
+    removed = False
+
+    if server_type == 'SSE' and 'sse_servers' in config_data['mcp']:
+        config_data['mcp']['sse_servers'] = [
+            s for s in config_data['mcp']['sse_servers'] if s.get('url') != identifier
+        ]
+        removed = True
+    elif server_type == 'Stdio' and 'stdio_servers' in config_data['mcp']:
+        config_data['mcp']['stdio_servers'] = [
+            s
+            for s in config_data['mcp']['stdio_servers']
+            if s.get('name') != identifier
+        ]
+        removed = True
+    elif server_type == 'SHTTP' and 'shttp_servers' in config_data['mcp']:
+        config_data['mcp']['shttp_servers'] = [
+            s for s in config_data['mcp']['shttp_servers'] if s.get('url') != identifier
+        ]
+        removed = True
+
+    if removed:
+        save_config_file(config_data)
+        print_formatted_text(f'✓ {server_type} MCP server "{identifier}" removed.\n')
+        print_formatted_text('Note: Restart OpenHands for changes to take effect.\n')
+    else:
+        print_formatted_text(f'Failed to remove {server_type} server "{identifier}".\n')
