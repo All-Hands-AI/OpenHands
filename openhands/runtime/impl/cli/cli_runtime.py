@@ -710,7 +710,6 @@ class CLIRuntime(Runtime):
         from openhands.mcp.utils import call_tool_mcp as call_tool_mcp_handler
         from openhands.mcp.utils import create_mcp_clients
 
-        mcp_clients = []
         try:
             # Get the MCP config for this runtime
             mcp_config = self.get_mcp_config()
@@ -757,13 +756,6 @@ class CLIRuntime(Runtime):
             error_msg = f'Error executing MCP tool {action.name}: {str(e)}'
             self.log('error', error_msg)
             return ErrorObservation(error_msg)
-        finally:
-            # Clean up MCP clients after tool execution
-            for client in mcp_clients:
-                try:
-                    await client.close()
-                except Exception as cleanup_error:
-                    self.log('debug', f'Error cleaning up MCP client: {cleanup_error}')
 
     @property
     def workspace_root(self) -> Path:
