@@ -477,12 +477,17 @@ def run_alias_setup_flow(config: OpenHandsConfig) -> None:
 
                 config_path = get_shell_config_path()
 
+                # Determine the appropriate reload command based on the detected shell
                 if '.zshrc' in str(config_path):
                     reload_cmd = 'source ~/.zshrc'
                 elif 'fish' in str(config_path):
                     reload_cmd = 'source ~/.config/fish/config.fish'
+                elif '.bashrc' in str(config_path):
+                    reload_cmd = 'source ~/.bashrc'
+                elif '.bash_profile' in str(config_path):
+                    reload_cmd = 'source ~/.bash_profile'
                 else:
-                    # Default to bash-like shells
+                    # Default to the detected config path
                     reload_cmd = f'source {config_path}'
 
                 print_formatted_text(

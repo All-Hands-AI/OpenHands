@@ -240,22 +240,39 @@ def get_shell_config_path() -> Path:
     """Get the path to the user's shell configuration file based on their default shell.
 
     Uses shellingham to detect the current shell and returns the appropriate config file path.
+    Handles Windows and Unix-like systems differently.
 
     Returns:
         Path to the shell configuration file.
     """
     home = Path.home()
+    import platform
+
+    # Check if we're on Windows
+    is_windows = platform.system() == 'Windows'
 
     # Default config paths for different shells
-    shell_configs = {
+    shell_configs: dict[str, list[str]] = {
         'bash': ['.bashrc', '.bash_profile'],
         'zsh': ['.zshrc'],
         'fish': ['.config/fish/config.fish'],
         'csh': ['.cshrc'],
         'tcsh': ['.tcshrc'],
         'ksh': ['.kshrc'],
-        'powershell': ['.config/powershell/Microsoft.PowerShell_profile.ps1'],
+        'powershell': [],
+        'cmd': [],  # CMD doesn't have a profile file
     }
+
+    # Add platform-specific PowerShell paths
+    if is_windows:
+        shell_configs['powershell'] = [
+            'Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1',
+            'Documents/PowerShell/Microsoft.PowerShell_profile.ps1',
+        ]
+    else:
+        shell_configs['powershell'] = [
+            '.config/powershell/Microsoft.PowerShell_profile.ps1',
+        ]
 
     # Try to detect the shell using shellingham
     try:
@@ -266,35 +283,63 @@ def get_shell_config_path() -> Path:
         # Get config files for the detected shell
         if shell_name in shell_configs:
             for config_file in shell_configs[shell_name]:
-                config_path = home / config_file
-                if config_path.exists():
-                    return config_path
+                if config_file:  # Skip None values
+                    config_path = home / config_file
+                    if config_path.exists():
+                        return config_path
 
-            # If no existing config file found, return the first one in the list
-            return home / shell_configs[shell_name][0]
+            # If no existing config file found but we have paths for this shell,
+            # return the first one in the list
+            if shell_configs[shell_name]:
+                return home / shell_configs[shell_name][0]
     except Exception:
-        # Fallback to bash if shell detection fails
+        # Fallback to system-specific defaults if shell detection fails
         pass
 
-    # Fallback to bash config files
-    bashrc = home / '.bashrc'
-    bash_profile = home / '.bash_profile'
+    # System-specific fallbacks
+    if is_windows:
+        # On Windows, prefer PowerShell profile if it exists
+        ps_profile = (
+            home / 'Documents' / 'PowerShell' / 'Microsoft.PowerShell_profile.ps1'
+        )
+        if ps_profile.exists():
+            return ps_profile
 
-    # Prefer .bashrc if it exists, otherwise use .bash_profile
-    if bashrc.exists():
-        return bashrc
-    return bash_profile
+        # Fallback to Windows PowerShell profile
+        win_ps_profile = (
+            home
+            / 'Documents'
+            / 'WindowsPowerShell'
+            / 'Microsoft.PowerShell_profile.ps1'
+        )
+        if win_ps_profile.exists():
+            return win_ps_profile
+
+        # Create PowerShell Core profile path if neither exists
+        ps_profile.parent.mkdir(parents=True, exist_ok=True)
+        return ps_profile
+    else:
+        # Unix-like systems fallback to bash config files
+        bashrc = home / '.bashrc'
+        bash_profile = home / '.bash_profile'
+
+        # Prefer .bashrc if it exists, otherwise use .bash_profile
+        if bashrc.exists():
+            return bashrc
+        return bash_profile
 
 
 def add_aliases_to_shell_config() -> bool:
     """Add OpenHands aliases to the user's shell configuration file.
 
     Detects the user's shell and adds appropriate aliases to the corresponding config file.
+    Handles different shell types including PowerShell on Windows.
 
     Returns:
         True if aliases were added successfully, False otherwise.
     """
     try:
+        # Get the shell configuration path
         profile_path = get_shell_config_path()
 
         # Create parent directories if they don't exist
@@ -302,7 +347,9 @@ def add_aliases_to_shell_config() -> bool:
 
         # Determine the shell type from the config path
         shell_type = 'default'
-        if '.zshrc' in str(profile_path):
+        if 'PowerShell' in str(profile_path) or 'powershell' in str(profile_path):
+            shell_type = 'powershell'
+        elif '.zshrc' in str(profile_path):
             shell_type = 'zsh'
         elif 'fish' in str(profile_path):
             shell_type = 'fish'
@@ -318,6 +365,15 @@ def add_aliases_to_shell_config() -> bool:
                 'alias oh="uvx --python 3.12 --from openhands-ai openhands"',
                 '',
             ]
+        elif shell_type == 'powershell':
+            # PowerShell uses different syntax for aliases (Set-Alias or function)
+            alias_lines = [
+                '',
+                '# OpenHands CLI aliases',
+                'function openhands { uvx --python 3.12 --from openhands-ai openhands $args }',
+                'function oh { uvx --python 3.12 --from openhands-ai openhands $args }',
+                '',
+            ]
         else:
             # Default format works for bash, zsh, and most other shells
             alias_lines = [
@@ -330,17 +386,25 @@ def add_aliases_to_shell_config() -> bool:
 
         # Check if aliases already exist
         if profile_path.exists():
-            with open(profile_path, 'r') as f:
+            with open(profile_path, 'r', encoding='utf-8', errors='ignore') as f:
                 content = f.read()
-                if 'alias openhands=' in content or 'alias oh=' in content:
-                    return True  # Aliases already exist
+                if shell_type == 'powershell':
+                    if 'function openhands' in content or 'function oh' in content:
+                        return True  # PowerShell aliases already exist
+                else:
+                    if 'alias openhands=' in content or 'alias oh=' in content:
+                        return True  # Aliases already exist
 
         # Append aliases to the profile
-        with open(profile_path, 'a') as f:
+        with open(profile_path, 'a', encoding='utf-8') as f:
             f.write('\n'.join(alias_lines))
 
         return True
-    except Exception:
+    except Exception as e:
+        # Log the exception for debugging
+        import sys
+
+        print(f'Error adding aliases: {str(e)}', file=sys.stderr)
         return False
 
 
@@ -369,6 +433,8 @@ def has_alias_setup_been_completed() -> bool:
 def aliases_exist_in_shell_config() -> bool:
     """Check if OpenHands aliases already exist in the shell configuration.
 
+    Handles different shell types including PowerShell on Windows.
+
     Returns:
         True if aliases exist, False otherwise.
     """
@@ -377,15 +443,31 @@ def aliases_exist_in_shell_config() -> bool:
         if not profile_path.exists():
             return False
 
-        with open(profile_path, 'r') as f:
+        # Determine if this is a PowerShell profile
+        is_powershell = 'PowerShell' in str(profile_path) or 'powershell' in str(
+            profile_path
+        )
+
+        with open(profile_path, 'r', encoding='utf-8', errors='ignore') as f:
             content = f.read()
-            return 'alias openhands=' in content or 'alias oh=' in content
-    except Exception:
+            if is_powershell:
+                # Check for PowerShell function definitions
+                return 'function openhands' in content or 'function oh' in content
+            else:
+                # Check for standard shell aliases
+                return 'alias openhands=' in content or 'alias oh=' in content
+    except Exception as e:
+        # Log the exception for debugging
+        import sys
+
+        print(f'Error checking aliases: {str(e)}', file=sys.stderr)
         return False
 
 
 def remove_aliases_from_shell_config() -> bool:
     """Remove OpenHands aliases from the user's shell configuration file.
+
+    Handles different shell types including PowerShell on Windows.
 
     Returns:
         True if aliases were removed successfully, False otherwise.
@@ -395,7 +477,12 @@ def remove_aliases_from_shell_config() -> bool:
         if not profile_path.exists():
             return True  # Nothing to remove
 
-        with open(profile_path, 'r') as f:
+        # Determine if this is a PowerShell profile
+        is_powershell = 'PowerShell' in str(profile_path) or 'powershell' in str(
+            profile_path
+        )
+
+        with open(profile_path, 'r', encoding='utf-8', errors='ignore') as f:
             lines = f.readlines()
 
         # Filter out OpenHands alias lines
@@ -406,13 +493,24 @@ def remove_aliases_from_shell_config() -> bool:
             line_stripped = line.strip()
 
             # Skip OpenHands-related lines
-            if (
-                line_stripped == '# OpenHands CLI aliases'
-                or line_stripped.startswith('alias openhands=')
-                or line_stripped.startswith('alias oh=')
-            ):
+            if line_stripped == '# OpenHands CLI aliases':
                 skip_next_empty = True
                 continue
+
+            if is_powershell:
+                # Handle PowerShell function definitions
+                if line_stripped.startswith(
+                    'function openhands'
+                ) or line_stripped.startswith('function oh'):
+                    skip_next_empty = True
+                    continue
+            else:
+                # Handle standard shell aliases
+                if line_stripped.startswith(
+                    'alias openhands='
+                ) or line_stripped.startswith('alias oh='):
+                    skip_next_empty = True
+                    continue
 
             # Skip empty lines immediately after OpenHands sections
             if skip_next_empty and line_stripped == '':
@@ -423,9 +521,13 @@ def remove_aliases_from_shell_config() -> bool:
             filtered_lines.append(line)
 
         # Write back the filtered content
-        with open(profile_path, 'w') as f:
+        with open(profile_path, 'w', encoding='utf-8') as f:
             f.writelines(filtered_lines)
 
         return True
-    except Exception:
+    except Exception as e:
+        # Log the exception for debugging
+        import sys
+
+        print(f'Error removing aliases: {str(e)}', file=sys.stderr)
         return False
