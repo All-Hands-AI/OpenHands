@@ -210,8 +210,13 @@ class A2aRequestHandler:
 
             messages = []
             for response in responses:
+                if response['source'] == EventSource.USER:
+                    role = Role.user
+                elif response['source'] == EventSource.AGENT or response['source'] == EventSource.ENVIRONMENT:
+                    role = Role.agent
+
                 message = A2aMessage(
-                    role=Role.agent,
+                    role=role,
                     parts=[{"kind": "text", "text": response['message']}],
                     messageId=response['message_id'],
                     taskId=task_id,
