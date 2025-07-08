@@ -409,10 +409,7 @@ export function ConversationCard({
       />
 
       {microagentsModalVisible && (
-        <MicroagentsModal
-          onClose={() => setMicroagentsModalVisible(false)}
-          conversationId={conversationId}
-        />
+        <MicroagentsModal onClose={() => setMicroagentsModalVisible(false)} />
       )}
     </>
   );
