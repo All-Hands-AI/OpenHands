@@ -22,7 +22,7 @@ function Terminal() {
           {t("DIFF_VIEWER$WAITING_FOR_RUNTIME")}
         </div>
       )}
-      <div ref={ref} className="h-full w-full" />
+      {!isRuntimeInactive && <div ref={ref} className="h-full w-full" />}
     </div>
   );
 }
