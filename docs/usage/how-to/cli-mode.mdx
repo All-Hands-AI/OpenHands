@@ -68,23 +68,6 @@ echo 'export PATH="$PATH:$HOME/.openhands-venv/bin"' >> ~/.bashrc  # or ~/.zshrc
 source ~/.bashrc  # or source ~/.zshrc
 ```
 
-Alternatively, you can create a simple script in your `~/.local/bin` directory:
-
-```bash
-mkdir -p ~/.local/bin
-
-cat << 'EOF' > ~/.local/bin/openhands
-#!/bin/bash
-exec uvx --python 3.12 --from openhands-ai openhands "$@"
-EOF
-
-chmod +x ~/.local/bin/openhands
-
-# Make sure ~/.local/bin is in your PATH
-echo 'export PATH="$PATH:$HOME/.local/bin"' >> ~/.bashrc  # or ~/.zshrc
-source ~/.bashrc  # or source ~/.zshrc
-```
-
 </Accordion>
 
 </AccordionGroup>
