@@ -84,31 +84,48 @@ export function ApiKeysManager() {
         </p>
 
         {!isLoadingLlmKey && llmApiKey && (
-          <div className="border border-tertiary rounded-md p-4 bg-base-tertiary">
-            <h3 className="text-lg font-medium mb-2">LLM API Key</h3>
-            <p className="text-sm mb-4">
-              This is your OpenHands LLM API key that can be used in the LLM
-              settings of OpenHands self-deploy and CLI.
-            </p>
-            <div className="flex items-center gap-2">
-              <input
-                type="password"
-                value={llmApiKey.key || ""}
-                readOnly
-                className="bg-tertiary border border-[#717888] h-10 w-full rounded-sm p-2 text-sm"
-              />
-              <button
-                type="button"
-                className="px-3 py-2 bg-blue-600 text-white rounded-sm text-sm"
-                onClick={() => {
-                  if (llmApiKey.key) {
-                    navigator.clipboard.writeText(llmApiKey.key);
-                    displayErrorToast("API key copied to clipboard");
-                  }
-                }}
-              >
-                Copy
-              </button>
+          <div className="border-b border-gray-200 pb-6 mb-6">
+            <h3 className="text-xl font-medium mb-2 text-gray-700">API KEY</h3>
+            <div className="flex items-center gap-2 mt-4">
+              <div className="flex-1 bg-gray-100 rounded-md px-4 py-2 flex items-center">
+                <div className="flex-1">
+                  {llmApiKey.key ? (
+                    <div className="flex items-center">
+                      <span className="text-gray-500">{"•".repeat(20)}</span>
+                      <span className="mx-2 text-gray-400">•</span>
+                    </div>
+                  ) : (
+                    <span className="text-gray-400">No API key available</span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  className="text-gray-500 hover:text-gray-700"
+                  aria-label="Copy API key"
+                  title="Copy API key"
+                  onClick={() => {
+                    if (llmApiKey.key) {
+                      navigator.clipboard.writeText(llmApiKey.key);
+                      displayErrorToast("API key copied to clipboard");
+                    }
+                  }}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         )}
