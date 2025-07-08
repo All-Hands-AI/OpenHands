@@ -1,0 +1,15 @@
+{
+  "name": "@openhands/types",
+  "version": "0.1.0",
+  "description": "Shared type definitions and utilities for OpenHands projects",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  },
+  "license": "MIT"
+}
