@@ -5,6 +5,8 @@ function Jupyter() {
   const parentRef = React.useRef<HTMLDivElement>(null);
   const [parentWidth, setParentWidth] = React.useState(0);
 
+  // This is a hack to prevent the editor from overflowing
+  // Should be removed after revising the parent and containers
   // Use ResizeObserver to properly track parent width changes
   React.useEffect(() => {
     let resizeObserver: ResizeObserver | null = null;
