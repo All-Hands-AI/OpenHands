@@ -25,7 +25,7 @@ export function TaskSuggestions({ filterFor }: TaskSuggestionsProps) {
       data-testid="task-suggestions"
       className={cn("flex flex-col w-full", !hasSuggestedTasks && "gap-6")}
     >
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 pb-1">
         <h2 className="heading">{t(I18nKey.TASKS$SUGGESTED_TASKS)}</h2>
         <TooltipButton
           testId="task-suggestions-info"
@@ -39,7 +39,7 @@ export function TaskSuggestions({ filterFor }: TaskSuggestionsProps) {
         </TooltipButton>
       </div>
 
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-6 max-h-[380px] overflow-y-auto">
         {isLoading && <TaskSuggestionsSkeleton />}
         {!hasSuggestedTasks && !isLoading && (
           <p>{t(I18nKey.TASKS$NO_TASKS_AVAILABLE)}</p>
