@@ -337,7 +337,9 @@ class Session:
         """Sends an error message to the client."""
         await self.send({'error': True, 'message': message})
 
-    async def _send_status_message(self, msg_type: str, runtime_status: RuntimeStatus, message: str) -> None:
+    async def _send_status_message(
+        self, msg_type: str, runtime_status: RuntimeStatus, message: str
+    ) -> None:
         """Sends a status message to the client."""
         if msg_type == 'error':
             agent_session = self.agent_session
@@ -349,10 +351,17 @@ class Session:
                 extra={'signal': 'agent_status_error'},
             )
         await self.send(
-            {'status_update': True, 'type': msg_type, 'id': runtime_status.value, 'message': message}
+            {
+                'status_update': True,
+                'type': msg_type,
+                'id': runtime_status.value,
+                'message': message,
+            }
         )
 
-    def queue_status_message(self, msg_type: str, runtime_status: RuntimeStatus, message: str) -> None:
+    def queue_status_message(
+        self, msg_type: str, runtime_status: RuntimeStatus, message: str
+    ) -> None:
         """Queues a status message to be sent asynchronously."""
         asyncio.run_coroutine_threadsafe(
             self._send_status_message(msg_type, runtime_status, message), self.loop
