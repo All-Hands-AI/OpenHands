@@ -355,7 +355,7 @@ class Session:
                 'status_update': True,
                 'type': msg_type,
                 'id': runtime_status.value,
-                'message': message
+                'message': message,
             }
         )
 
