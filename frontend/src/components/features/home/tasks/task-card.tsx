@@ -19,10 +19,9 @@ const getTaskTypeMap = (
 
 interface TaskCardProps {
   task: SuggestedTask;
-  isLastTask?: boolean;
 }
 
-export function TaskCard({ task, isLastTask }: TaskCardProps) {
+export function TaskCard({ task }: TaskCardProps) {
   const { setOptimisticUserMessage } = useOptimisticUserMessage();
   const { data: repositories } = useUserRepositories();
   const { mutate: createConversation, isPending } = useCreateConversation();
@@ -65,12 +64,7 @@ export function TaskCard({ task, isLastTask }: TaskCardProps) {
   }
 
   return (
-    <li
-      className={cn(
-        "py-3 border-b border-[#717888] flex items-center pr-6",
-        isLastTask && "border-b-0",
-      )}
-    >
+    <li className="py-3 border-b border-[#717888] flex items-center pr-6 last:border-b-0">
       <TaskIssueNumber issueNumber={task.issue_number} href={href} />
 
       <div className="w-full pl-8">

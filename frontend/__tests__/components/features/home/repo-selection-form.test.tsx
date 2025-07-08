@@ -252,8 +252,6 @@ describe("RepositorySelectionForm", () => {
     expect(searchedRepo).toBeInTheDocument();
 
     await userEvent.click(searchedRepo);
-    expect(mockOnRepoSelection).toHaveBeenCalledWith(
-      MOCK_SEARCH_REPOS[0].full_name,
-    );
+    expect(mockOnRepoSelection).toHaveBeenCalledWith(MOCK_SEARCH_REPOS[0]);
   });
 });
