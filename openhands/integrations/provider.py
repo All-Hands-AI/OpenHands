@@ -325,20 +325,26 @@ class ProviderHandler:
     async def verify_repo_provider(
         self, repository: str, specified_provider: ProviderType | None = None
     ) -> Repository:
+        errors = []
+
         if specified_provider:
             try:
                 service = self._get_service(specified_provider)
                 return await service.get_repository_details_from_repo_name(repository)
-            except Exception:
-                pass
+            except Exception as e:
+                errors.append(f'{specified_provider.value}: {str(e)}')
 
         for provider in self.provider_tokens:
             try:
                 service = self._get_service(provider)
                 return await service.get_repository_details_from_repo_name(repository)
-            except Exception:
-                pass
+            except Exception as e:
+                errors.append(f'{provider.value}: {str(e)}')
 
+        # Log all accumulated errors before raising AuthenticationError
+        logger.error(
+            f'Failed to access repository {repository} with all available providers. Errors: {"; ".join(errors)}'
+        )
         raise AuthenticationError(f'Unable to access repo {repository}')
 
     async def get_branches(

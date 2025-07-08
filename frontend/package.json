@@ -7,7 +7,7 @@
     "node": ">=20.0.0"
   },
   "dependencies": {
-    "@heroui/react": "^2.8.0-beta.10",
+    "@heroui/react": "^2.8.0-beta.13",
     "@microlink/react-json-view": "^1.26.2",
     "@monaco-editor/react": "^4.7.0-rc.0",
     "@react-router/node": "^7.6.3",
@@ -49,7 +49,7 @@
     "sirv-cli": "^3.0.1",
     "socket.io-client": "^4.8.1",
     "tailwind-merge": "^3.3.1",
-    "vite": "^7.0.2",
+    "vite": "^7.0.3",
     "web-vitals": "^5.0.3",
     "ws": "^8.18.2"
   },
