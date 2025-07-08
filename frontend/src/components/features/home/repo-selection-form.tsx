@@ -20,7 +20,7 @@ import {
 } from "./repository-selection";
 
 interface RepositorySelectionFormProps {
-  onRepoSelection: (repoTitle: string | null) => void;
+  onRepoSelection: (repo: GitRepository | null) => void;
 }
 
 export function RepositorySelectionForm({
@@ -96,8 +96,7 @@ export function RepositorySelectionForm({
 
   const handleRepoSelection = (key: React.Key | null) => {
     const selectedRepo = allRepositories?.find((repo) => repo.id === key);
-
-    if (selectedRepo) onRepoSelection(selectedRepo.full_name);
+    if (selectedRepo) onRepoSelection(selectedRepo);
     setSelectedRepository(selectedRepo || null);
     setSelectedBranch(null); // Reset branch selection when repo changes
     branchManuallyClearedRef.current = false; // Reset the flag when repo changes
