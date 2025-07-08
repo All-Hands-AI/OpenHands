@@ -10351,22 +10351,6 @@
         "de": "Bestätigen",
         "uk": "Підтвердити"
     },
-    "BUTTON$RESET": {
-        "en": "Reset",
-        "ja": "リセット",
-        "zh-CN": "重置",
-        "zh-TW": "重置",
-        "ko-KR": "재설정",
-        "no": "Tilbakestill",
-        "it": "Ripristina",
-        "pt": "Redefinir",
-        "es": "Restablecer",
-        "ar": "إعادة تعيين",
-        "fr": "Réinitialiser",
-        "tr": "Sıfırla",
-        "de": "Zurücksetzen",
-        "uk": "Скинути"
-    },
     "FORM$VALUE": {
         "en": "Value",
         "ja": "値",
