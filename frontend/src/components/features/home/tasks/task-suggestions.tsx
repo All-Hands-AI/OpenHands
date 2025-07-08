@@ -47,7 +47,7 @@ export function TaskSuggestions({ filterFor }: TaskSuggestionsProps) {
         </TooltipButton>
       </div>
 
-      <div className="flex flex-col gap-6 max-h-[380px] overflow-y-auto">
+      <div className="flex flex-col gap-6 max-h-[420px] overflow-y-auto">
         {isLoading && <TaskSuggestionsSkeleton />}
         {!hasSuggestedTasks && !isLoading && (
           <p>{t(I18nKey.TASKS$NO_TASKS_AVAILABLE)}</p>
