@@ -258,19 +258,17 @@ class OpenHands {
     selectedRepository?: string,
     git_provider?: Provider,
     initialUserMsg?: string,
-    imageUrls?: string[],
-    replayJson?: string,
     suggested_task?: SuggestedTask,
     selected_branch?: string,
+    conversationInstructions?: string,
   ): Promise<Conversation> {
     const body = {
       repository: selectedRepository,
       git_provider,
       selected_branch,
       initial_user_msg: initialUserMsg,
-      image_urls: imageUrls,
-      replay_json: replayJson,
       suggested_task,
+      conversation_instructions: conversationInstructions,
     };
 
     const { data } = await openHands.post<Conversation>(
