@@ -5759,6 +5759,38 @@
         "de": "Sie finden Ihren OpenHands API-Schlüssel im Tab <a>API-Schlüssel</a> von OpenHands Cloud.",
         "uk": "Ви можете знайти свій ключ API OpenHands у вкладці <a>Ключі API</a> OpenHands Cloud."
     },
+    "SETTINGS$OPENHANDS_API_KEY_HELP_TEXT": {
+        "en": "You can find your OpenHands API Key in the",
+        "ja": "OpenHands APIキーは",
+        "zh-CN": "您可以在",
+        "zh-TW": "您可以在",
+        "ko-KR": "OpenHands API 키는",
+        "no": "Du kan finne din OpenHands API-nøkkel i",
+        "it": "Puoi trovare la tua chiave API OpenHands nella",
+        "pt": "Você pode encontrar sua chave de API OpenHands na",
+        "es": "Puede encontrar su clave API de OpenHands en la",
+        "ar": "يمكنك العثور على مفتاح API الخاص بـ OpenHands في",
+        "fr": "Vous pouvez trouver votre clé API OpenHands dans",
+        "tr": "OpenHands API Anahtarınızı",
+        "de": "Sie finden Ihren OpenHands API-Schlüssel im",
+        "uk": "Ви можете знайти свій ключ API OpenHands у"
+    },
+    "SETTINGS$OPENHANDS_API_KEY_HELP_SUFFIX": {
+        "en": "tab of OpenHands Cloud.",
+        "ja": "タブで確認できます。",
+        "zh-CN": "标签页中找到您的OpenHands API密钥。",
+        "zh-TW": "標籤頁中找到您的OpenHands API密鑰。",
+        "ko-KR": "탭에서 찾을 수 있습니다.",
+        "no": "-fanen i OpenHands Cloud.",
+        "it": "scheda di OpenHands Cloud.",
+        "pt": "guia do OpenHands Cloud.",
+        "es": "pestaña de OpenHands Cloud.",
+        "ar": "علامة التبويب في OpenHands Cloud.",
+        "fr": "l'onglet d'OpenHands Cloud.",
+        "tr": "OpenHands Cloud'un sekmesinde bulabilirsiniz.",
+        "de": "Tab von OpenHands Cloud.",
+        "uk": "вкладці OpenHands Cloud."
+    },
     "SETTINGS$CREATE_API_KEY": {
         "en": "Create API Key",
         "uk": "Створити API ключ",

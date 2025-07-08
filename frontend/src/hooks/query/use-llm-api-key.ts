@@ -20,7 +20,6 @@ export function useLlmApiKey() {
           await openHands.get<LlmApiKeyResponse>("/api/keys/llm");
         return data;
       } catch (error) {
-        console.error("Error fetching LLM API key:", error);
         return { key: null };
       }
     },

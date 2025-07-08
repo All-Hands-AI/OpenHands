@@ -1,5 +1,5 @@
 import React from "react";
-import { useTranslation, Trans } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
 import { ModelSelector } from "#/components/shared/modals/settings/model-selector";
 import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers";
@@ -307,24 +307,13 @@ function LlmSettingsScreen() {
                   />
                   {(settings.LLM_MODEL?.startsWith("openhands/") ||
                     currentSelectedModel?.startsWith("openhands/")) && (
-                    <div className="mt-2 text-sm text-blue-400">
-                      <Trans
-                        i18nKey={I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP}
-                        components={{
-                          a: (
-                            <a
-                              href="https://app.all-hands.dev/settings/api-keys"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-400 hover:underline"
-                              aria-label={t(I18nKey.SETTINGS$NAV_API_KEYS)}
-                            >
-                              {t(I18nKey.SETTINGS$NAV_API_KEYS)}
-                            </a>
-                          ),
-                        }}
-                      />
-                    </div>
+                    <HelpLink
+                      testId="openhands-api-key-help"
+                      text={t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_TEXT)}
+                      linkText={t(I18nKey.SETTINGS$NAV_API_KEYS)}
+                      href="https://app.all-hands.dev/settings/api-keys"
+                      suffix={t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_SUFFIX)}
+                    />
                   )}
                 </>
               )}
@@ -395,24 +384,13 @@ function LlmSettingsScreen() {
               />
               {(settings.LLM_MODEL?.startsWith("openhands/") ||
                 currentSelectedModel?.startsWith("openhands/")) && (
-                <div className="mt-2 text-sm text-blue-400">
-                  <Trans
-                    i18nKey={I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP}
-                    components={{
-                      a: (
-                        <a
-                          href="https://app.all-hands.dev/settings/api-keys"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-400 hover:underline"
-                          aria-label={t(I18nKey.SETTINGS$NAV_API_KEYS)}
-                        >
-                          {t(I18nKey.SETTINGS$NAV_API_KEYS)}
-                        </a>
-                      ),
-                    }}
-                  />
-                </div>
+                <HelpLink
+                  testId="openhands-api-key-help-2"
+                  text={t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_TEXT)}
+                  linkText={t(I18nKey.SETTINGS$NAV_API_KEYS)}
+                  href="https://app.all-hands.dev/settings/api-keys"
+                  suffix={t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_SUFFIX)}
+                />
               )}
 
               <SettingsInput
