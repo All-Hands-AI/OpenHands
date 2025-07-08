@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from openhands.cli.commands import (
+    display_mcp_servers,
     handle_commands,
     handle_exit_command,
     handle_help_command,
@@ -232,15 +233,15 @@ class TestHandleHelpCommand:
         mock_display_help.assert_called_once()
 
 
-class TestHandleMcpCommand:
+class TestDisplayMcpServers:
     @patch('openhands.cli.commands.print_formatted_text')
-    def test_mcp_command_no_servers(self, mock_print):
+    def test_display_mcp_servers_no_servers(self, mock_print):
         from openhands.core.config.mcp_config import MCPConfig
 
         config = MagicMock(spec=OpenHandsConfig)
         config.mcp = MCPConfig()  # Empty config with no servers
 
-        handle_mcp_command(config)
+        display_mcp_servers(config)
 
         mock_print.assert_called_once()
         call_args = mock_print.call_args[0][0]
@@ -251,7 +252,7 @@ class TestHandleMcpCommand:
         )
 
     @patch('openhands.cli.commands.print_formatted_text')
-    def test_mcp_command_with_servers(self, mock_print):
+    def test_display_mcp_servers_with_servers(self, mock_print):
         from openhands.core.config.mcp_config import (
             MCPConfig,
             MCPSHTTPServerConfig,
@@ -266,7 +267,7 @@ class TestHandleMcpCommand:
             shttp_servers=[MCPSHTTPServerConfig(url='http://localhost:3000/mcp')],
         )
 
-        handle_mcp_command(config)
+        display_mcp_servers(config)
 
         # Should be called multiple times for different sections
         assert mock_print.call_count >= 4
@@ -278,6 +279,73 @@ class TestHandleMcpCommand:
         assert 'Stdio servers: 1' in first_call
         assert 'SHTTP servers: 1' in first_call
         assert 'Total: 3' in first_call
+
+
+class TestHandleMcpCommand:
+    @pytest.mark.asyncio
+    @patch('openhands.cli.commands.cli_confirm')
+    @patch('openhands.cli.commands.display_mcp_servers')
+    async def test_handle_mcp_command_list_action(self, mock_display, mock_cli_confirm):
+        config = MagicMock(spec=OpenHandsConfig)
+        mock_cli_confirm.return_value = 0  # List action
+
+        await handle_mcp_command(config)
+
+        mock_cli_confirm.assert_called_once_with(
+            config,
+            'MCP Server Configuration',
+            ['List configured servers', 'Add new server', 'Remove server', 'Go back'],
+        )
+        mock_display.assert_called_once_with(config)
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.commands.cli_confirm')
+    @patch('openhands.cli.commands.add_mcp_server')
+    async def test_handle_mcp_command_add_action(self, mock_add, mock_cli_confirm):
+        config = MagicMock(spec=OpenHandsConfig)
+        mock_cli_confirm.return_value = 1  # Add action
+
+        await handle_mcp_command(config)
+
+        mock_cli_confirm.assert_called_once_with(
+            config,
+            'MCP Server Configuration',
+            ['List configured servers', 'Add new server', 'Remove server', 'Go back'],
+        )
+        mock_add.assert_called_once_with(config)
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.commands.cli_confirm')
+    @patch('openhands.cli.commands.remove_mcp_server')
+    async def test_handle_mcp_command_remove_action(
+        self, mock_remove, mock_cli_confirm
+    ):
+        config = MagicMock(spec=OpenHandsConfig)
+        mock_cli_confirm.return_value = 2  # Remove action
+
+        await handle_mcp_command(config)
+
+        mock_cli_confirm.assert_called_once_with(
+            config,
+            'MCP Server Configuration',
+            ['List configured servers', 'Add new server', 'Remove server', 'Go back'],
+        )
+        mock_remove.assert_called_once_with(config)
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.commands.cli_confirm')
+    async def test_handle_mcp_command_go_back_action(self, mock_cli_confirm):
+        config = MagicMock(spec=OpenHandsConfig)
+        mock_cli_confirm.return_value = 3  # Go back action
+
+        await handle_mcp_command(config)
+
+        mock_cli_confirm.assert_called_once_with(
+            config,
+            'MCP Server Configuration',
+            ['List configured servers', 'Add new server', 'Remove server', 'Go back'],
+        )
+        # No other functions should be called for "Go back"
 
 
 class TestHandleStatusCommand:
