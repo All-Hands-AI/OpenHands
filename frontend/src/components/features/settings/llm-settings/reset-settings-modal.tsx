@@ -22,7 +22,7 @@ export function ResetSettingsModal({ onReset }: ResetSettingsModalProps) {
             variant="primary"
             className="grow"
           >
-            Reset
+            {t(I18nKey.BUTTON$RESET)}
           </BrandButton>
 
           <BrandButton
@@ -32,7 +32,7 @@ export function ResetSettingsModal({ onReset }: ResetSettingsModalProps) {
             className="grow"
             onClick={onReset}
           >
-            Cancel
+            {t(I18nKey.BUTTON$CANCEL)}
           </BrandButton>
         </div>
       </div>
