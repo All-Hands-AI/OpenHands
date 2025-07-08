@@ -187,7 +187,7 @@ For comprehensive setup instructions, including dependencies, troubleshooting, a
 To reduce build time (e.g., if no changes were made to the client-runtime component), you can use an existing Docker
 container image by setting the SANDBOX_RUNTIME_CONTAINER_IMAGE environment variable to the desired Docker image.
 
-Example: `export SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.47-nikolaik`
+Example: `export SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.48-nikolaik`
 
 ## Develop inside Docker container
 

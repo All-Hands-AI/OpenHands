@@ -51,17 +51,17 @@ OpenHands也可以使用Docker在本地系统上运行。
 
 
 ```bash
-docker pull docker.all-hands.dev/all-hands-ai/runtime:0.47-nikolaik
+docker pull docker.all-hands.dev/all-hands-ai/runtime:0.48-nikolaik
 
 docker run -it --rm --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.47-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.48-nikolaik \
     -e LOG_ALL_EVENTS=true \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v ~/.openhands:/.openhands \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app \
-    docker.all-hands.dev/all-hands-ai/openhands:0.47
+    docker.all-hands.dev/all-hands-ai/openhands:0.48
 ```
 
 > **注意**: 如果您在0.44版本之前使用过OpenHands，您可能需要运行 `mv ~/.openhands-state ~/.openhands` 来将对话历史迁移到新位置。
