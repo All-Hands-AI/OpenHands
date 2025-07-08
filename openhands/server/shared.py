@@ -43,7 +43,11 @@ if redis_host:
 
 
 sio = socketio.AsyncServer(
-    async_mode='asgi', cors_allowed_origins='*', client_manager=client_manager
+    async_mode='asgi',
+    cors_allowed_origins='*',
+    client_manager=client_manager,
+    # Increase buffer size to 4MB (to handle 3MB files with base64 overhead)
+    max_http_buffer_size=4 * 1024 * 1024,
 )
 
 MonitoringListenerImpl = get_impl(

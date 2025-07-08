@@ -70,6 +70,13 @@ try:
                 _THIRD_PARTY_RUNTIME_CLASSES[runtime_name] = runtime_class
 
         except ImportError:
+            # ImportError means the library is not installed (expected for optional dependencies)
+            pass
+        except Exception as e:
+            # Other exceptions mean the library is present but broken, which should be logged
+            from openhands.core.logger import openhands_logger as logger
+
+            logger.warning(f'Failed to import third-party runtime {module_path}: {e}')
             pass
 
 except ImportError:

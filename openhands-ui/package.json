@@ -9,9 +9,39 @@
   ],
   "type": "module",
   "devDependencies": {
-    "@types/bun": "latest"
+    "@chromatic-com/storybook": "^4.0.0",
+    "@storybook/addon-a11y": "^9.0.12",
+    "@storybook/addon-docs": "^9.0.12",
+    "@storybook/addon-onboarding": "^9.0.12",
+    "@storybook/addon-vitest": "^9.0.12",
+    "@storybook/react-vite": "^9.0.12",
+    "@tailwindcss/vite": "^4.1.10",
+    "@types/bun": "latest",
+    "@vitejs/plugin-react": "^4.5.2",
+    "@vitest/browser": "^3.2.4",
+    "@vitest/coverage-v8": "^3.2.4",
+    "playwright": "^1.53.1",
+    "storybook": "^9.0.12",
+    "vitest": "^3.2.4"
   },
   "peerDependencies": {
     "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@floating-ui/react": "^0.27.12",
+    "clsx": "^2.1.1",
+    "react": "^19.1.0",
+    "react-bootstrap-icons": "^1.11.6",
+    "react-dom": "^19.1.0",
+    "tailwind-merge": "^3.3.1",
+    "tailwind-scrollbar": "^4.0.2",
+    "tailwindcss": "^4.1.10"
+  },
+  "scripts": {
+    "dev": "storybook dev -p 6006",
+    "build:sb": "storybook build"
+  },
+  "engines": {
+    "bun": ">=1.2.0"
   }
 }

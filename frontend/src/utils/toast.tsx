@@ -1,4 +1,5 @@
 import toast from "react-hot-toast";
+import { calculateToastDuration } from "./toast-duration";
 
 const idMap = new Map<string, string>();
 
@@ -37,7 +38,7 @@ export default {
     toast(msg, {
       position: "bottom-right",
       className: "bg-tertiary",
-
+      duration: calculateToastDuration(msg, 5000),
       icon: "⚙️",
       style: {
         background: "#333",

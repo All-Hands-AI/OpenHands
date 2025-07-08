@@ -61,7 +61,7 @@ class JupyterPlugin(Plugin):
             # Windows-specific command format
             jupyter_launch_command = (
                 f'cd /d "{code_repo_path}" && '
-                'poetry run jupyter kernelgateway '
+                f'"{sys.executable}" -m jupyter kernelgateway '
                 '--KernelGatewayApp.ip=0.0.0.0 '
                 f'--KernelGatewayApp.port={self.kernel_gateway_port}'
             )
@@ -105,7 +105,7 @@ class JupyterPlugin(Plugin):
             jupyter_launch_command = (
                 f"{prefix}/bin/bash << 'EOF'\n"
                 f'{poetry_prefix}'
-                'poetry run jupyter kernelgateway '
+                f'"{sys.executable}" -m jupyter kernelgateway '
                 '--KernelGatewayApp.ip=0.0.0.0 '
                 f'--KernelGatewayApp.port={self.kernel_gateway_port}\n'
                 'EOF'

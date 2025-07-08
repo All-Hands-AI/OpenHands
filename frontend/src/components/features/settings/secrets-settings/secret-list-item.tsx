@@ -34,10 +34,15 @@ export function SecretListItem({
       data-testid="secret-item"
       className="border-t border-[#717888] last-of-type:border-b max-w-[830px] py-[13px] flex w-full items-center"
     >
-      <td className="w-1/4 text-sm text-content-2">{title}</td>
+      <td className="w-1/4 text-sm text-content-2 truncate" title={title}>
+        {title}
+      </td>
 
-      <td className="w-1/2 truncate overflow-hidden whitespace-nowrap text-sm text-content-2 opacity-80 italic">
-        {description || "-"}
+      <td
+        className="w-1/2 truncate overflow-hidden whitespace-nowrap text-sm text-content-2 opacity-80 italic"
+        title={description || ""}
+      >
+        {description || ""}
       </td>
 
       <td className="w-1/4 flex items-center justify-end gap-4">

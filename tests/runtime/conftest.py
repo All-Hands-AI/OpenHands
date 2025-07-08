@@ -212,6 +212,7 @@ def _load_runtime(
     runtime_startup_env_vars: dict[str, str] | None = None,
     docker_runtime_kwargs: dict[str, str] | None = None,
     override_mcp_config: MCPConfig | None = None,
+    enable_browser: bool = True,
 ) -> tuple[Runtime, OpenHandsConfig]:
     sid = 'rt_' + str(random.randint(100000, 999999))
 
@@ -221,6 +222,7 @@ def _load_runtime(
 
     config = load_openhands_config()
     config.run_as_openhands = run_as_openhands
+    config.enable_browser = enable_browser
     config.sandbox.force_rebuild_runtime = force_rebuild_runtime
     config.sandbox.keep_runtime_alive = False
     config.sandbox.docker_runtime_kwargs = docker_runtime_kwargs

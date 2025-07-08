@@ -1,24 +1,34 @@
-from unittest.mock import MagicMock, patch
+"""
+Unit tests for ConversationWindowCondenser.
+
+These tests mirror the tests for `_apply_conversation_window` in the AgentController,
+but adapted to test the condenser implementation. The ConversationWindowCondenser
+copies the functionality of the `_apply_conversation_window` function as closely as possible.
+
+The tests verify that the condenser:
+1. Identifies essential initial events (System Message, First User Message, Recall Action/Observation)
+2. Keeps roughly half of the non-essential events from recent history
+3. Handles dangling observations properly
+4. Returns appropriate CondensationAction objects specifying which events to forget
+"""
+
+from unittest.mock import patch
 
 import pytest
 
-from openhands.controller.agent import Agent
-from openhands.controller.agent_controller import AgentController
-from openhands.controller.state.state import State
-from openhands.core.config import OpenHandsConfig
 from openhands.events import EventSource
 from openhands.events.action import CmdRunAction, MessageAction, RecallAction
+from openhands.events.action.agent import CondensationAction
 from openhands.events.action.message import SystemMessageAction
 from openhands.events.event import RecallType
 from openhands.events.observation import (
     CmdOutputObservation,
-    Observation,
     RecallObservation,
 )
-from openhands.events.stream import EventStream
-from openhands.llm.llm import LLM
-from openhands.llm.metrics import Metrics
-from openhands.storage.memory import InMemoryFileStore
+from openhands.memory.condenser.condenser import Condensation, View
+from openhands.memory.condenser.impl.conversation_window_condenser import (
+    ConversationWindowCondenser,
+)
 
 
 # Helper function to create events with sequential IDs and causes
@@ -86,44 +96,20 @@ def create_events(event_data):
 
 
 @pytest.fixture
-def controller_fixture():
-    mock_agent = MagicMock(spec=Agent)
-    mock_agent.llm = MagicMock(spec=LLM)
-    mock_agent.llm.metrics = Metrics()
-    mock_agent.llm.config = OpenHandsConfig().get_llm_config()
-    mock_agent.config = OpenHandsConfig().get_agent_config('CodeActAgent')
-
-    mock_event_stream = MagicMock(spec=EventStream)
-    mock_event_stream.sid = 'test_sid'
-    mock_event_stream.file_store = InMemoryFileStore({})
-    # Ensure get_latest_event_id returns an integer
-    mock_event_stream.get_latest_event_id.return_value = -1
-
-    # Create a state with iteration_flag.max_value set to 10
-    state = State(inputs={}, session_id='test_sid')
-    state.iteration_flag.max_value = 10
-
-    controller = AgentController(
-        agent=mock_agent,
-        event_stream=mock_event_stream,
-        iteration_delta=1,  # Add the required iteration_delta parameter
-        sid='test_sid',
-        initial_state=state,
-    )
-
-    # Don't mock _first_user_message anymore since we need it to work with history
-    return controller
+def condenser_fixture():
+    condenser = ConversationWindowCondenser()
+    return condenser
 
 
 # =============================================
-# Test Cases for _apply_conversation_window
+# Test Cases for ConversationWindowCondenser
 # =============================================
 
 
-def test_basic_truncation(controller_fixture):
-    controller = controller_fixture
+def test_basic_truncation(condenser_fixture):
+    condenser = condenser_fixture
 
-    controller.state.history = create_events(
+    events = create_events(
         [
             {'type': SystemMessageAction, 'content': 'System Prompt'},  # 1
             {
@@ -156,6 +142,7 @@ def test_basic_truncation(controller_fixture):
             },  # 10
         ]
     )
+    view = View(events=events)
 
     # Calculation (RecallAction now essential):
     # History len = 10
@@ -167,21 +154,22 @@ def test_basic_truncation(controller_fixture):
     # Validation: remove leading obs2(8). validated_slice = [cmd3(9), obs3(10)]
     # Final = essentials + validated_slice = [sys(1), user(2), recall_act(3), recall_obs(4), cmd3(9), obs3(10)]
     # Expected IDs: [1, 2, 3, 4, 9, 10]. Length 6.
-    truncated_events = controller._apply_conversation_window(controller.state.history)
+    # Forgotten IDs: [5, 6, 7, 8]
+    condensation = condenser.get_condensation(view)
 
-    assert len(truncated_events) == 6
-    expected_ids = [1, 2, 3, 4, 9, 10]
-    actual_ids = [e.id for e in truncated_events]
-    assert actual_ids == expected_ids
-    # Check no dangling observations at the start of the recent slice part
-    # The first event of the validated slice is cmd3(9)
-    assert not isinstance(truncated_events[4], Observation)  # Index adjusted
+    assert isinstance(condensation, Condensation)
+    assert isinstance(condensation.action, CondensationAction)
+
+    # Check the forgotten event IDs
+    forgotten_ids = condensation.action.forgotten
+    expected_forgotten = [5, 6, 7, 8]
+    assert sorted(forgotten_ids) == expected_forgotten
 
 
-def test_no_system_message(controller_fixture):
-    controller = controller_fixture
+def test_no_system_message(condenser_fixture):
+    condenser = condenser_fixture
 
-    controller.state.history = create_events(
+    events = create_events(
         [
             {
                 'type': MessageAction,
@@ -213,7 +201,7 @@ def test_no_system_message(controller_fixture):
             },  # 9
         ]
     )
-    # No longer need to set mock ID
+    view = View(events=events)
 
     # Calculation (RecallAction now essential):
     # History len = 9
@@ -224,19 +212,22 @@ def test_no_system_message(controller_fixture):
     # recent_events_slice = history[6:] = [obs2(7), cmd3(8), obs3(9)]
     # Validation: remove leading obs2(7). validated_slice = [cmd3(8), obs3(9)]
     # Final = essentials + validated_slice = [user(1), recall_act(2), recall_obs(3), cmd3(8), obs3(9)]
-    # Expected IDs: [1, 2, 3, 8, 9]. Length 5.
-    truncated_events = controller._apply_conversation_window(controller.state.history)
+    # Expected kept IDs: [1, 2, 3, 8, 9]. Length 5.
+    # Forgotten IDs: [4, 5, 6, 7]
+    condensation = condenser.get_condensation(view)
 
-    assert len(truncated_events) == 5
-    expected_ids = [1, 2, 3, 8, 9]
-    actual_ids = [e.id for e in truncated_events]
-    assert actual_ids == expected_ids
+    assert isinstance(condensation, Condensation)
+    assert isinstance(condensation.action, CondensationAction)
+
+    forgotten_ids = condensation.action.forgotten
+    expected_forgotten = [4, 5, 6, 7]
+    assert sorted(forgotten_ids) == expected_forgotten
 
 
-def test_no_recall_observation(controller_fixture):
-    controller = controller_fixture
+def test_no_recall_observation(condenser_fixture):
+    condenser = condenser_fixture
 
-    controller.state.history = create_events(
+    events = create_events(
         [
             {'type': SystemMessageAction, 'content': 'System Prompt'},  # 1
             {
@@ -269,29 +260,33 @@ def test_no_recall_observation(controller_fixture):
             },  # 9
         ]
     )
+    view = View(events=events)
 
-    # Calculation (RecallAction essential only if RecallObs exists):
+    # Calculation (RecallAction essential even without RecallObs in condenser):
     # History len = 9
-    # Essentials = [sys(1), user(2)] (len=2) - RecallObs missing, so RecallAction not essential here
-    # Non-essential count = 9 - 2 = 7
-    # num_recent_to_keep = max(1, 7 // 2) = 3
+    # Essentials = [sys(1), user(2), recall_action(3)] (len=3)
+    # Non-essential count = 9 - 3 = 6
+    # num_recent_to_keep = max(1, 6 // 2) = 3
     # slice_start_index = 9 - 3 = 6
     # recent_events_slice = history[6:] = [obs2(7), cmd3(8), obs3(9)]
     # Validation: remove leading obs2(7). validated_slice = [cmd3(8), obs3(9)]
     # Final = essentials + validated_slice = [sys(1), user(2), recall_action(3), cmd_cat(8), obs_cat(9)]
-    # Expected IDs: [1, 2, 3, 8, 9]. Length 5.
-    truncated_events = controller._apply_conversation_window(controller.state.history)
+    # Expected kept IDs: [1, 2, 3, 8, 9]. Length 5.
+    # Forgotten IDs: [4, 5, 6, 7]
+    condensation = condenser.get_condensation(view)
 
-    assert len(truncated_events) == 5
-    expected_ids = [1, 2, 3, 8, 9]
-    actual_ids = [e.id for e in truncated_events]
-    assert actual_ids == expected_ids
+    assert isinstance(condensation, Condensation)
+    assert isinstance(condensation.action, CondensationAction)
+
+    forgotten_ids = condensation.action.forgotten
+    expected_forgotten = [4, 5, 6, 7]
+    assert sorted(forgotten_ids) == expected_forgotten
 
 
-def test_short_history_no_truncation(controller_fixture):
-    controller = controller_fixture
+def test_short_history_no_truncation(condenser_fixture):
+    condenser = condenser_fixture
 
-    history = create_events(
+    events = create_events(
         [
             {'type': SystemMessageAction, 'content': 'System Prompt'},  # 1
             {
@@ -310,7 +305,7 @@ def test_short_history_no_truncation(controller_fixture):
             },  # 6
         ]
     )
-    controller.state.history = history
+    view = View(events=events)
 
     # Calculation (RecallAction now essential):
     # History len = 6
@@ -321,19 +316,22 @@ def test_short_history_no_truncation(controller_fixture):
     # recent_events_slice = history[5:] = [obs1(6)]
     # Validation: remove leading obs1(6). validated_slice = []
     # Final = essentials + validated_slice = [sys(1), user(2), recall_act(3), recall_obs(4)]
-    # Expected IDs: [1, 2, 3, 4]. Length 4.
-    truncated_events = controller._apply_conversation_window(controller.state.history)
+    # Expected kept IDs: [1, 2, 3, 4]. Length 4.
+    # Forgotten IDs: [5, 6]
+    condensation = condenser.get_condensation(view)
 
-    assert len(truncated_events) == 4
-    expected_ids = [1, 2, 3, 4]
-    actual_ids = [e.id for e in truncated_events]
-    assert actual_ids == expected_ids
+    assert isinstance(condensation, Condensation)
+    assert isinstance(condensation.action, CondensationAction)
+
+    forgotten_ids = condensation.action.forgotten
+    expected_forgotten = [5, 6]
+    assert sorted(forgotten_ids) == expected_forgotten
 
 
-def test_only_essential_events(controller_fixture):
-    controller = controller_fixture
+def test_only_essential_events(condenser_fixture):
+    condenser = condenser_fixture
 
-    history = create_events(
+    events = create_events(
         [
             {'type': SystemMessageAction, 'content': 'System Prompt'},  # 1
             {
@@ -345,7 +343,7 @@ def test_only_essential_events(controller_fixture):
             {'type': RecallObservation, 'content': 'Recall result', 'cause_id': 3},  # 4
         ]
     )
-    controller.state.history = history
+    view = View(events=events)
 
     # Calculation (RecallAction now essential):
     # History len = 4
@@ -356,19 +354,22 @@ def test_only_essential_events(controller_fixture):
     # recent_events_slice = history[3:] = [recall_obs(4)]
     # Validation: remove leading recall_obs(4). validated_slice = []
     # Final = essentials + validated_slice = [sys(1), user(2), recall_act(3), recall_obs(4)]
-    # Expected IDs: [1, 2, 3, 4]. Length 4.
-    truncated_events = controller._apply_conversation_window(controller.state.history)
+    # Expected kept IDs: [1, 2, 3, 4]. Length 4.
+    # Forgotten IDs: []
+    condensation = condenser.get_condensation(view)
 
-    assert len(truncated_events) == 4
-    expected_ids = [1, 2, 3, 4]
-    actual_ids = [e.id for e in truncated_events]
-    assert actual_ids == expected_ids
+    assert isinstance(condensation, Condensation)
+    assert isinstance(condensation.action, CondensationAction)
+
+    forgotten_ids = condensation.action.forgotten
+    expected_forgotten = []
+    assert forgotten_ids == expected_forgotten
 
 
-def test_dangling_observations_at_cut_point(controller_fixture):
-    controller = controller_fixture
+def test_dangling_observations_at_cut_point(condenser_fixture):
+    condenser = condenser_fixture
 
-    history_forced_dangle = create_events(
+    events = create_events(
         [
             {'type': SystemMessageAction, 'content': 'System Prompt'},  # 1
             {
@@ -405,7 +406,7 @@ def test_dangling_observations_at_cut_point(controller_fixture):
             },  # 10
         ]
     )  # 10 events total
-    controller.state.history = history_forced_dangle
+    view = View(events=events)
 
     # Calculation (RecallAction now essential):
     # History len = 10
@@ -416,20 +417,22 @@ def test_dangling_observations_at_cut_point(controller_fixture):
     # recent_events_slice = history[7:] = [obs1(8), cmd2(9), obs2(10)]
     # Validation: remove leading obs1(8). validated_slice = [cmd2(9), obs2(10)]
     # Final = essentials + validated_slice = [sys(1), user(2), recall_act(3), recall_obs(4), cmd2(9), obs2(10)]
-    # Expected IDs: [1, 2, 3, 4, 9, 10]. Length 6.
-    truncated_events = controller._apply_conversation_window(controller.state.history)
+    # Expected kept IDs: [1, 2, 3, 4, 9, 10]. Length 6.
+    # Forgotten IDs: [5, 6, 7, 8]
+    condensation = condenser.get_condensation(view)
 
-    assert len(truncated_events) == 6
-    expected_ids = [1, 2, 3, 4, 9, 10]
-    actual_ids = [e.id for e in truncated_events]
-    assert actual_ids == expected_ids
-    # Verify dangling observations 5 and 6 were removed (implicitly by slice start and validation)
+    assert isinstance(condensation, Condensation)
+    assert isinstance(condensation.action, CondensationAction)
+
+    forgotten_ids = condensation.action.forgotten
+    expected_forgotten = [5, 6, 7, 8]
+    assert sorted(forgotten_ids) == expected_forgotten
 
 
-def test_only_dangling_observations_in_recent_slice(controller_fixture):
-    controller = controller_fixture
+def test_only_dangling_observations_in_recent_slice(condenser_fixture):
+    condenser = condenser_fixture
 
-    history = create_events(
+    events = create_events(
         [
             {'type': SystemMessageAction, 'content': 'System Prompt'},  # 1
             {
@@ -452,7 +455,7 @@ def test_only_dangling_observations_in_recent_slice(controller_fixture):
             },  # 6 (Dangling)
         ]
     )  # 6 events total
-    controller.state.history = history
+    view = View(events=events)
 
     # Calculation (RecallAction now essential):
     # History len = 6
@@ -463,43 +466,44 @@ def test_only_dangling_observations_in_recent_slice(controller_fixture):
     # recent_events_slice = history[5:] = [dangle2(6)]
     # Validation: remove leading dangle2(6). validated_slice = [] (Corrected based on user feedback/bugfix)
     # Final = essentials + validated_slice = [sys(1), user(2), recall_act(3), recall_obs(4)]
-    # Expected IDs: [1, 2, 3, 4]. Length 4.
+    # Expected kept IDs: [1, 2, 3, 4]. Length 4.
+    # Forgotten IDs: [5, 6]
     with patch(
-        'openhands.controller.agent_controller.logger.warning'
+        'openhands.memory.condenser.impl.conversation_window_condenser.logger.warning'
     ) as mock_log_warning:
-        truncated_events = controller._apply_conversation_window(
-            controller.state.history
-        )
+        condensation = condenser.get_condensation(view)
 
-        assert len(truncated_events) == 4
-        expected_ids = [1, 2, 3, 4]
-        actual_ids = [e.id for e in truncated_events]
-        assert actual_ids == expected_ids
-        # Verify dangling observations 5 and 6 were removed
+        assert isinstance(condensation, Condensation)
+        assert isinstance(condensation.action, CondensationAction)
+
+        forgotten_ids = condensation.action.forgotten
+        expected_forgotten = [5, 6]
+        assert sorted(forgotten_ids) == expected_forgotten
 
         # Check that the specific warning was logged exactly once
         assert mock_log_warning.call_count == 1
 
-        # Check the essential parts of the arguments, allowing for variations like stacklevel
+        # Check the essential parts of the arguments
         call_args, call_kwargs = mock_log_warning.call_args
         expected_message_substring = 'All recent events are dangling observations, which we truncate. This means the agent has only the essential first events. This should not happen.'
         assert expected_message_substring in call_args[0]
-        assert 'extra' in call_kwargs
-        assert call_kwargs['extra'].get('session_id') == 'test_sid'
 
 
-def test_empty_history(controller_fixture):
-    controller = controller_fixture
-    controller.state.history = []
+def test_empty_history(condenser_fixture):
+    condenser = condenser_fixture
+    view = View(events=[])
 
-    truncated_events = controller._apply_conversation_window(controller.state.history)
-    assert truncated_events == []
+    condensation = condenser.get_condensation(view)
+
+    assert isinstance(condensation, Condensation)
+    assert isinstance(condensation.action, CondensationAction)
+    assert condensation.action.forgotten == []
 
 
-def test_multiple_user_messages(controller_fixture):
-    controller = controller_fixture
+def test_multiple_user_messages(condenser_fixture):
+    condenser = condenser_fixture
 
-    history = create_events(
+    events = create_events(
         [
             {'type': SystemMessageAction, 'content': 'System Prompt'},  # 1
             {
@@ -540,7 +544,7 @@ def test_multiple_user_messages(controller_fixture):
             },  # 11
         ]
     )  # 11 events total
-    controller.state.history = history
+    view = View(events=events)
 
     # Calculation (RecallAction now essential):
     # History len = 11
@@ -551,15 +555,18 @@ def test_multiple_user_messages(controller_fixture):
     # recent_events_slice = history[8:] = [recall_obs2(9), cmd2(10), obs2(11)]
     # Validation: remove leading recall_obs2(9). validated_slice = [cmd2(10), obs2(11)]
     # Final = essentials + validated_slice = [sys(1), user1(2), recall_act1(3), recall_obs1(4)] + [cmd2(10), obs2(11)]
-    # Expected IDs: [1, 2, 3, 4, 10, 11]. Length 6.
-    truncated_events = controller._apply_conversation_window(controller.state.history)
+    # Expected kept IDs: [1, 2, 3, 4, 10, 11]. Length 6.
+    # Forgotten IDs: [5, 6, 7, 8, 9]
+    condensation = condenser.get_condensation(view)
 
-    assert len(truncated_events) == 6
-    expected_ids = [1, 2, 3, 4, 10, 11]
-    actual_ids = [e.id for e in truncated_events]
-    assert actual_ids == expected_ids
+    assert isinstance(condensation, Condensation)
+    assert isinstance(condensation.action, CondensationAction)
 
-    # Verify the second user message (ID 7) was NOT kept
-    assert not any(event.id == 7 for event in truncated_events)
-    # Verify the first user message (ID 2) is present
-    assert any(event.id == 2 for event in truncated_events)
+    forgotten_ids = condensation.action.forgotten
+    expected_forgotten = [5, 6, 7, 8, 9]
+    assert sorted(forgotten_ids) == expected_forgotten
+
+    # Additional validation: ensure that only the first user message is kept
+    kept_event_ids = set(range(1, 12)) - set(forgotten_ids)
+    assert 2 in kept_event_ids  # First user message kept
+    assert 7 not in kept_event_ids  # Second user message forgotten

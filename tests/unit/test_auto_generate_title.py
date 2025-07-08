@@ -9,7 +9,7 @@ from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.events.action import MessageAction
 from openhands.events.event import EventSource
-from openhands.events.stream import EventStream
+from openhands.events.event_store import EventStore
 from openhands.server.conversation_manager.standalone_conversation_manager import (
     StandaloneConversationManager,
 )
@@ -37,14 +37,14 @@ async def test_auto_generate_title_with_llm():
     user_message._id = 1
     user_message._timestamp = datetime.now(timezone.utc).isoformat()
 
-    # Mock the EventStream class
+    # Mock the EventStore class
     with patch(
-        'openhands.utils.conversation_summary.EventStream'
-    ) as mock_event_stream_cls:
+        'openhands.utils.conversation_summary.EventStore'
+    ) as mock_event_store_cls:
         # Configure the mock event stream to return our test message
-        mock_event_stream = MagicMock(spec=EventStream)
-        mock_event_stream.search_events.return_value = [user_message]
-        mock_event_stream_cls.return_value = mock_event_stream
+        mock_event_store = MagicMock(spec=EventStore)
+        mock_event_store.search_events.return_value = [user_message]
+        mock_event_store_cls.return_value = mock_event_store
 
         # Mock the LLM response
         with patch('openhands.utils.conversation_summary.LLM') as mock_llm_cls:
@@ -69,8 +69,8 @@ async def test_auto_generate_title_with_llm():
             # Verify the result
             assert title == 'Python Data Analysis Script'
 
-            # Verify EventStream was created with the correct parameters
-            mock_event_stream_cls.assert_called_once_with(
+            # Verify EventStore was created with the correct parameters
+            mock_event_store_cls.assert_called_once_with(
                 conversation_id, file_store, user_id
             )
 
@@ -102,14 +102,14 @@ async def test_auto_generate_title_fallback():
     user_message._id = 1
     user_message._timestamp = datetime.now(timezone.utc).isoformat()
 
-    # Mock the EventStream class
+    # Mock the EventStore class
     with patch(
-        'openhands.utils.conversation_summary.EventStream'
-    ) as mock_event_stream_cls:
+        'openhands.utils.conversation_summary.EventStore'
+    ) as mock_event_store_cls:
         # Configure the mock event stream to return our test message
-        mock_event_stream = MagicMock(spec=EventStream)
-        mock_event_stream.search_events.return_value = [user_message]
-        mock_event_stream_cls.return_value = mock_event_stream
+        mock_event_store = MagicMock(spec=EventStore)
+        mock_event_store.search_events.return_value = [user_message]
+        mock_event_store_cls.return_value = mock_event_store
 
         # Mock the LLM to raise an exception
         with patch('openhands.utils.conversation_summary.LLM') as mock_llm_cls:
@@ -132,8 +132,8 @@ async def test_auto_generate_title_fallback():
             assert title == 'This is a very long message th...'
             assert len(title) <= 35
 
-            # Verify EventStream was created with the correct parameters
-            mock_event_stream_cls.assert_called_once_with(
+            # Verify EventStore was created with the correct parameters
+            mock_event_store_cls.assert_called_once_with(
                 conversation_id, file_store, user_id
             )
 
@@ -148,14 +148,14 @@ async def test_auto_generate_title_no_messages():
     conversation_id = 'test-conversation'
     user_id = 'test-user'
 
-    # Mock the EventStream class
+    # Mock the EventStore class
     with patch(
-        'openhands.utils.conversation_summary.EventStream'
-    ) as mock_event_stream_cls:
-        # Configure the mock event stream to return no events
-        mock_event_stream = MagicMock(spec=EventStream)
-        mock_event_stream.search_events.return_value = []
-        mock_event_stream_cls.return_value = mock_event_stream
+        'openhands.utils.conversation_summary.EventStore'
+    ) as mock_event_store_cls:
+        # Configure the mock event store to return no events
+        mock_event_store = MagicMock(spec=EventStore)
+        mock_event_store.search_events.return_value = []
+        mock_event_store_cls.return_value = mock_event_store
 
         # Create test settings
         settings = Settings(
@@ -172,8 +172,8 @@ async def test_auto_generate_title_no_messages():
         # Verify the result is empty
         assert title == ''
 
-        # Verify EventStream was created with the correct parameters
-        mock_event_stream_cls.assert_called_once_with(
+        # Verify EventStore was created with the correct parameters
+        mock_event_store_cls.assert_called_once_with(
             conversation_id, file_store, user_id
         )
 

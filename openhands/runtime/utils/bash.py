@@ -230,7 +230,7 @@ class BashSession:
         )
         self.pane = self.window.active_pane
         logger.debug(f'pane: {self.pane}; history_limit: {self.session.history_limit}')
-        _initial_window.kill_window()
+        _initial_window.kill()
 
         # Configure bash to use simple PS1 and disable PS2
         self.pane.send_keys(
@@ -268,7 +268,7 @@ class BashSession:
         """Clean up the session."""
         if self._closed:
             return
-        self.session.kill_session()
+        self.session.kill()
         self._closed = True
 
     @property

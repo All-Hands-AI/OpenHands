@@ -90,7 +90,7 @@ describe("HomeScreen", () => {
     const mainContainer = screen
       .getByTestId("home-screen")
       .querySelector("main");
-    expect(mainContainer).toHaveClass("flex", "flex-col", "md:flex-row");
+    expect(mainContainer).toHaveClass("flex", "flex-col", "lg:flex-row");
   });
 
   it("should filter the suggested tasks based on the selected repository", async () => {

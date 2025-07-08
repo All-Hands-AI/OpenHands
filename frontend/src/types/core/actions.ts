@@ -11,7 +11,7 @@ export interface UserMessageAction extends OpenHandsActionEvent<"message"> {
 }
 
 export interface SystemMessageAction extends OpenHandsActionEvent<"system"> {
-  source: "agent";
+  source: "agent" | "environment";
   args: {
     content: string;
     tools: Array<Record<string, unknown>> | null;

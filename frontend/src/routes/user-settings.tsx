@@ -45,7 +45,7 @@ function EmailInputSection({
               isEmailChanged && !isEmailValid
                 ? "border-red-500"
                 : "border-tertiary"
-            } flex-grow focus:outline-hidden focus:border-transparent focus:ring-0`}
+            } flex-grow`}
             placeholder={t("SETTINGS$USER_EMAIL_LOADING")}
             data-testid="email-input"
           />

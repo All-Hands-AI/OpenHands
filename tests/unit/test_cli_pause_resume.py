@@ -253,7 +253,12 @@ class TestCliCommandsPauseResume:
         mock_handle_resume.return_value = (False, False)
 
         # Call handle_commands
-        close_repl, reload_microagents, new_session_requested = await handle_commands(
+        (
+            close_repl,
+            reload_microagents,
+            new_session_requested,
+            _,
+        ) = await handle_commands(
             message,
             event_stream,
             usage_metrics,
@@ -275,7 +280,7 @@ class TestCliCommandsPauseResume:
 class TestAgentStatePauseResume:
     @pytest.mark.asyncio
     @patch('openhands.cli.main.display_agent_running_message')
-    @patch('openhands.cli.main.process_agent_pause')
+    @patch('openhands.cli.tui.process_agent_pause')
     async def test_agent_running_enables_pause(
         self, mock_process_agent_pause, mock_display_message
     ):

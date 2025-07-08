@@ -23,14 +23,16 @@ from openhands.cli.tui import (
     display_initialization_animation,
     display_runtime_initialization_message,
     display_welcome_message,
-    process_agent_pause,
     read_confirmation_input,
     read_prompt_input,
+    start_pause_listener,
+    stop_pause_listener,
     update_streaming_output,
 )
 from openhands.cli.utils import (
     update_usage_metrics,
 )
+from openhands.cli.vscode_extension import attempt_vscode_extension_install
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent
 from openhands.core.config import (
@@ -40,9 +42,11 @@ from openhands.core.config import (
 )
 from openhands.core.config.condenser_config import NoOpCondenserConfig
 from openhands.core.config.mcp_config import OpenHandsMCPConfigImpl
+from openhands.core.config.utils import finalize_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.loop import run_agent_until_done
 from openhands.core.schema import AgentState
+from openhands.core.schema.exit_reason import ExitReason
 from openhands.core.setup import (
     create_agent,
     create_controller,
@@ -77,7 +81,6 @@ async def cleanup_session(
     controller: AgentController,
 ) -> None:
     """Clean up all resources from the current session."""
-
     event_stream = runtime.event_stream
     end_state = controller.get_state()
     end_state.save_to_session(
@@ -117,6 +120,7 @@ async def run_session(
 ) -> bool:
     reload_microagents = False
     new_session_requested = False
+    exit_reason = ExitReason.INTENTIONAL
 
     sid = generate_sid(config, session_name)
     is_loaded = asyncio.Event()
@@ -152,7 +156,7 @@ async def run_session(
     usage_metrics = UsageMetrics()
 
     async def prompt_for_next_task(agent_state: str) -> None:
-        nonlocal reload_microagents, new_session_requested
+        nonlocal reload_microagents, new_session_requested, exit_reason
         while True:
             next_message = await read_prompt_input(
                 config, agent_state, multiline=config.cli_multiline_input
@@ -165,6 +169,7 @@ async def run_session(
                 close_repl,
                 reload_microagents,
                 new_session_requested,
+                exit_reason,
             ) = await handle_commands(
                 next_message,
                 event_stream,
@@ -182,6 +187,10 @@ async def run_session(
         nonlocal reload_microagents, is_paused, always_confirm_mode
         display_event(event, config)
         update_usage_metrics(event, usage_metrics)
+
+        if isinstance(event, AgentStateChangedObservation):
+            if event.agent_state not in [AgentState.RUNNING, AgentState.PAUSED]:
+                await stop_pause_listener()
 
         if isinstance(event, AgentStateChangedObservation):
             if event.agent_state in [
@@ -236,9 +245,7 @@ async def run_session(
 
             if event.agent_state == AgentState.RUNNING:
                 display_agent_running_message()
-                loop.create_task(
-                    process_agent_pause(is_paused, event_stream)
-                )  # Create a task to track agent pause requests from the user
+                start_pause_listener(loop, is_paused, event_stream)
 
     def on_event(event: Event) -> None:
         loop.create_task(on_event_async(event))
@@ -328,6 +335,11 @@ async def run_session(
 
     await cleanup_session(loop, agent, runtime, controller)
 
+    if exit_reason == ExitReason.INTENTIONAL:
+        print_formatted_text('✅ Session terminated successfully.\n')
+    else:
+        print_formatted_text(f'⚠️ Session was interrupted: {exit_reason.value}\n')
+
     return new_session_requested
 
 
@@ -356,6 +368,9 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
 
     # Load config from toml and override with command line arguments
     config: OpenHandsConfig = setup_config_from_args(args)
+
+    # Attempt to install VS Code extension if applicable (one-time attempt)
+    attempt_vscode_extension_install()
 
     # Load settings from Settings Store
     # TODO: Make this generic?
@@ -423,6 +438,10 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
             config.workspace_base = os.getcwd()
         config.security.confirmation_mode = True
 
+        # Need to finalize config again after setting runtime to 'cli'
+        # This ensures Jupyter plugin is disabled for CLI runtime
+        finalize_config(config)
+
     # TODO: Set working directory from config or use current working directory?
     current_dir = config.workspace_base
 
@@ -434,7 +453,23 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
         return
 
     # Read task from file, CLI args, or stdin
-    task_str = read_task(args, config.cli_multiline_input)
+    if args.file:
+        # For CLI usage, we want to enhance the file content with a prompt
+        # that instructs the agent to read and understand the file first
+        with open(args.file, 'r', encoding='utf-8') as file:
+            file_content = file.read()
+
+        # Create a prompt that instructs the agent to read and understand the file first
+        task_str = f"""The user has tagged a file '{args.file}'.
+Please read and understand the following file content first:
+
+```
+{file_content}
+```
+
+After reviewing the file, please ask the user what they would like to do with it."""
+    else:
+        task_str = read_task(args, config.cli_multiline_input)
 
     # Run the first session
     new_session_requested = await run_session(
@@ -460,7 +495,7 @@ def main():
     try:
         loop.run_until_complete(main_with_loop(loop))
     except KeyboardInterrupt:
-        print('Received keyboard interrupt, shutting down...')
+        print_formatted_text('⚠️ Session was interrupted: interrupted\n')
     except ConnectionRefusedError as e:
         print(f'Connection refused: {e}')
         sys.exit(1)

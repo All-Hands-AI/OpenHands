@@ -10,6 +10,7 @@ from openhands.core.config import OpenHandsConfig
 from openhands.core.config.condenser_config import (
     BrowserOutputCondenserConfig,
     CondenserPipelineConfig,
+    ConversationWindowCondenserConfig,
     LLMSummarizingCondenserConfig,
 )
 from openhands.core.config.mcp_config import MCPConfig, OpenHandsMCPConfigImpl
@@ -156,13 +157,18 @@ class Session:
         agent_config = self.config.get_agent_config(agent_cls)
 
         if settings.enable_default_condenser:
-            # Default condenser chains a condenser that limits browser the total
-            # size of browser observations with a condenser that limits the size
-            # of the view given to the LLM. The order matters: with the browser
-            # output first, the summarizer will only see the most recent browser
-            # output, which should keep the summarization cost down.
+            # Default condenser chains three condensers together:
+            # 1. a conversation window condenser that handles explicit
+            # condensation requests,
+            # 2. a condenser that limits the total size of browser observations,
+            # and
+            # 3. a condenser that limits the size of the view given to the LLM.
+            # The order matters: with the browser output first, the summarizer
+            # will only see the most recent browser output, which should keep
+            # the summarization cost down.
             default_condenser_config = CondenserPipelineConfig(
                 condensers=[
+                    ConversationWindowCondenserConfig(),
                     BrowserOutputCondenserConfig(attention_window=2),
                     LLMSummarizingCondenserConfig(
                         llm_config=llm.config, keep_first=4, max_size=120

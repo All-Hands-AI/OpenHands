@@ -443,12 +443,18 @@ class Runtime(FileEditRuntimeMixin):
 
         # setup scripts time out after 10 minutes
         action = CmdRunAction(
-            f'chmod +x {setup_script} && source {setup_script}', blocking=True
+            f'chmod +x {setup_script} && source {setup_script}',
+            blocking=True,
+            hidden=True,
         )
         action.set_hard_timeout(600)
-        obs = self.run_action(action)
-        if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
-            self.log('error', f'Setup script failed: {obs.content}')
+
+        # Add the action to the event stream as an ENVIRONMENT event
+        source = EventSource.ENVIRONMENT
+        self.event_stream.add_event(action, source)
+
+        # Execute the action
+        self.run_action(action)
 
     @property
     def workspace_root(self) -> Path:
@@ -559,9 +565,19 @@ fi
             A list of loaded microagents
         """
         loaded_microagents: list[BaseMicroagent] = []
+
+        self.log(
+            'info',
+            f'Attempting to list files in {source_description} microagents directory: {microagents_dir}',
+        )
+
         files = self.list_files(str(microagents_dir))
 
         if not files:
+            self.log(
+                'warning',
+                f'No files found in {source_description} microagents directory: {microagents_dir}',
+            )
             return loaded_microagents
 
         self.log(
@@ -585,6 +601,8 @@ fi
 
             loaded_microagents.extend(repo_agents.values())
             loaded_microagents.extend(knowledge_agents.values())
+        except Exception as e:
+            self.log('error', f'Failed to load agents from {source_description}: {e}')
         finally:
             shutil.rmtree(microagent_folder)
 
@@ -697,15 +715,33 @@ fi
         """
         loaded_microagents: list[BaseMicroagent] = []
 
+        self.log(
+            'debug',
+            f'Starting org-level microagent loading for repository: {selected_repository}',
+        )
+
         repo_parts = selected_repository.split('/')
+
         if len(repo_parts) < 2:
+            self.log(
+                'warning',
+                f'Repository path has insufficient parts ({len(repo_parts)} < 2), skipping org-level microagents',
+            )
             return loaded_microagents
 
         # Extract the domain and org/user name
         org_name = repo_parts[-2]
+        self.log(
+            'info',
+            f'Extracted org/user name: {org_name}',
+        )
 
         # Determine if this is a GitLab repository
         is_gitlab = self._is_gitlab_repository(selected_repository)
+        self.log(
+            'debug',
+            f'Repository type detection - is_gitlab: {is_gitlab}',
+        )
 
         # For GitLab, use openhands-config (since .openhands is not a valid repo name)
         # For other providers, use .openhands
@@ -723,6 +759,10 @@ fi
         try:
             # Create a temporary directory for the org-level repo
             org_repo_dir = self.workspace_root / f'org_openhands_{org_name}'
+            self.log(
+                'debug',
+                f'Creating temporary directory for org repo: {org_repo_dir}',
+            )
 
             # Get authenticated URL and do a shallow clone (--depth 1) for efficiency
             try:
@@ -733,9 +773,18 @@ fi
                     self.git_provider_tokens,
                 )
             except Exception as e:
+                self.log(
+                    'error',
+                    f'Failed to get authenticated URL for {org_openhands_repo}: {str(e)}',
+                )
                 raise Exception(str(e))
+
             clone_cmd = (
                 f'GIT_TERMINAL_PROMPT=0 git clone --depth 1 {remote_url} {org_repo_dir}'
+            )
+            self.log(
+                'info',
+                'Executing clone command for org-level repo',
             )
 
             action = CmdRunAction(command=clone_cmd)
@@ -749,17 +798,39 @@ fi
 
                 # Load microagents from the org-level repo
                 org_microagents_dir = org_repo_dir / 'microagents'
+                self.log(
+                    'info',
+                    f'Looking for microagents in directory: {org_microagents_dir}',
+                )
+
                 loaded_microagents = self._load_microagents_from_directory(
                     org_microagents_dir, 'org-level'
+                )
+
+                self.log(
+                    'info',
+                    f'Loaded {len(loaded_microagents)} microagents from org-level repository {org_openhands_repo}',
                 )
 
                 # Clean up the org repo directory
                 action = CmdRunAction(f'rm -rf {org_repo_dir}')
                 self.run_action(action)
             else:
+                clone_error_msg = (
+                    obs.content
+                    if isinstance(obs, CmdOutputObservation)
+                    else 'Unknown error'
+                )
+                exit_code = (
+                    obs.exit_code if isinstance(obs, CmdOutputObservation) else 'N/A'
+                )
                 self.log(
                     'info',
-                    f'No org-level microagents found at {org_openhands_repo}',
+                    f'No org-level microagents found at {org_openhands_repo} (exit_code: {exit_code})',
+                )
+                self.log(
+                    'debug',
+                    f'Clone command output: {clone_error_msg}',
                 )
 
         except Exception as e:

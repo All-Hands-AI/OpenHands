@@ -261,7 +261,8 @@ class DockerRuntime(ActionExecutionClient):
             mount_mode = 'rw'  # Default mode
 
             # e.g. result would be: {"/home/user/openhands/workspace": {'bind': "/workspace", 'mode': 'rw'}}
-            volumes[self.config.workspace_mount_path] = {
+            # Add os.path.abspath() here so that relative paths can be used when workspace_mount_path is configured in config.toml
+            volumes[os.path.abspath(self.config.workspace_mount_path)] = {
                 'bind': self.config.workspace_mount_path_in_sandbox,
                 'mode': mount_mode,
             }
@@ -360,6 +361,8 @@ class DockerRuntime(ActionExecutionClient):
         )
 
         command = self.get_action_execution_server_startup_command()
+        self.log('info', f'Starting server with command: {command}')
+
         if self.config.sandbox.enable_gpu:
             gpu_ids = self.config.sandbox.cuda_visible_devices
             if gpu_ids is None:

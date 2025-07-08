@@ -6,7 +6,7 @@ from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
 from openhands.events.event import EventSource
-from openhands.events.stream import EventStream
+from openhands.events.event_store import EventStore
 from openhands.llm.llm import LLM
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
@@ -90,12 +90,12 @@ async def auto_generate_title(
         A generated title string
     """
     try:
-        # Create an event stream for the conversation
-        event_stream = EventStream(conversation_id, file_store, user_id)
+        # Create an event store for the conversation
+        event_store = EventStore(conversation_id, file_store, user_id)
 
         # Find the first user message
         first_user_message = None
-        for event in event_stream.search_events():
+        for event in event_store.search_events():
             if (
                 event.source == EventSource.USER
                 and isinstance(event, MessageAction)
