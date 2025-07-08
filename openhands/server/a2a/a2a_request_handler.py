@@ -25,16 +25,12 @@ from a2a.utils.telemetry import SpanKind, trace_class
 
 from openhands.core.schema import ActionType
 from openhands.core.schema.agent import AgentState
-from openhands.events.action import NullAction, SystemMessageAction
-from openhands.events.action.agent import RecallAction
+from openhands.events.action import NullAction
 from openhands.events.async_event_store_wrapper import AsyncEventStoreWrapper
 from openhands.events.event import Event, EventSource
 from openhands.events.event_store import EventStore
 from openhands.events.observation import NullObservation
-from openhands.events.observation.agent import (
-    AgentStateChangedObservation,
-    RecallObservation,
-)
+from openhands.events.observation.agent import AgentStateChangedObservation
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.session.session import Session
 from openhands.server.shared import (
@@ -189,9 +185,6 @@ class A2aRequestHandler:
                     (
                         NullAction,
                         NullObservation,
-                        RecallAction,
-                        RecallObservation,
-                        SystemMessageAction,
                         AgentStateChangedObservation,
                     ),
                 ):
