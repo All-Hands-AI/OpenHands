@@ -10,6 +10,13 @@ export const organizationService = {
     return data;
   },
 
+  getOrganization: async (orgId: string) => {
+    const { data } = await openHands.get("/api/organizations", {
+      params: { orgId },
+    });
+    return data;
+  },
+
   getOrganizationMembers: async () => {
     const { data } = await openHands.get<OrganizationMember[]>(
       "/api/organizations/members",
