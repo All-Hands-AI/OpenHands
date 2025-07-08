@@ -27,9 +27,9 @@ vi.mock("react-i18next", async () => {
     useTranslation: () => ({
       t: (key: string) => {
         const translations: Record<string, string> = {
-          "CONVERSATION$CREATED": "Created",
-          "CONVERSATION$AGO": "ago",
-          "CONVERSATION$UPDATED": "Updated"
+          CONVERSATION$CREATED: "Created",
+          CONVERSATION$AGO: "ago",
+          CONVERSATION$UPDATED: "Updated",
         };
         return translations[key] || key;
       },
@@ -82,7 +82,9 @@ describe("ConversationCard", () => {
     expect(card).toHaveTextContent("ago");
 
     // Use a regex to match the time part since it might have whitespace
-    const timeRegex = new RegExp(formatTimeDelta(new Date("2021-10-01T12:00:00Z")));
+    const timeRegex = new RegExp(
+      formatTimeDelta(new Date("2021-10-01T12:00:00Z")),
+    );
     expect(card).toHaveTextContent(timeRegex);
   });
 
@@ -108,7 +110,11 @@ describe("ConversationCard", () => {
         onChangeTitle={onChangeTitle}
         isActive
         title="Conversation 1"
-        selectedRepository="org/selectedRepository"
+        selectedRepository={{
+          selected_repository: "org/selectedRepository",
+          selected_branch: "main",
+          git_provider: "github",
+        }}
         lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
@@ -173,7 +179,11 @@ describe("ConversationCard", () => {
         isActive
         onChangeTitle={onChangeTitle}
         title="Conversation 1"
-        selectedRepository="org/selectedRepository"
+        selectedRepository={{
+          selected_repository: "org/selectedRepository",
+          selected_branch: "main",
+          git_provider: "github",
+        }}
         lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );

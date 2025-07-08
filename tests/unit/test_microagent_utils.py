@@ -223,6 +223,97 @@ Add proper error handling."""
     assert agent.source == str(cursorrules_path)
 
 
+def test_microagent_version_as_integer():
+    """Test loading a microagent with version as integer (reproduces the bug)."""
+    # Create a microagent with version as an unquoted integer
+    # This should be parsed as an integer by YAML but converted to string by our code
+    microagent_content = """---
+name: test_agent
+type: knowledge
+version: 2512312
+agent: CodeActAgent
+triggers:
+  - test
+---
+
+# Test Agent
+
+This is a test agent with integer version.
+"""
+
+    test_path = Path('test_agent.md')
+
+    # This should not raise an error even though version is an integer in YAML
+    agent = BaseMicroagent.load(test_path, file_content=microagent_content)
+
+    # Verify the agent was loaded correctly
+    assert isinstance(agent, KnowledgeMicroagent)
+    assert agent.name == 'test_agent'
+    assert agent.metadata.version == '2512312'  # Should be converted to string
+    assert isinstance(agent.metadata.version, str)  # Ensure it's actually a string
+    assert agent.type == MicroagentType.KNOWLEDGE
+
+
+def test_microagent_version_as_float():
+    """Test loading a microagent with version as float."""
+    # Create a microagent with version as an unquoted float
+    microagent_content = """---
+name: test_agent_float
+type: knowledge
+version: 1.5
+agent: CodeActAgent
+triggers:
+  - test
+---
+
+# Test Agent Float
+
+This is a test agent with float version.
+"""
+
+    test_path = Path('test_agent_float.md')
+
+    # This should not raise an error even though version is a float in YAML
+    agent = BaseMicroagent.load(test_path, file_content=microagent_content)
+
+    # Verify the agent was loaded correctly
+    assert isinstance(agent, KnowledgeMicroagent)
+    assert agent.name == 'test_agent_float'
+    assert agent.metadata.version == '1.5'  # Should be converted to string
+    assert isinstance(agent.metadata.version, str)  # Ensure it's actually a string
+    assert agent.type == MicroagentType.KNOWLEDGE
+
+
+def test_microagent_version_as_string_unchanged():
+    """Test loading a microagent with version as string (should remain unchanged)."""
+    # Create a microagent with version as a quoted string
+    microagent_content = """---
+name: test_agent_string
+type: knowledge
+version: "1.0.0"
+agent: CodeActAgent
+triggers:
+  - test
+---
+
+# Test Agent String
+
+This is a test agent with string version.
+"""
+
+    test_path = Path('test_agent_string.md')
+
+    # This should work normally
+    agent = BaseMicroagent.load(test_path, file_content=microagent_content)
+
+    # Verify the agent was loaded correctly
+    assert isinstance(agent, KnowledgeMicroagent)
+    assert agent.name == 'test_agent_string'
+    assert agent.metadata.version == '1.0.0'  # Should remain as string
+    assert isinstance(agent.metadata.version, str)  # Ensure it's actually a string
+    assert agent.type == MicroagentType.KNOWLEDGE
+
+
 @pytest.fixture
 def temp_microagents_dir_with_cursorrules():
     """Create a temporary directory with test microagents and .cursorrules file."""
