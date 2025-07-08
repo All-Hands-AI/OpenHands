@@ -1,8 +1,9 @@
 import clsx from "clsx";
 import React, { useEffect, useRef, useState } from "react";
 import { NavTab } from "./nav-tab";
-import { ChevronLeft } from "../../assets/chevron-left";
-import { ChevronRight } from "../../assets/chevron-right";
+import { ScrollLeftButton } from "./scroll-left-button";
+import { ScrollRightButton } from "./scroll-right-button";
+import { useTrackElementWidth } from "#/hooks/use-track-element-width";
 
 interface ContainerProps {
   label?: React.ReactNode;
@@ -27,25 +28,14 @@ export function Container({
   const [containerWidth, setContainerWidth] = useState(0);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Track container width using ResizeObserver
-  useEffect(() => {
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        setContainerWidth(entry.contentRect.width);
-      }
-    });
-
-    if (containerRef.current) {
-      resizeObserver.observe(containerRef.current);
-    }
-
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, []);
+  useTrackElementWidth({
+    elementRef: containerRef,
+    callback: setContainerWidth,
+  });
 
   // Check scroll position and update button states
   const updateScrollButtons = () => {
@@ -89,18 +79,10 @@ export function Container({
         <div className="relative flex items-center h-[36px] w-full">
           {/* Left scroll button */}
           {showScrollButtons && (
-            <button
-              type="button"
-              onClick={scrollLeft}
-              disabled={!canScrollLeft}
-              className={clsx(
-                "absolute left-0 z-10 bg-base-secondary border-r border-neutral-600 h-full px-2 flex items-center justify-center",
-                "hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed",
-                "rounded-tl-xl",
-              )}
-            >
-              <ChevronLeft width={16} height={16} active={canScrollLeft} />
-            </button>
+            <ScrollLeftButton
+              scrollLeft={scrollLeft}
+              canScrollLeft={canScrollLeft}
+            />
           )}
 
           {/* Scrollable tabs container */}
@@ -129,18 +111,10 @@ export function Container({
 
           {/* Right scroll button */}
           {showScrollButtons && (
-            <button
-              type="button"
-              onClick={scrollRight}
-              disabled={!canScrollRight}
-              className={clsx(
-                "absolute right-0 z-10 bg-base-secondary border-l border-neutral-600 h-full px-2 flex items-center justify-center",
-                "hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed",
-                "rounded-tr-xl",
-              )}
-            >
-              <ChevronRight width={16} height={16} active={canScrollRight} />
-            </button>
+            <ScrollRightButton
+              scrollRight={scrollRight}
+              canScrollRight={canScrollRight}
+            />
           )}
         </div>
       )}
