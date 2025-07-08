@@ -1,4 +1,6 @@
 import asyncio
+import os
+import sys
 from pathlib import Path
 
 import toml
@@ -39,6 +41,57 @@ from openhands.events.action import (
 )
 from openhands.events.stream import EventStream
 from openhands.storage.settings.file_settings_store import FileSettingsStore
+
+
+def restart_cli() -> None:
+    """Restart the CLI by replacing the current process."""
+    print_formatted_text('🔄 Restarting OpenHands CLI...\n')
+
+    # Get the current Python executable and script arguments
+    python_executable = sys.executable
+    script_args = sys.argv
+
+    # Use os.execv to replace the current process
+    # This preserves the original command line arguments
+    try:
+        os.execv(python_executable, [python_executable] + script_args)
+    except Exception as e:
+        print_formatted_text(f'❌ Failed to restart CLI: {e}\n')
+        print_formatted_text(
+            'Please restart OpenHands manually for changes to take effect.\n'
+        )
+
+
+async def prompt_for_restart(config: OpenHandsConfig) -> bool:
+    """Prompt user if they want to restart the CLI and return their choice."""
+    from prompt_toolkit import HTML
+    from prompt_toolkit.patch_stdout import patch_stdout
+
+    from openhands.cli.tui import create_prompt_session
+
+    print_formatted_text('\n📝 MCP server configuration updated successfully!')
+    print_formatted_text('The changes will take effect after restarting OpenHands.\n')
+
+    prompt_session = create_prompt_session(config)
+
+    while True:
+        try:
+            with patch_stdout():
+                response = await prompt_session.prompt_async(
+                    HTML(
+                        '<gold>Would you like to restart OpenHands now? (y/n): </gold>'
+                    )
+                )
+                response = response.strip().lower() if response else ''
+
+                if response in ['y', 'yes']:
+                    return True
+                elif response in ['n', 'no']:
+                    return False
+                else:
+                    print_formatted_text('Please enter "y" for yes or "n" for no.\n')
+        except (KeyboardInterrupt, EOFError):
+            return False
 
 
 async def handle_commands(
@@ -349,7 +402,7 @@ async def handle_mcp_command(config: OpenHandsConfig) -> None:
     elif action == 1:  # Add
         await add_mcp_server(config)
     elif action == 2:  # Remove
-        remove_mcp_server(config)
+        await remove_mcp_server(config)
     # action == 3 is "Go back", do nothing
 
 
@@ -494,6 +547,10 @@ async def add_sse_server(config: OpenHandsConfig) -> None:
 
     print_formatted_text(f'✓ SSE MCP server added: {url}\n')
 
+    # Prompt for restart
+    if await prompt_for_restart(config):
+        restart_cli()
+
 
 async def add_stdio_server(config: OpenHandsConfig) -> None:
     """Add a Stdio MCP server."""
@@ -555,6 +612,10 @@ async def add_stdio_server(config: OpenHandsConfig) -> None:
 
     print_formatted_text(f'✓ Stdio MCP server added: {name}\n')
 
+    # Prompt for restart
+    if await prompt_for_restart(config):
+        restart_cli()
+
 
 async def add_shttp_server(config: OpenHandsConfig) -> None:
     """Add an SHTTP MCP server."""
@@ -590,8 +651,12 @@ async def add_shttp_server(config: OpenHandsConfig) -> None:
 
     print_formatted_text(f'✓ SHTTP MCP server added: {url}\n')
 
+    # Prompt for restart
+    if await prompt_for_restart(config):
+        restart_cli()
 
-def remove_mcp_server(config: OpenHandsConfig) -> None:
+
+async def remove_mcp_server(config: OpenHandsConfig) -> None:
     """Remove an MCP server configuration."""
     mcp_config = config.mcp
 
@@ -669,6 +734,9 @@ def remove_mcp_server(config: OpenHandsConfig) -> None:
     if removed:
         save_config_file(config_data)
         print_formatted_text(f'✓ {server_type} MCP server "{identifier}" removed.\n')
-        print_formatted_text('Note: Restart OpenHands for changes to take effect.\n')
+
+        # Prompt for restart
+        if await prompt_for_restart(config):
+            restart_cli()
     else:
         print_formatted_text(f'Failed to remove {server_type} server "{identifier}".\n')
