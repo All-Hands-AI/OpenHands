@@ -383,8 +383,8 @@ class LocalRuntime(ActionExecutionClient):
         should_check_dependencies = os.getenv('SKIP_DEPENDENCY_CHECK', '') != '1'
         if should_check_dependencies:
             code_repo_path = os.path.dirname(os.path.dirname(openhands.__file__))
-            env_root_path = os.path.dirname(_python_bin_path())
-            check_dependencies(code_repo_path, env_root_path)
+            check_browser = config.enable_browser and sys.platform != 'win32'
+            check_dependencies(code_repo_path, check_browser)
 
         initial_num_warm_servers = int(os.getenv('INITIAL_NUM_WARM_SERVERS', '0'))
         # Initialize warm servers if needed
@@ -631,7 +631,7 @@ def _create_server(
         override_username=username,
     )
 
-    logger.debug(f'Starting server with command: {cmd}')
+    logger.info(f'Starting server with command: {cmd}')
 
     env = os.environ.copy()
     # Get the code repo path
