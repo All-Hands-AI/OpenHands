@@ -43,6 +43,7 @@ from openhands.core.logger import DEBUG
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
+from openhands.llm.metrics_registry import MetricsRegistry
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
@@ -82,6 +83,7 @@ class KubernetesRuntime(ActionExecutionClient):
         self,
         config: OpenHandsConfig,
         event_stream: EventStream,
+        metrics_registry: MetricsRegistry,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
@@ -138,6 +140,7 @@ class KubernetesRuntime(ActionExecutionClient):
         super().__init__(
             config,
             event_stream,
+            metrics_registry,
             sid,
             plugins,
             env_vars,

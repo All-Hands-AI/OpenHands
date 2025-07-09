@@ -5,6 +5,7 @@ from openhands.agenthub.codeact_agent import CodeActAgent
 from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.llm.llm import LLM
+from openhands.llm.metrics_registry import MetricsRegistry
 
 if TYPE_CHECKING:
     from openhands.events.action import Action
@@ -15,9 +16,7 @@ class LocAgent(CodeActAgent):
     VERSION = '1.0'
 
     def __init__(
-        self,
-        llm: LLM,
-        config: AgentConfig,
+        self, llm: LLM, config: AgentConfig, metrics_registry: MetricsRegistry
     ) -> None:
         """Initializes a new instance of the LocAgent class.
 
@@ -25,7 +24,7 @@ class LocAgent(CodeActAgent):
         - llm (LLM): The llm to be used by this agent
         - config (AgentConfig): The configuration for the agent
         """
-        super().__init__(llm, config)
+        super().__init__(llm, config, metrics_registry)
 
         self.tools = locagent_function_calling.get_tools()
         logger.debug(

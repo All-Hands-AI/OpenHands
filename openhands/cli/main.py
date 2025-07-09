@@ -65,6 +65,7 @@ from openhands.events.observation import (
     AgentStateChangedObservation,
 )
 from openhands.io import read_task
+from openhands.llm.metrics_registry import MetricsRegistry
 from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.condenser.impl.llm_summarizing_condenser import (
     LLMSummarizingCondenserConfig,
@@ -135,7 +136,10 @@ async def run_session(
         None, display_initialization_animation, 'Initializing...', is_loaded
     )
 
-    agent = create_agent(config)
+    # TODO: do we need to restore metrics for CLI?
+    metrics_registry = MetricsRegistry()
+
+    agent = create_agent(config, metrics_registry)
     runtime = create_runtime(
         config,
         sid=sid,

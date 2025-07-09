@@ -101,7 +101,11 @@ class StandaloneConversationManager(ConversationManager):
 
             # Create new conversation if none exists
             c = ServerConversation(
-                sid, file_store=self.file_store, config=self.config, user_id=user_id
+                MetricsRegistry(),
+                sid,
+                file_store=self.file_store,
+                config=self.config,
+                user_id=user_id,
             )
             try:
                 await c.connect()

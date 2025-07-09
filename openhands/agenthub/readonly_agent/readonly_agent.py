@@ -5,6 +5,8 @@ ReadOnlyAgent - A specialized version of CodeActAgent that only uses read-only t
 import os
 from typing import TYPE_CHECKING
 
+from openhands.llm.metrics_registry import MetricsRegistry
+
 if TYPE_CHECKING:
     from litellm import ChatCompletionToolParam
 
@@ -38,9 +40,7 @@ class ReadOnlyAgent(CodeActAgent):
     """
 
     def __init__(
-        self,
-        llm: LLM,
-        config: AgentConfig,
+        self, llm: LLM, config: AgentConfig, metrics_registry: MetricsRegistry
     ) -> None:
         """Initializes a new instance of the ReadOnlyAgent class.
 
@@ -49,7 +49,7 @@ class ReadOnlyAgent(CodeActAgent):
         - config (AgentConfig): The configuration for this agent
         """
         # Initialize the CodeActAgent class; some of it is overridden with class methods
-        super().__init__(llm, config)
+        super().__init__(llm, config, metrics_registry)
 
         logger.debug(
             f'TOOLS loaded for ReadOnlyAgent: {", ".join([tool.get("function").get("name") for tool in self.tools])}'

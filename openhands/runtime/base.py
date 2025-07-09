@@ -50,6 +50,7 @@ from openhands.integrations.provider import (
     ProviderType,
 )
 from openhands.integrations.service_types import AuthenticationError
+from openhands.llm.metrics_registry import MetricsRegistry
 from openhands.microagent import (
     BaseMicroagent,
     load_microagents_from_dir,
@@ -121,6 +122,7 @@ class Runtime(FileEditRuntimeMixin):
         self,
         config: OpenHandsConfig,
         event_stream: EventStream,
+        metrics_registry: MetricsRegistry,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
@@ -173,7 +175,9 @@ class Runtime(FileEditRuntimeMixin):
 
         # Load mixins
         FileEditRuntimeMixin.__init__(
-            self, enable_llm_editor=config.get_agent_config().enable_llm_editor
+            self,
+            enable_llm_editor=config.get_agent_config().enable_llm_editor,
+            metrics_registry=metrics_registry,
         )
 
         self.user_id = user_id

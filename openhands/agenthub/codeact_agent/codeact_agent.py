@@ -3,6 +3,8 @@ import sys
 from collections import deque
 from typing import TYPE_CHECKING
 
+from openhands.llm.metrics_registry import MetricsRegistry
+
 if TYPE_CHECKING:
     from litellm import ChatCompletionToolParam
 
@@ -72,9 +74,7 @@ class CodeActAgent(Agent):
     ]
 
     def __init__(
-        self,
-        llm: LLM,
-        config: AgentConfig,
+        self, llm: LLM, config: AgentConfig, metrics_registry: MetricsRegistry
     ) -> None:
         """Initializes a new instance of the CodeActAgent class.
 
@@ -90,7 +90,7 @@ class CodeActAgent(Agent):
         # Create a ConversationMemory instance
         self.conversation_memory = ConversationMemory(self.config, self.prompt_manager)
 
-        self.condenser = Condenser.from_config(self.config.condenser)
+        self.condenser = Condenser.from_config(self.config.condenser, metrics_registry)
         logger.debug(f'Using condenser: {type(self.condenser)}')
 
     @property

@@ -21,6 +21,7 @@ from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
     ProviderHandler,
 )
+from openhands.llm.metrics_registry import MetricsRegistry
 from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroagent
@@ -47,6 +48,7 @@ class AgentSession:
     sid: str
     user_id: str | None
     event_stream: EventStream
+    metrics_registry: MetricsRegistry
     file_store: FileStore
     controller: AgentController | None = None
     runtime: Runtime | None = None
@@ -337,6 +339,7 @@ class AgentSession:
             self.runtime = runtime_cls(
                 config=config,
                 event_stream=self.event_stream,
+                metrics_registry=self.metrics_registry,
                 sid=self.sid,
                 plugins=agent.sandbox_plugins,
                 status_callback=self._status_callback,
@@ -357,6 +360,7 @@ class AgentSession:
             self.runtime = runtime_cls(
                 config=config,
                 event_stream=self.event_stream,
+                metrics_registry=self.metrics_registry,
                 sid=self.sid,
                 plugins=agent.sandbox_plugins,
                 status_callback=self._status_callback,

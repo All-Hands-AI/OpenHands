@@ -24,6 +24,7 @@ from openhands.events.observation import (
 from openhands.linter import DefaultLinter
 from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics
+from openhands.llm.metrics_registry import MetricsRegistry
 from openhands.utils.chunk_localizer import Chunk, get_top_k_chunk_matches
 
 USER_MSG = """
@@ -128,7 +129,13 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
     # This restricts the number of lines we can edit to avoid exceeding the token limit.
     MAX_LINES_TO_EDIT = 300
 
-    def __init__(self, enable_llm_editor: bool, *args: Any, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        enable_llm_editor: bool,
+        metrics_registry: MetricsRegistry,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(*args, **kwargs)
         self.enable_llm_editor = enable_llm_editor
 
@@ -138,7 +145,7 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
         draft_editor_config = self.config.get_llm_config('draft_editor')
 
         # manually set the model name for the draft editor LLM to distinguish token costs
-        llm_metrics = Metrics(model_name='draft_editor:' + draft_editor_config.model)
+        Metrics(model_name='draft_editor:' + draft_editor_config.model)
         if draft_editor_config.caching_prompt:
             logger.debug(
                 'It is not recommended to cache draft editor LLM prompts as it may incur high costs for the same prompt. '
@@ -146,7 +153,9 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             )
             draft_editor_config.caching_prompt = False
 
-        self.draft_editor_llm = LLM(draft_editor_config, metrics=llm_metrics)
+        self.draft_editor_llm = LLM(
+            draft_editor_config, metrics_registry=metrics_registry
+        )
         logger.debug(
             f'[Draft edit functionality] enabled with LLM: {self.draft_editor_llm}'
         )
