@@ -76,20 +76,16 @@ def get_user_info() -> tuple[int, str | None]:
         return os.getuid(), username
 
 
-def check_dependencies(code_repo_path: str, poetry_venvs_path: str) -> None:
+def check_dependencies(code_repo_path: str, check_browser: bool) -> None:
     ERROR_MESSAGE = 'Please follow the instructions in https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md to install OpenHands.'
     if not os.path.exists(code_repo_path):
         raise ValueError(
             f'Code repo path {code_repo_path} does not exist. ' + ERROR_MESSAGE
         )
-    if not os.path.exists(poetry_venvs_path):
-        raise ValueError(
-            f'Poetry venvs path {poetry_venvs_path} does not exist. ' + ERROR_MESSAGE
-        )
     # Check jupyter is installed
     logger.debug('Checking dependencies: Jupyter')
     output = subprocess.check_output(
-        'poetry run jupyter --version',
+        [sys.executable, '-m', 'jupyter', '--version'],
         shell=True,
         text=True,
         cwd=code_repo_path,
