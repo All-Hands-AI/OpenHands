@@ -303,18 +303,21 @@ def truncate_hash(hash: str) -> str:
 
 def get_hash_for_lock_files(base_image: str) -> str:
     openhands_source_dir = Path(openhands.__file__).parent
+    logger.info(f'Calculating hash for lock files with base image: {base_image}')
     md5 = hashlib.md5()
     md5.update(base_image.encode())
     for file in ['pyproject.toml', 'poetry.lock']:
         src = Path(openhands_source_dir, file)
         if not src.exists():
             src = Path(openhands_source_dir.parent, file)
+        logger.info(f'Reading lock file: {src}')
         with open(src, 'rb') as f:
             for chunk in iter(lambda: f.read(4096), b''):
                 md5.update(chunk)
     # We get away with truncation because we want something that is unique
     # rather than something that is cryptographically secure
     result = truncate_hash(md5.hexdigest())
+    logger.info(f'Hash for docker build directory (lock files): {result}')
     return result
 
 
@@ -324,6 +327,7 @@ def get_tag_for_versioned_image(base_image: str) -> str:
 
 def get_hash_for_source_files() -> str:
     openhands_source_dir = Path(openhands.__file__).parent
+    logger.info(f'Calculating hash for source directory: {openhands_source_dir}')
     dir_hash = dirhash(
         openhands_source_dir,
         'md5',
@@ -336,6 +340,7 @@ def get_hash_for_source_files() -> str:
     # We get away with truncation because we want something that is unique
     # rather than something that is cryptographically secure
     result = truncate_hash(dir_hash)
+    logger.info(f'Hash for docker build directory (source files): {result}')
     return result
 
 
