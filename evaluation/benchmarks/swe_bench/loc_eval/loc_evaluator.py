@@ -706,7 +706,7 @@ def infer_data_loader(args):
                     json_obj = json.loads(line)
                     infer_outputs.append(json_obj)
                 except json.JSONDecodeError as e:
-                    logger.error(f"Error parsing JSON on line {line_num} in '{file_path}': {str(e)}")
+                    logger.error(f"Error parsing JSON on line {line_num} in '{infer_output_filepath}': {str(e)}")
                     continue
     
     return infer_outputs

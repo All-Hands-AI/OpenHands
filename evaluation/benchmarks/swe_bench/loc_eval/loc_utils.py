@@ -546,7 +546,7 @@ class LocMeta:
             instance = self.get_instance_by_id(actual_instance_id)
         else:
             # instance is a pandas Series
-            actual_instance_id = instance_id or instance.get('instance_id', 'unknown')
+            actual_instance_id = instance.get('instance_id', 'unknown')
         
         self.logger.info(f"Parsing localization with runtime for instance: {actual_instance_id}")
         
