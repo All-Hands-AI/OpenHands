@@ -38,7 +38,7 @@ jobs:
         run: npm ci
       - name: Run TypeScript compilation
         working-directory: ./frontend
-        run: npm run make-i18n && react-router build
+        run: npm run build
       - name: Run tests and collect coverage
         working-directory: ./frontend
         run: npm run test:coverage
