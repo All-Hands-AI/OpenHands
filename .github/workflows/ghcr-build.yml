@@ -104,7 +104,7 @@ jobs:
   # Builds the runtime Docker images
   ghcr_build_runtime:
     name: Build Image
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: blacksmith-8vcpu-ubuntu-2204
     if: "!(github.event_name == 'push' && startsWith(github.ref, 'refs/tags/ext-v'))"
     permissions:
       contents: read
@@ -135,16 +135,7 @@ jobs:
         uses: useblacksmith/setup-python@v6
         with:
           python-version: '3.12'
-      - name: Cache Poetry dependencies
-        uses: useblacksmith/cache@v5
-        with:
-          path: |
-            ~/.cache/pypoetry
-            ~/.virtualenvs
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
-          # This is the one that saves the cache, the others set 'lookup-only: true'
-          restore-keys: |
-            ${{ runner.os }}-poetry-
+          cache: poetry
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Install Python dependencies using Poetry
@@ -205,20 +196,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-      - name: Cache Poetry dependencies
-        uses: useblacksmith/cache@v5
-        with:
-          path: |
-            ~/.cache/pypoetry
-            ~/.virtualenvs
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
-          lookup-only: true
-          restore-keys: |
-            ${{ runner.os }}-poetry-
       - name: Set up Python
         uses: useblacksmith/setup-python@v6
         with:
           python-version: '3.12'
+          cache: poetry
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Install Python dependencies using Poetry
@@ -277,20 +259,11 @@ jobs:
           load: true
           tags: ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
           context: containers/runtime
-      - name: Cache Poetry dependencies
-        uses: useblacksmith/cache@v5
-        with:
-          path: |
-            ~/.cache/pypoetry
-            ~/.virtualenvs
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
-          lookup-only: true
-          restore-keys: |
-            ${{ runner.os }}-poetry-
       - name: Set up Python
         uses: useblacksmith/setup-python@v6
         with:
           python-version: '3.12'
+          cache: poetry
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Install Python dependencies using Poetry
@@ -347,20 +320,11 @@ jobs:
           load: true
           tags: ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
           context: containers/runtime
-      - name: Cache Poetry dependencies
-        uses: useblacksmith/cache@v5
-        with:
-          path: |
-            ~/.cache/pypoetry
-            ~/.virtualenvs
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
-          lookup-only: true
-          restore-keys: |
-            ${{ runner.os }}-poetry-
       - name: Set up Python
         uses: useblacksmith/setup-python@v6
         with:
           python-version: '3.12'
+          cache: poetry
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Install Python dependencies using Poetry
