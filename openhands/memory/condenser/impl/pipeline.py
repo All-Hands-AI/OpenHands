@@ -4,6 +4,7 @@ from contextlib import contextmanager
 
 from openhands.controller.state.state import State
 from openhands.core.config.condenser_config import CondenserPipelineConfig
+from openhands.llm.metrics_registry import MetricsRegistry
 from openhands.memory.condenser.condenser import Condensation, Condenser
 from openhands.memory.view import View
 
@@ -39,8 +40,12 @@ class CondenserPipeline(Condenser):
         return result
 
     @classmethod
-    def from_config(cls, config: CondenserPipelineConfig) -> CondenserPipeline:
-        condensers = [Condenser.from_config(c) for c in config.condensers]
+    def from_config(
+        cls, config: CondenserPipelineConfig, metrics_registry: MetricsRegistry
+    ) -> CondenserPipeline:
+        condensers = [
+            Condenser.from_config(c, metrics_registry) for c in config.condensers
+        ]
         return CondenserPipeline(*condensers)
 
 

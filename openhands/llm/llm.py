@@ -8,6 +8,7 @@ from typing import Any, Callable
 import httpx
 
 from openhands.core.config import LLMConfig
+from openhands.llm.metrics_registry import LLMService, MetricsRegistry
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -33,7 +34,6 @@ from openhands.llm.fn_call_converter import (
     convert_fncall_messages_to_non_fncall_messages,
     convert_non_fncall_messages_to_fncall_messages,
 )
-from openhands.llm.metrics import Metrics
 from openhands.llm.retry_mixin import RetryMixin
 
 __all__ = ['LLM']
@@ -117,8 +117,10 @@ class LLM(RetryMixin, DebugMixin):
     def __init__(
         self,
         config: LLMConfig,
-        metrics: Metrics | None = None,
+        metrics_registry: MetricsRegistry,
+        model_name: str = 'default',
         retry_listener: Callable[[int, int], None] | None = None,
+        llm_service: LLMService = LLMService.AGENT,
     ) -> None:
         """Initializes the LLM. If LLMConfig is passed, its values will be the fallback.
 
@@ -129,9 +131,11 @@ class LLM(RetryMixin, DebugMixin):
             metrics: The metrics to use.
         """
         self._tried_model_info = False
-        self.metrics: Metrics = (
-            metrics if metrics is not None else Metrics(model_name=config.model)
-        )
+        self.metrics_registry: MetricsRegistry = metrics_registry
+        # Assign metrics object to llm from metrics registry
+        self.metrics = self.metrics_registry.register_llm(llm_service, model_name)
+        self.model_name = model_name
+
         self.cost_metric_supported: bool = True
         self.config: LLMConfig = copy.deepcopy(config)
 
@@ -371,7 +375,7 @@ class LLM(RetryMixin, DebugMixin):
                 log_file = os.path.join(
                     self.config.log_completions_folder,
                     # use the metric model name (for draft editor)
-                    f'{self.metrics.model_name.replace("/", "__")}-{time.time()}.json',
+                    f'{self.model_name.replace("/", "__")}-{time.time()}.json',
                 )
 
                 # set up the dict to be logged

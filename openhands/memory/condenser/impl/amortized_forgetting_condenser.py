@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from openhands.core.config.condenser_config import AmortizedForgettingCondenserConfig
 from openhands.events.action.agent import CondensationAction
+from openhands.llm.metrics_registry import MetricsRegistry
 from openhands.memory.condenser.condenser import (
     Condensation,
     RollingCondenser,
@@ -58,7 +59,9 @@ class AmortizedForgettingCondenser(RollingCondenser):
 
     @classmethod
     def from_config(
-        cls, config: AmortizedForgettingCondenserConfig
+        cls,
+        config: AmortizedForgettingCondenserConfig,
+        metrics_registry: MetricsRegistry,
     ) -> AmortizedForgettingCondenser:
         return AmortizedForgettingCondenser(**config.model_dump(exclude={'type'}))
 

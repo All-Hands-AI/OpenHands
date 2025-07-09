@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from openhands.core.config.condenser_config import RecentEventsCondenserConfig
+from openhands.llm.metrics_registry import MetricsRegistry
 from openhands.memory.condenser.condenser import Condensation, Condenser, View
 
 
@@ -21,7 +22,9 @@ class RecentEventsCondenser(Condenser):
         return View(events=head + tail)
 
     @classmethod
-    def from_config(cls, config: RecentEventsCondenserConfig) -> RecentEventsCondenser:
+    def from_config(
+        cls, config: RecentEventsCondenserConfig, metrics_registry: MetricsRegistry
+    ) -> RecentEventsCondenser:
         return RecentEventsCondenser(**config.model_dump(exclude={'type'}))
 
 

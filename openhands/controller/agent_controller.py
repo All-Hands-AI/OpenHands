@@ -649,7 +649,7 @@ class AgentController:
         llm = LLM(
             config=llm_config,
             retry_listener=self.agent.llm.retry_listener,
-            metrics=self.state.metrics,
+            metrics_registry=self.state.metrics_registry,
         )
         delegate_agent = agent_cls(llm=llm, config=agent_config)
 
@@ -996,6 +996,7 @@ class AgentController:
         """
         # Get metrics from agent LLM
         agent_metrics = self.state.metrics
+        agent_metrics = self.state.metrics_registry.get_combined_metrics()
 
         # Get metrics from condenser LLM if it exists
         condenser_metrics: Metrics | None = None
