@@ -33,7 +33,9 @@ export function useRefreshLlmApiKey() {
 
   return useMutation({
     mutationFn: async () => {
-      const { data } = await openHands.post<LlmApiKeyResponse>("/api/keys/llm/byor/refresh");
+      const { data } = await openHands.post<LlmApiKeyResponse>(
+        "/api/keys/llm/byor/refresh",
+      );
       return data;
     },
     onSuccess: () => {
