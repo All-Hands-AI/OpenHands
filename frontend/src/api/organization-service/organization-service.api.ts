@@ -1,4 +1,8 @@
-import { OrganizationMember, OrganizationUserRole } from "#/types/org";
+import {
+  Organization,
+  OrganizationMember,
+  OrganizationUserRole,
+} from "#/types/org";
 import { openHands } from "../open-hands-axios";
 
 export const organizationService = {
@@ -10,10 +14,10 @@ export const organizationService = {
     return data;
   },
 
-  getOrganization: async (orgId: string) => {
-    const { data } = await openHands.get("/api/organizations", {
-      params: { orgId },
-    });
+  getOrganization: async ({ orgId }: { orgId: string }) => {
+    const { data } = await openHands.get<Organization>(
+      `/api/organizations/${orgId}`,
+    );
     return data;
   },
 
@@ -21,6 +25,13 @@ export const organizationService = {
     const { data } = await openHands.get<OrganizationMember[]>(
       "/api/organizations/members",
     );
+    return data;
+  },
+
+  getOrganizationPaymentInfo: async ({ orgId }: { orgId: string }) => {
+    const { data } = await openHands.get<{
+      cardNumber: string;
+    }>(`/api/organizations/${orgId}/payment`);
     return data;
   },
 

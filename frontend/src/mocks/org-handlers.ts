@@ -1,5 +1,9 @@
 import { http, HttpResponse } from "msw";
-import { OrganizationMember, OrganizationUserRole } from "#/types/org";
+import {
+  Organization,
+  OrganizationMember,
+  OrganizationUserRole,
+} from "#/types/org";
 
 const MOCK_ME: OrganizationMember = {
   id: "99",
@@ -29,9 +33,29 @@ export const INITIAL_MOCK_ORG_MEMBERS: OrganizationMember[] = [
   },
 ];
 
+const INITIAL_MOCK_ORGS: Organization[] = [
+  {
+    id: "1",
+    name: "Acme Corp",
+    balance: 1000,
+  },
+  {
+    id: "2",
+    name: "Beta LLC",
+    balance: 500,
+  },
+  {
+    id: "3",
+    name: "Gamma Inc",
+    balance: 750,
+  },
+];
+
 let orgMembers = new Map(
   INITIAL_MOCK_ORG_MEMBERS.map((member) => [member.id, member]),
 );
+
+const orgs = new Map(INITIAL_MOCK_ORGS.map((org) => [org.id, org]));
 
 export const resetOrgMembers = () => {
   orgMembers = new Map(
@@ -45,6 +69,38 @@ export const ORG_HANDLERS = [
   http.get("/api/organizations/members", () => {
     const members = Array.from(orgMembers.values());
     return HttpResponse.json(members);
+  }),
+
+  http.get("/api/organizations/:orgId", ({ params }) => {
+    const orgId = params.orgId?.toString();
+
+    if (orgId) {
+      const org = orgs.get(orgId);
+      if (org) return HttpResponse.json(org);
+    }
+
+    return HttpResponse.json(
+      { error: "Organization not found" },
+      { status: 404 },
+    );
+  }),
+
+  http.get("/api/organizations/:orgId/payment", ({ params }) => {
+    const orgId = params.orgId?.toString();
+
+    if (orgId) {
+      const org = orgs.get(orgId);
+      if (org) {
+        return HttpResponse.json({
+          cardNumber: "**** **** **** 1234", // Mocked payment info
+        });
+      }
+    }
+
+    return HttpResponse.json(
+      { error: "Organization not found" },
+      { status: 404 },
+    );
   }),
 
   http.post("/api/organizations/invite", async ({ request }) => {
