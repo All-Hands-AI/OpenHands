@@ -1,11 +1,8 @@
 import os
-from typing import TYPE_CHECKING
-
+from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.core.config.agent_config import AgentConfig
 from openhands.utils.import_utils import get_impl
-
-if TYPE_CHECKING:
-    from openhands.server.session.conversation_init_data import ConversationInitData
+    
 
 
 class ExperimentManager:
@@ -19,8 +16,8 @@ class ExperimentManager:
 
     @staticmethod
     def run_conversation_variant_test(
-        user_id: str, conversation_id: str, conversation_settings: 'ConversationInitData'
-    ) -> 'ConversationInitData':
+        user_id: str, conversation_id: str, conversation_settings: ConversationInitData
+    ) -> ConversationInitData:
         """
         Apply experiment variations to the conversation settings.
 
