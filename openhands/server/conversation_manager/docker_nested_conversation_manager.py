@@ -499,7 +499,6 @@ class DockerNestedConversationManager(ConversationManager):
         env_vars['ALLOW_SET_CONVERSATION_ID'] = '1'
         env_vars['SANDBOX_CLOSE_DELAY'] = '0'
         env_vars['SKIP_DEPENDENCY_CHECK'] = '1'
-        # Not useed yet but will be when warm local servers are merged
         env_vars['INITIAL_NUM_WARM_SERVERS'] = '1'
 
         # Set up mounted volume for conversation directory within workspace
