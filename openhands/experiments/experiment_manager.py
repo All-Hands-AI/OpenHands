@@ -15,7 +15,7 @@ class ExperimentManager:
     @staticmethod
     def run_agent_config_variant_test(
         user_id: str, conversation_id: str, agent_config: AgentConfig
-    ):
+    ) -> AgentConfig:
         return agent_config
 
 
