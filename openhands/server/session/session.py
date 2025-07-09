@@ -95,7 +95,6 @@ class Session:
         initial_message: MessageAction | None,
         replay_json: str | None,
     ) -> None:
-
         self.agent_session.event_stream.add_event(
             AgentStateChangedObservation('', AgentState.LOADING),
             EventSource.ENVIRONMENT,
