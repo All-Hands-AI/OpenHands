@@ -511,7 +511,9 @@ class DockerNestedConversationManager(ConversationManager):
         # Set up mounted volume for conversation directory within workspace
         if config.file_store == 'local':
             # Resolve ~ from path as the docker container does not work otherwise
-            file_store_path = os.path.realpath(os.path.expanduser(config.file_store_path))
+            file_store_path = os.path.realpath(
+                os.path.expanduser(config.file_store_path)
+            )
 
             volumes.append(
                 f'{file_store_path}/{conversation_dir}:/root/.openhands/{conversation_dir}:rw'
