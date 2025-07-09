@@ -5920,6 +5920,22 @@
         "ja": "このAPIキーをOpenHandsオープンソースおよびCLIのLLM APIキーとして使用できます。OpenHands Cloudアカウントに費用が発生します。このキーを他の場所で共有しないでください。",
         "uk": "Ви можете використовувати цей ключ API як ключ API LLM для OpenHands з відкритим кодом та CLI. Це призведе до витрат на вашому обліковому записі OpenHands Cloud. НЕ діліться цим ключем деінде."
     },
+    "SETTINGS$REFRESH_LLM_API_KEY": {
+        "en": "Refresh API Key",
+        "zh-CN": "刷新 API 密钥",
+        "zh-TW": "刷新 API 金鑰",
+        "de": "API-Schlüssel aktualisieren",
+        "ko-KR": "API 키 새로고침",
+        "no": "Oppdater API-nøkkel",
+        "it": "Aggiorna chiave API",
+        "pt": "Atualizar chave API",
+        "es": "Actualizar clave API",
+        "ar": "تحديث مفتاح API",
+        "fr": "Actualiser la clé API",
+        "tr": "API Anahtarını Yenile",
+        "ja": "APIキーを更新",
+        "uk": "Оновити ключ API"
+    },
     "SETTINGS$CONFIRMATION_MODE": {
         "en": "Enable Confirmation Mode",
         "de": "Bestätigungsmodus aktivieren",
@@ -6383,6 +6399,22 @@
         "pt": "Chave API copiada para a área de transferência",
         "es": "Clave API copiada al portapapeles",
         "tr": "API anahtarı panoya kopyalandı"
+    },
+    "SETTINGS$API_KEY_REFRESHED": {
+        "en": "API key refreshed successfully",
+        "uk": "Ключ API успішно оновлено",
+        "ja": "APIキーが正常に更新されました",
+        "zh-CN": "API密钥已成功刷新",
+        "zh-TW": "API金鑰已成功刷新",
+        "ko-KR": "API 키가 성공적으로 새로고침되었습니다",
+        "no": "API-nøkkel oppdatert",
+        "ar": "تم تحديث مفتاح API بنجاح",
+        "de": "API-Schlüssel erfolgreich aktualisiert",
+        "fr": "Clé API actualisée avec succès",
+        "it": "Chiave API aggiornata con successo",
+        "pt": "Chave API atualizada com sucesso",
+        "es": "Clave API actualizada con éxito",
+        "tr": "API anahtarı başarıyla yenilendi"
     },
     "SETTINGS$API_KEY_NAME_PLACEHOLDER": {
         "en": "My API Key",
