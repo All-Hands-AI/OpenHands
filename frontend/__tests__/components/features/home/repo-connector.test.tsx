@@ -206,9 +206,8 @@ describe("RepoConnector", () => {
       "rbren/polaris",
       "github",
       undefined,
-      [],
       undefined,
-      undefined,
+      "main",
       undefined,
     );
   });
