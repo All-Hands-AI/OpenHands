@@ -1,0 +1,1 @@
+{"id": 4, "timestamp": "2025-07-09T13:41:11.259454", "source": "user", "message": "Flip a coin!", "action": "message", "args": {"content": "Flip a coin!", "file_urls": [], "image_urls": [], "wait_for_response": false}}
