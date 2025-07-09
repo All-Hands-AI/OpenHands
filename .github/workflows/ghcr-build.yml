@@ -131,13 +131,13 @@ jobs:
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
+      - name: Install poetry via pipx
+        run: pipx install poetry
       - name: Set up Python
         uses: useblacksmith/setup-python@v6
         with:
           python-version: '3.12'
           cache: poetry
-      - name: Install poetry via pipx
-        run: pipx install poetry
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies POETRY_GROUP=main INSTALL_PLAYWRIGHT=0
       - name: Create source distribution and Dockerfile
@@ -196,13 +196,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+      - name: Install poetry via pipx
+        run: pipx install poetry
       - name: Set up Python
         uses: useblacksmith/setup-python@v6
         with:
           python-version: '3.12'
           cache: poetry
-      - name: Install poetry via pipx
-        run: pipx install poetry
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies POETRY_GROUP=main INSTALL_PLAYWRIGHT=0
       - name: Get hash in App Image
@@ -259,13 +259,13 @@ jobs:
           load: true
           tags: ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
           context: containers/runtime
+      - name: Install poetry via pipx
+        run: pipx install poetry
       - name: Set up Python
         uses: useblacksmith/setup-python@v6
         with:
           python-version: '3.12'
           cache: poetry
-      - name: Install poetry via pipx
-        run: pipx install poetry
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies INSTALL_PLAYWRIGHT=0
       - name: Run docker runtime tests
@@ -320,13 +320,13 @@ jobs:
           load: true
           tags: ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
           context: containers/runtime
+      - name: Install poetry via pipx
+        run: pipx install poetry
       - name: Set up Python
         uses: useblacksmith/setup-python@v6
         with:
           python-version: '3.12'
           cache: poetry
-      - name: Install poetry via pipx
-        run: pipx install poetry
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies POETRY_GROUP=main,test,runtime INSTALL_PLAYWRIGHT=0
       - name: Run runtime tests
