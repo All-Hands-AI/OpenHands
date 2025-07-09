@@ -93,6 +93,7 @@ jobs:
           ./containers/build.sh -i openhands -o ${{ env.REPO_OWNER }} --load
       - name: Get hash in App Image
         id: get_hash_in_app_image
+        shell: bash
         run: |
           # Run the build script in the app image
           docker run -e SANDBOX_USER_ID=0 -v /var/run/docker.sock:/var/run/docker.sock ghcr.io/${{ env.REPO_OWNER }}/openhands:${{ env.RELEVANT_SHA }} /bin/bash -c "mkdir -p containers/runtime; python3 openhands/runtime/utils/runtime_build.py --base_image ${{ env.BASE_IMAGE_FOR_HASH_EQUIVALENCE_TEST }} --build_folder containers/runtime --force_rebuild" 2>&1 | tee docker-outputs.txt
@@ -211,6 +212,7 @@ jobs:
           echo "hash_from_app_image=${{ needs.ghcr_build_app.outputs.hash_from_app_image }}" >> $GITHUB_ENV
 
       - name: Get hash using code (development mode)
+        shell: bash
         run: |
           mkdir -p containers/runtime
           poetry run python3 openhands/runtime/utils/runtime_build.py --base_image ${{ env.BASE_IMAGE_FOR_HASH_EQUIVALENCE_TEST }} --build_folder containers/runtime --force_rebuild > output.txt 2>&1
@@ -218,6 +220,7 @@ jobs:
           echo "hash_from_code=$hash_from_code" >> $GITHUB_ENV
 
       - name: Compare hashes
+        shell: bash
         run: |
           echo "Hash from App Image: ${{ env.hash_from_app_image }}"
           echo "Hash from Code: ${{ env.hash_from_code }}"
@@ -269,6 +272,7 @@ jobs:
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies INSTALL_PLAYWRIGHT=0
       - name: Run docker runtime tests
+        shell: bash
         run: |
           # We install pytest-xdist in order to run tests across CPUs
           poetry run pip install pytest-xdist
@@ -330,6 +334,7 @@ jobs:
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies POETRY_GROUP=main,test,runtime INSTALL_PLAYWRIGHT=0
       - name: Run runtime tests
+        shell: bash
         run: |
           # We install pytest-xdist in order to run tests across CPUs
           poetry run pip install pytest-xdist
@@ -390,6 +395,7 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
           SHORT_SHA: ${{ steps.short_sha.outputs.SHORT_SHA }}
+        shell: bash
         run: |
           echo "updating PR description"
           DOCKER_RUN_COMMAND="docker run -it --rm \
