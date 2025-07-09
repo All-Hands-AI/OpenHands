@@ -8,6 +8,7 @@ from openhands.runtime.impl.docker.docker_runtime import (
 from openhands.runtime.impl.kubernetes.kubernetes_runtime import KubernetesRuntime
 from openhands.runtime.impl.local.local_runtime import LocalRuntime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
+from openhands.runtime.pool import PooledRuntime
 from openhands.utils.import_utils import get_impl
 
 # mypy: disable-error-code="type-abstract"
@@ -18,6 +19,7 @@ _DEFAULT_RUNTIME_CLASSES: dict[str, type[Runtime]] = {
     'local': LocalRuntime,
     'kubernetes': KubernetesRuntime,
     'cli': CLIRuntime,
+    'pooled': PooledRuntime,
 }
 
 # Try to import third-party runtimes if available
@@ -112,6 +114,7 @@ __all__ = [
     'KubernetesRuntime',
     'CLIRuntime',
     'LocalRuntime',
+    'PooledRuntime',
     'get_runtime_cls',
 ]
 
