@@ -28,6 +28,7 @@ from openhands.events.observation.agent import RecallObservation
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
+from openhands.experiments import ExperimentManagerImpl
 from openhands.llm.llm import LLM
 from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation_init_data import ConversationInitData
@@ -155,14 +156,19 @@ class Session:
 
         llm = self._create_llm(agent_cls)
 
-        # Get the agent config from the settings if available, otherwise use the default
-        if isinstance(settings, ConversationInitData) and settings.agent_config:
-            agent_config = settings.agent_config
-            self.logger.info(
-                f'Using custom agent config from conversation init data: {agent_config}'
-            )
-        else:
-            agent_config = self.config.get_agent_config(agent_cls)
+        # Get the base agent config
+        agent_config = self.config.get_agent_config(agent_cls)
+        
+        # Apply experiment manager modifications to agent config
+        agent_config = ExperimentManagerImpl.run_agent_config_variant_test(
+            user_id=self.user_id or 'anonymous',
+            conversation_id=self.sid,
+            agent_config=agent_config,
+        )
+        self.logger.info(
+            'Applied experiment manager modifications to agent config',
+            extra={'user_id': self.user_id, 'conversation_id': self.sid},
+        )
 
         if settings.enable_default_condenser:
             # Default condenser chains three condensers together:
