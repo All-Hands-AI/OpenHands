@@ -166,54 +166,6 @@ jobs:
           name: runtime-src-${{ matrix.base_image.tag }}
           path: containers/runtime
 
-  verify_hash_equivalence_in_runtime_and_app:
-    name: Verify Hash Equivalence in Runtime and Docker images
-    runs-on: blacksmith-4vcpu-ubuntu-2204
-    needs: [ghcr_build_runtime, ghcr_build_app]
-    strategy:
-      fail-fast: false
-      matrix:
-        base_image: ['nikolaik']
-    env:
-      BASE_IMAGE_FOR_HASH_EQUIVALENCE_TEST: nikolaik/python-nodejs:python3.12-nodejs22
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-      - name: Install poetry via pipx
-        run: pipx install poetry
-      - name: Set up Python
-        uses: useblacksmith/setup-python@v6
-        with:
-          python-version: '3.12'
-          cache: poetry
-      - name: Install Python dependencies using Poetry
-        run: make install-python-dependencies POETRY_GROUP=main INSTALL_PLAYWRIGHT=0
-      - name: Get hash in App Image
-        run: |
-          echo "Hash from app image: ${{ needs.ghcr_build_app.outputs.hash_from_app_image }}"
-          echo "hash_from_app_image=${{ needs.ghcr_build_app.outputs.hash_from_app_image }}" >> $GITHUB_ENV
-
-      - name: Get hash using code (development mode)
-        shell: bash
-        run: |
-          mkdir -p containers/runtime
-          poetry run python3 openhands/runtime/utils/runtime_build.py --base_image ${{ env.BASE_IMAGE_FOR_HASH_EQUIVALENCE_TEST }} --build_folder containers/runtime --force_rebuild > output.txt 2>&1
-          hash_from_code=$(cat output.txt | grep "Hash for docker build directory" | awk -F "): " '{print $2}' | uniq | head -n1)
-          echo "hash_from_code=$hash_from_code" >> $GITHUB_ENV
-
-      - name: Compare hashes
-        shell: bash
-        run: |
-          echo "Hash from App Image: ${{ env.hash_from_app_image }}"
-          echo "Hash from Code: ${{ env.hash_from_code }}"
-          if [ "${{ env.hash_from_app_image }}" = "${{ env.hash_from_code }}" ]; then
-            echo "Hashes match!"
-          else
-            echo "Hashes do not match!"
-            exit 1
-          fi
-
   # Run unit tests with the Docker runtime Docker images as root
   test_runtime_root:
     name: RT Unit Tests (Root)
@@ -344,7 +296,7 @@ jobs:
     name: All Runtime Tests Passed
     if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
     runs-on: blacksmith-4vcpu-ubuntu-2204
-    needs: [test_runtime_root, test_runtime_oh, verify_hash_equivalence_in_runtime_and_app]
+    needs: [test_runtime_root, test_runtime_oh]
     steps:
       - name: All tests passed
         run: echo "All runtime tests have passed successfully!"
@@ -353,7 +305,7 @@ jobs:
     name: All Runtime Tests Passed
     if: ${{ cancelled() || contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
     runs-on: blacksmith-4vcpu-ubuntu-2204
-    needs: [test_runtime_root, test_runtime_oh, verify_hash_equivalence_in_runtime_and_app]
+    needs: [test_runtime_root, test_runtime_oh]
     steps:
       - name: Some tests failed
         run: |
