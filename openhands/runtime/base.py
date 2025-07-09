@@ -207,11 +207,13 @@ class Runtime(FileEditRuntimeMixin):
         message = f'[runtime {self.sid}] {message}'
         getattr(logger, level)(message, stacklevel=2)
 
-    def set_runtime_status(self, runtime_status: RuntimeStatus, error_msg: str = ''):
+    def set_runtime_status(
+        self, runtime_status: RuntimeStatus, msg: str = '', level: str = 'info'
+    ):
         """Sends a status message if the callback function was provided."""
         self.runtime_status = runtime_status
         if self.status_callback:
-            self.status_callback('info', runtime_status, error_msg)
+            self.status_callback(level, runtime_status, msg)
 
     # ====================================================================
 
