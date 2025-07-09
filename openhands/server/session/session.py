@@ -154,7 +154,15 @@ class Session:
         # TODO: override other LLM config & agent config groups (#2075)
 
         llm = self._create_llm(agent_cls)
-        agent_config = self.config.get_agent_config(agent_cls)
+
+        # Get the agent config from the settings if available, otherwise use the default
+        if isinstance(settings, ConversationInitData) and settings.agent_config:
+            agent_config = settings.agent_config
+            self.logger.info(
+                f'Using custom agent config from conversation init data: {agent_config}'
+            )
+        else:
+            agent_config = self.config.get_agent_config(agent_cls)
 
         if settings.enable_default_condenser:
             # Default condenser chains three condensers together:

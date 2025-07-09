@@ -12,8 +12,9 @@ class ExperimentManager:
         return conversation_settings
 
 
+# Default to the new AgentExperimentManager unless overridden by environment variable
 experiment_manager_cls = os.environ.get(
     'OPENHANDS_EXPERIMENT_MANAGER_CLS',
-    'openhands.experiments.experiment_manager.ExperimentManager',
+    'openhands.experiments.agent_experiment_manager.AgentExperimentManager',
 )
 ExperimentManagerImpl = get_impl(ExperimentManager, experiment_manager_cls)
