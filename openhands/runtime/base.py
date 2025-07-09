@@ -1007,7 +1007,8 @@ fi
     def subscribe_to_shell_stream(
         self, callback: Callable[[str], None] | None = None
     ) -> bool:
-        """Subscribe to shell command output stream.
+        """
+        Subscribe to shell command output stream.
 
         This method is meant to be overridden by runtime implementations
         that want to stream shell command output to external consumers.
