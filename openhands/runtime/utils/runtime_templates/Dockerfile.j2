@@ -127,6 +127,7 @@ RUN \
     # Set environment variables
     /openhands/micromamba/bin/micromamba run -n openhands poetry run python -c "import sys; print('OH_INTERPRETER_PATH=' + sys.executable)" >> /etc/environment && \
     # Set permissions
+    chmod -R g+rws /openhands/poetry && \
     mkdir -p /openhands/workspace && chmod -R g+rws,o+rw /openhands/workspace && \
     # Clean up
     /openhands/micromamba/bin/micromamba run -n openhands poetry cache clear --all . -n && \
