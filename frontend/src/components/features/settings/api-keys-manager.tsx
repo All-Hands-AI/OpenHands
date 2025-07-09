@@ -12,7 +12,10 @@ import { CreateApiKeyModal } from "./create-api-key-modal";
 import { DeleteApiKeyModal } from "./delete-api-key-modal";
 import { NewApiKeyModal } from "./new-api-key-modal";
 import { useApiKeys } from "#/hooks/query/use-api-keys";
-import { useLlmApiKey, useRefreshLlmApiKey } from "#/hooks/query/use-llm-api-key";
+import {
+  useLlmApiKey,
+  useRefreshLlmApiKey,
+} from "#/hooks/query/use-llm-api-key";
 
 export function ApiKeysManager() {
   const { t } = useTranslation();
@@ -56,8 +59,12 @@ export function ApiKeysManager() {
     try {
       setIsRefreshingLlmKey(true);
       await refreshLlmApiKey.mutateAsync();
-      displaySuccessToast(t(I18nKey.SETTINGS$API_KEY_REFRESHED, { defaultValue: "API key refreshed successfully" }));
-    } catch (error) {
+      displaySuccessToast(
+        t(I18nKey.SETTINGS$API_KEY_REFRESHED, {
+          defaultValue: "API key refreshed successfully",
+        }),
+      );
+    } catch (err) {
       displayErrorToast(t(I18nKey.ERROR$GENERIC));
     } finally {
       setIsRefreshingLlmKey(false);
@@ -110,7 +117,7 @@ export function ApiKeysManager() {
                 type="button"
                 variant="secondary"
                 onClick={handleRefreshLlmApiKey}
-                disabled={isRefreshingLlmKey}
+                isDisabled={isRefreshingLlmKey}
                 className="text-sm px-3 py-1"
               >
                 {isRefreshingLlmKey ? (
