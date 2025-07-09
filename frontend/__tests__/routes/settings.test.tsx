@@ -1,7 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import { createRoutesStub } from "react-router";
 import { describe, expect, it, vi } from "vitest";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import SettingsScreen, { clientLoader } from "#/routes/settings";
 import OpenHands from "#/api/open-hands";
 
@@ -38,7 +38,7 @@ describe("Settings Screen", () => {
       return new QueryClient();
     })(),
   }));
-  
+
   vi.mock("#/hooks/use-app-logout", () => ({
     useAppLogout: vi.fn().mockReturnValue({ handleLogout: handleLogoutMock }),
   }));
@@ -50,6 +50,7 @@ describe("Settings Screen", () => {
   const RouterStub = createRoutesStub([
     {
       Component: SettingsScreen,
+      // @ts-expect-error - custom loader
       clientLoader,
       path: "/settings",
       children: [
@@ -77,15 +78,14 @@ describe("Settings Screen", () => {
     },
   ]);
 
-  const renderSettingsScreen = (path = "/settings") => {
-    return render(<RouterStub initialEntries={[path]} />, {
+  const renderSettingsScreen = (path = "/settings") =>
+    render(<RouterStub initialEntries={[path]} />, {
       wrapper: ({ children }) => (
         <QueryClientProvider client={mockQueryClient}>
           {children}
         </QueryClientProvider>
       ),
     });
-  };
 
   it("should render the navbar", async () => {
     const sectionsToInclude = ["llm", "integrations", "application", "secrets"];
@@ -114,7 +114,7 @@ describe("Settings Screen", () => {
       });
       expect(sectionElement).not.toBeInTheDocument();
     });
-    
+
     getConfigSpy.mockRestore();
   });
 
@@ -151,7 +151,7 @@ describe("Settings Screen", () => {
       });
       expect(sectionElement).not.toBeInTheDocument();
     });
-    
+
     getConfigSpy.mockRestore();
   });
 
@@ -170,17 +170,23 @@ describe("Settings Screen", () => {
     // we test that the correct navbar is shown (OSS navbar) and that
     // the restricted route components are not rendered when accessing /settings
     renderSettingsScreen("/settings");
-    
+
     // Verify we're in OSS mode by checking the navbar
     const navbar = await screen.findByTestId("settings-navbar");
     expect(within(navbar).getByText("LLM")).toBeInTheDocument();
-    expect(within(navbar).queryByText("credits", { exact: false })).not.toBeInTheDocument();
-    
+    expect(
+      within(navbar).queryByText("credits", { exact: false }),
+    ).not.toBeInTheDocument();
+
     // Verify the LLM settings screen is shown
     expect(screen.getByTestId("llm-settings-screen")).toBeInTheDocument();
-    expect(screen.queryByTestId("billing-settings-screen")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("api-keys-settings-screen")).not.toBeInTheDocument();
-    
+    expect(
+      screen.queryByTestId("billing-settings-screen"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("api-keys-settings-screen"),
+    ).not.toBeInTheDocument();
+
     getConfigSpy.mockRestore();
   });
 
