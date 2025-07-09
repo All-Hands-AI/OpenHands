@@ -103,7 +103,7 @@ export function ApiKeysManager() {
               {t(I18nKey.SETTINGS$LLM_API_KEY_DESCRIPTION)}
             </p>
             <div className="flex items-center gap-2 mt-4">
-              <div className="flex-1 bg-white rounded-md px-4 py-2 flex items-center">
+              <div className="flex-1 bg-base-tertiary rounded-md px-4 py-2 flex items-center">
                 <div className="flex-1">
                   {llmApiKey.key ? (
                     <div className="flex items-center">
