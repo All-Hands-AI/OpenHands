@@ -111,7 +111,9 @@ export function ApiKeysManager() {
                       <span className="mx-2 text-gray-400">•</span>
                     </div>
                   ) : (
-                    <span className="text-gray-400">No API key available</span>
+                    <span className="text-gray-400">
+                      {t(I18nKey.API$NO_KEY_AVAILABLE)}
+                    </span>
                   )}
                 </div>
                 <button
