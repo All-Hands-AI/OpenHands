@@ -86,7 +86,6 @@ def check_dependencies(code_repo_path: str, check_browser: bool) -> None:
     logger.debug('Checking dependencies: Jupyter')
     output = subprocess.check_output(
         [sys.executable, '-m', 'jupyter', '--version'],
-        shell=True,
         text=True,
         cwd=code_repo_path,
     )
@@ -95,7 +94,6 @@ def check_dependencies(code_repo_path: str, check_browser: bool) -> None:
         raise ValueError('Jupyter is not properly installed. ' + ERROR_MESSAGE)
 
     # Check libtmux is installed (skip on Windows)
-
     if sys.platform != 'win32':
         logger.debug('Checking dependencies: libtmux')
         import libtmux
@@ -112,20 +110,16 @@ def check_dependencies(code_repo_path: str, check_browser: bool) -> None:
         if 'test' not in pane_output:
             raise ValueError('libtmux is not properly installed. ' + ERROR_MESSAGE)
 
-    # Skip browser environment check on Windows
-    if sys.platform != 'win32':
+    if check_browser:
         logger.debug('Checking dependencies: browser')
         from openhands.runtime.browser.browser_env import BrowserEnv
 
         browser = BrowserEnv()
         browser.close()
-    else:
-        logger.warning('Running on Windows - browser environment check skipped.')
 
 
 class LocalRuntime(ActionExecutionClient):
     """This runtime will run the action_execution_server directly on the local machine.
-
     When receiving an event, it will send the event to the server via HTTP.
 
     Args:
