@@ -59,11 +59,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-    env:
-      BASE_IMAGE_FOR_HASH_EQUIVALENCE_TEST: nikolaik/python-nodejs:python3.12-nodejs22
-    outputs:
-      # Since this job uses outputs it cannot use matrix
-      hash_from_app_image: ${{ steps.get_hash_in_app_image.outputs.hash_from_app_image }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -89,20 +84,6 @@ jobs:
         if: "!github.event.pull_request.head.repo.fork"
         run: |
           ./containers/build.sh -i openhands -o ${{ env.REPO_OWNER }} --push
-      - name: Build app image
-        if: "github.event.pull_request.head.repo.fork"
-        run: |
-          ./containers/build.sh -i openhands -o ${{ env.REPO_OWNER }} --load
-      - name: Get hash in App Image
-        id: get_hash_in_app_image
-        shell: bash
-        run: |
-          # Run the build script in the app image
-          docker run -e SANDBOX_USER_ID=0 -v /var/run/docker.sock:/var/run/docker.sock ghcr.io/${{ env.REPO_OWNER }}/openhands:${{ env.RELEVANT_SHA }} /bin/bash -c "mkdir -p containers/runtime; python3 openhands/runtime/utils/runtime_build.py --base_image ${{ env.BASE_IMAGE_FOR_HASH_EQUIVALENCE_TEST }} --build_folder containers/runtime --force_rebuild" 2>&1 | tee docker-outputs.txt
-          # Get the hash from the build script
-          hash_from_app_image=$(cat docker-outputs.txt | grep "Hash for docker build directory" | awk -F "): " '{print $2}' | uniq | head -n1)
-          echo "hash_from_app_image=$hash_from_app_image" >> $GITHUB_OUTPUT
-          echo "Hash from app image: $hash_from_app_image"
 
   # Builds the runtime Docker images
   ghcr_build_runtime:
