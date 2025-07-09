@@ -79,34 +79,6 @@ export function ApiKeysManager() {
   return (
     <>
       <div className="flex flex-col gap-6">
-        <div className="flex items-center justify-between">
-          <BrandButton
-            type="button"
-            variant="primary"
-            onClick={() => setCreateModalOpen(true)}
-          >
-            {t(I18nKey.SETTINGS$CREATE_API_KEY)}
-          </BrandButton>
-        </div>
-
-        <p className="text-sm text-gray-300">
-          <Trans
-            i18nKey={I18nKey.SETTINGS$API_KEYS_DESCRIPTION}
-            components={{
-              a: (
-                <a
-                  href="https://docs.all-hands.dev/usage/cloud/cloud-api"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-400 hover:underline"
-                >
-                  API documentation
-                </a>
-              ),
-            }}
-          />
-        </p>
-
         {!isLoadingLlmKey && llmApiKey && (
           <div className="border-b border-gray-200 pb-6 mb-6">
             <div className="flex items-center justify-between mb-2">
@@ -131,7 +103,7 @@ export function ApiKeysManager() {
               {t(I18nKey.SETTINGS$LLM_API_KEY_DESCRIPTION)}
             </p>
             <div className="flex items-center gap-2 mt-4">
-              <div className="flex-1 bg-gray-100 rounded-md px-4 py-2 flex items-center">
+              <div className="flex-1 bg-white rounded-md px-4 py-2 flex items-center">
                 <div className="flex-1">
                   {llmApiKey.key ? (
                     <div className="flex items-center">
@@ -173,6 +145,38 @@ export function ApiKeysManager() {
             </div>
           </div>
         )}
+
+        <h3 className="text-xl font-medium text-gray-700">
+          {t(I18nKey.SETTINGS$OPENHANDS_API_KEYS)}
+        </h3>
+
+        <div className="flex items-center justify-between">
+          <BrandButton
+            type="button"
+            variant="primary"
+            onClick={() => setCreateModalOpen(true)}
+          >
+            {t(I18nKey.SETTINGS$CREATE_API_KEY)}
+          </BrandButton>
+        </div>
+
+        <p className="text-sm text-gray-300">
+          <Trans
+            i18nKey={I18nKey.SETTINGS$API_KEYS_DESCRIPTION}
+            components={{
+              a: (
+                <a
+                  href="https://docs.all-hands.dev/usage/cloud/cloud-api"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400 hover:underline"
+                >
+                  API documentation
+                </a>
+              ),
+            }}
+          />
+        </p>
 
         {isLoading && (
           <div className="flex justify-center p-4">

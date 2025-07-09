@@ -15,7 +15,6 @@
         "de": "Kein Repository gefunden, um Microagent zu starten",
         "uk": "Не знайдено репозиторій для запуску мікроагента"
     },
-
     "MICROAGENT$ADD_TO_MICROAGENT": {
         "en": "Add to Microagent",
         "ja": "マイクロエージェントに追加",
@@ -4384,7 +4383,7 @@
         "ja": "設定を更新しました",
         "uk": "Налаштування оновлено"
     },
-     "CHAT_INTERFACE$AUGMENTED_PROMPT_FILES_TITLE":{
+    "CHAT_INTERFACE$AUGMENTED_PROMPT_FILES_TITLE": {
         "en": "NEW FILES ADDED",
         "de": "NEUE DATEIEN HINZUGEFÜGT",
         "zh-CN": "已添加新文件",
@@ -4398,8 +4397,8 @@
         "fr": "NOUVEAUX FICHIERS AJOUTÉS",
         "tr": "YENİ DOSYALAR EKLENDİ",
         "ja": "新しいファイルが追加されました",
-         "uk": "ДОДАНО НОВІ ФАЙЛИ"
-     },
+        "uk": "ДОДАНО НОВІ ФАЙЛИ"
+    },
     "CHAT_INTERFACE$DISCONNECTED": {
         "en": "Disconnected",
         "ja": "切断されました",
@@ -6000,7 +5999,7 @@
         "ja": "セキュリティアナライザー",
         "uk": "Увімкнути аналізатор безпеки"
     },
-    "SETTINGS$SECURITY_ANALYZER_PLACEHOLDER":{
+    "SETTINGS$SECURITY_ANALYZER_PLACEHOLDER": {
         "en": "Select a security analyzer…",
         "de": "Wählen Sie einen Sicherheitsanalysator aus…",
         "zh-CN": "选择一个安全分析器…",
@@ -10719,5 +10718,21 @@
         "tr": "Gizli anahtarları yönetmek için bir Git sağlayıcısına bağlan",
         "de": "Git-Anbieter verbinden, um Geheimnisse zu verwalten",
         "uk": "Підключити провайдера Git для управління секретами"
+    },
+    "SETTINGS$OPENHANDS_API_KEYS": {
+        "en": "OpenHands API Keys",
+        "ja": "OpenHands APIキー",
+        "zh-CN": "OpenHands API密钥",
+        "zh-TW": "OpenHands API密鑰",
+        "ko-KR": "OpenHands API 키",
+        "no": "OpenHands API-nøkler",
+        "it": "Chiavi API OpenHands",
+        "pt": "Chaves de API OpenHands",
+        "es": "Claves API de OpenHands",
+        "ar": "مفاتيح API لـ OpenHands",
+        "fr": "Clés API OpenHands",
+        "tr": "OpenHands API Anahtarları",
+        "de": "OpenHands API-Schlüssel",
+        "uk": "API-ключі OpenHands"
     }
 }
