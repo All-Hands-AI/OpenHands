@@ -32,6 +32,7 @@ from openhands.cli.tui import (
 from openhands.cli.utils import (
     update_usage_metrics,
 )
+from openhands.cli.vscode_extension import attempt_vscode_extension_install
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent
 from openhands.core.config import (
@@ -364,10 +365,22 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
     """Runs the agent in CLI mode."""
     args = parse_arguments()
 
-    logger.setLevel(logging.WARNING)
+    # Set log level from command line argument if provided
+    if args.log_level and isinstance(args.log_level, str):
+        log_level = getattr(logging, str(args.log_level).upper())
+        logger.setLevel(log_level)
+    else:
+        # Set default log level to WARNING if no LOG_LEVEL environment variable is set
+        # (command line argument takes precedence over environment variable)
+        env_log_level = os.getenv('LOG_LEVEL')
+        if not env_log_level:
+            logger.setLevel(logging.WARNING)
 
     # Load config from toml and override with command line arguments
     config: OpenHandsConfig = setup_config_from_args(args)
+
+    # Attempt to install VS Code extension if applicable (one-time attempt)
+    attempt_vscode_extension_install()
 
     # Load settings from Settings Store
     # TODO: Make this generic?

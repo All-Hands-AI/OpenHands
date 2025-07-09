@@ -335,34 +335,92 @@ class TestReadConfirmationInput:
         assert result == 'always'
 
     @pytest.mark.asyncio
+    @patch('openhands.cli.tui.print_formatted_text')
     @patch('openhands.cli.tui.create_prompt_session')
-    async def test_read_confirmation_input_invalid(self, mock_create_session):
+    async def test_read_confirmation_input_invalid_then_valid(
+        self, mock_create_session, mock_print
+    ):
         mock_session = AsyncMock()
-        mock_session.prompt_async.return_value = 'invalid'
+        # First return invalid input, then valid input
+        mock_session.prompt_async.side_effect = ['invalid', 'y']
         mock_create_session.return_value = mock_session
 
         result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
-        assert result == 'no'
+        assert result == 'yes'
+
+        # Verify error message was displayed
+        error_calls = [
+            call
+            for call in mock_print.call_args_list
+            if len(call[0]) > 0 and 'Invalid input' in str(call[0][0])
+        ]
+        assert len(error_calls) > 0
 
     @pytest.mark.asyncio
+    @patch('openhands.cli.tui.print_formatted_text')
     @patch('openhands.cli.tui.create_prompt_session')
-    async def test_read_confirmation_input_empty(self, mock_create_session):
+    async def test_read_confirmation_input_empty_then_valid(
+        self, mock_create_session, mock_print
+    ):
         mock_session = AsyncMock()
-        mock_session.prompt_async.return_value = ''
+        # First return empty input, then valid input
+        mock_session.prompt_async.side_effect = ['', 'n']
         mock_create_session.return_value = mock_session
 
         result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
         assert result == 'no'
+
+        # Verify error message was displayed
+        error_calls = [
+            call
+            for call in mock_print.call_args_list
+            if len(call[0]) > 0 and 'Invalid input' in str(call[0][0])
+        ]
+        assert len(error_calls) > 0
 
     @pytest.mark.asyncio
+    @patch('openhands.cli.tui.print_formatted_text')
     @patch('openhands.cli.tui.create_prompt_session')
-    async def test_read_confirmation_input_none(self, mock_create_session):
+    async def test_read_confirmation_input_none_then_valid(
+        self, mock_create_session, mock_print
+    ):
         mock_session = AsyncMock()
-        mock_session.prompt_async.return_value = None
+        # First return None, then valid input
+        mock_session.prompt_async.side_effect = [None, 'always']
         mock_create_session.return_value = mock_session
 
         result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
-        assert result == 'no'
+        assert result == 'always'
+
+        # Verify error message was displayed
+        error_calls = [
+            call
+            for call in mock_print.call_args_list
+            if len(call[0]) > 0 and 'Invalid input' in str(call[0][0])
+        ]
+        assert len(error_calls) > 0
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.tui.print_formatted_text')
+    @patch('openhands.cli.tui.create_prompt_session')
+    async def test_read_confirmation_input_multiple_invalid_then_valid(
+        self, mock_create_session, mock_print
+    ):
+        mock_session = AsyncMock()
+        # Multiple invalid inputs, then valid input
+        mock_session.prompt_async.side_effect = ['invalid1', 'invalid2', 'maybe', 'y']
+        mock_create_session.return_value = mock_session
+
+        result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
+        assert result == 'yes'
+
+        # Verify error message was displayed multiple times
+        error_calls = [
+            call
+            for call in mock_print.call_args_list
+            if len(call[0]) > 0 and 'Invalid input' in str(call[0][0])
+        ]
+        assert len(error_calls) >= 3  # Should have at least 3 error messages
 
     @pytest.mark.asyncio
     @patch('openhands.cli.tui.create_prompt_session')
