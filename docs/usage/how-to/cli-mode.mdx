@@ -33,6 +33,45 @@ pip install openhands-ai
 uvx --python 3.12 --from openhands-ai openhands
 ```
 
+<AccordionGroup>
+
+<Accordion title="Create shell aliases for easy access across environments">
+
+Add the following to your shell configuration file (`.bashrc`, `.zshrc`, etc.):
+
+```bash
+# Add OpenHands aliases
+alias openhands="uvx --python 3.12 --from openhands-ai openhands"
+alias oh="uvx --python 3.12 --from openhands-ai openhands"
+```
+
+After adding these lines, reload your shell configuration with `source ~/.bashrc` or `source ~/.zshrc` (depending on your shell).
+
+</Accordion>
+
+<Accordion title="Install OpenHands in home directory without global installation">
+
+You can install OpenHands in a virtual environment in your home directory using `uv`:
+
+```bash
+# Create a virtual environment in your home directory
+cd ~
+uv venv .openhands-venv --python 3.12
+
+# Install OpenHands in the virtual environment
+uv pip install -t ~/.openhands-venv/lib/python3.12/site-packages openhands-ai
+
+# Add the bin directory to your PATH in your shell configuration file
+echo 'export PATH="$PATH:$HOME/.openhands-venv/bin"' >> ~/.bashrc  # or ~/.zshrc
+
+# Reload your shell configuration
+source ~/.bashrc  # or source ~/.zshrc
+```
+
+</Accordion>
+
+</AccordionGroup>
+
 2. Launch an interactive OpenHands conversation from the command line:
 ```bash
 openhands

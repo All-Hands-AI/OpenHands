@@ -31,6 +31,7 @@
     "@floating-ui/react": "^0.27.12",
     "clsx": "^2.1.1",
     "react": "^19.1.0",
+    "focus-trap-react": "^11.0.4",
     "react-bootstrap-icons": "^1.11.6",
     "react-dom": "^19.1.0",
     "tailwind-merge": "^3.3.1",
