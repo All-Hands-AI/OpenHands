@@ -1,7 +1,5 @@
 import os
 
-from openhands.core.config import AgentConfig
-from openhands.core.logger import openhands_logger as logger
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.utils.import_utils import get_impl
 
@@ -33,58 +31,9 @@ class ExperimentManager:
         return conversation_settings
 
 
-class AgentExperimentManager(ExperimentManager):
-    """
-    Experiment manager for agent-related experiments, allowing for system prompt customization.
-
-    This implementation allows for:
-    1. Setting a custom system prompt filename via environment variable
-    2. Running A/B tests on different system prompts
-    """
-
-    @staticmethod
-    def run_conversation_variant_test(
-        user_id: str, conversation_id: str, conversation_settings: ConversationInitData
-    ) -> ConversationInitData:
-        """
-        Apply experiment variations to the conversation settings.
-
-        Args:
-            user_id: The user ID
-            conversation_id: The conversation ID
-            conversation_settings: The original conversation settings
-
-        Returns:
-            Modified conversation settings with experiment variations applied
-        """
-        # Create a copy of the settings to avoid modifying the original
-        modified_settings = conversation_settings.model_copy()
-
-        # Check for custom system prompt filename in environment variables
-        custom_system_prompt = os.environ.get('OPENHANDS_SYSTEM_PROMPT_FILENAME')
-        if custom_system_prompt:
-            logger.info(
-                f'Using custom system prompt from environment: {custom_system_prompt}',
-                extra={
-                    'user_id': user_id,
-                    'conversation_id': conversation_id,
-                    'experiment': 'custom_system_prompt',
-                },
-            )
-
-            # If agent_config doesn't exist, create it
-            if not modified_settings.agent_config:
-                modified_settings.agent_config = AgentConfig()
-
-            # Set the custom system prompt filename
-            modified_settings.agent_config.system_prompt_filename = custom_system_prompt
-
-        return modified_settings
-
-
-# Default to the AgentExperimentManager unless overridden by environment variable
+# Default to the base ExperimentManager unless overridden by environment variable
 experiment_manager_cls = os.environ.get(
     'OPENHANDS_EXPERIMENT_MANAGER_CLS',
-    'openhands.experiments.experiment_manager.AgentExperimentManager',
+    'openhands.experiments.experiment_manager.ExperimentManager',
 )
 ExperimentManagerImpl = get_impl(ExperimentManager, experiment_manager_cls)
