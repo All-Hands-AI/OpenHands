@@ -14,7 +14,6 @@ from openhands.events.observation.delegate import AgentDelegateObservation
 from openhands.events.observation.empty import NullObservation
 from openhands.events.serialization.event import event_to_trajectory
 from openhands.events.stream import EventStream
-from openhands.llm.metrics import Metrics
 from openhands.llm.metrics_registry import MetricsRegistry
 from openhands.storage.files import FileStore
 
@@ -274,20 +273,6 @@ class StateTracker:
         Budget flag will monitor for when budget is exceeded
         """
         if self.state.budget_flag:
-            self.state.budget_flag.current_value = self.state.metrics.accumulated_cost
-
-    def merge_metrics(self, metrics: Metrics):
-        """
-        Merges metrics with the state metrics
-
-        NOTE: this should be refactored in the future. We should have services (draft llm, title autocomplete, condenser, etc)
-        use their own LLMs, but the metrics object should be shared. This way we have one source of truth for accumulated costs from
-        all services
-
-        This would prevent having fragmented stores for metrics, and we don't have the burden of deciding where and how to store them
-        if we decide introduce more specialized services that require llm completions
-
-        """
-        self.state.metrics.merge(metrics)
-        if self.state.budget_flag:
-            self.state.budget_flag.current_value = self.state.metrics.accumulated_cost
+            self.state.budget_flag.current_value = (
+                self.state.metrics_registry.get_combined_metrics().accumulated_cost
+            )

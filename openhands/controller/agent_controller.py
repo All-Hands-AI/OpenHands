@@ -476,11 +476,6 @@ class AgentController:
             log_level, str(observation_to_print), extra={'msg_type': 'OBSERVATION'}
         )
 
-        # TODO: these metrics come from the draft editor, and they get accumulated into controller's state metrics and the agent's llm metrics
-        # In the future, we should have a more principled way to sharing metrics across all LLM instances for a given conversation
-        if observation.llm_metrics is not None:
-            self.state_tracker.merge_metrics(observation.llm_metrics)
-
         # this happens for runnable actions and microagent actions
         if self._pending_action and self._pending_action.id == observation.cause:
             if self.state.agent_state == AgentState.AWAITING_USER_CONFIRMATION:
@@ -682,6 +677,7 @@ class AgentController:
             user_id=self.user_id,
             agent=delegate_agent,
             event_stream=self.event_stream,
+            metrics_registry=self.state.metrics_registry,
             iteration_delta=self._initial_max_iterations,
             budget_per_task_delta=self._initial_max_budget_per_task,
             agent_to_llm_config=self.agent_to_llm_config,
