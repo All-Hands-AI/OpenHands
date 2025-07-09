@@ -11,7 +11,6 @@ from pydantic import (
 )
 from pydantic.json import pydantic_encoder
 
-from openhands.core.config.agent_config import AgentConfig
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.config.utils import load_openhands_config
@@ -46,7 +45,6 @@ class Settings(BaseModel):
     max_budget_per_task: float | None = None
     email: str | None = None
     email_verified: bool | None = None
-    agent_config: AgentConfig | None = None
 
     model_config = ConfigDict(
         validate_assignment=True,
