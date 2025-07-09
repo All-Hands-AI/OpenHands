@@ -15,7 +15,6 @@ from openhands.core.config import OpenHandsConfig
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.settings.file_settings_store import FileSettingsStore
 
-
 # Mock classes for condensers
 class MockLLMSummarizingCondenserConfig:
     def __init__(self, llm_config, type):
@@ -31,19 +30,17 @@ class MockNoOpCondenserConfig:
 class TestDisplaySettings:
     @pytest.fixture
     def app_config(self):
-        config = MagicMock()
+        config = MagicMock(spec=OpenHandsConfig)
         llm_config = MagicMock()
         llm_config.base_url = None
         llm_config.model = 'openai/gpt-4'
         llm_config.api_key = SecretStr('test-api-key')
         config.get_llm_config.return_value = llm_config
         config.default_agent = 'test-agent'
-        config.file_store_path = (
-            '/tmp'  # necessary for TestSettingsCommandShowsConfigFilePath to pass
-        )
+        config.file_store_path = '/tmp'
 
         # Set up security as a separate mock
-        security_mock = MagicMock()
+        security_mock = MagicMock(spec=OpenHandsConfig)
         security_mock.confirmation_mode = True
         config.security = security_mock
 
@@ -59,9 +56,7 @@ class TestDisplaySettings:
         llm_config.api_key = SecretStr('test-api-key')
         config.get_llm_config.return_value = llm_config
         config.default_agent = 'test-agent'
-        config.file_store_path = (
-            '/tmp'  # necessary for TestSettingsCommandShowsConfigFilePath to pass
-        )
+        config.file_store_path = '/tmp'
 
         # Set up security as a separate mock
         security_mock = MagicMock()
@@ -94,6 +89,8 @@ class TestDisplaySettings:
         assert 'Enabled' in settings_text
         assert 'Memory Condensation:' in settings_text
         assert 'Enabled' in settings_text
+        assert 'Configuration File' in settings_text
+        assert str(Path(app_config.file_store_path)) in settings_text
 
     @patch('openhands.cli.settings.print_container')
     def test_display_settings_advanced_config(
@@ -627,38 +624,3 @@ class TestModifyLLMSettingsAdvanced:
         # Verify settings were not changed
         app_config.set_llm_config.assert_not_called()
         settings_store.store.assert_not_called()
-
-
-class TestSettingsCommandShowsConfigFilePath:
-    """openhands settings` should print the JSON settings-file location."""
-
-    @pytest.fixture()
-    def dummy_config(self, tmp_path):
-        """Return a minimal stub OpenHandsConfig whose file_store_path
-        points to a temp directory."""
-        cfg = MagicMock()
-        cfg.file_store_path = tmp_path
-
-        # Provide the attributes display_settings touches
-        llm_cfg = MagicMock()
-        llm_cfg.base_url = None
-        llm_cfg.provider = 'openai'
-        cfg.get_llm_config.return_value = llm_cfg
-        cfg.security = MagicMock()
-        cfg.get_agent_config.return_value = MagicMock()
-        cfg.cli_multiline_input = False
-        return cfg
-
-    # -- Tests ---------------------------------------------------------------
-
-    def test_settings_contains_configuration_file(self, dummy_config):
-        expected_path = Path(dummy_config.file_store_path) / 'settings.json'
-
-        # Intercept the rich-TUI container so we can inspect the text
-        with patch('openhands.cli.settings.print_container') as mock_print:
-            display_settings(dummy_config)
-
-        # first (and only) call arg is the TextArea-inside-a-Frame container
-        settings_text = mock_print.call_args[0][0].body.text
-        assert 'Configuration File' in settings_text
-        assert str(expected_path) in settings_text
