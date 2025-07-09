@@ -77,17 +77,20 @@ export const Spinner = ({
           />
         </g>
       ) : (
-        <circle
-          cx={SIZE / 2}
-          cy={SIZE / 2}
-          r={radius}
-          fill="none"
-          className="stroke-primary-500 animate-dynamic-spinner origin-center"
-          strokeWidth={STROKE_WIDTH}
-          strokeDasharray={circumference}
-          strokeDashoffset={circumference * 0.75}
-          strokeLinecap="round"
-        />
+        <g className="animate-spinner-rotate origin-center">
+          <circle
+            cx={SIZE / 2}
+            cy={SIZE / 2}
+            r={radius}
+            fill="none"
+            className="stroke-primary-500 animate-arc-length"
+            strokeWidth={STROKE_WIDTH}
+            strokeDasharray={circumference}
+            strokeDashoffset={circumference * 0.75}
+            strokeLinecap="round"
+            transform={`rotate(-90 ${SIZE / 2} ${SIZE / 2})`}
+          />
+        </g>
       )}
     </svg>
   );
