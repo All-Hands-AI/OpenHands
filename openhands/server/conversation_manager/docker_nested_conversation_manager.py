@@ -501,8 +501,6 @@ class DockerNestedConversationManager(ConversationManager):
         env_vars['SKIP_DEPENDENCY_CHECK'] = '1'
         env_vars['INITIAL_NUM_WARM_SERVERS'] = '1'
 
-        # Set up mounted volume for conversation directory within workspace
-        # TODO: Check if we are using the standard event store and file store
         volumes: list[str | None]
         if not config.sandbox.volumes:
             volumes = []
@@ -510,12 +508,15 @@ class DockerNestedConversationManager(ConversationManager):
             volumes = [v.strip() for v in config.sandbox.volumes.split(',')]
         conversation_dir = get_conversation_dir(sid, user_id)
 
-        # Resolve ~ from path as the docker container does not work otherwise
-        file_store_path = os.path.realpath(os.path.expanduser(config.file_store_path))
+        # Set up mounted volume for conversation directory within workspace
+        if config.file_store == 'local':
+            # Resolve ~ from path as the docker container does not work otherwise
+            file_store_path = os.path.realpath(os.path.expanduser(config.file_store_path))
 
-        volumes.append(
-            f'{file_store_path}/{conversation_dir}:/root/.openhands/{conversation_dir}:rw'
-        )
+            volumes.append(
+                f'{file_store_path}/{conversation_dir}:/root/.openhands/{conversation_dir}:rw'
+            )
+
         config.sandbox.volumes = ','.join([v for v in volumes if v is not None])
         if not config.sandbox.runtime_container_image:
             config.sandbox.runtime_container_image = self._runtime_container_image
