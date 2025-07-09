@@ -82,7 +82,7 @@ export function ApiKeysManager() {
         {!isLoadingLlmKey && llmApiKey && (
           <div className="border-b border-gray-200 pb-6 mb-6">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-xl font-medium text-gray-700">
+              <h3 className="text-xl font-medium text-white">
                 {t(I18nKey.SETTINGS$LLM_API_KEY)}
               </h3>
               <BrandButton
@@ -99,7 +99,7 @@ export function ApiKeysManager() {
                 )}
               </BrandButton>
             </div>
-            <p className="text-sm text-gray-500 mb-4">
+            <p className="text-sm text-white mb-4">
               {t(I18nKey.SETTINGS$LLM_API_KEY_DESCRIPTION)}
             </p>
             <div className="flex items-center gap-2 mt-4">
@@ -107,18 +107,18 @@ export function ApiKeysManager() {
                 <div className="flex-1">
                   {llmApiKey.key ? (
                     <div className="flex items-center">
-                      <span className="text-gray-500">{"•".repeat(20)}</span>
-                      <span className="mx-2 text-gray-400">•</span>
+                      <span className="text-white">{"•".repeat(20)}</span>
+                      <span className="mx-2 text-white">•</span>
                     </div>
                   ) : (
-                    <span className="text-gray-400">
+                    <span className="text-white">
                       {t(I18nKey.API$NO_KEY_AVAILABLE)}
                     </span>
                   )}
                 </div>
                 <button
                   type="button"
-                  className="text-gray-500 hover:text-gray-700"
+                  className="text-white hover:text-gray-300"
                   aria-label="Copy API key"
                   title="Copy API key"
                   onClick={() => {
@@ -148,7 +148,7 @@ export function ApiKeysManager() {
           </div>
         )}
 
-        <h3 className="text-xl font-medium text-gray-700">
+        <h3 className="text-xl font-medium text-white">
           {t(I18nKey.SETTINGS$OPENHANDS_API_KEYS)}
         </h3>
 
