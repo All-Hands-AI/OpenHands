@@ -79,37 +79,6 @@ class AgentExperimentManager(ExperimentManager):
             # Set the custom system prompt filename
             modified_settings.agent_config.system_prompt_filename = custom_system_prompt
 
-        # Example of A/B testing based on conversation_id (can be expanded as needed)
-        # This is just a placeholder for future A/B testing implementation
-        # if conversation_id and int(conversation_id[:8], 16) % 2 == 0:
-        #     logger.info(
-        #         f"Assigning conversation {conversation_id} to experiment group A",
-        #         extra={
-        #             'user_id': user_id,
-        #             'conversation_id': conversation_id,
-        #             'experiment': 'system_prompt_ab_test',
-        #             'group': 'A',
-        #         },
-        #     )
-        #     # Apply group A settings
-        #     if not modified_settings.agent_config:
-        #         modified_settings.agent_config = AgentConfig()
-        #     modified_settings.agent_config.system_prompt_filename = 'system_prompt_a.j2'
-        # else:
-        #     logger.info(
-        #         f"Assigning conversation {conversation_id} to experiment group B",
-        #         extra={
-        #             'user_id': user_id,
-        #             'conversation_id': conversation_id,
-        #             'experiment': 'system_prompt_ab_test',
-        #             'group': 'B',
-        #         },
-        #     )
-        #     # Apply group B settings
-        #     if not modified_settings.agent_config:
-        #         modified_settings.agent_config = AgentConfig()
-        #     modified_settings.agent_config.system_prompt_filename = 'system_prompt_b.j2'
-
         return modified_settings
 
 
