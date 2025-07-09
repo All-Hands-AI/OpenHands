@@ -59,6 +59,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+    env:
+      BASE_IMAGE_FOR_HASH_EQUIVALENCE_TEST: nikolaik/python-nodejs:python3.12-nodejs22
     outputs:
       # Since this job uses outputs it cannot use matrix
       hash_from_app_image: ${{ steps.get_hash_in_app_image.outputs.hash_from_app_image }}
