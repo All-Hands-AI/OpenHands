@@ -8,11 +8,13 @@ type BaseSpinnerProps = HTMLProps<"svg">;
 export type DeterminateSpinnerProps = BaseSpinnerProps & {
   determinate: true;
   value: number;
+  variant?: never;
 };
 
 export type IndeterminateSpinnerProps = BaseSpinnerProps & {
   determinate?: false | null | undefined;
   value?: never;
+  variant?: "simple" | "dynamic";
 };
 
 export type SpinnerProps = DeterminateSpinnerProps | IndeterminateSpinnerProps;
@@ -25,6 +27,7 @@ const circumference = 2 * Math.PI * radius;
 export const Spinner = ({
   value = 10,
   determinate = false,
+  variant = "simple",
   className,
   ...props
 }: SpinnerProps) => {
@@ -43,24 +46,49 @@ export const Spinner = ({
         className="stroke-grey-970"
         strokeWidth={STROKE_WIDTH}
       />
-      <g
-        className={cn(
-          !determinate && "animate-indeterminate-spinner origin-center"
-        )}
-      >
+      {determinate ? (
+        <g>
+          <circle
+            cx={SIZE / 2}
+            cy={SIZE / 2}
+            r={radius}
+            fill="none"
+            className="stroke-primary-500 animate-determinate-spinner"
+            strokeWidth={STROKE_WIDTH}
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            strokeLinecap="round"
+            transform={`rotate(-90 ${SIZE / 2} ${SIZE / 2})`}
+          />
+        </g>
+      ) : variant === "simple" ? (
+        <g className="animate-indeterminate-spinner origin-center">
+          <circle
+            cx={SIZE / 2}
+            cy={SIZE / 2}
+            r={radius}
+            fill="none"
+            className="stroke-primary-500"
+            strokeWidth={STROKE_WIDTH}
+            strokeDasharray={circumference}
+            strokeDashoffset={circumference * 0.75}
+            strokeLinecap="round"
+            transform={`rotate(-90 ${SIZE / 2} ${SIZE / 2})`}
+          />
+        </g>
+      ) : (
         <circle
           cx={SIZE / 2}
           cy={SIZE / 2}
           r={radius}
           fill="none"
-          className="stroke-primary-500 animate-determinate-spinner"
+          className="stroke-primary-500 animate-dynamic-spinner origin-center"
           strokeWidth={STROKE_WIDTH}
           strokeDasharray={circumference}
-          strokeDashoffset={offset}
+          strokeDashoffset={circumference * 0.75}
           strokeLinecap="round"
-          transform={`rotate(-90 ${SIZE / 2} ${SIZE / 2})`}
         />
-      </g>
+      )}
     </svg>
   );
 };

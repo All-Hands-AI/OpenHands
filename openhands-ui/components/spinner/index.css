@@ -1,5 +1,5 @@
 @layer utilities {
-  @keyframes spinner-animate {
+  @keyframes spinner-rotate {
     0% {
       transform: rotate(-90deg);
     }
@@ -8,11 +8,38 @@
     }
   }
 
+  @keyframes spinner-dynamic {
+    0% {
+      stroke-dashoffset: 85%;
+      transform: rotate(-90deg);
+    }
+    25% {
+      stroke-dashoffset: 25%;
+      transform: rotate(0deg);
+    }
+    50% {
+      stroke-dashoffset: 10%;
+      transform: rotate(90deg);
+    }
+    75% {
+      stroke-dashoffset: 25%;
+      transform: rotate(180deg);
+    }
+    100% {
+      stroke-dashoffset: 85%;
+      transform: rotate(270deg);
+    }
+  }
+
   .animate-indeterminate-spinner {
-    animation: spinner-animate 2s linear infinite;
+    animation: spinner-rotate 2s linear infinite;
   }
 
   .animate-determinate-spinner {
     transition: stroke-dashoffset 0.3s ease;
+  }
+
+  .animate-dynamic-spinner {
+    animation: spinner-dynamic 1.8s cubic-bezier(0.65, 0, 0.35, 1) infinite;
   }
 }

@@ -27,6 +27,31 @@ export const Determinate: Story = {
   render: () => <DeterminateSpinner />,
 };
 
-export const Indeterminate: Story = {
-  render: () => <Spinner />,
+export const IndeterminateSimple: Story = {
+  render: () => <Spinner variant="simple" />,
+  name: "Indeterminate (Simple)",
+};
+
+export const IndeterminateDynamic: Story = {
+  render: () => <Spinner variant="dynamic" />,
+  name: "Indeterminate (Dynamic)",
+};
+
+export const AllVariants: Story = {
+  render: () => (
+    <div className="flex flex-col gap-4 items-center">
+      <div className="flex gap-4 items-center">
+        <Spinner variant="simple" />
+        <span>Simple Indeterminate</span>
+      </div>
+      <div className="flex gap-4 items-center">
+        <Spinner variant="dynamic" />
+        <span>Dynamic Indeterminate</span>
+      </div>
+      <div className="flex gap-4 items-center">
+        <DeterminateSpinner />
+        <span>Determinate</span>
+      </div>
+    </div>
+  ),
 };
