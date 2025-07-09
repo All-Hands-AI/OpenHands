@@ -169,6 +169,17 @@ class Session:
         llm = self._create_llm(agent_cls)
         agent_config = self.config.get_agent_config(agent_cls)
 
+        # Apply experiment manager modifications to agent config
+        agent_config = ExperimentManagerImpl.run_agent_config_variant_test(
+            user_id=self.user_id or 'anonymous',
+            conversation_id=self.sid,
+            agent_config=agent_config,
+        )
+        self.logger.info(
+            'Applied experiment manager modifications to agent config',
+            extra={'user_id': self.user_id, 'conversation_id': self.sid},
+        )
+
         if settings.enable_default_condenser:
             # Default condenser chains three condensers together:
             # 1. a conversation window condenser that handles explicit
