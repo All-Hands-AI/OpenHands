@@ -2,6 +2,7 @@ export const ProviderOptions = {
   github: "github",
   gitlab: "gitlab",
   bitbucket: "bitbucket",
+  azure_devops: "azure_devops",
 } as const;
 
 export type Provider = keyof typeof ProviderOptions;

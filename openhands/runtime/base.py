@@ -215,7 +215,6 @@ class Runtime(FileEditRuntimeMixin):
         if self.status_callback:
             self.status_callback(level, runtime_status, msg)
 
-    # ====================================================================
 
     def add_env_vars(self, env_vars: dict[str, str]) -> None:
         env_vars = {key.upper(): value for key, value in env_vars.items()}
@@ -630,6 +629,7 @@ fi
             ProviderType.GITHUB: 'github.com',
             ProviderType.GITLAB: 'gitlab.com',
             ProviderType.BITBUCKET: 'bitbucket.org',
+            ProviderType.AZURE_DEVOPS: 'dev.azure.com',
         }
 
         domain = provider_domains[provider]
@@ -655,6 +655,9 @@ fi
                     else:
                         # Access token format: use x-token-auth
                         remote_url = f'https://x-token-auth:{token_value}@{domain}/{repo_name}.git'
+                elif provider == ProviderType.AZURE_DEVOPS:
+                    # Azure DevOps uses simple token authentication
+                    remote_url = f'https://{token_value}@{domain}/{repo_name}.git'
                 else:
                     # GitHub
                     remote_url = f'https://{token_value}@{domain}/{repo_name}.git'
@@ -703,7 +706,7 @@ fi
         characters.
 
         Args:
-            selected_repository: The repository path (e.g., "github.com/acme-co/api")
+            selected_repository: The repository path (e.g., "github.com/acme-co/api" or "acme-co/api")
 
         Returns:
             A list of loaded microagents from the org/user level repository
@@ -935,9 +938,7 @@ fi
         observation = getattr(self, action_type)(action)
         return observation
 
-    # ====================================================================
     # Context manager
-    # ====================================================================
 
     def __enter__(self) -> 'Runtime':
         return self
@@ -955,9 +956,7 @@ fi
     ) -> MCPConfig:
         pass
 
-    # ====================================================================
     # Action execution
-    # ====================================================================
 
     @abstractmethod
     def run(self, action: CmdRunAction) -> Observation:
@@ -991,9 +990,7 @@ fi
     async def call_tool_mcp(self, action: MCPAction) -> Observation:
         pass
 
-    # ====================================================================
     # File operations
-    # ====================================================================
 
     @abstractmethod
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
@@ -1012,17 +1009,13 @@ fi
         """Zip all files in the sandbox and return a path in the local filesystem."""
         raise NotImplementedError('This method is not implemented in the base class.')
 
-    # ====================================================================
     # Authentication
-    # ====================================================================
 
     @property
     def session_api_key(self) -> str | None:
         return None
 
-    # ====================================================================
     # VSCode
-    # ====================================================================
 
     @property
     def vscode_enabled(self) -> bool:
@@ -1036,9 +1029,7 @@ fi
     def web_hosts(self) -> dict[str, int]:
         return {}
 
-    # ====================================================================
     # Git
-    # ====================================================================
 
     def _execute_shell_fn_git_handler(
         self, command: str, cwd: str | None

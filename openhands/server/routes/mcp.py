@@ -8,6 +8,9 @@ from fastmcp.server.dependencies import get_http_request
 from pydantic import Field
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.integrations.azure_devops.azure_devops_service import (
+    AzureDevOpsServiceImpl,
+)
 from openhands.integrations.bitbucket.bitbucket_service import BitBucketServiceImpl
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
@@ -244,7 +247,9 @@ async def create_bitbucket_pr(
     access_token = await get_access_token(request)
     user_id = await get_user_id(request)
 
-    bitbucket_token = (
+    azure_devops_token = (
+        provider_tokens.get(ProviderType.AZURE_DEVOPS, ProviderToken())
+            bitbucket_token = (
         provider_tokens.get(ProviderType.BITBUCKET, ProviderToken())
         if provider_tokens
         else ProviderToken()
