@@ -10,17 +10,6 @@ class ExperimentManager:
     def run_conversation_variant_test(
         user_id: str, conversation_id: str, conversation_settings: ConversationInitData
     ) -> ConversationInitData:
-        """
-        Apply experiment variations to the conversation settings.
-
-        Args:
-            user_id: The user ID
-            conversation_id: The conversation ID
-            conversation_settings: The original conversation settings
-
-        Returns:
-            Modified conversation settings with experiment variations applied
-        """
         return conversation_settings
 
     @staticmethod
