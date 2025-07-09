@@ -31,13 +31,16 @@ class MockNoOpCondenserConfig:
 class TestDisplaySettings:
     @pytest.fixture
     def app_config(self):
-        config = MagicMock(spec=OpenHandsConfig)
+        config = MagicMock()
         llm_config = MagicMock()
         llm_config.base_url = None
         llm_config.model = 'openai/gpt-4'
         llm_config.api_key = SecretStr('test-api-key')
         config.get_llm_config.return_value = llm_config
         config.default_agent = 'test-agent'
+        config.file_store_path = (
+            '/tmp'  # necessary for TestSettingsCommandShowsConfigFilePath to pass
+        )
 
         # Set up security as a separate mock
         security_mock = MagicMock()
@@ -49,13 +52,16 @@ class TestDisplaySettings:
 
     @pytest.fixture
     def advanced_app_config(self):
-        config = MagicMock(spec=OpenHandsConfig)
+        config = MagicMock()
         llm_config = MagicMock()
         llm_config.base_url = 'https://custom-api.com'
         llm_config.model = 'custom-model'
         llm_config.api_key = SecretStr('test-api-key')
         config.get_llm_config.return_value = llm_config
         config.default_agent = 'test-agent'
+        config.file_store_path = (
+            '/tmp'  # necessary for TestSettingsCommandShowsConfigFilePath to pass
+        )
 
         # Set up security as a separate mock
         security_mock = MagicMock()
