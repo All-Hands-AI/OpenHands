@@ -28,6 +28,7 @@ from openhands.events.observation.agent import RecallObservation
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
+from openhands.experiments import ExperimentManagerImpl
 from openhands.llm.llm import LLM
 from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation_init_data import ConversationInitData
@@ -94,6 +95,18 @@ class Session:
         initial_message: MessageAction | None,
         replay_json: str | None,
     ) -> None:
+        # Apply experiment manager modifications to settings if it's ConversationInitData
+        if isinstance(settings, ConversationInitData):
+            settings = ExperimentManagerImpl.run_conversation_variant_test(
+                user_id=self.user_id or 'anonymous',
+                conversation_id=self.sid,
+                conversation_settings=settings,
+            )
+            self.logger.info(
+                'Applied experiment manager modifications to conversation settings',
+                extra={'user_id': self.user_id, 'conversation_id': self.sid},
+            )
+
         self.agent_session.event_stream.add_event(
             AgentStateChangedObservation('', AgentState.LOADING),
             EventSource.ENVIRONMENT,
