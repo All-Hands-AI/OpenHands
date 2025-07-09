@@ -4,7 +4,10 @@ import { I18nKey } from "#/i18n/declaration";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { ApiKey, CreateApiKeyResponse } from "#/api/api-keys";
-import { displayErrorToast } from "#/utils/custom-toast-handlers";
+import {
+  displayErrorToast,
+  displaySuccessToast,
+} from "#/utils/custom-toast-handlers";
 import { CreateApiKeyModal } from "./create-api-key-modal";
 import { DeleteApiKeyModal } from "./delete-api-key-modal";
 import { NewApiKeyModal } from "./new-api-key-modal";
@@ -106,7 +109,7 @@ export function ApiKeysManager() {
                   onClick={() => {
                     if (llmApiKey.key) {
                       navigator.clipboard.writeText(llmApiKey.key);
-                      displayErrorToast("API key copied to clipboard");
+                      displaySuccessToast(t(I18nKey.SETTINGS$API_KEY_COPIED));
                     }
                   }}
                 >
