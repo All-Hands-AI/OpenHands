@@ -31,7 +31,7 @@ This folder implements localization evaluation at both file and function levels 
         - `max-infer-turn`: the maximum number of iterations the agent took to run inference
         - `align-with-max`: whether to align failure indices (e.g., incorrect localization, unresolved tasks) with `max_iter`
 
-    - Example: 
+    - Example:
         ```bash
         # Example
         ./evaluation/benchmarks/swe_bench/scripts/eval_localization.sh \

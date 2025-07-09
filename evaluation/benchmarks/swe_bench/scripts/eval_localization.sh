@@ -213,7 +213,7 @@ if [ ${PIPESTATUS[0]} -eq 0 ]; then
     print_status "Localization evaluation completed successfully!"
     print_status "Results saved to: $INFER_DIR/loc_eval"
     print_status "Log file: $LOG_FILE"
-    
+
     # Display summary if results exist
     if [ -f "$INFER_DIR/loc_eval/loc_eval_results/loc_acc/overall_eval.json" ]; then
         print_header "Evaluation Summary:"
