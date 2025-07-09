@@ -88,7 +88,12 @@ export function ApiKeysManager() {
 
         {!isLoadingLlmKey && llmApiKey && (
           <div className="border-b border-gray-200 pb-6 mb-6">
-            <h3 className="text-xl font-medium mb-2 text-gray-700">API Key</h3>
+            <h3 className="text-xl font-medium mb-2 text-gray-700">
+              {t(I18nKey.SETTINGS$LLM_API_KEY)}
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">
+              {t(I18nKey.SETTINGS$LLM_API_KEY_DESCRIPTION)}
+            </p>
             <div className="flex items-center gap-2 mt-4">
               <div className="flex-1 bg-gray-100 rounded-md px-4 py-2 flex items-center">
                 <div className="flex-1">
