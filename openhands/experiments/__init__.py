@@ -7,8 +7,9 @@ system prompts, agent configurations, and more.
 """
 
 from openhands.experiments.experiment_manager import (
+    AgentExperimentManager,
     ExperimentManager,
     ExperimentManagerImpl,
 )
 
-__all__ = ['ExperimentManager', 'ExperimentManagerImpl']
+__all__ = ['ExperimentManager', 'ExperimentManagerImpl', 'AgentExperimentManager']

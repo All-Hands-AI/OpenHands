@@ -3,7 +3,7 @@ import unittest
 from unittest.mock import patch
 
 from openhands.core.config import AgentConfig
-from openhands.experiments.agent_experiment_manager import AgentExperimentManager
+from openhands.experiments.experiment_manager import AgentExperimentManager
 from openhands.server.session.conversation_init_data import ConversationInitData
 
 
@@ -70,7 +70,7 @@ class TestAgentExperimentManager(unittest.TestCase):
             modified_settings.agent_config.system_prompt_filename, 'custom_prompt.j2'
         )
 
-    @patch('openhands.experiments.agent_experiment_manager.logger')
+    @patch('openhands.experiments.experiment_manager.logger')
     def test_logging(self, mock_logger):
         """Test that the experiment manager logs correctly."""
         # Set environment variable for custom system prompt
