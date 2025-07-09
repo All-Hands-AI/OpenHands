@@ -144,7 +144,6 @@ RUN \
 # rather than the current OpenHands release
 
 {{ setup_base_system() }}
-{{ setup_vscode_server() }}
 
 # Install micromamba
 RUN mkdir -p /openhands/micromamba/bin && \
@@ -171,9 +170,8 @@ COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
 # ================================================================
 {% endif %}
 
-{% if not build_from_scratch %}
 {{ setup_vscode_server() }}
-{% endif %}
+
 # ================================================================
 # Copy Project source files
 # ================================================================
