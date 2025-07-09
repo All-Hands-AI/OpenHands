@@ -13,8 +13,9 @@
     "plugin:react-hooks/recommended",
     "plugin:@tanstack/query/recommended",
   ],
-  "plugins": ["prettier", "unused-imports"],
+  "plugins": ["prettier", "unused-imports", "i18next"],
   "rules": {
+    "i18next/no-literal-string": "error",
     "unused-imports/no-unused-imports": "error",
     "prettier/prettier": ["error"],
     // Resolves https://stackoverflow.com/questions/59265981/typescript-eslint-missing-file-extension-ts-import-extensions/59268871#59268871
