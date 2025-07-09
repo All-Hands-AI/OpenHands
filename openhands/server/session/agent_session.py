@@ -443,6 +443,7 @@ class AgentSession:
             user_id=self.user_id,
             file_store=self.file_store,
             event_stream=self.event_stream,
+            metrics_registry=self.metrics_registry,
             agent=agent,
             iteration_delta=int(max_iterations),
             budget_per_task_delta=max_budget_per_task,
@@ -504,6 +505,10 @@ class AgentSession:
                 self.logger.warning(f'State could not be restored: {e}')
             else:
                 self.logger.debug('No events found, no state to restore')
+
+        if restored_state:
+            restored_state.metrics_registry = self.metrics_registry
+
         return restored_state
 
     def get_state(self) -> AgentState | None:

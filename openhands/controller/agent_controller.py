@@ -75,6 +75,7 @@ from openhands.events.observation import (
 from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics
+from openhands.llm.metrics_registry import MetricsRegistry
 from openhands.storage.files import FileStore
 
 # note: RESUME is only available on web GUI
@@ -104,6 +105,7 @@ class AgentController:
         self,
         agent: Agent,
         event_stream: EventStream,
+        metrics_registry: MetricsRegistry,
         iteration_delta: int,
         budget_per_task_delta: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
@@ -159,6 +161,7 @@ class AgentController:
         # state from the previous session, state from a parent agent, or a fresh state
         self.set_initial_state(
             state=initial_state,
+            metrics_registry=metrics_registry,
             max_iterations=iteration_delta,
             max_budget_per_task=budget_per_task_delta,
             confirmation_mode=confirmation_mode,
@@ -947,6 +950,7 @@ class AgentController:
     def set_initial_state(
         self,
         state: State | None,
+        metrics_registry: MetricsRegistry,
         max_iterations: int,
         max_budget_per_task: float | None,
         confirmation_mode: bool = False,
@@ -955,6 +959,7 @@ class AgentController:
             self.id,
             self.agent,
             state,
+            metrics_registry,
             max_iterations,
             max_budget_per_task,
             confirmation_mode,

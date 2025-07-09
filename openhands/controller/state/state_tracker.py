@@ -15,6 +15,7 @@ from openhands.events.observation.empty import NullObservation
 from openhands.events.serialization.event import event_to_trajectory
 from openhands.events.stream import EventStream
 from openhands.llm.metrics import Metrics
+from openhands.llm.metrics_registry import MetricsRegistry
 from openhands.storage.files import FileStore
 
 
@@ -53,6 +54,7 @@ class StateTracker:
         id: str,
         agent: Agent,
         state: State | None,
+        metrics_registry: MetricsRegistry,
         max_iterations: int,
         max_budget_per_task: float | None,
         confirmation_mode: bool = False,
@@ -87,6 +89,7 @@ class StateTracker:
                     max_value=max_budget_per_task,
                 ),
                 confirmation_mode=confirmation_mode,
+                metrics_registry=metrics_registry,
             )
             self.state.start_id = 0
 
