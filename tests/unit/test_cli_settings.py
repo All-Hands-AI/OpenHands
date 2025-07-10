@@ -15,6 +15,7 @@ from openhands.core.config import OpenHandsConfig
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.settings.file_settings_store import FileSettingsStore
 
+
 # Mock classes for condensers
 class MockLLMSummarizingCondenserConfig:
     def __init__(self, llm_config, type):
