@@ -106,7 +106,7 @@ export function ApiKeysManager() {
               </p>
               <div className="flex items-center gap-2">
                 <div className="flex-1 bg-base-tertiary rounded-md py-2 flex items-center">
-                  <div className="flex-1 pl-2">
+                  <div className="flex-1">
                     {llmApiKey.key ? (
                       <div className="flex items-center">
                         {showLlmApiKey ? (
