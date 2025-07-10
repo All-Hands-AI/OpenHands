@@ -28,6 +28,7 @@ from openhands.events.observation import (
 )
 from openhands.events.stream import EventStreamSubscriber
 from openhands.integrations.service_types import ProviderType
+from openhands.llm.metrics_registry import LLMRegistry
 from openhands.resolver.interfaces.issue import Issue
 from openhands.resolver.interfaces.issue_definitions import (
     ServiceContextIssue,
@@ -410,7 +411,8 @@ class IssueResolver:
             shutil.rmtree(self.workspace_base)
         shutil.copytree(os.path.join(self.output_dir, 'repo'), self.workspace_base)
 
-        runtime = create_runtime(self.app_config)
+        llm_registry = LLMRegistry()
+        runtime = create_runtime(self.app_config, llm_registry)
         await runtime.connect()
 
         def on_event(evt: Event) -> None:
@@ -439,6 +441,7 @@ class IssueResolver:
                 runtime=runtime,
                 fake_user_response_fn=codeact_user_response,
                 conversation_instructions=conversation_instructions,
+                llm_registry=llm_registry,
             )
             if state is None:
                 raise RuntimeError('Failed to run the agent.')

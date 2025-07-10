@@ -31,7 +31,7 @@ from openhands.events.action.action import Action
 from openhands.events.event import Event
 from openhands.events.observation import AgentStateChangedObservation
 from openhands.io import read_input, read_task
-from openhands.llm.metrics_registry import MetricsRegistry
+from openhands.llm.metrics_registry import LLMRegistry
 from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
@@ -57,6 +57,7 @@ async def run_controller(
     headless_mode: bool = True,
     memory: Memory | None = None,
     conversation_instructions: str | None = None,
+    llm_registry: LLMRegistry | None = None,
 ) -> State | None:
     """Main coroutine to run the agent controller with task input flexibility.
 
@@ -94,13 +95,17 @@ async def run_controller(
         >>> state = await run_controller(config=config, initial_user_action=action)
     """
     sid = sid or generate_sid(config)
-    agent = create_agent(config, metrics_registry=MetricsRegistry())
+    if not llm_registry:
+        llm_registry = LLMRegistry()
+
+    agent = create_agent(config, llm_registry)
 
     # when the runtime is created, it will be connected and clone the selected repository
     repo_directory = None
     if runtime is None:
         runtime = create_runtime(
             config,
+            llm_registry,
             sid=sid,
             headless_mode=headless_mode,
             agent=agent,
@@ -149,7 +154,7 @@ async def run_controller(
         )
 
     controller, initial_state = create_controller(
-        agent, runtime, config, replay_events=replay_events
+        agent, runtime, config, llm_registry, replay_events=replay_events
     )
 
     assert isinstance(initial_user_action, Action), (

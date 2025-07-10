@@ -7,7 +7,7 @@ import jinja2
 
 from openhands.core.config import LLMConfig
 from openhands.events.event import Event
-from openhands.llm.llm import LLM
+from openhands.llm.metrics_registry import LLMRegistry
 from openhands.resolver.interfaces.issue import (
     Issue,
     IssueHandlerInterface,
@@ -22,8 +22,9 @@ class ServiceContext:
 
     def __init__(self, strategy: IssueHandlerInterface, llm_config: LLMConfig | None):
         self._strategy = strategy
+        llm_registry = LLMRegistry()
         if llm_config is not None:
-            self.llm = LLM(llm_config)
+            self.llm = llm_registry.register_llm('resolver_embelishment', llm_config)
 
     def set_strategy(self, strategy: IssueHandlerInterface) -> None:
         self._strategy = strategy
