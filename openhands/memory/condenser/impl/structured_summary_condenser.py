@@ -8,13 +8,13 @@ from pydantic import BaseModel, Field
 from openhands.core.config.condenser_config import (
     StructuredSummaryCondenserConfig,
 )
+from openhands.core.config.llm_config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message, TextContent
 from openhands.events.action.agent import CondensationAction
 from openhands.events.observation.agent import AgentCondensationObservation
 from openhands.events.serialization.event import truncate_content
-from openhands.llm import LLM
-from openhands.llm.metrics_registry import LLMService, MetricsRegistry
+from openhands.llm.metrics_registry import LLMRegistry
 from openhands.memory.condenser.condenser import (
     Condensation,
     RollingCondenser,
@@ -167,7 +167,8 @@ class StructuredSummaryCondenser(RollingCondenser):
 
     def __init__(
         self,
-        llm: LLM,
+        llm_config: LLMConfig,
+        llm_registry: LLMRegistry,
         max_size: int = 100,
         keep_first: int = 1,
         max_event_length: int = 10_000,
@@ -181,15 +182,14 @@ class StructuredSummaryCondenser(RollingCondenser):
         if max_size < 1:
             raise ValueError(f'max_size ({max_size}) cannot be non-positive')
 
-        if not llm.is_function_calling_active():
-            raise ValueError(
-                'LLM must support function calling to use StructuredSummaryCondenser'
-            )
-
         self.max_size = max_size
         self.keep_first = keep_first
         self.max_event_length = max_event_length
-        self.llm = llm
+        self.llm = llm_registry.register_llm('structured_summary_condenser', llm_config)
+        if not self.llm.is_function_calling_active():
+            raise ValueError(
+                'LLM must support function calling to use StructuredSummaryCondenser'
+            )
 
         super().__init__()
 
@@ -310,7 +310,7 @@ Capture all relevant information, especially:
 
     @classmethod
     def from_config(
-        cls, config: StructuredSummaryCondenserConfig, metrics_registry: MetricsRegistry
+        cls, config: StructuredSummaryCondenserConfig, llm_registry: LLMRegistry
     ) -> StructuredSummaryCondenser:
         # This condenser cannot take advantage of prompt caching. If it happens
         # to be set, we'll pay for the cache writes but never get a chance to
@@ -319,11 +319,8 @@ Capture all relevant information, especially:
         llm_config.caching_prompt = False
 
         return StructuredSummaryCondenser(
-            llm=LLM(
-                config=llm_config,
-                metrics_registry=metrics_registry,
-                llm_service=LLMService.CONDENSER,
-            ),
+            llm_config=llm_config,
+            llm_registry=llm_registry,
             max_size=config.max_size,
             keep_first=config.keep_first,
             max_event_length=config.max_event_length,

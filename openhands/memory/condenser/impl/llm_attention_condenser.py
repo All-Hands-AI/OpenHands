@@ -4,9 +4,9 @@ from litellm import supports_response_schema
 from pydantic import BaseModel
 
 from openhands.core.config.condenser_config import LLMAttentionCondenserConfig
+from openhands.core.config.llm_config import LLMConfig
 from openhands.events.action.agent import CondensationAction
-from openhands.llm.llm import LLM
-from openhands.llm.metrics_registry import LLMService, MetricsRegistry
+from openhands.llm.metrics_registry import LLMRegistry
 from openhands.memory.condenser.condenser import (
     Condensation,
     RollingCondenser,
@@ -23,7 +23,13 @@ class ImportantEventSelection(BaseModel):
 class LLMAttentionCondenser(RollingCondenser):
     """Rolling condenser strategy that uses an LLM to select the most important events when condensing the history."""
 
-    def __init__(self, llm: LLM, max_size: int = 100, keep_first: int = 1):
+    def __init__(
+        self,
+        llm_config: LLMConfig,
+        llm_registry: LLMRegistry,
+        max_size: int = 100,
+        keep_first: int = 1,
+    ):
         if keep_first >= max_size // 2:
             raise ValueError(
                 f'keep_first ({keep_first}) must be less than half of max_size ({max_size})'
@@ -35,7 +41,7 @@ class LLMAttentionCondenser(RollingCondenser):
 
         self.max_size = max_size
         self.keep_first = keep_first
-        self.llm = llm
+        self.llm = llm_registry.register_llm('attention_condenser', llm_config)
 
         # This condenser relies on the `response_schema` feature, which is not supported by all LLMs
         if not supports_response_schema(
@@ -115,7 +121,7 @@ class LLMAttentionCondenser(RollingCondenser):
 
     @classmethod
     def from_config(
-        cls, config: LLMAttentionCondenserConfig, metrics_registry: MetricsRegistry
+        cls, config: LLMAttentionCondenserConfig, llm_registry: LLMRegistry
     ) -> LLMAttentionCondenser:
         # This condenser cannot take advantage of prompt caching. If it happens
         # to be set, we'll pay for the cache writes but never get a chance to
@@ -124,11 +130,8 @@ class LLMAttentionCondenser(RollingCondenser):
         llm_config.caching_prompt = False
 
         return LLMAttentionCondenser(
-            llm=LLM(
-                config=llm_config,
-                metrics_registry=metrics_registry,
-                llm_service=LLMService.CONDENSER,
-            ),
+            config=llm_config,
+            llm_registry=llm_registry,
             max_size=config.max_size,
             keep_first=config.keep_first,
         )

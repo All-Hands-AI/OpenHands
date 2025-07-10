@@ -8,7 +8,7 @@ from typing import Any, Callable
 import httpx
 
 from openhands.core.config import LLMConfig
-from openhands.llm.metrics_registry import LLMService, MetricsRegistry
+from openhands.llm.metrics import Metrics
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -117,10 +117,9 @@ class LLM(RetryMixin, DebugMixin):
     def __init__(
         self,
         config: LLMConfig,
-        metrics_registry: MetricsRegistry,
+        metrics: Metrics | None = None,
         model_name: str = 'default',
         retry_listener: Callable[[int, int], None] | None = None,
-        llm_service: LLMService = LLMService.AGENT,
     ) -> None:
         """Initializes the LLM. If LLMConfig is passed, its values will be the fallback.
 
@@ -131,13 +130,14 @@ class LLM(RetryMixin, DebugMixin):
             metrics: The metrics to use.
         """
         self._tried_model_info = False
-        self.metrics_registry: MetricsRegistry = metrics_registry
         # Assign metrics object to llm from metrics registry
-        self.metrics = self.metrics_registry.register_llm(llm_service, model_name)
         self.model_name = model_name
 
         self.cost_metric_supported: bool = True
         self.config: LLMConfig = copy.deepcopy(config)
+        self.metrics: Metrics = (
+            metrics if metrics is not None else Metrics(model_name=config.model)
+        )
 
         self.model_info: ModelInfo | None = None
         self.retry_listener = retry_listener

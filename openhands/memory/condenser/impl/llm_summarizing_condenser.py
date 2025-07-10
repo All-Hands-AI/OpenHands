@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from openhands.core.config.condenser_config import LLMSummarizingCondenserConfig
+from openhands.core.config.llm_config import LLMConfig
 from openhands.core.message import Message, TextContent
 from openhands.events.action.agent import CondensationAction
 from openhands.events.observation.agent import AgentCondensationObservation
 from openhands.events.serialization.event import truncate_content
-from openhands.llm import LLM
-from openhands.llm.metrics_registry import LLMService, MetricsRegistry
+from openhands.llm.metrics_registry import LLMRegistry
 from openhands.memory.condenser.condenser import (
     Condensation,
     RollingCondenser,
@@ -24,7 +24,8 @@ class LLMSummarizingCondenser(RollingCondenser):
 
     def __init__(
         self,
-        llm: LLM,
+        llm_config: LLMConfig,
+        llm_registry: LLMRegistry,
         max_size: int = 100,
         keep_first: int = 1,
         max_event_length: int = 10_000,
@@ -41,7 +42,7 @@ class LLMSummarizingCondenser(RollingCondenser):
         self.max_size = max_size
         self.keep_first = keep_first
         self.max_event_length = max_event_length
-        self.llm = llm
+        self.llm = llm_registry.register_llm('summary_condenser', llm_config)
 
         super().__init__()
 
@@ -155,7 +156,7 @@ CURRENT_STATE: Last flip: Heads, Haiku count: 15/20"""
 
     @classmethod
     def from_config(
-        cls, config: LLMSummarizingCondenserConfig, metrics_registry: MetricsRegistry
+        cls, config: LLMSummarizingCondenserConfig, llm_registry: LLMRegistry
     ) -> LLMSummarizingCondenser:
         # This condenser cannot take advantage of prompt caching. If it happens
         # to be set, we'll pay for the cache writes but never get a chance to
@@ -164,14 +165,10 @@ CURRENT_STATE: Last flip: Heads, Haiku count: 15/20"""
         llm_config.caching_prompt = False
 
         return LLMSummarizingCondenser(
-            llm=LLM(
-                config=llm_config,
-                metrics_registry=metrics_registry,
-                llm_service=LLMService.CONDENSER,
-            ),
+            config=llm_config,
+            llm_registry=llm_registry,
             max_size=config.max_size,
             keep_first=config.keep_first,
-            max_event_length=config.max_event_length,
         )
 
 

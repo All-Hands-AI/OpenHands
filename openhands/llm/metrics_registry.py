@@ -1,40 +1,36 @@
-from enum import Enum
 from uuid import uuid4
 
+from openhands.core.config.llm_config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
+from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics
 
 
-class LLMService(Enum):
-    AGENT = 'AGENT'
-    CONDENSER = 'CONDENSER'
-    DRAFT_LLM = 'DRAFT_LLM'
-    CONVO_TITLE_CREATOR = 'CONVO_TITLE_CREATOR'
-
-
-class MetricsRegistry:
+class LLMRegistry:
     metrics_id = str(uuid4())
-    global_metrics: dict[LLMService, Metrics] = {}
+    service_to_llm: dict[str, LLM] = {}
 
-    def register_llm(self, service: LLMService | str, model_name: str = 'default'):
+    def register_llm(self, service_id: str, config: LLMConfig):
         logger.info(
-            f'[Metrics registry {self.metrics_id}]: Registering service {service}'
+            f'[Metrics registry {self.metrics_id}]: Registering service for {service_id}'
         )
 
-        if service in self.global_metrics:
-            return self.global_metrics[service]
+        if service_id in self.service_to_llm:
+            raise Exception(f'Registering duplicate LLM: {service_id}')
 
-        metrics = Metrics(model_name=model_name)
-        self.global_metrics[service] = metrics
-        return metrics
+        llm = LLM(config=config)
+        self.service_to_llm[service_id] = llm
+        return llm
 
-    def save_metrics(self):
-        pass
+    def get_shared_llm(self, service_id: str):
+        if service_id not in self.service_to_llm:
+            raise Exception(f'LLM service does not exist {service_id}')
+
+        return self.service_to_llm[service_id]
 
     def get_combined_metrics(self) -> Metrics:
-        print('all metrics', self.global_metrics)
         total_metrics = Metrics()
-        for service in self.global_metrics:
-            total_metrics.merge(self.global_metrics[service])
+        for llm in self.service_to_llm.values():
+            total_metrics.merge(llm.metrics)
 
         return total_metrics

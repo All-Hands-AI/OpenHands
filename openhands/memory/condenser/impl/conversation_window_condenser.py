@@ -9,7 +9,7 @@ from openhands.events.action.agent import (
 from openhands.events.action.message import MessageAction, SystemMessageAction
 from openhands.events.event import EventSource
 from openhands.events.observation import Observation
-from openhands.llm.metrics_registry import MetricsRegistry
+from openhands.llm.metrics_registry import LLMRegistry
 from openhands.memory.condenser.condenser import Condensation, RollingCondenser, View
 
 
@@ -180,7 +180,7 @@ class ConversationWindowCondenser(RollingCondenser):
     def from_config(
         cls,
         _config: ConversationWindowCondenserConfig,
-        metrics_registry: MetricsRegistry,
+        metrics_registry: LLMRegistry,
     ) -> ConversationWindowCondenser:
         return ConversationWindowCondenser()
 

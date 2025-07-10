@@ -20,7 +20,6 @@ from openhands.events.action import (
 from openhands.events.action.agent import AgentFinishAction
 from openhands.events.event import Event, EventSource
 from openhands.llm.metrics import Metrics
-from openhands.llm.metrics_registry import MetricsRegistry
 from openhands.memory.view import View
 from openhands.storage.files import FileStore
 from openhands.storage.locations import get_conversation_agent_state_filename
@@ -92,7 +91,6 @@ class State:
     outputs: dict = field(default_factory=dict)
     agent_state: AgentState = AgentState.LOADING
     resume_state: AgentState | None = None
-    metrics_registry: MetricsRegistry = field(default_factory=MetricsRegistry)
 
     # root agent has level 0, and every delegate increases the level by one
     delegate_level: int = 0

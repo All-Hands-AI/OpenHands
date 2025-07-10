@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from openhands.controller.state.state import State
 from openhands.core.config.condenser_config import CondenserConfig
 from openhands.events.action.agent import CondensationAction
-from openhands.llm.metrics_registry import MetricsRegistry
+from openhands.llm.metrics_registry import LLMRegistry
 from openhands.memory.view import View
 
 CONDENSER_METADATA_KEY = 'condenser_meta'
@@ -126,7 +126,7 @@ class Condenser(ABC):
 
     @classmethod
     def from_config(
-        cls, config: CondenserConfig, metrics_registry: MetricsRegistry
+        cls, config: CondenserConfig, llm_registry: LLMRegistry
     ) -> Condenser:
         """Create a condenser from a configuration object.
 
@@ -141,7 +141,7 @@ class Condenser(ABC):
         """
         try:
             condenser_class = CONDENSER_REGISTRY[type(config)]
-            return condenser_class.from_config(config, metrics_registry)
+            return condenser_class.from_config(config, llm_registry)
         except KeyError:
             raise ValueError(f'Unknown condenser config: {config}')
 
