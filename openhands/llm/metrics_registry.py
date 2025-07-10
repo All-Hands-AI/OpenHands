@@ -16,7 +16,7 @@ class MetricsRegistry:
     metrics_id = str(uuid4())
     global_metrics: dict[LLMService, Metrics] = {}
 
-    def register_llm(self, service: LLMService, model_name: str = 'default'):
+    def register_llm(self, service: LLMService | str, model_name: str = 'default'):
         logger.info(
             f'[Metrics registry {self.metrics_id}]: Registering service {service}'
         )
