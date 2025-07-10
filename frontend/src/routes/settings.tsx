@@ -24,6 +24,7 @@ const SAAS_NAV_ITEMS = [
   { to: "/settings/secrets", text: "SETTINGS$NAV_SECRETS" },
   { to: "/settings/api-keys", text: "SETTINGS$NAV_API_KEYS" },
   { to: "/settings/team", text: "Team" },
+  { to: "/settings/org", text: "Organization" },
 ];
 
 const OSS_NAV_ITEMS = [
