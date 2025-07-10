@@ -560,7 +560,7 @@ class UpdateConversationRequest(BaseModel):
     """Request model for updating conversation metadata."""
 
     title: str = Field(
-        ..., min_length=1, max_length=200, description="New conversation title"
+        ..., min_length=1, max_length=200, description='New conversation title'
     )
 
     model_config = ConfigDict(extra='forbid')
