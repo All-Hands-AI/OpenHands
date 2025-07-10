@@ -994,8 +994,7 @@ class AgentController:
             action: The action to attach metrics to
         """
         # Get metrics from agent LLM
-        agent_metrics = self.state.metrics
-        agent_metrics = self.state.metrics_registry.get_combined_metrics()
+        agent_metrics = self.llm_registry.get_combined_metrics()
 
         # Get metrics from condenser LLM if it exists
         condenser_metrics: Metrics | None = None

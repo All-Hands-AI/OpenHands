@@ -54,7 +54,9 @@ class DummyAgent(Agent):
         retry_listener: Callable[[int, int], None] | None = None,
         requested_service: str | None = None,
     ):
-        super().__init__(config, llm_config, llm_registry, retry_listener, requested_service)
+        super().__init__(
+            config, llm_config, llm_registry, retry_listener, requested_service
+        )
         self.steps: list[ActionObs] = [
             {
                 'action': MessageAction('Time to get started!'),

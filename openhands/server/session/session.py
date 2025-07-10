@@ -29,8 +29,7 @@ from openhands.events.observation.agent import RecallObservation
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
-from openhands.llm.llm import LLM
-from openhands.llm.metrics_registry import MetricsRegistry
+from openhands.llm.metrics_registry import LLMRegistry
 from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.storage.data_models.settings import Settings
@@ -47,7 +46,7 @@ class Session:
     agent_session: AgentSession
     loop: asyncio.AbstractEventLoop
     config: OpenHandsConfig
-    metrics_registry: MetricsRegistry
+    llm_registry: LLMRegistry
     file_store: FileStore
     user_id: str | None
     logger: LoggerAdapter
@@ -57,7 +56,7 @@ class Session:
         sid: str,
         config: OpenHandsConfig,
         state: State | None,
-        metrics_registry: MetricsRegistry,
+        llm_registry: LLMRegistry,
         file_store: FileStore,
         sio: socketio.AsyncServer | None,
         user_id: str | None = None,
@@ -68,12 +67,12 @@ class Session:
         self.file_store = file_store
         self.logger = OpenHandsLoggerAdapter(extra={'session_id': sid})
         self.state = state
-        self.metrics_registry = metrics_registry
+        self.llm_registry = llm_registry
         self.agent_session = AgentSession(
             sid,
             file_store,
             state,
-            metrics_registry=self.metrics_registry,
+            llm_registry=self.llm_registry,
             status_callback=self.queue_status_message,
             user_id=user_id,
         )
@@ -161,10 +160,9 @@ class Session:
         self.config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
 
         # TODO: override other LLM config & agent config groups (#2075)
-
-        llm = self._create_llm(agent_cls)
         agent_config = self.config.get_agent_config(agent_cls)
-
+        agent_name = agent_cls if agent_cls is not None else 'agent'
+        llm_config = self.config.get_llm_config_from_agent(agent_name)
         if settings.enable_default_condenser:
             # Default condenser chains three condensers together:
             # 1. a conversation window condenser that handles explicit
@@ -180,7 +178,7 @@ class Session:
                     ConversationWindowCondenserConfig(),
                     BrowserOutputCondenserConfig(attention_window=2),
                     LLMSummarizingCondenserConfig(
-                        llm_config=llm.config, keep_first=4, max_size=120
+                        llm_config=llm_config, keep_first=4, max_size=120
                     ),
                 ]
             )
@@ -188,12 +186,17 @@ class Session:
             self.logger.info(
                 f'Enabling pipeline condenser with:'
                 f' browser_output_masking(attention_window=2), '
-                f' llm(model="{llm.config.model}", '
-                f' base_url="{llm.config.base_url}", '
+                f' llm(model="{llm_config.model}", '
+                f' base_url="{llm_config.base_url}", '
                 f' keep_first=4, max_size=80)'
             )
             agent_config.condenser = default_condenser_config
-        agent = Agent.get_cls(agent_cls)(llm, agent_config, self.metrics_registry)
+        agent = Agent.get_cls(agent_cls)(
+            agent_config,
+            llm_config,
+            self.llm_registry,
+            retry_listener=self._notify_on_llm_retry,
+        )
 
         git_provider_tokens = None
         selected_repository = None
@@ -248,15 +251,6 @@ class Session:
                 f'Failed to create agent session: {e.__class__.__name__}'
             )
             return
-
-    def _create_llm(self, agent_cls: str | None) -> LLM:
-        """Initialize LLM, extracted for testing."""
-        agent_name = agent_cls if agent_cls is not None else 'agent'
-        return LLM(
-            config=self.config.get_llm_config_from_agent(agent_name),
-            retry_listener=self._notify_on_llm_retry,
-            metrics_registry=self.metrics_registry,
-        )
 
     def _notify_on_llm_retry(self, retries: int, max: int) -> None:
         msg_id = 'STATUS$LLM_RETRY'

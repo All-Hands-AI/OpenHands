@@ -39,7 +39,10 @@ class LLMRegistry:
         existing_llm = self.service_to_llm[service_id]
 
         return LLM(
-            config=config, service_id=service_id, metrics=existing_llm.metrics, retry_listener=retry_listener
+            config=config,
+            service_id=service_id,
+            metrics=existing_llm.metrics,
+            retry_listener=retry_listener,
         )
 
     def get_combined_metrics(self) -> Metrics:

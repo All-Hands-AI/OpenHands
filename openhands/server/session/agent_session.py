@@ -21,7 +21,7 @@ from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
     ProviderHandler,
 )
-from openhands.llm.metrics_registry import MetricsRegistry
+from openhands.llm.metrics_registry import LLMRegistry
 from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroagent
@@ -48,7 +48,7 @@ class AgentSession:
     sid: str
     user_id: str | None
     event_stream: EventStream
-    metrics_registry: MetricsRegistry
+    llm_registry: LLMRegistry
     file_store: FileStore
     controller: AgentController | None = None
     runtime: Runtime | None = None
@@ -65,7 +65,7 @@ class AgentSession:
         sid: str,
         file_store: FileStore,
         state: State | None,
-        metrics_registry: MetricsRegistry,
+        llm_registry: LLMRegistry,
         status_callback: Callable | None = None,
         user_id: str | None = None,
     ) -> None:
@@ -85,7 +85,7 @@ class AgentSession:
             extra={'session_id': sid, 'user_id': user_id}
         )
         self.state = state
-        self.metrics_registry = metrics_registry
+        self.llm_registry = llm_registry
 
     async def start(
         self,
@@ -343,7 +343,7 @@ class AgentSession:
             self.runtime = runtime_cls(
                 config=config,
                 event_stream=self.event_stream,
-                metrics_registry=self.metrics_registry,
+                llm_registry=self.llm_registry,
                 sid=self.sid,
                 plugins=agent.sandbox_plugins,
                 status_callback=self._status_callback,
@@ -364,7 +364,7 @@ class AgentSession:
             self.runtime = runtime_cls(
                 config=config,
                 event_stream=self.event_stream,
-                metrics_registry=self.metrics_registry,
+                llm_registry=self.llm_registry,
                 sid=self.sid,
                 plugins=agent.sandbox_plugins,
                 status_callback=self._status_callback,
@@ -446,7 +446,7 @@ class AgentSession:
             user_id=self.user_id,
             file_store=self.file_store,
             event_stream=self.event_stream,
-            metrics_registry=self.metrics_registry,
+            llm_registry=self.llm_registry,
             agent=agent,
             iteration_delta=int(max_iterations),
             budget_per_task_delta=max_budget_per_task,

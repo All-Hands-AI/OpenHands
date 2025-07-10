@@ -24,7 +24,7 @@ from openhands.events.observation import (
 from openhands.linter import DefaultLinter
 from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics
-from openhands.llm.metrics_registry import LLMRegistry, MetricsRegistry
+from openhands.llm.metrics_registry import LLMRegistry
 from openhands.utils.chunk_localizer import Chunk, get_top_k_chunk_matches
 
 USER_MSG = """
@@ -153,7 +153,9 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             )
             draft_editor_config.caching_prompt = False
 
-        self.draft_editor_llm = llm_registry.register_llm('draft_editor_llm', draft_editor_config)
+        self.draft_editor_llm = llm_registry.register_llm(
+            'draft_editor_llm', draft_editor_config
+        )
         logger.debug(
             f'[Draft edit functionality] enabled with LLM: {self.draft_editor_llm}'
         )

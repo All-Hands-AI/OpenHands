@@ -30,8 +30,7 @@ from openhands.integrations.service_types import (
     ProviderType,
     SuggestedTask,
 )
-from openhands.llm.llm import LLM
-from openhands.llm.metrics_registry import MetricsRegistry
+from openhands.llm.metrics_registry import LLMRegistry
 from openhands.runtime import get_runtime_cls
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.data_models.conversation_info import ConversationInfo
@@ -347,7 +346,8 @@ def generate_prompt_template(events: str) -> str:
 
 def generate_prompt(llm_config: LLMConfig, prompt_template: str) -> str:
     # TODO: we should use metrics registry associated with the conversation session
-    llm = LLM(llm_config, metrics_registry=MetricsRegistry())
+    llm_registry = LLMRegistry()
+    llm = llm_registry.register_llm('remember_prompt', llm_config)
     messages = [
         {
             'role': 'system',

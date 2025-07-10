@@ -86,7 +86,9 @@ class CodeActAgent(Agent):
         Parameters:
         - config (AgentConfig): The configuration for this agent
         """
-        super().__init__(config, llm_config, llm_registry, retry_listener, requested_service)
+        super().__init__(
+            config, llm_config, llm_registry, retry_listener, requested_service
+        )
         self.pending_actions: deque['Action'] = deque()
         self.reset()
         self.tools = self._get_tools()

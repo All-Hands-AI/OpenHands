@@ -115,7 +115,9 @@ class BrowsingAgent(Agent):
         Parameters:
         - llm (LLM): The llm to be used by this agent
         """
-        super().__init__(config, llm_config, llm_registry, retry_listener, requested_service)
+        super().__init__(
+            config, llm_config, llm_registry, retry_listener, requested_service
+        )
         # define a configurable action space, with chat functionality, web navigation, and webpage grounding using accessibility tree and HTML.
         # see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/action/highlevel.py for more details
         action_subsets = ['chat', 'bid']

@@ -5,7 +5,6 @@ from openhands.agenthub.codeact_agent import CodeActAgent
 from openhands.core.config import AgentConfig
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
-from openhands.llm.llm import LLM
 from openhands.llm.metrics_registry import LLMRegistry
 
 if TYPE_CHECKING:
@@ -31,7 +30,9 @@ class LocAgent(CodeActAgent):
         - config (AgentConfig): The configuration for the agent
         """
 
-        super().__init__(config, llm_config, llm_registry, retry_listener, requested_service)
+        super().__init__(
+            config, llm_config, llm_registry, retry_listener, requested_service
+        )
 
         self.tools = locagent_function_calling.get_tools()
         logger.debug(

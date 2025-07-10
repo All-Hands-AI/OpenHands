@@ -13,7 +13,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import MessageAction
 from openhands.events.stream import EventStreamSubscriber, session_exists
-from openhands.llm.metrics_registry import MetricsRegistry
+from openhands.llm.metrics_registry import LLMRegistry
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.monitoring import MonitoringListener
@@ -101,7 +101,7 @@ class StandaloneConversationManager(ConversationManager):
 
             # Create new conversation if none exists
             c = ServerConversation(
-                MetricsRegistry(),
+                LLMRegistry(),
                 sid,
                 file_store=self.file_store,
                 config=self.config,
@@ -317,15 +317,15 @@ class StandaloneConversationManager(ConversationManager):
         except Exception:
             logger.debug('No events found, no state to restore')
 
-        metrics_registry = (
-            restored_state.metrics_registry if restored_state else MetricsRegistry()
-        )
+        llm_registry = (
+            LLMRegistry()
+        )  # TODO: we should attempt to restore it for existing convos
         session = Session(
             sid=sid,
             file_store=self.file_store,
             config=self.config,
             state=restored_state,
-            metrics_registry=metrics_registry,  # assign registry for session
+            llm_registry=llm_registry,  # assign registry for session
             sio=self.sio,
             user_id=user_id,
         )
@@ -338,7 +338,7 @@ class StandaloneConversationManager(ConversationManager):
             session.agent_session.event_stream.subscribe(
                 EventStreamSubscriber.SERVER,
                 self._create_conversation_update_callback(
-                    user_id, sid, settings, session.metrics_registry
+                    user_id, sid, settings, session.llm_registry
                 ),
                 UPDATED_AT_CALLBACK_ID,
             )
@@ -440,7 +440,7 @@ class StandaloneConversationManager(ConversationManager):
         user_id: str | None,
         conversation_id: str,
         settings: Settings,
-        metrics_registry: MetricsRegistry,
+        llm_registry: LLMRegistry,
     ) -> Callable:
         def callback(event, *args, **kwargs):
             call_async_from_sync(
@@ -449,7 +449,7 @@ class StandaloneConversationManager(ConversationManager):
                 user_id,
                 conversation_id,
                 settings,
-                metrics_registry,
+                llm_registry,
                 event,
             )
 
@@ -460,7 +460,7 @@ class StandaloneConversationManager(ConversationManager):
         user_id: str,
         conversation_id: str,
         settings: Settings,
-        metrics_registry: MetricsRegistry,
+        llm_registry: LLMRegistry,
         event=None,
     ):
         conversation_store = await self._get_conversation_store(user_id)
@@ -488,7 +488,7 @@ class StandaloneConversationManager(ConversationManager):
             conversation.title == default_title
         ):  # attempt to autogenerate if default title is in use
             title = await auto_generate_title(
-                conversation_id, user_id, self.file_store, settings, metrics_registry
+                conversation_id, user_id, self.file_store, settings, llm_registry
             )
             if title and not title.isspace():
                 conversation.title = title
