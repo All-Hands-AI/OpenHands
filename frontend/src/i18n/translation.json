@@ -5312,6 +5312,22 @@
         "de": "Gespräch verlassen",
         "uk": "Вийти з розмови"
     },
+    "CONVERSATION$TITLE_UPDATED": {
+        "en": "Conversation title updated successfully",
+        "ja": "会話のタイトルが正常に更新されました",
+        "zh-CN": "对话标题更新成功",
+        "zh-TW": "對話標題更新成功",
+        "ko-KR": "대화 제목이 성공적으로 업데이트되었습니다",
+        "de": "Gesprächstitel erfolgreich aktualisiert",
+        "no": "Samtaletittel oppdatert",
+        "it": "Titolo della conversazione aggiornato con successo",
+        "pt": "Título da conversa atualizado com sucesso",
+        "es": "Título de la conversación actualizado exitosamente",
+        "ar": "تم تحديث عنوان المحادثة بنجاح",
+        "fr": "Titre de la conversation mis à jour avec succès",
+        "tr": "Konuşma başlığı başarıyla güncellendi",
+        "uk": "Назву розмови успішно оновлено"
+    },
     "LANDING$OR": {
         "en": "Or",
         "ja": "または",

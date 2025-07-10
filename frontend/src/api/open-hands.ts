@@ -477,6 +477,18 @@ class OpenHands {
 
     return data.prompt;
   }
+
+  static async updateConversation(
+    conversationId: string,
+    updates: { title: string },
+  ): Promise<boolean> {
+    const { data } = await openHands.patch<boolean>(
+      `/api/conversations/${conversationId}`,
+      updates,
+    );
+
+    return data;
+  }
 }
 
 export default OpenHands;
