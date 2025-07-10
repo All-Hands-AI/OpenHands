@@ -107,13 +107,13 @@ def attempt_vscode_extension_install():
         f'INFO: First-time setup: attempting to install the OpenHands {editor_name} extension...'
     )
 
-    # Attempt 1: Download from GitHub Releases
-    if _attempt_github_install(editor_command, editor_name):
+    # Attempt 1: Install from bundled .vsix
+    if _attempt_bundled_install(editor_command, editor_name):
         _mark_installation_successful(flag_file, editor_name)
         return  # Success! We are done.
 
-    # Attempt 2: Install from bundled .vsix
-    if _attempt_bundled_install(editor_command, editor_name):
+    # Attempt 2: Download from GitHub Releases
+    if _attempt_github_install(editor_command, editor_name):
         _mark_installation_successful(flag_file, editor_name)
         return  # Success! We are done.
 
