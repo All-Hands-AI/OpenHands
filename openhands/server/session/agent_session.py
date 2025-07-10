@@ -27,6 +27,7 @@ from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
+from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.files import FileStore
@@ -377,7 +378,7 @@ class AgentSession:
             self.logger.error(f'Runtime initialization failed: {e}')
             if self._status_callback:
                 self._status_callback(
-                    'error', 'STATUS$ERROR_RUNTIME_DISCONNECTED', str(e)
+                    'error', RuntimeStatus.ERROR_RUNTIME_DISCONNECTED, str(e)
                 )
             return False
 
