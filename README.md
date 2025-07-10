@@ -99,6 +99,18 @@ or run it on tagged issues with [a github action](https://docs.all-hands.dev/usa
 
 Visit [Running OpenHands](https://docs.all-hands.dev/usage/installation) for more information and setup instructions.
 
+### Installation Options
+
+OpenHands offers two installation options:
+
+```bash
+# Minimal installation (CLI only)
+pip install openhands-ai
+
+# Full installation (all features)
+pip install "openhands-ai[all]"
+```
+
 If you want to modify the OpenHands source code, check out [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
 
 Having issues? The [Troubleshooting Guide](https://docs.all-hands.dev/usage/troubleshooting) can help.

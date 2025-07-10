@@ -150,9 +150,19 @@ install-python-dependencies:
 	fi
 	@if [ -n "${POETRY_GROUP}" ]; then \
 		echo "Installing only POETRY_GROUP=${POETRY_GROUP}"; \
-		poetry install --only $${POETRY_GROUP}; \
+		if [ -n "${POETRY_EXTRAS}" ]; then \
+			echo "With extras: ${POETRY_EXTRAS}"; \
+			poetry install --only $${POETRY_GROUP} --extras $${POETRY_EXTRAS}; \
+		else \
+			poetry install --only $${POETRY_GROUP}; \
+		fi \
 	else \
-		poetry install --with dev,test,runtime; \
+		if [ -n "${POETRY_EXTRAS}" ]; then \
+			echo "With extras: ${POETRY_EXTRAS}"; \
+			poetry install --with dev,test,runtime --extras $${POETRY_EXTRAS}; \
+		else \
+			poetry install --with dev,test,runtime; \
+		fi \
 	fi
 	@if [ "${INSTALL_PLAYWRIGHT}" != "false" ] && [ "${INSTALL_PLAYWRIGHT}" != "0" ]; then \
 		if [ -f "/etc/manjaro-release" ]; then \

@@ -113,7 +113,7 @@ RUN \
 #!/bin/bash
 make -s clean
 make -s check-dependencies
-make -s install-python-dependencies
+make -s install-python-dependencies POETRY_EXTRAS=all
 
 # NOTE
 # node_modules are .dockerignore-d therefore not mountable

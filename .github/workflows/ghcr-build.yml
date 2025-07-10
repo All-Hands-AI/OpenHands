@@ -147,7 +147,7 @@ jobs:
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Install Python dependencies using Poetry
-        run: make install-python-dependencies POETRY_GROUP=main INSTALL_PLAYWRIGHT=0
+        run: make install-python-dependencies POETRY_GROUP=main POETRY_EXTRAS=all INSTALL_PLAYWRIGHT=0
       - name: Create source distribution and Dockerfile
         run: poetry run python3 openhands/runtime/utils/runtime_build.py --base_image ${{ matrix.base_image.image }} --build_folder containers/runtime --force_rebuild
       - name: Lowercase Repository Owner
@@ -221,7 +221,7 @@ jobs:
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Install Python dependencies using Poetry
-        run: make install-python-dependencies POETRY_GROUP=main INSTALL_PLAYWRIGHT=0
+        run: make install-python-dependencies POETRY_GROUP=main POETRY_EXTRAS=all INSTALL_PLAYWRIGHT=0
       - name: Get hash in App Image
         run: |
           echo "Hash from app image: ${{ needs.ghcr_build_app.outputs.hash_from_app_image }}"
@@ -293,7 +293,7 @@ jobs:
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Install Python dependencies using Poetry
-        run: make install-python-dependencies INSTALL_PLAYWRIGHT=0
+        run: make install-python-dependencies POETRY_EXTRAS=all INSTALL_PLAYWRIGHT=0
       - name: Run docker runtime tests
         run: |
           # We install pytest-xdist in order to run tests across CPUs
@@ -363,7 +363,7 @@ jobs:
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Install Python dependencies using Poetry
-        run: make install-python-dependencies POETRY_GROUP=main,test,runtime INSTALL_PLAYWRIGHT=0
+        run: make install-python-dependencies POETRY_GROUP=main,test,runtime POETRY_EXTRAS=all INSTALL_PLAYWRIGHT=0
       - name: Run runtime tests
         run: |
           # We install pytest-xdist in order to run tests across CPUs
