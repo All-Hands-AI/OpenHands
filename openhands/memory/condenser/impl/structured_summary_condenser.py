@@ -14,7 +14,7 @@ from openhands.events.action.agent import CondensationAction
 from openhands.events.observation.agent import AgentCondensationObservation
 from openhands.events.serialization.event import truncate_content
 from openhands.llm import LLM
-from openhands.llm.metrics_registry import MetricsRegistry
+from openhands.llm.metrics_registry import LLMService, MetricsRegistry
 from openhands.memory.condenser.condenser import (
     Condensation,
     RollingCondenser,
@@ -319,7 +319,11 @@ Capture all relevant information, especially:
         llm_config.caching_prompt = False
 
         return StructuredSummaryCondenser(
-            llm=LLM(config=llm_config, metrics_registry=metrics_registry),
+            llm=LLM(
+                config=llm_config,
+                metrics_registry=metrics_registry,
+                llm_service=LLMService.CONDENSER,
+            ),
             max_size=config.max_size,
             keep_first=config.keep_first,
             max_event_length=config.max_event_length,

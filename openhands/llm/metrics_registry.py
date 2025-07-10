@@ -1,5 +1,7 @@
 from enum import Enum
+from uuid import uuid4
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.llm.metrics import Metrics
 
 
@@ -11,9 +13,13 @@ class LLMService(Enum):
 
 
 class MetricsRegistry:
+    metrics_id = str(uuid4())
     global_metrics: dict[LLMService, Metrics] = {}
 
     def register_llm(self, service: LLMService, model_name: str = 'default'):
+        logger.info(
+            f'[Metrics registry {self.metrics_id}]: Registering service {service}'
+        )
         if service in self.global_metrics:
             return self.global_metrics[service]
 

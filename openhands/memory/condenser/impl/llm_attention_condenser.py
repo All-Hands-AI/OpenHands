@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from openhands.core.config.condenser_config import LLMAttentionCondenserConfig
 from openhands.events.action.agent import CondensationAction
 from openhands.llm.llm import LLM
-from openhands.llm.metrics_registry import MetricsRegistry
+from openhands.llm.metrics_registry import LLMService, MetricsRegistry
 from openhands.memory.condenser.condenser import (
     Condensation,
     RollingCondenser,
@@ -124,7 +124,11 @@ class LLMAttentionCondenser(RollingCondenser):
         llm_config.caching_prompt = False
 
         return LLMAttentionCondenser(
-            llm=LLM(config=llm_config, metrics_registry=metrics_registry),
+            llm=LLM(
+                config=llm_config,
+                metrics_registry=metrics_registry,
+                llm_service=LLMService.CONDENSER,
+            ),
             max_size=config.max_size,
             keep_first=config.keep_first,
         )
