@@ -11,6 +11,9 @@ class LLMRegistry:
     metrics_id = str(uuid4())
     service_to_llm: dict[str, LLM] = {}
 
+    def __init__(self, conversation_id: str | None = None):
+        self.conversation_id = conversation_id
+
     def register_llm(
         self,
         service_id: str,
@@ -51,3 +54,10 @@ class LLMRegistry:
             total_metrics.merge(llm.metrics)
 
         return total_metrics
+
+    def save_registry(self):
+        pass
+
+    def maybe_restore_registry(self):
+        if not self.conversation_id:
+            return

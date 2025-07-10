@@ -30,29 +30,57 @@ from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.utils.conversation_summary import get_default_conversation_title
 
 
-async def create_new_conversation(
+async def initialize_conversation(
+    user_id: str | None,
+    conversation_id: str | None,
+    selected_repository: str | None,
+    selected_branch: str | None,
+    conversation_trigger: ConversationTrigger = ConversationTrigger.GUI,
+    git_provider: ProviderType | None = None,
+) -> ConversationMetadata | None:
+    if conversation_id is None:
+        conversation_id = uuid.uuid4().hex
+
+    conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
+
+    if not await conversation_store.exists(conversation_id):
+        logger.info(
+            f'New conversation ID: {conversation_id}',
+            extra={'user_id': user_id, 'session_id': conversation_id},
+        )
+
+        conversation_title = get_default_conversation_title(conversation_id)
+
+        logger.info(f'Saving metadata for conversation {conversation_id}')
+        convo_metadata = ConversationMetadata(
+            trigger=conversation_trigger,
+            conversation_id=conversation_id,
+            title=conversation_title,
+            user_id=user_id,
+            selected_repository=selected_repository,
+            selected_branch=selected_branch,
+            git_provider=git_provider,
+        )
+
+        # TODO: initialize and save LLM Registry here
+
+        await conversation_store.save_metadata(convo_metadata)
+        return convo_metadata
+
+    return None
+
+
+async def start_conversation(
     user_id: str | None,
     git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
     custom_secrets: CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA | None,
-    selected_repository: str | None,
-    selected_branch: str | None,
     initial_user_msg: str | None,
     image_urls: list[str] | None,
     replay_json: str | None,
-    conversation_instructions: str | None = None,
-    conversation_trigger: ConversationTrigger = ConversationTrigger.GUI,
-    attach_convo_id: bool = False,
-    git_provider: ProviderType | None = None,
-    conversation_id: str | None = None,
-) -> AgentLoopInfo:
-    logger.info(
-        'Creating conversation',
-        extra={
-            'signal': 'create_conversation',
-            'user_id': user_id,
-            'trigger': conversation_trigger.value,
-        },
-    )
+    conversation_id: str,
+    convo_metadata: ConversationMetadata,
+    conversation_instructions: str | None,
+):
     logger.info('Loading settings')
     settings_store = await SettingsStoreImpl.get_instance(config, user_id)
     settings = await settings_store.load()
@@ -77,59 +105,28 @@ async def create_new_conversation(
         raise MissingSettingsError('Settings not found')
 
     session_init_args['git_provider_tokens'] = git_provider_tokens
-    session_init_args['selected_repository'] = selected_repository
+    session_init_args['selected_repository'] = convo_metadata.selected_repository
     session_init_args['custom_secrets'] = custom_secrets
-    session_init_args['selected_branch'] = selected_branch
-    session_init_args['git_provider'] = git_provider
+    session_init_args['selected_branch'] = convo_metadata.selected_branch
+    session_init_args['git_provider'] = convo_metadata.git_provider
     session_init_args['conversation_instructions'] = conversation_instructions
     conversation_init_data = ConversationInitData(**session_init_args)
 
-    logger.info('Loading conversation store')
-    conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
-    logger.info('ServerConversation store loaded')
-
-    # For nested runtimes, we allow a single conversation id, passed in on container creation
-    if conversation_id is None:
-        conversation_id = uuid.uuid4().hex
-
-    if not await conversation_store.exists(conversation_id):
-        logger.info(
-            f'New conversation ID: {conversation_id}',
-            extra={'user_id': user_id, 'session_id': conversation_id},
-        )
-
-        conversation_init_data = ExperimentManagerImpl.run_conversation_variant_test(
-            user_id, conversation_id, conversation_init_data
-        )
-        conversation_title = get_default_conversation_title(conversation_id)
-
-        logger.info(f'Saving metadata for conversation {conversation_id}')
-        await conversation_store.save_metadata(
-            ConversationMetadata(
-                trigger=conversation_trigger,
-                conversation_id=conversation_id,
-                title=conversation_title,
-                user_id=user_id,
-                selected_repository=selected_repository,
-                selected_branch=selected_branch,
-                git_provider=git_provider,
-                llm_model=conversation_init_data.llm_model,
-            )
-        )
+    conversation_init_data = ExperimentManagerImpl.run_conversation_variant_test(
+        user_id, conversation_id, conversation_init_data
+    )
 
     logger.info(
         f'Starting agent loop for conversation {conversation_id}',
         extra={'user_id': user_id, 'session_id': conversation_id},
     )
+
     initial_message_action = None
     if initial_user_msg or image_urls:
         initial_message_action = MessageAction(
             content=initial_user_msg or '',
             image_urls=image_urls or [],
         )
-
-    if attach_convo_id:
-        logger.warning('Attaching convo ID is deprecated, skipping process')
 
     agent_loop_info = await conversation_manager.maybe_start_agent_loop(
         conversation_id,
@@ -140,6 +137,45 @@ async def create_new_conversation(
     )
     logger.info(f'Finished initializing conversation {agent_loop_info.conversation_id}')
     return agent_loop_info
+
+
+async def create_new_conversation(
+    user_id: str | None,
+    git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
+    custom_secrets: CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA | None,
+    selected_repository: str | None,
+    selected_branch: str | None,
+    initial_user_msg: str | None,
+    image_urls: list[str] | None,
+    replay_json: str | None,
+    conversation_instructions: str | None = None,
+    conversation_trigger: ConversationTrigger = ConversationTrigger.GUI,
+    git_provider: ProviderType | None = None,
+    conversation_id: str | None = None,
+) -> AgentLoopInfo:
+    conversation_metadata = await initialize_conversation(
+        user_id,
+        conversation_id,
+        selected_repository,
+        selected_branch,
+        conversation_trigger,
+        git_provider,
+    )
+
+    if not conversation_metadata:
+        raise Exception('Failed to initialize conversation')
+
+    return await start_conversation(
+        user_id,
+        git_provider_tokens,
+        custom_secrets,
+        initial_user_msg,
+        image_urls,
+        replay_json,
+        conversation_metadata.conversation_id,
+        conversation_metadata,
+        conversation_instructions,
+    )
 
 
 def create_provider_tokens_object(
