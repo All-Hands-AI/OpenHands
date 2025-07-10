@@ -47,6 +47,33 @@ Access launcher commands via Command Palette (Ctrl+Shift+P) or right-click menu.
    - Open VS Code Settings (Ctrl+,)
    - Search for "openhands"
    - Set "OpenHands: Server URL" (default: `http://localhost:3000`)
+- **Use Your Current File**: Automatically send the content of your active file to OpenHands to start a task.
+- **Use a Selection**: Send only the highlighted text from your editor to OpenHands for focused tasks.
+- **Safe Terminal Management**: The extension intelligently reuses idle terminals or creates new ones, ensuring it never interrupts an active process.
+- **Automatic Virtual Environment Detection**: Finds and uses your project's Python virtual environment (`.venv`, `venv`, etc.) automatically.
+
+## How to Use
+
+You can access the extension's commands in two ways:
+
+1.  **Command Palette**:
+    - Open the Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`).
+    - Type `OpenHands` to see the available commands.
+    - Select the command you want to run.
+
+2.  **Editor Context Menu**:
+    - Right-click anywhere in your text editor.
+    - The OpenHands commands will appear in the context menu.
+
+## Installation
+
+For the best experience, the OpenHands CLI will attempt to install the extension for you automatically the first time you run it inside VSCode.
+
+If you need to install it manually:
+1.  Download the latest `.vsix` file from the [GitHub Releases page](https://github.com/All-Hands-AI/OpenHands/releases).
+2.  In VSCode, open the Command Palette (`Ctrl+Shift+P`).
+3.  Run the **"Extensions: Install from VSIX..."** command.
+4.  Select the `.vsix` file you downloaded.
 
 ## Requirements
 

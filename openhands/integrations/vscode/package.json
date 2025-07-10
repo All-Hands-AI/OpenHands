@@ -105,6 +105,7 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+<<<<<<< HEAD
     "@types/glob": "^8.1.0",
     "@types/mocha": "^10.0.6",
     "@types/node": "^20.12.12",

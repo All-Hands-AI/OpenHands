@@ -410,7 +410,6 @@ export function activate(context: vscode.ExtensionContext) {
   outputChannel.appendLine(
     "DEBUG: OpenHands extension activated - runtime will connect on-demand",
   );
-
   // Clean up terminal tracking when terminals are closed
   const terminalCloseDisposable = vscode.window.onDidCloseTerminal(
     (terminal) => {
@@ -539,7 +538,6 @@ export function activate(context: vscode.ExtensionContext) {
 export function deactivate() {
   // Clean up runtime services
   cleanupRuntime();
-
   // Clean up resources if needed, though for this simple extension,
   // VS Code handles terminal disposal.
 }
