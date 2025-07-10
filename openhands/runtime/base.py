@@ -432,118 +432,52 @@ class Runtime(FileEditRuntimeMixin):
         1. Organization-level setup.sh (from org/.openhands or org/openhands-config)
         2. Repository-level setup.sh (from .openhands/setup.sh)
         """
-        # Get the repository name from the workspace
-        repo_dir = None
-        for item in self.workspace_root.iterdir():
-            if item.is_dir() and (item / '.git').exists():
-                repo_dir = item
-                break
+        # First, try to run the organization-level setup script if we have a repository
+        selected_repository = getattr(self, 'selected_repository', None)
+        if selected_repository:
+            repo_parts = selected_repository.split('/')
+            if len(repo_parts) >= 2:
+                org_name = repo_parts[0]  # First part is the organization name
 
-        if repo_dir:
-            # Try to get the remote URL to extract the organization
-            action = CmdRunAction(f'cd {repo_dir} && git remote get-url origin')
-            obs = self.run_action(action)
+                # Determine if this is a GitLab repository
+                self._is_gitlab_repository(selected_repository)
 
-            if isinstance(obs, CmdOutputObservation) and obs.exit_code == 0:
-                remote_url = obs.content.strip()
-                repo_parts = remote_url.split('/')
+                # For GitLab, use openhands-config (since .openhands is not a valid repo name)
+                # For other providers, use .openhands
 
-                if len(repo_parts) >= 2:
-                    # Extract the organization name
-                    org_name = repo_parts[-2]
+                # Check for org-level setup.sh in the temporary directory
+                # This assumes the org repo was already cloned during microagent loading
+                org_setup_script = f'/tmp/org_openhands_{org_name}/setup.sh'
 
-                    # Determine if this is a GitLab repository
-                    is_gitlab = self._is_gitlab_repository(remote_url)
+                # Try to read the org-level setup script
+                org_setup_read_obs = self.read(FileReadAction(path=org_setup_script))
+                if not isinstance(org_setup_read_obs, ErrorObservation):
+                    self.log(
+                        'info',
+                        f'Found org-level setup.sh at {org_setup_script}',
+                    )
 
-                    # For GitLab, use openhands-config (since .openhands is not a valid repo name)
-                    # For other providers, use .openhands
-                    if is_gitlab:
-                        org_openhands_repo = f'{org_name}/openhands-config'
-                    else:
-                        org_openhands_repo = f'{org_name}/.openhands'
-
-                    # Create a temporary directory for the org-level repo
-                    org_repo_dir = self.workspace_root / f'org_openhands_{org_name}'
-
-                    # Try to clone the org-level repo
-                    try:
-                        # Get authenticated URL and do a shallow clone (--depth 1) for efficiency
-                        try:
-                            remote_url = call_async_from_sync(
-                                self._get_authenticated_git_url,
-                                GENERAL_TIMEOUT,
-                                org_openhands_repo,
-                                self.git_provider_tokens,
-                            )
-
-                            clone_cmd = f'GIT_TERMINAL_PROMPT=0 git clone --depth 1 {remote_url} {org_repo_dir}'
-
-                            self.log(
-                                'info',
-                                'Executing clone command for org-level repo',
-                            )
-
-                            action = CmdRunAction(command=clone_cmd)
-                            obs = self.run_action(action)
-
-                            if (
-                                isinstance(obs, CmdOutputObservation)
-                                and obs.exit_code == 0
-                            ):
-                                self.log(
-                                    'info',
-                                    f'Successfully cloned org-level repo from {org_openhands_repo}',
-                                )
-
-                                # Check for org-level setup.sh
-                                org_setup_script = org_repo_dir / 'setup.sh'
-                                org_setup_read_obs = self.read(
-                                    FileReadAction(path=str(org_setup_script))
-                                )
-                                if not isinstance(org_setup_read_obs, ErrorObservation):
-                                    self.log(
-                                        'info',
-                                        f'Found org-level setup.sh at {org_setup_script}',
-                                    )
-
-                                    if self.status_callback:
-                                        self.status_callback(
-                                            'info',
-                                            RuntimeStatus.SETTING_UP_WORKSPACE,
-                                            'Running organization-level setup script...',
-                                        )
-
-                                    # Run the org-level setup script
-                                    org_setup_action = CmdRunAction(
-                                        f'chmod +x {org_setup_script} && source {org_setup_script}',
-                                        blocking=True,
-                                        hidden=True,
-                                    )
-                                    org_setup_action.set_hard_timeout(600)
-
-                                    # Add the action to the event stream as an ENVIRONMENT event
-                                    source = EventSource.ENVIRONMENT
-                                    self.event_stream.add_event(
-                                        org_setup_action, source
-                                    )
-
-                                    # Execute the action
-                                    self.run_action(org_setup_action)
-
-                                # Clean up the org repo directory
-                                action = CmdRunAction(f'rm -rf {org_repo_dir}')
-                                self.run_action(action)
-
-                        except Exception as e:
-                            self.log(
-                                'warning',
-                                f'Failed to get authenticated URL for {org_openhands_repo}: {str(e)}',
-                            )
-                    except Exception as e:
-                        self.log(
-                            'warning',
-                            f'Error while trying to run org-level setup script: {str(e)}',
+                    if self.status_callback:
+                        self.status_callback(
+                            'info',
+                            RuntimeStatus.SETTING_UP_WORKSPACE,
+                            'Running organization-level setup script...',
                         )
+
+                    # Run the org-level setup script
+                    org_setup_action = CmdRunAction(
+                        f'chmod +x {org_setup_script} && source {org_setup_script}',
+                        blocking=True,
+                        hidden=True,
+                    )
+                    org_setup_action.set_hard_timeout(600)
+
+                    # Add the action to the event stream as an ENVIRONMENT event
+                    source = EventSource.ENVIRONMENT
+                    self.event_stream.add_event(org_setup_action, source)
+
+                    # Execute the action
+                    self.run_action(org_setup_action)
 
         # Now run the repository-level setup script
         setup_script = '.openhands/setup.sh'
