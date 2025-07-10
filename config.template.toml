@@ -227,7 +227,6 @@ model = "gpt-4o"
 # agent.CodeActAgent
 ##############################################################################
 [agent]
-
 # Whether the browsing tool is enabled
 # Note: when this is set to true, enable_browser in the core config must also be true
 enable_browsing = true
@@ -241,6 +240,10 @@ enable_editor = true
 
 # Whether the IPython tool is enabled
 enable_jupyter = true
+
+# Whether the stream command tool is enabled
+# Only has an effect if enable_cmd is False
+enable_stream_cmd = true
 
 # Whether the command tool is enabled
 enable_cmd = true

@@ -49,6 +49,8 @@ class AgentConfig(BaseModel):
     extended: ExtendedConfig = Field(default_factory=lambda: ExtendedConfig({}))
     """Extended configuration for the agent."""
 
+    enable_stream_cmd: bool = Field(default=False)
+
     model_config = ConfigDict(extra='forbid')
 
     @classmethod

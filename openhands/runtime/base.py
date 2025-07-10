@@ -27,6 +27,7 @@ from openhands.events.action import (
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
+    CmdRunStreamAction,
     FileEditAction,
     FileReadAction,
     FileWriteAction,
@@ -959,6 +960,13 @@ fi
         self, extra_stdio_servers: list[MCPStdioServerConfig] | None = None
     ) -> MCPConfig:
         pass
+
+    # ====================================================================
+    # Action Stream execution
+    # ====================================================================
+
+    def run_stream(self, action: CmdRunStreamAction) -> Observation:
+        return self.run(action)
 
     # ====================================================================
     # Action execution

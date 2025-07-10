@@ -30,6 +30,10 @@ class ActionType(str, Enum):
     """Runs a command.
     """
 
+    RUN_STREAM = 'run_stream'
+    """Runs a command as stream.
+    """
+
     RUN_IPYTHON = 'run_ipython'
     """Runs a IPython cell.
     """

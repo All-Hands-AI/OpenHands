@@ -19,6 +19,7 @@ from openhands.agenthub.codeact_agent.tools import (
     create_cmd_run_tool,
     create_str_replace_editor_tool,
 )
+from openhands.agenthub.codeact_agent.tools.bash import create_stream_cmd_run_tool
 from openhands.core.exceptions import (
     FunctionCallNotExistsError,
     FunctionCallValidationError,
@@ -37,6 +38,7 @@ from openhands.events.action import (
     MessageAction,
 )
 from openhands.events.action.agent import CondensationRequestAction
+from openhands.events.action.commands import CmdRunStreamAction
 from openhands.events.action.mcp import MCPAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
@@ -101,6 +103,21 @@ def response_to_actions(
                         raise FunctionCallValidationError(
                             f"Invalid float passed to 'timeout' argument: {arguments['timeout']}"
                         ) from e
+
+            # ================================================
+            # CmdStreamRunTool (Bash)
+            # ================================================
+
+            elif (
+                tool_call.function.name
+                == create_stream_cmd_run_tool()['function']['name']
+            ):
+                if 'command' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "command" in tool call {tool_call.function.name}'
+                    )
+                # convert is_input to boolean
+                action = CmdRunStreamAction(command=arguments['command'])
 
             # ================================================
             # IPythonTool (Jupyter)

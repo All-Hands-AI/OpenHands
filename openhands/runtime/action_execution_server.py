@@ -16,15 +16,17 @@ import sys
 import tempfile
 import time
 import traceback
+import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Iterator
 from zipfile import ZipFile
 
 import puremagic
 from binaryornot.check import is_binary
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.security import APIKeyHeader
 from openhands_aci.editor.editor import OHEditor
 from openhands_aci.editor.exceptions import ToolError
@@ -43,6 +45,7 @@ from openhands.events.action import (
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
+    CmdRunStreamAction,
     FileEditAction,
     FileReadAction,
     FileWriteAction,
@@ -161,6 +164,11 @@ def _execute_file_editor(
     return result.output, (result.old_content, result.new_content)
 
 
+def _stream_error_message(message: str) -> Iterator[str]:
+    """Returns a stream of error messages."""
+    yield f'data: {json.dumps(ErrorObservation(content=message))}\n\n'
+
+
 class ActionExecutor:
     """ActionExecutor is running inside docker sandbox.
     It is responsible for executing actions received from OpenHands backend and producing observations.
@@ -186,6 +194,7 @@ class ActionExecutor:
             self.user_id = _updated_user_id
 
         self.bash_session: BashSession | 'WindowsPowershellSession' | None = None  # type: ignore[name-defined]
+        self.stream_bash_session: BashSession | None = None
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
         self.file_editor = OHEditor(workspace_root=self._initial_cwd)
@@ -219,6 +228,10 @@ class ActionExecutor:
             in ['true', '1', 'yes']
         )
         self.memory_monitor.start_monitoring()
+
+        self._stream_active = False
+        self._stream_done_event = asyncio.Event()
+        self._stream_done_event.set()  # 初始状态为 "stream 未运行"
 
     @property
     def initial_cwd(self):
@@ -397,6 +410,24 @@ class ActionExecutor:
             action_type = action.action
             observation = await getattr(self, action_type)(action)
             return observation
+
+    async def run_stream(self, task_id: str, action: CmdRunStreamAction):
+        async def generator_wrapper():
+            if not isinstance(self.bash_session, BashSession):
+                yield ErrorObservation(
+                    content='Stream execution on Windows is not currently supported'
+                )
+            else:
+                try:
+                    async for obs in self.bash_session.execute_stream(action):
+                        yield f'data: {json.dumps(event_to_dict(obs))}\n\n'
+                except Exception as e:
+                    logger.debug(f'client disconnect {str(e)}')
+
+        gen = generator_wrapper()
+        task = asyncio.create_task(gen.__anext__())
+        sse_task[task_id] = task
+        return gen
 
     async def run(
         self, action: CmdRunAction
@@ -843,6 +874,83 @@ if __name__ == '__main__':
             raise HTTPException(
                 status_code=500,
                 detail=traceback.format_exc(),
+            )
+
+    @app.get('/stop_cmd_action_stream')
+    async def stop_cmd_action_stream():
+        assert client is not None
+        try:
+            if not isinstance(client.bash_session, BashSession):
+                return JSONResponse(
+                    content={
+                        'status': 'failed',
+                        'message': 'Stream execution on Windows is not currently supported',
+                    },
+                    status_code=200,
+                )
+            await client.bash_session.stop_stream_cmd()
+            return JSONResponse(
+                content={'status': 'success', 'message': '命令已成功停止'},
+                status_code=200,
+            )
+        except Exception as e:
+            logger.error(
+                f'Error processing command: {str(e)}', exc_info=True, stack_info=True
+            )
+            raise HTTPException(
+                status_code=500,
+                detail=traceback.format_exc(),
+            )
+
+    sse_task: dict[str, asyncio.Task] = {}
+
+    async def cleanup_after_disconnect(task_id: str, bash_session: BashSession):
+        task = sse_task.pop(task_id)
+        if task and not task.done():
+            logger.debug(f'Cancelling task {task_id} due to disconnect.')
+            task.cancel()
+        await bash_session.stop_stream_cmd()
+
+    @app.post('/execute_cmd_action_stream')
+    async def execute_cmd_action_stream(
+        action_request: ActionRequest,
+    ) -> StreamingResponse:
+        """Stream execution of long-running shell commands with real-time output delivery.
+        Designed for scenarios such as machine learning or deep learning training, where tasks may take a long time and intermediate logs are critical for monitoring progress.
+        """
+        assert client is not None
+        if not isinstance(client.bash_session, BashSession):
+            return StreamingResponse(
+                _stream_error_message(
+                    'Stream execution on Windows is not currently supported'
+                ),
+                media_type='text/event-stream',
+            )
+        try:
+            action = event_from_dict(action_request.action)
+            client.last_execution_time = time.time()
+            if isinstance(action, CmdRunStreamAction):
+                task_id = str(uuid.uuid4())
+                task = await client.run_stream(task_id, action)
+                return StreamingResponse(
+                    task,
+                    media_type='text/event-stream',
+                    background=BackgroundTask(
+                        cleanup_after_disconnect, task_id, client.bash_session
+                    ),
+                )
+            else:
+                return StreamingResponse(
+                    _stream_error_message(
+                        'Only CmdRunStreamAction type actions are supported for streaming execution'
+                    ),
+                    media_type='text/event-stream',
+                )
+        except Exception as e:
+            logger.debug(f'Error processing command: {str(e)}')
+            return StreamingResponse(
+                _stream_error_message(f'Error executing command: {str(e)}'),
+                media_type='text/event-stream',
             )
 
     @app.post('/update_mcp_server')

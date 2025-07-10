@@ -165,6 +165,13 @@ class CmdOutputObservation(Observation):
 
 
 @dataclass
+class CmdStreamOutputObservation(Observation):
+    content: str
+    command: str
+    observation: str = ObservationType.RUN
+
+
+@dataclass
 class IPythonRunCellObservation(Observation):
     """This data class represents the output of a IPythonRunCellAction."""
 

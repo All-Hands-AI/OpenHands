@@ -15,6 +15,7 @@ from openhands.events.action.agent import (
 from openhands.events.action.browse import BrowseInteractiveAction, BrowseURLAction
 from openhands.events.action.commands import (
     CmdRunAction,
+    CmdRunStreamAction,
     IPythonRunCellAction,
 )
 from openhands.events.action.empty import NullAction
@@ -29,6 +30,7 @@ from openhands.events.action.message import MessageAction, SystemMessageAction
 actions = (
     NullAction,
     CmdRunAction,
+    CmdRunStreamAction,
     IPythonRunCellAction,
     BrowseURLAction,
     BrowseInteractiveAction,

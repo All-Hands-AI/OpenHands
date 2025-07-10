@@ -1,5 +1,6 @@
 import os
 import re
+import threading
 import time
 import traceback
 import uuid
@@ -10,7 +11,7 @@ import bashlex
 import libtmux
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.events.action import CmdRunAction
+from openhands.events.action import CmdRunAction, CmdRunStreamAction
 from openhands.events.observation import ErrorObservation
 from openhands.events.observation.commands import (
     CMD_OUTPUT_PS1_END,
@@ -169,6 +170,11 @@ class BashCommandStatus(Enum):
     HARD_TIMEOUT = 'hard_timeout'
 
 
+class StreamBashCommandStatus(Enum):
+    IDLE = 'idle'
+    RUNNING = 'RUNNING'
+
+
 def _remove_command_prefix(command_output: str, command: str) -> str:
     return command_output.lstrip().removeprefix(command.lstrip()).lstrip()
 
@@ -190,6 +196,9 @@ class BashSession:
         self.username = username
         self._initialized = False
         self.max_memory_mb = max_memory_mb
+        self.stream_bash_cmd_status = StreamBashCommandStatus.IDLE
+        self.stop_semaphore = threading.Semaphore(1)
+        self.stream_run_semaphore = threading.Semaphore(1)
 
     def initialize(self) -> None:
         self.server = libtmux.Server()
@@ -242,6 +251,7 @@ class BashSession:
         # Store the last command for interactive input handling
         self.prev_status: BashCommandStatus | None = None
         self.prev_output: str = ''
+        self.stream_bash_cmd_status = StreamBashCommandStatus.IDLE
         self._closed: bool = False
         logger.debug(f'Bash session initialized with work dir: {self.work_dir}')
 
@@ -654,3 +664,98 @@ class BashSession:
             logger.debug(f'SLEEPING for {self.POLL_INTERVAL} seconds for next poll')
             time.sleep(self.POLL_INTERVAL)
         raise RuntimeError('Bash session was likely interrupted...')
+
+    async def execute_stream(self, action: CmdRunStreamAction):
+        """Execute a command in the bash session."""
+        if not self._initialized:
+            raise RuntimeError('Bash session is not initialized')
+        with self.stream_run_semaphore:
+            # Strip the command of any leading/trailing whitespace
+            logger.debug(f'RECEIVED ACTION: {action}')
+            command = action.command.strip()
+            splited_commands = split_bash_commands(command)
+            if len(splited_commands) > 1:
+                yield ErrorObservation(
+                    content=(
+                        f'ERROR: Cannot execute multiple commands at once.\n'
+                        f'Please run each command separately OR chain them into a single command via && or ;\n'
+                        f'Provided commands:\n{"\n".join(f"({i + 1}) {cmd}" for i, cmd in enumerate(splited_commands))}'
+                    )
+                )
+            # Get initial state before sending command
+            initial_pane_output = self._get_pane_content()
+            initial_ps1_matches = CmdOutputMetadata.matches_ps1_metadata(
+                initial_pane_output
+            )
+            initial_ps1_count = len(initial_ps1_matches)
+            logger.debug(f'Initial PS1 count: {initial_ps1_count}')
+
+            # Send actual command to the pane
+            is_special_key = self._is_special_key(command)
+            command = escape_bash_special_chars(command)
+            self.stream_bash_cmd_status = StreamBashCommandStatus.RUNNING
+            logger.debug(f'SENDING COMMAND: {command!r}')
+            self.pane.send_keys(
+                command,
+                enter=not is_special_key,
+            )
+
+            prev_lines = initial_pane_output.splitlines()
+
+            while should_continue():
+                cur_pane_output = self._get_pane_content()
+                ps1_matches = CmdOutputMetadata.matches_ps1_metadata(cur_pane_output)
+                current_ps1_count = len(ps1_matches)
+                if (
+                    current_ps1_count > initial_ps1_count
+                    or cur_pane_output.rstrip().endswith(CMD_OUTPUT_PS1_END.rstrip())
+                ):
+                    self.stream_bash_cmd_status = StreamBashCommandStatus.IDLE
+                    logger.debug('Command execution completed.')
+                    metadata = (
+                        CmdOutputMetadata.from_ps1_match(ps1_matches[-1])
+                        if ps1_matches
+                        else CmdOutputMetadata()
+                    )
+                    metadata.suffix = (
+                        f'\n[The command completed with exit code {metadata.exit_code}.]'
+                        if not is_special_key
+                        else f'\n[The command completed with exit code {metadata.exit_code}. CTRL+{command[-1].upper()} was sent.]'
+                    )
+                    yield CmdOutputObservation(
+                        content='', command=command, metadata=metadata
+                    )
+                    break
+                else:
+                    cur_lines = cur_pane_output.splitlines()
+                    new_lines = cur_lines[len(prev_lines) :]
+                    if new_lines:
+                        output = '\n'.join(new_lines)
+                        logger.debug(f'COMMAND STREAM OUTPUT: {output}')
+                        yield CmdOutputObservation(content=output, command=command)
+                        prev_lines = cur_lines
+                time.sleep(self.POLL_INTERVAL)
+
+    async def stop_stream_cmd(self):
+        with self.stop_semaphore:
+            if self.stream_bash_cmd_status != StreamBashCommandStatus.RUNNING:
+                return
+            self.pane.send_keys('C-c', enter=False)
+            start_time = time.time()
+            timeout = 10
+            try:
+                while time.time() - start_time < timeout:
+                    pane_content = self._get_pane_content()
+                    if pane_content.rstrip().endswith(CMD_OUTPUT_PS1_END.rstrip()):
+                        logger.debug(
+                            'The command was successfully interrupted and returned to the shell prompt.'
+                        )
+                        return
+                    time.sleep(self.POLL_INTERVAL)  # 继续等待
+                else:
+                    logger.warning(
+                        'An attempt to interrupt the command failed: The timeout period was exceeded and no shell prompt was detected.'
+                    )
+            finally:
+                self._ready_for_next_command()
+                self.stream_bash_cmd_status = StreamBashCommandStatus.IDLE

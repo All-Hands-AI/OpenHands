@@ -266,6 +266,10 @@ class DockerRuntime(ActionExecutionClient):
                 'bind': self.config.workspace_mount_path_in_sandbox,
                 'mode': mount_mode,
             }
+            volumes[os.path.abspath('../mindflow-openhands')] = {
+                'bind': '/openhands/code',
+                'mode': 'rw',
+            }
             logger.debug(
                 f'Mount dir (legacy): {self.config.workspace_mount_path} with mode: {mount_mode}'
             )
