@@ -10,9 +10,7 @@ describe("ChatMessage", () => {
     expect(screen.getByText("Hello, World!")).toBeInTheDocument();
   });
 
-  it.todo("should render an assistant message");
-
-  it.skip("should support code syntax highlighting", () => {
+  it("should support code syntax highlighting", () => {
     const code = "```js\nconsole.log('Hello, World!')\n```";
     render(<ChatMessage type="user" message={code} />);
 
@@ -45,8 +43,6 @@ describe("ChatMessage", () => {
       expect(navigator.clipboard.readText()).resolves.toBe("Hello, World!"),
     );
   });
-
-  it("should display an error toast if copying content to clipboard fails", async () => {});
 
   it("should render a component passed as a prop", () => {
     function Component() {
