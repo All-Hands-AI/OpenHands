@@ -32,6 +32,7 @@ from openhands.integrations.service_types import (
 )
 from openhands.llm.llm import LLM
 from openhands.runtime import get_runtime_cls
+from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
@@ -189,7 +190,7 @@ async def new_conversation(
             content={
                 'status': 'error',
                 'message': str(e),
-                'msg_id': 'STATUS$ERROR_LLM_AUTHENTICATION',
+                'msg_id': RuntimeStatus.ERROR_LLM_AUTHENTICATION.value,
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )
@@ -199,7 +200,7 @@ async def new_conversation(
             content={
                 'status': 'error',
                 'message': str(e),
-                'msg_id': 'STATUS$GIT_PROVIDER_AUTHENTICATION_ERROR',
+                'msg_id': RuntimeStatus.GIT_PROVIDER_AUTHENTICATION_ERROR.value,
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )
