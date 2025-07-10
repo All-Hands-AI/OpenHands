@@ -20,16 +20,19 @@ class MetricsRegistry:
         logger.info(
             f'[Metrics registry {self.metrics_id}]: Registering service {service}'
         )
+
         if service in self.global_metrics:
             return self.global_metrics[service]
 
-        self.global_metrics[service] = Metrics(model_name=model_name)
-        return self.global_metrics[service]
+        metrics = Metrics(model_name=model_name)
+        self.global_metrics[service] = metrics
+        return metrics
 
     def save_metrics(self):
         pass
 
     def get_combined_metrics(self) -> Metrics:
+        print('all metrics', self.global_metrics)
         total_metrics = Metrics()
         for service in self.global_metrics:
             total_metrics.merge(self.global_metrics[service])
