@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=22.0.0"
   },
   "dependencies": {
     "@heroui/react": "^2.8.0-beta.13",
@@ -25,7 +25,7 @@
     "axios": "^1.10.0",
     "clsx": "^2.1.1",
     "eslint-config-airbnb-typescript": "^18.0.0",
-    "framer-motion": "^12.23.0",
+    "framer-motion": "^12.23.3",
     "i18next": "^25.3.2",
     "i18next-browser-languagedetector": "^8.2.0",
     "i18next-http-backend": "^3.0.2",
@@ -49,7 +49,7 @@
     "sirv-cli": "^3.0.1",
     "socket.io-client": "^4.8.1",
     "tailwind-merge": "^3.3.1",
-    "vite": "^7.0.3",
+    "vite": "^7.0.4",
     "web-vitals": "^5.0.3",
     "ws": "^8.18.2"
   },
@@ -70,7 +70,6 @@
     "lint:fix": "eslint src --ext .ts,.tsx,.js --fix && prettier --write src/**/*.{ts,tsx}",
     "prepare": "cd .. && husky frontend/.husky",
     "typecheck": "react-router typegen && tsc",
-    "check-unlocalized-strings": "node scripts/check-unlocalized-strings.cjs",
     "check-translation-completeness": "node scripts/check-translation-completeness.cjs"
   },
   "lint-staged": {
@@ -84,7 +83,7 @@
     "@babel/traverse": "^7.28.0",
     "@babel/types": "^7.27.0",
     "@mswjs/socket.io-binding": "^0.2.0",
-    "@playwright/test": "^1.53.2",
+    "@playwright/test": "^1.54.0",
     "@react-router/dev": "^7.6.3",
     "@tailwindcss/typography": "^0.5.16",
     "@tanstack/eslint-plugin-query": "^5.81.2",
@@ -107,6 +106,7 @@
     "eslint-config-airbnb": "^19.0.4",
     "eslint-config-airbnb-typescript": "^18.0.0",
     "eslint-config-prettier": "^10.1.5",
+    "eslint-plugin-i18next": "^6.1.2",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-prettier": "^5.5.1",
