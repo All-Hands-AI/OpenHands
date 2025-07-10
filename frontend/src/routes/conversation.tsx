@@ -25,6 +25,7 @@ import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { useDocumentTitleFromState } from "#/hooks/use-document-title-from-state";
 import OpenHands from "#/api/open-hands";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
+import { ConversationSubscriptionsProvider } from "#/context/conversation-subscriptions-provider";
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { ConversationTabs } from "#/components/features/conversation/conversation-tabs";
 
@@ -113,23 +114,25 @@ function AppContent() {
 
   return (
     <WsClientProvider conversationId={conversationId}>
-      <EventHandler>
-        <div data-testid="app-route" className="flex flex-col h-full gap-3">
-          <div className="flex h-full overflow-auto">{renderMain()}</div>
+      <ConversationSubscriptionsProvider>
+        <EventHandler>
+          <div data-testid="app-route" className="flex flex-col h-full gap-3">
+            <div className="flex h-full overflow-auto">{renderMain()}</div>
 
-          <Controls
-            setSecurityOpen={onSecurityModalOpen}
-            showSecurityLock={!!settings?.SECURITY_ANALYZER}
-          />
-          {settings && (
-            <Security
-              isOpen={securityModalIsOpen}
-              onOpenChange={onSecurityModalOpenChange}
-              securityAnalyzer={settings.SECURITY_ANALYZER}
+            <Controls
+              setSecurityOpen={onSecurityModalOpen}
+              showSecurityLock={!!settings?.SECURITY_ANALYZER}
             />
-          )}
-        </div>
-      </EventHandler>
+            {settings && (
+              <Security
+                isOpen={securityModalIsOpen}
+                onOpenChange={onSecurityModalOpenChange}
+                securityAnalyzer={settings.SECURITY_ANALYZER}
+              />
+            )}
+          </div>
+        </EventHandler>
+      </ConversationSubscriptionsProvider>
     </WsClientProvider>
   );
 }
