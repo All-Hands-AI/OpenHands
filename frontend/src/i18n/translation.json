@@ -6176,6 +6176,22 @@
         "es": "Nombre",
         "tr": "İsim"
     },
+    "SECRETS$DESCRIPTION": {
+        "en": "Description",
+        "uk": "Опис",
+        "ja": "説明",
+        "zh-CN": "描述",
+        "zh-TW": "描述",
+        "ko-KR": "설명",
+        "no": "Beskrivelse",
+        "ar": "الوصف",
+        "de": "Beschreibung",
+        "fr": "Description",
+        "it": "Descrizione",
+        "pt": "Descrição",
+        "es": "Descripción",
+        "tr": "Açıklama"
+    },
     "SETTINGS$KEY_PREFIX": {
         "en": "Key Prefix",
         "uk": "Префікс ключа",
