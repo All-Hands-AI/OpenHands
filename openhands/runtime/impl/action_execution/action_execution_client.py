@@ -251,7 +251,7 @@ class ActionExecutionClient(Runtime):
     def get_vscode_token(self) -> str:
         self.log(
             'warning',
-            f'TRACE:get_vscode_token:{self.vscode_enabled}:{self.runtime_initialized}',
+            f'TRACE:get_vscode_token:{self.vscode_enabled}:{self.runtime_initialized}:{self._vscode_token}',
         )
         if self.vscode_enabled and self.runtime_initialized:
             if self._vscode_token is not None:  # cached value
