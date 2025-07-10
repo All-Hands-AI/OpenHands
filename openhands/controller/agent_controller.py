@@ -73,9 +73,8 @@ from openhands.events.observation import (
     Observation,
 )
 from openhands.events.serialization.event import truncate_content
-from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics
-from openhands.llm.metrics_registry import MetricsRegistry
+from openhands.llm.metrics_registry import LLMRegistry
 from openhands.storage.files import FileStore
 
 # note: RESUME is only available on web GUI
@@ -105,7 +104,7 @@ class AgentController:
         self,
         agent: Agent,
         event_stream: EventStream,
-        metrics_registry: MetricsRegistry,
+        llm_registry: LLMRegistry,
         iteration_delta: int,
         budget_per_task_delta: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
@@ -146,6 +145,7 @@ class AgentController:
         self.agent = agent
         self.headless_mode = headless_mode
         self.is_delegate = is_delegate
+        self.llm_registry = llm_registry
 
         # the event stream must be set before maybe subscribing to it
         self.event_stream = event_stream
@@ -161,7 +161,6 @@ class AgentController:
         # state from the previous session, state from a parent agent, or a fresh state
         self.set_initial_state(
             state=initial_state,
-            metrics_registry=metrics_registry,
             max_iterations=iteration_delta,
             max_budget_per_task=budget_per_task_delta,
             confirmation_mode=confirmation_mode,
@@ -644,12 +643,13 @@ class AgentController:
         agent_config = self.agent_configs.get(action.agent, self.agent.config)
         llm_config = self.agent_to_llm_config.get(action.agent, self.agent.llm.config)
         # Make sure metrics are shared between parent and child for global accumulation
-        llm = LLM(
-            config=llm_config,
+        delegate_agent = agent_cls(
+            config=agent_config,
+            llm_config=llm_config,
+            llm_registry=self.llm_registry,
             retry_listener=self.agent.llm.retry_listener,
-            metrics_registry=self.state.metrics_registry,
+            requested_service=self.agent.llm.service_id,
         )
-        delegate_agent = agent_cls(llm=llm, config=agent_config)
 
         # Take a snapshot of the current metrics before starting the delegate
         state = State(
@@ -667,7 +667,7 @@ class AgentController:
         )
         self.log(
             'debug',
-            f'start delegate, creating agent {delegate_agent.name} using LLM {llm}',
+            f'start delegate, creating agent {delegate_agent.name}',
         )
 
         # Create the delegate with is_delegate=True so it does NOT subscribe directly
@@ -677,7 +677,7 @@ class AgentController:
             user_id=self.user_id,
             agent=delegate_agent,
             event_stream=self.event_stream,
-            metrics_registry=self.state.metrics_registry,
+            llm_registry=self.llm_registry,
             iteration_delta=self._initial_max_iterations,
             budget_per_task_delta=self._initial_max_budget_per_task,
             agent_to_llm_config=self.agent_to_llm_config,
@@ -946,7 +946,6 @@ class AgentController:
     def set_initial_state(
         self,
         state: State | None,
-        metrics_registry: MetricsRegistry,
         max_iterations: int,
         max_budget_per_task: float | None,
         confirmation_mode: bool = False,
@@ -955,7 +954,6 @@ class AgentController:
             self.id,
             self.agent,
             state,
-            metrics_registry,
             max_iterations,
             max_budget_per_task,
             confirmation_mode,

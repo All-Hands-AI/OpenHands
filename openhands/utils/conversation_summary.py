@@ -83,7 +83,7 @@ async def auto_generate_title(
     user_id: str | None,
     file_store: FileStore,
     settings: Settings,
-    metrics_registry: MetricsRegistry,
+    llm_registry: LLMRegistry,
 ) -> str:
     """
     Auto-generate a title for a conversation based on the first user message.
@@ -125,7 +125,7 @@ async def auto_generate_title(
 
                     # Try to generate title using LLM
                     llm_title = await generate_conversation_title(
-                        first_user_message, llm_config, metrics_registry
+                        first_user_message, llm_config, llm_registry
                     )
                     if llm_title:
                         logger.info(f'Generated title using LLM: {llm_title}')

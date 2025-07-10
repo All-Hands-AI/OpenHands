@@ -52,7 +52,6 @@ class StateTracker:
         id: str,
         agent: Agent,
         state: State | None,
-        metrics_registry: MetricsRegistry,
         max_iterations: int,
         max_budget_per_task: float | None,
         confirmation_mode: bool = False,
@@ -87,7 +86,6 @@ class StateTracker:
                     max_value=max_budget_per_task,
                 ),
                 confirmation_mode=confirmation_mode,
-                metrics_registry=metrics_registry,
             )
             self.state.start_id = 0
 
@@ -268,6 +266,5 @@ class StateTracker:
         Budget flag will monitor for when budget is exceeded
         """
         if self.state.budget_flag:
-            self.state.budget_flag.current_value = (
-                self.state.metrics_registry.get_combined_metrics().accumulated_cost
-            )
+            # TODO: will depend on the llm registry
+            pass

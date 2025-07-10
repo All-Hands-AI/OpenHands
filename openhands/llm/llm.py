@@ -117,6 +117,7 @@ class LLM(RetryMixin, DebugMixin):
     def __init__(
         self,
         config: LLMConfig,
+        service_id: str,
         metrics: Metrics | None = None,
         model_name: str = 'default',
         retry_listener: Callable[[int, int], None] | None = None,
@@ -135,6 +136,7 @@ class LLM(RetryMixin, DebugMixin):
 
         self.cost_metric_supported: bool = True
         self.config: LLMConfig = copy.deepcopy(config)
+        self.service_id = service_id
         self.metrics: Metrics = (
             metrics if metrics is not None else Metrics(model_name=config.model)
         )

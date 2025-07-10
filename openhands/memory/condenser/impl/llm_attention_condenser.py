@@ -130,7 +130,7 @@ class LLMAttentionCondenser(RollingCondenser):
         llm_config.caching_prompt = False
 
         return LLMAttentionCondenser(
-            config=llm_config,
+            llm_config=llm_config,
             llm_registry=llm_registry,
             max_size=config.max_size,
             keep_first=config.keep_first,

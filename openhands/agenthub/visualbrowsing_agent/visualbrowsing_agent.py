@@ -1,3 +1,5 @@
+from typing import Callable
+
 from browsergym.core.action.highlevel import HighLevelActionSet
 from browsergym.utils.obs import flatten_axtree_to_str
 
@@ -5,6 +7,7 @@ from openhands.agenthub.browsing_agent.response_parser import BrowsingResponsePa
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
+from openhands.core.config.llm_config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import ImageContent, Message, TextContent
 from openhands.events.action import (
@@ -16,7 +19,7 @@ from openhands.events.action import (
 from openhands.events.event import EventSource
 from openhands.events.observation import BrowserOutputObservation
 from openhands.events.observation.observation import Observation
-from openhands.llm.llm import LLM
+from openhands.llm.metrics_registry import LLMRegistry
 from openhands.runtime.plugins import (
     PluginRequirement,
 )
@@ -129,15 +132,20 @@ class VisualBrowsingAgent(Agent):
 
     def __init__(
         self,
-        llm: LLM,
         config: AgentConfig,
+        llm_config: LLMConfig,
+        llm_registry: LLMRegistry,
+        retry_listener: Callable[[int, int], None] | None = None,
+        requested_service: str | None = None,
     ) -> None:
         """Initializes a new instance of the VisualBrowsingAgent class.
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
         """
-        super().__init__(llm, config)
+        super().__init__(
+            config, llm_config, llm_registry, retry_listener, requested_service
+        )
         # define a configurable action space, with chat functionality, web navigation, and webpage grounding using accessibility tree and HTML.
         # see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/action/highlevel.py for more details
         action_subsets = [

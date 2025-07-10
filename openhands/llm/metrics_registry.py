@@ -1,3 +1,4 @@
+from typing import Callable
 from uuid import uuid4
 
 from openhands.core.config.llm_config import LLMConfig
@@ -10,7 +11,12 @@ class LLMRegistry:
     metrics_id = str(uuid4())
     service_to_llm: dict[str, LLM] = {}
 
-    def register_llm(self, service_id: str, config: LLMConfig):
+    def register_llm(
+        self,
+        service_id: str,
+        config: LLMConfig,
+        retry_listener: Callable[[int, int], None] | None = None,
+    ):
         logger.info(
             f'[Metrics registry {self.metrics_id}]: Registering service for {service_id}'
         )
@@ -18,15 +24,23 @@ class LLMRegistry:
         if service_id in self.service_to_llm:
             raise Exception(f'Registering duplicate LLM: {service_id}')
 
-        llm = LLM(config=config)
+        llm = LLM(config=config, service_id=service_id, retry_listener=retry_listener)
         self.service_to_llm[service_id] = llm
         return llm
 
-    def get_shared_llm(self, service_id: str):
+    def request_existing_service(
+        self,
+        service_id: str,
+        config: LLMConfig,
+        retry_listener: Callable[[int, int], None] | None = None,
+    ):
         if service_id not in self.service_to_llm:
             raise Exception(f'LLM service does not exist {service_id}')
+        existing_llm = self.service_to_llm[service_id]
 
-        return self.service_to_llm[service_id]
+        return LLM(
+            config=config, service_id=service_id, metrics=existing_llm.metrics, retry_listener=retry_listener
+        )
 
     def get_combined_metrics(self) -> Metrics:
         total_metrics = Metrics()

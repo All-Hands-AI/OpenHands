@@ -1,8 +1,9 @@
-from typing import TypedDict
+from typing import Callable, TypedDict
 
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
+from openhands.core.config.llm_config import LLMConfig
 from openhands.core.schema import AgentState
 from openhands.events.action import (
     Action,
@@ -25,7 +26,7 @@ from openhands.events.observation import (
     Observation,
 )
 from openhands.events.serialization.event import event_to_dict
-from openhands.llm.llm import LLM
+from openhands.llm.metrics_registry import LLMRegistry
 
 """
 FIXME: There are a few problems this surfaced
@@ -45,8 +46,15 @@ class DummyAgent(Agent):
     without making any LLM calls.
     """
 
-    def __init__(self, llm: LLM, config: AgentConfig):
-        super().__init__(llm, config)
+    def __init__(
+        self,
+        config: AgentConfig,
+        llm_config: LLMConfig,
+        llm_registry: LLMRegistry,
+        retry_listener: Callable[[int, int], None] | None = None,
+        requested_service: str | None = None,
+    ):
+        super().__init__(config, llm_config, llm_registry, retry_listener, requested_service)
         self.steps: list[ActionObs] = [
             {
                 'action': MessageAction('Time to get started!'),
