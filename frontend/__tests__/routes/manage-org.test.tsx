@@ -54,7 +54,7 @@ describe("Manage Org Route", () => {
     const addCreditsForm = screen.getByTestId("add-credits-form");
     expect(addCreditsForm).toBeInTheDocument();
 
-    const amountInput = within(addCreditsForm).getByRole("textbox");
+    const amountInput = within(addCreditsForm).getByTestId("amount-input");
     const nextButton = within(addCreditsForm).getByRole("button", {
       name: /next/i,
     });
@@ -68,6 +68,31 @@ describe("Manage Org Route", () => {
     await waitFor(() =>
       expect(screen.queryByTestId("add-credits-form")).not.toBeInTheDocument(),
     );
+  });
+
+  it("should close the modal when clicking cancel", async () => {
+    const createCheckoutSessionSpy = vi.spyOn(
+      OpenHands,
+      "createCheckoutSession",
+    );
+    renderManageOrg();
+
+    expect(screen.queryByTestId("add-credits-form")).not.toBeInTheDocument();
+    // Simulate adding credits
+    const addCreditsButton = screen.getByText(/add/i);
+    await userEvent.click(addCreditsButton);
+
+    const addCreditsForm = screen.getByTestId("add-credits-form");
+    expect(addCreditsForm).toBeInTheDocument();
+
+    const cancelButton = within(addCreditsForm).getByRole("button", {
+      name: /cancel/i,
+    });
+
+    await userEvent.click(cancelButton);
+
+    expect(screen.queryByTestId("add-credits-form")).not.toBeInTheDocument();
+    expect(createCheckoutSessionSpy).not.toHaveBeenCalled();
   });
 
   describe("superadmin actions", () => {
