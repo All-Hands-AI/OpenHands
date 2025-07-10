@@ -97,14 +97,19 @@ async def get_litellm_models() -> list[str]:
         if ollama_base_url:
             ollama_url = ollama_base_url.strip('/') + '/api/tags'
             try:
-                async with aiohttp.ClientSession() as session:
-                    async with session.get(ollama_url, timeout=3) as response:
-                        ollama_models_list = await response.json()['models']
+                # Use a timeout and ensure proper session cleanup
+                timeout = aiohttp.ClientTimeout(total=3)
+                async with aiohttp.ClientSession(timeout=timeout) as session:
+                    async with session.get(ollama_url) as response:
+                        response_json = await response.json()
+                        ollama_models_list = response_json.get('models', [])
                         for model in ollama_models_list:
                             model_list.append('ollama/' + model['name'])
                         break
             except aiohttp.ClientError as e:
                 logger.error(f'Error getting OLLAMA models: {e}')
+            except Exception as e:
+                logger.error(f'Unexpected error getting OLLAMA models: {e}')
 
     return list(sorted(set(model_list)))
 

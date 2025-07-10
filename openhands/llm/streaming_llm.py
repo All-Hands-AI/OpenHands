@@ -16,6 +16,7 @@ from openhands.llm.llm import (
     MODELS_USING_MAX_COMPLETION_TOKENS,
     REASONING_EFFORT_SUPPORTED_MODELS,
 )
+from openhands.utils.ensure_session_close import ensure_aiohttp_close
 from openhands.utils.tracing_utils import context_api, streaming_llm_workflow
 
 # Extended retry exceptions to include HTTP transfer encoding errors
@@ -114,44 +115,49 @@ class StreamingLLM(AsyncLLM):
                 kwargs.pop('extra_body', None)
 
             try:
-                # Directly call and await litellm_acompletion
-                resp = await self.async_streaming_completion_unwrapped(*args, **kwargs)
-                chunks = []
-                # For streaming we iterate over the chunks
-                async for chunk in resp:
-                    # Check for cancellation before yielding the chunk
-                    if (
-                        hasattr(self.config, 'on_cancel_requested_fn')
-                        and self.config.on_cancel_requested_fn is not None
-                        and await self.config.on_cancel_requested_fn()
-                    ):
-                        raise UserCancelledError(
-                            'LLM request cancelled due to CANCELLED state'
-                        )
-                    # with streaming, it is "delta", not "message"!
-                    message_back = chunk['choices'][0]['delta'].get('content', '')
-                    if message_back:
-                        self.log_response(message_back)
-                    chunks.append(chunk)
-                    yield chunk
-                if len(chunks) > 0:
-                    resp = stream_chunk_builder(chunks)
-                    cost = self._post_completion(resp)
-                    if cost and resp.get('usage'):
-                        resp['usage']['cost'] = cost
-                        if span:
-                            span.set_attribute('llm.cost', cost)
-
-                    # Add cost and token usage to the current span
-                    usage = resp.get('usage')
-                    if usage:
-                        prompt_tokens = usage.get('prompt_tokens', 0)
-                        completion_tokens = usage.get('completion_tokens', 0)
-                        if span:
-                            span.set_attribute('llm.usage.prompt_tokens', prompt_tokens)
-                            span.set_attribute(
-                                'llm.usage.completion_tokens', completion_tokens
+                # Directly call and await litellm_acompletion with session management
+                async with ensure_aiohttp_close():
+                    resp = await self.async_streaming_completion_unwrapped(
+                        *args, **kwargs
+                    )
+                    chunks = []
+                    # For streaming we iterate over the chunks
+                    async for chunk in resp:
+                        # Check for cancellation before yielding the chunk
+                        if (
+                            hasattr(self.config, 'on_cancel_requested_fn')
+                            and self.config.on_cancel_requested_fn is not None
+                            and await self.config.on_cancel_requested_fn()
+                        ):
+                            raise UserCancelledError(
+                                'LLM request cancelled due to CANCELLED state'
                             )
+                        # with streaming, it is "delta", not "message"!
+                        message_back = chunk['choices'][0]['delta'].get('content', '')
+                        if message_back:
+                            self.log_response(message_back)
+                        chunks.append(chunk)
+                        yield chunk
+                    if len(chunks) > 0:
+                        resp = stream_chunk_builder(chunks)
+                        cost = self._post_completion(resp)
+                        if cost and resp.get('usage'):
+                            resp['usage']['cost'] = cost
+                            if span:
+                                span.set_attribute('llm.cost', cost)
+
+                        # Add cost and token usage to the current span
+                        usage = resp.get('usage')
+                        if usage:
+                            prompt_tokens = usage.get('prompt_tokens', 0)
+                            completion_tokens = usage.get('completion_tokens', 0)
+                            if span:
+                                span.set_attribute(
+                                    'llm.usage.prompt_tokens', prompt_tokens
+                                )
+                                span.set_attribute(
+                                    'llm.usage.completion_tokens', completion_tokens
+                                )
 
                 if span:
                     span.end()

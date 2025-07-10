@@ -249,7 +249,9 @@ class ActionExecutionClient(Runtime):
         else:
             return ''
 
-    def send_action_for_execution(self, action: Action, action_semaphore: bool = True) -> Observation:
+    def send_action_for_execution(
+        self, action: Action, action_semaphore: bool = True
+    ) -> Observation:
         if (
             isinstance(action, FileEditAction)
             and action.impl_source == FileEditSource.LLM_BASED_EDIT
