@@ -24,7 +24,7 @@ jobs:
     runs-on: blacksmith-4vcpu-ubuntu-2204
     strategy:
       matrix:
-        node-version: [20, 22]
+        node-version: 22
       fail-fast: true
     steps:
       - name: Checkout
