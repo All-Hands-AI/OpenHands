@@ -324,6 +324,7 @@ class StandaloneConversationManager(ConversationManager):
             sid=sid,
             file_store=self.file_store,
             config=self.config,
+            state=restored_state,
             metrics_registry=metrics_registry,  # assign registry for session
             sio=self.sio,
             user_id=user_id,

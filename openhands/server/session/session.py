@@ -6,6 +6,7 @@ from logging import LoggerAdapter
 import socketio
 
 from openhands.controller.agent import Agent
+from openhands.controller.state.state import State
 from openhands.core.config import OpenHandsConfig
 from openhands.core.config.condenser_config import (
     BrowserOutputCondenserConfig,
@@ -55,6 +56,7 @@ class Session:
         self,
         sid: str,
         config: OpenHandsConfig,
+        state: State | None,
         metrics_registry: MetricsRegistry,
         file_store: FileStore,
         sio: socketio.AsyncServer | None,
@@ -65,10 +67,12 @@ class Session:
         self.last_active_ts = int(time.time())
         self.file_store = file_store
         self.logger = OpenHandsLoggerAdapter(extra={'session_id': sid})
+        self.state = state
         self.metrics_registry = metrics_registry
         self.agent_session = AgentSession(
             sid,
             file_store,
+            state,
             metrics_registry=self.metrics_registry,
             status_callback=self.queue_status_message,
             user_id=user_id,
