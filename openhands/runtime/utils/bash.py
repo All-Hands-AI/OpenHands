@@ -706,6 +706,16 @@ class BashSession:
                 cur_pane_output = self._get_pane_content()
                 ps1_matches = CmdOutputMetadata.matches_ps1_metadata(cur_pane_output)
                 current_ps1_count = len(ps1_matches)
+                cur_lines = cur_pane_output.splitlines()
+                new_lines = cur_lines[len(prev_lines) :]
+                if new_lines:
+                    output = '\n'.join(new_lines)
+                    logger.debug(f'COMMAND STREAM OUTPUT: {output}')
+                    yield CmdOutputObservation(
+                        content=CmdOutputMetadata.strip_from_output(output),
+                        command=command,
+                    )
+                    prev_lines = cur_lines
                 if (
                     current_ps1_count > initial_ps1_count
                     or cur_pane_output.rstrip().endswith(CMD_OUTPUT_PS1_END.rstrip())
@@ -726,14 +736,6 @@ class BashSession:
                         content='', command=command, metadata=metadata
                     )
                     break
-                else:
-                    cur_lines = cur_pane_output.splitlines()
-                    new_lines = cur_lines[len(prev_lines) :]
-                    if new_lines:
-                        output = '\n'.join(new_lines)
-                        logger.debug(f'COMMAND STREAM OUTPUT: {output}')
-                        yield CmdOutputObservation(content=output, command=command)
-                        prev_lines = cur_lines
                 time.sleep(self.POLL_INTERVAL)
 
     async def stop_stream_cmd(self):

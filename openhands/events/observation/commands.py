@@ -88,6 +88,10 @@ class CmdOutputMetadata(BaseModel):
                 processed['exit_code'] = -1
         return cls(**processed)
 
+    @classmethod
+    def strip_from_output(cls, output: str) -> str:
+        return CMD_OUTPUT_METADATA_PS1_REGEX.sub('', output).rstrip()
+
 
 @dataclass
 class CmdOutputObservation(Observation):
