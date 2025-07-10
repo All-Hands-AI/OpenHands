@@ -1,47 +1,9 @@
-import {
-  QueryClient,
-  QueryClientProvider,
-  useQuery,
-} from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
-import React from "react";
-import { organizationService } from "#/api/organization-service/organization-service.api";
-
-function ManageOrg() {
-  const { data: organization } = useQuery({
-    queryKey: ["organization", "about"],
-    queryFn: () => organizationService.getOrganization({ orgId: "1" }),
-  });
-  const { data: organizationPaymentInfo } = useQuery({
-    queryKey: ["organization", "payment"],
-    queryFn: () =>
-      organizationService.getOrganizationPaymentInfo({ orgId: "1" }),
-  });
-
-  const [addCreditsFormVisible, setAddCreditsFormVisible] =
-    React.useState(false);
-
-  return (
-    <div>
-      <div data-testid="available-credits">{organization?.balance}</div>
-      <button type="button" onClick={() => setAddCreditsFormVisible(true)}>
-        Add
-      </button>
-      {addCreditsFormVisible && (
-        <div data-testid="add-credits-form">
-          <input type="text" />
-          <button type="button">Next</button>
-        </div>
-      )}
-      <div data-testid="org-name">{organization?.name}</div>
-      <div data-testid="billing-info">
-        {organizationPaymentInfo?.cardNumber}
-      </div>
-    </div>
-  );
-}
+import OpenHands from "#/api/open-hands";
+import ManageOrg from "#/routes/manage-org";
 
 const renderManageOrg = () =>
   render(<ManageOrg />, {
@@ -64,10 +26,6 @@ describe("Manage Org Route", () => {
     });
   });
 
-  it.todo("should allow the user to add credits", async () => {
-    renderManageOrg();
-  });
-
   it("should render account details", async () => {
     renderManageOrg();
 
@@ -81,6 +39,11 @@ describe("Manage Org Route", () => {
   });
 
   it("should be able to add credits", async () => {
+    const createCheckoutSessionSpy = vi.spyOn(
+      OpenHands,
+      "createCheckoutSession",
+    );
+
     renderManageOrg();
 
     expect(screen.queryByTestId("add-credits-form")).not.toBeInTheDocument();
@@ -91,15 +54,27 @@ describe("Manage Org Route", () => {
     const addCreditsForm = screen.getByTestId("add-credits-form");
     expect(addCreditsForm).toBeInTheDocument();
 
-    expect(within(addCreditsForm).getByRole("textbox")).toBeInTheDocument();
-    expect(
-      within(addCreditsForm).getByRole("button", { name: /next/i }),
-    ).toBeInTheDocument();
+    const amountInput = within(addCreditsForm).getByRole("textbox");
+    const nextButton = within(addCreditsForm).getByRole("button", {
+      name: /next/i,
+    });
+
+    await userEvent.type(amountInput, "1000");
+    await userEvent.click(nextButton);
 
     // expect redirect to payment page
+    expect(createCheckoutSessionSpy).toHaveBeenCalledWith(1000);
+
+    await waitFor(() =>
+      expect(screen.queryByTestId("add-credits-form")).not.toBeInTheDocument(),
+    );
   });
 
-  it.todo("should be able to update the organization name");
-  it.todo("should be able to update the organization billing info");
-  it.todo("should be able to delete an organization");
+  describe("superadmin actions", () => {
+    it.todo("should be able to update the organization name");
+
+    it.todo("should be able to update the organization billing info");
+
+    it.todo("should be able to delete an organization");
+  });
 });
