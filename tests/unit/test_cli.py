@@ -334,7 +334,11 @@ async def test_run_session_with_initial_action(
 @patch('openhands.cli.main.LLMSummarizingCondenserConfig')
 @patch('openhands.cli.main.NoOpCondenserConfig')
 @patch('openhands.cli.main.finalize_config')
+@patch('openhands.cli.main.is_first_time_user')
+@patch('openhands.cli.main.has_alias_setup_been_completed')
 async def test_main_without_task(
+    mock_has_alias_setup_completed,
+    mock_is_first_time_user,
     mock_finalize_config,
     mock_noop_condenser,
     mock_llm_condenser,
@@ -347,6 +351,10 @@ async def test_main_without_task(
 ):
     """Test main function without a task."""
     loop = asyncio.get_running_loop()
+
+    # Mock alias setup functions to prevent the alias setup flow
+    mock_is_first_time_user.return_value = False
+    mock_has_alias_setup_completed.return_value = True
 
     # Mock arguments
     mock_args = MagicMock()
@@ -420,7 +428,11 @@ async def test_main_without_task(
 @patch('openhands.cli.main.LLMSummarizingCondenserConfig')
 @patch('openhands.cli.main.NoOpCondenserConfig')
 @patch('openhands.cli.main.finalize_config')
+@patch('openhands.cli.main.is_first_time_user')
+@patch('openhands.cli.main.has_alias_setup_been_completed')
 async def test_main_with_task(
+    mock_has_alias_setup_completed,
+    mock_is_first_time_user,
     mock_finalize_config,
     mock_noop_condenser,
     mock_llm_condenser,
@@ -433,6 +445,10 @@ async def test_main_with_task(
 ):
     """Test main function with a task."""
     loop = asyncio.get_running_loop()
+
+    # Mock alias setup functions to prevent the alias setup flow
+    mock_is_first_time_user.return_value = False
+    mock_has_alias_setup_completed.return_value = True
 
     # Mock arguments
     mock_args = MagicMock()
@@ -517,7 +533,11 @@ async def test_main_with_task(
 @patch('openhands.cli.main.LLMSummarizingCondenserConfig')
 @patch('openhands.cli.main.NoOpCondenserConfig')
 @patch('openhands.cli.main.finalize_config')
+@patch('openhands.cli.main.is_first_time_user')
+@patch('openhands.cli.main.has_alias_setup_been_completed')
 async def test_main_with_session_name_passes_name_to_run_session(
+    mock_has_alias_setup_completed,
+    mock_is_first_time_user,
     mock_finalize_config,
     mock_noop_condenser,
     mock_llm_condenser,
@@ -531,6 +551,10 @@ async def test_main_with_session_name_passes_name_to_run_session(
     """Test main function with a session name passes it to run_session."""
     loop = asyncio.get_running_loop()
     test_session_name = 'my_named_session'
+
+    # Mock alias setup functions to prevent the alias setup flow
+    mock_is_first_time_user.return_value = False
+    mock_has_alias_setup_completed.return_value = True
 
     # Mock arguments
     mock_args = MagicMock()
@@ -703,7 +727,11 @@ async def test_run_session_with_name_attempts_state_restore(
 @patch('openhands.cli.main.LLMSummarizingCondenserConfig')
 @patch('openhands.cli.main.NoOpCondenserConfig')
 @patch('openhands.cli.main.finalize_config')
+@patch('openhands.cli.main.is_first_time_user')
+@patch('openhands.cli.main.has_alias_setup_been_completed')
 async def test_main_security_check_fails(
+    mock_has_alias_setup_completed,
+    mock_is_first_time_user,
     mock_finalize_config,
     mock_noop_condenser,
     mock_llm_condenser,
@@ -716,6 +744,10 @@ async def test_main_security_check_fails(
 ):
     """Test main function when security check fails."""
     loop = asyncio.get_running_loop()
+
+    # Mock alias setup functions to prevent the alias setup flow
+    mock_is_first_time_user.return_value = False
+    mock_has_alias_setup_completed.return_value = True
 
     # Mock arguments
     mock_args = MagicMock()
@@ -764,7 +796,11 @@ async def test_main_security_check_fails(
 @patch('openhands.cli.main.LLMSummarizingCondenserConfig')
 @patch('openhands.cli.main.NoOpCondenserConfig')
 @patch('openhands.cli.main.finalize_config')
+@patch('openhands.cli.main.is_first_time_user')
+@patch('openhands.cli.main.has_alias_setup_been_completed')
 async def test_config_loading_order(
+    mock_has_alias_setup_completed,
+    mock_is_first_time_user,
     mock_finalize_config,
     mock_noop_condenser,
     mock_llm_condenser,
@@ -783,6 +819,10 @@ async def test_config_loading_order(
     3. Default condenser is configured correctly based on settings
     """
     loop = asyncio.get_running_loop()
+
+    # Mock alias setup functions to prevent the alias setup flow
+    mock_is_first_time_user.return_value = False
+    mock_has_alias_setup_completed.return_value = True
 
     # Mock arguments with specific agent but no LLM config
     mock_args = MagicMock()
@@ -869,9 +909,13 @@ async def test_config_loading_order(
 @patch('openhands.cli.main.LLMSummarizingCondenserConfig')
 @patch('openhands.cli.main.NoOpCondenserConfig')
 @patch('openhands.cli.main.finalize_config')
+@patch('openhands.cli.main.is_first_time_user')
+@patch('openhands.cli.main.has_alias_setup_been_completed')
 @patch('builtins.open', new_callable=MagicMock)
 async def test_main_with_file_option(
     mock_open,
+    mock_has_alias_setup_completed,
+    mock_is_first_time_user,
     mock_finalize_config,
     mock_noop_condenser,
     mock_llm_condenser,
@@ -884,6 +928,10 @@ async def test_main_with_file_option(
 ):
     """Test main function with a file option."""
     loop = asyncio.get_running_loop()
+
+    # Mock alias setup functions to prevent the alias setup flow
+    mock_is_first_time_user.return_value = False
+    mock_has_alias_setup_completed.return_value = True
 
     # Mock arguments
     mock_args = MagicMock()
