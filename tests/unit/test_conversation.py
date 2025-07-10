@@ -15,6 +15,7 @@ from openhands.integrations.service_types import (
     SuggestedTask,
     TaskType,
 )
+from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
@@ -405,7 +406,9 @@ async def test_new_conversation_invalid_session_api_key(provider_handler_mock):
             assert 'Error authenticating with the LLM provider' in response.body.decode(
                 'utf-8'
             )
-            assert 'STATUS$ERROR_LLM_AUTHENTICATION' in response.body.decode('utf-8')
+            assert RuntimeStatus.ERROR_LLM_AUTHENTICATION.value in response.body.decode(
+                'utf-8'
+            )
 
 
 @pytest.mark.asyncio
@@ -575,7 +578,7 @@ async def test_new_conversation_with_provider_authentication_error(
             assert json.loads(response.body.decode('utf-8')) == {
                 'status': 'error',
                 'message': 'auth error',
-                'msg_id': 'STATUS$GIT_PROVIDER_AUTHENTICATION_ERROR',
+                'msg_id': RuntimeStatus.GIT_PROVIDER_AUTHENTICATION_ERROR.value,
             }
 
             # Verify that verify_repo_provider was called with the repository
