@@ -262,22 +262,20 @@ async def modify_llm_settings_basic(
 
         # For OpenHands provider, directly show all verified models without the "use default" option
         if provider == 'openhands':
-            print_formatted_text(
-                HTML(f'\n<grey>Available OpenHands models:</grey>')
-            )
-            
+            print_formatted_text(HTML('\n<grey>Available OpenHands models:</grey>'))
+
             # Create a list of models for the cli_confirm function
             model_choices = VERIFIED_OPENHANDS_MODELS
-            
+
             model_choice = cli_confirm(
                 config,
                 '(Step 2/3) Select LLM Model:',
                 model_choices,
             )
-            
+
             # Get the selected model from the list
             model = model_choices[model_choice]
-            
+
         else:
             # For other providers, show the default model but allow changing it
             print_formatted_text(
@@ -321,6 +319,13 @@ async def modify_llm_settings_basic(
             else:
                 # Use the default model
                 model = default_model
+
+        if provider == 'openhands':
+            print_formatted_text(
+                HTML(
+                    '\nYou can find your OpenHands LLM API Key in the <a href="https://app.all-hands.dev/settings/api-keys">API Keys</a> tab of OpenHands Cloud: https://app.all-hands.dev/settings/api-keys'
+                )
+            )
 
         api_key = await get_validated_input(
             session,

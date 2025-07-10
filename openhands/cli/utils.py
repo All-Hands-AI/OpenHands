@@ -180,11 +180,11 @@ VERIFIED_MISTRAL_MODELS = [
 ]
 
 VERIFIED_OPENHANDS_MODELS = [
-    'claude-sonnet-4-20250514',
     'claude-opus-4-20250514',
-    'gemini-2.5-pro',
-    'o4-mini',
     'devstral-small-2505',
+    'o4-mini',
+    'claude-sonnet-4-20250514',
+    'gemini-2.5-pro',
 ]
 
 

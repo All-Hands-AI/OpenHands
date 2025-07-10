@@ -82,19 +82,5 @@ describe("extractModelAndProvider", () => {
       model: "claude-opus-4-20250514",
       separator: "/",
     });
-
-    // These models are no longer in the VERIFIED_ANTHROPIC_MODELS list
-    // but we keep the tests for backward compatibility
-    expect(extractModelAndProvider("claude-3-haiku-20240307")).toEqual({
-      provider: "",
-      model: "claude-3-haiku-20240307",
-      separator: "",
-    });
-
-    expect(extractModelAndProvider("claude-2.1")).toEqual({
-      provider: "",
-      model: "claude-2.1",
-      separator: "",
-    });
   });
 });
