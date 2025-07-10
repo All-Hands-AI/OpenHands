@@ -274,22 +274,24 @@ export function ConversationCard({
               variant={variant}
             />
           )}
-          <p className="text-xs text-neutral-400">
-            <span>{t(I18nKey.CONVERSATION$CREATED)} </span>
-            <time>
-              {formatTimeDelta(new Date(createdAt || lastUpdatedAt))}{" "}
-              {t(I18nKey.CONVERSATION$AGO)}
-            </time>
-            {showUpdateTime && (
-              <>
-                <span>{t(I18nKey.CONVERSATION$UPDATED)} </span>
-                <time>
-                  {formatTimeDelta(new Date(lastUpdatedAt))}{" "}
-                  {t(I18nKey.CONVERSATION$AGO)}
-                </time>
-              </>
-            )}
-          </p>
+          {(createdAt || lastUpdatedAt) && (
+            <p className="text-xs text-neutral-400">
+              <span>{t(I18nKey.CONVERSATION$CREATED)} </span>
+              <time>
+                {formatTimeDelta(new Date(createdAt || lastUpdatedAt))}{" "}
+                {t(I18nKey.CONVERSATION$AGO)}
+              </time>
+              {showUpdateTime && (
+                <>
+                  <span>{t(I18nKey.CONVERSATION$UPDATED)} </span>
+                  <time>
+                    {formatTimeDelta(new Date(lastUpdatedAt))}{" "}
+                    {t(I18nKey.CONVERSATION$AGO)}
+                  </time>
+                </>
+              )}
+            </p>
+          )}
         </div>
       </div>
 
@@ -328,11 +330,15 @@ export function ConversationCard({
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 pl-4 text-sm">
-                      <span className="text-neutral-400">Cache Hit:</span>
+                      <span className="text-neutral-400">
+                        {t(I18nKey.CONVERSATION$CACHE_HIT)}
+                      </span>
                       <span className="text-right">
                         {metrics.usage.cache_read_tokens.toLocaleString()}
                       </span>
-                      <span className="text-neutral-400">Cache Write:</span>
+                      <span className="text-neutral-400">
+                        {t(I18nKey.CONVERSATION$CACHE_WRITE)}
+                      </span>
                       <span className="text-right">
                         {metrics.usage.cache_write_tokens.toLocaleString()}
                       </span>
@@ -407,10 +413,7 @@ export function ConversationCard({
       />
 
       {microagentsModalVisible && (
-        <MicroagentsModal
-          onClose={() => setMicroagentsModalVisible(false)}
-          conversationId={conversationId}
-        />
+        <MicroagentsModal onClose={() => setMicroagentsModalVisible(false)} />
       )}
     </>
   );
