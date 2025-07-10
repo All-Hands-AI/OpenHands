@@ -82,7 +82,7 @@ export function ApiKeysManager() {
     <>
       <div className="flex flex-col gap-6">
         {!isLoadingLlmKey && llmApiKey && (
-          <div className="border-b border-gray-200 pb-6 mb-6">
+          <div className="border-b border-gray-200 pb-6 mb-6 flex flex-col gap-6">
             <h3 className="text-xl font-medium text-white">
               {t(I18nKey.SETTINGS$LLM_API_KEY)}
             </h3>
@@ -100,99 +100,110 @@ export function ApiKeysManager() {
                 )}
               </BrandButton>
             </div>
-            <p className="text-sm text-white mb-4">
-              {t(I18nKey.SETTINGS$LLM_API_KEY_DESCRIPTION)}
-            </p>
-            <div className="flex items-center gap-2 mt-4">
-              <div className="flex-1 bg-base-tertiary rounded-md py-2 flex items-center">
-                <div className="flex-1 pl-2">
-                  {llmApiKey.key ? (
-                    <div className="flex items-center">
-                      {showLlmApiKey ? (
-                        <span className="text-white font-mono">
-                          {llmApiKey.key}
-                        </span>
-                      ) : (
-                        <span className="text-white">{"•".repeat(20)}</span>
-                      )}
-                    </div>
-                  ) : (
-                    <span className="text-white">
-                      {t(I18nKey.API$NO_KEY_AVAILABLE)}
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center">
-                  {llmApiKey.key && (
+            <div>
+              <p className="text-sm text-gray-300 mb-2">
+                {t(I18nKey.SETTINGS$LLM_API_KEY_DESCRIPTION)}
+              </p>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 bg-base-tertiary rounded-md py-2 flex items-center">
+                  <div className="flex-1 pl-2">
+                    {llmApiKey.key ? (
+                      <div className="flex items-center">
+                        {showLlmApiKey ? (
+                          <span className="text-white font-mono">
+                            {llmApiKey.key}
+                          </span>
+                        ) : (
+                          <span className="text-white">{"•".repeat(20)}</span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-white">
+                        {t(I18nKey.API$NO_KEY_AVAILABLE)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center">
+                    {llmApiKey.key && (
+                      <button
+                        type="button"
+                        className="text-white hover:text-gray-300 mr-2"
+                        aria-label={
+                          showLlmApiKey ? "Hide API key" : "Show API key"
+                        }
+                        title={showLlmApiKey ? "Hide API key" : "Show API key"}
+                        onClick={() => setShowLlmApiKey(!showLlmApiKey)}
+                      >
+                        {showLlmApiKey ? (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                            <line x1="1" y1="1" x2="23" y2="23" />
+                          </svg>
+                        ) : (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                            <circle cx="12" cy="12" r="3" />
+                          </svg>
+                        )}
+                      </button>
+                    )}
                     <button
                       type="button"
                       className="text-white hover:text-gray-300 mr-2"
-                      aria-label={
-                        showLlmApiKey ? "Hide API key" : "Show API key"
-                      }
-                      title={showLlmApiKey ? "Hide API key" : "Show API key"}
-                      onClick={() => setShowLlmApiKey(!showLlmApiKey)}
+                      aria-label="Copy API key"
+                      title="Copy API key"
+                      onClick={() => {
+                        if (llmApiKey.key) {
+                          navigator.clipboard.writeText(llmApiKey.key);
+                          displaySuccessToast(
+                            t(I18nKey.SETTINGS$API_KEY_COPIED),
+                          );
+                        }
+                      }}
                     >
-                      {showLlmApiKey ? (
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="20"
-                          height="20"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-                          <line x1="1" y1="1" x2="23" y2="23" />
-                        </svg>
-                      ) : (
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="20"
-                          height="20"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                          <circle cx="12" cy="12" r="3" />
-                        </svg>
-                      )}
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <rect
+                          x="9"
+                          y="9"
+                          width="13"
+                          height="13"
+                          rx="2"
+                          ry="2"
+                        />
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                      </svg>
                     </button>
-                  )}
-                  <button
-                    type="button"
-                    className="text-white hover:text-gray-300 mr-2"
-                    aria-label="Copy API key"
-                    title="Copy API key"
-                    onClick={() => {
-                      if (llmApiKey.key) {
-                        navigator.clipboard.writeText(llmApiKey.key);
-                        displaySuccessToast(t(I18nKey.SETTINGS$API_KEY_COPIED));
-                      }
-                    }}
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                    </svg>
-                  </button>
+                  </div>
                 </div>
               </div>
             </div>
