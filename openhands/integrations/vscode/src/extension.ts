@@ -1,9 +1,26 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
+import { SocketService } from "./services/socket-service";
+import { VSCodeRuntimeActionHandler } from "./services/runtime-action-handler";
 
 // Create output channel for debug logging
 const outputChannel = vscode.window.createOutputChannel("OpenHands Debug");
+
+// Runtime services - initialized lazily when needed
+let socketService: SocketService | null = null;
+let runtimeActionHandler: VSCodeRuntimeActionHandler | null = null;
+
+// Connection status tracking
+enum ConnectionStatus {
+  DISCONNECTED = "disconnected",
+  CONNECTING = "connecting",
+  CONNECTED = "connected",
+  ERROR = "error",
+}
+
+let connectionStatus: ConnectionStatus = ConnectionStatus.DISCONNECTED;
+let connectionError: string | null = null;
 
 /**
  * This implementation uses VSCode's Shell Integration API.
@@ -280,7 +297,119 @@ function startOpenHandsInTerminal(options: {
   }
 }
 
+// Old initializeRuntime function removed - replaced with lazy connection via ensureConnected()
+
+/**
+ * Lazy connection to OpenHands backend - only connects when needed
+ */
+async function ensureConnected(): Promise<boolean> {
+  // If already connected, return true
+  if (connectionStatus === ConnectionStatus.CONNECTED && socketService) {
+    return true;
+  }
+
+  // If currently connecting, don't start another connection attempt
+  if (connectionStatus === ConnectionStatus.CONNECTING) {
+    vscode.window.showInformationMessage(
+      "⏳ Already connecting to OpenHands...",
+    );
+    return false;
+  }
+
+  // Attempt to connect
+  connectionStatus = ConnectionStatus.CONNECTING;
+  connectionError = null;
+
+  try {
+    // Get server URL from configuration
+    const config = vscode.workspace.getConfiguration("openhands");
+    const serverUrl = config.get<string>("serverUrl", "http://localhost:3000");
+
+    outputChannel.appendLine(
+      `DEBUG: Connecting to OpenHands backend at: ${serverUrl}`,
+    );
+
+    // Initialize services if not already done
+    if (!socketService) {
+      socketService = new SocketService(serverUrl);
+    }
+
+    if (!runtimeActionHandler) {
+      runtimeActionHandler = new VSCodeRuntimeActionHandler();
+      runtimeActionHandler.setSocketService(socketService);
+
+      // Set up event listener for incoming actions
+      socketService.onEvent((event) => {
+        if (runtimeActionHandler) {
+          runtimeActionHandler.handleAction(event);
+        }
+      });
+    }
+
+    // Attempt connection
+    await socketService.connect();
+
+    connectionStatus = ConnectionStatus.CONNECTED;
+    outputChannel.appendLine(
+      "DEBUG: Successfully connected to OpenHands backend",
+    );
+    vscode.window.showInformationMessage(
+      "✅ Connected to OpenHands - ready to execute actions in VSCode",
+    );
+
+    return true;
+  } catch (error) {
+    connectionStatus = ConnectionStatus.ERROR;
+    connectionError = error instanceof Error ? error.message : String(error);
+
+    outputChannel.appendLine(
+      `ERROR: Failed to connect to OpenHands backend: ${connectionError}`,
+    );
+
+    // Show user-friendly error message
+    const errorMsg = `❌ Cannot connect to OpenHands server. Is OpenHands running?\n\nError: ${connectionError}`;
+    const result = await vscode.window.showErrorMessage(
+      errorMsg,
+      "Retry Connection",
+      "Check Configuration",
+    );
+
+    if (result === "Retry Connection") {
+      // Reset status and try again
+      connectionStatus = ConnectionStatus.DISCONNECTED;
+      return ensureConnected();
+    }
+    if (result === "Check Configuration") {
+      // Open settings
+      vscode.commands.executeCommand(
+        "workbench.action.openSettings",
+        "openhands.serverUrl",
+      );
+    }
+
+    return false;
+  }
+}
+
+/**
+ * Clean up runtime services
+ */
+function cleanupRuntime(): void {
+  if (socketService) {
+    socketService.disconnect();
+    socketService = null;
+  }
+  runtimeActionHandler = null;
+  connectionStatus = ConnectionStatus.DISCONNECTED;
+  connectionError = null;
+  outputChannel.appendLine("DEBUG: OpenHands runtime services cleaned up");
+}
+
 export function activate(context: vscode.ExtensionContext) {
+  // Note: Runtime services are now initialized lazily when user runs commands
+  outputChannel.appendLine(
+    "DEBUG: OpenHands extension activated - runtime will connect on-demand",
+  );
   // Clean up terminal tracking when terminals are closed
   const terminalCloseDisposable = vscode.window.onDidCloseTerminal(
     (terminal) => {
@@ -292,8 +421,12 @@ export function activate(context: vscode.ExtensionContext) {
   // Command: Start New Conversation
   const startConversationDisposable = vscode.commands.registerCommand(
     "openhands.startConversation",
-    () => {
-      startOpenHandsInTerminal({});
+    async () => {
+      // Ensure connection before starting conversation
+      const connected = await ensureConnected();
+      if (connected) {
+        startOpenHandsInTerminal({});
+      }
     },
   );
   context.subscriptions.push(startConversationDisposable);
@@ -301,7 +434,12 @@ export function activate(context: vscode.ExtensionContext) {
   // Command: Start Conversation with Active File Content
   const startWithFileContextDisposable = vscode.commands.registerCommand(
     "openhands.startConversationWithFileContext",
-    () => {
+    async () => {
+      // Ensure connection before starting conversation
+      const connected = await ensureConnected();
+      if (!connected) {
+        return;
+      }
       const editor = vscode.window.activeTextEditor;
       if (!editor) {
         // No active editor, start conversation without task
@@ -336,7 +474,12 @@ export function activate(context: vscode.ExtensionContext) {
   // Command: Start Conversation with Selected Text
   const startWithSelectionContextDisposable = vscode.commands.registerCommand(
     "openhands.startConversationWithSelectionContext",
-    () => {
+    async () => {
+      // Ensure connection before starting conversation
+      const connected = await ensureConnected();
+      if (!connected) {
+        return;
+      }
       outputChannel.appendLine(
         "DEBUG: startConversationWithSelectionContext command triggered!",
       );
@@ -372,9 +515,29 @@ export function activate(context: vscode.ExtensionContext) {
     },
   );
   context.subscriptions.push(startWithSelectionContextDisposable);
+
+  // Command: Test Connection to OpenHands
+  const testConnectionDisposable = vscode.commands.registerCommand(
+    "openhands.testConnection",
+    async () => {
+      outputChannel.appendLine(
+        "DEBUG: Testing connection to OpenHands backend...",
+      );
+      const connected = await ensureConnected();
+      if (connected) {
+        vscode.window.showInformationMessage(
+          "✅ OpenHands connection successful!",
+        );
+      }
+      // Error handling is done in ensureConnected()
+    },
+  );
+  context.subscriptions.push(testConnectionDisposable);
 }
 
 export function deactivate() {
+  // Clean up runtime services
+  cleanupRuntime();
   // Clean up resources if needed, though for this simple extension,
   // VS Code handles terminal disposal.
 }
