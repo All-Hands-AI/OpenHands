@@ -4,7 +4,7 @@ import { BrandButton } from "../settings/brand-button";
 import { SettingsInput } from "../settings/settings-input";
 
 interface InviteOrganizationMemberModalProps {
-  onClose: () => void;
+  onClose: (event?: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
 export function InviteOrganizationMemberModal({
@@ -25,6 +25,7 @@ export function InviteOrganizationMemberModal({
       <div
         data-testid="invite-modal"
         className="bg-base rounded-xl p-4 border w-sm border-tertiary items-start"
+        onClick={(e) => e.stopPropagation()}
       >
         <form action={formAction} className="w-full flex flex-col gap-6">
           <div className="flex flex-col gap-2">

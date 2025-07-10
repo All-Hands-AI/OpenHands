@@ -8,7 +8,7 @@ import {
 const MOCK_ME: OrganizationMember = {
   id: "99",
   email: "me@acme.org",
-  role: "admin",
+  role: "superadmin",
   status: "active",
 };
 

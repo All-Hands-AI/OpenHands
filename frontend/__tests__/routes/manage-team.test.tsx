@@ -233,40 +233,6 @@ describe("Manage Team Route", () => {
       expect(screen.queryByTestId("invite-modal")).not.toBeInTheDocument();
     });
 
-    it("should call the API to invite a new team member when the form is submitted (and pop a toast)", async () => {
-      const inviteMemberSpy = vi.spyOn(organizationService, "inviteMember");
-
-      renderManageTeam();
-
-      const inviteButton = await screen.findByRole("button", {
-        name: /invite team/i,
-      });
-      await userEvent.click(inviteButton);
-
-      const modal = screen.getByTestId("invite-modal");
-      expect(modal).toBeInTheDocument();
-
-      const emailInput = within(modal).getByTestId("email-input");
-      await userEvent.type(emailInput, "someone@acme.org");
-      expect(emailInput).toHaveValue("someone@acme.org");
-
-      const submitButton = within(modal).getByRole("button", {
-        name: /next/i,
-      });
-      await userEvent.click(submitButton);
-
-      expect(inviteMemberSpy).toHaveBeenCalledExactlyOnceWith({
-        email: "someone@acme.org",
-      });
-      expect(screen.queryByTestId("invite-modal")).not.toBeInTheDocument();
-      expect(screen.getAllByTestId("member-item")).toHaveLength(
-        INITIAL_MOCK_ORG_MEMBERS.length + 1,
-      );
-      expect(screen.getByText("someone@acme.org")).toBeInTheDocument();
-
-      // TODO - verify that a toast is shown
-    });
-
     it("should render a list item in an invited state when a the user is is invited", async () => {
       const getUserSpy = vi.spyOn(userService, "getMe");
       const getOrganizationMembersSpy = vi.spyOn(

@@ -15,7 +15,7 @@ function UserContextMenuWithRootOutlet({
 }: UserContextMenuProps) {
   return (
     <div>
-      <div data-testid="root-outlet" id="root-outlet" />
+      <div data-testid="portal-root" id="portal-root" />
       <UserContextMenu type={type} onClose={onClose} />
     </div>
   );
@@ -50,6 +50,7 @@ describe("UserContextMenu", () => {
     screen.getByText("Logout");
     screen.getByText("Settings");
 
+    expect(screen.queryByText("Invite Team")).not.toBeInTheDocument();
     expect(screen.queryByText("Manage Team")).not.toBeInTheDocument();
     expect(screen.queryByText("Manage Account")).not.toBeInTheDocument();
     expect(
@@ -60,6 +61,7 @@ describe("UserContextMenu", () => {
   it("should render additional context items when user is an admin", () => {
     renderUserContextMenu({ type: "admin", onClose: vi.fn });
 
+    screen.getByText("Invite Team");
     screen.getByText("Manage Team");
     screen.getByText("Manage Account");
 
@@ -71,6 +73,7 @@ describe("UserContextMenu", () => {
   it("should render additional context items when user is a super admin", () => {
     renderUserContextMenu({ type: "superadmin", onClose: vi.fn });
 
+    screen.getByText("Invite Team");
     screen.getByText("Manage Team");
     screen.getByText("Manage Account");
     screen.getByText("Create New Organization");
@@ -122,7 +125,7 @@ describe("UserContextMenu", () => {
       const createOrgButton = screen.getByText("Create New Organization");
       await userEvent.click(createOrgButton);
 
-      const rootOutlet = screen.getByTestId("root-outlet");
+      const rootOutlet = screen.getByTestId("portal-root");
       expect(
         within(rootOutlet).getByTestId("create-org-modal"),
       ).toBeInTheDocument();
@@ -202,5 +205,22 @@ describe("UserContextMenu", () => {
     const createOrgButton = screen.getByText("Create New Organization");
     await userEvent.click(createOrgButton);
     expect(onCloseMock).toHaveBeenCalledTimes(5);
+  });
+
+  it("should render the invite user modal when Invite Team is clicked", async () => {
+    const inviteMemberSpy = vi.spyOn(organizationService, "inviteMember");
+    const onCloseMock = vi.fn();
+    renderUserContextMenu({ type: "admin", onClose: onCloseMock });
+
+    const inviteButton = screen.getByText("Invite Team");
+    await userEvent.click(inviteButton);
+
+    const portalRoot = screen.getByTestId("portal-root");
+    expect(within(portalRoot).getByTestId("invite-modal")).toBeInTheDocument();
+
+    await userEvent.click(
+      within(portalRoot).getByRole("button", { name: /skip/i }),
+    );
+    expect(inviteMemberSpy).not.toHaveBeenCalled();
   });
 });

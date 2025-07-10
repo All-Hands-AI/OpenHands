@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 import {
   IoCardOutline,
   IoLogOutOutline,
+  IoPersonAddOutline,
   IoPersonOutline,
 } from "react-icons/io5";
 import { FaCog } from "react-icons/fa";
@@ -13,6 +14,7 @@ import { CreateNewOrganizationModal } from "../org/create-new-organization-modal
 import { OrganizationUserRole } from "#/types/org";
 import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 import { cn } from "#/utils/utils";
+import { InviteOrganizationMemberModal } from "../org/invite-organization-member-modal";
 
 interface TempButtonProps {
   start: React.ReactNode;
@@ -51,6 +53,8 @@ export function UserContextMenu({ type, onClose }: UserContextMenuProps) {
   const ref = useClickOutsideElement<HTMLDivElement>(onClose);
 
   const [orgModalIsOpen, setOrgModalIsOpen] = React.useState(false);
+  const [inviteMemberModalIsOpen, setInviteMemberModalIsOpen] =
+    React.useState(false);
 
   const isUser = type === "user";
   const isSuperAdmin = type === "superadmin";
@@ -63,6 +67,10 @@ export function UserContextMenu({ type, onClose }: UserContextMenuProps) {
   const handleSettingsClick = () => {
     navigate("/settings");
     onClose();
+  };
+
+  const handleInviteMemberClick = () => {
+    setInviteMemberModalIsOpen(true);
   };
 
   const handleManageTeamClick = () => {
@@ -94,7 +102,14 @@ export function UserContextMenu({ type, onClose }: UserContextMenuProps) {
           <CreateNewOrganizationModal
             onCancel={() => setOrgModalIsOpen(false)}
           />,
-          document.getElementById("root-outlet") || document.body,
+          document.getElementById("portal-root") || document.body,
+        )}
+      {inviteMemberModalIsOpen &&
+        ReactDOM.createPortal(
+          <InviteOrganizationMemberModal
+            onClose={() => setInviteMemberModalIsOpen(false)}
+          />,
+          document.getElementById("portal-root") || document.body,
         )}
 
       <h3 className="text-lg font-semibold text-white">Account</h3>
@@ -102,6 +117,15 @@ export function UserContextMenu({ type, onClose }: UserContextMenuProps) {
       <div className="flex flex-col items-start gap-2">
         {!isUser && (
           <>
+            <TempButton
+              onClick={handleInviteMemberClick}
+              start={<IoPersonAddOutline className="text-white" size={14} />}
+            >
+              Invite Team
+            </TempButton>
+
+            <TempDivider />
+
             <TempButton
               onClick={handleManageAccountClick}
               start={<IoCardOutline className="text-white" size={14} />}
