@@ -251,9 +251,10 @@ class ActionExecutionClient(Runtime):
     def get_vscode_token(self) -> str:
         self.log(
             'warning',
-            f'TRACE:get_vscode_token:{self.vscode_enabled}:{self.runtime_initialized}:{self._vscode_token}',
+            f'TRACE:get_vscode_token:1:{self.vscode_enabled}:{self.runtime_initialized}:{self._vscode_token}',
         )
         if self.vscode_enabled and self.runtime_initialized:
+            self.log('warning', 'TRACE:get_vscode_token:2')
             if self._vscode_token is not None:  # cached value
                 return self._vscode_token
             response = self._send_action_server_request(
@@ -261,6 +262,7 @@ class ActionExecutionClient(Runtime):
                 f'{self.action_execution_server_url}/vscode/connection_token',
                 timeout=10,
             )
+            self.log('warning', f'TRACE:get_vscode_token:3:{response.status_code}')
             response_json = response.json()
             assert isinstance(response_json, dict)
             if response_json['token'] is None:
