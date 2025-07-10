@@ -9,12 +9,22 @@ import {
 } from "react-icons/io5";
 import { FaCog } from "react-icons/fa";
 import { FaPlus } from "react-icons/fa6";
+import { useQuery } from "@tanstack/react-query";
 import { useLogout } from "#/hooks/mutation/use-logout";
 import { CreateNewOrganizationModal } from "../org/create-new-organization-modal";
 import { OrganizationUserRole } from "#/types/org";
 import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 import { cn } from "#/utils/utils";
 import { InviteOrganizationMemberModal } from "../org/invite-organization-member-modal";
+import { useSelectedOrganizationId } from "#/context/use-selected-organization";
+import { useOrganization } from "#/hooks/query/use-organization";
+import { organizationService } from "#/api/organization-service/organization-service.api";
+
+const useOrganizations = () =>
+  useQuery({
+    queryKey: ["organizations"],
+    queryFn: organizationService.getOrganizations,
+  });
 
 interface TempButtonProps {
   start: React.ReactNode;
@@ -49,6 +59,9 @@ interface UserContextMenuProps {
 
 export function UserContextMenu({ type, onClose }: UserContextMenuProps) {
   const navigate = useNavigate();
+  const { orgId, setOrgId } = useSelectedOrganizationId();
+  const { data: organizations } = useOrganizations();
+  const { data: organization } = useOrganization();
   const { mutate: logout } = useLogout();
   const ref = useClickOutsideElement<HTMLDivElement>(onClose);
 
@@ -115,6 +128,22 @@ export function UserContextMenu({ type, onClose }: UserContextMenuProps) {
       <h3 className="text-lg font-semibold text-white">Account</h3>
 
       <div className="flex flex-col items-start gap-2">
+        <div data-testid="org-selector" className="w-full">
+          {organization?.name || "User Organization"} {orgId}
+        </div>
+        {organizations?.map((org) => (
+          <button
+            key={org.id}
+            type="button"
+            onClick={async () => {
+              setOrgId(org.id);
+            }}
+            className="w-full text-left hover:text-white"
+          >
+            {org.name}
+          </button>
+        ))}
+
         {!isUser && (
           <>
             <TempButton

@@ -1,11 +1,12 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, test, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import OpenHands from "#/api/open-hands";
 import { UserContextMenu } from "#/components/features/user/user-context-menu";
 import { organizationService } from "#/api/organization-service/organization-service.api";
 import { GetComponentPropTypes } from "#/utils/get-component-prop-types";
+import { INITIAL_MOCK_ORGS } from "#/mocks/org-handlers";
 
 type UserContextMenuProps = GetComponentPropTypes<typeof UserContextMenu>;
 
@@ -47,6 +48,7 @@ describe("UserContextMenu", () => {
   it("should render the default context items for a user", () => {
     renderUserContextMenu({ type: "user", onClose: vi.fn });
 
+    screen.getByTestId("org-selector");
     screen.getByText("Logout");
     screen.getByText("Settings");
 
@@ -61,6 +63,7 @@ describe("UserContextMenu", () => {
   it("should render additional context items when user is an admin", () => {
     renderUserContextMenu({ type: "admin", onClose: vi.fn });
 
+    screen.getByTestId("org-selector");
     screen.getByText("Invite Team");
     screen.getByText("Manage Team");
     screen.getByText("Manage Account");
@@ -73,6 +76,7 @@ describe("UserContextMenu", () => {
   it("should render additional context items when user is a super admin", () => {
     renderUserContextMenu({ type: "superadmin", onClose: vi.fn });
 
+    screen.getByTestId("org-selector");
     screen.getByText("Invite Team");
     screen.getByText("Manage Team");
     screen.getByText("Manage Account");
@@ -222,5 +226,26 @@ describe("UserContextMenu", () => {
       within(portalRoot).getByRole("button", { name: /skip/i }),
     );
     expect(inviteMemberSpy).not.toHaveBeenCalled();
+  });
+
+  test("the user can change orgs", async () => {
+    const getOrganizationSpy = vi.spyOn(organizationService, "getOrganization");
+    const onCloseMock = vi.fn();
+    renderUserContextMenu({ type: "user", onClose: onCloseMock });
+
+    const orgSelector = screen.getByTestId("org-selector");
+    expect(orgSelector).toBeInTheDocument();
+    expect(orgSelector).toHaveTextContent("User Organization"); // Default null organization
+
+    // Simulate changing the organization
+    await userEvent.click(orgSelector);
+    const orgOption = screen.getByText(INITIAL_MOCK_ORGS[1].name);
+    await userEvent.click(orgOption);
+
+    expect(onCloseMock).not.toHaveBeenCalled();
+    expect(getOrganizationSpy).toHaveBeenCalledWith({
+      // Check if the correct org ID is passed
+      orgId: INITIAL_MOCK_ORGS[1].id,
+    });
   });
 });

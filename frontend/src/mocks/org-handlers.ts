@@ -33,7 +33,7 @@ export const INITIAL_MOCK_ORG_MEMBERS: OrganizationMember[] = [
   },
 ];
 
-const INITIAL_MOCK_ORGS: Organization[] = [
+export const INITIAL_MOCK_ORGS: Organization[] = [
   {
     id: "1",
     name: "Acme Corp",
@@ -66,9 +66,14 @@ export const resetOrgMembers = () => {
 export const ORG_HANDLERS = [
   http.get("/api/users/me", () => HttpResponse.json(MOCK_ME)),
 
-  http.get("/api/organizations/members", () => {
+  http.get("/api/organizations/:orgId/members", () => {
     const members = Array.from(orgMembers.values());
     return HttpResponse.json(members);
+  }),
+
+  http.get("/api/organizations", () => {
+    const organizations = Array.from(orgs.values());
+    return HttpResponse.json(organizations);
   }),
 
   http.get("/api/organizations/:orgId", ({ params }) => {
@@ -121,7 +126,7 @@ export const ORG_HANDLERS = [
     return HttpResponse.json(newMember, { status: 201 });
   }),
 
-  http.post("/api/organizations/members", async ({ request }) => {
+  http.post("/api/organizations/:orgId/members", async ({ request }) => {
     const { userId, role } = (await request.json()) as {
       userId: string;
       role: OrganizationUserRole;

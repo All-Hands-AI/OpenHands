@@ -3,6 +3,6 @@ import { organizationService } from "#/api/organization-service/organization-ser
 
 export const useOrganizationMembers = () =>
   useQuery({
-    queryKey: ["organization", "members"],
-    queryFn: organizationService.getOrganizationMembers,
+    queryKey: ["organizations", "members"],
+    queryFn: () => organizationService.getOrganizationMembers({ orgId: "1" }),
   });

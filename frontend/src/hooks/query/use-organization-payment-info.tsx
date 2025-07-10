@@ -3,6 +3,6 @@ import { organizationService } from "#/api/organization-service/organization-ser
 
 export const useOrganizationPaymentInfo = ({ orgId }: { orgId: string }) =>
   useQuery({
-    queryKey: ["organization", orgId, "payment"],
+    queryKey: ["organizations", orgId, "payment"],
     queryFn: () => organizationService.getOrganizationPaymentInfo({ orgId }),
   });

@@ -9,7 +9,7 @@ export const useInviteOrganizationMember = () => {
       organizationService.inviteMember({ email }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["organization", "members"],
+        queryKey: ["organizations", "members"],
       });
     },
   });

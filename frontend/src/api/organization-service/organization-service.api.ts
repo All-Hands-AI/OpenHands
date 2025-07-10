@@ -21,9 +21,14 @@ export const organizationService = {
     return data;
   },
 
-  getOrganizationMembers: async () => {
+  getOrganizations: async () => {
+    const { data } = await openHands.get<Organization[]>("/api/organizations");
+    return data;
+  },
+
+  getOrganizationMembers: async ({ orgId }: { orgId: string }) => {
     const { data } = await openHands.get<OrganizationMember[]>(
-      "/api/organizations/members",
+      `/api/organizations/${orgId}/members`,
     );
     return data;
   },
@@ -47,16 +52,22 @@ export const organizationService = {
   },
 
   updateMemberRole: async ({
+    orgId,
     userId,
     role,
   }: {
+    orgId: string;
     userId: string;
     role: OrganizationUserRole;
   }) => {
-    const { data } = await openHands.post("/api/organizations/members", {
-      userId,
-      role,
-    });
+    const { data } = await openHands.post(
+      `/api/organizations/${orgId}/members`,
+      {
+        orgId,
+        userId,
+        role,
+      },
+    );
 
     return data;
   },

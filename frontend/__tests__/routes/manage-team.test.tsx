@@ -20,14 +20,7 @@ function ManageTeamWithPortalRoot() {
   );
 }
 
-const renderManageTeam = () =>
-  render(<ManageTeamWithPortalRoot />, {
-    wrapper: ({ children }) => (
-      <QueryClientProvider client={new QueryClient()}>
-        {children}
-      </QueryClientProvider>
-    ),
-  });
+let queryClient: QueryClient;
 
 describe("Manage Team Route", () => {
   beforeAll(() => {
@@ -39,8 +32,18 @@ describe("Manage Team Route", () => {
   });
 
   beforeEach(() => {
+    queryClient = new QueryClient();
     resetOrgMembers();
   });
+
+  const renderManageTeam = () =>
+    render(<ManageTeamWithPortalRoot />, {
+      wrapper: ({ children }) => (
+        <QueryClientProvider client={queryClient}>
+          {children}
+        </QueryClientProvider>
+      ),
+    });
 
   it.todo("should navigate away from the page if not saas");
 
@@ -51,7 +54,9 @@ describe("Manage Team Route", () => {
     );
 
     renderManageTeam();
-    expect(getOrganizationMembersSpy).toHaveBeenCalledOnce();
+    expect(getOrganizationMembersSpy).toHaveBeenCalledExactlyOnceWith({
+      orgId: "1",
+    });
 
     const memberListItems = await screen.findAllByTestId("member-item");
     expect(memberListItems).toHaveLength(INITIAL_MOCK_ORG_MEMBERS.length);
@@ -62,7 +67,7 @@ describe("Manage Team Route", () => {
     });
   });
 
-  test("an admin should be able to change the role of a team member", async () => {
+  test.only("an admin should be able to change the role of a team member", async () => {
     const getUserSpy = vi.spyOn(userService, "getMe");
     const updateMemberRoleSpy = vi.spyOn(
       organizationService,
@@ -92,6 +97,7 @@ describe("Manage Team Route", () => {
 
     expect(updateMemberRoleSpy).toHaveBeenCalledExactlyOnceWith({
       userId: "3", // assuming the third member is the one being updated
+      orgId: "1",
       role: "admin",
     });
     expect(
@@ -112,6 +118,7 @@ describe("Manage Team Route", () => {
 
     expect(updateMemberRoleSpy).toHaveBeenNthCalledWith(2, {
       userId: "3",
+      orgId: "1",
       role: "user",
     });
 
@@ -257,7 +264,10 @@ describe("Manage Team Route", () => {
 
       renderManageTeam();
 
-      const invitedMember = (await screen.findAllByTestId("member-item"))[0];
+      const members = await screen.findAllByTestId("member-item");
+      expect(members).toHaveLength(1);
+
+      const invitedMember = members[0];
       expect(invitedMember).toBeInTheDocument();
 
       // should have an "invited" badge
