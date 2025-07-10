@@ -11,7 +11,7 @@ class LLMService(Enum):
 
 
 class MetricsRegistry:
-    global_metrics: dict[LLMService, Metrics]
+    global_metrics: dict[LLMService, Metrics] = {}
 
     def register_llm(self, service: LLMService, model_name: str = 'default'):
         if service in self.global_metrics:

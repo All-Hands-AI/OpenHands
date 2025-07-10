@@ -69,6 +69,7 @@ class Session:
         self.agent_session = AgentSession(
             sid,
             file_store,
+            metrics_registry=self.metrics_registry,
             status_callback=self.queue_status_message,
             user_id=user_id,
         )
@@ -188,7 +189,7 @@ class Session:
                 f' keep_first=4, max_size=80)'
             )
             agent_config.condenser = default_condenser_config
-        agent = Agent.get_cls(agent_cls)(llm, agent_config)
+        agent = Agent.get_cls(agent_cls)(llm, agent_config, self.metrics_registry)
 
         git_provider_tokens = None
         selected_repository = None

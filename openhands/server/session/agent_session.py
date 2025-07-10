@@ -64,6 +64,7 @@ class AgentSession:
         self,
         sid: str,
         file_store: FileStore,
+        metrics_registry: MetricsRegistry,
         status_callback: Callable | None = None,
         user_id: str | None = None,
     ) -> None:
@@ -82,6 +83,7 @@ class AgentSession:
         self.logger = OpenHandsLoggerAdapter(
             extra={'session_id': sid, 'user_id': user_id}
         )
+        self.metrics_registry = metrics_registry
 
     async def start(
         self,
