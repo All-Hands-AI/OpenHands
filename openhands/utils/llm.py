@@ -60,6 +60,8 @@ def get_supported_llm_models(config: OpenHandsConfig) -> list[str]:
         'openhands/gemini-2.5-pro',
         'openhands/o4-mini',
         'openhands/devstral-small-2505',
+        'openhands/devstral-small-2507',
+        'openhands/devstral-medium-2507',
     ]
     model_list = openhands_models + model_list
 

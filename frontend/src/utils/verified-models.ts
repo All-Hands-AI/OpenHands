@@ -17,6 +17,8 @@ export const VERIFIED_MODELS = [
   "o4-mini",
   "deepseek-chat",
   "devstral-small-2505",
+  "devstral-small-2507",
+  "devstral-medium-2507",
 ];
 
 // LiteLLM does not return OpenAI models with the provider, so we list them here to set them ourselves for consistency
@@ -46,7 +48,11 @@ export const VERIFIED_ANTHROPIC_MODELS = [
 
 // LiteLLM does not return the compatible Mistral models with the provider, so we list them here to set them ourselves
 // (e.g., they return `devstral-small-2505` instead of `mistral/devstral-small-2505`)
-export const VERIFIED_MISTRAL_MODELS = ["devstral-small-2505"];
+export const VERIFIED_MISTRAL_MODELS = [
+  "devstral-small-2505",
+  "devstral-small-2507",
+  "devstral-medium-2507",
+];
 
 // LiteLLM does not return the compatible OpenHands models with the provider, so we list them here to set them ourselves
 // (e.g., they return `claude-sonnet-4-20250514` instead of `openhands/claude-sonnet-4-20250514`)
@@ -56,4 +62,6 @@ export const VERIFIED_OPENHANDS_MODELS = [
   "gemini-2.5-pro",
   "o4-mini",
   "devstral-small-2505",
+  "devstral-small-2507",
+  "devstral-medium-2507",
 ];
