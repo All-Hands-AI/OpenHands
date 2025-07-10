@@ -83,10 +83,10 @@ export function ApiKeysManager() {
       <div className="flex flex-col gap-6">
         {!isLoadingLlmKey && llmApiKey && (
           <div className="border-b border-gray-200 pb-6 mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-xl font-medium text-white">
-                {t(I18nKey.SETTINGS$LLM_API_KEY)}
-              </h3>
+            <h3 className="text-xl font-medium text-white">
+              {t(I18nKey.SETTINGS$LLM_API_KEY)}
+            </h3>
+            <div className="flex items-center justify-between">
               <BrandButton
                 type="button"
                 variant="primary"
