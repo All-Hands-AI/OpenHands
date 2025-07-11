@@ -1,4 +1,9 @@
-import { useRef, useState, type PropsWithChildren } from "react";
+import {
+  useRef,
+  useState,
+  type PropsWithChildren,
+  type ReactElement,
+} from "react";
 import type { HTMLProps } from "../../shared/types";
 import { cn } from "../../shared/utils/cn";
 import React from "react";
@@ -37,14 +42,16 @@ const Tabs: TabsType = ({ children, ...props }) => {
     React.Children.map(children, (child, index: number) => {
       const isFirst = index === 0;
       const isLast = childrenArray.length - 1 === index;
-      // @ts-ignore
-      return React.cloneElement(child, {
-        index,
-        isFirst,
-        isLast,
-        isActive: index === activeIndex,
-        onSelect: () => setActiveIndex(index),
-      } as TabItemProps);
+      return React.cloneElement(
+        child as ReactElement,
+        {
+          index,
+          isFirst,
+          isLast,
+          isActive: index === activeIndex,
+          onSelect: () => setActiveIndex(index),
+        } as TabItemProps
+      );
     }) ?? [];
 
   return (
@@ -78,9 +85,10 @@ const Tabs: TabsType = ({ children, ...props }) => {
           if (index !== activeIndex) {
             return null;
           }
+          const tabContent = (child.props as PropsWithChildren).children;
           return (
             <div key={index} role="tabpanel" aria-labelledby={`tab-${index}`}>
-              {child.props.children}
+              {tabContent}
             </div>
           );
         })}

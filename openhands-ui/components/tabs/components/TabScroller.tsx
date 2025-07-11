@@ -1,11 +1,5 @@
-import { useRef, useState, type PropsWithChildren } from "react";
-import type { HTMLProps } from "../../../shared/types";
 import { cn } from "../../../shared/utils/cn";
-import React from "react";
 import { Icon, type IconProps } from "../../icon/Icon";
-import { TabItem, type TabItemProps, type TabItemPropsPublic } from "./TabItem";
-import { useElementOverflow } from "../hooks/use-element-overflow";
-import { useElementScroll } from "../hooks/use-element-scroll";
 
 type TabScrollerProps = {
   position: "left" | "right";
