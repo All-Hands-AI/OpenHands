@@ -135,7 +135,7 @@ export function ExpandableMessage({
         <div className="flex flex-row justify-between items-center w-full">
           <span
             className={cn(
-              "font-bold",
+              "font-bold flex-1 min-w-0 break-words",
               type === "error" ? "text-danger" : "text-neutral-300",
             )}
           >
