@@ -87,6 +87,10 @@ class SandboxConfig(BaseModel):
         default=None,
         description="Volume mounts in the format 'host_path:container_path[:mode]', e.g. '/my/host/dir:/workspace:rw'. Multiple mounts can be specified using commas, e.g. '/path1:/workspace/path1,/path2:/workspace/path2:ro'",
     )
+    mount_docker_socket: bool = Field(
+        default=False,
+        description="Whether to mount the Docker socket to enable Docker-in-Docker functionality. WARNING: This grants container access to the host Docker daemon with root-equivalent privileges. Use only in trusted environments.",
+    )
 
     cuda_visible_devices: str | None = Field(default=None)
     model_config = ConfigDict(extra='forbid')
