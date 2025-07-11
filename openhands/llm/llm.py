@@ -36,7 +36,6 @@ from openhands.llm.fn_call_converter import (
 )
 from openhands.llm.metrics import Metrics
 from openhands.llm.retry_mixin import RetryMixin
-from openhands.utils.ensure_session_close import ensure_httpx_close
 
 __all__ = ['LLM']
 
@@ -319,8 +318,7 @@ class LLM(RetryMixin, DebugMixin):
             # logger.debug(
             #     f'LLM: calling litellm completion with model: {self.config.model}, base_url: {self.config.base_url}, args: {args}, kwargs: {kwargs}'
             # )
-            with ensure_httpx_close():
-                resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
+            resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
             logger.debug(f'Response raw: {resp}')
             # Calculate and record latency
             latency = time.time() - start_time
