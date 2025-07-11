@@ -317,7 +317,9 @@ async def run_session(
 
             # Check for MCP errors and add indicator to the same line
             if agent.config.enable_mcp and mcp_error_collector.has_errors():
-                mcp_line += ' ✗ MCP errors detected (type /mcp-errors to view)'
+                mcp_line += (
+                    ' ✗ MCP errors detected (type /mcp → select View errors to view)'
+                )
 
             welcome_message += mcp_line + '\n\n'
 
