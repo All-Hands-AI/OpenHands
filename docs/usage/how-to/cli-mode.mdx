@@ -137,7 +137,7 @@ type `/resume` at the prompt.
 
 #### MCP Server Management
 
-The `/mcp` command provides an interactive interface for managing Model Context Protocol (MCP) servers:
+To configure Model Context Protocol (MCP) servers, you can refer to the documentation on [MCP servers](../mcp) and use the `/mcp` command in the CLI. This command provides an interactive interface for managing Model Context Protocol (MCP) servers:
 
 - **List configured servers**: View all currently configured MCP servers (SSE, Stdio, and SHTTP)
 - **Add new server**: Interactively add a new MCP server with guided prompts
@@ -145,10 +145,6 @@ The `/mcp` command provides an interactive interface for managing Model Context 
 - **View errors**: Display any connection errors that occurred during MCP server startup
 
 This command modifies your `~/.openhands/config.toml` file and will prompt you to restart OpenHands for changes to take effect.
-
-## Using MCP servers
-
-To configure Model Context Protocol (MCP) servers, you can follow the documentation on [MCP servers](../mcp) and add them under the `[mcp]` section in the global `~/.openhands/config.toml` file.
 
 By default, the [Fetch MCP server](https://github.com/modelcontextprotocol/servers/tree/main/src/fetch) will be automatically configured for OpenHands. You can also [enable search engine](../search-engine-setup) via the [Tavily MCP server](https://github.com/tavily-ai/tavily-mcp) by setting the `search_api_key` under the `[core]` section in the `~/.openhands/config.toml` file.
 
