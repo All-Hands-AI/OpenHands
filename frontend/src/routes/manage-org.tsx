@@ -126,6 +126,34 @@ function ChangeOrgNameModal({ onClose }: ChangeOrgNameModalProps) {
   );
 }
 
+interface DeleteOrgConfirmationModalProps {
+  onClose: () => void;
+}
+
+function DeleteOrgConfirmationModal({
+  onClose,
+}: DeleteOrgConfirmationModalProps) {
+  const { orgId } = useSelectedOrganizationId();
+  const { mutate: deleteOrganization } = useMutation({
+    mutationFn: () => organizationService.deleteOrganization({ orgId }),
+  });
+
+  return (
+    <div data-testid="delete-org-confirmation">
+      <button
+        type="button"
+        onClick={() =>
+          deleteOrganization(undefined, {
+            onSuccess: onClose,
+          })
+        }
+      >
+        Confirm
+      </button>
+    </div>
+  );
+}
+
 interface AddCreditsModalProps {
   onClose: () => void;
 }
@@ -180,12 +208,19 @@ function ManageOrg() {
     React.useState(false);
   const [changeOrgNameFormVisible, setChangeOrgNameFormVisible] =
     React.useState(false);
+  const [deleteOrgConfirmationVisible, setDeleteOrgConfirmationVisible] =
+    React.useState(false);
 
   return (
     <div>
       {changeOrgNameFormVisible && (
         <ChangeOrgNameModal
           onClose={() => setChangeOrgNameFormVisible(false)}
+        />
+      )}
+      {deleteOrgConfirmationVisible && (
+        <DeleteOrgConfirmationModal
+          onClose={() => setDeleteOrgConfirmationVisible(false)}
         />
       )}
 
@@ -209,6 +244,13 @@ function ManageOrg() {
       <div data-testid="billing-info">
         {organizationPaymentInfo?.cardNumber}
       </div>
+
+      <button
+        type="button"
+        onClick={() => setDeleteOrgConfirmationVisible(true)}
+      >
+        Delete Organization
+      </button>
     </div>
   );
 }

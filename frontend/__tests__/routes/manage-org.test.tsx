@@ -146,10 +146,38 @@ describe("Manage Org Route", () => {
       });
     });
 
-    it.todo("should not allow roles other than superadmins to change org name");
+    it.todo("should NOT allow roles other than superadmins to change org name");
+
+    it("should be able to delete an organization", async () => {
+      const deleteOrgSpy = vi.spyOn(organizationService, "deleteOrganization");
+      renderManageOrg();
+
+      expect(
+        screen.queryByTestId("delete-org-confirmation"),
+      ).not.toBeInTheDocument();
+
+      const deleteOrgButton = screen.getByRole("button", {
+        name: /delete organization/i,
+      });
+      await userEvent.click(deleteOrgButton);
+
+      const deleteConfirmation = screen.getByTestId("delete-org-confirmation");
+      const confirmButton = within(deleteConfirmation).getByRole("button", {
+        name: /confirm/i,
+      });
+
+      await userEvent.click(confirmButton);
+
+      expect(deleteOrgSpy).toHaveBeenCalledWith({ orgId: "1" });
+      expect(
+        screen.queryByTestId("delete-org-confirmation"),
+      ).not.toBeInTheDocument();
+    });
+
+    it.todo(
+      "should NOT allow roles other than superadmins to delete an organization",
+    );
 
     it.todo("should be able to update the organization billing info");
-
-    it.todo("should be able to delete an organization");
   });
 });
