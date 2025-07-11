@@ -113,6 +113,7 @@ You can use the following commands whenever the prompt (`>`) is displayed:
 | `/new`       | Start a new conversation                                       |
 | `/settings`  | View and modify current LLM/agent settings                     |
 | `/resume`    | Resume the agent if paused                                     |
+| `/mcp`       | Manage MCP server configuration and view connection errors    |
 
 #### Settings and Configuration
 
@@ -133,6 +134,17 @@ project details and structure. Use this when onboarding the agent to a new codeb
 
 You can pause the agent while it is running by pressing `Ctrl-P`. To continue the conversation after pausing, simply
 type `/resume` at the prompt.
+
+#### MCP Server Management
+
+The `/mcp` command provides an interactive interface for managing Model Context Protocol (MCP) servers:
+
+- **List configured servers**: View all currently configured MCP servers (SSE, Stdio, and SHTTP)
+- **Add new server**: Interactively add a new MCP server with guided prompts
+- **Remove server**: Remove an existing MCP server from your configuration
+- **View errors**: Display any connection errors that occurred during MCP server startup
+
+This command modifies your `~/.openhands/config.toml` file and will prompt you to restart OpenHands for changes to take effect.
 
 ## Using MCP servers
 

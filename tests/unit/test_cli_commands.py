@@ -294,7 +294,13 @@ class TestHandleMcpCommand:
         mock_cli_confirm.assert_called_once_with(
             config,
             'MCP Server Configuration',
-            ['List configured servers', 'Add new server', 'Remove server', 'Go back'],
+            [
+                'List configured servers',
+                'Add new server',
+                'Remove server',
+                'View errors',
+                'Go back',
+            ],
         )
         mock_display.assert_called_once_with(config)
 
@@ -310,7 +316,13 @@ class TestHandleMcpCommand:
         mock_cli_confirm.assert_called_once_with(
             config,
             'MCP Server Configuration',
-            ['List configured servers', 'Add new server', 'Remove server', 'Go back'],
+            [
+                'List configured servers',
+                'Add new server',
+                'Remove server',
+                'View errors',
+                'Go back',
+            ],
         )
         mock_add.assert_called_once_with(config)
 
@@ -328,22 +340,58 @@ class TestHandleMcpCommand:
         mock_cli_confirm.assert_called_once_with(
             config,
             'MCP Server Configuration',
-            ['List configured servers', 'Add new server', 'Remove server', 'Go back'],
+            [
+                'List configured servers',
+                'Add new server',
+                'Remove server',
+                'View errors',
+                'Go back',
+            ],
         )
         mock_remove.assert_called_once_with(config)
 
     @pytest.mark.asyncio
     @patch('openhands.cli.commands.cli_confirm')
-    async def test_handle_mcp_command_go_back_action(self, mock_cli_confirm):
+    @patch('openhands.cli.commands.handle_mcp_errors_command')
+    async def test_handle_mcp_command_view_errors_action(
+        self, mock_handle_errors, mock_cli_confirm
+    ):
         config = MagicMock(spec=OpenHandsConfig)
-        mock_cli_confirm.return_value = 3  # Go back action
+        mock_cli_confirm.return_value = 3  # View errors action
 
         await handle_mcp_command(config)
 
         mock_cli_confirm.assert_called_once_with(
             config,
             'MCP Server Configuration',
-            ['List configured servers', 'Add new server', 'Remove server', 'Go back'],
+            [
+                'List configured servers',
+                'Add new server',
+                'Remove server',
+                'View errors',
+                'Go back',
+            ],
+        )
+        mock_handle_errors.assert_called_once()
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.commands.cli_confirm')
+    async def test_handle_mcp_command_go_back_action(self, mock_cli_confirm):
+        config = MagicMock(spec=OpenHandsConfig)
+        mock_cli_confirm.return_value = 4  # Go back action
+
+        await handle_mcp_command(config)
+
+        mock_cli_confirm.assert_called_once_with(
+            config,
+            'MCP Server Configuration',
+            [
+                'List configured servers',
+                'Add new server',
+                'Remove server',
+                'View errors',
+                'Go back',
+            ],
         )
         # No other functions should be called for "Go back"
 

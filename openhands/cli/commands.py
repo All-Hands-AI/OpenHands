@@ -137,8 +137,6 @@ async def handle_commands(
         close_repl, new_session_requested = await handle_resume_command(event_stream)
     elif command == '/mcp':
         await handle_mcp_command(config)
-    elif command == '/mcp-errors':
-        handle_mcp_errors_command()
     else:
         close_repl = True
         action = MessageAction(content=command)
@@ -394,7 +392,13 @@ async def handle_mcp_command(config: OpenHandsConfig) -> None:
     action = cli_confirm(
         config,
         'MCP Server Configuration',
-        ['List configured servers', 'Add new server', 'Remove server', 'Go back'],
+        [
+            'List configured servers',
+            'Add new server',
+            'Remove server',
+            'View errors',
+            'Go back',
+        ],
     )
 
     if action == 0:  # List
@@ -403,7 +407,9 @@ async def handle_mcp_command(config: OpenHandsConfig) -> None:
         await add_mcp_server(config)
     elif action == 2:  # Remove
         await remove_mcp_server(config)
-    # action == 3 is "Go back", do nothing
+    elif action == 3:  # View errors
+        handle_mcp_errors_command()
+    # action == 4 is "Go back", do nothing
 
 
 def display_mcp_servers(config: OpenHandsConfig) -> None:

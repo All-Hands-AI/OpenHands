@@ -78,8 +78,7 @@ COMMANDS = {
     '/new': 'Create a new conversation',
     '/settings': 'Display and modify current settings',
     '/resume': 'Resume the agent when paused',
-    '/mcp': 'Display MCP server configuration',
-    '/mcp-errors': 'Display MCP connection errors',
+    '/mcp': 'Manage MCP server configuration and view errors',
 }
 
 print_lock = threading.Lock()
