@@ -14,6 +14,15 @@ from openhands.cli.commands import (
     handle_commands,
 )
 from openhands.cli.settings import modify_llm_settings_basic
+from openhands.cli.shell_config import (
+    ShellConfigManager,
+    add_aliases_to_shell_config,
+    aliases_exist_in_shell_config,
+    has_alias_setup_been_completed,
+    is_first_time_user,
+    mark_alias_setup_completed,
+    remove_aliases_from_shell_config,
+)
 from openhands.cli.tui import (
     UsageMetrics,
     cli_confirm,
@@ -31,12 +40,6 @@ from openhands.cli.tui import (
     update_streaming_output,
 )
 from openhands.cli.utils import (
-    add_aliases_to_shell_config,
-    aliases_exist_in_shell_config,
-    has_alias_setup_been_completed,
-    is_first_time_user,
-    mark_alias_setup_completed,
-    remove_aliases_from_shell_config,
     update_usage_metrics,
 )
 from openhands.cli.vscode_extension import attempt_vscode_extension_install
@@ -473,23 +476,9 @@ def run_alias_setup_flow(config: OpenHandsConfig) -> None:
                     HTML('<ansigreen>✅ Aliases added successfully!</ansigreen>')
                 )
 
-                # Get the detected shell config path to provide accurate instructions
-                from openhands.cli.utils import get_shell_config_path
-
-                config_path = get_shell_config_path()
-
-                # Determine the appropriate reload command based on the detected shell
-                if '.zshrc' in str(config_path):
-                    reload_cmd = 'source ~/.zshrc'
-                elif 'fish' in str(config_path):
-                    reload_cmd = 'source ~/.config/fish/config.fish'
-                elif '.bashrc' in str(config_path):
-                    reload_cmd = 'source ~/.bashrc'
-                elif '.bash_profile' in str(config_path):
-                    reload_cmd = 'source ~/.bash_profile'
-                else:
-                    # Default to the detected config path
-                    reload_cmd = f'source {config_path}'
+                # Get the appropriate reload command using the shell config manager
+                shell_manager = ShellConfigManager()
+                reload_cmd = shell_manager.get_reload_command()
 
                 print_formatted_text(
                     HTML(
