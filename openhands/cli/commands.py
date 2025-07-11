@@ -45,7 +45,7 @@ from openhands.storage.settings.file_settings_store import FileSettingsStore
 
 def restart_cli() -> None:
     """Restart the CLI by replacing the current process."""
-    print_formatted_text('🔄 Restarting OpenHands CLI...\n')
+    print_formatted_text('🔄 Restarting OpenHands CLI...')
 
     # Get the current Python executable and script arguments
     python_executable = sys.executable
@@ -56,9 +56,9 @@ def restart_cli() -> None:
     try:
         os.execv(python_executable, [python_executable] + script_args)
     except Exception as e:
-        print_formatted_text(f'❌ Failed to restart CLI: {e}\n')
+        print_formatted_text(f'❌ Failed to restart CLI: {e}')
         print_formatted_text(
-            'Please restart OpenHands manually for changes to take effect.\n'
+            'Please restart OpenHands manually for changes to take effect.'
         )
 
 
@@ -69,8 +69,8 @@ async def prompt_for_restart(config: OpenHandsConfig) -> bool:
 
     from openhands.cli.tui import create_prompt_session
 
-    print_formatted_text('\n📝 MCP server configuration updated successfully!')
-    print_formatted_text('The changes will take effect after restarting OpenHands.\n')
+    print_formatted_text('📝 MCP server configuration updated successfully!')
+    print_formatted_text('The changes will take effect after restarting OpenHands.')
 
     prompt_session = create_prompt_session(config)
 
@@ -89,7 +89,7 @@ async def prompt_for_restart(config: OpenHandsConfig) -> bool:
                 elif response in ['n', 'no']:
                     return False
                 else:
-                    print_formatted_text('Please enter "y" for yes or "n" for no.\n')
+                    print_formatted_text('Please enter "y" for yes or "n" for no.')
         except (KeyboardInterrupt, EOFError):
             return False
 
@@ -419,7 +419,7 @@ def display_mcp_servers(config: OpenHandsConfig) -> None:
     if total_count == 0:
         print_formatted_text(
             'No custom MCP servers configured. See the documentation to learn more:\n'
-            '  https://docs.all-hands.dev/usage/how-to/cli-mode#using-mcp-servers\n'
+            '  https://docs.all-hands.dev/usage/how-to/cli-mode#using-mcp-servers'
         )
     else:
         print_formatted_text(
@@ -427,7 +427,7 @@ def display_mcp_servers(config: OpenHandsConfig) -> None:
             f'  • SSE servers: {sse_count}\n'
             f'  • Stdio servers: {stdio_count}\n'
             f'  • SHTTP servers: {shttp_count}\n'
-            f'  • Total: {total_count}\n'
+            f'  • Total: {total_count}'
         )
 
         # Show details for each type if they exist
@@ -510,21 +510,21 @@ async def add_mcp_server(config: OpenHandsConfig) -> None:
         elif transport_type == 2:  # SHTTP
             await add_shttp_server(config)
     except Exception as e:
-        print_formatted_text(f'Error adding MCP server: {e}\n')
+        print_formatted_text(f'Error adding MCP server: {e}')
 
 
 async def add_sse_server(config: OpenHandsConfig) -> None:
     """Add an SSE MCP server."""
-    print_formatted_text('Adding SSE MCP Server\n')
+    print_formatted_text('Adding SSE MCP Server')
 
     # Get URL
-    print_formatted_text('Enter server URL:')
+    print_formatted_text('\nEnter server URL:', end=' ')
     url = await read_prompt_input(config, '', multiline=False)
     if not url.strip():
-        print_formatted_text('URL is required. Server not added.\n')
+        print_formatted_text('URL is required. Server not added.')
         return
 
-    print_formatted_text('Enter API key (optional, press Enter to skip):')
+    print_formatted_text('\nEnter API key (optional, press Enter to skip):', end=' ')
     api_key_input = await read_prompt_input(config, '', multiline=False)
     api_key = api_key_input.strip() if api_key_input.strip() else None
 
@@ -545,7 +545,7 @@ async def add_sse_server(config: OpenHandsConfig) -> None:
     config_data['mcp']['sse_servers'].append(server_config)
     save_config_file(config_data)
 
-    print_formatted_text(f'✓ SSE MCP server added: {url}\n')
+    print_formatted_text(f'✓ SSE MCP server added: {url}')
 
     # Prompt for restart
     if await prompt_for_restart(config):
@@ -554,24 +554,24 @@ async def add_sse_server(config: OpenHandsConfig) -> None:
 
 async def add_stdio_server(config: OpenHandsConfig) -> None:
     """Add a Stdio MCP server."""
-    print_formatted_text('Adding Stdio MCP Server\n')
+    print_formatted_text('Adding Stdio MCP Server')
 
     # Get name
-    print_formatted_text('Enter server name:')
+    print_formatted_text('\nEnter server name:', end=' ')
     name = await read_prompt_input(config, '', multiline=False)
     if not name.strip():
-        print_formatted_text('Name is required. Server not added.\n')
+        print_formatted_text('Name is required. Server not added.')
         return
 
     # Get command
-    print_formatted_text('Enter command:')
+    print_formatted_text('\nEnter command:', end=' ')
     command = await read_prompt_input(config, '', multiline=False)
     if not command.strip():
-        print_formatted_text('Command is required. Server not added.\n')
+        print_formatted_text('Command is required. Server not added.')
         return
 
     # Get args (optional)
-    print_formatted_text('Enter arguments (comma-separated, optional):')
+    print_formatted_text('\nEnter arguments (comma-separated, optional):', end=' ')
     args_input = await read_prompt_input(config, '', multiline=False)
     args: list[str] = []
     if args_input.strip():
@@ -579,7 +579,8 @@ async def add_stdio_server(config: OpenHandsConfig) -> None:
 
     # Get environment variables (optional)
     print_formatted_text(
-        'Enter environment variables (KEY=VALUE format, comma-separated, optional):'
+        '\nEnter environment variables (KEY=VALUE format, comma-separated, optional):',
+        end=' ',
     )
     env_input = await read_prompt_input(config, '', multiline=False)
     env: dict[str, str] = {}
@@ -610,7 +611,7 @@ async def add_stdio_server(config: OpenHandsConfig) -> None:
     config_data['mcp']['stdio_servers'].append(server_config)
     save_config_file(config_data)
 
-    print_formatted_text(f'✓ Stdio MCP server added: {name}\n')
+    print_formatted_text(f'✓ Stdio MCP server added: {name}')
 
     # Prompt for restart
     if await prompt_for_restart(config):
@@ -619,16 +620,16 @@ async def add_stdio_server(config: OpenHandsConfig) -> None:
 
 async def add_shttp_server(config: OpenHandsConfig) -> None:
     """Add an SHTTP MCP server."""
-    print_formatted_text('Adding SHTTP MCP Server\n')
+    print_formatted_text('Adding SHTTP MCP Server')
 
     # Get URL
-    print_formatted_text('Enter server URL:')
+    print_formatted_text('\nEnter server URL:', end=' ')
     url = await read_prompt_input(config, '', multiline=False)
     if not url.strip():
-        print_formatted_text('URL is required. Server not added.\n')
+        print_formatted_text('URL is required. Server not added.')
         return
 
-    print_formatted_text('Enter API key (optional, press Enter to skip):')
+    print_formatted_text('\nEnter API key (optional, press Enter to skip):', end=' ')
     api_key_input = await read_prompt_input(config, '', multiline=False)
     api_key = api_key_input.strip() if api_key_input.strip() else None
 
@@ -649,7 +650,7 @@ async def add_shttp_server(config: OpenHandsConfig) -> None:
     config_data['mcp']['shttp_servers'].append(server_config)
     save_config_file(config_data)
 
-    print_formatted_text(f'✓ SHTTP MCP server added: {url}\n')
+    print_formatted_text(f'✓ SHTTP MCP server added: {url}')
 
     # Prompt for restart
     if await prompt_for_restart(config):
@@ -676,7 +677,7 @@ async def remove_mcp_server(config: OpenHandsConfig) -> None:
         servers.append(('SHTTP', shttp_server.url, shttp_server))
 
     if not servers:
-        print_formatted_text('No MCP servers configured to remove.\n')
+        print_formatted_text('No MCP servers configured to remove.')
         return
 
     # Create choices for the user
@@ -708,7 +709,7 @@ async def remove_mcp_server(config: OpenHandsConfig) -> None:
     config_data = load_config_file()
 
     if 'mcp' not in config_data:
-        print_formatted_text('No MCP configuration found.\n')
+        print_formatted_text('No MCP configuration found.')
         return
 
     removed = False
@@ -733,10 +734,10 @@ async def remove_mcp_server(config: OpenHandsConfig) -> None:
 
     if removed:
         save_config_file(config_data)
-        print_formatted_text(f'✓ {server_type} MCP server "{identifier}" removed.\n')
+        print_formatted_text(f'✓ {server_type} MCP server "{identifier}" removed.')
 
         # Prompt for restart
         if await prompt_for_restart(config):
             restart_cli()
     else:
-        print_formatted_text(f'Failed to remove {server_type} server "{identifier}".\n')
+        print_formatted_text(f'Failed to remove {server_type} server "{identifier}".')
