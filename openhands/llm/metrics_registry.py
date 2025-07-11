@@ -19,7 +19,7 @@ class LLMRegistry:
 
     def __init__(
         self,
-        file_store: FileStore,
+        file_store: FileStore | None,
         conversation_id: str,
         user_id: str | None,
     ):
@@ -106,6 +106,9 @@ class LLMRegistry:
         return total_metrics
 
     def save_registry(self):
+        if not self.file_store:
+            return
+
         with self._save_lock:
             metrics: dict[str, Metrics] = {}
             for service_id, llm in self.service_to_llm.items():
@@ -116,8 +119,9 @@ class LLMRegistry:
             self.file_store.write(self.registry_path, serialized_metrics)
 
     def maybe_restore_registry(self):
-        if not self.conversation_id:
+        if not self.file_store or not self.conversation_id:
             return
+
         try:
             encoded = self.file_store.read(self.registry_path)
             pickled = base64.b64decode(encoded)

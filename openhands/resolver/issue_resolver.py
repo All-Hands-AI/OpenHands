@@ -411,7 +411,7 @@ class IssueResolver:
             shutil.rmtree(self.workspace_base)
         shutil.copytree(os.path.join(self.output_dir, 'repo'), self.workspace_base)
 
-        llm_registry = LLMRegistry()
+        llm_registry = LLMRegistry(None, 'convo_id', None)
         runtime = create_runtime(self.app_config, llm_registry)
         await runtime.connect()
 

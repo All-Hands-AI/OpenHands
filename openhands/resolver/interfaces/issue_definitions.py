@@ -22,7 +22,8 @@ class ServiceContext:
 
     def __init__(self, strategy: IssueHandlerInterface, llm_config: LLMConfig | None):
         self._strategy = strategy
-        llm_registry = LLMRegistry()
+        # TODO: we should store registry information as well
+        llm_registry = LLMRegistry(None, 'convo_id', None)
         if llm_config is not None:
             self.llm = llm_registry.register_llm('resolver_embelishment', llm_config)
 
