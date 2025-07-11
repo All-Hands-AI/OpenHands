@@ -68,6 +68,15 @@ def init_user_and_working_directory(
     if username == 'root':
         return None
 
+    # If the requested user_id is 0 (root), skip user creation
+    # This happens when running as root but trying to create a different username
+    if user_id == 0:
+        logger.debug(
+            f'Requested UID is 0 (root). Skipping user creation for `{username}`. '
+            'Using root user instead.'
+        )
+        return None
+
     # Check if the username already exists
     existing_user_id = -1
     try:
