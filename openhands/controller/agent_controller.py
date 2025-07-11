@@ -161,6 +161,7 @@ class AgentController:
         # state from the previous session, state from a parent agent, or a fresh state
         self.set_initial_state(
             state=initial_state,
+            llm_registry=llm_registry,
             max_iterations=iteration_delta,
             max_budget_per_task=budget_per_task_delta,
             confirmation_mode=confirmation_mode,
@@ -946,14 +947,15 @@ class AgentController:
     def set_initial_state(
         self,
         state: State | None,
+        llm_registry: LLMRegistry,
         max_iterations: int,
         max_budget_per_task: float | None,
         confirmation_mode: bool = False,
     ):
         self.state_tracker.set_initial_state(
             self.id,
-            self.agent,
             state,
+            llm_registry,
             max_iterations,
             max_budget_per_task,
             confirmation_mode,

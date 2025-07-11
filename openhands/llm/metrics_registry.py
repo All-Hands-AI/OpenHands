@@ -1,5 +1,4 @@
 import base64
-import json
 import pickle
 from threading import Lock
 from typing import Callable
@@ -108,8 +107,6 @@ class LLMRegistry:
 
     def save_registry(self):
         with self._save_lock:
-
-
             metrics: dict[str, Metrics] = {}
             for service_id, llm in self.service_to_llm.items():
                 metrics[service_id] = llm.metrics.copy()

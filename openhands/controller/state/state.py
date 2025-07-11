@@ -20,7 +20,9 @@ from openhands.events.action import (
 from openhands.events.action.agent import AgentFinishAction
 from openhands.events.event import Event, EventSource
 from openhands.llm.metrics import Metrics
+from openhands.llm.metrics_registry import LLMRegistry
 from openhands.memory.view import View
+from openhands.server.shared import file_store
 from openhands.storage.files import FileStore
 from openhands.storage.locations import get_conversation_agent_state_filename
 
@@ -42,6 +44,11 @@ class TrafficControlState(str, Enum):
 
     # traffic control is temporarily paused
     PAUSED = 'paused'
+
+
+# tmp placeholder
+def create_empty_registry():
+    return LLMRegistry(file_store, '', None)
 
 
 @dataclass
@@ -84,6 +91,7 @@ class State:
             limit_increase_amount=100, current_value=0, max_value=100
         )
     )
+    llm_registry: LLMRegistry = field(default_factory=create_empty_registry)
     budget_flag: BudgetControlFlag | None = None
     confirmation_mode: bool = False
     history: list[Event] = field(default_factory=list)

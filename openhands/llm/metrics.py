@@ -1,5 +1,4 @@
 import copy
-import json
 import time
 
 from pydantic import BaseModel, Field
@@ -277,4 +276,3 @@ class Metrics:
 
     def __repr__(self) -> str:
         return f'Metrics({self.get()}'
-
