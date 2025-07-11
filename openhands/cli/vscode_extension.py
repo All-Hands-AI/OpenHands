@@ -270,7 +270,9 @@ def _attempt_bundled_install(editor_command: str, editor_name: str) -> bool:
             else:
                 logger.debug(f'Bundled .vsix not found at {vsix_path}.')
     except Exception as e:
-        logger.debug(f'Could not locate bundled .vsix: {e}.')
+        logger.warning(
+            f'Could not auto-install extension. Please make sure "code" command is in PATH. Error: {e}'
+        )
 
     return False
 
