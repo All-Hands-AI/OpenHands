@@ -223,7 +223,3 @@ def read_file(file_path: str | Path) -> str:
 def write_to_file(file_path: str | Path, content: str) -> None:
     with open(file_path, 'w') as f:
         f.write(content)
-
-
-# Shell configuration functions have been moved to openhands.cli.shell_config
-# This comment is left here to indicate the migration
