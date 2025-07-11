@@ -76,6 +76,40 @@ export const ORG_HANDLERS = [
     return HttpResponse.json(organizations);
   }),
 
+  http.patch("/api/organizations/:orgId", async ({ request, params }) => {
+    const { name } = (await request.json()) as {
+      name: string;
+    };
+    const orgId = params.orgId?.toString();
+
+    if (!name) {
+      return HttpResponse.json({ error: "Name is required" }, { status: 400 });
+    }
+
+    if (!orgId) {
+      return HttpResponse.json(
+        { error: "Organization ID is required" },
+        { status: 400 },
+      );
+    }
+
+    const existingOrg = orgs.get(orgId);
+    if (!existingOrg) {
+      return HttpResponse.json(
+        { error: "Organization not found" },
+        { status: 404 },
+      );
+    }
+
+    const updatedOrg: Organization = {
+      ...existingOrg,
+      name,
+    };
+    orgs.set(orgId, updatedOrg);
+
+    return HttpResponse.json(updatedOrg, { status: 201 });
+  }),
+
   http.get("/api/organizations/:orgId", ({ params }) => {
     const orgId = params.orgId?.toString();
 

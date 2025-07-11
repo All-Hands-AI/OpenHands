@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import OpenHands from "#/api/open-hands";
 import ManageOrg from "#/routes/manage-org";
+import { organizationService } from "#/api/organization-service/organization-service.api";
 
 vi.mock("#/context/use-selected-organization", () => ({
   useSelectedOrganizationId: vi.fn(() => ({
@@ -102,8 +103,50 @@ describe("Manage Org Route", () => {
     expect(createCheckoutSessionSpy).not.toHaveBeenCalled();
   });
 
-  describe("superadmin actions", () => {
-    it.todo("should be able to update the organization name");
+  describe("actions", () => {
+    it("should be able to update the organization name", async () => {
+      const updateOrgNameSpy = vi.spyOn(
+        organizationService,
+        "updateOrganization",
+      );
+
+      renderManageOrg();
+
+      const orgName = screen.getByTestId("org-name");
+      await waitFor(() => expect(orgName).toHaveTextContent("Acme Corp"));
+
+      expect(
+        screen.queryByTestId("update-org-name-form"),
+      ).not.toBeInTheDocument();
+
+      const changeOrgNameButton = within(orgName).getByRole("button", {
+        name: /change/i,
+      });
+      await userEvent.click(changeOrgNameButton);
+
+      const orgNameForm = screen.getByTestId("update-org-name-form");
+      const orgNameInput = within(orgNameForm).getByRole("textbox");
+      const saveButton = within(orgNameForm).getByRole("button", {
+        name: /save/i,
+      });
+
+      await userEvent.type(orgNameInput, "New Org Name");
+      await userEvent.click(saveButton);
+
+      expect(updateOrgNameSpy).toHaveBeenCalledWith({
+        orgId: "1",
+        name: "New Org Name",
+      });
+
+      await waitFor(() => {
+        expect(
+          screen.queryByTestId("update-org-name-form"),
+        ).not.toBeInTheDocument();
+        expect(orgName).toHaveTextContent("New Org Name");
+      });
+    });
+
+    it.todo("should not allow roles other than superadmins to change org name");
 
     it.todo("should be able to update the organization billing info");
 

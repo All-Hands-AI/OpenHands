@@ -1,9 +1,14 @@
 import React from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCreateStripeCheckoutSession } from "#/hooks/mutation/stripe/use-create-stripe-checkout-session";
 import { useOrganization } from "#/hooks/query/use-organization";
 import { useOrganizationPaymentInfo } from "#/hooks/query/use-organization-payment-info";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { cn } from "#/utils/utils";
+import { organizationService } from "#/api/organization-service/organization-service.api";
+import { useSelectedOrganizationId } from "#/context/use-selected-organization";
+import { SettingsInput } from "#/components/features/settings/settings-input";
+import { BrandButton } from "#/components/features/settings/brand-button";
 
 function TempChip({
   children,
@@ -65,6 +70,62 @@ function TempButton({
   );
 }
 
+interface ChangeOrgNameModalProps {
+  onClose: () => void;
+}
+
+function ChangeOrgNameModal({ onClose }: ChangeOrgNameModalProps) {
+  const { orgId } = useSelectedOrganizationId();
+  const queryClient = useQueryClient();
+
+  const { mutate: updateOrganization } = useMutation({
+    mutationFn: (name: string) =>
+      organizationService.updateOrganization({ orgId, name }),
+  });
+
+  const formAction = (formData: FormData) => {
+    const orgName = formData.get("org-name")?.toString();
+
+    if (orgName?.trim()) {
+      updateOrganization(orgName, {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["organizations", orgId] });
+          onClose();
+        },
+      });
+    }
+  };
+
+  return (
+    <ModalBackdrop onClose={onClose}>
+      <form
+        action={formAction}
+        data-testid="update-org-name-form"
+        className={cn(
+          "bg-base rounded-xl p-4 border w-sm border-tertiary items-start",
+          "flex flex-col gap-6",
+        )}
+      >
+        <div className="flex flex-col gap-2 w-full">
+          <h3 className="text-lg font-semibold">Change Org Name</h3>
+          <p className="text-xs text-gray-400">Modify your Org Name and Save</p>
+          <SettingsInput
+            name="org-name"
+            type="text"
+            required
+            className="w-full"
+            placeholder="Enter new organization name"
+          />
+        </div>
+
+        <BrandButton variant="primary" type="submit" className="w-full">
+          Save
+        </BrandButton>
+      </form>
+    </ModalBackdrop>
+  );
+}
+
 interface AddCreditsModalProps {
   onClose: () => void;
 }
@@ -117,9 +178,17 @@ function ManageOrg() {
 
   const [addCreditsFormVisible, setAddCreditsFormVisible] =
     React.useState(false);
+  const [changeOrgNameFormVisible, setChangeOrgNameFormVisible] =
+    React.useState(false);
 
   return (
     <div>
+      {changeOrgNameFormVisible && (
+        <ChangeOrgNameModal
+          onClose={() => setChangeOrgNameFormVisible(false)}
+        />
+      )}
+
       <div className="flex items-center gap-2">
         <TempChip data-testid="available-credits">
           {organization?.balance}
@@ -131,7 +200,12 @@ function ManageOrg() {
       {addCreditsFormVisible && (
         <AddCreditsModal onClose={() => setAddCreditsFormVisible(false)} />
       )}
-      <div data-testid="org-name">{organization?.name}</div>
+      <div data-testid="org-name">
+        <span>{organization?.name}</span>
+        <button type="button" onClick={() => setChangeOrgNameFormVisible(true)}>
+          Change
+        </button>
+      </div>
       <div data-testid="billing-info">
         {organizationPaymentInfo?.cardNumber}
       </div>

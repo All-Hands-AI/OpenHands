@@ -26,6 +26,20 @@ export const organizationService = {
     return data;
   },
 
+  updateOrganization: async ({
+    orgId,
+    name,
+  }: {
+    orgId: string;
+    name: string;
+  }) => {
+    const { data } = await openHands.patch<Organization>(
+      `/api/organizations/${orgId}`,
+      { name },
+    );
+    return data;
+  },
+
   getOrganizationMembers: async ({ orgId }: { orgId: string }) => {
     const { data } = await openHands.get<OrganizationMember[]>(
       `/api/organizations/${orgId}/members`,
