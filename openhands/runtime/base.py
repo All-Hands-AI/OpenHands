@@ -1089,7 +1089,7 @@ fi
         return False
 
     @classmethod
-    def setup(cls, config: OpenHandsConfig):
+    def setup(cls, config: OpenHandsConfig, headless_mode: bool = False):
         """Set up the environment for runtimes to be created."""
 
     @classmethod
