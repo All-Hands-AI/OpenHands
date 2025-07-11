@@ -21,7 +21,6 @@ from openhands.cli.shell_config import (
     has_alias_setup_been_completed,
     is_first_time_user,
     mark_alias_setup_completed,
-    remove_aliases_from_shell_config,
 )
 from openhands.cli.tui import (
     UsageMetrics,
@@ -400,33 +399,10 @@ def run_alias_setup_flow(config: OpenHandsConfig) -> None:
             )
         )
         print_formatted_text('')
-
-        # Ask user what to do with existing aliases
-        choice = cli_confirm(
-            config,
-            'What would you like to do with the existing aliases?',
-            ['Keep existing aliases', 'Remove aliases'],
+        print_formatted_text(
+            HTML('<ansigreen>✅ Aliases are already configured.</ansigreen>')
         )
-
-        if choice == 0:  # Keep existing aliases
-            print_formatted_text('')
-            print_formatted_text(
-                HTML('<ansigreen>✅ Keeping existing aliases.</ansigreen>')
-            )
-        else:  # Remove aliases
-            success = remove_aliases_from_shell_config()
-            if success:
-                print_formatted_text('')
-                print_formatted_text(
-                    HTML('<ansigreen>✅ Aliases removed successfully!</ansigreen>')
-                )
-            else:
-                print_formatted_text('')
-                print_formatted_text(
-                    HTML(
-                        '<ansired>❌ Failed to remove aliases. You may need to remove them manually.</ansired>'
-                    )
-                )
+        return  # Exit early since aliases already exist
     else:
         # No existing aliases, show the normal setup flow
         print_formatted_text(
