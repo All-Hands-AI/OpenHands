@@ -296,6 +296,7 @@ class ActionExecutor:
         self.browser_init_task = asyncio.create_task(self._init_browser_async())
         logger.debug('Browser initialization started in background')
 
+        logger.warning(f'ActonExecutor:ainit:{self.plugins_to_load}')
         await wait_all(
             (self._init_plugin(plugin) for plugin in self.plugins_to_load),
             timeout=int(os.environ.get('INIT_PLUGIN_TIMEOUT', '120')),
@@ -994,11 +995,14 @@ if __name__ == '__main__':
 
     @app.get('/vscode/connection_token')
     async def get_vscode_connection_token():
+        logger.warning(f'get_vscode_connection_token:1:{client}')
         assert client is not None
         if 'vscode' in client.plugins:
+            logger.warning(f'get_vscode_connection_token:2:{client.plugins}')
             plugin: VSCodePlugin = client.plugins['vscode']  # type: ignore
             return {'token': plugin.vscode_connection_token}
         else:
+            logger.warning('get_vscode_connection_token:3')
             return {'token': None}
 
     # ================================

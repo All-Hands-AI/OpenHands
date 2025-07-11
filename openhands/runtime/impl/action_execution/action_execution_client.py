@@ -264,6 +264,7 @@ class ActionExecutionClient(Runtime):
             )
             self.log('warning', f'TRACE:get_vscode_token:3:{response.status_code}')
             response_json = response.json()
+            self.log('warning', f'TRACE:get_vscode_token:4:{response_json}')
             assert isinstance(response_json, dict)
             if response_json['token'] is None:
                 return ''
