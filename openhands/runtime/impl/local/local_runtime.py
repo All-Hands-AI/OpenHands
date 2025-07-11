@@ -280,7 +280,10 @@ class LocalRuntime(ActionExecutionClient):
                         shutil.rmtree(server_info.temp_workspace)
 
                     # Create a new temp workspace for this session
-                    if self._temp_workspace is None and self.config.workspace_base is None:
+                    if (
+                        self._temp_workspace is None
+                        and self.config.workspace_base is None
+                    ):
                         self._temp_workspace = tempfile.mkdtemp(
                             prefix=f'openhands_workspace_{self.sid}',
                         )
