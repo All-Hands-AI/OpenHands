@@ -143,7 +143,7 @@ class LocalRuntime(ActionExecutionClient):
         user_id: str | None = None,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
     ) -> None:
-        logger.info(f"TRACE:LocalRuntime:init:{plugins}")
+        logger.info(f'TRACE:LocalRuntime:init:{plugins}')
         self.is_windows = sys.platform == 'win32'
         if self.is_windows:
             logger.warning(
