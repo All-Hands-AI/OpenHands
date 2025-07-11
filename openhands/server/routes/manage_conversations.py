@@ -47,6 +47,7 @@ from openhands.server.shared import (
     ConversationStoreImpl,
     config,
     conversation_manager,
+    file_store,
 )
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.server.user_auth import (
@@ -328,7 +329,9 @@ async def get_prompt(
     )
 
     prompt_template = generate_prompt_template(stringified_events)
-    prompt = generate_prompt(llm_config, prompt_template)
+    prompt = generate_prompt(
+        llm_config, prompt_template, conversation.sid, conversation.user_id
+    )
 
     return JSONResponse(
         {
@@ -344,9 +347,14 @@ def generate_prompt_template(events: str) -> str:
     return template.render(events=events)
 
 
-def generate_prompt(llm_config: LLMConfig, prompt_template: str) -> str:
+def generate_prompt(
+    llm_config: LLMConfig,
+    prompt_template: str,
+    conversation_id: str,
+    user_id: str | None,
+) -> str:
     # TODO: we should use metrics registry associated with the conversation session
-    llm_registry = LLMRegistry()
+    llm_registry = LLMRegistry(file_store, conversation_id, user_id)
     llm = llm_registry.register_llm('remember_prompt', llm_config)
     messages = [
         {

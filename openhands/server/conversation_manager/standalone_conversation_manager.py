@@ -101,7 +101,7 @@ class StandaloneConversationManager(ConversationManager):
 
             # Create new conversation if none exists
             c = ServerConversation(
-                LLMRegistry(),
+                LLMRegistry(self.file_store, sid, user_id),
                 sid,
                 file_store=self.file_store,
                 config=self.config,
@@ -317,8 +317,8 @@ class StandaloneConversationManager(ConversationManager):
         except Exception:
             logger.debug('No events found, no state to restore')
 
-        llm_registry = (
-            LLMRegistry()
+        llm_registry = LLMRegistry(
+            self.file_store, sid, user_id
         )  # TODO: we should attempt to restore it for existing convos
         session = Session(
             sid=sid,
