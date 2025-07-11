@@ -191,6 +191,17 @@ class LLM(RetryMixin, DebugMixin):
         elif 'gemini' in self.config.model.lower() and self.config.safety_settings:
             kwargs['safety_settings'] = self.config.safety_settings
 
+        # support AWS Bedrock provider
+        kwargs['aws_region_name'] = self.config.aws_region_name
+        if self.config.aws_access_key_id:
+            kwargs['aws_access_key_id'] = (
+                self.config.aws_access_key_id.get_secret_value()
+            )
+        if self.config.aws_secret_access_key:
+            kwargs['aws_secret_access_key'] = (
+                self.config.aws_secret_access_key.get_secret_value()
+            )
+
         self._completion = partial(
             litellm_completion,
             model=self.config.model,
