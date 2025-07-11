@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -673,3 +673,82 @@ class TestHandleResumeCommand:
         # Check the return values
         assert close_repl is True
         assert new_session_requested is False
+
+
+class TestMCPErrorHandling:
+    """Test MCP error handling in commands."""
+
+    @patch('openhands.cli.commands.display_mcp_errors')
+    def test_handle_mcp_errors_command(self, mock_display_errors):
+        """Test handling MCP errors command."""
+        from openhands.cli.commands import handle_mcp_errors_command
+
+        handle_mcp_errors_command()
+
+        mock_display_errors.assert_called_once()
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.tui.create_prompt_session')
+    async def test_prompt_for_restart_yes(self, mock_create_session):
+        """Test prompting for restart when user says yes."""
+        from openhands.cli.commands import prompt_for_restart
+
+        config = MagicMock(spec=OpenHandsConfig)
+
+        # Mock user saying yes to restart
+        mock_session = AsyncMock()
+        mock_session.prompt_async.return_value = 'y'
+        mock_create_session.return_value = mock_session
+
+        result = await prompt_for_restart(config)
+
+        assert result is True
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.tui.create_prompt_session')
+    async def test_prompt_for_restart_no(self, mock_create_session):
+        """Test prompting for restart when user says no."""
+        from openhands.cli.commands import prompt_for_restart
+
+        config = MagicMock(spec=OpenHandsConfig)
+
+        # Mock user saying no to restart
+        mock_session = AsyncMock()
+        mock_session.prompt_async.return_value = 'n'
+        mock_create_session.return_value = mock_session
+
+        result = await prompt_for_restart(config)
+
+        assert result is False
+
+    @patch('openhands.cli.commands.os.execv')
+    @patch('openhands.cli.commands.print_formatted_text')
+    def test_restart_cli_success(self, mock_print, mock_execv):
+        """Test successful CLI restart."""
+        from openhands.cli.commands import restart_cli
+
+        restart_cli()
+
+        mock_print.assert_called_once()
+        mock_execv.assert_called_once()
+
+    @patch('openhands.cli.commands.os.execv')
+    @patch('openhands.cli.commands.print_formatted_text')
+    def test_restart_cli_failure(self, mock_print, mock_execv):
+        """Test CLI restart failure."""
+        from openhands.cli.commands import restart_cli
+
+        # Mock execv to raise an exception
+        mock_execv.side_effect = Exception('Restart failed')
+
+        restart_cli()
+
+        # Should print restart message and error messages
+        assert mock_print.call_count >= 2
+        # Check that error message was printed
+        error_calls = [
+            call
+            for call in mock_print.call_args_list
+            if 'Failed to restart CLI' in str(call[0][0])
+        ]
+        assert len(error_calls) >= 1
