@@ -35,6 +35,8 @@ interface ConversationCardProps {
   conversationStatus?: ConversationStatus;
   variant?: "compact" | "default";
   conversationId?: string; // Optional conversation ID for VS Code URL
+  openContextMenuId: string | null;
+  setOpenContextMenuId: (id: string | null) => void;
 }
 
 const MAX_TIME_BETWEEN_CREATION_AND_UPDATE = 1000 * 60 * 30; // 30 minutes
@@ -55,6 +57,8 @@ export function ConversationCard({
   conversationStatus = "STOPPED",
   variant = "default",
   conversationId,
+  openContextMenuId,
+  setOpenContextMenuId
 }: ConversationCardProps) {
   const { t } = useTranslation();
   const { parsedEvents } = useWsClient();
@@ -175,6 +179,8 @@ export function ConversationCard({
     createdAt &&
     timeBetweenUpdateAndCreation > MAX_TIME_BETWEEN_CREATION_AND_UPDATE;
 
+const isContextMenuVisible = openContextMenuId === conversationId;
+
   return (
     <>
       <div
@@ -224,7 +230,7 @@ export function ConversationCard({
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
-                    setContextMenuVisible((prev) => !prev);
+                    setOpenContextMenuId( isContextMenuVisible ? null : conversationId);
                   }}
                 />
               </div>
