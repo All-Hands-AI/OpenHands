@@ -116,7 +116,6 @@ def response_to_actions(
                     raise FunctionCallValidationError(
                         f'Missing required argument "command" in tool call {tool_call.function.name}'
                     )
-                # convert is_input to boolean
                 action = CmdRunStreamAction(command=arguments['command'])
 
             # ================================================
