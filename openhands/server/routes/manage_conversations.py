@@ -44,6 +44,7 @@ from openhands.server.services.conversation_service import (
 )
 from openhands.server.session.conversation import ServerConversation
 from openhands.server.shared import (
+    ConversationManagerImpl,
     ConversationStoreImpl,
     config,
     conversation_manager,
@@ -354,8 +355,9 @@ def generate_prompt(
     user_id: str | None,
 ) -> str:
     # TODO: we should use metrics registry associated with the conversation session
+
     llm_registry = LLMRegistry(file_store, conversation_id, user_id)
-    llm = llm_registry.register_llm('remember_prompt', llm_config)
+    llm_registry.register_llm('', llm_config)
     messages = [
         {
             'role': 'system',
@@ -367,8 +369,9 @@ def generate_prompt(
         },
     ]
 
-    response = llm.completion(messages=messages)
-    raw_prompt = response['choices'][0]['message']['content'].strip()
+    raw_prompt = ConversationManagerImpl.request_extraneous_completion(
+        'remember_prompt', conversation_id, llm_config, messages
+    )
     prompt = re.search(r'<update_prompt>(.*?)</update_prompt>', raw_prompt, re.DOTALL)
 
     if prompt:

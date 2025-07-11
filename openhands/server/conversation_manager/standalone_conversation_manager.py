@@ -7,6 +7,7 @@ from typing import Callable, Iterable
 import socketio
 
 from openhands.controller.state.state import State
+from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
@@ -358,6 +359,21 @@ class StandaloneConversationManager(ConversationManager):
         if not session:
             raise RuntimeError(f'no_conversation:{sid}')
         await session.dispatch(data)
+
+    async def request_llm_completion(
+        self,
+        sid: str,
+        service_id: str,
+        llm_config: LLMConfig,
+        messages: list[dict[str, str]],
+    ):
+        session = self._local_agent_loops_by_sid.get(sid)
+        if not session:
+            raise RuntimeError(f'no_conversation:{sid}')
+        llm_registry = session.llm_registry
+        return llm_registry.request_extraneous_completion(
+            service_id, llm_config, messages
+        )
 
     async def disconnect_from_session(self, connection_id: str):
         sid = self._local_connection_id_to_session_id.pop(connection_id, None)

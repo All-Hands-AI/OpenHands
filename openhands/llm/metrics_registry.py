@@ -35,6 +35,17 @@ class LLMRegistry:
         # Always attempt to restore registry if it exists
         self.maybe_restore_registry()
 
+    def request_extraneous_completion(
+        self, service_id: str, llm_config: LLMConfig, messages: list[dict[str, str]]
+    ) -> str:
+        if service_id not in self.service_to_llm:
+            llm = LLM(config=llm_config, service_id=service_id)
+            self.service_to_llm[service_id] = llm
+
+        llm = self.service_to_llm[service_id]
+        response = llm.completion(messages=messages)
+        return response['choices'][0]['message']['content'].strip()
+
     def register_llm(
         self,
         service_id: str,
