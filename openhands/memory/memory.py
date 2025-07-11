@@ -23,6 +23,7 @@ from openhands.microagent import (
     load_microagents_from_dir,
 )
 from openhands.runtime.base import Runtime
+from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.utils.prompt import (
     ConversationInstructions,
     RepositoryInfo,
@@ -133,7 +134,7 @@ class Memory:
         except Exception as e:
             error_str = f'Error: {str(e.__class__.__name__)}'
             logger.error(error_str)
-            self.send_error_message('STATUS$ERROR_MEMORY', error_str)
+            self.set_runtime_status(RuntimeStatus.ERROR_MEMORY, error_str)
             return
 
     def _on_workspace_context_recall(
@@ -361,22 +362,24 @@ class Memory:
             content=conversation_instructions or ''
         )
 
-    def send_error_message(self, message_id: str, message: str):
+    def set_runtime_status(self, status: RuntimeStatus, message: str):
         """Sends an error message if the callback function was provided."""
         if self.status_callback:
             try:
                 if self.loop is None:
                     self.loop = asyncio.get_running_loop()
                 asyncio.run_coroutine_threadsafe(
-                    self._send_status_message('error', message_id, message), self.loop
+                    self._set_runtime_status('error', status, message), self.loop
                 )
-            except RuntimeError as e:
+            except (RuntimeError, KeyError) as e:
                 logger.error(
                     f'Error sending status message: {e.__class__.__name__}',
                     stack_info=False,
                 )
 
-    async def _send_status_message(self, msg_type: str, id: str, message: str):
+    async def _set_runtime_status(
+        self, msg_type: str, runtime_status: RuntimeStatus, message: str
+    ):
         """Sends a status message to the client."""
         if self.status_callback:
-            self.status_callback(msg_type, id, message)
+            self.status_callback(msg_type, runtime_status, message)
