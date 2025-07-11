@@ -260,29 +260,6 @@ function oh { {{ command }} $args }
                 return 'source ~/.bashrc'
 
 
-# Utility functions for backward compatibility and state management
-def is_first_time_user() -> bool:
-    """Check if this is the first time the user is running OpenHands CLI."""
-    openhands_dir = Path.home() / '.openhands'
-    return not openhands_dir.exists()
-
-
-def mark_alias_setup_completed() -> None:
-    """Mark that the alias setup has been completed."""
-    try:
-        openhands_dir = Path.home() / '.openhands'
-        openhands_dir.mkdir(parents=True, exist_ok=True)
-        marker_file = openhands_dir / '.alias_setup_completed'
-        marker_file.touch()
-    except Exception:
-        pass  # Silently fail if we can't create the marker
-
-
-def has_alias_setup_been_completed() -> bool:
-    """Check if the alias setup has been completed before."""
-    marker_file = Path.home() / '.openhands' / '.alias_setup_completed'
-    return marker_file.exists()
-
 
 # Convenience functions that use the ShellConfigManager
 def add_aliases_to_shell_config() -> bool:

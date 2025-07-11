@@ -18,9 +18,6 @@ from openhands.cli.shell_config import (
     ShellConfigManager,
     add_aliases_to_shell_config,
     aliases_exist_in_shell_config,
-    has_alias_setup_been_completed,
-    is_first_time_user,
-    mark_alias_setup_completed,
 )
 from openhands.cli.tui import (
     UsageMetrics,
@@ -476,8 +473,6 @@ def run_alias_setup_flow(config: OpenHandsConfig) -> None:
                 )
             )
 
-    # Mark that we've shown the alias setup (regardless of user choice)
-    mark_alias_setup_completed()
     print_formatted_text('')
 
 
@@ -573,8 +568,8 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
         finalize_config(config)
 
     # Check if we should show the alias setup flow
-    # Only show it if this is the first time or if the user hasn't seen it before
-    if is_first_time_user() or not has_alias_setup_been_completed():
+    # Only show it if aliases don't exist in the shell configuration
+    if not aliases_exist_in_shell_config():
         # Clear the terminal if we haven't shown a banner yet
         if not banner_shown:
             clear()

@@ -9,49 +9,11 @@ from openhands.cli.shell_config import (
     add_aliases_to_shell_config,
     aliases_exist_in_shell_config,
     get_shell_config_path,
-    has_alias_setup_been_completed,
-    is_first_time_user,
-    mark_alias_setup_completed,
 )
 
 
 class TestAliasSetup:
     """Test cases for alias setup functionality."""
-
-    def test_is_first_time_user_no_config_dir(self):
-        """Test first time user detection when .openhands doesn't exist."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            with patch(
-                'openhands.cli.shell_config.Path.home', return_value=Path(temp_dir)
-            ):
-                assert is_first_time_user() is True
-
-    def test_is_first_time_user_with_config_dir(self):
-        """Test first time user detection when .openhands exists."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            with patch(
-                'openhands.cli.shell_config.Path.home', return_value=Path(temp_dir)
-            ):
-                # Create .openhands directory
-                openhands_dir = Path(temp_dir) / '.openhands'
-                openhands_dir.mkdir()
-
-                assert is_first_time_user() is False
-
-    def test_alias_setup_completion_tracking(self):
-        """Test alias setup completion tracking."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            with patch(
-                'openhands.cli.shell_config.Path.home', return_value=Path(temp_dir)
-            ):
-                # Should not be completed initially
-                assert has_alias_setup_been_completed() is False
-
-                # Mark as completed
-                mark_alias_setup_completed()
-
-                # Should be completed now
-                assert has_alias_setup_been_completed() is True
 
     def test_get_shell_config_path_no_files_fallback(self):
         """Test shell config path fallback when no shell detection and no config files exist."""
@@ -212,27 +174,6 @@ class TestAliasSetup:
                         oh_count = content.count('alias oh=')
                         assert openhands_count == 1
                         assert oh_count == 1
-
-    def test_mark_alias_setup_completed_creates_directory(self):
-        """Test that marking alias setup completed creates the .openhands directory."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            with patch(
-                'openhands.cli.shell_config.Path.home', return_value=Path(temp_dir)
-            ):
-                # Directory shouldn't exist initially
-                openhands_dir = Path(temp_dir) / '.openhands'
-                assert not openhands_dir.exists()
-
-                # Mark as completed
-                mark_alias_setup_completed()
-
-                # Directory should exist now
-                assert openhands_dir.exists()
-                assert openhands_dir.is_dir()
-
-                # Marker file should exist
-                marker_file = openhands_dir / '.alias_setup_completed'
-                assert marker_file.exists()
 
     def test_aliases_exist_in_shell_config_no_file(self):
         """Test alias detection when no shell config exists."""
