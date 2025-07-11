@@ -110,7 +110,7 @@ function AddCreditsModal({ onClose }: AddCreditsModalProps) {
 }
 
 function ManageOrg() {
-  const { data: organization } = useOrganization({ orgId: "1" });
+  const { data: organization } = useOrganization();
   const { data: organizationPaymentInfo } = useOrganizationPaymentInfo({
     orgId: "1",
   });

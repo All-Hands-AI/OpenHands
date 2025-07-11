@@ -5,6 +5,13 @@ import userEvent from "@testing-library/user-event";
 import OpenHands from "#/api/open-hands";
 import ManageOrg from "#/routes/manage-org";
 
+vi.mock("#/context/use-selected-organization", () => ({
+  useSelectedOrganizationId: vi.fn(() => ({
+    orgId: "1",
+    setOrgId: vi.fn(),
+  })),
+}));
+
 const renderManageOrg = () =>
   render(<ManageOrg />, {
     wrapper: ({ children }) => (
