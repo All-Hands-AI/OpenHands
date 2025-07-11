@@ -48,7 +48,7 @@ class LLMRegistry:
         # We always save the registry after extraneous completions as we cannot predict
         # the next time the registry will be saved
         self.save_registry()
-        return response['choices'][0]['message']['content'].strip()
+        return response.choices[0].message.content.strip()
 
     def register_llm(
         self,

@@ -38,8 +38,6 @@ async def generate_conversation_title(
         truncated_message = message
 
     try:
-        llm = llm_registry.register_llm('convo_title_creator', llm_config)
-
         # Create a simple prompt for the LLM to generate a title
         messages = [
             {
@@ -52,8 +50,9 @@ async def generate_conversation_title(
             },
         ]
 
-        response = llm.completion(messages=messages)
-        title = response.choices[0].message.content.strip()
+        title = llm_registry.request_extraneous_completion(
+            'convo_title_creator', llm_config, messages
+        )
 
         # Ensure the title isn't too long
         if len(title) > max_length:
