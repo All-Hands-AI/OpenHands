@@ -15,13 +15,9 @@ export function useLlmApiKey() {
     queryKey: [LLM_API_KEY_QUERY_KEY],
     enabled: config?.APP_MODE === "saas",
     queryFn: async () => {
-      try {
-        const { data } =
-          await openHands.get<LlmApiKeyResponse>("/api/keys/llm/byor");
-        return data;
-      } catch (error) {
-        return { key: null };
-      }
+      const { data } =
+        await openHands.get<LlmApiKeyResponse>("/api/keys/llm/byor");
+      return data;
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes

@@ -65,3 +65,6 @@ export const VERIFIED_OPENHANDS_MODELS = [
   "devstral-small-2507",
   "devstral-medium-2507",
 ];
+
+// Default model for OpenHands provider
+export const DEFAULT_OPENHANDS_MODEL = "openhands/claude-sonnet-4-20250514";

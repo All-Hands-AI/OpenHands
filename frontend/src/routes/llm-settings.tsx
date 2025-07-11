@@ -24,6 +24,7 @@ import { LlmSettingsInputsSkeleton } from "#/components/features/settings/llm-se
 import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { getProviderId } from "#/utils/map-provider";
+import { DEFAULT_OPENHANDS_MODEL } from "#/utils/verified-models";
 
 function LlmSettingsScreen() {
   const { t } = useTranslation();
@@ -300,9 +301,7 @@ function LlmSettingsScreen() {
                 <>
                   <ModelSelector
                     models={modelsAndProviders}
-                    currentModel={
-                      settings.LLM_MODEL || "openhands/claude-sonnet-4-20250514"
-                    }
+                    currentModel={settings.LLM_MODEL || DEFAULT_OPENHANDS_MODEL}
                     onChange={handleModelIsDirty}
                   />
                   {(settings.LLM_MODEL?.startsWith("openhands/") ||
