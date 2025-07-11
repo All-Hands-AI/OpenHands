@@ -22,7 +22,6 @@ from openhands.events.event import Event, EventSource
 from openhands.llm.metrics import Metrics
 from openhands.llm.metrics_registry import LLMRegistry
 from openhands.memory.view import View
-from openhands.server.shared import file_store
 from openhands.storage.files import FileStore
 from openhands.storage.locations import get_conversation_agent_state_filename
 
@@ -44,11 +43,6 @@ class TrafficControlState(str, Enum):
 
     # traffic control is temporarily paused
     PAUSED = 'paused'
-
-
-# tmp placeholder
-def create_empty_registry():
-    return LLMRegistry(file_store, '', None)
 
 
 @dataclass
@@ -91,7 +85,7 @@ class State:
             limit_increase_amount=100, current_value=0, max_value=100
         )
     )
-    llm_registry: LLMRegistry = field(default_factory=create_empty_registry)
+    llm_registry: LLMRegistry | None = None
     budget_flag: BudgetControlFlag | None = None
     confirmation_mode: bool = False
     history: list[Event] = field(default_factory=list)
@@ -128,6 +122,9 @@ class State:
     def save_to_session(
         self, sid: str, file_store: FileStore, user_id: str | None
     ) -> None:
+        llm_registry = self.llm_registry
+        self.llm_registry = None  # Don't save registry; registry handles itself
+
         pickled = pickle.dumps(self)
         logger.debug(f'Saving state to session {sid}:{self.agent_state}')
         encoded = base64.b64encode(pickled).decode('utf-8')
@@ -146,6 +143,8 @@ class State:
         except Exception as e:
             logger.error(f'Failed to save state to session: {e}')
             raise e
+
+        self.llm_registry = llm_registry  # restore reference to registry
 
     @staticmethod
     def restore_from_session(

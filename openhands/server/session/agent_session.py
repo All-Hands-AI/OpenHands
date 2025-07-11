@@ -64,7 +64,6 @@ class AgentSession:
         self,
         sid: str,
         file_store: FileStore,
-        state: State | None,
         llm_registry: LLMRegistry,
         status_callback: Callable | None = None,
         user_id: str | None = None,
@@ -84,7 +83,6 @@ class AgentSession:
         self.logger = OpenHandsLoggerAdapter(
             extra={'session_id': sid, 'user_id': user_id}
         )
-        self.state = state
         self.llm_registry = llm_registry
 
     async def start(
@@ -441,6 +439,7 @@ class AgentSession:
             '-------------------------------------------------------------------------------------------'
         )
         self.logger.debug(msg)
+        initial_state = self._maybe_restore_state()
         controller = AgentController(
             sid=self.sid,
             user_id=self.user_id,
@@ -455,11 +454,11 @@ class AgentSession:
             confirmation_mode=confirmation_mode,
             headless_mode=False,
             status_callback=self._status_callback,
-            initial_state=self.state,
+            initial_state=initial_state,
             replay_events=replay_events,
         )
 
-        return (controller, self.state is not None)
+        return (controller, initial_state is not None)
 
     async def _create_memory(
         self,
@@ -498,6 +497,26 @@ class AgentSession:
             # If 5 minutes have elapsed and we still don't have a controller, something has gone wrong
             return AgentState.ERROR
         return None
+
+    def _maybe_restore_state(self) -> State | None:
+        """Helper method to handle state restore logic."""
+        restored_state = None
+
+        # Attempt to restore the state from session.
+        # Use a heuristic to figure out if we should have a state:
+        # if we have events in the stream.
+        try:
+            restored_state = State.restore_from_session(
+                self.sid, self.file_store, self.user_id
+            )
+            self.logger.debug(f'Restored state from session, sid: {self.sid}')
+        except Exception as e:
+            if self.event_stream.get_latest_event_id() > 0:
+                # if we have events, we should have a state
+                self.logger.warning(f'State could not be restored: {e}')
+            else:
+                self.logger.debug('No events found, no state to restore')
+        return restored_state
 
     def is_closed(self) -> bool:
         return self._closed

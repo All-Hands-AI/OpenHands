@@ -6,7 +6,6 @@ from typing import Callable, Iterable
 
 import socketio
 
-from openhands.controller.state.state import State
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
@@ -311,21 +310,12 @@ class StandaloneConversationManager(ConversationManager):
                 )
                 await self.close_session(oldest_conversation_id)
 
-        restored_state = None
-        try:
-            restored_state = State.restore_from_session(sid, self.file_store, user_id)
-            logger.debug(f'Restored state from session, sid: {sid}')
-        except Exception:
-            logger.debug('No events found, no state to restore')
-
-        llm_registry = LLMRegistry(
-            self.file_store, sid, user_id
-        )  # TODO: we should attempt to restore it for existing convos
+        # Registry automatically restores state if it already exists for a conversation
+        llm_registry = LLMRegistry(self.file_store, sid, user_id)
         session = Session(
             sid=sid,
             file_store=self.file_store,
             config=self.config,
-            state=restored_state,
             llm_registry=llm_registry,  # assign registry for session
             sio=self.sio,
             user_id=user_id,

@@ -265,7 +265,7 @@ class StateTracker:
         Budget flag will monitor for when budget is exceeded
         """
         # Sync cost across all llm services from llm registry
-        if self.state.budget_flag:
+        if self.state.budget_flag and self.state.llm_registry:
             self.state.budget_flag.current_value = (
                 self.state.llm_registry.get_combined_metrics().accumulated_cost
             )
