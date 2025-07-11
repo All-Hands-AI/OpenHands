@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation, Trans } from "react-i18next";
+import { FaTrash } from "react-icons/fa6";
 import { I18nKey } from "#/i18n/declaration";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
@@ -108,7 +109,12 @@ export function ApiKeysManager() {
               <tbody>
                 {apiKeys.map((key) => (
                   <tr key={key.id} className="border-t border-tertiary">
-                    <td className="p-3 text-sm">{key.name}</td>
+                    <td
+                      className="p-3 text-sm truncate max-w-[160px]"
+                      title={key.name}
+                    >
+                      {key.name}
+                    </td>
                     <td className="p-3 text-sm">
                       {formatDate(key.created_at)}
                     </td>
@@ -118,13 +124,14 @@ export function ApiKeysManager() {
                     <td className="p-3 text-right">
                       <button
                         type="button"
-                        className="underline"
                         onClick={() => {
                           setKeyToDelete(key);
                           setDeleteModalOpen(true);
                         }}
+                        aria-label={`Delete ${key.name}`}
+                        className="cursor-pointer"
                       >
-                        {t(I18nKey.BUTTON$DELETE)}
+                        <FaTrash size={16} />
                       </button>
                     </td>
                   </tr>

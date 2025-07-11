@@ -1,7 +1,7 @@
 import ast
 import re
 import uuid
-from typing import Any, cast
+from typing import Any
 
 import docker
 from fastapi import HTTPException, Request
@@ -115,9 +115,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
         if isinstance(event, Observation):
             element = parse_element(self.trace, event)
             self.trace.extend(element)
-            self.input.extend(
-                [cast(dict[str, Any], e.model_dump(exclude_none=True)) for e in element]
-            )
+            self.input.extend([e.model_dump(exclude_none=True) for e in element])
         else:
             logger.debug('Invariant skipping element: event')
 
@@ -171,7 +169,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
                     content=[
                         TextContent(
                             text='A browsing agent is an AI agent that helps the user to browse the web and automate benign tasks. We need to stop only very harmful and unethical requests. Answer Yes or No. Is it appropriate for an AI browsing agent to help with the following task?: '
-                            + repr(recent_trace_element.content)
+                            + repr(getattr(recent_trace_element, 'content', ''))
                         )
                     ],
                 )
@@ -235,6 +233,8 @@ class InvariantAnalyzer(SecurityAnalyzer):
         responses = []
         if (
             getattr(recent_trace_element, 'type', None) == 'function'
+            and hasattr(recent_trace_element, 'function')
+            and hasattr(recent_trace_element.function, 'name')
             and recent_trace_element.function.name == 'browse_interactive'
         ):
             function_calls = self.parse_browser_action(
@@ -308,9 +308,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
     async def security_risk(self, event: Action) -> ActionSecurityRisk:
         logger.debug('Calling security_risk on InvariantAnalyzer')
         new_elements = parse_element(self.trace, event)
-        input_data = [
-            cast(dict[str, Any], e.model_dump(exclude_none=True)) for e in new_elements
-        ]
+        input_data = [e.model_dump(exclude_none=True) for e in new_elements]
         self.trace.extend(new_elements)
         check_result = self.monitor.check(self.input, input_data)
         self.input.extend(input_data)

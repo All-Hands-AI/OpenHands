@@ -1,7 +1,9 @@
-import { Trans } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 
 export function BitbucketTokenHelpAnchor() {
+  const { t } = useTranslation();
+
   return (
     <p data-testid="bitbucket-token-help-anchor" className="text-xs">
       <Trans
@@ -9,7 +11,7 @@ export function BitbucketTokenHelpAnchor() {
         components={[
           <a
             key="bitbucket-token-help-anchor-link"
-            aria-label="Bitbucket token help link"
+            aria-label={t(I18nKey.GIT$BITBUCKET_TOKEN_HELP_LINK)}
             href="https://bitbucket.org/account/settings/app-passwords/new?scopes=repository:write,pullrequest:write,issue:write"
             target="_blank"
             className="underline underline-offset-2"
@@ -17,7 +19,7 @@ export function BitbucketTokenHelpAnchor() {
           />,
           <a
             key="bitbucket-token-help-anchor-link-2"
-            aria-label="Bitbucket token see more link"
+            aria-label={t(I18nKey.GIT$BITBUCKET_TOKEN_SEE_MORE_LINK)}
             href="https://support.atlassian.com/bitbucket-cloud/docs/app-passwords/"
             target="_blank"
             className="underline underline-offset-2"

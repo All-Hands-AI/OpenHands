@@ -66,7 +66,9 @@ class GitLabService(BaseGitService, GitService):
         Retrieve the GitLab Token to construct the headers
         """
         if not self.token:
-            self.token = await self.get_latest_token()
+            latest_token = await self.get_latest_token()
+            if latest_token:
+                self.token = latest_token
 
         return {
             'Authorization': f'Bearer {self.token.get_secret_value()}',
@@ -185,7 +187,7 @@ class GitLabService(BaseGitService, GitService):
 
         return User(
             id=str(response.get('id', '')),
-            login=response.get('username'),
+            login=response.get('username'),  # type: ignore[call-arg]
             avatar_url=avatar_url,
             name=response.get('name'),
             email=response.get('email'),
@@ -258,8 +260,8 @@ class GitLabService(BaseGitService, GitService):
         all_repos = all_repos[:MAX_REPOS]
         return [
             Repository(
-                id=str(repo.get('id')),
-                full_name=repo.get('path_with_namespace'),
+                id=str(repo.get('id')),  # type: ignore[arg-type]
+                full_name=repo.get('path_with_namespace'),  # type: ignore[arg-type]
                 stargazers_count=repo.get('star_count'),
                 git_provider=ProviderType.GITLAB,
                 is_public=repo.get('visibility') == 'public',
@@ -460,6 +462,7 @@ class GitLabService(BaseGitService, GitService):
         target_branch: str,
         title: str,
         description: str | None = None,
+        labels: list[str] | None = None,
     ) -> str:
         """
         Creates a merge request in GitLab
@@ -470,6 +473,7 @@ class GitLabService(BaseGitService, GitService):
             target_branch: The name of the branch you want the changes merged into
             title: The title of the merge request (optional, defaults to a generic title)
             description: The description of the merge request (optional)
+            labels: A list of labels to apply to the merge request (optional)
 
         Returns:
             - MR URL when successful
@@ -491,6 +495,10 @@ class GitLabService(BaseGitService, GitService):
             'title': title,
             'description': description,
         }
+
+        # Add labels if provided
+        if labels and len(labels) > 0:
+            payload['labels'] = ','.join(labels)
 
         # Make the POST request to create the MR
         response, _ = await self._make_request(

@@ -1,3 +1,6 @@
+# Exclude third-party runtime directory from linting
+exclude = ["third_party/"]
+
 [lint]
 select = [
     "E",

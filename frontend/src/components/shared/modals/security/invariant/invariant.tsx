@@ -198,46 +198,46 @@ function SecurityInvariant() {
               {t(I18nKey.INVARIANT$ASK_CONFIRMATION_RISK_SEVERITY_LABEL)}
             </p>
             <Select
-              placeholder="Select risk severity"
+              placeholder={t(I18nKey.SECURITY$SELECT_RISK_SEVERITY)}
               value={selectedRisk}
               onChange={(e) =>
                 setSelectedRisk(Number(e.target.value) as ActionSecurityRisk)
               }
               className={getRiskColor(selectedRisk)}
               selectedKeys={new Set([selectedRisk.toString()])}
-              aria-label="Select risk severity"
+              aria-label={t(I18nKey.SECURITY$SELECT_RISK_SEVERITY)}
             >
               <SelectItem
                 key={ActionSecurityRisk.UNKNOWN}
-                aria-label="Unknown Risk"
+                aria-label={t(I18nKey.SECURITY$UNKNOWN_RISK)}
                 className={getRiskColor(ActionSecurityRisk.UNKNOWN)}
               >
                 {getRiskText(ActionSecurityRisk.UNKNOWN)}
               </SelectItem>
               <SelectItem
                 key={ActionSecurityRisk.LOW}
-                aria-label="Low Risk"
+                aria-label={t(I18nKey.SECURITY$LOW_RISK)}
                 className={getRiskColor(ActionSecurityRisk.LOW)}
               >
                 {getRiskText(ActionSecurityRisk.LOW)}
               </SelectItem>
               <SelectItem
                 key={ActionSecurityRisk.MEDIUM}
-                aria-label="Medium Risk"
+                aria-label={t(I18nKey.SECURITY$MEDIUM_RISK)}
                 className={getRiskColor(ActionSecurityRisk.MEDIUM)}
               >
                 {getRiskText(ActionSecurityRisk.MEDIUM)}
               </SelectItem>
               <SelectItem
                 key={ActionSecurityRisk.HIGH}
-                aria-label="High Risk"
+                aria-label={t(I18nKey.SECURITY$HIGH_RISK)}
                 className={getRiskColor(ActionSecurityRisk.HIGH)}
               >
                 {getRiskText(ActionSecurityRisk.HIGH)}
               </SelectItem>
               <SelectItem
                 key={ActionSecurityRisk.HIGH + 1}
-                aria-label="Don't ask for confirmation"
+                aria-label={t(I18nKey.SECURITY$DONT_ASK_CONFIRMATION)}
               >
                 {t(I18nKey.INVARIANT$DONT_ASK_FOR_CONFIRMATION_LABEL)}
               </SelectItem>

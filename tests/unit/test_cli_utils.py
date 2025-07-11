@@ -397,7 +397,7 @@ class TestModelAndProviderFunctions:
         models = [
             'openai/gpt-4o',
             'anthropic/claude-sonnet-4-20250514',
-            'o3-mini',
+            'o3',
             'o4-mini',
             'devstral-small-2505',
             'mistral/devstral-small-2505',
@@ -414,7 +414,7 @@ class TestModelAndProviderFunctions:
 
         assert len(result['openai']['models']) == 3
         assert 'gpt-4o' in result['openai']['models']
-        assert 'o3-mini' in result['openai']['models']
+        assert 'o3' in result['openai']['models']
         assert 'o4-mini' in result['openai']['models']
 
         assert len(result['anthropic']['models']) == 1
