@@ -7,10 +7,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics
 from openhands.storage.files import FileStore
-from openhands.storage.locations import (
-    get_conversation_llm_registry_filename,
-    get_conversation_registered_llm,
-)
+from openhands.storage.locations import get_conversation_llm_registry_filename
 
 
 class LLMRegistry:
@@ -101,34 +98,15 @@ class LLMRegistry:
         return total_metrics
 
     def save_registry(self):
-        # Create registry paths and save them
-        # Used to reference individual metric dumps
-        # This is so that we can instantiate multiple LLM Registry for the same conversation and ensure they stay in sync
-        # IMPORTANT: this syncing only works as long as service ids are mutually exclusive between the LLM Registry (no two registry update the same LLM Service)
-        loaded_paths: list[str] = json.loads(self.file_store.read(self.registry_path))
-        paths = set(loaded_paths)
-        for service_id in self.service_to_llm:
-            paths.add(service_id)
-
-        self.file_store.write(self.registry_path, json.dumps(list(paths)))
-
-        # This only flushes the services the which are registered with this registry
+        metrics: dict[str, Metrics] = {}
         for service_id, llm in self.service_to_llm.items():
-            registered_llm_path = get_conversation_registered_llm(
-                service_id, self.conversation_id, self.user_id
-            )
-            self.file_store.write(registered_llm_path, json.dumps(llm.metrics))
+            metrics[service_id] = llm.metrics.copy()
+
+        serialized_metrics = json.dumps(metrics)
+        self.file_store.write(self.registry_path, serialized_metrics)
 
     def maybe_restore_registry(self):
         if not self.conversation_id:
             return
 
-        loaded_paths: list[str] = json.loads(self.file_store.read(self.registry_path))
-        paths = set(loaded_paths)
-
-        for service_id in paths:
-            registered_llm_path = get_conversation_registered_llm(
-                service_id, self.conversation_id, self.user_id
-            )
-            serialized_metrics = self.file_store.read(registered_llm_path)
-            self.restored_llm[service_id] = json.loads(serialized_metrics)
+        self.restored_llm = json.loads(self.file_store.read(self.registry_path))
