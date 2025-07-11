@@ -781,13 +781,8 @@ class AgentController:
             extra={'msg_type': 'STEP'},
         )
 
-        # Ensure budget control flag is synchronized with the latest metrics.
-        # In the future, we should centralized the use of one LLM object per conversation.
-        # This will help us unify the cost for auto generating titles, running the condensor, etc.
-        # Before many microservices will touh the same llm cost field, we should sync with the budget flag for the controller
-        # and check that we haven't exceeded budget BEFORE executing an agent step.
+        # Synchronize spend across all llm services with the budget flag
         self.state_tracker.sync_budget_flag_with_metrics()
-
         if self._is_stuck():
             await self._react_to_exception(
                 AgentStuckInLoopError('Agent got stuck in a loop')
@@ -996,35 +991,11 @@ class AgentController:
             action: The action to attach metrics to
         """
         # Get metrics from agent LLM
-        agent_metrics = self.llm_registry.get_combined_metrics()
-
-        # Get metrics from condenser LLM if it exists
-        condenser_metrics: Metrics | None = None
-        if hasattr(self.agent, 'condenser') and hasattr(self.agent.condenser, 'llm'):
-            condenser_metrics = self.agent.condenser.llm.metrics
-
-        # Create a new minimal metrics object with just what the frontend needs
-        metrics = Metrics(model_name=agent_metrics.model_name)
-
-        # Set accumulated cost (sum of agent and condenser costs)
-        metrics.accumulated_cost = agent_metrics.accumulated_cost
-        if condenser_metrics:
-            metrics.accumulated_cost += condenser_metrics.accumulated_cost
+        metrics = self.llm_registry.get_combined_metrics()
 
         # Add max_budget_per_task to metrics
         if self.state.budget_flag:
             metrics.max_budget_per_task = self.state.budget_flag.max_value
-
-        # Set accumulated token usage (sum of agent and condenser token usage)
-        # Use a deep copy to ensure we don't modify the original object
-        metrics._accumulated_token_usage = (
-            agent_metrics.accumulated_token_usage.model_copy(deep=True)
-        )
-        if condenser_metrics:
-            metrics._accumulated_token_usage = (
-                metrics._accumulated_token_usage
-                + condenser_metrics.accumulated_token_usage
-            )
 
         action.llm_metrics = metrics
 
@@ -1125,3 +1096,4 @@ class AgentController:
 
     def save_state(self):
         self.state_tracker.save_state()
+        self.state.llm_registry.save_registry()
