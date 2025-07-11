@@ -15,9 +15,7 @@ from openhands.cli.shell_config import (
 def test_get_shell_config_path_no_files_fallback():
     """Test shell config path fallback when no shell detection and no config files exist."""
     with tempfile.TemporaryDirectory() as temp_dir:
-        with patch(
-            'openhands.cli.shell_config.Path.home', return_value=Path(temp_dir)
-        ):
+        with patch('openhands.cli.shell_config.Path.home', return_value=Path(temp_dir)):
             # Mock shellingham to raise an exception (detection failure)
             with patch(
                 'shellingham.detect_shell',
@@ -30,9 +28,7 @@ def test_get_shell_config_path_no_files_fallback():
 def test_get_shell_config_path_bash_fallback():
     """Test shell config path fallback to bash when it exists."""
     with tempfile.TemporaryDirectory() as temp_dir:
-        with patch(
-            'openhands.cli.shell_config.Path.home', return_value=Path(temp_dir)
-        ):
+        with patch('openhands.cli.shell_config.Path.home', return_value=Path(temp_dir)):
             # Create .bashrc
             bashrc = Path(temp_dir) / '.bashrc'
             bashrc.touch()
@@ -49,9 +45,7 @@ def test_get_shell_config_path_bash_fallback():
 def test_get_shell_config_path_with_bash_detection():
     """Test shell config path when bash is detected."""
     with tempfile.TemporaryDirectory() as temp_dir:
-        with patch(
-            'openhands.cli.shell_config.Path.home', return_value=Path(temp_dir)
-        ):
+        with patch('openhands.cli.shell_config.Path.home', return_value=Path(temp_dir)):
             # Create .bashrc
             bashrc = Path(temp_dir) / '.bashrc'
             bashrc.touch()
@@ -65,9 +59,7 @@ def test_get_shell_config_path_with_bash_detection():
 def test_get_shell_config_path_with_zsh_detection():
     """Test shell config path when zsh is detected."""
     with tempfile.TemporaryDirectory() as temp_dir:
-        with patch(
-            'openhands.cli.shell_config.Path.home', return_value=Path(temp_dir)
-        ):
+        with patch('openhands.cli.shell_config.Path.home', return_value=Path(temp_dir)):
             # Create .zshrc
             zshrc = Path(temp_dir) / '.zshrc'
             zshrc.touch()
@@ -81,9 +73,7 @@ def test_get_shell_config_path_with_zsh_detection():
 def test_get_shell_config_path_with_fish_detection():
     """Test shell config path when fish is detected."""
     with tempfile.TemporaryDirectory() as temp_dir:
-        with patch(
-            'openhands.cli.shell_config.Path.home', return_value=Path(temp_dir)
-        ):
+        with patch('openhands.cli.shell_config.Path.home', return_value=Path(temp_dir)):
             # Create fish config directory and file
             fish_config_dir = Path(temp_dir) / '.config' / 'fish'
             fish_config_dir.mkdir(parents=True)
@@ -100,9 +90,7 @@ def test_get_shell_config_path_with_fish_detection():
 def test_add_aliases_to_shell_config_bash():
     """Test adding aliases to bash config."""
     with tempfile.TemporaryDirectory() as temp_dir:
-        with patch(
-            'openhands.cli.shell_config.Path.home', return_value=Path(temp_dir)
-        ):
+        with patch('openhands.cli.shell_config.Path.home', return_value=Path(temp_dir)):
             # Mock shellingham to return bash
             with patch('shellingham.detect_shell', return_value=('bash', 'bash')):
                 # Add aliases
@@ -110,9 +98,7 @@ def test_add_aliases_to_shell_config_bash():
                 assert success is True
 
                 # Get the actual path that was used
-                with patch(
-                    'shellingham.detect_shell', return_value=('bash', 'bash')
-                ):
+                with patch('shellingham.detect_shell', return_value=('bash', 'bash')):
                     profile_path = get_shell_config_path()
 
                 # Check that the aliases were added
@@ -120,17 +106,13 @@ def test_add_aliases_to_shell_config_bash():
                     content = f.read()
                     assert 'alias openhands=' in content
                     assert 'alias oh=' in content
-                    assert (
-                        'uvx --python 3.12 --from openhands-ai openhands' in content
-                    )
+                    assert 'uvx --python 3.12 --from openhands-ai openhands' in content
 
 
 def test_add_aliases_to_shell_config_zsh():
     """Test adding aliases to zsh config."""
     with tempfile.TemporaryDirectory() as temp_dir:
-        with patch(
-            'openhands.cli.shell_config.Path.home', return_value=Path(temp_dir)
-        ):
+        with patch('openhands.cli.shell_config.Path.home', return_value=Path(temp_dir)):
             # Mock shellingham to return zsh
             with patch('shellingham.detect_shell', return_value=('zsh', 'zsh')):
                 # Add aliases
@@ -143,17 +125,13 @@ def test_add_aliases_to_shell_config_zsh():
                     content = f.read()
                     assert 'alias openhands=' in content
                     assert 'alias oh=' in content
-                    assert (
-                        'uvx --python 3.12 --from openhands-ai openhands' in content
-                    )
+                    assert 'uvx --python 3.12 --from openhands-ai openhands' in content
 
 
 def test_add_aliases_handles_existing_aliases():
     """Test that adding aliases handles existing aliases correctly."""
     with tempfile.TemporaryDirectory() as temp_dir:
-        with patch(
-            'openhands.cli.shell_config.Path.home', return_value=Path(temp_dir)
-        ):
+        with patch('openhands.cli.shell_config.Path.home', return_value=Path(temp_dir)):
             # Mock shellingham to return bash
             with patch('shellingham.detect_shell', return_value=('bash', 'bash')):
                 # Add aliases first time
@@ -165,9 +143,7 @@ def test_add_aliases_handles_existing_aliases():
                 assert success is True
 
                 # Get the actual path that was used
-                with patch(
-                    'shellingham.detect_shell', return_value=('bash', 'bash')
-                ):
+                with patch('shellingham.detect_shell', return_value=('bash', 'bash')):
                     profile_path = get_shell_config_path()
 
                 # Check that aliases weren't duplicated
@@ -183,9 +159,7 @@ def test_add_aliases_handles_existing_aliases():
 def test_aliases_exist_in_shell_config_no_file():
     """Test alias detection when no shell config exists."""
     with tempfile.TemporaryDirectory() as temp_dir:
-        with patch(
-            'openhands.cli.shell_config.Path.home', return_value=Path(temp_dir)
-        ):
+        with patch('openhands.cli.shell_config.Path.home', return_value=Path(temp_dir)):
             # Mock shellingham to return bash
             with patch('shellingham.detect_shell', return_value=('bash', 'bash')):
                 assert aliases_exist_in_shell_config() is False
@@ -194,9 +168,7 @@ def test_aliases_exist_in_shell_config_no_file():
 def test_aliases_exist_in_shell_config_no_aliases():
     """Test alias detection when shell config exists but has no aliases."""
     with tempfile.TemporaryDirectory() as temp_dir:
-        with patch(
-            'openhands.cli.shell_config.Path.home', return_value=Path(temp_dir)
-        ):
+        with patch('openhands.cli.shell_config.Path.home', return_value=Path(temp_dir)):
             # Mock shellingham to return bash
             with patch('shellingham.detect_shell', return_value=('bash', 'bash')):
                 # Create bash profile with other content
@@ -210,9 +182,7 @@ def test_aliases_exist_in_shell_config_no_aliases():
 def test_aliases_exist_in_shell_config_with_aliases():
     """Test alias detection when aliases exist."""
     with tempfile.TemporaryDirectory() as temp_dir:
-        with patch(
-            'openhands.cli.shell_config.Path.home', return_value=Path(temp_dir)
-        ):
+        with patch('openhands.cli.shell_config.Path.home', return_value=Path(temp_dir)):
             # Mock shellingham to return bash
             with patch('shellingham.detect_shell', return_value=('bash', 'bash')):
                 # Add aliases first
@@ -233,9 +203,7 @@ def test_shell_config_manager_basic_functionality():
     assert manager.get_shell_type_from_path(Path('/home/user/.bashrc')) == 'bash'
     assert manager.get_shell_type_from_path(Path('/home/user/.zshrc')) == 'zsh'
     assert (
-        manager.get_shell_type_from_path(
-            Path('/home/user/.config/fish/config.fish')
-        )
+        manager.get_shell_type_from_path(Path('/home/user/.config/fish/config.fish'))
         == 'fish'
     )
 
@@ -245,12 +213,8 @@ def test_shell_config_manager_reload_commands():
     manager = ShellConfigManager()
 
     # Test different shell reload commands
-    assert 'source ~/.zshrc' in manager.get_reload_command(
-        Path('/home/user/.zshrc')
-    )
-    assert 'source ~/.bashrc' in manager.get_reload_command(
-        Path('/home/user/.bashrc')
-    )
+    assert 'source ~/.zshrc' in manager.get_reload_command(Path('/home/user/.zshrc'))
+    assert 'source ~/.bashrc' in manager.get_reload_command(Path('/home/user/.bashrc'))
     assert 'source ~/.bash_profile' in manager.get_reload_command(
         Path('/home/user/.bash_profile')
     )
@@ -264,9 +228,7 @@ def test_shell_config_manager_template_rendering():
     manager = ShellConfigManager(command='test-command')
 
     with tempfile.TemporaryDirectory() as temp_dir:
-        with patch(
-            'openhands.cli.shell_config.Path.home', return_value=Path(temp_dir)
-        ):
+        with patch('openhands.cli.shell_config.Path.home', return_value=Path(temp_dir)):
             # Create a bash config file
             bashrc = Path(temp_dir) / '.bashrc'
             bashrc.touch()

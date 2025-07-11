@@ -260,7 +260,6 @@ function oh { {{ command }} $args }
                 return 'source ~/.bashrc'
 
 
-
 # Convenience functions that use the ShellConfigManager
 def add_aliases_to_shell_config() -> bool:
     """Add OpenHands aliases to the shell configuration."""
