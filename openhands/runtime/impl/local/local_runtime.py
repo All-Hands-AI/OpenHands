@@ -787,4 +787,5 @@ def _get_plugins(config: OpenHandsConfig) -> list[PluginRequirement]:
     )
     agent = Agent.get_cls(config.default_agent)(llm, agent_config)
     plugins = agent.sandbox_plugins
+    logger.info(f'TRACE:LocalRuntime:_get_plugins:{plugins}')
     return plugins
