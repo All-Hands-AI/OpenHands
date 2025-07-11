@@ -703,11 +703,13 @@ if __name__ == '__main__':
     logger.info(f'File viewer server started at {server_url}')
 
     plugins_to_load: list[Plugin] = []
+    logger.info(f'action_execution_server.py:__main__:1:{args.plugins}')
     if args.plugins:
         for plugin in args.plugins:
             if plugin not in ALL_PLUGINS:
                 raise ValueError(f'Plugin {plugin} not found')
             plugins_to_load.append(ALL_PLUGINS[plugin]())  # type: ignore
+    logger.info(f'action_execution_server.py:__main__:2:{plugins_to_load}')
 
     client: ActionExecutor | None = None
     mcp_proxy_manager: MCPProxyManager | None = None

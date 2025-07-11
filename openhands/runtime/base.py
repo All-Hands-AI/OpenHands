@@ -144,6 +144,7 @@ class Runtime(FileEditRuntimeMixin):
         )
         # add VSCode plugin if not in headless mode
         if not headless_mode:
+            logger.info('TRACE:Runtime:add_vs_code')
             self.plugins.append(VSCodeRequirement())
 
         self.status_callback = status_callback
@@ -1089,7 +1090,7 @@ fi
         return False
 
     @classmethod
-    def setup(cls, config: OpenHandsConfig):
+    def setup(cls, config: OpenHandsConfig, headless_mode: bool = False):
         """Set up the environment for runtimes to be created."""
 
     @classmethod

@@ -36,6 +36,7 @@ from openhands.runtime.impl.docker.docker_runtime import (
     VSCODE_PORT_RANGE,
 )
 from openhands.runtime.plugins import PluginRequirement
+from openhands.runtime.plugins.vscode import VSCodeRequirement
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.command import get_action_execution_server_startup_command
@@ -143,7 +144,7 @@ class LocalRuntime(ActionExecutionClient):
         user_id: str | None = None,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
     ) -> None:
-        logger.info(f'TRACE:LocalRuntime:init:{plugins}')
+        logger.info(f'TRACE:LocalRuntime:init:1:{plugins}')
         self.is_windows = sys.platform == 'win32'
         if self.is_windows:
             logger.warning(
@@ -201,12 +202,15 @@ class LocalRuntime(ActionExecutionClient):
         if session_api_key:
             self.session.headers['X-Session-API-Key'] = session_api_key
 
+        logger.info(f'TRACE:LocalRuntime:init:2:{plugins}')
+
     @property
     def action_execution_server_url(self) -> str:
         return self.api_url
 
     async def connect(self) -> None:
         """Start the action_execution_server on the local machine or connect to an existing one."""
+        logger.info(f"TRACE:LocalRuntime:connect:1:{self.plugins}")
         self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
 
         # Get environment variables for warm server configuration
@@ -314,6 +318,7 @@ class LocalRuntime(ActionExecutionClient):
 
             # If no warm server is available, start a new one
             if not warm_server_available:
+                logger.info("TRACE:no_warm_server_available")
                 # Create a new server
                 server_info, api_url = _create_server(
                     config=self.config,
@@ -380,7 +385,7 @@ class LocalRuntime(ActionExecutionClient):
                 _create_warm_server_in_background(self.config, self.plugins)
 
     @classmethod
-    def setup(cls, config: OpenHandsConfig):
+    def setup(cls, config: OpenHandsConfig, headless_mode: bool = False):
         should_check_dependencies = os.getenv('SKIP_DEPENDENCY_CHECK', '') != '1'
         if should_check_dependencies:
             code_repo_path = os.path.dirname(os.path.dirname(openhands.__file__))
@@ -391,8 +396,13 @@ class LocalRuntime(ActionExecutionClient):
         # Initialize warm servers if needed
         if initial_num_warm_servers > 0 and len(_WARM_SERVERS) == 0:
             plugins = _get_plugins(config)
+
+            # Copy the logic from Runtime where we add a VSCodePlugin on init if missing
+            if not headless_mode:
+                plugins.append(VSCodeRequirement())
+
             for _ in range(initial_num_warm_servers):
-                _create_warm_server_in_background(config, plugins)
+                _create_warm_server(config, plugins)
 
     @tenacity.retry(
         wait=tenacity.wait_fixed(2),
@@ -715,6 +725,7 @@ def _create_warm_server(
     plugins: list[PluginRequirement],
 ) -> None:
     """Create a warm server in the background."""
+    logger.info("TRACE:_create_warm_server")
     try:
         server_info, api_url = _create_server(
             config=config,
