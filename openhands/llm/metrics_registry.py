@@ -1,4 +1,6 @@
+import base64
 import json
+import pickle
 from threading import Lock
 from typing import Callable
 from uuid import uuid4
@@ -106,15 +108,22 @@ class LLMRegistry:
 
     def save_registry(self):
         with self._save_lock:
+
+
             metrics: dict[str, Metrics] = {}
             for service_id, llm in self.service_to_llm.items():
                 metrics[service_id] = llm.metrics.copy()
 
-            serialized_metrics = json.dumps(metrics)
+            pickled = pickle.dumps(metrics)
+            serialized_metrics = base64.b64encode(pickled).decode('utf-8')
             self.file_store.write(self.registry_path, serialized_metrics)
 
     def maybe_restore_registry(self):
         if not self.conversation_id:
             return
-
-        self.restored_llm = json.loads(self.file_store.read(self.registry_path))
+        try:
+            encoded = self.file_store.read(self.registry_path)
+            pickled = base64.b64decode(encoded)
+            self.restored_llm = pickle.loads(pickled)
+        except FileNotFoundError:
+            pass
