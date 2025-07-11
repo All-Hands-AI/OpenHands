@@ -15,6 +15,23 @@ vi.mock("#/context/ws-client-provider", () => ({
   }),
 }));
 
+// Mock the terminal stream service
+vi.mock("#/services/terminal-stream-service", () => ({
+  getTerminalStreamService: vi.fn(() => ({
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+    isStreamConnected: vi.fn().mockReturnValue(true),
+  })),
+  TerminalStreamService: {},
+}));
+
+// Mock the useActionExecutionServerUrl hook
+vi.mock("#/hooks/query/use-action-execution-server-url", () => ({
+    useActionExecutionServerUrl: () => ({
+      url: "http://localhost:8000",
+    }),
+  }));
+
 interface TestTerminalComponentProps {
   commands: Command[];
 }
