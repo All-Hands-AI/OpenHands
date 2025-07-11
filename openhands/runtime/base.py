@@ -144,7 +144,6 @@ class Runtime(FileEditRuntimeMixin):
         )
         # add VSCode plugin if not in headless mode
         if not headless_mode:
-            logger.info('TRACE:Runtime:add_vs_code')
             self.plugins.append(VSCodeRequirement())
 
         self.status_callback = status_callback

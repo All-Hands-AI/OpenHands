@@ -140,11 +140,10 @@ class LocalRuntime(ActionExecutionClient):
         env_vars: dict[str, str] | None = None,
         status_callback: Callable[[str, RuntimeStatus, str], None] | None = None,
         attach_to_existing: bool = False,
-        headless_mode: bool = False,
+        headless_mode: bool = True,
         user_id: str | None = None,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
     ) -> None:
-        logger.info(f'TRACE:LocalRuntime:init:1:{plugins}')
         self.is_windows = sys.platform == 'win32'
         if self.is_windows:
             logger.warning(
@@ -202,15 +201,12 @@ class LocalRuntime(ActionExecutionClient):
         if session_api_key:
             self.session.headers['X-Session-API-Key'] = session_api_key
 
-        logger.info(f'TRACE:LocalRuntime:init:2:{plugins}')
-
     @property
     def action_execution_server_url(self) -> str:
         return self.api_url
 
     async def connect(self) -> None:
         """Start the action_execution_server on the local machine or connect to an existing one."""
-        logger.info(f"TRACE:LocalRuntime:connect:1:{self.plugins}")
         self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
 
         # Get environment variables for warm server configuration
@@ -318,7 +314,6 @@ class LocalRuntime(ActionExecutionClient):
 
             # If no warm server is available, start a new one
             if not warm_server_available:
-                logger.info("TRACE:no_warm_server_available")
                 # Create a new server
                 server_info, api_url = _create_server(
                     config=self.config,
@@ -725,7 +720,6 @@ def _create_warm_server(
     plugins: list[PluginRequirement],
 ) -> None:
     """Create a warm server in the background."""
-    logger.info("TRACE:_create_warm_server")
     try:
         server_info, api_url = _create_server(
             config=config,
@@ -798,5 +792,4 @@ def _get_plugins(config: OpenHandsConfig) -> list[PluginRequirement]:
     )
     agent = Agent.get_cls(config.default_agent)(llm, agent_config)
     plugins = agent.sandbox_plugins
-    logger.info(f'TRACE:LocalRuntime:_get_plugins:{plugins}')
     return plugins

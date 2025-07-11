@@ -296,7 +296,6 @@ class ActionExecutor:
         self.browser_init_task = asyncio.create_task(self._init_browser_async())
         logger.debug('Browser initialization started in background')
 
-        logger.warning(f'ActonExecutor:ainit:{self.plugins_to_load}')
         await wait_all(
             (self._init_plugin(plugin) for plugin in self.plugins_to_load),
             timeout=int(os.environ.get('INIT_PLUGIN_TIMEOUT', '120')),
@@ -703,13 +702,11 @@ if __name__ == '__main__':
     logger.info(f'File viewer server started at {server_url}')
 
     plugins_to_load: list[Plugin] = []
-    logger.info(f'action_execution_server.py:__main__:1:{args.plugins}')
     if args.plugins:
         for plugin in args.plugins:
             if plugin not in ALL_PLUGINS:
                 raise ValueError(f'Plugin {plugin} not found')
             plugins_to_load.append(ALL_PLUGINS[plugin]())  # type: ignore
-    logger.info(f'action_execution_server.py:__main__:2:{plugins_to_load}')
 
     client: ActionExecutor | None = None
     mcp_proxy_manager: MCPProxyManager | None = None
@@ -997,14 +994,11 @@ if __name__ == '__main__':
 
     @app.get('/vscode/connection_token')
     async def get_vscode_connection_token():
-        logger.warning(f'get_vscode_connection_token:1:{client}')
         assert client is not None
         if 'vscode' in client.plugins:
-            logger.warning(f'get_vscode_connection_token:2:{client.plugins}')
             plugin: VSCodePlugin = client.plugins['vscode']  # type: ignore
             return {'token': plugin.vscode_connection_token}
         else:
-            logger.warning('get_vscode_connection_token:3')
             return {'token': None}
 
     # ================================
