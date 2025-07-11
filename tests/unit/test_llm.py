@@ -264,6 +264,39 @@ def test_llm_init_with_openrouter_model(mock_get_model_info, default_config):
     mock_get_model_info.assert_called_once_with('openrouter:gpt-4o-mini')
 
 
+@patch('openhands.llm.llm.litellm_completion')
+def test_stop_parameter_handling(mock_litellm_completion, default_config):
+    """Test that stop parameter is only added for supported models."""
+    from litellm.types.utils import ModelResponse
+
+    mock_response = ModelResponse(
+        id='test-id',
+        choices=[{'message': {'content': 'Test response'}}],
+        model='test-model',
+    )
+    mock_litellm_completion.return_value = mock_response
+
+    # Test with a model that supports stop parameter
+    default_config.model = 'custom-model'  # Use a model not in FUNCTION_CALLING_SUPPORTED_MODELS
+    llm = LLM(default_config)
+    llm.completion(
+        messages=[{'role': 'user', 'content': 'Hello!'}],
+        tools=[{'type': 'function', 'function': {'name': 'test', 'description': 'test'}}],
+    )
+    # Verify stop parameter was included
+    assert 'stop' in mock_litellm_completion.call_args[1]
+
+    # Test with Grok-4 model that doesn't support stop parameter
+    default_config.model = 'xai/grok-4-0709'
+    llm = LLM(default_config)
+    llm.completion(
+        messages=[{'role': 'user', 'content': 'Hello!'}],
+        tools=[{'type': 'function', 'function': {'name': 'test', 'description': 'test'}}],
+    )
+    # Verify stop parameter was not included
+    assert 'stop' not in mock_litellm_completion.call_args[1]
+
+
 # Tests involving completion and retries
 
 
