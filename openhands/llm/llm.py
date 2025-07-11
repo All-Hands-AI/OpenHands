@@ -104,7 +104,7 @@ MODELS_WITHOUT_STOP_WORDS = [
     'o1-preview',
     'o1',
     'o1-2024-12-17',
-    'xai/grok-4-0709',  # Grok-4 doesn't support stop parameter
+    'xai/grok-4-0709',
 ]
 
 
