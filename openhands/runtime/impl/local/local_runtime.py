@@ -139,10 +139,11 @@ class LocalRuntime(ActionExecutionClient):
         env_vars: dict[str, str] | None = None,
         status_callback: Callable[[str, RuntimeStatus, str], None] | None = None,
         attach_to_existing: bool = False,
-        headless_mode: bool = True,
+        headless_mode: bool = False,
         user_id: str | None = None,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
     ) -> None:
+        logger.info(f"TRACE:LocalRuntime:init:{plugins}")
         self.is_windows = sys.platform == 'win32'
         if self.is_windows:
             logger.warning(
