@@ -251,6 +251,9 @@ class StateTracker:
         if self.sid and self.file_store:
             self.state.save_to_session(self.sid, self.file_store, self.user_id)
 
+        if self.state.llm_registry:
+            self.state.llm_registry.save_registry()
+
     def run_control_flags(self):
         """
         Performs one step of the control flags

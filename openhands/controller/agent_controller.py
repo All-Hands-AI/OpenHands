@@ -73,7 +73,6 @@ from openhands.events.observation import (
     Observation,
 )
 from openhands.events.serialization.event import truncate_content
-from openhands.llm.metrics import Metrics
 from openhands.llm.metrics_registry import LLMRegistry
 from openhands.storage.files import FileStore
 
@@ -1096,4 +1095,3 @@ class AgentController:
 
     def save_state(self):
         self.state_tracker.save_state()
-        self.state.llm_registry.save_registry()
