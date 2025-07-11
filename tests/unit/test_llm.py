@@ -277,11 +277,15 @@ def test_stop_parameter_handling(mock_litellm_completion, default_config):
     mock_litellm_completion.return_value = mock_response
 
     # Test with a model that supports stop parameter
-    default_config.model = 'custom-model'  # Use a model not in FUNCTION_CALLING_SUPPORTED_MODELS
+    default_config.model = (
+        'custom-model'  # Use a model not in FUNCTION_CALLING_SUPPORTED_MODELS
+    )
     llm = LLM(default_config)
     llm.completion(
         messages=[{'role': 'user', 'content': 'Hello!'}],
-        tools=[{'type': 'function', 'function': {'name': 'test', 'description': 'test'}}],
+        tools=[
+            {'type': 'function', 'function': {'name': 'test', 'description': 'test'}}
+        ],
     )
     # Verify stop parameter was included
     assert 'stop' in mock_litellm_completion.call_args[1]
@@ -291,7 +295,9 @@ def test_stop_parameter_handling(mock_litellm_completion, default_config):
     llm = LLM(default_config)
     llm.completion(
         messages=[{'role': 'user', 'content': 'Hello!'}],
-        tools=[{'type': 'function', 'function': {'name': 'test', 'description': 'test'}}],
+        tools=[
+            {'type': 'function', 'function': {'name': 'test', 'description': 'test'}}
+        ],
     )
     # Verify stop parameter was not included
     assert 'stop' not in mock_litellm_completion.call_args[1]
