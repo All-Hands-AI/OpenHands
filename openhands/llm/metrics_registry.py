@@ -1,4 +1,5 @@
 import json
+from threading import Lock
 from typing import Callable
 from uuid import uuid4
 
@@ -29,6 +30,8 @@ class LLMRegistry:
             self.conversation_id, self.user_id
         )
 
+        self._save_lock = Lock()
+
         # Always attempt to restore registry if it exists
         self.maybe_restore_registry()
 
@@ -41,6 +44,10 @@ class LLMRegistry:
 
         llm = self.service_to_llm[service_id]
         response = llm.completion(messages=messages)
+
+        # We always save the registry after extraneous completions as we cannot predict
+        # the next time the registry will be saved
+        self.save_registry()
         return response['choices'][0]['message']['content'].strip()
 
     def register_llm(
@@ -98,12 +105,13 @@ class LLMRegistry:
         return total_metrics
 
     def save_registry(self):
-        metrics: dict[str, Metrics] = {}
-        for service_id, llm in self.service_to_llm.items():
-            metrics[service_id] = llm.metrics.copy()
+        with self._save_lock:
+            metrics: dict[str, Metrics] = {}
+            for service_id, llm in self.service_to_llm.items():
+                metrics[service_id] = llm.metrics.copy()
 
-        serialized_metrics = json.dumps(metrics)
-        self.file_store.write(self.registry_path, serialized_metrics)
+            serialized_metrics = json.dumps(metrics)
+            self.file_store.write(self.registry_path, serialized_metrics)
 
     def maybe_restore_registry(self):
         if not self.conversation_id:
