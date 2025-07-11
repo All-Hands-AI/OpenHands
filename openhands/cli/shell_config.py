@@ -233,68 +233,6 @@ function oh { {{ command }} $args }
             print(f'Error adding aliases: {e}')
             return False
 
-    def remove_aliases(self, config_path: Optional[Path] = None) -> bool:
-        """Remove OpenHands aliases from the shell configuration.
-
-        Args:
-            config_path: Path to modify. If None, will detect automatically.
-
-        Returns:
-            True if successful, False otherwise.
-        """
-        if config_path is None:
-            config_path = self.get_shell_config_path()
-
-        if not config_path.exists():
-            return True  # Nothing to remove
-
-        try:
-            with open(config_path, 'r', encoding='utf-8', errors='ignore') as f:
-                lines = f.readlines()
-
-            shell_type = self.get_shell_type_from_path(config_path)
-            patterns = self.ALIAS_PATTERNS.get(shell_type, self.ALIAS_PATTERNS['bash'])
-
-            # Filter out OpenHands-related lines
-            filtered_lines = []
-            skip_next_empty = False
-
-            for line in lines:
-                line_stripped = line.strip()
-
-                # Skip OpenHands comment
-                if line_stripped == '# OpenHands CLI aliases':
-                    skip_next_empty = True
-                    continue
-
-                # Skip alias/function lines
-                should_skip = False
-                for pattern in patterns:
-                    if re.match(pattern, line_stripped):
-                        should_skip = True
-                        skip_next_empty = True
-                        break
-
-                if should_skip:
-                    continue
-
-                # Skip empty lines immediately after OpenHands sections
-                if skip_next_empty and line_stripped == '':
-                    skip_next_empty = False
-                    continue
-
-                skip_next_empty = False
-                filtered_lines.append(line)
-
-            # Write back the filtered content
-            with open(config_path, 'w', encoding='utf-8') as f:
-                f.writelines(filtered_lines)
-
-            return True
-        except Exception as e:
-            print(f'Error removing aliases: {e}')
-            return False
-
     def get_reload_command(self, config_path: Optional[Path] = None) -> str:
         """Get the command to reload the shell configuration.
 
@@ -351,12 +289,6 @@ def add_aliases_to_shell_config() -> bool:
     """Add OpenHands aliases to the shell configuration."""
     manager = ShellConfigManager()
     return manager.add_aliases()
-
-
-def remove_aliases_from_shell_config() -> bool:
-    """Remove OpenHands aliases from the shell configuration."""
-    manager = ShellConfigManager()
-    return manager.remove_aliases()
 
 
 def aliases_exist_in_shell_config() -> bool:
