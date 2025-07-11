@@ -130,3 +130,94 @@ docker run # ... \
 <Note>
 **Docker Desktop Required**: Network isolation features, including custom networks and `host.docker.internal` routing, require Docker Desktop. Docker Engine alone does not support these features on localhost across custom networks. If you're using Docker Engine without Docker Desktop, network isolation may not work as expected.
 </Note>
+
+## Docker-in-Docker Support
+
+OpenHands supports Docker-in-Docker functionality, which allows the sandbox container to build Docker images, run containers, and perform other Docker operations. This is useful for scenarios where the agent needs to work with containerized applications or build Docker images.
+
+<Warning>
+**CRITICAL SECURITY WARNING**: Enabling Docker-in-Docker functionality grants the sandbox container access to the host Docker daemon with root-equivalent privileges. This poses significant security risks:
+
+- **Full Host Access**: The sandbox can potentially access and modify any file on the host system
+- **Container Escape**: Malicious code could escape the sandbox and compromise the host
+- **Privilege Escalation**: The sandbox gains root-level access to the Docker daemon
+- **Network Access**: The sandbox can potentially access other containers and networks
+
+**Only enable this feature in trusted environments where you fully trust the code being executed.**
+</Warning>
+
+### Enabling Docker-in-Docker
+
+To enable Docker-in-Docker functionality, set the `mount_docker_socket` configuration option:
+
+#### Using Environment Variables
+
+```bash
+docker run # ... \
+    -e SANDBOX_MOUNT_DOCKER_SOCKET=true \
+    # ...
+```
+
+#### Using Configuration File
+
+```toml
+[sandbox]
+mount_docker_socket = true
+```
+
+### How It Works
+
+When enabled, OpenHands mounts the host Docker socket (`/var/run/docker.sock`) into the sandbox container. This allows the sandbox to communicate directly with the host Docker daemon.
+
+The feature includes safety checks:
+- Verifies that the Docker socket exists on the host before mounting
+- Logs security warnings when the feature is enabled
+- Provides clear error messages if the socket is not available
+
+### Use Cases
+
+Docker-in-Docker functionality is useful for:
+
+- **Building Docker Images**: The agent can build and tag Docker images
+- **Running Containerized Applications**: Testing and running applications in containers
+- **Container Management**: Starting, stopping, and managing containers
+- **Multi-container Applications**: Working with Docker Compose or similar tools
+- **CI/CD Workflows**: Implementing containerized build and deployment pipelines
+
+### Example Usage
+
+Once enabled, the agent can use Docker commands within the sandbox:
+
+```bash
+# Build a Docker image
+docker build -t my-app .
+
+# Run a container
+docker run -d --name my-container my-app
+
+# List running containers
+docker ps
+
+# Use Docker Compose
+docker-compose up -d
+```
+
+### Security Best Practices
+
+If you must use Docker-in-Docker functionality:
+
+1. **Trusted Code Only**: Only run trusted code that you have reviewed
+2. **Isolated Environment**: Use on isolated machines or VMs, not production systems
+3. **Network Isolation**: Implement network restrictions to limit potential damage
+4. **Monitoring**: Monitor Docker daemon activity for suspicious operations
+5. **Regular Updates**: Keep Docker and OpenHands updated with security patches
+6. **Backup Strategy**: Ensure you have backups of important data before enabling
+
+### Troubleshooting
+
+If Docker-in-Docker is not working:
+
+1. **Check Docker Socket**: Ensure `/var/run/docker.sock` exists on the host
+2. **Permissions**: Verify the Docker daemon is running and accessible
+3. **Logs**: Check OpenHands logs for Docker socket mounting warnings
+4. **Docker Version**: Ensure compatible Docker versions on host and container

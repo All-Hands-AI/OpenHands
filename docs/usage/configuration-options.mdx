@@ -367,6 +367,17 @@ To use these with the docker command, pass in `-e SANDBOX_<option>`. Example: `-
   - Default: `true`
   - Description: Whether to initialize plugins
 
+### Docker-in-Docker Support
+
+<Warning>
+**SECURITY WARNING**: The `mount_docker_socket` option grants the sandbox container access to the host Docker daemon with root-equivalent privileges. This poses significant security risks and should only be used in trusted environments. Malicious code running in the sandbox could potentially compromise the entire host system.
+</Warning>
+
+- `mount_docker_socket`
+  - Type: `bool`
+  - Default: `false`
+  - Description: Mount the host Docker socket (`/var/run/docker.sock`) into the sandbox container to enable Docker-in-Docker functionality. This allows the sandbox to build Docker images, run containers, and perform other Docker operations. **Use with extreme caution** as this grants root-equivalent access to the host system.
+
 ### Dependencies and Environment
 - `runtime_extra_deps`
   - Type: `str`
