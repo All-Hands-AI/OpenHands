@@ -5904,7 +5904,7 @@
         "uk": "Ключ API LLM"
     },
     "SETTINGS$LLM_API_KEY_DESCRIPTION": {
-        "en": "You can use this API Key as the LLM API Key for OpenHands self-deploy and CLI. It will incur cost on your OpenHands Cloud account. Do NOT share this key elsewhere.",
+        "en": "You can use this API Key as the LLM API Key for OpenHands open-source and CLI. It will incur cost on your OpenHands Cloud account. Do NOT share this key elsewhere.",
         "zh-CN": "您可以将此 API 密钥用作 OpenHands 开源和 CLI 的 LLM API 密钥。它将在您的 OpenHands Cloud 账户上产生费用。请勿在其他地方共享此密钥。",
         "zh-TW": "您可以將此 API 金鑰用作 OpenHands 開源和 CLI 的 LLM API 金鑰。它將在您的 OpenHands Cloud 帳戶上產生費用。請勿在其他地方共享此金鑰。",
         "de": "Sie können diesen API-Schlüssel als LLM-API-Schlüssel für OpenHands Open-Source und CLI verwenden. Es fallen Kosten für Ihr OpenHands Cloud-Konto an. Teilen Sie diesen Schlüssel NICHT anderswo.",
