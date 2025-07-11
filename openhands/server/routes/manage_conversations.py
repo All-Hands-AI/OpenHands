@@ -369,7 +369,7 @@ def generate_prompt(
         },
     ]
 
-    raw_prompt = ConversationManagerImpl.request_extraneous_completion(
+    raw_prompt = ConversationManagerImpl.request_llm_completion(
         'remember_prompt', conversation_id, llm_config, messages
     )
     prompt = re.search(r'<update_prompt>(.*?)</update_prompt>', raw_prompt, re.DOTALL)
