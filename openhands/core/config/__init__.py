@@ -5,6 +5,7 @@ from openhands.core.config.config_utils import (
     OH_MAX_ITERATIONS,
     get_field_info,
 )
+from openhands.core.config.container_reuse_strategy import ContainerReuseStrategy
 from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.mcp_config import MCPConfig
@@ -28,6 +29,7 @@ __all__ = [
     'OH_MAX_ITERATIONS',
     'AgentConfig',
     'CLIConfig',
+    'ContainerReuseStrategy',
     'OpenHandsConfig',
     'MCPConfig',
     'LLMConfig',
