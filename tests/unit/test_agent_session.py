@@ -10,6 +10,7 @@ from openhands.core.config.agent_config import AgentConfig
 from openhands.events import EventStream, EventStreamSubscriber
 from openhands.llm import LLM
 from openhands.llm.metrics import Metrics
+from openhands.llm.metrics_registry import LLMRegistry
 from openhands.memory.memory import Memory
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
@@ -21,12 +22,31 @@ from openhands.storage.memory import InMemoryFileStore
 
 
 @pytest.fixture
-def mock_agent():
-    """Create a properly configured mock agent with all required nested attributes"""
+def mock_llm_registry():
+    """Create a mock LLM registry that properly simulates LLM registration"""
+    registry = MagicMock(spec=LLMRegistry)
+
+    # Create a real metrics object that will be returned by get_combined_metrics
+    combined_metrics = Metrics()
+    registry.get_combined_metrics.return_value = combined_metrics
+
+    # Mock the register_llm method to return a mock LLM with the combined metrics
+    def mock_register_llm(service_id, config, retry_listener=None):
+        mock_llm = MagicMock(spec=LLM)
+        mock_llm.metrics = combined_metrics  # Use the same metrics object
+        mock_llm.config = config
+        return mock_llm
+
+    registry.register_llm.side_effect = mock_register_llm
+
+    return registry
+
+
+@pytest.fixture
+def mock_agent(mock_llm_registry):
+    """Create a properly configured mock agent that registers with the LLM registry"""
     # Create the base mocks
     agent = MagicMock(spec=Agent)
-    llm = MagicMock(spec=LLM)
-    metrics = MagicMock(spec=Metrics)
     llm_config = MagicMock(spec=LLMConfig)
     agent_config = MagicMock(spec=AgentConfig)
 
@@ -39,10 +59,12 @@ def mock_agent():
     agent_config.disabled_microagents = []
     agent_config.enable_mcp = True
 
-    # Set up the chain of mocks
-    llm.metrics = metrics
-    llm.config = llm_config
-    agent.llm = llm
+    # Simulate the agent's LLM registration process
+    # This will call the mock_register_llm function we defined in the registry
+    mock_llm = mock_llm_registry.register_llm('agent_llm', llm_config)
+
+    # Set up the agent
+    agent.llm = mock_llm
     agent.name = 'test-agent'
     agent.sandbox_plugins = []
     agent.config = agent_config
@@ -52,7 +74,7 @@ def mock_agent():
 
 
 @pytest.mark.asyncio
-async def test_agent_session_start_with_no_state(mock_agent):
+async def test_agent_session_start_with_no_state(mock_agent, mock_llm_registry):
     """Test that AgentSession.start() works correctly when there's no state to restore"""
 
     # Setup
@@ -60,6 +82,7 @@ async def test_agent_session_start_with_no_state(mock_agent):
     session = AgentSession(
         sid='test-session',
         file_store=file_store,
+        llm_registry=mock_llm_registry,
     )
 
     # Create a mock runtime and set it up
@@ -140,7 +163,7 @@ async def test_agent_session_start_with_no_state(mock_agent):
 
 
 @pytest.mark.asyncio
-async def test_agent_session_start_with_restored_state(mock_agent):
+async def test_agent_session_start_with_restored_state(mock_agent, mock_llm_registry):
     """Test that AgentSession.start() works correctly when there's a state to restore"""
 
     # Setup
@@ -148,6 +171,7 @@ async def test_agent_session_start_with_restored_state(mock_agent):
     session = AgentSession(
         sid='test-session',
         file_store=file_store,
+        llm_registry=mock_llm_registry,
     )
 
     # Create a mock runtime and set it up
@@ -231,14 +255,15 @@ async def test_agent_session_start_with_restored_state(mock_agent):
 
 
 @pytest.mark.asyncio
-async def test_metrics_centralization_and_sharing(mock_agent):
-    """Test that metrics are centralized and shared between controller and agent."""
+async def test_metrics_centralization_via_llm_registry(mock_agent, mock_llm_registry):
+    """Test that metrics are centralized through the LLM registry."""
 
     # Setup
     file_store = InMemoryFileStore({})
     session = AgentSession(
         sid='test-session',
         file_store=file_store,
+        llm_registry=mock_llm_registry,
     )
 
     # Create a mock runtime and set it up
@@ -263,6 +288,8 @@ async def test_metrics_centralization_and_sharing(mock_agent):
     # Create a real Memory instance with the mock event stream
     memory = Memory(event_stream=mock_event_stream, sid='test-session')
     memory.microagents_dir = 'test-dir'
+
+    # The registry already has a real metrics object set up in the fixture
 
     # Patch necessary components
     with (
@@ -283,43 +310,36 @@ async def test_metrics_centralization_and_sharing(mock_agent):
             max_iterations=10,
         )
 
-        # Verify that the agent's LLM metrics and controller's state metrics are the same object
-        assert session.controller.agent.llm.metrics is session.controller.state.metrics
+        # Verify that the LLM registry is properly set up
+        assert session.controller.state.llm_registry is mock_llm_registry
 
-        # Add some metrics to the agent's LLM
+        # Add some metrics to the agent's LLM (simulating LLM usage)
         test_cost = 0.05
         session.controller.agent.llm.metrics.add_cost(test_cost)
 
-        # Verify that the cost is reflected in the controller's state metrics
-        assert session.controller.state.metrics.accumulated_cost == test_cost
+        # Verify that the cost is reflected in the combined metrics from the registry
+        combined_metrics = session.controller.state.llm_registry.get_combined_metrics()
+        assert combined_metrics.accumulated_cost == test_cost
 
-        # Create a test metrics object to simulate an observation with metrics
-        test_observation_metrics = Metrics()
-        test_observation_metrics.add_cost(0.1)
+        # Add more cost to simulate additional LLM usage
+        additional_cost = 0.1
+        session.controller.agent.llm.metrics.add_cost(additional_cost)
 
-        # Get the current accumulated cost before merging
-        current_cost = session.controller.state.metrics.accumulated_cost
+        # Verify the combined metrics reflect the total cost
+        assert combined_metrics.accumulated_cost == test_cost + additional_cost
 
-        # Simulate merging metrics from an observation
-        session.controller.state_tracker.merge_metrics(test_observation_metrics)
-
-        # Verify that the merged metrics are reflected in both agent and controller
-        assert session.controller.state.metrics.accumulated_cost == current_cost + 0.1
-        assert (
-            session.controller.agent.llm.metrics.accumulated_cost == current_cost + 0.1
-        )
-
-        # Reset the agent and verify that metrics are not reset
+        # Reset the agent and verify that combined metrics are preserved
         session.controller.agent.reset()
 
-        # Metrics should still be the same after reset
-        assert session.controller.state.metrics.accumulated_cost == test_cost + 0.1
-        assert session.controller.agent.llm.metrics.accumulated_cost == test_cost + 0.1
-        assert session.controller.agent.llm.metrics is session.controller.state.metrics
+        # Combined metrics should still be preserved after agent reset
+        assert (
+            session.controller.state.llm_registry.get_combined_metrics().accumulated_cost
+            == test_cost + additional_cost
+        )
 
 
 @pytest.mark.asyncio
-async def test_budget_control_flag_syncs_with_metrics(mock_agent):
+async def test_budget_control_flag_syncs_with_metrics(mock_agent, mock_llm_registry):
     """Test that BudgetControlFlag's current value matches the accumulated costs."""
 
     # Setup
@@ -327,6 +347,7 @@ async def test_budget_control_flag_syncs_with_metrics(mock_agent):
     session = AgentSession(
         sid='test-session',
         file_store=file_store,
+        llm_registry=mock_llm_registry,
     )
 
     # Create a mock runtime and set it up
@@ -351,6 +372,8 @@ async def test_budget_control_flag_syncs_with_metrics(mock_agent):
     # Create a real Memory instance with the mock event stream
     memory = Memory(event_stream=mock_event_stream, sid='test-session')
     memory.microagents_dir = 'test-dir'
+
+    # The registry already has a real metrics object set up in the fixture
 
     # Patch necessary components
     with (
@@ -378,7 +401,7 @@ async def test_budget_control_flag_syncs_with_metrics(mock_agent):
         assert session.controller.state.budget_flag.max_value == 1.0
         assert session.controller.state.budget_flag.current_value == 0.0
 
-        # Add some metrics to the agent's LLM
+        # Add some metrics to the agent's LLM (simulating LLM usage)
         test_cost = 0.05
         session.controller.agent.llm.metrics.add_cost(test_cost)
 
@@ -387,18 +410,23 @@ async def test_budget_control_flag_syncs_with_metrics(mock_agent):
         session.controller.state_tracker.sync_budget_flag_with_metrics()
         assert session.controller.state.budget_flag.current_value == test_cost
 
-        # Create a test metrics object to simulate an observation with metrics
-        test_observation_metrics = Metrics()
-        test_observation_metrics.add_cost(0.1)
+        # Add more cost to simulate additional LLM usage
+        additional_cost = 0.1
+        session.controller.agent.llm.metrics.add_cost(additional_cost)
 
-        # Simulate merging metrics from an observation
-        session.controller.state_tracker.merge_metrics(test_observation_metrics)
+        # Sync again and verify the budget flag is updated
+        session.controller.state_tracker.sync_budget_flag_with_metrics()
+        assert (
+            session.controller.state.budget_flag.current_value
+            == test_cost + additional_cost
+        )
 
-        # Verify that the budget control flag's current value is updated to match the new accumulated cost
-        assert session.controller.state.budget_flag.current_value == test_cost + 0.1
-
-        # Reset the agent and verify that metrics and budget flag are not reset
+        # Reset the agent and verify that budget flag still reflects the accumulated cost
         session.controller.agent.reset()
 
         # Budget control flag should still reflect the accumulated cost after reset
-        assert session.controller.state.budget_flag.current_value == test_cost + 0.1
+        session.controller.state_tracker.sync_budget_flag_with_metrics()
+        assert (
+            session.controller.state.budget_flag.current_value
+            == test_cost + additional_cost
+        )
