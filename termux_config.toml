@@ -1,0 +1,107 @@
+# OpenHands Termux Configuration
+# Konfigurasi khusus untuk Termux
+
+[core]
+# Base path untuk workspace
+workspace_base = "~/.openhands/workspace"
+
+# Cache directory
+cache_dir = "~/.openhands/cache"
+
+# Debugging
+debug = false
+
+# Disable color jika terminal tidak support
+disable_color = false
+
+# Path untuk menyimpan trajectory
+save_trajectory_path = "~/.openhands/trajectories"
+
+# File store path
+file_store_path = "~/.openhands/file_store"
+
+# File store type
+file_store = "memory"
+
+# Maximum file size untuk upload (MB)
+file_uploads_max_file_size_mb = 10
+
+# Disable browser environment untuk Termux
+enable_browser = false
+
+# Maximum budget per task
+max_budget_per_task = 0.0
+
+# Maximum iterations
+max_iterations = 100
+
+# Runtime environment - gunakan local untuk Termux
+runtime = "local"
+
+# Default agent
+default_agent = "TermuxAgent"
+
+# Enable default condenser
+enable_default_condenser = false
+
+[llm]
+# API key - akan diset melalui CLI
+api_key = ""
+
+# Base URL - default ke OpenAI, bisa diganti
+base_url = "https://api.openai.com/v1"
+
+# Model default
+model = "gpt-3.5-turbo"
+
+# Temperature
+temperature = 0.7
+
+# Max tokens
+max_output_tokens = 2048
+
+# Timeout
+timeout = 60
+
+# Retries
+num_retries = 3
+
+# Retry settings
+retry_max_wait = 30
+retry_min_wait = 5
+retry_multiplier = 2.0
+
+[agent]
+# Disable tools yang tidak diperlukan di Termux
+enable_browsing = false
+enable_llm_editor = false
+enable_editor = true
+enable_jupyter = false
+enable_cmd = true
+enable_think = true
+enable_finish = true
+
+# Enable history truncation
+enable_history_truncation = true
+
+[sandbox]
+# Timeout
+timeout = 60
+
+# Disable Docker-related features
+use_host_network = false
+enable_auto_lint = false
+initialize_plugins = false
+
+[security]
+# Confirmation mode
+confirmation_mode = false
+
+# Security analyzer
+enable_security_analyzer = false
+
+[condenser]
+# Simple condenser untuk Termux
+type = "recent"
+keep_first = 1
+max_events = 50

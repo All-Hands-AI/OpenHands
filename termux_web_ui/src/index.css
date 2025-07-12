@@ -1,0 +1,186 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-dark-900 text-dark-50 font-mono;
+    font-feature-settings: "liga" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  html {
+    @apply scroll-smooth;
+  }
+}
+
+@layer components {
+  /* Button variants */
+  .btn {
+    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  
+  .btn-primary {
+    @apply bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
+  }
+  
+  .btn-secondary {
+    @apply bg-dark-700 text-dark-200 hover:bg-dark-600 focus:ring-dark-500;
+  }
+  
+  .btn-ghost {
+    @apply bg-transparent text-dark-300 hover:bg-dark-800 hover:text-dark-100 focus:ring-dark-500;
+  }
+  
+  .btn-danger {
+    @apply bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
+  }
+  
+  /* Input styles */
+  .input {
+    @apply w-full rounded-lg border border-dark-600 bg-dark-800 px-3 py-2 text-dark-100 placeholder-dark-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 transition-colors;
+  }
+  
+  .textarea {
+    @apply input resize-none;
+  }
+  
+  /* Card styles */
+  .card {
+    @apply rounded-lg border border-dark-700 bg-dark-800 p-4 shadow-lg;
+  }
+  
+  .card-header {
+    @apply border-b border-dark-700 pb-3 mb-4;
+  }
+  
+  /* Message styles */
+  .message {
+    @apply rounded-lg p-4 mb-4 animate-slide-up;
+  }
+  
+  .message-user {
+    @apply bg-primary-900/30 border border-primary-700/50 ml-8;
+  }
+  
+  .message-assistant {
+    @apply bg-dark-800 border border-dark-600 mr-8;
+  }
+  
+  .message-system {
+    @apply bg-yellow-900/30 border border-yellow-700/50 text-yellow-200;
+  }
+  
+  .message-error {
+    @apply bg-red-900/30 border border-red-700/50 text-red-200;
+  }
+  
+  /* Code styles */
+  .code-block {
+    @apply rounded-lg bg-dark-900 border border-dark-600 overflow-hidden;
+  }
+  
+  .code-header {
+    @apply flex items-center justify-between px-4 py-2 bg-dark-800 border-b border-dark-600 text-sm text-dark-300;
+  }
+  
+  .code-content {
+    @apply p-4 overflow-x-auto text-sm;
+  }
+  
+  /* Scrollbar styles */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #475569 #1e293b;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-dark-800;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-dark-600 rounded-full;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    @apply bg-dark-500;
+  }
+  
+  /* Mobile optimizations */
+  @media (max-width: 768px) {
+    .message-user {
+      @apply ml-2;
+    }
+    
+    .message-assistant {
+      @apply mr-2;
+    }
+    
+    .btn {
+      @apply px-3 py-2 text-sm;
+    }
+    
+    .card {
+      @apply p-3;
+    }
+  }
+  
+  /* Touch optimizations */
+  @media (hover: none) and (pointer: coarse) {
+    .btn:hover {
+      @apply transform-none;
+    }
+    
+    .btn:active {
+      @apply scale-95;
+    }
+  }
+  
+  /* Loading animations */
+  .loading-dots {
+    @apply inline-flex space-x-1;
+  }
+  
+  .loading-dots > div {
+    @apply w-2 h-2 bg-current rounded-full animate-pulse;
+    animation-delay: calc(var(--i) * 0.2s);
+  }
+  
+  /* Status indicators */
+  .status-online {
+    @apply bg-green-500;
+  }
+  
+  .status-offline {
+    @apply bg-red-500;
+  }
+  
+  .status-connecting {
+    @apply bg-yellow-500 animate-pulse;
+  }
+  
+  /* Utility classes */
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary-400 to-primary-600 bg-clip-text text-transparent;
+  }
+  
+  .glass {
+    @apply bg-dark-800/80 backdrop-blur-sm border border-dark-600/50;
+  }
+  
+  .glow {
+    @apply shadow-lg shadow-primary-500/20;
+  }
+}

@@ -1,0 +1,33 @@
+# OpenHands Termux Requirements
+# Dependencies minimal untuk menjalankan OpenHands di Termux
+
+# Core LLM
+litellm>=1.60.0
+aiohttp>=3.9.0
+
+# Web framework
+fastapi
+uvicorn[standard]
+
+# Configuration
+toml
+python-dotenv
+
+# Utilities
+termcolor
+jinja2>=3.1.3
+tenacity>=8.5
+pyjwt>=2.9.0
+requests
+prompt-toolkit>=3.0.50
+
+# JSON handling
+json-repair
+
+# File operations
+pathspec>=0.12.1
+whatthepatch>=1.0.6
+
+# Optional: untuk fitur tambahan
+# numpy  # Uncomment jika diperlukan
+# pandas  # Uncomment jika diperlukan
