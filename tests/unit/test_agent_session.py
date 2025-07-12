@@ -315,6 +315,7 @@ async def test_metrics_centralization_via_llm_registry(mock_agent, mock_llm_regi
         session.controller.agent.llm.metrics.add_cost(additional_cost)
 
         # Verify the combined metrics reflect the total cost
+        combined_metrics = session.controller.state.llm_registry.get_combined_metrics()
         assert combined_metrics.accumulated_cost == test_cost + additional_cost
 
         # Reset the agent and verify that combined metrics are preserved
