@@ -4,25 +4,34 @@ from litellm import ModelResponse
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 from openhands.core.config import AgentConfig, LLMConfig
 from openhands.events.action import MessageAction
-from openhands.llm.llm import LLM
+from openhands.llm.metrics_registry import LLMRegistry
+from openhands.storage.memory import InMemoryFileStore
 
 
 @pytest.fixture
-def mock_llm():
-    llm = LLM(
-        LLMConfig(
-            model='claude-3-5-sonnet-20241022',
-            api_key='fake',
-            caching_prompt=True,
-        )
+def llm_config():
+    return LLMConfig(
+        model='claude-3-5-sonnet-20241022',
+        api_key='fake',
+        caching_prompt=True,
     )
-    return llm
 
 
 @pytest.fixture
-def codeact_agent(mock_llm):
+def llm_registry():
+    file_store = InMemoryFileStore({})
+    registry = LLMRegistry(
+        file_store=file_store, conversation_id='test-conversation', user_id='test-user'
+    )
+    # Clear any existing LLMs to avoid conflicts between tests
+    registry.service_to_llm.clear()
+    return registry
+
+
+@pytest.fixture
+def codeact_agent(llm_config, llm_registry):
     config = AgentConfig()
-    agent = CodeActAgent(mock_llm, config)
+    agent = CodeActAgent(config, llm_config, llm_registry)
     return agent
 
 
