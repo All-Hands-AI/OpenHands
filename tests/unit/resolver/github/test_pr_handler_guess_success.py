@@ -148,8 +148,10 @@ def test_guess_success_thread_comments_litellm_call():
     """Test that the completion() call for thread comments contains the expected content."""
     # Create a PR handler instance
     llm_config = LLMConfig(model='test', api_key='test')
+    # Use a unique service ID for this test
+    service_id = 'test_guess_success_thread_comments_litellm_call_unique'
     handler = ServiceContextPR(
-        GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
+        GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config, service_id=service_id
     )
 
     # Create a mock issue with thread comments
@@ -265,8 +267,10 @@ def test_check_review_thread_with_git_patch():
     """Test that git patch from complete_runtime is included in the prompt."""
     # Create a PR handler instance
     llm_config = LLMConfig(model='test', api_key='test')
+    # Use a unique service ID for this test
+    service_id = 'test_check_review_thread_with_git_patch_unique'
     handler = ServiceContextPR(
-        GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
+        GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config, service_id=service_id
     )
 
     # Create test data
@@ -324,8 +328,10 @@ def test_check_review_thread():
     """Test the _check_review_thread helper function."""
     # Create a PR handler instance
     llm_config = LLMConfig(model='test', api_key='test')
+    # Use a unique service ID for this test
+    service_id = 'test_check_review_thread_unique'
     handler = ServiceContextPR(
-        GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
+        GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config, service_id=service_id
     )
 
     # Create test data
@@ -550,8 +556,10 @@ def test_check_review_comments():
     """Test the _check_review_comments helper function."""
     # Create a PR handler instance
     llm_config = LLMConfig(model='test', api_key='test')
+    # Use a unique service ID for this test
+    service_id = 'test_check_review_comments_unique'
     handler = ServiceContextPR(
-        GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
+        GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config, service_id=service_id
     )
 
     # Create test data

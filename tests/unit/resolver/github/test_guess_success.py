@@ -173,7 +173,9 @@ The changes successfully address the review comments."""
 def test_pr_handler_guess_success_no_comments():
     # Create a PR handler instance
     llm_config = LLMConfig(model='test', api_key='test')
-    handler = ServiceContextPR(GithubPRHandler('test', 'test', 'test'), llm_config)
+    # Use a unique service ID for this test
+    service_id = 'test_pr_handler_guess_success_no_comments'
+    handler = ServiceContextPR(GithubPRHandler('test', 'test', 'test'), llm_config, service_id=service_id)
 
     # Create a mock issue with no comments
     issue = Issue(

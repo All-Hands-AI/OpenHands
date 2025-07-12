@@ -455,7 +455,9 @@ def update_existing_pull_request(
                 # TODO: save registry information to persistent store
                 llm_registry = LLMRegistry(None, 'convo_id', None)
                 if llm_config is not None:
-                    llm = llm_registry.register_llm('resolver_summary', llm_config)
+                    # Use a unique service ID to avoid conflicts in tests
+                    service_id = f'resolver_summary_{id(issue)}'
+                    llm = llm_registry.register_llm(service_id, llm_config)
                     with open(
                         os.path.join(
                             os.path.dirname(__file__),

@@ -464,7 +464,9 @@ async def test_process_issue(
         [],
     )
     handler_instance.issue_type = 'pr' if test_case.get('is_pr', False) else 'issue'
-    handler_instance.llm = LLM(llm_config)
+    # Use a unique service ID for each test case
+    service_id = f'test_process_issue_{test_case["name"]}'
+    handler_instance.llm = LLM(llm_config, service_id=service_id)
 
     # Mock the runtime and its methods
     mock_runtime = MagicMock()
