@@ -175,7 +175,9 @@ def test_pr_handler_guess_success_no_comments():
     llm_config = LLMConfig(model='test', api_key='test')
     # Use a unique service ID for this test
     service_id = 'test_pr_handler_guess_success_no_comments'
-    handler = ServiceContextPR(GithubPRHandler('test', 'test', 'test'), llm_config, service_id=service_id)
+    handler = ServiceContextPR(
+        GithubPRHandler('test', 'test', 'test'), llm_config, service_id=service_id
+    )
 
     # Create a mock issue with no comments
     issue = Issue(

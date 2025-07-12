@@ -33,7 +33,7 @@ class IssueHandlerFactory:
         self.issue_type = issue_type
         self.llm_config = llm_config
 
-    def create(self) -> ServiceContextIssue | ServiceContextPR:
+    def create(self, service_id=None) -> ServiceContextIssue | ServiceContextPR:
         if self.issue_type == 'issue':
             if self.platform == ProviderType.GITHUB:
                 return ServiceContextIssue(
@@ -45,6 +45,7 @@ class IssueHandlerFactory:
                         self.base_domain,
                     ),
                     self.llm_config,
+                    service_id=service_id,
                 )
             elif self.platform == ProviderType.GITLAB:
                 return ServiceContextIssue(
@@ -56,6 +57,7 @@ class IssueHandlerFactory:
                         self.base_domain,
                     ),
                     self.llm_config,
+                    service_id=service_id,
                 )
             elif self.platform == ProviderType.BITBUCKET:
                 return ServiceContextIssue(
@@ -67,6 +69,7 @@ class IssueHandlerFactory:
                         self.base_domain,
                     ),
                     self.llm_config,
+                    service_id=service_id,
                 )
             else:
                 raise ValueError(f'Unsupported platform: {self.platform}')
@@ -81,6 +84,7 @@ class IssueHandlerFactory:
                         self.base_domain,
                     ),
                     self.llm_config,
+                    service_id=service_id,
                 )
             elif self.platform == ProviderType.GITLAB:
                 return ServiceContextPR(
@@ -92,6 +96,7 @@ class IssueHandlerFactory:
                         self.base_domain,
                     ),
                     self.llm_config,
+                    service_id=service_id,
                 )
             elif self.platform == ProviderType.BITBUCKET:
                 return ServiceContextPR(
@@ -103,6 +108,7 @@ class IssueHandlerFactory:
                         self.base_domain,
                     ),
                     self.llm_config,
+                    service_id=service_id,
                 )
             else:
                 raise ValueError(f'Unsupported platform: {self.platform}')
