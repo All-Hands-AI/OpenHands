@@ -1,8 +1,9 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
-# OpenHands Termux All-in-One Installer
+# OpenHands Termux All-in-One Installer v2.0
 # Installer lengkap untuk OpenHands di Termux (No Root Required)
-# Mendukung Termux dan Proot environment
+# Mendukung CLI, Web UI, Git Integration, dan semua fitur
+# Compatible dengan Termux dan Proot environment
 
 set -e
 
@@ -405,6 +406,68 @@ install_additional_tools() {
     success "Additional tools installed"
 }
 
+# Install Node.js and Web UI dependencies
+install_web_ui() {
+    info "Installing Web UI components..."
+    
+    # Install Node.js if not present
+    if ! command -v node >/dev/null 2>&1; then
+        info "Installing Node.js..."
+        pkg install -y nodejs npm || error_exit "Failed to install Node.js"
+        success "Node.js installed"
+    else
+        info "Node.js already installed: $(node --version)"
+    fi
+    
+    # Check if web UI directory exists
+    if [[ -d "termux_web_ui" ]]; then
+        info "Installing Web UI dependencies..."
+        cd termux_web_ui
+        
+        # Install npm dependencies
+        npm install || error_exit "Failed to install npm dependencies"
+        
+        # Build production version
+        npm run build || warning "Failed to build production version (development mode will be used)"
+        
+        cd ..
+        success "Web UI dependencies installed"
+    else
+        warning "Web UI directory not found, skipping web UI installation"
+    fi
+    
+    # Copy web UI server
+    if [[ -f "termux_web_ui_server.py" ]]; then
+        cp "termux_web_ui_server.py" "$INSTALL_DIR/"
+        chmod +x "$INSTALL_DIR/termux_web_ui_server.py"
+        success "Web UI server installed"
+    fi
+    
+    # Copy web UI scripts
+    local web_scripts=(
+        "install_web_ui.sh"
+        "start_web_ui.sh"
+        "stop_web_ui.sh"
+        "test_web_ui.sh"
+    )
+    
+    for script in "${web_scripts[@]}"; do
+        if [[ -f "$script" ]]; then
+            cp "$script" "$INSTALL_DIR/"
+            chmod +x "$INSTALL_DIR/$script"
+            info "Copied $script"
+        fi
+    done
+    
+    # Copy web UI directory
+    if [[ -d "termux_web_ui" ]]; then
+        cp -r "termux_web_ui" "$INSTALL_DIR/"
+        success "Web UI files copied"
+    fi
+    
+    success "Web UI installation completed"
+}
+
 # Setup Termux API integration
 setup_termux_api() {
     info "Setting up Termux API integration..."
@@ -486,12 +549,28 @@ create_welcome() {
     local welcome_file="$INSTALL_DIR/WELCOME.md"
     
     cat > "$welcome_file" << 'EOF'
-# 🎉 Welcome to OpenHands Termux!
+# 🎉 Welcome to OpenHands Termux v2.0!
 
-OpenHands has been successfully installed on your Termux environment!
+OpenHands has been successfully installed on your Termux environment with full Web UI support!
 
 ## 🚀 Quick Start
 
+### 🌐 Web UI (Recommended)
+1. **Start Web UI:**
+   ```bash
+   cd ~/.openhands
+   ./start_web_ui.sh
+   ```
+
+2. **Access in Browser:**
+   - Local: http://localhost:8000
+   - Mobile: http://YOUR_IP:8000
+
+3. **Install as PWA:**
+   - Open in Chrome/Firefox
+   - Menu → "Add to Home Screen"
+
+### 💻 Command Line
 1. **Configure API Key:**
    ```bash
    openhands config
@@ -509,32 +588,67 @@ OpenHands has been successfully installed on your Termux environment!
 
 ## 🛠️ Available Tools
 
+### Web Interface
+- `start_web_ui.sh` - Start web interface
+- `stop_web_ui.sh` - Stop web interface
+- `test_web_ui.sh` - Test web UI installation
+
+### Command Line Tools
 - `openhands` or `oh` - Main CLI
 - `system-monitor` - System monitoring
 - `backup-termux` - Backup tool
 - `weather` - Weather checker
 - `analyze-data` - Data analysis
 
+## ✨ Features
+
+### 🌐 Web UI Features
+- 🤖 AI Chat with streaming responses
+- 📁 File browser with visual management
+- 🔧 Git integration with GitHub support
+- 💻 Built-in terminal
+- 📊 Real-time system monitoring
+- 📱 Mobile-optimized interface
+- 📴 Progressive Web App support
+
+### 🔧 Default Configuration
+- **API Provider**: LLM7 (free, no API key required)
+- **Base URL**: https://api.llm7.io/v1
+- **Model**: gpt-3.5-turbo
+- **Web Port**: 8000
+
 ## 📚 Documentation
 
-- Main README: `~/.openhands/README.md`
-- Installation Guide: `~/.openhands/INSTALL.md`
-- Examples: `~/.openhands/examples/examples.md`
+- Web UI Guide: `~/.openhands/README_WEB_UI.md`
+- Main README: `~/.openhands/README_TERMUX.md`
+- Installation Guide: `~/.openhands/INSTALL_TERMUX.md`
+- Examples: `~/.openhands/examples_termux.md`
+- Changelog: `~/.openhands/CHANGELOG_TERMUX.md`
 
 ## 🆘 Support
 
 - Check logs: `~/openhands_install.log`
-- Run tests: `python ~/.openhands/scripts/test_termux.py`
+- Run tests: `python ~/.openhands/test_termux.py`
+- Web UI tests: `~/.openhands/test_web_ui.sh`
 - GitHub Issues: https://github.com/mulkymalikuldhrs/OpenHands/issues
 
 ## 🎯 Next Steps
 
-1. Configure your preferred LLM provider
-2. Explore the examples
-3. Try the additional tools
-4. Join the community!
+1. **Start Web UI**: `cd ~/.openhands && ./start_web_ui.sh`
+2. **Open Browser**: http://localhost:8000
+3. **Install as PWA**: Add to Home Screen
+4. **Explore Features**: Chat, Files, Git, Terminal, Monitor
+5. **Configure Settings**: API keys, models, preferences
+6. **Join Community**: Share feedback and contribute!
 
-Happy coding! 🚀
+## 🔧 Troubleshooting
+
+- **Port in use**: `./stop_web_ui.sh`
+- **Node.js issues**: `pkg install nodejs npm`
+- **Build errors**: `cd termux_web_ui && npm install`
+- **Permission issues**: `termux-setup-storage`
+
+Happy coding with OpenHands Termux v2.0! 🚀📱
 EOF
 
     success "Welcome guide created"
@@ -595,6 +709,7 @@ EOF
         "install_openhands_files:Installing OpenHands files"
         "setup_cli:Setting up CLI and PATH"
         "install_additional_tools:Installing additional tools"
+        "install_web_ui:Installing Web UI components"
         "setup_termux_api:Setting up Termux API integration"
         "create_shortcuts:Creating shortcuts"
         "setup_storage:Setting up storage access"
@@ -626,9 +741,11 @@ EOF
     echo -e "${GREEN}${FIRE} Installation completed successfully!${NC}"
     echo ""
     echo -e "${CYAN}${INFO} Installation Summary:${NC}"
-    echo -e "  ${CHECK} OpenHands installed to: ${INSTALL_DIR}"
+    echo -e "  ${CHECK} OpenHands v2.0 installed to: ${INSTALL_DIR}"
     echo -e "  ${CHECK} CLI available as: openhands, oh"
+    echo -e "  ${CHECK} Web UI available on port 8000"
     echo -e "  ${CHECK} Python version: ${PYTHON_VERSION}"
+    echo -e "  ${CHECK} Node.js version: $(node --version 2>/dev/null || echo 'Not installed')"
     echo -e "  ${CHECK} Termux version: ${TERMUX_VERSION}"
     echo -e "  ${CHECK} Android version: ${ANDROID_VERSION}"
     echo -e "  ${CHECK} Log file: ${LOG_FILE}"
@@ -636,13 +753,31 @@ EOF
         echo -e "  ${CHECK} Backup created: ${BACKUP_DIR}"
     fi
     echo ""
-    echo -e "${YELLOW}${ROCKET} Next Steps:${NC}"
-    echo -e "  1. Restart Termux or run: ${CYAN}source ~/.bashrc${NC}"
-    echo -e "  2. Configure API key: ${CYAN}openhands config${NC}"
-    echo -e "  3. Start using: ${CYAN}openhands chat${NC}"
-    echo -e "  4. Read welcome guide: ${CYAN}cat ~/.openhands/WELCOME.md${NC}"
+    echo -e "${YELLOW}${ROCKET} Quick Start:${NC}"
+    echo -e "  ${CYAN}🌐 Web UI (Recommended):${NC}"
+    echo -e "    cd ~/.openhands && ./start_web_ui.sh"
+    echo -e "    Open: http://localhost:8000"
     echo ""
-    echo -e "${GREEN}${ROCKET} Happy coding with OpenHands! ${ROCKET}${NC}"
+    echo -e "  ${CYAN}💻 Command Line:${NC}"
+    echo -e "    openhands config  # Configure API"
+    echo -e "    openhands chat    # Start chatting"
+    echo ""
+    echo -e "${YELLOW}${INFO} Features Available:${NC}"
+    echo -e "  ${CHECK} AI Chat with LLM7 (free API)"
+    echo -e "  ${CHECK} File browser and management"
+    echo -e "  ${CHECK} Git integration with GitHub"
+    echo -e "  ${CHECK} Built-in terminal"
+    echo -e "  ${CHECK} System monitoring"
+    echo -e "  ${CHECK} Progressive Web App"
+    echo -e "  ${CHECK} Mobile-optimized interface"
+    echo ""
+    echo -e "${YELLOW}${ROCKET} Next Steps:${NC}"
+    echo -e "  1. Start Web UI: ${CYAN}cd ~/.openhands && ./start_web_ui.sh${NC}"
+    echo -e "  2. Open browser: ${CYAN}http://localhost:8000${NC}"
+    echo -e "  3. Install as PWA: Add to Home Screen"
+    echo -e "  4. Read guide: ${CYAN}cat ~/.openhands/WELCOME.md${NC}"
+    echo ""
+    echo -e "${GREEN}${ROCKET} Happy coding with OpenHands Termux v2.0! ${ROCKET}${NC}"
 }
 
 # Cleanup function
