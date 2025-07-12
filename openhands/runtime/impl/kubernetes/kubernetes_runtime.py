@@ -255,8 +255,8 @@ class KubernetesRuntime(ActionExecutionClient):
             await call_sync_from_async(self._wait_until_ready)
         except Exception as alive_error:
             self.log('error', f'Failed to connect to runtime: {alive_error}')
-            self.send_error_message(
-                'ERROR$RUNTIME_CONNECTION',
+            self.set_runtime_status(
+                RuntimeStatus.ERROR_RUNTIME_DISCONNECTED,
                 f'Failed to connect to runtime: {alive_error}',
             )
             raise AgentRuntimeDisconnectedError(

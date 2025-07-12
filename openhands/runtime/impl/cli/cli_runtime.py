@@ -115,7 +115,7 @@ class CLIRuntime(Runtime):
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
-        status_callback: Callable[[str, str, str], None] | None = None,
+        status_callback: Callable[[str, RuntimeStatus, str], None] | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = False,
         user_id: str | None = None,
