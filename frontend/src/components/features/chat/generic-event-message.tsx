@@ -24,7 +24,7 @@ export function GenericEventMessage({
   return (
     <div className="flex flex-col gap-2 border-l-2 pl-2 my-2 py-2 border-neutral-300 text-sm w-full">
       <div className="flex items-center justify-between font-bold text-neutral-300">
-        <div>
+        <div className="flex-1 min-w-0 break-words">
           {title}
           {details && (
             <button
