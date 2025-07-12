@@ -8,6 +8,7 @@ import pytest
 from openhands.core.config import OpenHandsConfig
 from openhands.core.exceptions import LLMMalformedActionError
 from openhands.events import EventStream
+from openhands.llm.metrics_registry import LLMRegistry
 from openhands.runtime.impl.cli.cli_runtime import CLIRuntime
 from openhands.storage import get_file_store
 
@@ -24,9 +25,10 @@ def cli_runtime(temp_dir):
     """Create a CLIRuntime instance for testing."""
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('test', file_store)
+    llm_registry = LLMRegistry(file_store, 'test', None)
     config = OpenHandsConfig()
     config.workspace_base = temp_dir
-    runtime = CLIRuntime(config, event_stream)
+    runtime = CLIRuntime(config, event_stream, llm_registry)
     runtime._runtime_initialized = True  # Skip initialization
     return runtime
 
