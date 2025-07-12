@@ -72,6 +72,7 @@ anyio = "4.9.0"
 pythonnet = "*"
 fastmcp = "^2.5.2"
 python-frontmatter = "^1.1.0"
+shellingham = "^1.5.4"
 # TODO: Should these go into the runtime group?
 ipywidgets = "^8.1.5"
 qtconsole = "^5.6.1"
