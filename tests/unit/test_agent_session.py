@@ -8,7 +8,6 @@ from openhands.controller.state.state import State
 from openhands.core.config import LLMConfig, OpenHandsConfig
 from openhands.core.config.agent_config import AgentConfig
 from openhands.events import EventStream, EventStreamSubscriber
-from openhands.llm import LLM
 from openhands.llm.metrics import Metrics
 from openhands.llm.metrics_registry import LLMRegistry
 from openhands.memory.memory import Memory
@@ -24,21 +23,10 @@ from openhands.storage.memory import InMemoryFileStore
 @pytest.fixture
 def mock_llm_registry():
     """Create a mock LLM registry that properly simulates LLM registration"""
-    registry = MagicMock(spec=LLMRegistry)
-
-    # Create a real metrics object that will be returned by get_combined_metrics
-    combined_metrics = Metrics()
-    registry.get_combined_metrics.return_value = combined_metrics
-
-    # Mock the register_llm method to return a mock LLM with the combined metrics
-    def mock_register_llm(service_id, config, retry_listener=None):
-        mock_llm = MagicMock(spec=LLM)
-        mock_llm.metrics = combined_metrics  # Use the same metrics object
-        mock_llm.config = config
-        return mock_llm
-
-    registry.register_llm.side_effect = mock_register_llm
-
+    file_store = InMemoryFileStore({})
+    registry = LLMRegistry(
+        file_store=file_store, conversation_id='test-conversation', user_id='test-user'
+    )
     return registry
 
 
@@ -47,20 +35,21 @@ def mock_agent(mock_llm_registry):
     """Create a properly configured mock agent that registers with the LLM registry"""
     # Create the base mocks
     agent = MagicMock(spec=Agent)
-    llm_config = MagicMock(spec=LLMConfig)
     agent_config = MagicMock(spec=AgentConfig)
-
-    # Configure the LLM config
-    llm_config.model = 'test-model'
-    llm_config.base_url = 'http://test'
-    llm_config.max_message_chars = 1000
+    llm_config = LLMConfig(
+        model='gpt-4o',
+        api_key='test_key',
+        num_retries=2,
+        retry_min_wait=1,
+        retry_max_wait=2,
+    )
 
     # Configure the agent config
     agent_config.disabled_microagents = []
     agent_config.enable_mcp = True
 
     # Simulate the agent's LLM registration process
-    # This will call the mock_register_llm function we defined in the registry
+    mock_llm_registry.service_to_llm.clear()
     mock_llm = mock_llm_registry.register_llm('agent_llm', llm_config)
 
     # Set up the agent
