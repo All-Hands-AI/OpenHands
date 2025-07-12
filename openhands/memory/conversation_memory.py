@@ -786,7 +786,15 @@ class ConversationMemory:
                 '[ConversationMemory] No SystemMessageAction found in events. '
                 'Adding one for backward compatibility. '
             )
-            system_prompt = self.prompt_manager.get_system_message()
+            # Get shell type from agent config and resolve to actual shell type
+            shell_config = getattr(self.agent_config, 'shell', None)
+            # Import here to avoid circular imports
+            from openhands.agenthub.codeact_agent.tools.cmd import get_shell_type
+
+            shell_type = get_shell_type(shell_config)
+            system_prompt = self.prompt_manager.get_system_message(
+                shell_type=shell_type
+            )
             if system_prompt:
                 system_message = SystemMessageAction(content=system_prompt)
                 # Insert the system message directly at the beginning of the events list

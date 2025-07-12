@@ -1,6 +1,7 @@
 """Constants for tool names used in function calling."""
 
 EXECUTE_BASH_TOOL_NAME = 'execute_bash'
+EXECUTE_POWERSHELL_TOOL_NAME = 'execute_powershell'
 STR_REPLACE_EDITOR_TOOL_NAME = 'str_replace_editor'
 BROWSER_TOOL_NAME = 'browser'
 FINISH_TOOL_NAME = 'finish'
