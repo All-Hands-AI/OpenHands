@@ -4,6 +4,7 @@ import pytest
 
 from openhands.core.config import OpenHandsConfig
 from openhands.events import EventStream
+from openhands.llm.metrics_registry import LLMRegistry
 from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
 
 
@@ -40,12 +41,17 @@ def event_stream():
     return MagicMock(spec=EventStream)
 
 
+@pytest.fixture
+def llm_registry():
+    return MagicMock(spec=LLMRegistry)
+
+
 @patch('openhands.runtime.impl.docker.docker_runtime.stop_all_containers')
 def test_container_stopped_when_keep_runtime_alive_false(
-    mock_stop_containers, mock_docker_client, config, event_stream
+    mock_stop_containers, mock_docker_client, config, event_stream, llm_registry
 ):
     # Arrange
-    runtime = DockerRuntime(config, event_stream, sid='test-sid')
+    runtime = DockerRuntime(config, event_stream, llm_registry, sid='test-sid')
     runtime.container = mock_docker_client.containers.get.return_value
 
     # Act
@@ -57,11 +63,11 @@ def test_container_stopped_when_keep_runtime_alive_false(
 
 @patch('openhands.runtime.impl.docker.docker_runtime.stop_all_containers')
 def test_container_not_stopped_when_keep_runtime_alive_true(
-    mock_stop_containers, mock_docker_client, config, event_stream
+    mock_stop_containers, mock_docker_client, config, event_stream, llm_registry
 ):
     # Arrange
     config.sandbox.keep_runtime_alive = True
-    runtime = DockerRuntime(config, event_stream, sid='test-sid')
+    runtime = DockerRuntime(config, event_stream, llm_registry, sid='test-sid')
     runtime.container = mock_docker_client.containers.get.return_value
 
     # Act
