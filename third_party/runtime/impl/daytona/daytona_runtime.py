@@ -50,7 +50,6 @@ class DaytonaRuntime(ActionExecutionClient):
         daytona_api_key = os.getenv('DAYTONA_API_KEY')
         if not daytona_api_key:
             raise ValueError('DAYTONA_API_KEY environment variable is required for Daytona runtime')
-        
         daytona_api_url = os.getenv('DAYTONA_API_URL', 'https://app.daytona.io/api')
         daytona_target = os.getenv('DAYTONA_TARGET', 'eu')
 
@@ -129,9 +128,7 @@ class DaytonaRuntime(ActionExecutionClient):
 
     def _construct_api_url(self, port: int) -> str:
         assert self.sandbox is not None, 'Sandbox is not initialized'
-        assert self.sandbox.runner_domain is not None, 'Runner domain is not available'
-
-        return f'https://{port}-{self.sandbox.id}.{self.sandbox.runner_domain}'
+        return self.sandbox.get_preview_link(port).url
 
     @property
     def action_execution_server_url(self) -> str:
