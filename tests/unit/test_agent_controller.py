@@ -488,6 +488,10 @@ async def test_step_max_budget(mock_agent, mock_event_stream, llm_registry):
         limit_increase_amount=10, current_value=10.1, max_value=10
     )
 
+    # Register the metrics with the LLM registry
+    mock_agent.llm.metrics = metrics
+    llm_registry.service_to_llm['agent'] = mock_agent.llm
+
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
@@ -513,6 +517,10 @@ async def test_step_max_budget_headless(mock_agent, mock_event_stream, llm_regis
     budget_flag = BudgetControlFlag(
         limit_increase_amount=10, current_value=10.1, max_value=10
     )
+
+    # Register the metrics with the LLM registry
+    mock_agent.llm.metrics = metrics
+    llm_registry.service_to_llm['agent'] = mock_agent.llm
 
     controller = AgentController(
         agent=mock_agent,
@@ -553,6 +561,10 @@ async def test_budget_reset_on_continue(mock_agent, mock_event_stream, llm_regis
             max_value=initial_budget,
         ),
     )
+
+    # Register the metrics with the LLM registry
+    mock_agent.llm.metrics = metrics
+    llm_registry.service_to_llm['agent'] = mock_agent.llm
 
     # Create controller with budget cap
     controller = AgentController(
@@ -1345,6 +1357,9 @@ async def test_action_metrics_copy(mock_agent, llm_registry):
 
     mock_agent.llm.metrics = metrics
 
+    # Register the metrics with the LLM registry
+    llm_registry.service_to_llm['agent'] = mock_agent.llm
+
     # Mock agent step to return an action
     action = MessageAction(content='Test message')
 
@@ -1429,8 +1444,11 @@ async def test_condenser_metrics_included(mock_agent, test_event_stream, llm_reg
         cache_write_tokens=10,
         response_id='agent-accumulated',
     )
-    # mock_agent.llm.metrics = agent_metrics
+    mock_agent.llm.metrics = agent_metrics
     mock_agent.name = 'TestAgent'
+
+    # Register the agent metrics with the LLM registry
+    llm_registry.service_to_llm['agent'] = mock_agent.llm
 
     # Create condenser with its own metrics
     condenser = MagicMock()
@@ -1446,6 +1464,9 @@ async def test_condenser_metrics_included(mock_agent, test_event_stream, llm_reg
         response_id='condenser-accumulated',
     )
     condenser.llm.metrics = condenser_metrics
+
+    # Register the condenser metrics with the LLM registry
+    llm_registry.service_to_llm['condenser'] = condenser.llm
 
     # Attach the condenser to the mock_agent
     mock_agent.condenser = condenser

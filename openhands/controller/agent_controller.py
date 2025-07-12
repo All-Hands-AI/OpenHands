@@ -73,6 +73,7 @@ from openhands.events.observation import (
     Observation,
 )
 from openhands.events.serialization.event import truncate_content
+from openhands.llm.metrics import Metrics
 from openhands.llm.metrics_registry import LLMRegistry
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.storage.files import FileStore
@@ -994,11 +995,18 @@ class AgentController:
         # Get metrics from agent LLM
         metrics = self.llm_registry.get_combined_metrics()
 
+        # Create a clean copy with only the fields we want to keep
+        clean_metrics = Metrics()
+        clean_metrics.accumulated_cost = metrics.accumulated_cost
+        clean_metrics._accumulated_token_usage = copy.deepcopy(
+            metrics.accumulated_token_usage
+        )
+
         # Add max_budget_per_task to metrics
         if self.state.budget_flag:
-            metrics.max_budget_per_task = self.state.budget_flag.max_value
+            clean_metrics.max_budget_per_task = self.state.budget_flag.max_value
 
-        action.llm_metrics = metrics
+        action.llm_metrics = clean_metrics
 
         # Log the metrics information for debugging
         # Get the latest usage directly from the agent's metrics
