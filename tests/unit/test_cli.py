@@ -213,8 +213,11 @@ async def test_run_session_without_initial_action(
     # Assertions for initialization flow
     mock_display_runtime_init.assert_called_once_with('local')
     mock_display_animation.assert_called_once()
-    # Updated to include llm_registry parameter
-    mock_create_agent.assert_called_once()  # Use a more flexible assertion
+    # Check that mock_config is the first parameter to create_agent
+    mock_create_agent.assert_called_once()
+    assert mock_create_agent.call_args[0][0] == mock_config, (
+        'First parameter to create_agent should be mock_config'
+    )
     mock_add_mcp_tools.assert_called_once_with(mock_agent, mock_runtime, mock_memory)
     mock_create_runtime.assert_called_once()
     mock_create_controller.assert_called_once()
