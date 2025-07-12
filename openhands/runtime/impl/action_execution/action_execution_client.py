@@ -1,3 +1,4 @@
+import json
 import os
 import tempfile
 import threading
@@ -18,7 +19,7 @@ from openhands.core.config.mcp_config import (
 from openhands.core.exceptions import (
     AgentRuntimeTimeoutError,
 )
-from openhands.events import EventStream
+from openhands.events import EventSource, EventStream
 from openhands.events.action import (
     ActionConfirmationStatus,
     AgentThinkAction,
@@ -31,10 +32,13 @@ from openhands.events.action import (
     IPythonRunCellAction,
 )
 from openhands.events.action.action import Action
+from openhands.events.action.commands import CmdRunStreamAction
 from openhands.events.action.files import FileEditSource
 from openhands.events.action.mcp import MCPAction
 from openhands.events.observation import (
     AgentThinkObservation,
+    CmdOutputObservation,
+    CmdStreamOutputObservation,
     ErrorObservation,
     NullObservation,
     Observation,
@@ -272,7 +276,6 @@ class ActionExecutionClient(Runtime):
             and action.impl_source == FileEditSource.LLM_BASED_EDIT
         ):
             return self.llm_based_edit(action)
-
         # set timeout to default if not set
         if action.timeout is None:
             if isinstance(action, CmdRunAction) and action.blocking:
@@ -330,7 +333,75 @@ class ActionExecutionClient(Runtime):
                 )
             return obs
 
+    def _stop_cmd_action_stream(self):
+        """Stop the currently running command"""
+        try:
+            self._send_action_server_request(
+                'GET',
+                f'{self.action_execution_server_url}/stop_cmd_action_stream',
+                timeout=60,
+            )
+        except Exception as e:
+            self.log('error', f'Command termination failed: {str(e)}')
+
+    def send_cmd_action_for_stream_execution(
+        self, action: CmdRunStreamAction
+    ) -> Observation:
+        with self.action_semaphore:
+            try:
+                with self.session.stream(
+                    'POST',
+                    f'{self.action_execution_server_url}/execute_cmd_action_stream',
+                    json={'action': event_to_dict(action)},
+                    timeout=None,
+                ) as response:
+                    stream_obs = CmdOutputObservation(
+                        command_id=-1,
+                        content='',
+                        command=action.command,
+                        hidden=action.hidden,
+                        exit_code=-1,
+                        interpreter_details='',
+                    )
+                    for line in response.iter_lines():
+                        if line and line.startswith('data: '):
+                            data = line[6:]
+                            try:
+                                obs_dict = json.loads(data)
+                                stream_response_obs = observation_from_dict(obs_dict)
+                                if isinstance(
+                                    stream_response_obs, CmdOutputObservation
+                                ):
+                                    stream_obs.metadata = stream_response_obs.metadata
+                                    stream_obs.content = (
+                                        stream_obs.content + stream_response_obs.content
+                                    )
+                                    self.log(
+                                        'debug',
+                                        f'{stream_response_obs.command} execution stream data:{stream_response_obs.content}',
+                                    )
+                                    self.event_stream.add_event(
+                                        CmdStreamOutputObservation(
+                                            command=stream_response_obs.command,
+                                            content=stream_response_obs.content,
+                                        ),
+                                        EventSource.ENVIRONMENT,
+                                    )
+                                else:
+                                    return stream_response_obs
+                            except json.JSONDecodeError:
+                                self.log('error', f'JSON parsing error: {data}')
+                    stream_obs._cause = action.id  # type: ignore[attr-defined]
+                    return stream_obs
+            except Exception as e:
+                error_obs = ErrorObservation(
+                    f'Command execution failed: {str(e)}', error_id='RUNTIME_ERROR'
+                )
+                return error_obs
+
     def run(self, action: CmdRunAction) -> Observation:
+        if isinstance(action, CmdRunStreamAction):
+            return self.send_cmd_action_for_stream_execution(action)
         return self.send_action_for_execution(action)
 
     def run_ipython(self, action: IPythonRunCellAction) -> Observation:

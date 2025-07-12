@@ -88,6 +88,10 @@ class CmdOutputMetadata(BaseModel):
                 processed['exit_code'] = -1
         return cls(**processed)
 
+    @classmethod
+    def strip_from_output(cls, output: str) -> str:
+        return CMD_OUTPUT_METADATA_PS1_REGEX.sub('', output).rstrip()
+
 
 @dataclass
 class CmdOutputObservation(Observation):
@@ -162,6 +166,13 @@ class CmdOutputObservation(Observation):
         if self.metadata.exit_code != -1:
             ret += f'\n[Command finished with exit code {self.metadata.exit_code}]'
         return ret
+
+
+@dataclass
+class CmdStreamOutputObservation(Observation):
+    content: str
+    command: str
+    observation: str = ObservationType.RUN
 
 
 @dataclass
