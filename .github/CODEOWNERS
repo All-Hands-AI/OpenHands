@@ -3,9 +3,10 @@
 
 # Frontend code owners
 /frontend/ @rbren @amanape
+/openhands-ui/ @amanape
 
 # Evaluation code owners
-/evaluation/ @xingyaoww @neubig 
+/evaluation/ @xingyaoww @neubig
 
 # Documentation code owners
 /docs/ @mamoodi

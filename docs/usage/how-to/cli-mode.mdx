@@ -1,0 +1,184 @@
+---
+title: CLI
+description: The Command-Line Interface (CLI) provides a powerful interface that lets you engage with OpenHands
+  directly from your terminal.
+---
+
+This mode is different from the [headless mode](/usage/how-to/headless-mode), which is non-interactive and better
+for scripting.
+
+<iframe
+  className="w-full aspect-video"
+  src="https://www.youtube.com/embed/PfvIx4y8h7w"
+  title="OpenHands CLI Tutorial"
+  frameBorder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+  allowFullScreen>
+</iframe>
+
+## Getting Started
+
+### Running with Python
+
+**Note** - OpenHands requires Python version 3.12 or higher (Python 3.14 is not currently supported)
+
+1. Install OpenHands using pip:
+```bash
+pip install openhands-ai
+```
+
+  Or if you prefer not to manage your own Python environment, you can use `uvx`:
+
+```bash
+uvx --python 3.12 --from openhands-ai openhands
+```
+
+<AccordionGroup>
+
+<Accordion title="Create shell aliases for easy access across environments">
+
+Add the following to your shell configuration file (`.bashrc`, `.zshrc`, etc.):
+
+```bash
+# Add OpenHands aliases
+alias openhands="uvx --python 3.12 --from openhands-ai openhands"
+alias oh="uvx --python 3.12 --from openhands-ai openhands"
+```
+
+After adding these lines, reload your shell configuration with `source ~/.bashrc` or `source ~/.zshrc` (depending on your shell).
+
+</Accordion>
+
+<Accordion title="Install OpenHands in home directory without global installation">
+
+You can install OpenHands in a virtual environment in your home directory using `uv`:
+
+```bash
+# Create a virtual environment in your home directory
+cd ~
+uv venv .openhands-venv --python 3.12
+
+# Install OpenHands in the virtual environment
+uv pip install -t ~/.openhands-venv/lib/python3.12/site-packages openhands-ai
+
+# Add the bin directory to your PATH in your shell configuration file
+echo 'export PATH="$PATH:$HOME/.openhands-venv/bin"' >> ~/.bashrc  # or ~/.zshrc
+
+# Reload your shell configuration
+source ~/.bashrc  # or source ~/.zshrc
+```
+
+</Accordion>
+
+</AccordionGroup>
+
+2. Launch an interactive OpenHands conversation from the command line:
+```bash
+openhands
+```
+
+<Note>
+  If you have cloned the repository, you can also run the CLI directly using Poetry:
+
+  poetry run python -m openhands.cli.main
+</Note>
+
+3. Set your model, API key, and other preferences using the UI (or alternatively environment variables, below).
+
+This command opens an interactive prompt where you can type tasks or commands and get responses from OpenHands.
+The first time you run the CLI, it will take you through configuring the required LLM
+settings. These will be saved for future sessions.
+
+The conversation history will be saved in `~/.openhands/sessions`.
+
+### Running with Docker
+
+1. Set the following environment variables in your terminal:
+   - `SANDBOX_VOLUMES` to specify the directory you want OpenHands to access ([See using SANDBOX_VOLUMES for more info](../runtimes/docker#using-sandbox_volumes))
+   - `LLM_MODEL` - the LLM model to use (e.g. `export LLM_MODEL="anthropic/claude-sonnet-4-20250514"`)
+   - `LLM_API_KEY` - your API key (e.g. `export LLM_API_KEY="sk_test_12345"`)
+
+2. Run the following command:
+
+```bash
+docker run -it \
+    --pull=always \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.48-nikolaik \
+    -e SANDBOX_USER_ID=$(id -u) \
+    -e SANDBOX_VOLUMES=$SANDBOX_VOLUMES \
+    -e LLM_API_KEY=$LLM_API_KEY \
+    -e LLM_MODEL=$LLM_MODEL \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -v ~/.openhands:/.openhands \
+    --add-host host.docker.internal:host-gateway \
+    --name openhands-app-$(date +%Y%m%d%H%M%S) \
+    docker.all-hands.dev/all-hands-ai/openhands:0.48 \
+    python -m openhands.cli.main --override-cli-mode true
+```
+
+<Note>
+  If you used OpenHands before version 0.44, you may want to run `mv ~/.openhands-state ~/.openhands` to migrate your
+  conversation history to the new location.
+</Note>
+
+This launches the CLI in Docker, allowing you to interact with OpenHands.
+
+The `-e SANDBOX_USER_ID=$(id -u)` ensures files created by the agent in your workspace have the correct permissions.
+
+The conversation history will be saved in `~/.openhands/sessions`.
+
+## Interactive CLI Overview
+
+### What is CLI Mode?
+
+CLI mode enables real-time interaction with OpenHands agents. You can type natural language tasks, use interactive
+commands, and receive instant feedback—all inside your terminal.
+
+### Starting a Conversation
+
+When you start the CLI, you'll see a welcome message and a prompt (`>`). Enter your first task or type a command to
+begin your conversation.
+
+### Available Commands
+
+You can use the following commands whenever the prompt (`>`) is displayed:
+
+| Command      | Description                                                    |
+|--------------|----------------------------------------------------------------|
+| `/help`      | Show all available interactive commands and their descriptions |
+| `/exit`      | Exit the application                                           |
+| `/init`      | Initialize a new repository for agent exploration              |
+| `/status`    | Show conversation details and usage metrics                    |
+| `/new`       | Start a new conversation                                       |
+| `/settings`  | View and modify current LLM/agent settings                     |
+| `/resume`    | Resume the agent if paused                                     |
+
+#### Settings and Configuration
+
+You can update your model, API key, agent, and other preferences interactively using the `/settings` command. Just
+follow the prompts:
+
+- **Basic settings**: Choose a model/provider and enter your API key.
+- **Advanced settings**: Set custom endpoints, enable or disable confirmation mode, and configure memory condensation.
+
+Settings can also be managed via the `config.toml` file.
+
+#### Repository Initialization
+
+The `/init` command helps the agent understand your project by creating a `.openhands/microagents/repo.md` file with
+project details and structure. Use this when onboarding the agent to a new codebase.
+
+#### Agent Pause/Resume Feature
+
+You can pause the agent while it is running by pressing `Ctrl-P`. To continue the conversation after pausing, simply
+type `/resume` at the prompt.
+
+## Tips and Troubleshooting
+
+- Use `/help` at any time to see the list of available commands.
+- If you encounter permission issues, make sure your workspace directory is trusted and all required environment variables are set correctly.
+- For advanced LLM configuration, use the advanced options in `/settings`.
+- When confirmation mode is enabled, the CLI will prompt before sensitive operations. You can type `a` or `always` at the first confirmation prompt to automatically confirm subsequent actions for the current conversation.
+- If you want to start over, use `/new` to begin a fresh conversation without restarting the CLI.
+
+---

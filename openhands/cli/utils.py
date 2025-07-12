@@ -102,6 +102,8 @@ def extract_model_and_provider(model: str) -> ModelInfo:
             return ModelInfo(provider='openai', model=split[0], separator='/')
         if split[0] in VERIFIED_ANTHROPIC_MODELS:
             return ModelInfo(provider='anthropic', model=split[0], separator='/')
+        if split[0] in VERIFIED_MISTRAL_MODELS:
+            return ModelInfo(provider='mistral', model=split[0], separator='/')
         # return as model only
         return ModelInfo(provider='', model=model, separator='')
 
@@ -143,32 +145,36 @@ def organize_models_and_providers(
     return result_dict
 
 
-VERIFIED_PROVIDERS = ['openai', 'azure', 'anthropic', 'deepseek']
+VERIFIED_PROVIDERS = ['anthropic', 'openai', 'mistral']
 
 VERIFIED_OPENAI_MODELS = [
+    'o4-mini',
     'gpt-4o',
     'gpt-4o-mini',
-    'gpt-4-turbo',
-    'gpt-4',
     'gpt-4-32k',
+    'gpt-4.1',
+    'gpt-4.1-2025-04-14',
     'o1-mini',
-    'o1',
-    'o3-mini',
-    'o3-mini-2025-01-31',
+    'o3',
+    'codex-mini-latest',
 ]
 
 VERIFIED_ANTHROPIC_MODELS = [
-    'claude-2',
-    'claude-2.1',
-    'claude-3-5-sonnet-20240620',
-    'claude-3-5-sonnet-20241022',
-    'claude-3-5-haiku-20241022',
-    'claude-3-haiku-20240307',
-    'claude-3-opus-20240229',
-    'claude-3-sonnet-20240229',
-    'claude-3-7-sonnet-20250219',
     'claude-sonnet-4-20250514',
     'claude-opus-4-20250514',
+    'claude-3-7-sonnet-20250219',
+    'claude-3-sonnet-20240229',
+    'claude-3-opus-20240229',
+    'claude-3-haiku-20240307',
+    'claude-3-5-haiku-20241022',
+    'claude-3-5-sonnet-20241022',
+    'claude-3-5-sonnet-20240620',
+    'claude-2.1',
+    'claude-2',
+]
+
+VERIFIED_MISTRAL_MODELS = [
+    'devstral-small-2505',
 ]
 
 

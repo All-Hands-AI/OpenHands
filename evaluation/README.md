@@ -71,9 +71,26 @@ EVAL_CONDENSER=summarizer_for_eval \
 The name is up to you, but should match a name defined in your `config.toml` file. The last argument in the command specifies the condenser configuration to use. In this case, `summarizer_for_eval` is used, which refers to the LLM-based summarizing condenser as defined above.
 
 If no condenser configuration is specified, the 'noop' condenser will be used by default, which keeps the full conversation history.
-```
 
 For other configurations specific to evaluation, such as `save_trajectory_path`, these are typically set in the `get_config` function of the respective `run_infer.py` file for each benchmark.
+
+### Enabling LLM-Based Editor Tools
+
+The LLM-Based Editor tool (currently supported only for SWE-Bench) can be enabled by setting:
+```bash
+export ENABLE_LLM_EDITOR=true
+```
+
+You can set the config for the Editor LLM as:
+```toml
+[llm.draft_editor]
+base_url = "http://localhost:9002/v1"
+model = "hosted_vllm/lite_coder_qwen_editor_3B"
+api_key = ""
+temperature = 0.7
+max_input_tokens = 10500
+max_output_tokens = 10500
+```
 
 ## Supported Benchmarks
 

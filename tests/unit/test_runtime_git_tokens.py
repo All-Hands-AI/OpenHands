@@ -101,7 +101,7 @@ def runtime(temp_dir):
 
 def mock_repo_and_patch(monkeypatch, provider=ProviderType.GITHUB, is_public=True):
     repo = Repository(
-        id=123, full_name='owner/repo', git_provider=provider, is_public=is_public
+        id='123', full_name='owner/repo', git_provider=provider, is_public=is_public
     )
 
     async def mock_verify_repo_provider(*_args, **_kwargs):
@@ -234,7 +234,10 @@ async def test_clone_or_init_repo_no_repo_with_user_id(temp_dir):
     # Verify that git init was called
     assert len(runtime.run_action_calls) == 1
     assert isinstance(runtime.run_action_calls[0], CmdRunAction)
-    assert runtime.run_action_calls[0].command == 'git init'
+    assert (
+        runtime.run_action_calls[0].command
+        == f'git init && git config --global --add safe.directory {runtime.workspace_root}'
+    )
     assert result == ''
 
 
@@ -255,7 +258,10 @@ async def test_clone_or_init_repo_no_repo_no_user_id_no_workspace_base(temp_dir)
     # Verify that git init was called
     assert len(runtime.run_action_calls) == 1
     assert isinstance(runtime.run_action_calls[0], CmdRunAction)
-    assert runtime.run_action_calls[0].command == 'git init'
+    assert (
+        runtime.run_action_calls[0].command
+        == f'git init && git config --global --add safe.directory {runtime.workspace_root}'
+    )
     assert result == ''
 
 
@@ -295,11 +301,11 @@ async def test_clone_or_init_repo_auth_error(temp_dir):
         side_effect=AuthenticationError('Auth failed'),
     ):
         # Call the function with a repository
-        with pytest.raises(RuntimeError) as excinfo:
+        with pytest.raises(Exception) as excinfo:
             await runtime.clone_or_init_repo(None, 'owner/repo', None)
 
         # Verify the error message
-        assert 'Git provider authentication issue when cloning repo' in str(
+        assert 'Git provider authentication issue when getting remote URL' in str(
             excinfo.value
         )
 

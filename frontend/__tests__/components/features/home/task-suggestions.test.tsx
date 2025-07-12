@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Provider } from "react-redux";
@@ -7,6 +7,21 @@ import { setupStore } from "test-utils";
 import { TaskSuggestions } from "#/components/features/home/tasks/task-suggestions";
 import { SuggestionsService } from "#/api/suggestions-service/suggestions-service.api";
 import { MOCK_TASKS } from "#/mocks/task-suggestions-handlers";
+import userEvent from "@testing-library/user-event";
+
+// Mock the translation function
+vi.mock("react-i18next", async () => {
+  const actual = await vi.importActual("react-i18next");
+  return {
+    ...(actual as object),
+    useTranslation: () => ({
+      t: (key: string) => key,
+      i18n: {
+        changeLanguage: () => new Promise(() => {}),
+      },
+    }),
+  };
+});
 
 const renderTaskSuggestions = () => {
   const RouterStub = createRoutesStub([
@@ -53,7 +68,7 @@ describe("TaskSuggestions", () => {
   it("should render an empty message if there are no tasks", async () => {
     getSuggestedTasksSpy.mockResolvedValue([]);
     renderTaskSuggestions();
-    await screen.findByText(/No tasks available/i);
+    await screen.findByText("TASKS$NO_TASKS_AVAILABLE");
   });
 
   it("should render the task groups with the correct titles", async () => {
@@ -92,5 +107,27 @@ describe("TaskSuggestions", () => {
     });
 
     expect(screen.queryByTestId("task-group-skeleton")).not.toBeInTheDocument();
+  });
+
+  it("should render the tooltip button", () => {
+    renderTaskSuggestions();
+    const tooltipButton = screen.getByTestId("task-suggestions-info");
+    expect(tooltipButton).toBeInTheDocument();
+  });
+
+  it("should have the correct aria-label", () => {
+    renderTaskSuggestions();
+    const tooltipButton = screen.getByTestId("task-suggestions-info");
+    expect(tooltipButton).toHaveAttribute(
+      "aria-label",
+      "TASKS$TASK_SUGGESTIONS_INFO",
+    );
+  });
+
+  it("should render the info icon", () => {
+    renderTaskSuggestions();
+    const tooltipButton = screen.getByTestId("task-suggestions-info");
+    const icon = tooltipButton.querySelector("svg");
+    expect(icon).toBeInTheDocument();
   });
 });

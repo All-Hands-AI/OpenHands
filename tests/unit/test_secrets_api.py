@@ -1,6 +1,7 @@
 """Tests for the custom secrets API endpoints."""
 # flake8: noqa: E501
 
+import os
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -24,7 +25,12 @@ def test_client():
     """Create a test client for the settings API."""
     app = FastAPI()
     app.include_router(secrets_app)
-    return TestClient(app)
+
+    # Mock SESSION_API_KEY to None to disable authentication in tests
+    with patch.dict(os.environ, {'SESSION_API_KEY': ''}, clear=False):
+        # Clear the SESSION_API_KEY to disable auth dependency
+        with patch('openhands.server.dependencies._SESSION_API_KEY', None):
+            yield TestClient(app)
 
 
 @pytest.fixture

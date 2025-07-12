@@ -69,16 +69,21 @@ export function Sidebar() {
             <div className="flex items-center justify-center">
               <AllHandsLogoButton />
             </div>
-            <NewProjectButton />
+            <NewProjectButton disabled={settings?.EMAIL_VERIFIED === false} />
             <ConversationPanelButton
               isOpen={conversationPanelIsOpen}
-              onClick={() => setConversationPanelIsOpen((prev) => !prev)}
+              onClick={() =>
+                settings?.EMAIL_VERIFIED === false
+                  ? null
+                  : setConversationPanelIsOpen((prev) => !prev)
+              }
+              disabled={settings?.EMAIL_VERIFIED === false}
             />
           </div>
 
           <div className="flex flex-row md:flex-col md:items-center gap-[26px] md:mb-4">
-            <DocsButton />
-            <SettingsButton />
+            <DocsButton disabled={settings?.EMAIL_VERIFIED === false} />
+            <SettingsButton disabled={settings?.EMAIL_VERIFIED === false} />
             <UserActions
               user={
                 user.data ? { avatar_url: user.data.avatar_url } : undefined

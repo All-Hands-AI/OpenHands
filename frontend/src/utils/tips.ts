@@ -12,7 +12,7 @@ export const TIPS: Tip[] = [
   },
   {
     key: I18nKey.TIPS$SETUP_SCRIPT,
-    link: "https://docs.all-hands.dev/usage/customization/repository",
+    link: "https://docs.all-hands.dev/usage/prompting/repository#setup-script",
   },
   { key: I18nKey.TIPS$VSCODE_INSTANCE },
   { key: I18nKey.TIPS$SAVE_WORK },
@@ -30,7 +30,7 @@ export const TIPS: Tip[] = [
   },
   {
     key: I18nKey.TIPS$GITHUB_HOOK,
-    link: "https://docs.all-hands.dev/usage/cloud/cloud-issue-resolver",
+    link: "https://docs.all-hands.dev/usage/cloud/github-installation#working-on-github-issues-and-pull-requests-using-openhands",
   },
   {
     key: I18nKey.TIPS$BLOG_SIGNUP,
@@ -38,7 +38,7 @@ export const TIPS: Tip[] = [
   },
   {
     key: I18nKey.TIPS$API_USAGE,
-    link: "https://docs.all-hands.dev/swagger-ui/",
+    link: "https://docs.all-hands.dev/api-reference/health-check",
   },
 ];
 

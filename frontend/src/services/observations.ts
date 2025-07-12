@@ -13,8 +13,10 @@ export function handleObservationMessage(message: ObservationMessage) {
       let { content } = message;
 
       if (content.length > 5000) {
-        const head = content.slice(0, 5000);
-        content = `${head}\r\n\n... (truncated ${message.content.length - 5000} characters) ...`;
+        const halfLength = 2500;
+        const head = content.slice(0, halfLength);
+        const tail = content.slice(content.length - halfLength);
+        content = `${head}\r\n\n... (truncated ${message.content.length - 5000} characters) ...\r\n\n${tail}`;
       }
 
       store.dispatch(appendOutput(content));

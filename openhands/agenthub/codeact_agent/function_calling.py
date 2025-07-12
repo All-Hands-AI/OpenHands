@@ -11,6 +11,7 @@ from litellm import (
 
 from openhands.agenthub.codeact_agent.tools import (
     BrowserTool,
+    CondensationRequestTool,
     FinishTool,
     IPythonTool,
     LLMBasedFileEditTool,
@@ -35,6 +36,7 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
+from openhands.events.action.agent import CondensationRequestAction
 from openhands.events.action.mcp import MCPAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
@@ -141,6 +143,9 @@ def response_to_actions(
                     content=arguments['content'],
                     start=arguments.get('start', 1),
                     end=arguments.get('end', -1),
+                    impl_source=arguments.get(
+                        'impl_source', FileEditSource.LLM_BASED_EDIT
+                    ),
                 )
             elif (
                 tool_call.function.name
@@ -199,6 +204,12 @@ def response_to_actions(
             # ================================================
             elif tool_call.function.name == ThinkTool['function']['name']:
                 action = AgentThinkAction(thought=arguments.get('thought', ''))
+
+            # ================================================
+            # CondensationRequestAction
+            # ================================================
+            elif tool_call.function.name == CondensationRequestTool['function']['name']:
+                action = CondensationRequestAction()
 
             # ================================================
             # BrowserTool

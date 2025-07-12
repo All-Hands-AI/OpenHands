@@ -44,7 +44,7 @@ class GitHandler:
         Returns:
             bool: True if inside a Git repository, otherwise False.
         """
-        cmd = 'git rev-parse --is-inside-work-tree'
+        cmd = 'git --no-pager rev-parse --is-inside-work-tree'
         output = self.execute(cmd, self.cwd)
         return output.content.strip() == 'true'
 
@@ -71,7 +71,7 @@ class GitHandler:
         Returns:
             bool: True if the reference exists, otherwise False.
         """
-        cmd = f'git rev-parse --verify {ref}'
+        cmd = f'git --no-pager rev-parse --verify {ref}'
         output = self.execute(cmd, self.cwd)
         return output.exit_code == 0
 
@@ -86,9 +86,9 @@ class GitHandler:
         default_branch = self._get_default_branch()
 
         ref_current_branch = f'origin/{current_branch}'
-        ref_non_default_branch = f'$(git merge-base HEAD "$(git rev-parse --abbrev-ref origin/{default_branch})")'
+        ref_non_default_branch = f'$(git --no-pager merge-base HEAD "$(git --no-pager rev-parse --abbrev-ref origin/{default_branch})")'
         ref_default_branch = 'origin/' + default_branch
-        ref_new_repo = '$(git rev-parse --verify 4b825dc642cb6eb9a060e54bf8d69288fbee4904)'  # compares with empty tree
+        ref_new_repo = '$(git --no-pager rev-parse --verify 4b825dc642cb6eb9a060e54bf8d69288fbee4904)'  # compares with empty tree
 
         refs = [
             ref_current_branch,
@@ -116,7 +116,7 @@ class GitHandler:
         if not ref:
             return ''
 
-        cmd = f'git show {ref}:{file_path}'
+        cmd = f'git --no-pager show {ref}:{file_path}'
         output = self.execute(cmd, self.cwd)
         return output.content if output.exit_code == 0 else ''
 
@@ -127,7 +127,7 @@ class GitHandler:
         Returns:
             str: The name of the primary branch.
         """
-        cmd = 'git remote show origin | grep "HEAD branch"'
+        cmd = 'git --no-pager remote show origin | grep "HEAD branch"'
         output = self.execute(cmd, self.cwd)
         return output.content.split()[-1].strip()
 
@@ -138,7 +138,7 @@ class GitHandler:
         Returns:
             str: The name of the current branch.
         """
-        cmd = 'git rev-parse --abbrev-ref HEAD'
+        cmd = 'git --no-pager rev-parse --abbrev-ref HEAD'
         output = self.execute(cmd, self.cwd)
         return output.content.strip()
 
@@ -153,8 +153,12 @@ class GitHandler:
         if not ref:
             return []
 
-        diff_cmd = f'git diff --name-status {ref}'
+        diff_cmd = f'git --no-pager diff --name-status {ref}'
         output = self.execute(diff_cmd, self.cwd)
+        if output.exit_code != 0:
+            raise RuntimeError(
+                f'Failed to get diff for ref {ref} in {self.cwd}. Command output: {output.content}'
+            )
         return output.content.splitlines()
 
     def _get_untracked_files(self) -> list[dict[str, str]]:
@@ -164,7 +168,7 @@ class GitHandler:
         Returns:
             list[dict[str, str]]: A list of dictionaries containing file paths and statuses.
         """
-        cmd = 'git ls-files --others --exclude-standard'
+        cmd = 'git --no-pager ls-files --others --exclude-standard'
         output = self.execute(cmd, self.cwd)
         obs_list = output.content.splitlines()
         return (

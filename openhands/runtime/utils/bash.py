@@ -17,6 +17,7 @@ from openhands.events.observation.commands import (
     CmdOutputMetadata,
     CmdOutputObservation,
 )
+from openhands.runtime.utils.bash_constants import TIMEOUT_MESSAGE_TEMPLATE
 from openhands.utils.shutdown_listener import should_continue
 
 
@@ -229,7 +230,7 @@ class BashSession:
         )
         self.pane = self.window.active_pane
         logger.debug(f'pane: {self.pane}; history_limit: {self.session.history_limit}')
-        _initial_window.kill_window()
+        _initial_window.kill()
 
         # Configure bash to use simple PS1 and disable PS2
         self.pane.send_keys(
@@ -267,7 +268,7 @@ class BashSession:
         """Clean up the session."""
         if self._closed:
             return
-        self.session.kill_session()
+        self.session.kill()
         self._closed = True
 
     @property
@@ -379,9 +380,7 @@ class BashSession:
         metadata = CmdOutputMetadata()  # No metadata available
         metadata.suffix = (
             f'\n[The command has no new output after {self.NO_CHANGE_TIMEOUT_SECONDS} seconds. '
-            "You may wait longer to see additional output by sending empty command '', "
-            'send other commands to interact with the current process, '
-            'or send keys to interrupt/kill the command.]'
+            f'{TIMEOUT_MESSAGE_TEMPLATE}]'
         )
         command_output = self._get_command_output(
             command,
@@ -414,9 +413,7 @@ class BashSession:
         metadata = CmdOutputMetadata()  # No metadata available
         metadata.suffix = (
             f'\n[The command timed out after {timeout} seconds. '
-            "You may wait longer to see additional output by sending empty command '', "
-            'send other commands to interact with the current process, '
-            'or send keys to interrupt/kill the command.]'
+            f'{TIMEOUT_MESSAGE_TEMPLATE}]'
         )
         command_output = self._get_command_output(
             command,

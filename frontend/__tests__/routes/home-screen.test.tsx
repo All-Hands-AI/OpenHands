@@ -45,13 +45,13 @@ const renderHomeScreen = () =>
 
 const MOCK_RESPOSITORIES: GitRepository[] = [
   {
-    id: 1,
+    id: "1",
     full_name: "octocat/hello-world",
     git_provider: "github",
     is_public: true,
   },
   {
-    id: 2,
+    id: "2",
     full_name: "octocat/earth",
     git_provider: "github",
     is_public: true,
@@ -90,7 +90,7 @@ describe("HomeScreen", () => {
     const mainContainer = screen
       .getByTestId("home-screen")
       .querySelector("main");
-    expect(mainContainer).toHaveClass("flex", "flex-col", "md:flex-row");
+    expect(mainContainer).toHaveClass("flex", "flex-col", "lg:flex-row");
   });
 
   it("should filter the suggested tasks based on the selected repository", async () => {
@@ -334,10 +334,7 @@ describe("Settings 404", () => {
 
     renderHomeScreen();
 
-    // small hack to wait for the modal to not appear
-    await expect(
-      screen.findByTestId("ai-config-modal", {}, { timeout: 1000 }),
-    ).rejects.toThrow();
+    expect(screen.queryByTestId("ai-config-modal")).not.toBeInTheDocument();
   });
 });
 

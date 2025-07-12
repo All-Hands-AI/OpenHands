@@ -11,6 +11,7 @@ import {
 } from "#/types/message";
 import { handleObservationMessage } from "./observations";
 import { appendInput } from "#/state/command-slice";
+import { appendJupyterInput } from "#/state/jupyter-slice";
 import { queryClient } from "#/query-client-config";
 
 export function handleActionMessage(message: ActionMessage) {
@@ -22,6 +23,7 @@ export function handleActionMessage(message: ActionMessage) {
   if (message.llm_metrics) {
     const metrics = {
       cost: message.llm_metrics?.accumulated_cost ?? null,
+      max_budget_per_task: message.llm_metrics?.max_budget_per_task ?? null,
       usage: message.llm_metrics?.accumulated_token_usage ?? null,
     };
     store.dispatch(setMetrics(metrics));
@@ -29,6 +31,10 @@ export function handleActionMessage(message: ActionMessage) {
 
   if (message.action === ActionType.RUN) {
     store.dispatch(appendInput(message.args.command));
+  }
+
+  if (message.action === ActionType.RUN_IPYTHON) {
+    store.dispatch(appendJupyterInput(message.args.code));
   }
 
   if ("args" in message && "security_risk" in message.args) {

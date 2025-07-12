@@ -1,4 +1,4 @@
-import { Tooltip } from "@heroui/react";
+import { Tooltip, TooltipProps } from "@heroui/react";
 import React, { ReactNode } from "react";
 import { NavLink } from "react-router";
 import { cn } from "#/utils/utils";
@@ -12,6 +12,9 @@ export interface TooltipButtonProps {
   ariaLabel: string;
   testId?: string;
   className?: React.HTMLAttributes<HTMLButtonElement>["className"];
+  tooltipClassName?: React.HTMLAttributes<HTMLDivElement>["className"];
+  disabled?: boolean;
+  placement?: TooltipProps["placement"];
 }
 
 export function TooltipButton({
@@ -23,9 +26,12 @@ export function TooltipButton({
   ariaLabel,
   testId,
   className,
+  tooltipClassName,
+  disabled = false,
+  placement = "right",
 }: TooltipButtonProps) {
   const handleClick = (e: React.MouseEvent) => {
-    if (onClick) {
+    if (onClick && !disabled) {
       onClick();
       e.preventDefault();
     }
@@ -37,7 +43,12 @@ export function TooltipButton({
       aria-label={ariaLabel}
       data-testid={testId}
       onClick={handleClick}
-      className={cn("hover:opacity-80", className)}
+      className={cn(
+        "hover:opacity-80",
+        disabled && "opacity-50 cursor-not-allowed",
+        className,
+      )}
+      disabled={disabled}
     >
       {children}
     </button>
@@ -45,7 +56,7 @@ export function TooltipButton({
 
   let content;
 
-  if (navLinkTo) {
+  if (navLinkTo && !disabled) {
     content = (
       <NavLink
         to={navLinkTo}
@@ -63,7 +74,24 @@ export function TooltipButton({
         {children}
       </NavLink>
     );
-  } else if (href) {
+  } else if (navLinkTo && disabled) {
+    // If disabled and has navLinkTo, render a button that looks like a NavLink but doesn't navigate
+    content = (
+      <button
+        type="button"
+        aria-label={ariaLabel}
+        data-testid={testId}
+        className={cn(
+          "text-[#9099AC]",
+          "opacity-50 cursor-not-allowed",
+          className,
+        )}
+        disabled
+      >
+        {children}
+      </button>
+    );
+  } else if (href && !disabled) {
     content = (
       <a
         href={href}
@@ -76,12 +104,30 @@ export function TooltipButton({
         {children}
       </a>
     );
+  } else if (href && disabled) {
+    // If disabled and has href, render a button that looks like a link but doesn't navigate
+    content = (
+      <button
+        type="button"
+        aria-label={ariaLabel}
+        data-testid={testId}
+        className={cn("opacity-50 cursor-not-allowed", className)}
+        disabled
+      >
+        {children}
+      </button>
+    );
   } else {
     content = buttonContent;
   }
 
   return (
-    <Tooltip content={tooltip} closeDelay={100} placement="right">
+    <Tooltip
+      content={tooltip}
+      closeDelay={100}
+      placement={placement}
+      className={tooltipClassName}
+    >
       {content}
     </Tooltip>
   );

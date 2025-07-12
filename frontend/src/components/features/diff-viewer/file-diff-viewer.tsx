@@ -122,7 +122,7 @@ export function FileDiffViewer({ path, type }: FileDiffViewerProps) {
     modifiedEditor.onDidContentSizeChange(updateEditorHeight);
   };
 
-  const status = type === "U" ? STATUS_MAP.A : STATUS_MAP[type];
+  const status = (type === "U" ? STATUS_MAP.A : STATUS_MAP[type]) || "?";
 
   let statusIcon: React.ReactNode;
   if (typeof status === "string") {

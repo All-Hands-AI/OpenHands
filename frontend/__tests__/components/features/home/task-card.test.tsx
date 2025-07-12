@@ -19,10 +19,10 @@ const MOCK_TASK_1: SuggestedTask = {
 };
 
 const MOCK_RESPOSITORIES: GitRepository[] = [
-  { id: 1, full_name: "repo1", git_provider: "github", is_public: true },
-  { id: 2, full_name: "repo2", git_provider: "github", is_public: true },
-  { id: 3, full_name: "repo3", git_provider: "gitlab", is_public: true },
-  { id: 4, full_name: "repo4", git_provider: "gitlab", is_public: true },
+  { id: "1", full_name: "repo1", git_provider: "github", is_public: true },
+  { id: "2", full_name: "repo2", git_provider: "github", is_public: true },
+  { id: "3", full_name: "repo3", git_provider: "gitlab", is_public: true },
+  { id: "4", full_name: "repo4", git_provider: "gitlab", is_public: true },
 ];
 
 const renderTaskCard = (task = MOCK_TASK_1) => {
@@ -88,9 +88,14 @@ describe("TaskCard", () => {
         MOCK_RESPOSITORIES[0].full_name,
         MOCK_RESPOSITORIES[0].git_provider,
         undefined,
-        [],
+        {
+          git_provider: "github",
+          issue_number: 123,
+          repo: "repo1",
+          task_type: "MERGE_CONFLICTS",
+          title: "Task 1",
+        },
         undefined,
-        MOCK_TASK_1,
         undefined,
       );
     });
