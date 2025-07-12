@@ -97,6 +97,26 @@ def mock_child_agent():
     return agent
 
 
+def create_mock_agent_factory(mock_child_agent, llm_registry):
+    """Helper function to create a mock agent factory with proper LLM registration."""
+
+    def create_mock_agent(
+        config, llm_config, llm_registry, retry_listener=None, requested_service=None
+    ):
+        # Register the mock agent's LLM in the registry so get_combined_metrics() can find it
+        if requested_service:
+            mock_child_agent.llm = llm_registry.request_existing_service(
+                requested_service, llm_config, retry_listener
+            )
+        else:
+            mock_child_agent.llm = llm_registry.register_llm(
+                'agent_llm', llm_config, retry_listener
+            )
+        return mock_child_agent
+
+    return create_mock_agent
+
+
 @pytest.mark.asyncio
 async def test_delegation_flow(
     mock_parent_agent, mock_child_agent, mock_event_stream, llm_registry
@@ -104,11 +124,14 @@ async def test_delegation_flow(
     """
     Test that when the parent agent delegates to a child
      1. the parent's delegate is set, and once the child finishes, the parent is cleaned up properly.
-     2. metrics are accumulated globally (delegate is adding to the parents metrics)
-     3. local metrics for the delegate are still accessible
+     2. metrics are accumulated globally via LLM registry (delegate adds to the global metrics)
+     3. global metrics tracking works correctly through the LLM registry
     """
+
     # Mock the agent class resolution so that AgentController can instantiate mock_child_agent
-    Agent.get_cls = Mock(return_value=lambda llm, config: mock_child_agent)
+    Agent.get_cls = Mock(
+        return_value=create_mock_agent_factory(mock_child_agent, llm_registry)
+    )
 
     step_count = 0
 
@@ -118,6 +141,12 @@ async def test_delegation_flow(
         return CmdRunAction(command=f'ls {step_count}')
 
     mock_child_agent.step = agent_step_fn
+
+    # Set up the parent agent's LLM with initial cost and register it in the registry
+    mock_parent_agent.llm.metrics.accumulated_cost = 2
+    mock_parent_agent.llm.service_id = 'main_agent'
+    # Register the parent agent's LLM in the registry
+    llm_registry.service_to_llm['main_agent'] = mock_parent_agent.llm
 
     parent_metrics = Metrics()
     parent_metrics.accumulated_cost = 2
@@ -203,21 +232,23 @@ async def test_delegation_flow(
     for i in range(4):
         delegate_controller.state.iteration_flag.step()
         delegate_controller.agent.step(delegate_controller.state)
+        # Update the agent's LLM metrics (not the deprecated state metrics)
         delegate_controller.agent.llm.metrics.add_cost(1.0)
 
     assert (
         delegate_controller.state.get_local_step() == 4
     )  # verify local metrics are accessible via snapshot
 
+    # Check that the LLM registry has the combined metrics (parent + delegate)
+    combined_metrics = delegate_controller.state.llm_registry.get_combined_metrics()
     assert (
-        delegate_controller.state.metrics.accumulated_cost
-        == 6  # Make sure delegate tracks global cost
+        combined_metrics.accumulated_cost
+        == 6  # Make sure delegate tracks global cost (2 from parent + 4 from delegate)
     )
 
-    assert (
-        delegate_controller.state.get_local_metrics().accumulated_cost
-        == 4  # Delegate spent one dollar per step
-    )
+    # Since metrics are now global via LLM registry, local metrics tracking
+    # is handled differently. The delegate's LLM shares the same metrics object
+    # as the parent for global tracking, so we verify the global total is correct.
 
     delegate_controller.state.outputs = {'delegate_result': 'done'}
 
@@ -322,8 +353,17 @@ async def test_delegate_hits_global_limits(
     """
     Global limits from control flags should apply to delegates
     """
+
     # Mock the agent class resolution so that AgentController can instantiate mock_child_agent
-    Agent.get_cls = Mock(return_value=lambda llm, config: mock_child_agent)
+    Agent.get_cls = Mock(
+        return_value=create_mock_agent_factory(mock_child_agent, llm_registry)
+    )
+
+    # Set up the parent agent's LLM with initial cost and register it in the registry
+    mock_parent_agent.llm.metrics.accumulated_cost = 2
+    mock_parent_agent.llm.service_id = 'main_agent'
+    # Register the parent agent's LLM in the registry
+    llm_registry.service_to_llm['main_agent'] = mock_parent_agent.llm
 
     parent_metrics = Metrics()
     parent_metrics.accumulated_cost = 2
