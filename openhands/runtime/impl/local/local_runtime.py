@@ -790,12 +790,12 @@ def _create_warm_server_in_background(
 
 def _get_plugins(config: OpenHandsConfig) -> list[PluginRequirement]:
     from openhands.controller.agent import Agent
-    from openhands.llm.llm import LLM
 
     agent_config = config.get_agent_config(config.default_agent)
-    llm = LLM(
-        config=config.get_llm_config_from_agent(config.default_agent),
-    )
-    agent = Agent.get_cls(config.default_agent)(llm, agent_config)
+    llm_config = config.get_llm_config_from_agent(config.default_agent)
+    llm_registry = LLMRegistry(
+        None, 'convo_id', None
+    )  # Dummy registry, we just want to plugins
+    agent = Agent.get_cls(config.default_agent)(agent_config, llm_config, llm_registry)
     plugins = agent.sandbox_plugins
     return plugins
