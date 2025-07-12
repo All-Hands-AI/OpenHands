@@ -29,8 +29,25 @@ from openhands.events.observation.agent import RecallObservation
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics
+from openhands.llm.metrics_registry import LLMRegistry
 from openhands.memory.memory import Memory
 from openhands.storage.memory import InMemoryFileStore
+
+
+@pytest.fixture
+def llm_registry():
+    import uuid
+
+    # Clear the class-level dictionaries to avoid conflicts between tests
+    LLMRegistry.service_to_llm.clear()
+    LLMRegistry.restored_llm.clear()
+
+    file_store = InMemoryFileStore({})
+    # Use a unique conversation ID for each test to avoid conflicts
+    conversation_id = f'test-conversation-{uuid.uuid4()}'
+    return LLMRegistry(
+        file_store=file_store, conversation_id=conversation_id, user_id='test-user'
+    )
 
 
 @pytest.fixture
@@ -47,6 +64,7 @@ def mock_parent_agent():
     agent = MagicMock(spec=Agent)
     agent.name = 'ParentAgent'
     agent.llm = MagicMock(spec=LLM)
+    agent.llm.service_id = 'main_agent'
     agent.llm.metrics = Metrics()
     agent.llm.config = LLMConfig()
     agent.llm.retry_listener = None  # Add retry_listener attribute
@@ -66,6 +84,7 @@ def mock_child_agent():
     agent = MagicMock(spec=Agent)
     agent.name = 'ChildAgent'
     agent.llm = MagicMock(spec=LLM)
+    agent.llm.service_id = 'main_agent'
     agent.llm.metrics = Metrics()
     agent.llm.config = LLMConfig()
     agent.llm.retry_listener = None  # Add retry_listener attribute
@@ -79,7 +98,9 @@ def mock_child_agent():
 
 
 @pytest.mark.asyncio
-async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_stream):
+async def test_delegation_flow(
+    mock_parent_agent, mock_child_agent, mock_event_stream, llm_registry
+):
     """
     Test that when the parent agent delegates to a child
      1. the parent's delegate is set, and once the child finishes, the parent is cleaned up properly.
@@ -120,6 +141,7 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
         confirmation_mode=False,
         headless_mode=True,
         initial_state=parent_state,
+        llm_registry=llm_registry,
     )
 
     # Setup Memory to catch RecallActions
@@ -229,7 +251,7 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
     ],
 )
 async def test_delegate_step_different_states(
-    mock_parent_agent, mock_event_stream, delegate_state
+    mock_parent_agent, mock_event_stream, delegate_state, llm_registry
 ):
     """Ensure that delegate is closed or remains open based on the delegate's state."""
     # Create a state with iteration_flag.max_value set to 10
@@ -243,6 +265,7 @@ async def test_delegate_step_different_states(
         confirmation_mode=False,
         headless_mode=True,
         initial_state=state,
+        llm_registry=llm_registry,
     )
 
     mock_delegate = AsyncMock()
@@ -294,7 +317,7 @@ async def test_delegate_step_different_states(
 
 @pytest.mark.asyncio
 async def test_delegate_hits_global_limits(
-    mock_child_agent, mock_event_stream, mock_parent_agent
+    mock_child_agent, mock_event_stream, mock_parent_agent, llm_registry
 ):
     """
     Global limits from control flags should apply to delegates
@@ -324,6 +347,7 @@ async def test_delegate_hits_global_limits(
         confirmation_mode=False,
         headless_mode=False,
         initial_state=parent_state,
+        llm_registry=llm_registry,
     )
 
     # Setup Memory to catch RecallActions

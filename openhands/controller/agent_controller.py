@@ -671,6 +671,7 @@ class AgentController:
             f'start delegate, creating agent {delegate_agent.name}',
         )
 
+        print('setting delegate')
         # Create the delegate with is_delegate=True so it does NOT subscribe directly
         self.delegate = AgentController(
             sid=self.id + '-delegate',
