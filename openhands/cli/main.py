@@ -572,8 +572,6 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
     # and we're in an interactive environment (not during tests or CI)
     if (
         not aliases_exist_in_shell_config()
-        and os.getenv('CI') != 'true'
-        and os.getenv('PYTEST_CURRENT_TEST') is None
         and sys.stdin.isatty()
     ):
         # Clear the terminal if we haven't shown a banner yet
