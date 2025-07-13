@@ -81,4 +81,3 @@ jobs:
         env:
           TEST_RUNTIME: local
           DEBUG: "1"
-          OPENHANDS_SKIP_ALIAS_SETUP: "1"
