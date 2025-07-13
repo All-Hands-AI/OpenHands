@@ -570,10 +570,7 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
     # Check if we should show the alias setup flow
     # Only show it if aliases don't exist in the shell configuration
     # and we're in an interactive environment (not during tests or CI)
-    if (
-        not aliases_exist_in_shell_config()
-        and sys.stdin.isatty()
-    ):
+    if not aliases_exist_in_shell_config() and sys.stdin.isatty():
         # Clear the terminal if we haven't shown a banner yet
         if not banner_shown:
             clear()
