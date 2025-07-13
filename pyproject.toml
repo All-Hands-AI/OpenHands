@@ -98,7 +98,7 @@ jupyter_kernel_gateway = "*"
 # Third-party runtime dependencies (optional)
 e2b = { version = ">=1.0.5,<1.6.0", optional = true }
 modal = { version = ">=0.66.26,<1.1.0", optional = true }
-runloop-api-client = { version = "0.43.0", optional = true }
+runloop-api-client = { version = "0.48.2", optional = true }
 daytona = { version = "0.22.0", optional = true }
 
 [tool.poetry.extras]
@@ -108,7 +108,7 @@ third_party_runtimes = [ "e2b", "modal", "runloop-api-client", "daytona" ]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-ruff = "0.12.0"
+ruff = "0.12.3"
 mypy = "1.16.1"
 pre-commit = "4.2.0"
 build = "*"
