@@ -50,9 +50,10 @@
 1. ✅ Examine current `browser_env.py` implementation
 2. ✅ Research Browser-Use library structure and APIs
 3. ✅ Create new `browser_use_env.py` with equivalent functionality
-4. ✅ Implement action mapper and observation adapter
-5. Test the new implementation
-6. Update action execution server to use new environment
+4. ✅ Implement observation adapter
+5. **REVISED**: Remove action mapper - use Browser-Use actions directly
+6. Test the new implementation
+7. Update action execution server to use new environment
 
 ### Browser-Use Library Analysis
 
@@ -97,10 +98,10 @@
 ## Progress Tracking
 
 - [x] Phase 1: Core Browser Environment Replacement
-  - [x] Create action mapper (`action_mapper.py`)
   - [x] Create observation adapter (`observation_adapter.py`)
   - [x] Create Browser-Use environment (`browser_use_env.py`)
-  - [ ] Test the new implementation
+  - [x] **REVISED**: Remove action mapper, integrate Browser-Use actions directly
+  - [x] Test the new implementation
   - [ ] Update action execution server to use new environment
 - [ ] Phase 2: Action and Observation Updates
 - [ ] Phase 3: Agent Updates
@@ -112,32 +113,48 @@
 
 ### Created Files
 
-1. **`openhands/runtime/browser/action_mapper.py`**
-   - Maps BrowserGym-style action strings to Browser-Use action models
-   - Supports goto, click, fill, scroll, search_google, send_keys, etc.
-   - Handles bid-to-index conversion (simplified implementation)
-
-2. **`openhands/runtime/browser/observation_adapter.py`**
+1. **`openhands/runtime/browser/observation_adapter.py`**
    - Converts Browser-Use observations to OpenHands format
    - Maintains compatibility with existing BrowserOutputObservation structure
    - Handles screenshots, HTML content, and page structure
 
-3. **`openhands/runtime/browser/browser_use_env.py`**
+2. **`openhands/runtime/browser/browser_use_env.py`**
    - Drop-in replacement for BrowserGym environment
    - Maintains same interface (step(), check_alive(), close())
    - Uses multiprocessing architecture for compatibility
    - Integrates Browser-Use BrowserSession and Controller
+   - **REVISED**: Supports both string actions (backward compatibility) and direct Browser-Use action models
 
 ### Key Implementation Decisions
 
-1. **Action Mapping**: Used regex-based parsing to convert BrowserGym action strings to Browser-Use action models
+1. **REVISED**: **Hybrid Action Support**: Support both string actions (backward compatibility) and direct Browser-Use action models
 2. **Observation Structure**: Maintained exact field names for backward compatibility
 3. **Multiprocessing**: Kept the same pipe-based communication for compatibility
 4. **Error Handling**: Implemented comprehensive error handling and fallbacks
+5. **Complete Replacement**: Remove BrowserGym entirely, no feature flags or dual support
 
 ### Known Limitations
 
-1. **BID to Index Mapping**: Current implementation uses simple hash-based mapping - needs improvement
+1. **REVISED**: **Element Identification**: Need to replace BID system with Browser-Use's element indexing
 2. **Accessibility Tree**: Simplified implementation - needs proper tree flattening
 3. **Async Operations**: Some Browser-Use operations might be async - needs proper handling
 4. **Evaluation Support**: Basic evaluation support implemented - needs testing
+5. **Action Interface**: Need to update all agents to use Browser-Use action models instead of strings
+
+### Test Results
+
+**✅ Successful Tests:**
+- Browser-Use action model creation and validation
+- Action string parsing for backward compatibility
+- Environment initialization and basic communication
+- Alive check functionality
+
+**⚠️ Known Issues:**
+- Async operations not properly awaited (RuntimeWarnings)
+- Navigation and page content retrieval fail due to async issues
+- Screenshot capture needs async handling
+
+**Next Steps:**
+- Fix async handling in Browser-Use environment
+- Update action execution server to use new environment
+- Continue with Phase 2 (action/observation updates)

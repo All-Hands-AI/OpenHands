@@ -11,12 +11,24 @@ import json
 import multiprocessing
 import time
 import uuid
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 from browser_use import BrowserSession, Controller
+from browser_use.controller.service import (
+    ClickElementAction,
+    GoToUrlAction,
+    InputTextAction,
+    ScrollAction,
+    SearchGoogleAction,
+    SendKeysAction,
+    SwitchTabAction,
+    CloseTabAction,
+    UploadFileAction,
+    DoneAction,
+    NoParamsAction,
+)
 from openhands.core.exceptions import BrowserInitException
 from openhands.core.logger import openhands_logger as logger
-from openhands.runtime.browser.action_mapper import ActionMapper
 from openhands.runtime.browser.observation_adapter import ObservationAdapter
 from openhands.utils.shutdown_listener import should_continue, should_exit
 
@@ -144,7 +156,7 @@ class BrowserUseEnv:
         self,
         browser_session: BrowserSession,
         controller: Controller,
-        action_str: str
+        action: Union[str, Any]
     ) -> Dict[str, Any]:
         """
         Execute a browser action using Browser-Use.
@@ -152,15 +164,21 @@ class BrowserUseEnv:
         Args:
             browser_session: Browser-Use browser session
             controller: Browser-Use controller
-            action_str: Action string to execute
+            action: Browser-Use action model or action string (for backward compatibility)
 
         Returns:
             Observation dictionary in OpenHands format
         """
         try:
-            # Parse action using action mapper
-            action_mapper = ActionMapper()
-            browser_use_action = action_mapper.parse_action(action_str)
+            # Handle both action models and strings for backward compatibility
+            if isinstance(action, str):
+                # For backward compatibility, try to parse string actions
+                browser_use_action = self._parse_action_string(action)
+                action_str = action
+            else:
+                # Direct Browser-Use action model
+                browser_use_action = action
+                action_str = str(action)
 
             if browser_use_action is None:
                 # Handle unsupported actions
@@ -238,6 +256,54 @@ class BrowserUseEnv:
                 'last_action_error': str(e),
                 'error': True,
             }
+
+    def _parse_action_string(self, action_str: str) -> Optional[Any]:
+        """
+        Parse action string for backward compatibility.
+
+        This is a simplified parser for legacy BrowserGym-style actions.
+        In the future, this should be removed as agents will use Browser-Use actions directly.
+        """
+        import re
+
+        action_str = action_str.strip()
+
+        # Simple regex patterns for common actions
+        goto_pattern = re.compile(r'goto\("([^"]+)"\)')
+        click_pattern = re.compile(r'click\("([^"]+)"\)')
+        fill_pattern = re.compile(r'fill\("([^"]+)",\s*"([^"]*)"\)')
+        scroll_pattern = re.compile(r'scroll\(([^,]+),\s*([^)]+)\)')
+
+        if match := goto_pattern.match(action_str):
+            url = match.group(1)
+            return GoToUrlAction(url=url, new_tab=False)
+        elif match := click_pattern.match(action_str):
+            bid = match.group(1)
+            # Convert bid to index (simplified)
+            index = self._bid_to_index(bid)
+            return ClickElementAction(index=index)
+        elif match := fill_pattern.match(action_str):
+            bid = match.group(1)
+            text = match.group(2)
+            index = self._bid_to_index(bid)
+            return InputTextAction(index=index, text=text)
+        elif match := scroll_pattern.match(action_str):
+            delta_x = float(match.group(1))
+            delta_y = float(match.group(2))
+            return ScrollAction(down=delta_y > 0, num_pages=1)
+
+        return None
+
+    def _bid_to_index(self, bid: str) -> int:
+        """
+        Convert a BrowserGym bid to a Browser-Use index.
+
+        This is a simplified implementation for backward compatibility.
+        """
+        try:
+            return int(bid)
+        except ValueError:
+            return hash(bid) % 1000
 
     def step(self, action_str: str, timeout: float = 120) -> Dict[str, Any]:
         """

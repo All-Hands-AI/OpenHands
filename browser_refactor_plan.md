@@ -70,18 +70,12 @@ This document outlines the plan to refactor OpenHands' browser functionality fro
   - Maintain multiprocessing architecture for compatibility
   - Implement equivalent observation structure
 
-#### 1.2 Action Mapping
-- **File**: `openhands/runtime/browser/action_mapper.py`
-- **Purpose**: Map OpenHands actions to Browser-Use actions
-- **Mapping Strategy**:
-  ```python
-  # Current BrowserGym actions -> Browser-Use actions
-  goto(url) -> go_to_url(url, new_tab=False)
-  click(bid) -> click_element(index)
-  fill(bid, text) -> input_text(index, text)
-  scroll(delta_x, delta_y) -> scroll(down, num_pages)
-  # ... etc
-  ```
+#### 1.2 Browser-Use Action Integration
+- **Purpose**: Use Browser-Use's native action system directly
+- **Strategy**:
+  - Remove BrowserGym action string parsing
+  - Use Browser-Use's structured action models directly
+  - Update agents to generate Browser-Use actions instead of BrowserGym strings
 
 #### 1.3 Observation Adapter
 - **File**: `openhands/runtime/browser/observation_adapter.py`
@@ -98,8 +92,8 @@ This document outlines the plan to refactor OpenHands' browser functionality fro
 - **File**: `openhands/events/action/browse.py`
 - **Changes**:
   - Remove `browsergym_send_msg_to_user` field
-  - Add Browser-Use specific fields if needed
-  - Maintain backward compatibility during transition
+  - Update to use Browser-Use action models directly
+  - Replace string-based actions with structured Browser-Use actions
 
 #### 2.2 Update Observation Definitions
 - **File**: `openhands/events/observation/browse.py`
@@ -114,8 +108,8 @@ This document outlines the plan to refactor OpenHands' browser functionality fro
 - **File**: `openhands/agenthub/browsing_agent/browsing_agent.py`
 - **Changes**:
   - Remove BrowserGym HighLevelActionSet dependency
-  - Implement Browser-Use action generation
-  - Update response parsing for new action format
+  - Implement Browser-Use action generation using structured action models
+  - Update response parsing for Browser-Use action format
 
 #### 3.2 Update VisualBrowsingAgent
 - **File**: `openhands/agenthub/visualbrowsing_agent/visualbrowsing_agent.py`
@@ -126,8 +120,8 @@ This document outlines the plan to refactor OpenHands' browser functionality fro
 #### 3.3 Update CodeActAgent Browser Tool
 - **File**: `openhands/agenthub/codeact_agent/tools/browser.py`
 - **Changes**:
-  - Replace BrowserGym action descriptions with Browser-Use equivalents
-  - Update tool parameter descriptions
+  - Replace BrowserGym action descriptions with Browser-Use action models
+  - Update tool parameter descriptions to match Browser-Use action fields
   - Maintain existing API for tool calls
 
 ### Phase 4: Configuration and Infrastructure
@@ -137,7 +131,7 @@ This document outlines the plan to refactor OpenHands' browser functionality fro
 - **Changes**:
   - Replace `browsergym_eval_env` with `browser_use_config`
   - Add Browser-Use specific configuration options
-  - Maintain backward compatibility
+  - Remove BrowserGym configuration entirely
 
 #### 4.2 Update Action Execution Server
 - **File**: `openhands/runtime/action_execution_server.py`
@@ -203,35 +197,25 @@ This document outlines the plan to refactor OpenHands' browser functionality fro
 class BrowserUseEnv:
     def __init__(self, config: BrowserUseConfig):
         self.browser_session: BrowserSession
-        self.action_mapper: ActionMapper
         self.observation_adapter: ObservationAdapter
 
-    async def step(self, action: str) -> dict:
-        # 1. Parse action string
-        # 2. Map to Browser-Use action
-        # 3. Execute via BrowserSession
-        # 4. Convert observation to OpenHands format
-        # 5. Return observation dict
+    async def step(self, action: BrowserUseAction) -> dict:
+        # 1. Execute Browser-Use action directly
+        # 2. Get observation from BrowserSession
+        # 3. Convert observation to OpenHands format
+        # 4. Return observation dict
 ```
 
-### Action Mapping Strategy
+### Browser-Use Action Integration
 
 ```python
-# Action Mapping Examples
-ACTION_MAPPING = {
-    'goto': {
-        'browsergym': 'goto("url")',
-        'browser_use': 'go_to_url(url="url", new_tab=False)'
-    },
-    'click': {
-        'browsergym': 'click("bid")',
-        'browser_use': 'click_element(index=bid_to_index("bid"))'
-    },
-    'fill': {
-        'browsergym': 'fill("bid", "text")',
-        'browser_use': 'input_text(index=bid_to_index("bid"), text="text")'
-    }
-}
+# Direct Browser-Use Action Usage
+from browser_use.controller.service import GoToUrlAction, ClickElementAction, InputTextAction
+
+# Instead of string parsing, use structured actions directly
+goto_action = GoToUrlAction(url="https://example.com", new_tab=False)
+click_action = ClickElementAction(index=123)
+input_action = InputTextAction(index=456, text="Hello World")
 ```
 
 ### Observation Structure Compatibility
@@ -256,10 +240,10 @@ ACTION_MAPPING = {
 
 ## Migration Strategy
 
-### Backward Compatibility
-1. **Dual Support Period**: Maintain both BrowserGym and Browser-Use implementations during transition
-2. **Feature Flags**: Use configuration to switch between implementations
-3. **Gradual Migration**: Migrate one component at a time with thorough testing
+### Direct Replacement
+1. **Complete Removal**: Remove BrowserGym entirely and replace with Browser-Use
+2. **No Feature Flags**: No dual support period - direct replacement
+3. **Structured Actions**: Use Browser-Use's native action models throughout
 
 ### Testing Strategy
 1. **Unit Tests**: Test each component individually
@@ -268,9 +252,9 @@ ACTION_MAPPING = {
 4. **Performance Tests**: Compare performance between implementations
 
 ### Rollback Plan
-1. **Feature Flag**: Easy rollback to BrowserGym implementation
+1. **Git Revert**: Use git revert to rollback to previous BrowserGym implementation
 2. **Version Tagging**: Tag releases before and after migration
-3. **Documentation**: Clear migration and rollback instructions
+3. **Documentation**: Clear migration instructions
 
 ## Timeline
 
