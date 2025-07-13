@@ -765,6 +765,12 @@ def get_parser() -> argparse.ArgumentParser:
         type=str,
         default=None,
     )
+    parser.add_argument(
+        '--llm-timeout',
+        help='Set the LLM timeout in seconds (default: None, uses provider default)',
+        type=int,
+        default=None,
+    )
     return parser
 
 
@@ -851,6 +857,12 @@ def setup_config_from_args(args: argparse.Namespace) -> OpenHandsConfig:
         config.max_iterations = args.max_iterations
     if args.max_budget_per_task is not None:
         config.max_budget_per_task = args.max_budget_per_task
+
+    # Set LLM timeout if provided
+    if args.llm_timeout is not None:
+        llm_config = config.get_llm_config()
+        llm_config.timeout = args.llm_timeout
+        config.set_llm_config(llm_config)
 
     # Read selected repository in config for use by CLI and main.py
     if args.selected_repo is not None:

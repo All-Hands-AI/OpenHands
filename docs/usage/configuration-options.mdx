@@ -259,9 +259,9 @@ For development setups, you can also define custom named LLM configurations. See
   - Description: Temperature for the API
 
 - `timeout`
-  - Type: `int`
-  - Default: `0`
-  - Description: Timeout for the API
+  - Type: `int | None`
+  - Default: `None`
+  - Description: Timeout for the LLM API in seconds. If None, uses the provider's default timeout. Can also be set via CLI argument `--llm-timeout`.
 
 - `top_p`
   - Type: `float`
