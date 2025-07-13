@@ -249,14 +249,31 @@ def display_error(error: str) -> None:
     error = error.strip()
 
     if error:
+        # Check if this is a timeout error
+        if 'ERROR_LLM_TIMEOUT' in error or 'timeout' in error.lower():
+            title = 'Language Model Timed Out'
+            timeout_message = (
+                f'{error}\n\n'
+                'The language model request timed out. You can:\n'
+                '• Increase the timeout with --llm-timeout <seconds>\n'
+                '• Check your network connection\n'
+                '• Try again with a shorter prompt\n\n'
+                'For more configuration options, see:\n'
+                'https://docs.all-hands.dev/modules/usage/configuration-options'
+            )
+            display_text = timeout_message
+        else:
+            title = 'Error'
+            display_text = error
+
         container = Frame(
             TextArea(
-                text=error,
+                text=display_text,
                 read_only=True,
                 style='ansired',
                 wrap_lines=True,
             ),
-            title='Error',
+            title=title,
             style='ansired',
         )
         print_formatted_text('')
