@@ -130,6 +130,8 @@ async def search_events(
         )
 
     # Get matching events from the stream
+    # The improved search_events method will handle calculating the latest cur_id
+    # and will continue until it finds all events, even with multiple EventStream instances
     event_stream = conversation.event_stream
     events = list(
         event_stream.search_events(

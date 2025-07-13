@@ -101,43 +101,69 @@ class EventStore(EventStoreABC):
             end_id: The ID of the last event to retrieve. Defaults to the last event in the stream.
             reverse: Whether to retrieve events in reverse order. Defaults to False.
             filter: EventFilter to use
+            limit: Maximum number of events to return
 
         Yields:
             Events from the stream that match the criteria.
         """
-
-        if end_id is None:
-            end_id = self.cur_id
+        # For reverse order with no end_id, recalculate the maximum event ID
+        # This ensures we have the most up-to-date upper bound
+        calculated_end_id: int | None = None
+        if reverse and end_id is None:
+            calculated_end_id = self._calculate_cur_id()
+        elif end_id is not None:
+            calculated_end_id = end_id + 1  # From inclusive to exclusive
         else:
-            end_id += 1  # From inclusive to exclusive
+            calculated_end_id = None  # Will be handled in the loop
 
         if reverse:
             step = -1
-            start_id, end_id = end_id, start_id
-            start_id -= 1
-            end_id -= 1
+            if calculated_end_id is not None:
+                start_id, calculated_end_id = calculated_end_id, start_id
+                start_id -= 1
+                calculated_end_id -= 1
         else:
             step = 1
 
+        # Use calculated_end_id instead of end_id
+        end_id = calculated_end_id
+
         cache_page = _DUMMY_PAGE
         num_results = 0
-        for index in range(start_id, end_id, step):
+        index = start_id
+
+        # Use a while loop instead of range to handle dynamic end conditions
+        while True:
             if not should_continue():
                 return
+
+            # For ascending order with no end_id, continue until we hit a missing event
+            # For all other cases, use the specified or calculated end_id
+            if end_id is not None:
+                if (reverse and index <= end_id) or (not reverse and index >= end_id):
+                    return
+
             if not cache_page.covers(index):
                 cache_page = self._load_cache_page_for_index(index)
+
             event = cache_page.get_event(index)
             if event is None:
                 try:
                     event = self.get_event(index)
                 except FileNotFoundError:
+                    if not reverse and end_id is None:
+                        # We've reached the end of available events
+                        return
                     event = None
+
             if event:
                 if not filter or filter.include(event):
                     yield event
                     num_results += 1
                     if limit and limit <= num_results:
                         return
+
+            index += step
 
     def get_event(self, id: int) -> Event:
         filename = self._get_filename_for_id(id, self.user_id)
