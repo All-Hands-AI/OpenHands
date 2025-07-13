@@ -35,43 +35,17 @@ async def generate_unique_conversation_id(
 
 
 async def get_conversation_metadata(
-    conversation_id: str, user_id: str | None = Depends(get_user_id)
+    conversation_id: str,
+    conversation_store: ConversationStore = Depends(get_conversation_store),
 ) -> ConversationMetadata:
     """Get conversation metadata and validate user access without requiring an active conversation."""
-    conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
-
-    # Check if conversation exists
-    if not await conversation_store.exists(conversation_id):
-        logger.warning(
-            f'get_conversation_metadata: conversation {conversation_id} not found',
-            extra={'session_id': conversation_id, 'user_id': user_id},
-        )
+    try:
+        metadata = await conversation_store.get_metadata(conversation_id)
+        return metadata
+    except FileNotFoundError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f'Conversation {conversation_id} not found',
-        )
-
-    # Get metadata and validate user access
-    try:
-        metadata = await conversation_store.get_metadata(conversation_id)
-        if not await conversation_store.validate_metadata(conversation_id, user_id):
-            logger.warning(
-                f'get_conversation_metadata: user {user_id} does not have access to conversation {conversation_id}',
-                extra={'session_id': conversation_id, 'user_id': user_id},
-            )
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f'Access denied to conversation {conversation_id}',
-            )
-        return metadata
-    except Exception as e:
-        logger.error(
-            f'get_conversation_metadata: error getting metadata for conversation {conversation_id}: {e}',
-            extra={'session_id': conversation_id, 'user_id': user_id},
-        )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f'Error accessing conversation {conversation_id}',
         )
 
 
