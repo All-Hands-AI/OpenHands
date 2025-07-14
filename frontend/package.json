@@ -7,7 +7,7 @@
     "node": ">=22.0.0"
   },
   "dependencies": {
-    "@heroui/react": "^2.8.0-beta.13",
+    "@heroui/react": "^2.8.0-beta.15",
     "@microlink/react-json-view": "^1.26.2",
     "@monaco-editor/react": "^4.7.0-rc.0",
     "@react-router/node": "^7.6.3",
@@ -83,7 +83,7 @@
     "@babel/traverse": "^7.28.0",
     "@babel/types": "^7.27.0",
     "@mswjs/socket.io-binding": "^0.2.0",
-    "@playwright/test": "^1.54.0",
+    "@playwright/test": "^1.54.1",
     "@react-router/dev": "^7.6.3",
     "@tailwindcss/typography": "^0.5.16",
     "@tanstack/eslint-plugin-query": "^5.81.2",
@@ -91,7 +91,7 @@
     "@testing-library/jest-dom": "^6.6.1",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
-    "@types/node": "^24.0.12",
+    "@types/node": "^24.0.13",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@types/react-highlight": "^0.12.8",
