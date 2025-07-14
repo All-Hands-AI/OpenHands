@@ -39,7 +39,7 @@ fi
 
 if [ -z "$DATASET" ]; then
   echo "DATASET not specified, use default princeton-nlp/SWE-bench_Lite"
-  DATASET="sweperf"
+  DATASET="sweperf/sweperf"
 fi
 
 if [ -z "$SPLIT" ]; then

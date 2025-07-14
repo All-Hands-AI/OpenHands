@@ -155,7 +155,7 @@ def get_instance_docker_image(
     instance_id: str,
 ) -> str:
     # TODO: This currently assumes docker image is already local.
-    return f"sweb.eval.x86_64.{instance_id}"
+    return f"docker.io/sweperf/sweperf:{instance_id}"
 
 
 def get_config(
@@ -678,7 +678,8 @@ if __name__ == '__main__':
 
     # dataset = load_dataset(args.dataset, split=args.split)
     # swe_bench_tests = filter_dataset(dataset.to_pandas(), 'instance_id')
-    dataset = pd.read_json("/home/jjma_google_com/SWE-Perf/harness_data/initial_data.jsonl", lines=True)
+    dataset = load_dataset(
+        args.dataset, split=args.split, use_auth_token=True)
 
     dataset['version'] = dataset['version'].astype(str)
 
