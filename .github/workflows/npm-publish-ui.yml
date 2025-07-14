@@ -19,7 +19,6 @@ jobs:
   check-version:
     name: Check if version has changed
     runs-on: blacksmith-4vcpu-ubuntu-2204
-    shell: bash
     outputs:
       should-publish: ${{ steps.version-check.outputs.should-publish }}
       current-version: ${{ steps.version-check.outputs.current-version }}
@@ -31,6 +30,7 @@ jobs:
 
       - name: Check if version changed
         id: version-check
+        shell: bash
         run: |
           # Get current version from package.json
           CURRENT_VERSION=$(jq -r .version openhands-ui/package.json)
