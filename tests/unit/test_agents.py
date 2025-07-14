@@ -51,10 +51,6 @@ from openhands.storage.memory import InMemoryFileStore
 def llm_registry():
     import uuid
 
-    # Clear the class-level dictionaries to avoid conflicts between tests
-    LLMRegistry.service_to_llm.clear()
-    LLMRegistry.restored_llm.clear()
-
     file_store = InMemoryFileStore({})
     # Use a unique conversation ID for each test to avoid conflicts
     conversation_id = f'test-conversation-{uuid.uuid4()}'
@@ -76,10 +72,6 @@ def agent_class(request):
 @pytest.fixture
 def agent(agent_class) -> Union[CodeActAgent, ReadOnlyAgent]:
     import uuid
-
-    # Clear the class-level dictionaries to avoid conflicts between tests
-    LLMRegistry.service_to_llm.clear()
-    LLMRegistry.restored_llm.clear()
 
     file_store = InMemoryFileStore({})
     # Use a unique conversation ID for each agent to avoid conflicts

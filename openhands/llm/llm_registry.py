@@ -59,7 +59,7 @@ class LLMRegistry:
         retry_listener: Callable[[int, int], None] | None = None,
     ):
         logger.info(
-            f'[Metrics registry {self.metrics_id}]: Registering service for {service_id}'
+            f'[LLM registry {self.metrics_id}]: Registering service for {service_id}'
         )
 
         if service_id in self.service_to_llm:

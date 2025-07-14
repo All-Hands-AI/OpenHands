@@ -13,21 +13,12 @@ from openhands.storage.memory import InMemoryFileStore
 
 class TestLLMRegistry(unittest.TestCase):
     @staticmethod
-    def reset_registry_class_vars():
-        """Reset LLMRegistry class variables to avoid interference between tests."""
-        LLMRegistry.service_to_llm = {}
-        LLMRegistry.restored_llm = {}
-
-    @staticmethod
     def generate_unique_id(prefix='test'):
         """Generate a unique ID with the given prefix."""
         return f'{prefix}-{time.time()}'
 
     def setUp(self):
         """Set up test environment before each test."""
-        # Reset the class variables before each test
-        self.reset_registry_class_vars()
-
         self.file_store = InMemoryFileStore()
         self.conversation_id = self.generate_unique_id('conversation')
         self.user_id = self.generate_unique_id('user')

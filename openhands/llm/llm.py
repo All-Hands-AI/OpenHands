@@ -132,7 +132,6 @@ class LLM(RetryMixin, DebugMixin):
             metrics: The metrics to use.
         """
         self._tried_model_info = False
-        # Assign metrics object to llm from metrics registry
         self.model_name = model_name
 
         self.cost_metric_supported: bool = True

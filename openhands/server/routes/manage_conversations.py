@@ -355,8 +355,6 @@ def generate_prompt(
     conversation_id: str,
     user_id: str | None,
 ) -> str:
-    # TODO: we should use metrics registry associated with the conversation session
-
     llm_registry = LLMRegistry(file_store, conversation_id, user_id)
     llm_registry.register_llm('', llm_config)
     messages = [
