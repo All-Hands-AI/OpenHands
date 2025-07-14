@@ -24,7 +24,7 @@ from openhands.events.observation import BrowserOutputObservation
 from openhands.events.observation.agent import AgentCondensationObservation
 from openhands.events.observation.observation import Observation
 from openhands.llm import LLM
-from openhands.llm.metrics_registry import LLMRegistry
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.memory.condenser import Condenser
 from openhands.memory.condenser.condenser import Condensation, RollingCondenser, View
 from openhands.memory.condenser.impl import (

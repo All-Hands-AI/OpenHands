@@ -9,7 +9,7 @@ from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.events.action import MessageAction
 from openhands.events.event import EventSource
 from openhands.events.event_store import EventStore
-from openhands.llm.metrics_registry import LLMRegistry
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.server.conversation_manager.standalone_conversation_manager import (
     StandaloneConversationManager,
 )

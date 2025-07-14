@@ -21,8 +21,8 @@ from openhands.events.observation.agent import (
 from openhands.events.serialization.observation import observation_from_dict
 from openhands.events.stream import EventStream
 from openhands.llm import LLM
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.llm.metrics import Metrics
-from openhands.llm.metrics_registry import LLMRegistry
 from openhands.memory.memory import Memory
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,

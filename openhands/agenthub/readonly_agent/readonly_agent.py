@@ -6,7 +6,7 @@ import os
 from typing import TYPE_CHECKING, Callable
 
 from openhands.core.config.llm_config import LLMConfig
-from openhands.llm.metrics_registry import LLMRegistry
+from openhands.llm.llm_registry import LLMRegistry
 
 if TYPE_CHECKING:
     from litellm import ChatCompletionToolParam

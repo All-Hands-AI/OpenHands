@@ -8,8 +8,8 @@ from openhands.controller.state.state import State
 from openhands.core.config import LLMConfig, OpenHandsConfig
 from openhands.core.config.agent_config import AgentConfig
 from openhands.events import EventStream, EventStreamSubscriber
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.llm.metrics import Metrics
-from openhands.llm.metrics_registry import LLMRegistry
 from openhands.memory.memory import Memory
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,

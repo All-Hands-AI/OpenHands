@@ -22,7 +22,7 @@ from openhands.events.action import MessageAction
 from openhands.events.nested_event_store import NestedEventStore
 from openhands.events.stream import EventStream
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
-from openhands.llm.metrics_registry import LLMRegistry
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
 from openhands.server.config.server_config import ServerConfig

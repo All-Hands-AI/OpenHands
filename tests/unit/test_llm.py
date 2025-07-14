@@ -13,8 +13,8 @@ from openhands.core.config import LLMConfig
 from openhands.core.exceptions import LLMNoResponseError, OperationCancelled
 from openhands.core.message import Message, TextContent
 from openhands.llm.llm import LLM
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.llm.metrics import Metrics, TokenUsage
-from openhands.llm.metrics_registry import LLMRegistry
 from openhands.storage.memory import InMemoryFileStore
 
 

@@ -50,7 +50,7 @@ from openhands.integrations.provider import (
     ProviderType,
 )
 from openhands.integrations.service_types import AuthenticationError
-from openhands.llm.metrics_registry import LLMRegistry
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.microagent import (
     BaseMicroagent,
     load_microagents_from_dir,

@@ -26,7 +26,7 @@ from openhands.events.observation import (
     Observation,
 )
 from openhands.events.serialization.event import event_to_dict
-from openhands.llm.metrics_registry import LLMRegistry
+from openhands.llm.llm_registry import LLMRegistry
 
 """
 FIXME: There are a few problems this surfaced

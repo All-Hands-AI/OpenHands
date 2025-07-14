@@ -19,8 +19,8 @@ from openhands.events.action import (
 )
 from openhands.events.action.agent import AgentFinishAction
 from openhands.events.event import Event, EventSource
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.llm.metrics import Metrics
-from openhands.llm.metrics_registry import LLMRegistry
 from openhands.memory.view import View
 from openhands.storage.files import FileStore
 from openhands.storage.locations import get_conversation_agent_state_filename

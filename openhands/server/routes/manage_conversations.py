@@ -30,7 +30,7 @@ from openhands.integrations.service_types import (
     ProviderType,
     SuggestedTask,
 )
-from openhands.llm.metrics_registry import LLMRegistry
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo

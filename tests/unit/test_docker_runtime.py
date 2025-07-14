@@ -4,7 +4,7 @@ import pytest
 
 from openhands.core.config import OpenHandsConfig
 from openhands.events import EventStream
-from openhands.llm.metrics_registry import LLMRegistry
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
 
 

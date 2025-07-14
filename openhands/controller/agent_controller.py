@@ -73,8 +73,8 @@ from openhands.events.observation import (
     Observation,
 )
 from openhands.events.serialization.event import truncate_content
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.llm.metrics import Metrics
-from openhands.llm.metrics_registry import LLMRegistry
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.storage.files import FileStore
 

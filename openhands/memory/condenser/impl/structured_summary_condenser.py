@@ -14,7 +14,7 @@ from openhands.core.message import Message, TextContent
 from openhands.events.action.agent import CondensationAction
 from openhands.events.observation.agent import AgentCondensationObservation
 from openhands.events.serialization.event import truncate_content
-from openhands.llm.metrics_registry import LLMRegistry
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.memory.condenser.condenser import (
     Condensation,
     RollingCondenser,

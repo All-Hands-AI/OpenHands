@@ -28,8 +28,8 @@ from openhands.events.event import Event, RecallType
 from openhands.events.observation.agent import RecallObservation
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.llm.metrics import Metrics
-from openhands.llm.metrics_registry import LLMRegistry
 from openhands.memory.memory import Memory
 from openhands.storage.memory import InMemoryFileStore
 

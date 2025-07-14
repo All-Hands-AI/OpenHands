@@ -48,7 +48,7 @@ from openhands.events.observation import (
     Observation,
 )
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
-from openhands.llm.metrics_registry import LLMRegistry
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.runtime_status import RuntimeStatus

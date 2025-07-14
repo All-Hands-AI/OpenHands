@@ -5,7 +5,7 @@ from openhands.agenthub.codeact_agent import CodeActAgent
 from openhands.core.config import AgentConfig
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
-from openhands.llm.metrics_registry import LLMRegistry
+from openhands.llm.llm_registry import LLMRegistry
 
 if TYPE_CHECKING:
     from openhands.events.action import Action

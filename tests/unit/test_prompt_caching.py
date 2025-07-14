@@ -4,7 +4,7 @@ from litellm import ModelResponse
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 from openhands.core.config import AgentConfig, LLMConfig
 from openhands.events.action import MessageAction
-from openhands.llm.metrics_registry import LLMRegistry
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.storage.memory import InMemoryFileStore
 
 

@@ -20,7 +20,7 @@ from openhands.events.action import (
 from openhands.events.event import EventSource
 from openhands.events.observation import BrowserOutputObservation
 from openhands.events.observation.observation import Observation
-from openhands.llm.metrics_registry import LLMRegistry
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.plugins import (
     PluginRequirement,
 )

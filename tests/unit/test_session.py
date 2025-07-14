@@ -7,7 +7,7 @@ from litellm.exceptions import (
 
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.openhands_config import OpenHandsConfig
-from openhands.llm.metrics_registry import LLMRegistry
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.server.session.session import Session
 from openhands.storage.memory import InMemoryFileStore

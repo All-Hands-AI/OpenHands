@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 from openhands.core.config.llm_config import LLMConfig
 from openhands.llm.llm import LLM
-from openhands.llm.metrics_registry import LLMRegistry
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.storage.memory import InMemoryFileStore
 
 

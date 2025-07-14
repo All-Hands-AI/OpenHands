@@ -7,7 +7,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
 from openhands.events.event import EventSource
 from openhands.events.event_store import EventStore
-from openhands.llm.metrics_registry import LLMRegistry
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
 

@@ -28,7 +28,7 @@ from openhands.events.observation import (
 )
 from openhands.events.stream import EventStreamSubscriber
 from openhands.integrations.service_types import ProviderType
-from openhands.llm.metrics_registry import LLMRegistry
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.resolver.interfaces.issue import Issue
 from openhands.resolver.interfaces.issue_definitions import (
     ServiceContextIssue,

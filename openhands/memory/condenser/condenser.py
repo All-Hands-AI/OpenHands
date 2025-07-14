@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from openhands.controller.state.state import State
 from openhands.core.config.condenser_config import CondenserConfig
 from openhands.events.action.agent import CondensationAction
-from openhands.llm.metrics_registry import LLMRegistry
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.memory.view import View
 
 CONDENSER_METADATA_KEY = 'condenser_meta'

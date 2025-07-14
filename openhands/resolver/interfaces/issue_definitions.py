@@ -7,7 +7,7 @@ import jinja2
 
 from openhands.core.config import LLMConfig
 from openhands.events.event import Event
-from openhands.llm.metrics_registry import LLMRegistry
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.resolver.interfaces.issue import (
     Issue,
     IssueHandlerInterface,

@@ -8,7 +8,7 @@ import pytest
 from openhands.core.config import OpenHandsConfig
 from openhands.core.exceptions import LLMMalformedActionError
 from openhands.events import EventStream
-from openhands.llm.metrics_registry import LLMRegistry
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.impl.cli.cli_runtime import CLIRuntime
 from openhands.storage import get_file_store
 

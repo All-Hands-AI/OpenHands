@@ -42,7 +42,7 @@ from openhands.events.observation.commands import (
     CmdOutputObservation,
 )
 from openhands.events.tool import ToolCallMetadata
-from openhands.llm.metrics_registry import LLMRegistry
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.memory.condenser import View
 from openhands.storage.memory import InMemoryFileStore
 

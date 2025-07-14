@@ -33,8 +33,8 @@ from openhands.events.observation.agent import RecallObservation
 from openhands.events.observation.empty import NullObservation
 from openhands.events.serialization import event_to_dict
 from openhands.llm import LLM
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.llm.metrics import Metrics, TokenUsage
-from openhands.llm.metrics_registry import LLMRegistry
 from openhands.memory.condenser.condenser import Condensation
 from openhands.memory.condenser.impl.conversation_window_condenser import (
     ConversationWindowCondenser,

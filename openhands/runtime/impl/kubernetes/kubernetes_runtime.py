@@ -43,7 +43,7 @@ from openhands.core.logger import DEBUG
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
-from openhands.llm.metrics_registry import LLMRegistry
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )

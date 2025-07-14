@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from openhands.core.config.condenser_config import AmortizedForgettingCondenserConfig
 from openhands.events.action.agent import CondensationAction
-from openhands.llm.metrics_registry import LLMRegistry
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.memory.condenser.condenser import (
     Condensation,
     RollingCondenser,

@@ -12,7 +12,7 @@ from openhands.events.observation import NullObservation, Observation
 from openhands.events.stream import EventStream
 from openhands.integrations.provider import ProviderHandler, ProviderToken, ProviderType
 from openhands.integrations.service_types import AuthenticationError, Repository
-from openhands.llm.metrics_registry import LLMRegistry
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.base import Runtime
 from openhands.storage import get_file_store
 

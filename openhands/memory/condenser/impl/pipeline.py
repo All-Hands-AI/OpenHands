@@ -4,7 +4,7 @@ from contextlib import contextmanager
 
 from openhands.controller.state.state import State
 from openhands.core.config.condenser_config import CondenserPipelineConfig
-from openhands.llm.metrics_registry import LLMRegistry
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.memory.condenser.condenser import Condensation, Condenser
 from openhands.memory.view import View
 

@@ -10,7 +10,7 @@ from pytest import TempPathFactory
 from openhands.core.config import MCPConfig, OpenHandsConfig, load_openhands_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
-from openhands.llm.metrics_registry import LLMRegistry
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.cli.cli_runtime import CLIRuntime
 from openhands.runtime.impl.docker.docker_runtime import DockerRuntime

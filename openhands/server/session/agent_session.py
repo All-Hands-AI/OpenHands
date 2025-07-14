@@ -21,7 +21,7 @@ from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
     ProviderHandler,
 )
-from openhands.llm.metrics_registry import LLMRegistry
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroagent
