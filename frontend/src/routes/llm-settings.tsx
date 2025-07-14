@@ -374,7 +374,7 @@ function LlmSettingsScreen() {
                 name="llm-custom-model-input"
                 label={t(I18nKey.SETTINGS$CUSTOM_MODEL)}
                 defaultValue={
-                  settings.LLM_MODEL || "openhands/claude-sonnet-4-20250514"
+                  settings.LLM_MODEL || DEFAULT_OPENHANDS_MODEL
                 }
                 placeholder={DEFAULT_OPENHANDS_MODEL}
                 type="text"
