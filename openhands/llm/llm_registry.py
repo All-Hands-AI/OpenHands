@@ -13,10 +13,6 @@ from openhands.storage.locations import get_conversation_llm_registry_filename
 
 
 class LLMRegistry:
-    metrics_id = str(uuid4())
-    service_to_llm: dict[str, LLM] = {}
-    restored_llm: dict[str, Metrics] = {}
-
     def __init__(
         self,
         file_store: FileStore | None,
@@ -32,6 +28,10 @@ class LLMRegistry:
         )
 
         self._save_lock = Lock()
+
+        self.metrics_id = str(uuid4())
+        self.service_to_llm: dict[str, LLM] = {}
+        self.restored_llm: dict[str, Metrics] = {}
 
         # Always attempt to restore registry if it exists
         self.maybe_restore_registry()

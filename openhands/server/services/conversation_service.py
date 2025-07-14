@@ -67,6 +67,12 @@ async def initialize_conversation(
         await conversation_store.save_metadata(convo_metadata)
         return convo_metadata
 
+    try:
+        convo_metadata = await conversation_store.get_metadata(conversation_id)
+        return convo_metadata
+    except Exception:
+        pass
+
     return None
 
 
