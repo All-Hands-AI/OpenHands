@@ -92,7 +92,7 @@ def _simple_axtree_to_str(
     return '\n'.join(result) if result else "[Empty accessibility tree]"
 
 
-def get_agent_obs_text(obs: BrowserOutputObservation) -> str:
+def get_agent_obs_text(obs: BrowserOutputObservation, original_content: str = None) -> str:
     """Get a concise text that will be shown to the agent."""
     if obs.trigger_by_action == ActionType.BROWSE_INTERACTIVE:
         text = f'[Current URL: {obs.url}]\n'
@@ -114,40 +114,47 @@ def get_agent_obs_text(obs: BrowserOutputObservation) -> str:
         else:
             text += '[Action executed successfully.]\n'
 
-        # Try to get accessibility tree
-        axtree_available = False
-        cur_axtree_txt = ''
-        try:
-            cur_axtree_txt = get_axtree_str(
-                obs.axtree_object,
-                obs.extra_element_properties,
-                filter_visible_only=obs.filter_visible_only,
-            )
-            # Check if we got a meaningful accessibility tree
-            if cur_axtree_txt and not cur_axtree_txt.startswith('[No accessibility tree available]') and not cur_axtree_txt.startswith('[Empty accessibility tree]') and not cur_axtree_txt.startswith('[Error processing accessibility tree'):
-                axtree_available = True
-                if not obs.filter_visible_only:
-                    text += (
-                        f'Accessibility tree of the COMPLETE webpage:\nNote: [bid] is the unique alpha-numeric identifier at the beginning of lines for each element in the AXTree. Always use bid to refer to elements in your actions.\n'
-                        f'============== BEGIN accessibility tree ==============\n'
-                        f'{cur_axtree_txt}\n'
-                        f'============== END accessibility tree ==============\n'
-                    )
-                else:
-                    text += (
-                        f'Accessibility tree of the VISIBLE portion of the webpage (accessibility tree of complete webpage is too large and you may need to scroll to view remaining portion of the webpage):\nNote: [bid] is the unique alpha-numeric identifier at the beginning of lines for each element in the AXTree. Always use bid to refer to elements in your actions.\n'
-                        f'============== BEGIN accessibility tree ==============\n'
-                        f'{cur_axtree_txt}\n'
-                        f'============== END accessibility tree ==============\n'
-                    )
-        except Exception as e:
-            text += f'\n[Error encountered when processing the accessibility tree: {e}]'
-
-        # If accessibility tree is not available, empty, or errored, show the page content instead
-        if not axtree_available:
+        # Check if we should show accessibility tree or page content
+        # If axtree_object is empty or we have original_content, show page content
+        if not obs.axtree_object or original_content is not None:
             text += '============== BEGIN webpage content ==============\n'
-            text += obs.content
+            text += original_content if original_content is not None else obs.content
             text += '\n============== END webpage content ==============\n'
+        else:
+            # Try to get accessibility tree
+            axtree_available = False
+            cur_axtree_txt = ''
+            try:
+                cur_axtree_txt = get_axtree_str(
+                    obs.axtree_object,
+                    obs.extra_element_properties,
+                    filter_visible_only=obs.filter_visible_only,
+                )
+                # Check if we got a meaningful accessibility tree
+                if cur_axtree_txt and not cur_axtree_txt.startswith('[No accessibility tree available]') and not cur_axtree_txt.startswith('[Empty accessibility tree]') and not cur_axtree_txt.startswith('[Error processing accessibility tree'):
+                    axtree_available = True
+                    if not obs.filter_visible_only:
+                        text += (
+                            f'Accessibility tree of the COMPLETE webpage:\nNote: [bid] is the unique alpha-numeric identifier at the beginning of lines for each element in the AXTree. Always use bid to refer to elements in your actions.\n'
+                            f'============== BEGIN accessibility tree ==============\n'
+                            f'{cur_axtree_txt}\n'
+                            f'============== END accessibility tree ==============\n'
+                        )
+                    else:
+                        text += (
+                            f'Accessibility tree of the VISIBLE portion of the webpage (accessibility tree of complete webpage is too large and you may need to scroll to view remaining portion of the webpage):\nNote: [bid] is the unique alpha-numeric identifier at the beginning of lines for each element in the AXTree. Always use bid to refer to elements in your actions.\n'
+                            f'============== BEGIN accessibility tree ==============\n'
+                            f'{cur_axtree_txt}\n'
+                            f'============== END accessibility tree ==============\n'
+                        )
+            except Exception as e:
+                text += f'\n[Error encountered when processing the accessibility tree: {e}]'
+
+            # If accessibility tree is not available, empty, or errored, show the page content instead
+            if not axtree_available:
+                text += '============== BEGIN webpage content ==============\n'
+                text += obs.content
+                text += '\n============== END webpage content ==============\n'
 
         return text
 
@@ -233,9 +240,12 @@ async def browse(
                 image = png_base64_url_to_image(obs.get('screenshot'))
                 image.save(screenshot_path, format='PNG', optimize=True)
 
+        # Store original text content
+        original_text_content = obs['text_content']
+
         # Create the observation with all data
         observation = BrowserOutputObservation(
-            content=obs['text_content'],  # text content of the page
+            content=original_text_content,  # text content of the page
             url=obs.get('url', ''),  # URL of the page
             screenshot=obs.get('screenshot', None),  # base64-encoded screenshot, png
             screenshot_path=screenshot_path,  # path to saved screenshot file
@@ -260,14 +270,14 @@ async def browse(
             trigger_by_action=action.action,
         )
 
-        # Process the content first using the axtree_object
-        observation.content = get_agent_obs_text(observation)
-
         # If return_axtree is False, remove the axtree_object to save space
         if not action.return_axtree:
             observation.dom_object = {}
             observation.axtree_object = {}
             observation.extra_element_properties = {}
+
+        # Process the content using the axtree_object or original content
+        observation.content = get_agent_obs_text(observation, original_text_content if not action.return_axtree else None)
 
         return observation
     except Exception as e:
