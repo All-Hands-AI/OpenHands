@@ -109,9 +109,9 @@ def check_dependencies(code_repo_path: str, check_browser: bool) -> None:
 
     if check_browser:
         logger.debug('Checking dependencies: browser')
-        from openhands.runtime.browser.browser_env import BrowserEnv
+        from openhands.runtime.browser.browser_use_env import BrowserUseEnv
 
-        browser = BrowserEnv()
+        browser = BrowserUseEnv()
         browser.close()
 
 

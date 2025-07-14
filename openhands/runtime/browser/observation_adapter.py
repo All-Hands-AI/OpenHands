@@ -53,7 +53,7 @@ class ObservationAdapter:
         """
         try:
             # Get current page information
-            current_page = browser_session.get_current_page()
+            current_page = await browser_session.get_current_page()
             if not current_page:
                 raise ValueError("No current page available")
 
@@ -71,8 +71,8 @@ class ObservationAdapter:
             page_structure = await self._get_page_structure(browser_session)
 
             # Get tabs information
-            tabs_info = browser_session.get_tabs_info()
-            open_pages_urls = [tab.get('url', '') for tab in tabs_info] if tabs_info else []
+            tabs_info = await browser_session.get_tabs_info()
+            open_pages_urls = [tab.url for tab in tabs_info] if tabs_info else []
             active_page_index = 0  # Browser-Use might have different tab management
 
             # Create observation
@@ -113,7 +113,7 @@ class ObservationAdapter:
     async def _get_screenshot(self, browser_session: BrowserSession) -> str:
         """Get screenshot from browser session as base64 string."""
         try:
-            screenshot_data = browser_session.take_screenshot()
+            screenshot_data = await browser_session.take_screenshot()
             if screenshot_data:
                 # Convert to base64 if needed
                 if isinstance(screenshot_data, bytes):
@@ -131,7 +131,7 @@ class ObservationAdapter:
     async def _get_page_html(self, browser_session: BrowserSession) -> str:
         """Get page HTML content."""
         try:
-            return browser_session.get_page_html() or ''
+            return await browser_session.get_page_html() or ''
         except Exception as e:
             print(f"Error getting page HTML: {e}")
             return ''
@@ -140,7 +140,7 @@ class ObservationAdapter:
         """Get page structure information including DOM and accessibility tree."""
         try:
             # Get page structure from Browser-Use
-            structure = browser_session.get_page_structure()
+            structure = await browser_session.get_page_structure()
 
             # Convert to OpenHands format
             result = {
@@ -251,11 +251,12 @@ class ObservationAdapter:
             if filter_visible_only and not visible:
                 return
 
-            # Format the line
+            # Create line with proper indentation
             indent = '  ' * level
             line = f'{indent}[{bid}] {tag}'
             if text:
-                line += f': {text[:100]}'  # Truncate long text
+                line += f' "{text}"'
+
             result.append(line)
 
             # Traverse children
@@ -266,5 +267,8 @@ class ObservationAdapter:
         # Start traversal from root
         if isinstance(axtree_object, dict):
             traverse_node(axtree_object)
+        elif isinstance(axtree_object, list):
+            for node in axtree_object:
+                traverse_node(node)
 
         return '\n'.join(result)

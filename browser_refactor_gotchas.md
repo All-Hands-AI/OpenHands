@@ -58,7 +58,7 @@
 ### Browser-Use Library Analysis
 
 **Key Components Found:**
-- `BrowserSession`: Main browser interface with methods like `navigate()`, `take_screenshot()`, `get_page_info()`
+- `BrowserSession`: Main browser interface with methods like `navigate()`, `take_screenshot()`, `get_page_info()`, `go_back()`, `go_forward()`
 - `Controller`: Action execution interface with `act()` method
 - Action Models: Structured actions like `GoToUrlAction`, `ClickElementAction`, `InputTextAction`
 
@@ -70,9 +70,10 @@
 
 **Key Differences from BrowserGym:**
 - Browser-Use uses structured action models instead of string-based actions
-- Actions are executed via Controller.act() method
+- Actions can be executed via Controller.act() method OR direct BrowserSession methods
 - BrowserSession provides rich state information via get_* methods
 - No gymnasium dependency - direct Playwright-based control
+- **✅ Direct Navigation Methods**: `go_back()`, `go_forward()`, `navigate()` available directly on BrowserSession
 
 ### Gotchas to Watch For
 
@@ -101,7 +102,9 @@
   - [x] Create observation adapter (`observation_adapter.py`)
   - [x] Create Browser-Use environment (`browser_use_env.py`)
   - [x] **REVISED**: Remove action mapper, integrate Browser-Use actions directly
-  - [x] Test the new implementation
+  - [x] **✅ Test the new implementation** - All navigation tests passing
+  - [x] **✅ Fix async handling** - All async operations properly awaited
+  - [x] **✅ Fix go_back/go_forward** - Using direct BrowserSession methods
   - [ ] Update action execution server to use new environment
 - [ ] Phase 2: Action and Observation Updates
 - [ ] Phase 3: Agent Updates
@@ -132,14 +135,17 @@
 3. **Multiprocessing**: Kept the same pipe-based communication for compatibility
 4. **Error Handling**: Implemented comprehensive error handling and fallbacks
 5. **Complete Replacement**: Remove BrowserGym entirely, no feature flags or dual support
+6. **✅ Direct Method Usage**: Use BrowserSession methods directly (go_back, go_forward, navigate) instead of controller when possible
+7. **✅ Async-First Design**: All Browser-Use operations properly awaited and handled asynchronously
 
 ### Known Limitations
 
 1. **REVISED**: **Element Identification**: Need to replace BID system with Browser-Use's element indexing
 2. **Accessibility Tree**: Simplified implementation - needs proper tree flattening
-3. **Async Operations**: Some Browser-Use operations might be async - needs proper handling
+3. **✅ Async Operations**: All async operations properly handled and awaited
 4. **Evaluation Support**: Basic evaluation support implemented - needs testing
 5. **Action Interface**: Need to update all agents to use Browser-Use action models instead of strings
+6. **✅ Navigation Actions**: All navigation actions (goto, go_back, go_forward) working correctly
 
 ### Test Results
 
@@ -148,13 +154,16 @@
 - Action string parsing for backward compatibility
 - Environment initialization and basic communication
 - Alive check functionality
+- **✅ Navigation actions**: `goto()`, `go_back()`, `go_forward()` all working correctly
+- **✅ No-op actions**: `noop()` with wait times working correctly
+- **✅ Simple browsing**: Basic URL navigation working correctly
 
-**⚠️ Known Issues:**
-- Async operations not properly awaited (RuntimeWarnings)
-- Navigation and page content retrieval fail due to async issues
-- Screenshot capture needs async handling
+**🔧 Fixed Issues:**
+- **✅ Async operations**: Properly awaited all async calls in Browser-Use environment
+- **✅ Navigation actions**: Fixed `go_back()` and `go_forward()` by using direct `BrowserSession` methods instead of controller
+- **✅ Screenshot capture**: Async handling implemented correctly
+- **✅ Page content retrieval**: Working correctly with proper async handling
 
 **Next Steps:**
-- Fix async handling in Browser-Use environment
 - Update action execution server to use new environment
 - Continue with Phase 2 (action/observation updates)

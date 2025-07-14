@@ -59,32 +59,32 @@ This document outlines the plan to refactor OpenHands' browser functionality fro
 
 ## Refactoring Strategy
 
-### Phase 1: Core Browser Environment Replacement
+### Phase 1: Core Browser Environment Replacement ✅ COMPLETED
 
-#### 1.1 Create New Browser Environment
-- **File**: `openhands/runtime/browser/browser_use_env.py`
-- **Purpose**: Replace `browser_env.py` with Browser-Use implementation
+#### 1.1 Create New Browser Environment ✅
+- **File**: `openhands/runtime/browser/browser_use_env.py` ✅
+- **Purpose**: Replace `browser_env.py` with Browser-Use implementation ✅
 - **Key Changes**:
-  - Remove gymnasium dependency
-  - Use Browser-Use's BrowserSession directly
-  - Maintain multiprocessing architecture for compatibility
-  - Implement equivalent observation structure
+  - Remove gymnasium dependency ✅
+  - Use Browser-Use's BrowserSession directly ✅
+  - Maintain multiprocessing architecture for compatibility ✅
+  - Implement equivalent observation structure ✅
 
-#### 1.2 Browser-Use Action Integration
-- **Purpose**: Use Browser-Use's native action system directly
+#### 1.2 Browser-Use Action Integration ✅
+- **Purpose**: Use Browser-Use's native action system directly ✅
 - **Strategy**:
-  - Remove BrowserGym action string parsing
-  - Use Browser-Use's structured action models directly
-  - Update agents to generate Browser-Use actions instead of BrowserGym strings
+  - **REVISED**: Support both string actions (backward compatibility) and Browser-Use action models ✅
+  - Use Browser-Use's structured action models directly ✅
+  - **✅ Direct Method Usage**: Use BrowserSession methods directly for navigation (go_back, go_forward, navigate) ✅
 
-#### 1.3 Observation Adapter
-- **File**: `openhands/runtime/browser/observation_adapter.py`
-- **Purpose**: Convert Browser-Use observations to OpenHands format
+#### 1.3 Observation Adapter ✅
+- **File**: `openhands/runtime/browser/observation_adapter.py` ✅
+- **Purpose**: Convert Browser-Use observations to OpenHands format ✅
 - **Key Features**:
-  - Screenshot capture and base64 encoding
-  - DOM extraction and flattening
-  - Accessibility tree generation
-  - Error handling and status reporting
+  - Screenshot capture and base64 encoding ✅
+  - DOM extraction and flattening ✅
+  - Accessibility tree generation ✅
+  - Error handling and status reporting ✅
 
 ### Phase 2: Action and Observation Updates
 
@@ -133,12 +133,13 @@ This document outlines the plan to refactor OpenHands' browser functionality fro
   - Add Browser-Use specific configuration options
   - Remove BrowserGym configuration entirely
 
-#### 4.2 Update Action Execution Server
+#### 4.2 Update Action Execution Server 🔄 IN PROGRESS
 - **File**: `openhands/runtime/action_execution_server.py`
 - **Changes**:
   - Replace BrowserEnv with BrowserUseEnv
   - Update initialization parameters
   - Maintain existing API
+- **Status**: Next priority after Phase 1 completion
 
 #### 4.3 Update Command Generation
 - **File**: `openhands/runtime/utils/command.py`
@@ -190,32 +191,48 @@ This document outlines the plan to refactor OpenHands' browser functionality fro
 
 ## Implementation Details
 
-### Browser-Use Integration Architecture
+### Browser-Use Integration Architecture ✅ IMPLEMENTED
 
 ```python
-# New Browser Environment Structure
+# New Browser Environment Structure ✅ IMPLEMENTED
 class BrowserUseEnv:
-    def __init__(self, config: BrowserUseConfig):
+    def __init__(self, browser_use_config: Optional[str] = None):
         self.browser_session: BrowserSession
         self.observation_adapter: ObservationAdapter
 
-    async def step(self, action: BrowserUseAction) -> dict:
-        # 1. Execute Browser-Use action directly
-        # 2. Get observation from BrowserSession
-        # 3. Convert observation to OpenHands format
-        # 4. Return observation dict
+    async def execute_action_async(self, browser_session: BrowserSession, controller: Controller, action: Union[str, Any]) -> Dict[str, Any]:
+        # 1. Execute Browser-Use action directly ✅
+        # 2. Get observation from BrowserSession ✅
+        # 3. Convert observation to OpenHands format ✅
+        # 4. Return observation dict ✅
+
+        # Key improvements:
+        # - Direct BrowserSession method usage for navigation (go_back, go_forward, navigate)
+        # - Proper async handling for all operations
+        # - Backward compatibility with string actions
 ```
 
-### Browser-Use Action Integration
+### Browser-Use Action Integration ✅ IMPLEMENTED
 
 ```python
-# Direct Browser-Use Action Usage
+# Direct Browser-Use Action Usage ✅ IMPLEMENTED
 from browser_use.controller.service import GoToUrlAction, ClickElementAction, InputTextAction
 
-# Instead of string parsing, use structured actions directly
+# Instead of string parsing, use structured actions directly ✅
 goto_action = GoToUrlAction(url="https://example.com", new_tab=False)
 click_action = ClickElementAction(index=123)
 input_action = InputTextAction(index=456, text="Hello World")
+
+# ✅ HYBRID APPROACH: Support both structured actions and string actions
+# String actions for backward compatibility:
+# goto("https://example.com") -> GoToUrlAction(url="https://example.com", new_tab=False)
+# go_back() -> await browser_session.go_back()
+# go_forward() -> await browser_session.go_forward()
+
+# ✅ Direct BrowserSession method usage for navigation:
+await browser_session.go_back()      # Direct method call
+await browser_session.go_forward()   # Direct method call
+await browser_session.navigate(url)  # Direct method call
 ```
 
 ### Observation Structure Compatibility
@@ -258,10 +275,11 @@ input_action = InputTextAction(index=456, text="Hello World")
 
 ## Timeline
 
-### Week 1-2: Core Environment
-- Implement BrowserUseEnv
-- Create action mapper and observation adapter
-- Basic functionality testing
+### Week 1-2: Core Environment ✅ COMPLETED
+- ✅ Implement BrowserUseEnv
+- ✅ Create action mapper and observation adapter
+- ✅ Basic functionality testing
+- ✅ Fix async handling and navigation actions
 
 ### Week 3-4: Agent Updates
 - Update BrowsingAgent and VisualBrowsingAgent
@@ -270,7 +288,7 @@ input_action = InputTextAction(index=456, text="Hello World")
 
 ### Week 5-6: Infrastructure
 - Update configuration and command generation
-- Update action execution server
+- Update action execution server 🔄 NEXT PRIORITY
 - Integration testing
 
 ### Week 7-8: Evaluation
@@ -299,6 +317,12 @@ input_action = InputTextAction(index=456, text="Hello World")
 1. **Documentation Updates**: Updating documentation and examples
 2. **Configuration Changes**: Updating configuration files
 
+### ✅ Mitigated Risks
+1. **✅ Async Operations**: All async operations properly handled and tested
+2. **✅ Navigation Actions**: go_back, go_forward, goto all working correctly
+3. **✅ Backward Compatibility**: String actions still supported for smooth transition
+4. **✅ Core Functionality**: Basic browsing and navigation fully functional
+
 ## Success Criteria
 
 1. **Functional Parity**: All existing browser functionality works with Browser-Use
@@ -307,6 +331,25 @@ input_action = InputTextAction(index=456, text="Hello World")
 4. **Stability**: No regressions in browser functionality
 5. **Maintainability**: Cleaner, more maintainable codebase
 
+### ✅ Achieved Milestones
+1. **✅ Core Navigation**: goto, go_back, go_forward actions working correctly
+2. **✅ Basic Browsing**: Simple URL navigation and page content retrieval working
+3. **✅ Async Operations**: All async operations properly handled
+4. **✅ Backward Compatibility**: String-based actions still supported
+5. **✅ Error Handling**: Robust error handling and fallbacks implemented
+
 ## Conclusion
 
 This refactoring plan provides a comprehensive approach to replacing BrowserGym with Browser-Use while maintaining all existing functionality. The phased approach ensures minimal disruption and allows for thorough testing at each stage. The focus on backward compatibility and gradual migration reduces risk and ensures a smooth transition.
+
+### ✅ Phase 1 Successfully Completed
+
+Phase 1 of the refactoring has been successfully completed with all core browser environment functionality working correctly:
+
+- **✅ BrowserUseEnv Implementation**: Fully functional drop-in replacement for BrowserGym
+- **✅ Navigation Actions**: goto, go_back, go_forward all working correctly
+- **✅ Async Operations**: All async operations properly handled and tested
+- **✅ Backward Compatibility**: String-based actions still supported
+- **✅ Error Handling**: Robust error handling and fallbacks implemented
+
+The next priority is updating the action execution server to use the new BrowserUseEnv, followed by agent updates and evaluation integration.

@@ -61,7 +61,7 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.runtime.browser import browse
-from openhands.runtime.browser.browser_env import BrowserEnv
+from openhands.runtime.browser.browser_use_env import BrowserUseEnv
 from openhands.runtime.file_viewer_server import start_file_viewer_server
 
 # Import our custom MCP Proxy Manager
@@ -190,7 +190,7 @@ class ActionExecutor:
         self.plugins: dict[str, Plugin] = {}
         self.file_editor = OHEditor(workspace_root=self._initial_cwd)
         self.enable_browser = enable_browser
-        self.browser: BrowserEnv | None = None
+        self.browser: BrowserUseEnv | None = None
         self.browser_init_task: asyncio.Task | None = None
         self.browsergym_eval_env = browsergym_eval_env
 
@@ -236,7 +236,9 @@ class ActionExecutor:
 
         logger.debug('Initializing browser asynchronously')
         try:
-            self.browser = BrowserEnv(self.browsergym_eval_env)
+            # Pass the evaluation environment configuration to Browser-Use
+            # For now, we'll use the same parameter name for compatibility
+            self.browser = BrowserUseEnv(self.browsergym_eval_env)
             logger.debug('Browser initialized asynchronously')
         except Exception as e:
             logger.error(f'Failed to initialize browser: {e}')
