@@ -40,23 +40,15 @@ BROWSER_EVAL_GET_REWARDS_ACTION = 'GET_EVAL_REWARDS'
 class BrowserUseEnv:
     """Browser environment using Browser-Use library."""
 
-    def __init__(self, browser_use_config: Optional[str] = None):
-        """
-        Initialize Browser-Use environment.
-
-        Args:
-            browser_use_config: Configuration string for Browser-Use (for future use)
-        """
-        self.browser_use_config = browser_use_config
-        self.eval_mode = False
-        self.eval_dir = ''
-        self.eval_goal = None
-        self.goal_image_urls = []
+    def __init__(self, eval_mode: bool = False, eval_goal: str = '', goal_image_urls: list[str] = None):
+        self.eval_mode = eval_mode
+        self.eval_goal = eval_goal
+        self.goal_image_urls = goal_image_urls or []
         self.eval_rewards = []
 
-        # Initialize browser environment process
-        multiprocessing.set_start_method('spawn', force=True)
+        # Multiprocessing setup
         self.browser_side, self.agent_side = multiprocessing.Pipe()
+        self.browser_process = None
 
         self.init_browser()
         atexit.register(self.close)
@@ -310,6 +302,10 @@ class BrowserUseEnv:
             # Get page HTML
             html_content = await browser_session.get_page_html() or ''
 
+            # Get page structure (DOM and accessibility tree)
+            page_structure = await observation_adapter._get_page_structure(browser_session)
+            logger.debug(f'Page structure: {page_structure}')
+
             # Get tabs info
             tabs_info = await browser_session.get_tabs_info()
             open_pages_urls = [tab.url for tab in tabs_info] if tabs_info else []
@@ -319,9 +315,9 @@ class BrowserUseEnv:
                 'url': url,
                 'screenshot': screenshot,
                 'text_content': html_content,
-                'dom_object': {},
-                'axtree_object': {},
-                'extra_element_properties': {},
+                'dom_object': page_structure.get('dom', {}),
+                'axtree_object': page_structure.get('axtree', {}),
+                'extra_element_properties': page_structure.get('properties', {}),
                 'open_pages_urls': open_pages_urls,
                 'active_page_index': 0,
                 'last_action': action_str,

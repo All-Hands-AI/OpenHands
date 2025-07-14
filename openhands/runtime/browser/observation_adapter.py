@@ -139,27 +139,212 @@ class ObservationAdapter:
     async def _get_page_structure(self, browser_session: BrowserSession) -> Dict[str, Any]:
         """Get page structure information including DOM and accessibility tree."""
         try:
-            # Get page structure from Browser-Use
-            structure = await browser_session.get_page_structure()
+            # Get page HTML to generate accessibility tree
+            html_content = await browser_session.get_page_html() or ''
+
+            # Generate simple accessibility tree from HTML (no form state tracking)
+            axtree = self._html_to_axtree(html_content)
 
             # Convert to OpenHands format
             result = {
                 'dom': {},
-                'axtree': {},
+                'axtree': axtree,
                 'properties': {},
             }
-
-            if structure:
-                # Browser-Use structure might be different from the previous browser environment
-                result['dom'] = structure.get('dom', {})
-                result['axtree'] = structure.get('accessibility', {})
-                result['properties'] = structure.get('properties', {})
 
             return result
 
         except Exception as e:
             print(f"Error getting page structure: {e}")
             return {'dom': {}, 'axtree': {}, 'properties': {}}
+
+    def _html_to_axtree(self, html_content: str) -> Dict[str, Any]:
+        """Convert HTML content to a simple accessibility tree structure."""
+        try:
+            from bs4 import BeautifulSoup
+            import uuid
+
+            soup = BeautifulSoup(html_content, 'html.parser')
+
+            def create_axtree_node(element, level=0):
+                """Create an accessibility tree node from an HTML element."""
+                if element is None:
+                    return None
+
+                # Generate a unique bid
+                bid = str(uuid.uuid4())[:8]
+
+                # Get tag name
+                tag = element.name if element.name else 'text'
+
+                # Get text content
+                text = ''
+                if element.string:
+                    text = element.string.strip()
+                elif element.get_text():
+                    text = element.get_text().strip()
+
+                # Get attributes
+                attributes = {}
+                if element.attrs:
+                    for key, value in element.attrs.items():
+                        if isinstance(value, list):
+                            attributes[key] = ' '.join(value)
+                        else:
+                            attributes[key] = str(value)
+
+                # Create node
+                node = {
+                    'bid': bid,
+                    'tag': tag,
+                    'text': text,
+                    'visible': True,
+                    'attributes': attributes,
+                    'children': []
+                }
+
+                # Add children
+                for child in element.children:
+                    if hasattr(child, 'name') and child.name:
+                        child_node = create_axtree_node(child, level + 1)
+                        if child_node:
+                            node['children'].append(child_node)
+
+                return node
+
+            # Create root node
+            root = create_axtree_node(soup.html) if soup.html else {}
+
+            return root
+
+        except ImportError:
+            # If BeautifulSoup is not available, create a simple structure from HTML
+            return self._simple_html_to_axtree(html_content)
+        except Exception as e:
+            print(f"Error converting HTML to accessibility tree: {e}")
+            return self._simple_html_to_axtree(html_content)
+
+    def _simple_html_to_axtree(self, html_content: str) -> Dict[str, Any]:
+        """Convert HTML content to a simple accessibility tree structure without external dependencies."""
+        import re
+        import hashlib
+
+        def stable_bid(tag, attrs):
+            tag = tag.strip().lower()
+            # Use only id, name, and type attributes for bid
+            keys = ['id', 'name', 'type']
+            key_parts = [tag]
+            for k in keys:
+                v = attrs.get(k)
+                if v:
+                    key_parts.append(f'{k}={v.strip().lower()}')
+            key = '|'.join(key_parts)
+            return hashlib.md5(key.encode()).hexdigest()[:8]
+
+        def parse_attrs(attrs_str):
+            attrs = {}
+            # Match key="value" or key='value' (with optional whitespace)
+            for attr_match in re.finditer(r'(\w+)\s*=\s*(["\'])(.*?)\2', attrs_str):
+                key = attr_match.group(1).strip().lower()
+                value = attr_match.group(3).strip()
+                attrs[key] = value
+            return attrs
+
+        def parse_element(html, start=0):
+            tag_re = re.compile(r'<(\w+)([^>]*)>', re.DOTALL)
+            self_closing_re = re.compile(r'<(\w+)([^>]*)/\s*>', re.DOTALL)
+            end_tag_re = re.compile(r'</(\w+)>', re.DOTALL)
+            pos = start
+            children = []
+            while pos < len(html):
+                # Self-closing tag
+                self_closing = self_closing_re.match(html, pos)
+                if self_closing:
+                    tag_name = self_closing.group(1)
+                    attrs_str = self_closing.group(2)
+                    attrs = parse_attrs(attrs_str)
+                    bid = stable_bid(tag_name, attrs)
+
+                    node = {
+                        'bid': bid,
+                        'tag': tag_name,
+                        'text': '',
+                        'visible': True,
+                        'attributes': attrs,
+                        'children': []
+                    }
+                    children.append((node, self_closing.end()))
+                    pos = self_closing.end()
+                    continue
+                # Opening tag
+                tag = tag_re.match(html, pos)
+                if tag:
+                    tag_name = tag.group(1)
+                    attrs_str = tag.group(2)
+                    attrs = parse_attrs(attrs_str)
+                    bid = stable_bid(tag_name, attrs)
+                    # Find end tag
+                    end_tag = f'</{tag_name}>'
+                    end_pos = html.find(end_tag, tag.end())
+                    if end_pos == -1:
+                        # Malformed HTML, treat as self-closing
+                        node = {
+                            'bid': bid,
+                            'tag': tag_name,
+                            'text': '',
+                            'visible': True,
+                            'attributes': attrs,
+                            'children': []
+                        }
+                        children.append((node, tag.end()))
+                        pos = tag.end()
+                        continue
+                    # Recursively parse children
+                    inner_html = html[tag.end():end_pos]
+                    child_nodes = parse_element(inner_html, 0)
+                    # Get text content (excluding tags)
+                    text_content = re.sub(r'<[^>]+>', '', inner_html).strip()
+
+                    node = {
+                        'bid': bid,
+                        'tag': tag_name,
+                        'text': text_content,
+                        'visible': True,
+                        'attributes': attrs,
+                        'children': [c[0] for c in child_nodes]
+                    }
+                    children.append((node, end_pos + len(end_tag)))
+                    pos = end_pos + len(end_tag)
+                    continue
+                # No more tags, break
+                break
+            return children
+
+        try:
+            # Only parse the <html>...</html> section if present
+            html_match = re.search(r'<html[^>]*>(.*)</html>', html_content, re.DOTALL | re.IGNORECASE)
+            if html_match:
+                html_section = html_match.group(1)
+            else:
+                html_section = html_content
+            nodes = parse_element(html_section, 0)
+            root = {
+                'bid': 'root',
+                'tag': 'html',
+                'text': '',
+                'visible': True,
+                'children': [n[0] for n in nodes]
+            }
+            return root
+        except Exception as e:
+            print(f"Error in improved simple HTML parsing: {e}")
+            return {
+                'bid': 'root',
+                'tag': 'html',
+                'text': '',
+                'visible': True,
+                'children': []
+            }
 
     def get_agent_obs_text(self, observation: BrowserOutputObservation) -> str:
         """Get agent observation text in the same format as the original implementation."""

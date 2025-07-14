@@ -16,8 +16,54 @@ from openhands.utils.async_utils import call_sync_from_async
 
 # Stub for flatten_axtree_to_str (previously from browsergym)
 def flatten_axtree_to_str(axtree_object, extra_properties=None, with_clickable=True, skip_generic=False, filter_visible_only=False):
-    # TODO: Implement accessibility tree flattening for Browser-Use
-    return "[Accessibility tree flattening not implemented]"
+    """Flatten accessibility tree to string format."""
+    if not axtree_object:
+        return "[No accessibility tree available]"
+
+    result = []
+
+    def traverse_node(node, level=0):
+        if not isinstance(node, dict):
+            return
+
+        # Extract basic information
+        bid = node.get('bid', '')
+        tag = node.get('tag', '')
+        text = node.get('text', '')
+        visible = node.get('visible', True)
+        attributes = node.get('attributes', {})
+
+        # Skip invisible elements if filtering
+        if filter_visible_only and not visible:
+            return
+
+        # Create line with proper indentation
+        indent = '  ' * level
+        line = f'{indent}[{bid}] {tag}'
+
+        # Add attributes to the line
+        if attributes:
+            attr_str = ' '.join([f'{k}="{v}"' for k, v in attributes.items()])
+            line += f' {attr_str}'
+
+        if text:
+            line += f' "{text}"'
+
+        result.append(line)
+
+        # Traverse children
+        children = node.get('children', [])
+        for child in children:
+            traverse_node(child, level + 1)
+
+    # Start traversal from root
+    if isinstance(axtree_object, dict):
+        traverse_node(axtree_object)
+    elif isinstance(axtree_object, list):
+        for node in axtree_object:
+            traverse_node(node)
+
+    return '\n'.join(result) if result else "[Empty accessibility tree]"
 
 
 def get_axtree_str(
