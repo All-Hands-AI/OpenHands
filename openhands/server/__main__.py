@@ -1,9 +1,16 @@
 import os
-
+import warnings
 import uvicorn
 
 
 def main():
+    # Suppress SyntaxWarnings from pydub.utils about invalid escape sequences
+    warnings.filterwarnings(
+        "ignore",
+        category=SyntaxWarning,
+        module=r"pydub\.utils"
+    )
+
     uvicorn.run(
         'openhands.server.listen:app',
         host='0.0.0.0',
