@@ -376,7 +376,7 @@ function LlmSettingsScreen() {
                 defaultValue={
                   settings.LLM_MODEL || "openhands/claude-sonnet-4-20250514"
                 }
-                placeholder="openhands/claude-sonnet-4-20250514"
+                placeholder={DEFAULT_OPENHANDS_MODEL}
                 type="text"
                 className="w-full max-w-[680px]"
                 onChange={handleCustomModelIsDirty}
