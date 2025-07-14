@@ -180,7 +180,7 @@ class ConversationWindowCondenser(RollingCondenser):
     def from_config(
         cls,
         _config: ConversationWindowCondenserConfig,
-        metrics_registry: LLMRegistry,
+        llm_registry: LLMRegistry,
     ) -> ConversationWindowCondenser:
         return ConversationWindowCondenser()
 

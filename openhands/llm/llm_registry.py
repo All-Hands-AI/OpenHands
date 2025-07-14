@@ -39,6 +39,7 @@ class LLMRegistry:
     def request_extraneous_completion(
         self, service_id: str, llm_config: LLMConfig, messages: list[dict[str, str]]
     ) -> str:
+        print('extraneous completion', service_id)
         if service_id not in self.service_to_llm:
             llm = LLM(config=llm_config, service_id=service_id)
             self.service_to_llm[service_id] = llm
@@ -103,6 +104,7 @@ class LLMRegistry:
         for llm in self.service_to_llm.values():
             total_metrics.merge(llm.metrics)
 
+        print('total metrics', self.service_to_llm)
         return total_metrics
 
     def save_registry(self):

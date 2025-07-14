@@ -245,7 +245,7 @@ def test_initialize_repo(mock_output_dir):
 @patch('openhands.resolver.interfaces.github.GithubIssueHandler.reply_to_comment')
 @patch('httpx.post')
 @patch('subprocess.run')
-@patch('openhands.llm.metrics_registry.LLMRegistry.register_llm')
+@patch('openhands.llm.llm_registry.LLMRegistry.register_llm')
 def test_update_existing_pull_request(
     mock_register_llm,
     mock_subprocess_run,
