@@ -19,6 +19,9 @@ jobs:
   check-version:
     name: Check if version has changed
     runs-on: blacksmith-4vcpu-ubuntu-2204
+    defaults:
+      run:
+        shell: bash
     outputs:
       should-publish: ${{ steps.version-check.outputs.should-publish }}
       current-version: ${{ steps.version-check.outputs.current-version }}
@@ -30,7 +33,6 @@ jobs:
 
       - name: Check if version changed
         id: version-check
-        shell: bash
         run: |
           # Get current version from package.json
           CURRENT_VERSION=$(jq -r .version openhands-ui/package.json)
@@ -56,6 +58,9 @@ jobs:
     runs-on: blacksmith-4vcpu-ubuntu-2204
     needs: check-version
     if: needs.check-version.outputs.should-publish == 'true'
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -75,7 +80,6 @@ jobs:
 
       - name: Check if package already exists on npm
         id: npm-check
-        shell: bash
         working-directory: ./openhands-ui
         run: |
           PACKAGE_NAME=$(jq -r .name package.json)
