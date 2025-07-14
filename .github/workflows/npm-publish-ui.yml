@@ -19,6 +19,7 @@ jobs:
   check-version:
     name: Check if version has changed
     runs-on: blacksmith-4vcpu-ubuntu-2204
+    shell: bash
     outputs:
       should-publish: ${{ steps.version-check.outputs.should-publish }}
       current-version: ${{ steps.version-check.outputs.current-version }}
@@ -32,7 +33,7 @@ jobs:
         id: version-check
         run: |
           # Get current version from package.json
-          CURRENT_VERSION=$(cat openhands-ui/package.json | grep '"version"' | sed 's/.*"version": "\(.*\)".*/\1/')
+          CURRENT_VERSION=$(jq -r .version openhands-ui/package.json)
           echo "current-version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
 
           # Check if package.json version changed in this commit
@@ -74,9 +75,10 @@ jobs:
 
       - name: Check if package already exists on npm
         id: npm-check
+        shell: bash
         working-directory: ./openhands-ui
         run: |
-          PACKAGE_NAME=$(cat package.json | grep '"name"' | sed 's/.*"name": "\(.*\)".*/\1/')
+          PACKAGE_NAME=$(jq -r .name package.json)
           VERSION="${{ needs.check-version.outputs.current-version }}"
 
           # Check if this version already exists on npm

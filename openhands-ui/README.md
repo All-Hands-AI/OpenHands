@@ -90,7 +90,7 @@ npm install path/to/openhands-ui-x.x.x.tgz
 
 ## Publishing
 
-This package is automatically published to npm when changes are merged to the main branch. See [PUBLISHING.md](./PUBLISHING.md) for detailed information about the publishing process.
+This package is automatically published to npm **when a version bump is merged to the main branch**. See [PUBLISHING.md](./PUBLISHING.md) for detailed information about the publishing process.
 
 ## License
 
