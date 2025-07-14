@@ -373,9 +373,7 @@ function LlmSettingsScreen() {
                 testId="llm-custom-model-input"
                 name="llm-custom-model-input"
                 label={t(I18nKey.SETTINGS$CUSTOM_MODEL)}
-                defaultValue={
-                  settings.LLM_MODEL || DEFAULT_OPENHANDS_MODEL
-                }
+                defaultValue={settings.LLM_MODEL || DEFAULT_OPENHANDS_MODEL}
                 placeholder={DEFAULT_OPENHANDS_MODEL}
                 type="text"
                 className="w-full max-w-[680px]"
