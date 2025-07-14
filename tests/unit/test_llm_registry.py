@@ -50,9 +50,6 @@ class TestLLMRegistry(unittest.TestCase):
 
     def test_save_registry_locking(self):
         """Test that the save_registry method uses locking to prevent race conditions."""
-        # Reset class variables to ensure clean state
-        self.reset_registry_class_vars()
-
         service_id = self.generate_unique_id('service-locking')
 
         # Register an LLM
@@ -108,10 +105,6 @@ class TestLLMRegistry(unittest.TestCase):
     def test_restore_registry_with_metrics(self):
         """Test that when a registry is restored, the registered LLM is initiated with the restored metrics."""
         service_id = self.generate_unique_id('service-restore')
-
-        # Reset class variables to ensure clean state
-        self.reset_registry_class_vars()
-
         # Create a unique conversation ID for this test
         conversation_id = self.generate_unique_id('conversation-restore')
         user_id = self.generate_unique_id('user-restore')
@@ -137,10 +130,6 @@ class TestLLMRegistry(unittest.TestCase):
 
         # Save the registry
         registry1.save_registry()
-
-        # Reset class variables to simulate a new instance
-        self.reset_registry_class_vars()
-
         # Create a new registry with the same file_store, conversation_id, and user_id
         registry2 = LLMRegistry(
             file_store=self.file_store,
