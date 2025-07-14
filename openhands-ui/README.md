@@ -88,6 +88,10 @@ bun pm pack
 npm install path/to/openhands-ui-x.x.x.tgz
 ```
 
+## Publishing
+
+This package is automatically published to npm **when a version bump is merged to the main branch**. See [PUBLISHING.md](./PUBLISHING.md) for detailed information about the publishing process.
+
 ## License
 
 MIT
