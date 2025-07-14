@@ -219,10 +219,10 @@ async def test_export_latest_git_provider_tokens_token_update(runtime):
 
 
 @pytest.mark.asyncio
-async def test_clone_or_init_repo_no_repo_always_init_git(temp_dir):
-    """Test that git init is run when no repository is selected and always_init_git"""
+async def test_clone_or_init_repo_no_repo_init_git_in_empty_workspace(temp_dir):
+    """Test that git init is run when no repository is selected and init_git_in_empty_workspace"""
     config = OpenHandsConfig()
-    config.always_init_git = True
+    config.init_git_in_empty_workspace = True
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
     runtime = TestRuntime(
