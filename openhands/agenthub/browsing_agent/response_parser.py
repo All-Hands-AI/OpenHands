@@ -65,13 +65,12 @@ class BrowsingActionParserMessage(ActionParser):
         return BrowseInteractiveAction(
             browser_actions=msg,
             thought=action_str,
-            browsergym_send_msg_to_user=action_str,
         )
 
 
 class BrowsingActionParserBrowseInteractive(ActionParser):
     """Parser action:
-    - BrowseInteractiveAction(browser_actions) - handle send message to user function call in BrowserGym
+    - BrowseInteractiveAction(browser_actions) - handle send message to user function call
     """
 
     def __init__(self) -> None:
@@ -120,7 +119,6 @@ class BrowsingActionParserBrowseInteractive(ActionParser):
                         msg_content = ''
 
         return BrowseInteractiveAction(
-            browser_actions=browser_actions,
+            browser_actions=action_str,
             thought=thought,
-            browsergym_send_msg_to_user=msg_content,
         )

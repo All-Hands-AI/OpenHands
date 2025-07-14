@@ -4,7 +4,6 @@ import os
 from pathlib import Path
 from typing import Any
 
-from browsergym.utils.obs import flatten_axtree_to_str
 from PIL import Image
 
 from openhands.core.exceptions import BrowserUnavailableException
@@ -15,6 +14,11 @@ from openhands.runtime.browser.base64 import png_base64_url_to_image
 from openhands.runtime.browser.browser_use_env import BrowserUseEnv
 from openhands.utils.async_utils import call_sync_from_async
 
+# Stub for flatten_axtree_to_str (previously from browsergym)
+def flatten_axtree_to_str(axtree_object, extra_properties=None, with_clickable=True, skip_generic=False, filter_visible_only=False):
+    # TODO: Implement accessibility tree flattening for Browser-Use
+    return "[Accessibility tree flattening not implemented]"
+
 
 def get_axtree_str(
     axtree_object: dict[str, Any],
@@ -23,8 +27,7 @@ def get_axtree_str(
 ) -> str:
     """Get accessibility tree as string."""
     try:
-        # Try to use browsergym's flatten_axtree_to_str if available
-        from browsergym.utils.obs import flatten_axtree_to_str
+        # Try to use the flatten_axtree_to_str function if available
         cur_axtree_txt = flatten_axtree_to_str(
             axtree_object,
             extra_properties=extra_element_properties,
@@ -34,10 +37,10 @@ def get_axtree_str(
         )
         return str(cur_axtree_txt)
     except ImportError:
-        # Fallback when browsergym is not available
+        # Fallback when flatten_axtree_to_str is not available
         return _simple_axtree_to_str(axtree_object, extra_element_properties, filter_visible_only)
     except Exception as e:
-        # Fallback when browsergym fails
+        # Fallback when flatten_axtree_to_str fails
         return f"[Error processing accessibility tree: {e}]\n{_simple_axtree_to_str(axtree_object, extra_element_properties, filter_visible_only)}"
 
 
@@ -182,14 +185,14 @@ async def browse(
         action_str = f'goto("{asked_url}")'
 
     elif isinstance(action, BrowseInteractiveAction):
-        # new BrowseInteractiveAction, supports full featured BrowserGym actions
-        # action in BrowserGym: see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/action/functions.py
+        # new BrowseInteractiveAction, supports full featured browser actions
+        # action format: see Browser-Use documentation for available actions
         action_str = action.browser_actions
     else:
         raise ValueError(f'Invalid action type: {action.action}')
 
     try:
-        # obs provided by BrowserGym: see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/env.py#L396
+        # obs provided by Browser-Use: see Browser-Use documentation for observation format
         obs = await call_sync_from_async(browser.step, action_str)
 
         # Save screenshot if workspace_dir is provided

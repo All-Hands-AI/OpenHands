@@ -1,6 +1,3 @@
-from browsergym.core.action.highlevel import HighLevelActionSet
-from browsergym.utils.obs import flatten_axtree_to_str
-
 from openhands.agenthub.browsing_agent.response_parser import BrowsingResponseParser
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
@@ -139,7 +136,7 @@ class VisualBrowsingAgent(Agent):
         """
         super().__init__(llm, config)
         # define a configurable action space, with chat functionality, web navigation, and webpage grounding using accessibility tree and HTML.
-        # see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/action/highlevel.py for more details
+        # see Browser-Use documentation for more details on available actions
         action_subsets = [
             'chat',
             'bid',
@@ -190,7 +187,7 @@ Note:
         - state (State): used to get updated info
 
         Returns:
-        - BrowseInteractiveAction(browsergym_command) - BrowserGym commands to run
+        - BrowseInteractiveAction(browser_command) - Browser commands to run
         - MessageAction(content) - Message action to run (e.g. ask for clarification)
         - AgentFinishAction() - end the interaction
         """
@@ -228,13 +225,9 @@ Note:
         if len(prev_actions) >= 1:  # ignore noop()
             prev_actions = prev_actions[1:]  # remove the first noop action
 
-        # if the final BrowserInteractiveAction exec BrowserGym's send_msg_to_user,
-        # we should also send a message back to the user in OpenHands and call it a day
-        if (
-            isinstance(last_action, BrowseInteractiveAction)
-            and last_action.browsergym_send_msg_to_user
-        ):
-            return MessageAction(last_action.browsergym_send_msg_to_user)
+        # if the final action is a MessageAction, return it directly
+        if isinstance(last_action, MessageAction):
+            return last_action
 
         history_prompt = get_history_prompt(prev_actions)
         if isinstance(last_obs, BrowserOutputObservation):

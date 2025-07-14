@@ -173,7 +173,7 @@ class ActionExecutor:
         username: str,
         user_id: int,
         enable_browser: bool,
-        browsergym_eval_env: str | None,
+        browser_use_config: str | None,
     ) -> None:
         self.plugins_to_load = plugins_to_load
         self._initial_cwd = work_dir
@@ -192,11 +192,11 @@ class ActionExecutor:
         self.enable_browser = enable_browser
         self.browser: BrowserUseEnv | None = None
         self.browser_init_task: asyncio.Task | None = None
-        self.browsergym_eval_env = browsergym_eval_env
+        self.browser_use_config = browser_use_config
 
-        if (not self.enable_browser) and self.browsergym_eval_env:
+        if (not self.enable_browser) and self.browser_use_config:
             raise BrowserUnavailableException(
-                'Browser environment is not enabled in config, but browsergym_eval_env is set'
+                'Browser environment is not enabled in config, but browser_use_config is set'
             )
 
         self.start_time = time.time()
@@ -236,9 +236,8 @@ class ActionExecutor:
 
         logger.debug('Initializing browser asynchronously')
         try:
-            # Pass the evaluation environment configuration to Browser-Use
-            # For now, we'll use the same parameter name for compatibility
-            self.browser = BrowserUseEnv(self.browsergym_eval_env)
+            # Pass the Browser-Use configuration
+            self.browser = BrowserUseEnv(self.browser_use_config)
             logger.debug('Browser initialized asynchronously')
         except Exception as e:
             logger.error(f'Failed to initialize browser: {e}')
@@ -686,9 +685,9 @@ if __name__ == '__main__':
         help='Enable the browser environment',
     )
     parser.add_argument(
-        '--browsergym-eval-env',
+        '--browser-use-config',
         type=str,
-        help='BrowserGym environment used for browser evaluation',
+        help='Browser-Use configuration for browser evaluation',
         default=None,
     )
 
@@ -723,7 +722,7 @@ if __name__ == '__main__':
             username=args.username,
             user_id=args.user_id,
             enable_browser=args.enable_browser,
-            browsergym_eval_env=args.browsergym_eval_env,
+            browser_use_config=args.browser_use_config,
         )
         await client.ainit()
         logger.info('ActionExecutor initialized.')

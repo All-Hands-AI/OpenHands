@@ -1,6 +1,6 @@
-# Browsing Agent Framework
+# Browsing Agent
 
-This folder implements the basic BrowserGym [demo agent](https://github.com/ServiceNow/BrowserGym/tree/main/demo_agent) that enables full-featured web browsing.
+This folder implements the basic browser agent that enables full-featured web browsing using Browser-Use.
 
 
 ## Test run

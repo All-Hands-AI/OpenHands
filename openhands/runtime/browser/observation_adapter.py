@@ -150,8 +150,7 @@ class ObservationAdapter:
             }
 
             if structure:
-                # Browser-Use structure might be different from BrowserGym
-                # We'll need to adapt it to match the expected format
+                # Browser-Use structure might be different from the previous browser environment
                 result['dom'] = structure.get('dom', {})
                 result['axtree'] = structure.get('accessibility', {})
                 result['properties'] = structure.get('properties', {})
@@ -233,8 +232,7 @@ class ObservationAdapter:
         This is a simplified implementation. In a real scenario, you'd want to
         implement proper accessibility tree flattening similar to BrowserGym.
         """
-        # Simplified implementation - in practice, you'd want to implement
-        # proper accessibility tree traversal and formatting
+        # TODO: implement proper accessibility tree flattening similar to the previous browser environment.
         result = []
 
         def traverse_node(node, level=0):

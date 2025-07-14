@@ -3,7 +3,8 @@ import json
 import os
 from typing import Any
 
-import browsergym.webarena  # noqa F401 register webarena tasks as gym environments
+# TODO: Update to work with Browser-Use evaluation environments
+# import browsergym.webarena  # noqa F401 register webarena tasks as gym environments
 import gymnasium as gym
 import pandas as pd
 
@@ -52,7 +53,7 @@ def get_config(
 
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = 'python:3.12-bookworm'
-    sandbox_config.browsergym_eval_env = env_id
+    sandbox_config.browser_use_config = env_id
     sandbox_config.runtime_startup_env_vars = {
         'BASE_URL': base_url,
         'OPENAI_API_KEY': openai_api_key,
@@ -202,9 +203,11 @@ if __name__ == '__main__':
     dataset = pd.DataFrame(
         {
             'instance_id': [
-                id
-                for id in gym.envs.registry.keys()
-                if id.startswith('browsergym/webarena')
+                # TODO: Update to work with Browser-Use evaluation environments
+                # For now, return empty list as we need to implement Browser-Use evaluation
+                # id
+                # for id in gym.envs.registry.keys()
+                # if id.startswith('browsergym/webarena')
             ]
         }
     )

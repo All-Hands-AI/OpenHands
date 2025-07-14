@@ -412,7 +412,6 @@ async def test_unsafe_bash_command(temp_dir: str):
             BrowseInteractiveAction(
                 browser_actions='goto("http://localhost:3000")',
                 thought='browsing to localhost',
-                browsergym_send_msg_to_user='browsergym',
                 return_axtree=False,
             ),
             [
@@ -430,7 +429,6 @@ async def test_unsafe_bash_command(temp_dir: str):
                         name=ActionType.BROWSE_INTERACTIVE,
                         arguments={
                             'browser_actions': 'goto("http://localhost:3000")',
-                            'browsergym_send_msg_to_user': 'browsergym',
                             'return_axtree': False,
                         },
                     ),

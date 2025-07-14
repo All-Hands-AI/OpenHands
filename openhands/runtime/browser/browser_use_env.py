@@ -1,8 +1,8 @@
 """
-Browser-Use environment implementation for OpenHands.
+Browser environment using Browser-Use library.
 
-This module provides a Browser-Use-based implementation that maintains compatibility
-with the existing BrowserGym interface while using Browser-Use under the hood.
+This module provides a drop-in replacement for the previous browser environment,
+maintaining the same interface while using Browser-Use under the hood.
 """
 
 import asyncio
@@ -38,7 +38,7 @@ BROWSER_EVAL_GET_REWARDS_ACTION = 'GET_EVAL_REWARDS'
 
 
 class BrowserUseEnv:
-    """Browser environment using Browser-Use library instead of BrowserGym."""
+    """Browser environment using Browser-Use library."""
 
     def __init__(self, browser_use_config: Optional[str] = None):
         """
@@ -144,8 +144,8 @@ class BrowserUseEnv:
 
                         # Save rewards for evaluation
                         if self.eval_mode:
-                            # Browser-Use doesn't have built-in rewards like BrowserGym
-                            # We'll use a simple success indicator for now
+                            # Browser-Use doesn't have built-in rewards like the previous browser environment
+                            # For evaluation environments, rewards would need to be implemented separately
                             reward = 1.0 if not obs.get('error', False) else 0.0
                             self.eval_rewards.append(reward)
 
@@ -351,7 +351,7 @@ class BrowserUseEnv:
         """
         Parse action string for backward compatibility.
 
-        This is a simplified parser for legacy BrowserGym-style actions.
+        This is a simplified parser for legacy string-based actions.
         In the future, this should be removed as agents will use Browser-Use actions directly.
         """
         import re
@@ -446,7 +446,7 @@ class BrowserUseEnv:
 
     def _bid_to_index(self, bid: str) -> int:
         """
-        Convert a BrowserGym bid to a Browser-Use index.
+        Convert a legacy bid to a Browser-Use index.
 
         This is a simplified implementation for backward compatibility.
         """
@@ -459,7 +459,7 @@ class BrowserUseEnv:
         """
         Execute an action in the browser environment and return the observation.
 
-        This method maintains compatibility with the original BrowserGym interface.
+        This method maintains compatibility with the original browser environment interface.
 
         Args:
             action_str: Action string to execute

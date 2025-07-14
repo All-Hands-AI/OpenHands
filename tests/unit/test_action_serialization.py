@@ -123,9 +123,8 @@ def test_browse_interactive_action_serialization_deserialization():
     original_action_dict = {
         'action': 'browse_interactive',
         'args': {
-            'thought': '',
-            'browser_actions': 'goto("https://www.example.com")',
-            'browsergym_send_msg_to_user': '',
+            'browser_actions': 'goto("https://example.com")',
+            'thought': 'I need to navigate to the example website',
             'return_axtree': False,
         },
     }

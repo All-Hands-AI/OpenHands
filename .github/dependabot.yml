@@ -10,9 +10,6 @@ updates:
       pre-commit:
         patterns:
           - "pre-commit"
-      browsergym:
-        patterns:
-          - "browsergym*"
       mcp-packages:
         patterns:
           - "mcp"

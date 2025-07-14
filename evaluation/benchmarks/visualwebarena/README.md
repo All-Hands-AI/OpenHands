@@ -1,6 +1,6 @@
-# VisualWebArena Evaluation with OpenHands Browsing Agents
+# VisualWebArena Evaluation
 
-This folder contains evaluation for [VisualWebArena](https://github.com/web-arena-x/visualwebarena) benchmark, powered by [BrowserGym](https://github.com/ServiceNow/BrowserGym) for easy evaluation of how well an agent capable of browsing can perform on realistic web browsing tasks.
+This folder contains evaluation for [VisualWebArena](https://github.com/web-arena-x/visualwebarena) benchmark, powered by [Browser-Use](https://github.com/browser-use/browser-use) for easy evaluation of how well an agent capable of browsing can perform on realistic web browsing tasks.
 
 ## Setup Environment and LLM Configuration
 

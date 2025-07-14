@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import ClassVar
+from typing import ClassVar, Literal
 
 from openhands.core.schema import ActionType
 from openhands.events.action.action import Action, ActionSecurityRisk
@@ -28,13 +28,15 @@ class BrowseURLAction(Action):
 
 @dataclass
 class BrowseInteractiveAction(Action):
-    browser_actions: str
+    """Action for interactive browsing with full browser action support."""
+
+    action: Literal[ActionType.BROWSE_INTERACTIVE] = ActionType.BROWSE_INTERACTIVE
+    browser_actions: str = ''
     thought: str = ''
-    browsergym_send_msg_to_user: str = ''
-    action: str = ActionType.BROWSE_INTERACTIVE
+    return_axtree: bool = True
+    filter_visible_only: bool = False
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None
-    return_axtree: bool = False
 
     @property
     def message(self) -> str:

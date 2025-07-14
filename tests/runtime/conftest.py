@@ -206,7 +206,7 @@ def _load_runtime(
     run_as_openhands: bool = True,
     enable_auto_lint: bool = False,
     base_container_image: str | None = None,
-    browsergym_eval_env: str | None = None,
+    browser_use_config: str | None = None,
     use_workspace: bool | None = None,
     force_rebuild_runtime: bool = False,
     runtime_startup_env_vars: dict[str, str] | None = None,
@@ -247,7 +247,7 @@ def _load_runtime(
         f'workspace_mount_path_in_sandbox: {config.workspace_mount_path_in_sandbox}\n'
     )
 
-    config.sandbox.browsergym_eval_env = browsergym_eval_env
+    config.sandbox.browser_use_config = browser_use_config
     config.sandbox.enable_auto_lint = enable_auto_lint
     if runtime_startup_env_vars is not None:
         config.sandbox.runtime_startup_env_vars = runtime_startup_env_vars

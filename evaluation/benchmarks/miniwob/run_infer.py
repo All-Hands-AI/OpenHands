@@ -3,7 +3,8 @@ import json
 import os
 from typing import Any
 
-import browsergym.miniwob  # noqa F401 register miniwob tasks as gym environments
+# TODO: Update to work with Browser-Use evaluation environments
+# import browsergym.miniwob  # noqa F401 register miniwob tasks as gym environments
 import gymnasium as gym
 import pandas as pd
 
@@ -213,9 +214,11 @@ if __name__ == '__main__':
     dataset = pd.DataFrame(
         {
             'instance_id': [
-                id
-                for id in gym.envs.registry.keys()
-                if id.startswith('browsergym/miniwob')
+                # TODO: Update to work with Browser-Use evaluation environments
+                # For now, return empty list as we need to implement Browser-Use evaluation
+                # id
+                # for id in gym.envs.registry.keys()
+                # if id.startswith('browsergym/miniwob')
             ]
         }
     )

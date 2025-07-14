@@ -29,12 +29,12 @@ def get_action_execution_server_startup_command(
     if plugins is not None and len(plugins) > 0:
         plugin_args = ['--plugins'] + [plugin.name for plugin in plugins]
 
-    # Browsergym stuffs
-    browsergym_args = []
-    if sandbox_config.browsergym_eval_env is not None:
-        browsergym_args = [
-            '--browsergym-eval-env'
-        ] + sandbox_config.browsergym_eval_env.split(' ')
+    # Browser-Use configuration
+    browser_use_args = []
+    if sandbox_config.browser_use_config is not None:
+        browser_use_args = [
+            '--browser-use-config'
+        ] + sandbox_config.browser_use_config.split(' ')
 
     username = override_username or (
         'openhands' if app_config.run_as_openhands else 'root'
@@ -57,7 +57,7 @@ def get_action_execution_server_startup_command(
         username,
         '--user-id',
         str(user_id),
-        *browsergym_args,
+        *browser_use_args,
     ]
 
     if not app_config.enable_browser:

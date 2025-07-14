@@ -29,8 +29,8 @@ class SandboxConfig(BaseModel):
         runtime_startup_env_vars: The environment variables to set at the launch of the runtime.
             This is a dictionary of key-value pairs.
             This is useful for setting environment variables that are needed by the runtime.
-            For example, for specifying the base url of website for browsergym evaluation.
-        browsergym_eval_env: The BrowserGym environment to use for evaluation.
+            For example, for specifying the base url of website for browser evaluation.
+        browser_use_config: The Browser-Use configuration to use for evaluation.
             Default is None for general purpose browsing. Check evaluation/miniwob and evaluation/webarena for examples.
         platform: The platform on which the image should be built. Default is None.
         remote_runtime_resource_factor: Factor to scale the resource allocation for remote runtime.
@@ -71,7 +71,7 @@ class SandboxConfig(BaseModel):
     force_rebuild_runtime: bool = Field(default=False)
     runtime_extra_deps: str | None = Field(default=None)
     runtime_startup_env_vars: dict[str, str] = Field(default_factory=dict)
-    browsergym_eval_env: str | None = Field(default=None)
+    browser_use_config: str | None = Field(default=None)
     platform: str | None = Field(default=None)
     close_delay: int = Field(
         default=3600,

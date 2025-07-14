@@ -1,40 +1,17 @@
-import argparse
 import json
+import os
+import pandas as pd
+from openhands.core.logger import openhands_logger as logger
 
-import browsergym.visualwebarena  # noqa F401 register visualwebarena tasks as gym environments
-import gymnasium as gym
+# TODO: Update to work with Browser-Use evaluation environments
+# import browsergym.visualwebarena  # noqa F401 register visualwebarena tasks as gym environments
 
-parser = argparse.ArgumentParser(description='Calculate average reward.')
-parser.add_argument('output_path', type=str, help='path to output.jsonl')
+def get_success_rate(output_file: str) -> float:
+    """Get success rate from output file."""
+    if not os.path.exists(output_file):
+        logger.warning(f'Output file {output_file} does not exist')
+        return 0.0
 
-args = parser.parse_args()
-
-if __name__ == '__main__':
-    env_ids = [
-        id
-        for id in gym.envs.registry.keys()
-        if id.startswith('browsergym/visualwebarena')
-    ]
-    total_num = len(env_ids)
-    print('Total number of tasks: ', total_num)
-    total_reward = 0
-    total_cost = 0
-    actual_num = 0
-    with open(args.output_path, 'r') as f:
-        for line in f:
-            data = json.loads(line)
-            actual_num += 1
-            total_cost += data['metrics']['accumulated_cost']
-            reward = data['test_result']['reward']
-            if reward >= 0:
-                total_reward += data['test_result']['reward']
-            else:
-                actual_num -= 1
-    avg_reward = total_reward / total_num
-    print('Total reward: ', total_reward)
-    print('Success Rate: ', avg_reward)
-
-    avg_cost = total_cost / actual_num
-    print('Avg Cost: ', avg_cost)
-    print('Total Cost: ', total_cost)
-    print('Actual number of tasks finished: ', actual_num)
+    # TODO: Update environment ID filtering for Browser-Use
+    # For now, return 0.0 as we need to implement Browser-Use evaluation
+    return 0.0

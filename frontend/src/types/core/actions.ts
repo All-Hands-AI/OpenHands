@@ -88,14 +88,12 @@ export interface BrowseAction extends OpenHandsActionEvent<"browse"> {
   };
 }
 
-export interface BrowseInteractiveAction
-  extends OpenHandsActionEvent<"browse_interactive"> {
+export interface BrowseInteractiveAction extends OpenHandsActionEvent<"browse_interactive"> {
   source: "agent";
   timeout: number;
   args: {
     browser_actions: string;
     thought: string | null;
-    browsergym_send_msg_to_user: string;
   };
 }
 
