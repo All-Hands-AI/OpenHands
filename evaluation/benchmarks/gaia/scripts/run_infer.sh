@@ -36,6 +36,11 @@ echo "OPENHANDS_VERSION: $OPENHANDS_VERSION"
 echo "MODEL_CONFIG: $MODEL_CONFIG"
 echo "LEVELS: $LEVELS"
 
+EVAL_NOTE="${OPENHANDS_VERSION}_${LEVELS}"
+if [ -n "$EXP_NAME" ]; then
+  EVAL_NOTE="$EVAL_NOTE-$EXP_NAME"
+fi
+
 COMMAND="poetry run python ./evaluation/benchmarks/gaia/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
@@ -43,7 +48,7 @@ COMMAND="poetry run python ./evaluation/benchmarks/gaia/run_infer.py \
   --level $LEVELS \
   --data-split validation \
   --eval-num-workers $NUM_WORKERS \
-  --eval-note ${OPENHANDS_VERSION}_${LEVELS}"
+  --eval-note $EVAL_NOTE"
 
 if [ -n "$EVAL_LIMIT" ]; then
   echo "EVAL_LIMIT: $EVAL_LIMIT"

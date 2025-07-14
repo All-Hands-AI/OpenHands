@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 import tempfile
+import re
 from typing import Any
 
 import pandas as pd
@@ -810,12 +811,15 @@ if __name__ == '__main__':
     details = {}
     _agent_cls = openhands.agenthub.Agent.get_cls(args.agent_cls)
 
-    dataset_descrption = (
-        args.dataset.replace('/', '__') + '-' + args.split.replace('/', '__')
-    )
+    match = re.search(r'Multi-SWE-bench/[^/]+/[^/]+', args.dataset)
+    if match:
+        dataset_description = match.group(0) + '-' + args.split.replace('/', '__')
+    else:
+        dataset_description = args.dataset.replace('/', '__') + '-' + args.split.replace('/', '__')
+
     metadata = make_metadata(
         llm_config,
-        dataset_descrption,
+        dataset_description,
         args.agent_cls,
         args.max_iterations,
         args.eval_note,
@@ -842,7 +846,7 @@ if __name__ == '__main__':
         args.eval_num_workers,
         process_instance,
         timeout_seconds=120 * 60,  # 2 hour PER instance should be more than enough
-        max_retries=5,
+        max_retries=3,
     )
     # Check if any instances reached maximum retries
     check_maximum_retries_exceeded(metadata.eval_output_dir)

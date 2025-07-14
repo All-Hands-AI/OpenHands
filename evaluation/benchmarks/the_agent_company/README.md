@@ -2,10 +2,11 @@
 
 This folder contains the evaluation harness that we built on top of the original [The Agent Company](https://github.com/TheAgentCompany/TheAgentCompany/tree/main/evaluation) ([paper](https://arxiv.org/abs/2412.14161)).
 
-The evaluation consists of three steps:
-
-1. Environment setup: [install python environment](../../README.md#development-environment), [configure LLM config](../../README.md#configure-openhands-and-your-llm), [launch services](https://github.com/TheAgentCompany/TheAgentCompany/blob/main/docs/SETUP.md).
-2. [Run Evaluation](#run-inference-on-the-agent-company-tasks): Run all tasks and get the evaluation results.
+1. Setup OpenHands: [install python environment](../../README.md#development-environment) and [configure LLM config](../../README.md#configure-openhands-and-your-llm).
+2. Setup The Agent Company services [launch services](https://github.com/TheAgentCompany/TheAgentCompany/blob/main/docs/SETUP.md).
+ - the-agent-company should redirect to localhost. In linux/mac you might need to add 127.0.0.1 the-agent-company.com to /etc/hosts
+ - Unless you are running with root, create a tmp dir and export TMPDIR=<PATH-TO-YOUR-TMP-DIR>
+3. [Run Evaluation](#run-inference-on-the-agent-company-tasks): Run all tasks and get the evaluation results.
 
 ## Setup Environment and LLM Configuration
 
@@ -50,3 +51,12 @@ To speed up evaluation, you can use `start-percentile` and `end-percentile` to s
 provided concurrent runs are **targeting different servers**.
 
 Note: the script will automatically skip a task if it encounters an error. This usually happens when the OpenHands runtime dies due to some unexpected errors. This means even if the script finishes, it might not have evaluated all tasks. You can manually resume the evaluation by running the script again.
+
+### Report Generation
+
+To summarize the results, run:
+
+```bash
+./evaluation/benchmarks/the_agent_company/scripts/eval_infer.sh [path_to_output_folder]
+```
+

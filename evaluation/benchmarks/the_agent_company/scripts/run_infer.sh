@@ -21,7 +21,6 @@ AGENT_LLM_CONFIG="agent"
 ENV_LLM_CONFIG="env"
 
 # OUTPUTS_PATH is the path to save trajectories and evaluation results
-OUTPUTS_PATH="outputs"
 
 # SERVER_HOSTNAME is the hostname of the server that hosts all the web services,
 # including RocketChat, ownCloud, GitLab, and Plane.
@@ -75,11 +74,16 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Convert outputs_path to absolute path
-if [[ ! "$OUTPUTS_PATH" = /* ]]; then
-    # If path is not already absolute (doesn't start with /), make it absolute
-    OUTPUTS_PATH="$(cd "$(dirname "$OUTPUTS_PATH")" 2>/dev/null && pwd)/$(basename "$OUTPUTS_PATH")"
+if [ -z "$OUTPUTS_PATH" ]; then
+  OUTPUTS_PATH="./evaluation/evaluation_outputs/outputs/the_agent_company/$OPENHANDS_VERSION_$ENV_LLM_CONFIG_$EXP_NAME"
 fi
+
+# Convert outputs_path to absolute path
+if [[ "$OUTPUTS_PATH" == .* ]]; then
+  OUTPUTS_PATH="$PWD/${OUTPUTS_PATH#./}"
+fi
+echo "Saving at $OUTPUTS_PATH"
+mkdir -p "$OUTPUTS_PATH"
 
 : "${START_PERCENTILE:=0}"  # Default to 0 percentile (first line)
 : "${END_PERCENTILE:=100}"  # Default to 100 percentile (last line)
@@ -124,9 +128,49 @@ end_line=$(echo "scale=0; $total_lines * $END_PERCENTILE / 100" | bc)
 
 echo "Using tasks No. $start_line to $end_line (inclusive) out of 1-175 tasks"
 
+# Read config.toml
+set -euo pipefail
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CONFIG="${SCRIPT_DIR}/../config.toml"
+SELECTED_IDS=()
+
+if [[ -f "$CONFIG" ]]; then
+  echo "🔍 Found config.toml, checking selected_ids..."
+
+  PYTHON_CODE=$(cat <<EOF
+import toml
+from pathlib import Path
+
+config_path = Path("$CONFIG")
+try:
+    data = toml.load(config_path)
+    for item in data.get('selected_ids', []):
+        print(item)
+except Exception:
+    pass
+EOF
+)
+
+  echo "➡️ Running: poetry run python -c \"$PYTHON_CODE\""
+
+  mapfile -t SELECTED_IDS < <(poetry run python -c "$PYTHON_CODE")
+
+  echo "Using selected_ids=(${SELECTED_IDS[*]})"
+fi
+
+# helper to check membership
+is_selected() {
+  local id="$1"
+  for sel in "${SELECTED_IDS[@]}"; do
+    [[ "$sel" == "$id" ]] && return 0
+  done
+  return 1
+}
+
 # Create a temporary file with just the desired range
 temp_file="tasks_${START_PERCENTILE}_${END_PERCENTILE}.md"
 sed -n "${start_line},${end_line}p" tasks.md > "$temp_file"
+
 
 while IFS= read -r task_image; do
     # Remove prefix using ## to remove longest matching pattern from start
@@ -134,37 +178,39 @@ while IFS= read -r task_image; do
 
     # Remove suffix using % to remove shortest matching pattern from end
     task_name=${task_name%-image:*}
-    echo "Use task image $task_image, task name $task_name..."
+    if [[ "${#SELECTED_IDS[@]}" -eq 0 ]] || is_selected "$task_name"; then
+        echo "Use task image $task_image, task name $task_name..."
 
-    # Check if evaluation file exists
-    if [ -f "$OUTPUTS_PATH/eval_${task_name}-image.json" ]; then
-        echo "Skipping $task_name - evaluation file already exists"
-        continue
+        # Check if evaluation file exists
+        if [ -f "$OUTPUTS_PATH/eval_${task_name}-image.json" ]; then
+            echo "Skipping $task_name - evaluation file already exists"
+            continue
+        fi
+
+        docker pull $task_image
+
+        # Build the Python command
+        COMMAND="poetry run python -m evaluation.benchmarks.the_agent_company.run_infer \
+                --agent-llm-config \"$AGENT_LLM_CONFIG\" \
+                --env-llm-config \"$ENV_LLM_CONFIG\" \
+                --outputs-path \"$OUTPUTS_PATH\" \
+                --server-hostname \"$SERVER_HOSTNAME\" \
+                --task-image-name \"$task_image\""
+
+        # Add agent-config if it's defined
+        if [ -n "$AGENT_CONFIG" ]; then
+            COMMAND="$COMMAND --agent-config $AGENT_CONFIG"
+        fi
+
+        export PYTHONPATH=evaluation/benchmarks/the_agent_company:${PYTHONPATH:-} && \
+            eval "$COMMAND"
+
+        # Prune unused images and volumes
+        #docker image rm "$task_image"
+        #docker images "ghcr.io/all-hands-ai/runtime" -q | xargs -r docker rmi -f
+        #docker volume prune -f
+        #docker system prune -f
     fi
-
-    docker pull $task_image
-
-    # Build the Python command
-    COMMAND="poetry run python -m evaluation.benchmarks.the_agent_company.run_infer \
-            --agent-llm-config \"$AGENT_LLM_CONFIG\" \
-            --env-llm-config \"$ENV_LLM_CONFIG\" \
-            --outputs-path \"$OUTPUTS_PATH\" \
-            --server-hostname \"$SERVER_HOSTNAME\" \
-            --task-image-name \"$task_image\""
-
-    # Add agent-config if it's defined
-    if [ -n "$AGENT_CONFIG" ]; then
-        COMMAND="$COMMAND --agent-config $AGENT_CONFIG"
-    fi
-
-    export PYTHONPATH=evaluation/benchmarks/the_agent_company:$PYTHONPATH && \
-        eval "$COMMAND"
-
-    # Prune unused images and volumes
-    docker image rm "$task_image"
-    docker images "ghcr.io/all-hands-ai/runtime" -q | xargs -r docker rmi -f
-    docker volume prune -f
-    docker system prune -f
 done < "$temp_file"
 
 rm tasks.md "$temp_file"

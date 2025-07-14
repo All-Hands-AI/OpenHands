@@ -150,7 +150,6 @@ def initialize_runtime(
     token_gh = bench_config['token_gh']
     commandf = f'export TOKEN_GH={token_gh}'
     action = CmdRunAction(command=commandf)
-    logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
 
     action = CmdRunAction(command='poetry install')
@@ -163,7 +162,7 @@ def initialize_runtime(
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     if obs.exit_code != 0:
-        print(f'run_get_datapoint.py failed at {instance["id"]} with {obs.content}')
+        logger.info(f'run_get_datapoint.py failed at {instance["id"]} with {obs.content}')
     assert obs.exit_code == 0
 
     commandf = 'cat branch_name.txt'
@@ -205,7 +204,6 @@ def complete_runtime(
     token_gh = bench_config['token_gh']
     commandf = f'export TOKEN_GH={token_gh}'
     action = CmdRunAction(command=commandf)
-    logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
 
     # Navigate to the lca-baseslines scripts path
@@ -219,6 +217,9 @@ def complete_runtime(
     action = CmdRunAction(command=commandf)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
+    if obs.exit_code != 0:
+        logger.info(f'run_push_datapoint.py at {instance["id"]} ended in non zero with {obs.content}')
+        logger.info(f'Make sure your token has not expired.')
     # assert obs.exit_code == 0
 
     commandf = 'cat single_output.json'

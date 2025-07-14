@@ -15,10 +15,9 @@ def main():
                     'org': groups.group(1),
                     'repo': groups.group(2),
                     'number': groups.group(3),
-                    'fix_patch': data['test_result']['git_patch'],
+                    'fix_patch': data.get('test_result', {}).get('git_patch', '') or '',
                 }
                 fout.write(json.dumps(patch) + '\n')
-
 
 if __name__ == '__main__':
     main()

@@ -325,13 +325,13 @@ if __name__ == '__main__':
     run_evaluator(runtime, env_llm_config, trajectory_path, result_path)
 
     # finally, move trajectory file and evaluation result from mount path on host (temp dir) to outputs path
-    shutil.move(
+    shutil.copy2(
         os.path.join(temp_dir, f'traj_{task_short_name}.json'),
         os.path.join(
             os.path.abspath(args.outputs_path), f'traj_{task_short_name}.json'
         ),
     )
-    shutil.move(
+    shutil.copy2(
         os.path.join(temp_dir, f'eval_{task_short_name}.json'),
         os.path.join(
             os.path.abspath(args.outputs_path), f'eval_{task_short_name}.json'
