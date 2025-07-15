@@ -502,6 +502,7 @@ class DockerNestedConversationManager(ConversationManager):
         env_vars['SANDBOX_CLOSE_DELAY'] = '0'
         env_vars['SKIP_DEPENDENCY_CHECK'] = '1'
         env_vars['INITIAL_NUM_WARM_SERVERS'] = '1'
+        env_vars['INIT_GIT_IN_EMPTY_WORKSPACE'] = '1'
 
         volumes: list[str | None]
         if not config.sandbox.volumes:
