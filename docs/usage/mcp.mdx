@@ -29,6 +29,15 @@ sse_servers = [
     {url="https://secure-example.com/mcp", api_key="your-api-key"}
 ]
 
+# SHTTP Servers - External servers that communicate via Streamable HTTP
+shttp_servers = [
+    # Basic SHTTP server with just a URL
+    "http://example.com:8080/mcp",
+
+    # SHTTP server with API key authentication
+    {url="https://secure-example.com/mcp", api_key="your-api-key"}
+]
+
 # Stdio Servers - Local processes that communicate via standard input/output
 stdio_servers = [
     # Basic stdio server
@@ -57,6 +66,22 @@ SSE servers are configured using either a string URL or an object with the follo
   - Type: `str`
   - Description: The URL of the SSE server
 
+- `api_key` (optional)
+  - Type: `str`
+  - Description: API key for authentication
+
+### SHTTP Servers
+
+SHTTP (Streamable HTTP) servers are configured using either a string URL or an object with the following properties:
+
+- `url` (required)
+  - Type: `str`
+  - Description: The URL of the SHTTP server
+
+- `api_key` (optional)
+  - Type: `str`
+  - Description: API key for authentication
+
 ### Stdio Servers
 
 Stdio servers are configured using an object with the following properties:
@@ -84,7 +109,7 @@ Stdio servers are configured using an object with the following properties:
 When OpenHands starts, it:
 
 1. Reads the MCP configuration.
-2. Connects to any configured SSE servers.
+2. Connects to any configured SSE and SHTTP servers.
 3. Starts any configured stdio servers.
 4. Registers the tools provided by these servers with the agent.
 
@@ -93,3 +118,23 @@ The agent can then use these tools just like any built-in tool. When the agent c
 1. OpenHands routes the call to the appropriate MCP server.
 2. The server processes the request and returns a response.
 3. OpenHands converts the response to an observation and presents it to the agent.
+
+## Transport Protocols
+
+OpenHands supports three different MCP transport protocols:
+
+### Server-Sent Events (SSE)
+SSE is a legacy HTTP-based transport that uses Server-Sent Events for server-to-client communication and HTTP POST requests for client-to-server communication. This transport is suitable for basic streaming scenarios but has limitations in session management and connection resumability.
+
+### Streamable HTTP (SHTTP)
+SHTTP is the modern HTTP-based transport protocol that provides enhanced features over SSE:
+
+- **Improved Session Management**: Supports stateful sessions with session IDs for maintaining context across requests
+- **Connection Resumability**: Can resume broken connections and replay missed messages using event IDs
+- **Bidirectional Communication**: Uses HTTP POST for client-to-server and optional SSE streams for server-to-client communication
+- **Better Error Handling**: Enhanced error reporting and recovery mechanisms
+
+SHTTP is the recommended transport for HTTP-based MCP servers as it provides better reliability and features compared to the legacy SSE transport.
+
+### Standard Input/Output (stdio)
+Stdio transport enables communication through standard input and output streams, making it ideal for local integrations and command-line tools. This transport is used for locally executed MCP servers that run as separate processes.
