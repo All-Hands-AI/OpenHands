@@ -21,7 +21,13 @@ export const buttonStyles: Record<ComponentVariant, ButtonStyle> = {
       "disabled:opacity-50",
     ]),
     icon: cn(["text-primary-500"]),
-    text: cn(["text-primary-500"]),
+    text: cn([
+      "text-primary-500",
+      // hover modifier
+      "group-enabled:group-hover:font-semibold",
+      // focus modifier
+      "group-enabled:group-focus:font-semibold",
+    ]),
   },
   secondary: {
     button: cn([
@@ -36,7 +42,13 @@ export const buttonStyles: Record<ComponentVariant, ButtonStyle> = {
       "disabled:opacity-50",
     ]),
     icon: cn(["text-light-neutral-300"]),
-    text: cn(["text-light-neutral-300"]),
+    text: cn([
+      "text-light-neutral-300",
+      // hover modifier
+      "group-enabled:group-hover:font-semibold",
+      // focus modifier
+      "group-enabled:group-focus:font-semibold",
+    ]),
   },
   tertiary: {
     button: cn([
@@ -53,6 +65,10 @@ export const buttonStyles: Record<ComponentVariant, ButtonStyle> = {
     icon: cn(["text-primary-500"]),
     text: cn([
       "text-primary-500 underline",
+      // hover modifier
+      "group-enabled:group-hover:font-semibold",
+      // focus modifier
+      "group-enabled:group-focus:font-semibold",
       // disabled modifier
       "group-disabled:no-underline",
     ]),
