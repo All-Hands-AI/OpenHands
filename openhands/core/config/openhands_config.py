@@ -80,7 +80,9 @@ class OpenHandsConfig(BaseModel):
     )
 
     workspace_base: str | None = Field(default=None)
-    workspace_mount_path_in_sandbox: str = Field(default=DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX)
+    workspace_mount_path_in_sandbox: str = Field(
+        default=DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX
+    )
 
     # Deprecated parameters - will be removed in a future version
     workspace_mount_path: str | None = Field(default=None, deprecated=True)
