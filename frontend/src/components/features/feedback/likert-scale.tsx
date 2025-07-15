@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useTranslation } from "react-i18next";
+import { FaStar } from "react-icons/fa";
 import { cn } from "#/utils/utils";
 import { I18nKey } from "#/i18n/declaration";
 import { useSubmitConversationFeedback } from "#/hooks/mutation/use-submit-conversation-feedback";
@@ -207,7 +208,7 @@ export function LikertScale({
               className={cn("text-xl transition-all", getButtonClass(rating))}
               aria-label={`Rate ${rating} stars`}
             >
-              {t(I18nKey.FEEDBACK$STAR_RATING)}
+              <FaStar />
             </button>
           ))}
           {/* Show selected reason inline with stars when submitted (only for ratings <= 3) */}
