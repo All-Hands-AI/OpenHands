@@ -75,6 +75,7 @@ class CodeActAgent(Agent):
         self,
         llm: LLM,
         config: AgentConfig,
+        cwd: str = '/workspace',
     ) -> None:
         """Initializes a new instance of the CodeActAgent class.
 
@@ -82,7 +83,7 @@ class CodeActAgent(Agent):
         - llm (LLM): The llm to be used by this agent
         - config (AgentConfig): The configuration for this agent
         """
-        super().__init__(llm, config)
+        super().__init__(llm, config, cwd)
         self.pending_actions: deque['Action'] = deque()
         self.reset()
         self.tools = self._get_tools()
@@ -99,6 +100,7 @@ class CodeActAgent(Agent):
             self._prompt_manager = PromptManager(
                 prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
                 system_prompt_filename=self.config.system_prompt_filename,
+                cwd=self.cwd,
             )
 
         return self._prompt_manager

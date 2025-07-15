@@ -54,6 +54,7 @@ class PromptManager:
         self,
         prompt_dir: str,
         system_prompt_filename: str = 'system_prompt.j2',
+        cwd: str | None = None,
     ):
         self.prompt_dir: str = prompt_dir
         self.system_template: Template = self._load_system_template(
@@ -62,6 +63,7 @@ class PromptManager:
         self.user_template: Template = self._load_template('user_prompt')
         self.additional_info_template: Template = self._load_template('additional_info')
         self.microagent_info_template: Template = self._load_template('microagent_info')
+        self.cwd = cwd
 
     def _load_system_template(self, system_prompt_filename: str) -> Template:
         """Load the system prompt template using the specified filename."""
@@ -90,7 +92,7 @@ class PromptManager:
             return Template(file.read())
 
     def get_system_message(self) -> str:
-        return self.system_template.render().strip()
+        return self.system_template.render(cwd=self.cwd).strip()
 
     def get_example_user_message(self) -> str:
         """This is an initial user message that can be provided to the agent

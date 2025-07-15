@@ -40,6 +40,7 @@ class Agent(ABC):
         self,
         llm: LLM,
         config: AgentConfig,
+        cwd: str = '/workspace',
     ):
         self.llm = llm
         self.config = config
@@ -47,6 +48,7 @@ class Agent(ABC):
         self._prompt_manager: 'PromptManager' | None = None
         self.mcp_tools: dict[str, ChatCompletionToolParam] = {}
         self.tools: list = []
+        self.cwd = cwd
 
     @property
     def prompt_manager(self) -> 'PromptManager':
