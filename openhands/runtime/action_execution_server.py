@@ -16,7 +16,6 @@ import sys
 import tempfile
 import time
 import traceback
-import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Iterator
@@ -411,23 +410,12 @@ class ActionExecutor:
             observation = await getattr(self, action_type)(action)
             return observation
 
-    async def run_stream(self, task_id: str, action: CmdRunStreamAction):
-        async def generator_wrapper():
-            if not isinstance(self.bash_session, BashSession):
-                yield ErrorObservation(
-                    content='Stream execution on Windows is not currently supported'
-                )
-            else:
-                try:
-                    async for obs in self.bash_session.execute_stream(action):
-                        yield f'data: {json.dumps(event_to_dict(obs))}\n\n'
-                except Exception as e:
-                    logger.debug(f'client disconnect {str(e)}')
-
-        gen = generator_wrapper()
-        task = asyncio.create_task(gen.__anext__())
-        sse_task[task_id] = task
-        return gen
+    async def run_stream(self, action: CmdRunStreamAction):
+        try:
+            async for obs in self.bash_session.execute_stream(action):  # type: ignore
+                yield f'data: {json.dumps(event_to_dict(obs))}\n\n'
+        except Exception as e:
+            logger.debug(f'client disconnect {str(e)}')
 
     async def run(
         self, action: CmdRunAction
@@ -902,13 +890,7 @@ if __name__ == '__main__':
                 detail=traceback.format_exc(),
             )
 
-    sse_task: dict[str, asyncio.Task] = {}
-
-    async def cleanup_after_disconnect(task_id: str, bash_session: BashSession):
-        task = sse_task.pop(task_id)
-        if task and not task.done():
-            logger.debug(f'Cancelling task {task_id} due to disconnect.')
-            task.cancel()
+    async def cleanup_after_disconnect(bash_session: BashSession):
         await bash_session.stop_stream_cmd()
 
     @app.post('/execute_cmd_action_stream')
@@ -930,13 +912,11 @@ if __name__ == '__main__':
             action = event_from_dict(action_request.action)
             client.last_execution_time = time.time()
             if isinstance(action, CmdRunStreamAction):
-                task_id = str(uuid.uuid4())
-                task = await client.run_stream(task_id, action)
                 return StreamingResponse(
-                    task,
+                    client.run_stream(action),
                     media_type='text/event-stream',
                     background=BackgroundTask(
-                        cleanup_after_disconnect, task_id, client.bash_session
+                        cleanup_after_disconnect, client.bash_session
                     ),
                 )
             else:
