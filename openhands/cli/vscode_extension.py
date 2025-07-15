@@ -2,9 +2,12 @@ import importlib.resources
 import json
 import os
 import pathlib
+import shutil
 import subprocess
 import tempfile
 import urllib.request
+from pathlib import Path
+from typing import Optional
 from urllib.error import URLError
 
 from openhands.core.logger import openhands_logger as logger
@@ -72,6 +75,34 @@ def attempt_vscode_extension_install():
         )
     )
     if not (is_vscode_like or is_windsurf):
+        return
+
+    # Skip installation if we're in a VSCode remote terminal
+    # When running in a VSCode terminal on a remote machine via VSCode Remote:
+    # - TERM_PROGRAM might be 'vscode' in both local and remote environments
+    # - We need a simple way to detect remote environments
+
+    # Simple check for remote environment - if any of these are true, we're likely in a remote environment
+    is_remote_vscode = (
+        os.environ.get('OPENVSCODE_SERVER_ROOT') is not None
+        or os.environ.get('VSCODE_PORT') is not None
+        or os.environ.get('SSH_CONNECTION') is not None
+        or os.environ.get('SSH_CLIENT') is not None
+        or os.environ.get('SSH_TTY') is not None
+        or os.path.exists('/.dockerenv')
+        or os.path.exists('/run/.containerenv')
+    )
+
+    if is_remote_vscode:
+        logger.debug(
+            'Detected possible VSCode remote environment. Skipping automatic extension installation.'
+        )
+        print(
+            'INFO: VSCode remote environment detected. Automatic extension installation is skipped.'
+        )
+        print(
+            'INFO: To install the OpenHands extension manually, use the /vscode-extension command.'
+        )
         return
 
     # 2. Determine editor-specific commands and flags
@@ -275,6 +306,39 @@ def _attempt_bundled_install(editor_command: str, editor_name: str) -> bool:
         )
 
     return False
+
+
+def get_vsix_path() -> Optional[Path]:
+    """
+    Get the path to the bundled VSIX file or download it from GitHub if not available.
+
+    Returns:
+        Path to the VSIX file, or None if not found
+    """
+    # First try to get the bundled VSIX
+    vsix_filename = 'openhands-vscode-0.0.1.vsix'
+    try:
+        with importlib.resources.as_file(
+            importlib.resources.files('openhands').joinpath(
+                'integrations', 'vscode', vsix_filename
+            )
+        ) as vsix_path:
+            if vsix_path.exists():
+                # Create a copy in a temporary location that will persist
+                temp_dir = Path(tempfile.gettempdir()) / 'openhands'
+                temp_dir.mkdir(exist_ok=True)
+                temp_path = temp_dir / vsix_filename
+                shutil.copy(vsix_path, temp_path)
+                return temp_path
+    except Exception as e:
+        logger.debug(f'Could not access bundled VSIX: {e}')
+
+    # If bundled VSIX is not available, try to download from GitHub
+    github_vsix = download_latest_vsix_from_github()
+    if github_vsix:
+        return Path(github_vsix)
+
+    return None
 
 
 def _attempt_marketplace_install(

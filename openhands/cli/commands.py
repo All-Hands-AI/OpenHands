@@ -1,4 +1,5 @@
 import asyncio
+import shutil
 from pathlib import Path
 
 from prompt_toolkit import print_formatted_text
@@ -24,6 +25,7 @@ from openhands.cli.utils import (
     read_file,
     write_to_file,
 )
+from openhands.cli.vscode_extension import get_vsix_path
 from openhands.core.config import (
     OpenHandsConfig,
 )
@@ -79,6 +81,8 @@ async def handle_commands(
         await handle_settings_command(config, settings_store)
     elif command == '/resume':
         close_repl, new_session_requested = await handle_resume_command(event_stream)
+    elif command == '/vscode-extension':
+        handle_vscode_extension_command()
     else:
         close_repl = True
         action = MessageAction(content=command)
@@ -327,3 +331,48 @@ def check_folder_security_agreement(config: OpenHandsConfig, current_dir: str) -
         return confirm
 
     return True
+
+
+def handle_vscode_extension_command() -> None:
+    """
+    Handle the /vscode-extension command.
+
+    This command helps users install the OpenHands VSCode extension manually
+    by providing the path to the VSIX file.
+    """
+    print_formatted_text('\nOpenHands VSCode Extension Installation\n')
+
+    vsix_path = get_vsix_path()
+    if not vsix_path:
+        print_formatted_text(
+            '❌ Could not find or download the VSCode extension VSIX file.'
+        )
+        print_formatted_text('Please check your internet connection and try again.')
+        return
+
+    # Create a user-friendly location for the VSIX file
+    home_dir = Path.home()
+    downloads_dir = home_dir / 'Downloads'
+    if not downloads_dir.exists():
+        downloads_dir = home_dir
+
+    target_path = downloads_dir / 'openhands-vscode-extension.vsix'
+
+    try:
+        shutil.copy(vsix_path, target_path)
+        print_formatted_text(f'✅ VSCode extension VSIX file saved to: {target_path}')
+        print_formatted_text('\nTo install the extension:')
+        print_formatted_text('1. Open VSCode')
+        print_formatted_text('2. Go to Extensions view (Ctrl+Shift+X)')
+        print_formatted_text(
+            '3. Click on the "..." menu at the top of the Extensions view'
+        )
+        print_formatted_text('4. Select "Install from VSIX..."')
+        print_formatted_text(f'5. Navigate to and select: {target_path}')
+        print_formatted_text(
+            '\nAlternatively, you can run this command in your terminal:'
+        )
+        print_formatted_text(f'code --install-extension {target_path}')
+    except Exception as e:
+        print_formatted_text(f'❌ Error saving VSIX file: {e}')
+        print_formatted_text(f'The VSIX file is available at: {vsix_path}')
