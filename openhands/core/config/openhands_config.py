@@ -7,6 +7,7 @@ from openhands.core import logger
 from openhands.core.config.agent_config import AgentConfig
 from openhands.core.config.cli_config import CLIConfig
 from openhands.core.config.config_utils import (
+    DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX,
     OH_DEFAULT_AGENT,
     OH_MAX_ITERATIONS,
     model_defaults_to_dict,
@@ -78,10 +79,11 @@ class OpenHandsConfig(BaseModel):
         description='API key for Tavily search engine (https://tavily.com/). Required for search functionality.',
     )
 
+    workspace_base: str | None = Field(default=None)
+    workspace_mount_path_in_sandbox: str = Field(default=DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX)
+
     # Deprecated parameters - will be removed in a future version
-    workspace_base: str | None = Field(default=None, deprecated=True)
     workspace_mount_path: str | None = Field(default=None, deprecated=True)
-    workspace_mount_path_in_sandbox: str = Field(default='/workspace', deprecated=True)
     workspace_mount_rewrite: str | None = Field(default=None, deprecated=True)
     # End of deprecated parameters
 

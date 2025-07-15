@@ -345,13 +345,11 @@ class Memory:
                 additional_agent_instructions=runtime.additional_agent_instructions,
                 date=date,
                 custom_secrets_descriptions=custom_secrets_descriptions,
-                cwd=runtime.config.workspace_mount_path_in_sandbox or '/workspace',
             )
         else:
             self.runtime_info = RuntimeInfo(
                 date=date,
                 custom_secrets_descriptions=custom_secrets_descriptions,
-                cwd=runtime.config.workspace_mount_path_in_sandbox or '/workspace',
             )
 
     def set_conversation_instructions(

@@ -5,6 +5,8 @@ ReadOnlyAgent - A specialized version of CodeActAgent that only uses read-only t
 import os
 from typing import TYPE_CHECKING
 
+from openhands.core.config.config_utils import DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX
+
 if TYPE_CHECKING:
     from litellm import ChatCompletionToolParam
 
@@ -41,7 +43,7 @@ class ReadOnlyAgent(CodeActAgent):
         self,
         llm: LLM,
         config: AgentConfig,
-        cwd: str = '/workspace',
+        cwd: str = DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX,
     ) -> None:
         """Initializes a new instance of the ReadOnlyAgent class.
 

@@ -3,6 +3,8 @@ import sys
 from collections import deque
 from typing import TYPE_CHECKING
 
+from openhands.core.config.config_utils import DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX
+
 if TYPE_CHECKING:
     from litellm import ChatCompletionToolParam
 
@@ -75,7 +77,7 @@ class CodeActAgent(Agent):
         self,
         llm: LLM,
         config: AgentConfig,
-        cwd: str = '/workspace',
+        cwd: str = DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX,
     ) -> None:
         """Initializes a new instance of the CodeActAgent class.
 

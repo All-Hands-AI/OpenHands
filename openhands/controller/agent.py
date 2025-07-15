@@ -3,6 +3,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
+from openhands.core.config.config_utils import DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX
+
 if TYPE_CHECKING:
     from openhands.controller.state.state import State
     from openhands.events.action import Action
@@ -40,7 +42,7 @@ class Agent(ABC):
         self,
         llm: LLM,
         config: AgentConfig,
-        cwd: str = '/workspace',
+        cwd: str = DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX,
     ):
         self.llm = llm
         self.config = config

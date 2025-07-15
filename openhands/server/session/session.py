@@ -13,6 +13,7 @@ from openhands.core.config.condenser_config import (
     ConversationWindowCondenserConfig,
     LLMSummarizingCondenserConfig,
 )
+from openhands.core.config.config_utils import DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX
 from openhands.core.config.mcp_config import MCPConfig, OpenHandsMCPConfigImpl
 from openhands.core.exceptions import MicroagentValidationError
 from openhands.core.logger import OpenHandsLoggerAdapter
@@ -185,7 +186,7 @@ class Session:
                 f' keep_first=4, max_size=80)'
             )
             agent_config.condenser = default_condenser_config
-        cwd = self.config.workspace_mount_path_in_sandbox or '/workspace'
+        cwd = self.config.workspace_mount_path_in_sandbox or DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX
         agent = Agent.get_cls(agent_cls)(llm, agent_config, cwd)
 
         git_provider_tokens = None
