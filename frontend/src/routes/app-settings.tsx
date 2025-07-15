@@ -38,6 +38,10 @@ function AppSettingsScreen() {
     proactiveConversationsSwitchHasChanged,
     setProactiveConversationsSwitchHasChanged,
   ] = React.useState(false);
+  const [
+    solvabilityAnalysisSwitchHasChanged,
+    setSolvabilityAnalysisSwitchHasChanged,
+  ] = React.useState(false);
   const [maxBudgetPerTaskHasChanged, setMaxBudgetPerTaskHasChanged] =
     React.useState(false);
 
@@ -127,7 +131,9 @@ function AppSettingsScreen() {
 
   const checkIfSolvabilityAnalysisSwitchHasChanged = (checked: boolean) => {
     const currentSolvabilityAnalysis = !!settings?.ENABLE_SOLVABILITY_ANALYSIS;
-    setMaxBudgetPerTaskHasChanged(checked !== currentSolvabilityAnalysis);
+    setSolvabilityAnalysisSwitchHasChanged(
+      checked !== currentSolvabilityAnalysis,
+    );
   };
 
   const checkIfMaxBudgetPerTaskHasChanged = (value: string) => {
@@ -141,6 +147,7 @@ function AppSettingsScreen() {
     !analyticsSwitchHasChanged &&
     !soundNotificationsSwitchHasChanged &&
     !proactiveConversationsSwitchHasChanged &&
+    !solvabilityAnalysisSwitchHasChanged &&
     !maxBudgetPerTaskHasChanged;
 
   const shouldBeLoading = !settings || isLoading || isPending;
