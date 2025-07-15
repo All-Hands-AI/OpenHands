@@ -7,7 +7,11 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { mapProvider } from "#/utils/map-provider";
-import { VERIFIED_MODELS, VERIFIED_PROVIDERS, VERIFIED_OPENHANDS_MODELS } from "#/utils/verified-models";
+import {
+  VERIFIED_MODELS,
+  VERIFIED_PROVIDERS,
+  VERIFIED_OPENHANDS_MODELS,
+} from "#/utils/verified-models";
 import { extractModelAndProvider } from "#/utils/extract-model-and-provider";
 
 interface ModelSelectorProps {
@@ -159,11 +163,13 @@ export function ModelSelector({
           }}
         >
           <AutocompleteSection title={t(I18nKey.MODEL_SELECTOR$VERIFIED)}>
-            {getVerifiedModels().filter((model) =>
-              models[selectedProvider || ""]?.models?.includes(model),
-            ).map((model) => (
-              <AutocompleteItem key={model}>{model}</AutocompleteItem>
-            ))}
+            {getVerifiedModels()
+              .filter((model) =>
+                models[selectedProvider || ""]?.models?.includes(model),
+              )
+              .map((model) => (
+                <AutocompleteItem key={model}>{model}</AutocompleteItem>
+              ))}
           </AutocompleteSection>
           {models[selectedProvider || ""]?.models?.some(
             (model) => !getVerifiedModels().includes(model),
