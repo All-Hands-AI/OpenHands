@@ -8,6 +8,7 @@ export const VERIFIED_PROVIDERS = [
 export const VERIFIED_MODELS = [
   "o3-mini-2025-01-31",
   "o3-2025-04-16",
+  "o3",
   "o4-mini-2025-04-16",
   "claude-3-5-sonnet-20241022",
   "claude-3-7-sonnet-20250219",
@@ -60,6 +61,7 @@ export const VERIFIED_OPENHANDS_MODELS = [
   "claude-sonnet-4-20250514",
   "claude-opus-4-20250514",
   "gemini-2.5-pro",
+  "o3",
   "o4-mini",
   "devstral-small-2507",
   "devstral-medium-2507",
