@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useTranslation } from "react-i18next";
-import { FaStar, FaRegStar } from "react-icons/fa";
+import { FaStar } from "react-icons/fa";
 import { cn } from "#/utils/utils";
 import { I18nKey } from "#/i18n/declaration";
 import { useSubmitConversationFeedback } from "#/hooks/mutation/use-submit-conversation-feedback";
