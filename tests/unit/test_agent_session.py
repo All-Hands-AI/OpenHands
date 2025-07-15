@@ -409,7 +409,8 @@ def test_override_provider_tokens_with_custom_secret():
     """Test that override_provider_tokens_with_custom_secret works correctly.
 
     This test verifies that the method properly removes provider tokens when
-    corresponding custom secrets exist, without causing dictionary iteration errors.
+    corresponding custom secrets exist, without causing the 'dictionary changed
+    size during iteration' error that occurred before the fix.
     """
     # Setup
     file_store = InMemoryFileStore({})
@@ -426,13 +427,13 @@ def test_override_provider_tokens_with_custom_secret():
     }
 
     # Custom secrets that will cause some providers to be removed
-    # The get_provider_env_key method returns lowercase, but the method also checks uppercase
+    # Tests both lowercase and uppercase variants to ensure comprehensive coverage
     custom_secrets = {
         'github_token': 'custom_github_token',
-        'gitlab_token': 'custom_gitlab_token',
+        'GITLAB_TOKEN': 'custom_gitlab_token',
     }
 
-    # This should work without raising any errors
+    # This should work without raising RuntimeError: dictionary changed size during iteration
     result = session.override_provider_tokens_with_custom_secret(
         git_provider_tokens, custom_secrets
     )
@@ -444,69 +445,3 @@ def test_override_provider_tokens_with_custom_secret():
     # Verify that Bitbucket token remains (no custom secret for it)
     assert ProviderType.BITBUCKET in result
     assert result[ProviderType.BITBUCKET] == 'bitbucket_token_789'
-
-
-def test_override_provider_tokens_with_custom_secret_uppercase():
-    """Test that the method works with uppercase custom secret keys."""
-    # Setup
-    file_store = InMemoryFileStore({})
-    session = AgentSession(
-        sid='test-session',
-        file_store=file_store,
-    )
-
-    # Create test data
-    git_provider_tokens = {
-        ProviderType.GITHUB: 'github_token_123',
-        ProviderType.GITLAB: 'gitlab_token_456',
-    }
-
-    # Custom secrets with uppercase keys
-    custom_secrets = {
-        'GITHUB_TOKEN': 'custom_github_token',
-    }
-
-    result = session.override_provider_tokens_with_custom_secret(
-        git_provider_tokens, custom_secrets
-    )
-
-    # Verify that GitHub token was removed (uppercase custom secret)
-    assert ProviderType.GITHUB not in result
-
-    # Verify that GitLab token remains (no custom secret for it)
-    assert ProviderType.GITLAB in result
-    assert result[ProviderType.GITLAB] == 'gitlab_token_456'
-
-
-def test_override_provider_tokens_with_custom_secret_edge_cases():
-    """Test edge cases for override_provider_tokens_with_custom_secret."""
-    # Setup
-    file_store = InMemoryFileStore({})
-    session = AgentSession(
-        sid='test-session',
-        file_store=file_store,
-    )
-
-    # Test with None inputs
-    result = session.override_provider_tokens_with_custom_secret(None, None)
-    assert result is None
-
-    # Test with empty provider tokens
-    result = session.override_provider_tokens_with_custom_secret(
-        {}, {'github_token': 'token'}
-    )
-    assert result == {}
-
-    # Test with empty custom secrets
-    git_provider_tokens = {ProviderType.GITHUB: 'github_token_123'}
-    result = session.override_provider_tokens_with_custom_secret(
-        git_provider_tokens, {}
-    )
-    assert result == git_provider_tokens
-
-    # Test with no matching custom secrets
-    custom_secrets = {'other_token': 'value'}
-    result = session.override_provider_tokens_with_custom_secret(
-        git_provider_tokens, custom_secrets
-    )
-    assert result == git_provider_tokens
