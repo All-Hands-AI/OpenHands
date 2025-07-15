@@ -77,34 +77,6 @@ def attempt_vscode_extension_install():
     if not (is_vscode_like or is_windsurf):
         return
 
-    # Skip installation if we're in a VSCode remote terminal
-    # When running in a VSCode terminal on a remote machine via VSCode Remote:
-    # - TERM_PROGRAM might be 'vscode' in both local and remote environments
-    # - We need a simple way to detect remote environments
-
-    # Simple check for remote environment - if any of these are true, we're likely in a remote environment
-    is_remote_vscode = (
-        os.environ.get('OPENVSCODE_SERVER_ROOT') is not None
-        or os.environ.get('VSCODE_PORT') is not None
-        or os.environ.get('SSH_CONNECTION') is not None
-        or os.environ.get('SSH_CLIENT') is not None
-        or os.environ.get('SSH_TTY') is not None
-        or os.path.exists('/.dockerenv')
-        or os.path.exists('/run/.containerenv')
-    )
-
-    if is_remote_vscode:
-        logger.debug(
-            'Detected possible VSCode remote environment. Skipping automatic extension installation.'
-        )
-        print(
-            'INFO: VSCode remote environment detected. Automatic extension installation is skipped.'
-        )
-        print(
-            'INFO: To install the OpenHands extension manually, use the /vscode-extension command.'
-        )
-        return
-
     # 2. Determine editor-specific commands and flags
     if is_windsurf:
         editor_command, editor_name, flag_suffix = 'surf', 'Windsurf', 'windsurf'
@@ -155,7 +127,7 @@ def attempt_vscode_extension_install():
 
     # If all attempts failed, inform the user (but don't create flag - allow retry).
     print(
-        'INFO: Automatic installation failed. Please check the OpenHands documentation for manual installation instructions.'
+        'INFO: Automatic installation failed. You can use the /vscode-extension command to get the extension VSIX file for manual installation.'
     )
     print(
         f'INFO: Will retry installation next time you run OpenHands in {editor_name}.'
