@@ -185,6 +185,7 @@ VERIFIED_OPENHANDS_MODELS = [
     'claude-opus-4-20250514',
     'devstral-small-2507',
     'devstral-medium-2507',
+    'o3',
     'o4-mini',
     'claude-sonnet-4-20250514',
     'gemini-2.5-pro',
