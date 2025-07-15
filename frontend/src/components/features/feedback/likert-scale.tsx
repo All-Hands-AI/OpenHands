@@ -208,7 +208,7 @@ export function LikertScale({
               className={cn("text-xl transition-all", getButtonClass(rating))}
               aria-label={`Rate ${rating} stars`}
             >
-            <FaStar />
+              <FaStar />
             </button>
           ))}
           {/* Show selected reason inline with stars when submitted (only for ratings <= 3) */}
