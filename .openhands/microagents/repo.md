@@ -156,14 +156,19 @@ To add a new LLM model to OpenHands, you need to update multiple files across bo
    - Add the model to the appropriate `VERIFIED_*_MODELS` arrays
    - This ensures the model appears in CLI model selection
 
-3. **Backend LLM Configuration** (`openhands/llm/llm.py`):
+3. **Backend Model List** (`openhands/utils/llm.py`):
+   - **CRITICAL**: Add the model to the `openhands_models` list (lines 57-66) if using OpenHands provider
+   - This is required for the model to appear in the frontend model selector
+   - Format: `'openhands/model-name'` (e.g., `'openhands/o3'`)
+
+4. **Backend LLM Configuration** (`openhands/llm/llm.py`):
    - Add to feature-specific arrays based on model capabilities:
      - `FUNCTION_CALLING_SUPPORTED_MODELS` if the model supports function calling
      - `REASONING_EFFORT_SUPPORTED_MODELS` if the model supports reasoning effort parameters
      - `CACHE_PROMPT_SUPPORTED_MODELS` if the model supports prompt caching
      - `MODELS_WITHOUT_STOP_WORDS` if the model doesn't support stop words
 
-4. **Validation**:
+5. **Validation**:
    - Run backend linting: `pre-commit run --config ./dev_config/python/.pre-commit-config.yaml`
    - Run frontend linting: `cd frontend && npm run lint:fix`
    - Run frontend build: `cd frontend && npm run build`
