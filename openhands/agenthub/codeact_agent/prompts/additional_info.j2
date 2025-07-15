@@ -21,9 +21,6 @@ set any options to allow iframes and CORS requests, and allow the server to
 be accessed from any host (e.g. 0.0.0.0).
 For example, if you are using vite.config.js, you should set server.host and server.allowedHosts to true
 {% endif %}
-{% if runtime_info.cwd %}
-The current working directory is {{ runtime_info.cwd }}
-{% endif %}
 {% if runtime_info.additional_agent_instructions %}
 {{ runtime_info.additional_agent_instructions }}
 {% endif %}
