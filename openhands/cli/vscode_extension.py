@@ -74,23 +74,92 @@ def attempt_vscode_extension_install():
 
     # Skip installation if we're in a VSCode remote terminal
     # When running in a VSCode terminal on a remote machine via VSCode Remote:
-    # - TERM_PROGRAM might be 'tmux' or something else, not 'vscode'
-    # - OPENVSCODE_SERVER_ROOT might be set, indicating we're in a remote VSCode server
-    # - VSCODE_PORT might be set, indicating we're in a remote VSCode server
+    # - TERM_PROGRAM is typically 'vscode' in both local and remote VSCode
+    # - OPENVSCODE_SERVER_ROOT might be set in some remote VSCode server environments
+    # - VSCODE_PORT might be set in some remote VSCode server environments
+    # - SSH_CONNECTION or SSH_CLIENT might be set when connected via SSH
     # - We might be in a container or remote environment where extension installation doesn't make sense
     #
     # Detection logic:
     # 1. If OPENVSCODE_SERVER_ROOT is set, we're definitely in a remote VSCode server
-    # 2. If TERM_PROGRAM is 'vscode' AND VSCODE_PORT is set, we're likely in a remote VSCode terminal
-    #    (local VSCode doesn't typically set VSCODE_PORT in the terminal environment)
-    is_remote_vscode = os.environ.get('OPENVSCODE_SERVER_ROOT') is not None or (
-        is_vscode_like and os.environ.get('VSCODE_PORT') is not None
+    # 2. If VSCODE_PORT is set, we're likely in a remote VSCode server
+    # 3. If SSH_CONNECTION or SSH_CLIENT is set, we're in an SSH session
+    # 4. If we're in a container (check for container-specific env vars)
+    # 5. Try to detect if we're in a remote environment by checking for remote-specific paths
+
+    # Check for SSH connection
+    is_ssh_session = (
+        os.environ.get('SSH_CONNECTION') is not None
+        or os.environ.get('SSH_CLIENT') is not None
+        or os.environ.get('SSH_TTY') is not None
+    )
+
+    # Check for container environment
+    is_container = (
+        os.path.exists('/.dockerenv')
+        or os.path.exists('/run/.containerenv')
+        or os.environ.get('KUBERNETES_SERVICE_HOST') is not None
+    )
+
+    # Check for remote VSCode server
+    is_remote_vscode_server = (
+        os.environ.get('OPENVSCODE_SERVER_ROOT') is not None
+        or os.environ.get('VSCODE_PORT') is not None
+    )
+
+    # Check for remote-specific environment variables
+    remote_env_vars = [
+        'REMOTE_CONTAINERS',
+        'REMOTE_CONTAINERS_IPC',
+        'VSCODE_REMOTE_CONTAINERS_SESSION',
+        'VSCODE_REMOTE',
+        'REMOTE_SSH',
+        'VSCODE_REMOTE_SSH_SESSION',
+        'CODESPACES',
+        'GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN',
+    ]
+    has_remote_env_vars = any(
+        os.environ.get(var) is not None for var in remote_env_vars
+    )
+
+    # For VSCode Remote SSH/Containers, check if we're in a remote environment
+    # but TERM_PROGRAM is still 'vscode'
+    is_remote_vscode = (
+        is_remote_vscode_server
+        or is_ssh_session
+        or is_container
+        or has_remote_env_vars
+        or
+        # Additional check: if we're in VSCode but can't access the local extensions directory
+        (
+            is_vscode_like
+            and not os.path.exists(os.path.expanduser('~/.vscode/extensions'))
+        )
     )
 
     if is_remote_vscode:
-        logger.debug(
-            'Detected VSCode remote environment. Skipping extension installation.'
-        )
+        # Log which detection method triggered
+        if is_remote_vscode_server:
+            logger.debug(
+                'Detected remote VSCode server environment (OPENVSCODE_SERVER_ROOT or VSCODE_PORT).'
+            )
+        elif is_ssh_session:
+            logger.debug(
+                'Detected SSH session (SSH_CONNECTION, SSH_CLIENT, or SSH_TTY).'
+            )
+        elif is_container:
+            logger.debug(
+                'Detected container environment (/.dockerenv, /run/.containerenv, or KUBERNETES_SERVICE_HOST).'
+            )
+        elif has_remote_env_vars:
+            logger.debug('Detected VSCode remote environment variables.')
+        else:
+            logger.debug(
+                'Detected possible remote VSCode environment (missing ~/.vscode/extensions).'
+            )
+
+        logger.debug('Skipping extension installation in remote environment.')
+
         print(
             'INFO: VSCode remote environment detected. Extension installation is skipped when running in a remote terminal.'
         )
