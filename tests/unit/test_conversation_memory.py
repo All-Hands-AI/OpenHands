@@ -518,6 +518,7 @@ def test_process_events_with_empty_environment_info(conversation_memory):
         additional_agent_instructions='',
         microagent_knowledge=[],
         content='Retrieved environment info',
+        cwd='/foo/bar',
     )
 
     initial_user_message = MessageAction(content='Initial user message')

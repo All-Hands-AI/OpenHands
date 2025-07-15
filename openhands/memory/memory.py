@@ -198,6 +198,7 @@ class Memory:
                 conversation_instructions=self.conversation_instructions.content
                 if self.conversation_instructions is not None
                 else '',
+                cwd=self.runtime_info.cwd if self.runtime_info else '',
             )
             return obs
         return None
@@ -344,11 +345,13 @@ class Memory:
                 additional_agent_instructions=runtime.additional_agent_instructions,
                 date=date,
                 custom_secrets_descriptions=custom_secrets_descriptions,
+                cwd=runtime.config.workspace_mount_path_in_sandbox or '/workspace',
             )
         else:
             self.runtime_info = RuntimeInfo(
                 date=date,
                 custom_secrets_descriptions=custom_secrets_descriptions,
+                cwd=runtime.config.workspace_mount_path_in_sandbox or '/workspace',
             )
 
     def set_conversation_instructions(

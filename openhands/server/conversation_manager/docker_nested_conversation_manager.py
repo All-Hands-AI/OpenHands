@@ -498,10 +498,13 @@ class DockerNestedConversationManager(ConversationManager):
         env_vars['SESSION_API_KEY'] = self._get_session_api_key_for_conversation(sid)
         # We need to be able to specify the nested conversation id within the nested runtime
         env_vars['ALLOW_SET_CONVERSATION_ID'] = '1'
-        env_vars['WORKSPACE_BASE'] = '/workspace'
+        env_vars['FILE_STORE_PATH'] = '/workspace/.openhands/file_store'
+        env_vars['WORKSPACE_BASE'] = '/workspace/project'
+        env_vars['WORKSPACE_MOUNT_PATH_IN_SANDBOX'] = '/workspace/project'
         env_vars['SANDBOX_CLOSE_DELAY'] = '0'
         env_vars['SKIP_DEPENDENCY_CHECK'] = '1'
         env_vars['INITIAL_NUM_WARM_SERVERS'] = '1'
+        env_vars['INIT_GIT_IN_EMPTY_WORKSPACE'] = '1'
 
         volumes: list[str | None]
         if not config.sandbox.volumes:
