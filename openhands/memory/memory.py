@@ -198,7 +198,6 @@ class Memory:
                 conversation_instructions=self.conversation_instructions.content
                 if self.conversation_instructions is not None
                 else '',
-                cwd=self.runtime_info.cwd if self.runtime_info else '',
             )
             return obs
         return None

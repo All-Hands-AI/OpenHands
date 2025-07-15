@@ -186,7 +186,10 @@ class Session:
                 f' keep_first=4, max_size=80)'
             )
             agent_config.condenser = default_condenser_config
-        cwd = self.config.workspace_mount_path_in_sandbox or DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX
+        cwd = (
+            self.config.workspace_mount_path_in_sandbox
+            or DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX
+        )
         agent = Agent.get_cls(agent_cls)(llm, agent_config, cwd)
 
         git_provider_tokens = None
