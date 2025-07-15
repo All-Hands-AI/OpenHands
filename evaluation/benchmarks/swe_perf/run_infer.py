@@ -1,6 +1,7 @@
 import asyncio
 import copy
 import json
+import multiprocessing
 import os
 import tempfile
 from typing import Any, Literal
@@ -78,68 +79,25 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageActio
 /workspace/{workspace_dir_name}
 </uploaded_files>
 
-I've uploaded a python code repository in the directory {workspace_dir_name}. Consider the following Python file, which measures the runtime of a specific workload in the `workload()` function:
-
-<workload>
+I’ve uploaded a python code repository in the directory workspace_dir_name. Consider the following performance workload and `workload()` function showing an specific usage of the repository:
+<performance_workload>
 {instance.workload}
-</workload>
+</performance_workload>
 
-Can you help me implement the necessary changes to the repository to optimize this specific workload to run faster and also make sure that existing test cases remain intact and unchanged?
-You should focus only on specifically speeding up the code that runs in the `workload()` function: you do not need to worry about optimizing any setup work that occurs outside of this function.
-Assume that no test cases will be changing: you should make sure that your changes do not result in any tests changing in status.
-Also the development Python environment is already set up for you (i.e., all dependencies already installed), so you don't need to install other packages.
-Your task is to make the minimal changes to non-test files in the /workspace/{workspace_dir_name} directory to ensure that the exact given workload provided becomes faster without breaking the current correctness of the tests.
+Can you help me implement the necessary changes to the repository so that the runtime of the `workload()` function is faster? Basic guidelines:
+1. Your task is to make changes to non-test files (except the performance workload itself) in the /workspace directory to improve the performance of the code running in `workload()`. Please do not try to change the implementation of the performance workload file or the `workload()` function to optimize things: I want you to focus on making the workload AS IS run faster solely by editing the repository containing code that the `workload()` function calls.
+2. Make changes while ensuring the repository is functionally equivalent to the original. For test files related to changes you make in the repository, you can run them via the command `{instance.test_cmd} ...`.
+3. Make sure the `workload()` function improves in performance after you make changes to the repository. The workload can potentially take some time to run: for testing purposes, you can adjust the workload script to use fewer iterations. However, before you finish the task, please make sure to check that the **original performance workload** and `workload()` function runs successfully and the performance is improved.
+4. You may need to rebuild the repo for your changes to take effect before testing. Some rebuilds may take time to run, so be patient with running them.
+5. All the dependencies required to run the `workload()` function are already installed in the environment. You do not and should not need to install any additional dependencies.
 
-Follow these phases to resolve the issue:
+Follow these steps to improve performance:
+1. As a first step, explore the repository structure.
+2. Create a Python script to reproduce the performance workload, execute it with python <workload_file>, and examine the printed output metrics.
+3. Edit the source code of the repository to improve performance. Please do not change the contents of the `workload()` function itself, but focus on optimizing the code in the repository that the original `workload()` function uses.
+4. Rebuild and rerun your script to confirm that performance has improved.
 
-Phase 1. READING: read the workload and reword it in clearer terms
-   1.1 If there are code or config snippets. Express in words any best practices or conventions in them.
-   1.2 Hightlight message errors, method names, variables, file names, stack traces, and technical details.
-   1.3 Explain the problem in clear terms.
-   1.4 Enumerate the steps to reproduce the problem.
-   1.5 Hightlight any best practices to take into account when testing and fixing the issue
-
-Phase 2. RUNNING: install and run the tests on the repository
-   2.1 Follow the readme
-   2.2 Install the environment and anything needed
-   2.2 Iterate and figure out how to run the tests
-
-Phase 3. EXPLORATION: find the files that are related to the problem and possible solutions
-   3.1 Use `grep` to search for relevant methods, classes, keywords and error messages.
-   3.2 Identify all files related to the problem statement.
-   3.3 Propose the methods and files to fix the issue and explain why.
-   3.4 From the possible file locations, select the most likely location to fix the issue.
-
-Phase 4. TEST CREATION: before implementing any fix, create a script to reproduce and verify the issue.
-   4.1 Look at existing test files in the repository to understand the test format/structure.
-   4.2 Create a minimal reproduction script that reproduces the located issue.
-   4.3 Run the reproduction script to confirm you are reproducing the issue.
-   4.4 Adjust the reproduction script as necessary.
-
-Phase 5. FIX ANALYSIS: state clearly the problem and how to fix it
-   5.1 State clearly what the problem is.
-   5.2 State clearly where the problem is located.
-   5.3 State clearly how the test reproduces the issue.
-   5.4 State clearly the best practices to take into account in the fix.
-   5.5 State clearly how to fix the problem.
-
-Phase 6. FIX IMPLEMENTATION: Edit the source code to implement your chosen solution.
-   6.1 Make minimal, focused changes to fix the issue.
-
-Phase 7. VERIFICATION: Test your implementation thoroughly.
-   7.1 Run the workload to verify your solution improves performance.
-   7.2 Add edge cases to any test scripts you write to ensure comprehensive coverage.
-   7.3 Run existing tests related to the modified code to ensure you haven't broken anything.
-
-8. FINAL REVIEW: Carefully re-read the original workload and compare your changes with the base commit {instance['base_commit']}.
-   8.1 Ensure you've fully addressed all requirements.
-   8.2 Run any tests in the repository related to:
-     8.2.1 The issue you are fixing
-     8.2.2 The files you modified
-     8.2.3 The functions you changed
-   8.3 If any tests change in status from before, revise your implementation until the tests return to their original base commit state.
-
-Be thorough in your exploration, testing, and reasoning. It's fine if your thinking process is lengthy - quality and completeness are more important than brevity.
+Please remember that the goal is to improve the performance of the `workload()` function, not to change its implementation. The performance improvement should be achieved by only modifying the code in the repository that the `workload()` function calls.
 """
 
     if RUN_WITH_BROWSING:
@@ -161,6 +119,7 @@ def get_instance_docker_image(
 def get_config(
     instance: pd.Series,
     metadata: EvalMetadata,
+    cpu_group: list[int] | None = None,
 ) -> OpenHandsConfig:
     # We use a different instance image for the each instance of swe-bench eval
     base_container_image = get_instance_docker_image(
@@ -182,6 +141,12 @@ def get_config(
         dataset_name=metadata.dataset,
         instance_id=instance['instance_id'],
     )
+
+    if cpu_group is not None:
+        sandbox_config.docker_runtime_kwargs = {
+            # HACK: Use the cpu_group if provided, otherwise use all available CPUs
+            "cpuset_cpus": ','.join(map(str, cpu_group))
+        }
 
     config = OpenHandsConfig(
         default_agent=metadata.agent_class,
@@ -521,7 +486,11 @@ def process_instance(
     reset_logger: bool = True,
     runtime_failure_count: int = 0,
 ) -> EvalOutput:
-    config = get_config(instance, metadata)
+    # HACK: Use the global and get the cpu group for this worker.
+    global cpu_groups_queue
+    cpu_group = cpu_groups_queue.get()
+
+    config = get_config(instance, metadata, cpu_group=cpu_group)
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
@@ -548,6 +517,8 @@ def process_instance(
 
     runtime = create_runtime(config)
     call_async_from_sync(runtime.connect)
+
+
 
     try:
         initialize_runtime(runtime, instance, metadata)
@@ -580,6 +551,9 @@ def process_instance(
     finally:
         runtime.close()
     # ==========================================
+
+    # HACK: Put the cpu group back to the queue
+    cpu_groups_queue.put(cpu_group)
 
     # ======= Attempt to evaluate the agent's edits =======
     # we use eval_infer.sh to evaluate the agent's edits, not here
@@ -650,6 +624,27 @@ def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
     return dataset
 
 
+def divide_cpus_among_workers(num_workers):
+    current_cpus = list(os.sched_getaffinity(0))
+    num_cpus = len(current_cpus)
+    if num_workers <= 0:
+        raise ValueError("Number of workers must be greater than 0")
+
+    base_cpus_per_worker = num_cpus // num_workers
+    remainder = num_cpus % num_workers
+
+    # Divide this into groups.
+    cpu_groups = [
+        current_cpus[i * base_cpus_per_worker : (i + 1) * base_cpus_per_worker]
+        for i in range(num_workers)
+    ]
+    print(f"Divided {num_cpus} CPUs into {num_workers} groups, each with {base_cpus_per_worker} CPUs.")
+    print(f"CPU groups: {cpu_groups}")
+
+    return cpu_groups
+
+
+
 if __name__ == '__main__':
     parser = get_parser()
     parser.add_argument(
@@ -678,8 +673,12 @@ if __name__ == '__main__':
 
     # dataset = load_dataset(args.dataset, split=args.split)
     # swe_bench_tests = filter_dataset(dataset.to_pandas(), 'instance_id')
-    dataset = load_dataset(
-        args.dataset, split=args.split, use_auth_token=True)
+    dataset = load_dataset(args.dataset, split=args.split)
+
+
+    # Convert dataset to pandas DataFrame if it is not already.
+    if not isinstance(dataset, pd.DataFrame):
+        dataset = dataset.to_pandas()
 
     dataset['version'] = dataset['version'].astype(str)
 
@@ -747,6 +746,13 @@ if __name__ == '__main__':
     ITERATIVE_EVAL_MODE_MAX_ATTEMPTS = int(
         os.environ.get('ITERATIVE_EVAL_MODE_MAX_ATTEMPTS', '3')
     )
+
+    # Get all CPUs and divide into groups of num_workers and put them into a multiprocessing.Queue.
+    cpu_groups = divide_cpus_among_workers(args.eval_num_workers)
+    global cpu_groups_queue
+    cpu_groups_queue = multiprocessing.Queue()
+    for group in cpu_groups:
+        cpu_groups_queue.put(group)
 
     if not ITERATIVE_EVAL_MODE:
         # load the dataset
