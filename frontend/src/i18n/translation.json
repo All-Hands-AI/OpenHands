@@ -10815,22 +10815,6 @@
         "de": "Cache-Schreiben",
         "uk": "Запис у кеш"
     },
-    "FEEDBACK$STAR_RATING": {
-        "en": "Star Rating",
-        "ja": "星評価",
-        "zh-CN": "星级评分",
-        "zh-TW": "星級評分",
-        "ko-KR": "별점",
-        "no": "Stjerne Vurdering",
-        "it": "Valutazione a Stelle",
-        "pt": "Avaliação por Estrelas",
-        "es": "Calificación por Estrellas",
-        "ar": "تقييم النجوم",
-        "fr": "Évaluation par Étoiles",
-        "tr": "Yıldız Değerlendirmesi",
-        "de": "Sternebewertung",
-        "uk": "Зіркова оцінка"
-    },
     "BUTTON$CONFIRM": {
         "en": "Confirm",
         "ja": "確認",
