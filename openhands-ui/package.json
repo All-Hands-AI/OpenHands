@@ -1,13 +1,56 @@
 {
   "name": "@openhands/ui",
-  "version": "0.1.0",
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Mislav Lukach",
+      "email": "mislavlukach@gmail.com"
+    },
+    {
+      "name": "Stephan Psaras",
+      "email": "stephan@all-hands.dev"
+    }
+  ],
+  "version": "1.0.0-beta.4",
   "description": "OpenHands UI Components",
   "keywords": [
     "openhands",
     "ui",
-    "components"
+    "components",
+    "react",
+    "typescript",
+    "tailwindcss"
   ],
   "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./styles": "./dist/index.css"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/All-Hands-AI/OpenHands.git",
+    "directory": "openhands-ui"
+  },
+  "homepage": "https://www.all-hands.dev/",
+  "bugs": {
+    "url": "https://github.com/All-Hands-AI/OpenHands/issues"
+  },
   "devDependencies": {
     "@chromatic-com/storybook": "^4.0.0",
     "@storybook/addon-a11y": "^9.0.12",
@@ -22,27 +65,33 @@
     "@vitest/coverage-v8": "^3.2.4",
     "playwright": "^1.53.1",
     "storybook": "^9.0.12",
+    "typescript": "^5.8.3",
+    "vite-plugin-dts": "^4.5.4",
     "vitest": "^3.2.4"
   },
   "peerDependencies": {
-    "typescript": "^5.8.3"
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
   },
   "dependencies": {
     "@floating-ui/react": "^0.27.12",
     "clsx": "^2.1.1",
-    "react": "^19.1.0",
     "focus-trap-react": "^11.0.4",
     "react-bootstrap-icons": "^1.11.6",
-    "react-dom": "^19.1.0",
     "tailwind-merge": "^3.3.1",
     "tailwind-scrollbar": "^4.0.2",
     "tailwindcss": "^4.1.10"
   },
   "scripts": {
     "dev": "storybook dev -p 6006",
-    "build:sb": "storybook build"
+    "build:sb": "storybook build",
+    "clean": "rm -rf dist",
+    "build": "vite build",
+    "prepublishOnly": "bun run clean && bun run build"
   },
   "engines": {
-    "bun": ">=1.2.0"
+    "bun": ">=1.2.0",
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
   }
 }
