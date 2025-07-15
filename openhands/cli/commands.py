@@ -1,4 +1,5 @@
 import asyncio
+import re
 import shutil
 from pathlib import Path
 
@@ -350,17 +351,26 @@ def handle_vscode_extension_command() -> None:
         print_formatted_text('Please check your internet connection and try again.')
         return
 
+    # Extract version information from the filename if possible
+    version_info = ''
+    if vsix_path.name.startswith('openhands-vscode-'):
+        version_match = re.search(r'openhands-vscode-([0-9.]+)\.vsix', vsix_path.name)
+        if version_match:
+            version_info = f' (version {version_match.group(1)})'
+
     # Create a user-friendly location for the VSIX file
     home_dir = Path.home()
     downloads_dir = home_dir / 'Downloads'
     if not downloads_dir.exists():
         downloads_dir = home_dir
 
-    target_path = downloads_dir / 'openhands-vscode-extension.vsix'
+    target_path = downloads_dir / vsix_path.name
 
     try:
         shutil.copy(vsix_path, target_path)
-        print_formatted_text(f'✅ VSCode extension VSIX file saved to: {target_path}')
+        print_formatted_text(
+            f'✅ VSCode extension{version_info} VSIX file saved to: {target_path}'
+        )
         print_formatted_text('\nTo install the extension:')
         print_formatted_text('1. Open VSCode')
         print_formatted_text('2. Go to Extensions view (Ctrl+Shift+X)')

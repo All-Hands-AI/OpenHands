@@ -243,35 +243,39 @@ def _attempt_bundled_install(editor_command: str, editor_name: str) -> bool:
         bool: True if installation succeeded, False otherwise
     """
     try:
-        vsix_filename = 'openhands-vscode-0.0.1.vsix'
-        with importlib.resources.as_file(
-            importlib.resources.files('openhands').joinpath(
-                'integrations', 'vscode', vsix_filename
-            )
-        ) as vsix_path:
-            if vsix_path.exists():
-                process = subprocess.run(
-                    [
-                        editor_command,
-                        '--install-extension',
-                        str(vsix_path),
-                        '--force',
-                    ],
-                    capture_output=True,
-                    text=True,
-                    check=False,
-                )
-                if process.returncode == 0:
-                    print(
-                        f'INFO: Bundled {editor_name} extension installed successfully.'
+        vscode_dir = importlib.resources.files('openhands').joinpath(
+            'integrations', 'vscode'
+        )
+        with importlib.resources.as_file(vscode_dir) as vscode_path:
+            if vscode_path.exists() and vscode_path.is_dir():
+                # Find any .vsix file in the directory
+                vsix_files = list(vscode_path.glob('*.vsix'))
+                if vsix_files:
+                    vsix_path = vsix_files[0]  # Use the first .vsix file found
+                    process = subprocess.run(
+                        [
+                            editor_command,
+                            '--install-extension',
+                            str(vsix_path),
+                            '--force',
+                        ],
+                        capture_output=True,
+                        text=True,
+                        check=False,
                     )
-                    return True
+                    if process.returncode == 0:
+                        print(
+                            f'INFO: Bundled {editor_name} extension installed successfully.'
+                        )
+                        return True
+                    else:
+                        logger.debug(
+                            f'Bundled .vsix installation failed: {process.stderr.strip()}'
+                        )
                 else:
-                    logger.debug(
-                        f'Bundled .vsix installation failed: {process.stderr.strip()}'
-                    )
+                    logger.debug(f'No .vsix files found in {vscode_path}.')
             else:
-                logger.debug(f'Bundled .vsix not found at {vsix_path}.')
+                logger.debug(f'Bundled vscode directory not found at {vscode_path}.')
     except Exception as e:
         logger.warning(
             f'Could not auto-install extension. Please make sure "code" command is in PATH. Error: {e}'
@@ -287,21 +291,23 @@ def get_vsix_path() -> Optional[Path]:
     Returns:
         Path to the VSIX file, or None if not found
     """
-    # First try to get the bundled VSIX
-    vsix_filename = 'openhands-vscode-0.0.1.vsix'
+    # First try to get the bundled VSIX by looking for any .vsix file in the integrations/vscode directory
     try:
-        with importlib.resources.as_file(
-            importlib.resources.files('openhands').joinpath(
-                'integrations', 'vscode', vsix_filename
-            )
-        ) as vsix_path:
-            if vsix_path.exists():
-                # Create a copy in a temporary location that will persist
-                temp_dir = Path(tempfile.gettempdir()) / 'openhands'
-                temp_dir.mkdir(exist_ok=True)
-                temp_path = temp_dir / vsix_filename
-                shutil.copy(vsix_path, temp_path)
-                return temp_path
+        vscode_dir = importlib.resources.files('openhands').joinpath(
+            'integrations', 'vscode'
+        )
+        with importlib.resources.as_file(vscode_dir) as vscode_path:
+            if vscode_path.exists() and vscode_path.is_dir():
+                # Find any .vsix file in the directory
+                vsix_files = list(vscode_path.glob('*.vsix'))
+                if vsix_files:
+                    vsix_path = vsix_files[0]  # Use the first .vsix file found
+                    # Create a copy in a temporary location that will persist
+                    temp_dir = Path(tempfile.gettempdir()) / 'openhands'
+                    temp_dir.mkdir(exist_ok=True)
+                    temp_path = temp_dir / vsix_path.name
+                    shutil.copy(vsix_path, temp_path)
+                    return temp_path
     except Exception as e:
         logger.debug(f'Could not access bundled VSIX: {e}')
 
