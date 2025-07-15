@@ -4,7 +4,8 @@ import sys
 from pathlib import Path
 
 import toml
-from prompt_toolkit import print_formatted_text
+from prompt_toolkit import HTML, print_formatted_text
+from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.shortcuts import clear, print_container
 from prompt_toolkit.widgets import Frame, TextArea
 
@@ -17,6 +18,7 @@ from openhands.cli.tui import (
     COLOR_GREY,
     UsageMetrics,
     cli_confirm,
+    create_prompt_session,
     display_help,
     display_mcp_errors,
     display_shutdown_message,
@@ -64,11 +66,6 @@ def restart_cli() -> None:
 
 async def prompt_for_restart(config: OpenHandsConfig) -> bool:
     """Prompt user if they want to restart the CLI and return their choice."""
-    from prompt_toolkit import HTML
-    from prompt_toolkit.patch_stdout import patch_stdout
-
-    from openhands.cli.tui import create_prompt_session
-
     print_formatted_text('📝 MCP server configuration updated successfully!')
     print_formatted_text('The changes will take effect after restarting OpenHands.')
 
@@ -551,7 +548,7 @@ async def add_sse_server(config: OpenHandsConfig) -> None:
     config_data['mcp']['sse_servers'].append(server_config)
     save_config_file(config_data)
 
-    print_formatted_text(f'✓ SSE MCP server added: {url}')
+    print_formatted_text(f'✓ SSE MCP server added to ~/.openhands/config.toml: {url}')
 
     # Prompt for restart
     if await prompt_for_restart(config):
@@ -617,7 +614,9 @@ async def add_stdio_server(config: OpenHandsConfig) -> None:
     config_data['mcp']['stdio_servers'].append(server_config)
     save_config_file(config_data)
 
-    print_formatted_text(f'✓ Stdio MCP server added: {name}')
+    print_formatted_text(
+        f'✓ Stdio MCP server added to ~/.openhands/config.toml: {name}'
+    )
 
     # Prompt for restart
     if await prompt_for_restart(config):
@@ -656,7 +655,7 @@ async def add_shttp_server(config: OpenHandsConfig) -> None:
     config_data['mcp']['shttp_servers'].append(server_config)
     save_config_file(config_data)
 
-    print_formatted_text(f'✓ SHTTP MCP server added: {url}')
+    print_formatted_text(f'✓ SHTTP MCP server added to ~/.openhands/config.toml: {url}')
 
     # Prompt for restart
     if await prompt_for_restart(config):

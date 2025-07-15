@@ -697,10 +697,6 @@ class CLIRuntime(Runtime):
         Returns:
             Observation: The result of the MCP tool execution
         """
-        import sys
-
-        from openhands.events.observation import ErrorObservation
-
         # Check if we're on Windows - MCP is disabled on Windows
         if sys.platform == 'win32':
             self.log('info', 'MCP functionality is disabled on Windows')
@@ -942,8 +938,6 @@ class CLIRuntime(Runtime):
         Returns:
             MCPConfig: The MCP configuration with stdio servers and any configured SSE/SHTTP servers
         """
-        import sys
-
         # Check if we're on Windows - MCP is disabled on Windows
         if sys.platform == 'win32':
             self.log('debug', 'MCP is disabled on Windows, returning empty config')
