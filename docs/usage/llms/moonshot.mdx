@@ -1,0 +1,33 @@
+---
+title: Moonshot AI
+description: How to use Moonshot AI models with OpenHands
+---
+
+## Using Moonshot AI with OpenHands
+
+[Moonshot AI](https://platform.moonshot.ai/) offers several powerful models, including Kimi-K2, which has been verified to work well with OpenHands.
+
+### Setup
+
+1. Sign up for an account at [Moonshot AI Platform](https://platform.moonshot.ai/)
+2. Generate an API key from your account settings
+3. Configure OpenHands to use Moonshot AI:
+
+| Setting | Value |
+| --- | --- |
+| LLM Provider | `moonshot` |
+| LLM Model | `moonshot/kimi-k2-0711-preview` |
+| API Key | Your Moonshot API key |
+
+### Recommended Models
+
+- `moonshot/kimi-k2-0711-preview` - Kimi-K2 is Moonshot's most powerful model with a 131K context window, function calling support, and web search capabilities.
+
+### Pricing
+
+Kimi-K2 has the following pricing structure:
+- Input Price (Cache Hit): $0.15 per million tokens
+- Input Price (Cache Miss): $0.60 per million tokens
+- Output Price: $2.50 per million tokens
+
+For the most up-to-date pricing information, please refer to the [Moonshot AI pricing page](https://platform.moonshot.ai/docs/pricing/chat#generation-model-kimi-k2).
