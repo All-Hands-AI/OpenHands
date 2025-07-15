@@ -49,9 +49,9 @@ export const VERIFIED_ANTHROPIC_MODELS = [
 // LiteLLM does not return the compatible Mistral models with the provider, so we list them here to set them ourselves
 // (e.g., they return `devstral-small-2505` instead of `mistral/devstral-small-2505`)
 export const VERIFIED_MISTRAL_MODELS = [
-  "devstral-small-2505",
   "devstral-small-2507",
   "devstral-medium-2507",
+  "devstral-small-2505",
 ];
 
 // LiteLLM does not return the compatible OpenHands models with the provider, so we list them here to set them ourselves
@@ -61,9 +61,9 @@ export const VERIFIED_OPENHANDS_MODELS = [
   "claude-opus-4-20250514",
   "gemini-2.5-pro",
   "o4-mini",
-  "devstral-small-2505",
   "devstral-small-2507",
   "devstral-medium-2507",
+  "devstral-small-2505",
 ];
 
 // Default model for OpenHands provider
