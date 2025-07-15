@@ -1,5 +1,5 @@
 ARG OPENHANDS_BUILD_VERSION=dev
-FROM node:24.3.0-bookworm-slim AS frontend-builder
+FROM node:24.4.0-bookworm-slim AS frontend-builder
 
 WORKDIR /app
 
