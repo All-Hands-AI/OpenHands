@@ -63,7 +63,7 @@ async def test_agent_session_start_with_no_state(mock_agent):
     )
 
     # Create a mock runtime and set it up
-    mock_runtime = MagicMock()
+    mock_runtime = MagicMock(spec=ActionExecutionClient)
 
     # Mock the runtime creation to set up the runtime attribute
     async def mock_create_runtime(*args, **kwargs):
@@ -242,7 +242,7 @@ async def test_metrics_centralization_and_sharing(mock_agent):
     )
 
     # Create a mock runtime and set it up
-    mock_runtime = MagicMock()
+    mock_runtime = MagicMock(spec=ActionExecutionClient)
 
     # Mock the runtime creation to set up the runtime attribute
     async def mock_create_runtime(*args, **kwargs):
@@ -330,7 +330,7 @@ async def test_budget_control_flag_syncs_with_metrics(mock_agent):
     )
 
     # Create a mock runtime and set it up
-    mock_runtime = MagicMock()
+    mock_runtime = MagicMock(spec=ActionExecutionClient)
 
     # Mock the runtime creation to set up the runtime attribute
     async def mock_create_runtime(*args, **kwargs):
