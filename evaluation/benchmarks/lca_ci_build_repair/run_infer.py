@@ -21,12 +21,12 @@ from evaluation.utils.shared import (
     EvalOutput,
     codeact_user_response,
     compatibility_for_eval_history_pairs,
+    filter_dataset,
     get_default_sandbox_config_for_eval,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
     run_evaluation,
-    filter_dataset,
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
@@ -163,7 +163,9 @@ def initialize_runtime(
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     if obs.exit_code != 0:
-        logger.info(f'run_get_datapoint.py failed at {instance["id"]} with {obs.content}')
+        logger.info(
+            f'run_get_datapoint.py failed at {instance["id"]} with {obs.content}'
+        )
     assert obs.exit_code == 0
 
     commandf = 'cat branch_name.txt'
@@ -219,8 +221,10 @@ def complete_runtime(
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     if obs.exit_code != 0:
-        logger.info(f'run_push_datapoint.py at {instance["id"]} ended in non zero with {obs.content}')
-        logger.info(f'Make sure your token has not expired.')
+        logger.info(
+            f'run_push_datapoint.py at {instance["id"]} ended in non zero with {obs.content}'
+        )
+        logger.info('Make sure your token has not expired.')
     # assert obs.exit_code == 0
 
     commandf = 'cat single_output.json'
@@ -383,7 +387,9 @@ if __name__ == '__main__':
     # bench = bench.iloc[0:56]
     # add column instnace_id for compatibility with oh repo, old id column must be kept for lca repo
     bench['instance_id'] = bench['id'].astype(str)
-    bench = filter_dataset(bench, 'instance_id',os.path.dirname(os.path.abspath(__file__)))
+    bench = filter_dataset(
+        bench, 'instance_id', os.path.dirname(os.path.abspath(__file__))
+    )
 
     llm_config = None
     if args.llm_config:

@@ -1,6 +1,7 @@
+import argparse
 import json
 import re
-import argparse
+
 
 def main(input_file, output_file):
     with open(input_file, 'r') as fin:
@@ -15,6 +16,7 @@ def main(input_file, output_file):
                     'fix_patch': data.get('test_result', {}).get('git_patch', '') or '',
                 }
                 fout.write(json.dumps(patch) + '\n')
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

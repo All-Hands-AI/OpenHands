@@ -87,4 +87,3 @@ To summarize the results, run:
 ```bash
 ./evaluation/benchmarks/commit0/scripts/eval_infer.sh [path_to_output.jsonl]
 ```
-

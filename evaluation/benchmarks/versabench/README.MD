@@ -36,17 +36,17 @@ poetry run python ./evaluation/benchmarks/versabench/run_infer.py --split 202506
 
 ## Running Evaluation
 
-You can run 
+You can run
 
 ```bash
 poetry run python ./evaluation/benchmarks/versabench/eval_infer.py \
   --swe [path_to_output.jsonl] \
-  --swt [path_to_output.jsonl] \ 
+  --swt [path_to_output.jsonl] \
   --gaia [path_to_output.jsonl] \
   --lca-ci [path_to_output.jsonl] \
   --multi-swe [path_to_output.jsonl] \
   --commit0 [path_to_output.jsonl] \
-  --the-agent-comapny [path_to_output-folder] 
+  --the-agent-comapny [path_to_output-folder]
 ```
 
 For Multimodal, please run evaluation script independently.

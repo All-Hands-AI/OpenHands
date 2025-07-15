@@ -6,11 +6,8 @@ import asyncio
 import base64
 import json
 import os
-import sys
 import shutil
 import tempfile
-import pandas as pd
-
 
 import yaml
 from browsing import pre_login

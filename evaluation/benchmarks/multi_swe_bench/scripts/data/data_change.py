@@ -1,5 +1,6 @@
-import json
 import argparse
+import json
+
 
 def main(input_file, output_file):
     with (
@@ -34,6 +35,7 @@ def main(input_file, output_file):
 
             output_data = new_item
             fout.write(json.dumps(output_data, ensure_ascii=False) + '\n')
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

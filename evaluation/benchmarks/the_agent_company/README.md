@@ -59,4 +59,3 @@ To summarize the results, run:
 ```bash
 ./evaluation/benchmarks/the_agent_company/scripts/eval_infer.sh [path_to_output_folder]
 ```
-

@@ -1,12 +1,11 @@
 import asyncio
 import json
 import os
-import tempfile
 import re
+import tempfile
 from typing import Any
 
 import pandas as pd
-import toml
 from datasets import load_dataset
 
 import openhands.agenthub
@@ -20,6 +19,7 @@ from evaluation.utils.shared import (
     assert_and_raise,
     check_maximum_retries_exceeded,
     codeact_user_response,
+    filter_dataset,
     get_default_sandbox_config_for_eval,
     get_metrics,
     is_fatal_evaluation_error,
@@ -28,7 +28,6 @@ from evaluation.utils.shared import (
     reset_logger_for_multiprocessing,
     run_evaluation,
     update_llm_config_for_completions_logging,
-    filter_dataset,
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
@@ -750,6 +749,7 @@ def process_instance(
     )
     return output
 
+
 if __name__ == '__main__':
     # pdb.set_trace()
     parser = get_parser()
@@ -773,7 +773,9 @@ if __name__ == '__main__':
     # dataset = load_dataset(args.dataset)
     dataset = load_dataset('json', data_files=args.dataset)
     dataset = dataset[args.split]
-    swe_bench_tests = filter_dataset(dataset.to_pandas(), 'instance_id', os.path.dirname(os.path.abspath(__file__)))
+    swe_bench_tests = filter_dataset(
+        dataset.to_pandas(), 'instance_id', os.path.dirname(os.path.abspath(__file__))
+    )
     logger.info(
         f'Loaded dataset {args.dataset} with split {args.split}: {len(swe_bench_tests)} tasks'
     )
@@ -795,7 +797,9 @@ if __name__ == '__main__':
     if match:
         dataset_description = match.group(0) + '-' + args.split.replace('/', '__')
     else:
-        dataset_description = args.dataset.replace('/', '__') + '-' + args.split.replace('/', '__')
+        dataset_description = (
+            args.dataset.replace('/', '__') + '-' + args.split.replace('/', '__')
+        )
 
     metadata = make_metadata(
         llm_config,

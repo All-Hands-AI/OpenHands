@@ -3,9 +3,9 @@ import json
 import os
 from collections import Counter
 from typing import Any
-import toml
 
 import pandas as pd
+import toml
 from commit0.harness.constants import SPLIT
 from datasets import load_dataset
 
@@ -526,6 +526,7 @@ def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
         logger.info(f'Filtering {len(skip_ids)} tasks from "SKIP_IDS"...')
         return dataset[~dataset[filter_column].isin(skip_ids)]
     return dataset
+
 
 def commit0_setup(dataset: pd.DataFrame, repo_split: str) -> pd.DataFrame:
     """Setup Commit0 dataset based on split type.

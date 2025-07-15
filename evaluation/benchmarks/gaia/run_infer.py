@@ -22,12 +22,12 @@ from evaluation.utils.shared import (
     EvalOutput,
     codeact_user_response,
     compatibility_for_eval_history_pairs,
+    filter_dataset,
     get_default_sandbox_config_for_eval,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
     run_evaluation,
-    filter_dataset,
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
@@ -346,7 +346,9 @@ if __name__ == '__main__':
     )
     gaia_tests = dataset[metadata.data_split].to_pandas()
     gaia_tests.rename(columns={'task_id': 'instance_id'}, inplace=True)
-    gaia_tests = filter_dataset(gaia_tests, 'instance_id', os.path.dirname(os.path.abspath(__file__)))
+    gaia_tests = filter_dataset(
+        gaia_tests, 'instance_id', os.path.dirname(os.path.abspath(__file__))
+    )
 
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     prepared_dataset = prepare_dataset(gaia_tests, output_file, args.eval_n_limit)
