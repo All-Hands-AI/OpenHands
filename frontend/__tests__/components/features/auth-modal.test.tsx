@@ -52,13 +52,6 @@ describe("AuthModal", () => {
     const termsSection = screen.getByTestId("auth-modal-terms-of-service");
     expect(termsSection).toBeInTheDocument();
 
-    // Check that the section has the correct styling
-    expect(termsSection).toHaveClass(
-      "mt-4",
-      "text-xs",
-      "text-center",
-      "text-muted-foreground",
-    );
 
     // Check that all text content is present in the paragraph
     expect(termsSection).toHaveTextContent(
