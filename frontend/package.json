@@ -45,6 +45,7 @@
     "react-router": "^7.6.3",
     "react-syntax-highlighter": "^15.6.1",
     "react-textarea-autosize": "^8.5.9",
+    "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
     "sirv-cli": "^3.0.1",
     "socket.io-client": "^4.8.1",
