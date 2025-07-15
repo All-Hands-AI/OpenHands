@@ -22,6 +22,7 @@ from openhands.events.nested_event_store import NestedEventStore
 from openhands.events.stream import EventStream
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
 from openhands.llm.llm import LLM
+from openhands.runtime import get_runtime_cls
 from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.conversation_manager.conversation_manager import (
@@ -56,12 +57,12 @@ class DockerNestedConversationManager(ConversationManager):
     _runtime_container_image: str | None = None
 
     async def __aenter__(self):
-        # No action is required on startup for this implementation
-        pass
+        runtime_cls = get_runtime_cls(self.config.runtime)
+        runtime_cls.setup(self.config)
 
     async def __aexit__(self, exc_type, exc_value, traceback):
-        # No action is required on shutdown for this implementation
-        pass
+        runtime_cls = get_runtime_cls(self.config.runtime)
+        runtime_cls.teardown(self.config)
 
     async def attach_to_conversation(
         self, sid: str, user_id: str | None = None
@@ -86,9 +87,7 @@ class DockerNestedConversationManager(ConversationManager):
     async def get_running_agent_loops(
         self, user_id: str | None = None, filter_to_sids: set[str] | None = None
     ) -> set[str]:
-        """
-        Get the running agent loops directly from docker.
-        """
+        """Get the running agent loops directly from docker."""
         containers: list[Container] = self.docker_client.containers.list()
         names = (container.name or '' for container in containers)
         conversation_ids = {
@@ -380,8 +379,10 @@ class DockerNestedConversationManager(ConversationManager):
 
     def get_agent_session(self, sid: str):
         """Get the agent session for a given session ID.
+
         Args:
             sid: The session ID.
+
         Returns:
             The agent session, or None if not found.
         """
@@ -497,6 +498,7 @@ class DockerNestedConversationManager(ConversationManager):
         env_vars['SESSION_API_KEY'] = self._get_session_api_key_for_conversation(sid)
         # We need to be able to specify the nested conversation id within the nested runtime
         env_vars['ALLOW_SET_CONVERSATION_ID'] = '1'
+        env_vars['WORKSPACE_BASE'] = '/workspace'
         env_vars['SANDBOX_CLOSE_DELAY'] = '0'
         env_vars['SKIP_DEPENDENCY_CHECK'] = '1'
         env_vars['INITIAL_NUM_WARM_SERVERS'] = '1'
