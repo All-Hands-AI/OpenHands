@@ -71,6 +71,34 @@ def attempt_vscode_extension_install():
             if isinstance(val, str)
         )
     )
+
+    # Skip installation if we're in a VSCode remote terminal
+    # When running in a VSCode terminal on a remote machine via VSCode Remote:
+    # - TERM_PROGRAM might be 'tmux' or something else, not 'vscode'
+    # - OPENVSCODE_SERVER_ROOT might be set, indicating we're in a remote VSCode server
+    # - VSCODE_PORT might be set, indicating we're in a remote VSCode server
+    # - We might be in a container or remote environment where extension installation doesn't make sense
+    #
+    # Detection logic:
+    # 1. If OPENVSCODE_SERVER_ROOT is set, we're definitely in a remote VSCode server
+    # 2. If TERM_PROGRAM is 'vscode' AND VSCODE_PORT is set, we're likely in a remote VSCode terminal
+    #    (local VSCode doesn't typically set VSCODE_PORT in the terminal environment)
+    is_remote_vscode = os.environ.get('OPENVSCODE_SERVER_ROOT') is not None or (
+        is_vscode_like and os.environ.get('VSCODE_PORT') is not None
+    )
+
+    if is_remote_vscode:
+        logger.debug(
+            'Detected VSCode remote environment. Skipping extension installation.'
+        )
+        print(
+            'INFO: VSCode remote environment detected. Extension installation is skipped when running in a remote terminal.'
+        )
+        print(
+            'INFO: To install the OpenHands extension, please use the Extensions view in your local VSCode instance.'
+        )
+        return
+
     if not (is_vscode_like or is_windsurf):
         return
 
