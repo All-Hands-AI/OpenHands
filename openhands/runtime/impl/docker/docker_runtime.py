@@ -376,7 +376,7 @@ class DockerRuntime(ActionExecutionClient):
                 'Mount dir is not set, will not mount the workspace directory to the container'
             )
             volumes = {}  # Empty dict instead of None to satisfy mypy
-        
+
         # Conditionally mount Docker socket if configured
         if self.config.sandbox.mount_docker_socket:
             docker_socket_path = '/var/run/docker.sock'
@@ -384,21 +384,18 @@ class DockerRuntime(ActionExecutionClient):
             if os.path.exists(docker_socket_path):
                 self.log(
                     'warning',
-                    f'Mounting Docker socket to enable Docker-in-Docker functionality. '
-                    f'SECURITY WARNING: This grants container access to the host Docker daemon '
-                    f'with root-equivalent privileges. Use only in trusted environments.',
+                    'Mounting Docker socket to enable Docker-in-Docker functionality. '
+                    'SECURITY WARNING: This grants container access to the host Docker daemon '
+                    'with root-equivalent privileges. Use only in trusted environments.',
                 )
-                volumes[docker_socket_path] = {
-                    'bind': docker_socket_path,
-                    'mode': 'rw'
-                }
+                volumes[docker_socket_path] = {'bind': docker_socket_path, 'mode': 'rw'}
             else:
                 self.log(
                     'warning',
                     f'Docker socket mounting requested but {docker_socket_path} not found on host. '
                     f'Docker-in-Docker functionality will not be available.',
                 )
-        
+
         self.log(
             'debug',
             f'Sandbox workspace: {self.config.workspace_mount_path_in_sandbox}',
