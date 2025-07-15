@@ -107,7 +107,7 @@ class LLMRegistry:
         logger.info(f'total metrics\n\n{total_metrics}')
         return total_metrics
 
-    def get_metrics_for_registry(self, service_id: str) -> Metrics:
+    def get_metrics_for_service(self, service_id: str) -> Metrics:
         if service_id not in self.service_to_llm:
             raise Exception(f'LLM service does not exist {service_id}')
 
