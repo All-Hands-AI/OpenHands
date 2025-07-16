@@ -34,10 +34,7 @@ export const useAuthCallback = () => {
     const loginMethod = searchParams.get("login_method");
 
     // Set the login method if it's valid
-    if (
-      loginMethod === LoginMethod.GITHUB ||
-      loginMethod === LoginMethod.GITLAB
-    ) {
+    if (Object.values(LoginMethod).includes(loginMethod as LoginMethod)) {
       setLoginMethod(loginMethod as LoginMethod);
 
       // Clean up the URL by removing the login_method parameter

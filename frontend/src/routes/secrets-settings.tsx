@@ -13,6 +13,7 @@ import { BrandButton } from "#/components/features/settings/brand-button";
 import { ConfirmationModal } from "#/components/shared/modals/confirmation-modal";
 import { GetSecretsResponse } from "#/api/secrets-service.types";
 import { useUserProviders } from "#/hooks/use-user-providers";
+import { I18nKey } from "#/i18n/declaration";
 import { useConfig } from "#/hooks/query/use-config";
 
 function SecretsSettingsScreen() {
@@ -84,37 +85,19 @@ function SecretsSettingsScreen() {
       )}
 
       {shouldRenderConnectToGitButton && (
-        <Link to="/settings/git" data-testid="connect-git-button" type="button">
+        <Link
+          to="/settings/integrations"
+          data-testid="connect-git-button"
+          type="button"
+        >
           <BrandButton type="button" variant="secondary">
-            Connect a Git provider to manage secrets
+            {t(I18nKey.SECRETS$CONNECT_GIT_PROVIDER)}
           </BrandButton>
         </Link>
       )}
 
       {secrets?.length === 0 && view === "list" && (
         <p data-testid="no-secrets-message">{t("SECRETS$NO_SECRETS_FOUND")}</p>
-      )}
-
-      {view === "list" && (
-        <table className="w-full">
-          <tbody>
-            {secrets?.map((secret) => (
-              <SecretListItem
-                key={secret.name}
-                title={secret.name}
-                description={secret.description}
-                onEdit={() => {
-                  setView("edit-secret-form");
-                  setSelectedSecret(secret.name);
-                }}
-                onDelete={() => {
-                  setConfirmationModalIsVisible(true);
-                  setSelectedSecret(secret.name);
-                }}
-              />
-            ))}
-          </tbody>
-        </table>
       )}
 
       {!shouldRenderConnectToGitButton && view === "list" && (
@@ -127,6 +110,43 @@ function SecretsSettingsScreen() {
         >
           {t("SECRETS$ADD_NEW_SECRET")}
         </BrandButton>
+      )}
+
+      {view === "list" && (
+        <div className="border border-tertiary rounded-md overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-base-tertiary">
+              <tr className="flex w-full items-center">
+                <th className="w-1/4 text-left p-3 text-sm font-medium">
+                  {t(I18nKey.SETTINGS$NAME)}
+                </th>
+                <th className="w-1/2 text-left p-3 text-sm font-medium">
+                  {t(I18nKey.SECRETS$DESCRIPTION)}
+                </th>
+                <th className="w-1/4 text-right p-3 text-sm font-medium">
+                  {t(I18nKey.SETTINGS$ACTIONS)}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {secrets?.map((secret) => (
+                <SecretListItem
+                  key={secret.name}
+                  title={secret.name}
+                  description={secret.description}
+                  onEdit={() => {
+                    setView("edit-secret-form");
+                    setSelectedSecret(secret.name);
+                  }}
+                  onDelete={() => {
+                    setConfirmationModalIsVisible(true);
+                    setSelectedSecret(secret.name);
+                  }}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {(view === "add-secret-form" || view === "edit-secret-form") && (

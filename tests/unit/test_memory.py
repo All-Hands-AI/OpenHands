@@ -111,7 +111,7 @@ async def test_memory_on_event_exception_handling(memory, event_stream, mock_age
         )
 
         # Verify that the controller's last error was set
-        assert state.iteration == 0
+        assert state.iteration_flag.current_value == 0
         assert state.agent_state == AgentState.ERROR
         assert state.last_error == 'Error: Exception'
 
@@ -142,7 +142,7 @@ async def test_memory_on_workspace_context_recall_exception_handling(
         )
 
         # Verify that the controller's last error was set
-        assert state.iteration == 0
+        assert state.iteration_flag.current_value == 0
         assert state.agent_state == AgentState.ERROR
         assert state.last_error == 'Error: Exception'
 
@@ -389,7 +389,7 @@ async def test_custom_secrets_descriptions():
     }
 
     # Set runtime info with custom secrets
-    memory.set_runtime_info(mock_runtime, custom_secrets)
+    memory.set_runtime_info(mock_runtime, custom_secrets, '/workspace')
 
     # Set repository info
     memory.set_repository_info('test-owner/test-repo', '/workspace/test-repo')
@@ -448,6 +448,7 @@ def test_custom_secrets_descriptions_serialization(prompt_dir):
         available_hosts={'test-host.example.com': 8080},
         additional_agent_instructions='Test instructions',
         custom_secrets_descriptions=custom_secrets,
+        working_dir='/workspace',
     )
 
     # Create a RepositoryInfo

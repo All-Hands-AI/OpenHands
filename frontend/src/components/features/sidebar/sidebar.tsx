@@ -14,6 +14,7 @@ import { ConversationPanelWrapper } from "../conversation-panel/conversation-pan
 import { useLogout } from "#/hooks/mutation/use-logout";
 import { useConfig } from "#/hooks/query/use-config";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
+import { MicroagentManagementButton } from "#/components/shared/buttons/microagent-management-button";
 
 export function Sidebar() {
   const location = useLocation();
@@ -35,6 +36,9 @@ export function Sidebar() {
   // TODO: Remove HIDE_LLM_SETTINGS check once released
   const shouldHideLlmSettings =
     config?.FEATURE_FLAGS.HIDE_LLM_SETTINGS && config?.APP_MODE === "saas";
+
+  const shouldHideMicroagentManagement =
+    config?.FEATURE_FLAGS.HIDE_MICROAGENT_MANAGEMENT;
 
   React.useEffect(() => {
     if (shouldHideLlmSettings) return;
@@ -69,16 +73,26 @@ export function Sidebar() {
             <div className="flex items-center justify-center">
               <AllHandsLogoButton />
             </div>
-            <NewProjectButton />
+            <NewProjectButton disabled={settings?.EMAIL_VERIFIED === false} />
             <ConversationPanelButton
               isOpen={conversationPanelIsOpen}
-              onClick={() => setConversationPanelIsOpen((prev) => !prev)}
+              onClick={() =>
+                settings?.EMAIL_VERIFIED === false
+                  ? null
+                  : setConversationPanelIsOpen((prev) => !prev)
+              }
+              disabled={settings?.EMAIL_VERIFIED === false}
             />
+            {!shouldHideMicroagentManagement && (
+              <MicroagentManagementButton
+                disabled={settings?.EMAIL_VERIFIED === false}
+              />
+            )}
           </div>
 
           <div className="flex flex-row md:flex-col md:items-center gap-[26px] md:mb-4">
-            <DocsButton />
-            <SettingsButton />
+            <DocsButton disabled={settings?.EMAIL_VERIFIED === false} />
+            <SettingsButton disabled={settings?.EMAIL_VERIFIED === false} />
             <UserActions
               user={
                 user.data ? { avatar_url: user.data.avatar_url } : undefined

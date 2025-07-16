@@ -1,3 +1,4 @@
+import os
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -27,6 +28,9 @@ class MockUserAuth(UserAuth):
     async def get_user_id(self) -> str | None:
         return 'test-user'
 
+    async def get_user_email(self) -> str | None:
+        return 'test-email@whatever.com'
+
     async def get_access_token(self) -> SecretStr | None:
         return SecretStr('test-token')
 
@@ -51,6 +55,8 @@ class MockUserAuth(UserAuth):
 def test_client():
     # Create a test client
     with (
+        patch.dict(os.environ, {'SESSION_API_KEY': ''}, clear=False),
+        patch('openhands.server.dependencies._SESSION_API_KEY', None),
         patch(
             'openhands.server.user_auth.user_auth.UserAuth.get_instance',
             return_value=MockUserAuth(),

@@ -20,21 +20,32 @@ from openhands.events.observation.commands import (
     CmdOutputMetadata,
     CmdOutputObservation,
 )
+from openhands.runtime.utils.bash_constants import TIMEOUT_MESSAGE_TEMPLATE
+from openhands.runtime.utils.windows_exceptions import DotNetMissingError
 from openhands.utils.shutdown_listener import should_continue
 
-pythonnet.load('coreclr')
-logger.info("Successfully called pythonnet.load('coreclr')")
-
-# Now that pythonnet is initialized, import clr and System
 try:
-    import clr
+    pythonnet.load('coreclr')
+    logger.info("Successfully called pythonnet.load('coreclr')")
 
-    logger.debug(f'Imported clr module from: {clr.__file__}')
-    # Load System assembly *after* pythonnet is initialized
-    clr.AddReference('System')
-    import System
-except Exception as clr_sys_ex:
-    raise RuntimeError(f'FATAL: Failed to import clr or System. Error: {clr_sys_ex}')
+    # Now that pythonnet is initialized, import clr and System
+    try:
+        import clr
+
+        logger.debug(f'Imported clr module from: {clr.__file__}')
+        # Load System assembly *after* pythonnet is initialized
+        clr.AddReference('System')
+        import System
+    except Exception as clr_sys_ex:
+        error_msg = 'Failed to import .NET components.'
+        details = str(clr_sys_ex)
+        logger.error(f'{error_msg} Details: {details}')
+        raise DotNetMissingError(error_msg, details)
+except Exception as coreclr_ex:
+    error_msg = 'Failed to load CoreCLR.'
+    details = str(coreclr_ex)
+    logger.error(f'{error_msg} Details: {details}')
+    raise DotNetMissingError(error_msg, details)
 
 # Attempt to load the PowerShell SDK assembly only if clr and System loaded
 ps_sdk_path = None
@@ -77,9 +88,10 @@ try:
         RunspaceState,
     )
 except Exception as e:
-    raise RuntimeError(
-        f'FATAL: Failed to load PowerShell SDK components. Error: {e}. Check pythonnet installation and .NET Runtime compatibility. Path searched: {ps_sdk_path}'
-    )
+    error_msg = 'Failed to load PowerShell SDK components.'
+    details = f'{str(e)} (Path searched: {ps_sdk_path})'
+    logger.error(f'{error_msg} Details: {details}')
+    raise DotNetMissingError(error_msg, details)
 
 
 class WindowsPowershellSession:
@@ -114,9 +126,11 @@ class WindowsPowershellSession:
 
         if PowerShell is None:  # Check if SDK loading failed during module import
             # Logged critical error during import, just raise here to prevent instantiation
-            raise RuntimeError(
-                'PowerShell SDK (System.Management.Automation.dll) could not be loaded. Cannot initialize WindowsPowershellSession.'
+            error_msg = (
+                'PowerShell SDK (System.Management.Automation.dll) could not be loaded.'
             )
+            logger.error(error_msg)
+            raise DotNetMissingError(error_msg)
 
         self.work_dir = os.path.abspath(work_dir)
         self.username = username
@@ -559,9 +573,7 @@ class WindowsPowershellSession:
             else:
                 metadata.suffix = (
                     f'\n[The command timed out after {timeout_seconds} seconds. '
-                    "You may wait longer to see additional output by sending empty command '', "
-                    'send other commands to interact with the current process, '
-                    'or send keys to interrupt/kill the command.]'
+                    f'{TIMEOUT_MESSAGE_TEMPLATE}]'
                 )
 
             return CmdOutputObservation(
@@ -1331,9 +1343,7 @@ class WindowsPowershellSession:
             # Align suffix with bash.py timeout message
             suffix = (
                 f'\n[The command timed out after {timeout_seconds} seconds. '
-                "You may wait longer to see additional output by sending empty command '', "
-                'send other commands to interact with the current process, '
-                'or send keys to interrupt/kill the command.]'
+                f'{TIMEOUT_MESSAGE_TEMPLATE}]'
             )
         elif shutdown_requested:
             # Align suffix with bash.py equivalent (though bash.py might not have specific shutdown message)

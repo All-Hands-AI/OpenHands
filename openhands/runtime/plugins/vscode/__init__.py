@@ -62,10 +62,11 @@ class VSCodePlugin(Plugin):
                 f'Port {self.vscode_port} is not available. VSCode plugin will be disabled.'
             )
             return
+        workspace_path = os.getenv('WORKSPACE_MOUNT_PATH_IN_SANDBOX', '/workspace')
         cmd = (
             f"su - {username} -s /bin/bash << 'EOF'\n"
             f'sudo chown -R {username}:{username} /openhands/.openvscode-server\n'
-            'cd /workspace\n'
+            f'cd {workspace_path}\n'
             f'exec /openhands/.openvscode-server/bin/openvscode-server --host 0.0.0.0 --connection-token {self.vscode_connection_token} --port {self.vscode_port} --disable-workspace-trust\n'
             'EOF'
         )
@@ -103,7 +104,8 @@ class VSCodePlugin(Plugin):
         settings_path = current_dir / 'settings.json'
 
         # Create the .vscode directory in the workspace if it doesn't exist
-        vscode_dir = Path('/workspace/.vscode')
+        workspace_dir = Path(os.getenv('WORKSPACE_BASE', '/workspace'))
+        vscode_dir = workspace_dir / '.vscode'
         vscode_dir.mkdir(parents=True, exist_ok=True)
 
         # Copy the settings.json file to the .vscode directory

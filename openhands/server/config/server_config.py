@@ -12,6 +12,8 @@ class ServerConfig(ServerConfigInterface):
     github_client_id = os.environ.get('GITHUB_APP_CLIENT_ID', '')
     enable_billing = os.environ.get('ENABLE_BILLING', 'false') == 'true'
     hide_llm_settings = os.environ.get('HIDE_LLM_SETTINGS', 'false') == 'true'
+    # This config is used to hide the microagent management page from the users for now. We will remove this once we release the new microagent management page.
+    hide_microagent_management = True
     settings_store_class: str = (
         'openhands.storage.settings.file_settings_store.FileSettingsStore'
     )
@@ -42,18 +44,19 @@ class ServerConfig(ServerConfigInterface):
             'FEATURE_FLAGS': {
                 'ENABLE_BILLING': self.enable_billing,
                 'HIDE_LLM_SETTINGS': self.hide_llm_settings,
+                'HIDE_MICROAGENT_MANAGEMENT': self.hide_microagent_management,
             },
         }
 
         return config
 
 
-def load_server_config():
+def load_server_config() -> ServerConfig:
     config_cls = os.environ.get('OPENHANDS_CONFIG_CLS', None)
     logger.info(f'Using config class {config_cls}')
 
     server_config_cls = get_impl(ServerConfig, config_cls)
-    server_config = server_config_cls()
+    server_config: ServerConfig = server_config_cls()
     server_config.verify_config()
 
     return server_config

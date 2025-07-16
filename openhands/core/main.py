@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Callable, Protocol
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
+import openhands.cli.suppress_warnings  # noqa: F401
 from openhands.controller.agent import Agent
 from openhands.controller.replay import ReplayManager
 from openhands.controller.state.state import State
@@ -129,22 +130,20 @@ async def run_controller(
             selected_repository=config.sandbox.selected_repo,
             repo_directory=repo_directory,
             conversation_instructions=conversation_instructions,
+            working_dir=config.workspace_mount_path_in_sandbox,
         )
 
     # Add MCP tools to the agent
     if agent.config.enable_mcp:
         # Add OpenHands' MCP server by default
-        openhands_mcp_server, openhands_mcp_stdio_servers = (
+        _, openhands_mcp_stdio_servers = (
             OpenHandsMCPConfigImpl.create_default_mcp_server_config(
                 config.mcp_host, config, None
             )
         )
-        # FIXME: OpenHands' SSE server may not be running when headless mode is started
-        # if openhands_mcp_server:
-        #     config.mcp.sse_servers.append(openhands_mcp_server)
-        config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
+        runtime.config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
 
-        await add_mcp_tools_to_agent(agent, runtime, memory, config)
+        await add_mcp_tools_to_agent(agent, runtime, memory)
 
     replay_events: list[Event] | None = None
     if config.replay_trajectory_path:

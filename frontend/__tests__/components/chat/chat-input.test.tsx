@@ -193,9 +193,9 @@ describe("ChatInput", () => {
 
   it("should handle image paste correctly", () => {
     const onSubmit = vi.fn();
-    const onImagePaste = vi.fn();
+    const onFilesPaste = vi.fn();
 
-    render(<ChatInput onSubmit={onSubmit} onImagePaste={onImagePaste} />);
+    render(<ChatInput onSubmit={onSubmit} onFilesPaste={onFilesPaste} />);
 
     const input = screen.getByTestId("chat-input").querySelector("textarea");
     expect(input).toBeTruthy();
@@ -213,8 +213,8 @@ describe("ChatInput", () => {
       },
     });
 
-    // Verify image paste was handled
-    expect(onImagePaste).toHaveBeenCalledWith([file]);
+    // Verify file paste was handled
+    expect(onFilesPaste).toHaveBeenCalledWith([file]);
   });
 
   it("should use the default maxRows value", () => {

@@ -12,6 +12,7 @@ from openhands.controller.state.state import State
 from openhands.core.config import (
     OpenHandsConfig,
 )
+from openhands.core.config.config_utils import DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.event import Event
@@ -107,8 +108,12 @@ def initialize_repository_for_runtime(
         gitlab_token = SecretStr(os.environ['GITLAB_TOKEN'])
         provider_tokens[ProviderType.GITLAB] = ProviderToken(token=gitlab_token)
 
+    if 'BITBUCKET_TOKEN' in os.environ:
+        bitbucket_token = SecretStr(os.environ['BITBUCKET_TOKEN'])
+        provider_tokens[ProviderType.BITBUCKET] = ProviderToken(token=bitbucket_token)
+
     secret_store = (
-        UserSecrets(provider_tokens=provider_tokens) if provider_tokens else None
+        UserSecrets(provider_tokens=provider_tokens) if provider_tokens else None  # type: ignore[arg-type]
     )
     immutable_provider_tokens = secret_store.provider_tokens if secret_store else None
 
@@ -136,6 +141,7 @@ def create_memory(
     repo_directory: str | None = None,
     status_callback: Callable | None = None,
     conversation_instructions: str | None = None,
+    working_dir: str = DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX,
 ) -> Memory:
     """Create a memory for the agent to use.
 
@@ -158,7 +164,7 @@ def create_memory(
 
     if runtime:
         # sets available hosts
-        memory.set_runtime_info(runtime, {})
+        memory.set_runtime_info(runtime, {}, working_dir)
 
         # loads microagents from repo/.openhands/microagents
         microagents: list[BaseMicroagent] = runtime.get_microagents_from_selected_repo(
@@ -206,8 +212,8 @@ def create_controller(
 
     controller = AgentController(
         agent=agent,
-        max_iterations=config.max_iterations,
-        max_budget_per_task=config.max_budget_per_task,
+        iteration_delta=config.max_iterations,
+        budget_per_task_delta=config.max_budget_per_task,
         agent_to_llm_config=config.get_agent_to_llm_config_map(),
         event_stream=event_stream,
         initial_state=initial_state,

@@ -41,19 +41,6 @@ describe("UploadImageInput", () => {
     expect(onUploadMock).toHaveBeenNthCalledWith(1, files);
   });
 
-  it("should not upload any file that is not an image", async () => {
-    render(<UploadImageInput onUpload={onUploadMock} />);
-
-    const file = new File(["(⌐□_□)"], "chucknorris.txt", {
-      type: "text/plain",
-    });
-    const input = screen.getByTestId("upload-image-input");
-
-    await user.upload(input, file);
-
-    expect(onUploadMock).not.toHaveBeenCalled();
-  });
-
   it("should render custom labels", () => {
     const { rerender } = render(<UploadImageInput onUpload={onUploadMock} />);
     expect(screen.getByTestId("default-label")).toBeInTheDocument();

@@ -45,11 +45,12 @@ class TestHandleCommands:
     async def test_handle_exit_command(self, mock_handle_exit, mock_dependencies):
         mock_handle_exit.return_value = True
 
-        close_repl, reload_microagents, new_session = await handle_commands(
+        close_repl, reload_microagents, new_session, _ = await handle_commands(
             '/exit', **mock_dependencies
         )
 
         mock_handle_exit.assert_called_once_with(
+            mock_dependencies['config'],
             mock_dependencies['event_stream'],
             mock_dependencies['usage_metrics'],
             mock_dependencies['sid'],
@@ -63,7 +64,7 @@ class TestHandleCommands:
     async def test_handle_help_command(self, mock_handle_help, mock_dependencies):
         mock_handle_help.return_value = (False, False, False)
 
-        close_repl, reload_microagents, new_session = await handle_commands(
+        close_repl, reload_microagents, new_session, _ = await handle_commands(
             '/help', **mock_dependencies
         )
 
@@ -77,7 +78,7 @@ class TestHandleCommands:
     async def test_handle_init_command(self, mock_handle_init, mock_dependencies):
         mock_handle_init.return_value = (True, True)
 
-        close_repl, reload_microagents, new_session = await handle_commands(
+        close_repl, reload_microagents, new_session, _ = await handle_commands(
             '/init', **mock_dependencies
         )
 
@@ -95,7 +96,7 @@ class TestHandleCommands:
     async def test_handle_status_command(self, mock_handle_status, mock_dependencies):
         mock_handle_status.return_value = (False, False, False)
 
-        close_repl, reload_microagents, new_session = await handle_commands(
+        close_repl, reload_microagents, new_session, _ = await handle_commands(
             '/status', **mock_dependencies
         )
 
@@ -111,11 +112,12 @@ class TestHandleCommands:
     async def test_handle_new_command(self, mock_handle_new, mock_dependencies):
         mock_handle_new.return_value = (True, True)
 
-        close_repl, reload_microagents, new_session = await handle_commands(
+        close_repl, reload_microagents, new_session, _ = await handle_commands(
             '/new', **mock_dependencies
         )
 
         mock_handle_new.assert_called_once_with(
+            mock_dependencies['config'],
             mock_dependencies['event_stream'],
             mock_dependencies['usage_metrics'],
             mock_dependencies['sid'],
@@ -129,7 +131,7 @@ class TestHandleCommands:
     async def test_handle_settings_command(
         self, mock_handle_settings, mock_dependencies
     ):
-        close_repl, reload_microagents, new_session = await handle_commands(
+        close_repl, reload_microagents, new_session, _ = await handle_commands(
             '/settings', **mock_dependencies
         )
 
@@ -145,7 +147,7 @@ class TestHandleCommands:
     async def test_handle_unknown_command(self, mock_dependencies):
         user_message = 'Hello, this is not a command'
 
-        close_repl, reload_microagents, new_session = await handle_commands(
+        close_repl, reload_microagents, new_session, _ = await handle_commands(
             user_message, **mock_dependencies
         )
 
@@ -166,6 +168,7 @@ class TestHandleExitCommand:
     @patch('openhands.cli.commands.cli_confirm')
     @patch('openhands.cli.commands.display_shutdown_message')
     def test_exit_with_confirmation(self, mock_display_shutdown, mock_cli_confirm):
+        config = MagicMock(spec=OpenHandsConfig)
         event_stream = MagicMock(spec=EventStream)
         usage_metrics = MagicMock(spec=UsageMetrics)
         sid = 'test-session-id'
@@ -174,7 +177,7 @@ class TestHandleExitCommand:
         mock_cli_confirm.return_value = 0  # First option, which is "Yes, proceed"
 
         # Call the function under test
-        result = handle_exit_command(event_stream, usage_metrics, sid)
+        result = handle_exit_command(config, event_stream, usage_metrics, sid)
 
         # Verify correct behavior
         mock_cli_confirm.assert_called_once()
@@ -191,6 +194,7 @@ class TestHandleExitCommand:
     @patch('openhands.cli.commands.cli_confirm')
     @patch('openhands.cli.commands.display_shutdown_message')
     def test_exit_without_confirmation(self, mock_display_shutdown, mock_cli_confirm):
+        config = MagicMock(spec=OpenHandsConfig)
         event_stream = MagicMock(spec=EventStream)
         usage_metrics = MagicMock(spec=UsageMetrics)
         sid = 'test-session-id'
@@ -199,7 +203,7 @@ class TestHandleExitCommand:
         mock_cli_confirm.return_value = 1  # Second option, which is "No, dismiss"
 
         # Call the function under test
-        result = handle_exit_command(event_stream, usage_metrics, sid)
+        result = handle_exit_command(config, event_stream, usage_metrics, sid)
 
         # Verify correct behavior
         mock_cli_confirm.assert_called_once()
@@ -230,6 +234,7 @@ class TestHandleNewCommand:
     @patch('openhands.cli.commands.cli_confirm')
     @patch('openhands.cli.commands.display_shutdown_message')
     def test_new_with_confirmation(self, mock_display_shutdown, mock_cli_confirm):
+        config = MagicMock(spec=OpenHandsConfig)
         event_stream = MagicMock(spec=EventStream)
         usage_metrics = MagicMock(spec=UsageMetrics)
         sid = 'test-session-id'
@@ -238,7 +243,9 @@ class TestHandleNewCommand:
         mock_cli_confirm.return_value = 0  # First option, which is "Yes, proceed"
 
         # Call the function under test
-        close_repl, new_session = handle_new_command(event_stream, usage_metrics, sid)
+        close_repl, new_session = handle_new_command(
+            config, event_stream, usage_metrics, sid
+        )
 
         # Verify correct behavior
         mock_cli_confirm.assert_called_once()
@@ -256,6 +263,7 @@ class TestHandleNewCommand:
     @patch('openhands.cli.commands.cli_confirm')
     @patch('openhands.cli.commands.display_shutdown_message')
     def test_new_without_confirmation(self, mock_display_shutdown, mock_cli_confirm):
+        config = MagicMock(spec=OpenHandsConfig)
         event_stream = MagicMock(spec=EventStream)
         usage_metrics = MagicMock(spec=UsageMetrics)
         sid = 'test-session-id'
@@ -264,7 +272,9 @@ class TestHandleNewCommand:
         mock_cli_confirm.return_value = 1  # Second option, which is "No, dismiss"
 
         # Call the function under test
-        close_repl, new_session = handle_new_command(event_stream, usage_metrics, sid)
+        close_repl, new_session = handle_new_command(
+            config, event_stream, usage_metrics, sid
+        )
 
         # Verify correct behavior
         mock_cli_confirm.assert_called_once()
@@ -292,7 +302,7 @@ class TestHandleInitCommand:
         )
 
         # Verify correct behavior
-        mock_init_repository.assert_called_once_with(current_dir)
+        mock_init_repository.assert_called_once_with(config, current_dir)
         event_stream.add_event.assert_called_once()
         # Check event is the right type
         args, kwargs = event_stream.add_event.call_args
@@ -320,7 +330,7 @@ class TestHandleInitCommand:
         )
 
         # Verify correct behavior
-        mock_init_repository.assert_called_once_with(current_dir)
+        mock_init_repository.assert_called_once_with(config, current_dir)
         event_stream.add_event.assert_not_called()
 
         assert close_repl is False

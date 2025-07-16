@@ -1,9 +1,12 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@plugin '../hero.ts';
+@config "../tailwind.config.js";
+@source '../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
+
 
 .button-base {
-  @apply bg-tertiary border border-neutral-600 rounded;
+  @apply bg-tertiary border border-neutral-600 rounded-xs;
 }
 
 .skeleton {

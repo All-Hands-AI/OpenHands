@@ -101,7 +101,7 @@ def runtime(temp_dir):
 
 def mock_repo_and_patch(monkeypatch, provider=ProviderType.GITHUB, is_public=True):
     repo = Repository(
-        id=123, full_name='owner/repo', git_provider=provider, is_public=is_public
+        id='123', full_name='owner/repo', git_provider=provider, is_public=is_public
     )
 
     async def mock_verify_repo_provider(*_args, **_kwargs):
@@ -219,30 +219,10 @@ async def test_export_latest_git_provider_tokens_token_update(runtime):
 
 
 @pytest.mark.asyncio
-async def test_clone_or_init_repo_no_repo_with_user_id(temp_dir):
-    """Test that git init is run when no repository is selected and user_id is set"""
+async def test_clone_or_init_repo_no_repo_init_git_in_empty_workspace(temp_dir):
+    """Test that git init is run when no repository is selected and init_git_in_empty_workspace"""
     config = OpenHandsConfig()
-    file_store = get_file_store('local', temp_dir)
-    event_stream = EventStream('abc', file_store)
-    runtime = TestRuntime(
-        config=config, event_stream=event_stream, sid='test', user_id='test_user'
-    )
-
-    # Call the function with no repository
-    result = await runtime.clone_or_init_repo(None, None, None)
-
-    # Verify that git init was called
-    assert len(runtime.run_action_calls) == 1
-    assert isinstance(runtime.run_action_calls[0], CmdRunAction)
-    assert runtime.run_action_calls[0].command == 'git init'
-    assert result == ''
-
-
-@pytest.mark.asyncio
-async def test_clone_or_init_repo_no_repo_no_user_id_no_workspace_base(temp_dir):
-    """Test that git init is run when no repository is selected, no user_id, and no workspace_base"""
-    config = OpenHandsConfig()
-    config.workspace_base = None  # Ensure workspace_base is not set
+    config.init_git_in_empty_workspace = True
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
     runtime = TestRuntime(
@@ -255,7 +235,10 @@ async def test_clone_or_init_repo_no_repo_no_user_id_no_workspace_base(temp_dir)
     # Verify that git init was called
     assert len(runtime.run_action_calls) == 1
     assert isinstance(runtime.run_action_calls[0], CmdRunAction)
-    assert runtime.run_action_calls[0].command == 'git init'
+    assert (
+        runtime.run_action_calls[0].command
+        == f'git init && git config --global --add safe.directory {runtime.workspace_root}'
+    )
     assert result == ''
 
 
@@ -295,11 +278,11 @@ async def test_clone_or_init_repo_auth_error(temp_dir):
         side_effect=AuthenticationError('Auth failed'),
     ):
         # Call the function with a repository
-        with pytest.raises(RuntimeError) as excinfo:
+        with pytest.raises(Exception) as excinfo:
             await runtime.clone_or_init_repo(None, 'owner/repo', None)
 
         # Verify the error message
-        assert 'Git provider authentication issue when cloning repo' in str(
+        assert 'Git provider authentication issue when getting remote URL' in str(
             excinfo.value
         )
 

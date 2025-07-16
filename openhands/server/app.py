@@ -1,3 +1,4 @@
+import contextlib
 import warnings
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
@@ -29,6 +30,20 @@ from openhands.server.routes.settings import app as settings_router
 from openhands.server.routes.trajectory import app as trajectory_router
 from openhands.server.shared import conversation_manager
 
+mcp_app = mcp_server.http_app(path='/mcp')
+
+
+def combine_lifespans(*lifespans):
+    # Create a combined lifespan to manage multiple session managers
+    @contextlib.asynccontextmanager
+    async def combined_lifespan(app):
+        async with contextlib.AsyncExitStack() as stack:
+            for lifespan in lifespans:
+                await stack.enter_async_context(lifespan(app))
+            yield
+
+    return combined_lifespan
+
 
 @asynccontextmanager
 async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -40,8 +55,8 @@ app = FastAPI(
     title='OpenHands',
     description='OpenHands: Code Less, Make More',
     version=__version__,
-    lifespan=_lifespan,
-    routes=[Mount(path='/mcp', app=mcp_server.sse_app())],
+    lifespan=combine_lifespans(_lifespan, mcp_app.lifespan),
+    routes=[Mount(path='/mcp', app=mcp_app)],
 )
 
 

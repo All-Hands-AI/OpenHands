@@ -15,13 +15,14 @@ from openhands.integrations.service_types import (
     SuggestedTask,
     TaskType,
 )
+from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
 )
 from openhands.server.routes.manage_conversations import (
+    ConversationResponse,
     InitSessionRequest,
-    InitSessionResponse,
     delete_conversation,
     get_conversation,
     new_conversation,
@@ -250,6 +251,7 @@ async def test_new_conversation_success(provider_handler_mock):
                 conversation_id='test_conversation_id',
                 url='https://my-conversation.com',
                 session_api_key=None,
+                status=ConversationStatus.RUNNING,
             )
 
             test_request = InitSessionRequest(
@@ -263,7 +265,7 @@ async def test_new_conversation_success(provider_handler_mock):
             response = await create_new_test_conversation(test_request)
 
             # Verify the response
-            assert isinstance(response, InitSessionResponse)
+            assert isinstance(response, ConversationResponse)
             assert response.status == 'ok'
             # Don't check the exact conversation_id as it's now generated dynamically
             assert response.conversation_id is not None
@@ -293,6 +295,7 @@ async def test_new_conversation_with_suggested_task(provider_handler_mock):
                 conversation_id='test_conversation_id',
                 url='https://my-conversation.com',
                 session_api_key=None,
+                status=ConversationStatus.RUNNING,
             )
 
             # Mock SuggestedTask.get_prompt_for_task
@@ -321,7 +324,7 @@ async def test_new_conversation_with_suggested_task(provider_handler_mock):
                 response = await create_new_test_conversation(test_request)
 
                 # Verify the response
-                assert isinstance(response, InitSessionResponse)
+                assert isinstance(response, ConversationResponse)
                 assert response.status == 'ok'
                 # Don't check the exact conversation_id as it's now generated dynamically
                 assert response.conversation_id is not None
@@ -403,7 +406,9 @@ async def test_new_conversation_invalid_session_api_key(provider_handler_mock):
             assert 'Error authenticating with the LLM provider' in response.body.decode(
                 'utf-8'
             )
-            assert 'STATUS$ERROR_LLM_AUTHENTICATION' in response.body.decode('utf-8')
+            assert RuntimeStatus.ERROR_LLM_AUTHENTICATION.value in response.body.decode(
+                'utf-8'
+            )
 
 
 @pytest.mark.asyncio
@@ -479,6 +484,7 @@ async def test_new_conversation_with_bearer_auth(provider_handler_mock):
                 conversation_id='test_conversation_id',
                 url='https://my-conversation.com',
                 session_api_key=None,
+                status=ConversationStatus.RUNNING,
             )
 
             # Create the request object
@@ -492,7 +498,7 @@ async def test_new_conversation_with_bearer_auth(provider_handler_mock):
             response = await create_new_test_conversation(test_request, AuthType.BEARER)
 
             # Verify the response
-            assert isinstance(response, InitSessionResponse)
+            assert isinstance(response, ConversationResponse)
             assert response.status == 'ok'
 
             # Verify that create_new_conversation was called with REMOTE_API_KEY trigger
@@ -516,6 +522,7 @@ async def test_new_conversation_with_null_repository():
                 conversation_id='test_conversation_id',
                 url='https://my-conversation.com',
                 session_api_key=None,
+                status=ConversationStatus.RUNNING,
             )
 
             # Create the request object with null repository
@@ -529,7 +536,7 @@ async def test_new_conversation_with_null_repository():
             response = await create_new_test_conversation(test_request)
 
             # Verify the response
-            assert isinstance(response, InitSessionResponse)
+            assert isinstance(response, ConversationResponse)
             assert response.status == 'ok'
 
             # Verify that create_new_conversation was called with None repository
@@ -571,7 +578,7 @@ async def test_new_conversation_with_provider_authentication_error(
             assert json.loads(response.body.decode('utf-8')) == {
                 'status': 'error',
                 'message': 'auth error',
-                'msg_id': 'STATUS$GIT_PROVIDER_AUTHENTICATION_ERROR',
+                'msg_id': RuntimeStatus.GIT_PROVIDER_AUTHENTICATION_ERROR.value,
             }
 
             # Verify that verify_repo_provider was called with the repository

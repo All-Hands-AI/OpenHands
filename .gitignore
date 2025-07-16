@@ -166,7 +166,6 @@ cython_debug/
 # https://stackoverflow.com/questions/32964920/should-i-commit-the-vscode-folder-to-source-control
 .vscode/**/*
 !.vscode/extensions.json
-!.vscode/launch.json
 !.vscode/settings.json
 !.vscode/tasks.json
 
@@ -183,6 +182,8 @@ cython_debug/
 .roo/rules
 .cline/rules
 .windsurf/rules
+.repomix
+repomix-output.txt
 
 # evaluation
 evaluation/evaluation_outputs

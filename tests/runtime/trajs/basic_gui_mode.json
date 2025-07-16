@@ -589,7 +589,7 @@
         "working_dir": null,
         "py_interpreter_path": null,
         "prefix": "",
-        "suffix": "\n[The command has no new output after 30 seconds. You may wait longer to see additional output by sending empty command '', send other commands to interact with the current process, or send keys to interrupt/kill the command.]"
+        "suffix": "\n[The command has no new output after 30 seconds. You may wait longer to see additional output by sending empty command '', send other commands to interact with the current process, send keys to interrupt/kill the command, or use the timeout parameter in execute_bash for future commands.]"
       },
       "hidden": false
     },
