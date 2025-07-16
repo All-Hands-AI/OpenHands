@@ -7,7 +7,7 @@ from openhands.router.cost_saving.prompt import (
 )
 from transformers import AutoTokenizer
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.message import Message
+from openhands.core.message import Message, ImageContent
 from openhands.utils.trajectory import format_trajectory
 
 
@@ -34,6 +34,16 @@ class ThresholdBasedCostSavingRouter(BaseRouter):
         self.max_token_exceeded = False
 
     def should_route_to(self, messages: list[Message]) -> LLM:
+        for message in messages:
+            if message.role != 'user':
+                continue
+
+            # Check if content element has any instance of ImageContent
+            if any(isinstance(content, ImageContent) for content in message.content):
+                logger.warning('Image content detected. Routing to the strong model.')
+                self.routing_history.append(0)
+                return self.llm
+
         # Check if `messages` exceeds context window of the weak model
         if self.weak_llm.config.max_input_tokens and self.weak_llm.get_token_count(messages) > self.weak_llm.config.max_input_tokens:
             logger.warning(
