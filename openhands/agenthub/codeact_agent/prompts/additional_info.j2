@@ -10,6 +10,9 @@ At the user's request, repository {{ repository_info.repo_name }} has been clone
 {% endif %}
 {% if runtime_info -%}
 <RUNTIME_INFORMATION>
+{% if runtime_info.working_dir %}
+The current working directory is {{ runtime_info.working_dir }}
+{% endif %}
 {% if runtime_info.available_hosts %}
 The user has access to the following hosts for accessing a web application,
 each of which has a corresponding port:

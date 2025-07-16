@@ -5,8 +5,6 @@ ReadOnlyAgent - A specialized version of CodeActAgent that only uses read-only t
 import os
 from typing import TYPE_CHECKING
 
-from openhands.core.config.config_utils import DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX
-
 if TYPE_CHECKING:
     from litellm import ChatCompletionToolParam
 
@@ -43,7 +41,6 @@ class ReadOnlyAgent(CodeActAgent):
         self,
         llm: LLM,
         config: AgentConfig,
-        cwd: str = DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX,
     ) -> None:
         """Initializes a new instance of the ReadOnlyAgent class.
 
@@ -52,7 +49,7 @@ class ReadOnlyAgent(CodeActAgent):
         - config (AgentConfig): The configuration for this agent
         """
         # Initialize the CodeActAgent class; some of it is overridden with class methods
-        super().__init__(llm, config, cwd)
+        super().__init__(llm, config)
 
         logger.debug(
             f'TOOLS loaded for ReadOnlyAgent: {", ".join([tool.get("function").get("name") for tool in self.tools])}'
@@ -64,7 +61,6 @@ class ReadOnlyAgent(CodeActAgent):
         if self._prompt_manager is None:
             self._prompt_manager = PromptManager(
                 prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
-                cwd=self.cwd,
             )
         return self._prompt_manager
 

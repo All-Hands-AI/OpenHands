@@ -332,6 +332,7 @@ class Memory:
         self,
         runtime: Runtime,
         custom_secrets_descriptions: dict[str, str],
+        working_dir: str,
     ) -> None:
         """Store runtime info (web hosts, ports, etc.)."""
         # e.g. { '127.0.0.1': 8080 }
@@ -344,11 +345,13 @@ class Memory:
                 additional_agent_instructions=runtime.additional_agent_instructions,
                 date=date,
                 custom_secrets_descriptions=custom_secrets_descriptions,
+                working_dir=working_dir,
             )
         else:
             self.runtime_info = RuntimeInfo(
                 date=date,
                 custom_secrets_descriptions=custom_secrets_descriptions,
+                working_dir=working_dir,
             )
 
     def set_conversation_instructions(
