@@ -127,7 +127,7 @@ jobs:
           comment: |
             **Evaluation Triggered**
 
-            **Trigger:** ${{ github.event_name == 'pull_request' && format('Pull Request #{0}', github.event.pull_request.number) || (github.event_name == 'release' && format('Release {0}', github.ref_name)) || format('Manual Trigger: {0}', github.event.inputs.reason || 'No reason provided') }}
+            **Trigger:** ${{ github.event_name == 'pull_request' && format('Pull Request #{0}', github.event.pull_request.number) || (github.event_name == 'release' && 'Release') || format('Manual Trigger: {0}', github.event.inputs.reason || 'No reason provided') }}
             **Branch:** ${{ steps.eval_params.outputs.eval_branch }}
             **Instances:** ${{ steps.eval_params.outputs.eval_instances }}
             **Commit:** ${{ github.sha }}
