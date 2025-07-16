@@ -84,7 +84,7 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'o4-mini-2025-04-16',
     'gemini-2.5-pro',
     'gpt-4.1',
-    'kimi-k2-0711-preview'
+    'kimi-k2-0711-preview',
 ]
 
 REASONING_EFFORT_SUPPORTED_MODELS = [
