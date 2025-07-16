@@ -68,6 +68,7 @@
                         "usage/llms/local-llms",
                         "usage/llms/litellm-proxy",
                         "usage/llms/openai-llms",
+                        "usage/llms/openhands-llms",
                         "usage/llms/openrouter"
                       ]
                     }
