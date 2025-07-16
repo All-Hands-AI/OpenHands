@@ -1,10 +1,11 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 import openhands.agenthub.loc_agent.function_calling as locagent_function_calling
 from openhands.agenthub.codeact_agent import CodeActAgent
 from openhands.core.config import AgentConfig
+from openhands.core.config.llm_config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
-from openhands.llm.llm import LLM
+from openhands.llm.llm_registry import LLMRegistry
 
 if TYPE_CHECKING:
     from openhands.events.action import Action
@@ -16,8 +17,11 @@ class LocAgent(CodeActAgent):
 
     def __init__(
         self,
-        llm: LLM,
         config: AgentConfig,
+        llm_config: LLMConfig,
+        llm_registry: LLMRegistry,
+        retry_listener: Callable[[int, int], None] | None = None,
+        requested_service: str | None = None,
     ) -> None:
         """Initializes a new instance of the LocAgent class.
 
@@ -25,7 +29,10 @@ class LocAgent(CodeActAgent):
         - llm (LLM): The llm to be used by this agent
         - config (AgentConfig): The configuration for the agent
         """
-        super().__init__(llm, config)
+
+        super().__init__(
+            config, llm_config, llm_registry, retry_listener, requested_service
+        )
 
         self.tools = locagent_function_calling.get_tools()
         logger.debug(

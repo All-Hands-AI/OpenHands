@@ -30,7 +30,7 @@ from openhands.integrations.service_types import (
     ProviderType,
     SuggestedTask,
 )
-from openhands.llm.llm import LLM
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
@@ -45,9 +45,11 @@ from openhands.server.services.conversation_service import (
 )
 from openhands.server.session.conversation import ServerConversation
 from openhands.server.shared import (
+    ConversationManagerImpl,
     ConversationStoreImpl,
     config,
     conversation_manager,
+    file_store,
 )
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.server.user_auth import (
@@ -329,7 +331,9 @@ async def get_prompt(
     )
 
     prompt_template = generate_prompt_template(stringified_events)
-    prompt = generate_prompt(llm_config, prompt_template)
+    prompt = generate_prompt(
+        llm_config, prompt_template, conversation.sid, conversation.user_id
+    )
 
     return JSONResponse(
         {
@@ -345,8 +349,14 @@ def generate_prompt_template(events: str) -> str:
     return template.render(events=events)
 
 
-def generate_prompt(llm_config: LLMConfig, prompt_template: str) -> str:
-    llm = LLM(llm_config)
+def generate_prompt(
+    llm_config: LLMConfig,
+    prompt_template: str,
+    conversation_id: str,
+    user_id: str | None,
+) -> str:
+    llm_registry = LLMRegistry(file_store, conversation_id, user_id)
+    llm_registry.register_llm('', llm_config)
     messages = [
         {
             'role': 'system',
@@ -358,8 +368,9 @@ def generate_prompt(llm_config: LLMConfig, prompt_template: str) -> str:
         },
     ]
 
-    response = llm.completion(messages=messages)
-    raw_prompt = response['choices'][0]['message']['content'].strip()
+    raw_prompt = ConversationManagerImpl.request_llm_completion(
+        'remember_prompt', conversation_id, llm_config, messages
+    )
     prompt = re.search(r'<update_prompt>(.*?)</update_prompt>', raw_prompt, re.DOTALL)
 
     if prompt:

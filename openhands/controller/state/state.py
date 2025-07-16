@@ -19,6 +19,7 @@ from openhands.events.action import (
 )
 from openhands.events.action.agent import AgentFinishAction
 from openhands.events.event import Event, EventSource
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.llm.metrics import Metrics
 from openhands.memory.view import View
 from openhands.storage.files import FileStore
@@ -84,6 +85,7 @@ class State:
             limit_increase_amount=100, current_value=0, max_value=100
         )
     )
+    llm_registry: LLMRegistry | None = None
     budget_flag: BudgetControlFlag | None = None
     confirmation_mode: bool = False
     history: list[Event] = field(default_factory=list)
@@ -91,8 +93,7 @@ class State:
     outputs: dict = field(default_factory=dict)
     agent_state: AgentState = AgentState.LOADING
     resume_state: AgentState | None = None
-    # global metrics for the current task
-    metrics: Metrics = field(default_factory=Metrics)
+
     # root agent has level 0, and every delegate increases the level by one
     delegate_level: int = 0
     # start_id and end_id track the range of events in history
@@ -116,9 +117,14 @@ class State:
     local_metrics: Metrics | None = None
     delegates: dict[tuple[int, int], tuple[str, str]] | None = None
 
+    metrics: Metrics = field(default_factory=Metrics)
+
     def save_to_session(
         self, sid: str, file_store: FileStore, user_id: str | None
     ) -> None:
+        llm_registry = self.llm_registry
+        self.llm_registry = None  # Don't save registry; registry handles itself
+
         pickled = pickle.dumps(self)
         logger.debug(f'Saving state to session {sid}:{self.agent_state}')
         encoded = base64.b64encode(pickled).decode('utf-8')
@@ -137,6 +143,8 @@ class State:
         except Exception as e:
             logger.error(f'Failed to save state to session: {e}')
             raise e
+
+        self.llm_registry = llm_registry  # restore reference to registry
 
     @staticmethod
     def restore_from_session(

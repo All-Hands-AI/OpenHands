@@ -1,4 +1,3 @@
-from openhands.controller.agent import Agent
 from openhands.controller.state.control_flags import (
     BudgetControlFlag,
     IterationControlFlag,
@@ -14,7 +13,7 @@ from openhands.events.observation.delegate import AgentDelegateObservation
 from openhands.events.observation.empty import NullObservation
 from openhands.events.serialization.event import event_to_trajectory
 from openhands.events.stream import EventStream
-from openhands.llm.metrics import Metrics
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.storage.files import FileStore
 
 
@@ -51,8 +50,8 @@ class StateTracker:
     def set_initial_state(
         self,
         id: str,
-        agent: Agent,
         state: State | None,
+        llm_registry: LLMRegistry,
         max_iterations: int,
         max_budget_per_task: float | None,
         confirmation_mode: bool = False,
@@ -74,6 +73,7 @@ class StateTracker:
             self.state = State(
                 session_id=id.removesuffix('-delegate'),
                 inputs={},
+                llm_registry=llm_registry,
                 iteration_flag=IterationControlFlag(
                     limit_increase_amount=max_iterations,
                     current_value=0,
@@ -98,13 +98,7 @@ class StateTracker:
             if self.state.start_id <= -1:
                 self.state.start_id = 0
 
-            logger.info(
-                f'AgentController {id} initializing history from event {self.state.start_id}',
-            )
-
-        # Share the state metrics with the agent's LLM metrics
-        # This ensures that all accumulated metrics are always in sync between controller and llm
-        agent.llm.metrics = self.state.metrics
+            state.llm_registry = llm_registry
 
     def _init_history(self, event_stream: EventStream) -> None:
         """Initializes the agent's history from the event stream.
@@ -257,6 +251,9 @@ class StateTracker:
         if self.sid and self.file_store:
             self.state.save_to_session(self.sid, self.file_store, self.user_id)
 
+        if self.state.llm_registry:
+            self.state.llm_registry.save_registry()
+
     def run_control_flags(self):
         """
         Performs one step of the control flags
@@ -270,21 +267,8 @@ class StateTracker:
         Ensures that budget flag is up to date with accumulated costs from llm completions
         Budget flag will monitor for when budget is exceeded
         """
-        if self.state.budget_flag:
-            self.state.budget_flag.current_value = self.state.metrics.accumulated_cost
-
-    def merge_metrics(self, metrics: Metrics):
-        """
-        Merges metrics with the state metrics
-
-        NOTE: this should be refactored in the future. We should have services (draft llm, title autocomplete, condenser, etc)
-        use their own LLMs, but the metrics object should be shared. This way we have one source of truth for accumulated costs from
-        all services
-
-        This would prevent having fragmented stores for metrics, and we don't have the burden of deciding where and how to store them
-        if we decide introduce more specialized services that require llm completions
-
-        """
-        self.state.metrics.merge(metrics)
-        if self.state.budget_flag:
-            self.state.budget_flag.current_value = self.state.metrics.accumulated_cost
+        # Sync cost across all llm services from llm registry
+        if self.state.budget_flag and self.state.llm_registry:
+            self.state.budget_flag.current_value = (
+                self.state.llm_registry.get_combined_metrics().accumulated_cost
+            )

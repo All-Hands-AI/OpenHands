@@ -73,7 +73,7 @@ from openhands.events.observation import (
     Observation,
 )
 from openhands.events.serialization.event import truncate_content
-from openhands.llm.llm import LLM
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.llm.metrics import Metrics
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.storage.files import FileStore
@@ -105,6 +105,7 @@ class AgentController:
         self,
         agent: Agent,
         event_stream: EventStream,
+        llm_registry: LLMRegistry,
         iteration_delta: int,
         budget_per_task_delta: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
@@ -145,6 +146,7 @@ class AgentController:
         self.agent = agent
         self.headless_mode = headless_mode
         self.is_delegate = is_delegate
+        self.llm_registry = llm_registry
 
         # the event stream must be set before maybe subscribing to it
         self.event_stream = event_stream
@@ -160,6 +162,7 @@ class AgentController:
         # state from the previous session, state from a parent agent, or a fresh state
         self.set_initial_state(
             state=initial_state,
+            llm_registry=llm_registry,
             max_iterations=iteration_delta,
             max_budget_per_task=budget_per_task_delta,
             confirmation_mode=confirmation_mode,
@@ -474,11 +477,6 @@ class AgentController:
             log_level, str(observation_to_print), extra={'msg_type': 'OBSERVATION'}
         )
 
-        # TODO: these metrics come from the draft editor, and they get accumulated into controller's state metrics and the agent's llm metrics
-        # In the future, we should have a more principled way to sharing metrics across all LLM instances for a given conversation
-        if observation.llm_metrics is not None:
-            self.state_tracker.merge_metrics(observation.llm_metrics)
-
         # this happens for runnable actions and microagent actions
         if self._pending_action and self._pending_action.id == observation.cause:
             if self.state.agent_state == AgentState.AWAITING_USER_CONFIRMATION:
@@ -647,12 +645,13 @@ class AgentController:
         agent_config = self.agent_configs.get(action.agent, self.agent.config)
         llm_config = self.agent_to_llm_config.get(action.agent, self.agent.llm.config)
         # Make sure metrics are shared between parent and child for global accumulation
-        llm = LLM(
-            config=llm_config,
+        delegate_agent = agent_cls(
+            config=agent_config,
+            llm_config=llm_config,
+            llm_registry=self.llm_registry,
             retry_listener=self.agent.llm.retry_listener,
-            metrics=self.state.metrics,
+            requested_service=self.agent.llm.service_id,
         )
-        delegate_agent = agent_cls(llm=llm, config=agent_config)
 
         # Take a snapshot of the current metrics before starting the delegate
         state = State(
@@ -670,9 +669,10 @@ class AgentController:
         )
         self.log(
             'debug',
-            f'start delegate, creating agent {delegate_agent.name} using LLM {llm}',
+            f'start delegate, creating agent {delegate_agent.name}',
         )
 
+        print('setting delegate')
         # Create the delegate with is_delegate=True so it does NOT subscribe directly
         self.delegate = AgentController(
             sid=self.id + '-delegate',
@@ -680,6 +680,7 @@ class AgentController:
             user_id=self.user_id,
             agent=delegate_agent,
             event_stream=self.event_stream,
+            llm_registry=self.llm_registry,
             iteration_delta=self._initial_max_iterations,
             budget_per_task_delta=self._initial_max_budget_per_task,
             agent_to_llm_config=self.agent_to_llm_config,
@@ -782,13 +783,8 @@ class AgentController:
             extra={'msg_type': 'STEP'},
         )
 
-        # Ensure budget control flag is synchronized with the latest metrics.
-        # In the future, we should centralized the use of one LLM object per conversation.
-        # This will help us unify the cost for auto generating titles, running the condensor, etc.
-        # Before many microservices will touh the same llm cost field, we should sync with the budget flag for the controller
-        # and check that we haven't exceeded budget BEFORE executing an agent step.
+        # Synchronize spend across all llm services with the budget flag
         self.state_tracker.sync_budget_flag_with_metrics()
-
         if self._is_stuck():
             await self._react_to_exception(
                 AgentStuckInLoopError('Agent got stuck in a loop')
@@ -948,14 +944,15 @@ class AgentController:
     def set_initial_state(
         self,
         state: State | None,
+        llm_registry: LLMRegistry,
         max_iterations: int,
         max_budget_per_task: float | None,
         confirmation_mode: bool = False,
     ):
         self.state_tracker.set_initial_state(
             self.id,
-            self.agent,
             state,
+            llm_registry,
             max_iterations,
             max_budget_per_task,
             confirmation_mode,
@@ -996,37 +993,20 @@ class AgentController:
             action: The action to attach metrics to
         """
         # Get metrics from agent LLM
-        agent_metrics = self.state.metrics
+        metrics = self.llm_registry.get_combined_metrics()
 
-        # Get metrics from condenser LLM if it exists
-        condenser_metrics: Metrics | None = None
-        if hasattr(self.agent, 'condenser') and hasattr(self.agent.condenser, 'llm'):
-            condenser_metrics = self.agent.condenser.llm.metrics
-
-        # Create a new minimal metrics object with just what the frontend needs
-        metrics = Metrics(model_name=agent_metrics.model_name)
-
-        # Set accumulated cost (sum of agent and condenser costs)
-        metrics.accumulated_cost = agent_metrics.accumulated_cost
-        if condenser_metrics:
-            metrics.accumulated_cost += condenser_metrics.accumulated_cost
+        # Create a clean copy with only the fields we want to keep
+        clean_metrics = Metrics()
+        clean_metrics.accumulated_cost = metrics.accumulated_cost
+        clean_metrics._accumulated_token_usage = copy.deepcopy(
+            metrics.accumulated_token_usage
+        )
 
         # Add max_budget_per_task to metrics
         if self.state.budget_flag:
-            metrics.max_budget_per_task = self.state.budget_flag.max_value
+            clean_metrics.max_budget_per_task = self.state.budget_flag.max_value
 
-        # Set accumulated token usage (sum of agent and condenser token usage)
-        # Use a deep copy to ensure we don't modify the original object
-        metrics._accumulated_token_usage = (
-            agent_metrics.accumulated_token_usage.model_copy(deep=True)
-        )
-        if condenser_metrics:
-            metrics._accumulated_token_usage = (
-                metrics._accumulated_token_usage
-                + condenser_metrics.accumulated_token_usage
-            )
-
-        action.llm_metrics = metrics
+        action.llm_metrics = clean_metrics
 
         # Log the metrics information for debugging
         # Get the latest usage directly from the agent's metrics
