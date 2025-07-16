@@ -587,7 +587,7 @@ async def read_prompt_input(
         return '/exit'
 
 
-async def read_confirmation_input(config: OpenHandsConfig) -> str:
+async def read_confirmation_input(config: OpenHandsConfig) -> int:
     try:
         prompt_session = create_prompt_session(config)
 
@@ -595,30 +595,13 @@ async def read_confirmation_input(config: OpenHandsConfig) -> str:
             with patch_stdout():
                 print_formatted_text('')
                 confirmation: str = await prompt_session.prompt_async(
-                    HTML('<gold>Proceed with action? (y)es/(n)o/(a)lways > </gold>'),
+                    cli_confirm(config, 'Choose an option: ',
+                                ['Yes, proceed', 'No, skip this action', "Always proceed (don't ask again)", 'Let me provide different instructions']),
                 )
 
-                confirmation = (
-                    '' if confirmation is None else confirmation.strip().lower()
-                )
-
-                if confirmation in ['y', 'yes']:
-                    return 'yes'
-                elif confirmation in ['n', 'no']:
-                    return 'no'
-                elif confirmation in ['a', 'always']:
-                    return 'always'
-                else:
-                    # Display error message for invalid input
-                    print_formatted_text('')
-                    print_formatted_text(
-                        HTML(
-                            '<ansired>Invalid input. Please enter (y)es, (n)o, or (a)lways.</ansired>'
-                        )
-                    )
-                    # Continue the loop to re-prompt
+                return confirmation if confirmation is not None else 0
     except (KeyboardInterrupt, EOFError):
-        return 'no'
+        return 1
 
 
 def start_pause_listener(

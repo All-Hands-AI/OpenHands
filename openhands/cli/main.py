@@ -231,19 +231,20 @@ async def run_session(
                     return
 
                 confirmation_status = await read_confirmation_input(config)
-                if confirmation_status == 'yes' or confirmation_status == 'always':
+                if confirmation_status == 0 or confirmation_status == 2: # cli_confirm returns 0 for 'Yes, proceed' and 2 for 'Always proceed'
                     event_stream.add_event(
                         ChangeAgentStateAction(AgentState.USER_CONFIRMED),
                         EventSource.USER,
                     )
-                else:
+                elif confirmation_status == 1: # cli_confirm returns 1 for 'No, skip this action'
                     event_stream.add_event(
                         ChangeAgentStateAction(AgentState.USER_REJECTED),
                         EventSource.USER,
                     )
 
+
                 # Set the always_confirm_mode flag if the user wants to always confirm
-                if confirmation_status == 'always':
+                if confirmation_status == 2:
                     always_confirm_mode = True
 
             if event.agent_state == AgentState.PAUSED:
