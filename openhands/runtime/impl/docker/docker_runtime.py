@@ -599,14 +599,9 @@ class DockerRuntime(ActionExecutionClient):
         # Don't stop warm containers when closing a specific container
         if not rm_all_containers:
             # Only stop the specific container, not warm containers
-            if (
-                self.container
-                and hasattr(self.container, 'name')
-                and self.container.name
-                and not self.container.name.startswith(f'{CONTAINER_NAME_PREFIX}warm-')
-            ):
-                self.log('info', f'Stopping container: {self.container_name}')
-                stop_all_containers(self.container_name)
+            self.log('info', f'Stopping container: {self.container_name}')
+            # Call stop_all_containers with the container name
+            stop_all_containers(self.container_name)
         else:
             # Stop all containers including warm ones when explicitly requested
             close_prefix = CONTAINER_NAME_PREFIX
