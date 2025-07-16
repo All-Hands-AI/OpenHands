@@ -34,16 +34,16 @@ export const TabItem = ({
       id={`tab-${index}`}
       aria-selected={isActive}
       aria-controls={`panel-${index}`}
-      tabIndex={isActive ? 0 : -1}
       className={cn(
-        "flex items-center gap-x-3",
+        "flex items-center gap-x-3 cursor-pointer",
         "px-6 py-3",
         "text-light-neutral-15 whitespace-nowrap",
         "border-light-neutral-500 border-b-1 border-t-1 border-r-1",
-        "bg-light-neutral-970",
+        "bg-light-neutral-970 focus:outline-0",
         "enabled:hover:bg-light-neutral-500",
         "enabled:focus:bg-grey-970",
-        "enabled:active:bg-grey-970",
+        "enabled:active:bg-grey-970 enabled:active:text-primary-500",
+        isActive && "enabled:text-primary-500",
         isFirst && "border-l-1 rounded-tl-2xl",
         isLast && "rounded-tr-2xl"
       )}
