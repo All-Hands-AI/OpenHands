@@ -4,14 +4,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { createRoutesStub } from "react-router";
 import { organizationService } from "#/api/organization-service/organization-service.api";
-import {
-  INITIAL_MOCK_ORG_MEMBERS,
-  resetOrgMembers,
-} from "#/mocks/org-handlers";
 import { userService } from "#/api/user-service/user-service.api";
 import OpenHands from "#/api/open-hands";
 import ManageTeam from "#/routes/manage-team";
 import SettingsScreen from "#/routes/settings";
+import { ORGS_AND_MEMBERS } from "#/mocks/org-handlers";
 
 function ManageTeamWithPortalRoot() {
   return (
@@ -62,7 +59,6 @@ describe("Manage Team Route", () => {
 
   beforeEach(() => {
     queryClient = new QueryClient();
-    resetOrgMembers();
   });
 
   const renderManageTeam = () =>
@@ -96,11 +92,12 @@ describe("Manage Team Route", () => {
     renderManageTeam();
 
     await selectOrganization({ orgIndex: 0 });
+    const members = ORGS_AND_MEMBERS["1"];
 
     const memberListItems = await screen.findAllByTestId("member-item");
-    expect(memberListItems).toHaveLength(INITIAL_MOCK_ORG_MEMBERS.length);
+    expect(memberListItems).toHaveLength(members.length);
 
-    INITIAL_MOCK_ORG_MEMBERS.forEach((member) => {
+    members.forEach((member) => {
       expect(screen.getByText(member.email)).toBeInTheDocument();
       expect(screen.getByText(member.role)).toBeInTheDocument();
     });

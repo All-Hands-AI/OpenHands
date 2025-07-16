@@ -56,9 +56,9 @@ export const organizationService = {
     return data;
   },
 
-  inviteMember: async ({ email }: { email: string }) => {
+  inviteMember: async ({ orgId, email }: { orgId: string; email: string }) => {
     const { data } = await openHands.post<OrganizationMember>(
-      "/api/organizations/invite",
+      `/api/organizations/${orgId}/invite`,
       {
         email,
       },

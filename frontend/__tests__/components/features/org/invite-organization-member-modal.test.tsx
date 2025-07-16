@@ -19,6 +19,13 @@ const renderInviteOrganizationMemberModal = (config?: {
     },
   );
 
+vi.mock("#/context/use-selected-organization", () => ({
+  useSelectedOrganizationId: vi.fn(() => ({
+    orgId: "1",
+    setOrgId: vi.fn(),
+  })),
+}));
+
 describe("InviteOrganizationMemberModal", () => {
   it("should call onClose the modal when the close button is clicked", async () => {
     const onCloseMock = vi.fn();
@@ -51,6 +58,7 @@ describe("InviteOrganizationMemberModal", () => {
     await userEvent.click(submitButton);
 
     expect(inviteMemberSpy).toHaveBeenCalledExactlyOnceWith({
+      orgId: "1",
       email: "someone@acme.org",
     });
 
