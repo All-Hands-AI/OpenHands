@@ -15,7 +15,7 @@ export const useSelectedOrganizationId = () => {
   });
 
   const updateState = useMutation({
-    mutationFn: async (newValue: string) => {
+    mutationFn: async (newValue: string | null) => {
       queryClient.setQueryData([key], newValue);
       return newValue;
     },
@@ -39,6 +39,6 @@ export const useSelectedOrganizationId = () => {
 
   return {
     orgId,
-    setOrgId: (newValue: string) => updateState.mutate(newValue),
+    setOrgId: (newValue: string | null) => updateState.mutate(newValue),
   };
 };

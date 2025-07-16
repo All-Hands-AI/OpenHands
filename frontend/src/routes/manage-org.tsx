@@ -1,5 +1,6 @@
 import React from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router";
 import { useCreateStripeCheckoutSession } from "#/hooks/mutation/stripe/use-create-stripe-checkout-session";
 import { useOrganization } from "#/hooks/query/use-organization";
 import { useOrganizationPaymentInfo } from "#/hooks/query/use-organization-payment-info";
@@ -133,9 +134,16 @@ interface DeleteOrgConfirmationModalProps {
 function DeleteOrgConfirmationModal({
   onClose,
 }: DeleteOrgConfirmationModalProps) {
-  const { orgId } = useSelectedOrganizationId();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { orgId, setOrgId } = useSelectedOrganizationId();
   const { mutate: deleteOrganization } = useMutation({
     mutationFn: () => organizationService.deleteOrganization({ orgId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["organizations"] });
+      setOrgId(null);
+      navigate("/");
+    },
   });
 
   return (
@@ -212,7 +220,7 @@ function ManageOrg() {
     React.useState(false);
 
   return (
-    <div>
+    <div data-testid="manage-org-screen">
       {changeOrgNameFormVisible && (
         <ChangeOrgNameModal
           onClose={() => setChangeOrgNameFormVisible(false)}

@@ -2,19 +2,43 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
+import { createRoutesStub } from "react-router";
+import { selectOrganization } from "test-utils";
 import OpenHands from "#/api/open-hands";
 import ManageOrg from "#/routes/manage-org";
 import { organizationService } from "#/api/organization-service/organization-service.api";
+import SettingsScreen, { clientLoader } from "#/routes/settings";
 
-vi.mock("#/context/use-selected-organization", () => ({
-  useSelectedOrganizationId: vi.fn(() => ({
-    orgId: "1",
-    setOrgId: vi.fn(),
-  })),
-}));
+function ManageOrgWithPortalRoot() {
+  return (
+    <div>
+      <ManageOrg />
+      <div data-testid="portal-root" id="portal-root" />
+    </div>
+  );
+}
+
+const RouteStub = createRoutesStub([
+  {
+    Component: () => <div data-testid="home-screen" />,
+    path: "/",
+  },
+  {
+    loader: clientLoader,
+    Component: SettingsScreen,
+    path: "/settings",
+    HydrateFallback: () => <div>Loading...</div>,
+    children: [
+      {
+        Component: ManageOrgWithPortalRoot,
+        path: "/settings/org",
+      },
+    ],
+  },
+]);
 
 const renderManageOrg = () =>
-  render(<ManageOrg />, {
+  render(<RouteStub initialEntries={["/settings/org"]} />, {
     wrapper: ({ children }) => (
       <QueryClientProvider client={new QueryClient()}>
         {children}
@@ -22,11 +46,23 @@ const renderManageOrg = () =>
     ),
   });
 
+const { navigateMock } = vi.hoisted(() => ({
+  navigateMock: vi.fn(),
+}));
+
+vi.mock("react-router", async () => ({
+  ...(await vi.importActual("react-router")),
+  useNavigate: () => navigateMock,
+}));
+
 describe("Manage Org Route", () => {
   it.todo("should navigate away from the page if not saas");
 
   it("should render the available credits", async () => {
     renderManageOrg();
+    await screen.findByTestId("manage-org-screen");
+
+    await selectOrganization({ orgIndex: 0 });
 
     await waitFor(() => {
       const credits = screen.getByTestId("available-credits");
@@ -36,6 +72,8 @@ describe("Manage Org Route", () => {
 
   it("should render account details", async () => {
     renderManageOrg();
+
+    await selectOrganization({ orgIndex: 0 });
 
     await waitFor(() => {
       const orgName = screen.getByTestId("org-name");
@@ -53,6 +91,7 @@ describe("Manage Org Route", () => {
     );
 
     renderManageOrg();
+    await screen.findByTestId("manage-org-screen");
 
     expect(screen.queryByTestId("add-credits-form")).not.toBeInTheDocument();
     // Simulate adding credits
@@ -84,6 +123,7 @@ describe("Manage Org Route", () => {
       "createCheckoutSession",
     );
     renderManageOrg();
+    await screen.findByTestId("manage-org-screen");
 
     expect(screen.queryByTestId("add-credits-form")).not.toBeInTheDocument();
     // Simulate adding credits
@@ -111,6 +151,9 @@ describe("Manage Org Route", () => {
       );
 
       renderManageOrg();
+      await screen.findByTestId("manage-org-screen");
+
+      await selectOrganization({ orgIndex: 0 });
 
       const orgName = screen.getByTestId("org-name");
       await waitFor(() => expect(orgName).toHaveTextContent("Acme Corp"));
@@ -151,10 +194,20 @@ describe("Manage Org Route", () => {
     it("should be able to delete an organization", async () => {
       const deleteOrgSpy = vi.spyOn(organizationService, "deleteOrganization");
       renderManageOrg();
+      await screen.findByTestId("manage-org-screen");
+
+      await selectOrganization({ orgIndex: 0 });
 
       expect(
         screen.queryByTestId("delete-org-confirmation"),
       ).not.toBeInTheDocument();
+
+      const organizationSelect = await screen.findByTestId(
+        "organization-select",
+      );
+      const options =
+        await within(organizationSelect).findAllByTestId("org-option");
+      expect(options).toHaveLength(3); // Assuming there are 3 organizations
 
       const deleteOrgButton = screen.getByRole("button", {
         name: /delete organization/i,
@@ -172,6 +225,9 @@ describe("Manage Org Route", () => {
       expect(
         screen.queryByTestId("delete-org-confirmation"),
       ).not.toBeInTheDocument();
+
+      // expect to have navigated to home screen
+      screen.getByTestId("home-screen");
     });
 
     it.todo(

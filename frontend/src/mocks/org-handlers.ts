@@ -169,6 +169,24 @@ export const ORG_HANDLERS = [
     );
   }),
 
+  http.delete("/api/organizations/:orgId", ({ params }) => {
+    const orgId = params.orgId?.toString();
+
+    if (orgId && orgs.has(orgId) && ORGS_AND_MEMBERS[orgId]) {
+      orgs.delete(orgId);
+      delete ORGS_AND_MEMBERS[orgId];
+      return HttpResponse.json(
+        { message: "Organization deleted" },
+        { status: 204 },
+      );
+    }
+
+    return HttpResponse.json(
+      { error: "Organization not found" },
+      { status: 404 },
+    );
+  }),
+
   http.get("/api/organizations/:orgId/payment", ({ params }) => {
     const orgId = params.orgId?.toString();
 

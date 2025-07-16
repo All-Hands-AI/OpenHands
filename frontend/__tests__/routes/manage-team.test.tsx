@@ -3,6 +3,7 @@ import { render, screen, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { createRoutesStub } from "react-router";
+import { selectOrganization } from "test-utils";
 import { organizationService } from "#/api/organization-service/organization-service.api";
 import { userService } from "#/api/user-service/user-service.api";
 import OpenHands from "#/api/open-hands";
@@ -35,22 +36,6 @@ const RouteStub = createRoutesStub([
 ]);
 
 let queryClient: QueryClient;
-
-const selectOrganization = async ({ orgIndex }: { orgIndex: number }) => {
-  await screen.findByTestId("manage-team-settings");
-
-  const organizationSelect = screen.getByTestId("organization-select");
-  const options =
-    await within(organizationSelect).findAllByTestId("org-option");
-  expect(options).toHaveLength(3);
-
-  const selectedOption = options[orgIndex];
-  if (!selectedOption) {
-    expect.fail(`No organization option found at index ${orgIndex}`);
-  }
-
-  await userEvent.click(selectedOption);
-};
 
 describe("Manage Team Route", () => {
   beforeEach(() => {

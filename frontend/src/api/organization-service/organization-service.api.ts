@@ -40,7 +40,9 @@ export const organizationService = {
     return data;
   },
 
-  deleteOrganization: async ({ orgId }: { orgId: string }) => {},
+  deleteOrganization: async ({ orgId }: { orgId: string }) => {
+    await openHands.delete(`/api/organizations/${orgId}`);
+  },
 
   getOrganizationMembers: async ({ orgId }: { orgId: string }) => {
     const { data } = await openHands.get<OrganizationMember[]>(
