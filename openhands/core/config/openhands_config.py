@@ -89,6 +89,7 @@ class OpenHandsConfig(BaseModel):
     run_as_openhands: bool = Field(default=True)
     max_iterations: int = Field(default=OH_MAX_ITERATIONS)
     max_budget_per_task: float | None = Field(default=None)
+    init_git_in_empty_workspace: bool = Field(default=False)
 
     disable_color: bool = Field(default=False)
     jwt_secret: SecretStr | None = Field(default=None)
