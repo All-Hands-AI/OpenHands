@@ -1,5 +1,3 @@
-import os
-
 from evaluation.integration_tests.tests.base import BaseIntegrationTest, TestResult
 from evaluation.utils.shared import assert_and_raise
 from openhands.events.action import CmdRunAction
