@@ -367,9 +367,7 @@ class Runtime(FileEditRuntimeMixin):
         selected_branch: str | None,
     ) -> str:
         if not selected_repository:
-            # In SaaS mode (indicated by user_id being set), always run git init
-            # In OSS mode, only run git init if workspace_base is not set
-            if self.user_id or not self.config.workspace_base:
+            if self.config.init_git_in_empty_workspace:
                 logger.debug(
                     'No repository selected. Initializing a new git repository in the workspace.'
                 )
@@ -1062,7 +1060,8 @@ fi
 
     def get_git_changes(self, cwd: str) -> list[dict[str, str]] | None:
         self.git_handler.set_cwd(cwd)
-        return self.git_handler.get_git_changes()
+        changes = self.git_handler.get_git_changes()
+        return changes
 
     def get_git_diff(self, file_path: str, cwd: str) -> dict[str, str]:
         self.git_handler.set_cwd(cwd)

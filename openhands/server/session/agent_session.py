@@ -290,12 +290,16 @@ class AgentSession:
         custom_secrets: CUSTOM_SECRETS_TYPE | None,
     ):
         if git_provider_tokens and custom_secrets:
-            tokens = dict(git_provider_tokens)
-            for provider, _ in tokens.items():
-                token_name = ProviderHandler.get_provider_env_key(provider)
-                if token_name in custom_secrets or token_name.upper() in custom_secrets:
-                    del tokens[provider]
-
+            # Use dictionary comprehension to avoid modifying dictionary during iteration
+            tokens = {
+                provider: token
+                for provider, token in git_provider_tokens.items()
+                if not (
+                    ProviderHandler.get_provider_env_key(provider) in custom_secrets
+                    or ProviderHandler.get_provider_env_key(provider).upper()
+                    in custom_secrets
+                )
+            }
             return MappingProxyType(tokens)
         return git_provider_tokens
 
