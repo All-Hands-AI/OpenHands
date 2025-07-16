@@ -220,7 +220,10 @@ function ManageOrg() {
     React.useState(false);
 
   return (
-    <div data-testid="manage-org-screen">
+    <div
+      data-testid="manage-org-screen"
+      className="flex flex-col items-start gap-6 p-6"
+    >
       {changeOrgNameFormVisible && (
         <ChangeOrgNameModal
           onClose={() => setChangeOrgNameFormVisible(false)}
@@ -240,22 +243,53 @@ function ManageOrg() {
           + Add
         </TempInteractiveChip>
       </div>
+
       {addCreditsFormVisible && (
         <AddCreditsModal onClose={() => setAddCreditsFormVisible(false)} />
       )}
-      <div data-testid="org-name">
-        <span>{organization?.name}</span>
-        <button type="button" onClick={() => setChangeOrgNameFormVisible(true)}>
-          Change
-        </button>
+
+      <div data-testid="org-name" className="flex flex-col gap-2 w-sm">
+        <span className="text-white text-xs font-semibold ml-1">
+          Organization Name
+        </span>
+
+        <div
+          className={cn(
+            "text-sm p-3 bg-base rounded",
+            "flex items-center justify-between",
+          )}
+        >
+          <span className="text-white">{organization?.name}</span>
+          <button
+            type="button"
+            onClick={() => setChangeOrgNameFormVisible(true)}
+            className="text-[#A3A3A3] hover:text-white transition-colors cursor-pointer"
+          >
+            Change
+          </button>
+        </div>
       </div>
-      <div data-testid="billing-info">
-        {organizationPaymentInfo?.cardNumber}
+
+      <div className="flex flex-col gap-2 w-sm">
+        <span className="text-white text-xs font-semibold ml-1">
+          Billing Information
+        </span>
+
+        <span
+          data-testid="billing-info"
+          className={cn(
+            "text-sm p-3 bg-base rounded text-[#A3A3A3]",
+            "flex items-center justify-between",
+          )}
+        >
+          {organizationPaymentInfo?.cardNumber}
+        </span>
       </div>
 
       <button
         type="button"
         onClick={() => setDeleteOrgConfirmationVisible(true)}
+        className="text-xs text-[#FF3B30] cursor-pointer font-semibold hover:underline"
       >
         Delete Organization
       </button>
