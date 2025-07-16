@@ -138,5 +138,6 @@ class LLMRegistry:
             encoded = self.file_store.read(self.registry_path)
             pickled = base64.b64decode(encoded)
             self.restored_llm = pickle.loads(pickled)
+            logger.info(f'restored registry: {self.conversation_id}')
         except FileNotFoundError:
             pass
