@@ -1,3 +1,5 @@
+import os
+
 from evaluation.integration_tests.tests.base import BaseIntegrationTest, TestResult
 from evaluation.utils.shared import assert_and_raise
 from openhands.events.action import CmdRunAction
@@ -25,7 +27,10 @@ class Test(BaseIntegrationTest):
         assert_and_raise(obs.exit_code == 0, f'Failed to run command: {obs.content}')
 
         # git add
-        action = CmdRunAction(command='git add hello.py .vscode/')
+        cmd_str = 'git add hello.py'
+        if os.path.exists('.vscode'):
+            cmd_str += ' .vscode/'
+        action = CmdRunAction(command=cmd_str)
         obs = runtime.run_action(action)
         assert_and_raise(obs.exit_code == 0, f'Failed to run command: {obs.content}')
 
