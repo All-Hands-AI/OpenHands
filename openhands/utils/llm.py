@@ -58,6 +58,7 @@ def get_supported_llm_models(config: OpenHandsConfig) -> list[str]:
         'openhands/claude-sonnet-4-20250514',
         'openhands/claude-opus-4-20250514',
         'openhands/gemini-2.5-pro',
+        'openhands/o3',
         'openhands/o4-mini',
         'openhands/devstral-small-2505',
         'openhands/devstral-small-2507',
