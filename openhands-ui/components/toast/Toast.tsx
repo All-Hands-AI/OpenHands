@@ -1,14 +1,14 @@
-import { toast } from "react-toastify";
+import { toast as sonnerToast } from "sonner";
 import { Icon, type IconProps } from "../icon/Icon";
 import { cn } from "../../shared/utils/cn";
 import { Typography } from "../typography/Typography";
 import { toastStyles } from "./utils";
 
 type IBaseToastProps = {
+  id: string | number;
   text: string;
   icon: IconProps["icon"];
   iconClassName: string;
-  closeToast?: () => void;
 };
 const BaseToast = (props: IBaseToastProps) => {
   return (
@@ -27,7 +27,10 @@ const BaseToast = (props: IBaseToastProps) => {
       <Typography.Text fontSize="xs" className="text-white">
         {props.text}
       </Typography.Text>
-      <button onClick={props.closeToast} className="cursor-pointer">
+      <button
+        onClick={() => sonnerToast.dismiss(props.id)}
+        className="cursor-pointer"
+      >
         <Icon icon="X" className={cn("w-6 h-6 flex-shrink-0 text-white")} />
       </button>
     </div>
@@ -37,45 +40,45 @@ const BaseToast = (props: IBaseToastProps) => {
 export const toasterMessages = {
   error: (text?: string) => {
     const styles = toastStyles["error"];
-    toast((props) => (
+    sonnerToast.custom((id) => (
       <BaseToast
+        id={id}
         icon={styles.icon}
         iconClassName={cn(styles.iconColor)}
         text={text!}
-        closeToast={props.closeToast}
       />
     ));
   },
   success: (text?: string) => {
     const styles = toastStyles["success"];
-    toast((props) => (
+    sonnerToast.custom((id) => (
       <BaseToast
+        id={id}
         icon={styles.icon}
         iconClassName={cn(styles.iconColor)}
         text={text!}
-        closeToast={props.closeToast}
       />
     ));
   },
   info: (text?: string) => {
     const styles = toastStyles["info"];
-    toast((props) => (
+    sonnerToast.custom((id) => (
       <BaseToast
+        id={id}
         icon={styles.icon}
         iconClassName={cn(styles.iconColor)}
         text={text!}
-        closeToast={props.closeToast}
       />
     ));
   },
   warning: (text?: string) => {
     const styles = toastStyles["warning"];
-    toast((props) => (
+    sonnerToast.custom((id) => (
       <BaseToast
+        id={id}
         icon={styles.icon}
         iconClassName={cn(styles.iconColor)}
         text={text!}
-        closeToast={props.closeToast}
       />
     ));
   },
