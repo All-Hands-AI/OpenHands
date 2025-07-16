@@ -76,7 +76,7 @@ export const organizationService = {
     userId: string;
     role: OrganizationUserRole;
   }) => {
-    const { data } = await openHands.post(
+    const { data } = await openHands.patch(
       `/api/organizations/${orgId}/members`,
       {
         orgId,

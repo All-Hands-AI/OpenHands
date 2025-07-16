@@ -46,10 +46,79 @@ export const INITIAL_MOCK_ORGS: Organization[] = [
   },
   {
     id: "3",
-    name: "Gamma Inc",
+    name: "All Hands AI",
     balance: 750,
   },
 ];
+
+const orgAndMembers: Record<string, OrganizationMember[]> = {
+  "1": [
+    {
+      id: "1",
+      email: "alice@acme.org",
+      role: "superadmin",
+      status: "active",
+    },
+    {
+      id: "2",
+      email: "bob@acme.org",
+      role: "admin",
+      status: "active",
+    },
+    {
+      id: "3",
+      email: "charlie@acme.org",
+      role: "user",
+      status: "active",
+    },
+  ],
+  "2": [
+    {
+      id: "4",
+      email: "tony@gamma.org",
+      role: "user",
+      status: "active",
+    },
+    {
+      id: "5",
+      email: "evan@gamma.org",
+      role: "admin",
+      status: "active",
+    },
+  ],
+  "3": [
+    {
+      id: "6",
+      email: "robert@all-hands.dev",
+      role: "superadmin",
+      status: "active",
+    },
+    {
+      id: "7",
+      email: "ray@all-hands.dev",
+      role: "admin",
+      status: "active",
+    },
+    {
+      id: "8",
+      email: "chuck@all-hands.dev",
+      role: "user",
+      status: "active",
+    },
+    {
+      id: "9",
+      email: "stephan@all-hands.dev",
+      role: "user",
+      status: "active",
+    },
+    {
+      id: "10",
+      email: "tim@all-hands.dev",
+      role: "user",
+      status: "invited",
+    },
+  ],
+};
 
 let orgMembers = new Map(
   INITIAL_MOCK_ORG_MEMBERS.map((member) => [member.id, member]),
@@ -66,8 +135,15 @@ export const resetOrgMembers = () => {
 export const ORG_HANDLERS = [
   http.get("/api/users/me", () => HttpResponse.json(MOCK_ME)),
 
-  http.get("/api/organizations/:orgId/members", () => {
-    const members = Array.from(orgMembers.values());
+  http.get("/api/organizations/:orgId/members", ({ params }) => {
+    const orgId = params.orgId?.toString();
+    if (!orgId || !orgAndMembers[orgId]) {
+      return HttpResponse.json(
+        { error: "Organization not found" },
+        { status: 404 },
+      );
+    }
+    const members = orgAndMembers[orgId];
     return HttpResponse.json(members);
   }),
 
@@ -160,24 +236,41 @@ export const ORG_HANDLERS = [
     return HttpResponse.json(newMember, { status: 201 });
   }),
 
-  http.post("/api/organizations/:orgId/members", async ({ request }) => {
-    const { userId, role } = (await request.json()) as {
-      userId: string;
-      role: OrganizationUserRole;
-    };
+  http.patch(
+    "/api/organizations/:orgId/members",
+    async ({ request, params }) => {
+      const { userId, role } = (await request.json()) as {
+        userId: string;
+        role: OrganizationUserRole;
+      };
+      const orgId = params.orgId?.toString();
 
-    const member = orgMembers.get(userId);
-    if (!member) {
-      return HttpResponse.json({ error: "Member not found" }, { status: 404 });
-    }
+      if (!orgId || !orgAndMembers[orgId]) {
+        return HttpResponse.json(
+          { error: "Organization not found" },
+          { status: 404 },
+        );
+      }
 
-    // replace
-    const newMember: OrganizationMember = {
-      ...member,
-      role,
-    };
-    orgMembers.set(userId, newMember);
+      const member = orgAndMembers[orgId].find((m) => m.id === userId);
+      if (!member) {
+        return HttpResponse.json(
+          { error: "Member not found" },
+          { status: 404 },
+        );
+      }
 
-    return HttpResponse.json(member, { status: 200 });
-  }),
+      // replace
+      const newMember: OrganizationMember = {
+        ...member,
+        role,
+      };
+      const newMembers = orgAndMembers[orgId].map((m) =>
+        m.id === userId ? newMember : m,
+      );
+      orgAndMembers[orgId] = newMembers;
+
+      return HttpResponse.json(member, { status: 200 });
+    },
+  ),
 ];

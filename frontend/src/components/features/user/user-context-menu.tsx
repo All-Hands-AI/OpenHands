@@ -9,7 +9,6 @@ import {
 } from "react-icons/io5";
 import { FaCog } from "react-icons/fa";
 import { FaPlus } from "react-icons/fa6";
-import { useQuery } from "@tanstack/react-query";
 import { useLogout } from "#/hooks/mutation/use-logout";
 import { CreateNewOrganizationModal } from "../org/create-new-organization-modal";
 import { OrganizationUserRole } from "#/types/org";
@@ -18,13 +17,7 @@ import { cn } from "#/utils/utils";
 import { InviteOrganizationMemberModal } from "../org/invite-organization-member-modal";
 import { useSelectedOrganizationId } from "#/context/use-selected-organization";
 import { useOrganization } from "#/hooks/query/use-organization";
-import { organizationService } from "#/api/organization-service/organization-service.api";
-
-const useOrganizations = () =>
-  useQuery({
-    queryKey: ["organizations"],
-    queryFn: organizationService.getOrganizations,
-  });
+import { useOrganizations } from "#/hooks/query/use-organizations";
 
 interface TempButtonProps {
   start: React.ReactNode;

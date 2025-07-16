@@ -2,6 +2,7 @@ import { describe, expect, it, vi, test, beforeAll, beforeEach } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
+import { createRoutesStub } from "react-router";
 import { organizationService } from "#/api/organization-service/organization-service.api";
 import {
   INITIAL_MOCK_ORG_MEMBERS,
@@ -10,6 +11,7 @@ import {
 import { userService } from "#/api/user-service/user-service.api";
 import OpenHands from "#/api/open-hands";
 import ManageTeam from "#/routes/manage-team";
+import SettingsScreen from "#/routes/settings";
 
 function ManageTeamWithPortalRoot() {
   return (
@@ -20,7 +22,34 @@ function ManageTeamWithPortalRoot() {
   );
 }
 
+const RouteStub = createRoutesStub([
+  {
+    Component: SettingsScreen,
+    path: "/settings",
+    children: [
+      {
+        Component: ManageTeamWithPortalRoot,
+        path: "/settings/team",
+      },
+    ],
+  },
+]);
+
 let queryClient: QueryClient;
+
+const selectOrganization = async ({ orgIndex }: { orgIndex: number }) => {
+  const organizationSelect = screen.getByTestId("organization-select");
+  const options =
+    await within(organizationSelect).findAllByTestId("org-option");
+  expect(options).toHaveLength(3);
+
+  const selectedOption = options[orgIndex];
+  if (!selectedOption) {
+    expect.fail(`No organization option found at index ${orgIndex}`);
+  }
+
+  await userEvent.click(selectedOption);
+};
 
 describe("Manage Team Route", () => {
   beforeAll(() => {
@@ -37,7 +66,7 @@ describe("Manage Team Route", () => {
   });
 
   const renderManageTeam = () =>
-    render(<ManageTeamWithPortalRoot />, {
+    render(<RouteStub initialEntries={["/settings/team"]} />, {
       wrapper: ({ children }) => (
         <QueryClientProvider client={queryClient}>
           {children}
@@ -47,16 +76,26 @@ describe("Manage Team Route", () => {
 
   it.todo("should navigate away from the page if not saas");
 
-  it("should render the list of team members", async () => {
+  it("should allow the user to select an organization", async () => {
     const getOrganizationMembersSpy = vi.spyOn(
       organizationService,
       "getOrganizationMembers",
     );
 
     renderManageTeam();
+
+    expect(getOrganizationMembersSpy).not.toHaveBeenCalled();
+
+    await selectOrganization({ orgIndex: 0 });
     expect(getOrganizationMembersSpy).toHaveBeenCalledExactlyOnceWith({
       orgId: "1",
     });
+  });
+
+  it("should render the list of team members", async () => {
+    renderManageTeam();
+
+    await selectOrganization({ orgIndex: 0 });
 
     const memberListItems = await screen.findAllByTestId("member-item");
     expect(memberListItems).toHaveLength(INITIAL_MOCK_ORG_MEMBERS.length);
@@ -67,7 +106,7 @@ describe("Manage Team Route", () => {
     });
   });
 
-  test.only("an admin should be able to change the role of a team member", async () => {
+  test("an admin should be able to change the role of a team member", async () => {
     const getUserSpy = vi.spyOn(userService, "getMe");
     const updateMemberRoleSpy = vi.spyOn(
       organizationService,
@@ -82,6 +121,8 @@ describe("Manage Team Route", () => {
     });
 
     renderManageTeam();
+
+    await selectOrganization({ orgIndex: 0 });
 
     const memberListItems = await screen.findAllByTestId("member-item");
     const userRoleMember = memberListItems[2]; // third member is "user"
@@ -143,6 +184,8 @@ describe("Manage Team Route", () => {
 
     renderManageTeam();
 
+    await selectOrganization({ orgIndex: 0 });
+
     const memberListItems = await screen.findAllByTestId("member-item");
     const adminRoleMember = memberListItems[1]; // first member is "admin"
 
@@ -185,6 +228,8 @@ describe("Manage Team Route", () => {
     });
 
     renderManageTeam();
+
+    await selectOrganization({ orgIndex: 0 });
 
     const memberListItems = await screen.findAllByTestId("member-item");
     const superAdminMember = memberListItems[0]; // first member is "superadmin
@@ -263,6 +308,8 @@ describe("Manage Team Route", () => {
       ]);
 
       renderManageTeam();
+
+      await selectOrganization({ orgIndex: 0 });
 
       const members = await screen.findAllByTestId("member-item");
       expect(members).toHaveLength(1);
