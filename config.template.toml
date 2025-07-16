@@ -302,7 +302,7 @@ classpath = "my_package.my_module.MyCustomAgent"
 # Whether to initialize plugins
 #initialize_plugins = true
 
-# Mount Docker socket for Docker-in-Docker functionality
+# Mount Docker socket for docker-out-of-docker functionality
 # WARNING: This grants container access to the host Docker daemon with root-equivalent privileges
 # Use only in trusted environments
 #mount_docker_socket = false
@@ -482,5 +482,5 @@ type = "noop"
 # Optional YAML string defining pod tolerations
 #tolerations_yaml = ""
 
-# Run the runtime sandbox container in privileged mode for use with docker-in-docker
+# Run the runtime sandbox container in privileged mode for use with docker-out-of-docker
 #privileged = false

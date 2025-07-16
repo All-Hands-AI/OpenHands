@@ -89,7 +89,7 @@ class SandboxConfig(BaseModel):
     )
     mount_docker_socket: bool = Field(
         default=False,
-        description='Whether to mount the Docker socket to enable Docker-in-Docker functionality. WARNING: This grants container access to the host Docker daemon with root-equivalent privileges. Use only in trusted environments.',
+        description='Whether to mount the Docker socket to enable docker-out-of-docker functionality. WARNING: This grants container access to the host Docker daemon with root-equivalent privileges. Use only in trusted environments.',
     )
 
     cuda_visible_devices: str | None = Field(default=None)
