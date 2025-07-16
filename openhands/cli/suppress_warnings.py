@@ -41,6 +41,13 @@ def suppress_cli_warnings():
         message='.*Expected .* fields but got .*',
         category=UserWarning,
     )
+    
+    # Suppress SyntaxWarnings from pydub.utils about invalid escape sequences
+    warnings.filterwarnings(
+        'ignore',
+        category=SyntaxWarning,
+        module=r'pydub\.utils',
+    )
 
 
 # Apply warning suppressions when module is imported
