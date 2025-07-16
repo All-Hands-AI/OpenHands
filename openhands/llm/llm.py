@@ -172,6 +172,18 @@ class LLM(RetryMixin, DebugMixin):
             # openai doesn't expose top_k
             # litellm will handle it a bit differently than the openai-compatible params
             kwargs['top_k'] = self.config.top_k
+        if self.config.top_p is not None:
+            # openai doesn't expose top_p, but litellm does
+            kwargs['top_p'] = self.config.top_p
+
+        # Handle OpenHands provider - rewrite to litellm_proxy
+        if self.config.model.startswith('openhands/'):
+            model_name = self.config.model.removeprefix('openhands/')
+            self.config.model = f'litellm_proxy/{model_name}'
+            self.config.base_url = 'https://llm-proxy.app.all-hands.dev/'
+            logger.debug(
+                f'Rewrote openhands/{model_name} to {self.config.model} with base URL {self.config.base_url}'
+            )
 
         if (
             self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS
@@ -181,6 +193,7 @@ class LLM(RetryMixin, DebugMixin):
             kwargs.pop(
                 'temperature'
             )  # temperature is not supported for reasoning models
+            kwargs.pop('top_p')  # reasoning model like o3 doesn't support top_p
         # Azure issue: https://github.com/All-Hands-AI/OpenHands/issues/6777
         if self.config.model.startswith('azure'):
             kwargs['max_tokens'] = self.config.max_output_tokens
@@ -202,7 +215,6 @@ class LLM(RetryMixin, DebugMixin):
             api_version=self.config.api_version,
             custom_llm_provider=self.config.custom_llm_provider,
             timeout=self.config.timeout,
-            top_p=self.config.top_p,
             drop_params=self.config.drop_params,
             seed=self.config.seed,
             **kwargs,

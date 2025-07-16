@@ -104,6 +104,8 @@ def extract_model_and_provider(model: str) -> ModelInfo:
             return ModelInfo(provider='anthropic', model=split[0], separator='/')
         if split[0] in VERIFIED_MISTRAL_MODELS:
             return ModelInfo(provider='mistral', model=split[0], separator='/')
+        if split[0] in VERIFIED_OPENHANDS_MODELS:
+            return ModelInfo(provider='openhands', model=split[0], separator='/')
         # return as model only
         return ModelInfo(provider='', model=model, separator='')
 
@@ -145,7 +147,7 @@ def organize_models_and_providers(
     return result_dict
 
 
-VERIFIED_PROVIDERS = ['anthropic', 'openai', 'mistral']
+VERIFIED_PROVIDERS = ['openhands', 'anthropic', 'openai', 'mistral']
 
 VERIFIED_OPENAI_MODELS = [
     'o4-mini',
@@ -175,6 +177,18 @@ VERIFIED_ANTHROPIC_MODELS = [
 
 VERIFIED_MISTRAL_MODELS = [
     'devstral-small-2505',
+    'devstral-small-2507',
+    'devstral-medium-2507',
+]
+
+VERIFIED_OPENHANDS_MODELS = [
+    'claude-sonnet-4-20250514',
+    'claude-opus-4-20250514',
+    'devstral-small-2507',
+    'devstral-medium-2507',
+    'o3',
+    'o4-mini',
+    'gemini-2.5-pro',
 ]
 
 

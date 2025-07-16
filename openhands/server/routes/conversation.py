@@ -4,14 +4,17 @@ from pydantic import BaseModel
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.event_filter import EventFilter
+from openhands.events.event_store import EventStore
 from openhands.events.serialization.event import event_to_dict
 from openhands.memory.memory import Memory
 from openhands.microagent.types import InputMetadata
 from openhands.runtime.base import Runtime
 from openhands.server.dependencies import get_dependencies
 from openhands.server.session.conversation import ServerConversation
-from openhands.server.shared import conversation_manager
-from openhands.server.utils import get_conversation
+from openhands.server.shared import conversation_manager, file_store
+from openhands.server.user_auth import get_user_id
+from openhands.server.utils import get_conversation, get_conversation_metadata
+from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 
 app = APIRouter(
     prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies()
@@ -101,27 +104,31 @@ async def get_hosts(
 
 @app.get('/events')
 async def search_events(
+    conversation_id: str,
     start_id: int = 0,
     end_id: int | None = None,
     reverse: bool = False,
     filter: EventFilter | None = None,
     limit: int = 20,
-    conversation: ServerConversation = Depends(get_conversation),
+    metadata: ConversationMetadata = Depends(get_conversation_metadata),
+    user_id: str | None = Depends(get_user_id),
 ):
     """Search through the event stream with filtering and pagination.
     Args:
-        request: The incoming request object
+        conversation_id: The conversation ID
         start_id: Starting ID in the event stream. Defaults to 0
         end_id: Ending ID in the event stream
         reverse: Whether to retrieve events in reverse order. Defaults to False.
         filter: Filter for events
         limit: Maximum number of events to return. Must be between 1 and 100. Defaults to 20
+        metadata: Conversation metadata (injected by dependency)
+        user_id: User ID (injected by dependency)
     Returns:
         dict: Dictionary containing:
             - events: List of matching events
             - has_more: Whether there are more matching events after this batch
     Raises:
-        HTTPException: If conversation is not found
+        HTTPException: If conversation is not found or access is denied
         ValueError: If limit is less than 1 or greater than 100
     """
     if limit < 0 or limit > 100:
@@ -129,10 +136,16 @@ async def search_events(
             status_code=status.HTTP_400_BAD_REQUEST, detail='Invalid limit'
         )
 
-    # Get matching events from the stream
-    event_stream = conversation.event_stream
+    # Create an event store to access the events directly
+    event_store = EventStore(
+        sid=conversation_id,
+        file_store=file_store,
+        user_id=user_id,
+    )
+
+    # Get matching events from the store
     events = list(
-        event_stream.search_events(
+        event_store.search_events(
             start_id=start_id,
             end_id=end_id,
             reverse=reverse,
