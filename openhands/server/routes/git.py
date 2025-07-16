@@ -422,8 +422,6 @@ async def get_repository_microagents(
             # Load microagents from the directory
             repo_agents, knowledge_agents = load_microagents_from_dir(microagents_dir)
 
-            print(f'repo_agents: {repo_agents}')
-
             # Prepare response
             microagents = []
 
