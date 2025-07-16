@@ -45,7 +45,7 @@ def update_multi_swe_config(output_jsonl_path, config_path, dataset):
         "fix_patch_run_cmd": (
             "bash -c \"apt update ; apt install -y patch ; "
             "sed -i 's@git apply.*@patch --batch --fuzz=5 -p1 -i /home/test.patch;"
-            "patch --batch --fuzz=5 -p1 -i /home/fix.patch@g' /home/fix-run.sh\""
+            "patch --batch --fuzz=5 -p1 -i /home/fix.patch@g' /home/fix-run.sh ; chmod +x /home/*.sh  ; /home/fix-run.sh\""
         )
     }
 
