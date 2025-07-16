@@ -2,6 +2,7 @@ import os
 import shutil
 import subprocess
 import tempfile
+from datetime import datetime
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, status
@@ -16,6 +17,7 @@ from openhands.integrations.provider import (
 from openhands.integrations.service_types import (
     AuthenticationError,
     Branch,
+    ProviderType,
     Repository,
     SuggestedTask,
     UnknownException,
@@ -248,6 +250,58 @@ class MicroagentResponse(BaseModel):
     triggers: list[str] = []
     inputs: list[InputMetadata] = []
     tools: list[str] = []
+    created_at: datetime
+    git_provider: ProviderType
+
+
+def _get_file_creation_time(repo_dir: Path, file_path: Path) -> datetime:
+    """Get the creation time of a file from Git history.
+
+    Args:
+        repo_dir: The root directory of the Git repository
+        file_path: The path to the file relative to the repository root
+
+    Returns:
+        datetime: The timestamp when the file was first added to the repository
+    """
+    try:
+        # Get the relative path from the repository root
+        relative_path = file_path.relative_to(repo_dir)
+
+        # Use git log to get the first commit that added this file
+        # --follow: follow renames and moves
+        # --reverse: show commits in reverse chronological order (oldest first)
+        # --format=%ct: show commit timestamp in Unix format
+        # -1: limit to 1 result (the first commit)
+        cmd = [
+            'git',
+            'log',
+            '--follow',
+            '--reverse',
+            '--format=%ct',
+            '-1',
+            str(relative_path),
+        ]
+
+        result = subprocess.run(
+            cmd, cwd=repo_dir, capture_output=True, text=True, timeout=10
+        )
+
+        if result.returncode == 0 and result.stdout.strip():
+            # Parse Unix timestamp and convert to datetime
+            timestamp = int(result.stdout.strip())
+            return datetime.fromtimestamp(timestamp)
+        else:
+            logger.warning(
+                f'Failed to get creation time for {relative_path}: {result.stderr}'
+            )
+            # Fallback to current time if git log fails
+            return datetime.now()
+
+    except Exception as e:
+        logger.warning(f'Error getting creation time for {file_path}: {str(e)}')
+        # Fallback to current time if there's any error
+        return datetime.now()
 
 
 @app.get(
@@ -368,11 +422,17 @@ async def get_repository_microagents(
             # Load microagents from the directory
             repo_agents, knowledge_agents = load_microagents_from_dir(microagents_dir)
 
+            print(f'repo_agents: {repo_agents}')
+
             # Prepare response
             microagents = []
 
             # Add repo microagents
             for name, r_agent in repo_agents.items():
+                # Get the actual creation time from Git
+                agent_file_path = Path(r_agent.source)
+                created_at = _get_file_creation_time(repo_dir, agent_file_path)
+
                 microagents.append(
                     MicroagentResponse(
                         name=name,
@@ -388,11 +448,17 @@ async def get_repository_microagents(
                             if r_agent.metadata.mcp_tools
                             else []
                         ),
+                        created_at=created_at,
+                        git_provider=git_provider,
                     )
                 )
 
             # Add knowledge microagents
             for name, k_agent in knowledge_agents.items():
+                # Get the actual creation time from Git
+                agent_file_path = Path(k_agent.source)
+                created_at = _get_file_creation_time(repo_dir, agent_file_path)
+
                 microagents.append(
                     MicroagentResponse(
                         name=name,
@@ -408,6 +474,8 @@ async def get_repository_microagents(
                             if k_agent.metadata.mcp_tools
                             else []
                         ),
+                        created_at=created_at,
+                        git_provider=git_provider,
                     )
                 )
 
