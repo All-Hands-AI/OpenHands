@@ -8,33 +8,7 @@ import { OrganizationMemberListItem } from "#/components/features/org/organizati
 import { useUpdateMemberRole } from "#/hooks/mutation/use-update-member-role";
 import { useMe } from "#/hooks/query/use-me";
 import { BrandButton } from "#/components/features/settings/brand-button";
-
-type UserRoleChangePermissionKey = "change_user_role";
-type InviteUserToOrganizationKey = "invite_user_to_organization";
-
-type ChangeUserRolePermission =
-  `${UserRoleChangePermissionKey}:${OrganizationUserRole}`;
-
-type UserPermission = InviteUserToOrganizationKey | ChangeUserRolePermission;
-
-const superadminPerms: UserPermission[] = [
-  "invite_user_to_organization",
-  "change_user_role:superadmin",
-  "change_user_role:admin",
-  "change_user_role:user",
-];
-const adminPerms: UserPermission[] = [
-  "invite_user_to_organization",
-  "change_user_role:admin",
-  "change_user_role:user",
-];
-const userPerms: UserPermission[] = [];
-
-const rolePermissions: Record<OrganizationUserRole, UserPermission[]> = {
-  superadmin: superadminPerms,
-  admin: adminPerms,
-  user: userPerms,
-};
+import { rolePermissions } from "#/utils/org/permissions";
 
 function ManageTeam() {
   const { data: organizationMembers } = useOrganizationMembers();

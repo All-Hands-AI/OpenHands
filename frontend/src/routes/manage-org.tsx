@@ -10,6 +10,8 @@ import { organizationService } from "#/api/organization-service/organization-ser
 import { useSelectedOrganizationId } from "#/context/use-selected-organization";
 import { SettingsInput } from "#/components/features/settings/settings-input";
 import { BrandButton } from "#/components/features/settings/brand-button";
+import { useMe } from "#/hooks/query/use-me";
+import { rolePermissions } from "#/utils/org/permissions";
 
 function TempChip({
   children,
@@ -207,6 +209,7 @@ function AddCreditsModal({ onClose }: AddCreditsModalProps) {
 }
 
 function ManageOrg() {
+  const { data: me } = useMe();
   const { data: organization } = useOrganization();
   const { data: organizationPaymentInfo } = useOrganizationPaymentInfo({
     orgId: "1",
@@ -218,6 +221,11 @@ function ManageOrg() {
     React.useState(false);
   const [deleteOrgConfirmationVisible, setDeleteOrgConfirmationVisible] =
     React.useState(false);
+
+  const canChangeOrgName =
+    !!me && rolePermissions[me.role].includes("change_organization_name");
+  const canDeleteOrg =
+    !!me && rolePermissions[me.role].includes("delete_organization");
 
   return (
     <div
@@ -260,13 +268,15 @@ function ManageOrg() {
           )}
         >
           <span className="text-white">{organization?.name}</span>
-          <button
-            type="button"
-            onClick={() => setChangeOrgNameFormVisible(true)}
-            className="text-[#A3A3A3] hover:text-white transition-colors cursor-pointer"
-          >
-            Change
-          </button>
+          {canChangeOrgName && (
+            <button
+              type="button"
+              onClick={() => setChangeOrgNameFormVisible(true)}
+              className="text-[#A3A3A3] hover:text-white transition-colors cursor-pointer"
+            >
+              Change
+            </button>
+          )}
         </div>
       </div>
 
@@ -286,13 +296,15 @@ function ManageOrg() {
         </span>
       </div>
 
-      <button
-        type="button"
-        onClick={() => setDeleteOrgConfirmationVisible(true)}
-        className="text-xs text-[#FF3B30] cursor-pointer font-semibold hover:underline"
-      >
-        Delete Organization
-      </button>
+      {canDeleteOrg && (
+        <button
+          type="button"
+          onClick={() => setDeleteOrgConfirmationVisible(true)}
+          className="text-xs text-[#FF3B30] cursor-pointer font-semibold hover:underline"
+        >
+          Delete Organization
+        </button>
+      )}
     </div>
   );
 }

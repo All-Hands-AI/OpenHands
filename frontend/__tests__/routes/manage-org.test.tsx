@@ -8,6 +8,7 @@ import OpenHands from "#/api/open-hands";
 import ManageOrg from "#/routes/manage-org";
 import { organizationService } from "#/api/organization-service/organization-service.api";
 import SettingsScreen, { clientLoader } from "#/routes/settings";
+import { userService } from "#/api/user-service/user-service.api";
 
 function ManageOrgWithPortalRoot() {
   return (
@@ -149,6 +150,19 @@ describe("Manage Org Route", () => {
         organizationService,
         "updateOrganization",
       );
+      const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+      const getUserSpy = vi.spyOn(userService, "getMe");
+
+      // @ts-expect-error - only return the properties we need for this test
+      getConfigSpy.mockResolvedValue({
+        APP_MODE: "saas", // required to enable getMe
+      });
+      getUserSpy.mockResolvedValue({
+        id: "user1",
+        email: "me@acme.org",
+        role: "superadmin", // only superadmins can change org name
+        status: "active",
+      });
 
       renderManageOrg();
       await screen.findByTestId("manage-org-screen");
@@ -189,10 +203,63 @@ describe("Manage Org Route", () => {
       });
     });
 
-    it.todo("should NOT allow roles other than superadmins to change org name");
+    it("should NOT allow roles other than superadmins to change org name", async () => {
+      const getUserSpy = vi.spyOn(userService, "getMe");
+      getUserSpy.mockResolvedValue({
+        id: "user1",
+        email: "me@acme.org",
+        role: "admin",
+        status: "active",
+      });
+
+      renderManageOrg();
+      await screen.findByTestId("manage-org-screen");
+
+      await selectOrganization({ orgIndex: 0 });
+
+      const orgName = screen.getByTestId("org-name");
+      const changeOrgNameButton = within(orgName).queryByRole("button", {
+        name: /change/i,
+      });
+      expect(changeOrgNameButton).not.toBeInTheDocument();
+    });
+
+    it("should NOT allow roles other than superadmins to delete an organization", async () => {
+      const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+      const getUserSpy = vi.spyOn(userService, "getMe");
+
+      // @ts-expect-error - only return the properties we need for this test
+      getConfigSpy.mockResolvedValue({
+        APP_MODE: "saas", // required to enable getMe
+      });
+      getUserSpy.mockResolvedValue({
+        id: "user1",
+        email: "me@acme.org",
+        role: "admin",
+        status: "active",
+      });
+
+      renderManageOrg();
+      await screen.findByTestId("manage-org-screen");
+
+      await selectOrganization({ orgIndex: 0 });
+
+      const deleteOrgButton = screen.queryByRole("button", {
+        name: /delete organization/i,
+      });
+      expect(deleteOrgButton).not.toBeInTheDocument();
+    });
 
     it("should be able to delete an organization", async () => {
       const deleteOrgSpy = vi.spyOn(organizationService, "deleteOrganization");
+      const getUserSpy = vi.spyOn(userService, "getMe");
+      getUserSpy.mockResolvedValue({
+        id: "user1",
+        email: "me@acme.org",
+        role: "superadmin", // only superadmins can delete orgs
+        status: "active",
+      });
+
       renderManageOrg();
       await screen.findByTestId("manage-org-screen");
 
@@ -229,10 +296,6 @@ describe("Manage Org Route", () => {
       // expect to have navigated to home screen
       screen.getByTestId("home-screen");
     });
-
-    it.todo(
-      "should NOT allow roles other than superadmins to delete an organization",
-    );
 
     it.todo("should be able to update the organization billing info");
   });

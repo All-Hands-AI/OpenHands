@@ -253,6 +253,10 @@ describe("Manage Team Route", () => {
     ).not.toBeInTheDocument();
   });
 
+  it.todo(
+    "should not allow a user to change another user's role if they are the same role",
+  );
+
   describe("Inviting Team Members", () => {
     it("should render an invite team member button", async () => {
       renderManageTeam();
