@@ -29,7 +29,7 @@ export const Option = ({
   );
   const lastOption =
     visibleOptions?.length > 0
-      ? (visibleOptions![visibleOptions!.length - 1] as IOption<unknown>)
+      ? (visibleOptions[visibleOptions!.length - 1] as IOption<unknown>)
       : null;
 
   const option = data as IOption<unknown>;
