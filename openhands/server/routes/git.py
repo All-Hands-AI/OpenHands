@@ -1,6 +1,12 @@
+import os
+import shutil
+import subprocess
+import tempfile
+from pathlib import Path
+
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
-from pydantic import SecretStr
+from pydantic import BaseModel, SecretStr
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import (
@@ -15,6 +21,8 @@ from openhands.integrations.service_types import (
     UnknownException,
     User,
 )
+from openhands.microagent import load_microagents_from_dir
+from openhands.microagent.types import InputMetadata
 from openhands.server.dependencies import get_dependencies
 from openhands.server.shared import server_config
 from openhands.server.user_auth import (
@@ -229,3 +237,204 @@ async def get_repository_branches(
         content='Git provider token required. (such as GitHub).',
         status_code=status.HTTP_401_UNAUTHORIZED,
     )
+
+
+class MicroagentResponse(BaseModel):
+    """Response model for microagents endpoint."""
+
+    name: str
+    type: str
+    content: str
+    triggers: list[str] = []
+    inputs: list[InputMetadata] = []
+    tools: list[str] = []
+
+
+@app.get(
+    '/repository/{repository_name:path}/microagents',
+    response_model=list[MicroagentResponse],
+)
+async def get_repository_microagents(
+    repository_name: str,
+    provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
+    access_token: SecretStr | None = Depends(get_access_token),
+    user_id: str | None = Depends(get_user_id),
+) -> list[MicroagentResponse] | JSONResponse:
+    """Scan the .openhands/microagents directory of a repository and return the list of microagents.
+
+    Args:
+        repository_name: Repository name in the format 'owner/repo' or 'domain/owner/repo'
+        provider_tokens: Provider tokens for authentication
+        access_token: Access token for external authentication
+        user_id: User ID for authentication
+
+    Returns:
+        List of microagents found in the repository's .openhands/microagents directory
+    """
+    if not provider_tokens:
+        logger.info(
+            f'Returning 401 Unauthorized - Git provider token required for user_id: {user_id}'
+        )
+        return JSONResponse(
+            content='Git provider token required. (such as GitHub).',
+            status_code=status.HTTP_401_UNAUTHORIZED,
+        )
+
+    try:
+        # Create ProviderHandler to detect git provider and get repository info
+        provider_handler = ProviderHandler(
+            provider_tokens=provider_tokens,
+            external_auth_token=access_token,
+            external_auth_id=user_id,
+        )
+
+        # Verify repository and get provider information
+        try:
+            repository = await provider_handler.verify_repo_provider(repository_name)
+            git_provider = repository.git_provider
+            logger.info(
+                f'Detected git provider: {git_provider} for repository: {repository_name}'
+            )
+        except AuthenticationError as e:
+            logger.info(
+                f'Returning 401 Unauthorized - Authentication error for user_id: {user_id}, error: {str(e)}'
+            )
+            return JSONResponse(
+                content=str(e),
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        # Get authenticated git URL
+        provider_token = provider_tokens[git_provider]
+        domain = provider_token.host or _get_default_domain(git_provider)
+
+        if provider_token.token:
+            token_value = provider_token.token.get_secret_value()
+            if git_provider.value == 'gitlab':
+                remote_url = (
+                    f'https://oauth2:{token_value}@{domain}/{repository_name}.git'
+                )
+            elif git_provider.value == 'bitbucket':
+                if ':' in token_value:
+                    # App token format: username:app_password
+                    remote_url = f'https://{token_value}@{domain}/{repository_name}.git'
+                else:
+                    # Access token format: use x-token-auth
+                    remote_url = f'https://x-token-auth:{token_value}@{domain}/{repository_name}.git'
+            else:
+                # GitHub
+                remote_url = f'https://{token_value}@{domain}/{repository_name}.git'
+        else:
+            remote_url = f'https://{domain}/{repository_name}.git'
+
+        # Create temporary directory for cloning
+        temp_dir = tempfile.mkdtemp()
+        repo_dir = Path(temp_dir) / 'repo'
+
+        try:
+            # Clone the repository (shallow clone for efficiency)
+            clone_cmd = ['git', 'clone', '--depth', '1', remote_url, str(repo_dir)]
+
+            # Set environment variable to avoid interactive prompts
+            env = os.environ.copy()
+            env['GIT_TERMINAL_PROMPT'] = '0'
+
+            result = subprocess.run(
+                clone_cmd,
+                capture_output=True,
+                text=True,
+                env=env,
+                timeout=30,  # 30 second timeout
+            )
+
+            if result.returncode != 0:
+                logger.error(
+                    f'Failed to clone repository {repository_name}: {result.stderr}'
+                )
+                return JSONResponse(
+                    content=f'Failed to clone repository: {result.stderr}',
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+
+            # Look for .openhands/microagents directory
+            microagents_dir = repo_dir / '.openhands' / 'microagents'
+
+            if not microagents_dir.exists():
+                logger.info(
+                    f'No .openhands/microagents directory found in {repository_name}'
+                )
+                return []
+
+            # Load microagents from the directory
+            repo_agents, knowledge_agents = load_microagents_from_dir(microagents_dir)
+
+            # Prepare response
+            microagents = []
+
+            # Add repo microagents
+            for name, r_agent in repo_agents.items():
+                microagents.append(
+                    MicroagentResponse(
+                        name=name,
+                        type='repo',
+                        content=r_agent.content,
+                        triggers=[],
+                        inputs=r_agent.metadata.inputs,
+                        tools=(
+                            [
+                                server.name
+                                for server in r_agent.metadata.mcp_tools.stdio_servers
+                            ]
+                            if r_agent.metadata.mcp_tools
+                            else []
+                        ),
+                    )
+                )
+
+            # Add knowledge microagents
+            for name, k_agent in knowledge_agents.items():
+                microagents.append(
+                    MicroagentResponse(
+                        name=name,
+                        type='knowledge',
+                        content=k_agent.content,
+                        triggers=k_agent.triggers,
+                        inputs=k_agent.metadata.inputs,
+                        tools=(
+                            [
+                                server.name
+                                for server in k_agent.metadata.mcp_tools.stdio_servers
+                            ]
+                            if k_agent.metadata.mcp_tools
+                            else []
+                        ),
+                    )
+                )
+
+            logger.info(f'Found {len(microagents)} microagents in {repository_name}')
+            return microagents
+
+        finally:
+            # Clean up temporary directory
+            shutil.rmtree(temp_dir, ignore_errors=True)
+
+    except Exception as e:
+        logger.error(
+            f'Error scanning repository {repository_name}: {str(e)}', exc_info=True
+        )
+        return JSONResponse(
+            content=f'Error scanning repository: {str(e)}',
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+def _get_default_domain(git_provider):
+    """Get the default domain for a git provider."""
+    from openhands.integrations.service_types import ProviderType
+
+    domain_map = {
+        ProviderType.GITHUB: 'github.com',
+        ProviderType.GITLAB: 'gitlab.com',
+        ProviderType.BITBUCKET: 'bitbucket.org',
+    }
+    return domain_map.get(git_provider, 'github.com')
