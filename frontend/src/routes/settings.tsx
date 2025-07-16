@@ -16,6 +16,7 @@ const SAAS_ONLY_PATHS = [
   "/settings/billing",
   "/settings/credits",
   "/settings/api-keys",
+  "/settings/team",
 ];
 
 const SAAS_NAV_ITEMS = [

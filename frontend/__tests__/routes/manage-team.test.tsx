@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, test, beforeAll, beforeEach } from "vitest";
+import { describe, expect, it, vi, test, beforeEach } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
@@ -7,7 +7,7 @@ import { organizationService } from "#/api/organization-service/organization-ser
 import { userService } from "#/api/user-service/user-service.api";
 import OpenHands from "#/api/open-hands";
 import ManageTeam from "#/routes/manage-team";
-import SettingsScreen from "#/routes/settings";
+import SettingsScreen, { clientLoader } from "#/routes/settings";
 import { ORGS_AND_MEMBERS } from "#/mocks/org-handlers";
 
 function ManageTeamWithPortalRoot() {
@@ -21,8 +21,10 @@ function ManageTeamWithPortalRoot() {
 
 const RouteStub = createRoutesStub([
   {
+    loader: clientLoader,
     Component: SettingsScreen,
     path: "/settings",
+    HydrateFallback: () => <div>Loading...</div>,
     children: [
       {
         Component: ManageTeamWithPortalRoot,
@@ -35,6 +37,8 @@ const RouteStub = createRoutesStub([
 let queryClient: QueryClient;
 
 const selectOrganization = async ({ orgIndex }: { orgIndex: number }) => {
+  await screen.findByTestId("manage-team-settings");
+
   const organizationSelect = screen.getByTestId("organization-select");
   const options =
     await within(organizationSelect).findAllByTestId("org-option");
@@ -49,15 +53,13 @@ const selectOrganization = async ({ orgIndex }: { orgIndex: number }) => {
 };
 
 describe("Manage Team Route", () => {
-  beforeAll(() => {
+  beforeEach(() => {
     const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
     // @ts-expect-error - only return APP_MODE for these tests
     getConfigSpy.mockResolvedValue({
       APP_MODE: "saas",
     });
-  });
 
-  beforeEach(() => {
     queryClient = new QueryClient();
   });
 
@@ -70,7 +72,27 @@ describe("Manage Team Route", () => {
       ),
     });
 
-  it.todo("should navigate away from the page if not saas");
+  it("should render", async () => {
+    renderManageTeam();
+    await screen.findByTestId("manage-team-settings");
+  });
+
+  it("should navigate away from the page if not saas", async () => {
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    // @ts-expect-error - only return APP_MODE for these tests
+    getConfigSpy.mockResolvedValue({
+      APP_MODE: "oss",
+    });
+
+    renderManageTeam();
+    expect(
+      screen.queryByTestId("manage-team-settings"),
+    ).not.toBeInTheDocument();
+  });
+
+  it.todo(
+    "should navigate away from the page if user is USER role of the selected organization",
+  );
 
   it("should allow the user to select an organization", async () => {
     const getOrganizationMembersSpy = vi.spyOn(
@@ -79,6 +101,7 @@ describe("Manage Team Route", () => {
     );
 
     renderManageTeam();
+    await screen.findByTestId("manage-team-settings");
 
     expect(getOrganizationMembersSpy).not.toHaveBeenCalled();
 
@@ -90,6 +113,7 @@ describe("Manage Team Route", () => {
 
   it("should render the list of team members", async () => {
     renderManageTeam();
+    await screen.findByTestId("manage-team-settings");
 
     await selectOrganization({ orgIndex: 0 });
     const members = ORGS_AND_MEMBERS["1"];
@@ -118,6 +142,7 @@ describe("Manage Team Route", () => {
     });
 
     renderManageTeam();
+    await screen.findByTestId("manage-team-settings");
 
     await selectOrganization({ orgIndex: 0 });
 
@@ -180,6 +205,7 @@ describe("Manage Team Route", () => {
     });
 
     renderManageTeam();
+    await screen.findByTestId("manage-team-settings");
 
     await selectOrganization({ orgIndex: 0 });
 
@@ -208,6 +234,7 @@ describe("Manage Team Route", () => {
     });
 
     renderManageTeam();
+    await screen.findByTestId("manage-team-settings");
 
     const inviteButton = screen.queryByRole("button", {
       name: /invite team/i,
@@ -225,6 +252,7 @@ describe("Manage Team Route", () => {
     });
 
     renderManageTeam();
+    await screen.findByTestId("manage-team-settings");
 
     await selectOrganization({ orgIndex: 0 });
 

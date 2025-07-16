@@ -62,7 +62,7 @@ function ManageTeam() {
   };
 
   return (
-    <div className="p-4 flex flex-col gap-2">
+    <div data-testid="manage-team-settings" className="p-4 flex flex-col gap-2">
       {hasPermissionToInvite && (
         <BrandButton
           type="button"
