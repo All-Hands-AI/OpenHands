@@ -179,8 +179,8 @@ jobs:
         id: create_comment
         uses: KeisukeYamashita/create-comment@v1
         with:
-          # if triggered by PR, use PR number, otherwise use 5318 as fallback issue number for manual triggers
-          number: ${{ github.event_name == 'pull_request' && github.event.pull_request.number || 5318 }}
+          # if triggered by PR, use PR number, otherwise use 9745 as fallback issue number for manual triggers
+          number: ${{ github.event_name == 'pull_request' && github.event.pull_request.number || 9745 }}
           unique: false
           comment: |
               Trigger by: ${{ github.event_name == 'pull_request' && format('Pull Request (integration-test label on PR #{0})', github.event.pull_request.number) || (github.event_name == 'workflow_dispatch' && format('Manual Trigger: {0}', github.event.inputs.reason)) || 'Nightly Scheduled Run' }}
