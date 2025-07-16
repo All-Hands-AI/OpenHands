@@ -205,7 +205,7 @@ def test_docker_socket_mounting_enabled_socket_exists(
     mock_exists.assert_called_with('/var/run/docker.sock')
     runtime.log.assert_any_call(
         'warning',
-        'Mounting Docker socket to enable Docker-in-Docker functionality. '
+        'Mounting Docker socket to enable docker-out-of-docker functionality. '
         'SECURITY WARNING: This grants container access to the host Docker daemon '
         'with root-equivalent privileges. Use only in trusted environments.',
     )
@@ -257,7 +257,7 @@ def test_docker_socket_mounting_enabled_socket_not_exists(
     runtime.log.assert_any_call(
         'warning',
         'Docker socket mounting requested but /var/run/docker.sock not found on host. '
-        'Docker-in-Docker functionality will not be available.',
+        'docker-out-of-docker functionality will not be available.',
     )
 
     # Check that docker.containers.run was called without the Docker socket mounted
