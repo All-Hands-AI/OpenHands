@@ -309,7 +309,10 @@ class DockerRuntime(ActionExecutionClient):
 
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
 
-        use_host_network = self.config.sandbox.use_host_network or self.config.sandbox.docker_out_of_docker
+        use_host_network = (
+            self.config.sandbox.use_host_network
+            or self.config.sandbox.docker_out_of_docker
+        )
         network_mode: typing.Literal['host'] | None = (
             'host' if use_host_network else None
         )
