@@ -320,7 +320,9 @@ def test_docker_out_of_docker_enables_host_networking(
     mock_init_docker.return_value = mock_docker_client
     mock_exists.return_value = True
     config.sandbox.docker_out_of_docker = True
-    config.sandbox.use_host_network = False  # Explicitly set to False to test docker_out_of_docker override
+    config.sandbox.use_host_network = (
+        False  # Explicitly set to False to test docker_out_of_docker override
+    )
     runtime = DockerRuntime(config, event_stream, sid='test-sid')
     runtime.log = MagicMock()
 
@@ -345,12 +347,16 @@ def test_docker_out_of_docker_enables_host_networking(
     call_args = mock_docker_client.containers.run.call_args
     assert call_args is not None, 'docker.containers.run should have been called'
     network_mode_arg = call_args[1]['network_mode']
-    assert network_mode_arg == 'host', f'Expected network_mode to be "host", got {network_mode_arg}'
-    
+    assert network_mode_arg == 'host', (
+        f'Expected network_mode to be "host", got {network_mode_arg}'
+    )
+
     # Check that ports argument is None (not used with host networking)
     ports_arg = call_args[1]['ports']
-    assert ports_arg is None, f'Expected ports to be None with host networking, got {ports_arg}'
-    
+    assert ports_arg is None, (
+        f'Expected ports to be None with host networking, got {ports_arg}'
+    )
+
     # Check that Docker socket is mounted
     volumes_arg = call_args[1]['volumes']
     assert '/var/run/docker.sock' in volumes_arg
