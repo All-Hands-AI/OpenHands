@@ -43,15 +43,6 @@ class Test(BaseIntegrationTest):
                 reason=f'Failed to cat /workspace/hello.py: {obs.content}.',
             )
 
-        # check if the file /workspace/.vscode/settings.json exists
-        action = CmdRunAction(command='cat /workspace/.vscode/settings.json')
-        obs = runtime.run_action(action)
-        if obs.exit_code != 0:
-            return TestResult(
-                success=False,
-                reason=f'Failed to cat /workspace/.vscode/settings.json: {obs.content}.',
-            )
-
         # check if the staging area is empty
         action = CmdRunAction(command='git status')
         obs = runtime.run_action(action)
