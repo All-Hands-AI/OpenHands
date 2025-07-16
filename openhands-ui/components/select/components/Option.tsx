@@ -9,12 +9,9 @@ export const Option = ({
   isSelected,
   innerProps,
   data,
-  selectProps: {
-    customProps: { filterOption },
-    options,
-    inputValue,
-  },
+  selectProps: { options, inputValue, filterOption },
 }: OptionProps & { value: unknown }) => {
+<<<<<<< Updated upstream
   const visibleOptions = (options ?? []).filter((o) =>
     filterOption(
       {
@@ -31,6 +28,31 @@ export const Option = ({
     visibleOptions?.length > 0
       ? (visibleOptions[visibleOptions!.length - 1] as IOption<unknown>)
       : null;
+=======
+  // In the current design, last option (which may be really last option or last visible option if the search term is present)
+  // has to be rounded.  Therefore, that calculation is applied here by using filterOption function from react-select.
+  // Unfortunately, this function is meant to be applied only internally which means API of this function is not really
+  // user-friendly (look at the __isNew__ property).
+  // Ideally, either design will be changed or another implementation of this functionality will be explored.
+
+  const visibleOptions = filterOption
+    ? (options ?? []).filter((o) =>
+        filterOption(
+          {
+            // @ts-ignore
+            ...o,
+            data: {
+              __isNew__: false,
+            },
+          },
+          inputValue
+        )
+      )
+    : options;
+  const lastOption = visibleOptions[
+    visibleOptions!.length - 1
+  ] as IOption<unknown>;
+>>>>>>> Stashed changes
 
   const option = data as IOption<unknown>;
   const isLast = option.value === lastOption?.value;

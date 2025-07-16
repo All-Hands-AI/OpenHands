@@ -74,7 +74,7 @@ export const Select = <T extends string>(props: SelectProps<T>) => {
         )}
         isDisabled={disabled ?? readOnly}
         filterOption={filterOption}
-        customProps={{ filterOption, error, readOnly, hint }}
+        customProps={{ error, readOnly, hint }}
         onInputChange={(value, action) => {
           if (action.action === "input-change") {
             setInputValue(value);
@@ -86,6 +86,7 @@ export const Select = <T extends string>(props: SelectProps<T>) => {
         }}
         onChange={(option) => {
           onChange(option as IOption<T>);
+          setInputValue("");
         }}
         placeholder={placeholder ?? ""}
         options={options}
