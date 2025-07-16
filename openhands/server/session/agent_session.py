@@ -475,7 +475,9 @@ class AgentSession:
 
         if self.runtime:
             # sets available hosts and other runtime info
-            memory.set_runtime_info(self.runtime, custom_secrets_descriptions, working_dir)
+            memory.set_runtime_info(
+                self.runtime, custom_secrets_descriptions, working_dir
+            )
             memory.set_conversation_instructions(conversation_instructions)
 
             # loads microagents from repo/.openhands/microagents
