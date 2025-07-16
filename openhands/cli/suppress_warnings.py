@@ -49,5 +49,6 @@ def suppress_cli_warnings():
         module=r'pydub\.utils',
     )
 
+
 # Apply warning suppressions when module is imported
 suppress_cli_warnings()
