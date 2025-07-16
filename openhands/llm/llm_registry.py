@@ -100,13 +100,11 @@ class LLMRegistry:
         )
 
     def get_combined_metrics(self) -> Metrics:
-        logger.info('metrics by all services: ')
-
-        all_metrics = []
+        all_metrics = {}
 
         total_metrics = Metrics()
-        for llm in self.service_to_llm.values():
-            all_metrics.append(llm.metrics)
+        for service_id, llm in self.service_to_llm.items():
+            all_metrics[service_id] = llm.metrics
             total_metrics.merge(llm.metrics)
 
         logger.info(f'metrics by all services: {all_metrics}')
