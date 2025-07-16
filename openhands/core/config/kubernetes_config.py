@@ -59,7 +59,7 @@ class KubernetesConfig(BaseModel):
     )
     privileged: bool = Field(
         default=False,
-        description='Run the runtime sandbox container in privileged mode for use with docker-in-docker',
+        description='Run the runtime sandbox container in privileged mode for use with docker-out-of-docker',
     )
 
     model_config = ConfigDict(extra='forbid')

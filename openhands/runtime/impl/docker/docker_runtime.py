@@ -384,7 +384,7 @@ class DockerRuntime(ActionExecutionClient):
             if os.path.exists(docker_socket_path):
                 self.log(
                     'warning',
-                    'Mounting Docker socket to enable Docker-in-Docker functionality. '
+                    'Mounting Docker socket to enable docker-out-of-docker functionality. '
                     'SECURITY WARNING: This grants container access to the host Docker daemon '
                     'with root-equivalent privileges. Use only in trusted environments.',
                 )
@@ -393,7 +393,7 @@ class DockerRuntime(ActionExecutionClient):
                 self.log(
                     'warning',
                     f'Docker socket mounting requested but {docker_socket_path} not found on host. '
-                    f'Docker-in-Docker functionality will not be available.',
+                    f'docker-out-of-docker functionality will not be available.',
                 )
 
         self.log(
