@@ -300,9 +300,7 @@ def assert_and_raise(condition: bool, msg: str):
         raise EvalException(msg)
 
 
-def log_skipped_build_maximum_retries_exceeded(
-    instance, metadata, error, max_retries=5
-):
+def log_skipped_maximum_retries_exceeded(instance, metadata, error, max_retries=5):
     """Log and skip the instance when maximum retries are exceeded.
 
     Args:
@@ -319,16 +317,16 @@ def log_skipped_build_maximum_retries_exceeded(
     # Log the error
     logger.exception(error)
     logger.error(
-        f'Maximum error retries reached for instance {instance.instance_id}. Could not build instance image. '
-        f'Check build_error_maximum_retries_exceeded.jsonl, fix the image and run evaluation again. '
+        f'Maximum error retries reached for instance {instance.instance_id}. '
+        f'Check maximum_retries_exceeded.jsonl, fix the issue and run evaluation again. '
         f'Skipping this instance and continuing with others.'
     )
 
-    # Add the instance name to build_error_maximum_retries_exceeded.jsonl in the same folder as output.jsonl
+    # Add the instance name to maximum_retries_exceeded.jsonl in the same folder as output.jsonl
     if metadata and metadata.eval_output_dir:
         retries_file_path = os.path.join(
             metadata.eval_output_dir,
-            'build_error_maximum_retries_exceeded.jsonl',
+            'maximum_retries_exceeded.jsonl',
         )
         try:
             # Write the instance info as a JSON line
@@ -346,7 +344,7 @@ def log_skipped_build_maximum_retries_exceeded(
             logger.info(f'Added instance {instance.instance_id} to {retries_file_path}')
         except Exception as write_error:
             logger.error(
-                f'Failed to write to build_error_maximum_retries_exceeded.jsonl: {write_error}'
+                f'Failed to write to maximum_retries_exceeded.jsonl: {write_error}'
             )
 
     return EvalOutput(
@@ -358,19 +356,17 @@ def log_skipped_build_maximum_retries_exceeded(
 
 
 def check_maximum_retries_exceeded(eval_output_dir):
-    """Check if build_error_maximum_retries_exceeded.jsonl exists and output a message."""
+    """Check if maximum_retries_exceeded.jsonl exists and output a message."""
     from openhands.core.logger import openhands_logger as logger
 
-    retries_file_path = os.path.join(
-        eval_output_dir, 'build_error_maximum_retries_exceeded.jsonl'
-    )
+    retries_file_path = os.path.join(eval_output_dir, 'maximum_retries_exceeded.jsonl')
     if os.path.exists(retries_file_path):
         logger.info(
             'ATTENTION: Some instances reached maximum error retries and were skipped.'
         )
         logger.info(f'These instances are listed in: {retries_file_path}')
         logger.info(
-            'Fix these instances and run evaluation again with EVAL_SKIP_BUILD_ERRORS=false'
+            'Fix these instances and run evaluation again with EVAL_SKIP_MAXIMUM_RETRIES_EXCEEDED=false'
         )
 
 
@@ -427,14 +423,17 @@ def _process_instance_wrapper(
                     + '-' * 10
                 )
 
-                # Check if EVAL_SKIP_BUILD_ERRORS is set to true
+                # Check if EVAL_SKIP_MAXIMUM_RETRIES_EXCEEDED is set to true
                 skip_errors = (
-                    os.environ.get('EVAL_SKIP_BUILD_ERRORS', 'false').lower() == 'true'
+                    os.environ.get(
+                        'EVAL_SKIP_MAXIMUM_RETRIES_EXCEEDED', 'false'
+                    ).lower()
+                    == 'true'
                 )
 
                 if skip_errors:
                     # Use the dedicated function to log and skip maximum retries exceeded
-                    return log_skipped_build_maximum_retries_exceeded(
+                    return log_skipped_maximum_retries_exceeded(
                         instance, metadata, e, max_retries
                     )
                 else:

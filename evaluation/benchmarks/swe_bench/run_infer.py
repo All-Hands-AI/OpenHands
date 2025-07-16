@@ -974,6 +974,5 @@ if __name__ == '__main__':
         logger.info(
             f'Done! Total {len(added_instance_ids)} instances added to {output_file}'
         )
-
         # Check if any instances reached maximum retries
         check_maximum_retries_exceeded(metadata.eval_output_dir)
