@@ -1,5 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { useUserRepositories } from "#/hooks/query/use-user-repositories";
 import { useRepositoryBranches } from "#/hooks/query/use-repository-branches";
@@ -19,12 +20,13 @@ import {
 } from "./repository-selection";
 
 interface RepositorySelectionFormProps {
-  onRepoSelection: (repoTitle: string | null) => void;
+  onRepoSelection: (repo: GitRepository | null) => void;
 }
 
 export function RepositorySelectionForm({
   onRepoSelection,
 }: RepositorySelectionFormProps) {
+  const navigate = useNavigate();
   const [selectedRepository, setSelectedRepository] =
     React.useState<GitRepository | null>(null);
   const [selectedBranch, setSelectedBranch] = React.useState<Branch | null>(
@@ -94,8 +96,7 @@ export function RepositorySelectionForm({
 
   const handleRepoSelection = (key: React.Key | null) => {
     const selectedRepo = allRepositories?.find((repo) => repo.id === key);
-
-    if (selectedRepo) onRepoSelection(selectedRepo.full_name);
+    if (selectedRepo) onRepoSelection(selectedRepo);
     setSelectedRepository(selectedRepo || null);
     setSelectedBranch(null); // Reset branch selection when repo changes
     branchManuallyClearedRef.current = false; // Reset the flag when repo changes
@@ -209,10 +210,19 @@ export function RepositorySelectionForm({
           isRepositoriesError
         }
         onClick={() =>
-          createConversation({
-            selectedRepository,
-            selected_branch: selectedBranch?.name,
-          })
+          createConversation(
+            {
+              repository: {
+                name: selectedRepository?.full_name || "",
+                gitProvider: selectedRepository?.git_provider || "github",
+                branch: selectedBranch?.name || "main",
+              },
+            },
+            {
+              onSuccess: (data) =>
+                navigate(`/conversations/${data.conversation_id}`),
+            },
+          )
         }
       >
         {!isCreatingConversation && "Launch"}

@@ -769,6 +769,12 @@ def get_parser() -> argparse.ArgumentParser:
         type=bool,
         default=False,
     )
+    parser.add_argument(
+        '--log-level',
+        help='Set the log level',
+        type=str,
+        default=None,
+    )
     return parser
 
 

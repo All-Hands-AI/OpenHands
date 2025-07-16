@@ -12,7 +12,17 @@ from openhands.core.message import ImageContent, Message, TextContent
 
 def convert_content(content: list[TextContent | ImageContent]) -> str:
     """Converts a list of message content to a single string."""
-    return '\n'.join(item.text for item in content if item.type == 'text')
+    ret = ''
+
+    for item in content:
+        # Ignore non-text content
+        if item.type != 'text':
+            continue
+
+        assert isinstance(item, TextContent)
+        ret += f'{item.text}\n'
+
+    return ret
 
 
 def convert_tool_call_to_string(tool_call: ChatCompletionMessageToolCall) -> str:

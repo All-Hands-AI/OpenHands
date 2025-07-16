@@ -58,7 +58,7 @@ class ExtremeCostSavingRouter(BaseRouter):
     ):
         if self.WEAK_MODEL_CONFIG_NAME not in routing_llms:
             raise ValueError(
-                f'Weak LLM config {model_routing_config.reasoning_llm_config_name} not found'
+                f'Weak LLM config {self.WEAK_MODEL_CONFIG_NAME} not found'
             )
 
 # Register the router

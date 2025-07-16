@@ -12,11 +12,9 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.cli.cli_runtime import CLIRuntime
-from openhands.runtime.impl.daytona.daytona_runtime import DaytonaRuntime
 from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
 from openhands.runtime.impl.local.local_runtime import LocalRuntime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
-from openhands.runtime.impl.runloop.runloop_runtime import RunloopRuntime
 from openhands.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from openhands.storage import get_file_store
 from openhands.utils.async_utils import call_async_from_sync
@@ -130,10 +128,6 @@ def get_runtime_classes() -> list[type[Runtime]]:
         return [LocalRuntime]
     elif runtime.lower() == 'remote':
         return [RemoteRuntime]
-    elif runtime.lower() == 'runloop':
-        return [RunloopRuntime]
-    elif runtime.lower() == 'daytona':
-        return [DaytonaRuntime]
     elif runtime.lower() == 'cli':
         return [CLIRuntime]
     else:
@@ -218,6 +212,7 @@ def _load_runtime(
     runtime_startup_env_vars: dict[str, str] | None = None,
     docker_runtime_kwargs: dict[str, str] | None = None,
     override_mcp_config: MCPConfig | None = None,
+    enable_browser: bool = True,
 ) -> tuple[Runtime, OpenHandsConfig]:
     sid = 'rt_' + str(random.randint(100000, 999999))
 
@@ -227,6 +222,7 @@ def _load_runtime(
 
     config = load_openhands_config()
     config.run_as_openhands = run_as_openhands
+    config.enable_browser = enable_browser
     config.sandbox.force_rebuild_runtime = force_rebuild_runtime
     config.sandbox.keep_runtime_alive = False
     config.sandbox.docker_runtime_kwargs = docker_runtime_kwargs

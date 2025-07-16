@@ -50,7 +50,7 @@ class ProviderToken(BaseModel):
             # Override with emtpy string if it was set to None
             # Cannot pass None to SecretStr
             if token_str is None:
-                token_str = ''
+                token_str = ''  # type: ignore[unreachable]
             user_id = token_value.get('user_id')
             host = token_value.get('host')
             return cls(token=SecretStr(token_str), user_id=user_id, host=host)
@@ -74,8 +74,8 @@ class CustomSecret(BaseModel):
         if isinstance(secret_value, CustomSecret):
             return secret_value
         elif isinstance(secret_value, dict):
-            secret = secret_value.get('secret')
-            description = secret_value.get('description')
+            secret = secret_value.get('secret', '')
+            description = secret_value.get('description', '')
             return cls(secret=SecretStr(secret), description=description)
 
         else:
@@ -325,20 +325,26 @@ class ProviderHandler:
     async def verify_repo_provider(
         self, repository: str, specified_provider: ProviderType | None = None
     ) -> Repository:
+        errors = []
+
         if specified_provider:
             try:
                 service = self._get_service(specified_provider)
                 return await service.get_repository_details_from_repo_name(repository)
-            except Exception:
-                pass
+            except Exception as e:
+                errors.append(f'{specified_provider.value}: {str(e)}')
 
         for provider in self.provider_tokens:
             try:
                 service = self._get_service(provider)
                 return await service.get_repository_details_from_repo_name(repository)
-            except Exception:
-                pass
+            except Exception as e:
+                errors.append(f'{provider.value}: {str(e)}')
 
+        # Log all accumulated errors before raising AuthenticationError
+        logger.error(
+            f'Failed to access repository {repository} with all available providers. Errors: {"; ".join(errors)}'
+        )
         raise AuthenticationError(f'Unable to access repo {repository}')
 
     async def get_branches(

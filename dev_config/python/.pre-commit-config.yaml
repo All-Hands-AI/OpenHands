@@ -3,9 +3,9 @@ repos:
     rev: v5.0.0
     hooks:
       - id: trailing-whitespace
-        exclude: ^(docs/|modules/|python/|openhands-ui/)
+        exclude: ^(docs/|modules/|python/|openhands-ui/|third_party/)
       - id: end-of-file-fixer
-        exclude: ^(docs/|modules/|python/|openhands-ui/)
+        exclude: ^(docs/|modules/|python/|openhands-ui/|third_party/)
       - id: check-yaml
         args: ["--allow-multiple-documents"]
       - id: debug-statements
@@ -28,17 +28,19 @@ repos:
         entry: ruff check --config dev_config/python/ruff.toml
         types_or: [python, pyi, jupyter]
         args: [--fix, --unsafe-fixes]
+        exclude: third_party/
       # Run the formatter.
       - id: ruff-format
         entry: ruff format --config dev_config/python/ruff.toml
         types_or: [python, pyi, jupyter]
+        exclude: third_party/
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.15.0
     hooks:
       - id: mypy
         additional_dependencies:
-          [types-requests, types-setuptools, types-pyyaml, types-toml, types-docker, lxml]
+          [types-requests, types-setuptools, types-pyyaml, types-toml, types-docker, pydantic, lxml]
         # To see gaps add `--html-report mypy-report/`
         entry: mypy --config-file dev_config/python/mypy.ini openhands/
         always_run: true

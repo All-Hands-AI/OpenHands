@@ -27,6 +27,7 @@ from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
+from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.files import FileStore
@@ -123,7 +124,7 @@ class AgentSession:
         runtime_connected = False
         restored_state = False
         custom_secrets_handler = UserSecrets(
-            custom_secrets=custom_secrets if custom_secrets else {}
+            custom_secrets=custom_secrets if custom_secrets else {}  # type: ignore[arg-type]
         )
         try:
             self._create_security_analyzer(config.security.security_analyzer)
@@ -289,12 +290,16 @@ class AgentSession:
         custom_secrets: CUSTOM_SECRETS_TYPE | None,
     ):
         if git_provider_tokens and custom_secrets:
-            tokens = dict(git_provider_tokens)
-            for provider, _ in tokens.items():
-                token_name = ProviderHandler.get_provider_env_key(provider)
-                if token_name in custom_secrets or token_name.upper() in custom_secrets:
-                    del tokens[provider]
-
+            # Use dictionary comprehension to avoid modifying dictionary during iteration
+            tokens = {
+                provider: token
+                for provider, token in git_provider_tokens.items()
+                if not (
+                    ProviderHandler.get_provider_env_key(provider) in custom_secrets
+                    or ProviderHandler.get_provider_env_key(provider).upper()
+                    in custom_secrets
+                )
+            }
             return MappingProxyType(tokens)
         return git_provider_tokens
 
@@ -322,7 +327,7 @@ class AgentSession:
         if self.runtime is not None:
             raise RuntimeError('Runtime already created')
 
-        custom_secrets_handler = UserSecrets(custom_secrets=custom_secrets or {})
+        custom_secrets_handler = UserSecrets(custom_secrets=custom_secrets or {})  # type: ignore[arg-type]
         env_vars = custom_secrets_handler.get_env_vars()
 
         self.logger.debug(f'Initializing runtime `{runtime_name}` now...')
@@ -377,7 +382,7 @@ class AgentSession:
             self.logger.error(f'Runtime initialization failed: {e}')
             if self._status_callback:
                 self._status_callback(
-                    'error', 'STATUS$ERROR_RUNTIME_DISCONNECTED', str(e)
+                    'error', RuntimeStatus.ERROR_RUNTIME_DISCONNECTED, str(e)
                 )
             return False
 

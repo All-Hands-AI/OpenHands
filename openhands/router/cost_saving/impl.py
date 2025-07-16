@@ -112,11 +112,11 @@ class ThresholdBasedCostSavingRouter(BaseRouter):
     ):
         if self.WEAK_MODEL_CONFIG_NAME not in routing_llms:
             raise ValueError(
-                f'Weak LLM config {model_routing_config.reasoning_llm_config_name} not found'
+                f'Weak LLM config {self.WEAK_MODEL_CONFIG_NAME} not found'
             )
         if self.ROUTER_MODEL_CONFIG_NAME not in routing_llms:
             raise ValueError(
-                f'Classifier LLM config {model_routing_config.classifier_llm_config_name} not found'
+                f'Classifier LLM config {self.ROUTER_MODEL_CONFIG_NAME} not found'
             )
 
 

@@ -100,11 +100,10 @@ class Runtime(FileEditRuntimeMixin):
 
     Built-in implementations include:
     - DockerRuntime: Containerized environment using Docker
-    - E2BRuntime: Secure sandbox using E2B
     - RemoteRuntime: Remote execution environment
-    - ModalRuntime: Scalable cloud environment using Modal
     - LocalRuntime: Local execution for development
-    - DaytonaRuntime: Cloud development environment using Daytona
+    - KubernetesRuntime: Kubernetes-based execution environment
+    - CLIRuntime: Command-line interface runtime
 
     Args:
         sid: Session ID that uniquely identifies the current user session
@@ -114,7 +113,7 @@ class Runtime(FileEditRuntimeMixin):
     config: OpenHandsConfig
     initial_env_vars: dict[str, str]
     attach_to_existing: bool
-    status_callback: Callable[[str, str, str], None] | None
+    status_callback: Callable[[str, RuntimeStatus, str], None] | None
     runtime_status: RuntimeStatus | None
     _runtime_initialized: bool = False
 
@@ -125,7 +124,7 @@ class Runtime(FileEditRuntimeMixin):
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
-        status_callback: Callable[[str, str, str], None] | None = None,
+        status_callback: Callable[[str, RuntimeStatus, str], None] | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = False,
         user_id: str | None = None,
@@ -208,16 +207,13 @@ class Runtime(FileEditRuntimeMixin):
         message = f'[runtime {self.sid}] {message}'
         getattr(logger, level)(message, stacklevel=2)
 
-    def set_runtime_status(self, runtime_status: RuntimeStatus):
+    def set_runtime_status(
+        self, runtime_status: RuntimeStatus, msg: str = '', level: str = 'info'
+    ):
         """Sends a status message if the callback function was provided."""
         self.runtime_status = runtime_status
         if self.status_callback:
-            msg_id: str = runtime_status.value  # type: ignore
-            self.status_callback('info', msg_id, runtime_status.message)
-
-    def send_error_message(self, message_id: str, message: str):
-        if self.status_callback:
-            self.status_callback('error', message_id, message)
+            self.status_callback(level, runtime_status, msg)
 
     # ====================================================================
 
@@ -345,15 +341,13 @@ class Runtime(FileEditRuntimeMixin):
             else:
                 observation = await call_sync_from_async(self.run_action, event)
         except Exception as e:
-            err_id = ''
-            if isinstance(e, httpx.NetworkError) or isinstance(
-                e, AgentRuntimeDisconnectedError
-            ):
-                err_id = 'STATUS$ERROR_RUNTIME_DISCONNECTED'
+            runtime_status = RuntimeStatus.ERROR
+            if isinstance(e, (httpx.NetworkError, AgentRuntimeDisconnectedError)):
+                runtime_status = RuntimeStatus.ERROR_RUNTIME_DISCONNECTED
             error_message = f'{type(e).__name__}: {str(e)}'
             self.log('error', f'Unexpected error while running action: {error_message}')
             self.log('error', f'Problematic action: {str(event)}')
-            self.send_error_message(err_id, error_message)
+            self.set_runtime_status(runtime_status, error_message)
             return
 
         observation._cause = event.id  # type: ignore[attr-defined]
@@ -373,9 +367,7 @@ class Runtime(FileEditRuntimeMixin):
         selected_branch: str | None,
     ) -> str:
         if not selected_repository:
-            # In SaaS mode (indicated by user_id being set), always run git init
-            # In OSS mode, only run git init if workspace_base is not set
-            if self.user_id or not self.config.workspace_base:
+            if self.config.init_git_in_empty_workspace:
                 logger.debug(
                     'No repository selected. Initializing a new git repository in the workspace.'
                 )
@@ -398,7 +390,7 @@ class Runtime(FileEditRuntimeMixin):
 
         if self.status_callback:
             self.status_callback(
-                'info', 'STATUS$SETTING_UP_WORKSPACE', 'Setting up workspace...'
+                'info', RuntimeStatus.SETTING_UP_WORKSPACE, 'Setting up workspace...'
             )
 
         dir_name = selected_repository.split('/')[-1]
@@ -439,17 +431,23 @@ class Runtime(FileEditRuntimeMixin):
 
         if self.status_callback:
             self.status_callback(
-                'info', 'STATUS$SETTING_UP_WORKSPACE', 'Setting up workspace...'
+                'info', RuntimeStatus.SETTING_UP_WORKSPACE, 'Setting up workspace...'
             )
 
         # setup scripts time out after 10 minutes
         action = CmdRunAction(
-            f'chmod +x {setup_script} && source {setup_script}', blocking=True
+            f'chmod +x {setup_script} && source {setup_script}',
+            blocking=True,
+            hidden=True,
         )
         action.set_hard_timeout(600)
-        obs = self.run_action(action)
-        if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
-            self.log('error', f'Setup script failed: {obs.content}')
+
+        # Add the action to the event stream as an ENVIRONMENT event
+        source = EventSource.ENVIRONMENT
+        self.event_stream.add_event(action, source)
+
+        # Execute the action
+        self.run_action(action)
 
     @property
     def workspace_root(self) -> Path:
@@ -465,7 +463,7 @@ class Runtime(FileEditRuntimeMixin):
 
         if self.status_callback:
             self.status_callback(
-                'info', 'STATUS$SETTING_UP_GIT_HOOKS', 'Setting up git hooks...'
+                'info', RuntimeStatus.SETTING_UP_GIT_HOOKS, 'Setting up git hooks...'
             )
 
         # Ensure the git hooks directory exists
@@ -560,9 +558,19 @@ fi
             A list of loaded microagents
         """
         loaded_microagents: list[BaseMicroagent] = []
+
+        self.log(
+            'info',
+            f'Attempting to list files in {source_description} microagents directory: {microagents_dir}',
+        )
+
         files = self.list_files(str(microagents_dir))
 
         if not files:
+            self.log(
+                'warning',
+                f'No files found in {source_description} microagents directory: {microagents_dir}',
+            )
             return loaded_microagents
 
         self.log(
@@ -586,6 +594,8 @@ fi
 
             loaded_microagents.extend(repo_agents.values())
             loaded_microagents.extend(knowledge_agents.values())
+        except Exception as e:
+            self.log('error', f'Failed to load agents from {source_description}: {e}')
         finally:
             shutil.rmtree(microagent_folder)
 
@@ -698,15 +708,33 @@ fi
         """
         loaded_microagents: list[BaseMicroagent] = []
 
+        self.log(
+            'debug',
+            f'Starting org-level microagent loading for repository: {selected_repository}',
+        )
+
         repo_parts = selected_repository.split('/')
+
         if len(repo_parts) < 2:
+            self.log(
+                'warning',
+                f'Repository path has insufficient parts ({len(repo_parts)} < 2), skipping org-level microagents',
+            )
             return loaded_microagents
 
         # Extract the domain and org/user name
         org_name = repo_parts[-2]
+        self.log(
+            'info',
+            f'Extracted org/user name: {org_name}',
+        )
 
         # Determine if this is a GitLab repository
         is_gitlab = self._is_gitlab_repository(selected_repository)
+        self.log(
+            'debug',
+            f'Repository type detection - is_gitlab: {is_gitlab}',
+        )
 
         # For GitLab, use openhands-config (since .openhands is not a valid repo name)
         # For other providers, use .openhands
@@ -724,6 +752,10 @@ fi
         try:
             # Create a temporary directory for the org-level repo
             org_repo_dir = self.workspace_root / f'org_openhands_{org_name}'
+            self.log(
+                'debug',
+                f'Creating temporary directory for org repo: {org_repo_dir}',
+            )
 
             # Get authenticated URL and do a shallow clone (--depth 1) for efficiency
             try:
@@ -734,9 +766,18 @@ fi
                     self.git_provider_tokens,
                 )
             except Exception as e:
+                self.log(
+                    'error',
+                    f'Failed to get authenticated URL for {org_openhands_repo}: {str(e)}',
+                )
                 raise Exception(str(e))
+
             clone_cmd = (
                 f'GIT_TERMINAL_PROMPT=0 git clone --depth 1 {remote_url} {org_repo_dir}'
+            )
+            self.log(
+                'info',
+                'Executing clone command for org-level repo',
             )
 
             action = CmdRunAction(command=clone_cmd)
@@ -750,17 +791,39 @@ fi
 
                 # Load microagents from the org-level repo
                 org_microagents_dir = org_repo_dir / 'microagents'
+                self.log(
+                    'info',
+                    f'Looking for microagents in directory: {org_microagents_dir}',
+                )
+
                 loaded_microagents = self._load_microagents_from_directory(
                     org_microagents_dir, 'org-level'
+                )
+
+                self.log(
+                    'info',
+                    f'Loaded {len(loaded_microagents)} microagents from org-level repository {org_openhands_repo}',
                 )
 
                 # Clean up the org repo directory
                 action = CmdRunAction(f'rm -rf {org_repo_dir}')
                 self.run_action(action)
             else:
+                clone_error_msg = (
+                    obs.content
+                    if isinstance(obs, CmdOutputObservation)
+                    else 'Unknown error'
+                )
+                exit_code = (
+                    obs.exit_code if isinstance(obs, CmdOutputObservation) else 'N/A'
+                )
                 self.log(
                     'info',
-                    f'No org-level microagents found at {org_openhands_repo}',
+                    f'No org-level microagents found at {org_openhands_repo} (exit_code: {exit_code})',
+                )
+                self.log(
+                    'debug',
+                    f'Clone command output: {clone_error_msg}',
                 )
 
         except Exception as e:
@@ -997,7 +1060,8 @@ fi
 
     def get_git_changes(self, cwd: str) -> list[dict[str, str]] | None:
         self.git_handler.set_cwd(cwd)
-        return self.git_handler.get_git_changes()
+        changes = self.git_handler.get_git_changes()
+        return changes
 
     def get_git_diff(self, file_path: str, cwd: str) -> dict[str, str]:
         self.git_handler.set_cwd(cwd)
@@ -1022,3 +1086,11 @@ fi
         Returns False by default.
         """
         return False
+
+    @classmethod
+    def setup(cls, config: OpenHandsConfig, headless_mode: bool = False):
+        """Set up the environment for runtimes to be created."""
+
+    @classmethod
+    def teardown(cls, config: OpenHandsConfig):
+        """Tear down the environment in which runtimes are created."""
