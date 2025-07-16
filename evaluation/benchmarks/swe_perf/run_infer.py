@@ -85,8 +85,8 @@ I’ve uploaded a python code repository in the directory workspace_dir_name. Co
 </performance_workload>
 
 Can you help me implement the necessary changes to the repository so that the runtime of the `workload()` function is faster? Basic guidelines:
-1. Your task is to make changes to non-test files (except the performance workload itself) in the /workspace directory to improve the performance of the code running in `workload()`. Please do not try to change the implementation of the performance workload file or the `workload()` function to optimize things: I want you to focus on making the workload AS IS run faster solely by editing the repository containing code that the `workload()` function calls.
-2. Make changes while ensuring the repository is functionally equivalent to the original. For relevant test files you find in the repository, you can run them via the bash command `{instance.test_cmd} <test_file>` to check for correctness.
+1. Your task is to make changes to non-test files (except the performance workload itself) in the /workspace directory to improve the performance of the code running in `workload()`. Please do not try to change the implementation of the `workload()` function to optimize things: I want you to focus on making the workload AS IS run faster only by editing the repository containing code that the `workload()` function calls.
+2. Make changes while ensuring the repository is functionally equivalent to the original: your changes should not introduce new bugs or cause already-passing tests to begin failing after your changes. For relevant test files you identify in the repository that are related to your changes, you can run them via the bash command `{instance.test_cmd} <test_file>` to check for correctness. Note that running all the tests may take a long time, so you will need to determine which tests are relevant to your changes.
 3. Make sure the `workload()` function improves in performance after you make changes to the repository. The workload can potentially take some time to run: for testing purposes, you can adjust the workload script to use fewer iterations. However, before you finish the task, please make sure to check that the **original performance workload** and `workload()` function runs successfully and the performance is improved.
 4. You may need to rebuild the repo for your changes to take effect before testing. Some rebuilds may take a long time to run, so be patient with running them. You can reinstall the repository by running the bash command `{instance.rebuild_cmd}` in the workspace directory.
 5. All the dependencies required to run the `workload()` function are already installed in the environment. You should not install or upgrade any dependencies.
@@ -96,8 +96,9 @@ Follow these steps to improve performance:
 2. Create a Python script to reproduce the performance workload, execute it with python <workload_file>, and examine the printed output metrics.
 3. Edit the source code of the repository to improve performance. Please do not change the contents of the `workload()` function itself, but focus on optimizing the code in the repository that the original `workload()` function uses.
 4. Rebuild and rerun your script to confirm that performance has improved.
+5. If necessary, identify any relevant test files in the repository related to your changes and verify that test statuses did not change after your modifications.
 
-Please remember that the goal is to improve the performance of the `workload()` function, not to change its implementation. The performance improvement should be achieved by only modifying the code in the repository that the `workload()` function calls.
+Please remember that the goal is to improve the performance of the `workload()` function, not to change its implementation. The performance improvement should be achieved by only modifying the code in the repository that the `workload()` function calls, while also maintaining the existing correctness of the repository.
 """
 
     if RUN_WITH_BROWSING:
