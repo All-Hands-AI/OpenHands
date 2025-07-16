@@ -1,9 +1,16 @@
+import os
 from unittest.mock import MagicMock, patch
 
+import docker
 import pytest
 
 from openhands.core.config import OpenHandsConfig
 from openhands.events import EventStream
+from openhands.runtime.impl.docker.containers import (
+    ensure_warm_containers,
+    get_warm_container,
+    rename_container,
+)
 from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
 
 
@@ -165,3 +172,218 @@ def test_volumes_default_mode():
 
     # Assert that the mode remains 'rw' (default)
     assert volumes[os.path.abspath('/host/path')]['mode'] == 'rw'
+
+
+@patch('docker.from_env')
+def test_get_warm_container(mock_docker_from_env):
+    """Test that get_warm_container returns a warm container if one exists."""
+    # Setup
+    mock_client = MagicMock()
+    mock_docker_from_env.return_value = mock_client
+
+    mock_container = MagicMock()
+    mock_container.name = 'openhands-runtime-warm-0'
+    mock_client.containers.list.return_value = [mock_container]
+
+    # Execute
+    container = get_warm_container(mock_client, 'openhands-runtime-')
+
+    # Assert
+    assert container == mock_container
+    mock_client.containers.list.assert_called_once_with(all=True)
+
+
+@patch('docker.from_env')
+def test_get_warm_container_none_available(mock_docker_from_env):
+    """Test that get_warm_container returns None if no warm containers exist."""
+    # Setup
+    mock_client = MagicMock()
+    mock_docker_from_env.return_value = mock_client
+
+    mock_container = MagicMock()
+    mock_container.name = 'openhands-runtime-regular'
+    mock_client.containers.list.return_value = [mock_container]
+
+    # Execute
+    container = get_warm_container(mock_client, 'openhands-runtime-')
+
+    # Assert
+    assert container is None
+    mock_client.containers.list.assert_called_once_with(all=True)
+
+
+@patch('docker.from_env')
+def test_rename_container(mock_docker_from_env):
+    """Test that rename_container renames a container."""
+    # Setup
+    mock_container = MagicMock()
+
+    # Execute
+    result = rename_container(mock_container, 'new-name')
+
+    # Assert
+    assert result is True
+    mock_container.rename.assert_called_once_with('new-name')
+
+
+@patch('docker.from_env')
+def test_rename_container_failure(mock_docker_from_env):
+    """Test that rename_container handles failures."""
+    # Setup
+    mock_container = MagicMock()
+    mock_container.rename.side_effect = Exception('Failed to rename')
+
+    # Execute
+    result = rename_container(mock_container, 'new-name')
+
+    # Assert
+    assert result is False
+    mock_container.rename.assert_called_once_with('new-name')
+
+
+@patch.dict(os.environ, {'NUM_WARM_CONTAINERS': '2'})
+@patch('docker.from_env')
+def test_ensure_warm_containers(mock_docker_from_env):
+    """Test that ensure_warm_containers creates the right number of warm containers."""
+    # Setup
+    mock_client = MagicMock()
+    mock_docker_from_env.return_value = mock_client
+
+    # No existing warm containers
+    mock_client.containers.list.return_value = []
+
+    # Execute
+    ensure_warm_containers(
+        mock_client,
+        'openhands-runtime-',
+        'test-image',
+        ['test-command'],
+        {'ENV_VAR': 'value'},
+        {},
+    )
+
+    # Assert
+    assert mock_client.containers.run.call_count == 2
+    mock_client.containers.run.assert_any_call(
+        'test-image',
+        command=['test-command'],
+        entrypoint=[],
+        network_mode=None,
+        ports=None,
+        working_dir='/openhands/code/',
+        name='openhands-runtime-warm-0',
+        detach=True,
+        environment={'ENV_VAR': 'value'},
+        volumes={},
+        device_requests=None,
+    )
+    mock_client.containers.run.assert_any_call(
+        'test-image',
+        command=['test-command'],
+        entrypoint=[],
+        network_mode=None,
+        ports=None,
+        working_dir='/openhands/code/',
+        name='openhands-runtime-warm-1',
+        detach=True,
+        environment={'ENV_VAR': 'value'},
+        volumes={},
+        device_requests=None,
+    )
+
+
+@patch.dict(os.environ, {'NUM_WARM_CONTAINERS': '1'})
+@patch('openhands.runtime.impl.docker.docker_runtime.get_warm_container')
+@patch('openhands.runtime.impl.docker.docker_runtime.rename_container')
+@patch('openhands.runtime.impl.docker.docker_runtime.ensure_warm_containers')
+@patch('openhands.runtime.impl.docker.docker_runtime.call_sync_from_async')
+async def test_connect_with_warm_container(
+    mock_call_sync_from_async,
+    mock_ensure_warm_containers,
+    mock_rename_container,
+    mock_get_warm_container,
+    mock_docker_client,
+    config,
+    event_stream,
+):
+    """Test that connect uses a warm container if available."""
+    # Setup
+    runtime = DockerRuntime(config, event_stream, sid='test-sid')
+
+    # Mock container not found for the specific sid
+    mock_call_sync_from_async.side_effect = [
+        docker.errors.NotFound('Container not found')
+    ]
+
+    # Mock finding a warm container
+    warm_container = MagicMock()
+    warm_container.name = 'openhands-runtime-warm-0'
+    mock_get_warm_container.return_value = warm_container
+
+    # Mock successful rename
+    mock_rename_container.return_value = True
+
+    # Mock container attributes update
+    runtime._update_container_attributes = MagicMock()
+
+    # Mock wait_until_alive
+    runtime.wait_until_alive = MagicMock()
+
+    # Mock setup_initial_env
+    runtime.setup_initial_env = MagicMock()
+
+    # Execute
+    await runtime.connect()
+
+    # Assert
+    mock_get_warm_container.assert_called_once()
+    mock_rename_container.assert_called_once_with(
+        warm_container, 'openhands-runtime-test-sid'
+    )
+    assert runtime.container == warm_container
+    runtime._update_container_attributes.assert_called_once()
+    mock_ensure_warm_containers.assert_called_once()
+
+
+@patch.dict(os.environ, {'NUM_WARM_CONTAINERS': '1'})
+@patch('openhands.runtime.impl.docker.docker_runtime.get_warm_container')
+@patch('openhands.runtime.impl.docker.docker_runtime.ensure_warm_containers')
+@patch('openhands.runtime.impl.docker.docker_runtime.call_sync_from_async')
+async def test_connect_no_warm_container(
+    mock_call_sync_from_async,
+    mock_ensure_warm_containers,
+    mock_get_warm_container,
+    mock_docker_client,
+    config,
+    event_stream,
+):
+    """Test that connect creates a new container if no warm container is available."""
+    # Setup
+    runtime = DockerRuntime(config, event_stream, sid='test-sid')
+
+    # Mock container not found for the specific sid
+    mock_call_sync_from_async.side_effect = [
+        docker.errors.NotFound('Container not found')
+    ]
+
+    # Mock no warm container found
+    mock_get_warm_container.return_value = None
+
+    # Mock container creation
+    runtime.maybe_build_runtime_container_image = MagicMock()
+    runtime.init_container = MagicMock()
+
+    # Mock wait_until_alive
+    runtime.wait_until_alive = MagicMock()
+
+    # Mock setup_initial_env
+    runtime.setup_initial_env = MagicMock()
+
+    # Execute
+    await runtime.connect()
+
+    # Assert
+    mock_get_warm_container.assert_called_once()
+    runtime.maybe_build_runtime_container_image.assert_called_once()
+    runtime.init_container.assert_called_once()
+    mock_ensure_warm_containers.assert_called_once()

@@ -22,7 +22,12 @@ from openhands.runtime.builder import DockerRuntimeBuilder
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
-from openhands.runtime.impl.docker.containers import stop_all_containers
+from openhands.runtime.impl.docker.containers import (
+    ensure_warm_containers,
+    get_warm_container,
+    rename_container,
+    stop_all_containers,
+)
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.runtime.utils import find_available_tcp_port
@@ -153,23 +158,125 @@ class DockerRuntime(ActionExecutionClient):
     async def connect(self) -> None:
         self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
         try:
-            await call_sync_from_async(self._attach_to_container)
-        except docker.errors.NotFound as e:
-            if self.attach_to_existing:
+            # First try to attach to an existing container with the current sid
+            try:
+                await call_sync_from_async(self._attach_to_container)
                 self.log(
-                    'warning',
-                    f'Container {self.container_name} not found.',
+                    'info', f'Attached to existing container: {self.container_name}'
                 )
-                raise AgentRuntimeDisconnectedError from e
-            self.maybe_build_runtime_container_image()
-            self.log(
-                'info', f'Starting runtime with image: {self.runtime_container_image}'
-            )
-            await call_sync_from_async(self.init_container)
-            self.log(
-                'info',
-                f'Container started: {self.container_name}. VSCode URL: {self.vscode_url}',
-            )
+            except docker.errors.NotFound as e:
+                if self.attach_to_existing:
+                    self.log(
+                        'warning',
+                        f'Container {self.container_name} not found.',
+                    )
+                    raise AgentRuntimeDisconnectedError from e
+
+                # Try to find a warm container
+                warm_container = await call_sync_from_async(
+                    lambda: get_warm_container(
+                        self.docker_client, CONTAINER_NAME_PREFIX
+                    )
+                )
+
+                if warm_container:
+                    self.log(
+                        'info',
+                        f'Found warm container: {warm_container.name}, renaming to {self.container_name}',
+                    )
+                    # Rename the warm container to the current sid
+                    rename_success = await call_sync_from_async(
+                        lambda: rename_container(warm_container, self.container_name)
+                    )
+
+                    if rename_success:
+                        self.container = warm_container
+                        # Update container attributes after renaming
+                        await call_sync_from_async(self._update_container_attributes)
+                        self.log(
+                            'info',
+                            f'Successfully reused warm container as: {self.container_name}',
+                        )
+                    else:
+                        self.log(
+                            'warning',
+                            'Failed to rename warm container, creating a new one instead',
+                        )
+                        # Fall back to creating a new container
+                        self.maybe_build_runtime_container_image()
+                        self.log(
+                            'info',
+                            f'Starting runtime with image: {self.runtime_container_image}',
+                        )
+                        await call_sync_from_async(self.init_container)
+                else:
+                    # No warm container available, create a new one
+                    self.maybe_build_runtime_container_image()
+                    self.log(
+                        'info',
+                        f'Starting runtime with image: {self.runtime_container_image}',
+                    )
+                    await call_sync_from_async(self.init_container)
+                    self.log(
+                        'info',
+                        f'Container started: {self.container_name}. VSCode URL: {self.vscode_url}',
+                    )
+
+                # Ensure we have the configured number of warm containers
+                if self.runtime_container_image:
+                    # Create warm containers in the background
+                    command = self.get_action_execution_server_startup_command()
+                    environment = dict(**self.initial_env_vars)
+                    environment.update(
+                        {
+                            'PYTHONUNBUFFERED': '1',
+                            'PIP_BREAK_SYSTEM_PACKAGES': '1',
+                        }
+                    )
+                    if self.config.debug or DEBUG:
+                        environment['DEBUG'] = 'true'
+                    environment.update(self.config.sandbox.runtime_startup_env_vars)
+
+                    volumes = self._process_volumes()
+
+                    use_host_network = self.config.sandbox.use_host_network
+                    network_mode = 'host' if use_host_network else None
+
+                    if self.config.sandbox.enable_gpu:
+                        gpu_ids = self.config.sandbox.cuda_visible_devices
+                        if gpu_ids is None:
+                            device_requests = [
+                                docker.types.DeviceRequest(
+                                    capabilities=[['gpu']], count=-1
+                                )
+                            ]
+                        else:
+                            device_requests = [
+                                docker.types.DeviceRequest(
+                                    capabilities=[['gpu']],
+                                    device_ids=[str(i) for i in gpu_ids.split(',')],
+                                )
+                            ]
+                    else:
+                        device_requests = None
+
+                    if self.runtime_container_image is not None:
+                        await call_sync_from_async(
+                            lambda: ensure_warm_containers(
+                                self.docker_client,
+                                CONTAINER_NAME_PREFIX,
+                                self.runtime_container_image,  # type: ignore
+                                command,
+                                environment,
+                                volumes,
+                                network_mode,
+                                device_requests,
+                                self.config.sandbox.docker_runtime_kwargs,
+                            )
+                        )
+        except Exception as e:
+            self.log('error', f'Failed to connect to runtime: {str(e)}')
+            raise e
 
         if DEBUG_RUNTIME and self.container:
             self.log_streamer = LogStreamer(self.container, self.log)
@@ -406,10 +513,16 @@ class DockerRuntime(ActionExecutionClient):
             self.close()
             raise e
 
-    def _attach_to_container(self) -> None:
-        self.container = self.docker_client.containers.get(self.container_name)
-        if self.container.status == 'exited':
-            self.container.start()
+    def _update_container_attributes(self) -> None:
+        """
+        Update container attributes after attaching or renaming.
+        This extracts port information from the container environment.
+        """
+        if not self.container:
+            raise ValueError('Container not initialized')
+
+        # Refresh container information
+        self.container.reload()
 
         config = self.container.attrs['Config']
         for env_var in config['Env']:
@@ -433,7 +546,18 @@ class DockerRuntime(ActionExecutionClient):
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
         self.log(
             'debug',
-            f'attached to container: {self.container_name} {self._container_port} {self.api_url}',
+            f'Container attributes updated: {self.container_name} {self._container_port} {self.api_url}',
+        )
+
+    def _attach_to_container(self) -> None:
+        self.container = self.docker_client.containers.get(self.container_name)
+        if self.container.status == 'exited':
+            self.container.start()
+
+        self._update_container_attributes()
+        self.log(
+            'debug',
+            f'Attached to container: {self.container_name} {self._container_port} {self.api_url}',
         )
 
     @tenacity.retry(
@@ -471,10 +595,22 @@ class DockerRuntime(ActionExecutionClient):
 
         if self.config.sandbox.keep_runtime_alive or self.attach_to_existing:
             return
-        close_prefix = (
-            CONTAINER_NAME_PREFIX if rm_all_containers else self.container_name
-        )
-        stop_all_containers(close_prefix)
+
+        # Don't stop warm containers when closing a specific container
+        if not rm_all_containers:
+            # Only stop the specific container, not warm containers
+            if (
+                self.container
+                and hasattr(self.container, 'name')
+                and self.container.name
+                and not self.container.name.startswith(f'{CONTAINER_NAME_PREFIX}warm-')
+            ):
+                self.log('info', f'Stopping container: {self.container_name}')
+                stop_all_containers(self.container_name)
+        else:
+            # Stop all containers including warm ones when explicitly requested
+            close_prefix = CONTAINER_NAME_PREFIX
+            stop_all_containers(close_prefix)
 
     def _is_port_in_use_docker(self, port: int) -> bool:
         containers = self.docker_client.containers.list()
