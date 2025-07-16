@@ -50,7 +50,7 @@ RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'tru
 # TODO: migrate all swe-bench docker to ghcr.io/openhands
 # TODO: 适应所有的语言
 DOCKER_IMAGE_PREFIX = os.environ.get('EVAL_DOCKER_IMAGE_PREFIX', '')
-LANGUAGE = os.environ.get('LANGUAGE', 'python')
+LANGUAGE = os.environ.get('LANGUAGE', 'java')
 logger.info(f'Using docker image prefix: {DOCKER_IMAGE_PREFIX}')
 
 
@@ -315,19 +315,12 @@ def get_config(
     instance: pd.Series,
     metadata: EvalMetadata,
 ) -> OpenHandsConfig:
-    SWE_BENCH_CONTAINER_IMAGE = 'ghcr.io/opendevin/eval-swe-bench:full-v1.2.1'
-    if USE_INSTANCE_IMAGE:
-        # We use a different instance image for the each instance of swe-bench eval
-        # base_container_image = get_instance_docker_image(instance['instance_id'])
-        base_container_image = get_instance_docker_image(instance)
-        logger.info(
-            f'Using instance container image: {base_container_image}. '
-            f'Please make sure this image exists. '
-            f'Submit an issue on https://github.com/All-Hands-AI/OpenHands if you run into any issues.'
-        )
-    else:
-        base_container_image = SWE_BENCH_CONTAINER_IMAGE
-        logger.info(f'Using swe-bench container image: {base_container_image}')
+    base_container_image = get_instance_docker_image(instance)
+    logger.info(
+        f'Using instance container image: {base_container_image}. '
+        f'Please make sure this image exists. '
+        f'Submit an issue on https://github.com/All-Hands-AI/OpenHands if you run into any issues.'
+    )
 
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = base_container_image
@@ -774,7 +767,6 @@ if __name__ == '__main__':
     parser.add_argument(
         '--dataset',
         type=str,
-        default='princeton-nlp/SWE-bench',
         help='data set to evaluate on, either full-test or lite-test',
     )
     parser.add_argument(
@@ -789,6 +781,9 @@ if __name__ == '__main__':
     # so we don't need to manage file uploading to OpenHands's repo
     # dataset = load_dataset(args.dataset, split=args.split)
     # dataset = load_dataset(args.dataset)
+    logger.info(
+        f'Loading dataset {args.dataset} with split {args.split} '
+    )
     dataset = load_dataset('json', data_files=args.dataset)
     dataset = dataset[args.split]
     swe_bench_tests = filter_dataset(dataset.to_pandas(), 'instance_id')
@@ -841,5 +836,5 @@ if __name__ == '__main__':
         args.eval_num_workers,
         process_instance,
         timeout_seconds=120 * 60,  # 2 hour PER instance should be more than enough
-        max_retries=5,
+        max_retries=1,
     )

@@ -47,8 +47,8 @@ if [ -z "$DATASET" ]; then
 fi
 
 if [ -z "$LANGUAGE" ]; then
-  echo "LANUGUAGE not specified, use default python"
-  LANGUAGE="python"
+  echo "LANGUAGE not specified, use default python"
+  LANGUAGE="java"
 fi
 
 if [ -z "$SPLIT" ]; then
@@ -69,10 +69,10 @@ fi
 
 if [ -z "$EVAL_DOCKER_IMAGE_PREFIX" ]; then
   if [ "$LANGUAGE" = "python" ]; then
-  echo "EVAL_DOCKER_IMAGE_PREFIX is docker.io/xingyaoww/ as default as LANUGUAGE is python"
+  echo "EVAL_DOCKER_IMAGE_PREFIX is docker.io/xingyaoww/ as default as LANGUAGE is python"
     EVAL_DOCKER_IMAGE_PREFIX="docker.io/xingyaoww/"
   elif [ "$LANGUAGE" = "java" ]; then
-  echo "EVAL_DOCKER_IMAGE_PREFIX is java_verified as LANUGUAGE is java"
+  echo "EVAL_DOCKER_IMAGE_PREFIX is empty as LANGUAGE is java"
     EVAL_DOCKER_IMAGE_PREFIX=""
   fi
 fi
