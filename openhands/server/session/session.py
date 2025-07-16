@@ -13,7 +13,6 @@ from openhands.core.config.condenser_config import (
     ConversationWindowCondenserConfig,
     LLMSummarizingCondenserConfig,
 )
-from openhands.core.config.config_utils import DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX
 from openhands.core.config.mcp_config import MCPConfig, OpenHandsMCPConfigImpl
 from openhands.core.exceptions import MicroagentValidationError
 from openhands.core.logger import OpenHandsLoggerAdapter
