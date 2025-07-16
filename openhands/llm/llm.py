@@ -104,6 +104,7 @@ MODELS_WITHOUT_STOP_WORDS = [
     'o1-preview',
     'o1',
     'o1-2024-12-17',
+    'xai/grok-4-0709',
 ]
 
 
@@ -171,6 +172,15 @@ class LLM(RetryMixin, DebugMixin):
             # openai doesn't expose top_k
             # litellm will handle it a bit differently than the openai-compatible params
             kwargs['top_k'] = self.config.top_k
+
+        # Handle OpenHands provider - rewrite to litellm_proxy
+        if self.config.model.startswith('openhands/'):
+            model_name = self.config.model.removeprefix('openhands/')
+            self.config.model = f'litellm_proxy/{model_name}'
+            self.config.base_url = 'https://llm-proxy.app.all-hands.dev/'
+            logger.debug(
+                f'Rewrote openhands/{model_name} to {self.config.model} with base URL {self.config.base_url}'
+            )
 
         if (
             self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS
