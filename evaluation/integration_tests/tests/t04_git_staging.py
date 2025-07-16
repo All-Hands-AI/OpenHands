@@ -28,8 +28,6 @@ class Test(BaseIntegrationTest):
 
         # git add
         cmd_str = 'git add hello.py'
-        if os.path.exists('.vscode'):
-            cmd_str += ' .vscode/'
         action = CmdRunAction(command=cmd_str)
         obs = runtime.run_action(action)
         assert_and_raise(obs.exit_code == 0, f'Failed to run command: {obs.content}')
