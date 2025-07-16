@@ -10,13 +10,19 @@ import GitLabLogo from "#/assets/branding/gitlab-logo.svg?react";
 import BitbucketLogo from "#/assets/branding/bitbucket-logo.svg?react";
 import { useAuthUrl } from "#/hooks/use-auth-url";
 import { GetConfigResponse } from "#/api/open-hands.types";
+import { Provider } from "#/types/settings";
 
 interface AuthModalProps {
   githubAuthUrl: string | null;
   appMode?: GetConfigResponse["APP_MODE"] | null;
+  providersConfigured?: Provider[];
 }
 
-export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
+export function AuthModal({
+  githubAuthUrl,
+  appMode,
+  providersConfigured,
+}: AuthModalProps) {
   const { t } = useTranslation();
 
   const gitlabAuthUrl = useAuthUrl({
@@ -50,6 +56,20 @@ export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
     }
   };
 
+  // If providersConfigured is undefined or empty, show all providers by default
+  const showGithub =
+    !providersConfigured ||
+    providersConfigured.length === 0 ||
+    providersConfigured.includes("github");
+  const showGitlab =
+    !providersConfigured ||
+    providersConfigured.length === 0 ||
+    providersConfigured.includes("gitlab");
+  const showBitbucket =
+    !providersConfigured ||
+    providersConfigured.length === 0 ||
+    providersConfigured.includes("bitbucket");
+
   return (
     <ModalBackdrop>
       <ModalBody className="border border-tertiary">
@@ -61,35 +81,41 @@ export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
         </div>
 
         <div className="flex flex-col gap-3 w-full">
-          <BrandButton
-            type="button"
-            variant="primary"
-            onClick={handleGitHubAuth}
-            className="w-full"
-            startContent={<GitHubLogo width={20} height={20} />}
-          >
-            {t(I18nKey.GITHUB$CONNECT_TO_GITHUB)}
-          </BrandButton>
+          {showGithub && (
+            <BrandButton
+              type="button"
+              variant="primary"
+              onClick={handleGitHubAuth}
+              className="w-full"
+              startContent={<GitHubLogo width={20} height={20} />}
+            >
+              {t(I18nKey.GITHUB$CONNECT_TO_GITHUB)}
+            </BrandButton>
+          )}
 
-          <BrandButton
-            type="button"
-            variant="primary"
-            onClick={handleGitLabAuth}
-            className="w-full"
-            startContent={<GitLabLogo width={20} height={20} />}
-          >
-            {t(I18nKey.GITLAB$CONNECT_TO_GITLAB)}
-          </BrandButton>
+          {showGitlab && (
+            <BrandButton
+              type="button"
+              variant="primary"
+              onClick={handleGitLabAuth}
+              className="w-full"
+              startContent={<GitLabLogo width={20} height={20} />}
+            >
+              {t(I18nKey.GITLAB$CONNECT_TO_GITLAB)}
+            </BrandButton>
+          )}
 
-          <BrandButton
-            type="button"
-            variant="primary"
-            onClick={handleBitbucketAuth}
-            className="w-full"
-            startContent={<BitbucketLogo width={20} height={20} />}
-          >
-            {t(I18nKey.BITBUCKET$CONNECT_TO_BITBUCKET)}
-          </BrandButton>
+          {showBitbucket && (
+            <BrandButton
+              type="button"
+              variant="primary"
+              onClick={handleBitbucketAuth}
+              className="w-full"
+              startContent={<BitbucketLogo width={20} height={20} />}
+            >
+              {t(I18nKey.BITBUCKET$CONNECT_TO_BITBUCKET)}
+            </BrandButton>
+          )}
         </div>
 
         <p
