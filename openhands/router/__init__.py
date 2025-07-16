@@ -1,9 +1,10 @@
-from openhands.router.base import BaseRouter
+from openhands.router.base import ROUTER_REGISTRY, BaseRouter
+from openhands.router.cost_saving.extreme_impl import ExtremeCostSavingRouter
 from openhands.router.cost_saving.impl import ThresholdBasedCostSavingRouter
-from openhands.router.random.impl import RandomRouter
 
 __all__ = [
     'BaseRouter',
     'ThresholdBasedCostSavingRouter',
-    'RandomRouter',
+    'ExtremeCostSavingRouter',
+    'ROUTER_REGISTRY',
 ]

@@ -1,17 +1,20 @@
 from openhands.core.config import ModelRoutingConfig
 from openhands.llm.llm import LLM
-from openhands.router.base import BaseRouter
+from openhands.router.base import BaseRouter, ROUTER_REGISTRY
 from openhands.router.cost_saving.prompt import (
     CLASSIFIER_SYSTEM_MESSAGE,
     CLASSIFIER_USER_MESSAGE,
 )
 from transformers import AutoTokenizer
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.message import Message, ImageContent
+from openhands.core.message import Message
+from openhands.events.event import Event
 from openhands.utils.trajectory import format_trajectory
+from openhands.events.action import MessageAction
 
 
 class ThresholdBasedCostSavingRouter(BaseRouter):
+    ROUTER_NAME = "threshold_based_cv_router"
     WEAK_MODEL_CONFIG_NAME = 'weak_model'
     ROUTER_MODEL_CONFIG_NAME = 'classifier_model'
     TOKENIZER_NAME = "ryanhoangt/qwen2.5-coder-1.5b-it-seq-clsf-router-sonnet-4-devstral-lite-128k"
@@ -33,13 +36,10 @@ class ThresholdBasedCostSavingRouter(BaseRouter):
         self.routing_history: list[int] = []
         self.max_token_exceeded = False
 
-    def should_route_to(self, messages: list[Message]) -> LLM:
-        for message in messages:
-            if message.role != 'user':
-                continue
-
-            # Check if content element has any instance of ImageContent
-            if any(isinstance(content, ImageContent) for content in message.content):
+    def should_route_to(self, messages: list[Message], events: list[Event]) -> LLM:
+        # Handle multimodal input
+        for event in events:
+            if isinstance(event, MessageAction) and event.source == 'user' and event.image_urls:
                 logger.warning('Image content detected. Routing to the strong model.')
                 self.routing_history.append(0)
                 return self.llm
@@ -118,3 +118,7 @@ class ThresholdBasedCostSavingRouter(BaseRouter):
             raise ValueError(
                 f'Classifier LLM config {model_routing_config.classifier_llm_config_name} not found'
             )
+
+
+# Register the router
+ROUTER_REGISTRY[ThresholdBasedCostSavingRouter.ROUTER_NAME] = ThresholdBasedCostSavingRouter

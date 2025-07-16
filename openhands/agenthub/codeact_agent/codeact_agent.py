@@ -33,7 +33,7 @@ from openhands.memory.condenser.condenser import Condensation, View
 from openhands.memory.conversation_memory import ConversationMemory
 from openhands.router import (
     BaseRouter,
-    ThresholdBasedCostSavingRouter,
+    ROUTER_REGISTRY,
 )
 
 from openhands.runtime.plugins import (
@@ -103,7 +103,13 @@ class CodeActAgent(Agent):
 
         if config.enable_model_routing:
             assert model_routing_config is not None and routing_llms is not None
-            self.router = ThresholdBasedCostSavingRouter(
+            router_cls = ROUTER_REGISTRY.get(model_routing_config.router_name, None)
+            if router_cls is None:
+                raise ValueError(
+                    f'Router {model_routing_config.router_name} not found in registry.'
+                )
+
+            self.router = router_cls(
                 llm=self.llm,
                 routing_llms=routing_llms or dict(),
                 model_routing_config=model_routing_config,
@@ -211,7 +217,7 @@ class CodeActAgent(Agent):
         # Choose the active LLM based on the router
         if self.router:
             messages = self._get_messages(condensed_history, initial_user_message)
-            self.active_llm = self.router.should_route_to(messages)
+            self.active_llm = self.router.should_route_to(messages, condensed_history)
 
             if self.active_llm != self.llm:
                 logger.warning(
