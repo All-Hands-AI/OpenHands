@@ -370,13 +370,13 @@ To use these with the docker command, pass in `-e SANDBOX_<option>`. Example: `-
 ### Docker-out-of-Docker Support
 
 <Warning>
-**SECURITY WARNING**: The `mount_docker_socket` option grants the sandbox container access to the host Docker daemon with root-equivalent privileges. This poses significant security risks and should only be used in trusted environments. Malicious code running in the sandbox could potentially compromise the entire host system.
+**SECURITY WARNING**: The `docker_out_of_docker` option grants the sandbox container access to the host Docker daemon with root-equivalent privileges and host network interfaces. This poses significant security risks and should only be used in trusted environments. Malicious code running in the sandbox could potentially compromise the entire host system.
 </Warning>
 
-- `mount_docker_socket`
+- `docker_out_of_docker`
   - Type: `bool`
   - Default: `false`
-  - Description: Mount the host Docker socket (`/var/run/docker.sock`) into the sandbox container to enable docker-out-of-docker functionality. This allows the sandbox to build Docker images, run containers, and perform other Docker operations. **Use with extreme caution** as this grants root-equivalent access to the host system.
+  - Description: Enable docker-out-of-docker functionality by mounting the host Docker socket (`/var/run/docker.sock`) and using host networking. This allows the sandbox to build Docker images, run containers, and perform other Docker operations while accessing services via localhost ports. **Use with extreme caution** as this grants root-equivalent access to the host system and network interfaces.
 
 ### Dependencies and Environment
 - `runtime_extra_deps`

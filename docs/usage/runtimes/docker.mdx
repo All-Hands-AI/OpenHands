@@ -133,28 +133,29 @@ docker run # ... \
 
 ## Docker-out-of-Docker Support
 
-OpenHands supports docker-out-of-docker functionality, which allows the sandbox container to build Docker images, run containers, and perform other Docker operations. This is useful for scenarios where the agent needs to work with containerized applications or build Docker images.
+OpenHands supports docker-out-of-docker functionality, which allows the sandbox container to build Docker images, run containers, and perform other Docker operations. This feature also enables host networking, allowing the agent to access services running on localhost ports.
 
 <Warning>
-**CRITICAL SECURITY WARNING**: Enabling docker-out-of-docker functionality grants the sandbox container access to the host Docker daemon with root-equivalent privileges. This poses significant security risks:
+**CRITICAL SECURITY WARNING**: Enabling docker-out-of-docker functionality grants the sandbox container access to the host Docker daemon with root-equivalent privileges and host network interfaces. This poses significant security risks:
 
 - **Full Host Access**: The sandbox can potentially access and modify any file on the host system
 - **Container Escape**: Malicious code could escape the sandbox and compromise the host
 - **Privilege Escalation**: The sandbox gains root-level access to the Docker daemon
-- **Network Access**: The sandbox can potentially access other containers and networks
+- **Network Access**: The sandbox can access all host network interfaces and services
+- **Port Access**: The sandbox can access any service running on localhost ports
 
 **Only enable this feature in trusted environments where you fully trust the code being executed.**
 </Warning>
 
 ### Enabling Docker-out-of-Docker
 
-To enable docker-out-of-docker functionality, set the `mount_docker_socket` configuration option:
+To enable docker-out-of-docker functionality, set the `docker_out_of_docker` configuration option:
 
 #### Using Environment Variables
 
 ```bash
 docker run # ... \
-    -e SANDBOX_MOUNT_DOCKER_SOCKET=true \
+    -e SANDBOX_DOCKER_OUT_OF_DOCKER=true \
     # ...
 ```
 
@@ -162,12 +163,15 @@ docker run # ... \
 
 ```toml
 [sandbox]
-mount_docker_socket = true
+docker_out_of_docker = true
 ```
 
 ### How It Works
 
-When enabled, OpenHands mounts the host Docker socket (`/var/run/docker.sock`) into the sandbox container. This allows the sandbox to communicate directly with the host Docker daemon.
+When enabled, OpenHands:
+1. Mounts the host Docker socket (`/var/run/docker.sock`) into the sandbox container
+2. Enables host networking mode, allowing access to localhost services
+3. Provides the sandbox with direct access to the host Docker daemon
 
 The feature includes safety checks:
 - Verifies that the Docker socket exists on the host before mounting
@@ -183,23 +187,31 @@ docker-out-of-docker functionality is useful for:
 - **Container Management**: Starting, stopping, and managing containers
 - **Multi-container Applications**: Working with Docker Compose or similar tools
 - **CI/CD Workflows**: Implementing containerized build and deployment pipelines
+- **Localhost Service Access**: Accessing services running on host localhost ports
+- **Development Workflows**: Testing applications that need to communicate with host services
 
 ### Example Usage
 
-Once enabled, the agent can use Docker commands within the sandbox:
+Once enabled, the agent can use Docker commands and access localhost services within the sandbox:
 
 ```bash
 # Build a Docker image
 docker build -t my-app .
 
-# Run a container
-docker run -d --name my-container my-app
+# Run a container with port mapping
+docker run -d -p 8080:80 --name my-container my-app
+
+# Access the container via localhost (host networking enabled)
+curl http://localhost:8080
 
 # List running containers
 docker ps
 
 # Use Docker Compose
 docker-compose up -d
+
+# Access services running on host
+curl http://localhost:3000  # Access host service directly
 ```
 
 ### Security Best Practices
@@ -221,3 +233,6 @@ If docker-out-of-docker is not working:
 2. **Permissions**: Verify the Docker daemon is running and accessible
 3. **Logs**: Check OpenHands logs for Docker socket mounting warnings
 4. **Docker Version**: Ensure compatible Docker versions on host and container
+5. **Host Networking**: If you can't access localhost services, verify host networking is enabled
+6. **macOS Users**: Ensure Docker Desktop has host networking feature enabled
+7. **Port Access**: Test port accessibility with `curl http://localhost:PORT` from within the sandbox

@@ -181,7 +181,7 @@ def test_docker_socket_mounting_enabled_socket_exists(
     }
     mock_init_docker.return_value = mock_docker_client
     mock_exists.return_value = True
-    config.sandbox.mount_docker_socket = True
+    config.sandbox.docker_out_of_docker = True
     runtime = DockerRuntime(config, event_stream, sid='test-sid')
     runtime.log = MagicMock()
 
@@ -205,9 +205,9 @@ def test_docker_socket_mounting_enabled_socket_exists(
     mock_exists.assert_called_with('/var/run/docker.sock')
     runtime.log.assert_any_call(
         'warning',
-        'Mounting Docker socket to enable docker-out-of-docker functionality. '
+        'Enabling docker-out-of-docker functionality with Docker socket mounting and host networking. '
         'SECURITY WARNING: This grants container access to the host Docker daemon '
-        'with root-equivalent privileges. Use only in trusted environments.',
+        'with root-equivalent privileges and host network interfaces. Use only in trusted environments.',
     )
 
     # Check that docker.containers.run was called with the Docker socket mounted
@@ -232,7 +232,7 @@ def test_docker_socket_mounting_enabled_socket_not_exists(
     }
     mock_init_docker.return_value = mock_docker_client
     mock_exists.return_value = False
-    config.sandbox.mount_docker_socket = True
+    config.sandbox.docker_out_of_docker = True
     runtime = DockerRuntime(config, event_stream, sid='test-sid')
     runtime.log = MagicMock()
 
@@ -256,7 +256,7 @@ def test_docker_socket_mounting_enabled_socket_not_exists(
     mock_exists.assert_called_with('/var/run/docker.sock')
     runtime.log.assert_any_call(
         'warning',
-        'Docker socket mounting requested but /var/run/docker.sock not found on host. '
+        'Docker-out-of-docker functionality requested but /var/run/docker.sock not found on host. '
         'docker-out-of-docker functionality will not be available.',
     )
 
@@ -277,7 +277,7 @@ def test_docker_socket_mounting_disabled(mock_init_docker, config, event_stream)
         'Components': [{'Name': 'Engine', 'Version': '20.10.0'}],
     }
     mock_init_docker.return_value = mock_docker_client
-    config.sandbox.mount_docker_socket = False
+    config.sandbox.docker_out_of_docker = False
     runtime = DockerRuntime(config, event_stream, sid='test-sid')
     runtime.log = MagicMock()
 
@@ -303,3 +303,56 @@ def test_docker_socket_mounting_disabled(mock_init_docker, config, event_stream)
     assert call_args is not None, 'docker.containers.run should have been called'
     volumes_arg = call_args[1]['volumes']
     assert '/var/run/docker.sock' not in volumes_arg
+
+
+@patch('os.path.exists')
+@patch('openhands.runtime.impl.docker.docker_runtime.DockerRuntime._init_docker_client')
+def test_docker_out_of_docker_enables_host_networking(
+    mock_init_docker, mock_exists, config, event_stream
+):
+    """Test that host networking is enabled when docker-out-of-docker is enabled."""
+    # Arrange
+    mock_docker_client = MagicMock()
+    mock_docker_client.version.return_value = {
+        'Version': '20.10.0',
+        'Components': [{'Name': 'Engine', 'Version': '20.10.0'}],
+    }
+    mock_init_docker.return_value = mock_docker_client
+    mock_exists.return_value = True
+    config.sandbox.docker_out_of_docker = True
+    config.sandbox.use_host_network = False  # Explicitly set to False to test docker_out_of_docker override
+    runtime = DockerRuntime(config, event_stream, sid='test-sid')
+    runtime.log = MagicMock()
+
+    # Mock the _process_volumes method to return empty dict
+    runtime._process_volumes = MagicMock(return_value={})
+
+    # Mock other required methods and attributes
+    runtime._find_available_port = MagicMock(side_effect=[30000, 40000, 50000, 55000])
+    runtime.get_action_execution_server_startup_command = MagicMock(
+        return_value='test-command'
+    )
+    runtime.set_runtime_status = MagicMock()
+    runtime.initial_env_vars = {}
+    runtime._vscode_enabled = False  # Mock the private attribute
+    runtime.runtime_container_image = 'test-image'
+
+    # Act
+    runtime.init_container()
+
+    # Assert
+    # Check that docker.containers.run was called with host network mode
+    call_args = mock_docker_client.containers.run.call_args
+    assert call_args is not None, 'docker.containers.run should have been called'
+    network_mode_arg = call_args[1]['network_mode']
+    assert network_mode_arg == 'host', f'Expected network_mode to be "host", got {network_mode_arg}'
+    
+    # Check that ports argument is None (not used with host networking)
+    ports_arg = call_args[1]['ports']
+    assert ports_arg is None, f'Expected ports to be None with host networking, got {ports_arg}'
+    
+    # Check that Docker socket is mounted
+    volumes_arg = call_args[1]['volumes']
+    assert '/var/run/docker.sock' in volumes_arg
+    assert volumes_arg['/var/run/docker.sock']['bind'] == '/var/run/docker.sock'
+    assert volumes_arg['/var/run/docker.sock']['mode'] == 'rw'
