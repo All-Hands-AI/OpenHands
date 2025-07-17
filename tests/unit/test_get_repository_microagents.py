@@ -3,6 +3,7 @@ import shutil
 import tempfile
 from datetime import datetime
 from pathlib import Path
+from types import MappingProxyType
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -38,11 +39,13 @@ def test_client():
         with patch('openhands.server.dependencies._SESSION_API_KEY', None):
             # Override the FastAPI dependencies directly
             def mock_get_provider_tokens():
-                return {
-                    ProviderType.GITHUB: ProviderToken(
-                        token=SecretStr('ghp_test_token'), host='github.com'
-                    )
-                }
+                return MappingProxyType(
+                    {
+                        ProviderType.GITHUB: ProviderToken(
+                            token=SecretStr('ghp_test_token'), host='github.com'
+                        )
+                    }
+                )
 
             def mock_get_access_token():
                 return None
@@ -61,17 +64,19 @@ def test_client():
 @pytest.fixture
 def mock_provider_tokens():
     """Create mock provider tokens for testing."""
-    return {
-        ProviderType.GITHUB: ProviderToken(
-            token=SecretStr('ghp_test_token'), host='github.com'
-        ),
-        ProviderType.GITLAB: ProviderToken(
-            token=SecretStr('glpat_test_token'), host='gitlab.com'
-        ),
-        ProviderType.BITBUCKET: ProviderToken(
-            token=SecretStr('test_token'), host='bitbucket.org'
-        ),
-    }
+    return MappingProxyType(
+        {
+            ProviderType.GITHUB: ProviderToken(
+                token=SecretStr('ghp_test_token'), host='github.com'
+            ),
+            ProviderType.GITLAB: ProviderToken(
+                token=SecretStr('glpat_test_token'), host='gitlab.com'
+            ),
+            ProviderType.BITBUCKET: ProviderToken(
+                token=SecretStr('test_token'), host='bitbucket.org'
+            ),
+        }
+    )
 
 
 @pytest.fixture
@@ -214,6 +219,10 @@ class TestGetRepositoryMicroagents:
         mock_provider_handler.verify_repo_provider = AsyncMock(
             return_value=mock_repository
         )
+        # Mock the new get_authenticated_git_url method
+        mock_provider_handler.get_authenticated_git_url = AsyncMock(
+            return_value='https://ghp_test_token@github.com/test/repo.git'
+        )
 
         # Mock subprocess.run for git clone
         mock_result = MagicMock()
@@ -294,17 +303,6 @@ class TestGetRepositoryMicroagents:
                             assert knowledge_agent['git_provider'] == 'github'
 
     @pytest.mark.asyncio
-    async def test_get_microagents_no_provider_tokens(self, test_client):
-        """Test error when no provider tokens are provided."""
-        # Override the dependency to return None to simulate no provider tokens
-        test_client.app.dependency_overrides[get_provider_tokens] = lambda: None
-
-        response = test_client.get('/api/user/repository/test/repo/microagents')
-
-        assert response.status_code == 401
-        assert 'Git provider token required' in response.json()
-
-    @pytest.mark.asyncio
     async def test_get_microagents_authentication_error(
         self, test_client, mock_provider_tokens
     ):
@@ -351,6 +349,10 @@ class TestGetRepositoryMicroagents:
         mock_provider_handler.verify_repo_provider = AsyncMock(
             return_value=mock_repository
         )
+        # Mock the new get_authenticated_git_url method
+        mock_provider_handler.get_authenticated_git_url = AsyncMock(
+            return_value='https://ghp_test_token@github.com/test/repo.git'
+        )
 
         # Mock subprocess.run to fail
         mock_result = MagicMock()
@@ -391,6 +393,10 @@ class TestGetRepositoryMicroagents:
         )
         mock_provider_handler.verify_repo_provider = AsyncMock(
             return_value=mock_repository
+        )
+        # Mock the new get_authenticated_git_url method
+        mock_provider_handler.get_authenticated_git_url = AsyncMock(
+            return_value='https://ghp_test_token@github.com/test/repo.git'
         )
 
         # Mock subprocess.run for successful clone
@@ -448,6 +454,10 @@ class TestGetRepositoryMicroagents:
         mock_provider_handler.verify_repo_provider = AsyncMock(
             return_value=mock_repository
         )
+        # Mock the new get_authenticated_git_url method
+        mock_provider_handler.get_authenticated_git_url = AsyncMock(
+            return_value='https://ghp_test_token@github.com/test/repo.git'
+        )
 
         # Mock subprocess.run for successful clone
         mock_result = MagicMock()
@@ -484,11 +494,13 @@ class TestGetRepositoryMicroagents:
     ):
         """Test microagents endpoint with GitHub provider."""
         # Test specifically with GitHub provider
-        provider_tokens = {
-            ProviderType.GITHUB: ProviderToken(
-                token=SecretStr('ghp_test_token'), host='github.com'
-            )
-        }
+        provider_tokens = MappingProxyType(
+            {
+                ProviderType.GITHUB: ProviderToken(
+                    token=SecretStr('ghp_test_token'), host='github.com'
+                )
+            }
+        )
 
         # Override the dependency to use specific provider tokens
         test_client.app.dependency_overrides[get_provider_tokens] = (
@@ -506,6 +518,10 @@ class TestGetRepositoryMicroagents:
         )
         mock_provider_handler.verify_repo_provider = AsyncMock(
             return_value=mock_repository
+        )
+        # Mock the new get_authenticated_git_url method
+        mock_provider_handler.get_authenticated_git_url = AsyncMock(
+            return_value='https://ghp_test_token@github.com/test/repo.git'
         )
 
         # Mock subprocess.run for successful clone
@@ -586,6 +602,10 @@ class TestGetRepositoryMicroagents:
         )
         mock_provider_handler.verify_repo_provider = AsyncMock(
             return_value=mock_repository
+        )
+        # Mock the new get_authenticated_git_url method
+        mock_provider_handler.get_authenticated_git_url = AsyncMock(
+            return_value='https://ghp_test_token@github.com/test/repo.git'
         )
 
         # Mock subprocess.run for successful clone
@@ -685,6 +705,10 @@ class TestGetRepositoryMicroagents:
         mock_provider_handler.verify_repo_provider = AsyncMock(
             return_value=mock_repository
         )
+        # Mock the new get_authenticated_git_url method
+        mock_provider_handler.get_authenticated_git_url = AsyncMock(
+            return_value='https://ghp_test_token@github.com/test/repo.git'
+        )
 
         # Mock subprocess.run to raise timeout
         import subprocess
@@ -737,6 +761,10 @@ class TestGetRepositoryMicroagents:
         )
         mock_provider_handler.verify_repo_provider = AsyncMock(
             return_value=mock_repository
+        )
+        # Mock the new get_authenticated_git_url method
+        mock_provider_handler.get_authenticated_git_url = AsyncMock(
+            return_value='https://ghp_test_token@github.com/test/repo.git'
         )
 
         # Mock subprocess.run for successful clone

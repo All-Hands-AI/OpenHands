@@ -4,6 +4,8 @@ import subprocess
 import tempfile
 from datetime import datetime
 from pathlib import Path
+from types import MappingProxyType
+from typing import cast
 
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
@@ -304,6 +306,158 @@ def _get_file_creation_time(repo_dir: Path, file_path: Path) -> datetime:
         return datetime.now()
 
 
+async def _verify_repository_access(
+    repository_name: str,
+    provider_tokens: PROVIDER_TOKEN_TYPE | None,
+    access_token: SecretStr | None,
+    user_id: str | None,
+) -> Repository:
+    """Verify repository access and return repository information.
+
+    Args:
+        repository_name: Repository name in the format 'owner/repo'
+        provider_tokens: Provider tokens for authentication
+        access_token: Access token for external authentication
+        user_id: User ID for authentication
+
+    Returns:
+        Repository object with provider information
+
+    Raises:
+        AuthenticationError: If authentication fails
+    """
+    provider_handler = ProviderHandler(
+        provider_tokens=provider_tokens
+        or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({})),
+        external_auth_token=access_token,
+        external_auth_id=user_id,
+    )
+
+    repository = await provider_handler.verify_repo_provider(repository_name)
+    logger.info(
+        f'Detected git provider: {repository.git_provider} for repository: {repository_name}'
+    )
+    return repository
+
+
+def _clone_repository(remote_url: str, repository_name: str) -> Path:
+    """Clone repository to temporary directory.
+
+    Args:
+        remote_url: Authenticated git URL for cloning
+        repository_name: Repository name for error messages
+
+    Returns:
+        Path to the cloned repository directory
+
+    Raises:
+        RuntimeError: If cloning fails
+    """
+    temp_dir = tempfile.mkdtemp()
+    repo_dir = Path(temp_dir) / 'repo'
+
+    clone_cmd = ['git', 'clone', '--depth', '1', remote_url, str(repo_dir)]
+
+    # Set environment variable to avoid interactive prompts
+    env = os.environ.copy()
+    env['GIT_TERMINAL_PROMPT'] = '0'
+
+    result = subprocess.run(
+        clone_cmd,
+        capture_output=True,
+        text=True,
+        env=env,
+        timeout=30,  # 30 second timeout
+    )
+
+    if result.returncode != 0:
+        # Clean up on failure
+        shutil.rmtree(temp_dir, ignore_errors=True)
+        error_msg = f'Failed to clone repository: {result.stderr}'
+        logger.error(f'Failed to clone repository {repository_name}: {result.stderr}')
+        raise RuntimeError(error_msg)
+
+    return repo_dir
+
+
+def _process_microagents(
+    repo_dir: Path,
+    repository_name: str,
+    git_provider: ProviderType,
+) -> list[MicroagentResponse]:
+    """Process microagents from the cloned repository.
+
+    Args:
+        repo_dir: Path to the cloned repository directory
+        repository_name: Repository name for logging
+        git_provider: Git provider type
+
+    Returns:
+        List of microagents found in the repository
+    """
+    # Look for .openhands/microagents directory
+    microagents_dir = repo_dir / '.openhands' / 'microagents'
+
+    if not microagents_dir.exists():
+        logger.info(f'No .openhands/microagents directory found in {repository_name}')
+        return []
+
+    # Load microagents from the directory
+    repo_agents, knowledge_agents = load_microagents_from_dir(microagents_dir)
+
+    # Prepare response
+    microagents = []
+
+    # Add repo microagents
+    for name, r_agent in repo_agents.items():
+        # Get the actual creation time from Git
+        agent_file_path = Path(r_agent.source)
+        created_at = _get_file_creation_time(repo_dir, agent_file_path)
+
+        microagents.append(
+            MicroagentResponse(
+                name=name,
+                type='repo',
+                content=r_agent.content,
+                triggers=[],
+                inputs=r_agent.metadata.inputs,
+                tools=(
+                    [server.name for server in r_agent.metadata.mcp_tools.stdio_servers]
+                    if r_agent.metadata.mcp_tools
+                    else []
+                ),
+                created_at=created_at,
+                git_provider=git_provider,
+            )
+        )
+
+    # Add knowledge microagents
+    for name, k_agent in knowledge_agents.items():
+        # Get the actual creation time from Git
+        agent_file_path = Path(k_agent.source)
+        created_at = _get_file_creation_time(repo_dir, agent_file_path)
+
+        microagents.append(
+            MicroagentResponse(
+                name=name,
+                type='knowledge',
+                content=k_agent.content,
+                triggers=k_agent.triggers,
+                inputs=k_agent.metadata.inputs,
+                tools=(
+                    [server.name for server in k_agent.metadata.mcp_tools.stdio_servers]
+                    if k_agent.metadata.mcp_tools
+                    else []
+                ),
+                created_at=created_at,
+                git_provider=git_provider,
+            )
+        )
+
+    logger.info(f'Found {len(microagents)} microagents in {repository_name}')
+    return microagents
+
+
 @app.get(
     '/repository/{repository_name:path}/microagents',
     response_model=list[MicroagentResponse],
@@ -325,164 +479,47 @@ async def get_repository_microagents(
     Returns:
         List of microagents found in the repository's .openhands/microagents directory
     """
-    if not provider_tokens:
-        logger.info(
-            f'Returning 401 Unauthorized - Git provider token required for user_id: {user_id}'
-        )
-        return JSONResponse(
-            content='Git provider token required. (such as GitHub).',
-            status_code=status.HTTP_401_UNAUTHORIZED,
-        )
+    repo_dir = None
 
     try:
-        # Create ProviderHandler to detect git provider and get repository info
+        # Verify repository access and get provider information
+        repository = await _verify_repository_access(
+            repository_name, provider_tokens, access_token, user_id
+        )
+
+        # Construct authenticated git URL using provider handler
         provider_handler = ProviderHandler(
-            provider_tokens=provider_tokens,
+            provider_tokens=provider_tokens
+            or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({})),
             external_auth_token=access_token,
             external_auth_id=user_id,
         )
+        remote_url = await provider_handler.get_authenticated_git_url(repository_name)
 
-        # Verify repository and get provider information
-        try:
-            repository = await provider_handler.verify_repo_provider(repository_name)
-            git_provider = repository.git_provider
-            logger.info(
-                f'Detected git provider: {git_provider} for repository: {repository_name}'
-            )
-        except AuthenticationError as e:
-            logger.info(
-                f'Returning 401 Unauthorized - Authentication error for user_id: {user_id}, error: {str(e)}'
-            )
-            return JSONResponse(
-                content=str(e),
-                status_code=status.HTTP_401_UNAUTHORIZED,
-            )
+        # Clone repository
+        repo_dir = _clone_repository(remote_url, repository_name)
 
-        # Get authenticated git URL
-        provider_token = provider_tokens[git_provider]
-        domain = provider_token.host or _get_default_domain(git_provider)
+        # Process microagents
+        microagents = _process_microagents(
+            repo_dir, repository_name, repository.git_provider
+        )
 
-        if provider_token.token:
-            token_value = provider_token.token.get_secret_value()
-            if git_provider.value == 'gitlab':
-                remote_url = (
-                    f'https://oauth2:{token_value}@{domain}/{repository_name}.git'
-                )
-            elif git_provider.value == 'bitbucket':
-                if ':' in token_value:
-                    # App token format: username:app_password
-                    remote_url = f'https://{token_value}@{domain}/{repository_name}.git'
-                else:
-                    # Access token format: use x-token-auth
-                    remote_url = f'https://x-token-auth:{token_value}@{domain}/{repository_name}.git'
-            else:
-                # GitHub
-                remote_url = f'https://{token_value}@{domain}/{repository_name}.git'
-        else:
-            remote_url = f'https://{domain}/{repository_name}.git'
+        return microagents
 
-        # Create temporary directory for cloning
-        temp_dir = tempfile.mkdtemp()
-        repo_dir = Path(temp_dir) / 'repo'
+    except AuthenticationError as e:
+        logger.info(
+            f'Returning 401 Unauthorized - Authentication error for user_id: {user_id}, error: {str(e)}'
+        )
+        return JSONResponse(
+            content=str(e),
+            status_code=status.HTTP_401_UNAUTHORIZED,
+        )
 
-        try:
-            # Clone the repository (shallow clone for efficiency)
-            clone_cmd = ['git', 'clone', '--depth', '1', remote_url, str(repo_dir)]
-
-            # Set environment variable to avoid interactive prompts
-            env = os.environ.copy()
-            env['GIT_TERMINAL_PROMPT'] = '0'
-
-            result = subprocess.run(
-                clone_cmd,
-                capture_output=True,
-                text=True,
-                env=env,
-                timeout=30,  # 30 second timeout
-            )
-
-            if result.returncode != 0:
-                logger.error(
-                    f'Failed to clone repository {repository_name}: {result.stderr}'
-                )
-                return JSONResponse(
-                    content=f'Failed to clone repository: {result.stderr}',
-                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                )
-
-            # Look for .openhands/microagents directory
-            microagents_dir = repo_dir / '.openhands' / 'microagents'
-
-            if not microagents_dir.exists():
-                logger.info(
-                    f'No .openhands/microagents directory found in {repository_name}'
-                )
-                return []
-
-            # Load microagents from the directory
-            repo_agents, knowledge_agents = load_microagents_from_dir(microagents_dir)
-
-            # Prepare response
-            microagents = []
-
-            # Add repo microagents
-            for name, r_agent in repo_agents.items():
-                # Get the actual creation time from Git
-                agent_file_path = Path(r_agent.source)
-                created_at = _get_file_creation_time(repo_dir, agent_file_path)
-
-                microagents.append(
-                    MicroagentResponse(
-                        name=name,
-                        type='repo',
-                        content=r_agent.content,
-                        triggers=[],
-                        inputs=r_agent.metadata.inputs,
-                        tools=(
-                            [
-                                server.name
-                                for server in r_agent.metadata.mcp_tools.stdio_servers
-                            ]
-                            if r_agent.metadata.mcp_tools
-                            else []
-                        ),
-                        created_at=created_at,
-                        git_provider=git_provider,
-                    )
-                )
-
-            # Add knowledge microagents
-            for name, k_agent in knowledge_agents.items():
-                # Get the actual creation time from Git
-                agent_file_path = Path(k_agent.source)
-                created_at = _get_file_creation_time(repo_dir, agent_file_path)
-
-                microagents.append(
-                    MicroagentResponse(
-                        name=name,
-                        type='knowledge',
-                        content=k_agent.content,
-                        triggers=k_agent.triggers,
-                        inputs=k_agent.metadata.inputs,
-                        tools=(
-                            [
-                                server.name
-                                for server in k_agent.metadata.mcp_tools.stdio_servers
-                            ]
-                            if k_agent.metadata.mcp_tools
-                            else []
-                        ),
-                        created_at=created_at,
-                        git_provider=git_provider,
-                    )
-                )
-
-            logger.info(f'Found {len(microagents)} microagents in {repository_name}')
-            return microagents
-
-        finally:
-            # Clean up temporary directory
-            shutil.rmtree(temp_dir, ignore_errors=True)
+    except RuntimeError as e:
+        return JSONResponse(
+            content=str(e),
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
     except Exception as e:
         logger.error(
@@ -493,14 +530,7 @@ async def get_repository_microagents(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
-
-def _get_default_domain(git_provider):
-    """Get the default domain for a git provider."""
-    from openhands.integrations.service_types import ProviderType
-
-    domain_map = {
-        ProviderType.GITHUB: 'github.com',
-        ProviderType.GITLAB: 'gitlab.com',
-        ProviderType.BITBUCKET: 'bitbucket.org',
-    }
-    return domain_map.get(git_provider, 'github.com')
+    finally:
+        # Clean up temporary directory
+        if repo_dir and repo_dir.parent.exists():
+            shutil.rmtree(repo_dir.parent, ignore_errors=True)
