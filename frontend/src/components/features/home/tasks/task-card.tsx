@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
 import { SuggestedTask } from "./task.types";
 import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
@@ -24,6 +25,7 @@ export function TaskCard({ task }: TaskCardProps) {
   const { mutate: createConversation, isPending } = useCreateConversation();
   const isCreatingConversation = useIsCreatingConversation();
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const handleLaunchConversation = () => {
     setOptimisticUserMessage(t("TASK$ADDRESSING_TASK"));
@@ -34,6 +36,11 @@ export function TaskCard({ task }: TaskCardProps) {
         gitProvider: task.git_provider,
       },
       suggestedTask: task,
+    }, {
+      onSuccess: (data) => {
+        // Navigate to the conversation page after successful creation
+        navigate(`/conversations/${data.conversation_id}`);
+      }
     });
   };
 
