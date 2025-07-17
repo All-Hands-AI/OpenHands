@@ -9,8 +9,8 @@ from pydantic import SecretStr
 
 from openhands.integrations.bitbucket.bitbucket_service import BitBucketService
 from openhands.integrations.provider import ProviderToken, ProviderType
+from openhands.integrations.service_types import OwnerType, Repository
 from openhands.integrations.service_types import ProviderType as ServiceProviderType
-from openhands.integrations.service_types import Repository
 from openhands.integrations.utils import validate_provider_token
 from openhands.resolver.interfaces.bitbucket import BitbucketIssueHandler
 from openhands.resolver.interfaces.issue import Issue
@@ -590,6 +590,167 @@ async def test_validate_provider_token_with_empty_tokens():
 
         # Result should be None for invalid tokens
         assert result is None
+
+
+@pytest.mark.asyncio
+async def test_bitbucket_get_repositories_with_user_owner_type():
+    """Test that get_repositories correctly sets owner_type field for user repositories."""
+    service = BitBucketService(token=SecretStr('test-token'))
+
+    # Mock repository data for user repositories (private workspace)
+    mock_workspaces = [{'slug': 'test-user', 'name': 'Test User'}]
+    mock_repos = [
+        {
+            'uuid': 'repo-1',
+            'slug': 'user-repo1',
+            'workspace': {'slug': 'test-user', 'is_private': True},
+            'is_private': False,
+            'updated_on': '2023-01-01T00:00:00Z',
+        },
+        {
+            'uuid': 'repo-2',
+            'slug': 'user-repo2',
+            'workspace': {'slug': 'test-user', 'is_private': True},
+            'is_private': True,
+            'updated_on': '2023-01-02T00:00:00Z',
+        },
+    ]
+
+    with patch.object(service, '_fetch_paginated_data') as mock_fetch:
+        mock_fetch.side_effect = [mock_workspaces, mock_repos]
+
+        repositories = await service.get_repositories('pushed', AppMode.SAAS)
+
+        # Verify we got the expected number of repositories
+        assert len(repositories) == 2
+
+        # Verify owner_type is correctly set for user repositories (private workspace)
+        for repo in repositories:
+            assert repo.owner_type == OwnerType.USER
+            assert isinstance(repo, Repository)
+            assert repo.git_provider == ServiceProviderType.BITBUCKET
+
+
+@pytest.mark.asyncio
+async def test_bitbucket_get_repositories_with_organization_owner_type():
+    """Test that get_repositories correctly sets owner_type field for organization repositories."""
+    service = BitBucketService(token=SecretStr('test-token'))
+
+    # Mock repository data for organization repositories (public workspace)
+    mock_workspaces = [{'slug': 'test-org', 'name': 'Test Organization'}]
+    mock_repos = [
+        {
+            'uuid': 'repo-3',
+            'slug': 'org-repo1',
+            'workspace': {'slug': 'test-org', 'is_private': False},
+            'is_private': False,
+            'updated_on': '2023-01-03T00:00:00Z',
+        },
+        {
+            'uuid': 'repo-4',
+            'slug': 'org-repo2',
+            'workspace': {'slug': 'test-org', 'is_private': False},
+            'is_private': True,
+            'updated_on': '2023-01-04T00:00:00Z',
+        },
+    ]
+
+    with patch.object(service, '_fetch_paginated_data') as mock_fetch:
+        mock_fetch.side_effect = [mock_workspaces, mock_repos]
+
+        repositories = await service.get_repositories('pushed', AppMode.SAAS)
+
+        # Verify we got the expected number of repositories
+        assert len(repositories) == 2
+
+        # Verify owner_type is correctly set for organization repositories (public workspace)
+        for repo in repositories:
+            assert repo.owner_type == OwnerType.ORGANIZATION
+            assert isinstance(repo, Repository)
+            assert repo.git_provider == ServiceProviderType.BITBUCKET
+
+
+@pytest.mark.asyncio
+async def test_bitbucket_get_repositories_mixed_owner_types():
+    """Test that get_repositories correctly handles mixed user and organization repositories."""
+    service = BitBucketService(token=SecretStr('test-token'))
+
+    # Mock repository data with mixed workspace types
+    mock_workspaces = [
+        {'slug': 'test-user', 'name': 'Test User'},
+        {'slug': 'test-org', 'name': 'Test Organization'},
+    ]
+
+    # First workspace (user) repositories
+    mock_user_repos = [
+        {
+            'uuid': 'repo-1',
+            'slug': 'user-repo',
+            'workspace': {'slug': 'test-user', 'is_private': True},
+            'is_private': False,
+            'updated_on': '2023-01-01T00:00:00Z',
+        }
+    ]
+
+    # Second workspace (organization) repositories
+    mock_org_repos = [
+        {
+            'uuid': 'repo-2',
+            'slug': 'org-repo',
+            'workspace': {'slug': 'test-org', 'is_private': False},
+            'is_private': False,
+            'updated_on': '2023-01-02T00:00:00Z',
+        }
+    ]
+
+    with patch.object(service, '_fetch_paginated_data') as mock_fetch:
+        mock_fetch.side_effect = [mock_workspaces, mock_user_repos, mock_org_repos]
+
+        repositories = await service.get_repositories('pushed', AppMode.SAAS)
+
+        # Verify we got repositories from both workspaces
+        assert len(repositories) == 2
+
+        # Verify owner_type is correctly set for each repository
+        user_repo = next(repo for repo in repositories if 'user-repo' in repo.full_name)
+        org_repo = next(repo for repo in repositories if 'org-repo' in repo.full_name)
+
+        assert user_repo.owner_type == OwnerType.USER
+        assert org_repo.owner_type == OwnerType.ORGANIZATION
+
+
+@pytest.mark.asyncio
+async def test_bitbucket_get_repositories_owner_type_fallback():
+    """Test that owner_type defaults to USER when workspace is private."""
+    service = BitBucketService(token=SecretStr('test-token'))
+
+    # Mock repository data with private workspace (should default to USER)
+    mock_workspaces = [{'slug': 'test-user', 'name': 'Test User'}]
+    mock_repos = [
+        {
+            'uuid': 'repo-1',
+            'slug': 'user-repo',
+            'workspace': {'slug': 'test-user', 'is_private': True},  # Private workspace
+            'is_private': False,
+            'updated_on': '2023-01-01T00:00:00Z',
+        },
+        {
+            'uuid': 'repo-2',
+            'slug': 'another-user-repo',
+            'workspace': {'slug': 'test-user', 'is_private': True},  # Private workspace
+            'is_private': True,
+            'updated_on': '2023-01-02T00:00:00Z',
+        },
+    ]
+
+    with patch.object(service, '_fetch_paginated_data') as mock_fetch:
+        mock_fetch.side_effect = [mock_workspaces, mock_repos]
+
+        repositories = await service.get_repositories('pushed', AppMode.SAAS)
+
+        # Verify all repositories default to USER owner_type for private workspaces
+        for repo in repositories:
+            assert repo.owner_type == OwnerType.USER
 
 
 # Setup.py Bitbucket Token Tests
