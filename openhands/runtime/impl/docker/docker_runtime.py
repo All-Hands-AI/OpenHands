@@ -309,6 +309,7 @@ class DockerRuntime(ActionExecutionClient):
 
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
 
+        # Determine network mode: use host networking if explicitly enabled or if docker-out-of-docker is active
         use_host_network = (
             self.config.sandbox.use_host_network
             or self.config.sandbox.docker_out_of_docker
@@ -386,7 +387,7 @@ class DockerRuntime(ActionExecutionClient):
             )
             volumes = {}  # Empty dict instead of None to satisfy mypy
 
-        # Conditionally mount Docker socket if docker-out-of-docker is configured
+        # Mount Docker socket if docker-out-of-docker functionality is enabled
         if self.config.sandbox.docker_out_of_docker:
             docker_socket_path = '/var/run/docker.sock'
             # Check if Docker socket exists on host
