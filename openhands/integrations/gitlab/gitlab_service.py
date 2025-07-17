@@ -8,6 +8,7 @@ from openhands.integrations.service_types import (
     BaseGitService,
     Branch,
     GitService,
+    OwnerType,
     ProviderType,
     Repository,
     RequestMethod,
@@ -214,6 +215,11 @@ class GitLabService(BaseGitService, GitService):
                 stargazers_count=repo.get('star_count'),
                 git_provider=ProviderType.GITLAB,
                 is_public=True,
+                owner_type=(
+                    OwnerType.ORGANIZATION
+                    if repo.get('namespace', {}).get('kind') == 'group'
+                    else OwnerType.USER
+                ),
             )
             for repo in response
         ]
@@ -265,6 +271,11 @@ class GitLabService(BaseGitService, GitService):
                 stargazers_count=repo.get('star_count'),
                 git_provider=ProviderType.GITLAB,
                 is_public=repo.get('visibility') == 'public',
+                owner_type=(
+                    OwnerType.ORGANIZATION
+                    if repo.get('namespace', {}).get('kind') == 'group'
+                    else OwnerType.USER
+                ),
             )
             for repo in all_repos
         ]
@@ -415,6 +426,11 @@ class GitLabService(BaseGitService, GitService):
             stargazers_count=repo.get('star_count'),
             git_provider=ProviderType.GITLAB,
             is_public=repo.get('visibility') == 'public',
+            owner_type=(
+                OwnerType.ORGANIZATION
+                if repo.get('namespace', {}).get('kind') == 'group'
+                else OwnerType.USER
+            ),
         )
 
     async def get_branches(self, repository: str) -> list[Branch]:

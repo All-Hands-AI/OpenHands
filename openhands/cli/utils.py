@@ -182,12 +182,14 @@ VERIFIED_MISTRAL_MODELS = [
 ]
 
 VERIFIED_OPENHANDS_MODELS = [
+    'claude-sonnet-4-20250514',
     'claude-opus-4-20250514',
     'devstral-small-2507',
     'devstral-medium-2507',
+    'o3',
     'o4-mini',
-    'claude-sonnet-4-20250514',
     'gemini-2.5-pro',
+    'kimi-k2-0711-preview',
 ]
 
 
