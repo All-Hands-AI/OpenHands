@@ -12,6 +12,7 @@ from openhands.controller.state.state import State
 from openhands.core.config import (
     OpenHandsConfig,
 )
+from openhands.core.config.config_utils import DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.event import Event
@@ -140,6 +141,7 @@ def create_memory(
     repo_directory: str | None = None,
     status_callback: Callable | None = None,
     conversation_instructions: str | None = None,
+    working_dir: str = DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX,
 ) -> Memory:
     """Create a memory for the agent to use.
 
@@ -162,7 +164,7 @@ def create_memory(
 
     if runtime:
         # sets available hosts
-        memory.set_runtime_info(runtime, {})
+        memory.set_runtime_info(runtime, {}, working_dir)
 
         # loads microagents from repo/.openhands/microagents
         microagents: list[BaseMicroagent] = runtime.get_microagents_from_selected_repo(
