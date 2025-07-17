@@ -482,5 +482,5 @@ type = "noop"
 # Optional YAML string defining pod tolerations
 #tolerations_yaml = ""
 
-# Run the runtime sandbox container in privileged mode for use with docker-out-of-docker
+# Run the runtime sandbox container in privileged mode for use with docker-in-docker
 #privileged = false
