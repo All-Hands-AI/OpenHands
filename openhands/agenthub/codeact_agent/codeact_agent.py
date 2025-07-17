@@ -378,7 +378,6 @@ class CodeActAgent(Agent):
 
                     for action in actions:
                         self.pending_actions.append(action)
-
                         if isinstance(action, AgentFinishAction):
                             content = ''
                             if action.task_completed == 'partial':

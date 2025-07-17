@@ -85,6 +85,7 @@ async def test_search_conversations():
                             mock_conversation_module._get_conversation_visibility_by_user_id = mock_get_visibility
 
                             async def mock_get_running_agent_loops(*args, **kwargs):
+                                # Return an empty set so the conversation is not running
                                 return set()
 
                             mock_manager.get_running_agent_loops = (
@@ -95,9 +96,9 @@ async def test_search_conversations():
                             ) as mock_datetime:
                                 mock_datetime.now.return_value = datetime.fromisoformat(
                                     '2025-01-01T00:00:00+00:00'
-                                )
+                                ).replace(tzinfo=timezone.utc)
                                 mock_datetime.fromisoformat = datetime.fromisoformat
-                                mock_datetime.timezone = timezone
+                                mock_datetime.timezone = timezone.utc
                                 result_set = await search_conversations(
                                     MagicMock(
                                         state=MagicMock(
@@ -108,17 +109,19 @@ async def test_search_conversations():
                                     limit=20,
                                     page=1,
                                 )
+                                created_at = datetime.fromisoformat(
+                                    '2025-01-01T00:00:00+00:00'
+                                ).replace(tzinfo=timezone.utc)
+                                last_updated_at = datetime.fromisoformat(
+                                    '2025-01-01T00:01:00+00:00'
+                                ).replace(tzinfo=timezone.utc)
                                 expected = ConversationInfoResultSet(
                                     results=[
                                         ConversationInfo(
                                             conversation_id='some_conversation_id',
                                             title='Some Conversation',
-                                            created_at=datetime.fromisoformat(
-                                                '2025-01-01T00:00:00+00:00'
-                                            ),
-                                            last_updated_at=datetime.fromisoformat(
-                                                '2025-01-01T00:01:00+00:00'
-                                            ),
+                                            created_at=created_at,
+                                            last_updated_at=last_updated_at,
                                             status=ConversationStatus.STOPPED,
                                             selected_repository='foobar',
                                         )
@@ -139,8 +142,12 @@ async def test_get_conversation():
         expected = ConversationInfo(
             conversation_id='some_conversation_id',
             title='Some Conversation',
-            created_at=datetime.fromisoformat('2025-01-01T00:00:00+00:00'),
-            last_updated_at=datetime.fromisoformat('2025-01-01T00:01:00+00:00'),
+            created_at=datetime.fromisoformat('2025-01-01T00:00:00+00:00').replace(
+                tzinfo=timezone.utc
+            ),
+            last_updated_at=datetime.fromisoformat('2025-01-01T00:01:00+00:00').replace(
+                tzinfo=timezone.utc
+            ),
             status=ConversationStatus.STOPPED,
             selected_repository='foobar',
         )
@@ -174,8 +181,12 @@ async def test_update_conversation():
         expected = ConversationInfo(
             conversation_id='some_conversation_id',
             title='New Title',
-            created_at=datetime.fromisoformat('2025-01-01T00:00:00+00:00'),
-            last_updated_at=datetime.fromisoformat('2025-01-01T00:01:00+00:00'),
+            created_at=datetime.fromisoformat('2025-01-01T00:00:00+00:00').replace(
+                tzinfo=timezone.utc
+            ),
+            last_updated_at=datetime.fromisoformat('2025-01-01T00:01:00+00:00').replace(
+                tzinfo=timezone.utc
+            ),
             status=ConversationStatus.STOPPED,
             selected_repository='foobar',
         )

@@ -14,11 +14,9 @@ from openhands.events.event import Event, EventSource
 from openhands.events.event_store import EventStore
 from openhands.events.serialization.event import event_from_dict, event_to_dict
 from openhands.io import json
-from openhands.storage import FileStore
-from openhands.storage.locations import (
-    get_conversation_dir,
-)
-from openhands.utils.async_utils import call_sync_from_async
+from openhands.server.modules import conversation_module
+from openhands.storage.files import FileStore
+from openhands.storage.local import LocalFileStore
 from openhands.utils.shutdown_listener import should_continue
 
 
@@ -37,8 +35,11 @@ async def session_exists(
     sid: str, file_store: FileStore, user_id: str | None = None
 ) -> bool:
     try:
-        await call_sync_from_async(file_store.list, get_conversation_dir(sid, user_id))
-        return True
+        # await call_sync_from_async(file_store.list, get_conversation_dir(sid, user_id))
+        conversation_visibility = await conversation_module._get_conversation_by_id(sid)
+        if conversation_visibility is None:
+            return False
+        return conversation_visibility.status != 'deleted'
     except FileNotFoundError:
         return False
 
@@ -173,6 +174,9 @@ class EventStream(EventStore):
                 f'Event already has an ID:{event.id}. It was probably added back to the EventStream from inside a handler, triggering a loop.'
             )
         event._timestamp = datetime.now().isoformat()
+        from openhands.core.config import load_app_config
+
+        config_app = load_app_config()
         event._source = source  # type: ignore [attr-defined]
         with self._lock:
             event._id = self.cur_id  # type: ignore [attr-defined]
@@ -196,12 +200,25 @@ class EventStream(EventStore):
                 self.file_store.write(
                     self._get_filename_for_id(event.id, self.user_id), json.dumps(data)
                 )
+                if (
+                    config_app.enable_write_to_local
+                    and config_app.file_store != 'local'
+                ):
+                    local_file_store = LocalFileStore(config_app.file_store_path)
+                    local_file_store.write(
+                        self._get_filename_for_id(event.id, self.user_id),
+                        json.dumps(data),
+                    )
 
             # Store the cache page last - if it is not present during reads then it will simply be bypassed.
-            self._store_cache_page(current_write_page)
+            if config_app.file_store != 'database' or config_app.enable_write_to_local:
+                self._store_cache_page(current_write_page)
         self._queue.put(event)
 
     def _store_cache_page(self, current_write_page: list[dict]):
+        from openhands.core.config import load_app_config
+
+        config_app = load_app_config()
         """Store a page in the cache. Reading individual events is slow when there are a lot of them, so we use pages."""
         if len(current_write_page) < self.cache_size:
             return
@@ -209,7 +226,11 @@ class EventStream(EventStore):
         end = start + self.cache_size
         contents = json.dumps(current_write_page)
         cache_filename = self._get_filename_for_cache(start, end)
-        self.file_store.write(cache_filename, contents)
+        if config_app.file_store != 'database':
+            self.file_store.write(cache_filename, contents)
+        else:
+            local_file_store = LocalFileStore(config_app.file_store_path)
+            local_file_store.write(cache_filename, contents)
 
     def set_secrets(self, secrets: dict[str, str]) -> None:
         self.secrets = secrets.copy()

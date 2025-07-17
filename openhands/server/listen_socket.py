@@ -243,7 +243,7 @@ async def connect(connection_id: str, environ):
                 agent_state_changed = event
             else:
                 event_dict = event_to_dict(event)
-                logger.info(
+                logger.debug(
                     f'Processing event: {event.__class__.__name__}, source: {event_dict.get("source")} in conversation {conversation_id}'
                 )
 

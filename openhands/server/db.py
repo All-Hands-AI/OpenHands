@@ -4,11 +4,11 @@ from databases import Database
 from sqlalchemy import MetaData
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
-POSTGRES_USER = os.getenv('POSTGRES_USER')
-POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD')
-POSTGRES_DB = os.getenv('POSTGRES_DB')
-POSTGRES_HOST = os.getenv('POSTGRES_HOST')
-POSTGRES_PORT = os.getenv('POSTGRES_PORT')
+POSTGRES_USER = os.getenv('PGBOUNCER_DB_USER') or os.getenv('POSTGRES_USER')
+POSTGRES_PASSWORD = os.getenv('PGBOUNCER_DB_PASSWORD') or os.getenv('POSTGRES_PASSWORD')
+POSTGRES_DB = os.getenv('PGBOUNCER_DB_NAME') or os.getenv('POSTGRES_DB')
+POSTGRES_HOST = os.getenv('PGBOUNCER_DB_HOST') or os.getenv('POSTGRES_HOST')
+POSTGRES_PORT = os.getenv('PGBOUNCER_DB_PORT') or os.getenv('POSTGRES_PORT', '5432')
 SQLALCHEMY_DATABASE_URI = f'postgresql+asyncpg://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}'
 
 # Create the SQLAlchemy async engine

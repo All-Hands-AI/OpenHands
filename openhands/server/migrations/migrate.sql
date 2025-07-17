@@ -32,6 +32,36 @@ Create Table IF NOT EXISTS mem0_conversation_jobs (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS conversation_events (
+    id SERIAL PRIMARY KEY,
+    conversation_id VARCHAR NOT NULL,
+    event_id INT,
+    metadata JSONB,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create compound index for conversation_events (conversation_id, event_id)
+CREATE INDEX IF NOT EXISTS idx_conversation_events_conversation_event
+ON conversation_events(conversation_id, event_id);
+
+CREATE TABLE IF NOT EXISTS user_settings (
+    id SERIAL PRIMARY KEY,
+    user_id VARCHAR NOT NULL,
+    settings JSONB
+);
+
+-- Create index for user_settings.user_id if it doesn't exist
+CREATE INDEX IF NOT EXISTS idx_user_settings_user_id ON user_settings(user_id);
+
+CREATE TABLE IF NOT EXISTS agent_states (
+    id SERIAL PRIMARY KEY,
+    conversation_id TEXT NOT NULL,
+    metadata JSONB,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_agent_states_conversation_id ON agent_states(conversation_id);
 
 -- Check if configs column exists, if not add it
 DO $$
@@ -82,6 +112,15 @@ BEGIN
     ) THEN
         ALTER TABLE conversations
         ADD COLUMN status VARCHAR DEFAULT 'available';
+    END IF;
+
+     IF NOT EXISTS (
+        SELECT FROM information_schema.columns
+        WHERE table_name = 'conversations'
+        AND column_name = 'metadata'
+    ) THEN
+        ALTER TABLE conversations
+        ADD COLUMN metadata JSONB NOT NULL DEFAULT '{}';
     END IF;
 END;
 $$;

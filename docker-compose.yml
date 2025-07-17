@@ -18,6 +18,50 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - database_net
+
+  pgbouncer:
+    image: edoburu/pgbouncer
+
+    environment:
+      - DB_USER=$PGBOUNCER_DB_USER
+      - DB_PASSWORD=$PGBOUNCER_DB_PASSWORD
+      - DB_HOST=$PGBOUNCER_DB_HOST
+      - DB_NAME=$PGBOUNCER_DB_NAME
+      - POOL_MODE=transaction
+      - ADMIN_USERS=postgres,$PGBOUNCER_DB_USER
+      - MAX_CLIENT_CONN=100
+      - DEFAULT_POOL_SIZE=20
+      - MIN_POOL_SIZE=0
+      - AUTH_TYPE=scram-sha-256
+    ports:
+      - "6432:5432"
+
+    restart: on-failure
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "pg_isready",
+          "-U",
+          "${PGBOUNCER_DB_USER}",
+          "-h",
+          "postgres",
+          "-p",
+          "5432",
+        ]
+      interval: 30s
+      retries: 3
+      start_period: 10s
+      timeout: 10s
+    networks:
+      - database_net
+    depends_on:
+      - postgres
 
 volumes:
   postgres_data:
+networks:
+  database_net:

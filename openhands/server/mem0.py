@@ -6,7 +6,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional
 
 from mem0 import MemoryClient
-from psycopg2.pool import ThreadedConnectionPool
+from psycopg_pool import ConnectionPool
 
 from openhands.core.logger import openhands_logger as logger
 
@@ -38,21 +38,24 @@ class DBConnectionPool:
                 self._initializing = True
 
                 # Get database connection info from environment
-                user = os.getenv('POSTGRES_USER')
-                password = os.getenv('POSTGRES_PASSWORD')
-                database = os.getenv('POSTGRES_DB')
-                host = os.getenv('POSTGRES_HOST', 'localhost')
-                port = os.getenv('POSTGRES_PORT', '5432')
+                user = os.getenv('PGBOUNCER_DB_USER') or os.getenv('POSTGRES_USER')
+                password = os.getenv('PGBOUNCER_DB_PASSWORD') or os.getenv(
+                    'POSTGRES_PASSWORD'
+                )
+                database = os.getenv('PGBOUNCER_DB_NAME') or os.getenv('POSTGRES_DB')
+                host = os.getenv('PGBOUNCER_DB_HOST') or os.getenv('POSTGRES_HOST')
+                port = os.getenv('PGBOUNCER_DB_PORT') or os.getenv(
+                    'POSTGRES_PORT', '5432'
+                )
+
+                # Build connection string for psycopg3
+                conninfo = f'host={host} port={port} dbname={database} user={user} password={password}'
 
                 # Create a connection pool
-                self._pool = ThreadedConnectionPool(
-                    minconn=2,
-                    maxconn=10,
-                    user=user,
-                    password=password,
-                    database=database,
-                    host=host,
-                    port=port,
+                self._pool = ConnectionPool(
+                    conninfo=conninfo,
+                    min_size=2,
+                    max_size=10,
                 )
                 logger.info('Database connection pool initialized successfully')
             except Exception as e:
@@ -78,7 +81,7 @@ class DBConnectionPool:
     def close_pool(self):
         """Close the connection pool."""
         if self._pool:
-            self._pool.closeall()
+            self._pool.close()
             self._pool = None
 
 
@@ -186,18 +189,17 @@ async def _add_mem0_conversation_job_direct_db(
             logger.error('Failed to get database connection from pool')
             return False
 
-        # Insert directly with psycopg2
-        cursor = conn.cursor()
-        cursor.execute(
-            """
-            INSERT INTO mem0_conversation_jobs
-            (conversation_id, events, metadata, status)
-            VALUES (%s, %s, %s, %s)
-            """,
-            (conversation_id, json.dumps(events), json.dumps(metadata), 'pending'),
-        )
-        conn.commit()
-        cursor.close()
+        # Insert directly with psycopg3
+        with conn.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO mem0_conversation_jobs
+                (conversation_id, events, metadata, status)
+                VALUES (%s, %s, %s, %s)
+                """,
+                (conversation_id, json.dumps(events), json.dumps(metadata), 'pending'),
+            )
+            conn.commit()
         return True
     except Exception as e:
         logger.error(f'Error adding mem0 conversation job directly: {str(e)}')

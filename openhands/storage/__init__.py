@@ -1,3 +1,4 @@
+from openhands.storage.database import DatabaseFileStore
 from openhands.storage.files import FileStore
 from openhands.storage.google_cloud import GoogleCloudFileStore
 from openhands.storage.local import LocalFileStore
@@ -14,4 +15,6 @@ def get_file_store(file_store: str, file_store_path: str | None = None) -> FileS
         return S3FileStore(file_store_path)
     elif file_store == 'google_cloud':
         return GoogleCloudFileStore(file_store_path)
+    elif file_store == 'database':
+        return DatabaseFileStore()
     return InMemoryFileStore()

@@ -7,7 +7,7 @@ ENV POETRY_NO_INTERACTION=1 \
     POETRY_VIRTUALENVS_CREATE=1 \
     POETRY_CACHE_DIR=/tmp/poetry_cache
 RUN apt-get update -y \
-    && apt-get install -y curl make git build-essential \
+    && apt-get install -y libpq-dev curl make git build-essential \
     && python3 -m pip install poetry==1.8.2  --break-system-packages
 COPY ./pyproject.toml ./poetry.lock ./
 RUN touch README.md

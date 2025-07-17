@@ -236,3 +236,4 @@ containers/runtime/code
 yes/
 
 .claude/
+migration_checkpoint.json

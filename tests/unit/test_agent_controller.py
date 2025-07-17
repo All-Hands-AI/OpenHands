@@ -32,6 +32,14 @@ from openhands.runtime.base import Runtime
 from openhands.storage.memory import InMemoryFileStore
 
 
+@pytest.fixture(autouse=True)
+def patch_db_pool_instance():
+    with patch('openhands.server.mem0._db_pool_instance', MagicMock()), patch(
+        'openhands.core.database.db_pool', MagicMock()
+    ):
+        yield
+
+
 @pytest.fixture
 def temp_dir(tmp_path_factory: pytest.TempPathFactory) -> str:
     return str(tmp_path_factory.mktemp('test_event_stream'))
@@ -1376,7 +1384,6 @@ def test_agent_controller_should_step_with_null_observation_cause_zero():
 
 
 def test_apply_conversation_window_basic(mock_event_stream, mock_agent):
-    """Test that the _apply_conversation_window method correctly prunes a list of events."""
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
