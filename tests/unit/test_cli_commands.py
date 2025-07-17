@@ -688,12 +688,13 @@ class TestMCPErrorHandling:
         mock_display_errors.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch('openhands.cli.tui.create_prompt_session')
+    @patch('openhands.cli.commands.create_prompt_session')
     async def test_prompt_for_restart_yes(self, mock_create_session):
         """Test prompting for restart when user says yes."""
         from openhands.cli.commands import prompt_for_restart
 
         config = MagicMock(spec=OpenHandsConfig)
+        config.cli = MagicMock()
 
         # Mock user saying yes to restart
         mock_session = AsyncMock()
@@ -705,12 +706,13 @@ class TestMCPErrorHandling:
         assert result is True
 
     @pytest.mark.asyncio
-    @patch('openhands.cli.tui.create_prompt_session')
+    @patch('openhands.cli.commands.create_prompt_session')
     async def test_prompt_for_restart_no(self, mock_create_session):
         """Test prompting for restart when user says no."""
         from openhands.cli.commands import prompt_for_restart
 
         config = MagicMock(spec=OpenHandsConfig)
+        config.cli = MagicMock()
 
         # Mock user saying no to restart
         mock_session = AsyncMock()
