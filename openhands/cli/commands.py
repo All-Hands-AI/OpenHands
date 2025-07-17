@@ -42,7 +42,48 @@ from openhands.events.action import (
     MessageAction,
 )
 from openhands.events.stream import EventStream
+from openhands.mcp.validator import (
+    validate_args,
+    validate_command,
+    validate_env_vars,
+    validate_server_name,
+    validate_url,
+)
 from openhands.storage.settings.file_settings_store import FileSettingsStore
+
+
+async def prompt_with_validation(
+    config: OpenHandsConfig, prompt_text: str, validator_func, *validator_args
+) -> str | None:
+    """Prompt user for input with validation, repeating until valid input or cancellation.
+
+    Args:
+        config: OpenHands configuration
+        prompt_text: Text to display to user
+        validator_func: Function to validate input, should return (is_valid, error_message, ...)
+        *validator_args: Additional arguments to pass to validator function
+
+    Returns:
+        str | None: Valid input string, or None if user cancelled
+    """
+    while True:
+        print_formatted_text(prompt_text, end=' ')
+        user_input = await read_prompt_input(config, '', multiline=False)
+
+        # Check for cancellation
+        if user_input.strip().lower() in ['/exit', '/cancel', 'cancel']:
+            return None
+
+        # Validate input
+        validation_result = validator_func(user_input, *validator_args)
+        is_valid = validation_result[0]
+        error_message = validation_result[1]
+
+        if is_valid:
+            return user_input
+        else:
+            print_formatted_text(f'❌ {error_message}')
+            print_formatted_text('💡 Type "/cancel" to abort or try again.')
 
 
 def restart_cli() -> None:
@@ -520,11 +561,10 @@ async def add_sse_server(config: OpenHandsConfig) -> None:
     """Add an SSE MCP server."""
     print_formatted_text('Adding SSE MCP Server')
 
-    # Get URL
-    print_formatted_text('\nEnter server URL:', end=' ')
-    url = await read_prompt_input(config, '', multiline=False)
-    if not url.strip():
-        print_formatted_text('URL is required. Server not added.')
+    # Get URL with validation
+    url = await prompt_with_validation(config, '\nEnter server URL:', validate_url)
+    if url is None:
+        print_formatted_text('Operation cancelled.')
         return
 
     print_formatted_text('\nEnter API key (optional, press Enter to skip):', end=' ')
@@ -559,40 +599,48 @@ async def add_stdio_server(config: OpenHandsConfig) -> None:
     """Add a Stdio MCP server."""
     print_formatted_text('Adding Stdio MCP Server')
 
-    # Get name
-    print_formatted_text('\nEnter server name:', end=' ')
-    name = await read_prompt_input(config, '', multiline=False)
-    if not name.strip():
-        print_formatted_text('Name is required. Server not added.')
-        return
+    # Get existing server names to check for duplicates
+    existing_names = [server.name for server in config.mcp.stdio_servers]
 
-    # Get command
-    print_formatted_text('\nEnter command:', end=' ')
-    command = await read_prompt_input(config, '', multiline=False)
-    if not command.strip():
-        print_formatted_text('Command is required. Server not added.')
-        return
-
-    # Get args (optional)
-    print_formatted_text('\nEnter arguments (comma-separated, optional):', end=' ')
-    args_input = await read_prompt_input(config, '', multiline=False)
-    args: list[str] = []
-    if args_input.strip():
-        args = [arg.strip() for arg in args_input.split(',') if arg.strip()]
-
-    # Get environment variables (optional)
-    print_formatted_text(
-        '\nEnter environment variables (KEY=VALUE format, comma-separated, optional):',
-        end=' ',
+    # Get name with validation
+    name = await prompt_with_validation(
+        config, '\nEnter server name:', validate_server_name, existing_names
     )
-    env_input = await read_prompt_input(config, '', multiline=False)
-    env: dict[str, str] = {}
-    if env_input.strip():
-        for env_pair in env_input.split(','):
-            env_pair = env_pair.strip()
-            if '=' in env_pair:
-                key, value = env_pair.split('=', 1)
-                env[key.strip()] = value.strip()
+    if name is None:
+        print_formatted_text('Operation cancelled.')
+        return
+
+    # Get command with validation
+    command = await prompt_with_validation(
+        config, "\nEnter command (e.g., 'uvx', 'npx'):", validate_command
+    )
+    if command is None:
+        print_formatted_text('Operation cancelled.')
+        return
+
+    # Get args with validation (optional)
+    args_input = await prompt_with_validation(
+        config, '\nEnter arguments (comma-separated, optional):', validate_args
+    )
+    if args_input is None:
+        print_formatted_text('Operation cancelled.')
+        return
+
+    # Parse args from validation result
+    _, _, args = validate_args(args_input)
+
+    # Get environment variables with validation (optional)
+    env_input = await prompt_with_validation(
+        config,
+        '\nEnter environment variables (KEY=VALUE format, comma-separated, optional):',
+        validate_env_vars,
+    )
+    if env_input is None:
+        print_formatted_text('Operation cancelled.')
+        return
+
+    # Parse env from validation result
+    _, _, env = validate_env_vars(env_input)
 
     # Create server config
     server_config: dict[str, str | list[str] | dict[str, str]] = {
@@ -627,11 +675,10 @@ async def add_shttp_server(config: OpenHandsConfig) -> None:
     """Add an SHTTP MCP server."""
     print_formatted_text('Adding SHTTP MCP Server')
 
-    # Get URL
-    print_formatted_text('\nEnter server URL:', end=' ')
-    url = await read_prompt_input(config, '', multiline=False)
-    if not url.strip():
-        print_formatted_text('URL is required. Server not added.')
+    # Get URL with validation
+    url = await prompt_with_validation(config, '\nEnter server URL:', validate_url)
+    if url is None:
+        print_formatted_text('Operation cancelled.')
         return
 
     print_formatted_text('\nEnter API key (optional, press Enter to skip):', end=' ')
