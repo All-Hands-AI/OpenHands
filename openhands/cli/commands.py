@@ -2,12 +2,14 @@ import asyncio
 import os
 import sys
 from pathlib import Path
+from typing import Any
 
 import toml
 from prompt_toolkit import HTML, print_formatted_text
 from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.shortcuts import clear, print_container
 from prompt_toolkit.widgets import Frame, TextArea
+from pydantic import ValidationError
 
 from openhands.cli.settings import (
     display_settings,
@@ -19,6 +21,7 @@ from openhands.cli.tui import (
     UsageMetrics,
     cli_confirm,
     create_prompt_session,
+    display_error,
     display_help,
     display_mcp_errors,
     display_shutdown_message,
@@ -34,6 +37,11 @@ from openhands.cli.utils import (
 from openhands.core.config import (
     OpenHandsConfig,
 )
+from openhands.core.config.mcp_config import (
+    MCPSHTTPServerConfig,
+    MCPSSEServerConfig,
+    MCPStdioServerConfig,
+)
 from openhands.core.schema import AgentState
 from openhands.core.schema.exit_reason import ExitReason
 from openhands.events import EventSource
@@ -42,26 +50,26 @@ from openhands.events.action import (
     MessageAction,
 )
 from openhands.events.stream import EventStream
-from openhands.mcp.validator import (
-    validate_args,
-    validate_command,
-    validate_env_vars,
-    validate_server_name,
-    validate_url,
-)
 from openhands.storage.settings.file_settings_store import FileSettingsStore
 
 
-async def prompt_with_validation(
-    config: OpenHandsConfig, prompt_text: str, validator_func, *validator_args
+async def prompt_with_pydantic_validation(
+    config: OpenHandsConfig,
+    prompt_text: str,
+    model_class,
+    field_name: str,
+    existing_names: list[str] | None = None,
+    **model_kwargs,
 ) -> str | None:
-    """Prompt user for input with validation, repeating until valid input or cancellation.
+    """Prompt user for input with Pydantic validation, repeating until valid input or cancellation.
 
     Args:
         config: OpenHands configuration
         prompt_text: Text to display to user
-        validator_func: Function to validate input, should return (is_valid, error_message, ...)
-        *validator_args: Additional arguments to pass to validator function
+        model_class: Pydantic model class to use for validation
+        field_name: Name of the field to validate
+        existing_names: List of existing names to check for duplicates (for server names)
+        **model_kwargs: Additional fields to pass to model constructor
 
     Returns:
         str | None: Valid input string, or None if user cancelled
@@ -74,17 +82,46 @@ async def prompt_with_validation(
         if user_input.strip().lower() in ['/exit', '/cancel', 'cancel']:
             return None
 
-        # Validate input
-        validation_result = validator_func(user_input, *validator_args)
-        is_valid = validation_result[0]
-        error_message = validation_result[1]
-
-        if is_valid:
-            return user_input
-        else:
+        # Check for duplicates if this is a server name
+        if (
+            field_name == 'name'
+            and existing_names
+            and user_input.strip() in existing_names
+        ):
             print_formatted_text(
-                f'❌ {error_message}. Please try again or type "/cancel" to abort.'
+                f'❌ Server name \'{user_input.strip()}\' already exists. Please try again or type "/cancel" to abort.'
             )
+            continue
+
+        # Validate input using Pydantic
+        try:
+            # Create temporary model data for validation
+            temp_data = {field_name: user_input}
+            temp_data.update(model_kwargs)
+
+            # Add required dummy fields if needed
+            if model_class == MCPStdioServerConfig:
+                temp_data.setdefault('name', 'dummy')
+                temp_data.setdefault('command', 'dummy')
+            elif model_class in (MCPSSEServerConfig, MCPSHTTPServerConfig):
+                temp_data.setdefault('url', 'http://dummy.com')
+
+            model_class(**temp_data)
+            return user_input.strip()
+
+        except ValidationError as e:
+            # Extract the specific field error
+            for error in e.errors():
+                if error['loc'] == (field_name,):
+                    print_formatted_text(
+                        f'❌ {error["msg"]}. Please try again or type "/cancel" to abort.'
+                    )
+                    break
+            else:
+                # Fallback if no specific field error found
+                print_formatted_text(
+                    '❌ Invalid input. Please try again or type "/cancel" to abort.'
+                )
 
 
 def restart_cli() -> None:
@@ -563,7 +600,9 @@ async def add_sse_server(config: OpenHandsConfig) -> None:
     print_formatted_text('Adding SSE MCP Server')
 
     # Get URL with validation
-    url = await prompt_with_validation(config, '\nEnter server URL:', validate_url)
+    url = await prompt_with_pydantic_validation(
+        config, '\nEnter server URL:', MCPSSEServerConfig, 'url'
+    )
     if url is None:
         print_formatted_text('Operation cancelled.')
         return
@@ -572,12 +611,13 @@ async def add_sse_server(config: OpenHandsConfig) -> None:
     api_key_input = await read_prompt_input(config, '', multiline=False)
     api_key = api_key_input.strip() if api_key_input.strip() else None
 
-    # Create server config
-    server_config = {
-        'url': url.strip(),
-    }
-    if api_key:
-        server_config['api_key'] = api_key
+    # Create and validate server config
+    try:
+        server = MCPSSEServerConfig(url=url, api_key=api_key)
+    except ValidationError as e:
+        for error in e.errors():
+            display_error(str(error['msg']))
+        return
 
     # Save to config file
     config_data = load_config_file()
@@ -586,10 +626,16 @@ async def add_sse_server(config: OpenHandsConfig) -> None:
     if 'sse_servers' not in config_data['mcp']:
         config_data['mcp']['sse_servers'] = []
 
+    server_config = {'url': server.url}
+    if server.api_key:
+        server_config['api_key'] = server.api_key
+
     config_data['mcp']['sse_servers'].append(server_config)
     save_config_file(config_data)
 
-    print_formatted_text(f'✓ SSE MCP server added to ~/.openhands/config.toml: {url}')
+    print_formatted_text(
+        f'✓ SSE MCP server added to ~/.openhands/config.toml: {server.url}'
+    )
 
     # Prompt for restart
     if await prompt_for_restart(config):
@@ -604,54 +650,50 @@ async def add_stdio_server(config: OpenHandsConfig) -> None:
     existing_names = [server.name for server in config.mcp.stdio_servers]
 
     # Get name with validation
-    name = await prompt_with_validation(
-        config, '\nEnter server name:', validate_server_name, existing_names
+    name = await prompt_with_pydantic_validation(
+        config, '\nEnter server name:', MCPStdioServerConfig, 'name', existing_names
     )
     if name is None:
         print_formatted_text('Operation cancelled.')
         return
 
     # Get command with validation
-    command = await prompt_with_validation(
-        config, "\nEnter command (e.g., 'uvx', 'npx'):", validate_command
+    command = await prompt_with_pydantic_validation(
+        config, "\nEnter command (e.g., 'uvx', 'npx'):", MCPStdioServerConfig, 'command'
     )
     if command is None:
         print_formatted_text('Operation cancelled.')
         return
 
-    # Get args with validation (optional)
-    args_input = await prompt_with_validation(
-        config, '\nEnter arguments (comma-separated, optional):', validate_args
-    )
-    if args_input is None:
+    # Get args (optional) - will be parsed by Pydantic
+    print_formatted_text('\nEnter arguments (comma-separated, optional):', end=' ')
+    args_input = await read_prompt_input(config, '', multiline=False)
+    if args_input.strip().lower() in ['/exit', '/cancel', 'cancel']:
         print_formatted_text('Operation cancelled.')
         return
 
-    # Parse args from validation result
-    _, _, args = validate_args(args_input)
-
-    # Get environment variables with validation (optional)
-    env_input = await prompt_with_validation(
-        config,
+    # Get environment variables (optional) - will be parsed by Pydantic
+    print_formatted_text(
         '\nEnter environment variables (KEY=VALUE format, comma-separated, optional):',
-        validate_env_vars,
+        end=' ',
     )
-    if env_input is None:
+    env_input = await read_prompt_input(config, '', multiline=False)
+    if env_input.strip().lower() in ['/exit', '/cancel', 'cancel']:
         print_formatted_text('Operation cancelled.')
         return
 
-    # Parse env from validation result
-    _, _, env = validate_env_vars(env_input)
-
-    # Create server config
-    server_config: dict[str, str | list[str] | dict[str, str]] = {
-        'name': name.strip(),
-        'command': command.strip(),
-    }
-    if args:
-        server_config['args'] = args
-    if env:
-        server_config['env'] = env
+    # Create and validate server config
+    try:
+        server = MCPStdioServerConfig(
+            name=name,
+            command=command,
+            args=args_input,  # type: ignore  # Will be parsed by Pydantic validator
+            env=env_input,  # type: ignore  # Will be parsed by Pydantic validator
+        )
+    except ValidationError as e:
+        for error in e.errors():
+            display_error(str(error['msg']))
+        return
 
     # Save to config file
     config_data = load_config_file()
@@ -660,11 +702,20 @@ async def add_stdio_server(config: OpenHandsConfig) -> None:
     if 'stdio_servers' not in config_data['mcp']:
         config_data['mcp']['stdio_servers'] = []
 
+    server_config: dict[str, Any] = {
+        'name': server.name,
+        'command': server.command,
+    }
+    if server.args:
+        server_config['args'] = server.args
+    if server.env:
+        server_config['env'] = server.env
+
     config_data['mcp']['stdio_servers'].append(server_config)
     save_config_file(config_data)
 
     print_formatted_text(
-        f'✓ Stdio MCP server added to ~/.openhands/config.toml: {name}'
+        f'✓ Stdio MCP server added to ~/.openhands/config.toml: {server.name}'
     )
 
     # Prompt for restart
@@ -677,7 +728,9 @@ async def add_shttp_server(config: OpenHandsConfig) -> None:
     print_formatted_text('Adding SHTTP MCP Server')
 
     # Get URL with validation
-    url = await prompt_with_validation(config, '\nEnter server URL:', validate_url)
+    url = await prompt_with_pydantic_validation(
+        config, '\nEnter server URL:', MCPSHTTPServerConfig, 'url'
+    )
     if url is None:
         print_formatted_text('Operation cancelled.')
         return
@@ -686,12 +739,13 @@ async def add_shttp_server(config: OpenHandsConfig) -> None:
     api_key_input = await read_prompt_input(config, '', multiline=False)
     api_key = api_key_input.strip() if api_key_input.strip() else None
 
-    # Create server config
-    server_config = {
-        'url': url.strip(),
-    }
-    if api_key:
-        server_config['api_key'] = api_key
+    # Create and validate server config
+    try:
+        server = MCPSHTTPServerConfig(url=url, api_key=api_key)
+    except ValidationError as e:
+        for error in e.errors():
+            display_error(str(error['msg']))
+        return
 
     # Save to config file
     config_data = load_config_file()
@@ -700,10 +754,16 @@ async def add_shttp_server(config: OpenHandsConfig) -> None:
     if 'shttp_servers' not in config_data['mcp']:
         config_data['mcp']['shttp_servers'] = []
 
+    server_config = {'url': server.url}
+    if server.api_key:
+        server_config['api_key'] = server.api_key
+
     config_data['mcp']['shttp_servers'].append(server_config)
     save_config_file(config_data)
 
-    print_formatted_text(f'✓ SHTTP MCP server added to ~/.openhands/config.toml: {url}')
+    print_formatted_text(
+        f'✓ SHTTP MCP server added to ~/.openhands/config.toml: {server.url}'
+    )
 
     # Prompt for restart
     if await prompt_for_restart(config):
