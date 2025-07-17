@@ -380,6 +380,18 @@ def _clone_repository(remote_url: str, repository_name: str) -> Path:
     return repo_dir
 
 
+def _extract_repo_name(repository_name: str) -> str:
+    """Extract the actual repository name from the full repository path.
+
+    Args:
+        repository_name: Repository name in format 'owner/repo' or 'domain/owner/repo'
+
+    Returns:
+        The actual repository name (last part after the last '/')
+    """
+    return repository_name.split('/')[-1]
+
+
 def _process_microagents(
     repo_dir: Path,
     repository_name: str,
@@ -395,11 +407,24 @@ def _process_microagents(
     Returns:
         List of microagents found in the repository
     """
-    # Look for .openhands/microagents directory
-    microagents_dir = repo_dir / '.openhands' / 'microagents'
+    # Extract the actual repository name from the full path
+    actual_repo_name = _extract_repo_name(repository_name)
+
+    # Determine the microagents directory based on git provider and repository name
+    if git_provider != ProviderType.GITLAB and actual_repo_name == '.openhands':
+        # For non-GitLab providers with repository name ".openhands", scan "microagents" folder
+        microagents_dir = repo_dir / 'microagents'
+    elif git_provider == ProviderType.GITLAB and actual_repo_name == 'openhands-config':
+        # For GitLab with repository name "openhands-config", scan "microagents" folder
+        microagents_dir = repo_dir / 'microagents'
+    else:
+        # Default behavior: look for .openhands/microagents directory
+        microagents_dir = repo_dir / '.openhands' / 'microagents'
 
     if not microagents_dir.exists():
-        logger.info(f'No .openhands/microagents directory found in {repository_name}')
+        logger.info(
+            f'No microagents directory found in {repository_name} at {microagents_dir}'
+        )
         return []
 
     # Load microagents from the directory
@@ -468,7 +493,12 @@ async def get_repository_microagents(
     access_token: SecretStr | None = Depends(get_access_token),
     user_id: str | None = Depends(get_user_id),
 ) -> list[MicroagentResponse] | JSONResponse:
-    """Scan the .openhands/microagents directory of a repository and return the list of microagents.
+    """Scan the microagents directory of a repository and return the list of microagents.
+
+    The microagents directory location depends on the git provider and actual repository name:
+    - If git provider is not GitLab and actual repository name is ".openhands": scans "microagents" folder
+    - If git provider is GitLab and actual repository name is "openhands-config": scans "microagents" folder
+    - Otherwise: scans ".openhands/microagents" folder
 
     Args:
         repository_name: Repository name in the format 'owner/repo' or 'domain/owner/repo'
@@ -477,7 +507,7 @@ async def get_repository_microagents(
         user_id: User ID for authentication
 
     Returns:
-        List of microagents found in the repository's .openhands/microagents directory
+        List of microagents found in the repository's microagents directory
     """
     repo_dir = None
 
