@@ -5,10 +5,11 @@ import userEvent from "@testing-library/user-event";
 import { createRoutesStub } from "react-router";
 import { selectOrganization } from "test-utils";
 import { organizationService } from "#/api/organization-service/organization-service.api";
-import { userService } from "#/api/user-service/user-service.api";
 import OpenHands from "#/api/open-hands";
 import ManageTeam from "#/routes/manage-team";
-import SettingsScreen, { clientLoader } from "#/routes/settings";
+import SettingsScreen, {
+  clientLoader as settingsClientLoader,
+} from "#/routes/settings";
 import { ORGS_AND_MEMBERS } from "#/mocks/org-handlers";
 
 function ManageTeamWithPortalRoot() {
@@ -22,7 +23,7 @@ function ManageTeamWithPortalRoot() {
 
 const RouteStub = createRoutesStub([
   {
-    loader: clientLoader,
+    loader: settingsClientLoader,
     Component: SettingsScreen,
     path: "/settings",
     HydrateFallback: () => <div>Loading...</div>,
@@ -30,6 +31,10 @@ const RouteStub = createRoutesStub([
       {
         Component: ManageTeamWithPortalRoot,
         path: "/settings/team",
+      },
+      {
+        Component: () => <div data-testid="user-settings" />,
+        path: "/settings/user",
       },
     ],
   },
@@ -75,10 +80,6 @@ describe("Manage Team Route", () => {
     ).not.toBeInTheDocument();
   });
 
-  it.todo(
-    "should navigate away from the page if user is USER role of the selected organization",
-  );
-
   it("should allow the user to select an organization", async () => {
     const getOrganizationMembersSpy = vi.spyOn(
       organizationService,
@@ -113,18 +114,10 @@ describe("Manage Team Route", () => {
   });
 
   test("an admin should be able to change the role of a team member", async () => {
-    const getUserSpy = vi.spyOn(userService, "getMe");
     const updateMemberRoleSpy = vi.spyOn(
       organizationService,
       "updateMemberRole",
     );
-
-    getUserSpy.mockResolvedValue({
-      id: "some-user-id",
-      email: "user@acme.org",
-      role: "admin",
-      status: "active",
-    });
 
     renderManageTeam();
     await screen.findByTestId("manage-team-settings");
@@ -176,14 +169,6 @@ describe("Manage Team Route", () => {
   });
 
   it("should not allow a user to invite a new team member", async () => {
-    const getUserSpy = vi.spyOn(userService, "getMe");
-    getUserSpy.mockResolvedValue({
-      id: "some-user-id",
-      email: "someone@acme.org",
-      role: "user",
-      status: "active",
-    });
-
     renderManageTeam();
     await screen.findByTestId("manage-team-settings");
 
@@ -194,14 +179,6 @@ describe("Manage Team Route", () => {
   });
 
   it("should not allow an admin to change the superadmin's role", async () => {
-    const getUserSpy = vi.spyOn(userService, "getMe");
-    getUserSpy.mockResolvedValue({
-      id: "some-user-id",
-      email: "user@acme.org",
-      role: "admin",
-      status: "active",
-    });
-
     renderManageTeam();
     await screen.findByTestId("manage-team-settings");
 
@@ -270,18 +247,11 @@ describe("Manage Team Route", () => {
     });
 
     it("should render a list item in an invited state when a the user is is invited", async () => {
-      const getUserSpy = vi.spyOn(userService, "getMe");
       const getOrganizationMembersSpy = vi.spyOn(
         organizationService,
         "getOrganizationMembers",
       );
 
-      getUserSpy.mockResolvedValue({
-        id: "some-user-id",
-        email: "user@acme.org",
-        role: "admin",
-        status: "active",
-      });
       getOrganizationMembersSpy.mockResolvedValue([
         {
           id: "4",

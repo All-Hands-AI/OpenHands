@@ -38,6 +38,9 @@ const { navigateMock } = vi.hoisted(() => ({
 vi.mock("react-router", async (importActual) => ({
   ...(await importActual()),
   useNavigate: () => navigateMock,
+  useRevalidator: () => ({
+    revalidate: vi.fn(),
+  }),
 }));
 
 describe("UserContextMenu", () => {

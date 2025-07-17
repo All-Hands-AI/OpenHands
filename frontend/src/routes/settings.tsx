@@ -10,6 +10,7 @@ import { queryClient } from "#/query-client-config";
 import { GetConfigResponse } from "#/api/open-hands.types";
 import { useOrganizations } from "#/hooks/query/use-organizations";
 import { useSelectedOrganizationId } from "#/context/use-selected-organization";
+import { useMe } from "#/hooks/query/use-me";
 
 const SAAS_ONLY_PATHS = [
   "/settings/user",
@@ -17,6 +18,7 @@ const SAAS_ONLY_PATHS = [
   "/settings/credits",
   "/settings/api-keys",
   "/settings/team",
+  "/settings/org",
 ];
 
 const SAAS_NAV_ITEMS = [
@@ -66,10 +68,12 @@ export const clientLoader = async ({ request }: Route.ClientLoaderArgs) => {
 function SettingsScreen() {
   const { t } = useTranslation();
   const { setOrgId } = useSelectedOrganizationId();
+  const { data: me } = useMe();
   const { data: organizations } = useOrganizations();
   const { data: config } = useConfig();
 
   const isSaas = config?.APP_MODE === "saas";
+  const isUser = me?.role === "user";
   // this is used to determine which settings are available in the UI
   const navItems = isSaas ? SAAS_NAV_ITEMS : OSS_NAV_ITEMS;
 
@@ -99,21 +103,34 @@ function SettingsScreen() {
         data-testid="settings-navbar"
         className="flex items-end gap-6 px-9 border-b border-tertiary"
       >
-        {navItems.map(({ to, text }) => (
-          <NavLink
-            end
-            key={to}
-            to={to}
-            className={({ isActive }) =>
-              cn(
-                "border-b-2 border-transparent py-2.5 px-4 min-w-[40px] flex items-center justify-center",
-                isActive && "border-primary",
-              )
+        {navItems
+          .filter((navItem) => {
+            // if user is not an admin, do not show team settings
+            if (
+              (navItem.to === "/settings/team" ||
+                navItem.to === "/settings/org") &&
+              isUser
+            ) {
+              return false;
             }
-          >
-            <span className="text-[#F9FBFE] text-sm">{t(text)}</span>
-          </NavLink>
-        ))}
+
+            return true;
+          })
+          .map(({ to, text }) => (
+            <NavLink
+              end
+              key={to}
+              to={to}
+              className={({ isActive }) =>
+                cn(
+                  "border-b-2 border-transparent py-2.5 px-4 min-w-[40px] flex items-center justify-center",
+                  isActive && "border-primary",
+                )
+              }
+            >
+              <span className="text-[#F9FBFE] text-sm">{t(text)}</span>
+            </NavLink>
+          ))}
       </nav>
 
       <div className="flex flex-col grow overflow-auto">

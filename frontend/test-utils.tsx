@@ -19,6 +19,9 @@ vi.mock("react-router", async () => {
   return {
     ...actual,
     useParams: () => ({ conversationId: "test-conversation-id" }),
+    useRevalidator: () => ({
+      revalidate: vi.fn(),
+    }),
   };
 });
 

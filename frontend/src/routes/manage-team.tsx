@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import { Plus } from "lucide-react";
+import { redirect } from "react-router";
 import { InviteOrganizationMemberModal } from "#/components/features/org/invite-organization-member-modal";
 import { useOrganizationMembers } from "#/hooks/query/use-organization-members";
 import { OrganizationUserRole } from "#/types/org";
@@ -9,6 +10,29 @@ import { useUpdateMemberRole } from "#/hooks/mutation/use-update-member-role";
 import { useMe } from "#/hooks/query/use-me";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { rolePermissions } from "#/utils/org/permissions";
+import { organizationService } from "#/api/organization-service/organization-service.api";
+import { queryClient } from "#/query-client-config";
+import {
+  getSelectedOrgFromQueryClient,
+  getMeFromQueryClient,
+} from "#/utils/query-client-getters";
+
+export const clientLoader = async () => {
+  const selectedOrgId = getSelectedOrgFromQueryClient();
+  let me = getMeFromQueryClient(selectedOrgId);
+
+  if (!me && selectedOrgId) {
+    me = await organizationService.getMe({ orgId: selectedOrgId });
+    queryClient.setQueryData(["organizations", selectedOrgId, "me"], me);
+  }
+
+  if (!me || me.role === "user") {
+    // if user is USER role, redirect to user settings
+    return redirect("/settings/user");
+  }
+
+  return null;
+};
 
 function ManageTeam() {
   const { data: organizationMembers } = useOrganizationMembers();

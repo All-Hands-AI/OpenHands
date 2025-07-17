@@ -7,6 +7,9 @@ import { UserActions } from "#/components/features/sidebar/user-actions";
 vi.mock("react-router", async (importActual) => ({
   ...(await importActual()),
   useNavigate: () => vi.fn(),
+  useRevalidator: () => ({
+    revalidate: vi.fn(),
+  }),
 }));
 
 const renderUserActions = (props = { hasAvatar: true }) => {

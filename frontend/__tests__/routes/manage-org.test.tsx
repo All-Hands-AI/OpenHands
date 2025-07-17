@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { createRoutesStub } from "react-router";
 import { selectOrganization } from "test-utils";
@@ -8,7 +8,6 @@ import OpenHands from "#/api/open-hands";
 import ManageOrg from "#/routes/manage-org";
 import { organizationService } from "#/api/organization-service/organization-service.api";
 import SettingsScreen, { clientLoader } from "#/routes/settings";
-import { userService } from "#/api/user-service/user-service.api";
 
 function ManageOrgWithPortalRoot() {
   return (
@@ -57,7 +56,13 @@ vi.mock("react-router", async () => ({
 }));
 
 describe("Manage Org Route", () => {
-  it.todo("should navigate away from the page if not saas");
+  beforeEach(() => {
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    // @ts-expect-error - only return APP_MODE for these tests
+    getConfigSpy.mockResolvedValue({
+      APP_MODE: "saas",
+    });
+  });
 
   it("should render the available credits", async () => {
     renderManageOrg();
@@ -151,17 +156,10 @@ describe("Manage Org Route", () => {
         "updateOrganization",
       );
       const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
-      const getUserSpy = vi.spyOn(userService, "getMe");
 
       // @ts-expect-error - only return the properties we need for this test
       getConfigSpy.mockResolvedValue({
         APP_MODE: "saas", // required to enable getMe
-      });
-      getUserSpy.mockResolvedValue({
-        id: "user1",
-        email: "me@acme.org",
-        role: "superadmin", // only superadmins can change org name
-        status: "active",
       });
 
       renderManageOrg();
@@ -204,18 +202,10 @@ describe("Manage Org Route", () => {
     });
 
     it("should NOT allow roles other than superadmins to change org name", async () => {
-      const getUserSpy = vi.spyOn(userService, "getMe");
-      getUserSpy.mockResolvedValue({
-        id: "user1",
-        email: "me@acme.org",
-        role: "admin",
-        status: "active",
-      });
-
       renderManageOrg();
       await screen.findByTestId("manage-org-screen");
 
-      await selectOrganization({ orgIndex: 0 });
+      await selectOrganization({ orgIndex: 2 }); // user is admin in org 3
 
       const orgName = screen.getByTestId("org-name");
       const changeOrgNameButton = within(orgName).queryByRole("button", {
@@ -226,23 +216,15 @@ describe("Manage Org Route", () => {
 
     it("should NOT allow roles other than superadmins to delete an organization", async () => {
       const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
-      const getUserSpy = vi.spyOn(userService, "getMe");
-
       // @ts-expect-error - only return the properties we need for this test
       getConfigSpy.mockResolvedValue({
         APP_MODE: "saas", // required to enable getMe
-      });
-      getUserSpy.mockResolvedValue({
-        id: "user1",
-        email: "me@acme.org",
-        role: "admin",
-        status: "active",
       });
 
       renderManageOrg();
       await screen.findByTestId("manage-org-screen");
 
-      await selectOrganization({ orgIndex: 0 });
+      await selectOrganization({ orgIndex: 2 }); // user is admin in org 3
 
       const deleteOrgButton = screen.queryByRole("button", {
         name: /delete organization/i,
@@ -252,13 +234,6 @@ describe("Manage Org Route", () => {
 
     it("should be able to delete an organization", async () => {
       const deleteOrgSpy = vi.spyOn(organizationService, "deleteOrganization");
-      const getUserSpy = vi.spyOn(userService, "getMe");
-      getUserSpy.mockResolvedValue({
-        id: "user1",
-        email: "me@acme.org",
-        role: "superadmin", // only superadmins can delete orgs
-        status: "active",
-      });
 
       renderManageOrg();
       await screen.findByTestId("manage-org-screen");
@@ -294,7 +269,7 @@ describe("Manage Org Route", () => {
       ).not.toBeInTheDocument();
 
       // expect to have navigated to home screen
-      screen.getByTestId("home-screen");
+      await screen.findByTestId("home-screen");
     });
 
     it.todo("should be able to update the organization billing info");

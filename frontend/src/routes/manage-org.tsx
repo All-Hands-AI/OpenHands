@@ -1,6 +1,6 @@
 import React from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router";
+import { redirect, useNavigate } from "react-router";
 import { useCreateStripeCheckoutSession } from "#/hooks/mutation/stripe/use-create-stripe-checkout-session";
 import { useOrganization } from "#/hooks/query/use-organization";
 import { useOrganizationPaymentInfo } from "#/hooks/query/use-organization-payment-info";
@@ -12,6 +12,11 @@ import { SettingsInput } from "#/components/features/settings/settings-input";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { useMe } from "#/hooks/query/use-me";
 import { rolePermissions } from "#/utils/org/permissions";
+import { queryClient } from "#/query-client-config";
+import {
+  getSelectedOrgFromQueryClient,
+  getMeFromQueryClient,
+} from "#/utils/query-client-getters";
 
 function TempChip({
   children,
@@ -207,6 +212,23 @@ function AddCreditsModal({ onClose }: AddCreditsModalProps) {
     </ModalBackdrop>
   );
 }
+
+export const clientLoader = async () => {
+  const selectedOrgId = getSelectedOrgFromQueryClient();
+  let me = getMeFromQueryClient(selectedOrgId);
+
+  if (!me && selectedOrgId) {
+    me = await organizationService.getMe({ orgId: selectedOrgId });
+    queryClient.setQueryData(["organizations", selectedOrgId, "me"], me);
+  }
+
+  if (!me || me.role === "user") {
+    // if user is USER role, redirect to user settings
+    return redirect("/settings/user");
+  }
+
+  return null;
+};
 
 function ManageOrg() {
   const { data: me } = useMe();
