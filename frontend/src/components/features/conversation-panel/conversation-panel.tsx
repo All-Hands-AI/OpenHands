@@ -11,6 +11,9 @@ import { ConfirmStopModal } from "./confirm-stop-modal";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { ExitConversationModal } from "./exit-conversation-modal";
 import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
+import { Provider } from "#/types/settings";
+import { useUpdateConversation } from "#/hooks/mutation/use-update-conversation";
+import { displaySuccessToast } from "#/utils/custom-toast-handlers";
 
 interface ConversationPanelProps {
   onClose: () => void;
@@ -38,6 +41,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
 
   const { mutate: deleteConversation } = useDeleteConversation();
   const { mutate: stopConversation } = useStopConversation();
+  const { mutate: updateConversation } = useUpdateConversation();
 
   const handleDeleteProject = (conversationId: string) => {
     setConfirmDeleteModalVisible(true);
@@ -47,6 +51,20 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
   const handleStopConversation = (conversationId: string) => {
     setConfirmStopModalVisible(true);
     setSelectedConversationId(conversationId);
+  };
+
+  const handleConversationTitleChange = async (
+    conversationId: string,
+    newTitle: string,
+  ) => {
+    updateConversation(
+      { conversationId, newTitle },
+      {
+        onSuccess: () => {
+          displaySuccessToast(t(I18nKey.CONVERSATION$TITLE_UPDATED));
+        },
+      },
+    );
   };
 
   const handleConfirmDelete = () => {
@@ -113,8 +131,15 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
               isActive={isActive}
               onDelete={() => handleDeleteProject(project.conversation_id)}
               onStop={() => handleStopConversation(project.conversation_id)}
+              onChangeTitle={(title) =>
+                handleConversationTitleChange(project.conversation_id, title)
+              }
               title={project.title}
-              selectedRepository={project.selected_repository}
+              selectedRepository={{
+                selected_repository: project.selected_repository,
+                selected_branch: project.selected_branch,
+                git_provider: project.git_provider as Provider,
+              }}
               lastUpdatedAt={project.last_updated_at}
               createdAt={project.created_at}
               conversationStatus={project.status}

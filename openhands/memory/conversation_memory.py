@@ -524,11 +524,13 @@ class ConversationMemory:
                         additional_agent_instructions=obs.additional_agent_instructions,
                         date=date,
                         custom_secrets_descriptions=obs.custom_secrets_descriptions,
+                        working_dir=obs.working_dir,
                     )
                 else:
                     runtime_info = RuntimeInfo(
                         date=date,
                         custom_secrets_descriptions=obs.custom_secrets_descriptions,
+                        working_dir=obs.working_dir,
                     )
 
                 conversation_instructions = None

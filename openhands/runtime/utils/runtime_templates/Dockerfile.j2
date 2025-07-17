@@ -13,31 +13,45 @@ ENV POETRY_VIRTUALENVS_PATH=/openhands/poetry \
 {% macro setup_base_system() %}
 
 # Install base system dependencies
+
+{% if (('ubuntu' in base_image) or ('mswebench' in base_image)) %}
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         wget curl ca-certificates sudo apt-utils git jq tmux build-essential ripgrep ffmpeg \
-        {%- if 'ubuntu' in base_image and (base_image.endswith(':latest') or base_image.endswith(':24.04')) -%}
+        {%- if (base_image.endswith(':latest') or base_image.endswith(':24.04') or ('mswebench' in base_image)) -%}
         libgl1 \
         {%- else %}
         libgl1-mesa-glx \
         {% endif -%}
         libasound2-plugins libatomic1 && \
-    {%- if 'ubuntu' in base_image -%}
     curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     TZ=Etc/UTC DEBIAN_FRONTEND=noninteractive \
         apt-get install -y --no-install-recommends nodejs \
-        {%- if base_image.endswith(':latest') or base_image.endswith(':24.04') -%}
-        python3.12 python3.12-venv \
+        {%- if ('mswebench' in base_image) -%}
+        python3 python-is-python3 python3-pip python3-venv \
+        {%- elif base_image.endswith(':latest') or base_image.endswith(':24.04') -%}
+        python3.12 python3.12-venv python-is-python3 python3-pip \
         {%- else -%}
-        python3.10 python3.10-venv \
+        python3.10 python3.10-venv python-is-python3 python3-pip \
         {%- endif -%}
-        python-is-python3 python3-pip && \
+        && \
     corepack enable yarn && \
     {% endif -%}
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+{% endif %}
 
-{% if 'ubuntu' in base_image %}
+{% if (('ubuntu' not in base_image) and ('mswebench' not in base_image)) %}
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        wget curl ca-certificates sudo apt-utils git jq tmux build-essential ripgrep ffmpeg \
+        libgl1-mesa-glx \
+        libasound2-plugins libatomic1 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+{% endif %}
+
+{% if (('ubuntu' in base_image) or ('mswebench' in base_image)) %}
 RUN ln -s "$(dirname $(which node))/corepack" /usr/local/bin/corepack && \
     npm install -g corepack && corepack enable yarn && \
     curl -fsSL --compressed https://install.python-poetry.org | python -
@@ -111,33 +125,26 @@ RUN rm -rf ${OPENVSCODE_SERVER_ROOT}/extensions/{handlebars,pug,json,diff,grunt,
 # Install all dependencies
 WORKDIR /openhands/code
 
-# Configure micromamba and poetry
-RUN /openhands/micromamba/bin/micromamba config set changeps1 False && \
+RUN \
+    /openhands/micromamba/bin/micromamba config set changeps1 False && \
     /openhands/micromamba/bin/micromamba run -n openhands poetry config virtualenvs.path /openhands/poetry && \
     /openhands/micromamba/bin/micromamba run -n openhands poetry env use \
-    {%- if 'ubuntu' in base_image and not (base_image.endswith(':latest') or base_image.endswith(':24.04')) %}
+    {%- if 'ubuntu' in base_image and not (base_image.endswith(':latest') or base_image.endswith(':24.04')) and not ('mswebench' in base_image) %}
     python3.10
     {%- else %}
     python3.12
-    {%- endif %}
-
-# Install project dependencies in smaller chunks
-RUN /openhands/micromamba/bin/micromamba run -n openhands poetry install --only main --no-interaction --no-root
-
-RUN /openhands/micromamba/bin/micromamba run -n openhands poetry install --only runtime --no-interaction --no-root
-
-# Install playwright and its dependencies
-RUN apt-get update && \
-    /openhands/micromamba/bin/micromamba run -n openhands poetry run pip install playwright && \
-    /openhands/micromamba/bin/micromamba run -n openhands poetry run playwright install --with-deps chromium
-
-# Set environment variables and permissions
-RUN /openhands/micromamba/bin/micromamba run -n openhands poetry run python -c "import sys; print('OH_INTERPRETER_PATH=' + sys.executable)" >> /etc/environment && \
+    {%- endif %} && \
+    # Install project dependencies
+    /openhands/micromamba/bin/micromamba run -n openhands poetry install --only main,runtime --no-interaction --no-root && \
+    # Install playwright and its dependencies
+    /openhands/micromamba/bin/micromamba run -n openhands poetry run playwright install --with-deps chromium && \
+    # Set environment variables
+    /openhands/micromamba/bin/micromamba run -n openhands poetry run python -c "import sys; print('OH_INTERPRETER_PATH=' + sys.executable)" >> /etc/environment && \
+    # Set permissions
     chmod -R g+rws /openhands/poetry && \
-    mkdir -p /openhands/workspace && chmod -R g+rws,o+rw /openhands/workspace
-
-# Clear caches
-RUN /openhands/micromamba/bin/micromamba run -n openhands poetry cache clear --all . -n && \
+    mkdir -p /openhands/workspace && chmod -R g+rws,o+rw /openhands/workspace && \
+    # Clean up
+    /openhands/micromamba/bin/micromamba run -n openhands poetry cache clear --all . -n && \
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
     /openhands/micromamba/bin/micromamba clean --all
 
@@ -183,6 +190,8 @@ COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
 # ================================================================
 {% endif %}
 
+{{ setup_vscode_server() }}
+
 # ================================================================
 # Copy Project source files
 # ================================================================
@@ -192,7 +201,7 @@ COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
 COPY ./code/openhands /openhands/code/openhands
 RUN chmod a+rwx /openhands/code/openhands/__init__.py
 
-{{ setup_vscode_server() }}
+
 
 # ================================================================
 # END: Build from versioned image
