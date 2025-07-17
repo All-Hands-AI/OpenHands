@@ -611,8 +611,8 @@ async def test_new_conversation_with_unsupported_params():
 
 
 @pytest.mark.asyncio
-async def test_new_conversation_with_custom_conversation_trigger(provider_handler_mock):
-    """Test creating a new conversation with a custom conversation_trigger parameter."""
+async def test_new_conversation_with_create_microagent_task(provider_handler_mock):
+    """Test creating a new conversation with a CREATE_MICROAGENT suggested task."""
     with _patch_store():
         # Mock the create_new_conversation function directly
         with patch(
@@ -626,11 +626,20 @@ async def test_new_conversation_with_custom_conversation_trigger(provider_handle
                 status=ConversationStatus.RUNNING,
             )
 
+            # Create a CREATE_MICROAGENT suggested task
+            test_task = SuggestedTask(
+                git_provider=ProviderType.GITHUB,
+                task_type=TaskType.CREATE_MICROAGENT,
+                repo='test/repo',
+                issue_number=123,
+                title='Create a new microagent',
+            )
+
             test_request = InitSessionRequest(
                 repository='test/repo',
                 selected_branch='main',
-                initial_user_msg='Hello, agent!',
-                conversation_trigger=ConversationTrigger.SLACK,  # Custom trigger
+                initial_user_msg='Create a microagent for testing',
+                suggested_task=test_task,
             )
 
             # Call new_conversation
@@ -642,61 +651,15 @@ async def test_new_conversation_with_custom_conversation_trigger(provider_handle
             assert response.conversation_id is not None
             assert isinstance(response.conversation_id, str)
 
-            # Verify that create_new_conversation was called with the custom trigger
+            # Verify that create_new_conversation was called with the correct arguments
             mock_create_conversation.assert_called_once()
             call_args = mock_create_conversation.call_args[1]
             assert call_args['user_id'] == 'test_user'
             assert call_args['selected_repository'] == 'test/repo'
             assert call_args['selected_branch'] == 'main'
-            assert call_args['initial_user_msg'] == 'Hello, agent!'
-            assert call_args['conversation_trigger'] == ConversationTrigger.SLACK
-
-
-@pytest.mark.asyncio
-async def test_new_conversation_with_custom_trigger_overrides_auto_detection(
-    provider_handler_mock,
-):
-    """Test that custom conversation_trigger overrides automatic detection logic."""
-    with _patch_store():
-        # Mock the create_new_conversation function directly
-        with patch(
-            'openhands.server.routes.manage_conversations.create_new_conversation'
-        ) as mock_create_conversation:
-            # Set up the mock to return a conversation ID
-            mock_create_conversation.return_value = MagicMock(
-                conversation_id='test_conversation_id',
-                url='https://my-conversation.com',
-                session_api_key=None,
-                status=ConversationStatus.RUNNING,
+            # For CREATE_MICROAGENT, initial_user_msg should NOT be overridden
+            assert call_args['initial_user_msg'] == 'Create a microagent for testing'
+            assert (
+                call_args['conversation_trigger']
+                == ConversationTrigger.MICROAGENT_MANAGEMENT
             )
-
-            # Create a request with both suggested_task (which would normally set trigger to SUGGESTED_TASK)
-            # and a custom conversation_trigger (which should override the auto-detection)
-            test_task = SuggestedTask(
-                git_provider=ProviderType.GITHUB,
-                task_type=TaskType.FAILING_CHECKS,
-                repo='test/repo',
-                issue_number=123,
-                title='Fix failing checks',
-            )
-
-            test_request = InitSessionRequest(
-                repository='test/repo',
-                selected_branch='main',
-                suggested_task=test_task,
-                conversation_trigger=ConversationTrigger.RESOLVER,  # Custom trigger that should override
-            )
-
-            # Call new_conversation
-            response = await create_new_test_conversation(test_request)
-
-            # Verify the response
-            assert isinstance(response, ConversationResponse)
-            assert response.status == 'ok'
-
-            # Verify that create_new_conversation was called with the custom trigger (not SUGGESTED_TASK)
-            mock_create_conversation.assert_called_once()
-            call_args = mock_create_conversation.call_args[1]
-            assert call_args['conversation_trigger'] == ConversationTrigger.RESOLVER
-            # Verify that the initial_user_msg was still set from the suggested task
-            assert call_args['initial_user_msg'] is not None

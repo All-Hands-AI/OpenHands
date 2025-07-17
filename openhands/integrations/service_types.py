@@ -22,6 +22,7 @@ class TaskType(str, Enum):
     UNRESOLVED_COMMENTS = 'UNRESOLVED_COMMENTS'
     OPEN_ISSUE = 'OPEN_ISSUE'
     OPEN_PR = 'OPEN_PR'
+    CREATE_MICROAGENT = 'CREATE_MICROAGENT'
 
 
 class OwnerType(str, Enum):

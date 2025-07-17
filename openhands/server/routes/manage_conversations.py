@@ -29,6 +29,7 @@ from openhands.integrations.service_types import (
     AuthenticationError,
     ProviderType,
     SuggestedTask,
+    TaskType,
 )
 from openhands.llm.llm import LLM
 from openhands.runtime import get_runtime_cls
@@ -85,7 +86,6 @@ class InitSessionRequest(BaseModel):
     replay_json: str | None = None
     suggested_task: SuggestedTask | None = None
     conversation_instructions: str | None = None
-    conversation_trigger: ConversationTrigger | None = None
     # Only nested runtimes require the ability to specify a conversation id, and it could be a security risk
     if os.getenv('ALLOW_SET_CONVERSATION_ID', '0') == '1':
         conversation_id: str = Field(default_factory=lambda: uuid.uuid4().hex)
@@ -127,21 +127,17 @@ async def new_conversation(
     git_provider = data.git_provider
     conversation_instructions = data.conversation_instructions
 
-    # Handle suggested_task first (always set initial_user_msg if suggested_task is provided)
+    conversation_trigger = ConversationTrigger.GUI
+
     if suggested_task:
-        initial_user_msg = suggested_task.get_prompt_for_task()
-
-    # Use provided conversation_trigger if available, otherwise determine automatically
-    if data.conversation_trigger is not None:
-        conversation_trigger = data.conversation_trigger
-    else:
-        conversation_trigger = ConversationTrigger.GUI
-
-        if suggested_task:
+        if suggested_task.task_type == TaskType.CREATE_MICROAGENT:
+            conversation_trigger = ConversationTrigger.MICROAGENT_MANAGEMENT
+        else:
+            initial_user_msg = suggested_task.get_prompt_for_task()
             conversation_trigger = ConversationTrigger.SUGGESTED_TASK
 
-        if auth_type == AuthType.BEARER:
-            conversation_trigger = ConversationTrigger.REMOTE_API_KEY
+    if auth_type == AuthType.BEARER:
+        conversation_trigger = ConversationTrigger.REMOTE_API_KEY
 
     if (
         conversation_trigger == ConversationTrigger.REMOTE_API_KEY
