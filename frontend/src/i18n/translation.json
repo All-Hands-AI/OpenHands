@@ -10975,6 +10975,22 @@
         "de": "Mit der Anmeldung stimmen Sie unseren",
         "uk": "Реєструючись, ви погоджуєтеся з нашими"
     },
+    "AUTH$NO_PROVIDERS_CONFIGURED": {
+        "en": "At least one identity provider must be configured (e.g., GitHub)",
+        "ja": "少なくとも1つのIDプロバイダーを設定する必要があります（例：GitHub）",
+        "zh-CN": "必须配置至少一个身份提供商（例如 GitHub）",
+        "zh-TW": "必須配置至少一個身份提供商（例如 GitHub）",
+        "ko-KR": "최소 하나의 ID 제공자를 구성해야 합니다 (예: GitHub)",
+        "no": "Minst én identitetsleverandør må konfigureres (f.eks. GitHub)",
+        "it": "Deve essere configurato almeno un provider di identità (ad es. GitHub)",
+        "pt": "Pelo menos um provedor de identidade deve ser configurado (ex: GitHub)",
+        "es": "Debe configurarse al menos un proveedor de identidad (ej: GitHub)",
+        "ar": "يجب تكوين مزود هوية واحد على الأقل (مثل GitHub)",
+        "fr": "Au moins un fournisseur d'identité doit être configuré (ex: GitHub)",
+        "tr": "En az bir kimlik sağlayıcı yapılandırılmalıdır (örn. GitHub)",
+        "de": "Mindestens ein Identitätsanbieter muss konfiguriert werden (z.B. GitHub)",
+        "uk": "Принаймні один постачальник ідентифікації має бути налаштований (наприклад, GitHub)"
+    },
     "COMMON$TERMS_OF_SERVICE": {
         "en": "Terms of Service",
         "ja": "利用規約",
