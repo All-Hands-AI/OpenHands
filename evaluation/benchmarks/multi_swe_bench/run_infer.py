@@ -17,6 +17,7 @@ from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
     assert_and_raise,
+    check_maximum_retries_exceeded,
     codeact_user_response,
     get_default_sandbox_config_for_eval,
     get_metrics,
@@ -843,3 +844,5 @@ if __name__ == '__main__':
         timeout_seconds=120 * 60,  # 2 hour PER instance should be more than enough
         max_retries=5,
     )
+    # Check if any instances reached maximum retries
+    check_maximum_retries_exceeded(metadata.eval_output_dir)

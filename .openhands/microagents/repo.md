@@ -137,3 +137,65 @@ Your specialized knowledge and instructions here...
   2. Add the setting to the backend:
      - Add the setting to the `Settings` model in `openhands/storage/data_models/settings.py`
      - Update any relevant backend code to apply the setting (e.g., in session creation)
+
+### Adding New LLM Models
+
+To add a new LLM model to OpenHands, you need to update multiple files across both frontend and backend:
+
+#### Model Configuration Procedure:
+
+1. **Frontend Model Arrays** (`frontend/src/utils/verified-models.ts`):
+   - Add the model to `VERIFIED_MODELS` array (main list of all verified models)
+   - Add to provider-specific arrays based on the model's provider:
+     - `VERIFIED_OPENAI_MODELS` for OpenAI models
+     - `VERIFIED_ANTHROPIC_MODELS` for Anthropic models
+     - `VERIFIED_MISTRAL_MODELS` for Mistral models
+     - `VERIFIED_OPENHANDS_MODELS` for models available through OpenHands provider
+
+2. **Backend CLI Integration** (`openhands/cli/utils.py`):
+   - Add the model to the appropriate `VERIFIED_*_MODELS` arrays
+   - This ensures the model appears in CLI model selection
+
+3. **Backend Model List** (`openhands/utils/llm.py`):
+   - **CRITICAL**: Add the model to the `openhands_models` list (lines 57-66) if using OpenHands provider
+   - This is required for the model to appear in the frontend model selector
+   - Format: `'openhands/model-name'` (e.g., `'openhands/o3'`)
+
+4. **Backend LLM Configuration** (`openhands/llm/llm.py`):
+   - Add to feature-specific arrays based on model capabilities:
+     - `FUNCTION_CALLING_SUPPORTED_MODELS` if the model supports function calling
+     - `REASONING_EFFORT_SUPPORTED_MODELS` if the model supports reasoning effort parameters
+     - `CACHE_PROMPT_SUPPORTED_MODELS` if the model supports prompt caching
+     - `MODELS_WITHOUT_STOP_WORDS` if the model doesn't support stop words
+
+5. **Validation**:
+   - Run backend linting: `pre-commit run --config ./dev_config/python/.pre-commit-config.yaml`
+   - Run frontend linting: `cd frontend && npm run lint:fix`
+   - Run frontend build: `cd frontend && npm run build`
+
+#### Model Verification Arrays:
+
+- **VERIFIED_MODELS**: Main array of all verified models shown in the UI
+- **VERIFIED_OPENAI_MODELS**: OpenAI models (LiteLLM doesn't return provider prefix)
+- **VERIFIED_ANTHROPIC_MODELS**: Anthropic models (LiteLLM doesn't return provider prefix)
+- **VERIFIED_MISTRAL_MODELS**: Mistral models (LiteLLM doesn't return provider prefix)
+- **VERIFIED_OPENHANDS_MODELS**: Models available through OpenHands managed provider
+
+#### Model Feature Support Arrays:
+
+- **FUNCTION_CALLING_SUPPORTED_MODELS**: Models that support structured function calling
+- **REASONING_EFFORT_SUPPORTED_MODELS**: Models that support reasoning effort parameters (like o1, o3)
+- **CACHE_PROMPT_SUPPORTED_MODELS**: Models that support prompt caching for efficiency
+- **MODELS_WITHOUT_STOP_WORDS**: Models that don't support stop word parameters
+
+#### Frontend Model Integration:
+
+- Models are automatically available in the model selector UI once added to verified arrays
+- The `extractModelAndProvider` utility automatically detects provider from model arrays
+- Provider-specific models are grouped and prioritized in the UI selection
+
+#### CLI Model Integration:
+
+- Models appear in CLI provider selection based on the verified arrays
+- The `organize_models_and_providers` function groups models by provider
+- Default model selection prioritizes verified models for each provider

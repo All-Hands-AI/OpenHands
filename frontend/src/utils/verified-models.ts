@@ -8,6 +8,7 @@ export const VERIFIED_PROVIDERS = [
 export const VERIFIED_MODELS = [
   "o3-mini-2025-01-31",
   "o3-2025-04-16",
+  "o3",
   "o4-mini-2025-04-16",
   "claude-3-5-sonnet-20241022",
   "claude-3-7-sonnet-20250219",
@@ -19,6 +20,7 @@ export const VERIFIED_MODELS = [
   "devstral-small-2505",
   "devstral-small-2507",
   "devstral-medium-2507",
+  "kimi-k2-0711-preview",
 ];
 
 // LiteLLM does not return OpenAI models with the provider, so we list them here to set them ourselves for consistency
@@ -49,9 +51,9 @@ export const VERIFIED_ANTHROPIC_MODELS = [
 // LiteLLM does not return the compatible Mistral models with the provider, so we list them here to set them ourselves
 // (e.g., they return `devstral-small-2505` instead of `mistral/devstral-small-2505`)
 export const VERIFIED_MISTRAL_MODELS = [
-  "devstral-small-2505",
   "devstral-small-2507",
   "devstral-medium-2507",
+  "devstral-small-2505",
 ];
 
 // LiteLLM does not return the compatible OpenHands models with the provider, so we list them here to set them ourselves
@@ -60,10 +62,12 @@ export const VERIFIED_OPENHANDS_MODELS = [
   "claude-sonnet-4-20250514",
   "claude-opus-4-20250514",
   "gemini-2.5-pro",
+  "o3",
   "o4-mini",
-  "devstral-small-2505",
   "devstral-small-2507",
   "devstral-medium-2507",
+  "devstral-small-2505",
+  "kimi-k2-0711-preview",
 ];
 
 // Default model for OpenHands provider
