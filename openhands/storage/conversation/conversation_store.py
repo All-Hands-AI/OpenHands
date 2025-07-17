@@ -4,7 +4,10 @@ from abc import ABC, abstractmethod
 from typing import Iterable
 
 from openhands.core.config.openhands_config import OpenHandsConfig
-from openhands.storage.data_models.conversation_metadata import ConversationMetadata
+from openhands.storage.data_models.conversation_metadata import (
+    ConversationMetadata,
+    ConversationTrigger,
+)
 from openhands.storage.data_models.conversation_metadata_result_set import (
     ConversationMetadataResultSet,
 )
@@ -56,6 +59,14 @@ class ConversationStore(ABC):
         limit: int = 20,
     ) -> ConversationMetadataResultSet:
         """Search conversations."""
+
+    @abstractmethod
+    async def search_by_filters(
+        self,
+        selected_repository: str | None = None,
+        conversation_trigger: ConversationTrigger | None = None,
+    ) -> ConversationMetadataResultSet:
+        """Search conversations with filters for repository and conversation trigger. Returns all matches, no pagination."""
 
     async def get_all_metadata(
         self, conversation_ids: Iterable[str]

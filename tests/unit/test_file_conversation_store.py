@@ -3,7 +3,10 @@ import json
 import pytest
 
 from openhands.storage.conversation.file_conversation_store import FileConversationStore
-from openhands.storage.data_models.conversation_metadata import ConversationMetadata
+from openhands.storage.data_models.conversation_metadata import (
+    ConversationMetadata,
+    ConversationTrigger,
+)
 from openhands.storage.locations import get_conversation_metadata_filename
 from openhands.storage.memory import InMemoryFileStore
 
@@ -200,3 +203,159 @@ async def test_get_all_metadata():
     assert results[0].title == 'First conversation'
     assert results[1].conversation_id == 'conv2'
     assert results[1].title == 'Second conversation'
+
+
+@pytest.mark.asyncio
+async def test_search_by_filters_repository():
+    # Create test data with conversations for different repositories
+    store = FileConversationStore(
+        InMemoryFileStore(
+            {
+                get_conversation_metadata_filename('conv1'): json.dumps(
+                    {
+                        'conversation_id': 'conv1',
+                        'user_id': '123',
+                        'selected_repository': 'repo1',
+                        'title': 'First conversation',
+                        'created_at': '2025-01-16T19:51:04Z',
+                        'trigger': 'gui',
+                    }
+                ),
+                get_conversation_metadata_filename('conv2'): json.dumps(
+                    {
+                        'conversation_id': 'conv2',
+                        'user_id': '123',
+                        'selected_repository': 'repo2',
+                        'title': 'Second conversation',
+                        'created_at': '2025-01-17T19:51:04Z',
+                        'trigger': 'gui',
+                    }
+                ),
+                get_conversation_metadata_filename('conv3'): json.dumps(
+                    {
+                        'conversation_id': 'conv3',
+                        'user_id': '123',
+                        'selected_repository': 'repo1',
+                        'title': 'Third conversation',
+                        'created_at': '2025-01-15T19:51:04Z',
+                        'trigger': 'suggested_task',
+                    }
+                ),
+            }
+        )
+    )
+
+    # Test filtering by repository
+    result = await store.search_by_filters(selected_repository='repo1')
+    assert len(result.results) == 2
+    assert all(conv.selected_repository == 'repo1' for conv in result.results)
+
+    # Test filtering by non-existent repository
+    result = await store.search_by_filters(selected_repository='nonexistent')
+    assert len(result.results) == 0
+
+
+@pytest.mark.asyncio
+async def test_search_by_filters_conversation_trigger():
+    # Create test data with conversations for different triggers
+    store = FileConversationStore(
+        InMemoryFileStore(
+            {
+                get_conversation_metadata_filename('conv1'): json.dumps(
+                    {
+                        'conversation_id': 'conv1',
+                        'user_id': '123',
+                        'selected_repository': 'repo1',
+                        'title': 'GUI conversation',
+                        'created_at': '2025-01-16T19:51:04Z',
+                        'trigger': 'gui',
+                    }
+                ),
+                get_conversation_metadata_filename('conv2'): json.dumps(
+                    {
+                        'conversation_id': 'conv2',
+                        'user_id': '123',
+                        'selected_repository': 'repo1',
+                        'title': 'Suggested task conversation',
+                        'created_at': '2025-01-17T19:51:04Z',
+                        'trigger': 'suggested_task',
+                    }
+                ),
+                get_conversation_metadata_filename('conv3'): json.dumps(
+                    {
+                        'conversation_id': 'conv3',
+                        'user_id': '123',
+                        'selected_repository': 'repo1',
+                        'title': 'Another GUI conversation',
+                        'created_at': '2025-01-15T19:51:04Z',
+                        'trigger': 'gui',
+                    }
+                ),
+            }
+        )
+    )
+
+    # Test filtering by conversation trigger
+    result = await store.search_by_filters(conversation_trigger=ConversationTrigger.GUI)
+    assert len(result.results) == 2
+    assert all(conv.trigger == ConversationTrigger.GUI for conv in result.results)
+
+    # Test filtering by suggested task trigger
+    result = await store.search_by_filters(
+        conversation_trigger=ConversationTrigger.SUGGESTED_TASK
+    )
+    assert len(result.results) == 1
+    assert result.results[0].trigger == ConversationTrigger.SUGGESTED_TASK
+
+
+@pytest.mark.asyncio
+async def test_search_by_filters_combined():
+    # Create test data with different combinations
+    store = FileConversationStore(
+        InMemoryFileStore(
+            {
+                get_conversation_metadata_filename('conv1'): json.dumps(
+                    {
+                        'conversation_id': 'conv1',
+                        'user_id': '123',
+                        'selected_repository': 'repo1',
+                        'title': 'GUI conversation in repo1',
+                        'created_at': '2025-01-16T19:51:04Z',
+                        'trigger': 'gui',
+                    }
+                ),
+                get_conversation_metadata_filename('conv2'): json.dumps(
+                    {
+                        'conversation_id': 'conv2',
+                        'user_id': '123',
+                        'selected_repository': 'repo1',
+                        'title': 'Suggested task in repo1',
+                        'created_at': '2025-01-17T19:51:04Z',
+                        'trigger': 'suggested_task',
+                    }
+                ),
+                get_conversation_metadata_filename('conv3'): json.dumps(
+                    {
+                        'conversation_id': 'conv3',
+                        'user_id': '123',
+                        'selected_repository': 'repo2',
+                        'title': 'GUI conversation in repo2',
+                        'created_at': '2025-01-15T19:51:04Z',
+                        'trigger': 'gui',
+                    }
+                ),
+            }
+        )
+    )
+
+    # Test filtering by both repository and trigger
+    result = await store.search_by_filters(
+        selected_repository='repo1', conversation_trigger=ConversationTrigger.GUI
+    )
+    assert len(result.results) == 1
+    assert result.results[0].selected_repository == 'repo1'
+    assert result.results[0].trigger == ConversationTrigger.GUI
+
+    # Test with no filters (should return all)
+    result = await store.search_by_filters()
+    assert len(result.results) == 3

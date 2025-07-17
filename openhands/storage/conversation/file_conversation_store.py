@@ -10,7 +10,10 @@ from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.storage import get_file_store
 from openhands.storage.conversation.conversation_store import ConversationStore
-from openhands.storage.data_models.conversation_metadata import ConversationMetadata
+from openhands.storage.data_models.conversation_metadata import (
+    ConversationMetadata,
+    ConversationTrigger,
+)
 from openhands.storage.data_models.conversation_metadata_result_set import (
     ConversationMetadataResultSet,
 )
@@ -94,6 +97,48 @@ class FileConversationStore(ConversationStore):
         conversations = conversations[start:end]
         next_page_id = offset_to_page_id(end, end < num_conversations)
         return ConversationMetadataResultSet(conversations, next_page_id)
+
+    async def search_by_filters(
+        self,
+        selected_repository: str | None = None,
+        conversation_trigger: ConversationTrigger | None = None,
+    ) -> ConversationMetadataResultSet:
+        """Search conversations with filters for repository and conversation trigger. Returns all matches, no pagination."""
+        metadata_dir = self.get_conversation_metadata_dir()
+        try:
+            conversation_ids = [
+                path.split('/')[-2]
+                for path in self.file_store.list(metadata_dir)
+                if not path.startswith(f'{metadata_dir}/.')
+            ]
+        except FileNotFoundError:
+            return ConversationMetadataResultSet([])
+
+        # Load all conversations and apply filters
+        conversations = []
+        for conversation_id in conversation_ids:
+            try:
+                conversation = await self.get_metadata(conversation_id)
+                # Apply repository filter
+                if (
+                    selected_repository is not None
+                    and conversation.selected_repository != selected_repository
+                ):
+                    continue
+                # Apply conversation trigger filter
+                if (
+                    conversation_trigger is not None
+                    and conversation.trigger != conversation_trigger
+                ):
+                    continue
+                conversations.append(conversation)
+            except Exception:
+                logger.warning(
+                    f'Could not load conversation metadata: {conversation_id}'
+                )
+        # Sort by creation date (newest first)
+        conversations.sort(key=_sort_key, reverse=True)
+        return ConversationMetadataResultSet(conversations)
 
     def get_conversation_metadata_dir(self) -> str:
         return CONVERSATION_BASE_DIR
