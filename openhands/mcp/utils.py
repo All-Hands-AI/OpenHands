@@ -11,6 +11,8 @@ from openhands.core.config.mcp_config import (
     MCPSSEServerConfig,
 )
 from openhands.core.logger import openhands_logger as logger
+from mcp import McpError
+
 from openhands.events.action.mcp import MCPAction
 from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
@@ -177,15 +179,29 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
 
     logger.debug(f'Matching client: {matching_client}')
 
-    # Call the tool - this will create a new connection internally
-    response = await matching_client.call_tool(action.name, action.arguments)
-    logger.debug(f'MCP response: {response}')
+    try:
+        # Call the tool - this will create a new connection internally
+        response = await matching_client.call_tool(action.name, action.arguments)
+        logger.debug(f'MCP response: {response}')
 
-    return MCPObservation(
-        content=json.dumps(response.model_dump(mode='json')),
-        name=action.name,
-        arguments=action.arguments,
-    )
+        return MCPObservation(
+            content=json.dumps(response.model_dump(mode='json')),
+            name=action.name,
+            arguments=action.arguments,
+        )
+    except McpError as e:
+        # Handle MCP errors by returning an error observation instead of raising
+        logger.error(f'MCP error when calling tool {action.name}: {e}')
+        error_content = json.dumps({
+            'isError': True,
+            'error': str(e),
+            'content': []
+        })
+        return MCPObservation(
+            content=error_content,
+            name=action.name,
+            arguments=action.arguments,
+        )
 
 
 async def add_mcp_tools_to_agent(agent: 'Agent', runtime: Runtime, memory: 'Memory'):
