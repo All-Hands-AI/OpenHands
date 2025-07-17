@@ -82,8 +82,9 @@ async def prompt_with_validation(
         if is_valid:
             return user_input
         else:
-            print_formatted_text(f'❌ {error_message}')
-            print_formatted_text('💡 Type "/cancel" to abort or try again.')
+            print_formatted_text(
+                f'❌ {error_message}. Please try again or type "/cancel" to abort.'
+            )
 
 
 def restart_cli() -> None:
