@@ -171,6 +171,7 @@ describe("UserContextMenu", () => {
       expect(createOrgSpy).toHaveBeenCalledExactlyOnceWith({
         name: "New Organization",
       });
+      expect(screen.queryByTestId("create-org-modal")).not.toBeInTheDocument();
     });
   });
 
@@ -208,10 +209,6 @@ describe("UserContextMenu", () => {
     const manageAccountButton = screen.getByText("Manage Account");
     await userEvent.click(manageAccountButton);
     expect(onCloseMock).toHaveBeenCalledTimes(4);
-
-    const createOrgButton = screen.getByText("Create New Organization");
-    await userEvent.click(createOrgButton);
-    expect(onCloseMock).toHaveBeenCalledTimes(5);
   });
 
   it("should render the invite user modal when Invite Team is clicked", async () => {

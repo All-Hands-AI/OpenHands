@@ -91,7 +91,6 @@ export function UserContextMenu({ type, onClose }: UserContextMenuProps) {
 
   const handleCreateNewOrgClick = () => {
     setOrgModalIsOpen(true);
-    onClose();
   };
 
   return (
@@ -106,7 +105,7 @@ export function UserContextMenu({ type, onClose }: UserContextMenuProps) {
       {orgModalIsOpen &&
         ReactDOM.createPortal(
           <CreateNewOrganizationModal
-            onCancel={() => setOrgModalIsOpen(false)}
+            onClose={() => setOrgModalIsOpen(false)}
           />,
           document.getElementById("portal-root") || document.body,
         )}
