@@ -24,6 +24,11 @@ class TaskType(str, Enum):
     OPEN_PR = 'OPEN_PR'
 
 
+class OwnerType(str, Enum):
+    USER = 'user'
+    ORGANIZATION = 'organization'
+
+
 class SuggestedTask(BaseModel):
     git_provider: ProviderType
     task_type: TaskType
@@ -32,17 +37,7 @@ class SuggestedTask(BaseModel):
     title: str
 
     def get_provider_terms(self) -> dict:
-        if self.git_provider == ProviderType.GITLAB:
-            return {
-                'requestType': 'Merge Request',
-                'requestTypeShort': 'MR',
-                'apiName': 'GitLab API',
-                'tokenEnvVar': 'GITLAB_TOKEN',
-                'ciSystem': 'CI pipelines',
-                'ciProvider': 'GitLab',
-                'requestVerb': 'merge request',
-            }
-        elif self.git_provider == ProviderType.GITHUB:
+        if self.git_provider == ProviderType.GITHUB:
             return {
                 'requestType': 'Pull Request',
                 'requestTypeShort': 'PR',
@@ -51,6 +46,16 @@ class SuggestedTask(BaseModel):
                 'ciSystem': 'GitHub Actions',
                 'ciProvider': 'GitHub',
                 'requestVerb': 'pull request',
+            }
+        elif self.git_provider == ProviderType.GITLAB:
+            return {
+                'requestType': 'Merge Request',
+                'requestTypeShort': 'MR',
+                'apiName': 'GitLab API',
+                'tokenEnvVar': 'GITLAB_TOKEN',
+                'ciSystem': 'CI pipelines',
+                'ciProvider': 'GitLab',
+                'requestVerb': 'merge request',
             }
         elif self.git_provider == ProviderType.BITBUCKET:
             return {
@@ -117,6 +122,9 @@ class Repository(BaseModel):
     stargazers_count: int | None = None
     link_header: str | None = None
     pushed_at: str | None = None  # ISO 8601 format date string
+    owner_type: OwnerType | None = (
+        None  # Whether the repository is owned by a user or organization
+    )
 
 
 class AuthenticationError(ValueError):
