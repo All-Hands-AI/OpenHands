@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+echo 'Installing Versabench_cache'
 
 # Create target directory if it doesn't exist
 mkdir -p ./evaluation/benchmarks/versabench/versabench_cache
@@ -38,3 +39,4 @@ if [ ! -d ./evaluation/benchmarks/versabench/versabench_cache/swt-bench ]; then
         popd
     )
 fi
+echo 'Finished installing Versabench_cache'
