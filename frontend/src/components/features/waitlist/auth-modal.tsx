@@ -24,9 +24,10 @@ export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
     identityProvider: "gitlab",
   });
 
-  const bitbucketAuthUrl = useAuthUrl({
+  const azureDevOpsAuthUrl = useAuthUrl({
     appMode: appMode || null,
-    identityProvider: "bitbucket",
+    identityProvider: "bitbucket,
+  azure_devops",
   });
 
   const handleGitHubAuth = () => {
@@ -84,6 +85,12 @@ export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
           <BrandButton
             type="button"
             variant="primary"
+            onClick={handleAzureDevOpsAuth}
+            className="w-full"
+            startContent={<AzureDevOpsLogo width={20} height={20} />}
+          >
+            {t(I18nKey.AZURE_DEVOPS$CONNECT_TO_AZURE_DEVOPS) ||
+              "Connect to Azure DevOps"}
             onClick={handleBitbucketAuth}
             className="w-full"
             startContent={<BitbucketLogo width={20} height={20} />}
