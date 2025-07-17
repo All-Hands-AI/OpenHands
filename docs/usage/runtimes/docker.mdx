@@ -133,7 +133,7 @@ docker run # ... \
 
 ## Docker-out-of-Docker Support
 
-OpenHands supports docker-out-of-docker functionality, which allows the sandbox container to build Docker images, run containers, and perform other Docker operations. This feature also enables host networking, allowing the agent to access services running on localhost ports.
+OpenHands supports docker-out-of-docker functionality, which allows the agent in the sandbox container to build Docker images, run containers, and perform other Docker operations. This feature also enables host networking, allowing the agent to access services running on localhost ports.
 
 <Warning>
 **CRITICAL SECURITY WARNING**: Enabling docker-out-of-docker functionality grants the sandbox container access to the host Docker daemon with root-equivalent privileges and host network interfaces. This poses significant security risks:
@@ -178,61 +178,10 @@ The feature includes safety checks:
 - Logs security warnings when the feature is enabled
 - Provides clear error messages if the socket is not available
 
-### Use Cases
+### Use Case
 
-docker-out-of-docker functionality is useful for:
+A Single developer that maintains its own openhands server and needs docker inside the sandbox more than isolation. For example when using openhands to work on openhands itself.
 
-- **Building Docker Images**: The agent can build and tag Docker images
-- **Running Containerized Applications**: Testing and running applications in containers
-- **Container Management**: Starting, stopping, and managing containers
-- **Multi-container Applications**: Working with Docker Compose or similar tools
-- **CI/CD Workflows**: Implementing containerized build and deployment pipelines
-- **Localhost Service Access**: Accessing services running on host localhost ports
-- **Development Workflows**: Testing applications that need to communicate with host services
+It is not recommanded to use this feature in a multi-user environment. It is very likely that eventually an agent will
+break the system or shut down a docker container that somebody else is using.
 
-### Example Usage
-
-Once enabled, the agent can use Docker commands and access localhost services within the sandbox:
-
-```bash
-# Build a Docker image
-docker build -t my-app .
-
-# Run a container with port mapping
-docker run -d -p 8080:80 --name my-container my-app
-
-# Access the container via localhost (host networking enabled)
-curl http://localhost:8080
-
-# List running containers
-docker ps
-
-# Use Docker Compose
-docker-compose up -d
-
-# Access services running on host
-curl http://localhost:3000  # Access host service directly
-```
-
-### Security Best Practices
-
-If you must use docker-out-of-docker functionality:
-
-1. **Trusted Code Only**: Only run trusted code that you have reviewed
-2. **Isolated Environment**: Use on isolated machines or VMs, not production systems
-3. **Network Isolation**: Implement network restrictions to limit potential damage
-4. **Monitoring**: Monitor Docker daemon activity for suspicious operations
-5. **Regular Updates**: Keep Docker and OpenHands updated with security patches
-6. **Backup Strategy**: Ensure you have backups of important data before enabling
-
-### Troubleshooting
-
-If docker-out-of-docker is not working:
-
-1. **Check Docker Socket**: Ensure `/var/run/docker.sock` exists on the host
-2. **Permissions**: Verify the Docker daemon is running and accessible
-3. **Logs**: Check OpenHands logs for Docker socket mounting warnings
-4. **Docker Version**: Ensure compatible Docker versions on host and container
-5. **Host Networking**: If you can't access localhost services, verify host networking is enabled
-6. **macOS Users**: Ensure Docker Desktop has host networking feature enabled
-7. **Port Access**: Test port accessibility with `curl http://localhost:PORT` from within the sandbox
