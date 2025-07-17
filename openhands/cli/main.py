@@ -315,10 +315,26 @@ async def run_session(
 
         if initial_state.last_error:
             # If the last session ended in an error, provide a message.
-            initial_message = (
-                'NOTE: the last session ended with an error.'
-                "Let's get back on track. Do NOT resume your task. Ask me about it."
-            )
+            error_message = initial_state.last_error
+
+            # Check if it's an authentication error with OpenHands
+            if 'Authentication error with OpenHands provider' in error_message:
+                initial_message = (
+                    'Authentication error with OpenHands provider. Your API key is invalid or expired. '
+                    'Please get a new API key from https://app.all-hands.dev/settings/api-keys and '
+                    'update your configuration.'
+                )
+            elif 'ERROR_LLM_AUTHENTICATION' in error_message:
+                initial_message = (
+                    'Authentication error with the LLM provider. Please check your API key. '
+                    "If you're using OpenHands models, get a new API key from https://app.all-hands.dev/settings/api-keys"
+                )
+            else:
+                # For other errors, use the standard message
+                initial_message = (
+                    'NOTE: the last session ended with an error.'
+                    "Let's get back on track. Do NOT resume your task. Ask me about it."
+                )
         else:
             # If we are resuming, we already have a task
             initial_message = ''
