@@ -70,6 +70,10 @@ export function AuthModal({
     providersConfigured.length > 0 &&
     providersConfigured.includes("bitbucket");
 
+  // Check if no providers are configured
+  const noProvidersConfigured =
+    !providersConfigured || providersConfigured.length === 0;
+
   return (
     <ModalBackdrop>
       <ModalBody className="border border-tertiary">
@@ -81,40 +85,48 @@ export function AuthModal({
         </div>
 
         <div className="flex flex-col gap-3 w-full">
-          {showGithub && (
-            <BrandButton
-              type="button"
-              variant="primary"
-              onClick={handleGitHubAuth}
-              className="w-full"
-              startContent={<GitHubLogo width={20} height={20} />}
-            >
-              {t(I18nKey.GITHUB$CONNECT_TO_GITHUB)}
-            </BrandButton>
-          )}
+          {noProvidersConfigured ? (
+            <div className="text-center p-4 text-muted-foreground">
+              {t(I18nKey.AUTH$NO_PROVIDERS_CONFIGURED)}
+            </div>
+          ) : (
+            <>
+              {showGithub && (
+                <BrandButton
+                  type="button"
+                  variant="primary"
+                  onClick={handleGitHubAuth}
+                  className="w-full"
+                  startContent={<GitHubLogo width={20} height={20} />}
+                >
+                  {t(I18nKey.GITHUB$CONNECT_TO_GITHUB)}
+                </BrandButton>
+              )}
 
-          {showGitlab && (
-            <BrandButton
-              type="button"
-              variant="primary"
-              onClick={handleGitLabAuth}
-              className="w-full"
-              startContent={<GitLabLogo width={20} height={20} />}
-            >
-              {t(I18nKey.GITLAB$CONNECT_TO_GITLAB)}
-            </BrandButton>
-          )}
+              {showGitlab && (
+                <BrandButton
+                  type="button"
+                  variant="primary"
+                  onClick={handleGitLabAuth}
+                  className="w-full"
+                  startContent={<GitLabLogo width={20} height={20} />}
+                >
+                  {t(I18nKey.GITLAB$CONNECT_TO_GITLAB)}
+                </BrandButton>
+              )}
 
-          {showBitbucket && (
-            <BrandButton
-              type="button"
-              variant="primary"
-              onClick={handleBitbucketAuth}
-              className="w-full"
-              startContent={<BitbucketLogo width={20} height={20} />}
-            >
-              {t(I18nKey.BITBUCKET$CONNECT_TO_BITBUCKET)}
-            </BrandButton>
+              {showBitbucket && (
+                <BrandButton
+                  type="button"
+                  variant="primary"
+                  onClick={handleBitbucketAuth}
+                  className="w-full"
+                  startContent={<BitbucketLogo width={20} height={20} />}
+                >
+                  {t(I18nKey.BITBUCKET$CONNECT_TO_BITBUCKET)}
+                </BrandButton>
+              )}
+            </>
           )}
         </div>
 
