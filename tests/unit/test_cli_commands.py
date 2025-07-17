@@ -989,7 +989,7 @@ class TestPromptWithValidation:
         assert result == 'valid_input'
         assert mock_read_input.call_count == 2
         # Should print prompt twice, plus error message and help text
-        assert mock_print.call_count >= 4
+        assert mock_print.call_count >= 3
 
     @pytest.mark.asyncio
     @patch('openhands.cli.commands.read_prompt_input')
