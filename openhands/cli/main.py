@@ -231,20 +231,31 @@ async def run_session(
                     return
 
                 confirmation_status = await read_confirmation_input(config)
-                if confirmation_status == 0 or confirmation_status == 2: # cli_confirm returns 0 for 'Yes, proceed' and 2 for 'Always proceed'
+                if confirmation_status in ('yes', 'always'):
                     event_stream.add_event(
                         ChangeAgentStateAction(AgentState.USER_CONFIRMED),
                         EventSource.USER,
                     )
-                elif confirmation_status == 1: # cli_confirm returns 1 for 'No, skip this action'
+                elif confirmation_status == 'edit':
+                    # Tell the agent the proposed action was rejected
+                    event_stream.add_event(
+                        ChangeAgentStateAction(AgentState.USER_EDITED),
+                        EventSource.USER,
+                    )
+                    # Notify the user
+                    print_formatted_text(
+                        HTML('<skyblue>Okay, please tell me what I should do instead.</skyblue>')
+                    )
+                    # Solicit replacement isntructions
+                    await prompt_for_next_task(AgentState.AWAITING_USER_INPUT)
+                else: # 'no' or fallback
                     event_stream.add_event(
                         ChangeAgentStateAction(AgentState.USER_REJECTED),
                         EventSource.USER,
                     )
 
-
                 # Set the always_confirm_mode flag if the user wants to always confirm
-                if confirmation_status == 2:
+                if confirmation_status == 'always':
                     always_confirm_mode = True
 
             if event.agent_state == AgentState.PAUSED:

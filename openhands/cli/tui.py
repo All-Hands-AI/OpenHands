@@ -587,21 +587,25 @@ async def read_prompt_input(
         return '/exit'
 
 
-async def read_confirmation_input(config: OpenHandsConfig) -> int:
+async def read_confirmation_input(config: OpenHandsConfig) -> str:
     try:
-        prompt_session = create_prompt_session(config)
+        choices = [
+            'Yes, proceed',
+            'No, skip this action',
+            "Always proceed (don't ask again)",
+            'Let me provide different instructions',
+        ]
 
-        while True:
-            with patch_stdout():
-                print_formatted_text('')
-                confirmation: str = await prompt_session.prompt_async(
-                    cli_confirm(config, 'Choose an option: ',
-                                ['Yes, proceed', 'No, skip this action', "Always proceed (don't ask again)", 'Let me provide different instructions']),
-                )
+        # keep the outer coroutine responsive by using asyncio.to_thread which puts the blocking call app.run() of cli_confirm() in a separate thread
+        index = await asyncio.to_thread(cli_confirm,
+                                        config,
+                                        'Choose an option:',
+                                        choices)
 
-                return confirmation if confirmation is not None else 0
+        return {0: 'yes', 1: 'no', 2: 'always', 3: 'edit'}.get(index, 'no')
+
     except (KeyboardInterrupt, EOFError):
-        return 1
+        return 'no'
 
 
 def start_pause_listener(

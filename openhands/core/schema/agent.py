@@ -49,3 +49,7 @@ class AgentState(str, Enum):
     RATE_LIMITED = 'rate_limited'
     """The agent is rate limited.
     """
+
+    USER_EDITED = 'user_edited'
+    """The user edited the agent's input.
+    """
