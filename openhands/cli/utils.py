@@ -188,6 +188,7 @@ VERIFIED_OPENHANDS_MODELS = [
     'devstral-medium-2507',
     'o4-mini',
     'gemini-2.5-pro',
+    'kimi-k2-0711-preview',
 ]
 
 
