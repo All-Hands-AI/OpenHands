@@ -113,7 +113,9 @@ describe("TaskCard", () => {
 
   it("should navigate to the conversation page after creating a conversation", async () => {
     const createConversationSpy = vi.spyOn(OpenHands, "createConversation");
-    createConversationSpy.mockResolvedValue({ conversation_id: "test-conversation-id" });
+    createConversationSpy.mockResolvedValue({
+      conversation_id: "test-conversation-id",
+    });
 
     renderTaskCard();
 
