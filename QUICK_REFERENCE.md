@@ -54,6 +54,7 @@ ollama run deepseek-coder-v2:latest "Hello!"
 - `start-ollama.sh` - Startup script
 - `check-ollama-setup.sh` - Health check
 - `OLLAMA_SETUP.md` - Detailed guide
+- `MCP_SETUP.md` - MCP servers guide
 
 ## 🔍 Troubleshooting
 
@@ -63,6 +64,7 @@ ollama run deepseek-coder-v2:latest "Hello!"
 | Models not found | Run `ollama pull deepseek-coder-v2:latest` |
 | Docker not running | Start Docker Desktop |
 | Port 3000 in use | Stop other services or change port |
+| "No MCP servers configured" | Normal - MCP is optional. See `MCP_SETUP.md` |
 
 ## ⚙️ Configuration
 

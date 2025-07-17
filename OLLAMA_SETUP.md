@@ -225,6 +225,21 @@ If you encounter issues:
 3. Ensure models are loaded: `ollama list`
 4. Check Docker status: `docker ps`
 
+## MCP (Model Context Protocol) Servers
+
+OpenHands supports MCP servers that provide additional tools and capabilities. **MCP is completely optional** - OpenHands works perfectly without it.
+
+If you see "No MCP servers are currently configured" in the interface, this is normal and not an error. You can:
+
+- **Ignore it**: OpenHands works great without MCP servers
+- **Configure MCP**: See `MCP_SETUP.md` for detailed instructions on adding useful tools like file operations, git integration, web search, and more
+
+Common useful MCP servers include:
+- **Filesystem**: Enhanced file operations
+- **Git**: Advanced version control
+- **Time**: Current time and date functions
+- **Web Search**: Real-time search capabilities (requires API key)
+
 ## File Structure
 
 ```
@@ -232,7 +247,10 @@ OpenHands/
 ├── config.toml                 # Main configuration file
 ├── docker-compose.ollama.yml   # Docker Compose for Ollama setup
 ├── start-ollama.sh            # Automated setup script
+├── check-ollama-setup.sh      # Health check script
 ├── OLLAMA_SETUP.md            # This guide
+├── MCP_SETUP.md               # MCP servers configuration guide
+├── QUICK_REFERENCE.md         # Quick command reference
 └── workspace/                 # Your working directory
 ```
 
