@@ -376,7 +376,7 @@ To use these with the docker command, pass in `-e SANDBOX_<option>`. Example: `-
 - `docker_out_of_docker`
   - Type: `bool`
   - Default: `false`
-  - Description: Enable docker-out-of-docker functionality by mounting the host Docker socket (`/var/run/docker.sock`) and using host networking. This allows the sandbox to build Docker images, run containers, and perform other Docker operations while accessing services via localhost ports. **Use with extreme caution** as this grants root-equivalent access to the host system and network interfaces.
+  - Description: Enable docker-out-of-docker functionality by mounting the host Docker socket (`/var/run/docker.sock`) and using host networking. This allows the sandbox to build Docker images, run containers, and perform other Docker operations while accessing services via localhost ports. **Use with extreme caution** as this grants root-equivalent access to the host system and network interfaces. For detailed usage instructions and examples, see the [Docker Runtime documentation](./runtimes/docker#docker-out-of-docker).
 
 ### Dependencies and Environment
 - `runtime_extra_deps`

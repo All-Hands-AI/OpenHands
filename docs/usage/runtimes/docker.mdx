@@ -135,6 +135,8 @@ docker run # ... \
 
 OpenHands supports docker-out-of-docker functionality, which allows the agent in the sandbox container to build Docker images, run containers, and perform other Docker operations. This feature also enables host networking, allowing the agent to access services running on localhost ports.
 
+For complete configuration details, see the [`docker_out_of_docker` option](../configuration-options#docker-out-of-docker-support) in the Configuration Options documentation.
+
 <Warning>
 **CRITICAL SECURITY WARNING**: Enabling docker-out-of-docker functionality grants the sandbox container access to the host Docker daemon with root-equivalent privileges and host network interfaces. This poses significant security risks:
 
@@ -149,7 +151,7 @@ OpenHands supports docker-out-of-docker functionality, which allows the agent in
 
 ### Enabling Docker-out-of-Docker
 
-To enable docker-out-of-docker functionality, set the `docker_out_of_docker` configuration option:
+To enable docker-out-of-docker functionality, set the `docker_out_of_docker` configuration option (see [Configuration Options](../configuration-options#docker-out-of-docker-support) for complete details):
 
 #### Using Environment Variables
 
