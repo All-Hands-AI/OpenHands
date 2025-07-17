@@ -518,10 +518,9 @@ def process_instance(
         config.sandbox.remote_runtime_resource_factor
     )
 
-    runtime = create_runtime(config)
+    sid = "".join([str(c) for c in cpu_group]) + f'_{instance.instance_id}'
+    runtime = create_runtime(config, sid=sid)
     call_async_from_sync(runtime.connect)
-
-
 
     try:
         initialize_runtime(runtime, instance, metadata)
