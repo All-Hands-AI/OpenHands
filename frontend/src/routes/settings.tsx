@@ -67,7 +67,7 @@ export const clientLoader = async ({ request }: Route.ClientLoaderArgs) => {
 
 function SettingsScreen() {
   const { t } = useTranslation();
-  const { setOrgId } = useSelectedOrganizationId();
+  const { orgId, setOrgId } = useSelectedOrganizationId();
   const { data: me } = useMe();
   const { data: organizations } = useOrganizations();
   const { data: config } = useConfig();
@@ -105,11 +105,11 @@ function SettingsScreen() {
       >
         {navItems
           .filter((navItem) => {
-            // if user is not an admin, do not show team settings
+            // if user is not an admin or no org is selected, do not show team/org settings
             if (
               (navItem.to === "/settings/team" ||
                 navItem.to === "/settings/org") &&
-              isUser
+              (isUser || !orgId)
             ) {
               return false;
             }
