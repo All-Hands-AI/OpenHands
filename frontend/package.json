@@ -1,13 +1,13 @@
 {
   "name": "openhands-frontend",
-  "version": "0.48.0",
+  "version": "0.49.0",
   "private": true,
   "type": "module",
   "engines": {
     "node": ">=22.0.0"
   },
   "dependencies": {
-    "@heroui/react": "^2.8.0-beta.15",
+    "@heroui/react": "^2.8.0",
     "@microlink/react-json-view": "^1.26.2",
     "@monaco-editor/react": "^4.7.0-rc.0",
     "@react-router/node": "^7.6.3",
@@ -25,7 +25,7 @@
     "axios": "^1.10.0",
     "clsx": "^2.1.1",
     "eslint-config-airbnb-typescript": "^18.0.0",
-    "framer-motion": "^12.23.5",
+    "framer-motion": "^12.23.6",
     "i18next": "^25.3.2",
     "i18next-browser-languagedetector": "^8.2.0",
     "i18next-http-backend": "^3.0.2",
@@ -45,6 +45,7 @@
     "react-router": "^7.6.3",
     "react-syntax-highlighter": "^15.6.1",
     "react-textarea-autosize": "^8.5.9",
+    "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
     "sirv-cli": "^3.0.1",
     "socket.io-client": "^4.8.1",
@@ -91,7 +92,7 @@
     "@testing-library/jest-dom": "^6.6.1",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
-    "@types/node": "^24.0.13",
+    "@types/node": "^24.0.14",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@types/react-highlight": "^0.12.8",
