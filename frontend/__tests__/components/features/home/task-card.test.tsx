@@ -110,4 +110,17 @@ describe("TaskCard", () => {
     expect(launchButton).toHaveTextContent(/Loading/i);
     expect(launchButton).toBeDisabled();
   });
+
+  it("should navigate to the conversation page after creating a conversation", async () => {
+    const createConversationSpy = vi.spyOn(OpenHands, "createConversation");
+    createConversationSpy.mockResolvedValue({ conversation_id: "test-conversation-id" });
+
+    renderTaskCard();
+
+    const launchButton = screen.getByTestId("task-launch-button");
+    await userEvent.click(launchButton);
+
+    // Wait for navigation to the conversation page
+    await screen.findByTestId("conversation-screen");
+  });
 });

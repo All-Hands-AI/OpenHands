@@ -30,18 +30,20 @@ export function TaskCard({ task }: TaskCardProps) {
   const handleLaunchConversation = () => {
     setOptimisticUserMessage(t("TASK$ADDRESSING_TASK"));
 
-    return createConversation({
-      repository: {
-        name: task.repo,
-        gitProvider: task.git_provider,
+    return createConversation(
+      {
+        repository: {
+          name: task.repo,
+          gitProvider: task.git_provider,
+        },
+        suggestedTask: task,
       },
-      suggestedTask: task,
-    }, {
-      onSuccess: (data) => {
-        // Navigate to the conversation page after successful creation
-        navigate(`/conversations/${data.conversation_id}`);
-      }
-    });
+      {
+        onSuccess: (data) => {
+          navigate(`/conversations/${data.conversation_id}`);
+        },
+      },
+    );
   };
 
   // Determine the correct URL format based on git provider
