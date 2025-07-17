@@ -529,4 +529,287 @@ describe("ConversationPanel", () => {
 
     expect(screen.queryByTestId("stop-button")).not.toBeInTheDocument();
   });
+
+  it("should show edit button in context menu", async () => {
+    const user = userEvent.setup();
+    renderConversationPanel();
+
+    const cards = await screen.findAllByTestId("conversation-card");
+    expect(cards).toHaveLength(3);
+
+    // Click ellipsis to open context menu
+    const ellipsisButton = within(cards[0]).getByTestId("ellipsis-button");
+    await user.click(ellipsisButton);
+
+    // Edit button should be visible
+    const editButton = screen.getByTestId("edit-button");
+    expect(editButton).toBeInTheDocument();
+    expect(editButton).toHaveTextContent("BUTTON$EDIT_TITLE");
+  });
+
+  it("should enter edit mode when edit button is clicked", async () => {
+    const user = userEvent.setup();
+    renderConversationPanel();
+
+    const cards = await screen.findAllByTestId("conversation-card");
+
+    // Click ellipsis to open context menu
+    const ellipsisButton = within(cards[0]).getByTestId("ellipsis-button");
+    await user.click(ellipsisButton);
+
+    // Click edit button
+    const editButton = screen.getByTestId("edit-button");
+    await user.click(editButton);
+
+    // Should find input field instead of title text
+    const titleInput = within(cards[0]).getByTestId("conversation-card-title");
+    expect(titleInput).toBeInTheDocument();
+    expect(titleInput.tagName).toBe("INPUT");
+    expect(titleInput).toHaveValue("Conversation 1");
+    expect(titleInput).toHaveFocus();
+  });
+
+  it("should successfully update conversation title", async () => {
+    const user = userEvent.setup();
+
+    // Mock the updateConversation API call
+    const updateConversationSpy = vi.spyOn(OpenHands, "updateConversation");
+    updateConversationSpy.mockResolvedValue(true);
+
+    // Mock the toast function
+    const mockToast = vi.fn();
+    vi.mock("#/utils/custom-toast-handlers", () => ({
+      displaySuccessToast: mockToast,
+    }));
+
+    renderConversationPanel();
+
+    const cards = await screen.findAllByTestId("conversation-card");
+
+    // Enter edit mode
+    const ellipsisButton = within(cards[0]).getByTestId("ellipsis-button");
+    await user.click(ellipsisButton);
+
+    const editButton = screen.getByTestId("edit-button");
+    await user.click(editButton);
+
+    // Edit the title
+    const titleInput = within(cards[0]).getByTestId("conversation-card-title");
+    await user.clear(titleInput);
+    await user.type(titleInput, "Updated Title");
+
+    // Blur the input to save
+    await user.tab();
+
+    // Verify API call was made with correct parameters
+    expect(updateConversationSpy).toHaveBeenCalledWith("1", {
+      title: "Updated Title",
+    });
+  });
+
+  it("should save title when Enter key is pressed", async () => {
+    const user = userEvent.setup();
+
+    const updateConversationSpy = vi.spyOn(OpenHands, "updateConversation");
+    updateConversationSpy.mockResolvedValue(true);
+
+    renderConversationPanel();
+
+    const cards = await screen.findAllByTestId("conversation-card");
+
+    // Enter edit mode
+    const ellipsisButton = within(cards[0]).getByTestId("ellipsis-button");
+    await user.click(ellipsisButton);
+
+    const editButton = screen.getByTestId("edit-button");
+    await user.click(editButton);
+
+    // Edit the title and press Enter
+    const titleInput = within(cards[0]).getByTestId("conversation-card-title");
+    await user.clear(titleInput);
+    await user.type(titleInput, "Title Updated via Enter");
+    await user.keyboard("{Enter}");
+
+    // Verify API call was made
+    expect(updateConversationSpy).toHaveBeenCalledWith("1", {
+      title: "Title Updated via Enter",
+    });
+  });
+
+  it("should trim whitespace from title", async () => {
+    const user = userEvent.setup();
+
+    const updateConversationSpy = vi.spyOn(OpenHands, "updateConversation");
+    updateConversationSpy.mockResolvedValue(true);
+
+    renderConversationPanel();
+
+    const cards = await screen.findAllByTestId("conversation-card");
+
+    // Enter edit mode
+    const ellipsisButton = within(cards[0]).getByTestId("ellipsis-button");
+    await user.click(ellipsisButton);
+
+    const editButton = screen.getByTestId("edit-button");
+    await user.click(editButton);
+
+    // Edit the title with extra whitespace
+    const titleInput = within(cards[0]).getByTestId("conversation-card-title");
+    await user.clear(titleInput);
+    await user.type(titleInput, "   Trimmed Title   ");
+    await user.tab();
+
+    // Verify API call was made with trimmed title
+    expect(updateConversationSpy).toHaveBeenCalledWith("1", {
+      title: "Trimmed Title",
+    });
+
+    // Verify input shows trimmed value
+    expect(titleInput).toHaveValue("Trimmed Title");
+  });
+
+  it("should revert to original title when empty", async () => {
+    const user = userEvent.setup();
+
+    const updateConversationSpy = vi.spyOn(OpenHands, "updateConversation");
+    updateConversationSpy.mockResolvedValue(true);
+
+    renderConversationPanel();
+
+    const cards = await screen.findAllByTestId("conversation-card");
+
+    // Enter edit mode
+    const ellipsisButton = within(cards[0]).getByTestId("ellipsis-button");
+    await user.click(ellipsisButton);
+
+    const editButton = screen.getByTestId("edit-button");
+    await user.click(editButton);
+
+    // Clear the title completely
+    const titleInput = within(cards[0]).getByTestId("conversation-card-title");
+    await user.clear(titleInput);
+    await user.tab();
+
+    // Verify API was not called
+    expect(updateConversationSpy).not.toHaveBeenCalled();
+
+    // Verify input reverted to original value
+    expect(titleInput).toHaveValue("Conversation 1");
+  });
+
+  it("should handle API error when updating title", async () => {
+    const user = userEvent.setup();
+
+    const updateConversationSpy = vi.spyOn(OpenHands, "updateConversation");
+    updateConversationSpy.mockRejectedValue(new Error("API Error"));
+
+    vi.mock("#/utils/custom-toast-handlers", () => ({
+      displayErrorToast: vi.fn(),
+    }));
+
+    renderConversationPanel();
+
+    const cards = await screen.findAllByTestId("conversation-card");
+
+    // Enter edit mode
+    const ellipsisButton = within(cards[0]).getByTestId("ellipsis-button");
+    await user.click(ellipsisButton);
+
+    const editButton = screen.getByTestId("edit-button");
+    await user.click(editButton);
+
+    // Edit the title
+    const titleInput = within(cards[0]).getByTestId("conversation-card-title");
+    await user.clear(titleInput);
+    await user.type(titleInput, "Failed Update");
+    await user.tab();
+
+    // Verify API call was made
+    expect(updateConversationSpy).toHaveBeenCalledWith("1", {
+      title: "Failed Update",
+    });
+
+    // Wait for error handling
+    await waitFor(() => {
+      expect(updateConversationSpy).toHaveBeenCalled();
+    });
+  });
+
+  it("should close context menu when edit button is clicked", async () => {
+    const user = userEvent.setup();
+    renderConversationPanel();
+
+    const cards = await screen.findAllByTestId("conversation-card");
+
+    // Click ellipsis to open context menu
+    const ellipsisButton = within(cards[0]).getByTestId("ellipsis-button");
+    await user.click(ellipsisButton);
+
+    // Verify context menu is open
+    const contextMenu = screen.getByTestId("context-menu");
+    expect(contextMenu).toBeInTheDocument();
+
+    // Click edit button
+    const editButton = screen.getByTestId("edit-button");
+    await user.click(editButton);
+
+    // Verify context menu is closed
+    expect(screen.queryByTestId("context-menu")).not.toBeInTheDocument();
+  });
+
+  it("should not call API when title is unchanged", async () => {
+    const user = userEvent.setup();
+
+    const updateConversationSpy = vi.spyOn(OpenHands, "updateConversation");
+    updateConversationSpy.mockResolvedValue(true);
+
+    renderConversationPanel();
+
+    const cards = await screen.findAllByTestId("conversation-card");
+
+    // Enter edit mode
+    const ellipsisButton = within(cards[0]).getByTestId("ellipsis-button");
+    await user.click(ellipsisButton);
+
+    const editButton = screen.getByTestId("edit-button");
+    await user.click(editButton);
+
+    // Don't change the title, just blur
+    const titleInput = within(cards[0]).getByTestId("conversation-card-title");
+    await user.tab();
+
+    // Verify API was called with the same title (since handleConversationTitleChange will always be called)
+    expect(updateConversationSpy).toHaveBeenCalledWith("1", {
+      title: "Conversation 1",
+    });
+  });
+
+  it("should handle special characters in title", async () => {
+    const user = userEvent.setup();
+
+    const updateConversationSpy = vi.spyOn(OpenHands, "updateConversation");
+    updateConversationSpy.mockResolvedValue(true);
+
+    renderConversationPanel();
+
+    const cards = await screen.findAllByTestId("conversation-card");
+
+    // Enter edit mode
+    const ellipsisButton = within(cards[0]).getByTestId("ellipsis-button");
+    await user.click(ellipsisButton);
+
+    const editButton = screen.getByTestId("edit-button");
+    await user.click(editButton);
+
+    // Edit the title with special characters
+    const titleInput = within(cards[0]).getByTestId("conversation-card-title");
+    await user.clear(titleInput);
+    await user.type(titleInput, "Special @#$%^&*()_+ Characters");
+    await user.tab();
+
+    // Verify API call was made with special characters
+    expect(updateConversationSpy).toHaveBeenCalledWith("1", {
+      title: "Special @#$%^&*()_+ Characters",
+    });
+  });
 });
