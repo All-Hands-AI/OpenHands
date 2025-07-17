@@ -53,6 +53,7 @@ export interface GetConfigResponse {
   FEATURE_FLAGS: {
     ENABLE_BILLING: boolean;
     HIDE_LLM_SETTINGS: boolean;
+    HIDE_MICROAGENT_MANAGEMENT?: boolean;
   };
 }
 
@@ -84,7 +85,7 @@ export interface Conversation {
   title: string;
   selected_repository: string | null;
   selected_branch: string | null;
-  git_provider: string | null;
+  git_provider: Provider | null;
   last_updated_at: string;
   created_at: string;
   status: ConversationStatus;
