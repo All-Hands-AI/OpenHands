@@ -1,6 +1,8 @@
 import json
 from typing import TYPE_CHECKING
 
+from mcp.shared.exceptions import McpError
+
 if TYPE_CHECKING:
     from openhands.controller.agent import Agent
 
@@ -177,15 +179,31 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
 
     logger.debug(f'Matching client: {matching_client}')
 
-    # Call the tool - this will create a new connection internally
-    response = await matching_client.call_tool(action.name, action.arguments)
-    logger.debug(f'MCP response: {response}')
+    try:
+        # Call the tool - this will create a new connection internally
+        response = await matching_client.call_tool(action.name, action.arguments)
+        logger.debug(f'MCP response: {response}')
 
-    return MCPObservation(
-        content=json.dumps(response.model_dump(mode='json')),
-        name=action.name,
-        arguments=action.arguments,
-    )
+        observation = MCPObservation(
+            content=json.dumps(response.model_dump(mode='json')),
+            name=action.name,
+            arguments=action.arguments,
+        )
+        # Set the cause using the Event property
+        setattr(observation, '_cause', action.id)
+        return observation
+    except McpError as e:
+        # Handle MCP errors, including timeouts
+        logger.error(f'MCP error when calling tool {action.name}: {e}')
+        error_content = json.dumps({'isError': True, 'error': str(e), 'content': []})
+        observation = MCPObservation(
+            content=error_content,
+            name=action.name,
+            arguments=action.arguments,
+        )
+        # Set the cause using the Event property
+        setattr(observation, '_cause', action.id)
+        return observation
 
 
 async def add_mcp_tools_to_agent(agent: 'Agent', runtime: Runtime, memory: 'Memory'):
