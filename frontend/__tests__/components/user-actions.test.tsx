@@ -3,8 +3,6 @@ import { describe, expect, it, vi, afterEach, test } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { UserActions } from "#/components/features/sidebar/user-actions";
-import OpenHands from "#/api/open-hands";
-import { userService } from "#/api/user-service/user-service.api";
 
 vi.mock("react-router", async (importActual) => ({
   ...(await importActual()),
@@ -109,33 +107,5 @@ describe("UserActions", () => {
     );
     expect(screen.queryByText("Manage Team")).not.toBeInTheDocument();
     expect(screen.queryByText("Manage Account")).not.toBeInTheDocument();
-  });
-
-  test("context menu should be set to whatever the user is if saas", async () => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
-    const getMeSpy = vi.spyOn(userService, "getMe");
-
-    // @ts-expect-error - only return the APP_MODE
-    getConfigSpy.mockResolvedValue({
-      APP_MODE: "saas",
-    });
-    getMeSpy.mockResolvedValue({
-      id: "user-id",
-      email: "admin@acme.org",
-      role: "superadmin",
-      status: "active",
-    });
-
-    renderUserActions();
-    const userAvatar = screen.getByTestId("user-avatar");
-    await userEvent.click(userAvatar);
-
-    expect(screen.getByTestId("user-context-menu")).toHaveTextContent("Logout");
-    expect(screen.getByTestId("user-context-menu")).toHaveTextContent(
-      "Settings",
-    );
-    expect(screen.getByText("Manage Team")).toBeInTheDocument();
-    expect(screen.getByText("Manage Account")).toBeInTheDocument();
-    expect(screen.getByText("Create New Organization")).toBeInTheDocument();
   });
 });

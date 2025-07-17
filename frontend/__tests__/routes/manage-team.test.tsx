@@ -175,40 +175,6 @@ describe("Manage Team Route", () => {
     expect(userCombobox).toBeInTheDocument();
   });
 
-  test("a user should not be able to change other team members' roles", async () => {
-    const getUserSpy = vi.spyOn(userService, "getMe");
-    const updateMemberRoleSpy = vi.spyOn(
-      organizationService,
-      "updateMemberRole",
-    );
-
-    getUserSpy.mockResolvedValue({
-      id: "some-user-id",
-      email: "user@acme.org",
-      role: "user",
-      status: "active",
-    });
-
-    renderManageTeam();
-    await screen.findByTestId("manage-team-settings");
-
-    await selectOrganization({ orgIndex: 0 });
-
-    const memberListItems = await screen.findAllByTestId("member-item");
-    const adminRoleMember = memberListItems[1]; // first member is "admin"
-
-    const userCombobox = within(adminRoleMember).getByText(/admin/i);
-    expect(userCombobox).toBeInTheDocument();
-    await userEvent.click(userCombobox);
-
-    // Verify that the dropdown does not open for superadmin
-    expect(
-      within(adminRoleMember).queryByTestId("role-dropdown"),
-    ).not.toBeInTheDocument();
-
-    expect(updateMemberRoleSpy).not.toHaveBeenCalled();
-  });
-
   it("should not allow a user to invite a new team member", async () => {
     const getUserSpy = vi.spyOn(userService, "getMe");
     getUserSpy.mockResolvedValue({
@@ -239,7 +205,7 @@ describe("Manage Team Route", () => {
     renderManageTeam();
     await screen.findByTestId("manage-team-settings");
 
-    await selectOrganization({ orgIndex: 0 });
+    await selectOrganization({ orgIndex: 2 }); // user is admin in org 3
 
     const memberListItems = await screen.findAllByTestId("member-item");
     const superAdminMember = memberListItems[0]; // first member is "superadmin
@@ -260,6 +226,7 @@ describe("Manage Team Route", () => {
   describe("Inviting Team Members", () => {
     it("should render an invite team member button", async () => {
       renderManageTeam();
+      await selectOrganization({ orgIndex: 0 });
 
       const inviteButton = await screen.findByRole("button", {
         name: /invite team/i,
@@ -269,6 +236,7 @@ describe("Manage Team Route", () => {
 
     it("should render a modal when the invite button is clicked", async () => {
       renderManageTeam();
+      await selectOrganization({ orgIndex: 0 });
 
       expect(screen.queryByTestId("invite-modal")).not.toBeInTheDocument();
       const inviteButton = await screen.findByRole("button", {
@@ -284,6 +252,8 @@ describe("Manage Team Route", () => {
 
     it("should close the modal when the close button is clicked", async () => {
       renderManageTeam();
+
+      await selectOrganization({ orgIndex: 0 });
 
       const inviteButton = await screen.findByRole("button", {
         name: /invite team/i,

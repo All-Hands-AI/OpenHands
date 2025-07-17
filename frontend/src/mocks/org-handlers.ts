@@ -5,10 +5,9 @@ import {
   OrganizationUserRole,
 } from "#/types/org";
 
-const MOCK_ME: OrganizationMember = {
+const MOCK_ME: Omit<OrganizationMember, "role"> = {
   id: "99",
   email: "me@acme.org",
-  role: "admin",
   status: "active",
 };
 
@@ -102,7 +101,36 @@ export const ORGS_AND_MEMBERS: Record<string, OrganizationMember[]> = {
 const orgs = new Map(INITIAL_MOCK_ORGS.map((org) => [org.id, org]));
 
 export const ORG_HANDLERS = [
-  http.get("/api/users/me", () => HttpResponse.json(MOCK_ME)),
+  http.get("/api/organizations/:orgId/me", ({ params }) => {
+    const orgId = params.orgId?.toString();
+    if (!orgId || !ORGS_AND_MEMBERS[orgId]) {
+      return HttpResponse.json(
+        { error: "Organization not found" },
+        { status: 404 },
+      );
+    }
+
+    let role: OrganizationUserRole = "user";
+    switch (orgId) {
+      case "1":
+        role = "superadmin";
+        break;
+      case "2":
+        role = "user";
+        break;
+      case "3":
+        role = "admin";
+        break;
+      default:
+        role = "user";
+    }
+
+    const me: OrganizationMember = {
+      ...MOCK_ME,
+      role,
+    };
+    return HttpResponse.json(me);
+  }),
 
   http.get("/api/organizations/:orgId/members", ({ params }) => {
     const orgId = params.orgId?.toString();

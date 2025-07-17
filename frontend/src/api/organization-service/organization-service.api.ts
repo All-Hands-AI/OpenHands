@@ -6,6 +6,14 @@ import {
 import { openHands } from "../open-hands-axios";
 
 export const organizationService = {
+  getMe: async ({ orgId }: { orgId: string }) => {
+    const { data } = await openHands.get<OrganizationMember>(
+      `/api/organizations/${orgId}/me`,
+    );
+
+    return data;
+  },
+
   createOrganization: async ({ name }: { name: string }) => {
     const { data } = await openHands.post("/api/organizations", {
       name,

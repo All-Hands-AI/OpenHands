@@ -211,9 +211,7 @@ function AddCreditsModal({ onClose }: AddCreditsModalProps) {
 function ManageOrg() {
   const { data: me } = useMe();
   const { data: organization } = useOrganization();
-  const { data: organizationPaymentInfo } = useOrganizationPaymentInfo({
-    orgId: "1",
-  });
+  const { data: organizationPaymentInfo } = useOrganizationPaymentInfo();
 
   const [addCreditsFormVisible, setAddCreditsFormVisible] =
     React.useState(false);
