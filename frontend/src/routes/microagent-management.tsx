@@ -4,6 +4,7 @@ import { Route } from "./+types/settings";
 import { queryClient } from "#/query-client-config";
 import { GetConfigResponse } from "#/api/open-hands.types";
 import OpenHands from "#/api/open-hands";
+import { MicroagentManagementMain } from "#/components/features/microagent-management/microagent-management-main";
 
 export const clientLoader = async ({ request }: Route.ClientLoaderArgs) => {
   const url = new URL(request.url);
@@ -29,7 +30,7 @@ function MicroagentManagement() {
   return (
     <div className="w-full h-full flex rounded-lg border border-[#525252] bg-[#24272E]">
       <MicroagentManagementSidebar />
-      <div className="flex-1" />
+      <MicroagentManagementMain />
     </div>
   );
 }
