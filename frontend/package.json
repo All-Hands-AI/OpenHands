@@ -7,7 +7,7 @@
     "node": ">=22.0.0"
   },
   "dependencies": {
-    "@heroui/react": "^2.8.0",
+    "@heroui/react": "^2.8.1",
     "@microlink/react-json-view": "^1.26.2",
     "@monaco-editor/react": "^4.7.0-rc.0",
     "@react-router/node": "^7.6.3",
@@ -30,7 +30,7 @@
     "i18next-browser-languagedetector": "^8.2.0",
     "i18next-http-backend": "^3.0.2",
     "isbot": "^5.1.28",
-    "jose": "^6.0.11",
+    "jose": "^6.0.12",
     "lucide-react": "^0.525.0",
     "monaco-editor": "^0.52.2",
     "posthog-js": "^1.257.0",

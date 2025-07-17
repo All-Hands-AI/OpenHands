@@ -1,4 +1,4 @@
-import { MicroagentCard } from "./microagent-management-microagent-card";
+import { MicroagentManagementMicroagentCard } from "./microagent-management-microagent-card";
 import { MicroagentManagementAddMicroagentButton } from "./microagent-management-add-microagent-button";
 
 export function MicroagentManagementMicroagents() {
@@ -30,7 +30,7 @@ export function MicroagentManagementMicroagents() {
       </div>
       {microagents.map((microagent) => (
         <div key={microagent.id} className="pb-4">
-          <MicroagentCard microagent={microagent} />
+          <MicroagentManagementMicroagentCard microagent={microagent} />
         </div>
       ))}
     </div>

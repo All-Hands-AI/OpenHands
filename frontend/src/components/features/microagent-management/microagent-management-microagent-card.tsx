@@ -8,11 +8,13 @@ export interface Microagent {
   createdAt: string;
 }
 
-interface MicroagentCardProps {
+interface MicroagentManagementMicroagentCardProps {
   microagent: Microagent;
 }
 
-export function MicroagentCard({ microagent }: MicroagentCardProps) {
+export function MicroagentManagementMicroagentCard({
+  microagent,
+}: MicroagentManagementMicroagentCardProps) {
   const { t } = useTranslation();
 
   return (
