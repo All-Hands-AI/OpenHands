@@ -244,11 +244,13 @@ async def run_session(
                     )
                     # Notify the user
                     print_formatted_text(
-                        HTML('<skyblue>Okay, please tell me what I should do instead.</skyblue>')
+                        HTML(
+                            '<skyblue>Okay, please tell me what I should do instead.</skyblue>'
+                        )
                     )
                     # Solicit replacement isntructions
                     await prompt_for_next_task(AgentState.AWAITING_USER_INPUT)
-                else: # 'no' or fallback
+                else:  # 'no' or fallback
                     event_stream.add_event(
                         ChangeAgentStateAction(AgentState.USER_REJECTED),
                         EventSource.USER,

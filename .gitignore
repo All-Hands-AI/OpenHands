@@ -130,6 +130,9 @@ env.bak/
 .env.bak
 venv.bak/
 *venv/
+.repomix/
+repomix-output.txt
+
 
 # Spyder project settings
 .spyderproject

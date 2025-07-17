@@ -597,10 +597,9 @@ async def read_confirmation_input(config: OpenHandsConfig) -> str:
         ]
 
         # keep the outer coroutine responsive by using asyncio.to_thread which puts the blocking call app.run() of cli_confirm() in a separate thread
-        index = await asyncio.to_thread(cli_confirm,
-                                        config,
-                                        'Choose an option:',
-                                        choices)
+        index = await asyncio.to_thread(
+            cli_confirm, config, 'Choose an option:', choices
+        )
 
         return {0: 'yes', 1: 'no', 2: 'always', 3: 'edit'}.get(index, 'no')
 
