@@ -5078,14 +5078,14 @@ types-tqdm = "*"
 
 [[package]]
 name = "litellm"
-version = "1.72.7"
+version = "1.74.4"
 description = "Library to easily interface with LLM API providers"
 optional = false
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 groups = ["main"]
 files = [
-    {file = "litellm-1.72.7-py3-none-any.whl", hash = "sha256:704317ca71b00ca7fb164e8367e6559712605ed7f96f6d7fdb8b1276904a95e9"},
-    {file = "litellm-1.72.7.tar.gz", hash = "sha256:9bfdc156ebd8cb2fc869e0a388931b64468c4fd534df6a2f6e27f9cba2dafcb9"},
+    {file = "litellm-1.74.4-py3-none-any.whl", hash = "sha256:28de09c9d4cdbe322402f94236ec8dbac9edc5356e2f3b628b9bab0fb39284e4"},
+    {file = "litellm-1.74.4.tar.gz", hash = "sha256:ace3dd8c052b57b728a2dbd38e7061cf95e3506b13a58c61da39902f6ee4a6be"},
 ]
 
 [package.dependencies]
@@ -5096,7 +5096,7 @@ importlib-metadata = ">=6.8.0"
 jinja2 = ">=3.1.2,<4.0.0"
 jsonschema = ">=4.22.0,<5.0.0"
 openai = ">=1.68.2"
-pydantic = ">=2.0.0,<3.0.0"
+pydantic = ">=2.5.0,<3.0.0"
 python-dotenv = ">=0.2.0"
 tiktoken = ">=0.7.0"
 tokenizers = "*"
@@ -5104,7 +5104,7 @@ tokenizers = "*"
 [package.extras]
 caching = ["diskcache (>=5.6.1,<6.0.0)"]
 extra-proxy = ["azure-identity (>=1.15.0,<2.0.0)", "azure-keyvault-secrets (>=4.8.0,<5.0.0)", "google-cloud-kms (>=2.21.3,<3.0.0)", "prisma (==0.11.0)", "redisvl (>=0.4.1,<0.5.0) ; python_version >= \"3.9\" and python_version < \"3.14\"", "resend (>=0.8.0,<0.9.0)"]
-proxy = ["PyJWT (>=2.8.0,<3.0.0)", "apscheduler (>=3.10.4,<4.0.0)", "backoff", "boto3 (==1.34.34)", "cryptography (>=43.0.1,<44.0.0)", "fastapi (>=0.115.5,<0.116.0)", "fastapi-sso (>=0.16.0,<0.17.0)", "gunicorn (>=23.0.0,<24.0.0)", "litellm-enterprise (==0.1.7)", "litellm-proxy-extras (==0.2.5)", "mcp (==1.9.3) ; python_version >= \"3.10\"", "orjson (>=3.9.7,<4.0.0)", "pynacl (>=1.5.0,<2.0.0)", "python-multipart (>=0.0.18,<0.0.19)", "pyyaml (>=6.0.1,<7.0.0)", "rich (==13.7.1)", "rq", "uvicorn (>=0.29.0,<0.30.0)", "uvloop (>=0.21.0,<0.22.0) ; sys_platform != \"win32\"", "websockets (>=13.1.0,<14.0.0)"]
+proxy = ["PyJWT (>=2.8.0,<3.0.0)", "apscheduler (>=3.10.4,<4.0.0)", "azure-identity (>=1.15.0,<2.0.0)", "azure-storage-blob (>=12.25.1,<13.0.0)", "backoff", "boto3 (==1.34.34)", "cryptography (>=43.0.1,<44.0.0)", "fastapi (>=0.115.5,<0.116.0)", "fastapi-sso (>=0.16.0,<0.17.0)", "gunicorn (>=23.0.0,<24.0.0)", "litellm-enterprise (==0.1.13)", "litellm-proxy-extras (==0.2.10)", "mcp (==1.10.0) ; python_version >= \"3.10\"", "orjson (>=3.9.7,<4.0.0)", "pynacl (>=1.5.0,<2.0.0)", "python-multipart (>=0.0.18,<0.0.19)", "pyyaml (>=6.0.1,<7.0.0)", "rich (==13.7.1)", "rq", "uvicorn (>=0.29.0,<0.30.0)", "uvloop (>=0.21.0,<0.22.0) ; sys_platform != \"win32\"", "websockets (>=13.1.0,<14.0.0)"]
 utils = ["numpydoc"]
 
 [[package]]
@@ -11790,4 +11790,4 @@ third-party-runtimes = ["daytona", "e2b", "modal", "runloop-api-client"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12,<3.14"
-content-hash = "74ff27166aed7832f66fb828ceb1ec8d734d3766f0432e0542f4a444703f94c1"
+content-hash = "d219a686c03bbae18b369bf79d34fc847b7e0191343d3264c28d2f713f5241a3"
