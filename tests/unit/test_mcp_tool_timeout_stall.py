@@ -10,10 +10,10 @@ from mcp import McpError
 from openhands.controller.agent import Agent
 from openhands.controller.agent_controller import AgentController, AgentState
 from openhands.events.action.mcp import MCPAction
-from openhands.events.event import EventSource
-from openhands.events.stream import EventStream
-from openhands.events.observation.mcp import MCPObservation
 from openhands.events.action.message import SystemMessageAction
+from openhands.events.event import EventSource
+from openhands.events.observation.mcp import MCPObservation
+from openhands.events.stream import EventStream
 from openhands.mcp.client import MCPClient
 from openhands.mcp.tool import MCPClientTool
 from openhands.mcp.utils import call_tool_mcp
@@ -21,14 +21,14 @@ from openhands.mcp.utils import call_tool_mcp
 
 class MockConfig:
     """Mock config for testing."""
-    
+
     def __init__(self):
         self.max_message_chars = 10000
 
 
 class MockLLM:
     """Mock LLM for testing."""
-    
+
     def __init__(self):
         self.metrics = None
         self.config = MockConfig()
@@ -49,7 +49,7 @@ class MockAgent(Agent):
 
     def get_system_message(self):
         """Mock get_system_message method."""
-        return SystemMessageAction(content="System message")
+        return SystemMessageAction(content='System message')
 
 
 @pytest.mark.asyncio
@@ -118,26 +118,26 @@ async def test_mcp_tool_timeout_error_handling():
     # Before the fix, this would raise an exception and not return an observation
     # Now with the fix, it should return an error observation
     result = await call_tool_mcp([mock_client], mcp_action)
-    
+
     # Verify that the function returns an error observation
     assert isinstance(result, MCPObservation)
     content = json.loads(result.content)
     assert content['isError'] is True
     assert 'timed out' in content['error'].lower()
-    
+
     # The agent controller would now be able to continue processing
     # because it received an error observation instead of an exception
-    
+
     # Verify that the agent is still in the RUNNING state
     assert controller.get_agent_state() == AgentState.RUNNING
-    
+
     # Verify that the agent can continue processing
     agent.next_action = MCPAction(
         name='another_tool',
         arguments={'param': 'value'},
         thought='Another action after timeout',
     )
-    
+
     # The agent controller would be able to step because it received an observation
     # This demonstrates that the fix is working
 

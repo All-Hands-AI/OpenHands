@@ -5,14 +5,14 @@ if TYPE_CHECKING:
     from openhands.controller.agent import Agent
 
 
+from mcp import McpError
+
 from openhands.core.config.mcp_config import (
     MCPConfig,
     MCPSHTTPServerConfig,
     MCPSSEServerConfig,
 )
 from openhands.core.logger import openhands_logger as logger
-from mcp import McpError
-
 from openhands.events.action.mcp import MCPAction
 from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
@@ -192,11 +192,7 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
     except McpError as e:
         # Handle MCP errors by returning an error observation instead of raising
         logger.error(f'MCP error when calling tool {action.name}: {e}')
-        error_content = json.dumps({
-            'isError': True,
-            'error': str(e),
-            'content': []
-        })
+        error_content = json.dumps({'isError': True, 'error': str(e), 'content': []})
         return MCPObservation(
             content=error_content,
             name=action.name,
