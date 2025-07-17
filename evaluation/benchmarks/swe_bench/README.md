@@ -38,6 +38,10 @@ Please follow instruction [here](../../README.md#setup) to setup your local deve
 > - If your LLM config has temperature=0, we will automatically use temperature=0.1 for the 2nd and 3rd attempts
 >
 > To enable this iterative protocol, set `export ITERATIVE_EVAL_MODE=true`
+>
+> **Skipping errors on build**
+>
+> For debugging purposes, you can set `export EVAL_SKIP_MAXIMUM_RETRIES_EXCEEDED=true` to continue evaluation even when instances reach maximum retries. After evaluation completes, check `maximum_retries_exceeded.jsonl` for a list of failed instances, fix those issues, and then run the evaluation again with `export EVAL_SKIP_MAXIMUM_RETRIES_EXCEEDED=false`.
 
 
 ### Running Locally with Docker
