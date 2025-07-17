@@ -59,6 +59,7 @@ CACHE_PROMPT_SUPPORTED_MODELS = [
     'claude-3-haiku-20240307',
     'claude-3-opus-20240229',
     'claude-sonnet-4-20250514',
+    'claude-sonnet-4',
     'claude-opus-4-20250514',
 ]
 
@@ -72,6 +73,7 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'claude-3.5-haiku',
     'claude-3-5-haiku-20241022',
     'claude-sonnet-4-20250514',
+    'claude-sonnet-4',
     'claude-opus-4-20250514',
     'gpt-4o-mini',
     'gpt-4o',
