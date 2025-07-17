@@ -56,18 +56,18 @@ export function AuthModal({
     }
   };
 
-  // If providersConfigured is undefined or empty, show all providers by default
+  // Only show buttons if providers are configured and include the specific provider
   const showGithub =
-    !providersConfigured ||
-    providersConfigured.length === 0 ||
+    providersConfigured &&
+    providersConfigured.length > 0 &&
     providersConfigured.includes("github");
   const showGitlab =
-    !providersConfigured ||
-    providersConfigured.length === 0 ||
+    providersConfigured &&
+    providersConfigured.length > 0 &&
     providersConfigured.includes("gitlab");
   const showBitbucket =
-    !providersConfigured ||
-    providersConfigured.length === 0 ||
+    providersConfigured &&
+    providersConfigured.length > 0 &&
     providersConfigured.includes("bitbucket");
 
   return (
