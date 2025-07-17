@@ -189,25 +189,79 @@ This is a test knowledge microagent for testing purposes.
     shutil.rmtree(temp_dir, ignore_errors=True)
 
 
+@pytest.fixture
+def mock_repository():
+    """Create a mock repository for testing."""
+    return Repository(
+        id='123456',
+        full_name='test/repo',
+        git_provider=ProviderType.GITHUB,
+        is_public=True,
+        stargazers_count=100,
+    )
+
+
+@pytest.fixture
+def mock_provider_handler(mock_repository):
+    """Create a mock provider handler for testing."""
+    handler = MagicMock()
+    handler.verify_repo_provider = AsyncMock(return_value=mock_repository)
+    handler.get_authenticated_git_url = AsyncMock(
+        return_value='https://ghp_test_token@github.com/test/repo.git'
+    )
+    return handler
+
+
+@pytest.fixture
+def mock_subprocess_result():
+    """Create a mock subprocess result for testing."""
+    result = MagicMock()
+    result.returncode = 0
+    result.stderr = ''
+    return result
+
+
+@pytest.fixture
+def mock_microagents_data(mock_repo_microagent, mock_knowledge_microagent):
+    """Create mock microagents data for testing."""
+    return (
+        {'test_repo_agent': mock_repo_microagent},
+        {'test_knowledge_agent': mock_knowledge_microagent},
+    )
+
+
 class TestGetRepositoryMicroagents:
     """Test cases for the get_repository_microagents API endpoint."""
 
     @pytest.mark.asyncio
+    @patch(
+        'openhands.server.routes.git._get_file_creation_time',
+        return_value=datetime.now(),
+    )
+    @patch('openhands.server.routes.git.tempfile.mkdtemp')
+    @patch('openhands.server.routes.git.load_microagents_from_dir')
+    @patch('openhands.server.routes.git.subprocess.run')
+    @patch('openhands.server.routes.git.ProviderHandler')
     async def test_get_microagents_success(
         self,
+        mock_provider_handler_class,
+        mock_subprocess_run,
+        mock_load_microagents,
+        mock_mkdtemp,
+        mock_get_file_creation_time,
         test_client,
         mock_provider_tokens,
         mock_repo_microagent,
         mock_knowledge_microagent,
         temp_microagents_dir,
+        mock_microagents_data,
     ):
         """Test successful retrieval of microagents from a repository."""
-        # Override the default provider tokens with the mock ones
+        # Setup mocks
         test_client.app.dependency_overrides[get_provider_tokens] = (
             lambda: mock_provider_tokens
         )
 
-        # Mock ProviderHandler
         mock_provider_handler = MagicMock()
         mock_repository = Repository(
             id='123456',
@@ -219,125 +273,97 @@ class TestGetRepositoryMicroagents:
         mock_provider_handler.verify_repo_provider = AsyncMock(
             return_value=mock_repository
         )
-        # Mock the new get_authenticated_git_url method
         mock_provider_handler.get_authenticated_git_url = AsyncMock(
             return_value='https://ghp_test_token@github.com/test/repo.git'
         )
+        mock_provider_handler_class.return_value = mock_provider_handler
 
-        # Mock subprocess.run for git clone
         mock_result = MagicMock()
         mock_result.returncode = 0
         mock_result.stderr = ''
+        mock_subprocess_run.return_value = mock_result
 
-        # Mock load_microagents_from_dir
-        mock_repo_agents = {'test_repo_agent': mock_repo_microagent}
-        mock_knowledge_agents = {'test_knowledge_agent': mock_knowledge_microagent}
+        mock_load_microagents.return_value = mock_microagents_data
+        mock_mkdtemp.return_value = temp_microagents_dir
 
-        with patch(
-            'openhands.server.routes.git.ProviderHandler',
-            return_value=mock_provider_handler,
-        ):
-            with patch(
-                'openhands.server.routes.git.subprocess.run',
-                return_value=mock_result,
-            ):
-                with patch(
-                    'openhands.server.routes.git.load_microagents_from_dir',
-                    return_value=(mock_repo_agents, mock_knowledge_agents),
-                ):
-                    with patch(
-                        'openhands.server.routes.git.tempfile.mkdtemp',
-                        return_value=temp_microagents_dir,
-                    ):
-                        with patch(
-                            'openhands.server.routes.git._get_file_creation_time',
-                            return_value=datetime.now(),
-                        ):
-                            response = test_client.get(
-                                '/api/user/repository/test/repo/microagents'
-                            )
+        # Execute test
+        response = test_client.get('/api/user/repository/test/repo/microagents')
 
-                            assert response.status_code == 200
-                            data = response.json()
-                            assert len(data) == 2
+        # Assertions
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 2
 
-                            # Check repo microagent
-                            repo_agent = next(
-                                m for m in data if m['name'] == 'test_repo_agent'
-                            )
-                            assert repo_agent['type'] == 'repo'
-                            assert (
-                                repo_agent['content']
-                                == 'This is a test repository microagent for testing purposes.'
-                            )
-                            assert repo_agent['triggers'] == []
-                            assert len(repo_agent['inputs']) == 1
-                            assert repo_agent['inputs'][0]['name'] == 'query'
-                            assert repo_agent['tools'] == ['git', 'file_editor']
-                            assert 'created_at' in repo_agent
-                            assert 'git_provider' in repo_agent
-                            assert repo_agent['git_provider'] == 'github'
+        # Check repo microagent
+        repo_agent = next(m for m in data if m['name'] == 'test_repo_agent')
+        assert repo_agent['type'] == 'repo'
+        assert (
+            repo_agent['content']
+            == 'This is a test repository microagent for testing purposes.'
+        )
+        assert repo_agent['triggers'] == []
+        assert len(repo_agent['inputs']) == 1
+        assert repo_agent['inputs'][0]['name'] == 'query'
+        assert repo_agent['tools'] == ['git', 'file_editor']
+        assert 'created_at' in repo_agent
+        assert 'git_provider' in repo_agent
+        assert repo_agent['git_provider'] == 'github'
 
-                            # Check knowledge microagent - using actual returned triggers
-                            knowledge_agent = next(
-                                m for m in data if m['name'] == 'test_knowledge_agent'
-                            )
-                            assert knowledge_agent['type'] == 'knowledge'
-                            assert (
-                                knowledge_agent['content']
-                                == 'This is a test knowledge microagent for testing purposes.'
-                            )
-                            # The triggers come from the actual microagent object
-                            assert (
-                                knowledge_agent['triggers']
-                                == mock_knowledge_microagent.triggers
-                            )
-                            assert len(knowledge_agent['inputs']) == 1
-                            assert knowledge_agent['inputs'][0]['name'] == 'topic'
-                            assert knowledge_agent['tools'] == [
-                                'search',
-                                'fetch',
-                            ]
-                            assert 'created_at' in knowledge_agent
-                            assert 'git_provider' in knowledge_agent
-                            assert knowledge_agent['git_provider'] == 'github'
+        # Check knowledge microagent
+        knowledge_agent = next(m for m in data if m['name'] == 'test_knowledge_agent')
+        assert knowledge_agent['type'] == 'knowledge'
+        assert (
+            knowledge_agent['content']
+            == 'This is a test knowledge microagent for testing purposes.'
+        )
+        assert knowledge_agent['triggers'] == mock_knowledge_microagent.triggers
+        assert len(knowledge_agent['inputs']) == 1
+        assert knowledge_agent['inputs'][0]['name'] == 'topic'
+        assert knowledge_agent['tools'] == ['search', 'fetch']
+        assert 'created_at' in knowledge_agent
+        assert 'git_provider' in knowledge_agent
+        assert knowledge_agent['git_provider'] == 'github'
 
     @pytest.mark.asyncio
+    @patch('openhands.server.routes.git.ProviderHandler')
     async def test_get_microagents_authentication_error(
-        self, test_client, mock_provider_tokens
+        self, mock_provider_handler_class, test_client, mock_provider_tokens
     ):
         """Test authentication error when verifying repository."""
-        # Override the dependency to use mock provider tokens
+        # Setup mocks
         test_client.app.dependency_overrides[get_provider_tokens] = (
             lambda: mock_provider_tokens
         )
 
-        # Mock ProviderHandler to raise AuthenticationError
         mock_provider_handler = MagicMock()
         mock_provider_handler.verify_repo_provider = AsyncMock(
             side_effect=AuthenticationError('Invalid credentials')
         )
+        mock_provider_handler_class.return_value = mock_provider_handler
 
-        with patch(
-            'openhands.server.routes.git.ProviderHandler',
-            return_value=mock_provider_handler,
-        ):
-            response = test_client.get('/api/user/repository/test/repo/microagents')
+        # Execute test
+        response = test_client.get('/api/user/repository/test/repo/microagents')
 
-            assert response.status_code == 401
-            assert response.json() == 'Invalid credentials'
+        # Assertions
+        assert response.status_code == 401
+        assert response.json() == 'Invalid credentials'
 
     @pytest.mark.asyncio
+    @patch('openhands.server.routes.git.subprocess.run')
+    @patch('openhands.server.routes.git.ProviderHandler')
     async def test_get_microagents_clone_failure(
-        self, test_client, mock_provider_tokens
+        self,
+        mock_provider_handler_class,
+        mock_subprocess_run,
+        test_client,
+        mock_provider_tokens,
     ):
         """Test error when git clone fails."""
-        # Override the dependency to use mock provider tokens
+        # Setup mocks
         test_client.app.dependency_overrides[get_provider_tokens] = (
             lambda: mock_provider_tokens
         )
 
-        # Mock ProviderHandler
         mock_provider_handler = MagicMock()
         mock_repository = Repository(
             id='123456',
@@ -349,40 +375,42 @@ class TestGetRepositoryMicroagents:
         mock_provider_handler.verify_repo_provider = AsyncMock(
             return_value=mock_repository
         )
-        # Mock the new get_authenticated_git_url method
         mock_provider_handler.get_authenticated_git_url = AsyncMock(
             return_value='https://ghp_test_token@github.com/test/repo.git'
         )
+        mock_provider_handler_class.return_value = mock_provider_handler
 
         # Mock subprocess.run to fail
         mock_result = MagicMock()
         mock_result.returncode = 1
         mock_result.stderr = 'Repository not found'
+        mock_subprocess_run.return_value = mock_result
 
-        with patch(
-            'openhands.server.routes.git.ProviderHandler',
-            return_value=mock_provider_handler,
-        ):
-            with patch(
-                'openhands.server.routes.git.subprocess.run',
-                return_value=mock_result,
-            ):
-                response = test_client.get('/api/user/repository/test/repo/microagents')
+        # Execute test
+        response = test_client.get('/api/user/repository/test/repo/microagents')
 
-                assert response.status_code == 500
-                assert 'Failed to clone repository' in response.json()
+        # Assertions
+        assert response.status_code == 500
+        assert 'Failed to clone repository' in response.json()
 
     @pytest.mark.asyncio
+    @patch('openhands.server.routes.git.tempfile.mkdtemp')
+    @patch('openhands.server.routes.git.subprocess.run')
+    @patch('openhands.server.routes.git.ProviderHandler')
     async def test_get_microagents_no_microagents_directory(
-        self, test_client, mock_provider_tokens
+        self,
+        mock_provider_handler_class,
+        mock_subprocess_run,
+        mock_mkdtemp,
+        test_client,
+        mock_provider_tokens,
     ):
         """Test when repository has no .openhands/microagents directory."""
-        # Override the dependency to use mock provider tokens
+        # Setup mocks
         test_client.app.dependency_overrides[get_provider_tokens] = (
             lambda: mock_provider_tokens
         )
 
-        # Mock ProviderHandler
         mock_provider_handler = MagicMock()
         mock_repository = Repository(
             id='123456',
@@ -394,55 +422,47 @@ class TestGetRepositoryMicroagents:
         mock_provider_handler.verify_repo_provider = AsyncMock(
             return_value=mock_repository
         )
-        # Mock the new get_authenticated_git_url method
         mock_provider_handler.get_authenticated_git_url = AsyncMock(
             return_value='https://ghp_test_token@github.com/test/repo.git'
         )
+        mock_provider_handler_class.return_value = mock_provider_handler
 
         # Mock subprocess.run for successful clone
         mock_result = MagicMock()
         mock_result.returncode = 0
         mock_result.stderr = ''
+        mock_subprocess_run.return_value = mock_result
 
-        # Create temporary directory without microagents
-        temp_dir = tempfile.mkdtemp()
-        repo_dir = Path(temp_dir) / 'repo'
-        repo_dir.mkdir(exist_ok=True)
+        # Mock tempfile.mkdtemp to return a path that doesn't have microagents
+        temp_dir = '/tmp/test_no_microagents'
+        mock_mkdtemp.return_value = temp_dir
 
-        try:
-            with patch(
-                'openhands.server.routes.git.ProviderHandler',
-                return_value=mock_provider_handler,
-            ):
-                with patch(
-                    'openhands.server.routes.git.subprocess.run',
-                    return_value=mock_result,
-                ):
-                    with patch(
-                        'openhands.server.routes.git.tempfile.mkdtemp',
-                        return_value=temp_dir,
-                    ):
-                        response = test_client.get(
-                            '/api/user/repository/test/repo/microagents'
-                        )
+        # Execute test
+        response = test_client.get('/api/user/repository/test/repo/microagents')
 
-                        assert response.status_code == 200
-                        data = response.json()
-                        assert data == []
-        finally:
-            shutil.rmtree(temp_dir, ignore_errors=True)
+        # Assertions
+        assert response.status_code == 200
+        data = response.json()
+        assert data == []
 
     @pytest.mark.asyncio
+    @patch('openhands.server.routes.git.load_microagents_from_dir')
+    @patch('openhands.server.routes.git.subprocess.run')
+    @patch('openhands.server.routes.git.ProviderHandler')
     async def test_get_microagents_empty_directory(
-        self, test_client, mock_provider_tokens
+        self,
+        mock_provider_handler_class,
+        mock_subprocess_run,
+        mock_load_microagents,
+        test_client,
+        mock_provider_tokens,
     ):
         """Test when microagents directory exists but is empty."""
-        # Override the dependency to use mock provider tokens
+        # Setup mocks
         test_client.app.dependency_overrides[get_provider_tokens] = (
             lambda: mock_provider_tokens
         )
 
-        # Mock ProviderHandler
         mock_provider_handler = MagicMock()
         mock_repository = Repository(
             id='123456',
@@ -454,46 +474,49 @@ class TestGetRepositoryMicroagents:
         mock_provider_handler.verify_repo_provider = AsyncMock(
             return_value=mock_repository
         )
-        # Mock the new get_authenticated_git_url method
         mock_provider_handler.get_authenticated_git_url = AsyncMock(
             return_value='https://ghp_test_token@github.com/test/repo.git'
         )
+        mock_provider_handler_class.return_value = mock_provider_handler
 
         # Mock subprocess.run for successful clone
         mock_result = MagicMock()
         mock_result.returncode = 0
         mock_result.stderr = ''
+        mock_subprocess_run.return_value = mock_result
 
         # Mock load_microagents_from_dir to return empty results
-        mock_repo_agents = {}
-        mock_knowledge_agents = {}
+        mock_load_microagents.return_value = ({}, {})
 
-        with patch(
-            'openhands.server.routes.git.ProviderHandler',
-            return_value=mock_provider_handler,
-        ):
-            with patch(
-                'openhands.server.routes.git.subprocess.run',
-                return_value=mock_result,
-            ):
-                with patch(
-                    'openhands.server.routes.git.load_microagents_from_dir',
-                    return_value=(mock_repo_agents, mock_knowledge_agents),
-                ):
-                    response = test_client.get(
-                        '/api/user/repository/test/repo/microagents'
-                    )
+        # Execute test
+        response = test_client.get('/api/user/repository/test/repo/microagents')
 
-                    assert response.status_code == 200
-                    data = response.json()
-                    assert data == []
+        # Assertions
+        assert response.status_code == 200
+        data = response.json()
+        assert data == []
 
     @pytest.mark.asyncio
+    @patch(
+        'openhands.server.routes.git._get_file_creation_time',
+        return_value=datetime.now(),
+    )
+    @patch('openhands.server.routes.git.tempfile.mkdtemp')
+    @patch('openhands.server.routes.git.load_microagents_from_dir')
+    @patch('openhands.server.routes.git.subprocess.run')
+    @patch('openhands.server.routes.git.ProviderHandler')
     async def test_get_microagents_different_providers(
-        self, test_client, mock_repo_microagent
+        self,
+        mock_provider_handler_class,
+        mock_subprocess_run,
+        mock_load_microagents,
+        mock_mkdtemp,
+        mock_get_file_creation_time,
+        test_client,
+        mock_repo_microagent,
     ):
         """Test microagents endpoint with GitHub provider."""
-        # Test specifically with GitHub provider
+        # Setup mocks
         provider_tokens = MappingProxyType(
             {
                 ProviderType.GITHUB: ProviderToken(
@@ -501,13 +524,10 @@ class TestGetRepositoryMicroagents:
                 )
             }
         )
-
-        # Override the dependency to use specific provider tokens
         test_client.app.dependency_overrides[get_provider_tokens] = (
             lambda: provider_tokens
         )
 
-        # Mock ProviderHandler
         mock_provider_handler = MagicMock()
         mock_repository = Repository(
             id='123456',
@@ -519,15 +539,16 @@ class TestGetRepositoryMicroagents:
         mock_provider_handler.verify_repo_provider = AsyncMock(
             return_value=mock_repository
         )
-        # Mock the new get_authenticated_git_url method
         mock_provider_handler.get_authenticated_git_url = AsyncMock(
             return_value='https://ghp_test_token@github.com/test/repo.git'
         )
+        mock_provider_handler_class.return_value = mock_provider_handler
 
         # Mock subprocess.run for successful clone
         mock_result = MagicMock()
         mock_result.returncode = 0
         mock_result.stderr = ''
+        mock_subprocess_run.return_value = mock_result
 
         # Create temporary directory with microagents
         temp_dir = tempfile.mkdtemp()
@@ -537,52 +558,47 @@ class TestGetRepositoryMicroagents:
         # Mock load_microagents_from_dir
         mock_repo_agents = {'test_repo_agent': mock_repo_microagent}
         mock_knowledge_agents = {}
+        mock_load_microagents.return_value = (mock_repo_agents, mock_knowledge_agents)
+        mock_mkdtemp.return_value = temp_dir
 
         try:
-            with patch(
-                'openhands.server.routes.git.ProviderHandler',
-                return_value=mock_provider_handler,
-            ):
-                with patch(
-                    'openhands.server.routes.git.subprocess.run',
-                    return_value=mock_result,
-                ):
-                    with patch(
-                        'openhands.server.routes.git.load_microagents_from_dir',
-                        return_value=(
-                            mock_repo_agents,
-                            mock_knowledge_agents,
-                        ),
-                    ):
-                        with patch(
-                            'openhands.server.routes.git.tempfile.mkdtemp',
-                            return_value=temp_dir,
-                        ):
-                            with patch(
-                                'openhands.server.routes.git._get_file_creation_time',
-                                return_value=datetime.now(),
-                            ):
-                                response = test_client.get(
-                                    '/api/user/repository/test/repo/microagents'
-                                )
+            # Execute test
+            response = test_client.get('/api/user/repository/test/repo/microagents')
 
-                                assert response.status_code == 200
-                                data = response.json()
-                                assert len(data) == 1
-                                assert data[0]['name'] == 'test_repo_agent'
-                                assert data[0]['type'] == 'repo'
-                                assert 'created_at' in data[0]
-                                assert 'git_provider' in data[0]
-                                assert data[0]['git_provider'] == 'github'
+            # Assertions
+            assert response.status_code == 200
+            data = response.json()
+            assert len(data) == 1
+            assert data[0]['name'] == 'test_repo_agent'
+            assert data[0]['type'] == 'repo'
+            assert 'created_at' in data[0]
+            assert 'git_provider' in data[0]
+            assert data[0]['git_provider'] == 'github'
         finally:
             shutil.rmtree(temp_dir, ignore_errors=True)
 
     @pytest.mark.asyncio
+    @patch(
+        'openhands.server.routes.git._get_file_creation_time',
+        return_value=datetime.now(),
+    )
+    @patch('openhands.server.routes.git.tempfile.mkdtemp')
+    @patch('openhands.server.routes.git.load_microagents_from_dir')
+    @patch('openhands.server.routes.git.subprocess.run')
+    @patch('openhands.server.routes.git.ProviderHandler')
     async def test_get_microagents_with_external_auth(
-        self, test_client, mock_provider_tokens, mock_repo_microagent
+        self,
+        mock_provider_handler_class,
+        mock_subprocess_run,
+        mock_load_microagents,
+        mock_mkdtemp,
+        mock_get_file_creation_time,
+        test_client,
+        mock_provider_tokens,
+        mock_repo_microagent,
     ):
         """Test microagents endpoint with external authentication."""
-        # Override the dependencies to use external auth
+        # Setup mocks
         test_client.app.dependency_overrides[get_provider_tokens] = (
             lambda: mock_provider_tokens
         )
@@ -591,7 +607,6 @@ class TestGetRepositoryMicroagents:
         )
         test_client.app.dependency_overrides[get_user_id] = lambda: 'external_user'
 
-        # Mock ProviderHandler
         mock_provider_handler = MagicMock()
         mock_repository = Repository(
             id='123456',
@@ -603,15 +618,16 @@ class TestGetRepositoryMicroagents:
         mock_provider_handler.verify_repo_provider = AsyncMock(
             return_value=mock_repository
         )
-        # Mock the new get_authenticated_git_url method
         mock_provider_handler.get_authenticated_git_url = AsyncMock(
             return_value='https://ghp_test_token@github.com/test/repo.git'
         )
+        mock_provider_handler_class.return_value = mock_provider_handler
 
         # Mock subprocess.run for successful clone
         mock_result = MagicMock()
         mock_result.returncode = 0
         mock_result.stderr = ''
+        mock_subprocess_run.return_value = mock_result
 
         # Create temporary directory with microagents
         temp_dir = tempfile.mkdtemp()
@@ -621,79 +637,64 @@ class TestGetRepositoryMicroagents:
         # Mock load_microagents_from_dir
         mock_repo_agents = {'test_repo_agent': mock_repo_microagent}
         mock_knowledge_agents = {}
+        mock_load_microagents.return_value = (mock_repo_agents, mock_knowledge_agents)
+        mock_mkdtemp.return_value = temp_dir
 
         try:
-            with patch(
-                'openhands.server.routes.git.ProviderHandler',
-                return_value=mock_provider_handler,
-            ):
-                with patch(
-                    'openhands.server.routes.git.subprocess.run',
-                    return_value=mock_result,
-                ):
-                    with patch(
-                        'openhands.server.routes.git.load_microagents_from_dir',
-                        return_value=(
-                            mock_repo_agents,
-                            mock_knowledge_agents,
-                        ),
-                    ):
-                        with patch(
-                            'openhands.server.routes.git.tempfile.mkdtemp',
-                            return_value=temp_dir,
-                        ):
-                            with patch(
-                                'openhands.server.routes.git._get_file_creation_time',
-                                return_value=datetime.now(),
-                            ):
-                                response = test_client.get(
-                                    '/api/user/repository/test/repo/microagents'
-                                )
+            # Execute test
+            response = test_client.get('/api/user/repository/test/repo/microagents')
 
-                                assert response.status_code == 200
-                                data = response.json()
-                                assert len(data) == 1
-                                assert data[0]['name'] == 'test_repo_agent'
-                                assert 'created_at' in data[0]
-                                assert 'git_provider' in data[0]
-                                assert data[0]['git_provider'] == 'github'
+            # Assertions
+            assert response.status_code == 200
+            data = response.json()
+            assert len(data) == 1
+            assert data[0]['name'] == 'test_repo_agent'
+            assert 'created_at' in data[0]
+            assert 'git_provider' in data[0]
+            assert data[0]['git_provider'] == 'github'
         finally:
             shutil.rmtree(temp_dir, ignore_errors=True)
 
     @pytest.mark.asyncio
+    @patch('openhands.server.routes.git.ProviderHandler')
     async def test_get_microagents_generic_exception(
-        self, test_client, mock_provider_tokens
+        self, mock_provider_handler_class, test_client, mock_provider_tokens
     ):
         """Test handling of generic exceptions."""
-        # Override the dependency to use mock provider tokens
+        # Setup mocks
         test_client.app.dependency_overrides[get_provider_tokens] = (
             lambda: mock_provider_tokens
         )
 
-        # Mock ProviderHandler to raise generic exception
         mock_provider_handler = MagicMock()
         mock_provider_handler.verify_repo_provider = AsyncMock(
             side_effect=Exception('Unexpected error')
         )
+        mock_provider_handler_class.return_value = mock_provider_handler
 
-        with patch(
-            'openhands.server.routes.git.ProviderHandler',
-            return_value=mock_provider_handler,
-        ):
-            response = test_client.get('/api/user/repository/test/repo/microagents')
+        # Execute test
+        response = test_client.get('/api/user/repository/test/repo/microagents')
 
-            assert response.status_code == 500
-            assert 'Error scanning repository' in response.json()
+        # Assertions
+        assert response.status_code == 500
+        assert 'Error scanning repository' in response.json()
 
     @pytest.mark.asyncio
-    async def test_get_microagents_timeout(self, test_client, mock_provider_tokens):
+    @patch('openhands.server.routes.git.subprocess.run')
+    @patch('openhands.server.routes.git.ProviderHandler')
+    async def test_get_microagents_timeout(
+        self,
+        mock_provider_handler_class,
+        mock_subprocess_run,
+        test_client,
+        mock_provider_tokens,
+    ):
         """Test timeout handling during git clone."""
-        # Override the dependency to use mock provider tokens
+        # Setup mocks
         test_client.app.dependency_overrides[get_provider_tokens] = (
             lambda: mock_provider_tokens
         )
 
-        # Mock ProviderHandler
         mock_provider_handler = MagicMock()
         mock_repository = Repository(
             id='123456',
@@ -705,33 +706,44 @@ class TestGetRepositoryMicroagents:
         mock_provider_handler.verify_repo_provider = AsyncMock(
             return_value=mock_repository
         )
-        # Mock the new get_authenticated_git_url method
         mock_provider_handler.get_authenticated_git_url = AsyncMock(
             return_value='https://ghp_test_token@github.com/test/repo.git'
         )
+        mock_provider_handler_class.return_value = mock_provider_handler
 
         # Mock subprocess.run to raise timeout
         import subprocess
 
-        with patch(
-            'openhands.server.routes.git.ProviderHandler',
-            return_value=mock_provider_handler,
-        ):
-            with patch(
-                'openhands.server.routes.git.subprocess.run',
-                side_effect=subprocess.TimeoutExpired('git', 30),
-            ):
-                response = test_client.get('/api/user/repository/test/repo/microagents')
+        mock_subprocess_run.side_effect = subprocess.TimeoutExpired('git', 30)
 
-                assert response.status_code == 500
-                assert 'Error scanning repository' in response.json()
+        # Execute test
+        response = test_client.get('/api/user/repository/test/repo/microagents')
+
+        # Assertions
+        assert response.status_code == 500
+        assert 'Error scanning repository' in response.json()
 
     @pytest.mark.asyncio
+    @patch(
+        'openhands.server.routes.git._get_file_creation_time',
+        return_value=datetime.now(),
+    )
+    @patch('openhands.server.routes.git.tempfile.mkdtemp')
+    @patch('openhands.server.routes.git.load_microagents_from_dir')
+    @patch('openhands.server.routes.git.subprocess.run')
+    @patch('openhands.server.routes.git.ProviderHandler')
     async def test_get_microagents_microagents_without_mcp_tools(
-        self, test_client, mock_provider_tokens
+        self,
+        mock_provider_handler_class,
+        mock_subprocess_run,
+        mock_load_microagents,
+        mock_mkdtemp,
+        mock_get_file_creation_time,
+        test_client,
+        mock_provider_tokens,
     ):
         """Test microagents without MCP tools."""
-        # Override the dependency to use mock provider tokens
+        # Setup mocks
         test_client.app.dependency_overrides[get_provider_tokens] = (
             lambda: mock_provider_tokens
         )
@@ -750,7 +762,6 @@ class TestGetRepositoryMicroagents:
             type=MicroagentType.REPO_KNOWLEDGE,
         )
 
-        # Mock ProviderHandler
         mock_provider_handler = MagicMock()
         mock_repository = Repository(
             id='123456',
@@ -762,15 +773,16 @@ class TestGetRepositoryMicroagents:
         mock_provider_handler.verify_repo_provider = AsyncMock(
             return_value=mock_repository
         )
-        # Mock the new get_authenticated_git_url method
         mock_provider_handler.get_authenticated_git_url = AsyncMock(
             return_value='https://ghp_test_token@github.com/test/repo.git'
         )
+        mock_provider_handler_class.return_value = mock_provider_handler
 
         # Mock subprocess.run for successful clone
         mock_result = MagicMock()
         mock_result.returncode = 0
         mock_result.stderr = ''
+        mock_subprocess_run.return_value = mock_result
 
         # Create temporary directory with microagents
         temp_dir = tempfile.mkdtemp()
@@ -780,42 +792,21 @@ class TestGetRepositoryMicroagents:
         # Mock load_microagents_from_dir
         mock_repo_agents = {'simple_agent': repo_microagent}
         mock_knowledge_agents = {}
+        mock_load_microagents.return_value = (mock_repo_agents, mock_knowledge_agents)
+        mock_mkdtemp.return_value = temp_dir
 
         try:
-            with patch(
-                'openhands.server.routes.git.ProviderHandler',
-                return_value=mock_provider_handler,
-            ):
-                with patch(
-                    'openhands.server.routes.git.subprocess.run',
-                    return_value=mock_result,
-                ):
-                    with patch(
-                        'openhands.server.routes.git.load_microagents_from_dir',
-                        return_value=(
-                            mock_repo_agents,
-                            mock_knowledge_agents,
-                        ),
-                    ):
-                        with patch(
-                            'openhands.server.routes.git.tempfile.mkdtemp',
-                            return_value=temp_dir,
-                        ):
-                            with patch(
-                                'openhands.server.routes.git._get_file_creation_time',
-                                return_value=datetime.now(),
-                            ):
-                                response = test_client.get(
-                                    '/api/user/repository/test/repo/microagents'
-                                )
+            # Execute test
+            response = test_client.get('/api/user/repository/test/repo/microagents')
 
-                                assert response.status_code == 200
-                                data = response.json()
-                                assert len(data) == 1
-                                assert data[0]['name'] == 'simple_agent'
-                                assert data[0]['tools'] == []
-                                assert 'created_at' in data[0]
-                                assert 'git_provider' in data[0]
-                                assert data[0]['git_provider'] == 'github'
+            # Assertions
+            assert response.status_code == 200
+            data = response.json()
+            assert len(data) == 1
+            assert data[0]['name'] == 'simple_agent'
+            assert data[0]['tools'] == []
+            assert 'created_at' in data[0]
+            assert 'git_provider' in data[0]
+            assert data[0]['git_provider'] == 'github'
         finally:
             shutil.rmtree(temp_dir, ignore_errors=True)
