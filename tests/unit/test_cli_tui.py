@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
@@ -279,48 +279,42 @@ class TestReadConfirmationInput:
     async def test_read_confirmation_input_yes(self, mock_confirm):
         mock_confirm.return_value = 0  # user picked first menu item
 
-        cfg = MagicMock()                 # <- no spec for simplicity
+        cfg = MagicMock()  # <- no spec for simplicity
         cfg.cli = MagicMock(vi_mode=False)
 
         result = await read_confirmation_input(config=cfg)
         assert result == 'yes'
-
 
     @pytest.mark.asyncio
     @patch('openhands.cli.tui.cli_confirm')
     async def test_read_confirmation_input_no(self, mock_confirm):
         mock_confirm.return_value = 1  # user picked second menu item
 
-        cfg = MagicMock()                 # <- no spec for simplicity
+        cfg = MagicMock()  # <- no spec for simplicity
         cfg.cli = MagicMock(vi_mode=False)
 
         result = await read_confirmation_input(config=cfg)
         assert result == 'no'
-
 
     @pytest.mark.asyncio
     @patch('openhands.cli.tui.cli_confirm')
     async def test_read_confirmation_input_always(self, mock_confirm):
         mock_confirm.return_value = 2  # user picked third menu item
 
-        cfg = MagicMock()                 # <- no spec for simplicity
+        cfg = MagicMock()  # <- no spec for simplicity
         cfg.cli = MagicMock(vi_mode=False)
 
         result = await read_confirmation_input(config=cfg)
         assert result == 'always'
 
-
     @pytest.mark.asyncio
     @patch('openhands.cli.tui.print_formatted_text')
     @patch('openhands.cli.tui.cli_confirm')
-    async def test_read_confirmation_input_edit(
-        self, mock_confirm, mock_print
-    ):
+    async def test_read_confirmation_input_edit(self, mock_confirm, mock_print):
         mock_confirm.return_value = 3  # user picked third menu item
 
-        cfg = MagicMock()                 # <- no spec for simplicity
+        cfg = MagicMock()  # <- no spec for simplicity
         cfg.cli = MagicMock(vi_mode=False)
 
         result = await read_confirmation_input(config=cfg)
         assert result == 'edit'
-
