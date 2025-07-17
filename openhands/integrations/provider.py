@@ -95,6 +95,13 @@ CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA = Annotated[
 
 
 class ProviderHandler:
+    # Class variable for provider domains
+    PROVIDER_DOMAINS: dict[ProviderType, str] = {
+        ProviderType.GITHUB: 'github.com',
+        ProviderType.GITLAB: 'gitlab.com',
+        ProviderType.BITBUCKET: 'bitbucket.org',
+    }
+
     def __init__(
         self,
         provider_tokens: PROVIDER_TOKEN_TYPE,
@@ -417,13 +424,7 @@ class ProviderHandler:
         provider = repository.git_provider
         repo_name = repository.full_name
 
-        provider_domains = {
-            ProviderType.GITHUB: 'github.com',
-            ProviderType.GITLAB: 'gitlab.com',
-            ProviderType.BITBUCKET: 'bitbucket.org',
-        }
-
-        domain = provider_domains[provider]
+        domain = self.PROVIDER_DOMAINS[provider]
 
         # If provider tokens are provided, use the host from the token if available
         if self.provider_tokens and provider in self.provider_tokens:
