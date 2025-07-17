@@ -18,6 +18,7 @@ import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message"
 import { GitSettingInputsSkeleton } from "#/components/features/settings/git-settings/github-settings-inputs-skeleton";
 import { useAddGitProviders } from "#/hooks/mutation/use-add-git-providers";
 import { useUserProviders } from "#/hooks/use-user-providers";
+import { ProjectManagementIntegration } from "#/components/features/settings/project-management/project-management-integration";
 
 function GitSettingsScreen() {
   const { t } = useTranslation();
@@ -125,6 +126,10 @@ function GitSettingsScreen() {
 
           {shouldRenderExternalConfigureButtons && !isLoading && (
             <InstallSlackAppAnchor />
+          )}
+
+          {shouldRenderExternalConfigureButtons && !isLoading && (
+            <ProjectManagementIntegration />
           )}
 
           {!isSaas && (
