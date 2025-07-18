@@ -27,9 +27,9 @@ from openhands.integrations.provider import (
 )
 from openhands.integrations.service_types import (
     AuthenticationError,
+    CreateMicroagent,
     ProviderType,
     SuggestedTask,
-    TaskType,
 )
 from openhands.llm.llm import LLM
 from openhands.runtime import get_runtime_cls
@@ -85,6 +85,7 @@ class InitSessionRequest(BaseModel):
     image_urls: list[str] | None = None
     replay_json: str | None = None
     suggested_task: SuggestedTask | None = None
+    create_microagent: CreateMicroagent | None = None
     conversation_instructions: str | None = None
     # Only nested runtimes require the ability to specify a conversation id, and it could be a security risk
     if os.getenv('ALLOW_SET_CONVERSATION_ID', '0') == '1':
@@ -124,17 +125,22 @@ async def new_conversation(
     image_urls = data.image_urls or []
     replay_json = data.replay_json
     suggested_task = data.suggested_task
+    create_microagent = data.create_microagent
     git_provider = data.git_provider
     conversation_instructions = data.conversation_instructions
 
     conversation_trigger = ConversationTrigger.GUI
 
     if suggested_task:
-        if suggested_task.task_type == TaskType.CREATE_MICROAGENT:
-            conversation_trigger = ConversationTrigger.MICROAGENT_MANAGEMENT
-        else:
-            initial_user_msg = suggested_task.get_prompt_for_task()
-            conversation_trigger = ConversationTrigger.SUGGESTED_TASK
+        initial_user_msg = suggested_task.get_prompt_for_task()
+        conversation_trigger = ConversationTrigger.SUGGESTED_TASK
+    elif create_microagent:
+        conversation_trigger = ConversationTrigger.MICROAGENT_MANAGEMENT
+        # Set repository and git_provider from create_microagent if not already set
+        if not repository and create_microagent.repo:
+            repository = create_microagent.repo
+        if not git_provider and create_microagent.git_provider:
+            git_provider = create_microagent.git_provider
 
     if auth_type == AuthType.BEARER:
         conversation_trigger = ConversationTrigger.REMOTE_API_KEY

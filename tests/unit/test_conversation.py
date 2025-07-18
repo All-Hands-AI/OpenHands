@@ -11,6 +11,7 @@ from fastapi.testclient import TestClient
 
 from openhands.integrations.service_types import (
     AuthenticationError,
+    CreateMicroagent,
     ProviderType,
     SuggestedTask,
     TaskType,
@@ -611,8 +612,8 @@ async def test_new_conversation_with_unsupported_params():
 
 
 @pytest.mark.asyncio
-async def test_new_conversation_with_create_microagent_task(provider_handler_mock):
-    """Test creating a new conversation with a CREATE_MICROAGENT suggested task."""
+async def test_new_conversation_with_create_microagent(provider_handler_mock):
+    """Test creating a new conversation with a CreateMicroagent object."""
     with _patch_store():
         # Mock the create_new_conversation function directly
         with patch(
@@ -626,20 +627,18 @@ async def test_new_conversation_with_create_microagent_task(provider_handler_moc
                 status=ConversationStatus.RUNNING,
             )
 
-            # Create a CREATE_MICROAGENT suggested task
-            test_task = SuggestedTask(
-                git_provider=ProviderType.GITHUB,
-                task_type=TaskType.CREATE_MICROAGENT,
+            # Create the CreateMicroagent object
+            create_microagent = CreateMicroagent(
                 repo='test/repo',
-                issue_number=123,
+                git_provider=ProviderType.GITHUB,
                 title='Create a new microagent',
             )
 
             test_request = InitSessionRequest(
-                repository='test/repo',
+                repository=None,  # Not set in request, should be set from create_microagent
                 selected_branch='main',
-                initial_user_msg='Create a microagent for testing',
-                suggested_task=test_task,
+                initial_user_msg='Hello, agent!',
+                create_microagent=create_microagent,
             )
 
             # Call new_conversation
@@ -655,11 +654,129 @@ async def test_new_conversation_with_create_microagent_task(provider_handler_moc
             mock_create_conversation.assert_called_once()
             call_args = mock_create_conversation.call_args[1]
             assert call_args['user_id'] == 'test_user'
-            assert call_args['selected_repository'] == 'test/repo'
+            assert (
+                call_args['selected_repository'] == 'test/repo'
+            )  # Should be set from create_microagent
             assert call_args['selected_branch'] == 'main'
-            # For CREATE_MICROAGENT, initial_user_msg should NOT be overridden
-            assert call_args['initial_user_msg'] == 'Create a microagent for testing'
+            assert call_args['initial_user_msg'] == 'Hello, agent!'
             assert (
                 call_args['conversation_trigger']
                 == ConversationTrigger.MICROAGENT_MANAGEMENT
             )
+            assert (
+                call_args['git_provider'] == ProviderType.GITHUB
+            )  # Should be set from create_microagent
+
+
+@pytest.mark.asyncio
+async def test_new_conversation_with_create_microagent_repository_override(
+    provider_handler_mock,
+):
+    """Test creating a new conversation with CreateMicroagent when repository is already set."""
+    with _patch_store():
+        # Mock the create_new_conversation function directly
+        with patch(
+            'openhands.server.routes.manage_conversations.create_new_conversation'
+        ) as mock_create_conversation:
+            # Set up the mock to return a conversation ID
+            mock_create_conversation.return_value = MagicMock(
+                conversation_id='test_conversation_id',
+                url='https://my-conversation.com',
+                session_api_key=None,
+                status=ConversationStatus.RUNNING,
+            )
+
+            # Create the CreateMicroagent object
+            create_microagent = CreateMicroagent(
+                repo='microagent/repo',
+                git_provider=ProviderType.GITLAB,
+                title='Create a new microagent',
+            )
+
+            test_request = InitSessionRequest(
+                repository='existing/repo',  # Already set in request
+                selected_branch='main',
+                initial_user_msg='Hello, agent!',
+                create_microagent=create_microagent,
+            )
+
+            # Call new_conversation
+            response = await create_new_test_conversation(test_request)
+
+            # Verify the response
+            assert isinstance(response, ConversationResponse)
+            assert response.status == 'ok'
+            assert response.conversation_id is not None
+            assert isinstance(response.conversation_id, str)
+
+            # Verify that create_new_conversation was called with the correct arguments
+            mock_create_conversation.assert_called_once()
+            call_args = mock_create_conversation.call_args[1]
+            assert call_args['user_id'] == 'test_user'
+            assert (
+                call_args['selected_repository'] == 'existing/repo'
+            )  # Should keep existing value
+            assert call_args['selected_branch'] == 'main'
+            assert call_args['initial_user_msg'] == 'Hello, agent!'
+            assert (
+                call_args['conversation_trigger']
+                == ConversationTrigger.MICROAGENT_MANAGEMENT
+            )
+            assert (
+                call_args['git_provider'] == ProviderType.GITLAB
+            )  # Should be set from create_microagent
+
+
+@pytest.mark.asyncio
+async def test_new_conversation_with_create_microagent_minimal(provider_handler_mock):
+    """Test creating a new conversation with minimal CreateMicroagent object (only repo field)."""
+    with _patch_store():
+        # Mock the create_new_conversation function directly
+        with patch(
+            'openhands.server.routes.manage_conversations.create_new_conversation'
+        ) as mock_create_conversation:
+            # Set up the mock to return a conversation ID
+            mock_create_conversation.return_value = MagicMock(
+                conversation_id='test_conversation_id',
+                url='https://my-conversation.com',
+                session_api_key=None,
+                status=ConversationStatus.RUNNING,
+            )
+
+            # Create the CreateMicroagent object with only required field
+            create_microagent = CreateMicroagent(
+                repo='minimal/repo',
+            )
+
+            test_request = InitSessionRequest(
+                repository=None,
+                selected_branch='main',
+                initial_user_msg='Hello, agent!',
+                create_microagent=create_microagent,
+            )
+
+            # Call new_conversation
+            response = await create_new_test_conversation(test_request)
+
+            # Verify the response
+            assert isinstance(response, ConversationResponse)
+            assert response.status == 'ok'
+            assert response.conversation_id is not None
+            assert isinstance(response.conversation_id, str)
+
+            # Verify that create_new_conversation was called with the correct arguments
+            mock_create_conversation.assert_called_once()
+            call_args = mock_create_conversation.call_args[1]
+            assert call_args['user_id'] == 'test_user'
+            assert (
+                call_args['selected_repository'] == 'minimal/repo'
+            )  # Should be set from create_microagent
+            assert call_args['selected_branch'] == 'main'
+            assert call_args['initial_user_msg'] == 'Hello, agent!'
+            assert (
+                call_args['conversation_trigger']
+                == ConversationTrigger.MICROAGENT_MANAGEMENT
+            )
+            assert (
+                call_args['git_provider'] is None
+            )  # Should remain None since not set in create_microagent
