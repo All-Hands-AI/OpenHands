@@ -1,18 +1,12 @@
 import React from "react";
-import { useTranslation } from "react-i18next";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
 
-import { I18nKey } from "#/i18n/declaration";
-import {
-  displayErrorToast,
-  displaySuccessToast,
-} from "#/utils/custom-toast-handlers";
-import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
+import { useIntegrationStatus } from "#/hooks/query/use-integration-status";
+import { useLinkIntegration } from "#/hooks/mutation/use-link-integration";
+import { useUnlinkIntegration } from "#/hooks/mutation/use-unlink-integration";
+import { useValidateIntegration } from "#/hooks/mutation/use-validate-integration";
 import { ConfirmationModal } from "#/components/features/settings/project-management/confirmation-modal";
 import { InfoModal } from "#/components/features/settings/project-management/info-modal";
 import { IntegrationButton } from "#/components/features/settings/project-management/integration-button";
-import { openHands } from "#/api/open-hands-axios";
 
 interface IntegrationRowProps {
   platform: "jira" | "jira-dc" | "linear";
@@ -25,33 +19,15 @@ export function IntegrationRow({
   platformName,
   "data-testid": dataTestId,
 }: IntegrationRowProps) {
-  const queryClient = useQueryClient();
-  const { t } = useTranslation();
-
   const [isConfirmationModalOpen, setConfirmationModalOpen] =
     React.useState(false);
   const [isInfoModalOpen, setInfoModalOpen] = React.useState(false);
   const [isUnlinking, setUnlinking] = React.useState(false);
 
-  const { data: status, isLoading: isStatusLoading } = useQuery({
-    queryKey: ["integration-status", platform],
-    queryFn: async () => {
-      try {
-        const response = await openHands.get(
-          `/integration/${platform}/users/me`,
-        );
-        return response.data.status;
-      } catch (error) {
-        if (axios.isAxiosError(error) && error.response?.status === 404) {
-          return "inactive";
-        }
-        throw error;
-      }
-    },
-  });
+  const { data: status, isLoading: isStatusLoading } =
+    useIntegrationStatus(platform);
 
-  const validateMutation = useMutation({
-    mutationFn: () => openHands.get(`/integration/${platform}/validate`),
+  const validateMutation = useValidateIntegration(platform, {
     onSuccess: (data) => {
       if (data.data.status === "active") {
         setUnlinking(false);
@@ -60,48 +36,18 @@ export function IntegrationRow({
         setInfoModalOpen(true);
       }
     },
-    onError: (error) => {
-      if (axios.isAxiosError(error) && error.response?.status === 404) {
-        setInfoModalOpen(true);
-      } else {
-        const errorMessage = retrieveAxiosErrorMessage(error);
-        displayErrorToast(
-          errorMessage ||
-            t(I18nKey.PROJECT_MANAGEMENT$VALIDATE_INTEGRATION_ERROR),
-        );
-      }
+    onError: () => {
+      setInfoModalOpen(true);
     },
   });
 
-  const linkMutation = useMutation({
-    mutationFn: () => openHands.post(`/integration/${platform}/users`),
-    onSuccess: () => {
-      displaySuccessToast(t(I18nKey.SETTINGS$SAVED));
-      queryClient.invalidateQueries({
-        queryKey: ["integration-status", platform],
-      });
-    },
-    onError: (error) => {
-      const errorMessage = retrieveAxiosErrorMessage(error);
-      displayErrorToast(errorMessage || t(I18nKey.ERROR$GENERIC));
-    },
+  const linkMutation = useLinkIntegration(platform, {
     onSettled: () => {
       setConfirmationModalOpen(false);
     },
   });
 
-  const unlinkMutation = useMutation({
-    mutationFn: () => openHands.post(`/integration/${platform}/unlink`),
-    onSuccess: () => {
-      displaySuccessToast(t(I18nKey.SETTINGS$SAVED));
-      queryClient.invalidateQueries({
-        queryKey: ["integration-status", platform],
-      });
-    },
-    onError: (error) => {
-      const errorMessage = retrieveAxiosErrorMessage(error);
-      displayErrorToast(errorMessage || t(I18nKey.ERROR$GENERIC));
-    },
+  const unlinkMutation = useUnlinkIntegration(platform, {
     onSettled: () => {
       setConfirmationModalOpen(false);
     },
