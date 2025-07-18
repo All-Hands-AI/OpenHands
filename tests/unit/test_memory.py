@@ -389,7 +389,7 @@ async def test_custom_secrets_descriptions():
     }
 
     # Set runtime info with custom secrets
-    memory.set_runtime_info(mock_runtime, custom_secrets)
+    memory.set_runtime_info(mock_runtime, custom_secrets, '/workspace')
 
     # Set repository info
     memory.set_repository_info('test-owner/test-repo', '/workspace/test-repo')
@@ -448,6 +448,7 @@ def test_custom_secrets_descriptions_serialization(prompt_dir):
         available_hosts={'test-host.example.com': 8080},
         additional_agent_instructions='Test instructions',
         custom_secrets_descriptions=custom_secrets,
+        working_dir='/workspace',
     )
 
     # Create a RepositoryInfo
