@@ -1,4 +1,4 @@
-import { NavLink, Outlet, redirect } from "react-router";
+import { NavLink, Outlet, redirect, useLocation } from "react-router";
 import { useTranslation } from "react-i18next";
 import SettingsIcon from "#/icons/settings.svg?react";
 import { cn } from "#/utils/utils";
@@ -71,6 +71,7 @@ function SettingsScreen() {
   const { data: me } = useMe();
   const { data: organizations } = useOrganizations();
   const { data: config } = useConfig();
+  const location = useLocation();
 
   const isSaas = config?.APP_MODE === "saas";
   const isUser = me?.role === "user";
@@ -80,61 +81,74 @@ function SettingsScreen() {
   return (
     <main
       data-testid="settings-screen"
-      className="bg-base-secondary border border-tertiary h-full rounded-xl flex flex-col"
+      className="bg-base-secondary border border-tertiary h-full rounded-xl flex"
     >
-      <header className="px-3 py-1.5 border-b border-b-tertiary flex items-center gap-2">
-        <SettingsIcon width={16} height={16} />
-        <h1 className="text-sm leading-6">{t(I18nKey.SETTINGS$TITLE)}</h1>
-      </header>
+      <div className="w-64 border-r border-tertiary flex flex-col">
+        <header className="px-3 py-1.5 border-b border-b-tertiary flex items-center gap-2">
+          <SettingsIcon width={16} height={16} />
+          <h1 className="text-sm leading-6">{t(I18nKey.SETTINGS$TITLE)}</h1>
+        </header>
 
-      <div data-testid="organization-select">
-        {organizations?.map((org) => (
-          <span
-            data-testid="org-option"
-            key={org.id}
-            onClick={() => setOrgId(org.id)}
-          >
-            {org.name}
-          </span>
-        ))}
+        <div
+          data-testid="organization-select"
+          className="px-3 py-2 border-b border-tertiary"
+        >
+          {organizations?.map((org) => (
+            <span
+              data-testid="org-option"
+              key={org.id}
+              onClick={() => setOrgId(org.id)}
+              className="block cursor-pointer hover:bg-tertiary px-2 py-1 rounded"
+            >
+              {org.name}
+            </span>
+          ))}
+        </div>
+
+        <nav data-testid="settings-navbar" className="flex flex-col gap-1 p-2">
+          {navItems
+            .filter((navItem) => {
+              // if user is not an admin or no org is selected, do not show team/org settings
+              if (
+                (navItem.to === "/settings/team" ||
+                  navItem.to === "/settings/org") &&
+                (isUser || !orgId)
+              ) {
+                return false;
+              }
+
+              return true;
+            })
+            .map(({ to, text }) => (
+              <NavLink
+                end
+                key={to}
+                to={to}
+                className={({ isActive }) =>
+                  cn(
+                    "py-2 px-3 rounded flex items-center text-sm",
+                    isActive ? "bg-primary text-white" : "hover:bg-tertiary",
+                  )
+                }
+              >
+                <span>{t(text)}</span>
+              </NavLink>
+            ))}
+        </nav>
       </div>
 
-      <nav
-        data-testid="settings-navbar"
-        className="flex items-end gap-6 px-9 border-b border-tertiary"
-      >
-        {navItems
-          .filter((navItem) => {
-            // if user is not an admin or no org is selected, do not show team/org settings
-            if (
-              (navItem.to === "/settings/team" ||
-                navItem.to === "/settings/org") &&
-              (isUser || !orgId)
-            ) {
-              return false;
-            }
-
-            return true;
-          })
-          .map(({ to, text }) => (
-            <NavLink
-              end
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                cn(
-                  "border-b-2 border-transparent py-2.5 px-4 min-w-[40px] flex items-center justify-center",
-                  isActive && "border-primary",
-                )
-              }
-            >
-              <span className="text-[#F9FBFE] text-sm">{t(text)}</span>
-            </NavLink>
-          ))}
-      </nav>
-
       <div className="flex flex-col grow overflow-auto">
-        <Outlet />
+        <header className="px-11 pt-4">
+          <h1 className="text-2xl font-semibold text-white">
+            {t(
+              navItems.find((item) => item.to === location.pathname)?.text ||
+                "",
+            )}
+          </h1>
+        </header>
+        <div>
+          <Outlet />
+        </div>
       </div>
     </main>
   );
