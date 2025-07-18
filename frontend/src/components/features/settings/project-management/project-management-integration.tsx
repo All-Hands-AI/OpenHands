@@ -8,18 +8,18 @@ export function ProjectManagementIntegration() {
 
   return (
     <div className="flex flex-col gap-4 w-1/4">
-      <h2 className="text-lg font-semibold">
-        {t(I18nKey.PROJECT_MANAGEMENT$INTEGRATIONS_TITLE)}
-      </h2>
-      <div className="flex flex-col gap-4 rounded-md border border-neutral-600 p-4">
+      <h3 className="text-xl font-medium text-white">
+        {t(I18nKey.PROJECT_MANAGEMENT$TITLE)}
+      </h3>
+      <div className="flex flex-col gap-4">
         <IntegrationRow
           platform="jira"
-          platformName="Jira"
+          platformName="Jira Cloud"
           data-testid="jira-integration-row"
         />
         <IntegrationRow
           platform="jira-dc"
-          platformName="Jira DC"
+          platformName="Jira Data Center"
           data-testid="jira-dc-integration-row"
         />
         <IntegrationRow

@@ -1695,6 +1695,38 @@
         "de": "API-Schlüssel",
         "uk": "API ключі"
     },
+    "SETTINGS$GITHUB": {
+        "en": "GitHub",
+        "ja": "GitHub",
+        "zh-CN": "GitHub",
+        "zh-TW": "GitHub",
+        "ko-KR": "GitHub",
+        "no": "GitHub",
+        "it": "GitHub",
+        "pt": "GitHub",
+        "es": "GitHub",
+        "ar": "GitHub",
+        "fr": "GitHub",
+        "tr": "GitHub",
+        "de": "GitHub",
+        "uk": "GitHub"
+    },
+    "SETTINGS$SLACK": {
+        "en": "Slack",
+        "ja": "Slack",
+        "zh-CN": "Slack",
+        "zh-TW": "Slack",
+        "ko-KR": "Slack",
+        "no": "Slack",
+        "it": "Slack",
+        "pt": "Slack",
+        "es": "Slack",
+        "ar": "Slack",
+        "fr": "Slack",
+        "tr": "Slack",
+        "de": "Slack",
+        "uk": "Slack"
+    },
     "SETTINGS$NAV_LLM": {
         "en": "LLM",
         "ja": "LLM",
@@ -11742,6 +11774,22 @@
         "tr": "Proje Yönetim Aracı Entegrasyonları",
         "de": "Integrationen von Projektmanagement-Tools",
         "uk": "Інтеграції інструментів управління проектами"
+    },
+    "PROJECT_MANAGEMENT$TITLE": {
+        "en": "Project Management",
+        "ja": "プロジェクト管理",
+        "zh-CN": "项目管理",
+        "zh-TW": "專案管理",
+        "ko-KR": "프로젝트 관리",
+        "no": "Prosjektledelse",
+        "it": "Gestione del progetto",
+        "pt": "Gerenciamento de projetos",
+        "es": "Gestión de proyectos",
+        "ar": "إدارة المشاريع",
+        "fr": "Gestion de projet",
+        "tr": "Proje Yönetimi",
+        "de": "Projektmanagement",
+        "uk": "Управління проектами"
     },
     "PROJECT_MANAGEMENT$VALIDATE_INTEGRATION_ERROR": {
         "en": "Failed to validate integration. Please try again later.",

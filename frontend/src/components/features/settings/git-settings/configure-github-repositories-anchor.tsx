@@ -19,7 +19,7 @@ export function ConfigureGitHubRepositoriesAnchor({
       rel="noreferrer noopener"
       className="py-9"
     >
-      <BrandButton type="button" variant="secondary">
+      <BrandButton type="button" variant="primary" className="w-55">
         {t(I18nKey.GITHUB$CONFIGURE_REPOS)}
       </BrandButton>
     </a>
