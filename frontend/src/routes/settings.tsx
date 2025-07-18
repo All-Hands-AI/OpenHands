@@ -33,6 +33,12 @@ const OSS_NAV_ITEMS = [
   { to: "/settings/secrets", text: "SETTINGS$NAV_SECRETS" },
 ];
 
+// Define OSS-only paths that should be redirected in SaaS mode
+const OSS_ONLY_PATHS = [
+  "/settings",
+  "/settings/",
+];
+
 export const clientLoader = async ({ request }: Route.ClientLoaderArgs) => {
   const url = new URL(request.url);
   const { pathname } = url;
@@ -45,7 +51,8 @@ export const clientLoader = async ({ request }: Route.ClientLoaderArgs) => {
 
   const isSaas = config?.APP_MODE === "saas";
 
-  if (isSaas && pathname === "/settings") {
+  // In SaaS mode, redirect from LLM settings (both exact and index routes) to user settings
+  if (isSaas && OSS_ONLY_PATHS.includes(pathname)) {
     // no llm settings in saas mode, so redirect to user settings
     return redirect("/settings/user");
   }

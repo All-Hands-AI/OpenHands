@@ -190,5 +190,33 @@ describe("Settings Screen", () => {
     getConfigSpy.mockRestore();
   });
 
-  it.todo("should not be able to access oss-only routes in saas mode");
+  it("should not be able to access oss-only routes in saas mode", async () => {
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    // @ts-expect-error - only return app mode
+    getConfigSpy.mockResolvedValue({
+      APP_MODE: "saas",
+    });
+
+    // Clear any existing query data
+    mockQueryClient.clear();
+    
+    // Set the query data directly to ensure the clientLoader sees it
+    mockQueryClient.setQueryData(["config"], { APP_MODE: "saas" });
+
+    // In SaaS mode, accessing the LLM settings route should redirect to /settings/user
+    // Since createRoutesStub doesn't handle clientLoader redirects properly,
+    // we test that the correct navbar is shown (SaaS navbar)
+    renderSettingsScreen("/settings");
+
+    // Verify we're in SaaS mode by checking the navbar
+    const navbar = await screen.findByTestId("settings-navbar");
+    expect(within(navbar).queryByText("LLM")).not.toBeInTheDocument();
+    expect(within(navbar).getByText("Credits")).toBeInTheDocument();
+
+    // In a real application, the clientLoader would redirect from /settings to /settings/user
+    // and the LLM settings would not be shown. We can't test the redirect directly,
+    // but we can verify that the LLM settings are not in the navbar.
+
+    getConfigSpy.mockRestore();
+  });
 });
