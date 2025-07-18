@@ -11229,7 +11229,7 @@
         "fr": "Que souhaitez-vous que le microagent fasse ?",
         "tr": "Mikro ajanın ne yapmasını istersiniz?",
         "de": "Was soll der Microagent tun?",
-        "uk": "Що в,и хочете, щоб зробив мікроагент?"
+        "uk": "Що ви хочете, щоб зробив мікроагент?"
     },
     "MICROAGENT_MANAGEMENT$DESCRIBE_WHAT_TO_DO": {
         "en": "Describe what you would like the Microagent to do.",
