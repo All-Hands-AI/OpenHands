@@ -74,6 +74,10 @@ describe("Settings Screen", () => {
           Component: () => <div data-testid="api-keys-settings-screen" />,
           path: "/settings/api-keys",
         },
+        {
+          Component: () => <div data-testid="user-settings-screen" />,
+          path: "/settings/user",
+        },
       ],
     },
   ]);
@@ -190,5 +194,45 @@ describe("Settings Screen", () => {
     getConfigSpy.mockRestore();
   });
 
-  it.todo("should not be able to access oss-only routes in saas mode");
+  it("should not be able to access oss-only routes in saas mode", async () => {
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    // @ts-expect-error - only return app mode
+    getConfigSpy.mockResolvedValue({
+      APP_MODE: "saas",
+    });
+
+    // Mock pathname for the test
+    const originalPathname = Object.getOwnPropertyDescriptor(window, 'location');
+    Object.defineProperty(window, 'location', {
+      value: {
+        ...window.location,
+        pathname: "/settings"
+      },
+      writable: true
+    });
+
+    // Clear any existing query data
+    mockQueryClient.clear();
+
+    // Set the query data directly to ensure the component sees it
+    mockQueryClient.setQueryData(["config"], { APP_MODE: "saas" });
+
+    // In SaaS mode, accessing the LLM settings route should redirect to /settings/user
+    renderSettingsScreen("/settings");
+
+    // Verify we're in SaaS mode by checking the navbar
+    const navbar = await screen.findByTestId("settings-navbar");
+    expect(within(navbar).queryByText("LLM")).not.toBeInTheDocument();
+    expect(within(navbar).getByText("Credits")).toBeInTheDocument();
+
+    // Verify the LLM settings screen is not shown
+    expect(screen.queryByTestId("llm-settings-screen")).not.toBeInTheDocument();
+
+    // Restore window.location
+    if (originalPathname) {
+      Object.defineProperty(window, 'location', originalPathname);
+    }
+
+    getConfigSpy.mockRestore();
+  });
 });

@@ -1,3 +1,4 @@
+import React from "react";
 import { NavLink, Outlet, redirect } from "react-router";
 import { useTranslation } from "react-i18next";
 import SettingsIcon from "#/icons/settings.svg?react";
@@ -33,6 +34,9 @@ const OSS_NAV_ITEMS = [
   { to: "/settings/secrets", text: "SETTINGS$NAV_SECRETS" },
 ];
 
+// Define OSS-only paths that should be redirected in SaaS mode
+const OSS_ONLY_PATHS = ["/settings", "/settings/"];
+
 export const clientLoader = async ({ request }: Route.ClientLoaderArgs) => {
   const url = new URL(request.url);
   const { pathname } = url;
@@ -45,7 +49,8 @@ export const clientLoader = async ({ request }: Route.ClientLoaderArgs) => {
 
   const isSaas = config?.APP_MODE === "saas";
 
-  if (isSaas && pathname === "/settings") {
+  // In SaaS mode, redirect from LLM settings (both exact and index routes) to user settings
+  if (isSaas && OSS_ONLY_PATHS.includes(pathname)) {
     // no llm settings in saas mode, so redirect to user settings
     return redirect("/settings/user");
   }
@@ -61,10 +66,18 @@ export const clientLoader = async ({ request }: Route.ClientLoaderArgs) => {
 function SettingsScreen() {
   const { t } = useTranslation();
   const { data: config } = useConfig();
+  const { pathname } = window.location;
 
   const isSaas = config?.APP_MODE === "saas";
   // this is used to determine which settings are available in the UI
   const navItems = isSaas ? SAAS_NAV_ITEMS : OSS_NAV_ITEMS;
+
+  // If in SaaS mode and trying to access LLM settings, redirect to user settings
+  React.useEffect(() => {
+    if (isSaas && OSS_ONLY_PATHS.includes(pathname)) {
+      window.location.href = "/settings/user";
+    }
+  }, [isSaas, pathname]);
 
   return (
     <main
@@ -98,7 +111,8 @@ function SettingsScreen() {
       </nav>
 
       <div className="flex flex-col grow overflow-auto">
-        <Outlet />
+        {/* Only render the outlet if not trying to access LLM settings in SaaS mode */}
+        {!(isSaas && OSS_ONLY_PATHS.includes(pathname)) && <Outlet />}
       </div>
     </main>
   );
