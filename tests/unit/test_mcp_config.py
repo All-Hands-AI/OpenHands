@@ -27,10 +27,9 @@ def test_empty_sse_config():
 
 def test_invalid_sse_url():
     """Test SSE configuration with invalid URL format."""
-    config = MCPConfig(sse_servers=[MCPSSEServerConfig(url='not_a_url')])
-    with pytest.raises(ValueError) as exc_info:
-        config.validate_servers()
-    assert 'Invalid URL' in str(exc_info.value)
+    with pytest.raises(ValidationError) as exc_info:
+        MCPSSEServerConfig(url='not_a_url')
+    assert 'URL must include a scheme' in str(exc_info.value)
 
 
 def test_duplicate_sse_urls():
@@ -64,7 +63,7 @@ def test_from_toml_section_invalid_sse():
     }
     with pytest.raises(ValueError) as exc_info:
         MCPConfig.from_toml_section(data)
-    assert 'Invalid URL' in str(exc_info.value)
+    assert 'URL must include a scheme' in str(exc_info.value)
 
 
 def test_complex_urls():
