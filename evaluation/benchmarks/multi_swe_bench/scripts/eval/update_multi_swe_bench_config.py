@@ -37,9 +37,9 @@ def update_multi_swe_config(output_jsonl_path, config_path, dataset):
         "global_env": [],
         "clear_env": True,
         "stop_on_error": False,
-        "max_workers": 10,
-        "max_workers_build_image": 10,
-        "max_workers_run_instance": 10,
+        "max_workers": 5,
+        "max_workers_build_image": 5,
+        "max_workers_run_instance": 5,
         "log_dir": os.path.join(path_to_parent, "eval_files", "logs"),
         "log_level": "DEBUG",
         "fix_patch_run_cmd": (
