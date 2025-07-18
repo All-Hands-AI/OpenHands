@@ -11391,22 +11391,6 @@
         "de": "Dateistruktur lernen",
         "uk": "Вивчити структуру файлів"
     },
-    "PROJECT_MANAGEMENT$INTEGRATIONS_TITLE": {
-        "en": "Project Management Tool Integrations",
-        "ja": "プロジェクト管理ツールの統合",
-        "zh-CN": "项目管理工具集成",
-        "zh-TW": "專案管理工具集成",
-        "ko-KR": "프로젝트 관리 도구 통합",
-        "no": "Integrasjoner med prosjektstyringsverktøy",
-        "it": "Integrazioni degli strumenti di gestione dei progetti",
-        "pt": "Integrações de ferramentas de gerenciamento de projetos",
-        "es": "Integraciones de herramientas de gestión de proyectos",
-        "ar": "تكاملات أدوات إدارة المشاريع",
-        "fr": "Intégrations d'outils de gestion de projet",
-        "tr": "Proje Yönetim Aracı Entegrasyonları",
-        "de": "Integrationen von Projektmanagement-Tools",
-        "uk": "Інтеграції інструментів управління проектами"
-    },
     "PROJECT_MANAGEMENT$TITLE": {
         "en": "Project Management",
         "ja": "プロジェクト管理",
