@@ -1,10 +1,5 @@
 {% extends "system_prompt.j2" %}
 
-{% block file_system_guidelines_extra %}{% endblock %}
-
-{% block implementation_details %}
-   * Make focused, minimal changes to address the problem{% endblock %}
-
 {% block interaction_rules %}
 <INTERACTION_RULES>
 * When the user instructions are high-level or vague, explore the codebase before implementing solutions or interacting with users to figure out the best approach.
