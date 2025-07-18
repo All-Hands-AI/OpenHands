@@ -2,6 +2,7 @@ import gc
 import json
 import os
 import time
+from datetime import datetime
 
 import psutil
 import pytest
@@ -12,6 +13,7 @@ from openhands.events import EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import (
     NullAction,
 )
+from openhands.events.action import CmdRunAction
 from openhands.events.action.files import (
     FileEditAction,
     FileReadAction,
@@ -746,9 +748,6 @@ def test_secrets_replaced_in_content(temp_dir: str):
     stream.set_secrets({'api_key': 'secret123'})
 
     # Create an event with the secret in the command
-    from openhands.events.action import CmdRunAction
-    from datetime import datetime
-    
     action = CmdRunAction(
         command='curl -H "Authorization: Bearer secret123" https://api.example.com'
     )
@@ -772,8 +771,6 @@ def test_timestamp_not_affected_by_secret_replacement(temp_dir: str):
     stream.set_secrets({'test_secret': '18'})
 
     # Create an event with a timestamp
-    from openhands.events.action import CmdRunAction
-    
     action = CmdRunAction(command='echo "hello world"')
     action._timestamp = '2025-07-18T17:01:36.799608'  # Contains "18"
 
