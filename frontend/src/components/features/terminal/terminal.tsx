@@ -13,17 +13,24 @@ function Terminal() {
 
   const ref = useTerminal({
     commands,
+    readOnly: true, // Make terminal read-only
   });
 
   return (
     <div className="h-full p-2 min-h-0 flex-grow">
-      {isRuntimeInactive ? (
+      {isRuntimeInactive && (
         <div className="w-full h-full flex items-center text-center justify-center text-2xl text-tertiary-light">
           {t("DIFF_VIEWER$WAITING_FOR_RUNTIME")}
         </div>
-      ) : (
-        <div ref={ref} className="h-full w-full" />
       )}
+      <div
+        ref={ref}
+        className={
+          isRuntimeInactive
+            ? "w-0 h-0 opacity-0 overflow-hidden"
+            : "h-full w-full"
+        }
+      />
     </div>
   );
 }

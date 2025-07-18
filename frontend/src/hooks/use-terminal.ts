@@ -16,10 +16,12 @@ import { parseTerminalOutput } from "#/utils/parse-terminal-output";
 
 interface UseTerminalConfig {
   commands: Command[];
+  readOnly?: boolean;
 }
 
 const DEFAULT_TERMINAL_CONFIG: UseTerminalConfig = {
   commands: [],
+  readOnly: false,
 };
 
 const renderCommand = (command: Command, terminal: Terminal) => {
@@ -36,6 +38,7 @@ const persistentLastCommandIndex = { current: 0 };
 
 export const useTerminal = ({
   commands,
+  readOnly = false,
 }: UseTerminalConfig = DEFAULT_TERMINAL_CONFIG) => {
   const { send } = useWsClient();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
@@ -44,7 +47,7 @@ export const useTerminal = ({
   const ref = React.useRef<HTMLDivElement>(null);
   const lastCommandIndex = persistentLastCommandIndex; // Use the persistent reference
   const keyEventDisposable = React.useRef<{ dispose: () => void } | null>(null);
-  const disabled = RUNTIME_INACTIVE_STATES.includes(curAgentState);
+  const disabled = RUNTIME_INACTIVE_STATES.includes(curAgentState) || readOnly;
 
   const createTerminal = () =>
     new Terminal({
@@ -168,19 +171,6 @@ export const useTerminal = ({
       resizeObserver?.disconnect();
     };
   }, []);
-
-  // Ensure terminal is properly resized when it becomes visible again
-  React.useEffect(() => {
-    if (!disabled && fitAddon.current) {
-      // Small delay to ensure the DOM has updated
-      const timeoutId = setTimeout(() => {
-        fitAddon.current?.fit();
-      }, 100);
-
-      return () => clearTimeout(timeoutId);
-    }
-    return undefined;
-  }, [disabled]);
 
   React.useEffect(() => {
     if (terminal.current) {
