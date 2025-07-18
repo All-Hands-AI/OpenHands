@@ -223,7 +223,9 @@ class EventStream(EventStore):
         self, data: dict[str, Any], is_top_level: bool = True
     ) -> dict[str, Any]:
         # Fields that should not have secrets replaced (only at top level - system metadata)
-        TOP_LEVEL_PROTECTED_FIELDS = {'timestamp', 'id', 'source', 'cause'}
+        TOP_LEVEL_PROTECTED_FIELDS = {
+            'timestamp', 'id', 'source', 'cause', 'action', 'observation', 'message'
+        }
 
         for key in data:
             if is_top_level and key in TOP_LEVEL_PROTECTED_FIELDS:

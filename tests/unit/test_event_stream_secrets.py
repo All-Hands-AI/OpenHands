@@ -67,6 +67,8 @@ class TestEventStreamSecrets:
             {
                 'secret1': '123',  # Could appear in ID
                 'secret2': 'user',  # Could appear in source
+                'secret3': 'run',  # Could appear in action/observation
+                'secret4': 'Running',  # Could appear in message
             }
         )
 
@@ -76,21 +78,28 @@ class TestEventStreamSecrets:
             'timestamp': '2025-07-18T17:01:36.799608',
             'source': 'user',
             'cause': 123,
-            'message': 'This contains secret1: 123 and secret2: user',
+            'action': 'run',
+            'observation': 'run',
+            'message': 'Running command: echo hello',
+            'content': 'This contains secret1: 123 and secret2: user and secret3: run',
         }
 
         data_with_secrets_replaced = stream._replace_secrets(data)
 
-        # Protected fields should not be affected
+        # Protected fields should not be affected at top level
         assert data_with_secrets_replaced['id'] == 123
         assert data_with_secrets_replaced['timestamp'] == '2025-07-18T17:01:36.799608'
         assert data_with_secrets_replaced['source'] == 'user'
         assert data_with_secrets_replaced['cause'] == 123
+        assert data_with_secrets_replaced['action'] == 'run'
+        assert data_with_secrets_replaced['observation'] == 'run'
+        assert data_with_secrets_replaced['message'] == 'Running command: echo hello'
 
         # But non-protected fields should have secrets replaced
-        assert '<secret_hidden>' in data_with_secrets_replaced['message']
-        assert '123' not in data_with_secrets_replaced['message']
-        assert 'user' not in data_with_secrets_replaced['message']
+        assert '<secret_hidden>' in data_with_secrets_replaced['content']
+        assert '123' not in data_with_secrets_replaced['content']
+        assert 'user' not in data_with_secrets_replaced['content']
+        # Note: 'run' should still be replaced in content since it's not a protected field
 
     def test_nested_dict_secret_replacement(self):
         """Test that secrets are replaced in nested dictionaries while preserving protected fields."""
