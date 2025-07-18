@@ -288,7 +288,11 @@ class DockerRuntime(ActionExecutionClient):
         ]
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
 
-        use_host_network = self.config.sandbox.use_host_network
+        # Determine network mode: use host networking if explicitly enabled or if docker-out-of-docker is active
+        use_host_network = (
+            self.config.sandbox.use_host_network
+            or self.config.sandbox.docker_out_of_docker
+        )
         network_mode: typing.Literal['host'] | None = (
             'host' if use_host_network else None
         )
@@ -321,10 +325,16 @@ class DockerRuntime(ActionExecutionClient):
                     }
                 ]
         else:
-            self.log(
-                'warn',
-                'Using host network mode. If you are using MacOS, please make sure you have the latest version of Docker Desktop and enabled host network feature: https://docs.docker.com/network/drivers/host/#docker-desktop',
-            )
+            if self.config.sandbox.docker_out_of_docker:
+                self.log(
+                    'warn',
+                    'Using host network mode for docker-out-of-docker functionality. If you are using MacOS, please make sure you have the latest version of Docker Desktop and enabled host network feature: https://docs.docker.com/network/drivers/host/#docker-desktop',
+                )
+            else:
+                self.log(
+                    'warn',
+                    'Using host network mode. If you are using MacOS, please make sure you have the latest version of Docker Desktop and enabled host network feature: https://docs.docker.com/network/drivers/host/#docker-desktop',
+                )
 
         # Combine environment variables
         environment = dict(**self.initial_env_vars)
@@ -355,6 +365,26 @@ class DockerRuntime(ActionExecutionClient):
                 'Mount dir is not set, will not mount the workspace directory to the container'
             )
             volumes = {}  # Empty dict instead of None to satisfy mypy
+
+        # Mount Docker socket if docker-out-of-docker functionality is enabled
+        if self.config.sandbox.docker_out_of_docker:
+            docker_socket_path = '/var/run/docker.sock'
+            # Check if Docker socket exists on host
+            if os.path.exists(docker_socket_path):
+                self.log(
+                    'warning',
+                    'Enabling docker-out-of-docker functionality with Docker socket mounting and host networking. '
+                    'SECURITY WARNING: This grants container access to the host Docker daemon '
+                    'with root-equivalent privileges and host network interfaces. Use only in trusted environments.',
+                )
+                volumes[docker_socket_path] = {'bind': docker_socket_path, 'mode': 'rw'}
+            else:
+                self.log(
+                    'warning',
+                    f'Docker-out-of-docker functionality requested but {docker_socket_path} not found on host. '
+                    f'docker-out-of-docker functionality will not be available.',
+                )
+
         self.log(
             'debug',
             f'Sandbox workspace: {self.config.workspace_mount_path_in_sandbox}',

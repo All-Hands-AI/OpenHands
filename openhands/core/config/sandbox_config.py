@@ -87,6 +87,10 @@ class SandboxConfig(BaseModel):
         default=None,
         description="Volume mounts in the format 'host_path:container_path[:mode]', e.g. '/my/host/dir:/workspace:rw'. Multiple mounts can be specified using commas, e.g. '/path1:/workspace/path1,/path2:/workspace/path2:ro'",
     )
+    docker_out_of_docker: bool = Field(
+        default=False,
+        description='Whether to enable docker-out-of-docker functionality by mounting the Docker socket and using host networking. WARNING: This grants container access to the host Docker daemon with root-equivalent privileges and host network interfaces. Use only in trusted environments.',
+    )
 
     cuda_visible_devices: str | None = Field(default=None)
     model_config = ConfigDict(extra='forbid')

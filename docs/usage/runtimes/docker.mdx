@@ -130,3 +130,60 @@ docker run # ... \
 <Note>
 **Docker Desktop Required**: Network isolation features, including custom networks and `host.docker.internal` routing, require Docker Desktop. Docker Engine alone does not support these features on localhost across custom networks. If you're using Docker Engine without Docker Desktop, network isolation may not work as expected.
 </Note>
+
+## Docker-out-of-Docker Support
+
+OpenHands supports docker-out-of-docker functionality, which allows the agent in the sandbox container to build Docker images, run containers, and perform other Docker operations. This feature also enables host networking, allowing the agent to access services running on localhost ports.
+
+For complete configuration details, see the [`docker_out_of_docker` option](../configuration-options#docker-out-of-docker-support) in the Configuration Options documentation.
+
+<Warning>
+**CRITICAL SECURITY WARNING**: Enabling docker-out-of-docker functionality grants the sandbox container access to the host Docker daemon with root-equivalent privileges and host network interfaces. This poses significant security risks:
+
+- **Full Host Access**: The sandbox can potentially access and modify any file on the host system
+- **Container Escape**: Malicious code could escape the sandbox and compromise the host
+- **Privilege Escalation**: The sandbox gains root-level access to the Docker daemon
+- **Network Access**: The sandbox can access all host network interfaces and services
+- **Port Access**: The sandbox can access any service running on localhost ports
+
+**Only enable this feature in trusted environments where you fully trust the code being executed.**
+</Warning>
+
+### Enabling Docker-out-of-Docker
+
+To enable docker-out-of-docker functionality, set the `docker_out_of_docker` configuration option (see [Configuration Options](../configuration-options#docker-out-of-docker-support) for complete details):
+
+#### Using Environment Variables
+
+```bash
+docker run # ... \
+    -e SANDBOX_DOCKER_OUT_OF_DOCKER=true \
+    # ...
+```
+
+#### Using Configuration File
+
+```toml
+[sandbox]
+docker_out_of_docker = true
+```
+
+### How It Works
+
+When enabled, OpenHands:
+1. Mounts the host Docker socket (`/var/run/docker.sock`) into the sandbox container
+2. Enables host networking mode, allowing access to localhost services
+3. Provides the sandbox with direct access to the host Docker daemon
+
+The feature includes safety checks:
+- Verifies that the Docker socket exists on the host before mounting
+- Logs security warnings when the feature is enabled
+- Provides clear error messages if the socket is not available
+
+### Use Case
+
+A Single developer that maintains its own openhands server and needs docker inside the sandbox more than isolation. For example when using openhands to work on openhands itself.
+
+It is not recommanded to use this feature in a multi-user environment. It is very likely that eventually an agent will
+break the system or shut down a docker container that somebody else is using.
+
