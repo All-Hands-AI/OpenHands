@@ -201,3 +201,166 @@ This microagent has an invalid type.
     assert '"knowledge"' in error_msg
     assert '"repo"' in error_msg
     assert '"task"' in error_msg
+
+
+def test_cursorrules_file_load():
+    """Test loading .cursorrules file as a RepoMicroagent."""
+    cursorrules_content = """Always use Python for new files.
+Follow the existing code style.
+Add proper error handling."""
+
+    cursorrules_path = Path('.cursorrules')
+
+    # Test loading .cursorrules file directly
+    agent = BaseMicroagent.load(cursorrules_path, file_content=cursorrules_content)
+
+    # Verify it's loaded as a RepoMicroagent
+    assert isinstance(agent, RepoMicroagent)
+    assert agent.name == 'cursorrules'
+    assert agent.content == cursorrules_content
+    assert agent.type == MicroagentType.REPO_KNOWLEDGE
+    assert agent.metadata.name == 'cursorrules'
+    assert agent.source == str(cursorrules_path)
+
+
+def test_microagent_version_as_integer():
+    """Test loading a microagent with version as integer (reproduces the bug)."""
+    # Create a microagent with version as an unquoted integer
+    # This should be parsed as an integer by YAML but converted to string by our code
+    microagent_content = """---
+name: test_agent
+type: knowledge
+version: 2512312
+agent: CodeActAgent
+triggers:
+  - test
+---
+
+# Test Agent
+
+This is a test agent with integer version.
+"""
+
+    test_path = Path('test_agent.md')
+
+    # This should not raise an error even though version is an integer in YAML
+    agent = BaseMicroagent.load(test_path, file_content=microagent_content)
+
+    # Verify the agent was loaded correctly
+    assert isinstance(agent, KnowledgeMicroagent)
+    assert agent.name == 'test_agent'
+    assert agent.metadata.version == '2512312'  # Should be converted to string
+    assert isinstance(agent.metadata.version, str)  # Ensure it's actually a string
+    assert agent.type == MicroagentType.KNOWLEDGE
+
+
+def test_microagent_version_as_float():
+    """Test loading a microagent with version as float."""
+    # Create a microagent with version as an unquoted float
+    microagent_content = """---
+name: test_agent_float
+type: knowledge
+version: 1.5
+agent: CodeActAgent
+triggers:
+  - test
+---
+
+# Test Agent Float
+
+This is a test agent with float version.
+"""
+
+    test_path = Path('test_agent_float.md')
+
+    # This should not raise an error even though version is a float in YAML
+    agent = BaseMicroagent.load(test_path, file_content=microagent_content)
+
+    # Verify the agent was loaded correctly
+    assert isinstance(agent, KnowledgeMicroagent)
+    assert agent.name == 'test_agent_float'
+    assert agent.metadata.version == '1.5'  # Should be converted to string
+    assert isinstance(agent.metadata.version, str)  # Ensure it's actually a string
+    assert agent.type == MicroagentType.KNOWLEDGE
+
+
+def test_microagent_version_as_string_unchanged():
+    """Test loading a microagent with version as string (should remain unchanged)."""
+    # Create a microagent with version as a quoted string
+    microagent_content = """---
+name: test_agent_string
+type: knowledge
+version: "1.0.0"
+agent: CodeActAgent
+triggers:
+  - test
+---
+
+# Test Agent String
+
+This is a test agent with string version.
+"""
+
+    test_path = Path('test_agent_string.md')
+
+    # This should work normally
+    agent = BaseMicroagent.load(test_path, file_content=microagent_content)
+
+    # Verify the agent was loaded correctly
+    assert isinstance(agent, KnowledgeMicroagent)
+    assert agent.name == 'test_agent_string'
+    assert agent.metadata.version == '1.0.0'  # Should remain as string
+    assert isinstance(agent.metadata.version, str)  # Ensure it's actually a string
+    assert agent.type == MicroagentType.KNOWLEDGE
+
+
+@pytest.fixture
+def temp_microagents_dir_with_cursorrules():
+    """Create a temporary directory with test microagents and .cursorrules file."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        root = Path(temp_dir)
+
+        # Create .openhands/microagents directory structure
+        microagents_dir = root / '.openhands' / 'microagents'
+        microagents_dir.mkdir(parents=True, exist_ok=True)
+
+        # Create .cursorrules file in repository root
+        cursorrules_content = """Always use TypeScript for new files.
+Follow the existing code style."""
+        (root / '.cursorrules').write_text(cursorrules_content)
+
+        # Create test repo agent
+        repo_agent = """---
+# type: repo
+version: 1.0.0
+agent: CodeActAgent
+---
+
+# Test Repository Agent
+
+Repository-specific test instructions.
+"""
+        (microagents_dir / 'repo.md').write_text(repo_agent)
+
+        yield root
+
+
+def test_load_microagents_with_cursorrules(temp_microagents_dir_with_cursorrules):
+    """Test loading microagents when .cursorrules file exists."""
+    microagents_dir = (
+        temp_microagents_dir_with_cursorrules / '.openhands' / 'microagents'
+    )
+
+    repo_agents, knowledge_agents = load_microagents_from_dir(microagents_dir)
+
+    # Verify that .cursorrules file was loaded as a RepoMicroagent
+    assert len(repo_agents) == 2  # repo.md + .cursorrules
+    assert 'repo' in repo_agents
+    assert 'cursorrules' in repo_agents
+
+    # Check .cursorrules agent
+    cursorrules_agent = repo_agents['cursorrules']
+    assert isinstance(cursorrules_agent, RepoMicroagent)
+    assert cursorrules_agent.name == 'cursorrules'
+    assert 'Always use TypeScript for new files' in cursorrules_agent.content
+    assert cursorrules_agent.type == MicroagentType.REPO_KNOWLEDGE

@@ -82,17 +82,5 @@ describe("extractModelAndProvider", () => {
       model: "claude-opus-4-20250514",
       separator: "/",
     });
-
-    expect(extractModelAndProvider("claude-3-haiku-20240307")).toEqual({
-      provider: "anthropic",
-      model: "claude-3-haiku-20240307",
-      separator: "/",
-    });
-
-    expect(extractModelAndProvider("claude-2.1")).toEqual({
-      provider: "anthropic",
-      model: "claude-2.1",
-      separator: "/",
-    });
   });
 });

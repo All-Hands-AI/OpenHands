@@ -1,13 +1,21 @@
 import json
-from unittest.mock import MagicMock, patch
+from datetime import datetime, timezone
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from fastapi import status
 from fastapi.responses import JSONResponse
 
 from openhands.microagent.microagent import KnowledgeMicroagent, RepoMicroagent
 from openhands.microagent.types import MicroagentMetadata, MicroagentType
 from openhands.server.routes.conversation import get_microagents
+from openhands.server.routes.manage_conversations import (
+    UpdateConversationRequest,
+    update_conversation,
+)
 from openhands.server.session.conversation import ServerConversation
+from openhands.storage.conversation.conversation_store import ConversationStore
+from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 
 
 @pytest.mark.asyncio
@@ -155,3 +163,459 @@ async def test_get_microagents_exception():
         content = json.loads(response.body)
         assert 'error' in content
         assert 'Test exception' in content['error']
+
+
+@pytest.mark.update_conversation
+@pytest.mark.asyncio
+async def test_update_conversation_success():
+    """Test successful conversation update."""
+    # Mock data
+    conversation_id = 'test_conversation_123'
+    user_id = 'test_user_456'
+    original_title = 'Original Title'
+    new_title = 'Updated Title'
+
+    # Create mock metadata
+    mock_metadata = ConversationMetadata(
+        conversation_id=conversation_id,
+        user_id=user_id,
+        title=original_title,
+        selected_repository=None,
+        last_updated_at=datetime.now(timezone.utc),
+    )
+
+    # Create mock conversation store
+    mock_conversation_store = MagicMock(spec=ConversationStore)
+    mock_conversation_store.get_metadata = AsyncMock(return_value=mock_metadata)
+    mock_conversation_store.save_metadata = AsyncMock()
+
+    # Create update request
+    update_request = UpdateConversationRequest(title=new_title)
+
+    # Mock the conversation manager socket
+    mock_sio = AsyncMock()
+
+    with patch(
+        'openhands.server.routes.manage_conversations.conversation_manager'
+    ) as mock_manager:
+        mock_manager.sio = mock_sio
+
+        # Call the function
+        result = await update_conversation(
+            conversation_id=conversation_id,
+            data=update_request,
+            user_id=user_id,
+            conversation_store=mock_conversation_store,
+        )
+
+        # Verify the result
+        assert result is True
+
+        # Verify metadata was fetched
+        mock_conversation_store.get_metadata.assert_called_once_with(conversation_id)
+
+        # Verify metadata was updated and saved
+        mock_conversation_store.save_metadata.assert_called_once()
+        saved_metadata = mock_conversation_store.save_metadata.call_args[0][0]
+        assert saved_metadata.title == new_title.strip()
+        assert saved_metadata.last_updated_at is not None
+
+        # Verify socket emission
+        mock_sio.emit.assert_called_once()
+        emit_call = mock_sio.emit.call_args
+        assert emit_call[0][0] == 'oh_event'
+        assert emit_call[0][1]['conversation_title'] == new_title
+        assert emit_call[1]['to'] == f'room:{conversation_id}'
+
+
+@pytest.mark.update_conversation
+@pytest.mark.asyncio
+async def test_update_conversation_not_found():
+    """Test conversation update when conversation doesn't exist."""
+    conversation_id = 'nonexistent_conversation'
+    user_id = 'test_user_456'
+
+    # Create mock conversation store that raises FileNotFoundError
+    mock_conversation_store = MagicMock(spec=ConversationStore)
+    mock_conversation_store.get_metadata = AsyncMock(side_effect=FileNotFoundError())
+
+    # Create update request
+    update_request = UpdateConversationRequest(title='New Title')
+
+    # Call the function
+    result = await update_conversation(
+        conversation_id=conversation_id,
+        data=update_request,
+        user_id=user_id,
+        conversation_store=mock_conversation_store,
+    )
+
+    # Verify the result is a 404 error response
+    assert isinstance(result, JSONResponse)
+    assert result.status_code == status.HTTP_404_NOT_FOUND
+
+    # Parse the JSON content
+    content = json.loads(result.body)
+    assert content['status'] == 'error'
+    assert content['message'] == 'Conversation not found'
+    assert content['msg_id'] == 'CONVERSATION$NOT_FOUND'
+
+
+@pytest.mark.update_conversation
+@pytest.mark.asyncio
+async def test_update_conversation_permission_denied():
+    """Test conversation update when user doesn't own the conversation."""
+    conversation_id = 'test_conversation_123'
+    user_id = 'test_user_456'
+    owner_id = 'different_user_789'
+
+    # Create mock metadata owned by different user
+    mock_metadata = ConversationMetadata(
+        conversation_id=conversation_id,
+        user_id=owner_id,
+        title='Original Title',
+        selected_repository=None,
+        last_updated_at=datetime.now(timezone.utc),
+    )
+
+    # Create mock conversation store
+    mock_conversation_store = MagicMock(spec=ConversationStore)
+    mock_conversation_store.get_metadata = AsyncMock(return_value=mock_metadata)
+
+    # Create update request
+    update_request = UpdateConversationRequest(title='New Title')
+
+    # Call the function
+    result = await update_conversation(
+        conversation_id=conversation_id,
+        data=update_request,
+        user_id=user_id,
+        conversation_store=mock_conversation_store,
+    )
+
+    # Verify the result is a 403 error response
+    assert isinstance(result, JSONResponse)
+    assert result.status_code == status.HTTP_403_FORBIDDEN
+
+    # Parse the JSON content
+    content = json.loads(result.body)
+    assert content['status'] == 'error'
+    assert (
+        content['message']
+        == 'Permission denied: You can only update your own conversations'
+    )
+    assert content['msg_id'] == 'AUTHORIZATION$PERMISSION_DENIED'
+
+
+@pytest.mark.update_conversation
+@pytest.mark.asyncio
+async def test_update_conversation_permission_denied_no_user_id():
+    """Test conversation update when user_id is None and metadata has user_id."""
+    conversation_id = 'test_conversation_123'
+    user_id = None
+    owner_id = 'some_user_789'
+
+    # Create mock metadata owned by a user
+    mock_metadata = ConversationMetadata(
+        conversation_id=conversation_id,
+        user_id=owner_id,
+        title='Original Title',
+        selected_repository=None,
+        last_updated_at=datetime.now(timezone.utc),
+    )
+
+    # Create mock conversation store
+    mock_conversation_store = MagicMock(spec=ConversationStore)
+    mock_conversation_store.get_metadata = AsyncMock(return_value=mock_metadata)
+
+    # Create update request
+    update_request = UpdateConversationRequest(title='New Title')
+
+    # Call the function
+    result = await update_conversation(
+        conversation_id=conversation_id,
+        data=update_request,
+        user_id=user_id,
+        conversation_store=mock_conversation_store,
+    )
+
+    # Verify the result is successful (current logic allows this)
+    assert result is True
+
+
+@pytest.mark.update_conversation
+@pytest.mark.asyncio
+async def test_update_conversation_socket_emission_error():
+    """Test conversation update when socket emission fails."""
+    conversation_id = 'test_conversation_123'
+    user_id = 'test_user_456'
+    new_title = 'Updated Title'
+
+    # Create mock metadata
+    mock_metadata = ConversationMetadata(
+        conversation_id=conversation_id,
+        user_id=user_id,
+        title='Original Title',
+        selected_repository=None,
+        last_updated_at=datetime.now(timezone.utc),
+    )
+
+    # Create mock conversation store
+    mock_conversation_store = MagicMock(spec=ConversationStore)
+    mock_conversation_store.get_metadata = AsyncMock(return_value=mock_metadata)
+    mock_conversation_store.save_metadata = AsyncMock()
+
+    # Create update request
+    update_request = UpdateConversationRequest(title=new_title)
+
+    # Mock the conversation manager socket to raise an exception
+    mock_sio = AsyncMock()
+    mock_sio.emit.side_effect = Exception('Socket error')
+
+    with patch(
+        'openhands.server.routes.manage_conversations.conversation_manager'
+    ) as mock_manager:
+        mock_manager.sio = mock_sio
+
+        # Call the function (should still succeed despite socket error)
+        result = await update_conversation(
+            conversation_id=conversation_id,
+            data=update_request,
+            user_id=user_id,
+            conversation_store=mock_conversation_store,
+        )
+
+        # Verify the result is still successful
+        assert result is True
+
+        # Verify metadata was still saved
+        mock_conversation_store.save_metadata.assert_called_once()
+
+
+@pytest.mark.update_conversation
+@pytest.mark.asyncio
+async def test_update_conversation_general_exception():
+    """Test conversation update when an unexpected exception occurs."""
+    conversation_id = 'test_conversation_123'
+    user_id = 'test_user_456'
+
+    # Create mock conversation store that raises a general exception
+    mock_conversation_store = MagicMock(spec=ConversationStore)
+    mock_conversation_store.get_metadata = AsyncMock(
+        side_effect=Exception('Database error')
+    )
+
+    # Create update request
+    update_request = UpdateConversationRequest(title='New Title')
+
+    # Call the function
+    result = await update_conversation(
+        conversation_id=conversation_id,
+        data=update_request,
+        user_id=user_id,
+        conversation_store=mock_conversation_store,
+    )
+
+    # Verify the result is a 500 error response
+    assert isinstance(result, JSONResponse)
+    assert result.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+
+    # Parse the JSON content
+    content = json.loads(result.body)
+    assert content['status'] == 'error'
+    assert 'Failed to update conversation' in content['message']
+    assert content['msg_id'] == 'CONVERSATION$UPDATE_ERROR'
+
+
+@pytest.mark.update_conversation
+@pytest.mark.asyncio
+async def test_update_conversation_title_whitespace_trimming():
+    """Test that conversation title is properly trimmed of whitespace."""
+    conversation_id = 'test_conversation_123'
+    user_id = 'test_user_456'
+    title_with_whitespace = '  Trimmed Title  '
+    expected_title = 'Trimmed Title'
+
+    # Create mock metadata
+    mock_metadata = ConversationMetadata(
+        conversation_id=conversation_id,
+        user_id=user_id,
+        title='Original Title',
+        selected_repository=None,
+        last_updated_at=datetime.now(timezone.utc),
+    )
+
+    # Create mock conversation store
+    mock_conversation_store = MagicMock(spec=ConversationStore)
+    mock_conversation_store.get_metadata = AsyncMock(return_value=mock_metadata)
+    mock_conversation_store.save_metadata = AsyncMock()
+
+    # Create update request with whitespace
+    update_request = UpdateConversationRequest(title=title_with_whitespace)
+
+    # Mock the conversation manager socket
+    mock_sio = AsyncMock()
+
+    with patch(
+        'openhands.server.routes.manage_conversations.conversation_manager'
+    ) as mock_manager:
+        mock_manager.sio = mock_sio
+
+        # Call the function
+        result = await update_conversation(
+            conversation_id=conversation_id,
+            data=update_request,
+            user_id=user_id,
+            conversation_store=mock_conversation_store,
+        )
+
+        # Verify the result
+        assert result is True
+
+        # Verify metadata was updated with trimmed title
+        mock_conversation_store.save_metadata.assert_called_once()
+        saved_metadata = mock_conversation_store.save_metadata.call_args[0][0]
+        assert saved_metadata.title == expected_title
+
+
+@pytest.mark.update_conversation
+@pytest.mark.asyncio
+async def test_update_conversation_user_owns_conversation():
+    """Test successful update when user owns the conversation."""
+    conversation_id = 'test_conversation_123'
+    user_id = 'test_user_456'
+    new_title = 'Updated Title'
+
+    # Create mock metadata owned by the same user
+    mock_metadata = ConversationMetadata(
+        conversation_id=conversation_id,
+        user_id=user_id,  # Same user
+        title='Original Title',
+        selected_repository=None,
+        last_updated_at=datetime.now(timezone.utc),
+    )
+
+    # Create mock conversation store
+    mock_conversation_store = MagicMock(spec=ConversationStore)
+    mock_conversation_store.get_metadata = AsyncMock(return_value=mock_metadata)
+    mock_conversation_store.save_metadata = AsyncMock()
+
+    # Create update request
+    update_request = UpdateConversationRequest(title=new_title)
+
+    # Mock the conversation manager socket
+    mock_sio = AsyncMock()
+
+    with patch(
+        'openhands.server.routes.manage_conversations.conversation_manager'
+    ) as mock_manager:
+        mock_manager.sio = mock_sio
+
+        # Call the function
+        result = await update_conversation(
+            conversation_id=conversation_id,
+            data=update_request,
+            user_id=user_id,
+            conversation_store=mock_conversation_store,
+        )
+
+        # Verify success
+        assert result is True
+        mock_conversation_store.save_metadata.assert_called_once()
+
+
+@pytest.mark.update_conversation
+@pytest.mark.asyncio
+async def test_update_conversation_last_updated_at_set():
+    """Test that last_updated_at is properly set when updating."""
+    conversation_id = 'test_conversation_123'
+    user_id = 'test_user_456'
+    new_title = 'Updated Title'
+
+    # Create mock metadata
+    original_timestamp = datetime.now(timezone.utc)
+    mock_metadata = ConversationMetadata(
+        conversation_id=conversation_id,
+        user_id=user_id,
+        title='Original Title',
+        selected_repository=None,
+        last_updated_at=original_timestamp,
+    )
+
+    # Create mock conversation store
+    mock_conversation_store = MagicMock(spec=ConversationStore)
+    mock_conversation_store.get_metadata = AsyncMock(return_value=mock_metadata)
+    mock_conversation_store.save_metadata = AsyncMock()
+
+    # Create update request
+    update_request = UpdateConversationRequest(title=new_title)
+
+    # Mock the conversation manager socket
+    mock_sio = AsyncMock()
+
+    with patch(
+        'openhands.server.routes.manage_conversations.conversation_manager'
+    ) as mock_manager:
+        mock_manager.sio = mock_sio
+
+        # Call the function
+        result = await update_conversation(
+            conversation_id=conversation_id,
+            data=update_request,
+            user_id=user_id,
+            conversation_store=mock_conversation_store,
+        )
+
+        # Verify success
+        assert result is True
+
+        # Verify last_updated_at was updated
+        mock_conversation_store.save_metadata.assert_called_once()
+        saved_metadata = mock_conversation_store.save_metadata.call_args[0][0]
+        assert saved_metadata.last_updated_at > original_timestamp
+
+
+@pytest.mark.update_conversation
+@pytest.mark.asyncio
+async def test_update_conversation_no_user_id_no_metadata_user_id():
+    """Test successful update when both user_id and metadata.user_id are None."""
+    conversation_id = 'test_conversation_123'
+    user_id = None
+    new_title = 'Updated Title'
+
+    # Create mock metadata with no user_id
+    mock_metadata = ConversationMetadata(
+        conversation_id=conversation_id,
+        user_id=None,
+        title='Original Title',
+        selected_repository=None,
+        last_updated_at=datetime.now(timezone.utc),
+    )
+
+    # Create mock conversation store
+    mock_conversation_store = MagicMock(spec=ConversationStore)
+    mock_conversation_store.get_metadata = AsyncMock(return_value=mock_metadata)
+    mock_conversation_store.save_metadata = AsyncMock()
+
+    # Create update request
+    update_request = UpdateConversationRequest(title=new_title)
+
+    # Mock the conversation manager socket
+    mock_sio = AsyncMock()
+
+    with patch(
+        'openhands.server.routes.manage_conversations.conversation_manager'
+    ) as mock_manager:
+        mock_manager.sio = mock_sio
+
+        # Call the function
+        result = await update_conversation(
+            conversation_id=conversation_id,
+            data=update_request,
+            user_id=user_id,
+            conversation_store=mock_conversation_store,
+        )
+
+        # Verify success (should work when both are None)
+        assert result is True
+        mock_conversation_store.save_metadata.assert_called_once()

@@ -5,6 +5,7 @@ import {
   OpenHandsAction,
   SystemMessageAction,
   CommandAction,
+  FinishAction,
 } from "./actions";
 import {
   AgentStateChangeObservation,
@@ -14,6 +15,16 @@ import {
   OpenHandsObservation,
 } from "./observations";
 import { StatusUpdate } from "./variances";
+
+export const isOpenHandsEvent = (
+  event: unknown,
+): event is OpenHandsParsedEvent =>
+  typeof event === "object" &&
+  event !== null &&
+  "id" in event &&
+  "source" in event &&
+  "message" in event &&
+  "timestamp" in event;
 
 export const isOpenHandsAction = (
   event: OpenHandsParsedEvent,
@@ -58,7 +69,7 @@ export const isCommandObservation = (
 
 export const isFinishAction = (
   event: OpenHandsParsedEvent,
-): event is AssistantMessageAction =>
+): event is FinishAction =>
   isOpenHandsAction(event) && event.action === "finish";
 
 export const isSystemMessage = (
@@ -76,7 +87,9 @@ export const isMcpObservation = (
 ): event is MCPObservation =>
   isOpenHandsObservation(event) && event.observation === "mcp";
 
-export const isStatusUpdate = (
-  event: OpenHandsParsedEvent,
-): event is StatusUpdate =>
-  "status_update" in event && "type" in event && "id" in event;
+export const isStatusUpdate = (event: unknown): event is StatusUpdate =>
+  typeof event === "object" &&
+  event !== null &&
+  "status_update" in event &&
+  "type" in event &&
+  "id" in event;

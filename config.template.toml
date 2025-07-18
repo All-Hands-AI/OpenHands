@@ -10,27 +10,13 @@
 # General core configurations
 ##############################################################################
 [core]
-# API key for E2B
-#e2b_api_key = ""
-
-# API key for Modal
-#modal_api_token_id = ""
-#modal_api_token_secret = ""
-
-# API key for Daytona
-#daytona_api_key = ""
-
-# Daytona Target
-#daytona_target = ""
+# API keys and configuration for core services
 
 # Base path for the workspace
 #workspace_base = "./workspace"
 
 # Cache directory path
 #cache_dir = "/tmp/cache"
-
-# Reasoning effort for o1 models (low, medium, high, or not set)
-#reasoning_effort = "medium"
 
 # Debugging enabled
 #debug = false
@@ -59,6 +45,9 @@
 
 # Maximum file size for uploads, in megabytes
 #file_uploads_max_file_size_mb = 0
+
+# Enable the browser environment
+#enable_browser = true
 
 # Maximum budget per task, 0.0 means no limit
 #max_budget_per_task = 0.0
@@ -126,6 +115,9 @@ api_key = ""
 
 # API version
 #api_version = ""
+
+# Reasoning effort for OpenAI o-series models (low, medium, high, or not set)
+#reasoning_effort = "medium"
 
 # Cost per input token
 #input_cost_per_token = 0.0
@@ -237,6 +229,7 @@ model = "gpt-4o"
 [agent]
 
 # Whether the browsing tool is enabled
+# Note: when this is set to true, enable_browser in the core config must also be true
 enable_browsing = true
 
 # Whether the LLM draft editor is enabled
@@ -270,6 +263,9 @@ enable_finish = true
 # Whether history should be truncated to continue the session when hitting LLM context
 # length limit
 enable_history_truncation = true
+
+# Whether the condensation request tool is enabled
+enable_condensation_request = false
 
 [agent.RepoExplorerAgent]
 # Example: use a cheaper model for RepoExplorerAgent to reduce cost, especially

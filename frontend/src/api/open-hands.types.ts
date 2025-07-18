@@ -1,5 +1,6 @@
 import { ConversationStatus } from "#/types/conversation-status";
 import { RuntimeStatus } from "#/types/runtime-status";
+import { Provider } from "#/types/settings";
 
 export interface ErrorResponse {
   error: string;
@@ -49,9 +50,11 @@ export interface GetConfigResponse {
   GITHUB_CLIENT_ID: string;
   POSTHOG_CLIENT_KEY: string;
   STRIPE_PUBLISHABLE_KEY?: string;
+  PROVIDERS_CONFIGURED?: Provider[];
   FEATURE_FLAGS: {
     ENABLE_BILLING: boolean;
     HIDE_LLM_SETTINGS: boolean;
+    HIDE_MICROAGENT_MANAGEMENT?: boolean;
   };
 }
 
@@ -70,6 +73,12 @@ export interface AuthenticateResponse {
   error?: string;
 }
 
+export interface RepositorySelection {
+  selected_repository: string | null;
+  selected_branch: string | null;
+  git_provider: Provider | null;
+}
+
 export type ConversationTrigger = "resolver" | "gui" | "suggested_task";
 
 export interface Conversation {
@@ -77,7 +86,7 @@ export interface Conversation {
   title: string;
   selected_repository: string | null;
   selected_branch: string | null;
-  git_provider: string | null;
+  git_provider: Provider | null;
   last_updated_at: string;
   created_at: string;
   status: ConversationStatus;
