@@ -1,5 +1,5 @@
-# Workflow that runs python unit tests
-name: Run Python Unit Tests
+# Workflow that runs python tests
+name: Run Python Tests
 
 # The jobs in this workflow are required, so they must run at all times
 # * Always run on "main"
