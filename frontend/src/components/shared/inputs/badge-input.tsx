@@ -1,7 +1,7 @@
 import React from "react";
-import { FaX } from "react-icons/fa6";
 import { cn } from "#/utils/utils";
 import { BrandBadge } from "../badge";
+import XIcon from "#/icons/x.svg?react";
 
 interface BadgeInputProps {
   name?: string;
@@ -49,14 +49,15 @@ export function BadgeInput({
     >
       {value.map((badge, index) => (
         <div key={index}>
-          <BrandBadge className="flex items-center gap-0.5">
+          <BrandBadge className="flex items-center gap-0.5 py-1 px-2.5 text-sm text-[#0D0F11] font-semibold leading-[16px]">
             {badge}
             <button
               data-testid="remove-button"
               type="button"
               onClick={() => removeBadge(index)}
+              className="cursor-pointer"
             >
-              <FaX className="w-3 h-3 text-black" />
+              <XIcon width={14} height={14} color="#000000" />
             </button>
           </BrandBadge>
         </div>
