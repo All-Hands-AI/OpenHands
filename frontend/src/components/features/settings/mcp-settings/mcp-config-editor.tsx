@@ -41,7 +41,7 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
             className="text-sm text-blue-400 hover:underline mr-3"
             onClick={(e) => e.stopPropagation()}
           >
-            Documentation
+            {t(I18nKey.COMMON$DOCUMENTATION)}
           </a>
           <BrandButton
             type="button"

@@ -4,7 +4,6 @@ import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "test-utils";
 import type { Message } from "#/message";
 import { SUGGESTIONS } from "#/utils/suggestions";
-import { WsClientProviderStatus } from "#/context/ws-client-provider";
 import { ChatInterface } from "#/components/features/chat/chat-interface";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -19,7 +18,7 @@ describe("Empty state", () => {
   const { useWsClient: useWsClientMock } = vi.hoisted(() => ({
     useWsClient: vi.fn(() => ({
       send: sendMock,
-      status: WsClientProviderStatus.CONNECTED,
+      status: "CONNECTED",
       isLoadingMessages: false,
     })),
   }));
@@ -64,7 +63,7 @@ describe("Empty state", () => {
       // this is to test that the message is in the UI before the socket is called
       useWsClientMock.mockImplementation(() => ({
         send: sendMock,
-        status: WsClientProviderStatus.CONNECTED,
+        status: "CONNECTED",
         isLoadingMessages: false,
       }));
       const user = userEvent.setup();
@@ -87,7 +86,7 @@ describe("Empty state", () => {
     async () => {
       useWsClientMock.mockImplementation(() => ({
         send: sendMock,
-        status: WsClientProviderStatus.CONNECTED,
+        status: "CONNECTED",
         isLoadingMessages: false,
       }));
       const user = userEvent.setup();
@@ -101,7 +100,7 @@ describe("Empty state", () => {
 
       useWsClientMock.mockImplementation(() => ({
         send: sendMock,
-        status: WsClientProviderStatus.CONNECTED,
+        status: "CONNECTED",
         isLoadingMessages: false,
       }));
       rerender(<ChatInterface />);

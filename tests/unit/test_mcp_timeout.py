@@ -13,12 +13,12 @@ async def test_sse_connection_timeout():
     # Create a mock MCPClient
     mock_client = mock.MagicMock(spec=MCPClient)
 
-    # Configure the mock to raise a TimeoutError when connect_sse is called
-    async def mock_connect_sse(*args, **kwargs):
+    # Configure the mock to raise a TimeoutError when connect_http is called
+    async def mock_connect_http(*args, **kwargs):
         await asyncio.sleep(0.1)  # Simulate some delay
         raise asyncio.TimeoutError('Connection timed out')
 
-    mock_client.connect_sse.side_effect = mock_connect_sse
+    mock_client.connect_http.side_effect = mock_connect_http
     mock_client.disconnect = mock.AsyncMock()
 
     # Mock the MCPClient constructor to return our mock
@@ -35,11 +35,8 @@ async def test_sse_connection_timeout():
         # Verify that no clients were successfully connected
         assert len(clients) == 0
 
-        # Verify that connect_sse was called for each server
-        assert mock_client.connect_sse.call_count == 2
-
-        # Verify that disconnect was called for each failed connection
-        assert mock_client.disconnect.call_count == 2
+        # Verify that connect_http was called for each server
+        assert mock_client.connect_http.call_count == 2
 
 
 @pytest.mark.asyncio

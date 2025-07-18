@@ -12,17 +12,24 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import MessageAction
 from openhands.events.stream import EventStreamSubscriber, session_exists
+from openhands.runtime import get_runtime_cls
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.monitoring import MonitoringListener
-from openhands.server.session.agent_session import WAIT_TIME_BEFORE_CLOSE
+from openhands.server.session.agent_session import WAIT_TIME_BEFORE_CLOSE, AgentSession
 from openhands.server.session.conversation import ServerConversation
 from openhands.server.session.session import ROOM_KEY, Session
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
+from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
-from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync, wait_all
+from openhands.utils.async_utils import (
+    GENERAL_TIMEOUT,
+    call_async_from_sync,
+    run_in_loop,
+    wait_all,
+)
 from openhands.utils.conversation_summary import (
     auto_generate_title,
     get_default_conversation_title,
@@ -60,15 +67,20 @@ class StandaloneConversationManager(ConversationManager):
     _conversations_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     _cleanup_task: asyncio.Task | None = None
     _conversation_store_class: type[ConversationStore] | None = None
+    _loop: asyncio.AbstractEventLoop | None = None
 
     async def __aenter__(self):
+        # Grab a reference to the main event loop. This is the loop in which `await sio.emit` must be called
+        self._loop = asyncio.get_event_loop()
         self._cleanup_task = asyncio.create_task(self._cleanup_stale())
+        get_runtime_cls(self.config.runtime).setup(self.config)
         return self
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         if self._cleanup_task:
             self._cleanup_task.cancel()
             self._cleanup_task = None
+        get_runtime_cls(self.config.runtime).teardown(self.config)
 
     async def attach_to_conversation(
         self, sid: str, user_id: str | None = None
@@ -96,9 +108,22 @@ class StandaloneConversationManager(ConversationManager):
                 )
                 return conversation
 
+            # Get the event stream for the conversation - required to keep the cur_id up to date
+            event_stream = None
+            runtime = None
+            session = self._local_agent_loops_by_sid.get(sid)
+            if session:
+                event_stream = session.agent_session.event_stream
+                runtime = session.agent_session.runtime
+
             # Create new conversation if none exists
             c = ServerConversation(
-                sid, file_store=self.file_store, config=self.config, user_id=user_id
+                sid,
+                file_store=self.file_store,
+                config=self.config,
+                user_id=user_id,
+                event_stream=event_stream,
+                runtime=runtime,
             )
             try:
                 await c.connect()
@@ -111,7 +136,8 @@ class StandaloneConversationManager(ConversationManager):
                 return None
             end_time = time.time()
             logger.info(
-                f'ServerConversation {c.sid} connected in {end_time - start_time} seconds'
+                f'ServerConversation {c.sid} connected in {end_time - start_time} seconds',
+                extra={'session_id': sid},
             )
             self._active_conversations[sid] = (c, 1)
             return c
@@ -153,6 +179,10 @@ class StandaloneConversationManager(ConversationManager):
                     for sid, (conversation, detach_time) in items:
                         await conversation.disconnect()
                         self._detached_conversations.pop(sid, None)
+
+                # Implies disconnected sandboxes stay open indefinitely
+                if not self.config.sandbox.close_delay:
+                    return
 
                 close_threshold = time.time() - self.config.sandbox.close_delay
                 running_loops = list(self._local_agent_loops_by_sid.items())
@@ -291,10 +321,13 @@ class StandaloneConversationManager(ConversationManager):
                     'id': 'AGENT_ERROR$TOO_MANY_CONVERSATIONS',
                     'message': 'Too many conversations at once. If you are still using this one, try reactivating it by prompting the agent to continue',
                 }
-                await self.sio.emit(
-                    'oh_event',
-                    status_update_dict,
-                    to=ROOM_KEY.format(sid=oldest_conversation_id),
+                await run_in_loop(
+                    self.sio.emit(
+                        'oh_event',
+                        status_update_dict,
+                        to=ROOM_KEY.format(sid=oldest_conversation_id),
+                    ),
+                    self._loop,  # type:ignore
                 )
                 await self.close_session(oldest_conversation_id)
 
@@ -325,13 +358,13 @@ class StandaloneConversationManager(ConversationManager):
         sid = self._local_connection_id_to_session_id.get(connection_id)
         if not sid:
             raise RuntimeError(f'no_connected_session:{connection_id}')
+        await self.send_event_to_conversation(sid, data)
 
+    async def send_event_to_conversation(self, sid: str, data: dict):
         session = self._local_agent_loops_by_sid.get(sid)
-        if session:
-            await session.dispatch(data)
-            return
-
-        raise RuntimeError(f'no_connected_session:{connection_id}:{sid}')
+        if not session:
+            raise RuntimeError(f'no_conversation:{sid}')
+        await session.dispatch(data)
 
     async def disconnect_from_session(self, connection_id: str):
         sid = self._local_connection_id_to_session_id.pop(connection_id, None)
@@ -351,6 +384,20 @@ class StandaloneConversationManager(ConversationManager):
         if session:
             await self._close_session(sid)
 
+    def get_agent_session(self, sid: str) -> AgentSession | None:
+        """Get the agent session for a given session ID.
+
+        Args:
+            sid: The session ID.
+
+        Returns:
+            The agent session, or None if not found.
+        """
+        session = self._local_agent_loops_by_sid.get(sid)
+        if session:
+            return session.agent_session
+        return None
+
     async def _close_session(self, sid: str):
         logger.info(f'_close_session:{sid}', extra={'session_id': sid})
 
@@ -364,7 +411,9 @@ class StandaloneConversationManager(ConversationManager):
             f'removing connections: {connection_ids_to_remove}',
             extra={'session_id': sid},
         )
+        # Perform a graceful shutdown of each connection
         for connection_id in connection_ids_to_remove:
+            await self.sio.disconnect(connection_id)
             self._local_connection_id_to_session_id.pop(connection_id, None)
 
         session = self._local_agent_loops_by_sid.pop(sid, None)
@@ -455,10 +504,13 @@ class StandaloneConversationManager(ConversationManager):
                         'message': conversation_id,
                         'conversation_title': conversation.title,
                     }
-                    await self.sio.emit(
-                        'oh_event',
-                        status_update_dict,
-                        to=ROOM_KEY.format(sid=conversation_id),
+                    await run_in_loop(
+                        self.sio.emit(
+                            'oh_event',
+                            status_update_dict,
+                            to=ROOM_KEY.format(sid=conversation_id),
+                        ),
+                        self._loop,  # type:ignore
                     )
                 except Exception as e:
                     logger.error(f'Error emitting title update event: {e}')
@@ -485,10 +537,21 @@ class StandaloneConversationManager(ConversationManager):
             url=self._get_conversation_url(session.sid),
             session_api_key=None,
             event_store=session.agent_session.event_stream,
+            status=_get_status_from_session(session),
+            runtime_status=getattr(
+                session.agent_session.runtime, 'runtime_status', None
+            ),
         )
 
     def _get_conversation_url(self, conversation_id: str):
         return f'/api/conversations/{conversation_id}'
+
+
+def _get_status_from_session(session: Session) -> ConversationStatus:
+    agent_session = session.agent_session
+    if agent_session.runtime and agent_session.runtime.runtime_initialized:
+        return ConversationStatus.RUNNING
+    return ConversationStatus.STARTING
 
 
 def _last_updated_at_key(conversation: ConversationMetadata) -> float:

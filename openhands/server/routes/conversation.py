@@ -1,20 +1,30 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.event_filter import EventFilter
+from openhands.events.event_store import EventStore
 from openhands.events.serialization.event import event_to_dict
+from openhands.memory.memory import Memory
+from openhands.microagent.types import InputMetadata
 from openhands.runtime.base import Runtime
 from openhands.server.dependencies import get_dependencies
 from openhands.server.session.conversation import ServerConversation
-from openhands.server.shared import conversation_manager
-from openhands.server.utils import get_conversation
+from openhands.server.shared import conversation_manager, file_store
+from openhands.server.user_auth import get_user_id
+from openhands.server.utils import get_conversation, get_conversation_metadata
+from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 
-app = APIRouter(prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies())
+app = APIRouter(
+    prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies()
+)
 
 
 @app.get('/config')
-async def get_remote_runtime_config(conversation: ServerConversation = Depends(get_conversation)) -> JSONResponse:
+async def get_remote_runtime_config(
+    conversation: ServerConversation = Depends(get_conversation),
+) -> JSONResponse:
     """Retrieve the runtime configuration.
 
     Currently, this is the session ID and runtime ID (if available).
@@ -31,7 +41,9 @@ async def get_remote_runtime_config(conversation: ServerConversation = Depends(g
 
 
 @app.get('/vscode-url')
-async def get_vscode_url(conversation: ServerConversation = Depends(get_conversation)) -> JSONResponse:
+async def get_vscode_url(
+    conversation: ServerConversation = Depends(get_conversation),
+) -> JSONResponse:
     """Get the VSCode URL.
 
     This endpoint allows getting the VSCode URL.
@@ -61,7 +73,9 @@ async def get_vscode_url(conversation: ServerConversation = Depends(get_conversa
 
 
 @app.get('/web-hosts')
-async def get_hosts(conversation: ServerConversation = Depends(get_conversation)) -> JSONResponse:
+async def get_hosts(
+    conversation: ServerConversation = Depends(get_conversation),
+) -> JSONResponse:
     """Get the hosts used by the runtime.
 
     This endpoint allows getting the hosts used by the runtime.
@@ -90,27 +104,31 @@ async def get_hosts(conversation: ServerConversation = Depends(get_conversation)
 
 @app.get('/events')
 async def search_events(
+    conversation_id: str,
     start_id: int = 0,
     end_id: int | None = None,
     reverse: bool = False,
     filter: EventFilter | None = None,
     limit: int = 20,
-    conversation: ServerConversation = Depends(get_conversation),
+    metadata: ConversationMetadata = Depends(get_conversation_metadata),
+    user_id: str | None = Depends(get_user_id),
 ):
     """Search through the event stream with filtering and pagination.
     Args:
-        request: The incoming request object
+        conversation_id: The conversation ID
         start_id: Starting ID in the event stream. Defaults to 0
         end_id: Ending ID in the event stream
         reverse: Whether to retrieve events in reverse order. Defaults to False.
         filter: Filter for events
         limit: Maximum number of events to return. Must be between 1 and 100. Defaults to 20
+        metadata: Conversation metadata (injected by dependency)
+        user_id: User ID (injected by dependency)
     Returns:
         dict: Dictionary containing:
             - events: List of matching events
             - has_more: Whether there are more matching events after this batch
     Raises:
-        HTTPException: If conversation is not found
+        HTTPException: If conversation is not found or access is denied
         ValueError: If limit is less than 1 or greater than 100
     """
     if limit < 0 or limit > 100:
@@ -118,10 +136,16 @@ async def search_events(
             status_code=status.HTTP_400_BAD_REQUEST, detail='Invalid limit'
         )
 
-    # Get matching events from the stream
-    event_stream = conversation.event_stream
+    # Create an event store to access the events directly
+    event_store = EventStore(
+        sid=conversation_id,
+        file_store=file_store,
+        user_id=user_id,
+    )
+
+    # Get matching events from the store
     events = list(
-        event_stream.search_events(
+        event_store.search_events(
             start_id=start_id,
             end_id=end_id,
             reverse=reverse,
@@ -143,7 +167,102 @@ async def search_events(
 
 
 @app.post('/events')
-async def add_event(request: Request, conversation: ServerConversation = Depends(get_conversation)):
-    data = request.json()
-    conversation_manager.send_to_event_stream(conversation.sid, data)
+async def add_event(
+    request: Request, conversation: ServerConversation = Depends(get_conversation)
+):
+    data = await request.json()
+    await conversation_manager.send_event_to_conversation(conversation.sid, data)
     return JSONResponse({'success': True})
+
+
+class MicroagentResponse(BaseModel):
+    """Response model for microagents endpoint."""
+
+    name: str
+    type: str
+    content: str
+    triggers: list[str] = []
+    inputs: list[InputMetadata] = []
+    tools: list[str] = []
+
+
+@app.get('/microagents')
+async def get_microagents(
+    conversation: ServerConversation = Depends(get_conversation),
+) -> JSONResponse:
+    """Get all microagents associated with the conversation.
+
+    This endpoint returns all repository and knowledge microagents that are loaded for the conversation.
+
+    Returns:
+        JSONResponse: A JSON response containing the list of microagents.
+    """
+    try:
+        # Get the agent session for this conversation
+        agent_session = conversation_manager.get_agent_session(conversation.sid)
+
+        if not agent_session:
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content={'error': 'Agent session not found for this conversation'},
+            )
+
+        # Access the memory to get the microagents
+        memory: Memory | None = agent_session.memory
+        if memory is None:
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content={
+                    'error': 'Memory is not yet initialized for this conversation'
+                },
+            )
+
+        # Prepare the response
+        microagents = []
+
+        # Add repo microagents
+        for name, r_agent in memory.repo_microagents.items():
+            microagents.append(
+                MicroagentResponse(
+                    name=name,
+                    type='repo',
+                    content=r_agent.content,
+                    triggers=[],
+                    inputs=r_agent.metadata.inputs,
+                    tools=[
+                        server.name
+                        for server in r_agent.metadata.mcp_tools.stdio_servers
+                    ]
+                    if r_agent.metadata.mcp_tools
+                    else [],
+                )
+            )
+
+        # Add knowledge microagents
+        for name, k_agent in memory.knowledge_microagents.items():
+            microagents.append(
+                MicroagentResponse(
+                    name=name,
+                    type='knowledge',
+                    content=k_agent.content,
+                    triggers=k_agent.triggers,
+                    inputs=k_agent.metadata.inputs,
+                    tools=[
+                        server.name
+                        for server in k_agent.metadata.mcp_tools.stdio_servers
+                    ]
+                    if k_agent.metadata.mcp_tools
+                    else [],
+                )
+            )
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={'microagents': [m.dict() for m in microagents]},
+        )
+    except Exception as e:
+        logger.error(f'Error getting microagents: {e}')
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': f'Error getting microagents: {e}'},
+        )

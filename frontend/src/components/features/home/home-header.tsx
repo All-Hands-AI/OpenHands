@@ -1,10 +1,12 @@
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation";
 import { BrandButton } from "../settings/brand-button";
 import AllHandsLogo from "#/assets/branding/all-hands-logo-spark.svg?react";
 
 export function HomeHeader() {
+  const navigate = useNavigate();
   const {
     mutate: createConversation,
     isPending,
@@ -28,7 +30,15 @@ export function HomeHeader() {
           testId="header-launch-button"
           variant="primary"
           type="button"
-          onClick={() => createConversation({})}
+          onClick={() =>
+            createConversation(
+              {},
+              {
+                onSuccess: (data) =>
+                  navigate(`/conversations/${data.conversation_id}`),
+              },
+            )
+          }
           isDisabled={isCreatingConversation}
         >
           {!isCreatingConversation && t("HOME$LAUNCH_FROM_SCRATCH")}

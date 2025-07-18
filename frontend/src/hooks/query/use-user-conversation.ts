@@ -23,7 +23,6 @@ export const useUserConversation = (
     queryKey: ["user", "conversation", cid],
     queryFn: async () => {
       const conversation = await OpenHands.getConversation(cid!);
-      OpenHands.setCurrentConversation(conversation);
       return conversation;
     },
     enabled: !!cid,

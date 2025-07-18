@@ -3,6 +3,7 @@
 # CLI Settings are handled separately in cli_settings.py
 
 import asyncio
+import contextlib
 import sys
 import threading
 import time
@@ -52,6 +53,10 @@ ENABLE_STREAMING = False  # FIXME: this doesn't work
 # Global TextArea for streaming output
 streaming_output_text_area: TextArea | None = None
 
+# Track recent thoughts to prevent duplicate display
+recent_thoughts: list[str] = []
+MAX_RECENT_THOUGHTS = 5
+
 # Color and styling constants
 COLOR_GOLD = '#FFD700'
 COLOR_GREY = '#808080'
@@ -74,6 +79,8 @@ COMMANDS = {
 }
 
 print_lock = threading.Lock()
+
+pause_task: asyncio.Task | None = None  # No more than one pause task
 
 
 class UsageMetrics:
@@ -180,30 +187,54 @@ def display_initial_user_prompt(prompt: str) -> None:
 
 
 # Prompt output display functions
+def display_thought_if_new(thought: str) -> None:
+    """Display a thought only if it hasn't been displayed recently."""
+    global recent_thoughts
+    if thought and thought.strip():
+        # Check if this thought was recently displayed
+        if thought not in recent_thoughts:
+            display_message(thought)
+            recent_thoughts.append(thought)
+            # Keep only the most recent thoughts
+            if len(recent_thoughts) > MAX_RECENT_THOUGHTS:
+                recent_thoughts.pop(0)
+
+
 def display_event(event: Event, config: OpenHandsConfig) -> None:
     global streaming_output_text_area
     with print_lock:
-        if isinstance(event, Action):
-            if hasattr(event, 'thought'):
-                display_message(event.thought)
-            if hasattr(event, 'final_thought'):
-                display_message(event.final_thought)
-        if isinstance(event, MessageAction):
-            if event.source == EventSource.AGENT:
-                display_message(event.content)
         if isinstance(event, CmdRunAction):
-            display_command(event)
+            # For CmdRunAction, display thought first, then command
+            if hasattr(event, 'thought') and event.thought:
+                display_message(event.thought)
+
+            # Only display the command if it's not already confirmed
+            # Commands are always shown when AWAITING_CONFIRMATION, so we don't need to show them again when CONFIRMED
+            if event.confirmation_state != ActionConfirmationStatus.CONFIRMED:
+                display_command(event)
+
             if event.confirmation_state == ActionConfirmationStatus.CONFIRMED:
                 initialize_streaming_output()
-        if isinstance(event, CmdOutputObservation):
+        elif isinstance(event, Action):
+            # For other actions, display thoughts normally
+            if hasattr(event, 'thought') and event.thought:
+                display_message(event.thought)
+            if hasattr(event, 'final_thought') and event.final_thought:
+                display_message(event.final_thought)
+
+        if isinstance(event, MessageAction):
+            if event.source == EventSource.AGENT:
+                # Check if this message content is a duplicate thought
+                display_thought_if_new(event.content)
+        elif isinstance(event, CmdOutputObservation):
             display_command_output(event.content)
-        if isinstance(event, FileEditObservation):
+        elif isinstance(event, FileEditObservation):
             display_file_edit(event)
-        if isinstance(event, FileReadObservation):
+        elif isinstance(event, FileReadObservation):
             display_file_read(event)
-        if isinstance(event, AgentStateChangedObservation):
+        elif isinstance(event, AgentStateChangedObservation):
             display_agent_state_change_message(event.agent_state)
-        if isinstance(event, ErrorObservation):
+        elif isinstance(event, ErrorObservation):
             display_error(event.content)
 
 
@@ -515,13 +546,16 @@ class CommandCompleter(Completer):
                     )
 
 
-def create_prompt_session() -> PromptSession[str]:
-    return PromptSession(style=DEFAULT_STYLE)
+def create_prompt_session(config: OpenHandsConfig) -> PromptSession[str]:
+    """Creates a prompt session with VI mode enabled if specified in the config."""
+    return PromptSession(style=DEFAULT_STYLE, vi_mode=config.cli.vi_mode)
 
 
-async def read_prompt_input(agent_state: str, multiline: bool = False) -> str:
+async def read_prompt_input(
+    config: OpenHandsConfig, agent_state: str, multiline: bool = False
+) -> str:
     try:
-        prompt_session = create_prompt_session()
+        prompt_session = create_prompt_session(config)
         prompt_session.completer = (
             CommandCompleter(agent_state) if not multiline else None
         )
@@ -553,28 +587,60 @@ async def read_prompt_input(agent_state: str, multiline: bool = False) -> str:
         return '/exit'
 
 
-async def read_confirmation_input() -> str:
+async def read_confirmation_input(config: OpenHandsConfig) -> str:
     try:
-        prompt_session = create_prompt_session()
+        prompt_session = create_prompt_session(config)
 
-        with patch_stdout():
-            print_formatted_text('')
-            confirmation: str = await prompt_session.prompt_async(
-                HTML('<gold>Proceed with action? (y)es/(n)o/(a)lways > </gold>'),
-            )
+        while True:
+            with patch_stdout():
+                print_formatted_text('')
+                confirmation: str = await prompt_session.prompt_async(
+                    HTML('<gold>Proceed with action? (y)es/(n)o/(a)lways > </gold>'),
+                )
 
-            confirmation = '' if confirmation is None else confirmation.strip().lower()
+                confirmation = (
+                    '' if confirmation is None else confirmation.strip().lower()
+                )
 
-            if confirmation in ['y', 'yes']:
-                return 'yes'
-            elif confirmation in ['n', 'no']:
-                return 'no'
-            elif confirmation in ['a', 'always']:
-                return 'always'
-            else:
-                return 'no'
+                if confirmation in ['y', 'yes']:
+                    return 'yes'
+                elif confirmation in ['n', 'no']:
+                    return 'no'
+                elif confirmation in ['a', 'always']:
+                    return 'always'
+                else:
+                    # Display error message for invalid input
+                    print_formatted_text('')
+                    print_formatted_text(
+                        HTML(
+                            '<ansired>Invalid input. Please enter (y)es, (n)o, or (a)lways.</ansired>'
+                        )
+                    )
+                    # Continue the loop to re-prompt
     except (KeyboardInterrupt, EOFError):
         return 'no'
+
+
+def start_pause_listener(
+    loop: asyncio.AbstractEventLoop,
+    done_event: asyncio.Event,
+    event_stream,
+) -> None:
+    global pause_task
+    if pause_task is None or pause_task.done():
+        pause_task = loop.create_task(
+            process_agent_pause(done_event, event_stream)
+        )  # Create a task to track agent pause requests from the user
+
+
+async def stop_pause_listener() -> None:
+    global pause_task
+    if pause_task and not pause_task.done():
+        pause_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await pause_task
+        await asyncio.sleep(0)
+    pause_task = None
 
 
 async def process_agent_pause(done: asyncio.Event, event_stream: EventStream) -> None:
@@ -595,13 +661,18 @@ async def process_agent_pause(done: asyncio.Event, event_stream: EventStream) ->
                 )
                 done.set()
 
-    with input.raw_mode():
-        with input.attach(keys_ready):
-            await done.wait()
+    try:
+        with input.raw_mode():
+            with input.attach(keys_ready):
+                await done.wait()
+    finally:
+        input.close()
 
 
 def cli_confirm(
-    question: str = 'Are you sure?', choices: list[str] | None = None
+    config: OpenHandsConfig,
+    question: str = 'Are you sure?',
+    choices: list[str] | None = None,
 ) -> int:
     """Display a confirmation prompt with the given question and choices.
 
@@ -625,15 +696,27 @@ def cli_confirm(
     kb = KeyBindings()
 
     @kb.add('up')
-    def _(event: KeyPressEvent) -> None:
+    def _handle_up(event: KeyPressEvent) -> None:
         selected[0] = (selected[0] - 1) % len(choices)
 
+    if config.cli.vi_mode:
+
+        @kb.add('k')
+        def _handle_k(event: KeyPressEvent) -> None:
+            selected[0] = (selected[0] - 1) % len(choices)
+
     @kb.add('down')
-    def _(event: KeyPressEvent) -> None:
+    def _handle_down(event: KeyPressEvent) -> None:
         selected[0] = (selected[0] + 1) % len(choices)
 
+    if config.cli.vi_mode:
+
+        @kb.add('j')
+        def _handle_j(event: KeyPressEvent) -> None:
+            selected[0] = (selected[0] + 1) % len(choices)
+
     @kb.add('enter')
-    def _(event: KeyPressEvent) -> None:
+    def _handle_enter(event: KeyPressEvent) -> None:
         event.app.exit(result=selected[0])
 
     style = Style.from_dict({'selected': COLOR_GOLD, 'unselected': ''})

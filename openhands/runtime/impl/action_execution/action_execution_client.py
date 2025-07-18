@@ -406,7 +406,7 @@ class ActionExecutionClient(Runtime):
                 'POST',
                 f'{self.action_execution_server_url}/update_mcp_server',
                 json=stdio_tools,
-                timeout=10,
+                timeout=60,
             )
             result = response.json()
             if response.status_code != 200:
@@ -435,7 +435,7 @@ class ActionExecutionClient(Runtime):
             # We should always include the runtime as an MCP server whenever there's > 0 stdio servers
             updated_mcp_config.sse_servers.append(
                 MCPSSEServerConfig(
-                    url=self.action_execution_server_url.rstrip('/') + '/sse',
+                    url=self.action_execution_server_url.rstrip('/') + '/mcp/sse',
                     api_key=self.session_api_key,
                 )
             )
@@ -464,16 +464,13 @@ class ActionExecutionClient(Runtime):
         )
 
         # Create clients for this specific operation
-        mcp_clients = await create_mcp_clients(updated_mcp_config.sse_servers, updated_mcp_config.shttp_servers, self.sid)
+        mcp_clients = await create_mcp_clients(
+            updated_mcp_config.sse_servers, updated_mcp_config.shttp_servers, self.sid
+        )
 
         # Call the tool and return the result
         # No need for try/finally since disconnect() is now just resetting state
         result = await call_tool_mcp_handler(mcp_clients, action)
-
-        # Reset client state (no active connections to worry about)
-        for client in mcp_clients:
-            await client.disconnect()
-
         return result
 
     def close(self) -> None:

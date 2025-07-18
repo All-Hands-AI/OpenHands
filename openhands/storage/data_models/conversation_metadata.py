@@ -11,6 +11,7 @@ class ConversationTrigger(Enum):
     SUGGESTED_TASK = 'suggested_task'
     REMOTE_API_KEY = 'openhands_api'
     SLACK = 'slack'
+    MICROAGENT_MANAGEMENT = 'microagent_management'
 
 
 @dataclass
@@ -25,6 +26,7 @@ class ConversationMetadata:
     trigger: ConversationTrigger | None = None
     pr_number: list[int] = field(default_factory=list)
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    llm_model: str | None = None
     # Cost and token metrics
     accumulated_cost: float = 0.0
     prompt_tokens: int = 0

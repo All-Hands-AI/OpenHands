@@ -100,7 +100,6 @@ def mock_conversation_instructions_template():
     return 'Instructions: {{ repo_instruction }}'
 
 
-
 @pytest.fixture
 def mock_followup_prompt_template():
     return 'Issue context: {{ issues }}\n\nReview comments: {{ review_comments }}\n\nReview threads: {{ review_threads }}\n\nFiles: {{ files }}\n\nThread comments: {{ thread_context }}\n\nPlease fix this issue.'
@@ -532,7 +531,11 @@ async def test_process_issue(
             handler_instance.guess_success.assert_not_called()
 
 
-def test_get_instruction(mock_user_instructions_template, mock_conversation_instructions_template, mock_followup_prompt_template):
+def test_get_instruction(
+    mock_user_instructions_template,
+    mock_conversation_instructions_template,
+    mock_followup_prompt_template,
+):
     issue = Issue(
         owner='test_owner',
         repo='test_repo',
@@ -545,7 +548,10 @@ def test_get_instruction(mock_user_instructions_template, mock_conversation_inst
         GithubIssueHandler('owner', 'repo', 'token'), mock_llm_config
     )
     instruction, conversation_instructions, images_urls = issue_handler.get_instruction(
-        issue, mock_user_instructions_template, mock_conversation_instructions_template,  None
+        issue,
+        mock_user_instructions_template,
+        mock_conversation_instructions_template,
+        None,
     )
     expected_instruction = 'Issue: Test Issue\n\nThis is a test issue refer to image ![First Image](https://sampleimage.com/image1.png)\n\nPlease fix this issue.'
 
@@ -576,7 +582,10 @@ def test_get_instruction(mock_user_instructions_template, mock_conversation_inst
         GithubPRHandler('owner', 'repo', 'token'), mock_llm_config
     )
     instruction, conversation_instructions, images_urls = pr_handler.get_instruction(
-        issue, mock_followup_prompt_template, mock_conversation_instructions_template, None
+        issue,
+        mock_followup_prompt_template,
+        mock_conversation_instructions_template,
+        None,
     )
     expected_instruction = "Issue context: [\n    \"Issue 1 fix the type\"\n]\n\nReview comments: None\n\nReview threads: [\n    \"There is still a typo 'pthon' instead of 'python'\"\n]\n\nFiles: []\n\nThread comments: I've left review comments, please address them\n---\nThis is a valid concern.\n\nPlease fix this issue."
 
@@ -601,7 +610,9 @@ def test_file_instruction():
     with open('openhands/resolver/prompts/resolve/basic.jinja', 'r') as f:
         prompt = f.read()
 
-    with open('openhands/resolver/prompts/resolve/basic-conversation-instructions.jinja', 'r') as f:
+    with open(
+        'openhands/resolver/prompts/resolve/basic-conversation-instructions.jinja', 'r'
+    ) as f:
         conversation_instructions_template = f.read()
 
     # Test without thread comments
@@ -610,7 +621,7 @@ def test_file_instruction():
         GithubIssueHandler('owner', 'repo', 'token'), mock_llm_config
     )
     instruction, conversation_instructions, images_urls = issue_handler.get_instruction(
-        issue, prompt,conversation_instructions_template,  None
+        issue, prompt, conversation_instructions_template, None
     )
     expected_instruction = """Please fix the following issue for the repository in /workspace.
 An environment has been set up for you to start working. You may assume all necessary tools are installed.
@@ -619,7 +630,6 @@ An environment has been set up for you to start working. You may assume all nece
 Test Issue
 
 This is a test issue ![image](https://sampleimage.com/sample.png)"""
-
 
     expected_conversation_instructions = """IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.
 You SHOULD INCLUDE PROPER INDENTATION in your edit commands.
@@ -644,7 +654,9 @@ def test_file_instruction_with_repo_instruction():
     with open('openhands/resolver/prompts/resolve/basic.jinja', 'r') as f:
         prompt = f.read()
 
-    with open('openhands/resolver/prompts/resolve/basic-conversation-instructions.jinja', 'r') as f:
+    with open(
+        'openhands/resolver/prompts/resolve/basic-conversation-instructions.jinja', 'r'
+    ) as f:
         conversation_instructions_prompt = f.read()
 
     # load repo instruction from openhands/resolver/prompts/repo_instructions/all-hands-ai___openhands-resolver.txt
@@ -661,7 +673,6 @@ def test_file_instruction_with_repo_instruction():
     instruction, conversation_instructions, image_urls = issue_handler.get_instruction(
         issue, prompt, conversation_instructions_prompt, repo_instruction
     )
-
 
     expected_instruction = """Please fix the following issue for the repository in /workspace.
 An environment has been set up for you to start working. You may assume all necessary tools are installed.
@@ -682,7 +693,6 @@ This is a Python repo for openhands-resolver, a library that attempts to resolve
 
 
 When you think you have fixed the issue through code changes, please finish the interaction."""
-
 
     assert instruction == expected_instruction
     assert conversation_instructions == expected_conversation_instructions
@@ -785,7 +795,9 @@ def test_instruction_with_thread_comments():
     with open('openhands/resolver/prompts/resolve/basic.jinja', 'r') as f:
         prompt = f.read()
 
-    with open('openhands/resolver/prompts/resolve/basic-conversation-instructions.jinja', 'r') as f:
+    with open(
+        'openhands/resolver/prompts/resolve/basic-conversation-instructions.jinja', 'r'
+    ) as f:
         conversation_instructions_template = f.read()
 
     llm_config = LLMConfig(model='test', api_key='test')

@@ -55,7 +55,9 @@ def event_stream(temp_dir):
 class TestStuckDetector:
     @pytest.fixture
     def stuck_detector(self):
-        state = State(inputs={}, max_iterations=50)
+        state = State(inputs={})
+        # Set the iteration flag's max_value to 50 (equivalent to the old max_iterations)
+        state.iteration_flag.max_value = 50
         state.history = []  # Initialize history as an empty list
         return StuckDetector(state)
 

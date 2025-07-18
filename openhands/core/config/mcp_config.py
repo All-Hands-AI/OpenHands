@@ -2,7 +2,7 @@ import os
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
-from pydantic import BaseModel, Field, ValidationError, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 if TYPE_CHECKING:
     from openhands.core.config.openhands_config import OpenHandsConfig
@@ -54,6 +54,7 @@ class MCPStdioServerConfig(BaseModel):
             and set(self.env.items()) == set(other.env.items())
         )
 
+
 class MCPSHTTPServerConfig(BaseModel):
     url: str
     api_key: str | None = None
@@ -71,7 +72,7 @@ class MCPConfig(BaseModel):
     stdio_servers: list[MCPStdioServerConfig] = Field(default_factory=list)
     shttp_servers: list[MCPSHTTPServerConfig] = Field(default_factory=list)
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
     @staticmethod
     def _normalize_servers(servers_data: list[dict | str]) -> list[dict]:
@@ -130,7 +131,9 @@ class MCPConfig(BaseModel):
             # Convert all entries in sse_servers to MCPSSEServerConfig objects
             if 'sse_servers' in data:
                 data['sse_servers'] = cls._normalize_servers(data['sse_servers'])
-                servers = []
+                servers: list[
+                    MCPSSEServerConfig | MCPStdioServerConfig | MCPSHTTPServerConfig
+                ] = []
                 for server in data['sse_servers']:
                     servers.append(MCPSSEServerConfig(**server))
                 data['sse_servers'] = servers
@@ -157,6 +160,7 @@ class MCPConfig(BaseModel):
             mcp_mapping['mcp'] = cls(
                 sse_servers=mcp_config.sse_servers,
                 stdio_servers=mcp_config.stdio_servers,
+                shttp_servers=mcp_config.shttp_servers,
             )
         except ValidationError as e:
             raise ValueError(f'Invalid MCP configuration: {e}')
@@ -186,7 +190,7 @@ class OpenHandsMCPConfig:
     @staticmethod
     def create_default_mcp_server_config(
         host: str, config: 'OpenHandsConfig', user_id: str | None = None
-    ) -> tuple[MCPSHTTPServerConfig, list[MCPStdioServerConfig]]:
+    ) -> tuple[MCPSHTTPServerConfig | None, list[MCPStdioServerConfig]]:
         """
         Create a default MCP server configuration.
 
@@ -194,7 +198,7 @@ class OpenHandsMCPConfig:
             host: Host string
             config: OpenHandsConfig
         Returns:
-            tuple[MCPSSEServerConfig, list[MCPStdioServerConfig]]: A tuple containing the default SSE server configuration and a list of MCP stdio server configurations
+            tuple[MCPSHTTPServerConfig | None, list[MCPStdioServerConfig]]: A tuple containing the default SHTTP server configuration (or None) and a list of MCP stdio server configurations
         """
         stdio_servers = []
         search_engine_stdio_server = OpenHandsMCPConfig.add_search_engine(config)
