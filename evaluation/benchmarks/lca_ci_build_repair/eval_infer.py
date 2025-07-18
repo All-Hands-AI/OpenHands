@@ -113,6 +113,7 @@ def run_eval(
         os.path.abspath(__file__)
     )  # Get the absolute path of the script
     config_path = os.path.join(script_dir, 'config.yaml')
+    logger.info(f'config path is {config_path}')
     runtime.copy_to(config_path, lca_ci_path)
 
     token_gh = bench_config['token_gh']
@@ -129,15 +130,16 @@ def run_eval(
     commandf = f'poetry run python run_eval_jobs.py --model-name "{model_name}" --config-path "{lca_ci_path}/config.yaml" --job-ids-file "/tmp/output_lca.jsonl" --result-filename "testfile.jsonl"  > /tmp/single_output.txt'
     action = CmdRunAction(command=commandf)
     logger.info(action, extra={'msg_type': 'ACTION'})
+    action.set_hard_timeout(6000)
     obs = runtime.run_action(action)
-    logger.info(f'run_eval_jobs.py gave {obs.content} !')
+    logger.info(f'run_eval_jobs.py: {obs}.')
     # assert obs.exit_code == 0
 
     commandf = 'cat /tmp/single_output.txt'
     action = CmdRunAction(command=commandf)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
-    logger.info(f' {commandf} gave {obs.content}!')
+    logger.info(f' {commandf}: {obs.content}.')
 
     testfile_path = os.path.join(bench_config['out_folder'], 'testfile.jsonl')
     commandf = f'cat {testfile_path}'
