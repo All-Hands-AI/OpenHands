@@ -35,6 +35,7 @@ from openhands.cli.tui import (
     stop_pause_listener,
     update_streaming_output,
 )
+from openhands.cli.ui_launcher import launch_ui_server
 from openhands.cli.utils import (
     update_usage_metrics,
 )
@@ -480,6 +481,11 @@ def run_alias_setup_flow(config: OpenHandsConfig) -> None:
 async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
     """Runs the agent in CLI mode."""
     args = parse_arguments()
+
+    # Handle UI launch mode
+    if args.ui:
+        launch_ui_server()
+        return
 
     # Set log level from command line argument if provided
     if args.log_level and isinstance(args.log_level, str):

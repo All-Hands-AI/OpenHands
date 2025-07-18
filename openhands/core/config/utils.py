@@ -765,6 +765,12 @@ def get_parser() -> argparse.ArgumentParser:
         type=str,
         default=None,
     )
+    parser.add_argument(
+        '--ui',
+        help='Launch the OpenHands UI server using Docker',
+        action='store_true',
+        default=False,
+    )
     return parser
 
 

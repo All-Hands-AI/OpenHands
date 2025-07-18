@@ -417,6 +417,26 @@ async def test_main_without_task(
 
 @pytest.mark.asyncio
 @patch('openhands.cli.main.parse_arguments')
+@patch('openhands.cli.main.launch_ui_server')
+async def test_main_with_ui_flag(mock_launch_ui, mock_parse_args):
+    """Test main function with --ui flag."""
+    loop = asyncio.get_running_loop()
+
+    # Mock arguments with ui=True
+    mock_args = MagicMock()
+    mock_args.ui = True
+    mock_parse_args.return_value = mock_args
+
+    # Run the function
+    await cli.main_with_loop(loop)
+
+    # Assertions
+    mock_parse_args.assert_called_once()
+    mock_launch_ui.assert_called_once()
+
+
+@pytest.mark.asyncio
+@patch('openhands.cli.main.parse_arguments')
 @patch('openhands.cli.main.setup_config_from_args')
 @patch('openhands.cli.main.FileSettingsStore.get_instance')
 @patch('openhands.cli.main.check_folder_security_agreement')
