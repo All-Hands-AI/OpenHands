@@ -169,6 +169,19 @@ export const useTerminal = ({
     };
   }, []);
 
+  // Ensure terminal is properly resized when it becomes visible again
+  React.useEffect(() => {
+    if (!disabled && fitAddon.current) {
+      // Small delay to ensure the DOM has updated
+      const timeoutId = setTimeout(() => {
+        fitAddon.current?.fit();
+      }, 100);
+
+      return () => clearTimeout(timeoutId);
+    }
+    return undefined;
+  }, [disabled]);
+
   React.useEffect(() => {
     if (terminal.current) {
       // Dispose of existing listeners if they exist
