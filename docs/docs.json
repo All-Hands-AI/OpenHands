@@ -130,12 +130,6 @@
             ]
           },
           {
-            "group": "Tips and Tricks",
-            "pages": [
-              "usage/prompting/prompting-best-practices"
-            ]
-          },
-          {
             "group": "Troubleshooting & Feedback",
             "pages": [
               "usage/troubleshooting/troubleshooting",
