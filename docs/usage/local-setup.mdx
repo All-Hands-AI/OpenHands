@@ -66,6 +66,22 @@ A system with a modern processor and a minimum of **4GB RAM** is recommended to 
 
 ### Start the App
 
+#### Option 1: Using the CLI Launcher (Recommended)
+
+If you have Python 3.12+ installed, you can use the CLI launcher for a simpler experience:
+
+```bash
+# Install OpenHands
+pip install openhands-ai
+
+# Launch the UI server
+openhands --ui
+```
+
+This will automatically handle Docker requirements checking, image pulling, and launching the UI server.
+
+#### Option 2: Using Docker Directly
+
 ```bash
 docker pull docker.all-hands.dev/all-hands-ai/runtime:0.49-nikolaik
 

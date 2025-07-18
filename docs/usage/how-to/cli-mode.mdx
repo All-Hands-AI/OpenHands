@@ -128,6 +128,43 @@ permissions. This prevents the agent from creating root-owned files in the mount
 
 The conversation history will be saved in `~/.openhands/sessions`.
 
+## Launching the UI Server from CLI
+
+You can also launch the OpenHands UI server directly from the command line using the `--ui` flag:
+
+```bash
+openhands --ui
+```
+
+This command will:
+- Check that Docker is installed and running
+- Pull the required Docker images
+- Launch the OpenHands UI server at http://localhost:3000
+- Use the same configuration directory (`~/.openhands`) as the CLI mode
+
+### Mounting Your Current Directory
+
+To mount your current working directory into the UI server container, use the `--mount-cwd` flag:
+
+```bash
+openhands --ui --mount-cwd
+```
+
+This is useful when you want to work on files in your current directory through the UI. The directory will be mounted at `/workspace` inside the container.
+
+<Note>
+  The `--mount-cwd` flag only works when used together with the `--ui` flag.
+</Note>
+
+### Requirements
+
+Before using the `--ui` flag, ensure that:
+- Docker is installed and running on your system
+- You have internet access to pull the required Docker images
+- Port 3000 is available on your system
+
+The CLI will automatically check these requirements and provide helpful error messages if anything is missing.
+
 ## Interactive CLI Overview
 
 ### What is CLI Mode?
