@@ -13,7 +13,8 @@ export function MicroagentManagementAddMicroagentButton() {
 
   const dispatch = useDispatch();
 
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
     dispatch(setAddMicroagentModalVisible(!addMicroagentModalVisible));
   };
 
