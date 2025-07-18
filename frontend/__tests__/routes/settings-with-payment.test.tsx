@@ -30,7 +30,7 @@ vi.mock("react-i18next", async () => {
     useTranslation: () => ({
       t: (key: string) => {
         const translations: Record<string, string> = {
-          "SETTINGS$NAV_GIT": "Git",
+          "SETTINGS$NAV_INTEGRATIONS": "Integrations",
           "SETTINGS$NAV_APPLICATION": "Application",
           "SETTINGS$NAV_CREDITS": "Credits",
           "SETTINGS$NAV_API_KEYS": "API Keys",
@@ -61,7 +61,7 @@ describe("Settings Billing", () => {
         },
         {
           Component: () => <div data-testid="git-settings-screen" />,
-          path: "/settings/git",
+          path: "/settings/integrations",
         },
         {
           Component: () => <div data-testid="user-settings-screen" />,

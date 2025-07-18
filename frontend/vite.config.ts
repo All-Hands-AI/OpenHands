@@ -5,6 +5,7 @@ import viteTsconfigPaths from "vite-tsconfig-paths";
 import svgr from "vite-plugin-svgr";
 import { reactRouter } from "@react-router/dev/vite";
 import { configDefaults } from "vitest/config";
+import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig(({ mode }) => {
   const {
@@ -28,6 +29,7 @@ export default defineConfig(({ mode }) => {
       !process.env.VITEST && reactRouter(),
       viteTsconfigPaths(),
       svgr(),
+      tailwindcss(),
     ],
     server: {
       port: FE_PORT,
@@ -54,7 +56,7 @@ export default defineConfig(({ mode }) => {
         },
       },
       watch: {
-        ignored: ['**/node_modules/**', '**/.git/**'],
+        ignored: ["**/node_modules/**", "**/.git/**"],
       },
     },
     ssr: {

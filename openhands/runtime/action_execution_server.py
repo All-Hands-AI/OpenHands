@@ -20,6 +20,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from zipfile import ZipFile
 
+import puremagic
 from binaryornot.check import is_binary
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
@@ -51,6 +52,7 @@ from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.observation import (
     CmdOutputObservation,
     ErrorObservation,
+    FileDownloadObservation,
     FileEditObservation,
     FileReadObservation,
     FileWriteObservation,
@@ -170,6 +172,7 @@ class ActionExecutor:
         work_dir: str,
         username: str,
         user_id: int,
+        enable_browser: bool,
         browsergym_eval_env: str | None,
     ) -> None:
         self.plugins_to_load = plugins_to_load
@@ -186,13 +189,21 @@ class ActionExecutor:
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
         self.file_editor = OHEditor(workspace_root=self._initial_cwd)
+        self.enable_browser = enable_browser
         self.browser: BrowserEnv | None = None
         self.browser_init_task: asyncio.Task | None = None
         self.browsergym_eval_env = browsergym_eval_env
 
+        if (not self.enable_browser) and self.browsergym_eval_env:
+            raise BrowserUnavailableException(
+                'Browser environment is not enabled in config, but browsergym_eval_env is set'
+            )
+
         self.start_time = time.time()
         self.last_execution_time = self.start_time
         self._initialized = False
+        self.downloaded_files: list[str] = []
+        self.downloads_directory = '/workspace/.downloads'
 
         self.max_memory_gb: int | None = None
         if _override_max_memory_gb := os.environ.get('RUNTIME_MAX_MEMORY_GB', None):
@@ -215,6 +226,10 @@ class ActionExecutor:
 
     async def _init_browser_async(self):
         """Initialize the browser asynchronously."""
+        if not self.enable_browser:
+            logger.info('Browser environment is not enabled in config')
+            return
+
         if sys.platform == 'win32':
             logger.warning('Browser environment not supported on windows')
             return
@@ -592,7 +607,7 @@ class ActionExecutor:
     async def browse(self, action: BrowseURLAction) -> Observation:
         if self.browser is None:
             return ErrorObservation(
-                'Browser functionality is not supported on Windows.'
+                'Browser functionality is not supported or disabled.'
             )
         await self._ensure_browser_ready()
         return await browse(action, self.browser, self.initial_cwd)
@@ -600,10 +615,48 @@ class ActionExecutor:
     async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         if self.browser is None:
             return ErrorObservation(
-                'Browser functionality is not supported on Windows.'
+                'Browser functionality is not supported or disabled.'
             )
         await self._ensure_browser_ready()
-        return await browse(action, self.browser, self.initial_cwd)
+        browser_observation = await browse(action, self.browser, self.initial_cwd)
+        if not browser_observation.error:
+            return browser_observation
+        else:
+            curr_files = os.listdir(self.downloads_directory)
+            new_download = False
+            for file in curr_files:
+                if file not in self.downloaded_files:
+                    new_download = True
+                    self.downloaded_files.append(file)
+                    break  # FIXME: assuming only one file will be downloaded for simplicity
+
+            if not new_download:
+                return browser_observation
+            else:
+                # A new file is downloaded in self.downloads_directory, shift file to /workspace
+                src_path = os.path.join(
+                    self.downloads_directory, self.downloaded_files[-1]
+                )
+                # Guess extension of file using puremagic and add it to tgt_path file name
+                file_ext = ''
+                try:
+                    guesses = puremagic.magic_file(src_path)
+                    if len(guesses) > 0:
+                        ext = guesses[0].extension.strip()
+                        if len(ext) > 0:
+                            file_ext = ext
+                except Exception as _:
+                    pass
+
+                tgt_path = os.path.join(
+                    '/workspace', f'file_{len(self.downloaded_files)}{file_ext}'
+                )
+                shutil.copy(src_path, tgt_path)
+                file_download_obs = FileDownloadObservation(
+                    content=f'Execution of the previous action {action.browser_actions} resulted in a file download. The downloaded file is saved at location: {tgt_path}',
+                    file_path=tgt_path,
+                )
+                return file_download_obs
 
     def close(self):
         self.memory_monitor.stop_monitoring()
@@ -624,6 +677,12 @@ if __name__ == '__main__':
         '--username', type=str, help='User to run as', default='openhands'
     )
     parser.add_argument('--user-id', type=int, help='User ID to run as', default=1000)
+    parser.add_argument(
+        '--enable-browser',
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help='Enable the browser environment',
+    )
     parser.add_argument(
         '--browsergym-eval-env',
         type=str,
@@ -661,6 +720,7 @@ if __name__ == '__main__':
             work_dir=args.working_dir,
             username=args.username,
             user_id=args.user_id,
+            enable_browser=args.enable_browser,
             browsergym_eval_env=args.browsergym_eval_env,
         )
         await client.ainit()

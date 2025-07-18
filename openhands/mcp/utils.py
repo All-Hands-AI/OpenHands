@@ -5,12 +5,13 @@ if TYPE_CHECKING:
     from openhands.controller.agent import Agent
 
 
+from mcp import McpError
+
 from openhands.core.config.mcp_config import (
     MCPConfig,
     MCPSHTTPServerConfig,
     MCPSSEServerConfig,
 )
-from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.mcp import MCPAction
 from openhands.events.observation.mcp import MCPObservation
@@ -63,8 +64,10 @@ async def create_mcp_clients(
         )
         return []
 
-    servers: list[MCPSSEServerConfig | MCPSHTTPServerConfig] = sse_servers.copy()
-    servers.extend(shttp_servers.copy())
+    servers: list[MCPSSEServerConfig | MCPSHTTPServerConfig] = [
+        *sse_servers,
+        *shttp_servers,
+    ]
 
     if not servers:
         return []
@@ -176,20 +179,28 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
 
     logger.debug(f'Matching client: {matching_client}')
 
-    # Call the tool - this will create a new connection internally
-    response = await matching_client.call_tool(action.name, action.arguments)
-    logger.debug(f'MCP response: {response}')
+    try:
+        # Call the tool - this will create a new connection internally
+        response = await matching_client.call_tool(action.name, action.arguments)
+        logger.debug(f'MCP response: {response}')
 
-    return MCPObservation(
-        content=json.dumps(response.model_dump(mode='json')),
-        name=action.name,
-        arguments=action.arguments,
-    )
+        return MCPObservation(
+            content=json.dumps(response.model_dump(mode='json')),
+            name=action.name,
+            arguments=action.arguments,
+        )
+    except McpError as e:
+        # Handle MCP errors by returning an error observation instead of raising
+        logger.error(f'MCP error when calling tool {action.name}: {e}')
+        error_content = json.dumps({'isError': True, 'error': str(e), 'content': []})
+        return MCPObservation(
+            content=error_content,
+            name=action.name,
+            arguments=action.arguments,
+        )
 
 
-async def add_mcp_tools_to_agent(
-    agent: 'Agent', runtime: Runtime, memory: 'Memory', app_config: OpenHandsConfig
-):
+async def add_mcp_tools_to_agent(agent: 'Agent', runtime: Runtime, memory: 'Memory'):
     """
     Add MCP tools to an agent.
     """
@@ -208,7 +219,6 @@ async def add_mcp_tools_to_agent(
     extra_stdio_servers = []
 
     # Add microagent MCP tools if available
-    mcp_config: MCPConfig = app_config.mcp
     microagent_mcp_configs = memory.get_microagent_mcp_tools()
     for mcp_config in microagent_mcp_configs:
         if mcp_config.sse_servers:

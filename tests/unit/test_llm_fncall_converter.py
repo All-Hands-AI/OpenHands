@@ -682,6 +682,44 @@ def example():
 </parameter>
 </function>""",
         ),
+        # Test case with list parameter value
+        (
+            [
+                {
+                    'index': 1,
+                    'function': {
+                        'arguments': '{"command": "test", "path": "/test/file.py", "tags": ["tag1", "tag2", "tag with spaces"]}',
+                        'name': 'test_function',
+                    },
+                    'id': 'test_id',
+                    'type': 'function',
+                }
+            ],
+            """<function=test_function>
+<parameter=command>test</parameter>
+<parameter=path>/test/file.py</parameter>
+<parameter=tags>["tag1", "tag2", "tag with spaces"]</parameter>
+</function>""",
+        ),
+        # Test case with dict parameter value
+        (
+            [
+                {
+                    'index': 1,
+                    'function': {
+                        'arguments': '{"command": "test", "path": "/test/file.py", "metadata": {"key1": "value1", "key2": 42, "nested": {"subkey": "subvalue"}}}',
+                        'name': 'test_function',
+                    },
+                    'id': 'test_id',
+                    'type': 'function',
+                }
+            ],
+            """<function=test_function>
+<parameter=command>test</parameter>
+<parameter=path>/test/file.py</parameter>
+<parameter=metadata>{"key1": "value1", "key2": 42, "nested": {"subkey": "subvalue"}}</parameter>
+</function>""",
+        ),
     ],
 )
 def test_convert_tool_call_to_string(tool_calls, expected):

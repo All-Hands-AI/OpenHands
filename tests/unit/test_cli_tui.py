@@ -85,11 +85,30 @@ class TestDisplayFunctions:
     @patch('openhands.cli.tui.display_command')
     def test_display_event_cmd_action(self, mock_display_command):
         config = MagicMock(spec=OpenHandsConfig)
+        # Test that commands awaiting confirmation are displayed
         cmd_action = CmdRunAction(command='echo test')
+        cmd_action.confirmation_state = ActionConfirmationStatus.AWAITING_CONFIRMATION
 
         display_event(cmd_action, config)
 
         mock_display_command.assert_called_once_with(cmd_action)
+
+    @patch('openhands.cli.tui.display_command')
+    @patch('openhands.cli.tui.initialize_streaming_output')
+    def test_display_event_cmd_action_confirmed(
+        self, mock_init_streaming, mock_display_command
+    ):
+        config = MagicMock(spec=OpenHandsConfig)
+        # Test that confirmed commands don't display the command but do initialize streaming
+        cmd_action = CmdRunAction(command='echo test')
+        cmd_action.confirmation_state = ActionConfirmationStatus.CONFIRMED
+
+        display_event(cmd_action, config)
+
+        # Command should not be displayed (since it was already shown when awaiting confirmation)
+        mock_display_command.assert_not_called()
+        # But streaming should be initialized
+        mock_init_streaming.assert_called_once()
 
     @patch('openhands.cli.tui.display_command_output')
     def test_display_event_cmd_output(self, mock_display_output):
@@ -262,7 +281,7 @@ class TestReadConfirmationInput:
         mock_session.prompt_async.return_value = 'y'
         mock_create_session.return_value = mock_session
 
-        result = await read_confirmation_input()
+        result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
         assert result == 'yes'
 
     @pytest.mark.asyncio
@@ -272,7 +291,7 @@ class TestReadConfirmationInput:
         mock_session.prompt_async.return_value = 'yes'
         mock_create_session.return_value = mock_session
 
-        result = await read_confirmation_input()
+        result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
         assert result == 'yes'
 
     @pytest.mark.asyncio
@@ -282,7 +301,7 @@ class TestReadConfirmationInput:
         mock_session.prompt_async.return_value = 'n'
         mock_create_session.return_value = mock_session
 
-        result = await read_confirmation_input()
+        result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
         assert result == 'no'
 
     @pytest.mark.asyncio
@@ -292,7 +311,7 @@ class TestReadConfirmationInput:
         mock_session.prompt_async.return_value = 'no'
         mock_create_session.return_value = mock_session
 
-        result = await read_confirmation_input()
+        result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
         assert result == 'no'
 
     @pytest.mark.asyncio
@@ -302,7 +321,7 @@ class TestReadConfirmationInput:
         mock_session.prompt_async.return_value = 'a'
         mock_create_session.return_value = mock_session
 
-        result = await read_confirmation_input()
+        result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
         assert result == 'always'
 
     @pytest.mark.asyncio
@@ -312,38 +331,96 @@ class TestReadConfirmationInput:
         mock_session.prompt_async.return_value = 'always'
         mock_create_session.return_value = mock_session
 
-        result = await read_confirmation_input()
+        result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
         assert result == 'always'
 
     @pytest.mark.asyncio
+    @patch('openhands.cli.tui.print_formatted_text')
     @patch('openhands.cli.tui.create_prompt_session')
-    async def test_read_confirmation_input_invalid(self, mock_create_session):
+    async def test_read_confirmation_input_invalid_then_valid(
+        self, mock_create_session, mock_print
+    ):
         mock_session = AsyncMock()
-        mock_session.prompt_async.return_value = 'invalid'
+        # First return invalid input, then valid input
+        mock_session.prompt_async.side_effect = ['invalid', 'y']
         mock_create_session.return_value = mock_session
 
-        result = await read_confirmation_input()
-        assert result == 'no'
+        result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
+        assert result == 'yes'
+
+        # Verify error message was displayed
+        error_calls = [
+            call
+            for call in mock_print.call_args_list
+            if len(call[0]) > 0 and 'Invalid input' in str(call[0][0])
+        ]
+        assert len(error_calls) > 0
 
     @pytest.mark.asyncio
+    @patch('openhands.cli.tui.print_formatted_text')
     @patch('openhands.cli.tui.create_prompt_session')
-    async def test_read_confirmation_input_empty(self, mock_create_session):
+    async def test_read_confirmation_input_empty_then_valid(
+        self, mock_create_session, mock_print
+    ):
         mock_session = AsyncMock()
-        mock_session.prompt_async.return_value = ''
+        # First return empty input, then valid input
+        mock_session.prompt_async.side_effect = ['', 'n']
         mock_create_session.return_value = mock_session
 
-        result = await read_confirmation_input()
+        result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
         assert result == 'no'
+
+        # Verify error message was displayed
+        error_calls = [
+            call
+            for call in mock_print.call_args_list
+            if len(call[0]) > 0 and 'Invalid input' in str(call[0][0])
+        ]
+        assert len(error_calls) > 0
 
     @pytest.mark.asyncio
+    @patch('openhands.cli.tui.print_formatted_text')
     @patch('openhands.cli.tui.create_prompt_session')
-    async def test_read_confirmation_input_none(self, mock_create_session):
+    async def test_read_confirmation_input_none_then_valid(
+        self, mock_create_session, mock_print
+    ):
         mock_session = AsyncMock()
-        mock_session.prompt_async.return_value = None
+        # First return None, then valid input
+        mock_session.prompt_async.side_effect = [None, 'always']
         mock_create_session.return_value = mock_session
 
-        result = await read_confirmation_input()
-        assert result == 'no'
+        result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
+        assert result == 'always'
+
+        # Verify error message was displayed
+        error_calls = [
+            call
+            for call in mock_print.call_args_list
+            if len(call[0]) > 0 and 'Invalid input' in str(call[0][0])
+        ]
+        assert len(error_calls) > 0
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.tui.print_formatted_text')
+    @patch('openhands.cli.tui.create_prompt_session')
+    async def test_read_confirmation_input_multiple_invalid_then_valid(
+        self, mock_create_session, mock_print
+    ):
+        mock_session = AsyncMock()
+        # Multiple invalid inputs, then valid input
+        mock_session.prompt_async.side_effect = ['invalid1', 'invalid2', 'maybe', 'y']
+        mock_create_session.return_value = mock_session
+
+        result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
+        assert result == 'yes'
+
+        # Verify error message was displayed multiple times
+        error_calls = [
+            call
+            for call in mock_print.call_args_list
+            if len(call[0]) > 0 and 'Invalid input' in str(call[0][0])
+        ]
+        assert len(error_calls) >= 3  # Should have at least 3 error messages
 
     @pytest.mark.asyncio
     @patch('openhands.cli.tui.create_prompt_session')
@@ -354,7 +431,7 @@ class TestReadConfirmationInput:
         mock_session.prompt_async.side_effect = KeyboardInterrupt
         mock_create_session.return_value = mock_session
 
-        result = await read_confirmation_input()
+        result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
         assert result == 'no'
 
     @pytest.mark.asyncio
@@ -364,5 +441,5 @@ class TestReadConfirmationInput:
         mock_session.prompt_async.side_effect = EOFError
         mock_create_session.return_value = mock_session
 
-        result = await read_confirmation_input()
+        result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
         assert result == 'no'

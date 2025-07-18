@@ -921,7 +921,7 @@ SPECS_PYDICOM.update(
 
 SPECS_HUMANEVAL = {k: {'python': '3.9', 'test_cmd': 'python'} for k in ['1.0']}
 
-# Constants - Task Instance Instllation Environment
+# Constants - Task Instance Installation Environment
 MAP_REPO_VERSION_TO_SPECS: dict[str, dict[str, Any]] = {
     'astropy/astropy': SPECS_ASTROPY,
     'dbt-labs/dbt-core': SPECS_DBT_CORE,

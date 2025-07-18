@@ -17,7 +17,13 @@ Upon signing into OpenHands Cloud with a GitLab account, OpenHands will have acc
 After signing in with a Gitlab account, use the `select a repo` and `select a branch` dropdowns to select the
 appropriate repository and branch you'd like OpenHands to work on. Then click on `Launch` to start the conversation!
 
-![Connect Repo](/static/img/connect-repo.png)
+![Connect Repo](/static/img/connect-repo-no-github.png)
+
+## Using Tokens with Reduced Scopes
+
+OpenHands requests an API-scoped token during OAuth authentication. By default, this token is provided to the agent.
+To restrict the agent's permissions, you can define a custom secret `GITLAB_TOKEN`, which will override the default token assigned to the agent.
+While the high-permission API token is still requested and used for other components of the application (e.g. opening merge requests), the agent will not have access to it.
 
 ## Working on GitLab Issues and Merge Requests Using Openhands
 

@@ -186,9 +186,18 @@ class EventStream(EventStore):
 
         if event.id is not None:
             # Write the event to the store - this can take some time
-            self.file_store.write(
-                self._get_filename_for_id(event.id, self.user_id), json.dumps(data)
-            )
+            event_json = json.dumps(data)
+            filename = self._get_filename_for_id(event.id, self.user_id)
+            if len(event_json) > 1_000_000:  # Roughly 1MB in bytes, ignoring encoding
+                logger.warning(
+                    f'Saving event JSON over 1MB: {len(event_json):,} bytes, filename: {filename}',
+                    extra={
+                        'user_id': self.user_id,
+                        'session_id': self.sid,
+                        'size': len(event_json),
+                    },
+                )
+            self.file_store.write(filename, event_json)
 
             # Store the cache page last - if it is not present during reads then it will simply be bypassed.
             self._store_cache_page(current_write_page)
