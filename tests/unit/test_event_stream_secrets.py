@@ -144,33 +144,4 @@ class TestEventStreamSecrets:
         )
 
 
-if __name__ == '__main__':
-    test = TestEventStreamSecrets()
-    try:
-        test.test_secrets_replaced_in_content()
-        print('✓ test_secrets_replaced_in_content passed')
-    except Exception as e:
-        print(f'✗ test_secrets_replaced_in_content failed: {e}')
 
-    try:
-        test.test_timestamp_not_affected_by_secret_replacement()
-        print('✓ test_timestamp_not_affected_by_secret_replacement passed')
-    except Exception as e:
-        print(f'✗ test_timestamp_not_affected_by_secret_replacement failed: {e}')
-
-    try:
-        test.test_protected_fields_not_affected_by_secret_replacement()
-        print('✓ test_protected_fields_not_affected_by_secret_replacement passed')
-    except Exception as e:
-        print(f'✗ test_protected_fields_not_affected_by_secret_replacement failed: {e}')
-
-    try:
-        test.test_nested_dict_secret_replacement()
-        print('✓ test_nested_dict_secret_replacement passed')
-    except Exception as e:
-        print(f'✗ test_nested_dict_secret_replacement failed: {e}')
-        import traceback
-
-        traceback.print_exc()
-
-    print('All tests completed!')
