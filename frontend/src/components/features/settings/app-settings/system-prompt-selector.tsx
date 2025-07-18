@@ -17,8 +17,8 @@ const SYSTEM_PROMPT_OPTIONS = [
     label: "Interactive (Experimental)",
   },
   {
-    key: "system_prompt_long_horizon.j2",
-    label: "Long Horizon (Experimental)",
+    key: "system_prompt_todo_list.j2",
+    label: "TODO List (Experimental)",
   },
 ];
 
