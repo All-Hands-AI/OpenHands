@@ -8,8 +8,6 @@ from openhands.events.action import (
     Action,
     AgentFinishAction,
     AgentRejectAction,
-    BrowseInteractiveAction,
-    BrowseURLAction,
     CmdRunAction,
     FileReadAction,
     FileWriteAction,
@@ -17,7 +15,6 @@ from openhands.events.action import (
 )
 from openhands.events.observation import (
     AgentStateChangedObservation,
-    BrowserOutputObservation,
     CmdOutputMetadata,
     CmdOutputObservation,
     FileReadObservation,
@@ -58,7 +55,7 @@ class DummyAgent(Agent):
                     CmdOutputObservation(
                         'foo',
                         command='echo "foo"',
-                        metadata=CmdOutputMetadata(exit_code=0)
+                        metadata=CmdOutputMetadata(exit_code=0),
                     )
                 ],
             },
@@ -66,11 +63,7 @@ class DummyAgent(Agent):
                 'action': FileWriteAction(
                     content='echo "Hello, World!"', path='hello.sh'
                 ),
-                'observations': [
-                    FileWriteObservation(
-                        content='', path='hello.sh'
-                    )
-                ],
+                'observations': [FileWriteObservation(content='', path='hello.sh')],
             },
             {
                 'action': FileReadAction(path='hello.sh'),
@@ -145,22 +138,30 @@ class DummyAgent(Agent):
                             if isinstance(path, str):
                                 # Extract just the filename from the path
                                 import os
+
                                 obs['extras']['path'] = os.path.basename(path)
                         # Normalize message field to handle path differences
                         if 'message' in obs:
                             import os
+
                             message = obs['message']
                             if isinstance(message, str):
                                 # Replace full paths with just filenames in messages
                                 if 'I wrote to the file ' in message:
                                     parts = message.split('I wrote to the file ')
                                     if len(parts) == 2:
-                                        filename = os.path.basename(parts[1].rstrip('.'))
-                                        obs['message'] = f'I wrote to the file {filename}.'
+                                        filename = os.path.basename(
+                                            parts[1].rstrip('.')
+                                        )
+                                        obs['message'] = (
+                                            f'I wrote to the file {filename}.'
+                                        )
                                 elif 'I read the file ' in message:
                                     parts = message.split('I read the file ')
                                     if len(parts) == 2:
-                                        filename = os.path.basename(parts[1].rstrip('.'))
+                                        filename = os.path.basename(
+                                            parts[1].rstrip('.')
+                                        )
                                         obs['message'] = f'I read the file {filename}.'
 
                     if hist_obs != expected_obs:
