@@ -28,7 +28,7 @@ export function MicroagentManagementRepoMicroagent({
         <div className="text-white text-base font-normal">
           {repoMicroagent.repositoryName}
         </div>
-        <MicroagentManagementAddMicroagentButton onClick={() => {}} />
+        <MicroagentManagementAddMicroagentButton />
       </div>
       {numberOfMicroagents === 0 && (
         <MicroagentManagementLearnThisRepo

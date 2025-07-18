@@ -26,7 +26,7 @@ export function MicroagentManagementMicroagents() {
   return (
     <div>
       <div className="flex items-center justify-end pb-4">
-        <MicroagentManagementAddMicroagentButton onClick={() => {}} />
+        <MicroagentManagementAddMicroagentButton />
       </div>
       {microagents.map((microagent) => (
         <div key={microagent.id} className="pb-4">
