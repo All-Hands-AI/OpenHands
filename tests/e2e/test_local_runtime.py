@@ -17,7 +17,6 @@ def test_headless_mode_with_dummy_agent_no_browser():
     COPY . /src
     RUN pip install --upgrade pip setuptools wheel
     RUN pip install .
-    RUN playwright install --with-deps chromium
     ENV PYTHONUNBUFFERED=1
     ENV RUNTIME=local
     ENV RUN_AS_OPENHANDS=false
