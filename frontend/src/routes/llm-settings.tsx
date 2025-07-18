@@ -25,6 +25,27 @@ import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { getProviderId } from "#/utils/map-provider";
 import { DEFAULT_OPENHANDS_MODEL } from "#/utils/verified-models";
+import { redirect } from "react-router";
+import { queryClient } from "#/query-client-config";
+import { GetConfigResponse } from "#/api/open-hands.types";
+import OpenHands from "#/api/open-hands";
+
+// Add a client loader to ensure LLM settings are not accessible in SaaS mode
+export const clientLoader = async () => {
+  let config = queryClient.getQueryData<GetConfigResponse>(["config"]);
+  if (!config) {
+    config = await OpenHands.getConfig();
+    queryClient.setQueryData<GetConfigResponse>(["config"], config);
+  }
+
+  const isSaas = config?.APP_MODE === "saas";
+  if (isSaas) {
+    // In SaaS mode, redirect to user settings
+    return redirect("/settings/user");
+  }
+
+  return null;
+};
 
 function LlmSettingsScreen() {
   const { t } = useTranslation();
