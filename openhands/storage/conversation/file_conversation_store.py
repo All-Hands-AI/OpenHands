@@ -12,7 +12,6 @@ from openhands.storage import get_file_store
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import (
     ConversationMetadata,
-    ConversationTrigger,
 )
 from openhands.storage.data_models.conversation_metadata_result_set import (
     ConversationMetadataResultSet,
@@ -71,8 +70,6 @@ class FileConversationStore(ConversationStore):
         self,
         page_id: str | None = None,
         limit: int = 20,
-        selected_repository: str | None = None,
-        conversation_trigger: ConversationTrigger | None = None,
     ) -> ConversationMetadataResultSet:
         metadata_dir = self.get_conversation_metadata_dir()
         try:
@@ -84,23 +81,11 @@ class FileConversationStore(ConversationStore):
         except FileNotFoundError:
             return ConversationMetadataResultSet([])
 
-        # Load all conversations and apply filters
+        # Load all conversations
         conversations = []
         for conversation_id in conversation_ids:
             try:
                 conversation = await self.get_metadata(conversation_id)
-                # Apply repository filter
-                if (
-                    selected_repository is not None
-                    and conversation.selected_repository != selected_repository
-                ):
-                    continue
-                # Apply conversation trigger filter
-                if (
-                    conversation_trigger is not None
-                    and conversation.trigger != conversation_trigger
-                ):
-                    continue
                 conversations.append(conversation)
             except Exception:
                 logger.warning(
@@ -110,7 +95,7 @@ class FileConversationStore(ConversationStore):
         # Sort by creation date (newest first)
         conversations.sort(key=_sort_key, reverse=True)
 
-        # Apply pagination to all results
+        # Apply pagination
         num_conversations = len(conversations)
         start = page_id_to_offset(page_id)
         end = min(limit + start, num_conversations)

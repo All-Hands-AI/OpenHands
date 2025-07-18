@@ -247,10 +247,8 @@ async def test_search_conversations_with_repository_filter():
                         conversation_store=mock_store,
                     )
 
-                    # Verify that search was called with the correct repository filter
-                    mock_store.search.assert_called_once_with(
-                        None, 20, 'test/repo', None
-                    )
+                    # Verify that search was called with only pagination parameters (filtering is done at API level)
+                    mock_store.search.assert_called_once_with(None, 20)
 
                     # Verify the result contains only conversations from the specified repository
                     assert len(result_set.results) == 1
@@ -320,10 +318,8 @@ async def test_search_conversations_with_trigger_filter():
                         conversation_store=mock_store,
                     )
 
-                    # Verify that search was called with the correct trigger filter
-                    mock_store.search.assert_called_once_with(
-                        None, 20, None, ConversationTrigger.GUI
-                    )
+                    # Verify that search was called with only pagination parameters (filtering is done at API level)
+                    mock_store.search.assert_called_once_with(None, 20)
 
                     # Verify the result contains only conversations with the specified trigger
                     assert len(result_set.results) == 1
@@ -393,10 +389,8 @@ async def test_search_conversations_with_both_filters():
                         conversation_store=mock_store,
                     )
 
-                    # Verify that search was called with both filters
-                    mock_store.search.assert_called_once_with(
-                        None, 20, 'test/repo', ConversationTrigger.SUGGESTED_TASK
-                    )
+                    # Verify that search was called with only pagination parameters (filtering is done at API level)
+                    mock_store.search.assert_called_once_with(None, 20)
 
                     # Verify the result contains only conversations matching both filters
                     assert len(result_set.results) == 1
@@ -468,10 +462,8 @@ async def test_search_conversations_with_pagination():
                         conversation_store=mock_store,
                     )
 
-                    # Verify that search was called with pagination parameters
-                    mock_store.search.assert_called_once_with(
-                        'page_123', 10, None, None
-                    )
+                    # Verify that search was called with pagination parameters (filtering is done at API level)
+                    mock_store.search.assert_called_once_with('page_123', 10)
 
                     # Verify the result includes pagination info
                     assert result_set.next_page_id == 'next_page_123'
@@ -541,10 +533,8 @@ async def test_search_conversations_with_filters_and_pagination():
                         conversation_store=mock_store,
                     )
 
-                    # Verify that search was called with both filters and pagination
-                    mock_store.search.assert_called_once_with(
-                        'page_456', 5, 'test/repo', ConversationTrigger.GUI
-                    )
+                    # Verify that search was called with only pagination parameters (filtering is done at API level)
+                    mock_store.search.assert_called_once_with('page_456', 5)
 
                     # Verify the result includes pagination info
                     assert result_set.next_page_id == 'next_page_456'
@@ -603,10 +593,8 @@ async def test_search_conversations_empty_results():
                         conversation_store=mock_store,
                     )
 
-                    # Verify that search was called with the filters
-                    mock_store.search.assert_called_once_with(
-                        None, 20, 'nonexistent/repo', ConversationTrigger.GUI
-                    )
+                    # Verify that search was called with only pagination parameters (filtering is done at API level)
+                    mock_store.search.assert_called_once_with(None, 20)
 
                     # Verify the result is empty
                     assert len(result_set.results) == 0
