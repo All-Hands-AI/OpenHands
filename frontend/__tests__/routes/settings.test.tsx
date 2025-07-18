@@ -201,14 +201,19 @@ describe("Settings Screen", () => {
       APP_MODE: "saas",
     });
 
-    // Mock window.location
-    const originalLocation = window.location;
-    delete window.location;
-    window.location = { ...originalLocation, pathname: "/settings", href: "" };
-    
+    // Mock pathname for the test
+    const originalPathname = Object.getOwnPropertyDescriptor(window, 'location');
+    Object.defineProperty(window, 'location', {
+      value: {
+        ...window.location,
+        pathname: "/settings"
+      },
+      writable: true
+    });
+
     // Clear any existing query data
     mockQueryClient.clear();
-    
+
     // Set the query data directly to ensure the component sees it
     mockQueryClient.setQueryData(["config"], { APP_MODE: "saas" });
 
@@ -222,9 +227,11 @@ describe("Settings Screen", () => {
 
     // Verify the LLM settings screen is not shown
     expect(screen.queryByTestId("llm-settings-screen")).not.toBeInTheDocument();
-    
+
     // Restore window.location
-    window.location = originalLocation;
+    if (originalPathname) {
+      Object.defineProperty(window, 'location', originalPathname);
+    }
 
     getConfigSpy.mockRestore();
   });
