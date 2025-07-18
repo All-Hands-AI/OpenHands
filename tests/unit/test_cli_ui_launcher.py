@@ -230,3 +230,28 @@ class TestUILauncher:
 
         assert exc_info.value.code == 0  # Should exit gracefully
         assert mock_run.call_count == 2
+
+    @patch('openhands.cli.ui_launcher.check_docker_requirements')
+    @patch('openhands.cli.ui_launcher.ensure_config_dir_exists')
+    @patch('openhands.cli.ui_launcher.get_openhands_config_dir')
+    @patch('openhands.cli.ui_launcher.Path.cwd')
+    @patch('openhands.cli.ui_launcher.__version__', '0.49.0')
+    def test_launch_ui_server_with_mount_cwd(
+        self, mock_cwd, mock_get_config_dir, mock_ensure_config, mock_check_docker
+    ):
+        """Test UI launcher with mount_cwd flag."""
+        mock_check_docker.return_value = True
+        mock_config_dir = Path('/test/.openhands')
+        mock_get_config_dir.return_value = mock_config_dir
+        mock_cwd.return_value = Path('/current/working/dir')
+
+        with patch('openhands.cli.ui_launcher.print_formatted_text') as mock_print:
+            launch_ui_server(dry_run=True, mount_cwd=True)
+
+        # Check that the dry run output includes the workspace mount
+        calls = [str(call) for call in mock_print.call_args_list]
+        docker_cmd_call = next(
+            (call for call in calls if 'Would run: docker run' in call), None
+        )
+        assert docker_cmd_call is not None
+        assert '/current/working/dir:/workspace' in docker_cmd_call

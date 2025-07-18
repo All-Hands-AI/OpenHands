@@ -67,11 +67,12 @@ def ensure_config_dir_exists() -> None:
     config_dir.mkdir(exist_ok=True)
 
 
-def launch_ui_server(dry_run: bool = False) -> None:
+def launch_ui_server(dry_run: bool = False, mount_cwd: bool = False) -> None:
     """Launch the OpenHands UI server using Docker.
 
     Args:
         dry_run: If True, only show what would be executed without running it.
+        mount_cwd: If True, mount the current working directory into the container.
     """
     print_formatted_text(
         HTML('<ansiblue>🚀 Launching OpenHands UI server...</ansiblue>')
@@ -148,14 +149,24 @@ def launch_ui_server(dry_run: bool = False) -> None:
         '/var/run/docker.sock:/var/run/docker.sock',
         '-v',
         f'{config_dir}:/.openhands',
-        '-p',
-        '3000:3000',
-        '--add-host',
-        'host.docker.internal:host-gateway',
-        '--name',
-        'openhands-app',
-        app_image,
     ]
+
+    # Add current working directory mount if requested
+    if mount_cwd:
+        cwd = Path.cwd()
+        docker_cmd.extend(['-v', f'{cwd}:/workspace'])
+
+    docker_cmd.extend(
+        [
+            '-p',
+            '3000:3000',
+            '--add-host',
+            'host.docker.internal:host-gateway',
+            '--name',
+            'openhands-app',
+            app_image,
+        ]
+    )
 
     if dry_run:
         print_formatted_text(HTML(f'<grey>Would run: {" ".join(docker_cmd)}</grey>'))

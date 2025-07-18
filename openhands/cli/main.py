@@ -484,7 +484,7 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
 
     # Handle UI launch mode
     if args.ui:
-        launch_ui_server()
+        launch_ui_server(mount_cwd=args.mount_cwd)
         return
 
     # Set log level from command line argument if provided

@@ -425,6 +425,7 @@ async def test_main_with_ui_flag(mock_launch_ui, mock_parse_args):
     # Mock arguments with ui=True
     mock_args = MagicMock()
     mock_args.ui = True
+    mock_args.mount_cwd = False
     mock_parse_args.return_value = mock_args
 
     # Run the function
@@ -432,7 +433,7 @@ async def test_main_with_ui_flag(mock_launch_ui, mock_parse_args):
 
     # Assertions
     mock_parse_args.assert_called_once()
-    mock_launch_ui.assert_called_once()
+    mock_launch_ui.assert_called_once_with(mount_cwd=False)
 
 
 @pytest.mark.asyncio
