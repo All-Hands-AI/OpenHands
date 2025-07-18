@@ -100,28 +100,6 @@ function SecretsSettingsScreen() {
         <p data-testid="no-secrets-message">{t("SECRETS$NO_SECRETS_FOUND")}</p>
       )}
 
-      {view === "list" && (
-        <table className="w-full">
-          <tbody>
-            {secrets?.map((secret) => (
-              <SecretListItem
-                key={secret.name}
-                title={secret.name}
-                description={secret.description}
-                onEdit={() => {
-                  setView("edit-secret-form");
-                  setSelectedSecret(secret.name);
-                }}
-                onDelete={() => {
-                  setConfirmationModalIsVisible(true);
-                  setSelectedSecret(secret.name);
-                }}
-              />
-            ))}
-          </tbody>
-        </table>
-      )}
-
       {!shouldRenderConnectToGitButton && view === "list" && (
         <BrandButton
           testId="add-secret-button"
@@ -132,6 +110,43 @@ function SecretsSettingsScreen() {
         >
           {t("SECRETS$ADD_NEW_SECRET")}
         </BrandButton>
+      )}
+
+      {view === "list" && (
+        <div className="border border-tertiary rounded-md overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-base-tertiary">
+              <tr className="flex w-full items-center">
+                <th className="w-1/4 text-left p-3 text-sm font-medium">
+                  {t(I18nKey.SETTINGS$NAME)}
+                </th>
+                <th className="w-1/2 text-left p-3 text-sm font-medium">
+                  {t(I18nKey.SECRETS$DESCRIPTION)}
+                </th>
+                <th className="w-1/4 text-right p-3 text-sm font-medium">
+                  {t(I18nKey.SETTINGS$ACTIONS)}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {secrets?.map((secret) => (
+                <SecretListItem
+                  key={secret.name}
+                  title={secret.name}
+                  description={secret.description}
+                  onEdit={() => {
+                    setView("edit-secret-form");
+                    setSelectedSecret(secret.name);
+                  }}
+                  onDelete={() => {
+                    setConfirmationModalIsVisible(true);
+                    setSelectedSecret(secret.name);
+                  }}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {(view === "add-secret-form" || view === "edit-secret-form") && (

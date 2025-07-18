@@ -27,11 +27,13 @@ from openhands.integrations.provider import (
 )
 from openhands.integrations.service_types import (
     AuthenticationError,
+    CreateMicroagent,
     ProviderType,
     SuggestedTask,
 )
 from openhands.llm.llm import LLM
 from openhands.runtime import get_runtime_cls
+from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
@@ -83,6 +85,7 @@ class InitSessionRequest(BaseModel):
     image_urls: list[str] | None = None
     replay_json: str | None = None
     suggested_task: SuggestedTask | None = None
+    create_microagent: CreateMicroagent | None = None
     conversation_instructions: str | None = None
     # Only nested runtimes require the ability to specify a conversation id, and it could be a security risk
     if os.getenv('ALLOW_SET_CONVERSATION_ID', '0') == '1':
@@ -122,6 +125,7 @@ async def new_conversation(
     image_urls = data.image_urls or []
     replay_json = data.replay_json
     suggested_task = data.suggested_task
+    create_microagent = data.create_microagent
     git_provider = data.git_provider
     conversation_instructions = data.conversation_instructions
 
@@ -130,6 +134,13 @@ async def new_conversation(
     if suggested_task:
         initial_user_msg = suggested_task.get_prompt_for_task()
         conversation_trigger = ConversationTrigger.SUGGESTED_TASK
+    elif create_microagent:
+        conversation_trigger = ConversationTrigger.MICROAGENT_MANAGEMENT
+        # Set repository and git_provider from create_microagent if not already set
+        if not repository and create_microagent.repo:
+            repository = create_microagent.repo
+        if not git_provider and create_microagent.git_provider:
+            git_provider = create_microagent.git_provider
 
     if auth_type == AuthType.BEARER:
         conversation_trigger = ConversationTrigger.REMOTE_API_KEY
@@ -189,7 +200,7 @@ async def new_conversation(
             content={
                 'status': 'error',
                 'message': str(e),
-                'msg_id': 'STATUS$ERROR_LLM_AUTHENTICATION',
+                'msg_id': RuntimeStatus.ERROR_LLM_AUTHENTICATION.value,
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )
@@ -199,7 +210,7 @@ async def new_conversation(
             content={
                 'status': 'error',
                 'message': str(e),
-                'msg_id': 'STATUS$GIT_PROVIDER_AUTHENTICATION_ERROR',
+                'msg_id': RuntimeStatus.GIT_PROVIDER_AUTHENTICATION_ERROR.value,
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )
@@ -553,3 +564,122 @@ def _get_contextual_events(event_stream: EventStream, event_id: int) -> str:
     all_events = itertools.chain(ordered_context_before, context_after)
     stringified_events = '\n'.join(str(event) for event in all_events)
     return stringified_events
+
+
+class UpdateConversationRequest(BaseModel):
+    """Request model for updating conversation metadata."""
+
+    title: str = Field(
+        ..., min_length=1, max_length=200, description='New conversation title'
+    )
+
+    model_config = ConfigDict(extra='forbid')
+
+
+@app.patch('/conversations/{conversation_id}')
+async def update_conversation(
+    conversation_id: str,
+    data: UpdateConversationRequest,
+    user_id: str | None = Depends(get_user_id),
+    conversation_store: ConversationStore = Depends(get_conversation_store),
+) -> bool:
+    """Update conversation metadata.
+
+    This endpoint allows updating conversation details like title.
+    Only the conversation owner can update the conversation.
+
+    Args:
+        conversation_id: The ID of the conversation to update
+        data: The conversation update data (title, etc.)
+        user_id: The authenticated user ID
+        conversation_store: The conversation store dependency
+
+    Returns:
+        bool: True if the conversation was updated successfully
+
+    Raises:
+        HTTPException: If conversation is not found or user lacks permission
+    """
+
+    logger.info(
+        f'Updating conversation {conversation_id} with title: {data.title}',
+        extra={'session_id': conversation_id, 'user_id': user_id},
+    )
+
+    try:
+        # Get the existing conversation metadata
+        metadata = await conversation_store.get_metadata(conversation_id)
+
+        # Validate that the user owns this conversation
+        if user_id and metadata.user_id != user_id:
+            logger.warning(
+                f'User {user_id} attempted to update conversation {conversation_id} owned by {metadata.user_id}',
+                extra={'session_id': conversation_id, 'user_id': user_id},
+            )
+            return JSONResponse(
+                content={
+                    'status': 'error',
+                    'message': 'Permission denied: You can only update your own conversations',
+                    'msg_id': 'AUTHORIZATION$PERMISSION_DENIED',
+                },
+                status_code=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Update the conversation metadata
+        original_title = metadata.title
+        metadata.title = data.title.strip()
+        metadata.last_updated_at = datetime.now(timezone.utc)
+
+        # Save the updated metadata
+        await conversation_store.save_metadata(metadata)
+
+        # Emit a status update to connected clients about the title change
+        try:
+            status_update_dict = {
+                'status_update': True,
+                'type': 'info',
+                'message': conversation_id,
+                'conversation_title': metadata.title,
+            }
+            await conversation_manager.sio.emit(
+                'oh_event',
+                status_update_dict,
+                to=f'room:{conversation_id}',
+            )
+        except Exception as e:
+            logger.error(f'Error emitting title update event: {e}')
+            # Don't fail the update if we can't emit the event
+
+        logger.info(
+            f'Successfully updated conversation {conversation_id} title from "{original_title}" to "{metadata.title}"',
+            extra={'session_id': conversation_id, 'user_id': user_id},
+        )
+
+        return True
+
+    except FileNotFoundError:
+        logger.warning(
+            f'Conversation {conversation_id} not found for update',
+            extra={'session_id': conversation_id, 'user_id': user_id},
+        )
+        return JSONResponse(
+            content={
+                'status': 'error',
+                'message': 'Conversation not found',
+                'msg_id': 'CONVERSATION$NOT_FOUND',
+            },
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+    except Exception as e:
+        logger.error(
+            f'Error updating conversation {conversation_id}: {str(e)}',
+            extra={'session_id': conversation_id, 'user_id': user_id},
+        )
+        return JSONResponse(
+            content={
+                'status': 'error',
+                'message': f'Failed to update conversation: {str(e)}',
+                'msg_id': 'CONVERSATION$UPDATE_ERROR',
+            },
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )

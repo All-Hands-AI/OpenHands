@@ -12,6 +12,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import MessageAction
 from openhands.events.stream import EventStreamSubscriber, session_exists
+from openhands.runtime import get_runtime_cls
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.monitoring import MonitoringListener
@@ -23,7 +24,12 @@ from openhands.storage.data_models.conversation_metadata import ConversationMeta
 from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
-from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync, wait_all
+from openhands.utils.async_utils import (
+    GENERAL_TIMEOUT,
+    call_async_from_sync,
+    run_in_loop,
+    wait_all,
+)
 from openhands.utils.conversation_summary import (
     auto_generate_title,
     get_default_conversation_title,
@@ -61,15 +67,20 @@ class StandaloneConversationManager(ConversationManager):
     _conversations_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     _cleanup_task: asyncio.Task | None = None
     _conversation_store_class: type[ConversationStore] | None = None
+    _loop: asyncio.AbstractEventLoop | None = None
 
     async def __aenter__(self):
+        # Grab a reference to the main event loop. This is the loop in which `await sio.emit` must be called
+        self._loop = asyncio.get_event_loop()
         self._cleanup_task = asyncio.create_task(self._cleanup_stale())
+        get_runtime_cls(self.config.runtime).setup(self.config)
         return self
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         if self._cleanup_task:
             self._cleanup_task.cancel()
             self._cleanup_task = None
+        get_runtime_cls(self.config.runtime).teardown(self.config)
 
     async def attach_to_conversation(
         self, sid: str, user_id: str | None = None
@@ -97,9 +108,22 @@ class StandaloneConversationManager(ConversationManager):
                 )
                 return conversation
 
+            # Get the event stream for the conversation - required to keep the cur_id up to date
+            event_stream = None
+            runtime = None
+            session = self._local_agent_loops_by_sid.get(sid)
+            if session:
+                event_stream = session.agent_session.event_stream
+                runtime = session.agent_session.runtime
+
             # Create new conversation if none exists
             c = ServerConversation(
-                sid, file_store=self.file_store, config=self.config, user_id=user_id
+                sid,
+                file_store=self.file_store,
+                config=self.config,
+                user_id=user_id,
+                event_stream=event_stream,
+                runtime=runtime,
             )
             try:
                 await c.connect()
@@ -297,10 +321,13 @@ class StandaloneConversationManager(ConversationManager):
                     'id': 'AGENT_ERROR$TOO_MANY_CONVERSATIONS',
                     'message': 'Too many conversations at once. If you are still using this one, try reactivating it by prompting the agent to continue',
                 }
-                await self.sio.emit(
-                    'oh_event',
-                    status_update_dict,
-                    to=ROOM_KEY.format(sid=oldest_conversation_id),
+                await run_in_loop(
+                    self.sio.emit(
+                        'oh_event',
+                        status_update_dict,
+                        to=ROOM_KEY.format(sid=oldest_conversation_id),
+                    ),
+                    self._loop,  # type:ignore
                 )
                 await self.close_session(oldest_conversation_id)
 
@@ -477,10 +504,13 @@ class StandaloneConversationManager(ConversationManager):
                         'message': conversation_id,
                         'conversation_title': conversation.title,
                     }
-                    await self.sio.emit(
-                        'oh_event',
-                        status_update_dict,
-                        to=ROOM_KEY.format(sid=conversation_id),
+                    await run_in_loop(
+                        self.sio.emit(
+                            'oh_event',
+                            status_update_dict,
+                            to=ROOM_KEY.format(sid=conversation_id),
+                        ),
+                        self._loop,  # type:ignore
                     )
                 except Exception as e:
                     logger.error(f'Error emitting title update event: {e}')

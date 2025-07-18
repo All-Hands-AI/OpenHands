@@ -13,8 +13,8 @@ with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
 
-from litellm import ChatCompletionMessageToolCall, ModelInfo, PromptTokensDetails
 from litellm import Message as LiteLLMMessage
+from litellm import ModelInfo, PromptTokensDetails
 from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
@@ -59,6 +59,7 @@ CACHE_PROMPT_SUPPORTED_MODELS = [
     'claude-3-haiku-20240307',
     'claude-3-opus-20240229',
     'claude-sonnet-4-20250514',
+    'claude-sonnet-4',
     'claude-opus-4-20250514',
 ]
 
@@ -72,6 +73,7 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'claude-3.5-haiku',
     'claude-3-5-haiku-20241022',
     'claude-sonnet-4-20250514',
+    'claude-sonnet-4',
     'claude-opus-4-20250514',
     'gpt-4o-mini',
     'gpt-4o',
@@ -84,6 +86,7 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'o4-mini-2025-04-16',
     'gemini-2.5-pro',
     'gpt-4.1',
+    'kimi-k2-0711-preview',
 ]
 
 REASONING_EFFORT_SUPPORTED_MODELS = [
@@ -95,6 +98,8 @@ REASONING_EFFORT_SUPPORTED_MODELS = [
     'o3-mini',
     'o4-mini',
     'o4-mini-2025-04-16',
+    'gemini-2.5-flash',
+    'gemini-2.5-pro',
 ]
 
 MODELS_WITHOUT_STOP_WORDS = [
@@ -102,6 +107,7 @@ MODELS_WITHOUT_STOP_WORDS = [
     'o1-preview',
     'o1',
     'o1-2024-12-17',
+    'xai/grok-4-0709',
 ]
 
 
@@ -169,6 +175,18 @@ class LLM(RetryMixin, DebugMixin):
             # openai doesn't expose top_k
             # litellm will handle it a bit differently than the openai-compatible params
             kwargs['top_k'] = self.config.top_k
+        if self.config.top_p is not None:
+            # openai doesn't expose top_p, but litellm does
+            kwargs['top_p'] = self.config.top_p
+
+        # Handle OpenHands provider - rewrite to litellm_proxy
+        if self.config.model.startswith('openhands/'):
+            model_name = self.config.model.removeprefix('openhands/')
+            self.config.model = f'litellm_proxy/{model_name}'
+            self.config.base_url = 'https://llm-proxy.app.all-hands.dev/'
+            logger.debug(
+                f'Rewrote openhands/{model_name} to {self.config.model} with base URL {self.config.base_url}'
+            )
 
         if (
             self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS
@@ -178,6 +196,7 @@ class LLM(RetryMixin, DebugMixin):
             kwargs.pop(
                 'temperature'
             )  # temperature is not supported for reasoning models
+            kwargs.pop('top_p')  # reasoning model like o3 doesn't support top_p
         # Azure issue: https://github.com/All-Hands-AI/OpenHands/issues/6777
         if self.config.model.startswith('azure'):
             kwargs['max_tokens'] = self.config.max_output_tokens
@@ -199,7 +218,6 @@ class LLM(RetryMixin, DebugMixin):
             api_version=self.config.api_version,
             custom_llm_provider=self.config.custom_llm_provider,
             timeout=self.config.timeout,
-            top_p=self.config.top_p,
             drop_params=self.config.drop_params,
             seed=self.config.seed,
             **kwargs,
@@ -347,18 +365,8 @@ class LLM(RetryMixin, DebugMixin):
                     + str(resp)
                 )
 
-            message_back: str = resp['choices'][0]['message']['content'] or ''
-            tool_calls: list[ChatCompletionMessageToolCall] = resp['choices'][0][
-                'message'
-            ].get('tool_calls', [])
-            if tool_calls:
-                for tool_call in tool_calls:
-                    fn_name = tool_call.function.name
-                    fn_args = tool_call.function.arguments
-                    message_back += f'\nFunction call: {fn_name}({fn_args})'
-
             # log the LLM response
-            self.log_response(message_back)
+            self.log_response(resp)
 
             # post-process the response first to calculate cost
             cost = self._post_completion(resp)

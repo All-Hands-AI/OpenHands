@@ -52,14 +52,16 @@ test("organizeModelsAndProviders", () => {
       separator: "/",
       models: [
         "claude-3-5-sonnet-20241022",
-        "claude-3-haiku-20240307",
-        "claude-2",
-        "claude-2.1",
       ],
     },
     other: {
       separator: "",
-      models: ["together-ai-21.1b-41b"],
+      models: [
+        "together-ai-21.1b-41b",
+        "claude-3-haiku-20240307",
+        "claude-2",
+        "claude-2.1",
+      ],
     },
   });
 });

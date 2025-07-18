@@ -10,7 +10,8 @@ This section is for users who want to connect OpenHands to different LLMs.
 ## Model Recommendations
 
 Based on our evaluations of language models for coding tasks (using the SWE-bench dataset), we can provide some
-recommendations for model selection. Our latest benchmarking results can be found in [this spreadsheet](https://docs.google.com/spreadsheets/d/1wOUdFCMyY6Nt0AIqF705KN4JKOWgeI4wUGUP60krXXs/edit?gid=0).
+recommendations for model selection. Our latest benchmarking results can be found in
+[this spreadsheet](https://docs.google.com/spreadsheets/d/1wOUdFCMyY6Nt0AIqF705KN4JKOWgeI4wUGUP60krXXs/edit?gid=0).
 
 Based on these findings and community feedback, these are the latest models that have been verified to work reasonably well with OpenHands:
 
@@ -20,6 +21,7 @@ Based on these findings and community feedback, these are the latest models that
 - [openai/o4-mini](https://openai.com/index/introducing-o3-and-o4-mini/)
 - [gemini/gemini-2.5-pro](https://blog.google/technology/google-deepmind/gemini-model-thinking-updates-march-2025/)
 - [deepseek/deepseek-chat](https://api-docs.deepseek.com/)
+- [moonshot/kimi-k2-0711-preview](https://platform.moonshot.ai/docs/pricing/chat#generation-model-kimi-k2)
 
 If you have successfully run OpenHands with specific providers, we encourage you to open a PR to share your setup process
 to help others using the same provider!
@@ -70,17 +72,20 @@ We have a few guides for running OpenHands with specific model providers:
 - [Groq](/usage/llms/groq)
 - [Local LLMs with SGLang or vLLM](/usage/llms/local-llms)
 - [LiteLLM Proxy](/usage/llms/litellm-proxy)
+- [Moonshot AI](/usage/llms/moonshot)
 - [OpenAI](/usage/llms/openai-llms)
+- [OpenHands](/usage/llms/openhands-llms)
 - [OpenRouter](/usage/llms/openrouter)
 
 ## Model Customization
 
 LLM providers have specific settings that can be customized to optimize their performance with OpenHands, such as:
 
-- **Custom Tokenizers**: For specialized models, you can add a suitable tokenizer
-- **Native Tool Calling**: Toggle native function/tool calling capabilities
+- **Custom Tokenizers**: For specialized models, you can add a suitable tokenizer.
+- **Native Tool Calling**: Toggle native function/tool calling capabilities.
 
-For detailed information about model customization, see [LLM Configuration Options](configuration-options#llm-customization).
+For detailed information about model customization, see
+[LLM Configuration Options](/usage/configuration-options#llm-configuration).
 
 ### API retries and rate limits
 
