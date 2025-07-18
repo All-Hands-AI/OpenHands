@@ -71,39 +71,9 @@ class FileConversationStore(ConversationStore):
         self,
         page_id: str | None = None,
         limit: int = 20,
-    ) -> ConversationMetadataResultSet:
-        conversations: list[ConversationMetadata] = []
-        metadata_dir = self.get_conversation_metadata_dir()
-        try:
-            conversation_ids = [
-                path.split('/')[-2]
-                for path in self.file_store.list(metadata_dir)
-                if not path.startswith(f'{metadata_dir}/.')
-            ]
-        except FileNotFoundError:
-            return ConversationMetadataResultSet([])
-        num_conversations = len(conversation_ids)
-        start = page_id_to_offset(page_id)
-        end = min(limit + start, num_conversations)
-        conversations = []
-        for conversation_id in conversation_ids:
-            try:
-                conversations.append(await self.get_metadata(conversation_id))
-            except Exception:
-                logger.warning(
-                    f'Could not load conversation metadata: {conversation_id}'
-                )
-        conversations.sort(key=_sort_key, reverse=True)
-        conversations = conversations[start:end]
-        next_page_id = offset_to_page_id(end, end < num_conversations)
-        return ConversationMetadataResultSet(conversations, next_page_id)
-
-    async def search_by_filters(
-        self,
         selected_repository: str | None = None,
         conversation_trigger: ConversationTrigger | None = None,
     ) -> ConversationMetadataResultSet:
-        """Search conversations with filters for repository and conversation trigger. Returns all matches, no pagination."""
         metadata_dir = self.get_conversation_metadata_dir()
         try:
             conversation_ids = [
@@ -136,9 +106,17 @@ class FileConversationStore(ConversationStore):
                 logger.warning(
                     f'Could not load conversation metadata: {conversation_id}'
                 )
+
         # Sort by creation date (newest first)
         conversations.sort(key=_sort_key, reverse=True)
-        return ConversationMetadataResultSet(conversations)
+
+        # Apply pagination to all results
+        num_conversations = len(conversations)
+        start = page_id_to_offset(page_id)
+        end = min(limit + start, num_conversations)
+        conversations = conversations[start:end]
+        next_page_id = offset_to_page_id(end, end < num_conversations)
+        return ConversationMetadataResultSet(conversations, next_page_id)
 
     def get_conversation_metadata_dir(self) -> str:
         return CONVERSATION_BASE_DIR

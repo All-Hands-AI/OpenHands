@@ -57,16 +57,10 @@ class ConversationStore(ABC):
         self,
         page_id: str | None = None,
         limit: int = 20,
-    ) -> ConversationMetadataResultSet:
-        """Search conversations."""
-
-    @abstractmethod
-    async def search_by_filters(
-        self,
         selected_repository: str | None = None,
         conversation_trigger: ConversationTrigger | None = None,
     ) -> ConversationMetadataResultSet:
-        """Search conversations with filters for repository and conversation trigger. Returns all matches, no pagination."""
+        """Search conversations with optional filtering by repository and conversation trigger."""
 
     async def get_all_metadata(
         self, conversation_ids: Iterable[str]

@@ -220,9 +220,13 @@ async def new_conversation(
 async def search_conversations(
     page_id: str | None = None,
     limit: int = 20,
+    selected_repository: str | None = None,
+    conversation_trigger: ConversationTrigger | None = None,
     conversation_store: ConversationStore = Depends(get_conversation_store),
 ) -> ConversationInfoResultSet:
-    conversation_metadata_result_set = await conversation_store.search(page_id, limit)
+    conversation_metadata_result_set = await conversation_store.search(
+        page_id, limit, selected_repository, conversation_trigger
+    )
 
     # Filter out conversations older than max_age
     now = datetime.now(timezone.utc)
@@ -265,57 +269,6 @@ async def search_conversations(
         next_page_id=conversation_metadata_result_set.next_page_id,
     )
     return result
-
-
-@app.get('/conversations/filtered')
-async def search_conversations_filtered(
-    selected_repository: str | None = None,
-    conversation_trigger: ConversationTrigger | None = None,
-    conversation_store: ConversationStore = Depends(get_conversation_store),
-) -> list[ConversationInfo]:
-    """Search conversations filtered by repository and optionally by conversation trigger. Returns all matches, no pagination."""
-    conversation_metadata_result_set = await conversation_store.search_by_filters(
-        selected_repository=selected_repository,
-        conversation_trigger=conversation_trigger,
-    )
-
-    # Filter out conversations older than max_age
-    now = datetime.now(timezone.utc)
-    max_age = config.conversation_max_age_seconds
-    filtered_results = [
-        conversation
-        for conversation in conversation_metadata_result_set.results
-        if hasattr(conversation, 'created_at')
-        and (now - conversation.created_at.replace(tzinfo=timezone.utc)).total_seconds()
-        <= max_age
-    ]
-
-    conversation_ids = set(
-        conversation.conversation_id for conversation in filtered_results
-    )
-    connection_ids_to_conversation_ids = await conversation_manager.get_connections(
-        filter_to_sids=conversation_ids
-    )
-    agent_loop_info = await conversation_manager.get_agent_loop_info(
-        filter_to_sids=conversation_ids
-    )
-    agent_loop_info_by_conversation_id = {
-        info.conversation_id: info for info in agent_loop_info
-    }
-    return await wait_all(
-        _get_conversation_info(
-            conversation=conversation,
-            num_connections=sum(
-                1
-                for conversation_id in connection_ids_to_conversation_ids.values()
-                if conversation_id == conversation.conversation_id
-            ),
-            agent_loop_info=agent_loop_info_by_conversation_id.get(
-                conversation.conversation_id
-            ),
-        )
-        for conversation in filtered_results
-    )
 
 
 @app.get('/conversations/{conversation_id}')

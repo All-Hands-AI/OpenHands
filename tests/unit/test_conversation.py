@@ -159,6 +159,8 @@ async def test_search_conversations():
                     result_set = await search_conversations(
                         page_id=None,
                         limit=20,
+                        selected_repository=None,
+                        conversation_trigger=None,
                         conversation_store=mock_store,
                     )
 
@@ -181,6 +183,434 @@ async def test_search_conversations():
                         ]
                     )
                     assert result_set == expected
+
+
+@pytest.mark.asyncio
+async def test_search_conversations_with_repository_filter():
+    """Test searching conversations with repository filter."""
+    with _patch_store():
+        with patch(
+            'openhands.server.routes.manage_conversations.config'
+        ) as mock_config:
+            mock_config.conversation_max_age_seconds = 864000  # 10 days
+            with patch(
+                'openhands.server.routes.manage_conversations.conversation_manager'
+            ) as mock_manager:
+
+                async def mock_get_running_agent_loops(*args, **kwargs):
+                    return set()
+
+                async def mock_get_connections(*args, **kwargs):
+                    return {}
+
+                async def get_agent_loop_info(*args, **kwargs):
+                    return []
+
+                mock_manager.get_running_agent_loops = mock_get_running_agent_loops
+                mock_manager.get_connections = mock_get_connections
+                mock_manager.get_agent_loop_info = get_agent_loop_info
+                with patch(
+                    'openhands.server.routes.manage_conversations.datetime'
+                ) as mock_datetime:
+                    mock_datetime.now.return_value = datetime.fromisoformat(
+                        '2025-01-01T00:00:00+00:00'
+                    )
+                    mock_datetime.fromisoformat = datetime.fromisoformat
+                    mock_datetime.timezone = timezone
+
+                    # Mock the conversation store
+                    mock_store = MagicMock()
+                    mock_store.search = AsyncMock(
+                        return_value=ConversationInfoResultSet(
+                            results=[
+                                ConversationMetadata(
+                                    conversation_id='conversation_1',
+                                    title='Conversation 1',
+                                    created_at=datetime.fromisoformat(
+                                        '2025-01-01T00:00:00+00:00'
+                                    ),
+                                    last_updated_at=datetime.fromisoformat(
+                                        '2025-01-01T00:01:00+00:00'
+                                    ),
+                                    selected_repository='test/repo',
+                                    user_id='12345',
+                                )
+                            ]
+                        )
+                    )
+
+                    result_set = await search_conversations(
+                        page_id=None,
+                        limit=20,
+                        selected_repository='test/repo',
+                        conversation_trigger=None,
+                        conversation_store=mock_store,
+                    )
+
+                    # Verify that search was called with the correct repository filter
+                    mock_store.search.assert_called_once_with(
+                        None, 20, 'test/repo', None
+                    )
+
+                    # Verify the result contains only conversations from the specified repository
+                    assert len(result_set.results) == 1
+                    assert result_set.results[0].selected_repository == 'test/repo'
+
+
+@pytest.mark.asyncio
+async def test_search_conversations_with_trigger_filter():
+    """Test searching conversations with conversation trigger filter."""
+    with _patch_store():
+        with patch(
+            'openhands.server.routes.manage_conversations.config'
+        ) as mock_config:
+            mock_config.conversation_max_age_seconds = 864000  # 10 days
+            with patch(
+                'openhands.server.routes.manage_conversations.conversation_manager'
+            ) as mock_manager:
+
+                async def mock_get_running_agent_loops(*args, **kwargs):
+                    return set()
+
+                async def mock_get_connections(*args, **kwargs):
+                    return {}
+
+                async def get_agent_loop_info(*args, **kwargs):
+                    return []
+
+                mock_manager.get_running_agent_loops = mock_get_running_agent_loops
+                mock_manager.get_connections = mock_get_connections
+                mock_manager.get_agent_loop_info = get_agent_loop_info
+                with patch(
+                    'openhands.server.routes.manage_conversations.datetime'
+                ) as mock_datetime:
+                    mock_datetime.now.return_value = datetime.fromisoformat(
+                        '2025-01-01T00:00:00+00:00'
+                    )
+                    mock_datetime.fromisoformat = datetime.fromisoformat
+                    mock_datetime.timezone = timezone
+
+                    # Mock the conversation store
+                    mock_store = MagicMock()
+                    mock_store.search = AsyncMock(
+                        return_value=ConversationInfoResultSet(
+                            results=[
+                                ConversationMetadata(
+                                    conversation_id='conversation_1',
+                                    title='Conversation 1',
+                                    created_at=datetime.fromisoformat(
+                                        '2025-01-01T00:00:00+00:00'
+                                    ),
+                                    last_updated_at=datetime.fromisoformat(
+                                        '2025-01-01T00:01:00+00:00'
+                                    ),
+                                    selected_repository='test/repo',
+                                    trigger=ConversationTrigger.GUI,
+                                    user_id='12345',
+                                )
+                            ]
+                        )
+                    )
+
+                    result_set = await search_conversations(
+                        page_id=None,
+                        limit=20,
+                        selected_repository=None,
+                        conversation_trigger=ConversationTrigger.GUI,
+                        conversation_store=mock_store,
+                    )
+
+                    # Verify that search was called with the correct trigger filter
+                    mock_store.search.assert_called_once_with(
+                        None, 20, None, ConversationTrigger.GUI
+                    )
+
+                    # Verify the result contains only conversations with the specified trigger
+                    assert len(result_set.results) == 1
+                    assert result_set.results[0].trigger == ConversationTrigger.GUI
+
+
+@pytest.mark.asyncio
+async def test_search_conversations_with_both_filters():
+    """Test searching conversations with both repository and trigger filters."""
+    with _patch_store():
+        with patch(
+            'openhands.server.routes.manage_conversations.config'
+        ) as mock_config:
+            mock_config.conversation_max_age_seconds = 864000  # 10 days
+            with patch(
+                'openhands.server.routes.manage_conversations.conversation_manager'
+            ) as mock_manager:
+
+                async def mock_get_running_agent_loops(*args, **kwargs):
+                    return set()
+
+                async def mock_get_connections(*args, **kwargs):
+                    return {}
+
+                async def get_agent_loop_info(*args, **kwargs):
+                    return []
+
+                mock_manager.get_running_agent_loops = mock_get_running_agent_loops
+                mock_manager.get_connections = mock_get_connections
+                mock_manager.get_agent_loop_info = get_agent_loop_info
+                with patch(
+                    'openhands.server.routes.manage_conversations.datetime'
+                ) as mock_datetime:
+                    mock_datetime.now.return_value = datetime.fromisoformat(
+                        '2025-01-01T00:00:00+00:00'
+                    )
+                    mock_datetime.fromisoformat = datetime.fromisoformat
+                    mock_datetime.timezone = timezone
+
+                    # Mock the conversation store
+                    mock_store = MagicMock()
+                    mock_store.search = AsyncMock(
+                        return_value=ConversationInfoResultSet(
+                            results=[
+                                ConversationMetadata(
+                                    conversation_id='conversation_1',
+                                    title='Conversation 1',
+                                    created_at=datetime.fromisoformat(
+                                        '2025-01-01T00:00:00+00:00'
+                                    ),
+                                    last_updated_at=datetime.fromisoformat(
+                                        '2025-01-01T00:01:00+00:00'
+                                    ),
+                                    selected_repository='test/repo',
+                                    trigger=ConversationTrigger.SUGGESTED_TASK,
+                                    user_id='12345',
+                                )
+                            ]
+                        )
+                    )
+
+                    result_set = await search_conversations(
+                        page_id=None,
+                        limit=20,
+                        selected_repository='test/repo',
+                        conversation_trigger=ConversationTrigger.SUGGESTED_TASK,
+                        conversation_store=mock_store,
+                    )
+
+                    # Verify that search was called with both filters
+                    mock_store.search.assert_called_once_with(
+                        None, 20, 'test/repo', ConversationTrigger.SUGGESTED_TASK
+                    )
+
+                    # Verify the result contains only conversations matching both filters
+                    assert len(result_set.results) == 1
+                    result = result_set.results[0]
+                    assert result.selected_repository == 'test/repo'
+                    assert result.trigger == ConversationTrigger.SUGGESTED_TASK
+
+
+@pytest.mark.asyncio
+async def test_search_conversations_with_pagination():
+    """Test searching conversations with pagination."""
+    with _patch_store():
+        with patch(
+            'openhands.server.routes.manage_conversations.config'
+        ) as mock_config:
+            mock_config.conversation_max_age_seconds = 864000  # 10 days
+            with patch(
+                'openhands.server.routes.manage_conversations.conversation_manager'
+            ) as mock_manager:
+
+                async def mock_get_running_agent_loops(*args, **kwargs):
+                    return set()
+
+                async def mock_get_connections(*args, **kwargs):
+                    return {}
+
+                async def get_agent_loop_info(*args, **kwargs):
+                    return []
+
+                mock_manager.get_running_agent_loops = mock_get_running_agent_loops
+                mock_manager.get_connections = mock_get_connections
+                mock_manager.get_agent_loop_info = get_agent_loop_info
+                with patch(
+                    'openhands.server.routes.manage_conversations.datetime'
+                ) as mock_datetime:
+                    mock_datetime.now.return_value = datetime.fromisoformat(
+                        '2025-01-01T00:00:00+00:00'
+                    )
+                    mock_datetime.fromisoformat = datetime.fromisoformat
+                    mock_datetime.timezone = timezone
+
+                    # Mock the conversation store
+                    mock_store = MagicMock()
+                    mock_store.search = AsyncMock(
+                        return_value=ConversationInfoResultSet(
+                            results=[
+                                ConversationMetadata(
+                                    conversation_id='conversation_1',
+                                    title='Conversation 1',
+                                    created_at=datetime.fromisoformat(
+                                        '2025-01-01T00:00:00+00:00'
+                                    ),
+                                    last_updated_at=datetime.fromisoformat(
+                                        '2025-01-01T00:01:00+00:00'
+                                    ),
+                                    selected_repository='test/repo',
+                                    user_id='12345',
+                                )
+                            ],
+                            next_page_id='next_page_123',
+                        )
+                    )
+
+                    result_set = await search_conversations(
+                        page_id='page_123',
+                        limit=10,
+                        selected_repository=None,
+                        conversation_trigger=None,
+                        conversation_store=mock_store,
+                    )
+
+                    # Verify that search was called with pagination parameters
+                    mock_store.search.assert_called_once_with(
+                        'page_123', 10, None, None
+                    )
+
+                    # Verify the result includes pagination info
+                    assert result_set.next_page_id == 'next_page_123'
+
+
+@pytest.mark.asyncio
+async def test_search_conversations_with_filters_and_pagination():
+    """Test searching conversations with filters and pagination."""
+    with _patch_store():
+        with patch(
+            'openhands.server.routes.manage_conversations.config'
+        ) as mock_config:
+            mock_config.conversation_max_age_seconds = 864000  # 10 days
+            with patch(
+                'openhands.server.routes.manage_conversations.conversation_manager'
+            ) as mock_manager:
+
+                async def mock_get_running_agent_loops(*args, **kwargs):
+                    return set()
+
+                async def mock_get_connections(*args, **kwargs):
+                    return {}
+
+                async def get_agent_loop_info(*args, **kwargs):
+                    return []
+
+                mock_manager.get_running_agent_loops = mock_get_running_agent_loops
+                mock_manager.get_connections = mock_get_connections
+                mock_manager.get_agent_loop_info = get_agent_loop_info
+                with patch(
+                    'openhands.server.routes.manage_conversations.datetime'
+                ) as mock_datetime:
+                    mock_datetime.now.return_value = datetime.fromisoformat(
+                        '2025-01-01T00:00:00+00:00'
+                    )
+                    mock_datetime.fromisoformat = datetime.fromisoformat
+                    mock_datetime.timezone = timezone
+
+                    # Mock the conversation store
+                    mock_store = MagicMock()
+                    mock_store.search = AsyncMock(
+                        return_value=ConversationInfoResultSet(
+                            results=[
+                                ConversationMetadata(
+                                    conversation_id='conversation_1',
+                                    title='Conversation 1',
+                                    created_at=datetime.fromisoformat(
+                                        '2025-01-01T00:00:00+00:00'
+                                    ),
+                                    last_updated_at=datetime.fromisoformat(
+                                        '2025-01-01T00:01:00+00:00'
+                                    ),
+                                    selected_repository='test/repo',
+                                    trigger=ConversationTrigger.GUI,
+                                    user_id='12345',
+                                )
+                            ],
+                            next_page_id='next_page_456',
+                        )
+                    )
+
+                    result_set = await search_conversations(
+                        page_id='page_456',
+                        limit=5,
+                        selected_repository='test/repo',
+                        conversation_trigger=ConversationTrigger.GUI,
+                        conversation_store=mock_store,
+                    )
+
+                    # Verify that search was called with both filters and pagination
+                    mock_store.search.assert_called_once_with(
+                        'page_456', 5, 'test/repo', ConversationTrigger.GUI
+                    )
+
+                    # Verify the result includes pagination info
+                    assert result_set.next_page_id == 'next_page_456'
+                    assert len(result_set.results) == 1
+                    result = result_set.results[0]
+                    assert result.selected_repository == 'test/repo'
+                    assert result.trigger == ConversationTrigger.GUI
+
+
+@pytest.mark.asyncio
+async def test_search_conversations_empty_results():
+    """Test searching conversations that returns empty results."""
+    with _patch_store():
+        with patch(
+            'openhands.server.routes.manage_conversations.config'
+        ) as mock_config:
+            mock_config.conversation_max_age_seconds = 864000  # 10 days
+            with patch(
+                'openhands.server.routes.manage_conversations.conversation_manager'
+            ) as mock_manager:
+
+                async def mock_get_running_agent_loops(*args, **kwargs):
+                    return set()
+
+                async def mock_get_connections(*args, **kwargs):
+                    return {}
+
+                async def get_agent_loop_info(*args, **kwargs):
+                    return []
+
+                mock_manager.get_running_agent_loops = mock_get_running_agent_loops
+                mock_manager.get_connections = mock_get_connections
+                mock_manager.get_agent_loop_info = get_agent_loop_info
+                with patch(
+                    'openhands.server.routes.manage_conversations.datetime'
+                ) as mock_datetime:
+                    mock_datetime.now.return_value = datetime.fromisoformat(
+                        '2025-01-01T00:00:00+00:00'
+                    )
+                    mock_datetime.fromisoformat = datetime.fromisoformat
+                    mock_datetime.timezone = timezone
+
+                    # Mock the conversation store
+                    mock_store = MagicMock()
+                    mock_store.search = AsyncMock(
+                        return_value=ConversationInfoResultSet(
+                            results=[], next_page_id=None
+                        )
+                    )
+
+                    result_set = await search_conversations(
+                        page_id=None,
+                        limit=20,
+                        selected_repository='nonexistent/repo',
+                        conversation_trigger=ConversationTrigger.GUI,
+                        conversation_store=mock_store,
+                    )
+
+                    # Verify that search was called with the filters
+                    mock_store.search.assert_called_once_with(
+                        None, 20, 'nonexistent/repo', ConversationTrigger.GUI
+                    )
+
+                    # Verify the result is empty
+                    assert len(result_set.results) == 0
+                    assert result_set.next_page_id is None
 
 
 @pytest.mark.asyncio
