@@ -1,6 +1,5 @@
-{% extends "system_prompt.j2" %}
+{% include "system_prompt.j2" %}
 
-{% block task_management %}
 <TASK_MANAGEMENT>
 * For complex, long-horizon tasks, create a TODO.md file to track progress:
   1. Start by creating a detailed plan in TODO.md with clear steps
@@ -38,4 +37,3 @@
     d. Once complete, check off the item in TODO.md
     e. Proceed to the next unchecked item
 </TASK_MANAGEMENT>
-{% endblock %}
