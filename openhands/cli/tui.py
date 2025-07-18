@@ -4,6 +4,8 @@
 
 import asyncio
 import contextlib
+import datetime
+import json
 import sys
 import threading
 import time
@@ -49,6 +51,7 @@ from openhands.events.observation import (
     MCPObservation,
 )
 from openhands.llm.metrics import Metrics
+from openhands.mcp.error_collector import mcp_error_collector
 
 ENABLE_STREAMING = False  # FIXME: this doesn't work
 
@@ -192,10 +195,6 @@ def display_initial_user_prompt(prompt: str) -> None:
 
 def display_mcp_errors() -> None:
     """Display collected MCP errors."""
-    import datetime
-
-    from openhands.mcp.error_collector import mcp_error_collector
-
     errors = mcp_error_collector.get_errors()
 
     if not errors:
@@ -396,8 +395,6 @@ def display_mcp_action(event: MCPAction) -> None:
     # Format the arguments for display
     args_text = ''
     if event.arguments:
-        import json
-
         try:
             args_text = json.dumps(event.arguments, indent=2)
         except (TypeError, ValueError):
@@ -432,8 +429,6 @@ def display_mcp_observation(event: MCPObservation) -> None:
     if event.name:
         header = f'Tool: {event.name}'
         if event.arguments:
-            import json
-
             try:
                 args_text = json.dumps(event.arguments, indent=2)
                 header += f'\nArguments: {args_text}'
