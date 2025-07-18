@@ -88,6 +88,9 @@ class SandboxConfig(BaseModel):
         description="Volume mounts in the format 'host_path:container_path[:mode]', e.g. '/my/host/dir:/workspace:rw'. Multiple mounts can be specified using commas, e.g. '/path1:/workspace/path1,/path2:/workspace/path2:ro'",
     )
 
+    network_name: str = Field(default='openhands-network')
+    network_subnet: str = Field(default='172.22.0.0/24')
+
     cuda_visible_devices: str | None = Field(default=None)
     model_config = ConfigDict(extra='forbid')
 

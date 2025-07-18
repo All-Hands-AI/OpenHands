@@ -5,6 +5,7 @@ import json
 import multiprocessing
 import os
 import tempfile
+import docker
 from typing import Any, Literal
 
 import pandas as pd
@@ -153,6 +154,7 @@ def get_config(
         }
 
     sandbox_config.rm_all_containers = True
+    sandbox_config.network_subnet = "172.31.15.32/27"
 
     config = OpenHandsConfig(
         default_agent=metadata.agent_class,
@@ -491,14 +493,13 @@ def process_instance(
     metadata: EvalMetadata,
     reset_logger: bool = True,
     runtime_failure_count: int = 0,
-    cpu_groups_list: list[int] | None = None,
+    cpu_groups_queue: multiprocessing.Queue = None,
 ) -> EvalOutput:
     # HACK: Use the global and get the cpu group for this worker.
     cpu_group = None
-    if cpu_groups_list is not None:
+    if cpu_groups_queue is not None:
         # Get current multiprocessing worker id.
-        index = multiprocessing.current_process()._identity[0]
-        cpu_group = cpu_groups_list[index]
+        cpu_group = cpu_groups_queue.get()
 
     config = get_config(instance, metadata, cpu_group=cpu_group)
 
@@ -564,6 +565,9 @@ def process_instance(
     finally:
         runtime.close()
     # ==========================================
+
+    if cpu_group is not None:
+        cpu_groups_queue.put(cpu_group)
 
     # ======= Attempt to evaluate the agent's edits =======
     # we use eval_infer.sh to evaluate the agent's edits, not here
@@ -726,8 +730,6 @@ if __name__ == '__main__':
             'No Condenser config provided via EVAL_CONDENSER, using NoOpCondenser.'
         )
 
-    print(args)
-
     details = {'mode': args.mode}
     _agent_cls = openhands.agenthub.Agent.get_cls(args.agent_cls)
 
@@ -759,6 +761,9 @@ if __name__ == '__main__':
 
     # Get all CPUs and divide into groups of num_workers and put them into a multiprocessing.Queue.
     cpu_groups_list = divide_cpus_among_workers(args.eval_num_workers)
+    cpu_groups_queue = multiprocessing.Queue()
+    for cpu_group in cpu_groups_list:
+        cpu_groups_queue.put(cpu_group)
 
     if not ITERATIVE_EVAL_MODE:
         # load the dataset
@@ -773,7 +778,23 @@ if __name__ == '__main__':
 
         process_instance_with_cpu_groups = functools.partial(
             process_instance,
-            cpu_groups_list=cpu_groups_list,
+            cpu_groups_queue=cpu_groups_queue,
+        )
+
+        # HACK: Assuming docker, fix this later.
+        config = get_config(
+            instances.iloc[0],  # Use the first instance to get the config
+            metadata,
+            cpu_group=None,  # We will use the cpu_groups_queue to get the cpu group later
+        )
+        client = docker.from_env()
+        network = client.networks.create(
+            config.sandbox.network_name,
+            driver='bridge',
+            check_duplicate=True,
+            ipam=docker.types.IPAMConfig(pool_configs=[
+                docker.types.IPAMPool(subnet=config.sandbox.network_subnet)
+            ])
         )
 
         run_evaluation(

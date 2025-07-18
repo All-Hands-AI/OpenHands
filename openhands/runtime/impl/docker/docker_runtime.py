@@ -294,38 +294,38 @@ class DockerRuntime(ActionExecutionClient):
             'host' if use_host_network else None
         )
 
-        # Initialize port mappings
-        port_mapping: dict[str, list[dict[str, str]]] | None = None
-        if not use_host_network:
-            port_mapping = {
-                f'{self._container_port}/tcp': [
-                    {
-                        'HostPort': str(self._host_port),
-                        'HostIp': self.config.sandbox.runtime_binding_address,
-                    }
-                ],
-            }
+        # # Initialize port mappings
+        # port_mapping: dict[str, list[dict[str, str]]] | None = None
+        # if not use_host_network:
+        #     port_mapping = {
+        #         f'{self._container_port}/tcp': [
+        #             {
+        #                 'HostPort': str(self._host_port),
+        #                 'HostIp': self.config.sandbox.runtime_binding_address,
+        #             }
+        #         ],
+        #     }
 
-            if self.vscode_enabled:
-                port_mapping[f'{self._vscode_port}/tcp'] = [
-                    {
-                        'HostPort': str(self._vscode_port),
-                        'HostIp': self.config.sandbox.runtime_binding_address,
-                    }
-                ]
+        #     if self.vscode_enabled:
+        #         port_mapping[f'{self._vscode_port}/tcp'] = [
+        #             {
+        #                 'HostPort': str(self._vscode_port),
+        #                 'HostIp': self.config.sandbox.runtime_binding_address,
+        #             }
+        #         ]
 
-            for port in self._app_ports:
-                port_mapping[f'{port}/tcp'] = [
-                    {
-                        'HostPort': str(port),
-                        'HostIp': self.config.sandbox.runtime_binding_address,
-                    }
-                ]
-        else:
-            self.log(
-                'warn',
-                'Using host network mode. If you are using MacOS, please make sure you have the latest version of Docker Desktop and enabled host network feature: https://docs.docker.com/network/drivers/host/#docker-desktop',
-            )
+        #     for port in self._app_ports:
+        #         port_mapping[f'{port}/tcp'] = [
+        #             {
+        #                 'HostPort': str(port),
+        #                 'HostIp': self.config.sandbox.runtime_binding_address,
+        #             }
+        #         ]
+        # else:
+        #     self.log(
+        #         'warn',
+        #         'Using host network mode. If you are using MacOS, please make sure you have the latest version of Docker Desktop and enabled host network feature: https://docs.docker.com/network/drivers/host/#docker-desktop',
+        #     )
 
         # Combine environment variables
         environment = dict(**self.initial_env_vars)
@@ -396,8 +396,9 @@ class DockerRuntime(ActionExecutionClient):
                 command=command,
                 # Override the default 'bash' entrypoint because the command is a binary.
                 entrypoint=[],
-                network_mode=network_mode,
-                ports=port_mapping,
+                network=self.config.sandbox.network_name,
+                # network_mode=network_mode,
+                # ports=port_mapping,
                 working_dir='/openhands/code/',  # do not change this!
                 name=self.container_name,
                 detach=True,
@@ -463,6 +464,15 @@ class DockerRuntime(ActionExecutionClient):
             raise AgentRuntimeNotFoundError(
                 f'Container {self.container_name} not found.'
             )
+
+        ip_address = container.attrs["NetworkSettings"]["Networks"][self.config.sandbox.network_name]["IPAddress"]
+        if not ip_address:
+            raise ConnectionError(
+                f'Container {self.container_name} does not have an IP address assigned.'
+            )
+
+        # ip_address = container.attrs['NetworkSettings']['IPAddress']
+        self.api_url = f"http://{ip_address}:{self._container_port}"
 
         self.check_if_alive()
 
