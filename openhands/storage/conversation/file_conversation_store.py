@@ -10,9 +10,7 @@ from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.storage import get_file_store
 from openhands.storage.conversation.conversation_store import ConversationStore
-from openhands.storage.data_models.conversation_metadata import (
-    ConversationMetadata,
-)
+from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_metadata_result_set import (
     ConversationMetadataResultSet,
 )
@@ -71,6 +69,7 @@ class FileConversationStore(ConversationStore):
         page_id: str | None = None,
         limit: int = 20,
     ) -> ConversationMetadataResultSet:
+        conversations: list[ConversationMetadata] = []
         metadata_dir = self.get_conversation_metadata_dir()
         try:
             conversation_ids = [
@@ -80,25 +79,18 @@ class FileConversationStore(ConversationStore):
             ]
         except FileNotFoundError:
             return ConversationMetadataResultSet([])
-
-        # Load all conversations
+        num_conversations = len(conversation_ids)
+        start = page_id_to_offset(page_id)
+        end = min(limit + start, num_conversations)
         conversations = []
         for conversation_id in conversation_ids:
             try:
-                conversation = await self.get_metadata(conversation_id)
-                conversations.append(conversation)
+                conversations.append(await self.get_metadata(conversation_id))
             except Exception:
                 logger.warning(
                     f'Could not load conversation metadata: {conversation_id}'
                 )
-
-        # Sort by creation date (newest first)
         conversations.sort(key=_sort_key, reverse=True)
-
-        # Apply pagination
-        num_conversations = len(conversations)
-        start = page_id_to_offset(page_id)
-        end = min(limit + start, num_conversations)
         conversations = conversations[start:end]
         next_page_id = offset_to_page_id(end, end < num_conversations)
         return ConversationMetadataResultSet(conversations, next_page_id)
