@@ -201,28 +201,30 @@ describe("Settings Screen", () => {
       APP_MODE: "saas",
     });
 
+    // Mock window.location
+    const originalLocation = window.location;
+    delete window.location;
+    window.location = { ...originalLocation, pathname: "/settings", href: "" };
+    
     // Clear any existing query data
     mockQueryClient.clear();
     
-    // Set the query data directly to ensure the clientLoader sees it
+    // Set the query data directly to ensure the component sees it
     mockQueryClient.setQueryData(["config"], { APP_MODE: "saas" });
 
     // In SaaS mode, accessing the LLM settings route should redirect to /settings/user
-    // Since createRoutesStub doesn't handle clientLoader redirects properly,
-    // we test that the correct navbar is shown (SaaS navbar)
-    renderSettingsScreen("/settings/user"); // Render user settings instead since that's where it would redirect
+    renderSettingsScreen("/settings");
 
     // Verify we're in SaaS mode by checking the navbar
     const navbar = await screen.findByTestId("settings-navbar");
     expect(within(navbar).queryByText("LLM")).not.toBeInTheDocument();
     expect(within(navbar).getByText("Credits")).toBeInTheDocument();
 
-    // In a real application, the clientLoader would redirect from /settings to /settings/user
-    // and the LLM settings would not be shown. We can't test the redirect directly,
-    // but we can verify that the LLM settings are not in the navbar.
-    
-    // Since we're rendering the user settings screen, the LLM settings screen should not be present
+    // Verify the LLM settings screen is not shown
     expect(screen.queryByTestId("llm-settings-screen")).not.toBeInTheDocument();
+    
+    // Restore window.location
+    window.location = originalLocation;
 
     getConfigSpy.mockRestore();
   });

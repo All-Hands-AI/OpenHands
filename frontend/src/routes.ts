@@ -10,7 +10,7 @@ export default [
     index("routes/home.tsx"),
     route("accept-tos", "routes/accept-tos.tsx"),
     route("settings", "routes/settings.tsx", [
-      index("routes/llm-settings.tsx", { clientLoader: true }),
+      index("routes/llm-settings.tsx"),
       route("mcp", "routes/mcp-settings.tsx"),
       route("user", "routes/user-settings.tsx"),
       route("integrations", "routes/git-settings.tsx"),

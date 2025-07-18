@@ -1,3 +1,4 @@
+import React from "react";
 import { NavLink, Outlet, redirect } from "react-router";
 import { useTranslation } from "react-i18next";
 import SettingsIcon from "#/icons/settings.svg?react";
@@ -65,10 +66,18 @@ export const clientLoader = async ({ request }: Route.ClientLoaderArgs) => {
 function SettingsScreen() {
   const { t } = useTranslation();
   const { data: config } = useConfig();
+  const { pathname } = window.location;
 
   const isSaas = config?.APP_MODE === "saas";
   // this is used to determine which settings are available in the UI
   const navItems = isSaas ? SAAS_NAV_ITEMS : OSS_NAV_ITEMS;
+
+  // If in SaaS mode and trying to access LLM settings, redirect to user settings
+  React.useEffect(() => {
+    if (isSaas && OSS_ONLY_PATHS.includes(pathname)) {
+      window.location.href = "/settings/user";
+    }
+  }, [isSaas, pathname]);
 
   return (
     <main
@@ -102,7 +111,8 @@ function SettingsScreen() {
       </nav>
 
       <div className="flex flex-col grow overflow-auto">
-        <Outlet />
+        {/* Only render the outlet if not trying to access LLM settings in SaaS mode */}
+        {!(isSaas && OSS_ONLY_PATHS.includes(pathname)) && <Outlet />}
       </div>
     </main>
   );
