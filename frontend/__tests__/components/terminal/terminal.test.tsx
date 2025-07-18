@@ -62,7 +62,7 @@ describe.skip("Terminal", () => {
 
     act(() => {
       store.dispatch(appendInput("echo Hello"));
-      store.dispatch(appendOutput("Hello"));
+      store.dispatch(appendOutput({content: "Hello"}));
     });
 
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(1, "echo Hello");

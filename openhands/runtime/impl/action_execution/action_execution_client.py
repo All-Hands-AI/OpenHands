@@ -94,10 +94,6 @@ class ActionExecutionClient(Runtime):
             git_provider_tokens,
         )
 
-    @property
-    def action_execution_server_url(self) -> str:
-        raise NotImplementedError('Action execution server URL is not implemented')
-
     @retry(
         retry=retry_if_exception(_is_retryable_error),
         stop=stop_after_attempt(5) | stop_if_should_exit(),
