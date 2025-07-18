@@ -607,7 +607,7 @@ class TestMCPTUIDisplay:
         assert 'No output' in container.body.text
 
     @patch('openhands.cli.tui.print_formatted_text')
-    @patch('openhands.mcp.error_collector.mcp_error_collector')
+    @patch('openhands.cli.tui.mcp_error_collector')
     def test_display_mcp_errors_no_errors(self, mock_collector, mock_print):
         """Test displaying MCP errors when none exist."""
         mock_collector.get_errors.return_value = []
@@ -620,7 +620,7 @@ class TestMCPTUIDisplay:
 
     @patch('openhands.cli.tui.print_container')
     @patch('openhands.cli.tui.print_formatted_text')
-    @patch('openhands.mcp.error_collector.mcp_error_collector')
+    @patch('openhands.cli.tui.mcp_error_collector')
     def test_display_mcp_errors_with_errors(
         self, mock_collector, mock_print, mock_print_container
     ):
@@ -697,7 +697,7 @@ class TestMCPTUIDisplay:
 
     @patch('openhands.cli.tui.print_container')
     @patch('openhands.cli.tui.print_formatted_text')
-    @patch('openhands.mcp.error_collector.mcp_error_collector')
+    @patch('openhands.cli.tui.mcp_error_collector')
     def test_display_mcp_errors_with_exception_details(
         self, mock_collector, mock_print, mock_print_container
     ):
@@ -725,7 +725,7 @@ class TestMCPTUIDisplay:
 
     @patch('openhands.cli.tui.print_container')
     @patch('openhands.cli.tui.print_formatted_text')
-    @patch('openhands.mcp.error_collector.mcp_error_collector')
+    @patch('openhands.cli.tui.mcp_error_collector')
     def test_display_mcp_errors_without_exception_details(
         self, mock_collector, mock_print, mock_print_container
     ):
