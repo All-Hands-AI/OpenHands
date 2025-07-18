@@ -252,20 +252,7 @@ class AgentController:
             runtime_status = RuntimeStatus.ERROR
             if isinstance(e, AuthenticationError):
                 runtime_status = RuntimeStatus.ERROR_LLM_AUTHENTICATION
-
-                # Check if this is an OpenHands provider authentication error
-                if (
-                    'openhands' in str(e.model).lower()
-                    or 'litellm_proxy' in str(e.model).lower()
-                ):
-                    self.state.last_error = (
-                        'Authentication error with OpenHands provider. Your API key is invalid or expired. '
-                        'Please get a new API key from https://app.all-hands.dev/settings/api-keys and '
-                        'update your configuration.'
-                    )
-                else:
-                    # For other providers, use the standard error message
-                    self.state.last_error = runtime_status.value
+                self.state.last_error = runtime_status.value
             elif isinstance(
                 e,
                 (
