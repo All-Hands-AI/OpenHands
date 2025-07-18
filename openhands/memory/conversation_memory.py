@@ -369,8 +369,11 @@ class ConversationMemory:
         message: Message
 
         if isinstance(obs, CmdOutputObservation):
-            # if it doesn't have tool call metadata, it was triggered by a user action
+            # Note: CmdOutputObservation content is already truncated at initialization,
+            # and the observation content should not have been modified after initialization
+            # we keep this truncation for backwards compatibility for a time
             if obs.tool_call_metadata is None:
+                # if it doesn't have tool call metadata, it was triggered by a user action
                 text = truncate_content(
                     f'\nObserved result of command executed by user:\n{obs.to_agent_observation()}',
                     max_message_chars,
@@ -524,11 +527,13 @@ class ConversationMemory:
                         additional_agent_instructions=obs.additional_agent_instructions,
                         date=date,
                         custom_secrets_descriptions=obs.custom_secrets_descriptions,
+                        working_dir=obs.working_dir,
                     )
                 else:
                     runtime_info = RuntimeInfo(
                         date=date,
                         custom_secrets_descriptions=obs.custom_secrets_descriptions,
+                        working_dir=obs.working_dir,
                     )
 
                 conversation_instructions = None
