@@ -239,7 +239,7 @@ async def run_session(
                 elif confirmation_status == 'edit':
                     # Tell the agent the proposed action was rejected
                     event_stream.add_event(
-                        ChangeAgentStateAction(AgentState.USER_EDITED),
+                        ChangeAgentStateAction(AgentState.USER_REJECTED),
                         EventSource.USER,
                     )
                     # Notify the user
