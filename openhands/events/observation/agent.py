@@ -11,11 +11,20 @@ class AgentStateChangedObservation(Observation):
 
     agent_state: str
     reason: str = ''
+    error_summary: str | None = field(default=None, metadata={'log_default': None})
     observation: str = ObservationType.AGENT_STATE_CHANGED
 
     @property
     def message(self) -> str:
         return ''
+
+    def __str__(self) -> str:
+        res = f'**AgentStateChangedObservation** Agent state changed to {self.agent_state}'
+        if self.reason:
+            res += f'\nReason: {self.reason}'
+        if self.error_summary:
+            res += f'\nSummary: {self.error_summary}'
+        return res
 
 
 @dataclass
