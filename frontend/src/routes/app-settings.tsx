@@ -16,6 +16,7 @@ import {
 } from "#/utils/custom-toast-handlers";
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 import { AppSettingsInputsSkeleton } from "#/components/features/settings/app-settings/app-settings-inputs-skeleton";
+import { SystemPromptSelector } from "#/components/features/settings/app-settings/system-prompt-selector";
 import { useConfig } from "#/hooks/query/use-config";
 import { parseMaxBudgetPerTask } from "#/utils/settings-utils";
 
@@ -40,6 +41,8 @@ function AppSettingsScreen() {
   ] = React.useState(false);
   const [maxBudgetPerTaskHasChanged, setMaxBudgetPerTaskHasChanged] =
     React.useState(false);
+  const [systemPromptHasChanged, setSystemPromptHasChanged] =
+    React.useState(false);
 
   const formAction = (formData: FormData) => {
     const languageLabel = formData.get("language-input")?.toString();
@@ -62,6 +65,9 @@ function AppSettingsScreen() {
       ?.toString();
     const maxBudgetPerTask = parseMaxBudgetPerTask(maxBudgetPerTaskValue || "");
 
+    const systemPrompt =
+      formData.get("system-prompt-selector")?.toString() || "system_prompt.j2";
+
     saveSettings(
       {
         LANGUAGE: language,
@@ -69,6 +75,7 @@ function AppSettingsScreen() {
         ENABLE_SOUND_NOTIFICATIONS: enableSoundNotifications,
         ENABLE_PROACTIVE_CONVERSATION_STARTERS: enableProactiveConversations,
         MAX_BUDGET_PER_TASK: maxBudgetPerTask,
+        SYSTEM_PROMPT: systemPrompt,
       },
       {
         onSuccess: () => {
@@ -85,6 +92,7 @@ function AppSettingsScreen() {
           setSoundNotificationsSwitchHasChanged(false);
           setProactiveConversationsSwitchHasChanged(false);
           setMaxBudgetPerTaskHasChanged(false);
+          setSystemPromptHasChanged(false);
         },
       },
     );
@@ -127,12 +135,18 @@ function AppSettingsScreen() {
     setMaxBudgetPerTaskHasChanged(newValue !== currentValue);
   };
 
+  const checkIfSystemPromptHasChanged = (value: string) => {
+    const currentValue = settings?.SYSTEM_PROMPT || "system_prompt.j2";
+    setSystemPromptHasChanged(value !== currentValue);
+  };
+
   const formIsClean =
     !languageInputHasChanged &&
     !analyticsSwitchHasChanged &&
     !soundNotificationsSwitchHasChanged &&
     !proactiveConversationsSwitchHasChanged &&
-    !maxBudgetPerTaskHasChanged;
+    !maxBudgetPerTaskHasChanged &&
+    !systemPromptHasChanged;
 
   const shouldBeLoading = !settings || isLoading || isPending;
 
@@ -193,6 +207,12 @@ function AppSettingsScreen() {
             min={1}
             step={1}
             className="w-full max-w-[680px]" // Match the width of the language field
+          />
+
+          <SystemPromptSelector
+            name="system-prompt-selector"
+            defaultValue={settings.SYSTEM_PROMPT || "system_prompt.j2"}
+            onChange={checkIfSystemPromptHasChanged}
           />
         </div>
       )}

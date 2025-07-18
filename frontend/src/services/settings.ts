@@ -26,6 +26,7 @@ export const DEFAULT_SETTINGS: Settings = {
     sse_servers: [],
     stdio_servers: [],
   },
+  SYSTEM_PROMPT: "system_prompt.j2",
 };
 
 /**
