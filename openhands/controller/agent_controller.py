@@ -252,19 +252,7 @@ class AgentController:
             runtime_status = RuntimeStatus.ERROR
             if isinstance(e, AuthenticationError):
                 runtime_status = RuntimeStatus.ERROR_LLM_AUTHENTICATION
-
-                # Start with the base authentication error message
-                error_message = runtime_status.value
-
-                # Check if this is an OpenHands provider authentication error
-                if (
-                    'openhands' in str(e.model).lower()
-                    or 'litellm_proxy' in str(e.model).lower()
-                ):
-                    # Add OpenHands-specific guidance
-                    error_message += " If you're using OpenHands models, get a new API key from https://app.all-hands.dev/settings/api-keys"
-
-                self.state.last_error = error_message
+                self.state.last_error = runtime_status.value
             elif isinstance(
                 e,
                 (
