@@ -224,7 +224,13 @@ class EventStream(EventStore):
     ) -> dict[str, Any]:
         # Fields that should not have secrets replaced (only at top level - system metadata)
         TOP_LEVEL_PROTECTED_FIELDS = {
-            'timestamp', 'id', 'source', 'cause', 'action', 'observation', 'message'
+            'timestamp',
+            'id',
+            'source',
+            'cause',
+            'action',
+            'observation',
+            'message',
         }
 
         for key in data:

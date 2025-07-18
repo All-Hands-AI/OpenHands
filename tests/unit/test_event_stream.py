@@ -11,9 +11,9 @@ from pytest import TempPathFactory
 from openhands.core.schema import ActionType, ObservationType
 from openhands.events import EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import (
+    CmdRunAction,
     NullAction,
 )
-from openhands.events.action import CmdRunAction
 from openhands.events.action.files import (
     FileEditAction,
     FileReadAction,
@@ -782,9 +782,7 @@ def test_timestamp_not_affected_by_secret_replacement(temp_dir: str):
     # The timestamp should NOT be affected by secret replacement
     assert data_with_secrets_replaced['timestamp'] == original_timestamp
     assert '<secret_hidden>' not in data_with_secrets_replaced['timestamp']
-    assert (
-        '18' in data_with_secrets_replaced['timestamp']
-    )  # Original value preserved
+    assert '18' in data_with_secrets_replaced['timestamp']  # Original value preserved
 
 
 def test_protected_fields_not_affected_by_secret_replacement(temp_dir: str):
@@ -858,18 +856,10 @@ def test_nested_dict_secret_replacement(temp_dir: str):
 
     # Nested secrets should be replaced
     assert '<secret_hidden>' in data_with_secrets_replaced['args']['command']
-    assert (
-        data_with_secrets_replaced['args']['env']['SECRET_KEY'] == '<secret_hidden>'
-    )
-    assert (
-        '<secret_hidden>' in data_with_secrets_replaced['args']['env']['timestamp']
-    )
+    assert data_with_secrets_replaced['args']['env']['SECRET_KEY'] == '<secret_hidden>'
+    assert '<secret_hidden>' in data_with_secrets_replaced['args']['env']['timestamp']
 
     # Original secret should not appear in nested content
     assert 'password123' not in data_with_secrets_replaced['args']['command']
-    assert (
-        'password123' not in data_with_secrets_replaced['args']['env']['SECRET_KEY']
-    )
-    assert (
-        'password123' not in data_with_secrets_replaced['args']['env']['timestamp']
-    )
+    assert 'password123' not in data_with_secrets_replaced['args']['env']['SECRET_KEY']
+    assert 'password123' not in data_with_secrets_replaced['args']['env']['timestamp']
