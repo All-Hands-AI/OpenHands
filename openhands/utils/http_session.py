@@ -5,7 +5,10 @@ import httpx
 
 from openhands.core.logger import openhands_logger as logger
 
-CLIENT = httpx.Client()
+limits = httpx.Limits(max_keepalive_connections=10000, keepalive_expiry=30)
+CLIENT = httpx.Client(
+    limits=limits,
+)
 
 
 @dataclass

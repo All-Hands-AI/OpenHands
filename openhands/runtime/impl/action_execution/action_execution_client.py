@@ -52,7 +52,7 @@ from openhands.utils.tenacity_stop import stop_if_should_exit
 
 def _is_retryable_error(exception):
     return isinstance(
-        exception, (httpx.RemoteProtocolError, httpcore.RemoteProtocolError)
+        exception, (httpx.ReadError, httpcore.ReadError, httpx.RemoteProtocolError, httpcore.RemoteProtocolError)
     )
 
 

@@ -1,5 +1,6 @@
 import asyncio
 import copy
+import functools
 import json
 import multiprocessing
 import os
@@ -490,10 +491,14 @@ def process_instance(
     metadata: EvalMetadata,
     reset_logger: bool = True,
     runtime_failure_count: int = 0,
+    cpu_groups_list: list[int] | None = None,
 ) -> EvalOutput:
     # HACK: Use the global and get the cpu group for this worker.
-    global cpu_groups_queue
-    cpu_group = cpu_groups_queue.get()
+    cpu_group = None
+    if cpu_groups_list is not None:
+        # Get current multiprocessing worker id.
+        index = multiprocessing.current_process()._identity[0]
+        cpu_group = cpu_groups_list[index]
 
     config = get_config(instance, metadata, cpu_group=cpu_group)
 
@@ -520,7 +525,11 @@ def process_instance(
         config.sandbox.remote_runtime_resource_factor
     )
 
-    sid = "".join([str(c) for c in cpu_group]) + f'_{instance.instance_id}'
+    sid = instance.instance_id
+    if cpu_group is not None:
+        sid += f'_{"".join([str(c) for c in cpu_group])}'
+
+    config.file_store_path = os.path.join(config.file_store_path, sid)
     runtime = create_runtime(config, sid=sid)
     call_async_from_sync(runtime.connect)
 
@@ -555,9 +564,6 @@ def process_instance(
     finally:
         runtime.close()
     # ==========================================
-
-    # HACK: Put the cpu group back to the queue
-    cpu_groups_queue.put(cpu_group)
 
     # ======= Attempt to evaluate the agent's edits =======
     # we use eval_infer.sh to evaluate the agent's edits, not here
@@ -752,11 +758,7 @@ if __name__ == '__main__':
     )
 
     # Get all CPUs and divide into groups of num_workers and put them into a multiprocessing.Queue.
-    cpu_groups = divide_cpus_among_workers(args.eval_num_workers)
-    global cpu_groups_queue
-    cpu_groups_queue = multiprocessing.Queue()
-    for group in cpu_groups:
-        cpu_groups_queue.put(group)
+    cpu_groups_list = divide_cpus_among_workers(args.eval_num_workers)
 
     if not ITERATIVE_EVAL_MODE:
         # load the dataset
@@ -768,6 +770,11 @@ if __name__ == '__main__':
         # ):
         #     for col in ['PASS_TO_PASS', 'FAIL_TO_PASS']:
         #         instances[col] = instances[col].apply(lambda x: str(x))
+
+        process_instance_with_cpu_groups = functools.partial(
+            process_instance,
+            cpu_groups_list=cpu_groups_list,
+        )
 
         run_evaluation(
             instances,

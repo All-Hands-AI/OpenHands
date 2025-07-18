@@ -1,4 +1,5 @@
 import os
+import socket
 import typing
 from functools import lru_cache
 from typing import Callable
@@ -381,6 +382,15 @@ class DockerRuntime(ActionExecutionClient):
         try:
             if self.runtime_container_image is None:
                 raise ValueError('Runtime container image is not set')
+
+            # # Release sockets.
+            # for sock in [
+            #     self._host_port_socket,
+            #     self._vscode_port_socket,
+            # ] + self._app_ports_sockets:
+            #     if sock:
+            #         sock.close()
+
             self.container = self.docker_client.containers.run(
                 self.runtime_container_image,
                 command=command,
@@ -492,7 +502,6 @@ class DockerRuntime(ActionExecutionClient):
             port = find_available_tcp_port(port_range[0], port_range[1])
             if not self._is_port_in_use_docker(port):
                 return port
-        # If no port is found after max_attempts, return the last tried port
         return port
 
     @property
