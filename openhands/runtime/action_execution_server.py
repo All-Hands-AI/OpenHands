@@ -777,7 +777,17 @@ if __name__ == '__main__':
     # Are these something we should keep?
     @app.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception):
-        logger.exception('Unhandled exception occurred:')
+        # Check if this is the specific assertion error from Starlette middleware
+        if (
+            isinstance(exc, AssertionError)
+            and str(exc) == 'message["type"] == "http.response.body"'
+        ):
+            # This is the known FastMCP SSE connection closure error - log at debug level only
+            logger.debug('FastMCP SSE connection closed: %s', exc)
+        else:
+            # For all other exceptions, log at error level as before
+            logger.exception('Unhandled exception occurred:')
+
         return JSONResponse(
             status_code=500,
             content={'detail': 'An unexpected error occurred. Please try again later.'},
