@@ -465,6 +465,7 @@ class DockerRuntime(ActionExecutionClient):
                 f'Container {self.container_name} not found.'
             )
 
+        container = self.docker_client.containers.get(self.container_name)
         ip_address = container.attrs["NetworkSettings"]["Networks"][self.config.sandbox.network_name]["IPAddress"]
         if not ip_address:
             raise ConnectionError(
