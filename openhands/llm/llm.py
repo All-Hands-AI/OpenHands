@@ -112,6 +112,8 @@ MODELS_WITHOUT_STOP_WORDS = [
 
 # Models that may return empty responses while performing internal reasoning
 MODELS_WITH_EMPTY_REASONING_RESPONSES = [
+    'xai/grok-4',
+    'xai/grok-4-latest',
     'xai/grok-4-0709',
     # Add other reasoning models here if they exhibit similar behavior
 ]
