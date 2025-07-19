@@ -13,6 +13,7 @@ function Terminal() {
 
   const ref = useTerminal({
     commands,
+    readOnly: true, // Make terminal read-only
   });
 
   return (
