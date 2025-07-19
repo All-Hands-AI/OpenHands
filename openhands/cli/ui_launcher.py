@@ -154,7 +154,21 @@ def launch_ui_server(dry_run: bool = False, mount_cwd: bool = False) -> None:
     # Add current working directory mount if requested
     if mount_cwd:
         cwd = Path.cwd()
-        docker_cmd.extend(['-v', f'{cwd}:/workspace'])
+        # Following the documentation at https://docs.all-hands.dev/usage/runtimes/docker#connecting-to-your-filesystem
+        docker_cmd.extend(
+            [
+                '-e',
+                f'SANDBOX_VOLUMES={cwd}:/workspace:rw',
+                '-e',
+                f'SANDBOX_USER_ID={subprocess.check_output(["id", "-u"], text=True).strip()}',
+            ]
+        )
+        # Print the folder that will be mounted to inform the user
+        print_formatted_text(
+            HTML(
+                f'<ansigreen>📂 Mounting current directory:</ansigreen> <ansiyellow>{cwd}</ansiyellow> <ansigreen>to</ansigreen> <ansiyellow>/workspace</ansiyellow>'
+            )
+        )
 
     docker_cmd.extend(
         [
