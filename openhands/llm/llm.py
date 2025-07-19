@@ -166,6 +166,18 @@ class LLM(RetryMixin, DebugMixin):
         else:
             self.tokenizer = None
 
+        # Initialize the completion function
+        self._build_completion_function()
+
+        # Build the completion wrapper with retry logic
+        self._rebuild_completion_wrapper()
+
+    def _build_completion_function(self) -> None:
+        """Build the completion function based on current configuration.
+
+        This method creates the partial function that will be used for LLM completions.
+        It can be called multiple times to rebuild the function when configuration changes.
+        """
         # set up the completion function
         kwargs: dict[str, Any] = {
             'temperature': self.config.temperature,
@@ -224,6 +236,81 @@ class LLM(RetryMixin, DebugMixin):
         )
 
         self._completion_unwrapped = self._completion
+
+    def update_config(self, new_config: LLMConfig) -> None:
+        """Update the LLM configuration and rebuild the completion function.
+
+        This method allows for runtime configuration changes. When called, it will:
+        1. Update the internal configuration
+        2. Update metrics model name if the model changed
+        3. Reinitialize model info if the model changed
+        4. Update tokenizer if custom_tokenizer changed
+        5. Rebuild the completion function with new parameters
+
+        Args:
+            new_config: The new LLM configuration to use.
+        """
+        old_model = self.config.model
+        old_tokenizer = self.config.custom_tokenizer
+
+        # Update the configuration
+        self.config = copy.deepcopy(new_config)
+
+        # Update metrics model name if model changed
+        if old_model != new_config.model:
+            self.metrics.model_name = new_config.model
+            logger.debug(f'LLM model changed from {old_model} to {new_config.model}')
+
+            # Reset model info to force re-initialization
+            self._tried_model_info = False
+            self.model_info = None
+
+            # Reinitialize model info for the new model
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore')
+                self.init_model_info()
+
+            # Log new capabilities
+            if self.vision_is_active():
+                logger.debug('LLM: model has vision enabled')
+            if self.is_caching_prompt_active():
+                logger.debug('LLM: caching prompt enabled')
+            if self.is_function_calling_active():
+                logger.debug('LLM: model supports function calling')
+
+        # Update tokenizer if custom_tokenizer changed
+        if old_tokenizer != new_config.custom_tokenizer:
+            if new_config.custom_tokenizer is not None:
+                self.tokenizer = create_pretrained_tokenizer(
+                    new_config.custom_tokenizer
+                )
+                logger.debug(f'LLM tokenizer updated to {new_config.custom_tokenizer}')
+            else:
+                self.tokenizer = None
+                logger.debug('LLM tokenizer reset to default')
+
+        # Handle log completions folder creation if needed
+        if new_config.log_completions:
+            if new_config.log_completions_folder is None:
+                raise RuntimeError(
+                    'log_completions_folder is required when log_completions is enabled'
+                )
+            os.makedirs(new_config.log_completions_folder, exist_ok=True)
+
+        # Rebuild the completion function with new configuration
+        self._build_completion_function()
+
+        # Rebuild the wrapper with retry decorator
+        self._rebuild_completion_wrapper()
+
+        logger.debug('LLM configuration updated successfully')
+
+    def _rebuild_completion_wrapper(self) -> None:
+        """Rebuild the completion wrapper with retry decorator.
+
+        This method recreates the wrapper function that includes retry logic
+        and other processing around the base completion function.
+        """
 
         @self.retry_decorator(
             num_retries=self.config.num_retries,
