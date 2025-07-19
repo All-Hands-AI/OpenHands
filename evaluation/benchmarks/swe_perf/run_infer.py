@@ -12,7 +12,6 @@ import pandas as pd
 import toml
 from datasets import load_dataset
 
-from evaluation.benchmarks.swe_perf.ip_utils import network_down, network_up
 import openhands.agenthub
 from evaluation.benchmarks.swe_bench.binary_patch_utils import (
     remove_binary_diffs,
@@ -155,7 +154,7 @@ def get_config(
         }
 
     sandbox_config.rm_all_containers = True
-    sandbox_config.network_subnet = "10.10.100.0/24"
+    sandbox_config.network_subnet = "172.31.15.32/27"
 
     config = OpenHandsConfig(
         default_agent=metadata.agent_class,
@@ -788,7 +787,15 @@ if __name__ == '__main__':
             metadata,
             cpu_group=None,  # We will use the cpu_groups_queue to get the cpu group later
         )
-        network_up(config.sandbox.network_name, config.sandbox.network_subnet)
+        client = docker.from_env()
+        network = client.networks.create(
+            config.sandbox.network_name,
+            driver='bridge',
+            check_duplicate=True,
+            ipam=docker.types.IPAMConfig(pool_configs=[
+                docker.types.IPAMPool(subnet=config.sandbox.network_subnet)
+            ])
+        )
 
         run_evaluation(
             instances,
@@ -801,8 +808,6 @@ if __name__ == '__main__':
             * 60,  # 8 hour PER instance should be more than enough
             max_retries=5,
         )
-
-        network_down(config.sandbox.network_name)
     else:
         critic = AgentFinishedCritic()
 
