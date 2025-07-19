@@ -84,7 +84,7 @@ echo "Running SWE-bench evaluation"
 echo "=============================================================="
 
 RUN_ID=$(date +"%Y%m%d_%H%M%S")
-N_PROCESS=4
+N_PROCESS=20
 
 
 MODAL_FLAG=""

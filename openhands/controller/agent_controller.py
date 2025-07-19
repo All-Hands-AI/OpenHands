@@ -464,9 +464,13 @@ class AgentController:
             observation (observation): The observation to handle.
         """
         observation_to_print = copy.deepcopy(observation)
-        if len(observation_to_print.content) > self.agent.llm.config.max_message_chars:
+        if self.agent.active_llm and (
+            len(observation_to_print.content)
+            > self.agent.active_llm.config.max_message_chars
+        ):
             observation_to_print.content = truncate_content(
-                observation_to_print.content, self.agent.llm.config.max_message_chars
+                observation_to_print.content,
+                self.agent.active_llm.config.max_message_chars,
             )
         # Use info level if LOG_ALL_EVENTS is set
         log_level = 'info' if os.getenv('LOG_ALL_EVENTS') in ('true', '1') else 'debug'
@@ -990,7 +994,7 @@ class AgentController:
         - accumulated_token_usage: Accumulated token statistics across all API calls
         - max_budget_per_task: The maximum budget allowed for the task
 
-        This includes metrics from both the agent's LLM and the condenser's LLM if it exists.
+        This includes metrics from both the agent's LLM, the condenser's LLM and the routing LLMs if it exists.
 
         Args:
             action: The action to attach metrics to
@@ -1003,6 +1007,12 @@ class AgentController:
         if hasattr(self.agent, 'condenser') and hasattr(self.agent.condenser, 'llm'):
             condenser_metrics = self.agent.condenser.llm.metrics
 
+        routing_llms_metrics: list[Metrics] = []
+        # Get metrics from routing LLMs if they exist
+        if hasattr(self.agent, 'routing_llms'):
+            for routing_llm in self.agent.routing_llms:
+                routing_llms_metrics.append(routing_llm.metrics)
+
         # Create a new minimal metrics object with just what the frontend needs
         metrics = Metrics(model_name=agent_metrics.model_name)
 
@@ -1010,6 +1020,8 @@ class AgentController:
         metrics.accumulated_cost = agent_metrics.accumulated_cost
         if condenser_metrics:
             metrics.accumulated_cost += condenser_metrics.accumulated_cost
+        for routing_llm_metrics in routing_llms_metrics:
+            metrics.accumulated_cost += routing_llm_metrics.accumulated_cost
 
         # Add max_budget_per_task to metrics
         if self.state.budget_flag:
@@ -1024,6 +1036,11 @@ class AgentController:
             metrics._accumulated_token_usage = (
                 metrics._accumulated_token_usage
                 + condenser_metrics.accumulated_token_usage
+            )
+        for routing_llm_metrics in routing_llms_metrics:
+            metrics._accumulated_token_usage = (
+                metrics._accumulated_token_usage
+                + routing_llm_metrics.accumulated_token_usage
             )
 
         action.llm_metrics = metrics

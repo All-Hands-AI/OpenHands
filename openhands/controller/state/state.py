@@ -93,6 +93,8 @@ class State:
     resume_state: AgentState | None = None
     # global metrics for the current task
     metrics: Metrics = field(default_factory=Metrics)
+    # local routing LLM metrics for the current task
+    local_routing_metrics: list[Metrics] = field(default_factory=list)
     # root agent has level 0, and every delegate increases the level by one
     delegate_level: int = 0
     # start_id and end_id track the range of events in history
@@ -101,6 +103,10 @@ class State:
 
     parent_metrics_snapshot: Metrics | None = None
     parent_iteration: int = 100
+
+    routing_history: list[int] = field(
+        default_factory=list
+    )  # 1 means routing activated, 0 means not
 
     # NOTE: this is used by the controller to track parent's metrics snapshot before delegation
     # evaluation tasks to store extra data needed to track the progress/state of the task.
