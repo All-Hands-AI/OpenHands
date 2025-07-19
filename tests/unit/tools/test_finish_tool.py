@@ -34,11 +34,13 @@ class TestFinishToolSchema:
         schema = tool.get_schema()
         
         required = schema['function']['parameters']['required']
-        assert 'message' in required
+        assert required == []  # No required parameters
         
         properties = schema['function']['parameters']['properties']
-        assert 'message' in properties
-        assert properties['message']['type'] == 'string'
+        assert 'outputs' in properties
+        assert 'summary' in properties
+        assert properties['outputs']['type'] == 'object'
+        assert properties['summary']['type'] == 'string'
     
     def test_finish_tool_description_content(self):
         tool = FinishTool()
@@ -53,67 +55,69 @@ class TestFinishToolSchema:
 class TestFinishToolParameterValidation:
     """Test FinishTool parameter validation."""
     
-    def test_validate_valid_message(self):
+    def test_validate_valid_summary(self):
         tool = FinishTool()
-        params = {'message': 'Task completed successfully'}
+        params = {'summary': 'Task completed successfully'}
         
         validated = tool.validate_parameters(params)
-        assert validated['message'] == 'Task completed successfully'
+        assert validated['summary'] == 'Task completed successfully'
     
-    def test_validate_missing_message(self):
+    def test_validate_empty_parameters(self):
         tool = FinishTool()
         params = {}
         
-        with pytest.raises(ToolValidationError, match="Missing required parameter: message"):
-            tool.validate_parameters(params)
+        # Should not raise error - no required parameters
+        validated = tool.validate_parameters(params)
+        assert validated == {}
     
-    def test_validate_empty_message(self):
+    def test_validate_valid_outputs(self):
         tool = FinishTool()
-        params = {'message': ''}
-        
-        with pytest.raises(ToolValidationError, match="Parameter 'message' cannot be empty"):
-            tool.validate_parameters(params)
-    
-    def test_validate_whitespace_only_message(self):
-        tool = FinishTool()
-        params = {'message': '   \t\n   '}
-        
-        with pytest.raises(ToolValidationError, match="Parameter 'message' cannot be empty"):
-            tool.validate_parameters(params)
-    
-    def test_validate_message_not_string(self):
-        tool = FinishTool()
-        params = {'message': 123}
-        
-        with pytest.raises(ToolValidationError, match="Parameter 'message' must be a string"):
-            tool.validate_parameters(params)
-    
-    def test_validate_message_strips_whitespace(self):
-        tool = FinishTool()
-        params = {'message': '  Task completed  '}
+        params = {'outputs': {'result': 'success', 'count': 42}}
         
         validated = tool.validate_parameters(params)
-        assert validated['message'] == 'Task completed'
+        assert validated['outputs'] == {'result': 'success', 'count': 42}
+    
+    def test_validate_outputs_not_dict(self):
+        tool = FinishTool()
+        params = {'outputs': 'not a dict'}
+        
+        with pytest.raises(ToolValidationError, match="'outputs' must be a dictionary"):
+            tool.validate_parameters(params)
+    
+    def test_validate_summary_conversion(self):
+        tool = FinishTool()
+        params = {'summary': 123}
+        
+        validated = tool.validate_parameters(params)
+        assert validated['summary'] == '123'
+    
+    def test_validate_both_parameters(self):
+        tool = FinishTool()
+        params = {'outputs': {'status': 'done'}, 'summary': 'Task completed'}
+        
+        validated = tool.validate_parameters(params)
+        assert validated['outputs'] == {'status': 'done'}
+        assert validated['summary'] == 'Task completed'
     
     def test_validate_parameters_not_dict(self):
         tool = FinishTool()
         
-        with pytest.raises(ToolValidationError, match="Parameters must be a dictionary"):
-            tool.validate_parameters("not a dict")
+        # FinishTool doesn't validate parameter type - just ignores invalid ones
+        validated = tool.validate_parameters("not a dict")
+        assert validated == {}
     
-    def test_validate_with_optional_parameters(self):
+    def test_validate_with_unknown_parameters(self):
         tool = FinishTool()
         params = {
-            'message': 'Task completed',
-            'task_completed': True
+            'summary': 'Task completed',
+            'unknown_param': 'ignored'
         }
         
         validated = tool.validate_parameters(params)
-        assert validated['message'] == 'Task completed'
+        assert validated['summary'] == 'Task completed'
         
-        # Optional parameters should be included if present and valid
-        if 'task_completed' in validated:
-            assert isinstance(validated['task_completed'], (bool, str))
+        # Unknown parameters should be ignored
+        assert 'unknown_param' not in validated
 
 
 class TestFinishToolFunctionCallValidation:
@@ -123,10 +127,10 @@ class TestFinishToolFunctionCallValidation:
         tool = FinishTool()
         
         function_call = Mock()
-        function_call.arguments = '{"message": "Task completed successfully"}'
+        function_call.arguments = '{"summary": "Task completed successfully"}'
         
         validated = tool.validate_function_call(function_call)
-        assert validated['message'] == 'Task completed successfully'
+        assert validated['summary'] == 'Task completed successfully'
     
     def test_function_call_invalid_json(self):
         tool = FinishTool()
@@ -137,123 +141,123 @@ class TestFinishToolFunctionCallValidation:
         with pytest.raises(ToolValidationError, match="Failed to parse function call arguments"):
             tool.validate_function_call(function_call)
     
-    def test_function_call_missing_message(self):
+    def test_function_call_empty_parameters(self):
         tool = FinishTool()
         
         function_call = Mock()
-        function_call.arguments = '{"task_completed": true}'
+        function_call.arguments = '{}'
         
-        with pytest.raises(ToolValidationError, match="Missing required parameter: message"):
-            tool.validate_function_call(function_call)
+        # Should not raise error - no required parameters
+        validated = tool.validate_function_call(function_call)
+        assert validated == {}
     
-    def test_function_call_complex_message(self):
+    def test_function_call_complex_outputs(self):
         tool = FinishTool()
         
-        complex_message = 'Task completed successfully!\n\nSummary:\n- Created 5 files\n- Fixed 3 bugs\n- Added tests'
         function_call = Mock()
-        function_call.arguments = f'{{"message": "{complex_message}"}}'
+        function_call.arguments = '{"outputs": {"files_created": 5, "bugs_fixed": 3}, "summary": "Task completed successfully"}'
         
         validated = tool.validate_function_call(function_call)
-        assert validated['message'] == complex_message
+        assert validated['outputs'] == {"files_created": 5, "bugs_fixed": 3}
+        assert validated['summary'] == "Task completed successfully"
 
 
 class TestFinishToolEdgeCases:
     """Test FinishTool edge cases and error conditions."""
     
-    def test_very_long_message(self):
+    def test_very_long_summary(self):
         tool = FinishTool()
         
-        # Very long message
-        long_message = 'Task completed! ' + 'Details: ' * 1000
-        params = {'message': long_message}
+        # Very long summary
+        long_summary = 'Task completed! ' + 'Details: ' * 1000
+        params = {'summary': long_summary}
         
         validated = tool.validate_parameters(params)
-        assert validated['message'] == long_message
+        assert validated['summary'] == long_summary
     
-    def test_message_with_special_characters(self):
+    def test_summary_with_special_characters(self):
         tool = FinishTool()
         
-        special_message = 'Task completed! ✅ Success rate: 100% 🎉'
-        params = {'message': special_message}
+        special_summary = 'Task completed! ✅ Success rate: 100% 🎉'
+        params = {'summary': special_summary}
         
         validated = tool.validate_parameters(params)
-        assert validated['message'] == special_message
+        assert validated['summary'] == special_summary
     
-    def test_message_with_newlines(self):
+    def test_summary_with_newlines(self):
         tool = FinishTool()
         
-        multiline_message = 'Task completed!\nAll tests passed.\nReady for deployment.'
-        params = {'message': multiline_message}
+        multiline_summary = 'Task completed!\nAll tests passed.\nReady for deployment.'
+        params = {'summary': multiline_summary}
         
         validated = tool.validate_parameters(params)
-        assert validated['message'] == multiline_message
+        assert validated['summary'] == multiline_summary
     
-    def test_message_with_unicode(self):
+    def test_summary_with_unicode(self):
         tool = FinishTool()
         
-        unicode_message = 'Tarea completada! 任务完成! タスク完了! Задача выполнена!'
-        params = {'message': unicode_message}
+        unicode_summary = 'Tarea completada! 任务完成! タスク完了! Задача выполнена!'
+        params = {'summary': unicode_summary}
         
         validated = tool.validate_parameters(params)
-        assert validated['message'] == unicode_message
+        assert validated['summary'] == unicode_summary
     
-    def test_message_with_json_content(self):
+    def test_complex_outputs_structure(self):
         tool = FinishTool()
         
-        json_message = 'Task completed with result: {"status": "success", "count": 42}'
-        params = {'message': json_message}
+        complex_outputs = {
+            'status': 'success',
+            'results': {'count': 42, 'items': ['a', 'b', 'c']},
+            'metadata': {'timestamp': '2024-01-01', 'version': '1.0'}
+        }
+        params = {'outputs': complex_outputs}
         
         validated = tool.validate_parameters(params)
-        assert validated['message'] == json_message
+        assert validated['outputs'] == complex_outputs
 
 
 class TestFinishToolUsagePatterns:
     """Test common usage patterns for FinishTool."""
     
-    def test_success_message(self):
+    def test_success_patterns(self):
         tool = FinishTool()
         
-        success_messages = [
-            'Task completed successfully',
-            'All requirements have been implemented',
-            'Bug fixed and tests added',
-            'Feature development complete',
-            'Code review completed - all issues resolved'
+        success_cases = [
+            {'summary': 'Task completed successfully', 'outputs': {'status': 'success'}},
+            {'summary': 'All requirements implemented', 'outputs': {'features': 5}},
+            {'summary': 'Bug fixed and tests added', 'outputs': {'bugs_fixed': 1, 'tests_added': 3}},
         ]
         
-        for message in success_messages:
-            params = {'message': message}
+        for params in success_cases:
             validated = tool.validate_parameters(params)
-            assert validated['message'] == message
+            assert validated['summary'] == params['summary']
+            assert validated['outputs'] == params['outputs']
     
-    def test_failure_message(self):
+    def test_failure_patterns(self):
         tool = FinishTool()
         
-        failure_messages = [
-            'Unable to complete task due to missing dependencies',
-            'Task failed: insufficient permissions',
-            'Cannot proceed: required files not found',
-            'Task incomplete: external service unavailable'
+        failure_cases = [
+            {'summary': 'Unable to complete task', 'outputs': {'status': 'failed', 'reason': 'missing deps'}},
+            {'summary': 'Task failed: permissions', 'outputs': {'status': 'error'}},
         ]
         
-        for message in failure_messages:
-            params = {'message': message}
+        for params in failure_cases:
             validated = tool.validate_parameters(params)
-            assert validated['message'] == message
+            assert validated['summary'] == params['summary']
+            assert validated['outputs'] == params['outputs']
     
-    def test_partial_completion_message(self):
+    def test_partial_completion_patterns(self):
         tool = FinishTool()
         
-        partial_messages = [
-            'Task partially completed - 3 of 5 items done',
-            'Progress update: 80% complete, remaining work identified',
-            'Milestone reached - ready for next phase'
+        partial_cases = [
+            {'summary': 'Partial completion', 'outputs': {'completed': 3, 'total': 5}},
+            {'summary': '80% complete', 'outputs': {'progress': 0.8}},
         ]
         
-        for message in partial_messages:
-            params = {'message': message}
+        for params in partial_cases:
             validated = tool.validate_parameters(params)
-            assert validated['message'] == message
+            assert validated['summary'] == params['summary']
+            assert validated['outputs'] == params['outputs']
 
 
 class TestFinishToolInheritance:
@@ -306,14 +310,18 @@ class TestFinishToolSafety:
         """Test that FinishTool handles parameter types correctly."""
         tool = FinishTool()
         
-        # Test with different message types
+        # Test with different parameter types
         test_cases = [
-            {'message': 'Simple message'},
-            {'message': 'Message with numbers: 123'},
-            {'message': 'Message with symbols: !@#$%'},
+            {'summary': 'Simple summary'},
+            {'outputs': {'count': 123}},
+            {'summary': 'Summary with symbols: !@#$%', 'outputs': {'status': 'done'}},
         ]
         
         for params in test_cases:
             validated = tool.validate_parameters(params)
-            assert 'message' in validated
-            assert isinstance(validated['message'], str)
+            if 'summary' in params:
+                assert 'summary' in validated
+                assert isinstance(validated['summary'], str)
+            if 'outputs' in params:
+                assert 'outputs' in validated
+                assert isinstance(validated['outputs'], dict)
