@@ -219,10 +219,26 @@ class EventStream(EventStore):
     def update_secrets(self, secrets: dict[str, str]) -> None:
         self.secrets.update(secrets)
 
-    def _replace_secrets(self, data: dict[str, Any]) -> dict[str, Any]:
+    def _replace_secrets(
+        self, data: dict[str, Any], is_top_level: bool = True
+    ) -> dict[str, Any]:
+        # Fields that should not have secrets replaced (only at top level - system metadata)
+        TOP_LEVEL_PROTECTED_FIELDS = {
+            'timestamp',
+            'id',
+            'source',
+            'cause',
+            'action',
+            'observation',
+            'message',
+        }
+
         for key in data:
-            if isinstance(data[key], dict):
-                data[key] = self._replace_secrets(data[key])
+            if is_top_level and key in TOP_LEVEL_PROTECTED_FIELDS:
+                # Skip secret replacement for protected system fields at top level only
+                continue
+            elif isinstance(data[key], dict):
+                data[key] = self._replace_secrets(data[key], is_top_level=False)
             elif isinstance(data[key], str):
                 for secret in self.secrets.values():
                     data[key] = data[key].replace(secret, '<secret_hidden>')
