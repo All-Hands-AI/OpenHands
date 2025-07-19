@@ -89,7 +89,7 @@ I’ve uploaded a python code repository in the directory workspace_dir_name. Co
 Can you help me implement the necessary changes to the repository so that the runtime of the `workload()` function is faster? Basic guidelines:
 1. Your task is to make changes to non-test files in the /workspace directory to improve the performance of the code running in `workload()`. Please do not directly change the implementation of the `workload()` function to optimize things: I want you to focus on making the workload AS IS run faster by only editing the repository containing code that the `workload()` function calls.
 2. Make changes while ensuring the repository is functionally equivalent to the original: your changes should not introduce new bugs or cause already-passing tests to begin failing after your changes. However, you do not need to worry about tests that already fail without any changes made. For relevant test files you find in the repository, you can run them via the bash command `{instance.test_cmd} <test_file>` to check for correctness. Note that running all the tests may take a long time, so you need to determine which tests are relevant to your changes.
-3. Make sure the `workload()` function improves in performance after you make changes to the repository. The workload can potentially take some time to run: for testing purposes, you can adjust the workload script to use fewer iterations. Before you complete your task, please make sure to check that the **original performance workload** and `workload()` function runs successfully and the performance is improved.
+3. Make sure the `workload()` function improves in performance after you make changes to the repository. The workload can potentially take some time to run, so please allow it to finish: for iterative testing purposes, you can adjust the workload script to use fewer iterations. Before you complete your task, please make sure to check that the **original performance workload** and `workload()` function runs successfully and the performance is improved.
 4. You may need to reinstall/rebuild the repo for your changes to take effect before testing. Reinstalling may take a long time to run, so please be patient with running it and allow it to complete if possible. You can reinstall the repository by running the bash command `{instance.rebuild_cmd}` in the workspace directory.
 5. All the dependencies required to run the `workload()` function are already installed in the environment. You should not install or upgrade any dependencies.
 
@@ -102,7 +102,7 @@ Follow these steps to improve performance:
 6. After each attempted change, please reflect on the changes attempted and the performance impact observed. If the performance did not improve, consider alternative approaches or optimizations.
 7. Once you are satisfied, please use the finish command to complete your task.
 
-Please remember that the goal is to improve the performance of the `workload()` function, not to change its implementation. The performance improvement should come from modifying the code in the repository that the `workload()` function calls, while also maintaining the existing correctness of the repository.
+Please remember that you should not change the implementation of the `workload()` function. The performance improvement should solely come from editing the source files in the code repository.
 """
 
     if RUN_WITH_BROWSING:
@@ -139,7 +139,7 @@ def get_config(
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = base_container_image
     sandbox_config.enable_auto_lint = True
-    sandbox_config.use_host_network = False
+    sandbox_config.use_host_network = True
     # Add platform to the sandbox config to solve issue 4401
     sandbox_config.platform = 'linux/amd64'
     sandbox_config.remote_runtime_resource_factor = get_instance_resource_factor(
@@ -287,6 +287,24 @@ def initialize_runtime(
         obs.exit_code == 0,
         f'Failed to cd to /workspace/{workspace_dir_name}: {str(obs)}',
     )
+
+    # HACK: Some containers have uncommitted changes, please add all changes and commit them.
+    action = CmdRunAction(command='git add -A')
+    action.set_hard_timeout(600)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    # assert_and_raise(obs.exit_code == 0, f'Failed to git add -A: {str(obs)}')
+
+    action = CmdRunAction(command='git commit -m "Fix environment"')
+    action.set_hard_timeout(600)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    # assert_and_raise(
+    #     obs.exit_code == 0,
+    #     f'Failed to git commit -m "Fix environment": {str(obs)}',
+    # )
 
     action = CmdRunAction(command='git reset --hard')
     action.set_hard_timeout(600)
@@ -487,6 +505,23 @@ def complete_runtime(
     logger.info('-' * 30)
     return {'git_patch': git_patch}
 
+class CPUGroupManager:
+    def __init__(self, cpu_groups_queue: multiprocessing.Queue):
+        self.cpu_groups_queue = cpu_groups_queue
+
+    def __enter__(self):
+        # Get the current CPU group for this worker]
+        if self.cpu_groups_queue is not None:
+            self.cpu_group = self.cpu_groups_queue.get()
+            logger.info(f'Worker started with CPU group: {self.cpu_group}')
+            return self.cpu_group
+        return None
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        # Put the CPU group back into the queue for other workers to use
+        if self.cpu_groups_queue is not None:
+            self.cpu_groups_queue.put(self.cpu_group)
+            logger.info(f'Worker finished with CPU group: {self.cpu_group}')
 
 def process_instance(
     instance: pd.Series,
@@ -496,112 +531,111 @@ def process_instance(
     cpu_groups_queue: multiprocessing.Queue = None,
 ) -> EvalOutput:
     # HACK: Use the global and get the cpu group for this worker.
-    cpu_group = None
-    if cpu_groups_queue is not None:
-        # Get current multiprocessing worker id.
-        cpu_group = cpu_groups_queue.get()
+    with CPUGroupManager(cpu_groups_queue) as cpu_group:
+        config = get_config(instance, metadata, cpu_group=cpu_group)
 
-    config = get_config(instance, metadata, cpu_group=cpu_group)
+        # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
+        if reset_logger:
+            log_dir = os.path.join(metadata.eval_output_dir, 'infer_logs')
+            reset_logger_for_multiprocessing(logger, instance.instance_id, log_dir)
+        else:
+            logger.info(f'Starting evaluation for instance {instance.instance_id}.')
 
-    # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
-    if reset_logger:
-        log_dir = os.path.join(metadata.eval_output_dir, 'infer_logs')
-        reset_logger_for_multiprocessing(logger, instance.instance_id, log_dir)
-    else:
-        logger.info(f'Starting evaluation for instance {instance.instance_id}.')
-
-    # Increase resource_factor with increasing attempt_id
-    if runtime_failure_count > 0:
-        config.sandbox.remote_runtime_resource_factor = min(
-            config.sandbox.remote_runtime_resource_factor * (2**runtime_failure_count),
-            8,
-        )
-        logger.warning(
-            f'This is the {runtime_failure_count + 1}th attempt for instance {instance.instance_id}, setting resource factor to {config.sandbox.remote_runtime_resource_factor}'
-        )
-
-    metadata = copy.deepcopy(metadata)
-    metadata.details['runtime_failure_count'] = runtime_failure_count
-    metadata.details['remote_runtime_resource_factor'] = (
-        config.sandbox.remote_runtime_resource_factor
-    )
-
-    sid = instance.instance_id
-    if cpu_group is not None:
-        sid += f'_{"".join([str(c) for c in cpu_group])}'
-
-    config.file_store_path = os.path.join(config.file_store_path, sid)
-    runtime = create_runtime(config, sid=sid)
-    call_async_from_sync(runtime.connect)
-
-    try:
-        initialize_runtime(runtime, instance, metadata)
-
-        message_action = get_instruction(instance, metadata)
-
-        # Here's how you can run the agent (similar to the `main` function) and get the final task state
-        state: State | None = asyncio.run(
-            run_controller(
-                config=config,
-                initial_user_action=message_action,
-                runtime=runtime,
-                fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
-                    metadata.agent_class
-                ],
+        # Increase resource_factor with increasing attempt_id
+        if runtime_failure_count > 0:
+            config.sandbox.remote_runtime_resource_factor = min(
+                config.sandbox.remote_runtime_resource_factor * (2**runtime_failure_count),
+                8,
             )
+            logger.warning(
+                f'This is the {runtime_failure_count + 1}th attempt for instance {instance.instance_id}, setting resource factor to {config.sandbox.remote_runtime_resource_factor}'
+            )
+
+        metadata = copy.deepcopy(metadata)
+        metadata.details['runtime_failure_count'] = runtime_failure_count
+        metadata.details['remote_runtime_resource_factor'] = (
+            config.sandbox.remote_runtime_resource_factor
         )
 
-        # if fatal error, throw EvalError to trigger re-run
-        if is_fatal_evaluation_error(state.last_error):
-            raise EvalException('Fatal error detected: ' + state.last_error)
+        sid = None
 
-        # ======= THIS IS SWE-Bench specific =======
-        # Get git patch
-        return_val = complete_runtime(runtime, instance)
-        git_patch = return_val['git_patch']
-        logger.info(
-            f'Got git diff for instance {instance.instance_id}:\n--------\n{git_patch}\n--------'
+        # # Uncomment the following lines if you want to use the cpu_group in the instance id
+        # sid = instance.instance_id
+        # if cpu_group is not None:
+        #     sid += f'_{"".join([str(c) for c in cpu_group])}'
+        # config.file_store_path = os.path.join(config.file_store_path, sid)
+
+        runtime = create_runtime(config, sid=sid)
+        call_async_from_sync(runtime.connect)
+
+        try:
+            initialize_runtime(runtime, instance, metadata)
+
+            message_action = get_instruction(instance, metadata)
+
+            # Here's how you can run the agent (similar to the `main` function) and get the final task state
+            state: State | None = asyncio.run(
+                run_controller(
+                    config=config,
+                    initial_user_action=message_action,
+                    runtime=runtime,
+                    fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
+                        metadata.agent_class
+                    ],
+                )
+            )
+
+            # if fatal error, throw EvalError to trigger re-run
+            if is_fatal_evaluation_error(state.last_error):
+                raise EvalException('Fatal error detected: ' + state.last_error)
+
+            # ======= THIS IS SWE-Bench specific =======
+            # Get git patch
+            return_val = complete_runtime(runtime, instance)
+            git_patch = return_val['git_patch']
+            logger.info(
+                f'Got git diff for instance {instance.instance_id}:\n--------\n{git_patch}\n--------'
+            )
+        finally:
+            runtime.close()
+        # ==========================================
+
+        if cpu_group is not None:
+            cpu_groups_queue.put(cpu_group)
+
+        # ======= Attempt to evaluate the agent's edits =======
+        # we use eval_infer.sh to evaluate the agent's edits, not here
+        # because the agent may alter the environment / testcases
+        test_result = {
+            'git_patch': git_patch,
+        }
+
+        # If you are working on some simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
+        # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
+        if state is None:
+            raise ValueError('State should not be None.')
+
+        # NOTE: this is NO LONGER the event stream, but an agent history that includes delegate agent's events
+        histories = [event_to_dict(event) for event in state.history]
+        metrics = get_metrics(state)
+
+        # Save the output
+        instruction = message_action.content
+        if message_action.image_urls:
+            instruction += (
+                '\n\n<image_urls>' + '\n'.join(message_action.image_urls) + '</image_urls>'
+            )
+        output = EvalOutput(
+            instance_id=instance.instance_id,
+            instruction=instruction,
+            instance=instance.to_dict(),  # SWE Bench specific
+            test_result=test_result,
+            metadata=metadata,
+            history=histories,
+            metrics=metrics,
+            error=state.last_error if state and state.last_error else None,
         )
-    finally:
-        runtime.close()
-    # ==========================================
-
-    if cpu_group is not None:
-        cpu_groups_queue.put(cpu_group)
-
-    # ======= Attempt to evaluate the agent's edits =======
-    # we use eval_infer.sh to evaluate the agent's edits, not here
-    # because the agent may alter the environment / testcases
-    test_result = {
-        'git_patch': git_patch,
-    }
-
-    # If you are working on some simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
-    # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
-    if state is None:
-        raise ValueError('State should not be None.')
-
-    # NOTE: this is NO LONGER the event stream, but an agent history that includes delegate agent's events
-    histories = [event_to_dict(event) for event in state.history]
-    metrics = get_metrics(state)
-
-    # Save the output
-    instruction = message_action.content
-    if message_action.image_urls:
-        instruction += (
-            '\n\n<image_urls>' + '\n'.join(message_action.image_urls) + '</image_urls>'
-        )
-    output = EvalOutput(
-        instance_id=instance.instance_id,
-        instruction=instruction,
-        instance=instance.to_dict(),  # SWE Bench specific
-        test_result=test_result,
-        metadata=metadata,
-        history=histories,
-        metrics=metrics,
-        error=state.last_error if state and state.last_error else None,
-    )
-    return output
+        return output
 
 
 def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
@@ -760,8 +794,9 @@ if __name__ == '__main__':
     )
 
     # Get all CPUs and divide into groups of num_workers and put them into a multiprocessing.Queue.
+    cpu_groups_queue = None
     cpu_groups_list = divide_cpus_among_workers(args.eval_num_workers)
-    cpu_groups_queue = multiprocessing.Queue()
+    cpu_groups_queue = multiprocessing.Manager().Queue()
     for cpu_group in cpu_groups_list:
         cpu_groups_queue.put(cpu_group)
 
@@ -781,28 +816,30 @@ if __name__ == '__main__':
             cpu_groups_queue=cpu_groups_queue,
         )
 
-        # HACK: Assuming docker, fix this later.
-        config = get_config(
-            instances.iloc[0],  # Use the first instance to get the config
-            metadata,
-            cpu_group=None,  # We will use the cpu_groups_queue to get the cpu group later
-        )
-        client = docker.from_env()
-        network = client.networks.create(
-            config.sandbox.network_name,
-            driver='bridge',
-            check_duplicate=True,
-            ipam=docker.types.IPAMConfig(pool_configs=[
-                docker.types.IPAMPool(subnet=config.sandbox.network_subnet)
-            ])
-        )
+        if not "all-hands" in config.sandbox.remote_runtime_api_url and not config.sandbox.use_host_network:
+            # HACK: Assuming docker, fix this later.
+            config = get_config(
+                instances.iloc[0],  # Use the first instance to get the config
+                metadata,
+                cpu_group=None,  # We will use the cpu_groups_queue to get the cpu group later
+            )
+
+            client = docker.from_env()
+            network = client.networks.create(
+                config.sandbox.network_name,
+                driver='bridge',
+                check_duplicate=True,
+                ipam=docker.types.IPAMConfig(pool_configs=[
+                    docker.types.IPAMPool(subnet=config.sandbox.network_subnet)
+                ])
+            )
 
         run_evaluation(
             instances,
             metadata,
             output_file,
             args.eval_num_workers,
-            process_instance,
+            process_instance_with_cpu_groups,
             timeout_seconds=8
             * 60
             * 60,  # 8 hour PER instance should be more than enough

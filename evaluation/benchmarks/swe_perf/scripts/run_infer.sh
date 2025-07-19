@@ -122,6 +122,10 @@ function run_eval() {
   eval $COMMAND
 }
 
+# export RUNTIME=remote
+# export SANDBOX_REMOTE_RUNTIME_API_URL="https://runtime.eval.all-hands.dev"
+export NO_CHANGE_TIMEOUT_SECONDS=900 # 15 minutes
+
 unset SANDBOX_ENV_GITHUB_TOKEN # prevent the agent from using the github token to push
 if [ -z "$N_RUNS" ]; then
   N_RUNS=1
