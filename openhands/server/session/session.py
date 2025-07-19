@@ -147,7 +147,10 @@ class Session:
             else:
                 # If agent config doesn't exist, create a new one with the system prompt
                 from openhands.core.config.agent_config import AgentConfig
-                agent_configs[agent_cls] = AgentConfig(system_prompt_filename=settings.system_prompt)
+
+                agent_configs[agent_cls] = AgentConfig(
+                    system_prompt_filename=settings.system_prompt
+                )
 
         # NOTE: this need to happen AFTER the config is updated with the search_api_key
         self.config.mcp = settings.mcp_config or MCPConfig(
