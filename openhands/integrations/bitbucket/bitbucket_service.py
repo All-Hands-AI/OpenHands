@@ -9,6 +9,7 @@ from openhands.integrations.service_types import (
     BaseGitService,
     Branch,
     GitService,
+    OwnerType,
     ProviderType,
     Repository,
     RequestMethod,
@@ -246,6 +247,11 @@ class BitBucketService(BaseGitService, GitService):
                         is_public=repo.get('is_private', True) is False,
                         stargazers_count=None,  # Bitbucket doesn't have stars
                         pushed_at=repo.get('updated_on'),
+                        owner_type=(
+                            OwnerType.ORGANIZATION
+                            if repo.get('workspace', {}).get('is_private') is False
+                            else OwnerType.USER
+                        ),
                     )
                 )
 
@@ -287,6 +293,11 @@ class BitBucketService(BaseGitService, GitService):
             is_public=data.get('is_private', True) is False,
             stargazers_count=None,  # Bitbucket doesn't have stars
             pushed_at=data.get('updated_on'),
+            owner_type=(
+                OwnerType.ORGANIZATION
+                if data.get('workspace', {}).get('is_private') is False
+                else OwnerType.USER
+            ),
         )
 
     async def get_branches(self, repository: str) -> list[Branch]:

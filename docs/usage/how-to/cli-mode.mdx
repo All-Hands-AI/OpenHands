@@ -103,7 +103,7 @@ The conversation history will be saved in `~/.openhands/sessions`.
 ```bash
 docker run -it \
     --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.48-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.49-nikolaik \
     -e SANDBOX_USER_ID=$(id -u) \
     -e SANDBOX_VOLUMES=$SANDBOX_VOLUMES \
     -e LLM_API_KEY=$LLM_API_KEY \
@@ -112,7 +112,7 @@ docker run -it \
     -v ~/.openhands:/.openhands \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app-$(date +%Y%m%d%H%M%S) \
-    docker.all-hands.dev/all-hands-ai/openhands:0.48 \
+    docker.all-hands.dev/all-hands-ai/openhands:0.49 \
     python -m openhands.cli.main --override-cli-mode true
 ```
 
@@ -123,7 +123,8 @@ docker run -it \
 
 This launches the CLI in Docker, allowing you to interact with OpenHands.
 
-The `-e SANDBOX_USER_ID=$(id -u)` ensures files created by the agent in your workspace have the correct permissions.
+The `-e SANDBOX_USER_ID=$(id -u)` is passed to the Docker command to ensure the sandbox user matches the host user’s
+permissions. This prevents the agent from creating root-owned files in the mounted workspace.
 
 The conversation history will be saved in `~/.openhands/sessions`.
 
