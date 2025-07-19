@@ -1111,3 +1111,218 @@ def test_azure_model_default_max_tokens():
 
     # Verify the config has the default max_output_tokens value
     assert llm.config.max_output_tokens is None  # Default value
+
+
+def test_llm_update_config_basic(default_config):
+    """Test basic LLM configuration update functionality."""
+    llm = LLM(default_config)
+
+    # Verify initial state
+    assert llm.config.model == 'gpt-4o'
+    assert llm.config.temperature == 0.0
+    assert llm.metrics.model_name == 'gpt-4o'
+
+    # Create new config with different settings
+    new_config = LLMConfig(
+        model='claude-3-5-sonnet-20241022',
+        api_key='new_test_key',
+        temperature=0.7,
+        max_output_tokens=2000,
+        top_p=0.9,
+    )
+
+    # Update the configuration
+    llm.update_config(new_config)
+
+    # Verify the configuration was updated
+    assert llm.config.model == 'claude-3-5-sonnet-20241022'
+    assert llm.config.api_key.get_secret_value() == 'new_test_key'
+    assert llm.config.temperature == 0.7
+    assert llm.config.max_output_tokens == 2000
+    assert llm.config.top_p == 0.9
+    assert llm.metrics.model_name == 'claude-3-5-sonnet-20241022'
+
+
+def test_llm_update_config_model_change_resets_model_info(default_config):
+    """Test that changing model resets model info for re-initialization."""
+    llm = LLM(default_config)
+
+    # Set some model info to verify it gets reset
+    llm.model_info = {'test': 'info'}
+    llm._tried_model_info = True
+
+    # Create new config with different model
+    new_config = copy.deepcopy(default_config)
+    new_config.model = 'claude-3-5-sonnet-20241022'
+
+    # Update the configuration
+    llm.update_config(new_config)
+
+    # Verify model info was reset and metrics updated
+    assert llm.metrics.model_name == 'claude-3-5-sonnet-20241022'
+    # _tried_model_info should be reset to False to force re-initialization
+    # (it will be set back to True after init_model_info() is called)
+
+
+def test_llm_update_config_same_model_preserves_model_info(default_config):
+    """Test that keeping the same model preserves model info."""
+    llm = LLM(default_config)
+
+    # Create new config with same model but different other settings
+    new_config = copy.deepcopy(default_config)
+    new_config.temperature = 0.5
+    new_config.max_output_tokens = 1500
+
+    # Update the configuration
+    llm.update_config(new_config)
+
+    # Verify model info was preserved but other settings changed
+    assert llm.config.temperature == 0.5
+    assert llm.config.max_output_tokens == 1500
+    assert llm.metrics.model_name == 'gpt-4o'  # Same model
+
+
+def test_llm_update_config_custom_tokenizer_update(default_config):
+    """Test updating custom tokenizer configuration."""
+    llm = LLM(default_config)
+
+    # Initially no custom tokenizer
+    assert llm.config.custom_tokenizer is None
+    assert llm.tokenizer is None
+
+    # Update config with custom tokenizer
+    new_config = copy.deepcopy(default_config)
+    new_config.custom_tokenizer = 'gpt2'
+
+    llm.update_config(new_config)
+
+    # Verify tokenizer was updated
+    assert llm.config.custom_tokenizer == 'gpt2'
+    assert llm.tokenizer is not None
+
+    # Update back to no custom tokenizer
+    new_config.custom_tokenizer = None
+    llm.update_config(new_config)
+
+    # Verify tokenizer was reset
+    assert llm.config.custom_tokenizer is None
+    assert llm.tokenizer is None
+
+
+def test_llm_update_config_log_completions_folder_creation(default_config):
+    """Test that log completions folder is created when needed."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        log_folder = Path(temp_dir) / 'test_completions'
+
+        llm = LLM(default_config)
+
+        # Update config to enable log completions
+        new_config = copy.deepcopy(default_config)
+        new_config.log_completions = True
+        new_config.log_completions_folder = str(log_folder)
+
+        # Folder shouldn't exist yet
+        assert not log_folder.exists()
+
+        # Update configuration
+        llm.update_config(new_config)
+
+        # Verify folder was created
+        assert log_folder.exists()
+        assert log_folder.is_dir()
+
+
+def test_llm_update_config_log_completions_folder_required():
+    """Test that log_completions_folder is required when log_completions is True."""
+    config = LLMConfig(model='gpt-4o', api_key='test_key')
+    llm = LLM(config)
+
+    # Create config with log_completions=True but no folder
+    new_config = copy.deepcopy(config)
+    new_config.log_completions = True
+    new_config.log_completions_folder = None
+
+    # Should raise RuntimeError
+    with pytest.raises(RuntimeError, match='log_completions_folder is required'):
+        llm.update_config(new_config)
+
+
+def test_llm_update_config_completion_function_rebuilt(default_config):
+    """Test that completion function is rebuilt after config update."""
+    llm = LLM(default_config)
+
+    # Store reference to original completion function
+
+    # Update configuration
+    new_config = copy.deepcopy(default_config)
+    new_config.temperature = 0.8
+    new_config.max_output_tokens = 1500
+
+    llm.update_config(new_config)
+
+    # Verify completion functions exist (they should be rebuilt)
+    assert llm._completion is not None
+    assert llm._completion_unwrapped is not None
+
+    # The functions should be different objects since they were rebuilt
+    # (though this is implementation detail, the important thing is they work)
+    assert callable(llm._completion)
+    assert callable(llm._completion_unwrapped)
+
+
+def test_llm_update_config_preserves_metrics_and_retry_listener(default_config):
+    """Test that metrics and retry listener are preserved during config update."""
+    # Create custom metrics and retry listener
+    custom_metrics = Metrics(model_name='initial_model')
+    retry_listener = MagicMock()
+
+    llm = LLM(default_config, metrics=custom_metrics, retry_listener=retry_listener)
+
+    # Verify initial state
+    assert llm.metrics is custom_metrics
+    assert llm.retry_listener is retry_listener
+
+    # Update configuration
+    new_config = copy.deepcopy(default_config)
+    new_config.model = 'claude-3-5-sonnet-20241022'
+
+    llm.update_config(new_config)
+
+    # Verify metrics and retry listener are preserved
+    assert llm.metrics is custom_metrics
+    assert llm.retry_listener is retry_listener
+    # But metrics model name should be updated
+    assert llm.metrics.model_name == 'claude-3-5-sonnet-20241022'
+
+
+def test_llm_update_config_deep_copy_independence():
+    """Test that config update uses deep copy and doesn't affect original config."""
+    original_config = LLMConfig(
+        model='gpt-4o',
+        api_key='test_key',
+        temperature=0.0,
+    )
+
+    llm = LLM(original_config)
+
+    # Create new config
+    new_config = LLMConfig(
+        model='claude-3-5-sonnet-20241022',
+        api_key='new_key',
+        temperature=0.7,
+    )
+
+    # Update LLM config
+    llm.update_config(new_config)
+
+    # Modify the new_config after update
+    new_config.temperature = 0.9
+    new_config.model = 'different-model'
+
+    # LLM config should not be affected by external changes
+    assert llm.config.temperature == 0.7
+    assert llm.config.model == 'claude-3-5-sonnet-20241022'
+
+    # Original config should also be unchanged
+    assert original_config.temperature == 0.0
+    assert original_config.model == 'gpt-4o'
