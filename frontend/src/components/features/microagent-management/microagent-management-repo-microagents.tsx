@@ -1,42 +1,69 @@
-import { MicroagentManagementRepoMicroagent } from "./microagent-management-repo-microagent";
+import { MicroagentManagementMicroagentCard } from "./microagent-management-microagent-card";
+import { MicroagentManagementLearnThisRepo } from "./microagent-management-learn-this-repo";
+import { useRepositoryMicroagents } from "#/hooks/query/use-repository-microagents";
+import { LoadingSpinner } from "#/components/shared/loading-spinner";
 
-export function MicroagentManagementRepoMicroagents() {
-  const repoMicroagents = [
-    {
-      id: "rbren/rss-parser",
-      repositoryName: "rbren/rss-parser",
-      repositoryUrl: "https://github.com/rbren/rss-parser",
-      microagents: [],
-    },
-    {
-      id: "fairwinds/polaris",
-      repositoryName: "fairwinds/polaris",
-      repositoryUrl: "https://github.com/fairwinds/polaris",
-      microagents: [
-        {
-          id: "no-comments",
-          name: "No comments",
-          repositoryUrl: "fairwinds/polaris/Repo Overview",
-          createdAt: "05/30/2025",
-        },
-      ],
-    },
-  ];
+export interface RepoMicroagent {
+  id: string;
+  repositoryName: string;
+  repositoryUrl: string;
+}
 
-  const numberOfRepoMicroagents = repoMicroagents.length;
+interface MicroagentManagementRepoMicroagentsProps {
+  repoMicroagent: RepoMicroagent;
+}
 
-  if (numberOfRepoMicroagents === 0) {
-    return null;
+export function MicroagentManagementRepoMicroagents({
+  repoMicroagent,
+}: MicroagentManagementRepoMicroagentsProps) {
+  // Extract owner and repo from repositoryName (format: "owner/repo")
+  const [owner, repo] = repoMicroagent.repositoryName.split("/");
+
+  const {
+    data: microagents,
+    isLoading,
+    isError,
+  } = useRepositoryMicroagents(owner, repo);
+
+  if (isLoading) {
+    return (
+      <div className="pb-4 flex justify-center">
+        <LoadingSpinner size="small" />
+      </div>
+    );
   }
 
-  return (
-    <div>
-      {repoMicroagents.map((repoMicroagent) => (
-        <MicroagentManagementRepoMicroagent
-          key={repoMicroagent.id}
-          repoMicroagent={repoMicroagent}
+  if (isError) {
+    return (
+      <div className="pb-4">
+        <MicroagentManagementLearnThisRepo
+          repositoryUrl={repoMicroagent.repositoryUrl}
         />
-      ))}
+      </div>
+    );
+  }
+
+  const numberOfMicroagents = microagents?.length || 0;
+
+  return (
+    <div className="pb-4">
+      {numberOfMicroagents === 0 && (
+        <MicroagentManagementLearnThisRepo
+          repositoryUrl={repoMicroagent.repositoryUrl}
+        />
+      )}
+      {numberOfMicroagents > 0 &&
+        microagents?.map((microagent) => (
+          <div key={microagent.name} className="pb-4 last:pb-0">
+            <MicroagentManagementMicroagentCard
+              microagent={{
+                id: microagent.name,
+                name: microagent.name,
+                createdAt: microagent.created_at,
+              }}
+            />
+          </div>
+        ))}
     </div>
   );
 }

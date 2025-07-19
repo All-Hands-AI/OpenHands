@@ -11229,7 +11229,7 @@
         "fr": "Que souhaitez-vous que le microagent fasse ?",
         "tr": "Mikro ajanın ne yapmasını istersiniz?",
         "de": "Was soll der Microagent tun?",
-        "uk": "Що ви хочете, щоб зробив мікроагент?"
+        "uk": "Що в,и хочете, щоб зробив мікроагент?"
     },
     "MICROAGENT_MANAGEMENT$DESCRIBE_WHAT_TO_DO": {
         "en": "Describe what you would like the Microagent to do.",
@@ -11358,5 +11358,69 @@
         "tr": "Dosya yapısını öğren",
         "de": "Dateistruktur lernen",
         "uk": "Вивчити структуру файлів"
+    },
+    "MICROAGENT_MANAGEMENT$YOU_DO_NOT_HAVE_USER_LEVEL_MICROAGENTS": {
+        "en": "You do not have user-level microagents",
+        "ja": "ユーザーレベルのマイクロエージェントがありません",
+        "zh-CN": "您没有用户级微代理",
+        "zh-TW": "您沒有使用者層級的微代理",
+        "ko-KR": "사용자 수준의 마이크로에이전트가 없습니다",
+        "no": "Du har ikke mikroagenter på brukernivå",
+        "it": "Non hai microagenti a livello utente",
+        "pt": "Você não possui microagentes de nível de usuário",
+        "es": "No tienes microagentes a nivel de usuario",
+        "ar": "ليس لديك وكلاء دقيقون على مستوى المستخدم",
+        "fr": "Vous n'avez pas de microagents au niveau utilisateur",
+        "tr": "Kullanıcı düzeyinde mikro ajanınız yok",
+        "de": "Sie haben keine Mikroagenten auf Benutzerebene",
+        "uk": "У вас немає мікроагентів на рівні користувача"
+    },
+    "MICROAGENT_MANAGEMENT$YOU_DO_NOT_HAVE_MICROAGENTS": {
+        "en": "You do not have microagents",
+        "ja": "マイクロエージェントがありません",
+        "zh-CN": "您没有微代理",
+        "zh-TW": "您沒有微代理",
+        "ko-KR": "마이크로에이전트가 없습니다",
+        "no": "Du har ingen mikroagenter",
+        "it": "Non hai microagenti",
+        "pt": "Você não possui microagentes",
+        "es": "No tienes microagentes",
+        "ar": "ليس لديك وكلاء دقيقون",
+        "fr": "Vous n'avez pas de microagents",
+        "tr": "Mikro ajanınız yok",
+        "de": "Sie haben keine Mikroagenten",
+        "uk": "У вас немає мікроагентів"
+    },
+    "MICROAGENT_MANAGEMENT$YOU_DO_NOT_HAVE_ORGANIZATION_LEVEL_MICROAGENTS": {
+        "en": "You do not have organization-level microagents",
+        "ja": "組織レベルのマイクロエージェントがありません",
+        "zh-CN": "您没有组织级微代理",
+        "zh-TW": "您沒有組織層級的微代理",
+        "ko-KR": "조직 수준의 마이크로에이전트가 없습니다",
+        "no": "Du har ikke mikroagenter på organisasjonsnivå",
+        "it": "Non hai microagenti a livello organizzazione",
+        "pt": "Você não possui microagentes de nível organizacional",
+        "es": "No tienes microagentes a nivel de organización",
+        "ar": "ليس لديك وكلاء دقيقون على مستوى المؤسسة",
+        "fr": "Vous n'avez pas de microagents au niveau organisation",
+        "tr": "Organizasyon düzeyinde mikro ajanınız yok",
+        "de": "Sie haben keine Mikroagenten auf Organisationsebene",
+        "uk": "У вас немає мікроагентів на рівні організації"
+    },
+    "COMMON$SEARCH_REPOSITORIES": {
+        "en": "Search repositories",
+        "ja": "リポジトリを検索",
+        "zh-CN": "搜索仓库",
+        "zh-TW": "搜尋存儲庫",
+        "ko-KR": "저장소 검색",
+        "no": "Søk i repositories",
+        "it": "Cerca repository",
+        "pt": "Pesquisar repositórios",
+        "es": "Buscar repositorios",
+        "ar": "البحث في المستودعات",
+        "fr": "Rechercher des dépôts",
+        "tr": "Depo ara",
+        "de": "Repositorys durchsuchen",
+        "uk": "Пошук репозиторіїв"
     }
 }
