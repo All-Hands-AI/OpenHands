@@ -42,6 +42,13 @@ def suppress_cli_warnings():
         category=UserWarning,
     )
 
+    # Suppress SyntaxWarnings from pydub.utils about invalid escape sequences
+    warnings.filterwarnings(
+        'ignore',
+        category=SyntaxWarning,
+        module=r'pydub\.utils',
+    )
+
 
 # Apply warning suppressions when module is imported
 suppress_cli_warnings()
