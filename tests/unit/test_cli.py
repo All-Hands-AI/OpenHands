@@ -1238,11 +1238,18 @@ class TestUILauncher:
         ]
 
         with pytest.raises(SystemExit) as exc_info:
-            with patch('openhands.cli.ui_launcher.print_formatted_text'):
+            with patch('openhands.cli.ui_launcher.print_formatted_text') as mock_print:
                 launch_ui_server()
 
         assert exc_info.value.code == 0  # Should exit gracefully
         assert mock_run.call_count == 2
+
+        # Verify the success message is shown
+        success_message_call = any(
+            'OpenHands UI server stopped successfully' in str(call)
+            for call in mock_print.call_args_list
+        )
+        assert success_message_call, 'Success message should be shown on Ctrl+C'
 
     def test_launch_ui_server_with_mount_cwd(self):
         """Test UI launcher with mount_cwd flag."""

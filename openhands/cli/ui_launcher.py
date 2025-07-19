@@ -203,6 +203,6 @@ def launch_ui_server(dry_run: bool = False, mount_cwd: bool = False) -> None:
     except KeyboardInterrupt:
         print_formatted_text('')
         print_formatted_text(
-            HTML('<ansiyellow>⚠️ OpenHands UI server stopped.</ansiyellow>')
+            HTML('<ansigreen>✓ OpenHands UI server stopped successfully.</ansigreen>')
         )
         sys.exit(0)
