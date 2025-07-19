@@ -6,6 +6,8 @@ from openhands.cli.tui import (
     CustomDiffLexer,
     UsageMetrics,
     UserCancelledError,
+    display_agent_finish,
+    display_agent_message,
     display_banner,
     display_command,
     display_event,
@@ -23,6 +25,7 @@ from openhands.events import EventSource
 from openhands.events.action import (
     Action,
     ActionConfirmationStatus,
+    AgentFinishAction,
     CmdRunAction,
     MessageAction,
 )
@@ -72,15 +75,15 @@ class TestDisplayFunctions:
         args, kwargs = mock_print.call_args_list[0]
         assert "Let's start building" in str(args[0])
 
-    @patch('openhands.cli.tui.display_message')
-    def test_display_event_message_action(self, mock_display_message):
+    @patch('openhands.cli.tui.display_agent_message')
+    def test_display_event_message_action(self, mock_display_agent_message):
         config = MagicMock(spec=OpenHandsConfig)
         message = MessageAction(content='Test message')
         message._source = EventSource.AGENT
 
         display_event(message, config)
 
-        mock_display_message.assert_called_once_with('Test message')
+        mock_display_agent_message.assert_called_once_with('Test message')
 
     @patch('openhands.cli.tui.display_command')
     def test_display_event_cmd_action(self, mock_display_command):
@@ -147,6 +150,15 @@ class TestDisplayFunctions:
 
         mock_display_message.assert_called_once_with('Thinking about this...')
 
+    @patch('openhands.cli.tui.display_agent_finish')
+    def test_display_event_agent_finish(self, mock_display_agent_finish):
+        config = MagicMock(spec=OpenHandsConfig)
+        finish_action = AgentFinishAction(final_thought='Task completed')
+
+        display_event(finish_action, config)
+
+        mock_display_agent_finish.assert_called_once_with(finish_action)
+
     @patch('openhands.cli.tui.print_formatted_text')
     def test_display_message(self, mock_print):
         message = 'Test message'
@@ -155,6 +167,42 @@ class TestDisplayFunctions:
         mock_print.assert_called_once()
         args, kwargs = mock_print.call_args
         assert message in str(args[0])
+
+    @patch('openhands.cli.tui.print_container')
+    @patch('openhands.cli.tui.print_formatted_text')
+    def test_display_agent_message(self, mock_print_formatted, mock_print_container):
+        message = 'Agent message'
+        display_agent_message(message)
+
+        mock_print_formatted.assert_called_once()
+        mock_print_container.assert_called_once()
+
+    @patch('openhands.cli.tui.print_container')
+    @patch('openhands.cli.tui.print_formatted_text')
+    def test_display_agent_finish_with_thought(
+        self, mock_print_formatted, mock_print_container
+    ):
+        finish_action = AgentFinishAction(thought='Final thought')
+
+        display_agent_finish(finish_action)
+
+        mock_print_formatted.assert_called_once()
+        mock_print_container.assert_called_once()
+
+    @patch('openhands.cli.tui.print_container')
+    @patch('openhands.cli.tui.print_formatted_text')
+    def test_display_agent_finish_with_task_completed(
+        self, mock_print_formatted, mock_print_container
+    ):
+        from openhands.events.action.agent import AgentFinishTaskCompleted
+
+        finish_action = AgentFinishAction()
+        finish_action.task_completed = AgentFinishTaskCompleted.TRUE
+
+        display_agent_finish(finish_action)
+
+        mock_print_formatted.assert_called_once()
+        mock_print_container.assert_called_once()
 
     @patch('openhands.cli.tui.print_container')
     def test_display_command_awaiting_confirmation(self, mock_print_container):
