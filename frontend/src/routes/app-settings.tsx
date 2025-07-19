@@ -38,6 +38,10 @@ function AppSettingsScreen() {
     proactiveConversationsSwitchHasChanged,
     setProactiveConversationsSwitchHasChanged,
   ] = React.useState(false);
+  const [
+    solvabilityAnalysisSwitchHasChanged,
+    setSolvabilityAnalysisSwitchHasChanged,
+  ] = React.useState(false);
   const [maxBudgetPerTaskHasChanged, setMaxBudgetPerTaskHasChanged] =
     React.useState(false);
 
@@ -57,6 +61,9 @@ function AppSettingsScreen() {
       formData.get("enable-proactive-conversations-switch")?.toString() ===
       "on";
 
+    const enableSolvabilityAnalysis =
+      formData.get("enable-solvability-analysis-switch")?.toString() === "on";
+
     const maxBudgetPerTaskValue = formData
       .get("max-budget-per-task-input")
       ?.toString();
@@ -68,6 +75,7 @@ function AppSettingsScreen() {
         user_consents_to_analytics: enableAnalytics,
         ENABLE_SOUND_NOTIFICATIONS: enableSoundNotifications,
         ENABLE_PROACTIVE_CONVERSATION_STARTERS: enableProactiveConversations,
+        ENABLE_SOLVABILITY_ANALYSIS: enableSolvabilityAnalysis,
         MAX_BUDGET_PER_TASK: maxBudgetPerTask,
       },
       {
@@ -121,6 +129,13 @@ function AppSettingsScreen() {
     );
   };
 
+  const checkIfSolvabilityAnalysisSwitchHasChanged = (checked: boolean) => {
+    const currentSolvabilityAnalysis = !!settings?.ENABLE_SOLVABILITY_ANALYSIS;
+    setSolvabilityAnalysisSwitchHasChanged(
+      checked !== currentSolvabilityAnalysis,
+    );
+  };
+
   const checkIfMaxBudgetPerTaskHasChanged = (value: string) => {
     const newValue = parseMaxBudgetPerTask(value);
     const currentValue = settings?.MAX_BUDGET_PER_TASK;
@@ -132,6 +147,7 @@ function AppSettingsScreen() {
     !analyticsSwitchHasChanged &&
     !soundNotificationsSwitchHasChanged &&
     !proactiveConversationsSwitchHasChanged &&
+    !solvabilityAnalysisSwitchHasChanged &&
     !maxBudgetPerTaskHasChanged;
 
   const shouldBeLoading = !settings || isLoading || isPending;
@@ -179,6 +195,17 @@ function AppSettingsScreen() {
               onToggle={checkIfProactiveConversationsSwitchHasChanged}
             >
               {t(I18nKey.SETTINGS$PROACTIVE_CONVERSATION_STARTERS)}
+            </SettingsSwitch>
+          )}
+
+          {config?.APP_MODE === "saas" && (
+            <SettingsSwitch
+              testId="enable-solvability-analysis-switch"
+              name="enable-solvability-analysis-switch"
+              defaultIsToggled={!!settings.ENABLE_SOLVABILITY_ANALYSIS}
+              onToggle={checkIfSolvabilityAnalysisSwitchHasChanged}
+            >
+              {t(I18nKey.SETTINGS$SOLVABILITY_ANALYSIS)}
             </SettingsSwitch>
           )}
 
