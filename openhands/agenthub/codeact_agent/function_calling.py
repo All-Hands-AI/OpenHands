@@ -41,8 +41,6 @@ from openhands.events.action.agent import CondensationRequestAction
 from openhands.events.action.mcp import MCPAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
-
-# Import the model list for empty reasoning responses
 from openhands.llm.llm import MODELS_WITH_EMPTY_REASONING_RESPONSES
 
 

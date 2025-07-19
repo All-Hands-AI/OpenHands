@@ -1,6 +1,7 @@
 """Test function calling module."""
 
 import json
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -19,7 +20,9 @@ from openhands.events.action import (
 from openhands.events.event import FileEditSource, FileReadSource
 
 
-def create_mock_response(function_name: str, arguments: dict) -> ModelResponse:
+def create_mock_response(
+    function_name: str, arguments: dict[str, Any]
+) -> ModelResponse:
     """Helper function to create a mock response with a tool call."""
     return ModelResponse(
         id='mock-id',
@@ -246,6 +249,78 @@ def test_unexpected_argument_handling():
     assert 'Unexpected argument' in str(exc_info.value)
 
 
+def test_tool_call_html_entity_decoding():
+    """Test that HTML entities in tool call arguments are properly decoded."""
+    # Test case with HTML entities in str_replace_editor arguments
+    response = ModelResponse(
+        id='mock-id',
+        model='gpt-4o',
+        choices=[
+            {
+                'message': {
+                    'tool_calls': [
+                        {
+                            'function': {
+                                'name': 'str_replace_editor',
+                                'arguments': '{"command": "str_replace", "path": "test.py", "old_str": "if x &lt; y:", "new_str": "if x < y:"}',
+                            },
+                            'id': 'mock-tool-call-id',
+                            'type': 'function',
+                        }
+                    ],
+                    'content': None,
+                    'role': 'assistant',
+                },
+                'index': 0,
+                'finish_reason': 'tool_calls',
+            }
+        ],
+    )
+
+    actions = response_to_actions(response)
+    assert len(actions) == 1
+    assert isinstance(actions[0], FileEditAction)
+    # Verify the HTML entities were decoded
+    assert actions[0].old_str == 'if x < y:'
+    assert actions[0].new_str == 'if x < y:'
+    assert actions[0].path == 'test.py'
+
+
+def test_tool_call_html_entity_decoding_multiple_entities():
+    """Test decoding of multiple HTML entities in tool arguments."""
+    # Test with multiple HTML entities
+    response = ModelResponse(
+        id='mock-id',
+        model='gpt-4o',
+        choices=[
+            {
+                'message': {
+                    'tool_calls': [
+                        {
+                            'function': {
+                                'name': 'execute_bash',
+                                'arguments': '{"command": "echo \\"x &lt; y &amp;&amp; a &gt; b\\""}',
+                            },
+                            'id': 'mock-tool-call-id',
+                            'type': 'function',
+                        }
+                    ],
+                    'content': None,
+                    'role': 'assistant',
+                },
+                'index': 0,
+                'finish_reason': 'tool_calls',
+            }
+        ],
+    )
+
+    actions = response_to_actions(response)
+    assert len(actions) == 1
+    assert isinstance(actions[0], CmdRunAction)
+    # Verify all HTML entities were decoded
+    assert actions[0].command == 'echo "x < y && a > b"'
+
+
 def test_message_action_empty_response_non_grok():
     """Test that non-Grok models preserve original behavior for empty responses."""
     # Create a response with no tool calls and empty content
@@ -324,70 +399,70 @@ def test_message_action_non_empty_response_grok():
     assert actions[0].wait_for_response is True
 
 
-def test_message_action_grok_model_variants():
-    """Test that different Grok model name formats are handled correctly."""
-    # Test various ways the Grok model name might appear
-    grok_model_variants = [
+@pytest.mark.parametrize(
+    'model_name',
+    [
         'xai/grok-4-0709',
         'litellm_proxy/xai/grok-4-0709',
         'openrouter/xai/grok-4-0709',
-    ]
+    ],
+)
+def test_message_action_grok_model_variants(model_name):
+    """Test that different Grok model name formats are handled correctly."""
+    response = ModelResponse(
+        id='mock-id',
+        model=model_name,
+        choices=[
+            {
+                'message': {
+                    'content': '',  # Empty content
+                    'role': 'assistant',
+                },
+                'index': 0,
+                'finish_reason': 'stop',
+            }
+        ],
+    )
 
-    for model_name in grok_model_variants:
-        response = ModelResponse(
-            id='mock-id',
-            model=model_name,
-            choices=[
-                {
-                    'message': {
-                        'content': '',  # Empty content
-                        'role': 'assistant',
-                    },
-                    'index': 0,
-                    'finish_reason': 'stop',
-                }
-            ],
-        )
-
-        actions = response_to_actions(response)
-        assert len(actions) == 1
-        assert isinstance(actions[0], MessageAction)
-        assert actions[0].content == ''
-        # All Grok model variants should NOT wait for response when content is empty
-        assert actions[0].wait_for_response is False, f'Failed for model: {model_name}'
+    actions = response_to_actions(response)
+    assert len(actions) == 1
+    assert isinstance(actions[0], MessageAction)
+    assert actions[0].content == ''
+    # All Grok model variants should NOT wait for response when content is empty
+    assert actions[0].wait_for_response is False
 
 
-def test_message_action_similar_model_names():
-    """Test that models with similar names to Grok are not affected."""
-    # Test models that might partially match but shouldn't be treated as Grok
-    non_grok_models = [
+@pytest.mark.parametrize(
+    'model_name',
+    [
         'grok-lite',  # Similar name but not the specific Grok-4 model
         'xai/other-model',  # Same provider but different model
         'gpt-4-grok-mode',  # Contains 'grok' but not the actual model
-    ]
+    ],
+)
+def test_message_action_similar_model_names(model_name):
+    """Test that models with similar names to Grok are not affected."""
+    response = ModelResponse(
+        id='mock-id',
+        model=model_name,
+        choices=[
+            {
+                'message': {
+                    'content': '',  # Empty content
+                    'role': 'assistant',
+                },
+                'index': 0,
+                'finish_reason': 'stop',
+            }
+        ],
+    )
 
-    for model_name in non_grok_models:
-        response = ModelResponse(
-            id='mock-id',
-            model=model_name,
-            choices=[
-                {
-                    'message': {
-                        'content': '',  # Empty content
-                        'role': 'assistant',
-                    },
-                    'index': 0,
-                    'finish_reason': 'stop',
-                }
-            ],
-        )
-
-        actions = response_to_actions(response)
-        assert len(actions) == 1
-        assert isinstance(actions[0], MessageAction)
-        assert actions[0].content == ''
-        # Non-Grok models should maintain original behavior
-        assert actions[0].wait_for_response is True, f'Failed for model: {model_name}'
+    actions = response_to_actions(response)
+    assert len(actions) == 1
+    assert isinstance(actions[0], MessageAction)
+    assert actions[0].content == ''
+    # Non-Grok models should maintain original behavior
+    assert actions[0].wait_for_response is True
 
 
 def test_message_action_with_tool_calls_not_affected():
