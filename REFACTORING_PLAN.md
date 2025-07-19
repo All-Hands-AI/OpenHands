@@ -23,6 +23,7 @@
 - Tool schemas come from `Tool.get_schema()`
 - Action creation remains in function_calling.py (simple, no over-abstraction)
 - Remove duplicated tool logic across agents
+- **No registry needed** - agents directly import and use the tools they need
 
 ## Minimal Refactoring Strategy
 
@@ -30,13 +31,13 @@
 **Goal:** Make new tools work alongside existing system without breaking anything
 
 1. **Create tool adapter in function_calling.py**
-   - Add import for new `openhands.tools.registry`
-   - Create helper function `try_new_tool_first()` that attempts new tool processing
-   - Fall back to existing hardcoded logic if tool not found in new registry
+   - Add import for new `openhands.tools` (BashTool, FileEditorTool, etc.)
+   - Create helper function `validate_with_new_tools()` that attempts new tool validation
+   - Fall back to existing hardcoded logic if tool not found
    - This allows gradual migration without breaking existing functionality
 
 2. **Update tool imports in codeact_agent.py**
-   - Import new ToolRegistry alongside existing tool imports
+   - Import new Tool classes alongside existing tool imports
    - Modify `get_tools()` method to include schemas from both old and new tools
    - Ensure no duplicate tool names
 
@@ -80,11 +81,17 @@
 
 ### Bridge Function (Phase 1)
 ```python
-def validate_with_registry(tool_call):
-    """Try new tool registry for validation, fall back to old logic"""
-    from openhands.tools.registry import default_registry
+def validate_with_new_tools(tool_call):
+    """Try new tool classes for validation, fall back to old logic"""
+    from openhands.tools import BashTool, FileEditorTool
     
-    tool = default_registry.get_tool(tool_call.function.name)
+    # Map tool names to tool instances
+    tools = {
+        'execute_bash': BashTool(),
+        'str_replace_editor': FileEditorTool(),
+    }
+    
+    tool = tools.get(tool_call.function.name)
     if tool:
         try:
             return tool.validate_function_call(tool_call.function)
@@ -98,14 +105,20 @@ def validate_with_registry(tool_call):
 ### Simplified function_calling.py (Phase 3)
 ```python
 def response_to_actions(response: ModelResponse, mcp_tool_names: list[str] | None = None) -> list[Action]:
-    """Convert LLM response to OpenHands actions using tool registry"""
-    from openhands.tools.registry import default_registry
+    """Convert LLM response to OpenHands actions using new tool classes"""
+    from openhands.tools import BashTool, FileEditorTool
+    
+    # Create tool instances (could be module-level for efficiency)
+    tools = {
+        'execute_bash': BashTool(),
+        'str_replace_editor': FileEditorTool(),
+    }
     
     actions = []
     # ... existing response parsing logic ...
     
     for tool_call in assistant_msg.tool_calls:
-        tool = default_registry.get_tool(tool_call.function.name)
+        tool = tools.get(tool_call.function.name)
         if tool:
             # Validate parameters using tool
             try:

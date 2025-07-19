@@ -14,7 +14,6 @@ or modify existing ones.
 from .base import Tool, ToolError, ToolValidationError
 from .bash_tool import BashTool
 from .file_editor_tool import FileEditorTool
-from .registry import ToolRegistry
 
 __all__ = [
     'Tool',
@@ -22,5 +21,4 @@ __all__ = [
     'ToolValidationError',
     'BashTool',
     'FileEditorTool',
-    'ToolRegistry',
 ]
