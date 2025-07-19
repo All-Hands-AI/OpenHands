@@ -27,31 +27,41 @@ export function SystemPromptSelector({
   defaultValue = "system_prompt.j2",
   onChange,
 }: SystemPromptSelectorProps) {
+  const [selectedValue, setSelectedValue] = React.useState(defaultValue);
+
   const handleSelectionChange = (key: React.Key | null) => {
-    if (key && onChange) {
-      onChange(key.toString());
+    if (key) {
+      const value = key.toString();
+      setSelectedValue(value);
+      if (onChange) {
+        onChange(value);
+      }
     }
   };
 
   return (
-    <SettingsDropdownInput
-      testId="system-prompt-selector"
-      name={name}
-      label={
-        <div className="flex items-center gap-2">
-          {/* eslint-disable-next-line i18next/no-literal-string */}
-          <span>System Prompt</span>
-          {/* eslint-disable-next-line i18next/no-literal-string */}
-          <span className="text-xs bg-orange-500/20 text-orange-400 px-2 py-1 rounded-full">
-            Experimental
-          </span>
-        </div>
-      }
-      items={SYSTEM_PROMPT_OPTIONS}
-      defaultSelectedKey={defaultValue}
-      onSelectionChange={handleSelectionChange}
-      placeholder="Select system prompt variant"
-      wrapperClassName="w-full max-w-[680px]"
-    />
+    <div className="w-full max-w-[680px]">
+      <SettingsDropdownInput
+        testId="system-prompt-selector"
+        name={`${name}-display`}
+        label={
+          <div className="flex items-center gap-2">
+            {/* eslint-disable-next-line i18next/no-literal-string */}
+            <span>System Prompt</span>
+            {/* eslint-disable-next-line i18next/no-literal-string */}
+            <span className="text-xs bg-orange-500/20 text-orange-400 px-2 py-1 rounded-full">
+              Experimental
+            </span>
+          </div>
+        }
+        items={SYSTEM_PROMPT_OPTIONS}
+        defaultSelectedKey={defaultValue}
+        onSelectionChange={handleSelectionChange}
+        placeholder="Select system prompt variant"
+        wrapperClassName="w-full"
+      />
+      {/* Hidden input to ensure the value is submitted with the form */}
+      <input type="hidden" name={name} value={selectedValue} />
+    </div>
   );
 }
