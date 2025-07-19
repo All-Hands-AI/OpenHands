@@ -139,7 +139,9 @@ def get_config(
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = base_container_image
     sandbox_config.enable_auto_lint = True
-    sandbox_config.use_host_network = True
+    sandbox_config.use_host_network = False
+    sandbox_config.timeout = 1800
+
     # Add platform to the sandbox config to solve issue 4401
     sandbox_config.platform = 'linux/amd64'
     sandbox_config.remote_runtime_resource_factor = get_instance_resource_factor(
@@ -816,13 +818,14 @@ if __name__ == '__main__':
             cpu_groups_queue=cpu_groups_queue,
         )
 
+        config = get_config(
+            instances.iloc[0],  # Use the first instance to get the config
+            metadata,
+            cpu_group=None,  # We will use the cpu_groups_queue to get the cpu group later
+        )
+
         if not "all-hands" in config.sandbox.remote_runtime_api_url and not config.sandbox.use_host_network:
             # HACK: Assuming docker, fix this later.
-            config = get_config(
-                instances.iloc[0],  # Use the first instance to get the config
-                metadata,
-                cpu_group=None,  # We will use the cpu_groups_queue to get the cpu group later
-            )
 
             client = docker.from_env()
             network = client.networks.create(
