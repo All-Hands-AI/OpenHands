@@ -367,6 +367,8 @@ async def test_main_without_task(
     mock_args.llm_config = None
     mock_args.name = None
     mock_args.file = None
+    mock_args.ui = False
+    mock_args.mount_cwd = False
     mock_parse_args.return_value = mock_args
 
     # Mock config
@@ -478,6 +480,8 @@ async def test_main_with_task(
     mock_args.agent_cls = 'custom-agent'
     mock_args.llm_config = 'custom-config'
     mock_args.file = None
+    mock_args.ui = False
+    mock_args.mount_cwd = False
     mock_parse_args.return_value = mock_args
 
     # Mock config
@@ -582,6 +586,8 @@ async def test_main_with_session_name_passes_name_to_run_session(
     mock_args.llm_config = None
     mock_args.name = test_session_name  # Set the session name
     mock_args.file = None
+    mock_args.ui = False
+    mock_args.mount_cwd = False
     mock_parse_args.return_value = mock_args
 
     # Mock config
@@ -768,6 +774,8 @@ async def test_main_security_check_fails(
 
     # Mock arguments
     mock_args = MagicMock()
+    mock_args.ui = False
+    mock_args.mount_cwd = False
     mock_parse_args.return_value = mock_args
 
     # Mock config
@@ -845,6 +853,8 @@ async def test_config_loading_order(
     # Add a file property to avoid file I/O errors
     mock_args.file = None
     mock_args.log_level = 'INFO'
+    mock_args.ui = False
+    mock_args.mount_cwd = False
     mock_parse_args.return_value = mock_args
 
     # Mock read_task to return a dummy task
@@ -951,6 +961,8 @@ async def test_main_with_file_option(
     mock_args.name = None
     mock_args.file = '/path/to/test/file.txt'
     mock_args.task = None
+    mock_args.ui = False
+    mock_args.mount_cwd = False
     mock_parse_args.return_value = mock_args
 
     # Mock config
