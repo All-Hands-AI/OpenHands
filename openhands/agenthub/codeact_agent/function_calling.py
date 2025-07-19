@@ -259,7 +259,7 @@ def response_to_actions(
         content = str(assistant_msg.content) if assistant_msg.content else ""
 
         # Check if this is a model that may return empty responses while reasoning
-        model_name = getattr(response, "model", "")
+        model_name = str(getattr(response, "model", ""))
         is_reasoning_model = any(
             model in model_name for model in MODELS_WITH_EMPTY_REASONING_RESPONSES
         )
