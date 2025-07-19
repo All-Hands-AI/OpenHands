@@ -656,6 +656,70 @@ describe("Status toasts", () => {
   });
 });
 
+it("should render temperature and top_p inputs with default values", async () => {
+  renderLlmSettingsScreen();
+  await screen.findByTestId("llm-settings-screen");
+
+  const advancedSwitch = screen.getByTestId("advanced-settings-switch");
+  await userEvent.click(advancedSwitch);
+  await screen.findByTestId("llm-settings-form-advanced");
+
+  const temperatureInput = screen.getByTestId("temperature-input");
+  const topPInput = screen.getByTestId("top-p-input");
+
+  expect(temperatureInput).toBeInTheDocument();
+  expect(topPInput).toBeInTheDocument();
+  expect(temperatureInput).toHaveValue(0.15);
+  expect(topPInput).toHaveValue(0.95);
+});
+
+it("should enable save button when temperature or top_p values are changed", async () => {
+  renderLlmSettingsScreen();
+  await screen.findByTestId("llm-settings-screen");
+
+  const advancedSwitch = screen.getByTestId("advanced-settings-switch");
+  await userEvent.click(advancedSwitch);
+  await screen.findByTestId("llm-settings-form-advanced");
+
+  const saveButton = screen.getByTestId("submit-button");
+  expect(saveButton).toBeDisabled();
+
+  const temperatureInput = screen.getByTestId("temperature-input");
+  await userEvent.clear(temperatureInput);
+  await userEvent.type(temperatureInput, "0.5");
+
+  expect(saveButton).toBeEnabled();
+});
+
+it("should submit temperature and top_p values in advanced form", async () => {
+  const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+
+  renderLlmSettingsScreen();
+  await screen.findByTestId("llm-settings-screen");
+
+  const advancedSwitch = screen.getByTestId("advanced-settings-switch");
+  await userEvent.click(advancedSwitch);
+  await screen.findByTestId("llm-settings-form-advanced");
+
+  const temperatureInput = screen.getByTestId("temperature-input");
+  const topPInput = screen.getByTestId("top-p-input");
+
+  await userEvent.clear(temperatureInput);
+  await userEvent.type(temperatureInput, "0.7");
+  await userEvent.clear(topPInput);
+  await userEvent.type(topPInput, "0.8");
+
+  const submit = screen.getByTestId("submit-button");
+  await userEvent.click(submit);
+
+  expect(saveSettingsSpy).toHaveBeenCalledWith(
+    expect.objectContaining({
+      temperature: 0.7,
+      top_p: 0.8,
+    }),
+  );
+});
+
 describe("SaaS mode", () => {
   it("should not render the runtime settings input in oss mode", async () => {
     const getConfigSpy = vi.spyOn(OpenHands, "getConfig");

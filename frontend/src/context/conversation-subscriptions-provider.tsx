@@ -226,17 +226,15 @@ export function ConversationSubscriptionsProvider({
         });
 
         socket.on("connect_error", (error) => {
-          console.warn(
-            `Socket for conversation ${conversationId} CONNECTION ERROR:`,
-            error,
+          throw new Error(
+            `Unable to connect: ${error instanceof Error ? error.message : String(error)}`,
           );
         });
 
         socket.on("disconnect", (reason) => {
-          console.warn(
-            `Socket for conversation ${conversationId} DISCONNECTED! Reason:`,
-            reason,
-          );
+          throw new Error(`Disconnected from socket: ${String(reason)}`);
+          // TODO: Replace with proper disconnect handling/logging mechanism
+          // `Socket for conversation ${conversationId} DISCONNECTED! Reason:`, reason
           setConversationSockets((prev) => {
             // Make sure the conversation still exists in our state
             if (!prev[conversationId]) return prev;

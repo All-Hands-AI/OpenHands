@@ -45,6 +45,8 @@ class Settings(BaseModel):
     max_budget_per_task: float | None = None
     email: str | None = None
     email_verified: bool | None = None
+    temperature: float | None = None
+    top_p: float | None = None
 
     model_config = ConfigDict(
         validate_assignment=True,
@@ -135,5 +137,7 @@ class Settings(BaseModel):
             mcp_config=mcp_config,
             search_api_key=app_config.search_api_key,
             max_budget_per_task=app_config.max_budget_per_task,
+            temperature=llm_config.temperature,
+            top_p=llm_config.top_p,
         )
         return settings

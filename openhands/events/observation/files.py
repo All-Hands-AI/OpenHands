@@ -1,7 +1,9 @@
 """File-related observation classes for tracking file operations."""
 
+import os
 from dataclasses import dataclass
 from difflib import SequenceMatcher
+from typing import Any
 
 from openhands.core.schema import ObservationType
 from openhands.events.event import FileEditSource, FileReadSource
@@ -68,6 +70,143 @@ class FileEditObservation(Observation):
     _diff_cache: str | None = (
         None  # Cache for the diff visualization, used in LLM-based editing mode
     )
+
+    def _get_language_from_extension(self) -> str:
+        """Determine programming language from file extension."""
+        ext = os.path.splitext(self.path)[1].lower()
+        language_map = {
+            '.py': 'python',
+            '.js': 'javascript',
+            '.ts': 'typescript',
+            '.jsx': 'jsx',
+            '.tsx': 'tsx',
+            '.html': 'html',
+            '.css': 'css',
+            '.json': 'json',
+            '.md': 'markdown',
+            '.sh': 'shell',
+            '.yml': 'yaml',
+            '.yaml': 'yaml',
+        }
+        return language_map.get(ext, 'plaintext')
+
+    def get_edit_summary(self) -> dict[str, Any]:
+        """Generate a summary of the file edits.
+        This method provides a structured summary of the changes made to the file,
+        including information about whether it's a new file, and details about
+        the modifications if it's an existing file.
+        Returns:
+            A dictionary containing the edit summary with keys:
+                - 'file_path': Path to the edited file
+                - 'is_new_file': Boolean indicating if this is a new file
+                - 'type': Type of edit ('new_file', 'modification', or 'empty_edit')
+                - 'total_changes': Number of edit groups (for existing files)
+                - 'has_syntax_highlighting': Whether syntax highlighting is available
+                - 'language': Detected programming language based on file extension
+                - 'edit_groups': List of edit groups showing changes
+                - 'changes': List of change descriptions (for existing files)
+                - 'num_lines_added': Number of lines added
+                - 'num_lines_removed': Number of lines removed
+        """
+        # Initialize the summary with common fields
+        summary = {
+            'file_path': self.path,
+            'is_new_file': not self.prev_exist,
+            'type': 'new_file' if not self.prev_exist else 'modification',
+        }
+
+        # Handle new files
+        if not self.prev_exist:
+            line_count = len(self.new_content.split('\n')) if self.new_content else 0
+            summary['num_lines'] = line_count
+            return summary
+
+        # Handle empty or None content
+        if not self.old_content or not self.new_content:
+            summary['type'] = 'empty_edit'
+            summary['changes'] = []
+            summary['num_lines_added'] = 0
+            summary['num_lines_removed'] = 0
+            return summary
+
+        # Get edit groups for analysis
+        edit_groups = self.get_edit_groups(n_context_lines=3)
+
+        # Add UI-specific fields
+        summary.update(
+            {
+                'total_changes': len(edit_groups),
+                'has_syntax_highlighting': bool(os.path.splitext(self.path)[1]),
+                'language': self._get_language_from_extension(),
+                'edit_groups': edit_groups,
+            }
+        )
+
+        # Calculate changes for detailed analysis
+        changes = []
+        lines_added = 0
+        lines_removed = 0
+
+        for group in edit_groups:
+            # Count lines added and removed in this group
+            group_lines_added = len(
+                [line for line in group['after_edits'] if line.startswith('+')]
+            )
+            group_lines_removed = len(
+                [line for line in group['before_edits'] if line.startswith('-')]
+            )
+
+            lines_added += group_lines_added
+            lines_removed += group_lines_removed
+
+            # Create a summary of changes in this group
+            if group_lines_removed > 0 and group_lines_added > 0:
+                change_desc = f'Replaced {group_lines_removed} lines with {group_lines_added} new lines'
+            elif group_lines_removed > 0:
+                change_desc = f'Removed {group_lines_removed} lines'
+            elif group_lines_added > 0:
+                change_desc = f'Added {group_lines_added} new lines'
+            else:
+                continue  # Skip if no changes
+
+            # Add first and last line samples if available
+            before_samples = []
+            after_samples = []
+
+            # Get first and last modified lines from before edits (skip context lines)
+            before_lines = [
+                line for line in group['before_edits'] if line.startswith('-')
+            ]
+            after_lines = [
+                line for line in group['after_edits'] if line.startswith('+')
+            ]
+
+            if before_lines:
+                first_before = before_lines[0].split('|', 1)[-1].strip()
+                last_before = before_lines[-1].split('|', 1)[-1].strip()
+                before_samples = [first_before, last_before]
+
+            if after_lines:
+                first_after = after_lines[0].split('|', 1)[-1].strip()
+                last_after = after_lines[-1].split('|', 1)[-1].strip()
+                after_samples = [first_after, last_after]
+
+            # Add change detail
+            changes.append(
+                {
+                    'description': change_desc,
+                    'lines_removed': group_lines_removed,
+                    'lines_added': group_lines_added,
+                    'before_samples': before_samples,
+                    'after_samples': after_samples,
+                }
+            )
+
+        summary['changes'] = changes
+        summary['num_lines_added'] = lines_added
+        summary['num_lines_removed'] = lines_removed
+
+        return summary
 
     @property
     def message(self) -> str:

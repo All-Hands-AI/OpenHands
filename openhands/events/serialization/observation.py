@@ -1,5 +1,5 @@
 import copy
-from typing import Any
+from typing import Any, cast
 
 from openhands.events.event import RecallType
 from openhands.events.observation.agent import (
@@ -136,3 +136,33 @@ def observation_from_dict(observation: dict) -> Observation:
     obs = observation_class(content=content, **extras)
     assert isinstance(obs, Observation)
     return obs
+
+
+def observation_to_dict(observation: Observation) -> dict[str, Any]:
+    """Convert an observation to a dictionary representation.
+    This function serializes the observation into a format suitable for storage
+    or transmission. It includes all relevant fields from the observation object,
+    including special handling for FileEditObservation instances.
+    """
+    result: dict[str, Any] = {
+        'observation': getattr(observation, 'observation', None) or '',
+        'content': observation.content,
+        'extras': {},
+    }
+
+    # Add all attributes that are not None and not in the excluded list
+    excluded_keys = {'observation', 'content'}
+    for key, value in observation.__dict__.items():
+        if key not in excluded_keys and value is not None:
+            result['extras'][key] = value
+
+    # Special handling for FileEditObservation instances
+    if isinstance(observation, FileEditObservation):
+        edit_summary = observation.get_edit_summary()
+        language = observation._get_language_from_extension()
+
+        extras_dict = cast(dict[str, Any], result.get('extras', {}))
+        extras_dict['edit_summary'] = edit_summary
+        extras_dict['language'] = language
+
+    return result

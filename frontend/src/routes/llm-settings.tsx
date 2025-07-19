@@ -48,6 +48,8 @@ function LlmSettingsScreen() {
     confirmationMode: false,
     enableDefaultCondenser: false,
     securityAnalyzer: false,
+    temperature: false,
+    topP: false,
   });
 
   // Track the currently selected model to show help text
@@ -98,6 +100,8 @@ function LlmSettingsScreen() {
       confirmationMode: false,
       enableDefaultCondenser: false,
       securityAnalyzer: false,
+      temperature: false,
+      topP: false,
     });
   };
 
@@ -129,6 +133,8 @@ function LlmSettingsScreen() {
         CONFIRMATION_MODE: DEFAULT_SETTINGS.CONFIRMATION_MODE,
         SECURITY_ANALYZER: DEFAULT_SETTINGS.SECURITY_ANALYZER,
         ENABLE_DEFAULT_CONDENSER: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
+        TEMPERATURE: DEFAULT_SETTINGS.TEMPERATURE,
+        TOP_P: DEFAULT_SETTINGS.TOP_P,
       },
       {
         onSuccess: handleSuccessfulMutation,
@@ -150,6 +156,11 @@ function LlmSettingsScreen() {
     const securityAnalyzer = formData
       .get("security-analyzer-input")
       ?.toString();
+    const temperatureStr = formData.get("temperature-input")?.toString();
+    const topPStr = formData.get("top-p-input")?.toString();
+
+    const temperature = temperatureStr ? parseFloat(temperatureStr) : undefined;
+    const topP = topPStr ? parseFloat(topPStr) : undefined;
 
     saveSettings(
       {
@@ -161,6 +172,8 @@ function LlmSettingsScreen() {
         CONFIRMATION_MODE: confirmationMode,
         ENABLE_DEFAULT_CONDENSER: enableDefaultCondenser,
         SECURITY_ANALYZER: confirmationMode ? securityAnalyzer : undefined,
+        TEMPERATURE: temperature,
+        TOP_P: topP,
       },
       {
         onSuccess: handleSuccessfulMutation,
@@ -186,6 +199,8 @@ function LlmSettingsScreen() {
       confirmationMode: false,
       enableDefaultCondenser: false,
       securityAnalyzer: false,
+      temperature: false,
+      topP: false,
     });
   };
 
@@ -251,6 +266,27 @@ function LlmSettingsScreen() {
     setDirtyInputs((prev) => ({
       ...prev,
       confirmationMode: confirmationModeIsDirty,
+    }));
+  };
+
+  const handleTemperatureIsDirty = (temperature: string) => {
+    const temperatureValue = parseFloat(temperature);
+    const temperatureIsDirty =
+      !Number.isNaN(temperatureValue) &&
+      temperatureValue !== (settings?.TEMPERATURE ?? 0.15);
+    setDirtyInputs((prev) => ({
+      ...prev,
+      temperature: temperatureIsDirty,
+    }));
+  };
+
+  const handleTopPIsDirty = (topP: string) => {
+    const topPValue = parseFloat(topP);
+    const topPIsDirty =
+      !Number.isNaN(topPValue) && topPValue !== (settings?.TOP_P ?? 0.95);
+    setDirtyInputs((prev) => ({
+      ...prev,
+      topP: topPIsDirty,
     }));
   };
 
@@ -519,6 +555,35 @@ function LlmSettingsScreen() {
                   wrapperClassName="w-full max-w-[680px]"
                 />
               )}
+              <SettingsInput
+                testId="temperature-input"
+                name="temperature-input"
+                label="Temperature"
+                type="number"
+                className="w-full max-w-[680px]"
+                defaultValue={(settings.TEMPERATURE ?? 0.15).toString()}
+                placeholder="0.15"
+                min="0"
+                max="1"
+                step="0.01"
+                onChange={handleTemperatureIsDirty}
+                description="Controls randomness: 0 is focused, 1 is creative"
+              />
+
+              <SettingsInput
+                testId="top-p-input"
+                name="top-p-input"
+                label="Top P"
+                type="number"
+                className="w-full max-w-[680px]"
+                defaultValue={(settings.TOP_P ?? 0.95).toString()}
+                placeholder="0.95"
+                min="0"
+                max="1"
+                step="0.01"
+                onChange={handleTopPIsDirty}
+                description="Controls diversity via nucleus sampling"
+              />
             </div>
           )}
         </div>

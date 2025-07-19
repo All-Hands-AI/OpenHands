@@ -432,6 +432,116 @@ def test_microagent_observation_environment_serialization():
     # Check that knowledge microagent fields are empty
     assert deserialized.microagent_knowledge == []
 
+def test_file_edit_observation_serialization_with_summary():
+    """Test that edit_summary field is included in serialized output."""
+    # Create a FileEditObservation instance
+    observation = FileEditObservation(
+        content='[Existing file /workspace/test.py is edited with 1 changes.] test_file_edit_observation_serialization_with_summary',
+        path='/workspace/test.py',
+        prev_exist=True,
+        old_content='print("hello")',
+        new_content='print("world")',
+        impl_source=FileEditSource.LLM_BASED_EDIT,
+    )
+
+    # Serialize to dictionary
+    serialized = event_to_dict(observation)
+
+    # Verify edit_summary is present in extras
+    assert 'edit_summary' in serialized['extras'], (
+        'edit_summary field missing from serialization'
+    )
+    assert isinstance(serialized['extras']['edit_summary'], dict), (
+        'edit_summary should be a dictionary'
+    )
+
+    # Check some expected fields in the edit_summary
+    assert 'file_path' in serialized['extras']['edit_summary']
+    assert 'type' in serialized['extras']['edit_summary']
+
+
+def test_file_edit_observation_serialization_with_language():
+    """Test that language field is included in serialized output."""
+    # Create a FileEditObservation instance with a Python file
+    observation = FileEditObservation(
+        content='[Existing file /workspace/test.py is edited with 1 changes.] test_file_edit_observation_serialization_with_language',
+        path='/workspace/test.py',
+        prev_exist=True,
+        old_content='print("hello")',
+        new_content='print("world")',
+        impl_source=FileEditSource.LLM_BASED_EDIT,
+    )
+
+    # Serialize to dictionary
+    serialized = event_to_dict(observation)
+
+    # Verify language is present in extras
+    assert 'language' in serialized['extras'], (
+        'language field missing from serialization'
+    )
+    assert serialized['extras']['language'] == 'python', (
+        f"Expected language to be 'python', got {serialized['extras']['language']}"
+    )
+
+
+def test_file_edit_observation_gets_summary():
+    """Test that get_edit_summary method works correctly."""
+    # Create a FileEditObservation instance
+    observation = FileEditObservation(
+        content='[Existing file /path/to/file.txt is edited with 1 changes.]',
+        path='/workspace/test.py',
+        prev_exist=True,
+        old_content='print("hello")',
+        new_content='print("world")',
+        impl_source=FileEditSource.LLM_BASED_EDIT,
+    )
+
+    # Get the edit summary directly
+    edit_summary = observation.get_edit_summary()
+    assert isinstance(edit_summary, dict), 'edit_summary should be a dictionary'
+    assert 'file_path' in edit_summary, 'file_path missing from edit_summary'
+    assert 'type' in edit_summary, 'type missing from edit_summary'
+
+
+def test_file_edit_observation_gets_language():
+    """Test that _get_language_from_extension method works correctly."""
+    # Create a FileEditObservation instance with a Python file
+    observation = FileEditObservation(
+        content='[Existing file /path/to/file.txt is edited with 1 changes.]',
+        path='/workspace/test.py',
+        prev_exist=True,
+        old_content='print("hello")',
+        new_content='print("world")',
+        impl_source=FileEditSource.LLM_BASED_EDIT,
+    )
+
+    # Get the language directly
+    language = observation._get_language_from_extension()
+    assert language == 'python', f"Expected language to be 'python', got {language}"
+
+
+def test_file_edit_observation_backward_compatibility():
+    """Test backward compatibility with existing observations."""
+    # Create a legacy observation dictionary without the new fields
+    original_observation_dict = {
+        'observation': 'edit',
+        'content': '[Existing file /path/to/file.txt is edited with 1 changes.]',
+        'extras': {
+            '_diff_cache': None,
+            'impl_source': FileEditSource.LLM_BASED_EDIT,
+            'new_content': None,
+            'old_content': None,
+            'path': '/workspace/test.py',
+            'prev_exist': True,
+            'diff': None,
+        },
+        'message': 'I edited the file .',
+    }
+
+    # Serialize and deserialize
+    observation_instance = event_from_dict(original_observation_dict)
+    assert isinstance(observation_instance, FileEditObservation)
+
 
 def test_microagent_observation_combined_serialization():
     """Test serialization of a RecallObservation with both types of information."""

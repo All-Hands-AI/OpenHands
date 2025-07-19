@@ -91,6 +91,19 @@ export interface EditObservation extends OpenHandsObservationEvent<"edit"> {
   source: "agent";
   extras: {
     path: string;
+    old_content?: string;
+    new_content?: string;
+    edit_summary?: {
+      type: "modification" | "new_file" | "empty_edit";
+      total_changes: number;
+      has_syntax_highlighting: boolean;
+      language: string;
+      edit_groups: Array<{
+        before_edits: string[];
+        after_edits: string[];
+      }>;
+    };
+    language?: string;
     diff: string;
     impl_source: string;
   };

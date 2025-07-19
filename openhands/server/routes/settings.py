@@ -121,6 +121,10 @@ async def store_llm_settings(
             settings.llm_model = existing_settings.llm_model
         if settings.llm_base_url is None:
             settings.llm_base_url = existing_settings.llm_base_url
+        if settings.temperature is None:
+            settings.temperature = existing_settings.temperature
+        if settings.top_p is None:
+            settings.top_p = existing_settings.top_p
         # Keep existing search API key if not provided
         if settings.search_api_key is None:
             settings.search_api_key = existing_settings.search_api_key
