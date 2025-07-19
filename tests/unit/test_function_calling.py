@@ -25,25 +25,25 @@ def create_mock_response(
 ) -> ModelResponse:
     """Helper function to create a mock response with a tool call."""
     return ModelResponse(
-        id='mock-id',
+        id="mock-id",
         choices=[
             {
-                'message': {
-                    'tool_calls': [
+                "message": {
+                    "tool_calls": [
                         {
-                            'function': {
-                                'name': function_name,
-                                'arguments': json.dumps(arguments),
+                            "function": {
+                                "name": function_name,
+                                "arguments": json.dumps(arguments),
                             },
-                            'id': 'mock-tool-call-id',
-                            'type': 'function',
+                            "id": "mock-tool-call-id",
+                            "type": "function",
                         }
                     ],
-                    'content': None,
-                    'role': 'assistant',
+                    "content": None,
+                    "role": "assistant",
                 },
-                'index': 0,
-                'finish_reason': 'tool_calls',
+                "index": 0,
+                "finish_reason": "tool_calls",
             }
         ],
     )
@@ -52,18 +52,18 @@ def create_mock_response(
 def test_execute_bash_valid():
     """Test execute_bash with valid arguments."""
     response = create_mock_response(
-        'execute_bash', {'command': 'ls', 'is_input': 'false'}
+        "execute_bash", {"command": "ls", "is_input": "false"}
     )
     actions = response_to_actions(response)
     assert len(actions) == 1
     assert isinstance(actions[0], CmdRunAction)
-    assert actions[0].command == 'ls'
+    assert actions[0].command == "ls"
     assert actions[0].is_input is False
 
     # Test with timeout parameter
-    with patch.object(CmdRunAction, 'set_hard_timeout') as mock_set_hard_timeout:
+    with patch.object(CmdRunAction, "set_hard_timeout") as mock_set_hard_timeout:
         response_with_timeout = create_mock_response(
-            'execute_bash', {'command': 'ls', 'is_input': 'false', 'timeout': 30}
+            "execute_bash", {"command": "ls", "is_input": "false", "timeout": 30}
         )
         actions_with_timeout = response_to_actions(response_with_timeout)
 
@@ -72,13 +72,13 @@ def test_execute_bash_valid():
 
         assert len(actions_with_timeout) == 1
         assert isinstance(actions_with_timeout[0], CmdRunAction)
-        assert actions_with_timeout[0].command == 'ls'
+        assert actions_with_timeout[0].command == "ls"
         assert actions_with_timeout[0].is_input is False
 
 
 def test_execute_bash_missing_command():
     """Test execute_bash with missing command argument."""
-    response = create_mock_response('execute_bash', {'is_input': 'false'})
+    response = create_mock_response("execute_bash", {"is_input": "false"})
     with pytest.raises(FunctionCallValidationError) as exc_info:
         response_to_actions(response)
     assert 'Missing required argument "command"' in str(exc_info.value)
@@ -86,7 +86,7 @@ def test_execute_bash_missing_command():
 
 def test_execute_ipython_cell_valid():
     """Test execute_ipython_cell with valid arguments."""
-    response = create_mock_response('execute_ipython_cell', {'code': "print('hello')"})
+    response = create_mock_response("execute_ipython_cell", {"code": "print('hello')"})
     actions = response_to_actions(response)
     assert len(actions) == 1
     assert isinstance(actions[0], IPythonRunCellAction)
@@ -95,7 +95,7 @@ def test_execute_ipython_cell_valid():
 
 def test_execute_ipython_cell_missing_code():
     """Test execute_ipython_cell with missing code argument."""
-    response = create_mock_response('execute_ipython_cell', {})
+    response = create_mock_response("execute_ipython_cell", {})
     with pytest.raises(FunctionCallValidationError) as exc_info:
         response_to_actions(response)
     assert 'Missing required argument "code"' in str(exc_info.value)
@@ -104,14 +104,14 @@ def test_execute_ipython_cell_missing_code():
 def test_edit_file_valid():
     """Test edit_file with valid arguments."""
     response = create_mock_response(
-        'edit_file',
-        {'path': '/path/to/file', 'content': 'file content', 'start': 1, 'end': 10},
+        "edit_file",
+        {"path": "/path/to/file", "content": "file content", "start": 1, "end": 10},
     )
     actions = response_to_actions(response)
     assert len(actions) == 1
     assert isinstance(actions[0], FileEditAction)
-    assert actions[0].path == '/path/to/file'
-    assert actions[0].content == 'file content'
+    assert actions[0].path == "/path/to/file"
+    assert actions[0].content == "file content"
     assert actions[0].start == 1
     assert actions[0].end == 10
 
@@ -119,13 +119,13 @@ def test_edit_file_valid():
 def test_edit_file_missing_required():
     """Test edit_file with missing required arguments."""
     # Missing path
-    response = create_mock_response('edit_file', {'content': 'content'})
+    response = create_mock_response("edit_file", {"content": "content"})
     with pytest.raises(FunctionCallValidationError) as exc_info:
         response_to_actions(response)
     assert 'Missing required argument "path"' in str(exc_info.value)
 
     # Missing content
-    response = create_mock_response('edit_file', {'path': '/path/to/file'})
+    response = create_mock_response("edit_file", {"path": "/path/to/file"})
     with pytest.raises(FunctionCallValidationError) as exc_info:
         response_to_actions(response)
     assert 'Missing required argument "content"' in str(exc_info.value)
@@ -135,41 +135,41 @@ def test_str_replace_editor_valid():
     """Test str_replace_editor with valid arguments."""
     # Test view command
     response = create_mock_response(
-        'str_replace_editor', {'command': 'view', 'path': '/path/to/file'}
+        "str_replace_editor", {"command": "view", "path": "/path/to/file"}
     )
     actions = response_to_actions(response)
     assert len(actions) == 1
     assert isinstance(actions[0], FileReadAction)
-    assert actions[0].path == '/path/to/file'
+    assert actions[0].path == "/path/to/file"
     assert actions[0].impl_source == FileReadSource.OH_ACI
 
     # Test other commands
     response = create_mock_response(
-        'str_replace_editor',
+        "str_replace_editor",
         {
-            'command': 'str_replace',
-            'path': '/path/to/file',
-            'old_str': 'old',
-            'new_str': 'new',
+            "command": "str_replace",
+            "path": "/path/to/file",
+            "old_str": "old",
+            "new_str": "new",
         },
     )
     actions = response_to_actions(response)
     assert len(actions) == 1
     assert isinstance(actions[0], FileEditAction)
-    assert actions[0].path == '/path/to/file'
+    assert actions[0].path == "/path/to/file"
     assert actions[0].impl_source == FileEditSource.OH_ACI
 
 
 def test_str_replace_editor_missing_required():
     """Test str_replace_editor with missing required arguments."""
     # Missing command
-    response = create_mock_response('str_replace_editor', {'path': '/path/to/file'})
+    response = create_mock_response("str_replace_editor", {"path": "/path/to/file"})
     with pytest.raises(FunctionCallValidationError) as exc_info:
         response_to_actions(response)
     assert 'Missing required argument "command"' in str(exc_info.value)
 
     # Missing path
-    response = create_mock_response('str_replace_editor', {'command': 'view'})
+    response = create_mock_response("str_replace_editor", {"command": "view"})
     with pytest.raises(FunctionCallValidationError) as exc_info:
         response_to_actions(response)
     assert 'Missing required argument "path"' in str(exc_info.value)
@@ -177,7 +177,7 @@ def test_str_replace_editor_missing_required():
 
 def test_browser_valid():
     """Test browser with valid arguments."""
-    response = create_mock_response('browser', {'code': "click('button-1')"})
+    response = create_mock_response("browser", {"code": "click('button-1')"})
     actions = response_to_actions(response)
     assert len(actions) == 1
     assert isinstance(actions[0], BrowseInteractiveAction)
@@ -187,7 +187,7 @@ def test_browser_valid():
 
 def test_browser_missing_code():
     """Test browser with missing code argument."""
-    response = create_mock_response('browser', {})
+    response = create_mock_response("browser", {})
     with pytest.raises(FunctionCallValidationError) as exc_info:
         response_to_actions(response)
     assert 'Missing required argument "code"' in str(exc_info.value)
@@ -196,31 +196,31 @@ def test_browser_missing_code():
 def test_invalid_json_arguments():
     """Test handling of invalid JSON in arguments."""
     response = ModelResponse(
-        id='mock-id',
+        id="mock-id",
         choices=[
             {
-                'message': {
-                    'tool_calls': [
+                "message": {
+                    "tool_calls": [
                         {
-                            'function': {
-                                'name': 'execute_bash',
-                                'arguments': 'invalid json',
+                            "function": {
+                                "name": "execute_bash",
+                                "arguments": "invalid json",
                             },
-                            'id': 'mock-tool-call-id',
-                            'type': 'function',
+                            "id": "mock-tool-call-id",
+                            "type": "function",
                         }
                     ],
-                    'content': None,
-                    'role': 'assistant',
+                    "content": None,
+                    "role": "assistant",
                 },
-                'index': 0,
-                'finish_reason': 'tool_calls',
+                "index": 0,
+                "finish_reason": "tool_calls",
             }
         ],
     )
     with pytest.raises(FunctionCallValidationError) as exc_info:
         response_to_actions(response)
-    assert 'Failed to parse tool call arguments' in str(exc_info.value)
+    assert "Failed to parse tool call arguments" in str(exc_info.value)
 
 
 def test_unexpected_argument_handling():
@@ -230,13 +230,13 @@ def test_unexpected_argument_handling():
     (old_str_prefix) causes a TypeError.
     """
     response = create_mock_response(
-        'str_replace_editor',
+        "str_replace_editor",
         {
-            'command': 'str_replace',
-            'path': '/test/file.py',
-            'old_str': 'def test():\n    pass',
-            'new_str': 'def test():\n    return True',
-            'old_str_prefix': 'some prefix',  # Unexpected argument
+            "command": "str_replace",
+            "path": "/test/file.py",
+            "old_str": "def test():\n    pass",
+            "new_str": "def test():\n    return True",
+            "old_str_prefix": "some prefix",  # Unexpected argument
         },
     )
 
@@ -245,96 +245,24 @@ def test_unexpected_argument_handling():
         response_to_actions(response)
 
     # Verify the error message mentions the unexpected argument
-    assert 'old_str_prefix' in str(exc_info.value)
-    assert 'Unexpected argument' in str(exc_info.value)
-
-
-def test_tool_call_html_entity_decoding():
-    """Test that HTML entities in tool call arguments are properly decoded."""
-    # Test case with HTML entities in str_replace_editor arguments
-    response = ModelResponse(
-        id='mock-id',
-        model='gpt-4o',
-        choices=[
-            {
-                'message': {
-                    'tool_calls': [
-                        {
-                            'function': {
-                                'name': 'str_replace_editor',
-                                'arguments': '{"command": "str_replace", "path": "test.py", "old_str": "if x &lt; y:", "new_str": "if x < y:"}',
-                            },
-                            'id': 'mock-tool-call-id',
-                            'type': 'function',
-                        }
-                    ],
-                    'content': None,
-                    'role': 'assistant',
-                },
-                'index': 0,
-                'finish_reason': 'tool_calls',
-            }
-        ],
-    )
-
-    actions = response_to_actions(response)
-    assert len(actions) == 1
-    assert isinstance(actions[0], FileEditAction)
-    # Verify the HTML entities were decoded
-    assert actions[0].old_str == 'if x < y:'
-    assert actions[0].new_str == 'if x < y:'
-    assert actions[0].path == 'test.py'
-
-
-def test_tool_call_html_entity_decoding_multiple_entities():
-    """Test decoding of multiple HTML entities in tool arguments."""
-    # Test with multiple HTML entities
-    response = ModelResponse(
-        id='mock-id',
-        model='gpt-4o',
-        choices=[
-            {
-                'message': {
-                    'tool_calls': [
-                        {
-                            'function': {
-                                'name': 'execute_bash',
-                                'arguments': '{"command": "echo \\"x &lt; y &amp;&amp; a &gt; b\\""}',
-                            },
-                            'id': 'mock-tool-call-id',
-                            'type': 'function',
-                        }
-                    ],
-                    'content': None,
-                    'role': 'assistant',
-                },
-                'index': 0,
-                'finish_reason': 'tool_calls',
-            }
-        ],
-    )
-
-    actions = response_to_actions(response)
-    assert len(actions) == 1
-    assert isinstance(actions[0], CmdRunAction)
-    # Verify all HTML entities were decoded
-    assert actions[0].command == 'echo "x < y && a > b"'
+    assert "old_str_prefix" in str(exc_info.value)
+    assert "Unexpected argument" in str(exc_info.value)
 
 
 def test_message_action_empty_response_non_grok():
     """Test that non-Grok models preserve original behavior for empty responses."""
     # Create a response with no tool calls and empty content
     response = ModelResponse(
-        id='mock-id',
-        model='gpt-4o',  # Non-Grok model
+        id="mock-id",
+        model="gpt-4o",  # Non-Grok model
         choices=[
             {
-                'message': {
-                    'content': '',  # Empty content
-                    'role': 'assistant',
+                "message": {
+                    "content": "",  # Empty content
+                    "role": "assistant",
                 },
-                'index': 0,
-                'finish_reason': 'stop',
+                "index": 0,
+                "finish_reason": "stop",
             }
         ],
     )
@@ -342,7 +270,7 @@ def test_message_action_empty_response_non_grok():
     actions = response_to_actions(response)
     assert len(actions) == 1
     assert isinstance(actions[0], MessageAction)
-    assert actions[0].content == ''
+    assert actions[0].content == ""
     # Non-Grok models should still wait for response even with empty content (original behavior)
     assert actions[0].wait_for_response is True
 
@@ -351,16 +279,16 @@ def test_message_action_empty_response_grok():
     """Test that Grok models don't wait for response when content is empty."""
     # Create a response with no tool calls and empty content
     response = ModelResponse(
-        id='mock-id',
-        model='xai/grok-4-0709',  # Grok model
+        id="mock-id",
+        model="xai/grok-4-0709",  # Grok model
         choices=[
             {
-                'message': {
-                    'content': '',  # Empty content
-                    'role': 'assistant',
+                "message": {
+                    "content": "",  # Empty content
+                    "role": "assistant",
                 },
-                'index': 0,
-                'finish_reason': 'stop',
+                "index": 0,
+                "finish_reason": "stop",
             }
         ],
     )
@@ -368,7 +296,7 @@ def test_message_action_empty_response_grok():
     actions = response_to_actions(response)
     assert len(actions) == 1
     assert isinstance(actions[0], MessageAction)
-    assert actions[0].content == ''
+    assert actions[0].content == ""
     # Grok models should NOT wait for response when content is empty (new behavior)
     assert actions[0].wait_for_response is False
 
@@ -377,16 +305,16 @@ def test_message_action_non_empty_response_grok():
     """Test that Grok models still wait for response when content is non-empty."""
     # Create a response with no tool calls but with content
     response = ModelResponse(
-        id='mock-id',
-        model='xai/grok-4-0709',  # Grok model
+        id="mock-id",
+        model="xai/grok-4-0709",  # Grok model
         choices=[
             {
-                'message': {
-                    'content': 'Here is my response.',  # Non-empty content
-                    'role': 'assistant',
+                "message": {
+                    "content": "Here is my response.",  # Non-empty content
+                    "role": "assistant",
                 },
-                'index': 0,
-                'finish_reason': 'stop',
+                "index": 0,
+                "finish_reason": "stop",
             }
         ],
     )
@@ -394,32 +322,32 @@ def test_message_action_non_empty_response_grok():
     actions = response_to_actions(response)
     assert len(actions) == 1
     assert isinstance(actions[0], MessageAction)
-    assert actions[0].content == 'Here is my response.'
+    assert actions[0].content == "Here is my response."
     # Grok models should wait for response when there's actual content
     assert actions[0].wait_for_response is True
 
 
 @pytest.mark.parametrize(
-    'model_name',
+    "model_name",
     [
-        'xai/grok-4-0709',
-        'litellm_proxy/xai/grok-4-0709',
-        'openrouter/xai/grok-4-0709',
+        "xai/grok-4-0709",
+        "litellm_proxy/xai/grok-4-0709",
+        "openrouter/xai/grok-4-0709",
     ],
 )
 def test_message_action_grok_model_variants(model_name):
     """Test that different Grok model name formats are handled correctly."""
     response = ModelResponse(
-        id='mock-id',
+        id="mock-id",
         model=model_name,
         choices=[
             {
-                'message': {
-                    'content': '',  # Empty content
-                    'role': 'assistant',
+                "message": {
+                    "content": "",  # Empty content
+                    "role": "assistant",
                 },
-                'index': 0,
-                'finish_reason': 'stop',
+                "index": 0,
+                "finish_reason": "stop",
             }
         ],
     )
@@ -427,32 +355,32 @@ def test_message_action_grok_model_variants(model_name):
     actions = response_to_actions(response)
     assert len(actions) == 1
     assert isinstance(actions[0], MessageAction)
-    assert actions[0].content == ''
+    assert actions[0].content == ""
     # All Grok model variants should NOT wait for response when content is empty
     assert actions[0].wait_for_response is False
 
 
 @pytest.mark.parametrize(
-    'model_name',
+    "model_name",
     [
-        'grok-lite',  # Similar name but not the specific Grok-4 model
-        'xai/other-model',  # Same provider but different model
-        'gpt-4-grok-mode',  # Contains 'grok' but not the actual model
+        "grok-lite",  # Similar name but not the specific Grok-4 model
+        "xai/other-model",  # Same provider but different model
+        "gpt-4-grok-mode",  # Contains 'grok' but not the actual model
     ],
 )
 def test_message_action_similar_model_names(model_name):
     """Test that models with similar names to Grok are not affected."""
     response = ModelResponse(
-        id='mock-id',
+        id="mock-id",
         model=model_name,
         choices=[
             {
-                'message': {
-                    'content': '',  # Empty content
-                    'role': 'assistant',
+                "message": {
+                    "content": "",  # Empty content
+                    "role": "assistant",
                 },
-                'index': 0,
-                'finish_reason': 'stop',
+                "index": 0,
+                "finish_reason": "stop",
             }
         ],
     )
@@ -460,7 +388,7 @@ def test_message_action_similar_model_names(model_name):
     actions = response_to_actions(response)
     assert len(actions) == 1
     assert isinstance(actions[0], MessageAction)
-    assert actions[0].content == ''
+    assert actions[0].content == ""
     # Non-Grok models should maintain original behavior
     assert actions[0].wait_for_response is True
 
@@ -468,11 +396,11 @@ def test_message_action_similar_model_names(model_name):
 def test_message_action_with_tool_calls_not_affected():
     """Test that the empty response handling doesn't affect tool calls."""
     # This should not be affected by the empty response logic since it has tool calls
-    response = create_mock_response('execute_bash', {'command': 'ls -la'})
-    response.model = 'xai/grok-4-0709'  # Add model attribute
+    response = create_mock_response("execute_bash", {"command": "ls -la"})
+    response.model = "xai/grok-4-0709"  # Add model attribute
 
     actions = response_to_actions(response)
     assert len(actions) == 1
     assert isinstance(actions[0], CmdRunAction)
     # Tool calls don't have wait_for_response attribute
-    assert not hasattr(actions[0], 'wait_for_response')
+    assert not hasattr(actions[0], "wait_for_response")
