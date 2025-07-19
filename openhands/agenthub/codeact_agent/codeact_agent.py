@@ -16,6 +16,12 @@ from openhands.agenthub.codeact_agent.tools.condensation_request import (
     CondensationRequestTool,
 )
 from openhands.agenthub.codeact_agent.tools.finish import FinishTool
+from openhands.agenthub.codeact_agent.tools.gemini_edit_tools import (
+    create_gemini_list_directory_tool,
+    create_gemini_read_file_tool,
+    create_gemini_replace_tool,
+    create_gemini_write_file_tool,
+)
 from openhands.agenthub.codeact_agent.tools.ipython import IPythonTool
 from openhands.agenthub.codeact_agent.tools.llm_based_edit import LLMBasedFileEditTool
 from openhands.agenthub.codeact_agent.tools.str_replace_editor import (
@@ -133,12 +139,27 @@ class CodeActAgent(Agent):
             tools.append(IPythonTool)
         if self.config.enable_llm_editor:
             tools.append(LLMBasedFileEditTool)
+            logger.info('LLMBasedFileEditTool is enabled')
+        elif self.config.enable_gemini_editor:
+            # Add all four Gemini CLI tools separately
+            tools.extend(
+                [
+                    create_gemini_read_file_tool(detailed=not use_short_tool_desc),
+                    create_gemini_write_file_tool(detailed=not use_short_tool_desc),
+                    create_gemini_replace_tool(detailed=not use_short_tool_desc),
+                    create_gemini_list_directory_tool(detailed=not use_short_tool_desc),
+                ]
+            )
+            logger.info('Gemini CLI tools are enabled')
         elif self.config.enable_editor:
             tools.append(
                 create_str_replace_editor_tool(
                     use_short_description=use_short_tool_desc
                 )
             )
+            logger.info('StrReplaceEditorTool is enabled')
+        else:
+            logger.warning('No editor is enabled')
         return tools
 
     def reset(self) -> None:
