@@ -53,6 +53,10 @@ ENABLE_STREAMING = False  # FIXME: this doesn't work
 # Global TextArea for streaming output
 streaming_output_text_area: TextArea | None = None
 
+# Track recent thoughts to prevent duplicate display
+recent_thoughts: list[str] = []
+MAX_RECENT_THOUGHTS = 5
+
 # Color and styling constants
 COLOR_GOLD = '#FFD700'
 COLOR_GREY = '#808080'
@@ -183,19 +187,27 @@ def display_initial_user_prompt(prompt: str) -> None:
 
 
 # Prompt output display functions
+def display_thought_if_new(thought: str) -> None:
+    """Display a thought only if it hasn't been displayed recently."""
+    global recent_thoughts
+    if thought and thought.strip():
+        # Check if this thought was recently displayed
+        if thought not in recent_thoughts:
+            display_message(thought)
+            recent_thoughts.append(thought)
+            # Keep only the most recent thoughts
+            if len(recent_thoughts) > MAX_RECENT_THOUGHTS:
+                recent_thoughts.pop(0)
+
+
 def display_event(event: Event, config: OpenHandsConfig) -> None:
     global streaming_output_text_area
     with print_lock:
-        if isinstance(event, Action):
-            if hasattr(event, 'thought'):
-                display_message(event.thought)
-            if hasattr(event, 'final_thought'):
-                display_message(event.final_thought)
-        if isinstance(event, MessageAction):
-            if event.source == EventSource.AGENT:
-                display_message(event.content)
-
         if isinstance(event, CmdRunAction):
+            # For CmdRunAction, display thought first, then command
+            if hasattr(event, 'thought') and event.thought:
+                display_message(event.thought)
+
             # Only display the command if it's not already confirmed
             # Commands are always shown when AWAITING_CONFIRMATION, so we don't need to show them again when CONFIRMED
             if event.confirmation_state != ActionConfirmationStatus.CONFIRMED:
@@ -203,6 +215,17 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
 
             if event.confirmation_state == ActionConfirmationStatus.CONFIRMED:
                 initialize_streaming_output()
+        elif isinstance(event, Action):
+            # For other actions, display thoughts normally
+            if hasattr(event, 'thought') and event.thought:
+                display_message(event.thought)
+            if hasattr(event, 'final_thought') and event.final_thought:
+                display_message(event.final_thought)
+
+        if isinstance(event, MessageAction):
+            if event.source == EventSource.AGENT:
+                # Check if this message content is a duplicate thought
+                display_thought_if_new(event.content)
         elif isinstance(event, CmdOutputObservation):
             display_command_output(event.content)
         elif isinstance(event, FileEditObservation):
@@ -566,34 +589,20 @@ async def read_prompt_input(
 
 async def read_confirmation_input(config: OpenHandsConfig) -> str:
     try:
-        prompt_session = create_prompt_session(config)
+        choices = [
+            'Yes, proceed',
+            'No, skip this action',
+            "Always proceed (don't ask again)",
+            'Let me provide different instructions',
+        ]
 
-        while True:
-            with patch_stdout():
-                print_formatted_text('')
-                confirmation: str = await prompt_session.prompt_async(
-                    HTML('<gold>Proceed with action? (y)es/(n)o/(a)lways > </gold>'),
-                )
+        # keep the outer coroutine responsive by using asyncio.to_thread which puts the blocking call app.run() of cli_confirm() in a separate thread
+        index = await asyncio.to_thread(
+            cli_confirm, config, 'Choose an option:', choices
+        )
 
-                confirmation = (
-                    '' if confirmation is None else confirmation.strip().lower()
-                )
+        return {0: 'yes', 1: 'no', 2: 'always', 3: 'edit'}.get(index, 'no')
 
-                if confirmation in ['y', 'yes']:
-                    return 'yes'
-                elif confirmation in ['n', 'no']:
-                    return 'no'
-                elif confirmation in ['a', 'always']:
-                    return 'always'
-                else:
-                    # Display error message for invalid input
-                    print_formatted_text('')
-                    print_formatted_text(
-                        HTML(
-                            '<ansired>Invalid input. Please enter (y)es, (n)o, or (a)lways.</ansired>'
-                        )
-                    )
-                    # Continue the loop to re-prompt
     except (KeyboardInterrupt, EOFError):
         return 'no'
 

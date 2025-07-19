@@ -1,3 +1,4 @@
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -37,9 +38,10 @@ class TestDisplaySettings:
         llm_config.api_key = SecretStr('test-api-key')
         config.get_llm_config.return_value = llm_config
         config.default_agent = 'test-agent'
+        config.file_store_path = '/tmp'
 
         # Set up security as a separate mock
-        security_mock = MagicMock()
+        security_mock = MagicMock(spec=OpenHandsConfig)
         security_mock.confirmation_mode = True
         config.security = security_mock
 
@@ -48,13 +50,14 @@ class TestDisplaySettings:
 
     @pytest.fixture
     def advanced_app_config(self):
-        config = MagicMock(spec=OpenHandsConfig)
+        config = MagicMock()
         llm_config = MagicMock()
         llm_config.base_url = 'https://custom-api.com'
         llm_config.model = 'custom-model'
         llm_config.api_key = SecretStr('test-api-key')
         config.get_llm_config.return_value = llm_config
         config.default_agent = 'test-agent'
+        config.file_store_path = '/tmp'
 
         # Set up security as a separate mock
         security_mock = MagicMock()
@@ -87,6 +90,8 @@ class TestDisplaySettings:
         assert 'Enabled' in settings_text
         assert 'Memory Condensation:' in settings_text
         assert 'Enabled' in settings_text
+        assert 'Configuration File' in settings_text
+        assert str(Path(app_config.file_store_path)) in settings_text
 
     @patch('openhands.cli.settings.print_container')
     def test_display_settings_advanced_config(

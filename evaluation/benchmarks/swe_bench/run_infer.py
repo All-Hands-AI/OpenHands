@@ -28,6 +28,7 @@ from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
     assert_and_raise,
+    check_maximum_retries_exceeded,
     codeact_user_response,
     get_default_sandbox_config_for_eval,
     get_metrics,
@@ -109,9 +110,7 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageActio
         template_name = 'swt.j2'
     elif mode == 'swe':
         if 'claude' in llm_model:
-            template_name = 'swe_claude.j2'
-        elif 'gemini' in llm_model:
-            template_name = 'swe_gemini.j2'
+            template_name = 'swe_default.j2'
         elif 'gpt-4.1' in llm_model:
             template_name = 'swe_gpt4.j2'
         else:
@@ -970,3 +969,5 @@ if __name__ == '__main__':
         logger.info(
             f'Done! Total {len(added_instance_ids)} instances added to {output_file}'
         )
+        # Check if any instances reached maximum retries
+        check_maximum_retries_exceeded(metadata.eval_output_dir)
