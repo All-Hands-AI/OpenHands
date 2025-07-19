@@ -4,8 +4,7 @@ from typing import Any, Dict
 
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
-from openhands.events.action import BrowseInteractiveAction, BrowseURLAction
-from openhands.events.observation import BrowserObservation, ErrorObservation
+
 from openhands.llm.tool_names import BROWSER_TOOL_NAME
 
 from .base import Tool, ToolValidationError
@@ -128,35 +127,7 @@ class BrowserTool(Tool):
         
         return validated
     
-    def create_action(self, parameters: Dict[str, Any], thought: str = "") -> BrowseInteractiveAction | BrowseURLAction:
-        """Create a browser action from validated parameters."""
-        action_type = parameters['action']
-        
-        if action_type == 'goto':
-            return BrowseURLAction(
-                url=parameters['url'],
-                thought=thought
-            )
-        else:
-            # For other actions, use BrowseInteractiveAction
-            return BrowseInteractiveAction(
-                browser_actions=f"{action_type}({', '.join(f'{k}={v}' for k, v in parameters.items() if k != 'action')})",
-                thought=thought
-            )
-    
-    def interpret_observation(self, observation) -> str:
-        """Interpret browser observation."""
-        if isinstance(observation, BrowserObservation):
-            result = f"BROWSER RESULT:\n"
-            if hasattr(observation, 'content') and observation.content:
-                result += observation.content
-            if hasattr(observation, 'url'):
-                result += f"\nCurrent URL: {observation.url}"
-            return result
-        elif isinstance(observation, ErrorObservation):
-            return f"BROWSER ERROR: {observation.content}"
-        else:
-            return str(observation)
+
     
     def _get_description(self, use_short_description: bool) -> str:
         """Get description for the tool."""

@@ -47,13 +47,13 @@ class ToolRegistry:
         """
         return self._tools.get(name)
     
-    def get_all_tools(self) -> List[Tool]:
+    def get_all_tools(self) -> Dict[str, Tool]:
         """Get all registered tools.
         
         Returns:
-            List of all registered tools
+            Dictionary mapping tool names to Tool instances
         """
-        return list(self._tools.values())
+        return self._tools.copy()
     
     def get_tool_names(self) -> List[str]:
         """Get names of all registered tools.

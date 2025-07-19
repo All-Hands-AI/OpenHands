@@ -2,14 +2,9 @@
 
 import json
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict
 
 from litellm import ChatCompletionToolParam
-from pydantic import BaseModel, ValidationError
-
-from openhands.events.action import Action
-from openhands.events.observation import Observation
-
 
 class ToolError(Exception):
     """Base exception for tool-related errors."""
@@ -21,19 +16,11 @@ class ToolValidationError(ToolError):
     pass
 
 
-class ToolResult(BaseModel):
-    """Result of a tool operation."""
-    success: bool
-    action: Optional[Action] = None
-    error: Optional[str] = None
-    observation: Optional[Observation] = None
-
-
 class Tool(ABC):
     """Base class for all OpenHands tools.
     
-    This class encapsulates tool definitions, parameter validation,
-    action creation, and error handling.
+    This class encapsulates tool definitions and parameter validation.
+    Action creation is handled by the function calling layer.
     """
     
     def __init__(self, name: str, description: str):
@@ -67,28 +54,17 @@ class Tool(ABC):
         """
         pass
     
-    @abstractmethod
-    def create_action(self, parameters: Dict[str, Any], thought: str = "") -> Action:
-        """Create an OpenHands action from validated parameters.
-        
-        Args:
-            parameters: Validated parameters
-            thought: Optional thought/reasoning for the action
-            
-        Returns:
-            OpenHands action ready for execution
-        """
-        pass
-    
-    def process_function_call(self, function_call: Any, thought: str = "") -> ToolResult:
-        """Process a function call and create an action.
+    def validate_function_call(self, function_call: Any) -> Dict[str, Any]:
+        """Validate a function call and return normalized parameters.
         
         Args:
             function_call: Function call object from LLM
-            thought: Optional thought/reasoning
             
         Returns:
-            ToolResult containing the action or error
+            Validated and normalized parameters
+            
+        Raises:
+            ToolValidationError: If function call is invalid
         """
         try:
             # Parse function call arguments
@@ -100,40 +76,17 @@ class Tool(ABC):
             try:
                 parameters = json.loads(arguments_str)
             except json.JSONDecodeError as e:
-                return ToolResult(
-                    success=False,
-                    error=f"Failed to parse function call arguments: {arguments_str}. Error: {e}"
+                raise ToolValidationError(
+                    f"Failed to parse function call arguments: {arguments_str}. Error: {e}"
                 )
             
             # Validate parameters
-            validated_params = self.validate_parameters(parameters)
+            return self.validate_parameters(parameters)
             
-            # Create action
-            action = self.create_action(validated_params, thought)
-            
-            return ToolResult(success=True, action=action)
-            
-        except ToolValidationError as e:
-            return ToolResult(success=False, error=str(e))
+        except ToolValidationError:
+            raise
         except Exception as e:
-            return ToolResult(
-                success=False,
-                error=f"Unexpected error processing function call: {e}"
-            )
-    
-    def interpret_observation(self, observation: Observation) -> str:
-        """Interpret an observation and provide human-readable feedback.
-        
-        Args:
-            observation: Observation from action execution
-            
-        Returns:
-            Human-readable interpretation of the observation
-        """
-        # Default implementation - subclasses can override for custom interpretation
-        if hasattr(observation, 'content'):
-            return observation.content
-        return str(observation)
+            raise ToolValidationError(f"Unexpected error validating function call: {e}")
     
     def __str__(self) -> str:
         return f"Tool({self.name})"

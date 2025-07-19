@@ -4,9 +4,7 @@ from typing import Any, Dict, List, Optional
 
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
-from openhands.events.action import FileEditAction, FileReadAction
-from openhands.events.event import FileEditSource, FileReadSource
-from openhands.events.observation import FileEditObservation, FileReadObservation, ErrorObservation
+
 from openhands.llm.tool_names import STR_REPLACE_EDITOR_TOOL_NAME
 
 from .base import Tool, ToolValidationError
@@ -132,50 +130,7 @@ class FileEditorTool(Tool):
         
         return validated
     
-    def create_action(self, parameters: Dict[str, Any], thought: str = "") -> FileEditAction | FileReadAction:
-        """Create a FileEditAction or FileReadAction from validated parameters."""
-        command = parameters['command']
-        
-        # Handle view command as FileReadAction
-        if command == 'view':
-            return FileReadAction(
-                path=parameters['path'],
-                thought=thought,
-                impl_source=FileReadSource.OH_ACI,
-                view_range=parameters.get('view_range')
-            )
-        
-        # Handle other commands as FileEditAction
-        return FileEditAction(
-            path=parameters['path'],
-            command=command,
-            file_text=parameters.get('file_text'),
-            old_str=parameters.get('old_str'),
-            new_str=parameters.get('new_str'),
-            insert_line=parameters.get('insert_line'),
-            thought=thought,
-            impl_source=FileEditSource.OH_ACI
-        )
-    
-    def interpret_observation(self, observation) -> str:
-        """Interpret file editor observation."""
-        if isinstance(observation, FileReadObservation):
-            if observation.content:
-                return f"Here's the result of running `cat -n` on {observation.path}:\n{observation.content}"
-            else:
-                return f"File {observation.path} is empty or could not be read."
-        
-        elif isinstance(observation, FileEditObservation):
-            result = f"The file {observation.path} has been edited."
-            if hasattr(observation, 'content') and observation.content:
-                result += f"\n{observation.content}"
-            return result
-        
-        elif isinstance(observation, ErrorObservation):
-            return f"ERROR in [{self.name}]: {observation.content}"
-        
-        else:
-            return str(observation)
+
     
     def _get_detailed_description(self) -> str:
         """Get detailed description for the tool."""

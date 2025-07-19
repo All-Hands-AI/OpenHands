@@ -4,8 +4,7 @@ from typing import Any, Dict
 
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
-from openhands.events.action import AgentFinishAction
-from openhands.events.observation import AgentFinishObservation
+
 from openhands.llm.tool_names import FINISH_TOOL_NAME
 
 from .base import Tool, ToolValidationError
@@ -61,22 +60,7 @@ class FinishTool(Tool):
         
         return validated
     
-    def create_action(self, parameters: Dict[str, Any], thought: str = "") -> AgentFinishAction:
-        """Create an AgentFinishAction from validated parameters."""
-        return AgentFinishAction(
-            outputs=parameters.get('outputs', {}),
-            thought=thought
-        )
-    
-    def interpret_observation(self, observation) -> str:
-        """Interpret finish observation."""
-        if isinstance(observation, AgentFinishObservation):
-            result = "TASK COMPLETED"
-            if hasattr(observation, 'outputs') and observation.outputs:
-                result += f"\nOutputs: {observation.outputs}"
-            return result
-        else:
-            return str(observation)
+
     
     def _get_description(self, use_short_description: bool) -> str:
         """Get description for the tool."""

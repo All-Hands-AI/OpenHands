@@ -11,7 +11,7 @@ This decouples tool logic from agent processing, making it easier to add new too
 or modify existing ones.
 """
 
-from .base import Tool, ToolError, ToolResult, ToolValidationError
+from .base import Tool, ToolError, ToolValidationError
 from .bash_tool import BashTool
 from .file_editor_tool import FileEditorTool
 from .registry import ToolRegistry
@@ -19,7 +19,6 @@ from .registry import ToolRegistry
 __all__ = [
     'Tool',
     'ToolError',
-    'ToolResult', 
     'ToolValidationError',
     'BashTool',
     'FileEditorTool',

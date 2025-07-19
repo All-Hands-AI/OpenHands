@@ -5,8 +5,7 @@ from typing import Any, Dict
 
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
-from openhands.events.action import CmdRunAction
-from openhands.events.observation import CmdOutputObservation, ErrorObservation
+
 from openhands.llm.tool_names import EXECUTE_BASH_TOOL_NAME
 
 from .base import Tool, ToolValidationError
@@ -81,33 +80,7 @@ class BashTool(Tool):
         
         return validated
     
-    def create_action(self, parameters: Dict[str, Any], thought: str = "") -> CmdRunAction:
-        """Create a CmdRunAction from validated parameters."""
-        action = CmdRunAction(
-            command=parameters['command'],
-            is_input=parameters['is_input'],
-            thought=thought
-        )
-        
-        # Set timeout if provided
-        if 'timeout' in parameters:
-            action.set_hard_timeout(parameters['timeout'])
-        
-        return action
-    
-    def interpret_observation(self, observation) -> str:
-        """Interpret bash command observation."""
-        if isinstance(observation, CmdOutputObservation):
-            result = f"EXECUTION RESULT of [{self.name}]:\n"
-            if observation.content:
-                result += observation.content
-            if hasattr(observation, 'exit_code'):
-                result += f"\n[Exit Code: {observation.exit_code}]"
-            return result
-        elif isinstance(observation, ErrorObservation):
-            return f"ERROR in [{self.name}]: {observation.content}"
-        else:
-            return str(observation)
+
     
     def _get_detailed_description(self) -> str:
         """Get detailed description for the tool."""
