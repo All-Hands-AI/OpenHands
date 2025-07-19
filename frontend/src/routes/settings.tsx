@@ -35,7 +35,7 @@ const OSS_NAV_ITEMS = [
 ];
 
 // Define OSS-only paths that should be redirected in SaaS mode
-const OSS_ONLY_PATHS = ["/settings", "/settings/"];
+const OSS_ONLY_PATHS = ["/settings"];
 
 export const clientLoader = async ({ request }: Route.ClientLoaderArgs) => {
   const url = new URL(request.url);

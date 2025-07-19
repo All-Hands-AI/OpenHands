@@ -103,7 +103,7 @@ describe("Settings Screen in SaaS Mode", () => {
     // the second click might interrupt the redirect process, causing the LLM settings
     // to be shown momentarily before the useEffect redirect kicks in.
     // The fix ensures that even if the redirect is interrupted, the outlet is not rendered.
-    
+
     getConfigSpy.mockRestore();
   });
 });
