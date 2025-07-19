@@ -8,6 +8,8 @@ import json
 import os
 import shutil
 import tempfile
+import sys
+import pandas as pd
 
 import yaml
 from browsing import pre_login
@@ -260,6 +262,7 @@ if __name__ == '__main__':
         raise ValueError('LLM API key is not set for evaluation environment')
 
     task_short_name = args.task_image_name.split('/')[-1].split(':')[0]
+
     logger.info(
         f'Task image name is {args.task_image_name}, short name is {task_short_name}'
     )
@@ -325,13 +328,13 @@ if __name__ == '__main__':
     run_evaluator(runtime, env_llm_config, trajectory_path, result_path)
 
     # finally, move trajectory file and evaluation result from mount path on host (temp dir) to outputs path
-    shutil.move(
+    shutil.copy2(
         os.path.join(temp_dir, f'traj_{task_short_name}.json'),
         os.path.join(
             os.path.abspath(args.outputs_path), f'traj_{task_short_name}.json'
         ),
     )
-    shutil.move(
+    shutil.copy2(
         os.path.join(temp_dir, f'eval_{task_short_name}.json'),
         os.path.join(
             os.path.abspath(args.outputs_path), f'eval_{task_short_name}.json'
