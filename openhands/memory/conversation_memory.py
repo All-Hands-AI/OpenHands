@@ -243,7 +243,7 @@ class ConversationMemory:
             # Add the LLM message (assistant) that initiated the tool calls
             # (overwrites any previous message with the same response_id)
             logger.debug(
-                f'Tool calls type: {type(assistant_msg.tool_calls)}, value: {assistant_msg.tool_calls}'
+                f'Tool calls type: {type(assistant_msg.tool_calls)}'
             )
             pending_tool_call_action_messages[llm_response.id] = Message(
                 role=getattr(assistant_msg, 'role', 'assistant'),
