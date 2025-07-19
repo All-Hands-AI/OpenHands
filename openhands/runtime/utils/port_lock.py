@@ -1,6 +1,5 @@
 """File-based port locking system for preventing race conditions in port allocation."""
 
-import fcntl
 import os
 import random
 import socket
@@ -9,6 +8,14 @@ import time
 from typing import Optional
 
 from openhands.core.logger import openhands_logger as logger
+
+# Import fcntl only on Unix systems
+try:
+    import fcntl
+
+    HAS_FCNTL = True
+except ImportError:
+    HAS_FCNTL = False
 
 
 class PortLock:
@@ -39,33 +46,57 @@ class PortLock:
             return True
 
         try:
-            # Create lock file
-            self.lock_fd = os.open(
-                self.lock_file_path, os.O_CREAT | os.O_WRONLY | os.O_TRUNC
-            )
+            if HAS_FCNTL:
+                # Unix-style file locking with fcntl
+                self.lock_fd = os.open(
+                    self.lock_file_path, os.O_CREAT | os.O_WRONLY | os.O_TRUNC
+                )
 
-            # Try to acquire exclusive lock with timeout
-            start_time = time.time()
-            while time.time() - start_time < timeout:
-                try:
-                    fcntl.flock(self.lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-                    self._locked = True
+                # Try to acquire exclusive lock with timeout
+                start_time = time.time()
+                while time.time() - start_time < timeout:
+                    try:
+                        fcntl.flock(self.lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                        self._locked = True
 
-                    # Write port number to lock file for debugging
-                    os.write(self.lock_fd, f'{self.port}\n'.encode())
-                    os.fsync(self.lock_fd)
+                        # Write port number to lock file for debugging
+                        os.write(self.lock_fd, f'{self.port}\n'.encode())
+                        os.fsync(self.lock_fd)
 
-                    logger.debug(f'Acquired lock for port {self.port}')
-                    return True
-                except (OSError, IOError):
-                    # Lock is held by another process, wait a bit
-                    time.sleep(0.01)
+                        logger.debug(f'Acquired lock for port {self.port}')
+                        return True
+                    except (OSError, IOError):
+                        # Lock is held by another process, wait a bit
+                        time.sleep(0.01)
 
-            # Timeout reached
-            if self.lock_fd:
-                os.close(self.lock_fd)
-                self.lock_fd = None
-            return False
+                # Timeout reached
+                if self.lock_fd:
+                    os.close(self.lock_fd)
+                    self.lock_fd = None
+                return False
+            else:
+                # Windows fallback: use atomic file creation
+                start_time = time.time()
+                while time.time() - start_time < timeout:
+                    try:
+                        # Try to create lock file exclusively
+                        self.lock_fd = os.open(
+                            self.lock_file_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY
+                        )
+                        self._locked = True
+
+                        # Write port number to lock file for debugging
+                        os.write(self.lock_fd, f'{self.port}\n'.encode())
+                        os.fsync(self.lock_fd)
+
+                        logger.debug(f'Acquired lock for port {self.port}')
+                        return True
+                    except OSError:
+                        # Lock file already exists, wait a bit
+                        time.sleep(0.01)
+
+                # Timeout reached
+                return False
 
         except Exception as e:
             logger.debug(f'Failed to acquire lock for port {self.port}: {e}')
@@ -81,9 +112,13 @@ class PortLock:
         """Release the lock."""
         if self.lock_fd is not None:
             try:
-                fcntl.flock(self.lock_fd, fcntl.LOCK_UN)
+                if HAS_FCNTL:
+                    # Unix: unlock and close
+                    fcntl.flock(self.lock_fd, fcntl.LOCK_UN)
+
                 os.close(self.lock_fd)
-                # Remove lock file
+
+                # Remove lock file (both Unix and Windows)
                 try:
                     os.unlink(self.lock_file_path)
                 except FileNotFoundError:
