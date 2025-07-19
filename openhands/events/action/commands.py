@@ -38,6 +38,11 @@ class CmdRunAction(Action):
 
 
 @dataclass
+class CmdRunStreamAction(CmdRunAction):
+    action: str = ActionType.RUN_STREAM
+
+
+@dataclass
 class IPythonRunCellAction(Action):
     code: str
     thought: str = ''

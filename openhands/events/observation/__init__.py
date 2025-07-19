@@ -9,6 +9,7 @@ from openhands.events.observation.browse import BrowserOutputObservation
 from openhands.events.observation.commands import (
     CmdOutputMetadata,
     CmdOutputObservation,
+    CmdStreamOutputObservation,
     IPythonRunCellObservation,
 )
 from openhands.events.observation.delegate import AgentDelegateObservation
@@ -32,6 +33,7 @@ __all__ = [
     'NullObservation',
     'AgentThinkObservation',
     'CmdOutputObservation',
+    'CmdStreamOutputObservation',
     'CmdOutputMetadata',
     'IPythonRunCellObservation',
     'BrowserOutputObservation',
