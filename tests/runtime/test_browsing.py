@@ -4,7 +4,7 @@ import os
 import re
 
 import pytest
-from conftest import _close_test_runtime, _load_runtime
+from conftest import close_test_runtime, create_runtime_and_config
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
@@ -144,7 +144,7 @@ def test_browser_disabled(temp_dir, runtime_cls, run_as_openhands):
 
 
 def test_simple_browse(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
 
     # Test browse
     action_cmd = CmdRunAction(command='python3 -m http.server 8000 > server.log 2>&1 &')
@@ -184,12 +184,12 @@ def test_simple_browse(temp_dir, runtime_cls, run_as_openhands):
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
 
-    _close_test_runtime(runtime)
+    close_test_runtime(runtime)
 
 
 def test_browser_navigation_actions(temp_dir, runtime_cls, run_as_openhands):
     """Test browser navigation actions: goto, go_back, go_forward, noop."""
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create test HTML pages
         page1_content = """
@@ -317,12 +317,12 @@ def test_browser_navigation_actions(temp_dir, runtime_cls, run_as_openhands):
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_browser_form_interactions(temp_dir, runtime_cls, run_as_openhands):
     """Test browser form interaction actions: fill, click, select_option, clear."""
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create a test form page
         form_content = """
@@ -531,12 +531,12 @@ fill("{textarea_bid}", "This is a test message")
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_browser_interactive_actions(temp_dir, runtime_cls, run_as_openhands):
     """Test browser interactive actions: scroll, hover, fill, press, focus."""
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create a test page with scrollable content
         scroll_content = """
@@ -737,12 +737,12 @@ scroll(0, 400)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_browser_file_upload(temp_dir, runtime_cls, run_as_openhands):
     """Test browser file upload action."""
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create a test file to upload
         test_file_content = 'This is a test file for upload testing.'
@@ -893,11 +893,11 @@ def test_browser_file_upload(temp_dir, runtime_cls, run_as_openhands):
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_read_pdf_browse(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create a PDF file using reportlab in the host environment
         from reportlab.lib.pagesizes import letter
@@ -965,11 +965,11 @@ def test_read_pdf_browse(temp_dir, runtime_cls, run_as_openhands):
         assert 'screenshot_' in obs.content
         assert '.png' in obs.content
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_read_png_browse(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create a PNG file using PIL in the host environment
         from PIL import Image, ImageDraw
@@ -1032,12 +1032,12 @@ def test_read_png_browse(temp_dir, runtime_cls, run_as_openhands):
         assert 'screenshot_' in obs.content
         assert '.png' in obs.content
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_download_file(temp_dir, runtime_cls, run_as_openhands):
     """Test downloading a file using the browser."""
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Minimal PDF content for testing
         pdf_content = b"""%PDF-1.4
@@ -1193,4 +1193,4 @@ def test_download_file(temp_dir, runtime_cls, run_as_openhands):
         obs = runtime.run_action(action_cmd)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     finally:
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
