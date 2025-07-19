@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { Provider } from "#/types/settings";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -102,3 +103,16 @@ export const formatTimestamp = (timestamp: string) =>
     minute: "2-digit",
     second: "2-digit",
   });
+
+export const getGitProviderBaseUrl = (gitProvider: Provider): string => {
+  switch (gitProvider) {
+    case "github":
+      return "https://github.com";
+    case "gitlab":
+      return "https://gitlab.com";
+    case "bitbucket":
+      return "https://bitbucket.org";
+    default:
+      return "";
+  }
+};

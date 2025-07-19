@@ -18,6 +18,7 @@ import { openHands } from "./open-hands-axios";
 import { ApiSettings, PostApiSettings, Provider } from "#/types/settings";
 import { GitUser, GitRepository, Branch } from "#/types/git";
 import { SuggestedTask } from "#/components/features/home/tasks/task.types";
+import { RepositoryMicroagent } from "#/types/microagent-management";
 
 class OpenHands {
   private static currentConversation: Conversation | null = null;
@@ -461,6 +462,22 @@ class OpenHands {
     const { data } = await openHands.get<GetMicroagentsResponse>(url, {
       headers: this.getConversationHeaders(),
     });
+    return data;
+  }
+
+  /**
+   * Get the available microagents for a specific repository
+   * @param owner The repository owner
+   * @param repo The repository name
+   * @returns The available microagents for the repository
+   */
+  static async getRepositoryMicroagents(
+    owner: string,
+    repo: string,
+  ): Promise<RepositoryMicroagent[]> {
+    const { data } = await openHands.get<RepositoryMicroagent[]>(
+      `/api/user/repository/${owner}/${repo}/microagents`,
+    );
     return data;
   }
 
