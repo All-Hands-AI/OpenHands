@@ -272,7 +272,7 @@ def test_build_runtime_image_from_scratch():
             == f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag_mock-source-tag'
         )
         mock_prep_build_folder.assert_called_once_with(
-            ANY, base_image, BuildFromImageType.SCRATCH, None
+            ANY, base_image, BuildFromImageType.SCRATCH, None, True
         )
 
 
@@ -367,6 +367,7 @@ def test_build_runtime_image_exact_hash_not_exist_and_lock_exist():
             f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag',
             BuildFromImageType.LOCK,
             None,
+            True,
         )
 
 
@@ -426,6 +427,7 @@ def test_build_runtime_image_exact_hash_not_exist_and_lock_not_exist_and_version
             f'{get_runtime_image_repo()}:{OH_VERSION}_mock-versioned-tag',
             BuildFromImageType.VERSIONED,
             None,
+            True,
         )
 
 
