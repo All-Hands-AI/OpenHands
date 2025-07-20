@@ -177,7 +177,7 @@ def build_runtime_image_in_folder(
     enable_browser: bool = True,
 ) -> str:
     runtime_image_repo, _ = get_runtime_image_repo_and_tag(base_image)
-    lock_tag = f'oh_v{oh_version}_{get_hash_for_lock_files(base_image)}'
+    lock_tag = f'oh_v{oh_version}_{get_hash_for_lock_files(base_image, enable_browser)}'
     versioned_tag = (
         # truncate the base image to 96 characters to fit in the tag max length (128 characters)
         f'oh_v{oh_version}_{get_tag_for_versioned_image(base_image)}'
@@ -312,10 +312,13 @@ def truncate_hash(hash: str) -> str:
     return ''.join(result)
 
 
-def get_hash_for_lock_files(base_image: str) -> str:
+def get_hash_for_lock_files(base_image: str, enable_browser: bool = True) -> str:
     openhands_source_dir = Path(openhands.__file__).parent
     md5 = hashlib.md5()
     md5.update(base_image.encode())
+    # Only include enable_browser in hash when it's False for backward compatibility
+    if not enable_browser:
+        md5.update(str(enable_browser).encode())
     for file in ['pyproject.toml', 'poetry.lock']:
         src = Path(openhands_source_dir, file)
         if not src.exists():
