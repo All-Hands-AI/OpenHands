@@ -390,7 +390,9 @@ if __name__ == '__main__':
     parser.add_argument('--force_rebuild', action='store_true', default=False)
     parser.add_argument('--platform', type=str, default=None)
     parser.add_argument('--enable_browser', action='store_true', default=True)
-    parser.add_argument('--no_enable_browser', dest='enable_browser', action='store_false')
+    parser.add_argument(
+        '--no_enable_browser', dest='enable_browser', action='store_false'
+    )
     args = parser.parse_args()
 
     if args.build_folder is not None:
@@ -458,6 +460,9 @@ if __name__ == '__main__':
         logger.debug('Building image in a temporary folder')
         docker_builder = DockerRuntimeBuilder(docker.from_env())
         image_name = build_runtime_image(
-            args.base_image, docker_builder, platform=args.platform, enable_browser=args.enable_browser
+            args.base_image,
+            docker_builder,
+            platform=args.platform,
+            enable_browser=args.enable_browser,
         )
         logger.debug(f'\nBuilt image: {image_name}\n')
