@@ -262,7 +262,7 @@ def response_to_actions(
         wait_for_response = True
         if is_reasoning_model and not content:
             wait_for_response = False
-        elif content:  # For all other models, wait if there's content
+        elif content:
             wait_for_response = True
         else:  # For non-reasoning models with empty content, still wait (original behavior)
             wait_for_response = True
