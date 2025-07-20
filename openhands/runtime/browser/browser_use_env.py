@@ -64,9 +64,9 @@ class BrowserUseEnv:
             logger.error(f'Failed to start browser process: {e}')
             raise
 
-        # Wait for browser to be ready with a shorter timeout
-        if not self.check_alive(timeout=30):
-            logger.error('Browser initialization timed out after 30 seconds')
+        # Wait for browser to be ready with a longer timeout for Docker containers
+        if not self.check_alive(timeout=60):
+            logger.error('Browser initialization timed out after 60 seconds')
             self.close()
             raise BrowserInitException('Failed to start browser environment within timeout.')
 
@@ -82,7 +82,17 @@ class BrowserUseEnv:
             os.environ['PYTHONPATH'] = os.environ.get('PYTHONPATH', '')
             os.environ['NO_SANDBOX'] = '1'
             os.environ['CHROME_HEADLESS'] = '1'
+            # Additional environment variables for Docker container compatibility
+            # Note: Removed PLAYWRIGHT_BROWSERS_PATH and PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD
+            # to allow Playwright to use its installed browsers
+            os.environ['BROWSER_USE_HEADLESS'] = '1'  # Force headless mode
+            os.environ['BROWSER_USE_NO_SANDBOX'] = '1'  # Disable sandbox
+            os.environ['BROWSER_USE_DISABLE_DEV_SHM'] = '1'  # Disable /dev/shm usage
+            os.environ['BROWSER_USE_DISABLE_GPU'] = '1'  # Disable GPU
+            os.environ['BROWSER_USE_DISABLE_WEB_SECURITY'] = '1'  # Disable web security
+            os.environ['BROWSER_USE_DISABLE_FEATURES'] = 'VizDisplayCompositor'  # Disable features
             logger.info('Environment variables set for headless browser')
+
             self.browser_process()
         except Exception as e:
             logger.error(f'Error in browser process wrapper: {e}')
@@ -113,15 +123,19 @@ class BrowserUseEnv:
             logger.info('Initializing Browser-Use session...')
             # Initialize Browser-Use session
             browser_session = BrowserSession()
+            logger.info('BrowserSession created successfully')
             controller = Controller()
+            logger.info('Controller created successfully')
 
             logger.info('Starting browser session...')
             # Start the browser
             await browser_session.start()
+            logger.info('Browser session started successfully')
 
             logger.info('Navigating to blank page...')
             # Navigate to a blank page initially
             await browser_session.navigate('about:blank')
+            logger.info('Successfully navigated to blank page')
 
             logger.info('Browser-Use environment started successfully.')
 
@@ -135,6 +149,7 @@ class BrowserUseEnv:
                             logger.info('SHUTDOWN received, shutting down browser env...')
                             break
                         elif unique_request_id == 'IS_ALIVE':
+                            logger.info('IS_ALIVE received, responding with ALIVE')
                             self.browser_side.send(('ALIVE', None))
                             continue
 
@@ -178,6 +193,11 @@ class BrowserUseEnv:
 
         except Exception as e:
             logger.error(f'Error in async browser process: {e}')
+            # Send error back to main process
+            try:
+                self.browser_side.send(('ERROR', str(e)))
+            except:
+                pass
             raise
         finally:
             # Clean up browser session
