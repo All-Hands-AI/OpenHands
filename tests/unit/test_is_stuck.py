@@ -107,7 +107,7 @@ class TestStuckDetector:
         state.history.append(message_action)
         state.history.append(observation)
 
-        cmd_action = CmdRunAction(command='ls')
+        cmd_action = CmdRunAction(command=command='ls', reset_terminal=False)
         state.history.append(cmd_action)
         cmd_observation = CmdOutputObservation(
             command='ls', content='file1.txt\nfile2.txt'
@@ -124,7 +124,7 @@ class TestStuckDetector:
 
         # First add some actions that would be stuck in non-UI mode
         for i in range(4):
-            cmd_action = CmdRunAction(command='ls')
+            cmd_action = CmdRunAction(command=command='ls', reset_terminal=False)
             cmd_action._id = i
             state.history.append(cmd_action)
             cmd_observation = CmdOutputObservation(
@@ -152,7 +152,7 @@ class TestStuckDetector:
 
         # Add two more identical actions - still not stuck because we need at least 3
         for i in range(2):
-            cmd_action = CmdRunAction(command='ls')
+            cmd_action = CmdRunAction(command=command='ls', reset_terminal=False)
             cmd_action._id = i + 4
             state.history.append(cmd_action)
             cmd_observation = CmdOutputObservation(
@@ -165,7 +165,7 @@ class TestStuckDetector:
 
         # Add two more identical actions - now it should be stuck
         for i in range(2):
-            cmd_action = CmdRunAction(command='ls')
+            cmd_action = CmdRunAction(command=command='ls', reset_terminal=False)
             cmd_action._id = i + 6
             state.history.append(cmd_action)
             cmd_observation = CmdOutputObservation(
@@ -188,7 +188,7 @@ class TestStuckDetector:
         state.history.append(hello_action)
         state.history.append(hello_observation)
 
-        cmd_action_1 = CmdRunAction(command='ls')
+        cmd_action_1 = CmdRunAction(command=command='ls', reset_terminal=False)
         cmd_action_1._id = 1
         state.history.append(cmd_action_1)
         cmd_observation_1 = CmdOutputObservation(content='', command='ls')
@@ -196,7 +196,7 @@ class TestStuckDetector:
         state.history.append(cmd_observation_1)
         # 4 events
 
-        cmd_action_2 = CmdRunAction(command='ls')
+        cmd_action_2 = CmdRunAction(command=command='ls', reset_terminal=False)
         cmd_action_2._id = 2
         state.history.append(cmd_action_2)
         cmd_observation_2 = CmdOutputObservation(content='', command='ls')
@@ -212,7 +212,7 @@ class TestStuckDetector:
 
         assert stuck_detector.is_stuck(headless_mode=True) is False
 
-        cmd_action_3 = CmdRunAction(command='ls')
+        cmd_action_3 = CmdRunAction(command=command='ls', reset_terminal=False)
         cmd_action_3._id = 3
         state.history.append(cmd_action_3)
         cmd_observation_3 = CmdOutputObservation(content='', command='ls')
@@ -223,7 +223,7 @@ class TestStuckDetector:
         assert len(state.history) == 10
         assert stuck_detector.is_stuck(headless_mode=True) is False
 
-        cmd_action_4 = CmdRunAction(command='ls')
+        cmd_action_4 = CmdRunAction(command=command='ls', reset_terminal=False)
         cmd_action_4._id = 4
         state.history.append(cmd_action_4)
         cmd_observation_4 = CmdOutputObservation(content='', command='ls')
@@ -250,14 +250,14 @@ class TestStuckDetector:
         state.history.append(hello_observation)
         # 2 events
 
-        cmd_action_1 = CmdRunAction(command='invalid_command')
+        cmd_action_1 = CmdRunAction(command=command='invalid_command', reset_terminal=False)
         state.history.append(cmd_action_1)
         error_observation_1 = ErrorObservation(content='Command not found')
         # error_observation_1._cause = cmd_action_1._id
         state.history.append(error_observation_1)
         # 4 events
 
-        cmd_action_2 = CmdRunAction(command='invalid_command')
+        cmd_action_2 = CmdRunAction(command=command='invalid_command', reset_terminal=False)
         state.history.append(cmd_action_2)
         error_observation_2 = ErrorObservation(
             content='Command still not found or another error'
@@ -271,14 +271,14 @@ class TestStuckDetector:
         state.history.append(message_null_observation)
         # 8 events
 
-        cmd_action_3 = CmdRunAction(command='invalid_command')
+        cmd_action_3 = CmdRunAction(command=command='invalid_command', reset_terminal=False)
         state.history.append(cmd_action_3)
         error_observation_3 = ErrorObservation(content='Different error')
         # error_observation_3._cause = cmd_action_3._id
         state.history.append(error_observation_3)
         # 10 events
 
-        cmd_action_4 = CmdRunAction(command='invalid_command')
+        cmd_action_4 = CmdRunAction(command=command='invalid_command', reset_terminal=False)
         state.history.append(cmd_action_4)
         error_observation_4 = ErrorObservation(content='Command not found')
         # error_observation_4._cause = cmd_action_4._id
@@ -436,7 +436,7 @@ class TestStuckDetector:
         message_observation = NullObservation(content='')
         state.history.append(message_observation)
 
-        cmd_action_1 = CmdRunAction(command='ls')
+        cmd_action_1 = CmdRunAction(command=command='ls', reset_terminal=False)
         state.history.append(cmd_action_1)
         cmd_observation_1 = CmdOutputObservation(
             command='ls', content='file1.txt\nfile2.txt'
@@ -452,7 +452,7 @@ class TestStuckDetector:
         # read_observation_1._cause = read_action_1._id
         state.history.append(read_observation_1)
 
-        cmd_action_2 = CmdRunAction(command='ls')
+        cmd_action_2 = CmdRunAction(command=command='ls', reset_terminal=False)
         state.history.append(cmd_action_2)
         cmd_observation_2 = CmdOutputObservation(
             command='ls', content='file1.txt\nfile2.txt'
@@ -475,7 +475,7 @@ class TestStuckDetector:
         message_null_observation = NullObservation(content='')
         state.history.append(message_null_observation)
 
-        cmd_action_3 = CmdRunAction(command='ls')
+        cmd_action_3 = CmdRunAction(command=command='ls', reset_terminal=False)
         state.history.append(cmd_action_3)
         cmd_observation_3 = CmdOutputObservation(
             command='ls', content='file1.txt\nfile2.txt'
@@ -506,7 +506,7 @@ class TestStuckDetector:
         # hello_observation._cause = hello_action._id
         state.history.append(hello_observation)
 
-        cmd_action_1 = CmdRunAction(command='ls')
+        cmd_action_1 = CmdRunAction(command=command='ls', reset_terminal=False)
         state.history.append(cmd_action_1)
         cmd_observation_1 = CmdOutputObservation(
             command='ls', content='file1.txt\nfile2.txt'
@@ -522,7 +522,7 @@ class TestStuckDetector:
         # read_observation_1._cause = read_action_1._id
         state.history.append(read_observation_1)
 
-        cmd_action_2 = CmdRunAction(command='pwd')
+        cmd_action_2 = CmdRunAction(command=command='pwd', reset_terminal=False)
         state.history.append(cmd_action_2)
         cmd_observation_2 = CmdOutputObservation(command='pwd', content='/home/user')
         # cmd_observation_2._cause = cmd_action_2._id
@@ -540,7 +540,7 @@ class TestStuckDetector:
         state.history.append(message_action)
         state.history.append(message_null_observation)
 
-        cmd_action_3 = CmdRunAction(command='pwd')
+        cmd_action_3 = CmdRunAction(command=command='pwd', reset_terminal=False)
         state.history.append(cmd_action_3)
         cmd_observation_3 = CmdOutputObservation(command='pwd', content='/home/user')
         # cmd_observation_3._cause = cmd_action_3._id
@@ -569,7 +569,7 @@ class TestStuckDetector:
         message_action_3._source = EventSource.USER
         state.history.append(message_action_3)
 
-        cmd_kill_action = CmdRunAction(
+        cmd_kill_action = CmdRunAction(command=
             command='echo 42', thought="I'm not stuck, he's stuck"
         )
         state.history.append(cmd_kill_action)
@@ -651,7 +651,7 @@ class TestStuckDetector:
             # Add some other events between condensation events (except after the last one)
             if i < 9:
                 # Add a command action and observation
-                cmd_action = CmdRunAction(command=f'ls {i}')
+                cmd_action = CmdRunAction(command=command=f'ls {i}', reset_terminal=False)
                 state.history.append(cmd_action)
                 cmd_observation = CmdOutputObservation(
                     command=f'ls {i}', content='file1.txt\nfile2.txt'

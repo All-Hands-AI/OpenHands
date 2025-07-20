@@ -311,20 +311,20 @@ def test_check_cmd_action_for_provider_token_ref():
     """Test detection of provider tokens in command actions"""
 
     # Test command with GitHub token
-    cmd = CmdRunAction(command='echo $GITHUB_TOKEN')
+    cmd = CmdRunAction(command=command='echo $GITHUB_TOKEN', reset_terminal=False)
     providers = ProviderHandler.check_cmd_action_for_provider_token_ref(cmd)
     assert ProviderType.GITHUB in providers
     assert len(providers) == 1
 
     # Test command with multiple tokens
-    cmd = CmdRunAction(command='echo $GITHUB_TOKEN && echo $GITLAB_TOKEN')
+    cmd = CmdRunAction(command=command='echo $GITHUB_TOKEN && echo $GITLAB_TOKEN', reset_terminal=False)
     providers = ProviderHandler.check_cmd_action_for_provider_token_ref(cmd)
     assert ProviderType.GITHUB in providers
     assert ProviderType.GITLAB in providers
     assert len(providers) == 2
 
     # Test command without tokens
-    cmd = CmdRunAction(command='echo "Hello"')
+    cmd = CmdRunAction(command=command='echo "Hello"', reset_terminal=False)
     providers = ProviderHandler.check_cmd_action_for_provider_token_ref(cmd)
     assert len(providers) == 0
 

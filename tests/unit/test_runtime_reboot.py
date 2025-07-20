@@ -26,7 +26,7 @@ def runtime(mock_session):
 
 def test_runtime_timeout_error(runtime, mock_session):
     # Create a command action
-    action = CmdRunAction(command='test command')
+    action = CmdRunAction(command=command='test command', reset_terminal=False)
     action.set_hard_timeout(120)
 
     # Mock the runtime to raise a timeout error
@@ -79,7 +79,7 @@ def test_runtime_disconnected_error(
     )
 
     # Create a command action
-    action = CmdRunAction(command='test command')
+    action = CmdRunAction(command=command='test command', reset_terminal=False)
     action.set_hard_timeout(120)
 
     # Verify that the error message is correct

@@ -338,7 +338,7 @@ def test_mismatched_tool_call_events_and_auto_add_system_message(
         function_name='foo',
     )
 
-    action = CmdRunAction('foo')
+    action = CmdRunAction(command='foo', reset_terminal=False)
     action._source = EventSource.AGENT
     action.tool_call_metadata = tool_call_metadata
 

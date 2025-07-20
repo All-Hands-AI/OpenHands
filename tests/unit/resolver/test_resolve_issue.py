@@ -158,7 +158,7 @@ def test_initialize_runtime_runs_setup_script_and_git_hooks(
     class MinimalResolver:
         def initialize_runtime(self, runtime):
             # This is the method we're testing
-            action = CmdRunAction(command='git config --global core.pager ""')
+            action = CmdRunAction(command=command='git config --global core.pager ""', reset_terminal=False)
             runtime.run_action(action)
 
             # Run setup script if it exists

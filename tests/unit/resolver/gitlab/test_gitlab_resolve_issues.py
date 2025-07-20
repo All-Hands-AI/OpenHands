@@ -145,13 +145,13 @@ def test_initialize_runtime(default_mock_args, mock_gitlab_token):
     else:
         assert mock_runtime.run_action.call_count == 2
 
-    mock_runtime.run_action.assert_any_call(CmdRunAction(command='cd /workspace'))
+    mock_runtime.run_action.assert_any_call(CmdRunAction(command=command='cd /workspace'), reset_terminal=False)
     if os.getenv('GITLAB_CI') == 'true':
         mock_runtime.run_action.assert_any_call(
-            CmdRunAction(command='sudo chown -R 1001:0 /workspace/*')
+            CmdRunAction(command=command='sudo chown -R 1001:0 /workspace/*', reset_terminal=False)
         )
     mock_runtime.run_action.assert_any_call(
-        CmdRunAction(command='git config --global core.pager ""')
+        CmdRunAction(command=command='git config --global core.pager ""', reset_terminal=False)
     )
 
 
