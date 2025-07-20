@@ -40,7 +40,8 @@ BROWSER_EVAL_GET_REWARDS_ACTION = 'GET_EVAL_REWARDS'
 class BrowserUseEnv:
     """Browser environment using Browser-Use library."""
 
-    def __init__(self, eval_mode: bool = False, eval_goal: str = '', goal_image_urls: list[str] = None):
+    def __init__(self, browser_use_config: str | None = None, eval_mode: bool = False, eval_goal: str = '', goal_image_urls: list[str] = None):
+        self.browser_use_config = browser_use_config
         self.eval_mode = eval_mode
         self.eval_goal = eval_goal
         self.goal_image_urls = goal_image_urls or []
@@ -48,24 +49,49 @@ class BrowserUseEnv:
 
         # Multiprocessing setup
         self.browser_side, self.agent_side = multiprocessing.Pipe()
-        self.browser_process = None
 
         self.init_browser()
         atexit.register(self.close)
 
     def init_browser(self) -> None:
         """Initialize the browser environment."""
-        logger.debug('Starting Browser-Use environment...')
+        logger.info('Starting Browser-Use environment...')
         try:
-            self.process = multiprocessing.Process(target=self.browser_process)
+            self.process = multiprocessing.Process(target=self._browser_process_wrapper)
             self.process.start()
+            logger.info(f'Browser process started with PID: {self.process.pid}')
         except Exception as e:
             logger.error(f'Failed to start browser process: {e}')
             raise
 
-        if not self.check_alive(timeout=200):
+        # Wait for browser to be ready with a shorter timeout
+        if not self.check_alive(timeout=30):
+            logger.error('Browser initialization timed out after 30 seconds')
             self.close()
-            raise BrowserInitException('Failed to start browser environment.')
+            raise BrowserInitException('Failed to start browser environment within timeout.')
+
+        logger.info('Browser environment initialized successfully')
+
+    def _browser_process_wrapper(self) -> None:
+        """Wrapper for the browser process to handle multiprocessing."""
+        try:
+            logger.info('Starting browser process wrapper...')
+            # Set environment variables for headless browser operation
+            import os
+            os.environ['DISPLAY'] = ':99'
+            os.environ['PYTHONPATH'] = os.environ.get('PYTHONPATH', '')
+            os.environ['NO_SANDBOX'] = '1'
+            os.environ['CHROME_HEADLESS'] = '1'
+            logger.info('Environment variables set for headless browser')
+            self.browser_process()
+        except Exception as e:
+            logger.error(f'Error in browser process wrapper: {e}')
+            # Send error back to main process
+            try:
+                self.browser_side.send(('ERROR', str(e)))
+            except:
+                pass
+            raise
 
     def browser_process(self) -> None:
         """Browser process that handles Browser-Use operations."""
@@ -84,13 +110,16 @@ class BrowserUseEnv:
         controller = None
 
         try:
+            logger.info('Initializing Browser-Use session...')
             # Initialize Browser-Use session
             browser_session = BrowserSession()
             controller = Controller()
 
+            logger.info('Starting browser session...')
             # Start the browser
             await browser_session.start()
 
+            logger.info('Navigating to blank page...')
             # Navigate to a blank page initially
             await browser_session.navigate('about:blank')
 
@@ -103,7 +132,7 @@ class BrowserUseEnv:
 
                         # Handle shutdown
                         if unique_request_id == 'SHUTDOWN':
-                            logger.debug('SHUTDOWN received, shutting down browser env...')
+                            logger.info('SHUTDOWN received, shutting down browser env...')
                             break
                         elif unique_request_id == 'IS_ALIVE':
                             self.browser_side.send(('ALIVE', None))
@@ -144,7 +173,7 @@ class BrowserUseEnv:
                         self.browser_side.send((unique_request_id, obs))
 
                 except KeyboardInterrupt:
-                    logger.debug('Browser env process interrupted by user.')
+                    logger.info('Browser env process interrupted by user.')
                     break
 
         except Exception as e:
@@ -186,8 +215,8 @@ class BrowserUseEnv:
                 browser_use_action = action
                 action_str = str(action)
 
-            logger.debug(f'Executing action: {action_str}')
-            logger.debug(f'Parsed action: {browser_use_action}')
+            logger.info(f'Executing action: {action_str}')
+            logger.info(f'Parsed action: {browser_use_action}')
 
             if browser_use_action is None:
                 # Handle unsupported actions
@@ -210,15 +239,15 @@ class BrowserUseEnv:
             # Handle go_back and go_forward as special cases
             if isinstance(browser_use_action, tuple) and len(browser_use_action) == 2 and isinstance(browser_use_action[1], NoParamsAction):
                 action_name, action_model = browser_use_action
-                logger.debug(f'Executing special navigation action: {action_name}')
+                logger.info(f'Executing special navigation action: {action_name}')
                 if action_name == 'go_back':
                     # Use direct BrowserSession method for go_back
-                    logger.debug('Using direct go_back method')
+                    logger.info('Using direct go_back method')
                     await browser_session.go_back()
                     result = {'success': True}
                 elif action_name == 'go_forward':
                     # Use direct BrowserSession method for go_forward
-                    logger.debug('Using direct go_forward method')
+                    logger.info('Using direct go_forward method')
                     await browser_session.go_forward()
                     result = {'success': True}
                 else:
@@ -226,12 +255,12 @@ class BrowserUseEnv:
                     result = await controller.act(browser_session, action_name, **{})
             elif isinstance(browser_use_action, GoToUrlAction):
                 # Use direct navigation for URL actions
-                logger.debug(f'Using direct navigation for URL: {browser_use_action.url}')
+                logger.info(f'Using direct navigation for URL: {browser_use_action.url}')
                 await browser_session.navigate(browser_use_action.url)
                 result = {'success': True}
             elif isinstance(browser_use_action, NoParamsAction):
                 # Handle no-op actions (wait, go_back, go_forward)
-                logger.debug('Executing no-op action')
+                logger.info('Executing no-op action')
                 if 'noop' in action_str.lower():
                     # Extract wait time if present
                     import re
@@ -243,12 +272,12 @@ class BrowserUseEnv:
                     result = {'success': True}
                 elif 'go_back' in action_str.lower():
                     # Handle go_back action directly
-                    logger.debug('Using direct go_back method for string action')
+                    logger.info('Using direct go_back method for string action')
                     await browser_session.go_back()
                     result = {'success': True}
                 elif 'go_forward' in action_str.lower():
                     # Handle go_forward action directly
-                    logger.debug('Using direct go_forward method for string action')
+                    logger.info('Using direct go_forward method for string action')
                     await browser_session.go_forward()
                     result = {'success': True}
                 else:
@@ -260,7 +289,7 @@ class BrowserUseEnv:
                         result = {'success': True}  # Assume success for now
             else:
                 # For other actions, try using controller
-                logger.debug(f'Executing Browser-Use action: {browser_use_action}')
+                logger.info(f'Executing Browser-Use action: {browser_use_action}')
                 try:
                     result = await controller.act(browser_session, browser_use_action)
                 except Exception as e:
@@ -268,18 +297,18 @@ class BrowserUseEnv:
                     # Fallback: try to handle common actions directly
                     if isinstance(browser_use_action, ClickElementAction):
                         # Try to click by index
-                        logger.debug(f'Attempting direct click for index: {browser_use_action.index}')
+                        logger.info(f'Attempting direct click for index: {browser_use_action.index}')
                         # This would need implementation based on Browser-Use's element selection
                         result = {'success': True}  # Placeholder
                     elif isinstance(browser_use_action, InputTextAction):
                         # Try to input text by index
-                        logger.debug(f'Attempting direct input for index: {browser_use_action.index}')
+                        logger.info(f'Attempting direct input for index: {browser_use_action.index}')
                         # This would need implementation based on Browser-Use's element selection
                         result = {'success': True}  # Placeholder
                     else:
                         result = {'success': False, 'error': str(e)}
 
-            logger.debug(f'Action result: {result}')
+            logger.info(f'Action result: {result}')
 
             # Create observation using adapter
             observation_adapter = ObservationAdapter()
@@ -287,7 +316,7 @@ class BrowserUseEnv:
             # Get current page information
             current_page = await browser_session.get_current_page()
             url = current_page.url if current_page else ''
-            logger.debug(f'Current page URL: {url}')
+            logger.info(f'Current page URL: {url}')
 
             # Take screenshot
             screenshot_data = await browser_session.take_screenshot()
@@ -304,7 +333,7 @@ class BrowserUseEnv:
 
             # Get page structure (DOM and accessibility tree)
             page_structure = await observation_adapter._get_page_structure(browser_session)
-            logger.debug(f'Page structure: {page_structure}')
+            logger.info(f'Page structure: {page_structure}')
 
             # Get tabs info
             tabs_info = await browser_session.get_tabs_info()
@@ -353,7 +382,7 @@ class BrowserUseEnv:
         import re
 
         action_str = action_str.strip()
-        logger.debug(f'Parsing action string: {action_str}')
+        logger.info(f'Parsing action string: {action_str}')
 
         # Simple regex patterns for common actions
         goto_pattern = re.compile(r'goto\("([^"]+)"\)')
@@ -372,72 +401,72 @@ class BrowserUseEnv:
 
         if match := goto_pattern.match(action_str):
             url = match.group(1)
-            logger.debug(f'Parsed goto action with URL: {url}')
+            logger.info(f'Parsed goto action with URL: {url}')
             return GoToUrlAction(url=url, new_tab=False)
         elif match := click_pattern.match(action_str):
             bid = match.group(1)
             # Convert bid to index (simplified)
             index = self._bid_to_index(bid)
-            logger.debug(f'Parsed click action with bid: {bid}, index: {index}')
+            logger.info(f'Parsed click action with bid: {bid}, index: {index}')
             return ClickElementAction(index=index)
         elif match := fill_pattern.match(action_str):
             bid = match.group(1)
             text = match.group(2)
             index = self._bid_to_index(bid)
-            logger.debug(f'Parsed fill action with bid: {bid}, text: {text}, index: {index}')
+            logger.info(f'Parsed fill action with bid: {bid}, text: {text}, index: {index}')
             return InputTextAction(index=index, text=text)
         elif match := scroll_pattern.match(action_str):
             delta_x = float(match.group(1))
             delta_y = float(match.group(2))
-            logger.debug(f'Parsed scroll action with delta_x: {delta_x}, delta_y: {delta_y}')
+            logger.info(f'Parsed scroll action with delta_x: {delta_x}, delta_y: {delta_y}')
             return ScrollAction(down=delta_y > 0, num_pages=1)
         elif noop_pattern.match(action_str):
             # No-op action - just wait
-            logger.debug('Parsed noop action')
+            logger.info('Parsed noop action')
             return NoParamsAction()
         elif go_back_pattern.match(action_str):
             # Go back action
-            logger.debug('Parsed go_back action')
+            logger.info('Parsed go_back action')
             return ('go_back', NoParamsAction())
         elif go_forward_pattern.match(action_str):
             # Go forward action
-            logger.debug('Parsed go_forward action')
+            logger.info('Parsed go_forward action')
             return ('go_forward', NoParamsAction())
         elif match := upload_file_pattern.match(action_str):
             bid = match.group(1)
             file_path = match.group(2)
             index = self._bid_to_index(bid)
-            logger.debug(f'Parsed upload_file action with bid: {bid}, file_path: {file_path}, index: {index}')
+            logger.info(f'Parsed upload_file action with bid: {bid}, file_path: {file_path}, index: {index}')
             return UploadFileAction(index=index, file_path=file_path)
         elif match := press_pattern.match(action_str):
             bid = match.group(1)
             key = match.group(2)
             index = self._bid_to_index(bid)
-            logger.debug(f'Parsed press action with bid: {bid}, key: {key}, index: {index}')
+            logger.info(f'Parsed press action with bid: {bid}, key: {key}, index: {index}')
             return SendKeysAction(keys=key)
         elif match := hover_pattern.match(action_str):
             bid = match.group(1)
             index = self._bid_to_index(bid)
-            logger.debug(f'Parsed hover action with bid: {bid}, index: {index}')
+            logger.info(f'Parsed hover action with bid: {bid}, index: {index}')
             return NoParamsAction()  # Placeholder - Browser-Use might not have hover
         elif match := focus_pattern.match(action_str):
             bid = match.group(1)
             index = self._bid_to_index(bid)
-            logger.debug(f'Parsed focus action with bid: {bid}, index: {index}')
+            logger.info(f'Parsed focus action with bid: {bid}, index: {index}')
             return NoParamsAction()  # Placeholder - Browser-Use might not have focus
         elif match := clear_pattern.match(action_str):
             bid = match.group(1)
             index = self._bid_to_index(bid)
-            logger.debug(f'Parsed clear action with bid: {bid}, index: {index}')
+            logger.info(f'Parsed clear action with bid: {bid}, index: {index}')
             return InputTextAction(index=index, text="")  # Clear by setting empty text
         elif match := select_option_pattern.match(action_str):
             bid = match.group(1)
             option = match.group(2)
             index = self._bid_to_index(bid)
-            logger.debug(f'Parsed select_option action with bid: {bid}, option: {option}, index: {index}')
+            logger.info(f'Parsed select_option action with bid: {bid}, option: {option}, index: {index}')
             return NoParamsAction()  # Placeholder - Browser-Use might not have select_option
 
-        logger.debug(f'No pattern matched for action: {action_str}')
+        logger.info(f'No pattern matched for action: {action_str}')
         return None
 
     def _bid_to_index(self, bid: str) -> int:
@@ -479,13 +508,20 @@ class BrowserUseEnv:
 
     def check_alive(self, timeout: float = 60) -> bool:
         """Check if the browser environment is alive."""
-        self.agent_side.send(('IS_ALIVE', None))
-        if self.agent_side.poll(timeout=timeout):
-            response_id, _ = self.agent_side.recv()
-            if response_id == 'ALIVE':
-                return True
-            logger.debug(f'Browser env is not alive. Response ID: {response_id}')
-        return False
+        try:
+            self.agent_side.send(('IS_ALIVE', None))
+            if self.agent_side.poll(timeout=timeout):
+                response_id, response_data = self.agent_side.recv()
+                if response_id == 'ALIVE':
+                    return True
+                elif response_id == 'ERROR':
+                    logger.error(f'Browser process reported error: {response_data}')
+                    return False
+                logger.info(f'Browser env is not alive. Response ID: {response_id}')
+            return False
+        except Exception as e:
+            logger.error(f'Error checking browser alive status: {e}')
+            return False
 
     def close(self) -> None:
         """Close the browser environment."""

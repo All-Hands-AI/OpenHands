@@ -75,6 +75,9 @@ def test_simple_browse(temp_dir, runtime_cls, run_as_openhands):
     obs = runtime.run_action(action_browse)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
+    import time
+    time.sleep(1000)
+
     assert isinstance(obs, BrowserOutputObservation)
     assert 'http://localhost:8000' in obs.url
     assert not obs.error

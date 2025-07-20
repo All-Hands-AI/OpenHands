@@ -237,14 +237,35 @@ class ActionExecutor:
         logger.debug('Initializing browser asynchronously')
         try:
             # Pass the Browser-Use configuration
-            self.browser = BrowserUseEnv(self.browser_use_config)
-            logger.debug('Browser initialized asynchronously')
+            # Make browser initialization non-blocking by running it in a thread
+            import threading
+            import concurrent.futures
+
+            def init_browser_sync():
+                try:
+                    return BrowserUseEnv(self.browser_use_config)
+                except Exception as e:
+                    logger.error(f'Failed to initialize browser: {e}')
+                    return None
+
+            # Run browser initialization in a thread pool to avoid blocking
+            loop = asyncio.get_event_loop()
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                self.browser = await loop.run_in_executor(executor, init_browser_sync)
+
+            if self.browser:
+                logger.debug('Browser initialized asynchronously')
+            else:
+                logger.warning('Browser initialization failed, but server will continue')
         except Exception as e:
             logger.error(f'Failed to initialize browser: {e}')
             self.browser = None
 
     async def _ensure_browser_ready(self):
         """Ensure the browser is ready for use."""
+        if not self.enable_browser:
+            raise BrowserUnavailableException('Browser functionality is not supported or disabled')
+
         if self.browser is None:
             if self.browser_init_task is None:
                 # Start browser initialization if it hasn't been started
@@ -293,9 +314,12 @@ class ActionExecutor:
         self.bash_session = self._create_bash_session()
         logger.debug('Bash session initialized')
 
-        # Start browser initialization in the background
-        self.browser_init_task = asyncio.create_task(self._init_browser_async())
-        logger.debug('Browser initialization started in background')
+        # Start browser initialization in the background only if enabled
+        if self.enable_browser:
+            self.browser_init_task = asyncio.create_task(self._init_browser_async())
+            logger.debug('Browser initialization started in background')
+        else:
+            logger.debug('Browser initialization skipped (disabled)')
 
         await wait_all(
             (self._init_plugin(plugin) for plugin in self.plugins_to_load),
@@ -606,20 +630,24 @@ class ActionExecutor:
         )
 
     async def browse(self, action: BrowseURLAction) -> Observation:
-        if self.browser is None:
-            return ErrorObservation(
-                'Browser functionality is not supported or disabled.'
-            )
-        await self._ensure_browser_ready()
-        return await browse(action, self.browser, self.initial_cwd)
+        try:
+            await self._ensure_browser_ready()
+            return await browse(action, self.browser, self.initial_cwd)
+        except BrowserUnavailableException as e:
+            return ErrorObservation(str(e))
+        except Exception as e:
+            logger.error(f'Error in browse action: {e}')
+            return ErrorObservation(f'Browser error: {str(e)}')
 
     async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
-        if self.browser is None:
-            return ErrorObservation(
-                'Browser functionality is not supported or disabled.'
-            )
-        await self._ensure_browser_ready()
-        browser_observation = await browse(action, self.browser, self.initial_cwd)
+        try:
+            await self._ensure_browser_ready()
+            browser_observation = await browse(action, self.browser, self.initial_cwd)
+        except BrowserUnavailableException as e:
+            return ErrorObservation(str(e))
+        except Exception as e:
+            logger.error(f'Error in browse_interactive action: {e}')
+            return ErrorObservation(f'Browser error: {str(e)}')
         if not browser_observation.error:
             return browser_observation
         else:

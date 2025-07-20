@@ -5,6 +5,7 @@ from typing import Callable
 from uuid import UUID
 
 import docker
+import httpcore
 import httpx
 import tenacity
 from docker.models.containers import Container
@@ -58,6 +59,8 @@ def _is_retryablewait_until_alive_error(exception: Exception) -> bool:
             httpx.RemoteProtocolError,
             httpx.HTTPStatusError,
             httpx.ReadTimeout,
+            httpx.ReadError,
+            httpcore.ReadError,
         ),
     )
 
