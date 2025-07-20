@@ -21,6 +21,11 @@ _DETAILED_BASH_DESCRIPTION = """Execute a bash command in the terminal within a 
   - Send control commands like `C-c` (Ctrl+C), `C-d` (Ctrl+D), or `C-z` (Ctrl+Z) to interrupt the process
   - If you do C-c, you can re-start the process with a longer "timeout" parameter to let it run to completion
 
+### Terminal Recovery
+* If the terminal becomes unresponsive or stuck, you can set `reset_terminal` to `true` to completely reset the terminal session.
+* This will terminate all running processes and create a fresh terminal session.
+* Note that this will lose all environment variables, working directory changes, and other session state.
+
 ### Best Practices
 * Directory verification: Before creating new directories or files, first verify the parent directory exists and is the correct location.
 * Directory management: Try to maintain working directory by using absolute paths and avoiding excessive use of `cd`.
@@ -32,7 +37,8 @@ _DETAILED_BASH_DESCRIPTION = """Execute a bash command in the terminal within a 
 _SHORT_BASH_DESCRIPTION = """Execute a bash command in the terminal.
 * Long running commands: For commands that may run indefinitely, it should be run in the background and the output should be redirected to a file, e.g. command = `python3 app.py > server.log 2>&1 &`. For commands that need to run for a specific duration, you can set the "timeout" argument to specify a hard timeout in seconds.
 * Interact with running process: If a bash command returns exit code `-1`, this means the process is not yet finished. By setting `is_input` to `true`, the assistant can interact with the running process and send empty `command` to retrieve any additional logs, or send additional text (set `command` to the text) to STDIN of the running process, or send command like `C-c` (Ctrl+C), `C-d` (Ctrl+D), `C-z` (Ctrl+Z) to interrupt the process.
-* One command at a time: You can only execute one bash command at a time. If you need to run multiple commands sequentially, you can use `&&` or `;` to chain them together."""
+* One command at a time: You can only execute one bash command at a time. If you need to run multiple commands sequentially, you can use `&&` or `;` to chain them together.
+* Reset terminal: If the terminal becomes unresponsive, set `reset_terminal` to `true` to reset the terminal session (this will lose all session state)."""
 
 
 def refine_prompt(prompt: str):
@@ -71,6 +77,11 @@ def create_cmd_run_tool(
                     'timeout': {
                         'type': 'number',
                         'description': 'Optional. Sets a hard timeout in seconds for the command execution. If not provided, the command will use the default soft timeout behavior.',
+                    },
+                    'reset_terminal': {
+                        'type': 'string',
+                        'description': 'If True, completely resets the terminal session, terminating all running processes and creating a fresh session. This will lose all environment variables, working directory changes, and other session state. Default is False.',
+                        'enum': ['true', 'false'],
                     },
                 },
                 'required': ['command'],
