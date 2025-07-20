@@ -34,7 +34,7 @@ class TestBashSessionReset(unittest.TestCase):
             original_initialize()
 
         # Use setattr to avoid mypy error
-        setattr(bash_session, "initialize", mock_initialize)
+        setattr(bash_session, 'initialize', mock_initialize)
 
         # Initial initialization
         bash_session.initialize()
@@ -91,7 +91,7 @@ class TestBashSessionReset(unittest.TestCase):
                 )
 
         # Use setattr to avoid mypy error
-        setattr(bash_session, "execute", mock_execute)
+        setattr(bash_session, 'execute', mock_execute)
         bash_session.initialize()
 
         # Simulate a stuck session by setting prev_status to CONTINUE
