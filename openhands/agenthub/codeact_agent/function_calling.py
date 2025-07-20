@@ -255,7 +255,9 @@ def response_to_actions(
             model in model_name for model in MODELS_WITH_EMPTY_REASONING_RESPONSES
         )
 
-        # Don't wait for response if content is empty and it's a reasoning model
+        # Grok-4 can send the number of reasoning tokens, but NOT the reasoning content, nor content
+        # Ref: https://github.com/All-Hands-AI/OpenHands/pull/9809
+        # Don't wait for response if content is empty and it's Grok
         # This prevents getting stuck when reasoning models return empty responses while thinking
         wait_for_response = True
         if is_reasoning_model and not content:
