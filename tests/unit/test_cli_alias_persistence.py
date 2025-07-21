@@ -98,6 +98,8 @@ def test_alias_setup_skipped_when_global_command_exists():
                         # Test the main logic conditions
                         from openhands.cli.main import (
                             alias_setup_declined as main_alias_setup_declined,
+                        )
+                        from openhands.cli.main import (
                             aliases_exist_in_shell_config,
                             global_openhands_command_exists,
                         )

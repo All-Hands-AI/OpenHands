@@ -404,9 +404,7 @@ def run_alias_setup_flow(config: OpenHandsConfig) -> None:
     )
     print_formatted_text('')
     print_formatted_text(
-        HTML(
-            '<grey>This will add the following aliases to your shell profile:</grey>'
-        )
+        HTML('<grey>This will add the following aliases to your shell profile:</grey>')
     )
     print_formatted_text(
         HTML(
