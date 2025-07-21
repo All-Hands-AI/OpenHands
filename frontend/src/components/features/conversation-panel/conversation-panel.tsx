@@ -36,6 +36,9 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
   const [selectedConversationId, setSelectedConversationId] = React.useState<
     string | null
   >(null);
+  const [openContextMenuId, setOpenContextMenuId] = React.useState<
+    string | null
+  >(null);
 
   const { data: conversations, isFetching, error } = useUserConversations();
 
@@ -144,6 +147,10 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
               createdAt={project.created_at}
               conversationStatus={project.status}
               conversationId={project.conversation_id}
+              contextMenuOpen={openContextMenuId === project.conversation_id}
+              onContextMenuToggle={(isOpen) =>
+                setOpenContextMenuId(isOpen ? project.conversation_id : null)
+              }
             />
           )}
         </NavLink>
