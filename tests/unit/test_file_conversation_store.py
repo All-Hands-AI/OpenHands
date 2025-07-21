@@ -90,10 +90,113 @@ async def test_search_basic():
 
     result = await store.search()
     assert len(result.results) == 3
-    # Should be sorted by date, newest first
+    # Should be sorted by created_at date (since no last_updated_at), newest first
     assert result.results[0].conversation_id == 'conv2'
     assert result.results[1].conversation_id == 'conv1'
     assert result.results[2].conversation_id == 'conv3'
+    assert result.next_page_id is None
+
+
+@pytest.mark.asyncio
+async def test_search_sort_by_last_updated_at():
+    # Create test data with conversations that have both created_at and last_updated_at
+    # The last_updated_at should take precedence for sorting
+    store = FileConversationStore(
+        InMemoryFileStore(
+            {
+                get_conversation_metadata_filename('conv1'): json.dumps(
+                    {
+                        'conversation_id': 'conv1',
+                        'user_id': '123',
+                        'selected_repository': 'repo1',
+                        'title': 'First conversation',
+                        'created_at': '2025-01-17T19:51:04Z',  # Created second
+                        'last_updated_at': '2025-01-15T20:00:00Z',  # Updated first (oldest)
+                    }
+                ),
+                get_conversation_metadata_filename('conv2'): json.dumps(
+                    {
+                        'conversation_id': 'conv2',
+                        'user_id': '123',
+                        'selected_repository': 'repo1',
+                        'title': 'Second conversation',
+                        'created_at': '2025-01-15T19:51:04Z',  # Created first (oldest)
+                        'last_updated_at': '2025-01-18T20:00:00Z',  # Updated most recently
+                    }
+                ),
+                get_conversation_metadata_filename('conv3'): json.dumps(
+                    {
+                        'conversation_id': 'conv3',
+                        'user_id': '123',
+                        'selected_repository': 'repo1',
+                        'title': 'Third conversation',
+                        'created_at': '2025-01-16T19:51:04Z',  # Created third
+                        'last_updated_at': '2025-01-17T20:00:00Z',  # Updated second
+                    }
+                ),
+            }
+        )
+    )
+
+    result = await store.search()
+    assert len(result.results) == 3
+    # Should be sorted by last_updated_at, newest first
+    assert result.results[0].conversation_id == 'conv2'  # Most recently updated
+    assert result.results[1].conversation_id == 'conv3'  # Second most recently updated
+    assert result.results[2].conversation_id == 'conv1'  # Least recently updated
+    assert result.next_page_id is None
+
+
+@pytest.mark.asyncio
+async def test_search_mixed_last_updated_at():
+    # Test conversations with mixed presence of last_updated_at
+    # Some have last_updated_at, some don't (should fall back to created_at)
+    store = FileConversationStore(
+        InMemoryFileStore(
+            {
+                get_conversation_metadata_filename('conv1'): json.dumps(
+                    {
+                        'conversation_id': 'conv1',
+                        'user_id': '123',
+                        'selected_repository': 'repo1',
+                        'title': 'First conversation',
+                        'created_at': '2025-01-16T19:51:04Z',
+                        'last_updated_at': '2025-01-18T20:00:00Z',  # Most recent update
+                    }
+                ),
+                get_conversation_metadata_filename('conv2'): json.dumps(
+                    {
+                        'conversation_id': 'conv2',
+                        'user_id': '123',
+                        'selected_repository': 'repo1',
+                        'title': 'Second conversation',
+                        'created_at': '2025-01-17T19:51:04Z',  # No last_updated_at, falls back to created_at
+                    }
+                ),
+                get_conversation_metadata_filename('conv3'): json.dumps(
+                    {
+                        'conversation_id': 'conv3',
+                        'user_id': '123',
+                        'selected_repository': 'repo1',
+                        'title': 'Third conversation',
+                        'created_at': '2025-01-15T19:51:04Z',
+                        'last_updated_at': '2025-01-16T20:00:00Z',  # Older update
+                    }
+                ),
+            }
+        )
+    )
+
+    result = await store.search()
+    assert len(result.results) == 3
+    # Should be sorted by last_updated_at (or created_at as fallback), newest first
+    assert result.results[0].conversation_id == 'conv1'  # Most recent last_updated_at
+    assert (
+        result.results[1].conversation_id == 'conv2'
+    )  # Falls back to created_at (2025-01-17)
+    assert (
+        result.results[2].conversation_id == 'conv3'
+    )  # Older last_updated_at (2025-01-16)
     assert result.next_page_id is None
 
 
