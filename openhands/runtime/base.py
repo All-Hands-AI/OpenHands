@@ -341,22 +341,28 @@ class Runtime(FileEditRuntimeMixin):
                 observation: Observation = await self.call_tool_mcp(event)
             else:
                 observation = await call_sync_from_async(self.run_action, event)
-        except Exception as e:
+        except PermissionError as e:
             # Handle PermissionError specially - convert to ErrorObservation
             # so the agent can receive feedback and continue execution
-            if isinstance(e, PermissionError):
-                observation = ErrorObservation(content=str(e))
-            else:
-                runtime_status = RuntimeStatus.ERROR
-                if isinstance(e, (httpx.NetworkError, AgentRuntimeDisconnectedError)):
-                    runtime_status = RuntimeStatus.ERROR_RUNTIME_DISCONNECTED
-                error_message = f'{type(e).__name__}: {str(e)}'
-                self.log(
-                    'error', f'Unexpected error while running action: {error_message}'
-                )
-                self.log('error', f'Problematic action: {str(event)}')
-                self.set_runtime_status(runtime_status, error_message)
-                return
+            observation = ErrorObservation(content=str(e))
+        except (httpx.NetworkError, AgentRuntimeDisconnectedError) as e:
+            runtime_status = RuntimeStatus.ERROR_RUNTIME_DISCONNECTED
+            error_message = f'{type(e).__name__}: {str(e)}'
+            self.log(
+                'error', f'Unexpected error while running action: {error_message}'
+            )
+            self.log('error', f'Problematic action: {str(event)}')
+            self.set_runtime_status(runtime_status, error_message)
+            return
+        except Exception as e:
+            runtime_status = RuntimeStatus.ERROR
+            error_message = f'{type(e).__name__}: {str(e)}'
+            self.log(
+                'error', f'Unexpected error while running action: {error_message}'
+            )
+            self.log('error', f'Problematic action: {str(event)}')
+            self.set_runtime_status(runtime_status, error_message)
+            return
 
         observation._cause = event.id  # type: ignore[attr-defined]
         observation.tool_call_metadata = event.tool_call_metadata
