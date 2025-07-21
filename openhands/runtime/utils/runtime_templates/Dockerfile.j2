@@ -51,7 +51,7 @@ RUN apt-get update && \
 
 {% if (('ubuntu' in base_image) or ('mswebench' in base_image)) %}
 # Install poetry (corepack/yarn not needed in runtime)
-RUN curl -fsSL --compressed https://install.python-poetry.org | python -
+RUN curl -fsSL --compressed https://install.python-poetry.org | python3 -
 {% endif %}
 
 # Install uv (required by MCP)
