@@ -24,7 +24,7 @@ class TestThoughtDisplayOrder:
         config = MagicMock(spec=OpenHandsConfig)
 
         # Create a CmdRunAction with a thought awaiting confirmation
-        cmd_action = CmdRunAction(command=command=
+        cmd_action = CmdRunAction(
             command='npm install',
             thought='I need to install the dependencies first before running the tests.',
         )
@@ -61,7 +61,7 @@ class TestThoughtDisplayOrder:
         config = MagicMock(spec=OpenHandsConfig)
 
         # Create a CmdRunAction without a thought
-        cmd_action = CmdRunAction(command=command=command='npm install', reset_terminal=False)
+        cmd_action = CmdRunAction(command='npm install', reset_terminal=False)
         cmd_action.confirmation_state = ActionConfirmationStatus.AWAITING_CONFIRMATION
 
         display_event(cmd_action, config)
@@ -79,7 +79,7 @@ class TestThoughtDisplayOrder:
         config = MagicMock(spec=OpenHandsConfig)
 
         # Create a CmdRunAction with empty thought
-        cmd_action = CmdRunAction(command=command=command='npm install', thought='')
+        cmd_action = CmdRunAction(command='npm install', thought='')
         cmd_action.confirmation_state = ActionConfirmationStatus.AWAITING_CONFIRMATION
 
         display_event(cmd_action, config)
@@ -98,7 +98,7 @@ class TestThoughtDisplayOrder:
         config = MagicMock(spec=OpenHandsConfig)
 
         # Create a confirmed CmdRunAction with thought
-        cmd_action = CmdRunAction(command=command=
+        cmd_action = CmdRunAction(
             command='npm install',
             thought='I need to install the dependencies first before running the tests.',
         )
@@ -182,7 +182,7 @@ class TestThoughtDisplayOrder:
         config = MagicMock(spec=OpenHandsConfig)
 
         # Create a CmdRunAction with both thoughts
-        cmd_action = CmdRunAction(command=command=command='npm install', thought='Initial thought')
+        cmd_action = CmdRunAction(command='npm install', thought='Initial thought')
         cmd_action.final_thought = 'Final thought'
         cmd_action.confirmation_state = ActionConfirmationStatus.AWAITING_CONFIRMATION
 
@@ -219,7 +219,7 @@ class TestThoughtDisplayIntegration:
             ),
         ):
             # Create the scenario from the issue
-            cmd_action = CmdRunAction(command=command=
+            cmd_action = CmdRunAction(
                 command='npm install',
                 thought='I need to install the dependencies first before running the tests.',
             )

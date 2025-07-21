@@ -252,7 +252,7 @@ async def test_run_controller_with_fatal_error(
 
     def agent_step_fn(state):
         print(f'agent_step_fn received state: {state}')
-        return CmdRunAction(command=command='ls', reset_terminal=False)
+        return CmdRunAction(command='ls', reset_terminal=False)
 
     mock_agent.step = agent_step_fn
     mock_agent.llm = MagicMock(spec=LLM)
@@ -318,7 +318,7 @@ async def test_run_controller_stop_with_stuck(
 
     def agent_step_fn(state):
         print(f'agent_step_fn received state: {state}')
-        return CmdRunAction(command=command='ls', reset_terminal=False)
+        return CmdRunAction(command='ls', reset_terminal=False)
 
     mock_agent.step = agent_step_fn
     mock_agent.llm = MagicMock(spec=LLM)
@@ -586,7 +586,7 @@ async def test_reset_with_pending_action_no_observation(mock_agent, mock_event_s
     mock_event_stream.add_event.reset_mock()
 
     # Create a pending action with tool call metadata
-    pending_action = CmdRunAction(command=command='test', reset_terminal=False)
+    pending_action = CmdRunAction(command='test', reset_terminal=False)
     pending_action.tool_call_metadata = {
         'function': 'test_function',
         'args': {'arg1': 'value1'},
@@ -635,7 +635,7 @@ async def test_reset_with_pending_action_existing_observation(
     mock_event_stream.add_event.reset_mock()
 
     # Create a pending action with tool call metadata
-    pending_action = CmdRunAction(command=command='test', reset_terminal=False)
+    pending_action = CmdRunAction(command='test', reset_terminal=False)
     pending_action.tool_call_metadata = {
         'function': 'test_function',
         'args': {'arg1': 'value1'},
@@ -708,7 +708,7 @@ async def test_reset_with_pending_action_no_metadata(
     mock_event_stream.add_event.reset_mock()
 
     # Create a pending action without tool call metadata
-    pending_action = CmdRunAction(command=command='test', reset_terminal=False)
+    pending_action = CmdRunAction(command='test', reset_terminal=False)
     # Mock hasattr to return False for tool_call_metadata
     original_hasattr = hasattr
 
@@ -758,7 +758,7 @@ async def test_run_controller_max_iterations_has_metrics(
         )
         nonlocal step_count
         step_count += 1
-        return CmdRunAction(command=command=f'ls {step_count}', reset_terminal=False)
+        return CmdRunAction(command=f'ls {step_count}', reset_terminal=False)
 
     mock_agent.step = agent_step_fn
 

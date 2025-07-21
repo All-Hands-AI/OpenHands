@@ -73,7 +73,10 @@ def test_basic_command():
 
     # Test multiple commands in sequence
     obs = session.execute(
-        CmdRunAction(command='echo "first" && echo "second" && echo "third"', reset_terminal=False),
+        CmdRunAction(
+            command='echo "first" && echo "second" && echo "third"',
+            reset_terminal=False,
+        ),
         reset_terminal=False,
     )
     assert 'first' in obs.content
@@ -93,7 +96,7 @@ def test_long_running_command_follow_by_execute():
 
     # Test command that produces output slowly
     obs = session.execute(
-        CmdRunAction(command=
+        CmdRunAction(
             command='for i in {1..3}; do echo $i; sleep 3; done',
             blocking=False,
             reset_terminal=False,
@@ -144,7 +147,7 @@ def test_interactive_command():
 
     # Test interactive command with blocking=True
     obs = session.execute(
-        CmdRunAction(command=
+        CmdRunAction(
             command='read -p \'Enter name: \' name && echo "Hello $name"',
         )
     )
@@ -202,7 +205,7 @@ def test_ctrl_c():
 
     # Start infinite loop
     obs = session.execute(
-        CmdRunAction(command=
+        CmdRunAction(
             command="while true; do echo 'looping'; sleep 3; done", reset_terminal=False
         ),
     )
@@ -255,7 +258,9 @@ def test_command_output_continuation():
     # Start a command that produces output slowly but with longer sleep time
     # to ensure we hit the timeout
     obs = session.execute(
-        CmdRunAction(command='for i in {1..5}; do echo $i; sleep 2; done', reset_terminal=False),
+        CmdRunAction(
+            command='for i in {1..5}; do echo $i; sleep 2; done', reset_terminal=False
+        ),
         reset_terminal=False,
     )
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -327,7 +332,9 @@ def test_long_output():
 
     # Generate a long output that may exceed buffer size
     obs = session.execute(
-        CmdRunAction(command='for i in {1..5000}; do echo "Line $i"; done', reset_terminal=False),
+        CmdRunAction(
+            command='for i in {1..5000}; do echo "Line $i"; done', reset_terminal=False
+        ),
         reset_terminal=False,
     )
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -346,7 +353,9 @@ def test_long_output_exceed_history_limit():
 
     # Generate a long output that may exceed buffer size
     obs = session.execute(
-        CmdRunAction(command='for i in {1..50000}; do echo "Line $i"; done', reset_terminal=False),
+        CmdRunAction(
+            command='for i in {1..50000}; do echo "Line $i"; done', reset_terminal=False
+        ),
         reset_terminal=False,
     )
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -365,7 +374,7 @@ def test_multiline_command():
 
     # Test multiline command with PS2 prompt disabled
     obs = session.execute(
-        CmdRunAction(command=
+        CmdRunAction(
             command="""if true; then
 echo "inside if"
 fi""",

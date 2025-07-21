@@ -24,7 +24,9 @@ def test_reset_terminal(bash_session):
     test_file = os.path.join(bash_session.work_dir, 'test_file.txt')
 
     # Run a command to create the file
-    action = CmdRunAction(command=command=command=f"echo 'test content' > {test_file}", reset_terminal=False)
+    action = CmdRunAction(
+        command=f"echo 'test content' > {test_file}", reset_terminal=False
+    )
     result = bash_session.execute(action)
 
     assert isinstance(result, CmdOutputObservation)
@@ -42,7 +44,7 @@ def test_reset_terminal(bash_session):
         ],
     ):
         # Simulate a hanging command by patching the _get_pane_content method
-        action = CmdRunAction(command=command=
+        action = CmdRunAction(
             command='while true; do sleep 1; done', reset_terminal=True
         )
         result = bash_session.execute(action)
@@ -51,7 +53,7 @@ def test_reset_terminal(bash_session):
     assert 'Terminal session has been reset' in result.content
 
     # Verify we can run commands after reset
-    action = CmdRunAction(command=command=command="echo 'After reset'", reset_terminal=False)
+    action = CmdRunAction(command="echo 'After reset'", reset_terminal=False)
     result = bash_session.execute(action)
 
     assert isinstance(result, CmdOutputObservation)
@@ -78,7 +80,9 @@ def test_reset_terminal_recovers_from_stuck_session(bash_session):
 
     with patch.object(bash_session, 'execute', side_effect=mock_execute):
         # First command gets stuck
-        action = CmdRunAction(command=command=command="echo 'This will get stuck'", reset_terminal=False)
+        action = CmdRunAction(
+            command="echo 'This will get stuck'", reset_terminal=False
+        )
         result = bash_session.execute(action)
 
         assert isinstance(result, CmdOutputObservation)
@@ -86,14 +90,14 @@ def test_reset_terminal_recovers_from_stuck_session(bash_session):
         assert result.metadata.exit_code == -1
 
         # Reset the terminal
-        action = CmdRunAction(command=command=command="echo 'This should work'", reset_terminal=True)
+        action = CmdRunAction(command="echo 'This should work'", reset_terminal=True)
         result = bash_session.execute(action)
 
         assert isinstance(result, CmdOutputObservation)
         assert 'Terminal session has been reset' in result.content
 
         # Verify we can run commands after reset
-        action = CmdRunAction(command=command=command="echo 'After reset'", reset_terminal=False)
+        action = CmdRunAction(command="echo 'After reset'", reset_terminal=False)
         result = bash_session.execute(action)
 
         assert isinstance(result, CmdOutputObservation)

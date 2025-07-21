@@ -357,7 +357,7 @@ async def test_unsafe_bash_command(temp_dir: str):
             ],
         ),
         (  # Test CmdRunAction
-            CmdRunAction(command=command='ls', thought='running ls'),
+            CmdRunAction(command='ls', thought='running ls'),
             [
                 Message(
                     metadata={}, role='assistant', content='running ls', tool_calls=None

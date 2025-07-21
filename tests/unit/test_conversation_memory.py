@@ -598,7 +598,7 @@ def test_process_events_with_message_action_with_image(conversation_memory):
 
 
 def test_process_events_with_user_cmd_action(conversation_memory):
-    action = CmdRunAction(command=command='ls -l', reset_terminal=False)
+    action = CmdRunAction(command='ls -l', reset_terminal=False)
     action._source = EventSource.USER
 
     # Define initial user action
@@ -1418,7 +1418,7 @@ def test_process_events_partial_history(conversation_memory):
     )
     recall_obs._source = EventSource.AGENT
 
-    cmd_action = CmdRunAction(command=command='ls', thought='Running ls')
+    cmd_action = CmdRunAction(command='ls', thought='Running ls')
     cmd_action._source = EventSource.AGENT
     cmd_action.tool_call_metadata = _create_mock_tool_call_metadata(
         tool_call_id='call_ls_1', function_name='execute_bash', response_id='resp_ls_1'

@@ -122,7 +122,7 @@ async def test_export_latest_git_provider_tokens_no_user_id(temp_dir):
     runtime = TestRuntime(config=config, event_stream=event_stream, sid='test')
 
     # Create a command that would normally trigger token export
-    cmd = CmdRunAction(command=command='echo $GITHUB_TOKEN', reset_terminal=False)
+    cmd = CmdRunAction(command='echo $GITHUB_TOKEN', reset_terminal=False)
 
     # This should not raise any errors and should return None
     await runtime._export_latest_git_provider_tokens(cmd)
@@ -142,7 +142,7 @@ async def test_export_latest_git_provider_tokens_no_token_ref(temp_dir):
     )
 
     # Create a command that doesn't reference any tokens
-    cmd = CmdRunAction(command=command='echo "hello"', reset_terminal=False)
+    cmd = CmdRunAction(command='echo "hello"', reset_terminal=False)
 
     # This should not raise any errors and should return None
     await runtime._export_latest_git_provider_tokens(cmd)
@@ -155,7 +155,7 @@ async def test_export_latest_git_provider_tokens_no_token_ref(temp_dir):
 async def test_export_latest_git_provider_tokens_success(runtime):
     """Test successful token export when command references tokens"""
     # Create a command that references the GitHub token
-    cmd = CmdRunAction(command=command='echo $GITHUB_TOKEN', reset_terminal=False)
+    cmd = CmdRunAction(command='echo $GITHUB_TOKEN', reset_terminal=False)
 
     # Export the tokens
     await runtime._export_latest_git_provider_tokens(cmd)
@@ -186,7 +186,9 @@ async def test_export_latest_git_provider_tokens_multiple_refs(temp_dir):
     )
 
     # Create a command that references multiple tokens
-    cmd = CmdRunAction(command=command='echo $GITHUB_TOKEN && echo $GITLAB_TOKEN', reset_terminal=False)
+    cmd = CmdRunAction(
+        command='echo $GITHUB_TOKEN && echo $GITLAB_TOKEN', reset_terminal=False
+    )
 
     # Export the tokens
     await runtime._export_latest_git_provider_tokens(cmd)
@@ -202,7 +204,7 @@ async def test_export_latest_git_provider_tokens_multiple_refs(temp_dir):
 async def test_export_latest_git_provider_tokens_token_update(runtime):
     """Test that token updates are handled correctly"""
     # First export with initial token
-    cmd = CmdRunAction(command=command='echo $GITHUB_TOKEN', reset_terminal=False)
+    cmd = CmdRunAction(command='echo $GITHUB_TOKEN', reset_terminal=False)
     await runtime._export_latest_git_provider_tokens(cmd)
 
     # Update the token

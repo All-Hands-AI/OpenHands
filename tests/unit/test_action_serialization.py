@@ -102,6 +102,7 @@ def test_cmd_run_action_serialization_deserialization():
             'confirmation_state': ActionConfirmationStatus.CONFIRMED,
             'is_static': False,
             'cwd': None,
+            'reset_terminal': False,
         },
     }
     serialization_deserialization(original_action_dict, CmdRunAction)
