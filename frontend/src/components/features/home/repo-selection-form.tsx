@@ -95,15 +95,10 @@ export function RepositorySelectionForm({
   const isCreatingConversation =
     isPending || isSuccess || isCreatingConversationElsewhere;
 
-  // Filter repositories by selected provider
-  const filteredRepositories = React.useMemo(() => {
-    if (!selectedProvider) return [];
-    return (repositories || [])
-      .concat(searchedRepos || [])
-      .filter(repo => repo.git_provider === selectedProvider);
-  }, [repositories, searchedRepos, selectedProvider]);
-
-  const repositoriesItems = filteredRepositories.map((repo) => ({
+  // Use all repositories without filtering by provider for now
+  const allRepositories = repositories?.concat(searchedRepos || []);
+  
+  const repositoriesItems = (allRepositories || []).map((repo) => ({
     key: repo.id,
     label: decodeURIComponent(repo.full_name),
   }));
@@ -122,7 +117,7 @@ export function RepositorySelectionForm({
   }, [providers]);
 
   const handleRepoSelection = (key: React.Key | null) => {
-    const selectedRepo = filteredRepositories.find((repo) => repo.id === key);
+    const selectedRepo = allRepositories?.find((repo) => repo.id === key);
     if (selectedRepo) onRepoSelection(selectedRepo);
     setSelectedRepository(selectedRepo || null);
     setSelectedBranch(null); // Reset branch selection when repo changes
@@ -198,8 +193,8 @@ export function RepositorySelectionForm({
       return <RepositoryErrorState />;
     }
 
-    // If there are multiple providers and none is selected, disable the repo dropdown
-    const isDisabled = providers.length > 1 && !selectedProvider;
+    // For now, don't disable the repo dropdown based on provider selection
+    const isDisabled = false;
 
     return (
       <RepositoryDropdown
@@ -210,7 +205,7 @@ export function RepositorySelectionForm({
         defaultFilter={(textValue, inputValue) => {
           if (!inputValue) return true;
 
-          const repo = filteredRepositories.find((r) => r.full_name === textValue);
+          const repo = allRepositories?.find((r) => r.full_name === textValue);
           if (!repo) return false;
 
           const sanitizedInput = sanitizeQuery(inputValue);
