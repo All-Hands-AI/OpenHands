@@ -1,4 +1,4 @@
-"""Test runtime error handling for LLMMalformedActionError."""
+"""Test runtime error handling for PermissionError."""
 
 import os
 import tempfile
@@ -33,10 +33,10 @@ def cli_runtime(temp_dir):
 
 
 @pytest.mark.asyncio
-async def test_llm_malformed_action_error_converted_to_observation(
+async def test_permission_error_converted_to_observation(
     cli_runtime, temp_dir
 ):
-    """Test that LLMMalformedActionError is converted to ErrorObservation instead of stopping the agent."""
+    """Test that PermissionError is converted to ErrorObservation instead of stopping the agent."""
     # Initialize the runtime
     await cli_runtime.connect()
 
@@ -63,7 +63,7 @@ async def test_llm_malformed_action_error_converted_to_observation(
 
 
 @pytest.mark.asyncio
-async def test_llm_malformed_action_error_path_traversal(cli_runtime, temp_dir):
+async def test_permission_error_path_traversal(cli_runtime, temp_dir):
     """Test that path traversal attempts are converted to ErrorObservation."""
     # Initialize the runtime
     await cli_runtime.connect()

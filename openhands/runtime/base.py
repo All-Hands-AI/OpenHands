@@ -19,7 +19,6 @@ from openhands.core.config import OpenHandsConfig, SandboxConfig
 from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig
 from openhands.core.exceptions import (
     AgentRuntimeDisconnectedError,
-    LLMMalformedActionError,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventSource, EventStream, EventStreamSubscriber
@@ -343,9 +342,9 @@ class Runtime(FileEditRuntimeMixin):
             else:
                 observation = await call_sync_from_async(self.run_action, event)
         except Exception as e:
-            # Handle LLMMalformedActionError specially - convert to ErrorObservation
+            # Handle PermissionError specially - convert to ErrorObservation
             # so the agent can receive feedback and continue execution
-            if isinstance(e, LLMMalformedActionError):
+            if isinstance(e, PermissionError):
                 observation = ErrorObservation(content=str(e))
             else:
                 runtime_status = RuntimeStatus.ERROR
