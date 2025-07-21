@@ -1,6 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
+import { useNavigate } from "react-router";
 import { ModelSelector } from "#/components/shared/modals/settings/model-selector";
 import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers";
 import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
@@ -28,12 +29,21 @@ import { DEFAULT_OPENHANDS_MODEL } from "#/utils/verified-models";
 
 function LlmSettingsScreen() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const { mutate: saveSettings, isPending } = useSaveSettings();
 
   const { data: resources } = useAIConfigOptions();
   const { data: settings, isLoading, isFetching } = useSettings();
   const { data: config } = useConfig();
+  
+  // Safety check: If in SaaS mode, redirect to user settings
+  // This provides an additional layer of protection
+  React.useEffect(() => {
+    if (config?.APP_MODE === "saas") {
+      navigate("/settings/user");
+    }
+  }, [config?.APP_MODE, navigate]);
 
   const [view, setView] = React.useState<"basic" | "advanced">("basic");
   const [securityAnalyzerInputIsVisible, setSecurityAnalyzerInputIsVisible] =
