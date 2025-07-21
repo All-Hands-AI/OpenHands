@@ -76,8 +76,7 @@ def test_basic_command():
         CmdRunAction(
             command='echo "first" && echo "second" && echo "third"',
             reset_terminal=False,
-        ),
-        reset_terminal=False,
+        )
     )
     assert 'first' in obs.content
     assert 'second' in obs.content
@@ -260,8 +259,7 @@ def test_command_output_continuation():
     obs = session.execute(
         CmdRunAction(
             command='for i in {1..5}; do echo $i; sleep 2; done', reset_terminal=False
-        ),
-        reset_terminal=False,
+        )
     )
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
@@ -334,8 +332,7 @@ def test_long_output():
     obs = session.execute(
         CmdRunAction(
             command='for i in {1..5000}; do echo "Line $i"; done', reset_terminal=False
-        ),
-        reset_terminal=False,
+        )
     )
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert 'Line 1' in obs.content
@@ -355,8 +352,7 @@ def test_long_output_exceed_history_limit():
     obs = session.execute(
         CmdRunAction(
             command='for i in {1..50000}; do echo "Line $i"; done', reset_terminal=False
-        ),
-        reset_terminal=False,
+        )
     )
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert 'Previous command outputs are truncated' in obs.metadata.prefix
