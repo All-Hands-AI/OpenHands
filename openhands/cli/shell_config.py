@@ -6,6 +6,7 @@ shell aliases across different shell types and platforms.
 
 import platform
 import re
+import shutil
 from pathlib import Path
 from typing import Optional
 
@@ -277,3 +278,12 @@ def get_shell_config_path() -> Path:
     """Get the path to the shell configuration file."""
     manager = ShellConfigManager()
     return manager.get_shell_config_path()
+
+
+def global_openhands_command_exists() -> bool:
+    """Check if a global 'openhands' command is already available in PATH.
+
+    Returns:
+        True if 'openhands' command is found in PATH, False otherwise.
+    """
+    return shutil.which('openhands') is not None

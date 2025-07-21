@@ -18,6 +18,7 @@ from openhands.cli.shell_config import (
     ShellConfigManager,
     add_aliases_to_shell_config,
     aliases_exist_in_shell_config,
+    global_openhands_command_exists,
 )
 from openhands.cli.tui import (
     UsageMetrics,
@@ -382,11 +383,17 @@ async def run_setup_flow(config: OpenHandsConfig, settings_store: FileSettingsSt
     await modify_llm_settings_basic(config, settings_store)
 
 
-def run_alias_setup_flow(config: OpenHandsConfig) -> None:
+async def run_alias_setup_flow(
+    config: OpenHandsConfig, settings_store: FileSettingsStore
+) -> None:
     """Run the alias setup flow to configure shell aliases.
 
     Prompts the user to set up aliases for 'openhands' and 'oh' commands.
     Handles existing aliases by offering to keep or remove them.
+
+    Args:
+        config: OpenHands configuration
+        settings_store: Settings store to persist user preferences
     """
     print_formatted_text('')
     print_formatted_text(HTML('<gold>🚀 Welcome to OpenHands CLI!</gold>'))
@@ -415,6 +422,19 @@ def run_alias_setup_flow(config: OpenHandsConfig) -> None:
             HTML('<ansigreen>✅ Aliases are already configured.</ansigreen>')
         )
         return  # Exit early since aliases already exist
+
+    # Check if a global openhands command already exists
+    if global_openhands_command_exists():
+        print_formatted_text(
+            HTML(
+                '<grey>We detected a global <b>openhands</b> command is already available in your PATH.</grey>'
+            )
+        )
+        print_formatted_text('')
+        print_formatted_text(
+            HTML('<ansigreen>✅ OpenHands is already accessible globally.</ansigreen>')
+        )
+        return  # Exit early since global command exists
     else:
         # No existing aliases, show the normal setup flow
         print_formatted_text(
@@ -481,6 +501,17 @@ def run_alias_setup_flow(config: OpenHandsConfig) -> None:
                     )
                 )
         else:  # User chose "No"
+            # Persist the user's choice to not ask again
+            settings = await settings_store.load()
+            if settings is None:
+                # Create new settings if none exist
+                from openhands.storage.data_models.settings import Settings
+
+                settings = Settings()
+
+            settings.cli_alias_setup_declined = True
+            await settings_store.store(settings)
+
             print_formatted_text('')
             print_formatted_text(
                 HTML(
@@ -583,14 +614,27 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
         finalize_config(config)
 
     # Check if we should show the alias setup flow
-    # Only show it if aliases don't exist in the shell configuration
-    # and we're in an interactive environment (not during tests or CI)
-    if not aliases_exist_in_shell_config() and sys.stdin.isatty():
+    # Only show it if:
+    # 1. Aliases don't exist in the shell configuration
+    # 2. No global openhands command exists
+    # 3. User hasn't previously declined alias setup
+    # 4. We're in an interactive environment (not during tests or CI)
+    should_show_alias_setup = (
+        not aliases_exist_in_shell_config()
+        and not global_openhands_command_exists()
+        and sys.stdin.isatty()
+    )
+
+    # Check if user has previously declined alias setup
+    if should_show_alias_setup and settings:
+        should_show_alias_setup = not settings.cli_alias_setup_declined
+
+    if should_show_alias_setup:
         # Clear the terminal if we haven't shown a banner yet
         if not banner_shown:
             clear()
 
-        run_alias_setup_flow(config)
+        await run_alias_setup_flow(config, settings_store)
         banner_shown = True
 
     # TODO: Set working directory from config or use current working directory?
