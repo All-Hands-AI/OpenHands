@@ -627,8 +627,8 @@ def _create_server(
             os.getenv('WORK_PORT_1')
             or os.getenv('APP_PORT_1')
             or str(find_available_tcp_port(*APP_PORT_RANGE_1))
-         ),
-         int(
+        ),
+        int(
             os.getenv('WORK_PORT_2')
             or os.getenv('APP_PORT_2')
             or str(find_available_tcp_port(*APP_PORT_RANGE_2))
