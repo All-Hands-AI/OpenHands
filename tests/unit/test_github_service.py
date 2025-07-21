@@ -114,7 +114,7 @@ async def test_github_get_repositories_with_user_owner_type():
         patch.object(service, '_fetch_paginated_repos', return_value=mock_repo_data),
         patch.object(service, 'get_installation_ids', return_value=[123]),
     ):
-        repositories = await service.get_repositories('pushed', AppMode.SAAS)
+        repositories = await service.get_all_repositories('pushed', AppMode.SAAS)
 
         # Verify we got the expected number of repositories
         assert len(repositories) == 2
@@ -153,7 +153,7 @@ async def test_github_get_repositories_with_organization_owner_type():
         patch.object(service, '_fetch_paginated_repos', return_value=mock_repo_data),
         patch.object(service, 'get_installation_ids', return_value=[123]),
     ):
-        repositories = await service.get_repositories('pushed', AppMode.SAAS)
+        repositories = await service.get_all_repositories('pushed', AppMode.SAAS)
 
         # Verify we got the expected number of repositories
         assert len(repositories) == 2
@@ -192,7 +192,7 @@ async def test_github_get_repositories_mixed_owner_types():
         patch.object(service, '_fetch_paginated_repos', return_value=mock_repo_data),
         patch.object(service, 'get_installation_ids', return_value=[123]),
     ):
-        repositories = await service.get_repositories('pushed', AppMode.SAAS)
+        repositories = await service.get_all_repositories('pushed', AppMode.SAAS)
 
         # Verify we got the expected number of repositories
         assert len(repositories) == 2
@@ -239,7 +239,7 @@ async def test_github_get_repositories_owner_type_fallback():
         patch.object(service, '_fetch_paginated_repos', return_value=mock_repo_data),
         patch.object(service, 'get_installation_ids', return_value=[123]),
     ):
-        repositories = await service.get_repositories('pushed', AppMode.SAAS)
+        repositories = await service.get_all_repositories('pushed', AppMode.SAAS)
 
         # Verify all repositories default to USER owner_type
         for repo in repositories:

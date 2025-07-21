@@ -450,7 +450,7 @@ async def test_bitbucket_sort_parameter_mapping():
         ]
 
         # Call get_repositories with sort='pushed'
-        await service.get_repositories('pushed', AppMode.SAAS)
+        await service.get_all_repositories('pushed', AppMode.SAAS)
 
         # Verify that the second call used 'updated_on' instead of 'pushed'
         assert mock_request.call_count == 2
@@ -520,7 +520,7 @@ async def test_bitbucket_pagination():
         ]
 
         # Call get_repositories
-        repositories = await service.get_repositories('pushed', AppMode.SAAS)
+        repositories = await service.get_all_repositories('pushed', AppMode.SAAS)
 
         # Verify that all three requests were made (workspaces + 2 pages of repos)
         assert mock_request.call_count == 3
@@ -619,7 +619,7 @@ async def test_bitbucket_get_repositories_with_user_owner_type():
     with patch.object(service, '_fetch_paginated_data') as mock_fetch:
         mock_fetch.side_effect = [mock_workspaces, mock_repos]
 
-        repositories = await service.get_repositories('pushed', AppMode.SAAS)
+        repositories = await service.get_all_repositories('pushed', AppMode.SAAS)
 
         # Verify we got the expected number of repositories
         assert len(repositories) == 2
@@ -658,7 +658,7 @@ async def test_bitbucket_get_repositories_with_organization_owner_type():
     with patch.object(service, '_fetch_paginated_data') as mock_fetch:
         mock_fetch.side_effect = [mock_workspaces, mock_repos]
 
-        repositories = await service.get_repositories('pushed', AppMode.SAAS)
+        repositories = await service.get_all_repositories('pushed', AppMode.SAAS)
 
         # Verify we got the expected number of repositories
         assert len(repositories) == 2
@@ -706,7 +706,7 @@ async def test_bitbucket_get_repositories_mixed_owner_types():
     with patch.object(service, '_fetch_paginated_data') as mock_fetch:
         mock_fetch.side_effect = [mock_workspaces, mock_user_repos, mock_org_repos]
 
-        repositories = await service.get_repositories('pushed', AppMode.SAAS)
+        repositories = await service.get_all_repositories('pushed', AppMode.SAAS)
 
         # Verify we got repositories from both workspaces
         assert len(repositories) == 2
@@ -746,7 +746,7 @@ async def test_bitbucket_get_repositories_owner_type_fallback():
     with patch.object(service, '_fetch_paginated_data') as mock_fetch:
         mock_fetch.side_effect = [mock_workspaces, mock_repos]
 
-        repositories = await service.get_repositories('pushed', AppMode.SAAS)
+        repositories = await service.get_all_repositories('pushed', AppMode.SAAS)
 
         # Verify all repositories default to USER owner_type for private workspaces
         for repo in repositories:

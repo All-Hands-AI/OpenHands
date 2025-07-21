@@ -37,7 +37,7 @@ async def test_gitlab_get_repositories_with_user_owner_type():
         # Mock the pagination response
         mock_request.side_effect = [(mock_repos, {'Link': ''})]  # No next page
 
-        repositories = await service.get_repositories('pushed', AppMode.SAAS)
+        repositories = await service.get_all_repositories('pushed', AppMode.SAAS)
 
         # Verify we got the expected number of repositories
         assert len(repositories) == 2
@@ -76,7 +76,7 @@ async def test_gitlab_get_repositories_with_organization_owner_type():
         # Mock the pagination response
         mock_request.side_effect = [(mock_repos, {'Link': ''})]  # No next page
 
-        repositories = await service.get_repositories('pushed', AppMode.SAAS)
+        repositories = await service.get_all_repositories('pushed', AppMode.SAAS)
 
         # Verify we got the expected number of repositories
         assert len(repositories) == 2
@@ -115,7 +115,7 @@ async def test_gitlab_get_repositories_mixed_owner_types():
         # Mock the pagination response
         mock_request.side_effect = [(mock_repos, {'Link': ''})]  # No next page
 
-        repositories = await service.get_repositories('pushed', AppMode.SAAS)
+        repositories = await service.get_all_repositories('pushed', AppMode.SAAS)
 
         # Verify we got the expected number of repositories
         assert len(repositories) == 2
@@ -162,7 +162,7 @@ async def test_gitlab_get_repositories_owner_type_fallback():
         # Mock the pagination response
         mock_request.side_effect = [(mock_repos, {'Link': ''})]  # No next page
 
-        repositories = await service.get_repositories('pushed', AppMode.SAAS)
+        repositories = await service.get_all_repositories('pushed', AppMode.SAAS)
 
         # Verify all repositories default to USER owner_type
         for repo in repositories:
