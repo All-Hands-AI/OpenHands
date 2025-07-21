@@ -60,7 +60,7 @@ export function RepositorySelectionForm({
   const [searchQuery, setSearchQuery] = React.useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const { data: searchedRepos } = useSearchRepositories(debouncedSearchQuery);
-  
+
   // Auto-select provider if there's only one
   React.useEffect(() => {
     if (providers.length === 1 && !selectedProvider) {
@@ -97,7 +97,7 @@ export function RepositorySelectionForm({
 
   // Use all repositories without filtering by provider for now
   const allRepositories = repositories?.concat(searchedRepos || []);
-  
+
   const repositoriesItems = (allRepositories || []).map((repo) => ({
     key: repo.id,
     label: decodeURIComponent(repo.full_name),
@@ -107,7 +107,7 @@ export function RepositorySelectionForm({
     key: branch.name,
     label: branch.name,
   }));
-  
+
   // Create provider dropdown items
   const providerItems = React.useMemo(() => {
     return providers.map(provider => ({
@@ -123,7 +123,7 @@ export function RepositorySelectionForm({
     setSelectedBranch(null); // Reset branch selection when repo changes
     branchManuallyClearedRef.current = false; // Reset the flag when repo changes
   };
-  
+
   const handleProviderSelection = (key: React.Key | null) => {
     const provider = key as Provider | null;
     setSelectedProvider(provider);

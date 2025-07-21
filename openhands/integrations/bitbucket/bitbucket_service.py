@@ -9,6 +9,7 @@ from openhands.integrations.service_types import (
     BaseGitService,
     Branch,
     GitService,
+    InstallationsService,
     OwnerType,
     ProviderType,
     Repository,
@@ -20,7 +21,7 @@ from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
 
 
-class BitBucketService(BaseGitService, GitService):
+class BitBucketService(BaseGitService, GitService, InstallationsService):
     """Default implementation of GitService for Bitbucket integration.
 
     This is an extension point in OpenHands that allows applications to customize Bitbucket

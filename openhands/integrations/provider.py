@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from types import MappingProxyType
-from typing import Annotated, Any, Coroutine, Literal, overload
+from typing import Annotated, Any, Coroutine, Literal, cast, overload
 
 from pydantic import (
     BaseModel,
@@ -22,6 +22,7 @@ from openhands.integrations.service_types import (
     AuthenticationError,
     Branch,
     GitService,
+    InstallationsService,
     ProviderType,
     Repository,
     SuggestedTask,
@@ -160,6 +161,24 @@ class ProviderHandler:
         service = self._get_service(provider)
         return await service.get_latest_token()
 
+    async def get_github_installations(self) -> list[str]:
+        service = cast(InstallationsService, self._get_service(ProviderType.GITHUB))
+        try:
+            return await service.get_installations()
+        except Exception as e:
+            logger.warning(f'Failed to get github installations {e}')
+
+        return []
+
+    async def get_bitbucket_workspaces(self) -> list[str]:
+        service = cast(InstallationsService, self._get_service(ProviderType.BITBUCKET))
+        try:
+            return await service.get_installations()
+        except Exception as e:
+            logger.warning(f'Failed to get bitbucket workspaces {e}')
+
+        return []
+
     async def get_repositories(
         self,
         sort: str,
@@ -184,7 +203,9 @@ class ProviderHandler:
 
             service = self._get_service(selected_provider)
             try:
-                await service.get_paginated_repos(page, per_page, sort, installation_id)
+                return await service.get_paginated_repos(
+                    page, per_page, sort, installation_id
+                )
             except Exception as e:
                 logger.warning(f'Error fetching repos from {selected_provider}: {e}')
 

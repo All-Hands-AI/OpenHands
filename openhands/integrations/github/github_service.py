@@ -15,6 +15,7 @@ from openhands.integrations.service_types import (
     BaseGitService,
     Branch,
     GitService,
+    InstallationsService,
     OwnerType,
     ProviderType,
     Repository,
@@ -28,7 +29,7 @@ from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
 
 
-class GitHubService(BaseGitService, GitService):
+class GitHubService(BaseGitService, GitService, InstallationsService):
     """Default implementation of GitService for GitHub integration.
 
     TODO: This doesn't seem a good candidate for the get_impl() pattern. What are the abstract methods we should actually separate and implement here?

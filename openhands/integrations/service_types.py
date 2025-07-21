@@ -200,6 +200,12 @@ class BaseGitService(ABC):
         return UnknownException(f'HTTP error {type(e).__name__} : {e}')
 
 
+class InstallationsService(Protocol):
+    async def get_installations(self) -> list[str]:
+        """Get installations for the service; repos live underneath these installations"""
+        ...
+
+
 class GitService(Protocol):
     """Protocol defining the interface for Git service providers"""
 
