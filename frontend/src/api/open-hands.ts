@@ -425,40 +425,17 @@ class OpenHands {
   }
 
   /**
-   * Retrieves the repositories of the user for a specific provider
-   * @param provider The git provider (github, gitlab, bitbucket)
-   * @param installationId Optional installation ID for GitHub
-   * @param workspace Optional workspace for BitBucket
-   * @param page Optional page number for pagination
+   * Given a PAT, retrieves the repositories of the user
    * @returns A list of repositories
    */
-  static async retrieveUserGitRepositories(
-    provider?: Provider,
-    installationId?: string,
-    workspace?: string,
-    page?: number,
-  ) {
-    const params: Record<string, string | number> = {
-      sort: "pushed",
-    };
-
-    if (page) {
-      params.page = page;
-    }
-
-    if (provider === "github" && installationId) {
-      params.installation_id = installationId;
-    } else if (provider === "bitbucket" && workspace) {
-      params.workspace = workspace;
-    }
-
-    if (provider) {
-      params.provider = provider;
-    }
-
+  static async retrieveUserGitRepositories() {
     const { data } = await openHands.get<GitRepository[]>(
       "/api/user/repositories",
-      { params },
+      {
+        params: {
+          sort: "pushed",
+        },
+      },
     );
 
     return data;
