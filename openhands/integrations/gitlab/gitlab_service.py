@@ -226,6 +226,46 @@ class GitLabService(BaseGitService, GitService):
 
         return repos
 
+    async def get_paginated_repos(
+        self, page: int, per_page: int, sort: str, installation_id: int | None
+    ) -> list[Repository]:
+        url = f'{self.BASE_URL}/projects'
+        order_by = {
+            'pushed': 'last_activity_at',
+            'updated': 'last_activity_at',
+            'created': 'created_at',
+            'full_name': 'name',
+        }.get(sort, 'last_activity_at')
+
+        params = {
+            'page': str(page),
+            'per_page': str(per_page),
+            'order_by': order_by,
+            'sort': 'desc',  # GitLab uses sort for direction (asc/desc)
+            'owned': True,  # Boolean value without quotes
+            'membership': True,  # Include projects user is a member of
+        }
+        response, headers = await self._make_request(url, params)
+
+        next_link: str = headers.get('Link', '')
+        repos = [
+            Repository(
+                id=str(repo.get('id')),  # type: ignore[arg-type]
+                full_name=repo.get('path_with_namespace'),  # type: ignore[arg-type]
+                stargazers_count=repo.get('star_count'),
+                git_provider=ProviderType.GITLAB,
+                is_public=repo.get('visibility') == 'public',
+                owner_type=(
+                    OwnerType.ORGANIZATION
+                    if repo.get('namespace', {}).get('kind') == 'group'
+                    else OwnerType.USER
+                ),
+                link_header=next_link,
+            )
+            for repo in response
+        ]
+        return repos
+
     async def get_all_repositories(
         self, sort: str, app_mode: AppMode
     ) -> list[Repository]:

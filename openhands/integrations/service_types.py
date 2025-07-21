@@ -239,6 +239,12 @@ class GitService(Protocol):
         """Get repositories for the authenticated user"""
         ...
 
+    async def get_paginated_repos(
+        self, page: int, per_page: int, sort: str, installation_id: int | None
+    ) -> list[Repository]:
+        """Get a page of repositories for the authenticated user"""
+        ...
+
     async def get_suggested_tasks(self) -> list[SuggestedTask]:
         """Get suggested tasks for the authenticated user across all repositories"""
         ...
