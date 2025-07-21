@@ -714,7 +714,7 @@ async def read_confirmation_input(config: OpenHandsConfig) -> str:
             cli_confirm, config, 'Choose an option:', choices
         )
 
-        return {0: 'yes', 1: 'no', 2: 'always', 3: 'edit'}.get(index, 'no')
+        return {0: 'yes', 1: 'no', 2: 'always', 3: 'no'}.get(index, 'no')
 
     except (KeyboardInterrupt, EOFError):
         return 'no'
