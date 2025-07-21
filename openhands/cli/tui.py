@@ -589,34 +589,20 @@ async def read_prompt_input(
 
 async def read_confirmation_input(config: OpenHandsConfig) -> str:
     try:
-        prompt_session = create_prompt_session(config)
+        choices = [
+            'Yes, proceed',
+            'No, skip this action',
+            "Always proceed (don't ask again)",
+            'Let me provide different instructions',
+        ]
 
-        while True:
-            with patch_stdout():
-                print_formatted_text('')
-                confirmation: str = await prompt_session.prompt_async(
-                    HTML('<gold>Proceed with action? (y)es/(n)o/(a)lways > </gold>'),
-                )
+        # keep the outer coroutine responsive by using asyncio.to_thread which puts the blocking call app.run() of cli_confirm() in a separate thread
+        index = await asyncio.to_thread(
+            cli_confirm, config, 'Choose an option:', choices
+        )
 
-                confirmation = (
-                    '' if confirmation is None else confirmation.strip().lower()
-                )
+        return {0: 'yes', 1: 'no', 2: 'always', 3: 'edit'}.get(index, 'no')
 
-                if confirmation in ['y', 'yes']:
-                    return 'yes'
-                elif confirmation in ['n', 'no']:
-                    return 'no'
-                elif confirmation in ['a', 'always']:
-                    return 'always'
-                else:
-                    # Display error message for invalid input
-                    print_formatted_text('')
-                    print_formatted_text(
-                        HTML(
-                            '<ansired>Invalid input. Please enter (y)es, (n)o, or (a)lways.</ansired>'
-                        )
-                    )
-                    # Continue the loop to re-prompt
     except (KeyboardInterrupt, EOFError):
         return 'no'
 
