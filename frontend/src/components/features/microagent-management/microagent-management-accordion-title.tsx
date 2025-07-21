@@ -14,7 +14,7 @@ export function MicroagentManagementAccordionTitle({
       <div className="flex items-center gap-2">
         <GitProviderIcon gitProvider={repository.git_provider} />
         <div
-          className="text-white text-base font-normal truncate max-w-[168px]"
+          className="text-white text-base font-normal truncate max-w-[150px]"
           title={repository.full_name}
         >
           {repository.full_name}

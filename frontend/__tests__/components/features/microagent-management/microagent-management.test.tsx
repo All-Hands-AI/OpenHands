@@ -13,7 +13,7 @@ import { RepositoryMicroagent } from "#/types/microagent-management";
 describe("MicroagentManagement", () => {
   const RouterStub = createRoutesStub([
     {
-      Component: () => <MicroagentManagement />,
+      Component: MicroagentManagement,
       path: "/",
     },
   ]);
