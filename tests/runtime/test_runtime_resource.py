@@ -1,7 +1,7 @@
 """Stress tests for the DockerRuntime, which connects to the ActionExecutor running in the sandbox."""
 
 import pytest
-from conftest import _close_test_runtime, _load_runtime
+from conftest import close_test_runtime, create_runtime_and_config
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction
@@ -9,7 +9,7 @@ from openhands.events.action import CmdRunAction
 
 def test_stress_docker_runtime(temp_dir, runtime_cls, repeat=1):
     pytest.skip('This test is flaky')
-    runtime, config = _load_runtime(
+    runtime, config = create_runtime_and_config(
         temp_dir,
         runtime_cls,
         docker_runtime_kwargs={
@@ -35,12 +35,12 @@ def test_stress_docker_runtime(temp_dir, runtime_cls, repeat=1):
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
-    _close_test_runtime(runtime)
+    close_test_runtime(runtime)
 
 
 # def test_stress_docker_runtime_hit_memory_limits(temp_dir, runtime_cls):
 #     """Test runtime behavior under resource constraints."""
-#     runtime, config = _load_runtime(
+#     runtime, config = create_runtime_and_config(
 #         temp_dir,
 #         runtime_cls,
 #         docker_runtime_kwargs={
@@ -74,12 +74,12 @@ def test_stress_docker_runtime(temp_dir, runtime_cls, repeat=1):
 #     assert 'aborted early, out of system resources' in obs.content
 #     assert obs.exit_code == 3  # OOM killed!
 
-#     _close_test_runtime(runtime)
+#     close_test_runtime(runtime)
 
 
 # def test_stress_docker_runtime_within_memory_limits(temp_dir, runtime_cls):
 #     """Test runtime behavior under resource constraints."""
-#     runtime, config = _load_runtime(
+#     runtime, config = create_runtime_and_config(
 #         temp_dir,
 #         runtime_cls,
 #         docker_runtime_kwargs={
@@ -112,4 +112,4 @@ def test_stress_docker_runtime(temp_dir, runtime_cls, repeat=1):
 #     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 #     assert obs.exit_code == 0
 
-#     _close_test_runtime(runtime)
+#     close_test_runtime(runtime)

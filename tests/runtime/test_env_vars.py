@@ -4,7 +4,7 @@ import os
 from unittest.mock import patch
 
 import pytest
-from conftest import _close_test_runtime, _load_runtime
+from conftest import close_test_runtime, create_runtime_and_config
 
 from openhands.events.action import CmdRunAction
 from openhands.events.observation import CmdOutputObservation
@@ -16,7 +16,7 @@ from openhands.events.observation import CmdOutputObservation
 
 def test_env_vars_os_environ(temp_dir, runtime_cls, run_as_openhands):
     with patch.dict(os.environ, {'SANDBOX_ENV_FOOBAR': 'BAZ'}):
-        runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+        runtime, _ = create_runtime_and_config(temp_dir, runtime_cls, run_as_openhands)
 
         obs: CmdOutputObservation = runtime.run_action(CmdRunAction(command='env'))
         print(obs)
@@ -30,11 +30,11 @@ def test_env_vars_os_environ(temp_dir, runtime_cls, run_as_openhands):
             f'Output: [{obs.content}] for {runtime_cls}'
         )
 
-        _close_test_runtime(runtime)
+        close_test_runtime(runtime)
 
 
 def test_env_vars_runtime_operations(temp_dir, runtime_cls):
-    runtime, config = _load_runtime(temp_dir, runtime_cls)
+    runtime, _ = create_runtime_and_config(temp_dir, runtime_cls)
 
     # Test adding single env var
     runtime.add_env_vars({'QUUX': 'abc"def'})
@@ -65,11 +65,11 @@ def test_env_vars_runtime_operations(temp_dir, runtime_cls):
         and obs.content.strip().split('\r\n')[0].strip() == 'new_value'
     )
 
-    _close_test_runtime(runtime)
+    close_test_runtime(runtime)
 
 
 def test_env_vars_added_by_config(temp_dir, runtime_cls):
-    runtime, config = _load_runtime(
+    runtime, _ = create_runtime_and_config(
         temp_dir,
         runtime_cls,
         runtime_startup_env_vars={'ADDED_ENV_VAR': 'added_value'},
@@ -81,7 +81,7 @@ def test_env_vars_added_by_config(temp_dir, runtime_cls):
         obs.exit_code == 0
         and obs.content.strip().split('\r\n')[0].strip() == 'added_value'
     )
-    _close_test_runtime(runtime)
+    close_test_runtime(runtime)
 
 
 @pytest.mark.skipif(
@@ -91,7 +91,7 @@ def test_env_vars_added_by_config(temp_dir, runtime_cls):
 def test_docker_runtime_env_vars_persist_after_restart(temp_dir):
     from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
 
-    runtime, config = _load_runtime(temp_dir, DockerRuntime)
+    runtime, _ = create_runtime_and_config(temp_dir, DockerRuntime)
 
     # Add a test environment variable
     runtime.add_env_vars({'GITHUB_TOKEN': 'test_token'})
@@ -117,4 +117,4 @@ def test_docker_runtime_env_vars_persist_after_restart(temp_dir):
     assert obs.exit_code == 0
     assert obs.content.strip().split('\r\n')[0].strip() == 'test_token'
 
-    _close_test_runtime(runtime)
+    close_test_runtime(runtime)
