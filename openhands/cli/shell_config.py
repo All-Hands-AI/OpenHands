@@ -295,7 +295,7 @@ def alias_setup_declined() -> bool:
     Returns:
         True if user has declined alias setup, False otherwise.
     """
-    marker_file = Path.home() / '.openhands' / 'alias_setup_declined'
+    marker_file = Path.home() / '.openhands' / '.cli_alias_setup_declined'
     return marker_file.exists()
 
 
@@ -303,5 +303,5 @@ def mark_alias_setup_declined() -> None:
     """Mark that the user has declined alias setup."""
     openhands_dir = Path.home() / '.openhands'
     openhands_dir.mkdir(exist_ok=True)
-    marker_file = openhands_dir / 'alias_setup_declined'
+    marker_file = openhands_dir / '.cli_alias_setup_declined'
     marker_file.touch()
