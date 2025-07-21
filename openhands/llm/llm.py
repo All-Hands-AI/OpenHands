@@ -819,6 +819,8 @@ class LLM(RetryMixin, DebugMixin):
             message.function_calling_enabled = self.is_function_calling_active()
             if 'deepseek' in self.config.model:
                 message.force_string_serializer = True
+            if 'kimi-k2-instruct' in self.config.model and 'groq' in self.config.model:
+                message.force_string_serializer = True
 
         # let pydantic handle the serialization
         return [message.model_dump() for message in messages]
