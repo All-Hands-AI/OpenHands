@@ -239,7 +239,7 @@ async def run_session(
                         ChangeAgentStateAction(AgentState.USER_CONFIRMED),
                         EventSource.USER,
                     )
-                else: # 'no' or alternative instructions
+                else:  # 'no' or alternative instructions
                     # Tell the agent the proposed action was rejected
                     event_stream.add_event(
                         ChangeAgentStateAction(AgentState.USER_REJECTED),
