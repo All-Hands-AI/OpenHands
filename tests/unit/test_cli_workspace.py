@@ -6,7 +6,6 @@ import tempfile
 import pytest
 
 from openhands.core.config import OpenHandsConfig
-
 from openhands.events import EventStream
 from openhands.runtime.impl.cli.cli_runtime import CLIRuntime
 from openhands.storage import get_file_store

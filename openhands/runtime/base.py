@@ -348,18 +348,14 @@ class Runtime(FileEditRuntimeMixin):
         except (httpx.NetworkError, AgentRuntimeDisconnectedError) as e:
             runtime_status = RuntimeStatus.ERROR_RUNTIME_DISCONNECTED
             error_message = f'{type(e).__name__}: {str(e)}'
-            self.log(
-                'error', f'Unexpected error while running action: {error_message}'
-            )
+            self.log('error', f'Unexpected error while running action: {error_message}')
             self.log('error', f'Problematic action: {str(event)}')
             self.set_runtime_status(runtime_status, error_message)
             return
         except Exception as e:
             runtime_status = RuntimeStatus.ERROR
             error_message = f'{type(e).__name__}: {str(e)}'
-            self.log(
-                'error', f'Unexpected error while running action: {error_message}'
-            )
+            self.log('error', f'Unexpected error while running action: {error_message}')
             self.log('error', f'Problematic action: {str(event)}')
             self.set_runtime_status(runtime_status, error_message)
             return

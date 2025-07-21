@@ -33,9 +33,7 @@ def cli_runtime(temp_dir):
 
 
 @pytest.mark.asyncio
-async def test_permission_error_converted_to_observation(
-    cli_runtime, temp_dir
-):
+async def test_permission_error_converted_to_observation(cli_runtime, temp_dir):
     """Test that PermissionError is converted to ErrorObservation instead of stopping the agent."""
     # Initialize the runtime
     await cli_runtime.connect()
