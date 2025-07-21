@@ -35,7 +35,8 @@ export function RepositorySelectionForm({
   const [selectedBranch, setSelectedBranch] = React.useState<Branch | null>(
     null,
   );
-  const [selectedProvider, setSelectedProvider] = React.useState<Provider | null>(null);
+  const [selectedProvider, setSelectedProvider] =
+    React.useState<Provider | null>(null);
   // Add a ref to track if the branch was manually cleared by the user
   const branchManuallyClearedRef = React.useRef<boolean>(false);
   const { providers } = useUserProviders();
@@ -43,7 +44,15 @@ export function RepositorySelectionForm({
     data: repositories,
     isLoading: isLoadingRepositories,
     isError: isRepositoriesError,
-  } = useUserRepositories();
+    currentPage,
+    setCurrentPage,
+    githubInstallations,
+    bitbucketWorkspaces,
+    currentInstallationId,
+    setCurrentInstallationId,
+    currentWorkspace,
+    setCurrentWorkspace,
+  } = useUserRepositories(selectedProvider || undefined);
   const {
     data: branches,
     isLoading: isLoadingBranches,
@@ -109,12 +118,34 @@ export function RepositorySelectionForm({
   }));
 
   // Create provider dropdown items
-  const providerItems = React.useMemo(() => {
-    return providers.map(provider => ({
-      key: provider,
-      label: provider.charAt(0).toUpperCase() + provider.slice(1), // Capitalize first letter
-    }));
-  }, [providers]);
+  const providerItems = React.useMemo(
+    () =>
+      providers.map((provider) => ({
+        key: provider,
+        label: provider.charAt(0).toUpperCase() + provider.slice(1), // Capitalize first letter
+      })),
+    [providers],
+  );
+
+  // Create installation dropdown items for GitHub
+  const installationItems = React.useMemo(
+    () =>
+      githubInstallations?.map((installationId) => ({
+        key: installationId,
+        label: `Installation ${installationId}`,
+      })) || [],
+    [githubInstallations],
+  );
+
+  // Create workspace dropdown items for BitBucket
+  const workspaceItems = React.useMemo(
+    () =>
+      bitbucketWorkspaces?.map((workspace) => ({
+        key: workspace,
+        label: workspace,
+      })) || [],
+    [bitbucketWorkspaces],
+  );
 
   const handleRepoSelection = (key: React.Key | null) => {
     const selectedRepo = allRepositories?.find((repo) => repo.id === key);
@@ -129,6 +160,20 @@ export function RepositorySelectionForm({
     setSelectedProvider(provider);
     setSelectedRepository(null); // Reset repository selection when provider changes
     setSelectedBranch(null); // Reset branch selection when provider changes
+    onRepoSelection(null); // Reset parent component's selected repo
+  };
+
+  const handleInstallationSelection = (key: React.Key | null) => {
+    setCurrentInstallationId(key?.toString());
+    setSelectedRepository(null); // Reset repository selection when installation changes
+    setSelectedBranch(null); // Reset branch selection when installation changes
+    onRepoSelection(null); // Reset parent component's selected repo
+  };
+
+  const handleWorkspaceSelection = (key: React.Key | null) => {
+    setCurrentWorkspace(key?.toString());
+    setSelectedRepository(null); // Reset repository selection when workspace changes
+    setSelectedBranch(null); // Reset branch selection when workspace changes
     onRepoSelection(null); // Reset parent component's selected repo
   };
 
@@ -163,6 +208,16 @@ export function RepositorySelectionForm({
     }
   };
 
+  const handleNextPage = () => {
+    setCurrentPage(currentPage + 1);
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
   // Render the provider dropdown
   const renderProviderSelector = () => {
     // Only render if there are multiple providers
@@ -180,6 +235,74 @@ export function RepositorySelectionForm({
         onSelectionChange={handleProviderSelection}
         selectedKey={selectedProvider || undefined}
       />
+    );
+  };
+
+  // Render the installation dropdown for GitHub
+  const renderInstallationSelector = () => {
+    if (selectedProvider !== "github" || !githubInstallations?.length) {
+      return null;
+    }
+
+    return (
+      <SettingsDropdownInput
+        testId="installation-dropdown"
+        name="installation-dropdown"
+        placeholder="Select GitHub Installation"
+        items={installationItems}
+        wrapperClassName="max-w-[500px] mt-4"
+        onSelectionChange={handleInstallationSelection}
+        selectedKey={currentInstallationId || undefined}
+      />
+    );
+  };
+
+  // Render the workspace dropdown for BitBucket
+  const renderWorkspaceSelector = () => {
+    if (selectedProvider !== "bitbucket" || !bitbucketWorkspaces?.length) {
+      return null;
+    }
+
+    return (
+      <SettingsDropdownInput
+        testId="workspace-dropdown"
+        name="workspace-dropdown"
+        placeholder="Select BitBucket Workspace"
+        items={workspaceItems}
+        wrapperClassName="max-w-[500px] mt-4"
+        onSelectionChange={handleWorkspaceSelection}
+        selectedKey={currentWorkspace || undefined}
+      />
+    );
+  };
+
+  // Render pagination controls
+  const renderPagination = () => {
+    if (!repositories?.length) {
+      return null;
+    }
+
+    return (
+      <div className="flex items-center justify-between mt-4 max-w-[500px]">
+        <button
+          type="button"
+          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+          onClick={handlePreviousPage}
+          disabled={currentPage <= 1}
+        >
+          {t("Previous")}
+        </button>
+        <span className="text-sm text-gray-700">
+          {t("Page")} {currentPage}
+        </span>
+        <button
+          type="button"
+          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+          onClick={handleNextPage}
+        >
+          {t("Next")}
+        </button>
+      </div>
     );
   };
 
@@ -250,7 +373,10 @@ export function RepositorySelectionForm({
   return (
     <div className="flex flex-col gap-4">
       {renderProviderSelector()}
+      {renderInstallationSelector()}
+      {renderWorkspaceSelector()}
       {renderRepositorySelector()}
+      {renderPagination()}
       {renderBranchSelector()}
 
       <BrandButton
