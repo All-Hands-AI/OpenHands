@@ -8,6 +8,7 @@ export interface RepositoryDropdownProps {
   onSelectionChange: (key: React.Key | null) => void;
   onInputChange: (value: string) => void;
   defaultFilter?: (textValue: string, inputValue: string) => boolean;
+  isDisabled?: boolean;
 }
 
 export function RepositoryDropdown({
@@ -15,6 +16,7 @@ export function RepositoryDropdown({
   onSelectionChange,
   onInputChange,
   defaultFilter,
+  isDisabled = false,
 }: RepositoryDropdownProps) {
   const { t } = useTranslation();
 
@@ -22,12 +24,13 @@ export function RepositoryDropdown({
     <SettingsDropdownInput
       testId="repo-dropdown"
       name="repo-dropdown"
-      placeholder={t(I18nKey.REPOSITORY$SELECT_REPO)}
+      placeholder={isDisabled ? t("Please select a provider first") : t(I18nKey.REPOSITORY$SELECT_REPO)}
       items={items}
       wrapperClassName="max-w-[500px]"
       onSelectionChange={onSelectionChange}
       onInputChange={onInputChange}
       defaultFilter={defaultFilter}
+      isDisabled={isDisabled}
     />
   );
 }

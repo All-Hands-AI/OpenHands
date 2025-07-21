@@ -10,6 +10,9 @@ import { BrandButton } from "../settings/brand-button";
 import { useSearchRepositories } from "#/hooks/query/use-search-repositories";
 import { useDebounce } from "#/hooks/use-debounce";
 import { sanitizeQuery } from "#/utils/sanitize-query";
+import { useUserProviders } from "#/hooks/use-user-providers";
+import { Provider } from "#/types/settings";
+import { SettingsDropdownInput } from "../settings/settings-dropdown-input";
 import {
   RepositoryDropdown,
   RepositoryLoadingState,
@@ -32,8 +35,10 @@ export function RepositorySelectionForm({
   const [selectedBranch, setSelectedBranch] = React.useState<Branch | null>(
     null,
   );
+  const [selectedProvider, setSelectedProvider] = React.useState<Provider | null>(null);
   // Add a ref to track if the branch was manually cleared by the user
   const branchManuallyClearedRef = React.useRef<boolean>(false);
+  const { providers } = useUserProviders();
   const {
     data: repositories,
     isLoading: isLoadingRepositories,
@@ -55,6 +60,13 @@ export function RepositorySelectionForm({
   const [searchQuery, setSearchQuery] = React.useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const { data: searchedRepos } = useSearchRepositories(debouncedSearchQuery);
+  
+  // Auto-select provider if there's only one
+  React.useEffect(() => {
+    if (providers.length === 1 && !selectedProvider) {
+      setSelectedProvider(providers[0]);
+    }
+  }, [providers, selectedProvider]);
 
   // Auto-select main or master branch if it exists, but only if the branch wasn't manually cleared
   React.useEffect(() => {
@@ -83,8 +95,15 @@ export function RepositorySelectionForm({
   const isCreatingConversation =
     isPending || isSuccess || isCreatingConversationElsewhere;
 
-  const allRepositories = repositories?.concat(searchedRepos || []);
-  const repositoriesItems = allRepositories?.map((repo) => ({
+  // Filter repositories by selected provider
+  const filteredRepositories = React.useMemo(() => {
+    if (!selectedProvider) return [];
+    return (repositories || [])
+      .concat(searchedRepos || [])
+      .filter(repo => repo.git_provider === selectedProvider);
+  }, [repositories, searchedRepos, selectedProvider]);
+
+  const repositoriesItems = filteredRepositories.map((repo) => ({
     key: repo.id,
     label: decodeURIComponent(repo.full_name),
   }));
@@ -93,13 +112,29 @@ export function RepositorySelectionForm({
     key: branch.name,
     label: branch.name,
   }));
+  
+  // Create provider dropdown items
+  const providerItems = React.useMemo(() => {
+    return providers.map(provider => ({
+      key: provider,
+      label: provider.charAt(0).toUpperCase() + provider.slice(1), // Capitalize first letter
+    }));
+  }, [providers]);
 
   const handleRepoSelection = (key: React.Key | null) => {
-    const selectedRepo = allRepositories?.find((repo) => repo.id === key);
+    const selectedRepo = filteredRepositories.find((repo) => repo.id === key);
     if (selectedRepo) onRepoSelection(selectedRepo);
     setSelectedRepository(selectedRepo || null);
     setSelectedBranch(null); // Reset branch selection when repo changes
     branchManuallyClearedRef.current = false; // Reset the flag when repo changes
+  };
+  
+  const handleProviderSelection = (key: React.Key | null) => {
+    const provider = key as Provider | null;
+    setSelectedProvider(provider);
+    setSelectedRepository(null); // Reset repository selection when provider changes
+    setSelectedBranch(null); // Reset branch selection when provider changes
+    onRepoSelection(null); // Reset parent component's selected repo
   };
 
   const handleBranchSelection = (key: React.Key | null) => {
@@ -133,6 +168,26 @@ export function RepositorySelectionForm({
     }
   };
 
+  // Render the provider dropdown
+  const renderProviderSelector = () => {
+    // Only render if there are multiple providers
+    if (providers.length <= 1) {
+      return null;
+    }
+
+    return (
+      <SettingsDropdownInput
+        testId="provider-dropdown"
+        name="provider-dropdown"
+        placeholder="Select Provider"
+        items={providerItems}
+        wrapperClassName="max-w-[500px]"
+        onSelectionChange={handleProviderSelection}
+        selectedKey={selectedProvider || undefined}
+      />
+    );
+  };
+
   // Render the appropriate UI based on the loading/error state
   const renderRepositorySelector = () => {
     if (isLoadingRepositories) {
@@ -143,15 +198,19 @@ export function RepositorySelectionForm({
       return <RepositoryErrorState />;
     }
 
+    // If there are multiple providers and none is selected, disable the repo dropdown
+    const isDisabled = providers.length > 1 && !selectedProvider;
+
     return (
       <RepositoryDropdown
         items={repositoriesItems || []}
         onSelectionChange={handleRepoSelection}
         onInputChange={handleRepoInputChange}
+        isDisabled={isDisabled}
         defaultFilter={(textValue, inputValue) => {
           if (!inputValue) return true;
 
-          const repo = allRepositories?.find((r) => r.full_name === textValue);
+          const repo = filteredRepositories.find((r) => r.full_name === textValue);
           if (!repo) return false;
 
           const sanitizedInput = sanitizeQuery(inputValue);
@@ -195,8 +254,8 @@ export function RepositorySelectionForm({
 
   return (
     <div className="flex flex-col gap-4">
+      {renderProviderSelector()}
       {renderRepositorySelector()}
-
       {renderBranchSelector()}
 
       <BrandButton
