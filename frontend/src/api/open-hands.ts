@@ -493,6 +493,10 @@ class OpenHands {
   static async getGitHubUserInstallationIds(): Promise<string[]> {
     return [];
   }
+
+  static async getBitBucketWorkspaces(): Promise<string[]> {
+    return [];
+  }
 }
 
 export default OpenHands;
