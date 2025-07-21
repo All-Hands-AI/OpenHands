@@ -623,8 +623,16 @@ def _create_server(
         os.getenv('VSCODE_PORT') or str(find_available_tcp_port(*VSCODE_PORT_RANGE))
     )
     app_ports = [
-        int(os.getenv('WORK_PORT_1') or os.getenv('WORK_PORT_1') or str(find_available_tcp_port(*APP_PORT_RANGE_1))),
-        int(os.getenv('WORK_PORT_2') or os.getenv('WORK_PORT_2') or str(find_available_tcp_port(*APP_PORT_RANGE_2))),
+        int(
+             os.getenv('WORK_PORT_1')
+             or os.getenv('APP_PORT_1')
+             or str(find_available_tcp_port(*APP_PORT_RANGE_1))
+         ),
+         int(
+             os.getenv('WORK_PORT_2')
+             or os.getenv('APP_PORT_2')
+             or str(find_available_tcp_port(*APP_PORT_RANGE_2))
+        ),
     ]
 
     # Get user info
