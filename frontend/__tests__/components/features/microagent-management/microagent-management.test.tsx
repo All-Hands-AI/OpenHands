@@ -80,6 +80,22 @@ describe("MicroagentManagement", () => {
       owner_type: "user",
       pushed_at: "2021-10-04T12:00:00Z",
     },
+    {
+      id: "5",
+      full_name: "user/TestRepository",
+      git_provider: "github",
+      is_public: true,
+      owner_type: "user",
+      pushed_at: "2021-10-05T12:00:00Z",
+    },
+    {
+      id: "6",
+      full_name: "org/AnotherRepo",
+      git_provider: "github",
+      is_public: true,
+      owner_type: "organization",
+      pushed_at: "2021-10-06T12:00:00Z",
+    },
   ];
 
   const mockMicroagents: RepositoryMicroagent[] = [
@@ -464,5 +480,273 @@ describe("MicroagentManagement", () => {
 
     expect(readyMessage).toBeInTheDocument();
     expect(descriptionMessage).toBeInTheDocument();
+  });
+
+  // Search functionality tests
+  describe("Search functionality", () => {
+    it("should render search input field", async () => {
+      renderMicroagentManagement();
+
+      // Wait for repositories to be loaded
+      await waitFor(() => {
+        expect(OpenHands.retrieveUserGitRepositories).toHaveBeenCalled();
+      });
+
+      // Check that search input is rendered
+      const searchInput = screen.getByRole("textbox", {
+        name: /search repositories/i,
+      });
+      expect(searchInput).toBeInTheDocument();
+      expect(searchInput).toHaveAttribute(
+        "placeholder",
+        "Search repositories...",
+      );
+    });
+
+    it("should filter repositories when typing in search input", async () => {
+      const user = userEvent.setup();
+      renderMicroagentManagement();
+
+      // Wait for repositories to be loaded
+      await waitFor(() => {
+        expect(OpenHands.retrieveUserGitRepositories).toHaveBeenCalled();
+      });
+
+      // Initially only repositories with .openhands should be visible
+      expect(screen.getByText("user/repo2/.openhands")).toBeInTheDocument();
+      expect(screen.queryByText("user/repo1")).not.toBeInTheDocument();
+      expect(screen.queryByText("user/repo4")).not.toBeInTheDocument();
+
+      // Type in search input to filter further
+      const searchInput = screen.getByRole("textbox", {
+        name: /search repositories/i,
+      });
+      await user.type(searchInput, "repo2");
+
+      // Only repo2 should be visible
+      expect(screen.getByText("user/repo2/.openhands")).toBeInTheDocument();
+      expect(screen.queryByText("user/repo1")).not.toBeInTheDocument();
+      expect(
+        screen.queryByText("org/repo3/.openhands"),
+      ).not.toBeInTheDocument();
+      expect(screen.queryByText("user/repo4")).not.toBeInTheDocument();
+      expect(screen.queryByText("user/TestRepository")).not.toBeInTheDocument();
+      expect(screen.queryByText("org/AnotherRepo")).not.toBeInTheDocument();
+    });
+
+    it("should perform case-insensitive search", async () => {
+      const user = userEvent.setup();
+      renderMicroagentManagement();
+
+      // Wait for repositories to be loaded
+      await waitFor(() => {
+        expect(OpenHands.retrieveUserGitRepositories).toHaveBeenCalled();
+      });
+
+      // Type in search input with uppercase
+      const searchInput = screen.getByRole("textbox", {
+        name: /search repositories/i,
+      });
+      await user.type(searchInput, "REPO2");
+
+      // repo2 should be visible (case-insensitive match)
+      expect(screen.getByText("user/repo2/.openhands")).toBeInTheDocument();
+      expect(screen.queryByText("user/repo1")).not.toBeInTheDocument();
+      expect(
+        screen.queryByText("org/repo3/.openhands"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("should filter repositories by partial matches", async () => {
+      const user = userEvent.setup();
+      renderMicroagentManagement();
+
+      // Wait for repositories to be loaded
+      await waitFor(() => {
+        expect(OpenHands.retrieveUserGitRepositories).toHaveBeenCalled();
+      });
+
+      // Type in search input with partial match
+      const searchInput = screen.getByRole("textbox", {
+        name: /search repositories/i,
+      });
+      await user.type(searchInput, "repo");
+
+      // All repositories with "repo" in the name should be visible
+      expect(screen.getByText("user/repo2/.openhands")).toBeInTheDocument();
+      expect(screen.queryByText("user/repo1")).not.toBeInTheDocument();
+      expect(
+        screen.queryByText("org/repo3/.openhands"),
+      ).not.toBeInTheDocument();
+      expect(screen.queryByText("user/repo4")).not.toBeInTheDocument();
+      expect(screen.queryByText("user/TestRepository")).not.toBeInTheDocument();
+      expect(screen.queryByText("org/AnotherRepo")).not.toBeInTheDocument();
+    });
+
+    it("should show all repositories when search input is cleared", async () => {
+      const user = userEvent.setup();
+      renderMicroagentManagement();
+
+      // Wait for repositories to be loaded
+      await waitFor(() => {
+        expect(OpenHands.retrieveUserGitRepositories).toHaveBeenCalled();
+      });
+
+      // Type in search input
+      const searchInput = screen.getByRole("textbox", {
+        name: /search repositories/i,
+      });
+      await user.type(searchInput, "repo2");
+
+      // Only repo2 should be visible
+      expect(screen.getByText("user/repo2/.openhands")).toBeInTheDocument();
+      expect(screen.queryByText("user/repo1")).not.toBeInTheDocument();
+
+      // Clear the search input
+      await user.clear(searchInput);
+
+      // All repositories should be visible again (only those with .openhands)
+      expect(screen.getByText("user/repo2/.openhands")).toBeInTheDocument();
+      expect(screen.queryByText("user/repo1")).not.toBeInTheDocument();
+      expect(
+        screen.queryByText("org/repo3/.openhands"),
+      ).not.toBeInTheDocument();
+      expect(screen.queryByText("user/repo4")).not.toBeInTheDocument();
+      expect(screen.queryByText("user/TestRepository")).not.toBeInTheDocument();
+      expect(screen.queryByText("org/AnotherRepo")).not.toBeInTheDocument();
+    });
+
+    it("should handle empty search results", async () => {
+      const user = userEvent.setup();
+      renderMicroagentManagement();
+
+      // Wait for repositories to be loaded
+      await waitFor(() => {
+        expect(OpenHands.retrieveUserGitRepositories).toHaveBeenCalled();
+      });
+
+      // Type in search input with non-existent repository name
+      const searchInput = screen.getByRole("textbox", {
+        name: /search repositories/i,
+      });
+      await user.type(searchInput, "nonexistent");
+
+      // No repositories should be visible
+      expect(screen.queryByText("user/repo1")).not.toBeInTheDocument();
+      expect(
+        screen.queryByText("user/repo2/.openhands"),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByText("org/repo3/.openhands"),
+      ).not.toBeInTheDocument();
+      expect(screen.queryByText("user/repo4")).not.toBeInTheDocument();
+      expect(screen.queryByText("user/TestRepository")).not.toBeInTheDocument();
+      expect(screen.queryByText("org/AnotherRepo")).not.toBeInTheDocument();
+    });
+
+    it("should handle special characters in search", async () => {
+      const user = userEvent.setup();
+      renderMicroagentManagement();
+
+      // Wait for repositories to be loaded
+      await waitFor(() => {
+        expect(OpenHands.retrieveUserGitRepositories).toHaveBeenCalled();
+      });
+
+      // Type in search input with special characters
+      const searchInput = screen.getByRole("textbox", {
+        name: /search repositories/i,
+      });
+      await user.type(searchInput, ".openhands");
+
+      // Only repositories with .openhands should be visible
+      expect(screen.getByText("user/repo2/.openhands")).toBeInTheDocument();
+      expect(screen.queryByText("user/repo1")).not.toBeInTheDocument();
+      expect(screen.queryByText("user/repo4")).not.toBeInTheDocument();
+    });
+
+    it("should maintain accordion functionality with filtered results", async () => {
+      const user = userEvent.setup();
+      renderMicroagentManagement();
+
+      // Wait for repositories to be loaded
+      await waitFor(() => {
+        expect(OpenHands.retrieveUserGitRepositories).toHaveBeenCalled();
+      });
+
+      // Filter to show only repo2
+      const searchInput = screen.getByRole("textbox", {
+        name: /search repositories/i,
+      });
+      await user.type(searchInput, "repo2");
+
+      // Click on the filtered repository accordion
+      const repoAccordion = screen.getByText("user/repo2/.openhands");
+      await user.click(repoAccordion);
+
+      // Wait for microagents to be fetched
+      await waitFor(() => {
+        expect(OpenHands.getRepositoryMicroagents).toHaveBeenCalledWith(
+          "user",
+          "repo2",
+        );
+      });
+
+      // Check that microagents are displayed
+      const microagent1 = screen.getByText("test-microagent-1");
+      const microagent2 = screen.getByText("test-microagent-2");
+
+      expect(microagent1).toBeInTheDocument();
+      expect(microagent2).toBeInTheDocument();
+    });
+
+    it("should handle whitespace in search input", async () => {
+      const user = userEvent.setup();
+      renderMicroagentManagement();
+
+      // Wait for repositories to be loaded
+      await waitFor(() => {
+        expect(OpenHands.retrieveUserGitRepositories).toHaveBeenCalled();
+      });
+
+      // Type in search input with leading/trailing whitespace
+      const searchInput = screen.getByRole("textbox", {
+        name: /search repositories/i,
+      });
+      await user.type(searchInput, "  repo2  ");
+
+      // repo2 should still be visible (whitespace should be trimmed)
+      expect(screen.getByText("user/repo2/.openhands")).toBeInTheDocument();
+      expect(screen.queryByText("user/repo1")).not.toBeInTheDocument();
+    });
+
+    it("should update search results in real-time", async () => {
+      const user = userEvent.setup();
+      renderMicroagentManagement();
+
+      // Wait for repositories to be loaded
+      await waitFor(() => {
+        expect(OpenHands.retrieveUserGitRepositories).toHaveBeenCalled();
+      });
+
+      const searchInput = screen.getByRole("textbox", {
+        name: /search repositories/i,
+      });
+
+      // Type "repo" - should show repo2
+      await user.type(searchInput, "repo");
+      expect(screen.getByText("user/repo2/.openhands")).toBeInTheDocument();
+      expect(screen.queryByText("user/repo1")).not.toBeInTheDocument();
+
+      // Add "2" to make it "repo2" - should show only repo2
+      await user.type(searchInput, "2");
+      expect(screen.getByText("user/repo2/.openhands")).toBeInTheDocument();
+      expect(screen.queryByText("user/repo1")).not.toBeInTheDocument();
+
+      // Remove "2" to make it "repo" again - should show repo2
+      await user.keyboard("{Backspace}");
+      expect(screen.getByText("user/repo2/.openhands")).toBeInTheDocument();
+      expect(screen.queryByText("user/repo1")).not.toBeInTheDocument();
+    });
   });
 });

@@ -11197,7 +11197,7 @@
         "fr": "Que souhaitez-vous que le microagent fasse ?",
         "tr": "Mikro ajanın ne yapmasını istersiniz?",
         "de": "Was soll der Microagent tun?",
-        "uk": "Що ви хочете, щоб зробив мікроагент?"
+        "uk": "Що в,и хочете, щоб зробив мікроагент?"
     },
     "MICROAGENT_MANAGEMENT$DESCRIBE_WHAT_TO_DO": {
         "en": "Describe what you would like the Microagent to do.",
@@ -11374,5 +11374,21 @@
         "tr": "Organizasyon düzeyinde mikro ajanınız yok",
         "de": "Sie haben keine Mikroagenten auf Organisationsebene",
         "uk": "У вас немає мікроагентів на рівні організації"
+    },
+    "COMMON$SEARCH_REPOSITORIES": {
+        "en": "Search repositories",
+        "ja": "リポジトリを検索",
+        "zh-CN": "搜索仓库",
+        "zh-TW": "搜尋存儲庫",
+        "ko-KR": "저장소 검색",
+        "no": "Søk i repositories",
+        "it": "Cerca repository",
+        "pt": "Pesquisar repositórios",
+        "es": "Buscar repositorios",
+        "ar": "البحث في المستودعات",
+        "fr": "Rechercher des dépôts",
+        "tr": "Depo ara",
+        "de": "Repositorys durchsuchen",
+        "uk": "Пошук репозиторіїв"
     }
 }
