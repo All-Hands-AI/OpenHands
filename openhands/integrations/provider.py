@@ -160,10 +160,35 @@ class ProviderHandler:
         service = self._get_service(provider)
         return await service.get_latest_token()
 
-    async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
+    async def get_repositories(
+        self,
+        sort: str,
+        app_mode: AppMode,
+        selected_provider: ProviderType | None,
+        page: int | None,
+        per_page: int | None,
+        installation_id: str | None,
+    ) -> list[Repository]:
         """
         Get repositories from providers
         """
+
+        """
+        Get repositories from providers
+        """
+
+        if selected_provider:
+            if not page or not per_page:
+                logger.error('Failed to provider params for paginating repos')
+                return []
+
+            service = self._get_service(selected_provider)
+            try:
+                await service.get_paginated_repos(page, per_page, sort, installation_id)
+            except Exception as e:
+                logger.warning(f'Error fetching repos from {selected_provider}: {e}')
+
+            return []
 
         all_repos: list[Repository] = []
         for provider in self.provider_tokens:

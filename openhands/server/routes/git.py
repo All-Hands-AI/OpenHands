@@ -41,6 +41,10 @@ app = APIRouter(prefix='/api/user', dependencies=get_dependencies())
 @app.get('/repositories', response_model=list[Repository])
 async def get_user_repositories(
     sort: str = 'pushed',
+    selected_provider: ProviderType | None = None,
+    page: int | None = None,
+    per_page: int | None = None,
+    installation_id: str | None = None,
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
     user_id: str | None = Depends(get_user_id),
@@ -53,7 +57,14 @@ async def get_user_repositories(
         )
 
         try:
-            return await client.get_repositories(sort, server_config.app_mode)
+            return await client.get_repositories(
+                sort,
+                server_config.app_mode,
+                selected_provider,
+                page,
+                per_page,
+                installation_id,
+            )
 
         except AuthenticationError as e:
             logger.info(
