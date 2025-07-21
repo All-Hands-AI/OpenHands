@@ -4,7 +4,7 @@ import { useIsAuthed } from "./use-is-authed";
 import OpenHands from "#/api/open-hands";
 import { useUserProviders } from "../use-user-providers";
 
-export const useAppInstallations = () => {
+export const useBitbucketWorkspaces = () => {
   const { data: config } = useConfig();
   const { data: userIsAuthenticated } = useIsAuthed();
   const { providers } = useUserProviders();
