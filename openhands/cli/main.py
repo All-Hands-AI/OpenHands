@@ -398,117 +398,80 @@ def run_alias_setup_flow(config: OpenHandsConfig) -> None:
     print_formatted_text(HTML('<gold>🚀 Welcome to OpenHands CLI!</gold>'))
     print_formatted_text('')
 
-    # Check if aliases already exist
-    if aliases_exist_in_shell_config():
-        print_formatted_text(
-            HTML(
-                '<grey>We detected existing OpenHands aliases in your shell configuration.</grey>'
-            )
+    # Show the normal setup flow
+    print_formatted_text(
+        HTML('<grey>Would you like to set up convenient shell aliases?</grey>')
+    )
+    print_formatted_text('')
+    print_formatted_text(
+        HTML(
+            '<grey>This will add the following aliases to your shell profile:</grey>'
         )
-        print_formatted_text('')
-        print_formatted_text(
-            HTML(
-                '<grey>  • <b>openhands</b> → uvx --python 3.12 --from openhands-ai openhands</grey>'
-            )
+    )
+    print_formatted_text(
+        HTML(
+            '<grey>  • <b>openhands</b> → uvx --python 3.12 --from openhands-ai openhands</grey>'
         )
-        print_formatted_text(
-            HTML(
-                '<grey>  • <b>oh</b> → uvx --python 3.12 --from openhands-ai openhands</grey>'
-            )
+    )
+    print_formatted_text(
+        HTML(
+            '<grey>  • <b>oh</b> → uvx --python 3.12 --from openhands-ai openhands</grey>'
         )
-        print_formatted_text('')
-        print_formatted_text(
-            HTML('<ansigreen>✅ Aliases are already configured.</ansigreen>')
+    )
+    print_formatted_text('')
+    print_formatted_text(
+        HTML(
+            '<ansiyellow>⚠️  Note: This requires uv to be installed first.</ansiyellow>'
         )
-        return  # Exit early since aliases already exist
+    )
+    print_formatted_text(
+        HTML(
+            '<ansiyellow>   Installation guide: https://docs.astral.sh/uv/getting-started/installation</ansiyellow>'
+        )
+    )
+    print_formatted_text('')
 
-    # Check if a global openhands command already exists
-    if global_openhands_command_exists():
-        print_formatted_text(
-            HTML(
-                '<grey>We detected a global <b>openhands</b> command is already available in your PATH.</grey>'
-            )
-        )
-        print_formatted_text('')
-        print_formatted_text(
-            HTML('<ansigreen>✅ OpenHands is already accessible globally.</ansigreen>')
-        )
-        return  # Exit early since global command exists
-    else:
-        # No existing aliases, show the normal setup flow
-        print_formatted_text(
-            HTML('<grey>Would you like to set up convenient shell aliases?</grey>')
-        )
-        print_formatted_text('')
-        print_formatted_text(
-            HTML(
-                '<grey>This will add the following aliases to your shell profile:</grey>'
-            )
-        )
-        print_formatted_text(
-            HTML(
-                '<grey>  • <b>openhands</b> → uvx --python 3.12 --from openhands-ai openhands</grey>'
-            )
-        )
-        print_formatted_text(
-            HTML(
-                '<grey>  • <b>oh</b> → uvx --python 3.12 --from openhands-ai openhands</grey>'
-            )
-        )
-        print_formatted_text('')
-        print_formatted_text(
-            HTML(
-                '<ansiyellow>⚠️  Note: This requires uv to be installed first.</ansiyellow>'
-            )
-        )
-        print_formatted_text(
-            HTML(
-                '<ansiyellow>   Installation guide: https://docs.astral.sh/uv/getting-started/installation</ansiyellow>'
-            )
-        )
-        print_formatted_text('')
+    # Use cli_confirm to get user choice
+    choice = cli_confirm(
+        config,
+        'Set up shell aliases?',
+        ['Yes, set up aliases', 'No, skip this step'],
+    )
 
-        # Use cli_confirm to get user choice
-        choice = cli_confirm(
-            config,
-            'Set up shell aliases?',
-            ['Yes, set up aliases', 'No, skip this step'],
-        )
+    if choice == 0:  # User chose "Yes"
+        success = add_aliases_to_shell_config()
+        if success:
+            print_formatted_text('')
+            print_formatted_text(
+                HTML('<ansigreen>✅ Aliases added successfully!</ansigreen>')
+            )
 
-        if choice == 0:  # User chose "Yes"
-            success = add_aliases_to_shell_config()
-            if success:
-                print_formatted_text('')
-                print_formatted_text(
-                    HTML('<ansigreen>✅ Aliases added successfully!</ansigreen>')
+            # Get the appropriate reload command using the shell config manager
+            shell_manager = ShellConfigManager()
+            reload_cmd = shell_manager.get_reload_command()
+
+            print_formatted_text(
+                HTML(
+                    f'<grey>Run <b>{reload_cmd}</b> (or restart your terminal) to use the new aliases.</grey>'
                 )
-
-                # Get the appropriate reload command using the shell config manager
-                shell_manager = ShellConfigManager()
-                reload_cmd = shell_manager.get_reload_command()
-
-                print_formatted_text(
-                    HTML(
-                        f'<grey>Run <b>{reload_cmd}</b> (or restart your terminal) to use the new aliases.</grey>'
-                    )
-                )
-            else:
-                print_formatted_text('')
-                print_formatted_text(
-                    HTML(
-                        '<ansired>❌ Failed to add aliases. You can set them up manually later.</ansired>'
-                    )
-                )
-        else:  # User chose "No"
-            # Mark that the user has declined alias setup
-            mark_alias_setup_declined()
-
+            )
+        else:
             print_formatted_text('')
             print_formatted_text(
                 HTML(
-                    '<grey>Skipped alias setup. You can run this setup again anytime.</grey>'
+                    '<ansired>❌ Failed to add aliases. You can set them up manually later.</ansired>'
                 )
             )
+    else:  # User chose "No"
+        # Mark that the user has declined alias setup
+        mark_alias_setup_declined()
+
+        print_formatted_text('')
+        print_formatted_text(
+            HTML(
+                '<grey>Skipped alias setup. You can run this setup again anytime.</grey>'
+            )
+        )
 
     print_formatted_text('')
 
