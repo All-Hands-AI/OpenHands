@@ -50,19 +50,9 @@ RUN apt-get update && \
 {% endif %}
 
 {% if (('ubuntu' in base_image) or ('mswebench' in base_image)) %}
-# Install corepack and poetry
+# Install corepack and poetry - simplified approach
 RUN set -e && \
-    NODE_PATH=$(which node) && \
-    echo "Node.js found at: $NODE_PATH" && \
-    NODE_DIR=$(dirname "$NODE_PATH") && \
-    echo "Node directory: $NODE_DIR" && \
-    ls -la "$NODE_DIR/" && \
-    if [ -f "$NODE_DIR/corepack" ]; then \
-        echo "Corepack binary found, creating symlink"; \
-        ln -sf "$NODE_DIR/corepack" /usr/local/bin/corepack; \
-    else \
-        echo "Corepack binary not found, installing via npm"; \
-    fi && \
+    echo "Installing corepack via npm..." && \
     npm install -g corepack && \
     echo "Corepack installed successfully" && \
     curl -fsSL --compressed https://install.python-poetry.org | python -
