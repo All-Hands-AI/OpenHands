@@ -21,7 +21,7 @@ export function MicroagentManagementSidebarTabs() {
             "w-full bg-transparent border border-[#ffffff40] rounded-[6px]",
           tab: "px-2 h-[22px]",
           tabContent: "text-white text-[12px] font-normal",
-          panel: "py-0 px-0",
+          panel: “p-0",
           cursor: "bg-[#C9B97480] rounded-sm",
         }}
       >
