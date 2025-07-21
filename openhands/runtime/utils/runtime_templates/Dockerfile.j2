@@ -50,11 +50,14 @@ RUN apt-get update && \
 {% endif %}
 
 {% if (('ubuntu' in base_image) or ('mswebench' in base_image)) %}
-RUN ln -s "$(dirname $(which node))/corepack" /usr/local/bin/corepack && \
+# Install corepack and poetry
+RUN NODE_PATH=$(which node) && \
+    NODE_DIR=$(dirname "$NODE_PATH") && \
+    ln -sf "$NODE_DIR/corepack" /usr/local/bin/corepack && \
     npm install -g corepack && \
     curl -fsSL --compressed https://install.python-poetry.org | python -
 
-# Enable corepack after installation
+# Enable corepack after installation (separate RUN to ensure corepack is fully installed)
 RUN corepack enable yarn
 {% endif %}
 
