@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Button } from "../button/Button";
 import { ToastManager } from "./ToastManager";
 import { toasterMessages } from "./Toast";
+import React from "react";
 
 const meta = {
   title: "Components/Toast",
@@ -14,25 +15,41 @@ const meta = {
 export default meta;
 
 type Story = StoryObj<typeof meta>;
+type ToastType = keyof typeof toasterMessages;
 
-const ToastComponent = () => {
-  const notify = () => {
-    toasterMessages.error("Lorem Ipsum");
-    toasterMessages.success("Lorem Ipsum");
-    toasterMessages.info("Lorem Ipsum");
-    toasterMessages.warning("Lorem Ipsum");
-  };
+const toastComponents: Record<ToastType, (text?: string) => void> = {
+  error: toasterMessages.error,
+  success: toasterMessages.success,
+  info: toasterMessages.info,
+  warning: toasterMessages.warning,
+};
 
+const ToastComponent = ({ type }: { type: ToastType }) => {
   return (
-    <>
-      <ToastManager>
-        <Button onClick={notify}>Notify</Button>
-      </ToastManager>
-    </>
+    <ToastManager>
+      <Button onClick={() => toastComponents[type]("Lorem Ipsum")}>
+        Notify
+      </Button>
+    </ToastManager>
   );
 };
 
-export const Main: Story = {
+export const Success: Story = {
   args: {},
-  render: ToastComponent,
+  render: () => <ToastComponent type={"success"} />,
+};
+
+export const Error: Story = {
+  args: {},
+  render: () => <ToastComponent type={"error"} />,
+};
+
+export const Info: Story = {
+  args: {},
+  render: () => <ToastComponent type={"info"} />,
+};
+
+export const Warning: Story = {
+  args: {},
+  render: () => <ToastComponent type={"warning"} />,
 };

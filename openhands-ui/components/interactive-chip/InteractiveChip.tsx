@@ -8,7 +8,6 @@ import type { HTMLProps } from "../../shared/types";
 import { cn } from "../../shared/utils/cn";
 import { Typography } from "../typography/Typography";
 
-import { invariant } from "../../shared/utils/invariant";
 import { interactiveChipStyles, type InteractiveChipType } from "./utils";
 
 export type InteractiveChipProps = Omit<
@@ -34,8 +33,6 @@ export const InteractiveChip = ({
   onEndClick,
   ...props
 }: PropsWithChildren<InteractiveChipProps>) => {
-  invariant(typeof children === "string", "Children must be string");
-
   const iconCss = cn("w-4 h-4 text-inherit");
   const buttonCss = cn(disabled ? "cursor-not-allowed" : "cursor-pointer");
 

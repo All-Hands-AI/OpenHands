@@ -1,3 +1,4 @@
+import { useEffect, useRef, type ReactNode } from "react";
 import type { ComponentVariant } from "../../shared/types";
 import { cn } from "../../shared/utils/cn";
 
@@ -21,7 +22,13 @@ export const buttonStyles: Record<ComponentVariant, ButtonStyle> = {
       "disabled:opacity-50",
     ]),
     icon: cn(["text-primary-500"]),
-    text: cn(["text-primary-500"]),
+    text: cn([
+      "text-primary-500",
+      // hover modifier
+      "group-enabled:group-hover:font-semibold",
+      // focus modifier
+      "group-enabled:group-focus:font-semibold",
+    ]),
   },
   secondary: {
     button: cn([
@@ -36,7 +43,13 @@ export const buttonStyles: Record<ComponentVariant, ButtonStyle> = {
       "disabled:opacity-50",
     ]),
     icon: cn(["text-light-neutral-300"]),
-    text: cn(["text-light-neutral-300"]),
+    text: cn([
+      "text-light-neutral-300",
+      // hover modifier
+      "group-enabled:group-hover:font-semibold",
+      // focus modifier
+      "group-enabled:group-focus:font-semibold",
+    ]),
   },
   tertiary: {
     button: cn([
@@ -53,8 +66,36 @@ export const buttonStyles: Record<ComponentVariant, ButtonStyle> = {
     icon: cn(["text-primary-500"]),
     text: cn([
       "text-primary-500 underline",
+      // hover modifier
+      "group-enabled:group-hover:font-semibold",
+      // focus modifier
+      "group-enabled:group-focus:font-semibold",
       // disabled modifier
       "group-disabled:no-underline",
     ]),
   },
+};
+
+/**
+ * Custom hook that calculates and applies a CSS custom property (variable)
+ * based on the length of a text node. Useful for adjusting spacing or layout
+ * to account for changes in font weight, such as bold text rendering wider.
+ */
+const BOLD_TEXT_INCREASE = 0.15;
+export const useAndApplyBoldTextWidth = (
+  textNode: ReactNode,
+  varName: string
+) => {
+  const textRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if (textRef) {
+      const charCount =
+        typeof textNode === "string" ? (textNode as string).length : 0;
+      const textIncrease = charCount * BOLD_TEXT_INCREASE;
+      textRef.current!.style.setProperty(`--${varName}`, `${textIncrease}px`);
+    }
+  }, [textRef.current]);
+
+  return textRef;
 };
