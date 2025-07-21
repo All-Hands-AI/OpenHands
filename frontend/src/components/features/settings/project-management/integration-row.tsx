@@ -3,7 +3,7 @@ import React from "react";
 import { useIntegrationStatus } from "#/hooks/query/use-integration-status";
 import { useLinkIntegration } from "#/hooks/mutation/use-link-integration";
 import { useUnlinkIntegration } from "#/hooks/mutation/use-unlink-integration";
-import { useValidateIntegration } from "#/hooks/mutation/use-validate-integration";
+import { useValidateIntegration } from "#/hooks/query/use-validate-integration";
 import { ConfirmationModal } from "#/components/features/settings/project-management/confirmation-modal";
 import { InfoModal } from "#/components/features/settings/project-management/info-modal";
 import { IntegrationButton } from "#/components/features/settings/project-management/integration-button";
