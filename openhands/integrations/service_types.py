@@ -233,7 +233,9 @@ class GitService(Protocol):
         """Search for repositories"""
         ...
 
-    async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
+    async def get_all_repositories(
+        self, sort: str, app_mode: AppMode
+    ) -> list[Repository]:
         """Get repositories for the authenticated user"""
         ...
 

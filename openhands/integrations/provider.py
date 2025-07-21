@@ -169,7 +169,7 @@ class ProviderHandler:
         for provider in self.provider_tokens:
             try:
                 service = self._get_service(provider)
-                service_repos = await service.get_repositories(sort, app_mode)
+                service_repos = await service.get_all_repositories(sort, app_mode)
                 all_repos.extend(service_repos)
             except Exception as e:
                 logger.warning(f'Error fetching repos from {provider}: {e}')

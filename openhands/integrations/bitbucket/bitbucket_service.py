@@ -185,7 +185,9 @@ class BitBucketService(BaseGitService, GitService):
 
         return all_items[:max_items]  # Trim to max_items if needed
 
-    async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
+    async def get_all_repositories(
+        self, sort: str, app_mode: AppMode
+    ) -> list[Repository]:
         """Get repositories for the authenticated user using workspaces endpoint.
 
         This method gets all repositories (both public and private) that the user has access to

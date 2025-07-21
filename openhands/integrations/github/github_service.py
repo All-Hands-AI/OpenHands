@@ -192,7 +192,40 @@ class GitHubService(BaseGitService, GitService):
         ts = repo.get('pushed_at')
         return datetime.strptime(ts, '%Y-%m-%dT%H:%M:%SZ') if ts else datetime.min
 
-    async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
+    async def get_paginated_repos(
+        self, page: int, per_page: int, sort: str, installation_id: int | None
+    ):
+        params = {'page': str(page), 'per_page': str(per_page)}
+        if installation_id:
+            url = f'{self.BASE_URL}/user/installations/{installation_id}/repositories'
+            response, headers = await self._make_request(url, params)
+            response = response.get('repositories', [])
+        else:
+            url = f'{self.BASE_URL}/user/repos'
+            params['sort'] = sort
+            response, headers = await self._make_request(url, params)
+
+        next_link: str = headers.get('Link', '')
+        return [
+            Repository(
+                id=str(repo.get('id')),  # type: ignore[arg-type]
+                full_name=repo.get('full_name'),  # type: ignore[arg-type]
+                stargazers_count=repo.get('stargazers_count'),
+                git_provider=ProviderType.GITHUB,
+                is_public=not repo.get('private', True),
+                owner_type=(
+                    OwnerType.ORGANIZATION
+                    if repo.get('owner', {}).get('type') == 'Organization'
+                    else OwnerType.USER
+                ),
+                link_header=next_link,
+            )
+            for repo in response
+        ]
+
+    async def get_all_repositories(
+        self, sort: str, app_mode: AppMode
+    ) -> list[Repository]:
         MAX_REPOS = 1000
         PER_PAGE = 100  # Maximum allowed by GitHub API
         all_repos: list[dict] = []
