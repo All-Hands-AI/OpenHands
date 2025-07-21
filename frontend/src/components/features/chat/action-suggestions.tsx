@@ -19,8 +19,11 @@ export function ActionSuggestions({
   const [hasPullRequest, setHasPullRequest] = React.useState(false);
 
   const providersAreSet = providers.length > 0;
-  const isGitLab = providers.includes("gitlab");
-  const isBitbucket = providers.includes("bitbucket");
+
+  // Use the git_provider from the conversation, not the user's authenticated providers
+  const currentGitProvider = conversation?.git_provider;
+  const isGitLab = currentGitProvider === "gitlab";
+  const isBitbucket = currentGitProvider === "bitbucket";
 
   const pr = isGitLab ? "merge request" : "pull request";
   const prShort = isGitLab ? "MR" : "PR";

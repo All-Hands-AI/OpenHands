@@ -231,12 +231,26 @@ async def run_session(
                     return
 
                 confirmation_status = await read_confirmation_input(config)
-                if confirmation_status == 'yes' or confirmation_status == 'always':
+                if confirmation_status in ('yes', 'always'):
                     event_stream.add_event(
                         ChangeAgentStateAction(AgentState.USER_CONFIRMED),
                         EventSource.USER,
                     )
-                else:
+                elif confirmation_status == 'edit':
+                    # Tell the agent the proposed action was rejected
+                    event_stream.add_event(
+                        ChangeAgentStateAction(AgentState.USER_REJECTED),
+                        EventSource.USER,
+                    )
+                    # Notify the user
+                    print_formatted_text(
+                        HTML(
+                            '<skyblue>Okay, please tell me what I should do instead.</skyblue>'
+                        )
+                    )
+                    # Solicit replacement isntructions
+                    await prompt_for_next_task(AgentState.AWAITING_USER_INPUT)
+                else:  # 'no' or fallback
                     event_stream.add_event(
                         ChangeAgentStateAction(AgentState.USER_REJECTED),
                         EventSource.USER,
