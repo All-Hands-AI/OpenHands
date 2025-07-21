@@ -175,7 +175,7 @@ function GitSettingsScreen() {
 
       <div className="flex gap-6 p-6 justify-end border-t border-t-tertiary">
         {!shouldRenderExternalConfigureButtons && (
-          <>
+          <div className="flex gap-6">
             <BrandButton
               testId="disconnect-tokens-button"
               name="disconnect-tokens-button"
@@ -196,7 +196,7 @@ function GitSettingsScreen() {
               {!isPending && t("SETTINGS$SAVE_CHANGES")}
               {isPending && t("SETTINGS$SAVING")}
             </BrandButton>
-          </>
+          </div>
         )}
       </div>
     </form>
