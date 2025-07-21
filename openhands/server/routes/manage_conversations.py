@@ -220,20 +220,43 @@ async def new_conversation(
 async def search_conversations(
     page_id: str | None = None,
     limit: int = 20,
+    selected_repository: str | None = None,
+    conversation_trigger: ConversationTrigger | None = None,
     conversation_store: ConversationStore = Depends(get_conversation_store),
 ) -> ConversationInfoResultSet:
     conversation_metadata_result_set = await conversation_store.search(page_id, limit)
 
-    # Filter out conversations older than max_age
+    # Apply filters at API level
+    filtered_results = []
     now = datetime.now(timezone.utc)
     max_age = config.conversation_max_age_seconds
-    filtered_results = [
-        conversation
-        for conversation in conversation_metadata_result_set.results
-        if hasattr(conversation, 'created_at')
-        and (now - conversation.created_at.replace(tzinfo=timezone.utc)).total_seconds()
-        <= max_age
-    ]
+
+    for conversation in conversation_metadata_result_set.results:
+        # Skip conversations without created_at or older than max_age
+        if not hasattr(conversation, 'created_at'):
+            continue
+
+        age_seconds = (
+            now - conversation.created_at.replace(tzinfo=timezone.utc)
+        ).total_seconds()
+        if age_seconds > max_age:
+            continue
+
+        # Apply repository filter
+        if (
+            selected_repository is not None
+            and conversation.selected_repository != selected_repository
+        ):
+            continue
+
+        # Apply conversation trigger filter
+        if (
+            conversation_trigger is not None
+            and conversation.trigger != conversation_trigger
+        ):
+            continue
+
+        filtered_results.append(conversation)
 
     conversation_ids = set(
         conversation.conversation_id for conversation in filtered_results

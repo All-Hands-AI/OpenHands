@@ -1,5 +1,5 @@
-# Workflow that runs python unit tests
-name: Run Python Unit Tests
+# Workflow that runs python tests
+name: Run Python Tests
 
 # The jobs in this workflow are required, so they must run at all times
 # * Always run on "main"
@@ -16,9 +16,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Run python unit tests on Linux
+  # Run python tests on Linux
   test-on-linux:
-    name: Python Unit Tests on Linux
+    name: Python Tests on Linux
     runs-on: blacksmith-4vcpu-ubuntu-2204
     env:
       INSTALL_DOCKER: '0' # Set to '0' to skip Docker installation
@@ -51,6 +51,8 @@ jobs:
         run: poetry run pytest --forked -n auto -svv ./tests/unit
       - name: Run Runtime Tests with CLIRuntime
         run: TEST_RUNTIME=cli poetry run pytest -svv tests/runtime/test_bash.py
+      - name: Run E2E Tests
+        run: poetry run pytest -svv tests/e2e
 
   # Run specific Windows python tests
   test-on-windows:
