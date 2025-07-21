@@ -57,10 +57,6 @@ class KubernetesConfig(BaseModel):
     tolerations_yaml: str | None = Field(
         default=None, description='Optional YAML string defining pod tolerations'
     )
-    privileged: bool = Field(
-        default=False,
-        description='Run the runtime sandbox container in privileged mode for use with docker-out-of-docker',
-    )
 
     model_config = ConfigDict(extra='forbid')
 
