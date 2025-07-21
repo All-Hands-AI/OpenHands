@@ -50,18 +50,8 @@ RUN apt-get update && \
 {% endif %}
 
 {% if (('ubuntu' in base_image) or ('mswebench' in base_image)) %}
-# Install corepack and poetry - simplified approach
-RUN set -e && \
-    echo "Installing corepack via npm..." && \
-    npm install -g corepack && \
-    echo "Corepack installed successfully" && \
-    curl -fsSL --compressed https://install.python-poetry.org | python -
-
-# Enable corepack after installation (separate RUN to ensure corepack is fully installed)
-RUN set -e && \
-    echo "Enabling corepack for yarn..." && \
-    corepack enable yarn && \
-    echo "Corepack enabled successfully"
+# Install poetry (corepack/yarn not needed in runtime)
+RUN curl -fsSL --compressed https://install.python-poetry.org | python -
 {% endif %}
 
 # Install uv (required by MCP)
