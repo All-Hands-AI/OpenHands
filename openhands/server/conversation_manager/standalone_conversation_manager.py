@@ -120,7 +120,7 @@ class StandaloneConversationManager(ConversationManager):
 
             # Create new conversation if none exists
             c = ServerConversation(
-                LLMRegistry(self.file_store, sid, user_id),
+                LLMRegistry(None, sid, user_id),
                 sid,
                 file_store=self.file_store,
                 config=self.config,

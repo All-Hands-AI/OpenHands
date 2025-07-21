@@ -30,7 +30,6 @@ from openhands.integrations.service_types import (
     ProviderType,
     SuggestedTask,
 )
-from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
@@ -49,7 +48,6 @@ from openhands.server.shared import (
     ConversationStoreImpl,
     config,
     conversation_manager,
-    file_store,
 )
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.server.user_auth import (
@@ -331,9 +329,7 @@ async def get_prompt(
     )
 
     prompt_template = generate_prompt_template(stringified_events)
-    prompt = generate_prompt(
-        llm_config, prompt_template, conversation.sid, conversation.user_id
-    )
+    prompt = generate_prompt(llm_config, prompt_template, conversation.sid)
 
     return JSONResponse(
         {
@@ -350,13 +346,8 @@ def generate_prompt_template(events: str) -> str:
 
 
 def generate_prompt(
-    llm_config: LLMConfig,
-    prompt_template: str,
-    conversation_id: str,
-    user_id: str | None,
+    llm_config: LLMConfig, prompt_template: str, conversation_id: str
 ) -> str:
-    llm_registry = LLMRegistry(file_store, conversation_id, user_id)
-    llm_registry.register_llm('', llm_config)
     messages = [
         {
             'role': 'system',
