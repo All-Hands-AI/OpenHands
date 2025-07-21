@@ -12,11 +12,11 @@ import { SettingsInput } from "#/components/features/settings/settings-input";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { useMe } from "#/hooks/query/use-me";
 import { rolePermissions } from "#/utils/org/permissions";
-import { queryClient } from "#/query-client-config";
 import {
   getSelectedOrgFromQueryClient,
   getMeFromQueryClient,
 } from "#/utils/query-client-getters";
+import { queryClient } from "#/query-client-config";
 
 function TempChip({
   children,

@@ -3,7 +3,7 @@
 import React, { PropsWithChildren } from "react";
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
-import { RenderOptions, render, screen, within } from "@testing-library/react";
+import { RenderOptions, render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { I18nextProvider, initReactI18next } from "react-i18next";
 import i18n from "i18next";
@@ -11,6 +11,7 @@ import { expect, vi } from "vitest";
 import { AxiosError } from "axios";
 import userEvent from "@testing-library/user-event";
 import { AppStore, RootState, rootReducer } from "./src/store";
+import { INITIAL_MOCK_ORGS } from "#/mocks/org-handlers";
 
 // Mock useParams before importing components
 vi.mock("react-router", async () => {
@@ -104,15 +105,18 @@ export const selectOrganization = async ({
 }: {
   orgIndex: number;
 }) => {
-  const organizationSelect = await screen.findByTestId("organization-select");
-  const options =
-    await within(organizationSelect).findAllByTestId("org-option");
-  expect(options).toHaveLength(3);
+  const organizationSelect = await screen.findByTestId("org-select");
+  expect(organizationSelect).toBeInTheDocument();
 
-  const selectedOption = options[orgIndex];
-  if (!selectedOption) {
-    expect.fail(`No organization option found at index ${orgIndex}`);
+  await userEvent.click(organizationSelect);
+
+  // Wait for the options to appear in the popover
+  const targetOrg = INITIAL_MOCK_ORGS[orgIndex];
+  if (!targetOrg) {
+    expect.fail(`No organization found at index ${orgIndex}`);
   }
 
-  await userEvent.click(selectedOption);
+  // Find the option by its text content (organization name)
+  const option = await screen.findByText(targetOrg.name);
+  await userEvent.click(option);
 };

@@ -229,13 +229,11 @@ describe("UserContextMenu", () => {
   });
 
   test("the user can change orgs", async () => {
-    const getOrganizationSpy = vi.spyOn(organizationService, "getOrganization");
     const onCloseMock = vi.fn();
     renderUserContextMenu({ type: "user", onClose: onCloseMock });
 
     const orgSelector = screen.getByTestId("org-selector");
     expect(orgSelector).toBeInTheDocument();
-    expect(orgSelector).toHaveTextContent("User Organization"); // Default null organization
 
     // Simulate changing the organization
     await userEvent.click(orgSelector);
@@ -243,9 +241,9 @@ describe("UserContextMenu", () => {
     await userEvent.click(orgOption);
 
     expect(onCloseMock).not.toHaveBeenCalled();
-    expect(getOrganizationSpy).toHaveBeenCalledWith({
-      // Check if the correct org ID is passed
-      orgId: INITIAL_MOCK_ORGS[1].id,
-    });
+    
+    // Verify that the dropdown shows the selected organization
+    // The dropdown should now display the selected org name
+    expect(orgSelector).toHaveValue(INITIAL_MOCK_ORGS[1].name);
   });
 });

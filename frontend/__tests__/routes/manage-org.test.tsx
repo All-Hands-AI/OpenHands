@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { createRoutesStub } from "react-router";
 import { selectOrganization } from "test-utils";
@@ -8,6 +8,7 @@ import OpenHands from "#/api/open-hands";
 import ManageOrg from "#/routes/manage-org";
 import { organizationService } from "#/api/organization-service/organization-service.api";
 import SettingsScreen, { clientLoader } from "#/routes/settings";
+import { resetOrgMockData } from "#/mocks/org-handlers";
 
 function ManageOrgWithPortalRoot() {
   return (
@@ -62,6 +63,11 @@ describe("Manage Org Route", () => {
     getConfigSpy.mockResolvedValue({
       APP_MODE: "saas",
     });
+  });
+
+  afterEach(() => {
+    // Reset organization mock data to ensure clean state between tests
+    resetOrgMockData();
   });
 
   it("should render the available credits", async () => {
@@ -243,13 +249,6 @@ describe("Manage Org Route", () => {
       expect(
         screen.queryByTestId("delete-org-confirmation"),
       ).not.toBeInTheDocument();
-
-      const organizationSelect = await screen.findByTestId(
-        "organization-select",
-      );
-      const options =
-        await within(organizationSelect).findAllByTestId("org-option");
-      expect(options).toHaveLength(3); // Assuming there are 3 organizations
 
       const deleteOrgButton = screen.getByRole("button", {
         name: /delete organization/i,

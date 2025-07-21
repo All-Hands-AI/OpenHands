@@ -11,6 +11,7 @@ import { GetConfigResponse } from "#/api/open-hands.types";
 import { useOrganizations } from "#/hooks/query/use-organizations";
 import { useSelectedOrganizationId } from "#/context/use-selected-organization";
 import { useMe } from "#/hooks/query/use-me";
+import { SettingsDropdownInput } from "#/components/features/settings/settings-dropdown-input";
 
 const SAAS_ONLY_PATHS = [
   "/settings/user",
@@ -89,20 +90,26 @@ function SettingsScreen() {
           <h1 className="text-sm leading-6">{t(I18nKey.SETTINGS$TITLE)}</h1>
         </header>
 
-        <div
-          data-testid="organization-select"
-          className="px-3 py-2 border-b border-tertiary"
-        >
-          {organizations?.map((org) => (
-            <span
-              data-testid="org-option"
-              key={org.id}
-              onClick={() => setOrgId(org.id)}
-              className="block cursor-pointer hover:bg-tertiary px-2 py-1 rounded"
-            >
-              {org.name}
-            </span>
-          ))}
+        <div className="px-3 py-2 border-b border-tertiary">
+          <SettingsDropdownInput
+            testId="org-select"
+            name="organization"
+            placeholder="Please select an organization"
+            selectedKey={orgId || ""}
+            items={
+              organizations?.map((org) => ({
+                key: org.id,
+                label: org.name,
+              })) || []
+            }
+            onSelectionChange={(org) => {
+              if (org) {
+                setOrgId(org.toString());
+              } else {
+                setOrgId(null);
+              }
+            }}
+          />
         </div>
 
         <nav data-testid="settings-navbar" className="flex flex-col gap-1 p-2">

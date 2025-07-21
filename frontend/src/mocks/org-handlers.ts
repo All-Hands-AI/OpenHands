@@ -100,6 +100,14 @@ export const ORGS_AND_MEMBERS: Record<string, OrganizationMember[]> = {
 
 const orgs = new Map(INITIAL_MOCK_ORGS.map((org) => [org.id, org]));
 
+export const resetOrgMockData = () => {
+  // Reset organizations to initial state
+  orgs.clear();
+  INITIAL_MOCK_ORGS.forEach((org) => {
+    orgs.set(org.id, { ...org });
+  });
+};
+
 export const ORG_HANDLERS = [
   http.get("/api/organizations/:orgId/me", ({ params }) => {
     const orgId = params.orgId?.toString();

@@ -16,8 +16,8 @@ import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 import { cn } from "#/utils/utils";
 import { InviteOrganizationMemberModal } from "../org/invite-organization-member-modal";
 import { useSelectedOrganizationId } from "#/context/use-selected-organization";
-import { useOrganization } from "#/hooks/query/use-organization";
 import { useOrganizations } from "#/hooks/query/use-organizations";
+import { SettingsDropdownInput } from "../settings/settings-dropdown-input";
 
 interface TempButtonProps {
   start: React.ReactNode;
@@ -54,7 +54,6 @@ export function UserContextMenu({ type, onClose }: UserContextMenuProps) {
   const navigate = useNavigate();
   const { orgId, setOrgId } = useSelectedOrganizationId();
   const { data: organizations } = useOrganizations();
-  const { data: organization } = useOrganization();
   const { mutate: logout } = useLogout();
   const ref = useClickOutsideElement<HTMLDivElement>(onClose);
 
@@ -99,7 +98,7 @@ export function UserContextMenu({ type, onClose }: UserContextMenuProps) {
       ref={ref}
       className={cn(
         "w-full flex flex-col gap-3 bg-base border border-tertiary rounded-xl p-6",
-        "text-sm text-basic",
+        "text-sm text-basic w-fit",
       )}
     >
       {orgModalIsOpen &&
@@ -120,21 +119,25 @@ export function UserContextMenu({ type, onClose }: UserContextMenuProps) {
       <h3 className="text-lg font-semibold text-white">Account</h3>
 
       <div className="flex flex-col items-start gap-2">
-        <div data-testid="org-selector" className="w-full">
-          {organization?.name || "User Organization"} {orgId}
-        </div>
-        {organizations?.map((org) => (
-          <button
-            key={org.id}
-            type="button"
-            onClick={async () => {
-              setOrgId(org.id);
-            }}
-            className="w-full text-left hover:text-white"
-          >
-            {org.name}
-          </button>
-        ))}
+        <SettingsDropdownInput
+          testId="org-selector"
+          name="organization"
+          placeholder="Please select an organization"
+          selectedKey={orgId || "default"}
+          items={
+            organizations?.map((org) => ({
+              key: org.id,
+              label: org.name,
+            })) || []
+          }
+          onSelectionChange={(org) => {
+            if (org) {
+              setOrgId(org.toString());
+            } else {
+              setOrgId(null);
+            }
+          }}
+        />
 
         {!isUser && (
           <>
