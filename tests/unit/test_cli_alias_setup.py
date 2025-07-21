@@ -7,9 +7,11 @@ from unittest.mock import patch
 from openhands.cli.shell_config import (
     ShellConfigManager,
     add_aliases_to_shell_config,
+    alias_setup_declined,
     aliases_exist_in_shell_config,
     get_shell_config_path,
     global_openhands_command_exists,
+    mark_alias_setup_declined,
 )
 
 
@@ -257,3 +259,37 @@ def test_global_openhands_command_exists_false():
     """Test global command detection when openhands command doesn't exist."""
     with patch('shutil.which', return_value=None):
         assert global_openhands_command_exists() is False
+
+
+def test_alias_setup_declined_false():
+    """Test alias setup declined check when marker file doesn't exist."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with patch('openhands.cli.shell_config.Path.home', return_value=Path(temp_dir)):
+            assert alias_setup_declined() is False
+
+
+def test_alias_setup_declined_true():
+    """Test alias setup declined check when marker file exists."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with patch('openhands.cli.shell_config.Path.home', return_value=Path(temp_dir)):
+            # Create the marker file
+            mark_alias_setup_declined()
+            assert alias_setup_declined() is True
+
+
+def test_mark_alias_setup_declined():
+    """Test marking alias setup as declined creates the marker file."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with patch('openhands.cli.shell_config.Path.home', return_value=Path(temp_dir)):
+            # Initially should be False
+            assert alias_setup_declined() is False
+
+            # Mark as declined
+            mark_alias_setup_declined()
+
+            # Should now be True
+            assert alias_setup_declined() is True
+
+            # Verify the file exists
+            marker_file = Path(temp_dir) / '.openhands' / 'alias_setup_declined'
+            assert marker_file.exists()

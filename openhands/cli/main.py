@@ -17,8 +17,10 @@ from openhands.cli.settings import modify_llm_settings_basic
 from openhands.cli.shell_config import (
     ShellConfigManager,
     add_aliases_to_shell_config,
+    alias_setup_declined,
     aliases_exist_in_shell_config,
     global_openhands_command_exists,
+    mark_alias_setup_declined,
 )
 from openhands.cli.tui import (
     UsageMetrics,
@@ -383,9 +385,7 @@ async def run_setup_flow(config: OpenHandsConfig, settings_store: FileSettingsSt
     await modify_llm_settings_basic(config, settings_store)
 
 
-async def run_alias_setup_flow(
-    config: OpenHandsConfig, settings_store: FileSettingsStore
-) -> None:
+def run_alias_setup_flow(config: OpenHandsConfig) -> None:
     """Run the alias setup flow to configure shell aliases.
 
     Prompts the user to set up aliases for 'openhands' and 'oh' commands.
@@ -393,7 +393,6 @@ async def run_alias_setup_flow(
 
     Args:
         config: OpenHands configuration
-        settings_store: Settings store to persist user preferences
     """
     print_formatted_text('')
     print_formatted_text(HTML('<gold>🚀 Welcome to OpenHands CLI!</gold>'))
@@ -501,16 +500,8 @@ async def run_alias_setup_flow(
                     )
                 )
         else:  # User chose "No"
-            # Persist the user's choice to not ask again
-            settings = await settings_store.load()
-            if settings is None:
-                # Create new settings if none exist
-                from openhands.storage.data_models.settings import Settings
-
-                settings = Settings()
-
-            settings.cli_alias_setup_declined = True
-            await settings_store.store(settings)
+            # Mark that the user has declined alias setup
+            mark_alias_setup_declined()
 
             print_formatted_text('')
             print_formatted_text(
@@ -622,19 +613,16 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
     should_show_alias_setup = (
         not aliases_exist_in_shell_config()
         and not global_openhands_command_exists()
+        and not alias_setup_declined()
         and sys.stdin.isatty()
     )
-
-    # Check if user has previously declined alias setup
-    if should_show_alias_setup and settings:
-        should_show_alias_setup = not settings.cli_alias_setup_declined
 
     if should_show_alias_setup:
         # Clear the terminal if we haven't shown a banner yet
         if not banner_shown:
             clear()
 
-        await run_alias_setup_flow(config, settings_store)
+        run_alias_setup_flow(config)
         banner_shown = True
 
     # TODO: Set working directory from config or use current working directory?

@@ -287,3 +287,21 @@ def global_openhands_command_exists() -> bool:
         True if 'openhands' command is found in PATH, False otherwise.
     """
     return shutil.which('openhands') is not None
+
+
+def alias_setup_declined() -> bool:
+    """Check if the user has previously declined alias setup.
+
+    Returns:
+        True if user has declined alias setup, False otherwise.
+    """
+    marker_file = Path.home() / '.openhands' / 'alias_setup_declined'
+    return marker_file.exists()
+
+
+def mark_alias_setup_declined() -> None:
+    """Mark that the user has declined alias setup."""
+    openhands_dir = Path.home() / '.openhands'
+    openhands_dir.mkdir(exist_ok=True)
+    marker_file = openhands_dir / 'alias_setup_declined'
+    marker_file.touch()

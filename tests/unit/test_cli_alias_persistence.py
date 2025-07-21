@@ -2,30 +2,19 @@
 
 import tempfile
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
-
-import pytest
+from unittest.mock import patch
 
 from openhands.cli.main import run_alias_setup_flow
+from openhands.cli.shell_config import alias_setup_declined, mark_alias_setup_declined
 from openhands.core.config import OpenHandsConfig
-from openhands.storage.data_models.settings import Settings
-from openhands.storage.settings.file_settings_store import FileSettingsStore
 
 
-@pytest.mark.asyncio
-async def test_alias_setup_declined_persisted():
+def test_alias_setup_declined_persisted():
     """Test that when user declines alias setup, their choice is persisted."""
-    # Create a mock config
     config = OpenHandsConfig()
-
-    # Create a mock settings store
-    settings_store = MagicMock(spec=FileSettingsStore)
-    settings_store.load = AsyncMock(return_value=None)  # No existing settings
-    settings_store.store = AsyncMock()
 
     with tempfile.TemporaryDirectory() as temp_dir:
         with patch('openhands.cli.shell_config.Path.home', return_value=Path(temp_dir)):
-            # Mock shell detection and other dependencies
             with patch('shellingham.detect_shell', return_value=('bash', 'bash')):
                 with patch(
                     'openhands.cli.shell_config.aliases_exist_in_shell_config',
@@ -39,33 +28,26 @@ async def test_alias_setup_declined_persisted():
                             'openhands.cli.main.cli_confirm', return_value=1
                         ):  # User chooses "No"
                             with patch('prompt_toolkit.print_formatted_text'):
+                                # Initially, user hasn't declined
+                                assert not alias_setup_declined()
+
                                 # Run the alias setup flow
-                                await run_alias_setup_flow(config, settings_store)
+                                run_alias_setup_flow(config)
 
-                                # Verify that store was called with declined=True
-                                settings_store.store.assert_called_once()
-                                stored_settings = settings_store.store.call_args[0][0]
-                                assert isinstance(stored_settings, Settings)
-                                assert stored_settings.cli_alias_setup_declined is True
+                                # After declining, the marker should be set
+                                assert alias_setup_declined()
 
 
-@pytest.mark.asyncio
-async def test_alias_setup_skipped_when_previously_declined():
-    """Test that alias setup is skipped when user previously declined."""
-    # Create a mock config
+def test_alias_setup_skipped_when_previously_declined():
+    """Test that alias setup is skipped when user has previously declined."""
     OpenHandsConfig()
-
-    # Create settings with declined=True
-    existing_settings = Settings(cli_alias_setup_declined=True)
-
-    # Create a mock settings store
-    settings_store = MagicMock(spec=FileSettingsStore)
-    settings_store.load = AsyncMock(return_value=existing_settings)
-    settings_store.store = AsyncMock()
 
     with tempfile.TemporaryDirectory() as temp_dir:
         with patch('openhands.cli.shell_config.Path.home', return_value=Path(temp_dir)):
-            # Mock shell detection and other dependencies
+            # Mark that user has previously declined
+            mark_alias_setup_declined()
+            assert alias_setup_declined()
+
             with patch('shellingham.detect_shell', return_value=('bash', 'bash')):
                 with patch(
                     'openhands.cli.shell_config.aliases_exist_in_shell_config',
@@ -77,42 +59,33 @@ async def test_alias_setup_skipped_when_previously_declined():
                     ):
                         with patch('openhands.cli.main.cli_confirm'):
                             with patch('prompt_toolkit.print_formatted_text'):
-                                # This test should verify that the function doesn't even get to the point
-                                # of calling cli_confirm, but since we're testing the main logic,
-                                # we need to test the condition in the main function
-
-                                # The actual test should be in the main function logic
-                                # Let's test the condition directly
-                                should_show_alias_setup = (
-                                    not False  # aliases_exist_in_shell_config()
-                                    and not False  # global_openhands_command_exists()
-                                    and True  # sys.stdin.isatty() (mocked as True)
+                                # This should not show the setup flow since user previously declined
+                                # We test this by checking the main logic conditions
+                                from openhands.cli.main import (
+                                    alias_setup_declined as main_alias_setup_declined,
+                                )
+                                from openhands.cli.main import (
+                                    aliases_exist_in_shell_config,
+                                    global_openhands_command_exists,
                                 )
 
-                                # Check if user has previously declined alias setup
-                                if should_show_alias_setup and existing_settings:
-                                    should_show_alias_setup = (
-                                        not existing_settings.cli_alias_setup_declined
-                                    )
+                                should_show = (
+                                    not aliases_exist_in_shell_config()
+                                    and not global_openhands_command_exists()
+                                    and not main_alias_setup_declined()
+                                )
 
-                                # Should be False because user previously declined
-                                assert should_show_alias_setup is False
+                                assert not should_show, (
+                                    'Alias setup should be skipped when user previously declined'
+                                )
 
 
-@pytest.mark.asyncio
-async def test_alias_setup_skipped_when_global_command_exists():
+def test_alias_setup_skipped_when_global_command_exists():
     """Test that alias setup is skipped when global openhands command exists."""
-    # Create a mock config
     config = OpenHandsConfig()
-
-    # Create a mock settings store
-    settings_store = MagicMock(spec=FileSettingsStore)
-    settings_store.load = AsyncMock(return_value=None)
-    settings_store.store = AsyncMock()
 
     with tempfile.TemporaryDirectory() as temp_dir:
         with patch('openhands.cli.shell_config.Path.home', return_value=Path(temp_dir)):
-            # Mock shell detection and other dependencies
             with patch('shellingham.detect_shell', return_value=('bash', 'bash')):
                 with patch(
                     'openhands.cli.shell_config.aliases_exist_in_shell_config',
@@ -125,29 +98,20 @@ async def test_alias_setup_skipped_when_global_command_exists():
                         with patch('openhands.cli.main.cli_confirm') as mock_confirm:
                             with patch('prompt_toolkit.print_formatted_text'):
                                 # Run the alias setup flow
-                                await run_alias_setup_flow(config, settings_store)
+                                run_alias_setup_flow(config)
 
-                                # Verify that cli_confirm was never called (setup was skipped)
-                                mock_confirm.assert_not_called()
+                                # cli_confirm should not be called since global command exists
+                                assert not mock_confirm.called, (
+                                    'cli_confirm should not be called when global command exists'
+                                )
 
-                                # Verify that store was never called (no settings to persist)
-                                settings_store.store.assert_not_called()
 
-
-@pytest.mark.asyncio
-async def test_alias_setup_accepted_does_not_set_declined_flag():
-    """Test that when user accepts alias setup, declined flag is not set."""
-    # Create a mock config
+def test_alias_setup_accepted_does_not_set_declined_flag():
+    """Test that when user accepts alias setup, no declined marker is created."""
     config = OpenHandsConfig()
-
-    # Create a mock settings store
-    settings_store = MagicMock(spec=FileSettingsStore)
-    settings_store.load = AsyncMock(return_value=None)  # No existing settings
-    settings_store.store = AsyncMock()
 
     with tempfile.TemporaryDirectory() as temp_dir:
         with patch('openhands.cli.shell_config.Path.home', return_value=Path(temp_dir)):
-            # Mock shell detection and other dependencies
             with patch('shellingham.detect_shell', return_value=('bash', 'bash')):
                 with patch(
                     'openhands.cli.shell_config.aliases_exist_in_shell_config',
@@ -165,8 +129,11 @@ async def test_alias_setup_accepted_does_not_set_declined_flag():
                                 return_value=True,
                             ):
                                 with patch('prompt_toolkit.print_formatted_text'):
-                                    # Run the alias setup flow
-                                    await run_alias_setup_flow(config, settings_store)
+                                    # Initially, user hasn't declined
+                                    assert not alias_setup_declined()
 
-                                    # Verify that store was not called (no need to persist declined flag)
-                                    settings_store.store.assert_not_called()
+                                    # Run the alias setup flow
+                                    run_alias_setup_flow(config)
+
+                                    # After accepting, the declined marker should still be False
+                                    assert not alias_setup_declined()
