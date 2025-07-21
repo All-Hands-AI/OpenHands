@@ -94,7 +94,7 @@ works best, but you have [many options](https://docs.all-hands.dev/usage/llms).
 
 You can [connect OpenHands to your local filesystem](https://docs.all-hands.dev/usage/runtimes/docker#connecting-to-your-filesystem),
 run OpenHands in a scriptable [headless mode](https://docs.all-hands.dev/usage/how-to/headless-mode),
-interact with it via a [friendly CLI](https://docs.all-hands.dev/usage/how-to/cli-mode) (or launch the UI server with `openhands --ui`),
+interact with it via a [friendly CLI](https://docs.all-hands.dev/usage/how-to/cli-mode) (or launch the GUI server with `openhands --gui`),
 or run it on tagged issues with [a github action](https://docs.all-hands.dev/usage/how-to/github-action).
 
 Visit [Running OpenHands](https://docs.all-hands.dev/usage/installation) for more information and setup instructions.

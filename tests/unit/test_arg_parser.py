@@ -139,7 +139,7 @@ def test_help_message(capsys):
         '--selected-repo SELECTED_REPO',
         '--override-cli-mode OVERRIDE_CLI_MODE',
         '--log-level LOG_LEVEL',
-        '--ui',
+        '--gui',
         '--mount-cwd',
     ]
 

@@ -1,4 +1,4 @@
-"""UI launcher for OpenHands CLI."""
+"""GUI launcher for OpenHands CLI."""
 
 import shutil
 import subprocess
@@ -67,15 +67,15 @@ def ensure_config_dir_exists() -> None:
     config_dir.mkdir(exist_ok=True)
 
 
-def launch_ui_server(dry_run: bool = False, mount_cwd: bool = False) -> None:
-    """Launch the OpenHands UI server using Docker.
+def launch_gui_server(dry_run: bool = False, mount_cwd: bool = False) -> None:
+    """Launch the OpenHands GUI server using Docker.
 
     Args:
         dry_run: If True, only show what would be executed without running it.
         mount_cwd: If True, mount the current working directory into the container.
     """
     print_formatted_text(
-        HTML('<ansiblue>🚀 Launching OpenHands UI server...</ansiblue>')
+        HTML('<ansiblue>🚀 Launching OpenHands GUI server...</ansiblue>')
     )
     print_formatted_text('')
 
@@ -126,7 +126,7 @@ def launch_ui_server(dry_run: bool = False, mount_cwd: bool = False) -> None:
 
     print_formatted_text('')
     print_formatted_text(
-        HTML('<ansigreen>✅ Starting OpenHands UI server...</ansigreen>')
+        HTML('<ansigreen>✅ Starting OpenHands GUI server...</ansigreen>')
     )
     print_formatted_text(
         HTML('<grey>The server will be available at: http://localhost:3000</grey>')
@@ -196,13 +196,13 @@ def launch_ui_server(dry_run: bool = False, mount_cwd: bool = False) -> None:
     except subprocess.CalledProcessError as e:
         print_formatted_text('')
         print_formatted_text(
-            HTML('<ansired>❌ Failed to start OpenHands UI server.</ansired>')
+            HTML('<ansired>❌ Failed to start OpenHands GUI server.</ansired>')
         )
         print_formatted_text(HTML(f'<grey>Error: {e}</grey>'))
         sys.exit(1)
     except KeyboardInterrupt:
         print_formatted_text('')
         print_formatted_text(
-            HTML('<ansigreen>✓ OpenHands UI server stopped successfully.</ansigreen>')
+            HTML('<ansigreen>✓ OpenHands GUI server stopped successfully.</ansigreen>')
         )
         sys.exit(0)

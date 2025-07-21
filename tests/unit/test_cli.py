@@ -7,11 +7,11 @@ import pytest
 import pytest_asyncio
 
 from openhands.cli import main as cli
-from openhands.cli.ui_launcher import (
+from openhands.cli.gui_launcher import (
     check_docker_requirements,
     ensure_config_dir_exists,
     get_openhands_config_dir,
-    launch_ui_server,
+    launch_gui_server,
 )
 from openhands.controller.state.state import State
 from openhands.events import EventSource
@@ -367,7 +367,7 @@ async def test_main_without_task(
     mock_args.llm_config = None
     mock_args.name = None
     mock_args.file = None
-    mock_args.ui = False
+    mock_args.gui = False
     mock_args.mount_cwd = False
     mock_parse_args.return_value = mock_args
 
@@ -427,14 +427,14 @@ async def test_main_without_task(
 
 @pytest.mark.asyncio
 @patch('openhands.cli.main.parse_arguments')
-@patch('openhands.cli.main.launch_ui_server')
-async def test_main_with_ui_flag(mock_launch_ui, mock_parse_args):
-    """Test main function with --ui flag."""
+@patch('openhands.cli.main.launch_gui_server')
+async def test_main_with_gui_flag(mock_launch_gui, mock_parse_args):
+    """Test main function with --gui flag."""
     loop = asyncio.get_running_loop()
 
-    # Mock arguments with ui=True
+    # Mock arguments with gui=True
     mock_args = MagicMock()
-    mock_args.ui = True
+    mock_args.gui = True
     mock_args.mount_cwd = False
     mock_parse_args.return_value = mock_args
 
@@ -443,7 +443,7 @@ async def test_main_with_ui_flag(mock_launch_ui, mock_parse_args):
 
     # Assertions
     mock_parse_args.assert_called_once()
-    mock_launch_ui.assert_called_once_with(mount_cwd=False)
+    mock_launch_gui.assert_called_once_with(mount_cwd=False)
 
 
 @pytest.mark.asyncio
@@ -480,7 +480,7 @@ async def test_main_with_task(
     mock_args.agent_cls = 'custom-agent'
     mock_args.llm_config = 'custom-config'
     mock_args.file = None
-    mock_args.ui = False
+    mock_args.gui = False
     mock_args.mount_cwd = False
     mock_parse_args.return_value = mock_args
 
@@ -586,7 +586,7 @@ async def test_main_with_session_name_passes_name_to_run_session(
     mock_args.llm_config = None
     mock_args.name = test_session_name  # Set the session name
     mock_args.file = None
-    mock_args.ui = False
+    mock_args.gui = False
     mock_args.mount_cwd = False
     mock_parse_args.return_value = mock_args
 
@@ -774,7 +774,7 @@ async def test_main_security_check_fails(
 
     # Mock arguments
     mock_args = MagicMock()
-    mock_args.ui = False
+    mock_args.gui = False
     mock_args.mount_cwd = False
     mock_parse_args.return_value = mock_args
 
@@ -853,7 +853,7 @@ async def test_config_loading_order(
     # Add a file property to avoid file I/O errors
     mock_args.file = None
     mock_args.log_level = 'INFO'
-    mock_args.ui = False
+    mock_args.gui = False
     mock_args.mount_cwd = False
     mock_parse_args.return_value = mock_args
 
@@ -961,7 +961,7 @@ async def test_main_with_file_option(
     mock_args.name = None
     mock_args.file = '/path/to/test/file.txt'
     mock_args.task = None
-    mock_args.ui = False
+    mock_args.gui = False
     mock_args.mount_cwd = False
     mock_parse_args.return_value = mock_args
 
@@ -1024,31 +1024,31 @@ async def test_main_with_file_option(
     )
 
 
-# UI Launcher Tests
+# GUI Launcher Tests
 
 
 class TestDockerRequirements:
     """Test Docker requirements checking."""
 
-    @patch('openhands.cli.ui_launcher.shutil.which')
+    @patch('openhands.cli.gui_launcher.shutil.which')
     def test_check_docker_requirements_no_docker(self, mock_which):
         """Test Docker requirements check when Docker is not installed."""
         mock_which.return_value = None
 
-        with patch('openhands.cli.ui_launcher.print_formatted_text') as mock_print:
+        with patch('openhands.cli.gui_launcher.print_formatted_text') as mock_print:
             result = check_docker_requirements()
 
         assert result is False
         mock_print.assert_called()
 
-    @patch('openhands.cli.ui_launcher.shutil.which')
-    @patch('openhands.cli.ui_launcher.subprocess.run')
+    @patch('openhands.cli.gui_launcher.shutil.which')
+    @patch('openhands.cli.gui_launcher.subprocess.run')
     def test_check_docker_requirements_daemon_not_running(self, mock_run, mock_which):
         """Test Docker requirements check when Docker daemon is not running."""
         mock_which.return_value = '/usr/bin/docker'
         mock_run.return_value = MagicMock(returncode=1)
 
-        with patch('openhands.cli.ui_launcher.print_formatted_text') as mock_print:
+        with patch('openhands.cli.gui_launcher.print_formatted_text') as mock_print:
             result = check_docker_requirements()
 
         assert result is False
@@ -1057,21 +1057,21 @@ class TestDockerRequirements:
             ['docker', 'info'], capture_output=True, text=True, timeout=10
         )
 
-    @patch('openhands.cli.ui_launcher.shutil.which')
-    @patch('openhands.cli.ui_launcher.subprocess.run')
+    @patch('openhands.cli.gui_launcher.shutil.which')
+    @patch('openhands.cli.gui_launcher.subprocess.run')
     def test_check_docker_requirements_timeout(self, mock_run, mock_which):
         """Test Docker requirements check when Docker command times out."""
         mock_which.return_value = '/usr/bin/docker'
         mock_run.side_effect = subprocess.TimeoutExpired('docker', 10)
 
-        with patch('openhands.cli.ui_launcher.print_formatted_text') as mock_print:
+        with patch('openhands.cli.gui_launcher.print_formatted_text') as mock_print:
             result = check_docker_requirements()
 
         assert result is False
         mock_print.assert_called()
 
-    @patch('openhands.cli.ui_launcher.shutil.which')
-    @patch('openhands.cli.ui_launcher.subprocess.run')
+    @patch('openhands.cli.gui_launcher.shutil.which')
+    @patch('openhands.cli.gui_launcher.subprocess.run')
     def test_check_docker_requirements_success(self, mock_run, mock_which):
         """Test Docker requirements check when Docker is available and running."""
         mock_which.return_value = '/usr/bin/docker'
@@ -1096,7 +1096,7 @@ class TestConfigDirectory:
         assert config_dir.name == '.openhands'
         assert config_dir.parent == Path.home()
 
-    @patch('openhands.cli.ui_launcher.get_openhands_config_dir')
+    @patch('openhands.cli.gui_launcher.get_openhands_config_dir')
     def test_ensure_config_dir_exists(self, mock_get_config_dir):
         """Test ensuring the config directory exists."""
         mock_config_dir = MagicMock(spec=Path)
@@ -1107,70 +1107,70 @@ class TestConfigDirectory:
         mock_config_dir.mkdir.assert_called_once_with(exist_ok=True)
 
 
-class TestUILauncher:
-    """Test UI launcher functionality."""
+class TestGUILauncher:
+    """Test GUI launcher functionality."""
 
-    @patch('openhands.cli.ui_launcher.check_docker_requirements')
-    def test_launch_ui_server_docker_not_available(self, mock_check_docker):
-        """Test UI launcher when Docker is not available."""
+    @patch('openhands.cli.gui_launcher.check_docker_requirements')
+    def test_launch_gui_server_docker_not_available(self, mock_check_docker):
+        """Test GUI launcher when Docker is not available."""
         mock_check_docker.return_value = False
 
         with pytest.raises(SystemExit) as exc_info:
-            launch_ui_server()
+            launch_gui_server()
 
         assert exc_info.value.code == 1
         mock_check_docker.assert_called_once()
 
-    @patch('openhands.cli.ui_launcher.check_docker_requirements')
-    @patch('openhands.cli.ui_launcher.ensure_config_dir_exists')
-    @patch('openhands.cli.ui_launcher.get_openhands_config_dir')
-    @patch('openhands.cli.ui_launcher.__version__', '0.49.0')
-    def test_launch_ui_server_dry_run(
+    @patch('openhands.cli.gui_launcher.check_docker_requirements')
+    @patch('openhands.cli.gui_launcher.ensure_config_dir_exists')
+    @patch('openhands.cli.gui_launcher.get_openhands_config_dir')
+    @patch('openhands.cli.gui_launcher.__version__', '0.49.0')
+    def test_launch_gui_server_dry_run(
         self, mock_get_config_dir, mock_ensure_config, mock_check_docker
     ):
-        """Test UI launcher in dry run mode."""
+        """Test GUI launcher in dry run mode."""
         mock_check_docker.return_value = True
         mock_config_dir = Path('/test/.openhands')
         mock_get_config_dir.return_value = mock_config_dir
 
-        with patch('openhands.cli.ui_launcher.print_formatted_text') as mock_print:
-            launch_ui_server(dry_run=True)
+        with patch('openhands.cli.gui_launcher.print_formatted_text') as mock_print:
+            launch_gui_server(dry_run=True)
 
         mock_check_docker.assert_called_once()
         mock_ensure_config.assert_called_once()
         mock_get_config_dir.assert_called_once()
         mock_print.assert_called()
 
-    @patch('openhands.cli.ui_launcher.check_docker_requirements')
-    @patch('openhands.cli.ui_launcher.ensure_config_dir_exists')
-    @patch('openhands.cli.ui_launcher.get_openhands_config_dir')
-    @patch('openhands.cli.ui_launcher.subprocess.run')
-    @patch('openhands.cli.ui_launcher.__version__', '0.49.0')
-    def test_launch_ui_server_pull_failure(
+    @patch('openhands.cli.gui_launcher.check_docker_requirements')
+    @patch('openhands.cli.gui_launcher.ensure_config_dir_exists')
+    @patch('openhands.cli.gui_launcher.get_openhands_config_dir')
+    @patch('openhands.cli.gui_launcher.subprocess.run')
+    @patch('openhands.cli.gui_launcher.__version__', '0.49.0')
+    def test_launch_gui_server_pull_failure(
         self, mock_run, mock_get_config_dir, mock_ensure_config, mock_check_docker
     ):
-        """Test UI launcher when Docker pull fails."""
+        """Test GUI launcher when Docker pull fails."""
         mock_check_docker.return_value = True
         mock_config_dir = Path('/test/.openhands')
         mock_get_config_dir.return_value = mock_config_dir
         mock_run.side_effect = subprocess.CalledProcessError(1, 'docker')
 
         with pytest.raises(SystemExit) as exc_info:
-            with patch('openhands.cli.ui_launcher.print_formatted_text'):
-                launch_ui_server()
+            with patch('openhands.cli.gui_launcher.print_formatted_text'):
+                launch_gui_server()
 
         assert exc_info.value.code == 1
         mock_run.assert_called_once()
 
-    @patch('openhands.cli.ui_launcher.check_docker_requirements')
-    @patch('openhands.cli.ui_launcher.ensure_config_dir_exists')
-    @patch('openhands.cli.ui_launcher.get_openhands_config_dir')
-    @patch('openhands.cli.ui_launcher.subprocess.run')
-    @patch('openhands.cli.ui_launcher.__version__', '0.49.0')
-    def test_launch_ui_server_success(
+    @patch('openhands.cli.gui_launcher.check_docker_requirements')
+    @patch('openhands.cli.gui_launcher.ensure_config_dir_exists')
+    @patch('openhands.cli.gui_launcher.get_openhands_config_dir')
+    @patch('openhands.cli.gui_launcher.subprocess.run')
+    @patch('openhands.cli.gui_launcher.__version__', '0.49.0')
+    def test_launch_gui_server_success(
         self, mock_run, mock_get_config_dir, mock_ensure_config, mock_check_docker
     ):
-        """Test successful UI launcher execution."""
+        """Test successful GUI launcher execution."""
         mock_check_docker.return_value = True
         mock_config_dir = Path('/test/.openhands')
         mock_get_config_dir.return_value = mock_config_dir
@@ -1178,8 +1178,8 @@ class TestUILauncher:
         # Mock successful subprocess calls
         mock_run.return_value = MagicMock(returncode=0)
 
-        with patch('openhands.cli.ui_launcher.print_formatted_text'):
-            launch_ui_server()
+        with patch('openhands.cli.gui_launcher.print_formatted_text'):
+            launch_gui_server()
 
         # Should be called twice: once for pull, once for run
         assert mock_run.call_count == 2
@@ -1218,15 +1218,15 @@ class TestUILauncher:
         ]
         assert run_call[0][0] == expected_cmd
 
-    @patch('openhands.cli.ui_launcher.check_docker_requirements')
-    @patch('openhands.cli.ui_launcher.ensure_config_dir_exists')
-    @patch('openhands.cli.ui_launcher.get_openhands_config_dir')
-    @patch('openhands.cli.ui_launcher.subprocess.run')
-    @patch('openhands.cli.ui_launcher.__version__', '0.49.0')
-    def test_launch_ui_server_keyboard_interrupt(
+    @patch('openhands.cli.gui_launcher.check_docker_requirements')
+    @patch('openhands.cli.gui_launcher.ensure_config_dir_exists')
+    @patch('openhands.cli.gui_launcher.get_openhands_config_dir')
+    @patch('openhands.cli.gui_launcher.subprocess.run')
+    @patch('openhands.cli.gui_launcher.__version__', '0.49.0')
+    def test_launch_gui_server_keyboard_interrupt(
         self, mock_run, mock_get_config_dir, mock_ensure_config, mock_check_docker
     ):
-        """Test UI launcher handling of keyboard interrupt."""
+        """Test GUI launcher handling of keyboard interrupt."""
         mock_check_docker.return_value = True
         mock_config_dir = Path('/test/.openhands')
         mock_get_config_dir.return_value = mock_config_dir
@@ -1238,35 +1238,35 @@ class TestUILauncher:
         ]
 
         with pytest.raises(SystemExit) as exc_info:
-            with patch('openhands.cli.ui_launcher.print_formatted_text') as mock_print:
-                launch_ui_server()
+            with patch('openhands.cli.gui_launcher.print_formatted_text') as mock_print:
+                launch_gui_server()
 
         assert exc_info.value.code == 0  # Should exit gracefully
         assert mock_run.call_count == 2
 
         # Verify the success message is shown
         success_message_call = any(
-            'OpenHands UI server stopped successfully' in str(call)
+            'OpenHands GUI server stopped successfully' in str(call)
             for call in mock_print.call_args_list
         )
         assert success_message_call, 'Success message should be shown on Ctrl+C'
 
-    def test_launch_ui_server_with_mount_cwd(self):
-        """Test UI launcher with mount_cwd flag."""
+    def test_launch_gui_server_with_mount_cwd(self):
+        """Test GUI launcher with mount_cwd flag."""
         with (
             patch(
-                'openhands.cli.ui_launcher.check_docker_requirements'
+                'openhands.cli.gui_launcher.check_docker_requirements'
             ) as mock_check_docker,
-            patch('openhands.cli.ui_launcher.ensure_config_dir_exists'),
+            patch('openhands.cli.gui_launcher.ensure_config_dir_exists'),
             patch(
-                'openhands.cli.ui_launcher.get_openhands_config_dir'
+                'openhands.cli.gui_launcher.get_openhands_config_dir'
             ) as mock_get_config_dir,
-            patch('openhands.cli.ui_launcher.Path.cwd') as mock_cwd,
+            patch('openhands.cli.gui_launcher.Path.cwd') as mock_cwd,
             patch(
-                'openhands.cli.ui_launcher.subprocess.check_output'
+                'openhands.cli.gui_launcher.subprocess.check_output'
             ) as mock_check_output,
-            patch('openhands.cli.ui_launcher.__version__', '0.49.0'),
-            patch('openhands.cli.ui_launcher.print_formatted_text') as mock_print,
+            patch('openhands.cli.gui_launcher.__version__', '0.49.0'),
+            patch('openhands.cli.gui_launcher.print_formatted_text') as mock_print,
         ):
             mock_check_docker.return_value = True
             mock_config_dir = Path('/test/.openhands')
@@ -1274,7 +1274,7 @@ class TestUILauncher:
             mock_cwd.return_value = Path('/current/working/dir')
             mock_check_output.return_value = '1000\n'
 
-            launch_ui_server(dry_run=True, mount_cwd=True)
+            launch_gui_server(dry_run=True, mount_cwd=True)
 
             # Check that the dry run output includes the workspace mount
             calls = [str(call) for call in mock_print.call_args_list]
