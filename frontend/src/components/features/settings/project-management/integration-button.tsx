@@ -25,7 +25,7 @@ export function IntegrationButton({
       onClick={onClick}
       isDisabled={isLoading}
       type="button"
-      className="w-20 min-w-20"
+      className="w-30 min-w-20"
     >
       {isLoading && t(I18nKey.SETTINGS$SAVING)}
       {!isLoading &&

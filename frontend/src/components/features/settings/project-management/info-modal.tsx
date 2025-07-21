@@ -1,5 +1,5 @@
 import React from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
@@ -24,9 +24,24 @@ export function InfoModal({ isOpen, onClose, platformName }: InfoModalProps) {
           {t(I18nKey.PROJECT_MANAGEMENT$INFO_MODAL_TITLE)}
         </h2>
         <p>
-          {t(I18nKey.PROJECT_MANAGEMENT$INFO_MODAL_DESCRIPTION, {
-            platform: platformName,
-          })}
+          <Trans
+            i18nKey={I18nKey.PROJECT_MANAGEMENT$INFO_MODAL_DESCRIPTION}
+            values={{
+              platform: platformName,
+            }}
+            components={{
+              a: (
+                <a
+                  href="https://docs.all-hands.dev/usage/cloud/openhands-cloud"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400 hover:underline"
+                >
+                  documentation
+                </a>
+              ),
+            }}
+          />
         </p>
         <div className="flex justify-end">
           <BrandButton
