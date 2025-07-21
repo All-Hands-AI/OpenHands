@@ -22,10 +22,10 @@ export function MicroagentManagementMicroagentCard({
       <div className="text-white text-[16px] font-semibold">
         {microagent.name}
       </div>
-      <div className="text-white text-[14px] font-normal">
+      <div className="text-white text-sm font-normal">
         {microagent.repositoryUrl}
       </div>
-      <div className="text-white text-[14px] font-normal">
+      <div className="text-white text-sm font-normal">
         {t(I18nKey.COMMON$CREATED_ON)} {microagent.createdAt}
       </div>
     </div>
