@@ -2,6 +2,7 @@ import gc
 import json
 import os
 import time
+from datetime import datetime
 
 import psutil
 import pytest
@@ -10,6 +11,7 @@ from pytest import TempPathFactory
 from openhands.core.schema import ActionType, ObservationType
 from openhands.events import EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import (
+    CmdRunAction,
     NullAction,
 )
 from openhands.events.action.files import (
@@ -735,3 +737,129 @@ def test_cache_page_with_missing_events(temp_dir: str):
         # If the delete operation fails, we'll just verify that the basic functionality works
         print(f'Note: Could not delete file {missing_filename}: {e}')
         assert len(initial_events) > 0, 'Should retrieve events successfully'
+
+
+def test_secrets_replaced_in_content(temp_dir: str):
+    """Test that secrets are properly replaced in event content."""
+    file_store = get_file_store('local', temp_dir)
+    stream = EventStream('test_session', file_store)
+
+    # Set up a secret
+    stream.set_secrets({'api_key': 'secret123'})
+
+    # Create an event with the secret in the command
+    action = CmdRunAction(
+        command='curl -H "Authorization: Bearer secret123" https://api.example.com'
+    )
+    action._timestamp = datetime.now().isoformat()
+
+    # Convert to dict and apply secret replacement
+    data = event_to_dict(action)
+    data_with_secrets_replaced = stream._replace_secrets(data)
+
+    # The secret should be replaced in the command
+    assert '<secret_hidden>' in data_with_secrets_replaced['args']['command']
+    assert 'secret123' not in data_with_secrets_replaced['args']['command']
+
+
+def test_timestamp_not_affected_by_secret_replacement(temp_dir: str):
+    """Test that timestamps are not corrupted by secret replacement."""
+    file_store = get_file_store('local', temp_dir)
+    stream = EventStream('test_session', file_store)
+
+    # Set up a secret that appears in the current date (e.g., "18" for 2025-07-18)
+    stream.set_secrets({'test_secret': '18'})
+
+    # Create an event with a timestamp
+    action = CmdRunAction(command='echo "hello world"')
+    action._timestamp = '2025-07-18T17:01:36.799608'  # Contains "18"
+
+    # Convert to dict and apply secret replacement
+    data = event_to_dict(action)
+    original_timestamp = data['timestamp']
+    data_with_secrets_replaced = stream._replace_secrets(data)
+
+    # The timestamp should NOT be affected by secret replacement
+    assert data_with_secrets_replaced['timestamp'] == original_timestamp
+    assert '<secret_hidden>' not in data_with_secrets_replaced['timestamp']
+    assert '18' in data_with_secrets_replaced['timestamp']  # Original value preserved
+
+
+def test_protected_fields_not_affected_by_secret_replacement(temp_dir: str):
+    """Test that protected system fields are not affected by secret replacement."""
+    file_store = get_file_store('local', temp_dir)
+    stream = EventStream('test_session', file_store)
+
+    # Set up secrets that might appear in system fields
+    stream.set_secrets(
+        {
+            'secret1': '123',  # Could appear in ID
+            'secret2': 'user',  # Could appear in source
+            'secret3': 'run',  # Could appear in action/observation
+            'secret4': 'Running',  # Could appear in message
+        }
+    )
+
+    # Create test data with protected fields
+    data = {
+        'id': 123,
+        'timestamp': '2025-07-18T17:01:36.799608',
+        'source': 'user',
+        'cause': 123,
+        'action': 'run',
+        'observation': 'run',
+        'message': 'Running command: echo hello',
+        'content': 'This contains secret1: 123 and secret2: user and secret3: run',
+    }
+
+    data_with_secrets_replaced = stream._replace_secrets(data)
+
+    # Protected fields should not be affected at top level
+    assert data_with_secrets_replaced['id'] == 123
+    assert data_with_secrets_replaced['timestamp'] == '2025-07-18T17:01:36.799608'
+    assert data_with_secrets_replaced['source'] == 'user'
+    assert data_with_secrets_replaced['cause'] == 123
+    assert data_with_secrets_replaced['action'] == 'run'
+    assert data_with_secrets_replaced['observation'] == 'run'
+    assert data_with_secrets_replaced['message'] == 'Running command: echo hello'
+
+    # But non-protected fields should have secrets replaced
+    assert '<secret_hidden>' in data_with_secrets_replaced['content']
+    assert '123' not in data_with_secrets_replaced['content']
+    assert 'user' not in data_with_secrets_replaced['content']
+    # Note: 'run' should still be replaced in content since it's not a protected field
+
+
+def test_nested_dict_secret_replacement(temp_dir: str):
+    """Test that secrets are replaced in nested dictionaries while preserving protected fields."""
+    file_store = get_file_store('local', temp_dir)
+    stream = EventStream('test_session', file_store)
+
+    stream.set_secrets({'secret': 'password123'})
+
+    # Create nested data structure
+    data = {
+        'timestamp': '2025-07-18T17:01:36.799608',
+        'args': {
+            'command': 'login --password password123',
+            'env': {
+                'SECRET_KEY': 'password123',
+                'timestamp': 'password123_timestamp',  # This should be replaced since it's not top-level
+            },
+        },
+    }
+
+    data_with_secrets_replaced = stream._replace_secrets(data)
+
+    # Top-level timestamp should be protected
+    assert data_with_secrets_replaced['timestamp'] == '2025-07-18T17:01:36.799608'
+
+    # Nested secrets should be replaced
+    assert '<secret_hidden>' in data_with_secrets_replaced['args']['command']
+    assert data_with_secrets_replaced['args']['env']['SECRET_KEY'] == '<secret_hidden>'
+    assert '<secret_hidden>' in data_with_secrets_replaced['args']['env']['timestamp']
+
+    # Original secret should not appear in nested content
+    assert 'password123' not in data_with_secrets_replaced['args']['command']
+    assert 'password123' not in data_with_secrets_replaced['args']['env']['SECRET_KEY']
+    assert 'password123' not in data_with_secrets_replaced['args']['env']['timestamp']
