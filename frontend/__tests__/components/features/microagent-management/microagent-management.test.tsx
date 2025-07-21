@@ -14,7 +14,7 @@ import { Conversation } from "#/api/open-hands.types";
 describe("MicroagentManagement", () => {
   const RouterStub = createRoutesStub([
     {
-      Component: () => <MicroagentManagement />,
+      Component: MicroagentManagement,
       path: "/",
     },
   ]);

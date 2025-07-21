@@ -635,7 +635,8 @@ def _create_server(
         server_port=execution_server_port,
         plugins=plugins,
         app_config=config,
-        python_prefix=['poetry', 'run'],
+        python_prefix=[],
+        python_executable=sys.executable,
         override_user_id=user_id,
         override_username=username,
     )

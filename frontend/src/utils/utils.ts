@@ -159,4 +159,9 @@ export const getProviderName = (gitProvider: Provider) => {
 export const getPR = (isGitLab: boolean) =>
   isGitLab ? "merge request" : "pull request";
 
+/**
+ * Get the short name of the PR
+ * @param isGitLab Whether the git provider is GitLab
+ * @returns The short name of the PR
+ */
 export const getPRShort = (isGitLab: boolean) => (isGitLab ? "MR" : "PR");

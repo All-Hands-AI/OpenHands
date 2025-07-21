@@ -129,4 +129,159 @@ describe("ActionSuggestions", () => {
     expect(createPRPrompt).toContain("meaningful branch name");
     expect(createPRPrompt).not.toContain("SAME branch name");
   });
+
+  it("should use correct provider name based on conversation git_provider, not user authenticated providers", async () => {
+    // Test case for GitHub repository
+    const getConversationSpy = vi.spyOn(OpenHands, "getConversation");
+    getConversationSpy.mockResolvedValue({
+      conversation_id: "test-github",
+      title: "GitHub Test",
+      selected_repository: "test-repo",
+      git_provider: "github",
+      selected_branch: "main",
+      last_updated_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      status: "RUNNING",
+      runtime_status: "STATUS$READY",
+      url: null,
+      session_api_key: null,
+    });
+
+    // Mock user having both GitHub and Bitbucket tokens
+    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    getSettingsSpy.mockResolvedValue({
+      ...MOCK_DEFAULT_USER_SETTINGS,
+      provider_tokens_set: {
+        github: "github-token",
+        bitbucket: "bitbucket-token",
+      },
+    });
+
+    const onSuggestionsClick = vi.fn();
+    render(<ActionSuggestions onSuggestionsClick={onSuggestionsClick} />, {
+      wrapper: ({ children }) => (
+        <QueryClientProvider client={new QueryClient()}>
+          {children}
+        </QueryClientProvider>
+      ),
+    });
+
+    const buttons = await screen.findAllByTestId("suggestion");
+    const prButton = buttons.find((button) =>
+      button.textContent?.includes("Push & Create PR"),
+    );
+
+    expect(prButton).toBeInTheDocument();
+
+    if (prButton) {
+      prButton.click();
+    }
+
+    // The suggestion should mention GitHub, not Bitbucket
+    expect(onSuggestionsClick).toHaveBeenCalledWith(
+      expect.stringContaining("GitHub")
+    );
+    expect(onSuggestionsClick).not.toHaveBeenCalledWith(
+      expect.stringContaining("Bitbucket")
+    );
+  });
+
+  it("should use GitLab terminology when git_provider is gitlab", async () => {
+    const getConversationSpy = vi.spyOn(OpenHands, "getConversation");
+    getConversationSpy.mockResolvedValue({
+      conversation_id: "test-gitlab",
+      title: "GitLab Test",
+      selected_repository: "test-repo",
+      git_provider: "gitlab",
+      selected_branch: "main",
+      last_updated_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      status: "RUNNING",
+      runtime_status: "STATUS$READY",
+      url: null,
+      session_api_key: null,
+    });
+
+    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    getSettingsSpy.mockResolvedValue({
+      ...MOCK_DEFAULT_USER_SETTINGS,
+      provider_tokens_set: {
+        gitlab: "gitlab-token",
+      },
+    });
+
+    const onSuggestionsClick = vi.fn();
+    render(<ActionSuggestions onSuggestionsClick={onSuggestionsClick} />, {
+      wrapper: ({ children }) => (
+        <QueryClientProvider client={new QueryClient()}>
+          {children}
+        </QueryClientProvider>
+      ),
+    });
+
+    const buttons = await screen.findAllByTestId("suggestion");
+    const prButton = buttons.find((button) =>
+      button.textContent?.includes("Push & Create PR"),
+    );
+
+    if (prButton) {
+      prButton.click();
+    }
+
+    // Should mention GitLab and "merge request" instead of "pull request"
+    expect(onSuggestionsClick).toHaveBeenCalledWith(
+      expect.stringContaining("GitLab")
+    );
+    expect(onSuggestionsClick).toHaveBeenCalledWith(
+      expect.stringContaining("merge request")
+    );
+  });
+
+  it("should use Bitbucket terminology when git_provider is bitbucket", async () => {
+    const getConversationSpy = vi.spyOn(OpenHands, "getConversation");
+    getConversationSpy.mockResolvedValue({
+      conversation_id: "test-bitbucket",
+      title: "Bitbucket Test",
+      selected_repository: "test-repo",
+      git_provider: "bitbucket",
+      selected_branch: "main",
+      last_updated_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      status: "RUNNING",
+      runtime_status: "STATUS$READY",
+      url: null,
+      session_api_key: null,
+    });
+
+    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    getSettingsSpy.mockResolvedValue({
+      ...MOCK_DEFAULT_USER_SETTINGS,
+      provider_tokens_set: {
+        bitbucket: "bitbucket-token",
+      },
+    });
+
+    const onSuggestionsClick = vi.fn();
+    render(<ActionSuggestions onSuggestionsClick={onSuggestionsClick} />, {
+      wrapper: ({ children }) => (
+        <QueryClientProvider client={new QueryClient()}>
+          {children}
+        </QueryClientProvider>
+      ),
+    });
+
+    const buttons = await screen.findAllByTestId("suggestion");
+    const prButton = buttons.find((button) =>
+      button.textContent?.includes("Push & Create PR"),
+    );
+
+    if (prButton) {
+      prButton.click();
+    }
+
+    // Should mention Bitbucket
+    expect(onSuggestionsClick).toHaveBeenCalledWith(
+      expect.stringContaining("Bitbucket")
+    );
+  });
 });
