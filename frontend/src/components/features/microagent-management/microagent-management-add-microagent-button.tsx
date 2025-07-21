@@ -1,10 +1,20 @@
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { I18nKey } from "#/i18n/declaration";
-import { setAddMicroagentModalVisible } from "#/state/microagent-management-slice";
+import {
+  setAddMicroagentModalVisible,
+  setSelectedRepository,
+} from "#/state/microagent-management-slice";
 import { RootState } from "#/store";
+import { GitRepository } from "#/types/git";
 
-export function MicroagentManagementAddMicroagentButton() {
+interface MicroagentManagementAddMicroagentButtonProps {
+  repository: GitRepository;
+}
+
+export function MicroagentManagementAddMicroagentButton({
+  repository,
+}: MicroagentManagementAddMicroagentButtonProps) {
   const { t } = useTranslation();
 
   const { addMicroagentModalVisible } = useSelector(
@@ -16,6 +26,7 @@ export function MicroagentManagementAddMicroagentButton() {
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     dispatch(setAddMicroagentModalVisible(!addMicroagentModalVisible));
+    dispatch(setSelectedRepository(repository));
   };
 
   return (

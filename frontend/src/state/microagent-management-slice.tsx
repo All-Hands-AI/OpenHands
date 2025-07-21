@@ -1,15 +1,17 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { GitRepository } from "#/types/git";
+import { EventMicroagentStatus } from "#/types/microagent-status";
 
 export const microagentManagementSlice = createSlice({
   name: "microagentManagement",
   initialState: {
     selectedMicroagent: null,
     addMicroagentModalVisible: false,
-    selectedRepository: null,
+    selectedRepository: null as GitRepository | null,
     personalRepositories: [] as GitRepository[],
     organizationRepositories: [] as GitRepository[],
     repositories: [] as GitRepository[],
+    microagentStatuses: [] as EventMicroagentStatus[],
   },
   reducers: {
     setSelectedMicroagent: (state, action) => {
@@ -30,6 +32,24 @@ export const microagentManagementSlice = createSlice({
     setRepositories: (state, action) => {
       state.repositories = action.payload;
     },
+    setMicroagentStatuses: (state, action) => {
+      state.microagentStatuses = action.payload;
+    },
+    addMicroagentStatus: (state, action) => {
+      state.microagentStatuses.push(action.payload);
+    },
+    updateMicroagentStatus: (state, action) => {
+      const { conversationId, status, prUrl } = action.payload;
+      const statusEntry = state.microagentStatuses.find(
+        (entry) => entry.conversationId === conversationId,
+      );
+      if (statusEntry) {
+        statusEntry.status = status;
+        if (prUrl) {
+          statusEntry.prUrl = prUrl;
+        }
+      }
+    },
   },
 });
 
@@ -40,6 +60,9 @@ export const {
   setPersonalRepositories,
   setOrganizationRepositories,
   setRepositories,
+  setMicroagentStatuses,
+  addMicroagentStatus,
+  updateMicroagentStatus,
 } = microagentManagementSlice.actions;
 
 export default microagentManagementSlice.reducer;

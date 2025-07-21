@@ -21,6 +21,7 @@ export function MicroagentManagementRepositories({
   tabType,
 }: MicroagentManagementRepositoriesProps) {
   const { t } = useTranslation();
+
   const [searchQuery, setSearchQuery] = useState("");
 
   const numberOfRepoMicroagents = repositories.length;

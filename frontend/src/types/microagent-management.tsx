@@ -10,3 +10,8 @@ export interface RepositoryMicroagent {
   created_at: string;
   git_provider: string;
 }
+
+export interface MicroagentFormData {
+  query: string;
+  triggers: string[];
+}
