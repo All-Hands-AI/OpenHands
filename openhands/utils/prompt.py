@@ -1,4 +1,5 @@
 import os
+import subprocess
 from dataclasses import dataclass, field
 from itertools import islice
 
@@ -7,6 +8,35 @@ from jinja2 import Template
 from openhands.controller.state.state import State
 from openhands.core.message import Message, TextContent
 from openhands.events.observation.agent import MicroagentKnowledge
+
+
+def get_current_branch(repo_directory: str | None) -> str | None:
+    """Get the current git branch name for a repository.
+
+    Args:
+        repo_directory: The directory path of the git repository
+
+    Returns:
+        The current branch name, or None if it cannot be determined
+    """
+    if not repo_directory or not os.path.exists(repo_directory):
+        return None
+
+    try:
+        result = subprocess.run(
+            ['git', 'branch', '--show-current'],
+            cwd=repo_directory,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if result.returncode == 0:
+            branch_name = result.stdout.strip()
+            return branch_name if branch_name else None
+    except (subprocess.TimeoutExpired, subprocess.SubprocessError, FileNotFoundError):
+        pass
+
+    return None
 
 
 @dataclass
@@ -24,6 +54,7 @@ class RepositoryInfo:
 
     repo_name: str | None = None
     repo_directory: str | None = None
+    branch_name: str | None = None
 
 
 @dataclass

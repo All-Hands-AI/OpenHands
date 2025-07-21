@@ -28,6 +28,7 @@ from openhands.utils.prompt import (
     ConversationInstructions,
     RepositoryInfo,
     RuntimeInfo,
+    get_current_branch,
 )
 
 GLOBAL_MICROAGENTS_DIR = os.path.join(
@@ -325,7 +326,10 @@ class Memory:
     def set_repository_info(self, repo_name: str, repo_directory: str) -> None:
         """Store repository info so we can reference it in an observation."""
         if repo_name or repo_directory:
-            self.repository_info = RepositoryInfo(repo_name, repo_directory)
+            branch_name = get_current_branch(repo_directory)
+            self.repository_info = RepositoryInfo(
+                repo_name, repo_directory, branch_name
+            )
         else:
             self.repository_info = None
 
