@@ -50,7 +50,7 @@ export const InteractiveChip = ({
       <span
         ref={textRef}
         className={cn(
-          "tg-family-outfit tg-xs text-center font-normal",
+          "tg-family-outfit tg-xs text-center font-normal line-1",
           buttonClassNames.text,
           !props.disabled && `button-bold-text`
         )}

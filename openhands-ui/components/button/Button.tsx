@@ -36,7 +36,7 @@ export const Button = ({
       {...props}
       aria-disabled={props.disabled ? "true" : "false"}
       className={cn(
-        size === "small" ? "px-3 py-1.5 min-w-32" : "px-3 py-3 min-w-64",
+        size === "small" ? "px-2 py-3 min-w-32" : "px-3 py-4 min-w-64",
         "flex flex-row items-center gap-x-8",
         hasIcons ? " justify-between" : " justify-center",
         "group enabled:cursor-pointer focus:outline-0",
@@ -50,9 +50,9 @@ export const Button = ({
       <span
         ref={textRef}
         className={cn(
-          "text-center font-normal block flex-1",
+          "tg-family-outfit tg-lg text-center font-normal leading-[100%]",
           buttonClassNames.text,
-          `button-bold-text`
+          !props.disabled && `button-bold-text`
         )}
       >
         {children}
