@@ -49,7 +49,6 @@ from openhands.integrations.provider import (
     ProviderHandler,
     ProviderType,
 )
-from openhands.integrations.service_types import AuthenticationError
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.microagent import (
     BaseMicroagent,
