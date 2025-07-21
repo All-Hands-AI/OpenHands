@@ -581,7 +581,7 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
     )
 
     if should_show_alias_setup:
-        # Clear the terminal if we haven't shown a banner yet
+        # Clear the terminal if we haven't shown a banner yet (i.e., setup flow didn't run)
         if not banner_shown:
             clear()
 
