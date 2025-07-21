@@ -424,7 +424,7 @@ async def test_budget_control_flag_syncs_with_metrics(mock_agent, mock_llm_regis
         assert session.controller.state.budget_flag.current_value == test_cost + 0.1
 
 
-def test_override_provider_tokens_with_custom_secret():
+def test_override_provider_tokens_with_custom_secret(mock_llm_registry):
     """Test that override_provider_tokens_with_custom_secret works correctly.
 
     This test verifies that the method properly removes provider tokens when
@@ -436,6 +436,7 @@ def test_override_provider_tokens_with_custom_secret():
     session = AgentSession(
         sid='test-session',
         file_store=file_store,
+        llm_registry=mock_llm_registry,
     )
 
     # Create test data
