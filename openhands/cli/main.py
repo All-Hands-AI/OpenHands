@@ -13,7 +13,6 @@ from openhands.cli.commands import (
     check_folder_security_agreement,
     handle_commands,
 )
-from openhands.cli.gui_launcher import launch_gui_server
 from openhands.cli.settings import modify_llm_settings_basic
 from openhands.cli.shell_config import (
     ShellConfigManager,
@@ -495,11 +494,6 @@ def run_alias_setup_flow(config: OpenHandsConfig) -> None:
 async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
     """Runs the agent in CLI mode."""
     args = parse_arguments()
-
-    # Handle GUI launch mode
-    if args.gui:
-        launch_gui_server(mount_cwd=args.mount_cwd)
-        return
 
     # Set log level from command line argument if provided
     if args.log_level and isinstance(args.log_level, str):

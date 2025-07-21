@@ -166,7 +166,7 @@ joblib = "*"
 swebench = { git = "https://github.com/ryanhoangt/SWE-bench.git", rev = "fix-modal-patch-eval" }
 
 [tool.poetry.scripts]
-openhands = "openhands.cli.main:main"
+openhands = "openhands.cli.entry:main"
 
 [tool.poetry.group.testgeneval.dependencies]
 fuzzywuzzy = "^0.18.0"

@@ -765,18 +765,7 @@ def get_parser() -> argparse.ArgumentParser:
         type=str,
         default=None,
     )
-    parser.add_argument(
-        '--gui',
-        help='Launch the OpenHands GUI server using Docker',
-        action='store_true',
-        default=False,
-    )
-    parser.add_argument(
-        '--mount-cwd',
-        help='Mount the current working directory into the GUI server container (only used with --gui)',
-        action='store_true',
-        default=False,
-    )
+
     return parser
 
 
