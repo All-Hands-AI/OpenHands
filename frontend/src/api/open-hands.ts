@@ -489,6 +489,10 @@ class OpenHands {
 
     return data;
   }
+
+  static async getGitHubUserInstallationIds(): Promise<string[]> {
+    return [];
+  }
 }
 
 export default OpenHands;
