@@ -151,22 +151,7 @@ For complete configuration details, see the [`docker_out_of_docker` option](../c
 
 ### Enabling Docker-out-of-Docker
 
-To enable docker-out-of-docker functionality, set the `docker_out_of_docker` configuration option (see [Configuration Options](../configuration-options#docker-out-of-docker-support) for complete details):
-
-#### Using Environment Variables
-
-```bash
-docker run # ... \
-    -e SANDBOX_DOCKER_OUT_OF_DOCKER=true \
-    # ...
-```
-
-#### Using Configuration File
-
-```toml
-[sandbox]
-docker_out_of_docker = true
-```
+To enable docker-out-of-docker functionality, set the `docker_out_of_docker` configuration option (see [Configuration Options](../configuration-options#docker-out-of-docker-support) for complete details).
 
 ### How It Works
 
