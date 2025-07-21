@@ -196,6 +196,17 @@ class DockerRuntime(ActionExecutionClient):
             self.set_runtime_status(RuntimeStatus.READY)
         self._runtime_initialized = True
 
+        for network_name in self.config.sandbox.additional_networks:
+            try:
+                network = self.docker_client.networks.get(network_name)
+                network.connect(self.container)
+            except Exception as e:
+                self.log(
+                    'error',
+                    f'Error: Failed to connect instance {self.container_name} to network {network_name}'
+                )
+                self.log('error', str(e))
+
     def maybe_build_runtime_container_image(self):
         if self.runtime_container_image is None:
             if self.base_container_image is None:
