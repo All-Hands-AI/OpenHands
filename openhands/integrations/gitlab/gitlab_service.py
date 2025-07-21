@@ -227,7 +227,7 @@ class GitLabService(BaseGitService, GitService):
         return repos
 
     async def get_paginated_repos(
-        self, page: int, per_page: int, sort: str, installation_id: int | None
+        self, page: int, per_page: int, sort: str, installation_id: str | None
     ) -> list[Repository]:
         url = f'{self.BASE_URL}/projects'
         order_by = {

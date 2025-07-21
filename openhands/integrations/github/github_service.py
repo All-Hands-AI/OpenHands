@@ -193,7 +193,7 @@ class GitHubService(BaseGitService, GitService):
         return datetime.strptime(ts, '%Y-%m-%dT%H:%M:%SZ') if ts else datetime.min
 
     async def get_paginated_repos(
-        self, page: int, per_page: int, sort: str, installation_id: int | None
+        self, page: int, per_page: int, sort: str, installation_id: str | None
     ):
         params = {'page': str(page), 'per_page': str(per_page)}
         if installation_id:
@@ -232,7 +232,7 @@ class GitHubService(BaseGitService, GitService):
 
         if app_mode == AppMode.SAAS:
             # Get all installation IDs and fetch repos for each one
-            installation_ids = await self.get_installation_ids()
+            installation_ids = await self.get_installations()
 
             # Iterate through each installation ID
             for installation_id in installation_ids:
@@ -279,11 +279,11 @@ class GitHubService(BaseGitService, GitService):
             for repo in all_repos
         ]
 
-    async def get_installation_ids(self) -> list[int]:
+    async def get_installations(self) -> list[str]:
         url = f'{self.BASE_URL}/user/installations'
         response, _ = await self._make_request(url)
         installations = response.get('installations', [])
-        return [i['id'] for i in installations]
+        return [str(i['id']) for i in installations]
 
     async def search_repositories(
         self, query: str, per_page: int, sort: str, order: str

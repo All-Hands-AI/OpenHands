@@ -185,8 +185,18 @@ class BitBucketService(BaseGitService, GitService):
 
         return all_items[:max_items]  # Trim to max_items if needed
 
+    async def get_installations(self) -> list[str]:
+        workspaces_url = f'{self.BASE_URL}/workspaces'
+        workspaces = await self._fetch_paginated_data(workspaces_url, {}, 100)
+
+        installations: list[str] = []
+        for workspace in workspaces:
+            installations.append(workspace['slug'])
+
+        return installations
+
     async def get_paginated_repos(
-        self, page: int, per_page: int, sort: str, installation_id: int | None
+        self, page: int, per_page: int, sort: str, installation_id: str | None
     ) -> list[Repository]:
         """Get paginated repositories for a specific workspace.
 
@@ -203,7 +213,7 @@ class BitBucketService(BaseGitService, GitService):
             return []
 
         # Convert installation_id to string for use as workspace_slug
-        workspace_slug = str(installation_id)
+        workspace_slug = installation_id
         workspace_repos_url = f'{self.BASE_URL}/repositories/{workspace_slug}'
 
         # Map sort parameter to Bitbucket API compatible values
