@@ -27,6 +27,7 @@ from openhands.integrations.provider import (
 )
 from openhands.integrations.service_types import (
     AuthenticationError,
+    CreateMicroagent,
     ProviderType,
     SuggestedTask,
 )
@@ -84,6 +85,7 @@ class InitSessionRequest(BaseModel):
     image_urls: list[str] | None = None
     replay_json: str | None = None
     suggested_task: SuggestedTask | None = None
+    create_microagent: CreateMicroagent | None = None
     conversation_instructions: str | None = None
     # Only nested runtimes require the ability to specify a conversation id, and it could be a security risk
     if os.getenv('ALLOW_SET_CONVERSATION_ID', '0') == '1':
@@ -123,6 +125,7 @@ async def new_conversation(
     image_urls = data.image_urls or []
     replay_json = data.replay_json
     suggested_task = data.suggested_task
+    create_microagent = data.create_microagent
     git_provider = data.git_provider
     conversation_instructions = data.conversation_instructions
 
@@ -131,6 +134,13 @@ async def new_conversation(
     if suggested_task:
         initial_user_msg = suggested_task.get_prompt_for_task()
         conversation_trigger = ConversationTrigger.SUGGESTED_TASK
+    elif create_microagent:
+        conversation_trigger = ConversationTrigger.MICROAGENT_MANAGEMENT
+        # Set repository and git_provider from create_microagent if not already set
+        if not repository and create_microagent.repo:
+            repository = create_microagent.repo
+        if not git_provider and create_microagent.git_provider:
+            git_provider = create_microagent.git_provider
 
     if auth_type == AuthType.BEARER:
         conversation_trigger = ConversationTrigger.REMOTE_API_KEY
@@ -210,20 +220,43 @@ async def new_conversation(
 async def search_conversations(
     page_id: str | None = None,
     limit: int = 20,
+    selected_repository: str | None = None,
+    conversation_trigger: ConversationTrigger | None = None,
     conversation_store: ConversationStore = Depends(get_conversation_store),
 ) -> ConversationInfoResultSet:
     conversation_metadata_result_set = await conversation_store.search(page_id, limit)
 
-    # Filter out conversations older than max_age
+    # Apply filters at API level
+    filtered_results = []
     now = datetime.now(timezone.utc)
     max_age = config.conversation_max_age_seconds
-    filtered_results = [
-        conversation
-        for conversation in conversation_metadata_result_set.results
-        if hasattr(conversation, 'created_at')
-        and (now - conversation.created_at.replace(tzinfo=timezone.utc)).total_seconds()
-        <= max_age
-    ]
+
+    for conversation in conversation_metadata_result_set.results:
+        # Skip conversations without created_at or older than max_age
+        if not hasattr(conversation, 'created_at'):
+            continue
+
+        age_seconds = (
+            now - conversation.created_at.replace(tzinfo=timezone.utc)
+        ).total_seconds()
+        if age_seconds > max_age:
+            continue
+
+        # Apply repository filter
+        if (
+            selected_repository is not None
+            and conversation.selected_repository != selected_repository
+        ):
+            continue
+
+        # Apply conversation trigger filter
+        if (
+            conversation_trigger is not None
+            and conversation.trigger != conversation_trigger
+        ):
+            continue
+
+        filtered_results.append(conversation)
 
     conversation_ids = set(
         conversation.conversation_id for conversation in filtered_results

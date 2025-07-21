@@ -190,7 +190,7 @@ class OpenHandsMCPConfig:
     @staticmethod
     def create_default_mcp_server_config(
         host: str, config: 'OpenHandsConfig', user_id: str | None = None
-    ) -> tuple[MCPSHTTPServerConfig, list[MCPStdioServerConfig]]:
+    ) -> tuple[MCPSHTTPServerConfig | None, list[MCPStdioServerConfig]]:
         """
         Create a default MCP server configuration.
 
@@ -198,7 +198,7 @@ class OpenHandsMCPConfig:
             host: Host string
             config: OpenHandsConfig
         Returns:
-            tuple[MCPSSEServerConfig, list[MCPStdioServerConfig]]: A tuple containing the default SSE server configuration and a list of MCP stdio server configurations
+            tuple[MCPSHTTPServerConfig | None, list[MCPStdioServerConfig]]: A tuple containing the default SHTTP server configuration (or None) and a list of MCP stdio server configurations
         """
         stdio_servers = []
         search_engine_stdio_server = OpenHandsMCPConfig.add_search_engine(config)
