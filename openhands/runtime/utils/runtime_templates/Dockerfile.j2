@@ -18,23 +18,16 @@ ENV POETRY_VIRTUALENVS_PATH=/openhands/poetry \
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         wget curl ca-certificates sudo apt-utils git jq tmux build-essential ripgrep ffmpeg \
-        {%- if (base_image.endswith(':latest') or base_image.endswith(':24.04') or ('mswebench' in base_image)) -%}
-        libgl1 \
-        {%- else %}
-        libgl1-mesa-glx \
-        {% endif -%}
-        libasound2-plugins libatomic1 && \
+        {% if (base_image.endswith(':latest') or base_image.endswith(':24.04') or ('mswebench' in base_image)) %}libgl1 \
+        {% else %}libgl1-mesa-glx \
+        {% endif %}libasound2-plugins libatomic1 && \
     curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     TZ=Etc/UTC DEBIAN_FRONTEND=noninteractive \
         apt-get install -y --no-install-recommends nodejs \
-        {%- if ('mswebench' in base_image) -%}
-        python3 python-is-python3 python3-pip python3-venv \
-        {%- elif base_image.endswith(':latest') or base_image.endswith(':24.04') -%}
-        python3.12 python3.12-venv python-is-python3 python3-pip \
-        {%- else -%}
-        python3.10 python3.10-venv python-is-python3 python3-pip \
-        {%- endif -%}
-        && \
+        {% if ('mswebench' in base_image) %}python3 python-is-python3 python3-pip python3-venv \
+        {% elif base_image.endswith(':latest') or base_image.endswith(':24.04') %}python3.12 python3.12-venv python-is-python3 python3-pip \
+        {% else %}python3.10 python3.10-venv python-is-python3 python3-pip \
+        {% endif %}&& \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 {% endif %}
