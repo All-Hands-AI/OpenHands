@@ -1,0 +1,10 @@
+{
+  "tags": [
+    ""
+  ],
+  "platform": "linux/amd64,linux/arm64",
+  "build_args": [
+    "OPENHANDS_BUILD_VERSION=dev"
+  ],
+  "dockerfile": "./containers/runtime/Dockerfile"
+}
