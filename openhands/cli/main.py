@@ -586,7 +586,7 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
             clear()
 
         run_alias_setup_flow(config)
-        banner_shown = True
+        # Don't set banner_shown = True here, so the ASCII art banner will still be shown
 
     # TODO: Set working directory from config or use current working directory?
     current_dir = config.workspace_base
