@@ -185,6 +185,76 @@ class BitBucketService(BaseGitService, GitService):
 
         return all_items[:max_items]  # Trim to max_items if needed
 
+    async def get_paginated_repos(
+        self, page: int, per_page: int, sort: str, installation_id: int | None
+    ) -> list[Repository]:
+        """Get paginated repositories for a specific workspace.
+
+        Args:
+            page: The page number to fetch
+            per_page: The number of repositories per page
+            sort: The sort field ('pushed', 'updated', 'created', 'full_name')
+            installation_id: The workspace slug to fetch repositories from (as int, will be converted to string)
+
+        Returns:
+            A list of Repository objects
+        """
+        if not installation_id:
+            return []
+
+        # Convert installation_id to string for use as workspace_slug
+        workspace_slug = str(installation_id)
+        workspace_repos_url = f'{self.BASE_URL}/repositories/{workspace_slug}'
+
+        # Map sort parameter to Bitbucket API compatible values
+        bitbucket_sort = sort
+        if sort == 'pushed':
+            # Bitbucket doesn't support 'pushed', use 'updated_on' instead
+            bitbucket_sort = '-updated_on'  # Use negative prefix for descending order
+        elif sort == 'updated':
+            bitbucket_sort = '-updated_on'
+        elif sort == 'created':
+            bitbucket_sort = '-created_on'
+        elif sort == 'full_name':
+            bitbucket_sort = 'name'  # Bitbucket uses 'name' not 'full_name'
+        else:
+            # Default to most recently updated first
+            bitbucket_sort = '-updated_on'
+
+        params = {
+            'pagelen': per_page,
+            'page': page,
+            'sort': bitbucket_sort,
+        }
+
+        response, headers = await self._make_request(workspace_repos_url, params)
+
+        # Extract repositories from the response
+        repos = response.get('values', [])
+
+        # Extract link header for pagination
+        next_link = response.get('next', '')
+
+        repositories = [
+            Repository(
+                id=repo.get('uuid', ''),
+                full_name=f'{repo.get("workspace", {}).get("slug", "")}/{repo.get("slug", "")}',
+                git_provider=ProviderType.BITBUCKET,
+                is_public=repo.get('is_private', True) is False,
+                stargazers_count=None,  # Bitbucket doesn't have stars
+                pushed_at=repo.get('updated_on'),
+                owner_type=(
+                    OwnerType.ORGANIZATION
+                    if repo.get('workspace', {}).get('is_private') is False
+                    else OwnerType.USER
+                ),
+                link_header=next_link,
+            )
+            for repo in repos
+        ]
+
+        return repositories
+
     async def get_all_repositories(
         self, sort: str, app_mode: AppMode
     ) -> list[Repository]:
