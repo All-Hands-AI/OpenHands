@@ -3,6 +3,11 @@ import { Trans, useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
+import { ModalBody } from "#/components/shared/modals/modal-body";
+import {
+  BaseModalTitle,
+  BaseModalDescription,
+} from "#/components/shared/modals/confirmation-modals/base-modal";
 
 interface InfoModalProps {
   isOpen: boolean;
@@ -19,11 +24,11 @@ export function InfoModal({ isOpen, onClose, platformName }: InfoModalProps) {
 
   return (
     <ModalBackdrop onClose={onClose}>
-      <div className="bg-base-secondary p-4 rounded-xl flex flex-col gap-4 border border-tertiary w-96">
-        <h2 className="text-lg font-semibold">
-          {t(I18nKey.PROJECT_MANAGEMENT$INFO_MODAL_TITLE)}
-        </h2>
-        <p>
+      <ModalBody className="items-start border border-tertiary w-96">
+        <BaseModalTitle
+          title={t(I18nKey.PROJECT_MANAGEMENT$INFO_MODAL_TITLE)}
+        />
+        <BaseModalDescription>
           <Trans
             i18nKey={I18nKey.PROJECT_MANAGEMENT$INFO_MODAL_DESCRIPTION}
             values={{
@@ -42,18 +47,19 @@ export function InfoModal({ isOpen, onClose, platformName }: InfoModalProps) {
               ),
             }}
           />
-        </p>
-        <div className="flex justify-end">
+        </BaseModalDescription>
+        <div className="flex flex-col gap-2 w-full">
           <BrandButton
             variant="primary"
             onClick={onClose}
             data-testid="close-button"
             type="button"
+            className="w-full"
           >
             {t(I18nKey.PROJECT_MANAGEMENT$CLOSE_BUTTON_LABEL)}
           </BrandButton>
         </div>
-      </div>
+      </ModalBody>
     </ModalBackdrop>
   );
 }
