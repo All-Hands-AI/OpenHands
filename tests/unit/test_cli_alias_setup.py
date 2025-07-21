@@ -10,7 +10,6 @@ from openhands.cli.shell_config import (
     alias_setup_declined,
     aliases_exist_in_shell_config,
     get_shell_config_path,
-    global_openhands_command_exists,
     mark_alias_setup_declined,
 )
 
@@ -247,18 +246,6 @@ def test_shell_config_manager_template_rendering():
                     assert 'test-command' in content
                     assert 'alias openhands="test-command"' in content
                     assert 'alias oh="test-command"' in content
-
-
-def test_global_openhands_command_exists_true():
-    """Test global command detection when openhands command exists."""
-    with patch('shutil.which', return_value='/usr/local/bin/openhands'):
-        assert global_openhands_command_exists() is True
-
-
-def test_global_openhands_command_exists_false():
-    """Test global command detection when openhands command doesn't exist."""
-    with patch('shutil.which', return_value=None):
-        assert global_openhands_command_exists() is False
 
 
 def test_alias_setup_declined_false():

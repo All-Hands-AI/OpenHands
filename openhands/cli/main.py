@@ -19,7 +19,6 @@ from openhands.cli.shell_config import (
     add_aliases_to_shell_config,
     alias_setup_declined,
     aliases_exist_in_shell_config,
-    global_openhands_command_exists,
     mark_alias_setup_declined,
 )
 from openhands.cli.tui import (
@@ -568,12 +567,10 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
     # Check if we should show the alias setup flow
     # Only show it if:
     # 1. Aliases don't exist in the shell configuration
-    # 2. No global openhands command exists
-    # 3. User hasn't previously declined alias setup
-    # 4. We're in an interactive environment (not during tests or CI)
+    # 2. User hasn't previously declined alias setup
+    # 3. We're in an interactive environment (not during tests or CI)
     should_show_alias_setup = (
         not aliases_exist_in_shell_config()
-        and not global_openhands_command_exists()
         and not alias_setup_declined()
         and sys.stdin.isatty()
     )
