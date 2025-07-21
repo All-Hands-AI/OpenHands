@@ -47,7 +47,6 @@ from openhands.utils.prompt import (
     PromptManager,
     RepositoryInfo,
     RuntimeInfo,
-    get_current_branch,
 )
 
 
@@ -513,11 +512,10 @@ class ConversationMemory:
             if obs.recall_type == RecallType.WORKSPACE_CONTEXT:
                 # everything is optional, check if they are present
                 if obs.repo_name or obs.repo_directory:
-                    branch_name = get_current_branch(obs.repo_directory)
                     repo_info = RepositoryInfo(
                         repo_name=obs.repo_name or '',
                         repo_directory=obs.repo_directory or '',
-                        branch_name=branch_name,
+                        branch_name=obs.repo_branch or None,
                     )
                 else:
                     repo_info = None
