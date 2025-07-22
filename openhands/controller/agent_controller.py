@@ -82,8 +82,12 @@ from openhands.storage.files import FileStore
 TRAFFIC_CONTROL_REMINDER = (
     "Please click on resume button if you'd like to continue, or start a new task."
 )
-ERROR_ACTION_NOT_EXECUTED_ID = 'AGENT_ERROR$ERROR_ACTION_NOT_EXECUTED'
-ERROR_ACTION_NOT_EXECUTED = 'Stop button pressed. The action has not been executed.'
+ERROR_ACTION_NOT_EXECUTED_STOPPED_ID = 'AGENT_ERROR$ERROR_ACTION_NOT_EXECUTED_STOPPED'
+ERROR_ACTION_NOT_EXECUTED_ERROR_ID = 'AGENT_ERROR$ERROR_ACTION_NOT_EXECUTED_ERROR'
+ERROR_ACTION_NOT_EXECUTED_STOPPED = (
+    'Stop button pressed. The action has not been executed.'
+)
+ERROR_ACTION_NOT_EXECUTED_ERROR = 'The action has not been executed due to a runtime error. The runtime system may have crashed and restarted due to resource constraints. Any previously established system state, dependencies, or environment variables may have been lost.'
 
 
 class AgentController:
@@ -552,9 +556,17 @@ class AgentController:
 
             # make a new ErrorObservation with the tool call metadata
             if not found_observation:
+                # Use different messages and IDs based on whether the agent was stopped by user or due to error
+                if self.state.agent_state == AgentState.STOPPED:
+                    error_content = ERROR_ACTION_NOT_EXECUTED_STOPPED
+                    error_id = ERROR_ACTION_NOT_EXECUTED_STOPPED_ID
+                else:  # AgentState.ERROR
+                    error_content = ERROR_ACTION_NOT_EXECUTED_ERROR
+                    error_id = ERROR_ACTION_NOT_EXECUTED_ERROR_ID
+
                 obs = ErrorObservation(
-                    content=ERROR_ACTION_NOT_EXECUTED,
-                    error_id=ERROR_ACTION_NOT_EXECUTED_ID,
+                    content=error_content,
+                    error_id=error_id,
                 )
                 obs.tool_call_metadata = self._pending_action.tool_call_metadata
                 obs._cause = self._pending_action.id  # type: ignore[attr-defined]
