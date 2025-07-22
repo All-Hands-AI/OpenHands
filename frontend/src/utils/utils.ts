@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { Provider } from "#/types/settings";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -102,3 +103,42 @@ export const formatTimestamp = (timestamp: string) =>
     minute: "2-digit",
     second: "2-digit",
   });
+
+export const getGitProviderBaseUrl = (gitProvider: Provider): string => {
+  switch (gitProvider) {
+    case "github":
+      return "https://github.com";
+    case "gitlab":
+      return "https://gitlab.com";
+    case "bitbucket":
+      return "https://bitbucket.org";
+    default:
+      return "";
+  }
+};
+
+/**
+ * Get the name of the git provider
+ * @param gitProvider The git provider
+ * @returns The name of the git provider
+ */
+export const getProviderName = (gitProvider: Provider) => {
+  if (gitProvider === "gitlab") return "GitLab";
+  if (gitProvider === "bitbucket") return "Bitbucket";
+  return "GitHub";
+};
+
+/**
+ * Get the name of the PR
+ * @param isGitLab Whether the git provider is GitLab
+ * @returns The name of the PR
+ */
+export const getPR = (isGitLab: boolean) =>
+  isGitLab ? "merge request" : "pull request";
+
+/**
+ * Get the short name of the PR
+ * @param isGitLab Whether the git provider is GitLab
+ * @returns The short name of the PR
+ */
+export const getPRShort = (isGitLab: boolean) => (isGitLab ? "MR" : "PR");

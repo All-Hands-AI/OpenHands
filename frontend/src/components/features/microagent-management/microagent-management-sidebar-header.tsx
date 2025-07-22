@@ -10,7 +10,7 @@ export function MicroagentManagementSidebarHeader() {
       <h1 className="text-white text-[28px] font-bold">
         {t(I18nKey.MICROAGENT_MANAGEMENT$DESCRIPTION)}
       </h1>
-      <p className="text-white text-[14px] font-normal leading-[20px] pt-2">
+      <p className="text-white text-sm font-normal leading-[20px] pt-2">
         {t(I18nKey.MICROAGENT_MANAGEMENT$USE_MICROAGENTS)}
         <QuestionCircleIcon className="inline-block ml-1" />
       </p>
