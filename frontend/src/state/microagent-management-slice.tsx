@@ -6,7 +6,7 @@ export const microagentManagementSlice = createSlice({
   initialState: {
     selectedMicroagent: null,
     addMicroagentModalVisible: false,
-    selectedRepository: null,
+    selectedRepository: null as GitRepository | null,
     personalRepositories: [] as GitRepository[],
     organizationRepositories: [] as GitRepository[],
     repositories: [] as GitRepository[],

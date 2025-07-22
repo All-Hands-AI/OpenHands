@@ -116,3 +116,29 @@ export const getGitProviderBaseUrl = (gitProvider: Provider): string => {
       return "";
   }
 };
+
+/**
+ * Get the name of the git provider
+ * @param gitProvider The git provider
+ * @returns The name of the git provider
+ */
+export const getProviderName = (gitProvider: Provider) => {
+  if (gitProvider === "gitlab") return "GitLab";
+  if (gitProvider === "bitbucket") return "Bitbucket";
+  return "GitHub";
+};
+
+/**
+ * Get the name of the PR
+ * @param isGitLab Whether the git provider is GitLab
+ * @returns The name of the PR
+ */
+export const getPR = (isGitLab: boolean) =>
+  isGitLab ? "merge request" : "pull request";
+
+/**
+ * Get the short name of the PR
+ * @param isGitLab Whether the git provider is GitLab
+ * @returns The short name of the PR
+ */
+export const getPRShort = (isGitLab: boolean) => (isGitLab ? "MR" : "PR");
