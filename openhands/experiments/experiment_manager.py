@@ -18,7 +18,6 @@ class ExperimentManager:
     ) -> AgentConfig:
         return agent_config
 
-
 experiment_manager_cls = os.environ.get(
     'OPENHANDS_EXPERIMENT_MANAGER_CLS',
     'openhands.experiments.experiment_manager.ExperimentManager',
