@@ -14,7 +14,7 @@
       "email": "stephan@all-hands.dev"
     }
   ],
-  "version": "1.0.0-beta.4",
+  "version": "1.0.0-beta.5",
   "description": "OpenHands UI Components",
   "keywords": [
     "openhands",
@@ -78,6 +78,8 @@
     "clsx": "^2.1.1",
     "focus-trap-react": "^11.0.4",
     "react-bootstrap-icons": "^1.11.6",
+    "react-select": "^5.10.2",
+    "sonner": "^2.0.6",
     "tailwind-merge": "^3.3.1",
     "tailwind-scrollbar": "^4.0.2",
     "tailwindcss": "^4.1.10"

@@ -50,9 +50,11 @@ export interface GetConfigResponse {
   GITHUB_CLIENT_ID: string;
   POSTHOG_CLIENT_KEY: string;
   STRIPE_PUBLISHABLE_KEY?: string;
+  PROVIDERS_CONFIGURED?: Provider[];
   FEATURE_FLAGS: {
     ENABLE_BILLING: boolean;
     HIDE_LLM_SETTINGS: boolean;
+    HIDE_MICROAGENT_MANAGEMENT?: boolean;
   };
 }
 
