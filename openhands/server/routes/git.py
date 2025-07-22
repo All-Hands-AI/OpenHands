@@ -38,8 +38,9 @@ from openhands.server.user_auth import (
 app = APIRouter(prefix='/api/user', dependencies=get_dependencies())
 
 
-@app.get('/github/installations', response_model=list[str])
-async def get_user_github_installations(
+@app.get('/installations', response_model=list[str])
+async def get_user_installations(
+    provider: ProviderType,
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
     user_id: str | None = Depends(get_user_id),
@@ -51,28 +52,15 @@ async def get_user_github_installations(
             external_auth_id=user_id,
         )
 
-        return await client.get_github_installations()
-
-    return JSONResponse(
-        content='Git provider token required. (such as GitHub).',
-        status_code=status.HTTP_401_UNAUTHORIZED,
-    )
-
-
-@app.get('/bitbucket/installations', response_model=list[str])
-async def get_user_bitbucket_installations(
-    provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
-    access_token: SecretStr | None = Depends(get_access_token),
-    user_id: str | None = Depends(get_user_id),
-):
-    if provider_tokens:
-        client = ProviderHandler(
-            provider_tokens=provider_tokens,
-            external_auth_token=access_token,
-            external_auth_id=user_id,
-        )
-
-        return await client.get_github_installations()
+        if provider == ProviderType.GITHUB:
+            return await client.get_github_installations()
+        elif provider == ProviderType.BITBUCKET:
+            return await client.get_bitbucket_workspaces()
+        else:
+            return JSONResponse(
+                content=f"Provider {provider} doesn't support installations",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
 
     return JSONResponse(
         content='Git provider token required. (such as GitHub).',

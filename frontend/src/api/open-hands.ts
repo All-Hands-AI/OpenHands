@@ -491,20 +491,11 @@ class OpenHands {
   }
 
   /**
-   * Get the GitHub user installation IDs
-   * @returns List of GitHub installation IDs
+   * Get the user installation IDs
+   * @returns List of installation IDs
    */
-  static async getGitHubUserInstallationIds(): Promise<string[]> {
-    const { data } = await openHands.get<string[]>("/github/installations");
-    return data;
-  }
-
-  /**
-   * Get the BitBucket workspaces
-   * @returns List of BitBucket workspaces
-   */
-  static async getBitBucketWorkspaces(): Promise<string[]> {
-    const { data } = await openHands.get<string[]>("/bitbucket/installations");
+  static async getUserInstallationIds(provider: Provider): Promise<string[]> {
+    const { data } = await openHands.get<string[]>("/api/user/installations");
     return data;
   }
 }
