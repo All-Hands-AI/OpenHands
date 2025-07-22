@@ -111,6 +111,10 @@ function GitSettingsScreen() {
     !gitlabHostInputHasValue &&
     !bitbucketHostInputHasValue;
   const shouldRenderExternalConfigureButtons = isSaas && config.APP_SLUG;
+  const shouldRenderProjectManagementIntegrations =
+    config?.FEATURE_FLAGS?.ENABLE_JIRA ||
+    config?.FEATURE_FLAGS?.ENABLE_JIRA_DC ||
+    config?.FEATURE_FLAGS?.ENABLE_LINEAR;
 
   return (
     <form
@@ -144,7 +148,7 @@ function GitSettingsScreen() {
             </>
           )}
 
-          {shouldRenderExternalConfigureButtons && !isLoading && (
+          {shouldRenderProjectManagementIntegrations && !isLoading && (
             <div className="mt-6">
               <ProjectManagementIntegration />
             </div>
