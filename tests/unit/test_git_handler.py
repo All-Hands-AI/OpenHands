@@ -164,7 +164,7 @@ class TestGitHandler(unittest.TestCase):
         )
 
     def test_get_valid_ref_with_origin_current_branch(self):
-        """Test that _get_valid_ref returns the current branch in origin when it exists."""
+        """Test that _get_valid_ref returns merge-base when both current branch and merge-base exist."""
         # This test uses the setup from setUp where the current branch exists in origin
         ref = self.git_handler._get_valid_ref()
         self.assertIsNotNone(ref)
@@ -176,11 +176,11 @@ class TestGitHandler(unittest.TestCase):
             if cmd.startswith('git --no-pager rev-parse --verify')
         ]
 
-        # First should check origin/feature-branch (current branch)
-        self.assertTrue(any('origin/feature-branch' in cmd for cmd in verify_commands))
+        # First should check merge-base (new behavior)
+        self.assertTrue(any('merge-base' in cmd for cmd in verify_commands))
 
-        # Should have found a valid ref (origin/feature-branch)
-        self.assertEqual(ref, 'origin/feature-branch')
+        # Should have found a valid ref (merge-base should be preferred)
+        self.assertTrue('merge-base' in ref)
 
         # Verify the ref exists
         result = self._execute_command(
@@ -395,6 +395,38 @@ class TestGitHandler(unittest.TestCase):
                 for cmd, _ in self.executed_commands
             )
         )
+
+    def test_merge_scenario_shows_only_user_changes(self):
+        """Test that after merging main, only user changes are shown, not merged content."""
+        # Add a file to main in origin (simulating other developers' work)
+        with open(os.path.join(self.origin_dir, 'main-addition.txt'), 'w') as f:
+            f.write('Content added to main')
+
+        self._execute_command('git add main-addition.txt', self.origin_dir)
+        self._execute_command("git commit -m 'Add main-addition.txt'", self.origin_dir)
+
+        # Switch back to local repo and merge main
+        self._execute_command('git fetch origin', self.local_dir)
+        self._execute_command('git merge origin/main', self.local_dir)
+
+        # Clear executed commands to start fresh
+        self.executed_commands = []
+
+        # Get changes after merge
+        changes = self.git_handler.get_git_changes()
+        self.assertIsNotNone(changes)
+
+        # Should NOT include the merged file as a change
+        change_paths = [change['path'] for change in changes]
+        self.assertNotIn(
+            'main-addition.txt',
+            change_paths,
+            'Merged content should not appear as user changes',
+        )
+
+        # Should still show user's original changes (if any exist relative to merge-base)
+        # In this case, we expect to see the files that were changed on the feature branch
+        # relative to where it diverged from main
 
 
 if __name__ == '__main__':

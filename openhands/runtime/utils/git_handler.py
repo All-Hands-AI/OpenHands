@@ -86,13 +86,14 @@ class GitHandler:
         default_branch = self._get_default_branch()
 
         ref_current_branch = f'origin/{current_branch}'
-        ref_non_default_branch = f'$(git --no-pager merge-base HEAD "$(git --no-pager rev-parse --abbrev-ref origin/{default_branch})")'
+        ref_merge_base = f'$(git --no-pager merge-base HEAD "$(git --no-pager rev-parse --abbrev-ref origin/{default_branch})")'
         ref_default_branch = 'origin/' + default_branch
         ref_new_repo = '$(git --no-pager rev-parse --verify 4b825dc642cb6eb9a060e54bf8d69288fbee4904)'  # compares with empty tree
 
+        # Prefer merge-base first to show only user changes, especially after merges
         refs = [
+            ref_merge_base,
             ref_current_branch,
-            ref_non_default_branch,
             ref_default_branch,
             ref_new_repo,
         ]
