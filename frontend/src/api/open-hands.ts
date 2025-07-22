@@ -437,7 +437,7 @@ class OpenHands {
       "/api/user/repositories",
       {
         params: {
-          provider,
+          selected_provider: provider,
           sort: "pushed",
           page,
           per_page,
