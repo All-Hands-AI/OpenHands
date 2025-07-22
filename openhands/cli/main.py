@@ -14,8 +14,16 @@ from openhands.cli.commands import (
     handle_commands,
 )
 from openhands.cli.settings import modify_llm_settings_basic
+from openhands.cli.shell_config import (
+    ShellConfigManager,
+    add_aliases_to_shell_config,
+    alias_setup_declined,
+    aliases_exist_in_shell_config,
+    mark_alias_setup_declined,
+)
 from openhands.cli.tui import (
     UsageMetrics,
+    cli_confirm,
     display_agent_running_message,
     display_banner,
     display_event,
@@ -70,6 +78,7 @@ from openhands.memory.condenser.impl.llm_summarizing_condenser import (
     LLMSummarizingCondenserConfig,
 )
 from openhands.microagent.microagent import BaseMicroagent
+from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.storage.settings.file_settings_store import FileSettingsStore
 
@@ -224,12 +233,26 @@ async def run_session(
                     return
 
                 confirmation_status = await read_confirmation_input(config)
-                if confirmation_status == 'yes' or confirmation_status == 'always':
+                if confirmation_status in ('yes', 'always'):
                     event_stream.add_event(
                         ChangeAgentStateAction(AgentState.USER_CONFIRMED),
                         EventSource.USER,
                     )
-                else:
+                elif confirmation_status == 'edit':
+                    # Tell the agent the proposed action was rejected
+                    event_stream.add_event(
+                        ChangeAgentStateAction(AgentState.USER_REJECTED),
+                        EventSource.USER,
+                    )
+                    # Notify the user
+                    print_formatted_text(
+                        HTML(
+                            '<skyblue>Okay, please tell me what I should do instead.</skyblue>'
+                        )
+                    )
+                    # Solicit replacement isntructions
+                    await prompt_for_next_task(AgentState.AWAITING_USER_INPUT)
+                else:  # 'no' or fallback
                     event_stream.add_event(
                         ChangeAgentStateAction(AgentState.USER_REJECTED),
                         EventSource.USER,
@@ -270,6 +293,7 @@ async def run_session(
         selected_repository=config.sandbox.selected_repo,
         repo_directory=repo_directory,
         conversation_instructions=conversation_instructions,
+        working_dir=os.getcwd(),
     )
 
     # Add MCP tools to the agent
@@ -358,6 +382,95 @@ async def run_setup_flow(config: OpenHandsConfig, settings_store: FileSettingsSt
 
     # Use the existing settings modification function for basic setup
     await modify_llm_settings_basic(config, settings_store)
+
+
+def run_alias_setup_flow(config: OpenHandsConfig) -> None:
+    """Run the alias setup flow to configure shell aliases.
+
+    Prompts the user to set up aliases for 'openhands' and 'oh' commands.
+    Handles existing aliases by offering to keep or remove them.
+
+    Args:
+        config: OpenHands configuration
+    """
+    print_formatted_text('')
+    print_formatted_text(HTML('<gold>🚀 Welcome to OpenHands CLI!</gold>'))
+    print_formatted_text('')
+
+    # Show the normal setup flow
+    print_formatted_text(
+        HTML('<grey>Would you like to set up convenient shell aliases?</grey>')
+    )
+    print_formatted_text('')
+    print_formatted_text(
+        HTML('<grey>This will add the following aliases to your shell profile:</grey>')
+    )
+    print_formatted_text(
+        HTML(
+            '<grey>  • <b>openhands</b> → uvx --python 3.12 --from openhands-ai openhands</grey>'
+        )
+    )
+    print_formatted_text(
+        HTML(
+            '<grey>  • <b>oh</b> → uvx --python 3.12 --from openhands-ai openhands</grey>'
+        )
+    )
+    print_formatted_text('')
+    print_formatted_text(
+        HTML(
+            '<ansiyellow>⚠️  Note: This requires uv to be installed first.</ansiyellow>'
+        )
+    )
+    print_formatted_text(
+        HTML(
+            '<ansiyellow>   Installation guide: https://docs.astral.sh/uv/getting-started/installation</ansiyellow>'
+        )
+    )
+    print_formatted_text('')
+
+    # Use cli_confirm to get user choice
+    choice = cli_confirm(
+        config,
+        'Set up shell aliases?',
+        ['Yes, set up aliases', 'No, skip this step'],
+    )
+
+    if choice == 0:  # User chose "Yes"
+        success = add_aliases_to_shell_config()
+        if success:
+            print_formatted_text('')
+            print_formatted_text(
+                HTML('<ansigreen>✅ Aliases added successfully!</ansigreen>')
+            )
+
+            # Get the appropriate reload command using the shell config manager
+            shell_manager = ShellConfigManager()
+            reload_cmd = shell_manager.get_reload_command()
+
+            print_formatted_text(
+                HTML(
+                    f'<grey>Run <b>{reload_cmd}</b> (or restart your terminal) to use the new aliases.</grey>'
+                )
+            )
+        else:
+            print_formatted_text('')
+            print_formatted_text(
+                HTML(
+                    '<ansired>❌ Failed to add aliases. You can set them up manually later.</ansired>'
+                )
+            )
+    else:  # User chose "No"
+        # Mark that the user has declined alias setup
+        mark_alias_setup_declined()
+
+        print_formatted_text('')
+        print_formatted_text(
+            HTML(
+                '<grey>Skipped alias setup. You can run this setup again anytime.</grey>'
+            )
+        )
+
+    print_formatted_text('')
 
 
 async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
@@ -451,6 +564,25 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
         # This ensures Jupyter plugin is disabled for CLI runtime
         finalize_config(config)
 
+    # Check if we should show the alias setup flow
+    # Only show it if:
+    # 1. Aliases don't exist in the shell configuration
+    # 2. User hasn't previously declined alias setup
+    # 3. We're in an interactive environment (not during tests or CI)
+    should_show_alias_setup = (
+        not aliases_exist_in_shell_config()
+        and not alias_setup_declined()
+        and sys.stdin.isatty()
+    )
+
+    if should_show_alias_setup:
+        # Clear the terminal if we haven't shown a banner yet (i.e., setup flow didn't run)
+        if not banner_shown:
+            clear()
+
+        run_alias_setup_flow(config)
+        # Don't set banner_shown = True here, so the ASCII art banner will still be shown
+
     # TODO: Set working directory from config or use current working directory?
     current_dir = config.workspace_base
 
@@ -480,6 +612,9 @@ After reviewing the file, please ask the user what they would like to do with it
     else:
         task_str = read_task(args, config.cli_multiline_input)
 
+    # Setup the runtime
+    get_runtime_cls(config.runtime).setup(config)
+
     # Run the first session
     new_session_requested = await run_session(
         loop,
@@ -496,6 +631,9 @@ After reviewing the file, please ask the user what they would like to do with it
         new_session_requested = await run_session(
             loop, config, settings_store, current_dir, None
         )
+
+    # Teardown the runtime
+    get_runtime_cls(config.runtime).teardown(config)
 
 
 def main():

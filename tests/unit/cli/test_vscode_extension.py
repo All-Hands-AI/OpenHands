@@ -142,16 +142,24 @@ def test_extension_detection_partial_match_ignored(mock_env_and_dependencies):
         ),
         subprocess.CompletedProcess(
             returncode=0, args=[], stdout='', stderr=''
-        ),  # GitHub install succeeds
+        ),  # Bundled install succeeds
     ]
-    mock_env_and_dependencies['download'].return_value = '/fake/path/to/github.vsix'
 
-    with mock.patch('os.remove'), mock.patch('os.path.exists', return_value=True):
-        vscode_extension.attempt_vscode_extension_install()
+    # Mock bundled VSIX to succeed
+    mock_vsix_path = mock.MagicMock()
+    mock_vsix_path.exists.return_value = True
+    mock_vsix_path.__str__.return_value = '/fake/path/to/bundled.vsix'
+    mock_env_and_dependencies[
+        'as_file'
+    ].return_value.__enter__.return_value = mock_vsix_path
+
+    vscode_extension.attempt_vscode_extension_install()
 
     # Should proceed with installation since exact match not found
     assert mock_env_and_dependencies['subprocess'].call_count == 2
-    mock_env_and_dependencies['download'].assert_called_once()
+    mock_env_and_dependencies['as_file'].assert_called_once()
+    # GitHub download should not be attempted since bundled install succeeds
+    mock_env_and_dependencies['download'].assert_not_called()
 
 
 def test_list_extensions_fails_continues_installation(mock_env_and_dependencies):
@@ -159,23 +167,31 @@ def test_list_extensions_fails_continues_installation(mock_env_and_dependencies)
     os.environ['TERM_PROGRAM'] = 'vscode'
     mock_env_and_dependencies['exists'].return_value = False
 
-    # --list-extensions fails, but GitHub install succeeds
+    # --list-extensions fails, but bundled install succeeds
     mock_env_and_dependencies['subprocess'].side_effect = [
         subprocess.CompletedProcess(
             returncode=1, args=[], stdout='', stderr='Command failed'
         ),
         subprocess.CompletedProcess(
             returncode=0, args=[], stdout='', stderr=''
-        ),  # GitHub install succeeds
+        ),  # Bundled install succeeds
     ]
-    mock_env_and_dependencies['download'].return_value = '/fake/path/to/github.vsix'
 
-    with mock.patch('os.remove'), mock.patch('os.path.exists', return_value=True):
-        vscode_extension.attempt_vscode_extension_install()
+    # Mock bundled VSIX to succeed
+    mock_vsix_path = mock.MagicMock()
+    mock_vsix_path.exists.return_value = True
+    mock_vsix_path.__str__.return_value = '/fake/path/to/bundled.vsix'
+    mock_env_and_dependencies[
+        'as_file'
+    ].return_value.__enter__.return_value = mock_vsix_path
+
+    vscode_extension.attempt_vscode_extension_install()
 
     # Should proceed with installation
     assert mock_env_and_dependencies['subprocess'].call_count == 2
-    mock_env_and_dependencies['download'].assert_called_once()
+    mock_env_and_dependencies['as_file'].assert_called_once()
+    # GitHub download should not be attempted since bundled install succeeds
+    mock_env_and_dependencies['download'].assert_not_called()
 
 
 def test_list_extensions_exception_continues_installation(mock_env_and_dependencies):
@@ -183,43 +199,60 @@ def test_list_extensions_exception_continues_installation(mock_env_and_dependenc
     os.environ['TERM_PROGRAM'] = 'vscode'
     mock_env_and_dependencies['exists'].return_value = False
 
-    # --list-extensions throws exception, but GitHub install succeeds
+    # --list-extensions throws exception, but bundled install succeeds
     mock_env_and_dependencies['subprocess'].side_effect = [
         FileNotFoundError('code command not found'),
         subprocess.CompletedProcess(
             returncode=0, args=[], stdout='', stderr=''
-        ),  # GitHub install succeeds
+        ),  # Bundled install succeeds
     ]
-    mock_env_and_dependencies['download'].return_value = '/fake/path/to/github.vsix'
 
-    with mock.patch('os.remove'), mock.patch('os.path.exists', return_value=True):
-        vscode_extension.attempt_vscode_extension_install()
+    # Mock bundled VSIX to succeed
+    mock_vsix_path = mock.MagicMock()
+    mock_vsix_path.exists.return_value = True
+    mock_vsix_path.__str__.return_value = '/fake/path/to/bundled.vsix'
+    mock_env_and_dependencies[
+        'as_file'
+    ].return_value.__enter__.return_value = mock_vsix_path
+
+    vscode_extension.attempt_vscode_extension_install()
 
     # Should proceed with installation
     assert mock_env_and_dependencies['subprocess'].call_count == 2
-    mock_env_and_dependencies['download'].assert_called_once()
+    mock_env_and_dependencies['as_file'].assert_called_once()
+    # GitHub download should not be attempted since bundled install succeeds
+    mock_env_and_dependencies['download'].assert_not_called()
 
 
 def test_mark_installation_successful_os_error(mock_env_and_dependencies):
     """Should log error but continue if flag file creation fails."""
     os.environ['TERM_PROGRAM'] = 'vscode'
     mock_env_and_dependencies['exists'].return_value = False
+
+    # Mock bundled VSIX to succeed
+    mock_vsix_path = mock.MagicMock()
+    mock_vsix_path.exists.return_value = True
+    mock_vsix_path.__str__.return_value = '/fake/path/to/bundled.vsix'
+    mock_env_and_dependencies[
+        'as_file'
+    ].return_value.__enter__.return_value = mock_vsix_path
+
     mock_env_and_dependencies['subprocess'].side_effect = [
         subprocess.CompletedProcess(
             returncode=0, args=[], stdout='', stderr=''
         ),  # --list-extensions (empty)
         subprocess.CompletedProcess(
             returncode=0, args=[], stdout='', stderr=''
-        ),  # GitHub install succeeds
+        ),  # Bundled install succeeds
     ]
-    mock_env_and_dependencies['download'].return_value = '/fake/path/to/github.vsix'
     mock_env_and_dependencies['touch'].side_effect = OSError('Permission denied')
 
-    with mock.patch('os.remove'), mock.patch('os.path.exists', return_value=True):
-        vscode_extension.attempt_vscode_extension_install()
+    vscode_extension.attempt_vscode_extension_install()
 
     # Should still complete installation
-    mock_env_and_dependencies['download'].assert_called_once()
+    mock_env_and_dependencies['as_file'].assert_called_once()
+    # GitHub download should not be attempted since bundled install succeeds
+    mock_env_and_dependencies['download'].assert_not_called()
     mock_env_and_dependencies['touch'].assert_called_once()
     # Should log the error
     mock_env_and_dependencies['logger'].assert_any_call(
@@ -251,55 +284,10 @@ def test_installation_failure_no_flag_created(mock_env_and_dependencies):
     )
 
 
-def test_install_succeeds_from_github(mock_env_and_dependencies):
-    """Should successfully install from GitHub on the first try."""
+def test_install_succeeds_from_bundled(mock_env_and_dependencies):
+    """Should successfully install from bundled VSIX on the first try."""
     os.environ['TERM_PROGRAM'] = 'vscode'
     mock_env_and_dependencies['exists'].return_value = False
-    mock_env_and_dependencies['download'].return_value = '/fake/path/to/github.vsix'
-
-    # Mock subprocess calls: first --list-extensions (returns empty), then install
-    mock_env_and_dependencies['subprocess'].side_effect = [
-        subprocess.CompletedProcess(
-            returncode=0, args=[], stdout='', stderr=''
-        ),  # --list-extensions
-        subprocess.CompletedProcess(
-            returncode=0, args=[], stdout='', stderr=''
-        ),  # --install-extension
-    ]
-
-    with (
-        mock.patch('os.remove') as mock_os_remove,
-        mock.patch('os.path.exists', return_value=True),
-    ):
-        vscode_extension.attempt_vscode_extension_install()
-
-        mock_env_and_dependencies['download'].assert_called_once()
-        # Should have two subprocess calls: list-extensions and install-extension
-        assert mock_env_and_dependencies['subprocess'].call_count == 2
-        mock_env_and_dependencies['subprocess'].assert_any_call(
-            ['code', '--list-extensions'],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        mock_env_and_dependencies['subprocess'].assert_any_call(
-            ['code', '--install-extension', '/fake/path/to/github.vsix', '--force'],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        mock_env_and_dependencies['print'].assert_any_call(
-            'INFO: OpenHands VS Code extension installed successfully from GitHub.'
-        )
-        mock_os_remove.assert_called_once_with('/fake/path/to/github.vsix')
-        mock_env_and_dependencies['touch'].assert_called_once()
-
-
-def test_github_fails_falls_back_to_bundled(mock_env_and_dependencies):
-    """Should fall back to bundled VSIX if GitHub download fails."""
-    os.environ['TERM_PROGRAM'] = 'vscode'
-    mock_env_and_dependencies['exists'].return_value = False
-    mock_env_and_dependencies['download'].return_value = None
 
     mock_vsix_path = mock.MagicMock()
     mock_vsix_path.exists.return_value = True
@@ -320,7 +308,6 @@ def test_github_fails_falls_back_to_bundled(mock_env_and_dependencies):
 
     vscode_extension.attempt_vscode_extension_install()
 
-    mock_env_and_dependencies['download'].assert_called_once()
     mock_env_and_dependencies['as_file'].assert_called_once()
     # Should have two subprocess calls: list-extensions and install-extension
     assert mock_env_and_dependencies['subprocess'].call_count == 2
@@ -336,7 +323,60 @@ def test_github_fails_falls_back_to_bundled(mock_env_and_dependencies):
         text=True,
         check=False,
     )
+    mock_env_and_dependencies['print'].assert_any_call(
+        'INFO: Bundled VS Code extension installed successfully.'
+    )
     mock_env_and_dependencies['touch'].assert_called_once()
+    # GitHub download should not be attempted
+    mock_env_and_dependencies['download'].assert_not_called()
+
+
+def test_bundled_fails_falls_back_to_github(mock_env_and_dependencies):
+    """Should fall back to GitHub if bundled VSIX installation fails."""
+    os.environ['TERM_PROGRAM'] = 'vscode'
+    mock_env_and_dependencies['exists'].return_value = False
+    mock_env_and_dependencies['download'].return_value = '/fake/path/to/github.vsix'
+
+    # Mock bundled VSIX to fail
+    mock_env_and_dependencies['as_file'].side_effect = FileNotFoundError
+
+    # Mock subprocess calls: first --list-extensions (returns empty), then install
+    mock_env_and_dependencies['subprocess'].side_effect = [
+        subprocess.CompletedProcess(
+            returncode=0, args=[], stdout='', stderr=''
+        ),  # --list-extensions
+        subprocess.CompletedProcess(
+            returncode=0, args=[], stdout='', stderr=''
+        ),  # --install-extension
+    ]
+
+    with (
+        mock.patch('os.remove') as mock_os_remove,
+        mock.patch('os.path.exists', return_value=True),
+    ):
+        vscode_extension.attempt_vscode_extension_install()
+
+        mock_env_and_dependencies['as_file'].assert_called_once()
+        mock_env_and_dependencies['download'].assert_called_once()
+        # Should have two subprocess calls: list-extensions and install-extension
+        assert mock_env_and_dependencies['subprocess'].call_count == 2
+        mock_env_and_dependencies['subprocess'].assert_any_call(
+            ['code', '--list-extensions'],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        mock_env_and_dependencies['subprocess'].assert_any_call(
+            ['code', '--install-extension', '/fake/path/to/github.vsix', '--force'],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        mock_env_and_dependencies['print'].assert_any_call(
+            'INFO: OpenHands VS Code extension installed successfully from GitHub.'
+        )
+        mock_os_remove.assert_called_once_with('/fake/path/to/github.vsix')
+        mock_env_and_dependencies['touch'].assert_called_once()
 
 
 def test_all_methods_fail(mock_env_and_dependencies):

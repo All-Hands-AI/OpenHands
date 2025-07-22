@@ -33,12 +33,12 @@ export function NavTab({
     >
       {({ isActive }) => (
         <div className="flex items-center justify-between w-full">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 min-w-0">
             <div className={cn(isActive && "text-logo")}>{icon}</div>
-            {label}
+            <span className="truncate">{label}</span>
             {isBeta && <BetaBadge />}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             {rightContent}
             {isLoading && <LoadingSpinner size="small" />}
           </div>
