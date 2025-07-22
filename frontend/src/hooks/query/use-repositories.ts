@@ -31,9 +31,7 @@ export const useRepositories = (selectedProvider: Provider | null) => {
 
   // Call both hooks but only return the appropriate one
   const userRepos = useUserRepositories(selectedProvider);
-  const installationRepos = useInstallationRepositories(
-    selectedProvider || "github",
-  );
+  const installationRepos = useInstallationRepositories(selectedProvider);
 
   return shouldUseInstallationRepos ? installationRepos : userRepos;
 };

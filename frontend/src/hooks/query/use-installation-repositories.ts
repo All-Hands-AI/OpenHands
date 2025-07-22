@@ -5,13 +5,12 @@ import { useConfig } from "./use-config";
 import { useUserProviders } from "../use-user-providers";
 import { Provider } from "#/types/settings";
 import OpenHands from "#/api/open-hands";
+import { shouldUseInstallationRepos } from "#/utils/utils";
 
-export const useInstallationRepositories = (provider: Provider) => {
+export const useInstallationRepositories = (provider: Provider | null) => {
   const { providers } = useUserProviders();
   const { data: config } = useConfig();
   const { data: installations } = useAppInstallations(provider);
-
-  const providersAreSet = provider.length > 0;
 
   const repos = useInfiniteQuery({
     queryKey: ["repositories", providers, provider, installations],
@@ -49,10 +48,11 @@ export const useInstallationRepositories = (provider: Provider) => {
       return null;
     },
     enabled:
-      providersAreSet &&
+      providers.length > 0 &&
+      !!provider &&
+      !shouldUseInstallationRepos(provider, config?.APP_MODE) &&
       Array.isArray(installations) &&
-      installations.length > 0 &&
-      config?.APP_MODE === "saas",
+      installations.length > 0,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes
   });

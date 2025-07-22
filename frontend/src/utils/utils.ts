@@ -1,3 +1,4 @@
+import { Provider } from "#/types/settings";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -102,3 +103,21 @@ export const formatTimestamp = (timestamp: string) =>
     minute: "2-digit",
     second: "2-digit",
   });
+
+export const shouldUseInstallationRepos = (
+  provider: Provider,
+  app_mode: "saas" | "oss" | undefined,
+) => {
+  if (!provider) return false;
+
+  switch (provider) {
+    case "bitbucket":
+      return true;
+    case "gitlab":
+      return false;
+    case "github":
+      return app_mode === "saas";
+    default:
+      return false;
+  }
+};

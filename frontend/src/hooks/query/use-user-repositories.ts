@@ -4,6 +4,7 @@ import { useConfig } from "./use-config";
 import { useUserProviders } from "../use-user-providers";
 import { Provider } from "#/types/settings";
 import OpenHands from "#/api/open-hands";
+import { shouldUseInstallationRepos } from "#/utils/utils";
 
 export const useUserRepositories = (selected_provider: Provider | null) => {
   const { providers } = useUserProviders();
@@ -16,13 +17,13 @@ export const useUserRepositories = (selected_provider: Provider | null) => {
     initialPageParam: 1,
     getNextPageParam: (lastPage) => lastPage.nextPage,
     enabled:
-      providers.length > 0 && config?.APP_MODE === "oss" && !!selected_provider,
+      providers.length > 0 &&
+      !!selected_provider &&
+      !shouldUseInstallationRepos(selected_provider, config?.APP_MODE),
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes
   });
 
-  // TODO: Once we create our custom dropdown component, we should fetch data onEndReached
-  // (nextui autocomplete doesn't support onEndReached nor is it compatible for extending)
   const { isSuccess, isFetchingNextPage, hasNextPage, fetchNextPage } = repos;
   React.useEffect(() => {
     if (!isFetchingNextPage && isSuccess && hasNextPage) {
