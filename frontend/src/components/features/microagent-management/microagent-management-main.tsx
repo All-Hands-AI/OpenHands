@@ -4,6 +4,8 @@ import { MicroagentManagementDefault } from "./microagent-management-default";
 import { MicroagentManagementOpeningPr } from "./microagent-management-opening-pr";
 import { MicroagentManagementReviewPr } from "./microagent-management-review-pr";
 import { MicroagentManagementViewMicroagent } from "./microagent-management-view-microagent";
+import { MicroagentManagementError } from "./microagent-management-error";
+import { MicroagentManagementConversationStopped } from "./microagent-management-conversation-stopped";
 
 export function MicroagentManagementMain() {
   const { selectedMicroagentItem } = useSelector(
@@ -17,12 +19,33 @@ export function MicroagentManagementMain() {
   }
 
   if (conversation) {
-    const prNumber = conversation.pr_number || [];
-    if (prNumber.length === 0) {
+    if (conversation.pr_number && conversation.pr_number.length > 0) {
+      return <MicroagentManagementReviewPr />;
+    }
+
+    const isConversationStarting =
+      conversation.status === "STARTING" ||
+      conversation.runtime_status === "STATUS$STARTING_RUNTIME";
+    const isConversationOpeningPr =
+      conversation.status === "RUNNING" &&
+      conversation.runtime_status === "STATUS$READY";
+
+    if (isConversationStarting || isConversationOpeningPr) {
       return <MicroagentManagementOpeningPr />;
     }
 
-    return <MicroagentManagementReviewPr />;
+    if (conversation.runtime_status === "STATUS$ERROR") {
+      return <MicroagentManagementError />;
+    }
+
+    if (
+      conversation.status === "STOPPED" ||
+      conversation.runtime_status === "STATUS$STOPPED"
+    ) {
+      return <MicroagentManagementConversationStopped />;
+    }
+
+    return <MicroagentManagementDefault />;
   }
 
   return <MicroagentManagementDefault />;

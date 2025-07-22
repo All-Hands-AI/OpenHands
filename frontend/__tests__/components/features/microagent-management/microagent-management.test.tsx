@@ -34,7 +34,6 @@ describe("MicroagentManagement", () => {
           personalRepositories: [],
           organizationRepositories: [],
           repositories: [],
-          microagentStatuses: [],
           selectedMicroagentItem: null,
         },
       },
@@ -1234,6 +1233,12 @@ describe("MicroagentManagement", () => {
 
   // Add microagent integration tests
   describe("Add microagent functionality", () => {
+    beforeEach(() => {
+      vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue([
+        { name: "main", commit_sha: "abc123", protected: false },
+      ]);
+    });
+
     it("should render add microagent button", async () => {
       renderMicroagentManagement();
 
@@ -1289,7 +1294,6 @@ describe("MicroagentManagement", () => {
             personalRepositories: [],
             organizationRepositories: [],
             repositories: [],
-            microagentStatuses: [],
           },
         },
       });
@@ -1391,18 +1395,18 @@ describe("MicroagentManagement", () => {
       const addButtons = screen.getAllByText("COMMON$ADD_MICROAGENT");
       await user.click(addButtons[0]);
 
-      // Wait for modal to be rendered
+      // Wait for modal to be rendered and branch to be selected
       await waitFor(() => {
         expect(screen.getByTestId("add-microagent-modal")).toBeInTheDocument();
       });
-
       // Enter query text
       const queryInput = screen.getByTestId("query-input");
       await user.type(queryInput, "Test query");
-
-      // Check that confirm button is enabled
-      const confirmButton = screen.getByTestId("confirm-button");
-      expect(confirmButton).not.toBeDisabled();
+      // Wait for the confirm button to be enabled after entering query and branch selection
+      await waitFor(() => {
+        const confirmButton = screen.getByTestId("confirm-button");
+        expect(confirmButton).not.toBeDisabled();
+      });
     });
 
     it("should prevent form submission when query is empty", async () => {
@@ -1444,18 +1448,18 @@ describe("MicroagentManagement", () => {
       const addButtons = screen.getAllByText("COMMON$ADD_MICROAGENT");
       await user.click(addButtons[0]);
 
-      // Wait for modal to be rendered
+      // Wait for modal to be rendered and branch to be selected
       await waitFor(() => {
         expect(screen.getByTestId("add-microagent-modal")).toBeInTheDocument();
       });
-
       // Enter query with whitespace
       const queryInput = screen.getByTestId("query-input");
       await user.type(queryInput, "  Test query with whitespace  ");
-
-      // Check that confirm button is enabled
-      const confirmButton = screen.getByTestId("confirm-button");
-      expect(confirmButton).not.toBeDisabled();
+      // Wait for the confirm button to be enabled after entering query and branch selection
+      await waitFor(() => {
+        const confirmButton = screen.getByTestId("confirm-button");
+        expect(confirmButton).not.toBeDisabled();
+      });
     });
   });
 
@@ -1482,7 +1486,7 @@ describe("MicroagentManagement", () => {
       last_updated_at: "2021-10-01T12:00:00Z",
       created_at: "2021-10-01T12:00:00Z",
       status: "RUNNING",
-      runtime_status: null,
+      runtime_status: "STATUS$READY",
       trigger: "microagent_management",
       url: null,
       session_api_key: null,
@@ -1498,7 +1502,7 @@ describe("MicroagentManagement", () => {
       last_updated_at: "2021-10-01T12:00:00Z",
       created_at: "2021-10-01T12:00:00Z",
       status: "RUNNING",
-      runtime_status: null,
+      runtime_status: "STATUS$READY",
       trigger: "microagent_management",
       url: null,
       session_api_key: null,
@@ -1542,7 +1546,6 @@ describe("MicroagentManagement", () => {
             personalRepositories: [],
             organizationRepositories: [],
             repositories: [],
-            microagentStatuses: [],
             selectedMicroagentItem,
           },
         },
@@ -1593,7 +1596,10 @@ describe("MicroagentManagement", () => {
       });
 
       // Check that the opening PR component is rendered
-      await screen.findByText("COMMON$WORKING_ON_IT!");
+      await screen.findByText(
+        (content) => content === "COMMON$WORKING_ON_IT!",
+        { exact: false },
+      );
       expect(
         screen.getByText("MICROAGENT_MANAGEMENT$WE_ARE_WORKING_ON_IT"),
       ).toBeInTheDocument();
@@ -1601,13 +1607,20 @@ describe("MicroagentManagement", () => {
     });
 
     it("should render MicroagentManagementOpeningPr when conversation is selected with null pr_number", async () => {
+      const conversationWithNullPr = {
+        ...mockConversationWithoutPr,
+        pr_number: null,
+      };
       renderMicroagentManagementMain({
         microagent: null,
-        conversation: mockConversationWithNullPr,
+        conversation: conversationWithNullPr,
       });
 
       // Check that the opening PR component is rendered
-      await screen.findByText("COMMON$WORKING_ON_IT!");
+      await screen.findByText(
+        (content) => content === "COMMON$WORKING_ON_IT!",
+        { exact: false },
+      );
       expect(
         screen.getByText("MICROAGENT_MANAGEMENT$WE_ARE_WORKING_ON_IT"),
       ).toBeInTheDocument();
@@ -1646,8 +1659,8 @@ describe("MicroagentManagement", () => {
     it("should handle conversation with undefined pr_number", async () => {
       const conversationWithUndefinedPr = {
         ...mockConversationWithoutPr,
-        pr_number: undefined,
       };
+      delete conversationWithUndefinedPr.pr_number;
 
       renderMicroagentManagementMain({
         microagent: null,
@@ -1655,7 +1668,10 @@ describe("MicroagentManagement", () => {
       });
 
       // Should render the opening PR component (treats undefined as empty array)
-      await screen.findByText("COMMON$WORKING_ON_IT!");
+      await screen.findByText(
+        (content) => content === "COMMON$WORKING_ON_IT!",
+        { exact: false },
+      );
       expect(
         screen.getByText("MICROAGENT_MANAGEMENT$WE_ARE_WORKING_ON_IT"),
       ).toBeInTheDocument();
@@ -1689,7 +1705,10 @@ describe("MicroagentManagement", () => {
       });
 
       // Should render the opening PR component (treats empty string as empty array)
-      await screen.findByText("COMMON$WORKING_ON_IT!");
+      await screen.findByText(
+        (content) => content === "COMMON$WORKING_ON_IT!",
+        { exact: false },
+      );
       expect(
         screen.getByText("MICROAGENT_MANAGEMENT$WE_ARE_WORKING_ON_IT"),
       ).toBeInTheDocument();
@@ -1707,7 +1726,10 @@ describe("MicroagentManagement", () => {
       });
 
       // Should render the opening PR component (treats 0 as falsy)
-      await screen.findByText("COMMON$WORKING_ON_IT!");
+      await screen.findByText(
+        (content) => content === "COMMON$WORKING_ON_IT!",
+        { exact: false },
+      );
       expect(
         screen.getByText("MICROAGENT_MANAGEMENT$WE_ARE_WORKING_ON_IT"),
       ).toBeInTheDocument();
@@ -1763,7 +1785,7 @@ describe("MicroagentManagement", () => {
         last_updated_at: "2021-10-01T12:00:00Z",
         created_at: "2021-10-01T12:00:00Z",
         status: "RUNNING",
-        runtime_status: null,
+        runtime_status: "STATUS$READY",
         trigger: "microagent_management",
         url: null,
         session_api_key: null,
@@ -1776,7 +1798,10 @@ describe("MicroagentManagement", () => {
       });
 
       // Should render the opening PR component (undefined pr_number defaults to empty array)
-      await screen.findByText("COMMON$WORKING_ON_IT!");
+      await screen.findByText(
+        (content) => content === "COMMON$WORKING_ON_IT!",
+        { exact: false },
+      );
       expect(
         screen.getByText("MICROAGENT_MANAGEMENT$WE_ARE_WORKING_ON_IT"),
       ).toBeInTheDocument();

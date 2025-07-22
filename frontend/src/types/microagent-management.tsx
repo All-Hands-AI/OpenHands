@@ -14,12 +14,13 @@ export interface RepositoryMicroagent {
   path: string;
 }
 
-export interface MicroagentFormData {
-  query: string;
-  triggers: string[];
-}
-
 export interface IMicroagentItem {
   microagent?: RepositoryMicroagent;
   conversation?: Conversation;
+}
+
+export interface MicroagentFormData {
+  query: string;
+  triggers: string[];
+  selectedBranch: string;
 }

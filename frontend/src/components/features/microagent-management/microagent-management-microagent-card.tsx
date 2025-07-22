@@ -3,10 +3,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { formatDateMMDDYYYY } from "#/utils/format-time-delta";
-import {
-  EventMicroagentStatus,
-  MicroagentStatus,
-} from "#/types/microagent-status";
 import { RepositoryMicroagent } from "#/types/microagent-management";
 import { Conversation } from "#/api/open-hands.types";
 import {
@@ -20,14 +16,12 @@ import { GitRepository } from "#/types/git";
 interface MicroagentManagementMicroagentCardProps {
   microagent?: RepositoryMicroagent;
   conversation?: Conversation;
-  microagentStatus?: EventMicroagentStatus;
   repository: GitRepository;
 }
 
 export function MicroagentManagementMicroagentCard({
   microagent,
   conversation,
-  microagentStatus,
   repository,
 }: MicroagentManagementMicroagentCardProps) {
   const { t } = useTranslation();
@@ -50,45 +44,43 @@ export function MicroagentManagementMicroagentCard({
     : "";
 
   // Format the createdAt date using MM/DD/YYYY format
-  const formattedCreatedAt = microagent
-    ? formatDateMMDDYYYY(new Date(microagent.created_at))
-    : "";
+  const formattedCreatedAt = useMemo(() => {
+    if (microagent) {
+      return formatDateMMDDYYYY(new Date(microagent.created_at));
+    }
+    if (conversation) {
+      return formatDateMMDDYYYY(new Date(conversation.created_at));
+    }
+    return "";
+  }, [microagent, conversation]);
 
-  const hasPr = prNumber && prNumber.length > 0;
-
-  const isOpeningPRStatus = () =>
-    ((conversationStatus === "STARTING" || conversationStatus === "RUNNING") &&
-      runtimeStatus === "STATUS$READY") ||
-    microagentStatus?.status === MicroagentStatus.CREATING;
-
-  const isCompletedStatus = () =>
-    hasPr || microagentStatus?.status === MicroagentStatus.COMPLETED;
-
-  const isStoppedStatus = () =>
-    conversationStatus === "STOPPED" || runtimeStatus === "STATUS$STOPPED";
-
-  const isErrorStatus = () =>
-    runtimeStatus === "STATUS$ERROR" ||
-    microagentStatus?.status === MicroagentStatus.ERROR;
+  const hasPr = !!(prNumber && prNumber.length > 0);
 
   // Helper function to get status text
   const statusText = useMemo(() => {
-    if (isStoppedStatus()) {
+    if (hasPr) {
+      return t(I18nKey.COMMON$READY_FOR_REVIEW);
+    }
+    if (
+      conversationStatus === "STARTING" ||
+      runtimeStatus === "STATUS$STARTING_RUNTIME"
+    ) {
+      return t(I18nKey.COMMON$STARTING);
+    }
+    if (
+      conversationStatus === "STOPPED" ||
+      runtimeStatus === "STATUS$STOPPED"
+    ) {
       return t(I18nKey.COMMON$STOPPED);
     }
-    if (isErrorStatus()) {
+    if (runtimeStatus === "STATUS$ERROR") {
       return t(I18nKey.MICROAGENT$STATUS_ERROR);
     }
-    if (isCompletedStatus()) {
-      return hasPr || microagentStatus?.prUrl
-        ? t(I18nKey.COMMON$READY_FOR_REVIEW)
-        : t(I18nKey.COMMON$COMPLETED_PARTIALLY);
-    }
-    if (isOpeningPRStatus()) {
+    if (conversationStatus === "RUNNING" && runtimeStatus === "STATUS$READY") {
       return t(I18nKey.MICROAGENT$STATUS_OPENING_PR);
     }
     return "";
-  }, [microagentStatus, conversationStatus, runtimeStatus, t]);
+  }, [conversationStatus, runtimeStatus, t, hasPr]);
 
   const cardTitle = microagent?.name ?? conversation?.title;
 

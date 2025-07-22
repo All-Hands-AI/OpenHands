@@ -11566,5 +11566,53 @@
         "tr": "Öğren",
         "de": "Lernen",
         "uk": "Вчитися"
+    },
+    "COMMON$STARTING": {
+        "en": "Starting",
+        "ja": "開始中",
+        "zh-CN": "启动中",
+        "zh-TW": "啟動中",
+        "ko-KR": "시작 중",
+        "no": "Starter",
+        "it": "Avvio",
+        "pt": "Iniciando",
+        "es": "Iniciando",
+        "ar": "جارٍ البدء",
+        "fr": "Démarrage",
+        "tr": "Başlatılıyor",
+        "de": "Wird gestartet",
+        "uk": "Запуск"
+    },
+    "MICROAGENT_MANAGEMENT$ERROR": {
+        "en": "The system has encountered an error. Please try again later.",
+        "ja": "システムでエラーが発生しました。後でもう一度お試しください。",
+        "zh-CN": "系统遇到错误。请稍后再试。",
+        "zh-TW": "系統發生錯誤。請稍後再試。",
+        "ko-KR": "시스템에 오류가 발생했습니다. 나중에 다시 시도해 주세요.",
+        "no": "Systemet har oppdaget en feil. Prøv igjen senere.",
+        "it": "Il sistema ha riscontrato un errore. Riprova più tardi.",
+        "pt": "O sistema encontrou um erro. Por favor, tente novamente mais tarde.",
+        "es": "El sistema ha encontrado un error. Por favor, inténtalo de nuevo más tarde.",
+        "ar": "واجه النظام خطأ. يرجى المحاولة مرة أخرى لاحقًا.",
+        "fr": "Le système a rencontré une erreur. Veuillez réessayer plus tard.",
+        "tr": "Sistem bir hata ile karşılaştı. Lütfen daha sonra tekrar deneyin.",
+        "de": "Das System hat einen Fehler festgestellt. Bitte versuchen Sie es später erneut.",
+        "uk": "Система зіткнулася з помилкою. Будь ласка, спробуйте пізніше."
+    },
+    "MICROAGENT_MANAGEMENT$CONVERSATION_STOPPED": {
+        "en": "The conversation has been stopped.",
+        "ja": "会話が停止されました。",
+        "zh-CN": "对话已被停止。",
+        "zh-TW": "對話已被停止。",
+        "ko-KR": "대화가 중단되었습니다.",
+        "no": "Samtalen har blitt stoppet.",
+        "it": "La conversazione è stata interrotta.",
+        "pt": "A conversa foi interrompida.",
+        "es": "La conversación ha sido detenida.",
+        "ar": "تم إيقاف المحادثة.",
+        "fr": "La conversation a été arrêtée.",
+        "tr": "Konuşma durduruldu.",
+        "de": "Das Gespräch wurde gestoppt.",
+        "uk": "Розмову зупинено."
     }
 }
