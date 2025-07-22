@@ -35,9 +35,7 @@ def update_multi_swe_config(output_jsonl_path):
         'mode': 'evaluation',
         'workdir': os.path.join(path_to_parent, 'eval_files', 'workdir'),
         'patch_files': [converted_path],
-        'dataset_files': [
-            './evaluation/benchmarks/versabench/versabench_cache/Multi-SWE-bench/java/all/all.jsonl'
-        ],
+        'dataset_files': [os.path.abspath('./evaluation/benchmarks/versabench/versabench_cache/Multi-SWE-bench/java/all/all.jsonl')],
         'force_build': True,
         'output_dir': os.path.join(path_to_parent, 'eval_files', 'dataset'),
         'specifics': [],
@@ -47,25 +45,20 @@ def update_multi_swe_config(output_jsonl_path):
         'global_env': [],
         'clear_env': True,
         'stop_on_error': False,
-        'max_workers': 10,
-        'max_workers_build_image': 10,
-        'max_workers_run_instance': 10,
+        'max_workers': 5,
+        'max_workers_build_image': 5,
+        'max_workers_run_instance': 5,
         'log_dir': os.path.join(path_to_parent, 'eval_files', 'logs'),
         'log_level': 'DEBUG',
-        'fix_patch_run_cmd': (
-            'bash -c "apt update ; apt install -y patch ; '
-            "sed -i 's@git apply.*@patch --batch --fuzz=5 -p1 -i /home/test.patch;"
-            'patch --batch --fuzz=5 -p1 -i /home/fix.patch@g\' /home/fix-run.sh"'
-        ),
+        'fix_patch_run_cmd': 'bash -c "apt update && apt install -y patch && sed -i \'s@git apply.*@patch --batch --fuzz=5 -p1 -i /home/test.patch;@\' /home/fix-run.sh && chmod +x /home/*.sh  && /home/fix-run.sh"',
     }
 
     # Save to multibench.config
-    config_path = (
-        './evaluation/benchmarks/versabench/versabench_cache/multibench.config.json'
-    )
+    config_path =  os.path.join(path_to_parent, 'multibench.config.json')
     os.makedirs(os.path.dirname(config_path), exist_ok=True)
     with open(config_path, 'w') as f:
         json.dump(config, f, indent=4)
+    return config_path
 
 
 def eval_benchmark(benchmark, command):
@@ -121,10 +114,10 @@ def main():
             f'export RUNTIME=""; ./evaluation/benchmarks/swe_bench/scripts/eval_infer.sh {args.multimodal}  "" princeton-nlp/SWE-bench_Multimodal test',
         )
     if args.multi_swe:
-        update_multi_swe_config(args.multi_swe)
+        config_path = update_multi_swe_config(args.multi_swe)
         eval_benchmark(
             'multi-swe',
-            'pip install multi-swe-bench ; python -m multi_swe_bench.harness.run_evaluation --config ./evaluation/benchmarks/versabench/versabench_cache/multibench.config.json',
+            f'pip install multi-swe-bench ; python -m multi_swe_bench.harness.run_evaluation --config {config_path}',
         )
     if args.lca_ci:
         if args.lca_ci.endswith('output.jsonl'):

@@ -149,10 +149,11 @@ def main():
             f'export EVAL_DOCKER_IMAGE_PREFIX=""; ./evaluation/benchmarks/lca_ci_build_repair/scripts/run_infer.sh {args.llm} HEAD CodeActAgent 100 100 1',
         )
     if all or args.the_agent_company:
+        the_agent_company_tmp_dir = './evaluation/benchmarks/versabench/versabench_cache/the_agent_company_tmp_dir'
         run_single_benchmark(
             'the_agent_company',
             args.split,
-            f'export TMPDIR=./tmp_the_agent_company ;export EVAL_DOCKER_IMAGE_PREFIX=""; ./evaluation/benchmarks/the_agent_company/scripts/run_infer.sh --agent-llm-config {args.llm} --env-llm-config {args.llm} --server-hostname localhost --version 1.0.0 --start-percentile 50 --end-percentile 100 --agent-config CodeActAgent',
+            f'export TMPDIR={the_agent_company_tmp_dir};export EVAL_DOCKER_IMAGE_PREFIX=""; ./evaluation/benchmarks/the_agent_company/scripts/run_infer.sh --agent-llm-config {args.llm} --env-llm-config {args.llm} --server-hostname localhost --version 1.0.0 --start-percentile 50 --end-percentile 100 --agent-config CodeActAgent',
         )
     if all or args.gaia:
         # Reminder: add your Tavily API key

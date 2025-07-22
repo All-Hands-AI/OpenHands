@@ -39,4 +39,8 @@ if [ ! -d ./evaluation/benchmarks/versabench/versabench_cache/swt-bench ]; then
         popd
     )
 fi
+
+#The Agent Company tmp directory
+mkdir -p ./evaluation/benchmarks/versabench/versabench_cache/the_agent_company_tmp_dir
+
 echo 'Finished installing Versabench_cache'
