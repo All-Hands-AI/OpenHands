@@ -168,6 +168,10 @@ describe("MicroagentManagement", () => {
     vi.spyOn(OpenHands, "searchConversations").mockResolvedValue([
       ...mockConversations,
     ]);
+    // Mock branches to always return a 'main' branch for the modal
+    vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue([
+      { name: "main", commit_sha: "abc123", protected: false },
+    ]);
   });
 
   it("should render the microagent management page", async () => {
@@ -1387,18 +1391,17 @@ describe("MicroagentManagement", () => {
       const addButtons = screen.getAllByText("COMMON$ADD_MICROAGENT");
       await user.click(addButtons[0]);
 
-      // Wait for modal to be rendered
+      // Wait for modal to be rendered and branch to be selected
       await waitFor(() => {
         expect(screen.getByTestId("add-microagent-modal")).toBeInTheDocument();
       });
-
-      // Enter query text
+      // Wait for the confirm button to be enabled after entering query and branch selection
       const queryInput = screen.getByTestId("query-input");
       await user.type(queryInput, "Test query");
-
-      // Check that confirm button is enabled
-      const confirmButton = screen.getByTestId("confirm-button");
-      expect(confirmButton).not.toBeDisabled();
+      await waitFor(() => {
+        const confirmButton = screen.getByTestId("confirm-button");
+        expect(confirmButton).not.toBeDisabled();
+      });
     });
 
     it("should prevent form submission when query is empty", async () => {
@@ -1440,18 +1443,18 @@ describe("MicroagentManagement", () => {
       const addButtons = screen.getAllByText("COMMON$ADD_MICROAGENT");
       await user.click(addButtons[0]);
 
-      // Wait for modal to be rendered
+      // Wait for modal to be rendered and branch to be selected
       await waitFor(() => {
         expect(screen.getByTestId("add-microagent-modal")).toBeInTheDocument();
       });
-
       // Enter query with whitespace
       const queryInput = screen.getByTestId("query-input");
       await user.type(queryInput, "  Test query with whitespace  ");
-
-      // Check that confirm button is enabled
-      const confirmButton = screen.getByTestId("confirm-button");
-      expect(confirmButton).not.toBeDisabled();
+      // Wait for the confirm button to be enabled after entering query and branch selection
+      await waitFor(() => {
+        const confirmButton = screen.getByTestId("confirm-button");
+        expect(confirmButton).not.toBeDisabled();
+      });
     });
   });
 });

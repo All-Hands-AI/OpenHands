@@ -33,31 +33,24 @@ export function MicroagentManagementMicroagentCard({
 
   const hasPr = prNumber && prNumber.length > 0;
 
-  const isOpeningPRStatus = () =>
-    (conversationStatus === "STARTING" || conversationStatus === "RUNNING") &&
-    runtimeStatus === "STATUS$READY";
-
-  const isCompletedStatus = () => hasPr;
-
-  const isStoppedStatus = () =>
-    conversationStatus === "STOPPED" || runtimeStatus === "STATUS$STOPPED";
-
-  const isErrorStatus = () => runtimeStatus === "STATUS$ERROR";
-
   // Helper function to get status text
   const statusText = useMemo(() => {
-    if (isCompletedStatus()) {
-      return hasPr
-        ? t(I18nKey.COMMON$READY_FOR_REVIEW)
-        : t(I18nKey.COMMON$COMPLETED_PARTIALLY);
+    if (hasPr) {
+      return t(I18nKey.COMMON$READY_FOR_REVIEW);
     }
-    if (isStoppedStatus()) {
+    if (
+      conversationStatus === "STOPPED" ||
+      runtimeStatus === "STATUS$STOPPED"
+    ) {
       return t(I18nKey.COMMON$STOPPED);
     }
-    if (isErrorStatus()) {
+    if (runtimeStatus === "STATUS$ERROR") {
       return t(I18nKey.MICROAGENT$STATUS_ERROR);
     }
-    if (isOpeningPRStatus()) {
+    if (
+      (conversationStatus === "STARTING" || conversationStatus === "RUNNING") &&
+      runtimeStatus === "STATUS$READY"
+    ) {
       return t(I18nKey.MICROAGENT$STATUS_OPENING_PR);
     }
     return "";

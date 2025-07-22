@@ -14,4 +14,5 @@ export interface RepositoryMicroagent {
 export interface MicroagentFormData {
   query: string;
   triggers: string[];
+  selectedBranch: string;
 }

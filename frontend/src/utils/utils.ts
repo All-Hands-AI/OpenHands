@@ -118,29 +118,6 @@ export const getGitProviderBaseUrl = (gitProvider: Provider): string => {
 };
 
 /**
- * Get the default branch name for a git provider
- * @param gitProvider The git provider
- * @returns The default branch name for the provider
- *
- * @example
- * getDefaultBranch("github") // "main"
- * getDefaultBranch("gitlab") // "main"
- * getDefaultBranch("bitbucket") // "main"
- */
-export const getDefaultBranch = (gitProvider: Provider): string => {
-  switch (gitProvider) {
-    case "github":
-      return "main";
-    case "gitlab":
-      return "main";
-    case "bitbucket":
-      return "main";
-    default:
-      return "main";
-  }
-};
-
-/**
  * Get the name of the git provider
  * @param gitProvider The git provider
  * @returns The name of the git provider
