@@ -45,7 +45,7 @@ describe("AuthModal", () => {
       <AuthModal
         githubAuthUrl={mockUrl}
         appMode="saas"
-        providersConfigured={["github", "gitlab"]}
+        providersConfigured={["github"]}
       />,
     );
 
