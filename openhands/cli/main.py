@@ -73,6 +73,7 @@ from openhands.events.observation import (
     AgentStateChangedObservation,
 )
 from openhands.io import read_task
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.condenser.impl.llm_summarizing_condenser import (
     LLMSummarizingCondenserConfig,
@@ -80,6 +81,7 @@ from openhands.memory.condenser.impl.llm_summarizing_condenser import (
 from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
+from openhands.storage import get_file_store
 from openhands.storage.settings.file_settings_store import FileSettingsStore
 
 
@@ -144,9 +146,14 @@ async def run_session(
         None, display_initialization_animation, 'Initializing...', is_loaded
     )
 
-    agent = create_agent(config)
+    # TODO: do we need to restore metrics for CLI?
+    file_store = get_file_store(config.file_store, config.file_store_path)
+    llm_registry = LLMRegistry(file_store, sid, None)
+
+    agent = create_agent(config, llm_registry)
     runtime = create_runtime(
         config,
+        llm_registry,
         sid=sid,
         headless_mode=True,
         agent=agent,
@@ -158,7 +165,7 @@ async def run_session(
 
     runtime.subscribe_to_shell_stream(stream_to_console)
 
-    controller, initial_state = create_controller(agent, runtime, config)
+    controller, initial_state = create_controller(agent, runtime, config, llm_registry)
 
     event_stream = runtime.event_stream
 

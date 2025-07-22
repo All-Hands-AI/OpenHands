@@ -148,8 +148,12 @@ def test_guess_success_thread_comments_litellm_call():
     """Test that the completion() call for thread comments contains the expected content."""
     # Create a PR handler instance
     llm_config = LLMConfig(model='test', api_key='test')
+    # Use a unique service ID for this test
+    service_id = 'test_gitlab_guess_success_thread_comments_litellm_call'
     handler = ServiceContextPR(
-        GitlabPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
+        GitlabPRHandler('test-owner', 'test-repo', 'test-token'),
+        llm_config,
+        service_id=service_id,
     )
 
     # Create a mock issue with thread comments
@@ -223,8 +227,12 @@ def test_check_feedback_with_llm():
     """Test the _check_feedback_with_llm helper function."""
     # Create a PR handler instance
     llm_config = LLMConfig(model='test', api_key='test')
+    # Use a unique service ID for this test
+    service_id = 'test_gitlab_check_feedback_with_llm_unique'
     handler = ServiceContextPR(
-        GitlabPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
+        GitlabPRHandler('test-owner', 'test-repo', 'test-token'),
+        llm_config,
+        service_id=service_id,
     )
 
     # Test cases for different LLM responses
@@ -324,8 +332,12 @@ def test_check_review_thread():
     """Test the _check_review_thread helper function."""
     # Create a PR handler instance
     llm_config = LLMConfig(model='test', api_key='test')
+    # Use a unique service ID for this test
+    service_id = 'test_gitlab_check_review_thread'
     handler = ServiceContextPR(
-        GitlabPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
+        GitlabPRHandler('test-owner', 'test-repo', 'test-token'),
+        llm_config,
+        service_id=service_id,
     )
 
     # Create test data
@@ -438,8 +450,12 @@ def test_check_thread_comments():
     """Test the _check_thread_comments helper function."""
     # Create a PR handler instance
     llm_config = LLMConfig(model='test', api_key='test')
+    # Use a unique service ID for this test
+    service_id = 'test_gitlab_check_thread_comments'
     handler = ServiceContextPR(
-        GitlabPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
+        GitlabPRHandler('test-owner', 'test-repo', 'test-token'),
+        llm_config,
+        service_id=service_id,
     )
 
     # Create test data
@@ -550,8 +566,12 @@ def test_check_review_comments():
     """Test the _check_review_comments helper function."""
     # Create a PR handler instance
     llm_config = LLMConfig(model='test', api_key='test')
+    # Use a unique service ID for this test
+    service_id = 'test_gitlab_check_review_comments'
     handler = ServiceContextPR(
-        GitlabPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
+        GitlabPRHandler('test-owner', 'test-repo', 'test-token'),
+        llm_config,
+        service_id=service_id,
     )
 
     # Create test data
@@ -605,8 +625,12 @@ def test_guess_success_review_comments_litellm_call():
     """Test that the completion() call for review comments contains the expected content."""
     # Create a PR handler instance
     llm_config = LLMConfig(model='test', api_key='test')
+    # Use a unique service ID for this test
+    service_id = 'test_gitlab_guess_success_review_comments_litellm_call'
     handler = ServiceContextPR(
-        GitlabPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
+        GitlabPRHandler('test-owner', 'test-repo', 'test-token'),
+        llm_config,
+        service_id=service_id,
     )
 
     # Create a mock issue with review comments

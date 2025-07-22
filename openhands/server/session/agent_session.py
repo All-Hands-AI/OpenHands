@@ -21,6 +21,7 @@ from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
     ProviderHandler,
 )
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroagent
@@ -48,6 +49,7 @@ class AgentSession:
     sid: str
     user_id: str | None
     event_stream: EventStream
+    llm_registry: LLMRegistry
     file_store: FileStore
     controller: AgentController | None = None
     runtime: Runtime | None = None
@@ -63,6 +65,7 @@ class AgentSession:
         self,
         sid: str,
         file_store: FileStore,
+        llm_registry: LLMRegistry,
         status_callback: Callable | None = None,
         user_id: str | None = None,
     ) -> None:
@@ -81,6 +84,7 @@ class AgentSession:
         self.logger = OpenHandsLoggerAdapter(
             extra={'session_id': sid, 'user_id': user_id}
         )
+        self.llm_registry = llm_registry
 
     async def start(
         self,
@@ -343,6 +347,7 @@ class AgentSession:
             self.runtime = runtime_cls(
                 config=config,
                 event_stream=self.event_stream,
+                llm_registry=self.llm_registry,
                 sid=self.sid,
                 plugins=agent.sandbox_plugins,
                 status_callback=self._status_callback,
@@ -363,6 +368,7 @@ class AgentSession:
             self.runtime = runtime_cls(
                 config=config,
                 event_stream=self.event_stream,
+                llm_registry=self.llm_registry,
                 sid=self.sid,
                 plugins=agent.sandbox_plugins,
                 status_callback=self._status_callback,
@@ -445,6 +451,7 @@ class AgentSession:
             user_id=self.user_id,
             file_store=self.file_store,
             event_stream=self.event_stream,
+            llm_registry=self.llm_registry,
             agent=agent,
             iteration_delta=int(max_iterations),
             budget_per_task_delta=max_budget_per_task,
@@ -491,6 +498,15 @@ class AgentSession:
                 memory.set_repository_info(selected_repository, repo_directory)
         return memory
 
+    def get_state(self) -> AgentState | None:
+        controller = self.controller
+        if controller:
+            return controller.state.agent_state
+        if time.time() > self._started_at + WAIT_TIME_BEFORE_CLOSE:
+            # If 5 minutes have elapsed and we still don't have a controller, something has gone wrong
+            return AgentState.ERROR
+        return None
+
     def _maybe_restore_state(self) -> State | None:
         """Helper method to handle state restore logic."""
         restored_state = None
@@ -510,15 +526,6 @@ class AgentSession:
             else:
                 self.logger.debug('No events found, no state to restore')
         return restored_state
-
-    def get_state(self) -> AgentState | None:
-        controller = self.controller
-        if controller:
-            return controller.state.agent_state
-        if time.time() > self._started_at + WAIT_TIME_BEFORE_CLOSE:
-            # If 5 minutes have elapsed and we still don't have a controller, something has gone wrong
-            return AgentState.ERROR
-        return None
 
     def is_closed(self) -> bool:
         return self._closed

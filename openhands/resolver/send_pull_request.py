@@ -10,7 +10,7 @@ from pydantic import SecretStr
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.service_types import ProviderType
-from openhands.llm.llm import LLM
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.resolver.interfaces.bitbucket import BitbucketIssueHandler
 from openhands.resolver.interfaces.github import GithubIssueHandler
 from openhands.resolver.interfaces.gitlab import GitlabIssueHandler
@@ -452,8 +452,12 @@ def update_existing_pull_request(
                     comment_message += f'- {explanation}\n'
 
                 # Summarize with LLM if provided
+                # TODO: save registry information to persistent store
+                llm_registry = LLMRegistry(None, 'convo_id', None)
                 if llm_config is not None:
-                    llm = LLM(llm_config)
+                    # Use a unique service ID to avoid conflicts in tests
+                    service_id = f'resolver_summary_{id(issue)}'
+                    llm = llm_registry.register_llm(service_id, llm_config)
                     with open(
                         os.path.join(
                             os.path.dirname(__file__),

@@ -17,7 +17,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.event import Event
 from openhands.integrations.provider import ProviderToken, ProviderType
-from openhands.llm.llm import LLM
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime import get_runtime_cls
@@ -30,6 +30,7 @@ from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
 
 def create_runtime(
     config: OpenHandsConfig,
+    llm_registry: LLMRegistry,
     sid: str | None = None,
     headless_mode: bool = True,
     agent: Agent | None = None,
@@ -77,6 +78,7 @@ def create_runtime(
         sid=session_id,
         plugins=agent_cls.sandbox_plugins,
         headless_mode=headless_mode,
+        llm_registry=llm_registry,
     )
 
     logger.debug(
@@ -178,14 +180,13 @@ def create_memory(
     return memory
 
 
-def create_agent(config: OpenHandsConfig) -> Agent:
+def create_agent(config: OpenHandsConfig, llm_registry: LLMRegistry) -> Agent:
     agent_cls: type[Agent] = Agent.get_cls(config.default_agent)
     agent_config = config.get_agent_config(config.default_agent)
     llm_config = config.get_llm_config_from_agent(config.default_agent)
 
     agent = agent_cls(
-        llm=LLM(config=llm_config),
-        config=agent_config,
+        config=agent_config, llm_config=llm_config, llm_registry=llm_registry
     )
 
     return agent
@@ -195,6 +196,7 @@ def create_controller(
     agent: Agent,
     runtime: Runtime,
     config: OpenHandsConfig,
+    llm_registry: LLMRegistry,
     headless_mode: bool = True,
     replay_events: list[Event] | None = None,
 ) -> tuple[AgentController, State | None]:
@@ -212,6 +214,7 @@ def create_controller(
 
     controller = AgentController(
         agent=agent,
+        llm_registry=llm_registry,
         iteration_delta=config.max_iterations,
         budget_per_task_delta=config.max_budget_per_task,
         agent_to_llm_config=config.get_agent_to_llm_config_map(),

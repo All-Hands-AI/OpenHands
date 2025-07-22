@@ -2,6 +2,7 @@ import asyncio
 
 from openhands.core.config import OpenHandsConfig
 from openhands.events.stream import EventStream
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.security import SecurityAnalyzer, options
@@ -19,6 +20,7 @@ class ServerConversation:
 
     def __init__(
         self,
+        llm_registry: LLMRegistry,
         sid: str,
         file_store: FileStore,
         config: OpenHandsConfig,
@@ -50,6 +52,7 @@ class ServerConversation:
                 sid=self.sid,
                 attach_to_existing=True,
                 headless_mode=False,
+                llm_registry=llm_registry,
             )
         self.runtime = runtime
 
