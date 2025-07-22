@@ -8,7 +8,10 @@ class ModelRoutingConfig(BaseModel):
         prob_threshold (float): The probability threshold for routing decisions, used by `threshold_based_cv_router`.
         router_name (str): The name of the router to use. Default is 'noop_router'.
     """
-    prob_threshold: float = Field(default=0.49414062500000006) # 60% calls to strong model
+
+    prob_threshold: float = Field(
+        default=0.49414062500000006
+    )  # 60% calls to strong model
     router_name: str = Field(default='noop_router')
 
     model_config = {'extra': 'forbid'}

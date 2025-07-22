@@ -1,15 +1,15 @@
 from openhands.core.config import ModelRoutingConfig
-from openhands.llm.llm import LLM
-from openhands.router.base import BaseRouter, ROUTER_REGISTRY
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
-from openhands.events.event import Event
 from openhands.events.action import MessageAction
+from openhands.events.event import Event
+from openhands.llm.llm import LLM
+from openhands.router.base import ROUTER_REGISTRY, BaseRouter
 
 
 class RuleBasedCostSavingRouter(BaseRouter):
     WEAK_MODEL_CONFIG_NAME = 'weak_model'
-    ROUTER_NAME = "rule_based_cv_router"
+    ROUTER_NAME = 'rule_based_cv_router'
 
     def __init__(
         self,
@@ -28,7 +28,11 @@ class RuleBasedCostSavingRouter(BaseRouter):
         route_to_strong = False
         # Handle multimodal input
         for event in events:
-            if isinstance(event, MessageAction) and event.source == 'user' and event.image_urls:
+            if (
+                isinstance(event, MessageAction)
+                and event.source == 'user'
+                and event.image_urls
+            ):
                 logger.info('Image content detected. Routing to the strong model.')
                 route_to_strong = True
                 break
@@ -38,7 +42,11 @@ class RuleBasedCostSavingRouter(BaseRouter):
 
         # Check if `messages` exceeds context window of the weak model
         # Assuming the weak model has a lower context window limit compared to the strong model
-        if self.weak_llm.config.max_input_tokens and self.weak_llm.get_token_count(messages) > self.weak_llm.config.max_input_tokens:
+        if (
+            self.weak_llm.config.max_input_tokens
+            and self.weak_llm.get_token_count(messages)
+            > self.weak_llm.config.max_input_tokens
+        ):
             logger.warning(
                 f"Messages having {self.weak_llm.get_token_count(messages)}, exceed weak model's max input tokens ({self.weak_llm.config.max_input_tokens} tokens). "
                 'Routing to the strong model.'
@@ -53,13 +61,10 @@ class RuleBasedCostSavingRouter(BaseRouter):
             self.active_llm = self.weak_llm
             self.routing_history.append(1)
 
-    def _validate_model_routing_config(
-        self, routing_llms: dict[str, LLM]
-    ):
+    def _validate_model_routing_config(self, routing_llms: dict[str, LLM]):
         if self.WEAK_MODEL_CONFIG_NAME not in routing_llms:
-            raise ValueError(
-                f'Weak LLM config {self.WEAK_MODEL_CONFIG_NAME} not found'
-            )
+            raise ValueError(f'Weak LLM config {self.WEAK_MODEL_CONFIG_NAME} not found')
+
 
 # Register the router
 ROUTER_REGISTRY[RuleBasedCostSavingRouter.ROUTER_NAME] = RuleBasedCostSavingRouter

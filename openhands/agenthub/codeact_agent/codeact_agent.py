@@ -35,7 +35,6 @@ from openhands.memory.condenser import Condenser
 from openhands.memory.condenser.condenser import Condensation, View
 from openhands.memory.conversation_memory import ConversationMemory
 from openhands.router import ROUTER_REGISTRY
-
 from openhands.runtime.plugins import (
     AgentSkillsRequirement,
     JupyterRequirement,
@@ -108,7 +107,6 @@ class CodeActAgent(Agent):
             routing_llms=routing_llms or dict(),
             model_routing_config=model_routing_config,
         )
-
 
     @property
     def prompt_manager(self) -> PromptManager:
@@ -206,11 +204,11 @@ class CodeActAgent(Agent):
 
         initial_user_message = self._get_initial_user_message(state.history)
 
-        messages_for_routing_decision = self._get_messages(condensed_history, initial_user_message)
-        self.router.set_active_llm(messages_for_routing_decision, condensed_history)
-        logger.debug(
-            f'Active LLM set to: {self.router.active_llm.config.model}'
+        messages_for_routing_decision = self._get_messages(
+            condensed_history, initial_user_message
         )
+        self.router.set_active_llm(messages_for_routing_decision, condensed_history)
+        logger.debug(f'Active LLM set to: {self.router.active_llm.config.model}')
 
         state.routing_history = self.router.routing_history
 
