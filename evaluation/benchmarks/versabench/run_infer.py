@@ -93,9 +93,29 @@ def run_single_benchmark(benchmark, config_path, command):
 
     env = os.environ.copy()  # inherit current environment with micromamba active
     cwd = os.getcwd()  # preserve current directory
-    result = subprocess.run(['/bin/zsh', '-c', command], check=True, env=env, cwd=cwd)
+
+    # Run subprocess and capture stdout and stderr
+    result = subprocess.run(
+        ['/bin/zsh', '-c', command],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env=env,
+        cwd=cwd,
+        text=True,  # Return strings rather than bytes
+    )
+
     if result.returncode != 0:
-        print(f'Command failed with exit code {result.returncode}')
+        logger.error(f'Command failed with exit code {result.returncode}')
+        logger.error(f'Command stderr output:\n{result.stderr}')
+        logger.error(f'Command stdout output:\n{result.stdout}')
+        # Raise exception to maintain the same behavior as before with check=True
+        raise subprocess.CalledProcessError(
+            returncode=result.returncode,
+            cmd=command,
+            output=result.stdout,
+            stderr=result.stderr,
+        )
+
     logger.info(f'Finished sub-benchmark {benchmark}')
 
 
