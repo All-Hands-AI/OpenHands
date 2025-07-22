@@ -426,20 +426,30 @@ class OpenHands {
   }
 
   /**
-   * Given a PAT, retrieves the repositories of the user
    * @returns A list of repositories
    */
-  static async retrieveUserGitRepositories() {
+  static async retrieveUserGitRepositories(
+    provider: Provider,
+    page = 1,
+    per_page = 30,
+  ) {
     const { data } = await openHands.get<GitRepository[]>(
       "/api/user/repositories",
       {
         params: {
+          provider,
           sort: "pushed",
+          page,
+          per_page,
         },
       },
     );
 
-    return data;
+    const link =
+      data.length > 0 && data[0].link_header ? data[0].link_header : "";
+    const nextPage = extractNextPageFromLink(link);
+
+    return { data, nextPage };
   }
 
   static async retrieveInstallationRepositories(
@@ -535,7 +545,9 @@ class OpenHands {
    * @returns List of installation IDs
    */
   static async getUserInstallationIds(provider: Provider): Promise<string[]> {
-    const { data } = await openHands.get<string[]>(`/api/user/installations?provider=${provider}`);
+    const { data } = await openHands.get<string[]>(
+      `/api/user/installations?provider=${provider}`,
+    );
     return data;
   }
 }
