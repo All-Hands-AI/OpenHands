@@ -34,7 +34,6 @@ describe("MicroagentManagement", () => {
           personalRepositories: [],
           organizationRepositories: [],
           repositories: [],
-          microagentStatuses: [],
         },
       },
     });
@@ -1287,7 +1286,6 @@ describe("MicroagentManagement", () => {
             personalRepositories: [],
             organizationRepositories: [],
             repositories: [],
-            microagentStatuses: [],
           },
         },
       });

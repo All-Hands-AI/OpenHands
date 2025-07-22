@@ -2,10 +2,6 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { formatDateMMDDYYYY } from "#/utils/format-time-delta";
-import {
-  EventMicroagentStatus,
-  MicroagentStatus,
-} from "#/types/microagent-status";
 import { ConversationStatus } from "#/types/conversation-status";
 import { RuntimeStatus } from "#/types/runtime-status";
 
@@ -19,13 +15,11 @@ interface MicroagentManagementMicroagentCardProps {
     prNumber?: number[] | null;
   };
   showMicroagentFilePath?: boolean;
-  microagentStatus?: EventMicroagentStatus;
 }
 
 export function MicroagentManagementMicroagentCard({
   microagent,
   showMicroagentFilePath = true,
-  microagentStatus,
 }: MicroagentManagementMicroagentCardProps) {
   const { t } = useTranslation();
 
@@ -40,38 +34,34 @@ export function MicroagentManagementMicroagentCard({
   const hasPr = prNumber && prNumber.length > 0;
 
   const isOpeningPRStatus = () =>
-    ((conversationStatus === "STARTING" || conversationStatus === "RUNNING") &&
-      runtimeStatus === "STATUS$READY") ||
-    microagentStatus?.status === MicroagentStatus.CREATING;
+    (conversationStatus === "STARTING" || conversationStatus === "RUNNING") &&
+    runtimeStatus === "STATUS$READY";
 
-  const isCompletedStatus = () =>
-    hasPr || microagentStatus?.status === MicroagentStatus.COMPLETED;
+  const isCompletedStatus = () => hasPr;
 
   const isStoppedStatus = () =>
     conversationStatus === "STOPPED" || runtimeStatus === "STATUS$STOPPED";
 
-  const isErrorStatus = () =>
-    runtimeStatus === "STATUS$ERROR" ||
-    microagentStatus?.status === MicroagentStatus.ERROR;
+  const isErrorStatus = () => runtimeStatus === "STATUS$ERROR";
 
   // Helper function to get status text
   const statusText = useMemo(() => {
+    if (isCompletedStatus()) {
+      return hasPr
+        ? t(I18nKey.COMMON$READY_FOR_REVIEW)
+        : t(I18nKey.COMMON$COMPLETED_PARTIALLY);
+    }
     if (isStoppedStatus()) {
       return t(I18nKey.COMMON$STOPPED);
     }
     if (isErrorStatus()) {
       return t(I18nKey.MICROAGENT$STATUS_ERROR);
     }
-    if (isCompletedStatus()) {
-      return hasPr || microagentStatus?.prUrl
-        ? t(I18nKey.COMMON$READY_FOR_REVIEW)
-        : t(I18nKey.COMMON$COMPLETED_PARTIALLY);
-    }
     if (isOpeningPRStatus()) {
       return t(I18nKey.MICROAGENT$STATUS_OPENING_PR);
     }
     return "";
-  }, [microagentStatus, conversationStatus, runtimeStatus, t]);
+  }, [conversationStatus, runtimeStatus, t, hasPr]);
 
   return (
     <div className="rounded-lg bg-[#ffffff0d] border border-[#ffffff33] p-4 cursor-pointer hover:bg-[#ffffff33] hover:border-[#C9B974] transition-all duration-300">

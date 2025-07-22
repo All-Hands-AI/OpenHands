@@ -4,16 +4,10 @@ import { MicroagentManagementSidebar } from "./microagent-management-sidebar";
 import { MicroagentManagementMain } from "./microagent-management-main";
 import { MicroagentManagementAddMicroagentModal } from "./microagent-management-add-microagent-modal";
 import { RootState } from "#/store";
-import {
-  setAddMicroagentModalVisible,
-  addMicroagentStatus,
-  updateMicroagentStatus,
-} from "#/state/microagent-management-slice";
+import { setAddMicroagentModalVisible } from "#/state/microagent-management-slice";
 import { useCreateConversationAndSubscribeMultiple } from "#/hooks/use-create-conversation-and-subscribe-multiple";
 import { MicroagentFormData } from "#/types/microagent-management";
-import { MicroagentStatus } from "#/types/microagent-status";
 import { AgentState } from "#/types/agent-state";
-import { getFirstPRUrl } from "#/utils/parse-pr-url";
 import {
   getDefaultBranch,
   getPR,
@@ -56,30 +50,8 @@ export function MicroagentManagementContent() {
     [],
   );
 
-  // Reusable function to update microagent status and invalidate conversations list
-  const updateMicroagentStatusAndInvalidate = React.useCallback(
-    (
-      conversationId: string,
-      status: MicroagentStatus,
-      repositoryName: string,
-      prUrl?: string,
-    ) => {
-      dispatch(
-        updateMicroagentStatus({
-          conversationId,
-          status,
-          ...(prUrl && { prUrl }),
-        }),
-      );
-
-      // Invalidate conversations list when microagent status changes
-      invalidateConversationsList(repositoryName);
-    },
-    [dispatch, invalidateConversationsList],
-  );
-
   const handleMicroagentEvent = React.useCallback(
-    (socketEvent: unknown, microagentConversationId: string) => {
+    (socketEvent: unknown) => {
       // Handle error events
       const isErrorEvent = (
         evt: unknown,
@@ -94,43 +66,41 @@ export function MicroagentManagementContent() {
         isAgentStateChangeObservation(evt) &&
         evt.extras.agent_state === AgentState.ERROR;
 
+      const shouldInvalidateConversationsList = (
+        currentSocketEvent: unknown,
+      ): boolean => {
+        if (
+          isErrorEvent(currentSocketEvent) ||
+          isAgentStatusError(currentSocketEvent)
+        ) {
+          return true;
+        }
+        if (
+          isOpenHandsEvent(currentSocketEvent) &&
+          isAgentStateChangeObservation(currentSocketEvent)
+        ) {
+          return true;
+        }
+        if (
+          isOpenHandsEvent(currentSocketEvent) &&
+          isFinishAction(currentSocketEvent)
+        ) {
+          return true;
+        }
+        return false;
+      };
+
       // Get repository name from selectedRepository for invalidation
       const repositoryName =
         selectedRepository && typeof selectedRepository === "object"
           ? (selectedRepository as GitRepository).full_name
           : "";
 
-      if (isErrorEvent(socketEvent) || isAgentStatusError(socketEvent)) {
-        updateMicroagentStatusAndInvalidate(
-          microagentConversationId,
-          MicroagentStatus.ERROR,
-          repositoryName,
-        );
-      } else if (
-        isOpenHandsEvent(socketEvent) &&
-        isAgentStateChangeObservation(socketEvent)
-      ) {
-        if (socketEvent.extras.agent_state === AgentState.FINISHED) {
-          updateMicroagentStatusAndInvalidate(
-            microagentConversationId,
-            MicroagentStatus.COMPLETED,
-            repositoryName,
-          );
-        }
-      } else if (isOpenHandsEvent(socketEvent) && isFinishAction(socketEvent)) {
-        // Check if the finish action contains a PR URL
-        const prUrl = getFirstPRUrl(socketEvent.args.final_thought || "");
-        if (prUrl) {
-          updateMicroagentStatusAndInvalidate(
-            microagentConversationId,
-            MicroagentStatus.COMPLETED,
-            repositoryName,
-            prUrl,
-          );
-        }
+      if (shouldInvalidateConversationsList(socketEvent)) {
+        invalidateConversationsList(repositoryName);
       }
     },
-    [updateMicroagentStatusAndInvalidate, selectedRepository],
+    [invalidateConversationsList, selectedRepository],
   );
 
   const handleCreateMicroagent = (formData: MicroagentFormData) => {
@@ -189,17 +159,8 @@ ${formData.query}
         gitProvider,
       },
       createMicroagent,
-      onSuccessCallback: (conversationId: string) => {
+      onSuccessCallback: () => {
         hideAddMicroagentModal();
-
-        // Add the new microagent to the status tracking
-        dispatch(
-          addMicroagentStatus({
-            eventId: Date.now(), // Use timestamp as event ID for microagent creation
-            conversationId,
-            status: MicroagentStatus.CREATING,
-          }),
-        );
 
         // Invalidate conversations list to fetch the latest conversations for this repository
         invalidateConversationsList(repositoryName);
@@ -213,9 +174,9 @@ ${formData.query}
 
         hideAddMicroagentModal();
       },
-      onEventCallback: (event: unknown, conversationId: string) => {
+      onEventCallback: (event: unknown) => {
         // Handle conversation events for real-time status updates
-        handleMicroagentEvent(event, conversationId);
+        handleMicroagentEvent(event);
       },
     });
   };
