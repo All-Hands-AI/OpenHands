@@ -1,0 +1,1 @@
+// foo.ts - Empty TypeScript file
