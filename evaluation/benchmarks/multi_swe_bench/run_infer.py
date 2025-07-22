@@ -836,5 +836,5 @@ if __name__ == '__main__':
         args.eval_num_workers,
         process_instance,
         timeout_seconds=120 * 60,  # 2 hour PER instance should be more than enough
-        max_retries=1,
+        max_retries=3,
     )
