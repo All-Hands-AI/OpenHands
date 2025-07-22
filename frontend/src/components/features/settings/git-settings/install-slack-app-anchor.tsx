@@ -6,16 +6,21 @@ export function InstallSlackAppAnchor() {
   const { t } = useTranslation();
 
   return (
-    <a
-      data-testid="install-slack-app-button"
-      href="https://slack.com/oauth/v2/authorize?client_id=7477886716822.8729519890534&scope=app_mentions:read,channels:history,chat:write,groups:history,im:history,mpim:history,users:read&user_scope="
-      target="_blank"
-      rel="noreferrer noopener"
-      className="py-9"
-    >
-      <BrandButton type="button" variant="primary" className="w-55">
+    <div data-testid="install-slack-app-button" className="py-9">
+      <BrandButton
+        type="button"
+        variant="primary"
+        className="w-55"
+        onClick={() =>
+          window.open(
+            "https://slack.com/oauth/v2/authorize?client_id=7477886716822.8729519890534&scope=app_mentions:read,channels:history,chat:write,groups:history,im:history,mpim:history,users:read&user_scope=",
+            "_blank",
+            "noreferrer noopener",
+          )
+        }
+      >
         {t(I18nKey.SLACK$INSTALL_APP)}
       </BrandButton>
-    </a>
+    </div>
   );
 }
