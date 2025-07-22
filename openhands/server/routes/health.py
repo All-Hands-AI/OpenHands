@@ -1,5 +1,3 @@
-import time
-
 from fastapi import FastAPI
 
 from openhands.runtime.utils.system_stats import get_system_info
