@@ -51,6 +51,28 @@ NOTE: SWE-Gym sampling with parallelism is currently only tested with AllHands R
 
 5. When `rollout_swegym.sh` finishes, you will get a file called `output.with_completions.jsonl.gz`. Then you can use [`./scripts/swegym/convert_data.ipynb`](./scripts/swegym/convert_data.ipynb) to convert them into SFT data format.
 
+## Running the Jupyter Notebook
+
+To run the data conversion notebook, follow these steps:
+
+1. Navigate to the OpenHands repository root:
+```bash
+cd openhands_repo
+```
+
+2. Set the PYTHONPATH and start Jupyter notebook:
+```bash
+PYTHONPATH=$(pwd) jupyter notebook
+```
+
+3. In the Jupyter interface, navigate to `evaluation/benchmarks/swe_bench/scripts/swegym/convert_data.ipynb`
+
+4. Update the file paths in the notebook:
+   - Set `FILE_PATHS` to point to your `output.with_completions.jsonl.gz` files
+   - Set `YOUR_OUTPUT_FOLDER` to your desired output directory
+
+5. Run the notebook cells sequentially to process your data and generate the SFT training format.
+
 ---
 # More info about SWE-Gym
 
