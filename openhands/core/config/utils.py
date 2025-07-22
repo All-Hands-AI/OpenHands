@@ -850,4 +850,8 @@ def setup_config_from_args(args: argparse.Namespace) -> OpenHandsConfig:
     if args.selected_repo is not None:
         config.sandbox.selected_repo = args.selected_repo
 
+    # Set workspace base folder if provided
+    if args.directory is not None:
+        config.workspace_base = args.directory
+
     return config
