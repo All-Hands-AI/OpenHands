@@ -2,6 +2,7 @@ import React, { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { SettingsDropdownInput } from "../../settings/settings-dropdown-input";
 import { I18nKey } from "#/i18n/declaration";
+import { cn } from "#/utils/utils";
 
 export interface BranchDropdownProps {
   items: { key: React.Key; label: string }[];
@@ -30,7 +31,7 @@ export function BranchDropdown({
       name="branch-dropdown"
       placeholder={t(I18nKey.REPOSITORY$SELECT_BRANCH)}
       items={items}
-      wrapperClassName={wrapperClassName || "max-w-[500px]"}
+      wrapperClassName={cn("max-w-[500px]", wrapperClassName)}
       onSelectionChange={onSelectionChange}
       onInputChange={onInputChange}
       isDisabled={isDisabled}
