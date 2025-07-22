@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Accordion, AccordionItem } from "@heroui/react";
 import { MicroagentManagementRepoMicroagents } from "./microagent-management-repo-microagents";
 import { GitRepository } from "#/types/git";
-import { getGitProviderBaseUrl, cn } from "#/utils/utils";
+import { cn } from "#/utils/utils";
 import { TabType } from "#/types/microagent-management";
 import { MicroagentManagementNoRepositories } from "./microagent-management-no-repositories";
 import { I18nKey } from "#/i18n/declaration";
@@ -110,13 +110,7 @@ export function MicroagentManagementRepositories({
               <MicroagentManagementAccordionTitle repository={repository} />
             }
           >
-            <MicroagentManagementRepoMicroagents
-              repoMicroagent={{
-                id: repository.id,
-                repositoryName: repository.full_name,
-                repositoryUrl: `${getGitProviderBaseUrl(repository.git_provider)}/${repository.full_name}`,
-              }}
-            />
+            <MicroagentManagementRepoMicroagents repository={repository} />
           </AccordionItem>
         ))}
       </Accordion>

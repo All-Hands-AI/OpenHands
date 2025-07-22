@@ -1,24 +1,34 @@
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { MicroagentManagementMicroagentCard } from "./microagent-management-microagent-card";
 import { MicroagentManagementLearnThisRepo } from "./microagent-management-learn-this-repo";
 import { useRepositoryMicroagents } from "#/hooks/query/use-repository-microagents";
 import { useSearchConversations } from "#/hooks/query/use-search-conversations";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
-
-export interface RepoMicroagent {
-  id: string;
-  repositoryName: string;
-  repositoryUrl: string;
-}
+import { GitRepository } from "#/types/git";
+import { getGitProviderBaseUrl } from "#/utils/utils";
+import { RootState } from "#/store";
+import { setSelectedMicroagentItem } from "#/state/microagent-management-slice";
 
 interface MicroagentManagementRepoMicroagentsProps {
-  repoMicroagent: RepoMicroagent;
+  repository: GitRepository;
 }
 
 export function MicroagentManagementRepoMicroagents({
-  repoMicroagent,
+  repository,
 }: MicroagentManagementRepoMicroagentsProps) {
+  const { selectedMicroagentItem } = useSelector(
+    (state: RootState) => state.microagentManagement,
+  );
+
+  const dispatch = useDispatch();
+
+  const { full_name: repositoryName, git_provider: gitProvider } = repository;
+
   // Extract owner and repo from repositoryName (format: "owner/repo")
-  const [owner, repo] = repoMicroagent.repositoryName.split("/");
+  const [owner, repo] = repositoryName.split("/");
+
+  const repositoryUrl = `${getGitProviderBaseUrl(gitProvider)}/${repositoryName}`;
 
   const {
     data: microagents,
@@ -30,11 +40,28 @@ export function MicroagentManagementRepoMicroagents({
     data: conversations,
     isLoading: isLoadingConversations,
     isError: isErrorConversations,
-  } = useSearchConversations(
-    repoMicroagent.repositoryName,
-    "microagent_management",
-    1000,
-  );
+  } = useSearchConversations(repositoryName, "microagent_management", 1000);
+
+  useEffect(() => {
+    const hasConversations = conversations && conversations.length > 0;
+    const selectedConversation = selectedMicroagentItem?.conversation;
+
+    if (hasConversations && selectedConversation) {
+      // get the latest selected conversation.
+      const latestSelectedConversation = conversations.find(
+        (conversation) =>
+          conversation.conversation_id === selectedConversation.conversation_id,
+      );
+      if (latestSelectedConversation) {
+        dispatch(
+          setSelectedMicroagentItem({
+            microagent: null,
+            conversation: latestSelectedConversation,
+          }),
+        );
+      }
+    }
+  }, [conversations]);
 
   // Show loading only when both queries are loading
   const isLoading = isLoadingMicroagents || isLoadingConversations;
@@ -54,9 +81,7 @@ export function MicroagentManagementRepoMicroagents({
   if (isError) {
     return (
       <div className="pb-4">
-        <MicroagentManagementLearnThisRepo
-          repositoryUrl={repoMicroagent.repositoryUrl}
-        />
+        <MicroagentManagementLearnThisRepo repositoryUrl={repositoryUrl} />
       </div>
     );
   }
@@ -68,9 +93,7 @@ export function MicroagentManagementRepoMicroagents({
   return (
     <div className="pb-4">
       {totalItems === 0 && (
-        <MicroagentManagementLearnThisRepo
-          repositoryUrl={repoMicroagent.repositoryUrl}
-        />
+        <MicroagentManagementLearnThisRepo repositoryUrl={repositoryUrl} />
       )}
 
       {/* Render microagents */}
@@ -78,11 +101,8 @@ export function MicroagentManagementRepoMicroagents({
         microagents?.map((microagent) => (
           <div key={microagent.name} className="pb-4 last:pb-0">
             <MicroagentManagementMicroagentCard
-              microagent={{
-                id: microagent.name,
-                name: microagent.name,
-                createdAt: microagent.created_at,
-              }}
+              microagent={microagent}
+              repository={repository}
             />
           </div>
         ))}
@@ -92,15 +112,8 @@ export function MicroagentManagementRepoMicroagents({
         conversations?.map((conversation) => (
           <div key={conversation.conversation_id} className="pb-4 last:pb-0">
             <MicroagentManagementMicroagentCard
-              microagent={{
-                id: conversation.conversation_id,
-                name: conversation.title,
-                createdAt: conversation.created_at,
-                conversationStatus: conversation.status,
-                runtimeStatus: conversation.runtime_status || undefined,
-                prNumber: conversation.pr_number || undefined,
-              }}
-              showMicroagentFilePath={false}
+              conversation={conversation}
+              repository={repository}
             />
           </div>
         ))}

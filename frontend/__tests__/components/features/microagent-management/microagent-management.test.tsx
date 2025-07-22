@@ -6,6 +6,7 @@ import { createRoutesStub } from "react-router";
 import React from "react";
 import { renderWithProviders } from "test-utils";
 import MicroagentManagement from "#/routes/microagent-management";
+import { MicroagentManagementMain } from "#/components/features/microagent-management/microagent-management-main";
 import OpenHands from "#/api/open-hands";
 import { GitRepository } from "#/types/git";
 import { RepositoryMicroagent } from "#/types/microagent-management";
@@ -28,12 +29,12 @@ describe("MicroagentManagement", () => {
           usage: null,
         },
         microagentManagement: {
-          selectedMicroagent: null,
           addMicroagentModalVisible: false,
           selectedRepository: null,
           personalRepositories: [],
           organizationRepositories: [],
           repositories: [],
+          selectedMicroagentItem: null,
         },
       },
     });
@@ -109,6 +110,7 @@ describe("MicroagentManagement", () => {
       tools: [],
       created_at: "2021-10-01T12:00:00Z",
       git_provider: "github",
+      path: ".openhands/microagents/test-microagent-1",
     },
     {
       name: "test-microagent-2",
@@ -119,6 +121,7 @@ describe("MicroagentManagement", () => {
       tools: [],
       created_at: "2021-10-02T12:00:00Z",
       git_provider: "github",
+      path: ".openhands/microagents/test-microagent-2",
     },
   ];
 
@@ -167,10 +170,6 @@ describe("MicroagentManagement", () => {
     // Setup default mock for searchConversations
     vi.spyOn(OpenHands, "searchConversations").mockResolvedValue([
       ...mockConversations,
-    ]);
-    // Mock branches to always return a 'main' branch for the modal
-    vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue([
-      { name: "main", commit_sha: "abc123", protected: false },
     ]);
   });
 
@@ -1234,6 +1233,12 @@ describe("MicroagentManagement", () => {
 
   // Add microagent integration tests
   describe("Add microagent functionality", () => {
+    beforeEach(() => {
+      vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue([
+        { name: "main", commit_sha: "abc123", protected: false },
+      ]);
+    });
+
     it("should render add microagent button", async () => {
       renderMicroagentManagement();
 
@@ -1276,17 +1281,16 @@ describe("MicroagentManagement", () => {
             usage: null,
           },
           microagentManagement: {
-            selectedMicroagent: null,
+            selectedMicroagentItem: null,
             addMicroagentModalVisible: true, // Start with modal visible
             selectedRepository: {
               id: "1",
-              name: "test-repo",
               full_name: "user/test-repo",
-              private: false,
               git_provider: "github",
-              default_branch: "main",
               is_public: true,
-            } as GitRepository,
+              owner_type: "user",
+              pushed_at: "2021-10-01T12:00:00Z",
+            },
             personalRepositories: [],
             organizationRepositories: [],
             repositories: [],
@@ -1395,9 +1399,10 @@ describe("MicroagentManagement", () => {
       await waitFor(() => {
         expect(screen.getByTestId("add-microagent-modal")).toBeInTheDocument();
       });
-      // Wait for the confirm button to be enabled after entering query and branch selection
+      // Enter query text
       const queryInput = screen.getByTestId("query-input");
       await user.type(queryInput, "Test query");
+      // Wait for the confirm button to be enabled after entering query and branch selection
       await waitFor(() => {
         const confirmButton = screen.getByTestId("confirm-button");
         expect(confirmButton).not.toBeDisabled();
@@ -1455,6 +1460,403 @@ describe("MicroagentManagement", () => {
         const confirmButton = screen.getByTestId("confirm-button");
         expect(confirmButton).not.toBeDisabled();
       });
+    });
+  });
+
+  // MicroagentManagementMain component tests
+  describe("MicroagentManagementMain", () => {
+    const mockRepositoryMicroagent: RepositoryMicroagent = {
+      name: "test-microagent",
+      type: "repo",
+      content: "Test microagent content",
+      triggers: ["test", "microagent"],
+      inputs: [],
+      tools: [],
+      created_at: "2021-10-01T12:00:00Z",
+      git_provider: "github",
+      path: ".openhands/microagents/test-microagent",
+    };
+
+    const mockConversationWithPr: Conversation = {
+      conversation_id: "conv-with-pr",
+      title: "Test Conversation with PR",
+      selected_repository: "user/repo2/.openhands",
+      selected_branch: "main",
+      git_provider: "github",
+      last_updated_at: "2021-10-01T12:00:00Z",
+      created_at: "2021-10-01T12:00:00Z",
+      status: "RUNNING",
+      runtime_status: "STATUS$READY",
+      trigger: "microagent_management",
+      url: null,
+      session_api_key: null,
+      pr_number: [123],
+    };
+
+    const mockConversationWithoutPr: Conversation = {
+      conversation_id: "conv-without-pr",
+      title: "Test Conversation without PR",
+      selected_repository: "user/repo2/.openhands",
+      selected_branch: "main",
+      git_provider: "github",
+      last_updated_at: "2021-10-01T12:00:00Z",
+      created_at: "2021-10-01T12:00:00Z",
+      status: "RUNNING",
+      runtime_status: "STATUS$READY",
+      trigger: "microagent_management",
+      url: null,
+      session_api_key: null,
+      pr_number: [],
+    };
+
+    const mockConversationWithNullPr: Conversation = {
+      conversation_id: "conv-null-pr",
+      title: "Test Conversation with null PR",
+      selected_repository: "user/repo2/.openhands",
+      selected_branch: "main",
+      git_provider: "github",
+      last_updated_at: "2021-10-01T12:00:00Z",
+      created_at: "2021-10-01T12:00:00Z",
+      status: "RUNNING",
+      runtime_status: null,
+      trigger: "microagent_management",
+      url: null,
+      session_api_key: null,
+      pr_number: null,
+    };
+
+    const renderMicroagentManagementMain = (selectedMicroagentItem: any) => {
+      return renderWithProviders(<MicroagentManagementMain />, {
+        preloadedState: {
+          metrics: {
+            cost: null,
+            max_budget_per_task: null,
+            usage: null,
+          },
+          microagentManagement: {
+            addMicroagentModalVisible: false,
+            selectedRepository: {
+              id: "1",
+              full_name: "user/test-repo",
+              git_provider: "github",
+              is_public: true,
+              owner_type: "user",
+              pushed_at: "2021-10-01T12:00:00Z",
+            },
+            personalRepositories: [],
+            organizationRepositories: [],
+            repositories: [],
+            selectedMicroagentItem,
+          },
+        },
+      });
+    };
+
+    it("should render MicroagentManagementDefault when no microagent or conversation is selected", async () => {
+      renderMicroagentManagementMain(null);
+
+      // Check that the default component is rendered
+      await screen.findByText("MICROAGENT_MANAGEMENT$READY_TO_ADD_MICROAGENT");
+      expect(
+        screen.getByText(
+          "MICROAGENT_MANAGEMENT$OPENHANDS_CAN_LEARN_ABOUT_REPOSITORIES",
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it("should render MicroagentManagementDefault when selectedMicroagentItem is empty object", async () => {
+      renderMicroagentManagementMain({});
+
+      // Check that the default component is rendered
+      await screen.findByText("MICROAGENT_MANAGEMENT$READY_TO_ADD_MICROAGENT");
+      expect(
+        screen.getByText(
+          "MICROAGENT_MANAGEMENT$OPENHANDS_CAN_LEARN_ABOUT_REPOSITORIES",
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it("should render MicroagentManagementViewMicroagent when microagent is selected", async () => {
+      renderMicroagentManagementMain({
+        microagent: mockRepositoryMicroagent,
+        conversation: null,
+      });
+
+      // Check that the microagent view component is rendered
+      await screen.findByText("test-microagent");
+      expect(
+        screen.getByText(".openhands/microagents/test-microagent"),
+      ).toBeInTheDocument();
+    });
+
+    it("should render MicroagentManagementOpeningPr when conversation is selected with empty pr_number array", async () => {
+      renderMicroagentManagementMain({
+        microagent: null,
+        conversation: mockConversationWithoutPr,
+      });
+
+      // Check that the opening PR component is rendered
+      await screen.findByText(
+        (content) => content === "COMMON$WORKING_ON_IT!",
+        { exact: false },
+      );
+      expect(
+        screen.getByText("MICROAGENT_MANAGEMENT$WE_ARE_WORKING_ON_IT"),
+      ).toBeInTheDocument();
+      expect(screen.getAllByTestId("view-conversation-button")).toHaveLength(1);
+    });
+
+    it("should render MicroagentManagementOpeningPr when conversation is selected with null pr_number", async () => {
+      const conversationWithNullPr = {
+        ...mockConversationWithoutPr,
+        pr_number: null,
+      };
+      renderMicroagentManagementMain({
+        microagent: null,
+        conversation: conversationWithNullPr,
+      });
+
+      // Check that the opening PR component is rendered
+      await screen.findByText(
+        (content) => content === "COMMON$WORKING_ON_IT!",
+        { exact: false },
+      );
+      expect(
+        screen.getByText("MICROAGENT_MANAGEMENT$WE_ARE_WORKING_ON_IT"),
+      ).toBeInTheDocument();
+      expect(screen.getAllByTestId("view-conversation-button")).toHaveLength(1);
+    });
+
+    it("should render MicroagentManagementReviewPr when conversation is selected with non-empty pr_number array", async () => {
+      renderMicroagentManagementMain({
+        microagent: null,
+        conversation: mockConversationWithPr,
+      });
+
+      // Check that the review PR component is rendered
+      await screen.findByText("MICROAGENT_MANAGEMENT$YOUR_MICROAGENT_IS_READY");
+      expect(screen.getAllByTestId("view-conversation-button")).toHaveLength(2);
+    });
+
+    it("should prioritize microagent over conversation when both are present", async () => {
+      renderMicroagentManagementMain({
+        microagent: mockRepositoryMicroagent,
+        conversation: mockConversationWithPr,
+      });
+
+      // Should render the microagent view, not the conversation view
+      await screen.findByText("test-microagent");
+      expect(
+        screen.getByText(".openhands/microagents/test-microagent"),
+      ).toBeInTheDocument();
+
+      // Should NOT render the review PR component
+      expect(
+        screen.queryByText("MICROAGENT_MANAGEMENT$YOUR_MICROAGENT_IS_READY"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("should handle conversation with undefined pr_number", async () => {
+      const conversationWithUndefinedPr = {
+        ...mockConversationWithoutPr,
+      };
+      delete conversationWithUndefinedPr.pr_number;
+
+      renderMicroagentManagementMain({
+        microagent: null,
+        conversation: conversationWithUndefinedPr,
+      });
+
+      // Should render the opening PR component (treats undefined as empty array)
+      await screen.findByText(
+        (content) => content === "COMMON$WORKING_ON_IT!",
+        { exact: false },
+      );
+      expect(
+        screen.getByText("MICROAGENT_MANAGEMENT$WE_ARE_WORKING_ON_IT"),
+      ).toBeInTheDocument();
+    });
+
+    it("should handle conversation with multiple PR numbers", async () => {
+      const conversationWithMultiplePrs = {
+        ...mockConversationWithPr,
+        pr_number: [123, 456, 789],
+      };
+
+      renderMicroagentManagementMain({
+        microagent: null,
+        conversation: conversationWithMultiplePrs,
+      });
+
+      // Should render the review PR component (non-empty array)
+      await screen.findByText("MICROAGENT_MANAGEMENT$YOUR_MICROAGENT_IS_READY");
+      expect(screen.getAllByTestId("view-conversation-button")).toHaveLength(2);
+    });
+
+    it("should handle conversation with empty string pr_number", async () => {
+      const conversationWithEmptyStringPr = {
+        ...mockConversationWithoutPr,
+        pr_number: "",
+      };
+
+      renderMicroagentManagementMain({
+        microagent: null,
+        conversation: conversationWithEmptyStringPr,
+      });
+
+      // Should render the opening PR component (treats empty string as empty array)
+      await screen.findByText(
+        (content) => content === "COMMON$WORKING_ON_IT!",
+        { exact: false },
+      );
+      expect(
+        screen.getByText("MICROAGENT_MANAGEMENT$WE_ARE_WORKING_ON_IT"),
+      ).toBeInTheDocument();
+    });
+
+    it("should handle conversation with zero pr_number", async () => {
+      const conversationWithZeroPr = {
+        ...mockConversationWithoutPr,
+        pr_number: 0,
+      };
+
+      renderMicroagentManagementMain({
+        microagent: null,
+        conversation: conversationWithZeroPr,
+      });
+
+      // Should render the opening PR component (treats 0 as falsy)
+      await screen.findByText(
+        (content) => content === "COMMON$WORKING_ON_IT!",
+        { exact: false },
+      );
+      expect(
+        screen.getByText("MICROAGENT_MANAGEMENT$WE_ARE_WORKING_ON_IT"),
+      ).toBeInTheDocument();
+    });
+
+    it("should handle conversation with single PR number as array", async () => {
+      const conversationWithSinglePr = {
+        ...mockConversationWithPr,
+        pr_number: [42],
+      };
+
+      renderMicroagentManagementMain({
+        microagent: null,
+        conversation: conversationWithSinglePr,
+      });
+
+      // Should render the review PR component (non-empty array)
+      await screen.findByText("MICROAGENT_MANAGEMENT$YOUR_MICROAGENT_IS_READY");
+      expect(screen.getAllByTestId("view-conversation-button")).toHaveLength(2);
+    });
+
+    it("should handle edge case with null selectedMicroagentItem", async () => {
+      renderMicroagentManagementMain(null);
+
+      // Should render the default component
+      await screen.findByText("MICROAGENT_MANAGEMENT$READY_TO_ADD_MICROAGENT");
+      expect(
+        screen.getByText(
+          "MICROAGENT_MANAGEMENT$OPENHANDS_CAN_LEARN_ABOUT_REPOSITORIES",
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it("should handle edge case with undefined selectedMicroagentItem", async () => {
+      renderMicroagentManagementMain(undefined);
+
+      // Should render the default component
+      await screen.findByText("MICROAGENT_MANAGEMENT$READY_TO_ADD_MICROAGENT");
+      expect(
+        screen.getByText(
+          "MICROAGENT_MANAGEMENT$OPENHANDS_CAN_LEARN_ABOUT_REPOSITORIES",
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it("should handle conversation with missing pr_number property", async () => {
+      const conversationWithoutPrNumber = {
+        conversation_id: "conv-no-pr-number",
+        title: "Test Conversation without PR number property",
+        selected_repository: "user/repo2/.openhands",
+        selected_branch: "main",
+        git_provider: "github",
+        last_updated_at: "2021-10-01T12:00:00Z",
+        created_at: "2021-10-01T12:00:00Z",
+        status: "RUNNING",
+        runtime_status: "STATUS$READY",
+        trigger: "microagent_management",
+        url: null,
+        session_api_key: null,
+        // pr_number property is missing
+      };
+
+      renderMicroagentManagementMain({
+        microagent: null,
+        conversation: conversationWithoutPrNumber,
+      });
+
+      // Should render the opening PR component (undefined pr_number defaults to empty array)
+      await screen.findByText(
+        (content) => content === "COMMON$WORKING_ON_IT!",
+        { exact: false },
+      );
+      expect(
+        screen.getByText("MICROAGENT_MANAGEMENT$WE_ARE_WORKING_ON_IT"),
+      ).toBeInTheDocument();
+    });
+
+    it("should handle microagent with all required properties", async () => {
+      const completeMicroagent: RepositoryMicroagent = {
+        name: "complete-microagent",
+        type: "knowledge",
+        content: "Complete microagent content with all properties",
+        triggers: ["complete", "test"],
+        inputs: ["input1", "input2"],
+        tools: ["tool1", "tool2"],
+        created_at: "2021-10-01T12:00:00Z",
+        git_provider: "github",
+        path: ".openhands/microagents/complete-microagent",
+      };
+
+      renderMicroagentManagementMain({
+        microagent: completeMicroagent,
+        conversation: null,
+      });
+
+      // Check that the microagent view component is rendered with complete data
+      await screen.findByText("complete-microagent");
+      expect(
+        screen.getByText(".openhands/microagents/complete-microagent"),
+      ).toBeInTheDocument();
+    });
+
+    it("should handle conversation with all required properties", async () => {
+      const completeConversation: Conversation = {
+        conversation_id: "complete-conversation",
+        title: "Complete Conversation",
+        selected_repository: "user/complete-repo/.openhands",
+        selected_branch: "main",
+        git_provider: "github",
+        last_updated_at: "2021-10-01T12:00:00Z",
+        created_at: "2021-10-01T12:00:00Z",
+        status: "RUNNING",
+        runtime_status: "STATUS$READY",
+        trigger: "microagent_management",
+        url: "https://example.com",
+        session_api_key: "test-api-key",
+        pr_number: [999],
+      };
+
+      renderMicroagentManagementMain({
+        microagent: null,
+        conversation: completeConversation,
+      });
+
+      // Check that the review PR component is rendered with complete data
+      await screen.findByText("MICROAGENT_MANAGEMENT$YOUR_MICROAGENT_IS_READY");
+      expect(screen.getAllByTestId("view-conversation-button")).toHaveLength(2);
     });
   });
 });

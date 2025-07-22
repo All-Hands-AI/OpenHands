@@ -1,3 +1,5 @@
+import { Conversation } from "#/api/open-hands.types";
+
 export type TabType = "personal" | "repositories" | "organizations";
 
 export interface RepositoryMicroagent {
@@ -9,6 +11,12 @@ export interface RepositoryMicroagent {
   tools: string[];
   created_at: string;
   git_provider: string;
+  path: string;
+}
+
+export interface IMicroagentItem {
+  microagent?: RepositoryMicroagent;
+  conversation?: Conversation;
 }
 
 export interface MicroagentFormData {

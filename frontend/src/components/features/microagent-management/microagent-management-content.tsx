@@ -178,9 +178,11 @@ export function MicroagentManagementContent() {
   };
 
   return (
-    <div className="w-full h-full flex rounded-lg border border-[#525252] bg-[#24272E]">
+    <div className="w-full h-full flex rounded-lg border border-[#525252] bg-[#24272E] overflow-hidden">
       <MicroagentManagementSidebar />
-      <MicroagentManagementMain />
+      <div className="flex-1">
+        <MicroagentManagementMain />
+      </div>
       {addMicroagentModalVisible && (
         <MicroagentManagementAddMicroagentModal
           onConfirm={handleCreateMicroagent}
