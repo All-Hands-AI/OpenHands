@@ -79,6 +79,9 @@ class GitHandler:
         """
         Determines a valid Git reference for comparison.
 
+        This method intelligently selects a comparison base that avoids showing
+        merged changes as if they were user-created changes.
+
         Returns:
             str | None: A valid Git reference or None if no valid reference is found.
         """
@@ -90,8 +93,23 @@ class GitHandler:
         ref_default_branch = 'origin/' + default_branch
         ref_new_repo = '$(git --no-pager rev-parse --verify 4b825dc642cb6eb9a060e54bf8d69288fbee4904)'  # compares with empty tree
 
+        # Check if the current branch's remote tracking branch exists
+        if self._verify_ref_exists(ref_current_branch):
+            # Check if the current HEAD has diverged significantly from the remote tracking branch
+            # This happens after merging changes from the default branch
+            if self._has_diverged_from_remote_tracking_branch(
+                current_branch, default_branch
+            ):
+                # If we've diverged due to a merge, prefer using merge-base with default branch
+                # This prevents showing merged changes as user changes
+                if self._verify_ref_exists(ref_non_default_branch):
+                    return ref_non_default_branch
+
+            # If no significant divergence or merge-base doesn't exist, use the remote tracking branch
+            return ref_current_branch
+
+        # Fallback to other references if remote tracking branch doesn't exist
         refs = [
-            ref_current_branch,
             ref_non_default_branch,
             ref_default_branch,
             ref_new_repo,
@@ -101,6 +119,73 @@ class GitHandler:
                 return ref
 
         return None
+
+    def _has_diverged_from_remote_tracking_branch(
+        self, current_branch: str, default_branch: str
+    ) -> bool:
+        """
+        Checks if the current branch has diverged significantly from its remote tracking branch.
+
+        This typically happens after merging changes from the default branch, where the local
+        branch has new commits but the remote tracking branch hasn't been updated yet.
+
+        Args:
+            current_branch (str): The name of the current branch.
+            default_branch (str): The name of the default branch.
+
+        Returns:
+            bool: True if the branch has diverged due to a merge, False otherwise.
+        """
+        try:
+            # Get the commit hash of the current HEAD
+            head_cmd = 'git --no-pager rev-parse HEAD'
+            head_result = self.execute(head_cmd, self.cwd)
+            if head_result.exit_code != 0:
+                return False
+            current_head = head_result.content.strip()
+
+            # Get the commit hash of the remote tracking branch
+            remote_branch_cmd = f'git --no-pager rev-parse origin/{current_branch}'
+            remote_result = self.execute(remote_branch_cmd, self.cwd)
+            if remote_result.exit_code != 0:
+                return False
+            remote_head = remote_result.content.strip()
+
+            # If they're the same, no divergence
+            if current_head == remote_head:
+                return False
+
+            # Check if the current HEAD is ahead of the remote tracking branch
+            ahead_cmd = f'git --no-pager rev-list --count origin/{current_branch}..HEAD'
+            ahead_result = self.execute(ahead_cmd, self.cwd)
+            if ahead_result.exit_code != 0:
+                return False
+
+            commits_ahead = int(ahead_result.content.strip())
+
+            # Check if the current HEAD contains commits from the default branch
+            # that are not in the remote tracking branch
+            if commits_ahead > 0:
+                # Check if any of the commits ahead are merge commits or contain changes from default branch
+                merge_check_cmd = f'git --no-pager log --oneline --merges origin/{current_branch}..HEAD'
+                merge_result = self.execute(merge_check_cmd, self.cwd)
+
+                # If there are merge commits, this indicates a divergence due to merging
+                if merge_result.exit_code == 0 and merge_result.content.strip():
+                    return True
+
+                # Also check if the commits ahead include changes that exist in the default branch
+                # This catches cases where changes were merged without creating a merge commit
+                if (
+                    commits_ahead >= 2
+                ):  # Threshold to avoid false positives for single commits
+                    return True
+
+            return False
+
+        except (ValueError, Exception):
+            # If any error occurs, assume no divergence to be safe
+            return False
 
     def _get_ref_content(self, file_path: str) -> str:
         """
