@@ -118,22 +118,28 @@ class GitHandler:
         ref_default_branch = 'origin/' + default_branch
         ref_new_repo = '$(git --no-pager rev-parse --verify 4b825dc642cb6eb9a060e54bf8d69288fbee4904)'  # compares with empty tree
 
-        # If there are recent merge commits, prefer merge-base to show only user changes
-        # Otherwise, prefer origin/current-branch to show changes since last push
-        if self._has_recent_merge_commits() and self._verify_ref_exists(ref_merge_base):
-            refs = [
-                ref_merge_base,
-                ref_current_branch,
-                ref_default_branch,
-                ref_new_repo,
-            ]
-        else:
-            refs = [
-                ref_current_branch,
-                ref_merge_base,
-                ref_default_branch,
-                ref_new_repo,
-            ]
+        # Only use merge-base if:
+        # 1. There are recent merge commits AND
+        # 2. origin/current-branch would show merged content (is behind after merge)
+        if (
+            self._has_recent_merge_commits()
+            and self._verify_ref_exists(ref_current_branch)
+            and self._verify_ref_exists(ref_merge_base)
+        ):
+            # Check if origin/current-branch is behind (would show merged content)
+            cmd = f'git --no-pager rev-list --count {ref_current_branch}..HEAD'
+            output = self.execute(cmd, self.cwd)
+            if output.exit_code == 0 and int(output.content.strip()) > 0:
+                # origin/current-branch is behind, use merge-base to filter merged content
+                return ref_merge_base
+
+        # Default behavior: use origin/current-branch first (shows changes since push)
+        refs = [
+            ref_current_branch,
+            ref_merge_base,
+            ref_default_branch,
+            ref_new_repo,
+        ]
 
         for ref in refs:
             if self._verify_ref_exists(ref):
