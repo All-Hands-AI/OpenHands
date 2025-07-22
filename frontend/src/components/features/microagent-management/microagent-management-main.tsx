@@ -4,13 +4,6 @@ import { MicroagentManagementDefault } from "./microagent-management-default";
 import { MicroagentManagementOpeningPr } from "./microagent-management-opening-pr";
 import { MicroagentManagementReviewPr } from "./microagent-management-review-pr";
 import { MicroagentManagementViewMicroagent } from "./microagent-management-view-microagent";
-import {
-  isConversationCompleted,
-  isConversationError,
-  isConversationOpeningPR,
-  isConversationStarting,
-  isConversationStopped,
-} from "#/utils/utils";
 import { MicroagentManagementError } from "./microagent-management-error";
 import { MicroagentManagementConversationStopped } from "./microagent-management-conversation-stopped";
 
@@ -29,26 +22,28 @@ export function MicroagentManagementMain() {
     const hasPr = !!(
       conversation.pr_number && conversation.pr_number.length > 0
     );
-    if (isConversationCompleted(hasPr)) {
+    if (hasPr) {
       return <MicroagentManagementReviewPr />;
     }
 
-    if (
-      isConversationStarting(
-        conversation.status,
-        conversation.runtime_status,
-      ) ||
-      isConversationOpeningPR(conversation.status, conversation.runtime_status)
-    ) {
+    const isConversationStarting =
+      conversation.status === "STARTING" ||
+      conversation.runtime_status === "STATUS$STARTING_RUNTIME";
+    const isConversationOpeningPr =
+      conversation.status === "RUNNING" &&
+      conversation.runtime_status === "STATUS$READY";
+
+    if (isConversationStarting || isConversationOpeningPr) {
       return <MicroagentManagementOpeningPr />;
     }
 
-    if (isConversationError(conversation.runtime_status)) {
+    if (conversation.runtime_status === "STATUS$ERROR") {
       return <MicroagentManagementError />;
     }
 
     if (
-      isConversationStopped(conversation.status, conversation.runtime_status)
+      conversation.status === "STOPPED" ||
+      conversation.runtime_status === "STATUS$STOPPED"
     ) {
       return <MicroagentManagementConversationStopped />;
     }

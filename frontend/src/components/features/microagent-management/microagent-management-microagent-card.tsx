@@ -10,14 +10,7 @@ import {
   setSelectedRepository,
 } from "#/state/microagent-management-slice";
 import { RootState } from "#/store";
-import {
-  cn,
-  isConversationCompleted,
-  isConversationError,
-  isConversationOpeningPR,
-  isConversationStarting,
-  isConversationStopped,
-} from "#/utils/utils";
+import { cn } from "#/utils/utils";
 import { GitRepository } from "#/types/git";
 
 interface MicroagentManagementMicroagentCardProps {
@@ -65,21 +58,25 @@ export function MicroagentManagementMicroagentCard({
 
   // Helper function to get status text
   const statusText = useMemo(() => {
-    if (isConversationCompleted(hasPr)) {
-      return hasPr
-        ? t(I18nKey.COMMON$READY_FOR_REVIEW)
-        : t(I18nKey.COMMON$COMPLETED_PARTIALLY);
+    if (hasPr) {
+      return t(I18nKey.COMMON$READY_FOR_REVIEW);
     }
-    if (isConversationStarting(conversationStatus, runtimeStatus)) {
+    if (
+      conversationStatus === "STARTING" ||
+      runtimeStatus === "STATUS$STARTING_RUNTIME"
+    ) {
       return t(I18nKey.COMMON$STARTING);
     }
-    if (isConversationStopped(conversationStatus, runtimeStatus)) {
+    if (
+      conversationStatus === "STOPPED" ||
+      runtimeStatus === "STATUS$STOPPED"
+    ) {
       return t(I18nKey.COMMON$STOPPED);
     }
-    if (isConversationError(runtimeStatus)) {
+    if (runtimeStatus === "STATUS$ERROR") {
       return t(I18nKey.MICROAGENT$STATUS_ERROR);
     }
-    if (isConversationOpeningPR(conversationStatus, runtimeStatus)) {
+    if (conversationStatus === "RUNNING" && runtimeStatus === "STATUS$READY") {
       return t(I18nKey.MICROAGENT$STATUS_OPENING_PR);
     }
     return "";

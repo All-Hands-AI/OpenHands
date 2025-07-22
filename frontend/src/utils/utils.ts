@@ -1,8 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { Provider } from "#/types/settings";
-import { ConversationStatus } from "#/types/conversation-status";
-import { RuntimeStatus } from "#/types/runtime-status";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -120,29 +118,6 @@ export const getGitProviderBaseUrl = (gitProvider: Provider): string => {
 };
 
 /**
- * Get the default branch name for a git provider
- * @param gitProvider The git provider
- * @returns The default branch name for the provider
- *
- * @example
- * getDefaultBranch("github") // "main"
- * getDefaultBranch("gitlab") // "main"
- * getDefaultBranch("bitbucket") // "main"
- */
-export const getDefaultBranch = (gitProvider: Provider): string => {
-  switch (gitProvider) {
-    case "github":
-      return "main";
-    case "gitlab":
-      return "main";
-    case "bitbucket":
-      return "main";
-    default:
-      return "main";
-  }
-};
-
-/**
  * Get the name of the git provider
  * @param gitProvider The git provider
  * @returns The name of the git provider
@@ -232,26 +207,3 @@ export const constructMicroagentUrl = (
       return "";
   }
 };
-
-export const isConversationStarting = (
-  conversationStatus: ConversationStatus | null | undefined,
-  runtimeStatus: RuntimeStatus | null | undefined,
-) =>
-  conversationStatus === "STARTING" ||
-  runtimeStatus === "STATUS$STARTING_RUNTIME";
-
-export const isConversationStopped = (
-  conversationStatus: ConversationStatus | null | undefined,
-  runtimeStatus: RuntimeStatus | null | undefined,
-) => conversationStatus === "STOPPED" || runtimeStatus === "STATUS$STOPPED";
-
-export const isConversationError = (
-  runtimeStatus: RuntimeStatus | null | undefined,
-) => runtimeStatus === "STATUS$ERROR";
-
-export const isConversationCompleted = (hasPr: boolean) => hasPr;
-
-export const isConversationOpeningPR = (
-  conversationStatus: ConversationStatus | null | undefined,
-  runtimeStatus: RuntimeStatus | null | undefined,
-) => conversationStatus === "RUNNING" && runtimeStatus === "STATUS$READY";
