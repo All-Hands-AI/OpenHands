@@ -79,7 +79,11 @@ export interface RepositorySelection {
   git_provider: Provider | null;
 }
 
-export type ConversationTrigger = "resolver" | "gui" | "suggested_task";
+export type ConversationTrigger =
+  | "resolver"
+  | "gui"
+  | "suggested_task"
+  | "microagent_management";
 
 export interface Conversation {
   conversation_id: string;
@@ -94,6 +98,7 @@ export interface Conversation {
   trigger?: ConversationTrigger;
   url: string | null;
   session_api_key: string | null;
+  pr_number?: number[] | null;
 }
 
 export interface ResultSet<T> {
@@ -132,4 +137,10 @@ export interface GetMicroagentsResponse {
 export interface GetMicroagentPromptResponse {
   status: string;
   prompt: string;
+}
+
+export interface CreateMicroagent {
+  repo: string;
+  git_provider?: Provider;
+  title?: string;
 }

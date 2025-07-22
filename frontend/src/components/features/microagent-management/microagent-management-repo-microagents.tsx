@@ -1,29 +1,55 @@
+import { useSelector } from "react-redux";
 import { MicroagentManagementMicroagentCard } from "./microagent-management-microagent-card";
 import { MicroagentManagementLearnThisRepo } from "./microagent-management-learn-this-repo";
 import { useRepositoryMicroagents } from "#/hooks/query/use-repository-microagents";
+import { useSearchConversations } from "#/hooks/query/use-search-conversations";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
-
-export interface RepoMicroagent {
-  id: string;
-  repositoryName: string;
-  repositoryUrl: string;
-}
+import { RootState } from "#/store";
+import { GitRepository } from "#/types/git";
+import { getGitProviderBaseUrl } from "#/utils/utils";
 
 interface MicroagentManagementRepoMicroagentsProps {
-  repoMicroagent: RepoMicroagent;
+  repository: GitRepository;
 }
 
 export function MicroagentManagementRepoMicroagents({
-  repoMicroagent,
+  repository,
 }: MicroagentManagementRepoMicroagentsProps) {
+  const { full_name: repositoryName, git_provider: gitProvider } = repository;
+
   // Extract owner and repo from repositoryName (format: "owner/repo")
-  const [owner, repo] = repoMicroagent.repositoryName.split("/");
+  const [owner, repo] = repositoryName.split("/");
+
+  const repositoryUrl = `${getGitProviderBaseUrl(gitProvider)}/${repositoryName}`;
+
+  // Get microagentStatuses from global state
+  const { microagentStatuses } = useSelector(
+    (state: RootState) => state.microagentManagement,
+  );
 
   const {
     data: microagents,
-    isLoading,
-    isError,
+    isLoading: isLoadingMicroagents,
+    isError: isErrorMicroagents,
   } = useRepositoryMicroagents(owner, repo);
+
+  const {
+    data: conversations,
+    isLoading: isLoadingConversations,
+    isError: isErrorConversations,
+  } = useSearchConversations(repositoryName, "microagent_management", 1000);
+
+  // Show loading only when both queries are loading
+  const isLoading = isLoadingMicroagents || isLoadingConversations;
+
+  // Show error UI.
+  const isError = isErrorMicroagents || isErrorConversations;
+
+  // Helper function to get microagent status for a conversation
+  const getMicroagentStatus = (conversationId: string) =>
+    microagentStatuses.find(
+      (status) => status.conversationId === conversationId,
+    );
 
   if (isLoading) {
     return (
@@ -33,37 +59,53 @@ export function MicroagentManagementRepoMicroagents({
     );
   }
 
+  // If there's an error with microagents, show the learn this repo component
   if (isError) {
     return (
       <div className="pb-4">
-        <MicroagentManagementLearnThisRepo
-          repositoryUrl={repoMicroagent.repositoryUrl}
-        />
+        <MicroagentManagementLearnThisRepo repositoryUrl={repositoryUrl} />
       </div>
     );
   }
 
   const numberOfMicroagents = microagents?.length || 0;
+  const numberOfConversations = conversations?.length || 0;
+  const totalItems = numberOfMicroagents + numberOfConversations;
 
   return (
     <div className="pb-4">
-      {numberOfMicroagents === 0 && (
-        <MicroagentManagementLearnThisRepo
-          repositoryUrl={repoMicroagent.repositoryUrl}
-        />
+      {totalItems === 0 && (
+        <MicroagentManagementLearnThisRepo repositoryUrl={repositoryUrl} />
       )}
+
+      {/* Render microagents */}
       {numberOfMicroagents > 0 &&
         microagents?.map((microagent) => (
           <div key={microagent.name} className="pb-4 last:pb-0">
             <MicroagentManagementMicroagentCard
-              microagent={{
-                id: microagent.name,
-                name: microagent.name,
-                createdAt: microagent.created_at,
-              }}
+              microagent={microagent}
+              repository={repository}
             />
           </div>
         ))}
+
+      {/* Render conversations */}
+      {numberOfConversations > 0 &&
+        conversations?.map((conversation) => {
+          const microagentStatus = getMicroagentStatus(
+            conversation.conversation_id,
+          );
+
+          return (
+            <div key={conversation.conversation_id} className="pb-4 last:pb-0">
+              <MicroagentManagementMicroagentCard
+                conversation={conversation}
+                microagentStatus={microagentStatus}
+                repository={repository}
+              />
+            </div>
+          );
+        })}
     </div>
   );
 }

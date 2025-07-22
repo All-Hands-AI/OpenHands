@@ -1,29 +1,29 @@
 import { useSelector } from "react-redux";
-import { useTranslation } from "react-i18next";
 import { RootState } from "#/store";
-import { I18nKey } from "#/i18n/declaration";
+import { MicroagentManagementDefault } from "./microagent-management-default";
+import { MicroagentManagementOpeningPr } from "./microagent-management-opening-pr";
+import { MicroagentManagementReviewPr } from "./microagent-management-review-pr";
+import { MicroagentManagementViewMicroagent } from "./microagent-management-view-microagent";
 
 export function MicroagentManagementMain() {
-  const { t } = useTranslation();
-
-  const { selectedMicroagent } = useSelector(
+  const { selectedMicroagentItem } = useSelector(
     (state: RootState) => state.microagentManagement,
   );
 
-  if (!selectedMicroagent) {
-    return (
-      <div className="flex-1 flex flex-col h-full items-center justify-center">
-        <div className="text-[#F9FBFE] text-xl font-bold pb-4">
-          {t(I18nKey.MICROAGENT_MANAGEMENT$READY_TO_ADD_MICROAGENT)}
-        </div>
-        <div className="text-white text-sm font-normal text-center max-w-[455px]">
-          {t(
-            I18nKey.MICROAGENT_MANAGEMENT$OPENHANDS_CAN_LEARN_ABOUT_REPOSITORIES,
-          )}
-        </div>
-      </div>
-    );
+  const { microagent, conversation } = selectedMicroagentItem ?? {};
+
+  if (microagent) {
+    return <MicroagentManagementViewMicroagent />;
   }
 
-  return null;
+  if (conversation) {
+    const prNumber = conversation.pr_number || [];
+    if (prNumber.length === 0) {
+      return <MicroagentManagementOpeningPr />;
+    }
+
+    return <MicroagentManagementReviewPr />;
+  }
+
+  return <MicroagentManagementDefault />;
 }
