@@ -73,9 +73,9 @@ class FileConversationStore(ConversationStore):
         metadata_dir = self.get_conversation_metadata_dir()
         try:
             conversation_ids = [
-                path.split('/')[-2]
+                Path(path).name
                 for path in self.file_store.list(metadata_dir)
-                if not path.startswith(f'{metadata_dir}/.')
+                if not Path(path).name.startswith('.')
             ]
         except FileNotFoundError:
             return ConversationMetadataResultSet([])
