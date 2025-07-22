@@ -1,28 +1,31 @@
 #!/bin/bash
 
 echo "Running OpenHands pre-commit hook..."
+echo "This hook runs 'make lint' to ensure code quality before committing."
 
 # Store the exit code to return at the end
 # This allows us to be additive to existing pre-commit hooks
 EXIT_CODE=0
 
+# Run make lint to check both frontend and backend code
+echo "Running linting checks with 'make lint'..."
+make lint
+if [ $? -ne 0 ]; then
+    echo "Linting failed. Please fix the issues before committing."
+    EXIT_CODE=1
+else
+    echo "Linting checks passed!"
+fi
+
 # Check if frontend directory has changed
 frontend_changes=$(git diff --cached --name-only | grep "^frontend/")
 if [ -n "$frontend_changes" ]; then
-    echo "Frontend changes detected. Running frontend checks..."
+    echo "Frontend changes detected. Running additional frontend checks..."
 
     # Check if frontend directory exists
     if [ -d "frontend" ]; then
         # Change to frontend directory
         cd frontend || exit 1
-
-        # Run lint:fix
-        echo "Running npm lint:fix..."
-        npm run lint:fix
-        if [ $? -ne 0 ]; then
-            echo "Frontend linting failed. Please fix the issues before committing."
-            EXIT_CODE=1
-        fi
 
         # Run build
         echo "Running npm build..."
@@ -50,7 +53,7 @@ if [ -n "$frontend_changes" ]; then
         echo "Frontend directory not found. Skipping frontend checks."
     fi
 else
-    echo "No frontend changes detected. Skipping frontend checks."
+    echo "No frontend changes detected. Skipping additional frontend checks."
 fi
 
 # Run any existing pre-commit hooks that might have been installed by the user
