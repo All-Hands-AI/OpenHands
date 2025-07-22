@@ -464,13 +464,12 @@ class AgentController:
             observation (observation): The observation to handle.
         """
         observation_to_print = copy.deepcopy(observation)
-        if self.agent.active_llm and (
-            len(observation_to_print.content)
-            > self.agent.active_llm.config.max_message_chars
+        if self.agent.llm and (
+            len(observation_to_print.content) > self.agent.llm.config.max_message_chars
         ):
             observation_to_print.content = truncate_content(
                 observation_to_print.content,
-                self.agent.active_llm.config.max_message_chars,
+                self.agent.llm.config.max_message_chars,
             )
         # Use info level if LOG_ALL_EVENTS is set
         log_level = 'info' if os.getenv('LOG_ALL_EVENTS') in ('true', '1') else 'debug'
@@ -1009,8 +1008,8 @@ class AgentController:
 
         routing_llms_metrics: list[Metrics] = []
         # Get metrics from routing LLMs if they exist
-        if hasattr(self.agent, 'routing_llms'):
-            for routing_llm in self.agent.routing_llms:
+        if hasattr(self.agent, 'router'):
+            for routing_llm in list(self.agent.router.routing_llms.values()):
                 routing_llms_metrics.append(routing_llm.metrics)
 
         # Create a new minimal metrics object with just what the frontend needs

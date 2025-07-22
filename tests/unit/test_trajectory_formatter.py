@@ -29,6 +29,7 @@ def test_system_message_only():
     ]
     expected_output = """*** System Message that describes the assistant's behavior ***
 System behavior description.
+
 ----------------------------------------------------------------------------------------------------
 """
     assert format_trajectory(traj) == expected_output
@@ -45,6 +46,8 @@ def test_user_messages_only():
 *** Turn 1 - USER ***
 Hello.
 How are you?
+
+
 ----------------------------------------------------------------------------------------------------
 """
     assert format_trajectory(traj) == expected_output
@@ -62,18 +65,25 @@ def test_mixed_messages():
     ]
     expected_output = """*** System Message that describes the assistant's behavior ***
 System behavior description.
+
 ----------------------------------------------------------------------------------------------------
 *** Turn 1 - USER ***
 Hello.
+
+
 ----------------------------------------------------------------------------------------------------
 *** Turn 1 - ASSISTANT ***
 Hi there!
+
 ----------------------------------------------------------------------------------------------------
 *** Turn 2 - USER ***
 你好
+
+
 ----------------------------------------------------------------------------------------------------
 *** Turn 2 - ASSISTANT ***
 你好
+
 ----------------------------------------------------------------------------------------------------
 """
     assert format_trajectory(traj) == expected_output
@@ -93,6 +103,7 @@ def test_tool_call_handling():
     expected_output = """----------------------------------------------------------------------------------------------------
 *** Turn 1 - ASSISTANT ***
 Running the tool.
+
 ### Tool Call 0
 <function=fn>
 <parameter=param1>value1</parameter>

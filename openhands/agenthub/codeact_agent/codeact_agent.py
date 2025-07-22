@@ -34,10 +34,7 @@ from openhands.llm.llm_utils import check_tools
 from openhands.memory.condenser import Condenser
 from openhands.memory.condenser.condenser import Condensation, View
 from openhands.memory.conversation_memory import ConversationMemory
-from openhands.router import (
-    BaseRouter,
-    ROUTER_REGISTRY,
-)
+from openhands.router import ROUTER_REGISTRY
 
 from openhands.runtime.plugins import (
     AgentSkillsRequirement,
@@ -45,7 +42,6 @@ from openhands.runtime.plugins import (
     PluginRequirement,
 )
 from openhands.utils.prompt import PromptManager
-
 
 
 class CodeActAgent(Agent):
@@ -81,7 +77,7 @@ class CodeActAgent(Agent):
         self,
         llm: LLM,
         config: AgentConfig,
-        model_routing_config: ModelRoutingConfig | None = None,
+        model_routing_config: ModelRoutingConfig = ModelRoutingConfig(),
         routing_llms: dict[str, LLM] | None = None,
     ) -> None:
         """Initializes a new instance of the CodeActAgent class.
@@ -102,27 +98,17 @@ class CodeActAgent(Agent):
         self.condenser = Condenser.from_config(self.config.condenser)
         logger.debug(f'Using condenser: {type(self.condenser)}')
 
-        self.router: BaseRouter | None = None
-
-        if config.enable_model_routing:
-            assert model_routing_config is not None and routing_llms is not None
-            router_cls = ROUTER_REGISTRY.get(model_routing_config.router_name, None)
-            if router_cls is None:
-                raise ValueError(
-                    f'Router {model_routing_config.router_name} not found in registry.'
-                )
-
-            self.router = router_cls(
-                llm=self.llm,
-                routing_llms=routing_llms or dict(),
-                model_routing_config=model_routing_config,
+        router_cls = ROUTER_REGISTRY.get(model_routing_config.router_name, None)
+        if router_cls is None:
+            raise ValueError(
+                f'Router {model_routing_config.router_name} not found in registry.'
             )
-
-        self.routing_llms = (
-            [routing_llm for routing_llm in routing_llms.values()]
-            if routing_llms
-            else []
+        self.router = router_cls(
+            llm=self.llm,
+            routing_llms=routing_llms or dict(),
+            model_routing_config=model_routing_config,
         )
+
 
     @property
     def prompt_manager(self) -> PromptManager:
@@ -219,34 +205,22 @@ class CodeActAgent(Agent):
         )
 
         initial_user_message = self._get_initial_user_message(state.history)
-        # Choose the active LLM based on the router
-        if self.router:
-            messages = self._get_messages(condensed_history, initial_user_message)
-            self.active_llm = self.router.should_route_to(messages, condensed_history)
 
-            if self.active_llm != self.llm:
-                logger.warning(
-                    f'Router activated, this turn is routed to: {self.active_llm}'
-                )
-        else:
-            self.active_llm = self.llm
-
-        state.routing_history = (
-            self.router.routing_history
-            if self.router and hasattr(self.router, 'routing_history')
-            else []
+        messages_for_routing_decision = self._get_messages(condensed_history, initial_user_message)
+        self.router.set_active_llm(messages_for_routing_decision, condensed_history)
+        logger.debug(
+            f'Active LLM set to: {self.router.active_llm.config.model}'
         )
 
-        messages = self._get_messages(
-            condensed_history,
-            initial_user_message,
-        )  # We need to call this after self.active_llm is correctly set
+        state.routing_history = self.router.routing_history
+
+        messages = self._get_messages(condensed_history, initial_user_message)
         params: dict = {
-            'messages': self.active_llm.format_messages_for_llm(messages),
+            'messages': self.router.active_llm.format_messages_for_llm(messages),
         }
-        params['tools'] = check_tools(self.tools, self.active_llm.config)
+        params['tools'] = check_tools(self.tools, self.router.active_llm.config)
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
-        response = self.active_llm.completion(**params)
+        response = self.router.active_llm.completion(**params)
         logger.debug(f'Response from LLM: {response}')
         actions = self.response_to_actions(response)
         logger.debug(f'Actions after response_to_actions: {actions}')
@@ -310,17 +284,15 @@ class CodeActAgent(Agent):
         if not self.prompt_manager:
             raise Exception('Prompt Manager not instantiated.')
 
-        active_llm = self.active_llm or self.llm
-
         # Use ConversationMemory to process events (including SystemMessageAction)
         messages = self.conversation_memory.process_events(
             condensed_history=events,
             initial_user_action=initial_user_message,
-            max_message_chars=active_llm.config.max_message_chars,
-            vision_is_active=active_llm.vision_is_active(),
+            max_message_chars=self.router.active_llm.config.max_message_chars,
+            vision_is_active=self.router.active_llm.vision_is_active(),
         )
 
-        if active_llm.is_caching_prompt_active():
+        if self.router.active_llm.is_caching_prompt_active():
             self.conversation_memory.apply_prompt_caching(messages)
 
         return messages

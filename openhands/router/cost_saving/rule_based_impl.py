@@ -7,9 +7,9 @@ from openhands.events.event import Event
 from openhands.events.action import MessageAction
 
 
-class ExtremeCostSavingRouter(BaseRouter):
+class RuleBasedCostSavingRouter(BaseRouter):
     WEAK_MODEL_CONFIG_NAME = 'weak_model'
-    ROUTER_NAME = "extreme_cv_router"
+    ROUTER_NAME = "rule_based_cv_router"
 
     def __init__(
         self,
@@ -19,42 +19,42 @@ class ExtremeCostSavingRouter(BaseRouter):
     ):
         super().__init__(llm, routing_llms, model_routing_config)
 
-        self._validate_model_routing_config(model_routing_config, routing_llms)
+        self._validate_model_routing_config(routing_llms)
 
         self.weak_llm = routing_llms[self.WEAK_MODEL_CONFIG_NAME]
-
-        self.routing_history: list[int] = []
         self.max_token_exceeded = False
 
-    def should_route_to(self, messages: list[Message], events: list[Event]) -> LLM:
+    def set_active_llm(self, messages: list[Message], events: list[Event]) -> None:
+        route_to_strong = False
         # Handle multimodal input
         for event in events:
             if isinstance(event, MessageAction) and event.source == 'user' and event.image_urls:
-                logger.warning('Image content detected. Routing to the strong model.')
-                self.routing_history.append(0)
-                return self.llm
+                logger.info('Image content detected. Routing to the strong model.')
+                route_to_strong = True
+                break
+
+        if not route_to_strong and self.max_token_exceeded:
+            route_to_strong = True
 
         # Check if `messages` exceeds context window of the weak model
-        # FIXME: hardcode for now
-        if self.weak_llm.get_token_count(messages) > 128_000:
+        # Assuming the weak model has a lower context window limit compared to the strong model
+        if self.weak_llm.config.max_input_tokens and self.weak_llm.get_token_count(messages) > self.weak_llm.config.max_input_tokens:
             logger.warning(
-                f'Messages exceed weak model max input tokens (128000 tokens). '
+                f"Messages having {self.weak_llm.get_token_count(messages)}, exceed weak model's max input tokens ({self.weak_llm.config.max_input_tokens} tokens). "
                 'Routing to the strong model.'
             )
             self.max_token_exceeded = True
-            self.routing_history.append(0)
-            return self.llm
+            route_to_strong = True
 
-        if self.max_token_exceeded:
+        if route_to_strong:
+            self.active_llm = self.llm
             self.routing_history.append(0)
-            return self.llm
-
-        # Use weak model otherwise
-        self.routing_history.append(1)
-        return self.weak_llm
+        else:
+            self.active_llm = self.weak_llm
+            self.routing_history.append(1)
 
     def _validate_model_routing_config(
-        self, model_routing_config: ModelRoutingConfig, routing_llms: dict[str, LLM]
+        self, routing_llms: dict[str, LLM]
     ):
         if self.WEAK_MODEL_CONFIG_NAME not in routing_llms:
             raise ValueError(
@@ -62,4 +62,4 @@ class ExtremeCostSavingRouter(BaseRouter):
             )
 
 # Register the router
-ROUTER_REGISTRY[ExtremeCostSavingRouter.ROUTER_NAME] = ExtremeCostSavingRouter
+ROUTER_REGISTRY[RuleBasedCostSavingRouter.ROUTER_NAME] = RuleBasedCostSavingRouter

@@ -5,10 +5,11 @@ class ModelRoutingConfig(BaseModel):
     """Configuration for model routing.
 
     Attributes:
-        classifier_llm_config_name: The name of the classifier LLM config to use. Default is 'classifier_model'.
+        prob_threshold (float): The probability threshold for routing decisions, used by `threshold_based_cv_router`.
+        router_name (str): The name of the router to use. Default is 'noop_router'.
     """
     prob_threshold: float = Field(default=0.49414062500000006) # 60% calls to strong model
-    router_name: str = Field(default='extreme_cv_router')
+    router_name: str = Field(default='noop_router')
 
     model_config = {'extra': 'forbid'}
 

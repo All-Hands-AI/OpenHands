@@ -250,7 +250,7 @@ def get_config(
         enable_mcp=False,
         condenser=metadata.condenser_config,
         enable_prompt_extensions=False,
-        enable_model_routing=config_copy.get_agent_config().enable_model_routing,
+        # enable_model_routing=config_copy.get_agent_config().enable_model_routing,
     )
     config.set_agent_config(agent_config)
     config.routing_llms = config_copy.routing_llms

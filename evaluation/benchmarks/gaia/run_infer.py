@@ -84,13 +84,13 @@ def get_config(
         config.search_api_key = SecretStr(config_copy.search_api_key)
 
     if metadata.agent_config:
-        metadata.agent_config.enable_model_routing = config_copy.get_agent_config().enable_model_routing
+        # metadata.agent_config.enable_model_routing = config_copy.get_agent_config().enable_model_routing
         config.set_agent_config(metadata.agent_config, metadata.agent_class)
     else:
         logger.info('Agent config not provided, using default settings')
         agent_config = config.get_agent_config(metadata.agent_class)
         agent_config.enable_prompt_extensions = False
-        agent_config.enable_model_routing = config_copy.get_agent_config().enable_model_routing
+        # agent_config.enable_model_routing = config_copy.get_agent_config().enable_model_routing
 
     config.routing_llms = config_copy.routing_llms
     # Set log_completions to True for all routing LLMs

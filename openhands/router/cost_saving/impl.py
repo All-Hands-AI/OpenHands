@@ -36,13 +36,14 @@ class ThresholdBasedCostSavingRouter(BaseRouter):
         self.routing_history: list[int] = []
         self.max_token_exceeded = False
 
-    def should_route_to(self, messages: list[Message], events: list[Event]) -> LLM:
+    def set_active_llm(self, messages: list[Message], events: list[Event]) -> None:
         # Handle multimodal input
         for event in events:
             if isinstance(event, MessageAction) and event.source == 'user' and event.image_urls:
                 logger.warning('Image content detected. Routing to the strong model.')
                 self.routing_history.append(0)
-                return self.llm
+                self.active_llm = self.llm
+                return
 
         # Check if `messages` exceeds context window of the weak model
         if self.weak_llm.config.max_input_tokens and self.weak_llm.get_token_count(messages) > self.weak_llm.config.max_input_tokens:
@@ -52,22 +53,25 @@ class ThresholdBasedCostSavingRouter(BaseRouter):
             )
             self.max_token_exceeded = True
             self.routing_history.append(0)
-            return self.llm
+            self.active_llm = self.llm
+            return
 
         formatted_trajectory = format_trajectory(messages)
         if self.max_token_exceeded:
             self.routing_history.append(0)
-            return self.llm
+            self.active_llm = self.llm
+            return
 
         threshold = self.score_trajectory(formatted_trajectory)
         logger.warning(f'Router probability: {threshold}')
 
         if threshold < self.model_routing_config.prob_threshold:
             self.routing_history.append(0)
-            return self.llm
+            self.active_llm = self.llm
+            return
 
         self.routing_history.append(1)
-        return self.weak_llm
+        self.active_llm = self.weak_llm
 
     def score_trajectory(self, trajectory, **kwargs):
         """Score the trajectory using the weak model."""

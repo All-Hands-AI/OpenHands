@@ -1,10 +1,12 @@
 from openhands.router.base import ROUTER_REGISTRY, BaseRouter
-from openhands.router.cost_saving.extreme_impl import ExtremeCostSavingRouter
 from openhands.router.cost_saving.impl import ThresholdBasedCostSavingRouter
+from openhands.router.cost_saving.rule_based_impl import RuleBasedCostSavingRouter
+from openhands.router.noop import NoOpRouter
 
 __all__ = [
     'BaseRouter',
     'ThresholdBasedCostSavingRouter',
-    'ExtremeCostSavingRouter',
+    'RuleBasedCostSavingRouter',
+    'NoOpRouter',
     'ROUTER_REGISTRY',
 ]

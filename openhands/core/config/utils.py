@@ -202,8 +202,10 @@ def load_from_toml(cfg: OpenHandsConfig, toml_file: str = 'config.toml') -> None
 
     if 'model_routing' in toml_config:
         try:
-            model_routing_config = ModelRoutingConfig(**toml_config['model_routing'])
-            cfg.model_routing = model_routing_config
+            model_routing_mapping = ModelRoutingConfig.from_toml_section(toml_config['model_routing'])
+            # We only use the base model routing config for now
+            if 'model_routing' in model_routing_mapping:
+                cfg.model_routing = model_routing_mapping['model_routing']
         except (TypeError, KeyError, ValidationError) as e:
             logger.openhands_logger.warning(
                 f'Cannot parse [model_routing] config from toml, values have not been applied.\nError: {e}'

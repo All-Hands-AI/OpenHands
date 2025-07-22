@@ -48,7 +48,6 @@ class Agent(ABC):
         self._prompt_manager: 'PromptManager' | None = None
         self.mcp_tools: dict[str, ChatCompletionToolParam] = {}
         self.tools: list = []
-        self.active_llm: LLM | None = None  # The LLM chosen by the router
 
     @property
     def prompt_manager(self) -> 'PromptManager':
