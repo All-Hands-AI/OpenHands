@@ -11,8 +11,15 @@ import {
 } from "#/state/microagent-management-slice";
 import { GitRepository } from "#/types/git";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
+import { cn } from "#/utils/utils";
 
-export function MicroagentManagementSidebar() {
+interface MicroagentManagementSidebarProps {
+  isSmallerScreen?: boolean;
+}
+
+export function MicroagentManagementSidebar({
+  isSmallerScreen = false,
+}: MicroagentManagementSidebarProps) {
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const { data: repositories, isLoading } = useUserRepositories();
@@ -42,7 +49,12 @@ export function MicroagentManagementSidebar() {
   }, [repositories, dispatch]);
 
   return (
-    <div className="w-[418px] h-full max-h-full overflow-y-auto overflow-x-hidden border-r border-[#525252] bg-[#24272E] rounded-tl-lg rounded-bl-lg py-10 px-6 flex flex-col">
+    <div
+      className={cn(
+        "w-[418px] h-full max-h-full overflow-y-auto overflow-x-hidden border-r border-[#525252] bg-[#24272E] rounded-tl-lg rounded-bl-lg py-10 px-6 flex flex-col",
+        isSmallerScreen && "w-full border-none",
+      )}
+    >
       <MicroagentManagementSidebarHeader />
       {isLoading ? (
         <div className="flex flex-col items-center justify-center gap-4 flex-1">

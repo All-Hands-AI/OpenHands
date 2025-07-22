@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { MicroagentManagementSidebar } from "./microagent-management-sidebar";
 import { MicroagentManagementMain } from "./microagent-management-main";
@@ -73,13 +73,28 @@ ${formData.query}
 `;
 
 export function MicroagentManagementContent() {
+  // Responsive width state
+  const [width, setWidth] = useState(window.innerWidth);
+
   const { addMicroagentModalVisible, selectedRepository } = useSelector(
     (state: RootState) => state.microagentManagement,
   );
 
   const dispatch = useDispatch();
+
   const { createConversationAndSubscribe, isPending } =
     useCreateConversationAndSubscribeMultiple();
+
+  function handleResize() {
+    setWidth(window.innerWidth);
+  }
+
+  useEffect(() => {
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
 
   const hideAddMicroagentModal = () => {
     dispatch(setAddMicroagentModalVisible(false));
@@ -176,6 +191,26 @@ export function MicroagentManagementContent() {
       },
     });
   };
+
+  if (width < 1024) {
+    return (
+      <div className="w-full h-full flex flex-col gap-6">
+        <div className="w-full rounded-lg border border-[#525252] bg-[#24272E] max-h-[494px] min-h-[494px]">
+          <MicroagentManagementSidebar isSmallerScreen />
+        </div>
+        <div className="w-full rounded-lg border border-[#525252] bg-[#24272E] flex-1 min-h-[494px]">
+          <MicroagentManagementMain />
+        </div>
+        {addMicroagentModalVisible && (
+          <MicroagentManagementAddMicroagentModal
+            onConfirm={handleCreateMicroagent}
+            onCancel={hideAddMicroagentModal}
+            isLoading={isPending}
+          />
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="w-full h-full flex rounded-lg border border-[#525252] bg-[#24272E] overflow-hidden">
