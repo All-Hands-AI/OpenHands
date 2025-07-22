@@ -2,7 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
-import { useUserRepositories } from "#/hooks/query/use-user-repositories";
+import { useRepositories } from "#/hooks/query/use-repositories";
 import { useRepositoryBranches } from "#/hooks/query/use-repository-branches";
 import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation";
 import { Branch, GitRepository } from "#/types/git";
@@ -44,7 +44,7 @@ export function RepositorySelectionForm({
     data: repositoriesData,
     isLoading: isLoadingRepositories,
     isError: isRepositoriesError,
-  } = useUserRepositories(selectedProvider);
+  } = useRepositories(selectedProvider);
   const {
     data: branches,
     isLoading: isLoadingBranches,
