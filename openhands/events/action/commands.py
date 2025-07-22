@@ -20,6 +20,9 @@ class CmdRunAction(Action):
     is_static: bool = False  # if True, runs the command in a separate process
     cwd: str | None = None  # current working directory, only used if is_static is True
     hidden: bool = False
+    reset_terminal: bool = (
+        False  # if True, resets the terminal session before executing the command
+    )
     action: str = ActionType.RUN
     runnable: ClassVar[bool] = True
     confirmation_state: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED

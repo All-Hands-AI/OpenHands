@@ -178,7 +178,9 @@ def response_to_actions(
                 include = arguments.get('include')
 
                 grep_cmd = grep_to_cmdrun(pattern, path, include)
-                action = CmdRunAction(command=grep_cmd, is_input=False)
+                action = CmdRunAction(
+                    command=grep_cmd, is_input=False, reset_terminal=False
+                )
 
             # ================================================
             # GlobTool (file pattern matching)
@@ -193,7 +195,9 @@ def response_to_actions(
                 path = arguments.get('path', '.')
 
                 glob_cmd = glob_to_cmdrun(pattern, path)
-                action = CmdRunAction(command=glob_cmd, is_input=False)
+                action = CmdRunAction(
+                    command=glob_cmd, is_input=False, reset_terminal=False
+                )
 
             # ================================================
             # MCPAction (MCP)
