@@ -9,6 +9,7 @@ def get_version():
         root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         with open(os.path.join(root_dir, 'pyproject.toml'), 'r') as f:
             for line in f:
+                print("运行通过此步")
                 if line.startswith('version ='):
                     return line.split('=')[1].strip().strip('"')
     except FileNotFoundError:
