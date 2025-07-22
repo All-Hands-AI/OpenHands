@@ -98,9 +98,9 @@ async def test_search_basic():
 
 
 @pytest.mark.asyncio
-async def test_search_sort_active_first_then_by_created_at():
-    # Create test data with conversations that have both created_at and last_updated_at
-    # Active conversations (with last_updated_at) should appear first, then sorted by created_at
+async def test_search_sort_by_created_at():
+    # Create test data with conversations that have different created_at timestamps
+    # They should be sorted by created_at (newest first)
     store = FileConversationStore(
         InMemoryFileStore(
             {
@@ -110,8 +110,8 @@ async def test_search_sort_active_first_then_by_created_at():
                         'user_id': '123',
                         'selected_repository': 'repo1',
                         'title': 'First conversation',
-                        'created_at': '2025-01-17T19:51:04Z',  # Created second
-                        'last_updated_at': '2025-01-15T20:00:00Z',  # Has activity
+                        'created_at': '2025-01-17T19:51:04Z',  # Created most recently
+                        'last_updated_at': '2025-01-15T20:00:00Z',
                     }
                 ),
                 get_conversation_metadata_filename('conv2'): json.dumps(
@@ -120,8 +120,8 @@ async def test_search_sort_active_first_then_by_created_at():
                         'user_id': '123',
                         'selected_repository': 'repo1',
                         'title': 'Second conversation',
-                        'created_at': '2025-01-15T19:51:04Z',  # Created third (oldest)
-                        'last_updated_at': '2025-01-18T20:00:00Z',  # Has activity
+                        'created_at': '2025-01-15T19:51:04Z',  # Created least recently
+                        'last_updated_at': '2025-01-18T20:00:00Z',
                     }
                 ),
                 get_conversation_metadata_filename('conv3'): json.dumps(
@@ -130,8 +130,8 @@ async def test_search_sort_active_first_then_by_created_at():
                         'user_id': '123',
                         'selected_repository': 'repo1',
                         'title': 'Third conversation',
-                        'created_at': '2025-01-16T19:51:04Z',  # Created third
-                        'last_updated_at': '2025-01-17T20:00:00Z',  # Has activity
+                        'created_at': '2025-01-16T19:51:04Z',  # Created second most recently
+                        'last_updated_at': '2025-01-17T20:00:00Z',
                     }
                 ),
             }
@@ -140,7 +140,7 @@ async def test_search_sort_active_first_then_by_created_at():
 
     result = await store.search()
     assert len(result.results) == 3
-    # All conversations have activity (last_updated_at), so they should be sorted by created_at
+    # Should be sorted by created_at (newest first)
     assert result.results[0].conversation_id == 'conv1'  # Created most recently
     assert result.results[1].conversation_id == 'conv3'  # Created second most recently
     assert result.results[2].conversation_id == 'conv2'  # Created least recently
@@ -148,9 +148,9 @@ async def test_search_sort_active_first_then_by_created_at():
 
 
 @pytest.mark.asyncio
-async def test_search_mixed_activity():
-    # Test conversations with mixed presence of last_updated_at
-    # Active conversations (with last_updated_at) should appear first, then inactive ones
+async def test_search_with_mixed_metadata():
+    # Test conversations with mixed metadata (some with last_updated_at, some without)
+    # They should all be sorted by created_at (newest first)
     store = FileConversationStore(
         InMemoryFileStore(
             {
@@ -160,8 +160,8 @@ async def test_search_mixed_activity():
                         'user_id': '123',
                         'selected_repository': 'repo1',
                         'title': 'First conversation',
-                        'created_at': '2025-01-16T19:51:04Z',  # Created second
-                        'last_updated_at': '2025-01-18T20:00:00Z',  # Has activity
+                        'created_at': '2025-01-16T19:51:04Z',  # Created third most recently
+                        'last_updated_at': '2025-01-18T20:00:00Z',
                     }
                 ),
                 get_conversation_metadata_filename('conv2'): json.dumps(
@@ -170,7 +170,8 @@ async def test_search_mixed_activity():
                         'user_id': '123',
                         'selected_repository': 'repo1',
                         'title': 'Second conversation',
-                        'created_at': '2025-01-17T19:51:04Z',  # Created most recently, no activity
+                        'created_at': '2025-01-17T19:51:04Z',  # Created most recently
+                        # No last_updated_at
                     }
                 ),
                 get_conversation_metadata_filename('conv3'): json.dumps(
@@ -179,8 +180,8 @@ async def test_search_mixed_activity():
                         'user_id': '123',
                         'selected_repository': 'repo1',
                         'title': 'Third conversation',
-                        'created_at': '2025-01-15T19:51:04Z',  # Created least recently
-                        'last_updated_at': '2025-01-16T20:00:00Z',  # Has activity
+                        'created_at': '2025-01-15T19:51:04Z',  # Created second least recently
+                        'last_updated_at': '2025-01-16T20:00:00Z',
                     }
                 ),
                 get_conversation_metadata_filename('conv4'): json.dumps(
@@ -189,7 +190,8 @@ async def test_search_mixed_activity():
                         'user_id': '123',
                         'selected_repository': 'repo1',
                         'title': 'Fourth conversation',
-                        'created_at': '2025-01-14T19:51:04Z',  # Created before conv2, no activity
+                        'created_at': '2025-01-14T19:51:04Z',  # Created least recently
+                        # No last_updated_at
                     }
                 ),
             }
@@ -199,12 +201,11 @@ async def test_search_mixed_activity():
     result = await store.search()
     assert len(result.results) == 4
     
-    # Active conversations should appear first (conv1, conv3), sorted by created_at
-    # Then inactive conversations (conv2, conv4), sorted by created_at
-    assert result.results[0].conversation_id == 'conv1'  # Active, created more recently
-    assert result.results[1].conversation_id == 'conv3'  # Active, created less recently
-    assert result.results[2].conversation_id == 'conv2'  # Inactive, created more recently
-    assert result.results[3].conversation_id == 'conv4'  # Inactive, created less recently
+    # Should be sorted by created_at (newest first), regardless of last_updated_at
+    assert result.results[0].conversation_id == 'conv2'  # Created most recently
+    assert result.results[1].conversation_id == 'conv1'  # Created second most recently
+    assert result.results[2].conversation_id == 'conv3'  # Created third most recently
+    assert result.results[3].conversation_id == 'conv4'  # Created least recently
     
     assert result.next_page_id is None
 

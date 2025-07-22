@@ -114,22 +114,16 @@ class FileConversationStore(ConversationStore):
         return FileConversationStore(file_store)
 
 
-def _sort_key(conversation: ConversationMetadata) -> tuple:
+def _sort_key(conversation: ConversationMetadata) -> str:
     """
-    Sort conversations with the following priority:
-    1. Active conversations first
-    2. Within active and inactive groups, sort by created_at (newest first)
+    Sort conversations by created_at (newest first).
     
-    Returns a tuple of (is_active, created_at) for sorting.
-    - is_active: 1 if conversation has activity, 0 otherwise (for reverse sorting)
-    - created_at: ISO format string for chronological sorting
+    Since we can't reliably determine which conversations are "active" (RUNNING or STARTING)
+    from the metadata alone, we sort by created_at to ensure consistent behavior.
+    
+    Returns the created_at timestamp as an ISO format string for chronological sorting.
     """
-    # Check if conversation is active (has last_updated_at)
-    is_active = 1 if conversation.last_updated_at else 0
-    
-    # Use created_at for secondary sorting
     created_at = conversation.created_at
-    created_at_str = created_at.isoformat() if created_at else ''
-    
-    # Return tuple for sorting (active conversations first, then by created_at)
-    return (is_active, created_at_str)
+    if created_at:
+        return created_at.isoformat()  # YYYY-MM-DDTHH:MM:SS for sorting
+    return ''
