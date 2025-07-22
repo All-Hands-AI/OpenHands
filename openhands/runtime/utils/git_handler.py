@@ -75,9 +75,37 @@ class GitHandler:
         output = self.execute(cmd, self.cwd)
         return output.exit_code == 0
 
+    def _has_recent_merge_commits(self) -> bool:
+        """
+        Checks if there are recent merge commits in the current branch.
+
+        Returns:
+            bool: True if there are merge commits in the last 10 commits, False otherwise.
+        """
+        # Check for merge commits in recent history
+        cmd = 'git --no-pager rev-list --merges -n 1 HEAD~10..HEAD 2>/dev/null || git --no-pager rev-list --merges -n 1 HEAD'
+        output = self.execute(cmd, self.cwd)
+        has_merges = output.exit_code == 0 and output.content.strip() != ''
+
+        if has_merges:
+            return True
+
+        # Also check if HEAD itself is a merge commit
+        cmd = 'git --no-pager rev-list --parents -n 1 HEAD'
+        output = self.execute(cmd, self.cwd)
+        if output.exit_code == 0:
+            # If HEAD has more than one parent, it's a merge commit
+            parents = output.content.strip().split()
+            return len(parents) > 2  # commit hash + parent1 + parent2 (or more)
+
+        return False
+
     def _get_valid_ref(self) -> str | None:
         """
         Determines a valid Git reference for comparison.
+
+        Uses merge-base when recent merge commits are detected to show only user changes.
+        Otherwise uses origin/current-branch to show changes since last push.
 
         Returns:
             str | None: A valid Git reference or None if no valid reference is found.
@@ -90,13 +118,23 @@ class GitHandler:
         ref_default_branch = 'origin/' + default_branch
         ref_new_repo = '$(git --no-pager rev-parse --verify 4b825dc642cb6eb9a060e54bf8d69288fbee4904)'  # compares with empty tree
 
-        # Prefer merge-base first to show only user changes, especially after merges
-        refs = [
-            ref_merge_base,
-            ref_current_branch,
-            ref_default_branch,
-            ref_new_repo,
-        ]
+        # If there are recent merge commits, prefer merge-base to show only user changes
+        # Otherwise, prefer origin/current-branch to show changes since last push
+        if self._has_recent_merge_commits() and self._verify_ref_exists(ref_merge_base):
+            refs = [
+                ref_merge_base,
+                ref_current_branch,
+                ref_default_branch,
+                ref_new_repo,
+            ]
+        else:
+            refs = [
+                ref_current_branch,
+                ref_merge_base,
+                ref_default_branch,
+                ref_new_repo,
+            ]
+
         for ref in refs:
             if self._verify_ref_exists(ref):
                 return ref

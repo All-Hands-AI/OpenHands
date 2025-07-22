@@ -164,23 +164,13 @@ class TestGitHandler(unittest.TestCase):
         )
 
     def test_get_valid_ref_with_origin_current_branch(self):
-        """Test that _get_valid_ref returns merge-base when both current branch and merge-base exist."""
+        """Test that _get_valid_ref returns origin/current-branch when no recent merges."""
         # This test uses the setup from setUp where the current branch exists in origin
         ref = self.git_handler._get_valid_ref()
         self.assertIsNotNone(ref)
 
-        # Check that the refs were checked in the correct order
-        verify_commands = [
-            cmd
-            for cmd, _ in self.executed_commands
-            if cmd.startswith('git --no-pager rev-parse --verify')
-        ]
-
-        # First should check merge-base (new behavior)
-        self.assertTrue(any('merge-base' in cmd for cmd in verify_commands))
-
-        # Should have found a valid ref (merge-base should be preferred)
-        self.assertTrue('merge-base' in ref)
+        # Should prefer origin/feature-branch when no recent merge commits
+        self.assertEqual(ref, 'origin/feature-branch')
 
         # Verify the ref exists
         result = self._execute_command(
@@ -427,6 +417,33 @@ class TestGitHandler(unittest.TestCase):
         # Should still show user's original changes (if any exist relative to merge-base)
         # In this case, we expect to see the files that were changed on the feature branch
         # relative to where it diverged from main
+
+    def test_no_changes_after_push_without_merge(self):
+        """Test that after pushing changes (without merge), no changes are shown."""
+        # Create a new file and commit it
+        with open(os.path.join(self.local_dir, 'new-feature.txt'), 'w') as f:
+            f.write('New feature content')
+
+        self._execute_command('git add new-feature.txt', self.local_dir)
+        self._execute_command("git commit -m 'Add new feature'", self.local_dir)
+
+        # Push the changes
+        self._execute_command('git push origin feature-branch', self.local_dir)
+
+        # Clear executed commands to start fresh
+        self.executed_commands = []
+
+        # Get changes after push - should show no changes since no recent merges
+        changes = self.git_handler.get_git_changes()
+        self.assertIsNotNone(changes)
+
+        # Should show no changes since everything is pushed and no recent merges
+        # This tests the regression fix - after push, changes should be clear
+        self.assertEqual(
+            len(changes),
+            0,
+            'Should show no changes after pushing without recent merges',
+        )
 
 
 if __name__ == '__main__':
