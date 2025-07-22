@@ -92,7 +92,7 @@
     "@testing-library/jest-dom": "^6.6.1",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
-    "@types/node": "^24.0.15",
+    "@types/node": "^24.1.0",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@types/react-highlight": "^0.12.8",
