@@ -35,7 +35,8 @@ export function RepositorySelectionForm({
   const [selectedBranch, setSelectedBranch] = React.useState<Branch | null>(
     null,
   );
-  const [selectedProvider, setSelectedProvider] = React.useState<Provider | null>(null);
+  const [selectedProvider, setSelectedProvider] =
+    React.useState<Provider | null>(null);
   // Add a ref to track if the branch was manually cleared by the user
   const branchManuallyClearedRef = React.useRef<boolean>(false);
   const { providers } = useUserProviders();
@@ -43,7 +44,7 @@ export function RepositorySelectionForm({
     data: repositories,
     isLoading: isLoadingRepositories,
     isError: isRepositoriesError,
-  } = useUserRepositories();
+  } = useUserRepositories(selectedProvider);
   const {
     data: branches,
     isLoading: isLoadingBranches,
@@ -110,7 +111,7 @@ export function RepositorySelectionForm({
 
   // Create provider dropdown items
   const providerItems = React.useMemo(() => {
-    return providers.map(provider => ({
+    return providers.map((provider) => ({
       key: provider,
       label: provider.charAt(0).toUpperCase() + provider.slice(1), // Capitalize first letter
     }));
