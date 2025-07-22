@@ -1,4 +1,3 @@
-import { Provider } from "#/types/settings";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { Provider } from "#/types/settings";
@@ -120,6 +119,8 @@ export const shouldUseInstallationRepos = (
       return app_mode === "saas";
     default:
       return false;
+  }
+};
 
 export const getGitProviderBaseUrl = (gitProvider: Provider): string => {
   switch (gitProvider) {

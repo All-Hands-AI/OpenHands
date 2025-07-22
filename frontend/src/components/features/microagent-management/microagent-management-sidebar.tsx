@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { MicroagentManagementSidebarHeader } from "./microagent-management-sidebar-header";
 import { MicroagentManagementSidebarTabs } from "./microagent-management-sidebar-tabs";
 import { useUserRepositories } from "#/hooks/query/use-user-repositories";
+import { useUserProviders } from "#/hooks/use-user-providers";
 import {
   setPersonalRepositories,
   setOrganizationRepositories,
@@ -22,15 +23,21 @@ export function MicroagentManagementSidebar({
 }: MicroagentManagementSidebarProps) {
   const dispatch = useDispatch();
   const { t } = useTranslation();
-  const { data: repositories, isLoading } = useUserRepositories();
+  const { providers } = useUserProviders();
+  const selectedProvider = providers.length > 0 ? providers[0] : null;
+  const { data: repositories, isLoading } =
+    useUserRepositories(selectedProvider);
 
   useEffect(() => {
-    if (repositories) {
+    if (repositories?.pages) {
       const personalRepos: GitRepository[] = [];
       const organizationRepos: GitRepository[] = [];
       const otherRepos: GitRepository[] = [];
 
-      repositories.forEach((repo: GitRepository) => {
+      // Flatten all pages to get all repositories
+      const allRepositories = repositories.pages.flatMap((page) => page.data);
+
+      allRepositories.forEach((repo: GitRepository) => {
         const hasOpenHandsSuffix = repo.full_name.endsWith("/.openhands");
 
         if (repo.owner_type === "user" && hasOpenHandsSuffix) {
