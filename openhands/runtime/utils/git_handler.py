@@ -214,7 +214,14 @@ class GitHandler:
         """
         cmd = 'git --no-pager remote show origin | grep "HEAD branch"'
         output = self.execute(cmd, self.cwd)
-        return output.content.split()[-1].strip()
+        if output.exit_code != 0 or not output.content.strip():
+            # Fallback to 'main' if no remote origin exists
+            return 'main'
+
+        parts = output.content.split()
+        if len(parts) == 0:
+            return 'main'
+        return parts[-1].strip()
 
     def _get_current_branch(self) -> str:
         """
