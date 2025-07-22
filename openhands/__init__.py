@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 __package_name__ = 'openhands_ai'
 
@@ -7,9 +8,9 @@ def get_version():
     # Try getting the version from pyproject.toml
     try:
         root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        with open(os.path.join(root_dir, 'pyproject.toml'), 'r') as f:
+        file_path = Path(root_dir) / 'openhands' / 'pyproject.toml'
+        with open(file_path, 'r') as f:
             for line in f:
-                print("运行通过此步")
                 if line.startswith('version ='):
                     return line.split('=')[1].strip().strip('"')
     except FileNotFoundError:
