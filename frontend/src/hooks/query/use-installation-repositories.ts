@@ -50,7 +50,7 @@ export const useInstallationRepositories = (provider: Provider | null) => {
     enabled:
       providers.length > 0 &&
       !!provider &&
-      !shouldUseInstallationRepos(provider, config?.APP_MODE) &&
+      shouldUseInstallationRepos(provider, config?.APP_MODE) &&
       Array.isArray(installations) &&
       installations.length > 0,
     staleTime: 1000 * 60 * 5, // 5 minutes

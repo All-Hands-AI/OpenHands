@@ -18,7 +18,7 @@ export const useAppInstallations = (provider: Provider | null) => {
       !!provider &&
       (providers.includes("github") || providers.includes("bitbucket")) &&
       !!config?.GITHUB_CLIENT_ID &&
-      config?.APP_MODE === "saas",
+      (config?.APP_MODE === "saas" || provider === "bitbucket"),
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes
   });
