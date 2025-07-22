@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import OpenHands from "#/api/open-hands";
+import { Provider } from "#/types/settings";
 
-export const useUserRepositories = () =>
+export const useUserRepositories = (provider: Provider) =>
   useQuery({
     queryKey: ["repositories"],
     queryFn: OpenHands.retrieveUserGitRepositories,
