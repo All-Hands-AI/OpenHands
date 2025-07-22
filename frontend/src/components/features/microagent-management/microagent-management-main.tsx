@@ -19,10 +19,7 @@ export function MicroagentManagementMain() {
   }
 
   if (conversation) {
-    const hasPr = !!(
-      conversation.pr_number && conversation.pr_number.length > 0
-    );
-    if (hasPr) {
+    if (conversation.pr_number && conversation.pr_number.length > 0) {
       return <MicroagentManagementReviewPr />;
     }
 
