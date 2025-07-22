@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { MicroagentManagementSidebar } from "./microagent-management-sidebar";
 import { MicroagentManagementMain } from "./microagent-management-main";
@@ -74,9 +74,7 @@ ${formData.query}
 
 export function MicroagentManagementContent() {
   // Responsive width state
-  const [width, setWidth] = React.useState(
-    typeof window !== "undefined" ? window.innerWidth : 1200,
-  );
+  const [width, setWidth] = useState(window.innerWidth);
 
   const { addMicroagentModalVisible, selectedRepository } = useSelector(
     (state: RootState) => state.microagentManagement,
@@ -87,10 +85,11 @@ export function MicroagentManagementContent() {
   const { createConversationAndSubscribe, isPending } =
     useCreateConversationAndSubscribeMultiple();
 
+  function handleResize() {
+    setWidth(window.innerWidth);
+  }
+
   useEffect(() => {
-    function handleResize() {
-      setWidth(window.innerWidth);
-    }
     window.addEventListener("resize", handleResize);
     return () => {
       window.removeEventListener("resize", handleResize);
