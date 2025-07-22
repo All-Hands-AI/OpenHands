@@ -210,6 +210,7 @@ class DockerRuntime(ActionExecutionClient):
                 extra_deps=self.config.sandbox.runtime_extra_deps,
                 force_rebuild=self.config.sandbox.force_rebuild_runtime,
                 extra_build_args=self.config.sandbox.runtime_extra_build_args,
+                enable_browser=self.config.enable_browser,
             )
 
     @staticmethod

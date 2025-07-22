@@ -1,29 +1,60 @@
 import { useSelector } from "react-redux";
-import { useTranslation } from "react-i18next";
 import { RootState } from "#/store";
-import { I18nKey } from "#/i18n/declaration";
+import { MicroagentManagementDefault } from "./microagent-management-default";
+import { MicroagentManagementOpeningPr } from "./microagent-management-opening-pr";
+import { MicroagentManagementReviewPr } from "./microagent-management-review-pr";
+import { MicroagentManagementViewMicroagent } from "./microagent-management-view-microagent";
+import {
+  isConversationCompleted,
+  isConversationError,
+  isConversationOpeningPR,
+  isConversationStarting,
+  isConversationStopped,
+} from "#/utils/utils";
+import { MicroagentManagementError } from "./microagent-management-error";
+import { MicroagentManagementConversationStopped } from "./microagent-management-conversation-stopped";
 
 export function MicroagentManagementMain() {
-  const { t } = useTranslation();
-
-  const { selectedMicroagent } = useSelector(
+  const { selectedMicroagentItem } = useSelector(
     (state: RootState) => state.microagentManagement,
   );
 
-  if (!selectedMicroagent) {
-    return (
-      <div className="flex-1 flex flex-col h-full items-center justify-center">
-        <div className="text-[#F9FBFE] text-xl font-bold pb-4">
-          {t(I18nKey.MICROAGENT_MANAGEMENT$READY_TO_ADD_MICROAGENT)}
-        </div>
-        <div className="text-white text-sm font-normal text-center max-w-[455px]">
-          {t(
-            I18nKey.MICROAGENT_MANAGEMENT$OPENHANDS_CAN_LEARN_ABOUT_REPOSITORIES,
-          )}
-        </div>
-      </div>
-    );
+  const { microagent, conversation } = selectedMicroagentItem ?? {};
+
+  if (microagent) {
+    return <MicroagentManagementViewMicroagent />;
   }
 
-  return null;
+  if (conversation) {
+    const hasPr = !!(
+      conversation.pr_number && conversation.pr_number.length > 0
+    );
+    if (isConversationCompleted(hasPr)) {
+      return <MicroagentManagementReviewPr />;
+    }
+
+    if (
+      isConversationStarting(
+        conversation.status,
+        conversation.runtime_status,
+      ) ||
+      isConversationOpeningPR(conversation.status, conversation.runtime_status)
+    ) {
+      return <MicroagentManagementOpeningPr />;
+    }
+
+    if (isConversationError(conversation.runtime_status)) {
+      return <MicroagentManagementError />;
+    }
+
+    if (
+      isConversationStopped(conversation.status, conversation.runtime_status)
+    ) {
+      return <MicroagentManagementConversationStopped />;
+    }
+
+    return <MicroagentManagementDefault />;
+  }
+
+  return <MicroagentManagementDefault />;
 }

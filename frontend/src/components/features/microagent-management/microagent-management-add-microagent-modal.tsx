@@ -10,30 +10,55 @@ import { RootState } from "#/store";
 import XIcon from "#/icons/x.svg?react";
 import { cn } from "#/utils/utils";
 import { BadgeInput } from "#/components/shared/inputs/badge-input";
+import { MicroagentFormData } from "#/types/microagent-management";
+import { GitRepository } from "#/types/git";
 
 interface MicroagentManagementAddMicroagentModalProps {
-  onConfirm: () => void;
+  onConfirm: (formData: MicroagentFormData) => void;
   onCancel: () => void;
+  isLoading: boolean;
 }
 
 export function MicroagentManagementAddMicroagentModal({
   onConfirm,
   onCancel,
+  isLoading = false,
 }: MicroagentManagementAddMicroagentModalProps) {
   const { t } = useTranslation();
 
   const [triggers, setTriggers] = useState<string[]>([]);
+  const [query, setQuery] = useState<string>("");
 
   const { selectedRepository } = useSelector(
     (state: RootState) => state.microagentManagement,
   );
 
   const modalTitle = selectedRepository
-    ? `${t(I18nKey.MICROAGENT_MANAGEMENT$ADD_A_MICROAGENT_TO)} ${selectedRepository}`
+    ? `${t(I18nKey.MICROAGENT_MANAGEMENT$ADD_A_MICROAGENT_TO)} ${(selectedRepository as GitRepository).full_name}`
     : t(I18nKey.MICROAGENT_MANAGEMENT$ADD_A_MICROAGENT);
 
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    if (!query.trim()) {
+      return;
+    }
+
+    onConfirm({
+      query: query.trim(),
+      triggers,
+    });
+  };
+
+  const handleConfirm = () => {
+    if (!query.trim()) {
+      return;
+    }
+
+    onConfirm({
+      query: query.trim(),
+      triggers,
+    });
   };
 
   return (
@@ -73,6 +98,8 @@ export function MicroagentManagementAddMicroagentModal({
               required
               data-testid="query-input"
               name="query-input"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
               placeholder={t(I18nKey.MICROAGENT_MANAGEMENT$DESCRIBE_WHAT_TO_DO)}
               rows={6}
               className={cn(
@@ -80,19 +107,6 @@ export function MicroagentManagementAddMicroagentModal({
                 "disabled:bg-[#2D2F36] disabled:border-[#2D2F36] disabled:cursor-not-allowed",
               )}
             />
-            <div className="flex items-center gap-2 text-[11px] font-normal text-white leading-[16px]">
-              <span className="font-semibold">
-                {t(I18nKey.COMMON$FOR_EXAMPLE)}:
-              </span>
-              <span className="underline">
-                {t(I18nKey.COMMON$TEST_DB_MIGRATION)}
-              </span>
-              <span className="underline">{t(I18nKey.COMMON$RUN_TEST)}</span>
-              <span className="underline">{t(I18nKey.COMMON$RUN_APP)}</span>
-              <span className="underline">
-                {t(I18nKey.COMMON$LEARN_FILE_STRUCTURE)}
-              </span>
-            </div>
           </label>
           <label
             htmlFor="trigger-input"
@@ -129,17 +143,19 @@ export function MicroagentManagementAddMicroagentModal({
             type="button"
             variant="secondary"
             onClick={onCancel}
-            data-testid="cancel-button"
+            testId="cancel-button"
           >
             {t(I18nKey.BUTTON$CANCEL)}
           </BrandButton>
           <BrandButton
             type="button"
             variant="primary"
-            onClick={onConfirm}
-            data-testid="confirm-button"
+            onClick={handleConfirm}
+            testId="confirm-button"
+            isDisabled={!query.trim() || isLoading}
           >
-            {t(I18nKey.MICROAGENT$LAUNCH)}
+            {!isLoading && t(I18nKey.MICROAGENT$LAUNCH)}
+            {isLoading && t(I18nKey.HOME$LOADING)}
           </BrandButton>
         </div>
       </ModalBody>
