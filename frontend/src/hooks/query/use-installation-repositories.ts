@@ -6,7 +6,7 @@ import { useUserProviders } from "../use-user-providers";
 import { Provider } from "#/types/settings";
 import OpenHands from "#/api/open-hands";
 
-export const useAppRepositories = (provider: Provider) => {
+export const useInstallationRepositories = (provider: Provider) => {
   const { providers } = useUserProviders();
   const { data: config } = useConfig();
   const { data: installations } = useAppInstallations(provider);
