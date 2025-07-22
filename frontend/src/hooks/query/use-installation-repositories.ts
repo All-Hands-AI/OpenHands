@@ -7,13 +7,15 @@ import { Provider } from "#/types/settings";
 import OpenHands from "#/api/open-hands";
 import { shouldUseInstallationRepos } from "#/utils/utils";
 
-export const useInstallationRepositories = (provider: Provider | null) => {
+export const useInstallationRepositories = (
+  selectedProvider: Provider | null,
+) => {
   const { providers } = useUserProviders();
   const { data: config } = useConfig();
-  const { data: installations } = useAppInstallations(provider);
+  const { data: installations } = useAppInstallations(selectedProvider);
 
   const repos = useInfiniteQuery({
-    queryKey: ["repositories", providers, provider, installations],
+    queryKey: ["repositories", providers, selectedProvider, installations],
     queryFn: async ({
       pageParam,
     }: {
@@ -26,7 +28,7 @@ export const useInstallationRepositories = (provider: Provider | null) => {
       }
 
       return OpenHands.retrieveInstallationRepositories(
-        provider!,
+        selectedProvider!,
         installationIndex || 0,
         installations,
         repoPage || 1,
@@ -50,8 +52,8 @@ export const useInstallationRepositories = (provider: Provider | null) => {
     },
     enabled:
       providers.length > 0 &&
-      !!provider &&
-      shouldUseInstallationRepos(provider, config?.APP_MODE) &&
+      !!selectedProvider &&
+      shouldUseInstallationRepos(selectedProvider, config?.APP_MODE) &&
       Array.isArray(installations) &&
       installations.length > 0,
     staleTime: 1000 * 60 * 5, // 5 minutes

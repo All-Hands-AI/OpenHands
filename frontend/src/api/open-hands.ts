@@ -455,7 +455,7 @@ class OpenHands {
    * @returns A list of repositories
    */
   static async retrieveUserGitRepositories(
-    provider: Provider,
+    selected_provider: Provider,
     page = 1,
     per_page = 30,
   ) {
@@ -463,7 +463,7 @@ class OpenHands {
       "/api/user/repositories",
       {
         params: {
-          selected_provider: provider,
+          selected_provider,
           sort: "pushed",
           page,
           per_page,
@@ -479,7 +479,7 @@ class OpenHands {
   }
 
   static async retrieveInstallationRepositories(
-    provider: Provider,
+    selected_provider: Provider,
     installationIndex: number,
     installations: string[],
     page = 1,
@@ -490,7 +490,7 @@ class OpenHands {
       "/api/user/repositories",
       {
         params: {
-          selected_provider: provider,
+          selected_provider,
           sort: "pushed",
           page,
           per_page,
