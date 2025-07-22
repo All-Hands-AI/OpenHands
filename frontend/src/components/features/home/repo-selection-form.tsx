@@ -41,7 +41,7 @@ export function RepositorySelectionForm({
   const branchManuallyClearedRef = React.useRef<boolean>(false);
   const { providers } = useUserProviders();
   const {
-    data: repositories,
+    data: repositoriesData,
     isLoading: isLoadingRepositories,
     isError: isRepositoriesError,
   } = useUserRepositories(selectedProvider);
@@ -96,10 +96,20 @@ export function RepositorySelectionForm({
   const isCreatingConversation =
     isPending || isSuccess || isCreatingConversationElsewhere;
 
-  // Use all repositories without filtering by provider for now
-  const allRepositories = repositories?.concat(searchedRepos || []);
+  // Extract repositories from paginated data structure
+  const repositories = React.useMemo(() => {
+    if (!repositoriesData?.pages) return [];
+    return repositoriesData.pages.flatMap((page) => page.data || []);
+  }, [repositoriesData]);
 
-  const repositoriesItems = (allRepositories || []).map((repo) => ({
+  // Combine user repositories with search results
+  const allRepositories = React.useMemo(() => {
+    const userRepos = repositories || [];
+    const searchRepos = searchedRepos || [];
+    return [...userRepos, ...searchRepos];
+  }, [repositories, searchedRepos]);
+
+  const repositoriesItems = allRepositories.map((repo) => ({
     key: repo.id,
     label: decodeURIComponent(repo.full_name),
   }));
@@ -110,12 +120,14 @@ export function RepositorySelectionForm({
   }));
 
   // Create provider dropdown items
-  const providerItems = React.useMemo(() => {
-    return providers.map((provider) => ({
-      key: provider,
-      label: provider.charAt(0).toUpperCase() + provider.slice(1), // Capitalize first letter
-    }));
-  }, [providers]);
+  const providerItems = React.useMemo(
+    () =>
+      providers.map((provider) => ({
+        key: provider,
+        label: provider.charAt(0).toUpperCase() + provider.slice(1), // Capitalize first letter
+      })),
+    [providers],
+  );
 
   const handleRepoSelection = (key: React.Key | null) => {
     const selectedRepo = allRepositories?.find((repo) => repo.id === key);
@@ -186,6 +198,20 @@ export function RepositorySelectionForm({
 
   // Render the appropriate UI based on the loading/error state
   const renderRepositorySelector = () => {
+    // Disable repository selector if no provider is selected (and there are multiple providers)
+    const isDisabled = providers.length > 1 && !selectedProvider;
+
+    if (isDisabled) {
+      return (
+        <RepositoryDropdown
+          items={[]}
+          onSelectionChange={() => {}}
+          onInputChange={() => {}}
+          isDisabled
+        />
+      );
+    }
+
     if (isLoadingRepositories) {
       return <RepositoryLoadingState />;
     }
@@ -194,15 +220,12 @@ export function RepositorySelectionForm({
       return <RepositoryErrorState />;
     }
 
-    // For now, don't disable the repo dropdown based on provider selection
-    const isDisabled = false;
-
     return (
       <RepositoryDropdown
         items={repositoriesItems || []}
         onSelectionChange={handleRepoSelection}
         onInputChange={handleRepoInputChange}
-        isDisabled={isDisabled}
+        isDisabled={false}
         defaultFilter={(textValue, inputValue) => {
           if (!inputValue) return true;
 
@@ -262,7 +285,8 @@ export function RepositorySelectionForm({
           !selectedRepository ||
           isCreatingConversation ||
           isLoadingRepositories ||
-          isRepositoriesError
+          isRepositoriesError ||
+          (providers.length > 1 && !selectedProvider)
         }
         onClick={() =>
           createConversation(
