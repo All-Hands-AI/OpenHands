@@ -241,7 +241,7 @@ ${formData.query}
         <div className="w-full rounded-lg border border-[#525252] bg-[#24272E] max-h-[494px] min-h-[494px]">
           <MicroagentManagementSidebar isSmallerScreen />
         </div>
-        <div className="w-full rounded-lg border border-[#525252] bg-[#24272E] flex-1">
+        <div className="w-full rounded-lg border border-[#525252] bg-[#24272E] flex-1 min-h-[494px]">
           <MicroagentManagementMain />
         </div>
         {addMicroagentModalVisible && (
