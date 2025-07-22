@@ -3,6 +3,7 @@ import { useCreateConversation } from "./mutation/use-create-conversation";
 import { useUserProviders } from "./use-user-providers";
 import { useConversationSubscriptions } from "#/context/conversation-subscriptions-provider";
 import { Provider } from "#/types/settings";
+import { CreateMicroagent } from "#/api/open-hands.types";
 
 /**
  * Custom hook to create a conversation and subscribe to it, supporting multiple subscriptions.
@@ -24,6 +25,7 @@ export const useCreateConversationAndSubscribeMultiple = () => {
       query,
       conversationInstructions,
       repository,
+      createMicroagent,
       onSuccessCallback,
       onEventCallback,
     }: {
@@ -34,6 +36,7 @@ export const useCreateConversationAndSubscribeMultiple = () => {
         branch: string;
         gitProvider: Provider;
       };
+      createMicroagent?: CreateMicroagent;
       onSuccessCallback?: (conversationId: string) => void;
       onEventCallback?: (event: unknown, conversationId: string) => void;
     }) => {
@@ -42,6 +45,7 @@ export const useCreateConversationAndSubscribeMultiple = () => {
           query,
           conversationInstructions,
           repository,
+          createMicroagent,
         },
         {
           onSuccess: (data) => {

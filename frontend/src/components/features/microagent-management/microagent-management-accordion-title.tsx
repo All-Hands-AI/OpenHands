@@ -20,7 +20,7 @@ export function MicroagentManagementAccordionTitle({
           {repository.full_name}
         </div>
       </div>
-      <MicroagentManagementAddMicroagentButton />
+      <MicroagentManagementAddMicroagentButton repository={repository} />
     </div>
   );
 }
