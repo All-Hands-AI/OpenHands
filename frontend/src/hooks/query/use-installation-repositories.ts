@@ -26,6 +26,7 @@ export const useInstallationRepositories = (provider: Provider | null) => {
       }
 
       return OpenHands.retrieveInstallationRepositories(
+        provider!,
         installationIndex || 0,
         installations,
         repoPage || 1,

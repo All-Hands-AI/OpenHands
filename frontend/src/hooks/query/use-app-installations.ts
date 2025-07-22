@@ -4,6 +4,7 @@ import { useIsAuthed } from "./use-is-authed";
 import OpenHands from "#/api/open-hands";
 import { useUserProviders } from "../use-user-providers";
 import { Provider } from "#/types/settings";
+import { shouldUseInstallationRepos } from "#/utils/utils";
 
 export const useAppInstallations = (provider: Provider | null) => {
   const { data: config } = useConfig();
@@ -16,9 +17,7 @@ export const useAppInstallations = (provider: Provider | null) => {
     enabled:
       userIsAuthenticated &&
       !!provider &&
-      (providers.includes("github") || providers.includes("bitbucket")) &&
-      !!config?.GITHUB_CLIENT_ID &&
-      (config?.APP_MODE === "saas" || provider === "bitbucket"),
+      shouldUseInstallationRepos(provider, config?.APP_MODE),
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes
   });

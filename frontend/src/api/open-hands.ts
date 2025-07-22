@@ -453,6 +453,7 @@ class OpenHands {
   }
 
   static async retrieveInstallationRepositories(
+    provider: Provider,
     installationIndex: number,
     installations: string[],
     page = 1,
@@ -463,6 +464,7 @@ class OpenHands {
       "/api/user/repositories",
       {
         params: {
+          selected_provider: provider,
           sort: "pushed",
           page,
           per_page,
