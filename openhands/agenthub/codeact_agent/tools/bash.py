@@ -21,6 +21,12 @@ _DETAILED_BASH_DESCRIPTION = """Execute a bash command in the terminal within a 
   - Send control commands like `C-c` (Ctrl+C), `C-d` (Ctrl+D), or `C-z` (Ctrl+Z) to interrupt the process
   - If you do C-c, you can re-start the process with a longer "timeout" parameter to let it run to completion
 
+### Terminal Reset
+* If the terminal becomes unresponsive or stuck, you can set `reset_terminal` to `true` to completely reset the terminal session
+* This will terminate all running processes, close the current tmux session, and create a fresh session
+* Note: This will lose all environment variables, working directory changes, and other session state
+* Use this as a last resort when other recovery methods (like Ctrl+C) fail
+
 ### Best Practices
 * Directory verification: Before creating new directories or files, first verify the parent directory exists and is the correct location.
 * Directory management: Try to maintain working directory by using absolute paths and avoiding excessive use of `cd`.
@@ -71,6 +77,10 @@ def create_cmd_run_tool(
                     'timeout': {
                         'type': 'number',
                         'description': 'Optional. Sets a hard timeout in seconds for the command execution. If not provided, the command will use the default soft timeout behavior.',
+                    },
+                    'reset_terminal': {
+                        'type': 'boolean',
+                        'description': 'Optional. If True, completely reset the terminal session by terminating all running processes, closing the current tmux session, and creating a fresh session. Use this when the terminal becomes unresponsive. Default is False.',
                     },
                 },
                 'required': ['command'],
