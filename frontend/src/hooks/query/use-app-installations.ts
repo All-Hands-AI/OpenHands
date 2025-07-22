@@ -11,7 +11,7 @@ export const useAppInstallations = (provider: Provider) => {
   const { providers } = useUserProviders();
 
   return useQuery({
-    queryKey: ["installations", providers, config?.GITHUB_CLIENT_ID],
+    queryKey: ["installations", providers, config?.GITHUB_CLIENT_ID, provider],
     queryFn: () => OpenHands.getUserInstallationIds(provider),
     enabled:
       userIsAuthenticated &&

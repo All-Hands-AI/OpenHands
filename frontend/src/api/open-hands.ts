@@ -531,10 +531,11 @@ class OpenHands {
 
   /**
    * Get the user installation IDs
+   * @param provider The provider to get installation IDs for (github, bitbucket, etc.)
    * @returns List of installation IDs
    */
   static async getUserInstallationIds(provider: Provider): Promise<string[]> {
-    const { data } = await openHands.get<string[]>("/api/user/installations");
+    const { data } = await openHands.get<string[]>(`/api/user/installations?provider=${provider}`);
     return data;
   }
 }
