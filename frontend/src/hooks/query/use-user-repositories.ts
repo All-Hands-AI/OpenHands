@@ -13,7 +13,7 @@ export const useUserRepositories = (selectedProvider: Provider | null) => {
   const repos = useInfiniteQuery({
     queryKey: ["repositories", providers, selectedProvider],
     queryFn: async ({ pageParam }) =>
-      OpenHands.retrieveUserGitRepositories(selectedProvider!, pageParam, 100),
+      OpenHands.retrieveUserGitRepositories(selectedProvider!, pageParam, 30),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => lastPage.nextPage,
     enabled:
