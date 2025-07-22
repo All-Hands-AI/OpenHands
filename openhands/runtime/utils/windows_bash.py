@@ -659,6 +659,7 @@ class WindowsPowershellSession:
         Returns:
             CmdOutputObservation or ErrorObservation.
         """
+        newline = '\n'
         if not self._initialized or self._closed:
             return ErrorObservation(
                 content='PowerShell session is not initialized or has been closed.'
@@ -938,7 +939,7 @@ class WindowsPowershellSession:
                     content=(
                         f'ERROR: Cannot execute multiple commands at once.\n'
                         f'Please run each command separately OR chain them into a single command via PowerShell operators (e.g., ; or |).\n'
-                        f'Detected commands:\n{"\n".join(f"({i + 1}) {cmd}" for i, cmd in enumerate(splited_cmds))}'
+                        f'Detected commands:\n{newline.join(f"({i + 1}) {cmd}" for i, cmd in enumerate(splited_cmds))}'
                     )
                 )
             elif statements.Count == 0 and not command.strip().startswith('#'):
