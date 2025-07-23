@@ -193,6 +193,33 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
         ts = repo.get('pushed_at')
         return datetime.strptime(ts, '%Y-%m-%dT%H:%M:%SZ') if ts else datetime.min
 
+    def _parse_repository(
+        self, repo: dict, link_header: str | None = None
+    ) -> Repository:
+        """
+        Parse a GitHub API repository response into a Repository object.
+
+        Args:
+            repo: Repository data from GitHub API
+            link_header: Optional link header for pagination
+
+        Returns:
+            Repository object
+        """
+        return Repository(
+            id=str(repo.get('id')),  # type: ignore[arg-type]
+            full_name=repo.get('full_name'),  # type: ignore[arg-type]
+            stargazers_count=repo.get('stargazers_count'),
+            git_provider=ProviderType.GITHUB,
+            is_public=not repo.get('private', True),
+            owner_type=(
+                OwnerType.ORGANIZATION
+                if repo.get('owner', {}).get('type') == 'Organization'
+                else OwnerType.USER
+            ),
+            link_header=link_header,
+        )
+
     async def get_paginated_repos(
         self, page: int, per_page: int, sort: str, installation_id: str | None
     ):
@@ -208,20 +235,7 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
 
         next_link: str = headers.get('Link', '')
         return [
-            Repository(
-                id=str(repo.get('id')),  # type: ignore[arg-type]
-                full_name=repo.get('full_name'),  # type: ignore[arg-type]
-                stargazers_count=repo.get('stargazers_count'),
-                git_provider=ProviderType.GITHUB,
-                is_public=not repo.get('private', True),
-                owner_type=(
-                    OwnerType.ORGANIZATION
-                    if repo.get('owner', {}).get('type') == 'Organization'
-                    else OwnerType.USER
-                ),
-                link_header=next_link,
-            )
-            for repo in response
+            self._parse_repository(repo, link_header=next_link) for repo in response
         ]
 
     async def get_all_repositories(
@@ -264,21 +278,7 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
             all_repos = await self._fetch_paginated_repos(url, params, MAX_REPOS)
 
         # Convert to Repository objects
-        return [
-            Repository(
-                id=str(repo.get('id')),  # type: ignore[arg-type]
-                full_name=repo.get('full_name'),  # type: ignore[arg-type]
-                stargazers_count=repo.get('stargazers_count'),
-                git_provider=ProviderType.GITHUB,
-                is_public=not repo.get('private', True),
-                owner_type=(
-                    OwnerType.ORGANIZATION
-                    if repo.get('owner', {}).get('type') == 'Organization'
-                    else OwnerType.USER
-                ),
-            )
-            for repo in all_repos
-        ]
+        return [self._parse_repository(repo) for repo in all_repos]
 
     async def get_installations(self) -> list[str]:
         url = f'{self.BASE_URL}/user/installations'
@@ -315,21 +315,7 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
 
         response, _ = await self._make_request(url, params)
         repo_items = response.get('items', [])
-        repos = [
-            Repository(
-                id=str(repo.get('id')),
-                full_name=repo.get('full_name'),
-                stargazers_count=repo.get('stargazers_count'),
-                git_provider=ProviderType.GITHUB,
-                is_public=True,
-                owner_type=(
-                    OwnerType.ORGANIZATION
-                    if repo.get('owner', {}).get('type') == 'Organization'
-                    else OwnerType.USER
-                ),
-            )
-            for repo in repo_items
-        ]
+        repos = [self._parse_repository(repo) for repo in repo_items]
 
         return repos
 
@@ -466,18 +452,7 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
         url = f'{self.BASE_URL}/repos/{repository}'
         repo, _ = await self._make_request(url)
 
-        return Repository(
-            id=str(repo.get('id')),
-            full_name=repo.get('full_name'),
-            stargazers_count=repo.get('stargazers_count'),
-            git_provider=ProviderType.GITHUB,
-            is_public=not repo.get('private', True),
-            owner_type=(
-                OwnerType.ORGANIZATION
-                if repo.get('owner', {}).get('type') == 'Organization'
-                else OwnerType.USER
-            ),
-        )
+        return self._parse_repository(repo)
 
     async def get_branches(self, repository: str) -> list[Branch]:
         """Get branches for a repository"""
