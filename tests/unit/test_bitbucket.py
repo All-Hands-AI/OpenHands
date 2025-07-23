@@ -958,7 +958,7 @@ async def test_bitbucket_search_repositories_with_workspace_query():
 
         assert url == 'https://api.bitbucket.org/2.0/repositories/test-workspace'
         assert params['q'] == 'name~"test"'
-        assert params['pagelen'] == 3
+        assert params['pagelen'] == 5  # per_page parameter
 
         # Verify the result
         assert len(result) == 1
@@ -1037,12 +1037,12 @@ async def test_bitbucket_search_repositories_with_general_query():
         repo_call1 = mock_request.call_args_list[0]
         repo_url1, repo_params1 = repo_call1[0]
         assert repo_url1 == 'https://api.bitbucket.org/2.0/repositories/workspace1'
-        assert repo_params1['pagelen'] == 3
+        assert repo_params1['pagelen'] == 5  # per_page parameter
 
         repo_call2 = mock_request.call_args_list[1]
         repo_url2, repo_params2 = repo_call2[0]
         assert repo_url2 == 'https://api.bitbucket.org/2.0/repositories/workspace2'
-        assert repo_params2['pagelen'] == 3
+        assert repo_params2['pagelen'] == 5  # per_page parameter
 
         # Verify the result
         assert len(result) == 3
@@ -1052,20 +1052,45 @@ async def test_bitbucket_search_repositories_with_general_query():
 
 
 @pytest.mark.asyncio
-async def test_bitbucket_search_repositories_public_returns_empty():
+async def test_bitbucket_search_repositories_public_general_search():
     """
-    Test that the Bitbucket service returns empty list for public repository search.
+    Test that the Bitbucket service performs general search for non-URL public queries.
     """
     # Create a service instance
     service = BitBucketService(token=SecretStr('test-token'))
 
-    # Call search_repositories with public=True
-    result = await service.search_repositories(
-        query='test', per_page=5, sort='stars', order='desc', public=True
-    )
+    # Mock the _make_request method
+    with patch.object(service, '_make_request') as mock_request:
+        # Mock response for general search
+        mock_request.return_value = (
+            {
+                'values': [
+                    {
+                        'uuid': '{repo-uuid}',
+                        'slug': 'test-repo',
+                        'workspace': {'slug': 'test-workspace'},
+                        'is_private': False,
+                        'updated_on': '2023-01-01T00:00:00Z',
+                    }
+                ]
+            },
+            {},
+        )
 
-    # Verify empty result for public search
-    assert result == []
+        # Call search_repositories with public=True and non-URL query
+        result = await service.search_repositories(
+            query='test', per_page=5, sort='stars', order='desc', public=True
+        )
+
+        # Verify the general search was made
+        mock_request.assert_called_once_with(
+            'https://api.bitbucket.org/2.0/repositories',
+            {'q': 'name~"test"', 'pagelen': 5},
+        )
+
+        # Verify the result
+        assert len(result) == 1
+        assert result[0].full_name == 'test-workspace/test-repo'
 
 
 @pytest.mark.asyncio
@@ -1144,3 +1169,242 @@ async def test_bitbucket_get_installations_without_query():
 
         # Verify the result
         assert result == ['workspace1', 'workspace2', 'workspace3']
+
+
+@pytest.mark.asyncio
+async def test_bitbucket_search_repositories_with_url_query():
+    """
+    Test that the Bitbucket service correctly extracts repo info from URL queries.
+    """
+    # Create a service instance
+    service = BitBucketService(token=SecretStr('test-token'))
+
+    # Mock the _make_request method
+    with patch.object(service, '_make_request') as mock_request:
+        # Mock response for specific repository lookup
+        mock_request.return_value = (
+            {
+                'uuid': '{repo-uuid}',
+                'slug': 'nodejs-docs-hello-world-2',
+                'workspace': {'slug': 'vshpak_bsd'},
+                'is_private': False,
+                'updated_on': '2023-01-01T00:00:00Z',
+            },
+            {},
+        )
+
+        # Call search_repositories with Bitbucket URL
+        result = await service.search_repositories(
+            query='https://bitbucket.org/vshpak_bsd/nodejs-docs-hello-world-2/src/master/',
+            per_page=5,
+            sort='stars',
+            order='desc',
+            public=True,
+        )
+
+        # Verify the request was made correctly
+        mock_request.assert_called_once_with(
+            'https://api.bitbucket.org/2.0/repositories/vshpak_bsd/nodejs-docs-hello-world-2',
+            {},
+        )
+
+        # Verify the result
+        assert len(result) == 1
+        assert result[0].full_name == 'vshpak_bsd/nodejs-docs-hello-world-2'
+
+
+@pytest.mark.asyncio
+async def test_bitbucket_search_repositories_with_custom_domain_url():
+    """
+    Test that the Bitbucket service correctly extracts repo info from custom domain URLs.
+    """
+    # Create a service instance with custom base domain
+    service = BitBucketService(
+        token=SecretStr('test-token'), base_domain='custom-bitbucket.com'
+    )
+
+    # Mock the _make_request method
+    with patch.object(service, '_make_request') as mock_request:
+        # Mock response for specific repository lookup
+        mock_request.return_value = (
+            {
+                'uuid': '{repo-uuid}',
+                'slug': 'test-repo',
+                'workspace': {'slug': 'test-workspace'},
+                'is_private': False,
+                'updated_on': '2023-01-01T00:00:00Z',
+            },
+            {},
+        )
+
+        # Call search_repositories with custom domain URL
+        result = await service.search_repositories(
+            query='https://custom-bitbucket.com/test-workspace/test-repo/src/main/',
+            per_page=5,
+            sort='stars',
+            order='desc',
+            public=True,
+        )
+
+        # Verify the request was made correctly (should use custom API URL)
+        mock_request.assert_called_once_with(
+            'https://api.custom-bitbucket.com/2.0/repositories/test-workspace/test-repo',
+            {},
+        )
+
+        # Verify the result
+        assert len(result) == 1
+        assert result[0].full_name == 'test-workspace/test-repo'
+
+
+@pytest.mark.asyncio
+async def test_bitbucket_search_repositories_with_url_without_protocol():
+    """
+    Test that the Bitbucket service falls back to general search for URLs without protocol.
+    """
+    # Create a service instance
+    service = BitBucketService(token=SecretStr('test-token'))
+
+    # Mock the _make_request method
+    with patch.object(service, '_make_request') as mock_request:
+        # Mock response for general search (fallback)
+        mock_request.return_value = (
+            {
+                'values': [
+                    {
+                        'uuid': '{repo-uuid}',
+                        'slug': 'test-repo',
+                        'workspace': {'slug': 'test-workspace'},
+                        'is_private': False,
+                        'updated_on': '2023-01-01T00:00:00Z',
+                    }
+                ]
+            },
+            {},
+        )
+
+        # Call search_repositories with URL without protocol
+        result = await service.search_repositories(
+            query='bitbucket.org/test-workspace/test-repo',
+            per_page=5,
+            sort='stars',
+            order='desc',
+            public=True,
+        )
+
+        # Verify the fallback general search was made
+        mock_request.assert_called_once_with(
+            'https://api.bitbucket.org/2.0/repositories',
+            {'q': 'name~"bitbucket.org/test-workspace/test-repo"', 'pagelen': 5},
+        )
+
+        # Verify the result
+        assert len(result) == 1
+        assert result[0].full_name == 'test-workspace/test-repo'
+
+
+@pytest.mark.asyncio
+async def test_bitbucket_search_repositories_with_invalid_url():
+    """
+    Test that the Bitbucket service falls back to general search for invalid URLs.
+    """
+    # Create a service instance
+    service = BitBucketService(token=SecretStr('test-token'))
+
+    # Mock the _make_request method
+    with patch.object(service, '_make_request') as mock_request:
+        # Mock response for general search (fallback)
+        mock_request.return_value = (
+            {
+                'values': [
+                    {
+                        'uuid': '{repo-uuid}',
+                        'slug': 'test-repo',
+                        'workspace': {'slug': 'test-workspace'},
+                        'is_private': False,
+                        'updated_on': '2023-01-01T00:00:00Z',
+                    }
+                ]
+            },
+            {},
+        )
+
+        # Call search_repositories with invalid Bitbucket URL
+        result = await service.search_repositories(
+            query='https://bitbucket.org/invalid',  # Missing repo name
+            per_page=5,
+            sort='stars',
+            order='desc',
+            public=True,
+        )
+
+        # Verify the fallback general search was made
+        mock_request.assert_called_once_with(
+            'https://api.bitbucket.org/2.0/repositories',
+            {'q': 'name~"https://bitbucket.org/invalid"', 'pagelen': 5},
+        )
+
+        # Verify the result
+        assert len(result) == 1
+        assert result[0].full_name == 'test-workspace/test-repo'
+
+
+@pytest.mark.asyncio
+async def test_bitbucket_search_repositories_url_not_found_fallback():
+    """
+    Test that the Bitbucket service falls back to general search when specific repo from URL is not found.
+    """
+    # Create a service instance
+    service = BitBucketService(token=SecretStr('test-token'))
+
+    # Mock the _make_request method
+    with patch.object(service, '_make_request') as mock_request:
+        # First call (specific repo) raises exception, second call (general search) succeeds
+        mock_request.side_effect = [
+            Exception('Repository not found'),  # Specific repo lookup fails
+            (
+                {
+                    'values': [
+                        {
+                            'uuid': '{repo-uuid}',
+                            'slug': 'fallback-repo',
+                            'workspace': {'slug': 'fallback-workspace'},
+                            'is_private': False,
+                            'updated_on': '2023-01-01T00:00:00Z',
+                        }
+                    ]
+                },
+                {},
+            ),  # General search succeeds
+        ]
+
+        # Call search_repositories with Bitbucket URL
+        result = await service.search_repositories(
+            query='https://bitbucket.org/nonexistent/repo/src/master/',
+            per_page=5,
+            sort='stars',
+            order='desc',
+            public=True,
+        )
+
+        # Verify both requests were made
+        assert mock_request.call_count == 2
+
+        # First call: specific repo lookup
+        first_call = mock_request.call_args_list[0]
+        assert (
+            first_call[0][0]
+            == 'https://api.bitbucket.org/2.0/repositories/nonexistent/repo'
+        )
+
+        # Second call: general search fallback
+        second_call = mock_request.call_args_list[1]
+        assert second_call[0][0] == 'https://api.bitbucket.org/2.0/repositories'
+        assert (
+            second_call[0][1]['q']
+            == 'name~"https://bitbucket.org/nonexistent/repo/src/master/"'
+        )
+
+        # Verify the result from fallback search
+        assert len(result) == 1
+        assert result[0].full_name == 'fallback-workspace/fallback-repo'
