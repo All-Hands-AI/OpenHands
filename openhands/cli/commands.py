@@ -637,7 +637,8 @@ async def add_stdio_server(config: OpenHandsConfig) -> None:
             return
 
         args_input = await collect_input(
-            config, '\nEnter arguments (comma-separated, optional):'
+            config,
+            '\nEnter arguments (optional, e.g., "-y mcp-remote https://example.com"):',
         )
         if args_input is None:
             print_formatted_text('Operation cancelled.')

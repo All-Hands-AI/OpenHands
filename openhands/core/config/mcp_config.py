@@ -1,5 +1,6 @@
 import os
 import re
+import shlex
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
@@ -110,11 +111,29 @@ class MCPStdioServerConfig(BaseModel):
     @field_validator('args', mode='before')
     @classmethod
     def parse_args(cls, v) -> list[str]:
-        """Parse arguments from string or return list as-is."""
+        """Parse arguments from string or return list as-is.
+
+        Supports shell-like argument parsing using shlex.split().
+        Examples:
+        - "-y mcp-remote https://example.com"
+        - '--config "path with spaces" --debug'
+        - "arg1 arg2 arg3"
+        """
         if isinstance(v, str):
             if not v.strip():
                 return []
-            return [arg.strip() for arg in v.split(',') if arg.strip()]
+
+            v = v.strip()
+
+            # Use shell-like parsing for natural argument handling
+            try:
+                return shlex.split(v)
+            except ValueError as e:
+                # If shlex parsing fails (e.g., unmatched quotes), provide clear error
+                raise ValueError(
+                    f'Invalid argument format: {str(e)}. Use shell-like format, e.g., "arg1 arg2" or \'--config "value with spaces"\''
+                )
+
         return v or []
 
     @field_validator('env', mode='before')
