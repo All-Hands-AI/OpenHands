@@ -155,33 +155,17 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
         Returns:
             Repository object
         """
-        # Handle different ways of getting the repository ID
+
         repo_id = repo.get('uuid', '')
-        if not repo_id:
-            repo_id = repo.get('id', '')
 
-        # Handle different ways of getting the full name
-        full_name = repo.get('full_name')
-        if not full_name:
-            workspace_slug = repo.get('workspace', {}).get('slug', '')
-            repo_slug = repo.get('slug', '')
-            full_name = (
-                f'{workspace_slug}/{repo_slug}' if workspace_slug and repo_slug else ''
-            )
+        workspace_slug = repo.get('workspace', {}).get('slug', '')
+        repo_slug = repo.get('slug', '')
+        full_name = (
+            f'{workspace_slug}/{repo_slug}' if workspace_slug and repo_slug else ''
+        )
 
-        # Handle different ways of determining if repository is public
         is_public = not repo.get('is_private', True)
-
-        # Handle different ways of determining owner type
-        owner_type = OwnerType.USER
-        if repo.get('owner', {}).get('type') == 'user':
-            owner_type = OwnerType.USER
-        elif repo.get('owner', {}).get('type') == 'team':
-            owner_type = OwnerType.ORGANIZATION
-        elif repo.get('workspace', {}).get('is_private') is False:
-            owner_type = OwnerType.ORGANIZATION
-        else:
-            owner_type = OwnerType.USER
+        owner_type = OwnerType.ORGANIZATION
 
         return Repository(
             id=repo_id,
@@ -206,10 +190,10 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
         repositories = []
         # Bitbucket doesn't have a dedicated search endpoint like GitHub
         if '/' in query:
-            workspace, repo_query = query.split('/', 1)
+            workspace_slug, repo_query = query.split('/', 1)
 
-            url = f'{self.BASE_URL}/repositories/{workspace}'
-            params = {'q': f'name~"{query}"', 'pagelen': 3}
+            url = f'{self.BASE_URL}/repositories/{workspace_slug}'
+            params = {'q': f'name~"{repo_query}"', 'pagelen': 3}
             response, _ = await self._make_request(url, params)
 
             for repo_data in response.get('values', []):
