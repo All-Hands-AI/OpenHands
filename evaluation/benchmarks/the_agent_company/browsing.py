@@ -250,7 +250,7 @@ def pre_login(
         for action in login_actions:
             # Resolve any descriptive selectors to anchor IDs
             if obs:
-                action = resolve_action(action, obs.get_agent_obs_text())
+                action = resolve_action(action, obs.content)
 
             if not action:
                 logger.error(f'FAILED TO RESOLVE ACTION, {action}')

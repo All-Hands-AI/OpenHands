@@ -1,11 +1,11 @@
 import asyncio
 import json
 import os
+import re
 import tempfile
 from typing import Any
 
 import pandas as pd
-import toml
 from datasets import load_dataset
 
 import openhands.agenthub
@@ -19,6 +19,7 @@ from evaluation.utils.shared import (
     assert_and_raise,
     check_maximum_retries_exceeded,
     codeact_user_response,
+    filter_dataset,
     get_default_sandbox_config_for_eval,
     get_metrics,
     is_fatal_evaluation_error,
@@ -750,26 +751,6 @@ def process_instance(
     return output
 
 
-def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
-    file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.toml')
-    if os.path.exists(file_path):
-        with open(file_path, 'r') as file:
-            data = toml.load(file)
-            if 'selected_ids' in data:
-                selected_ids = data['selected_ids']
-                logger.info(
-                    f'Filtering {len(selected_ids)} tasks from "selected_ids"...'
-                )
-                subset = dataset[dataset[filter_column].isin(selected_ids)]
-                logger.info(f'Retained {subset.shape[0]} tasks after filtering')
-                return subset
-    skip_ids = os.environ.get('SKIP_IDS', '').split(',')
-    if len(skip_ids) > 0:
-        logger.info(f'Filtering {len(skip_ids)} tasks from "SKIP_IDS"...')
-        return dataset[~dataset[filter_column].isin(skip_ids)]
-    return dataset
-
-
 if __name__ == '__main__':
     # pdb.set_trace()
     parser = get_parser()
@@ -793,7 +774,9 @@ if __name__ == '__main__':
     # dataset = load_dataset(args.dataset)
     dataset = load_dataset('json', data_files=args.dataset)
     dataset = dataset[args.split]
-    swe_bench_tests = filter_dataset(dataset.to_pandas(), 'instance_id')
+    swe_bench_tests = filter_dataset(
+        dataset.to_pandas(), 'instance_id', os.path.dirname(os.path.abspath(__file__))
+    )
     logger.info(
         f'Loaded dataset {args.dataset} with split {args.split}: {len(swe_bench_tests)} tasks'
     )
@@ -811,12 +794,17 @@ if __name__ == '__main__':
     details = {}
     _agent_cls = openhands.agenthub.Agent.get_cls(args.agent_cls)
 
-    dataset_descrption = (
-        args.dataset.replace('/', '__') + '-' + args.split.replace('/', '__')
-    )
+    match = re.search(r'Multi-SWE-bench/[^/]+/[^/]+', args.dataset)
+    if match:
+        dataset_description = match.group(0) + '-' + args.split.replace('/', '__')
+    else:
+        dataset_description = (
+            args.dataset.replace('/', '__') + '-' + args.split.replace('/', '__')
+        )
+
     metadata = make_metadata(
         llm_config,
-        dataset_descrption,
+        dataset_description,
         args.agent_cls,
         args.max_iterations,
         args.eval_note,
@@ -843,7 +831,7 @@ if __name__ == '__main__':
         args.eval_num_workers,
         process_instance,
         timeout_seconds=120 * 60,  # 2 hour PER instance should be more than enough
-        max_retries=5,
+        max_retries=3,
     )
     # Check if any instances reached maximum retries
     check_maximum_retries_exceeded(metadata.eval_output_dir)
