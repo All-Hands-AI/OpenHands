@@ -144,20 +144,57 @@ class GitHandler:
 
     def get_git_changes(self) -> list[dict[str, str]] | None:
         """
-        Retrieves the list of changed files in the Git repository.
-        Optimized to use a single git command for maximum performance.
+        Recursively retrieves the list of changed files in all Git repositories.
+        Uses a single bash command for maximum performance and checks all subdirectories.
 
         Returns:
-            list[dict[str, str]] | None: A list of dictionaries containing file paths and statuses. None if not a git repository.
+            list[dict[str, str]] | None: A list of dictionaries containing file paths and statuses. None if no git repositories found.
         """
-        # Single command that checks git repo, gets status, and handles all cases
-        # git status --porcelain will fail if not in a git repo, so we can use that as our check
-        cmd = (
-            'git --no-pager status --porcelain=v1 --untracked-files=normal 2>/dev/null'
-        )
+        # Use a single command that finds all git repositories and gets their changes
+        # This approach uses find to locate .git directories, then processes each one
+        base_dir = self.cwd or '.'
+
+        cmd = f"""
+        # Find all git repositories and process them, avoiding duplicates
+        {{
+            # First, find all .git directories
+            find "{base_dir}" -name ".git" -type d 2>/dev/null | while read git_dir; do
+                echo "$(dirname "$git_dir")"
+            done
+
+            # Also check if the base directory itself is a git repo
+            if [ -d "{base_dir}/.git" ] || (cd "{base_dir}" && git rev-parse --git-dir >/dev/null 2>&1); then
+                echo "{base_dir}"
+            fi
+        }} | sort -u | while read repo_dir; do
+            cd "$repo_dir" || continue
+
+            # Get relative path from base_dir to repo_dir
+            if command -v realpath >/dev/null 2>&1; then
+                rel_path=$(realpath --relative-to="{base_dir}" "$repo_dir" 2>/dev/null || echo ".")
+            else
+                rel_path=$(python3 -c "import os; print(os.path.relpath('$repo_dir', '{base_dir}'))" 2>/dev/null || echo ".")
+            fi
+
+            # If we're in the base directory, don't add a prefix
+            if [ "$rel_path" = "." ]; then
+                prefix=""
+            else
+                prefix="$rel_path/"
+            fi
+
+            # Get git status and add prefix to each file path
+            git --no-pager status --porcelain=v1 --untracked-files=normal 2>/dev/null | while IFS= read -r line; do
+                if [ -n "$line" ] && [ $(echo "$line" | wc -c) -ge 4 ]; then
+                    echo "$(echo "$line" | cut -c1-3)$prefix$(echo "$line" | cut -c4-)"
+                fi
+            done
+        done
+        """
+
         output = self.execute(cmd, self.cwd)
 
-        if output.exit_code != 0:
+        if output.exit_code != 0 or not output.content.strip():
             return None
 
         result = []
@@ -190,7 +227,7 @@ class GitHandler:
                 }
             )
 
-        return result
+        return result if result else None
 
     def get_git_diff(self, file_path: str) -> dict[str, str]:
         """
