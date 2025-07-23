@@ -1,4 +1,3 @@
-import os
 from dataclasses import dataclass
 from typing import Callable
 
@@ -157,86 +156,59 @@ class GitHandler:
         if not self.cwd:
             return None
 
-        # Check if the current directory itself is a git repository
-        current_dir_changes = self._get_git_changes_for_directory(self.cwd)
+        # Single bash command that:
+        # 1. Creates a list of directories to check (current dir + direct subdirectories)
+        # 2. For each directory, checks if it's a git repo and gets status
+        # 3. Outputs in format: REPO_PATH|STATUS|FILE_PATH
+        cmd = """bash -c '
+        {
+            # Check current directory first
+            echo "."
+            # List direct subdirectories (excluding hidden ones)
+            find . -maxdepth 1 -type d ! -name ".*" ! -name "." 2>/dev/null || true
+        } | while IFS= read -r dir; do
+            if [ -d "$dir/.git" ] || git -C "$dir" rev-parse --git-dir >/dev/null 2>&1; then
+                # Get absolute path of the directory
+                repo_path=$(cd "$dir" && pwd)
+                # Get git status for this repository
+                git -C "$dir" status --porcelain 2>/dev/null | while IFS= read -r line; do
+                    if [ -n "$line" ]; then
+                        # Extract status (first 2 chars) and file path (from char 3 onwards)
+                        status=$(echo "$line" | cut -c1-2)
+                        file_path=$(echo "$line" | cut -c4-)
+                        # Convert status codes to single character
+                        case "$status" in
+                            "M "*|" M") echo "$repo_path|M|$file_path" ;;
+                            "A "*|" A") echo "$repo_path|A|$file_path" ;;
+                            "D "*|" D") echo "$repo_path|D|$file_path" ;;
+                            "R "*|" R") echo "$repo_path|R|$file_path" ;;
+                            "C "*|" C") echo "$repo_path|C|$file_path" ;;
+                            "U "*|" U") echo "$repo_path|U|$file_path" ;;
+                            "??") echo "$repo_path|A|$file_path" ;;
+                            *) echo "$repo_path|M|$file_path" ;;
+                        esac
+                    fi
+                done
+            fi
+        done
+        ' """
 
-        # Get all direct subdirectories of the workspace directory
-        workspace_changes = []
-        try:
-            # List all items in the current directory
-            for item in os.listdir(self.cwd):
-                item_path = os.path.join(self.cwd, item)
-                # Check if it's a directory and not a hidden directory
-                if os.path.isdir(item_path) and not item.startswith('.'):
-                    # Check if this subdirectory is a git repository
-                    subdir_changes = self._get_git_changes_for_directory(item_path)
-                    if subdir_changes:
-                        workspace_changes.extend(subdir_changes)
-        except (OSError, PermissionError):
-            # If we can't list the directory, just use current directory changes
-            pass
+        result = self.execute(cmd.strip(), self.cwd)
+        if result.exit_code != 0 or not result.content.strip():
+            return None
 
-        # Combine results from current directory and subdirectories
-        all_changes = []
-        if current_dir_changes:
-            all_changes.extend(current_dir_changes)
-        if workspace_changes:
-            all_changes.extend(workspace_changes)
+        # Parse the output
+        changes = []
+        for line in result.content.strip().split('\n'):
+            if '|' in line:
+                parts = line.split('|', 2)
+                if len(parts) == 3:
+                    repo_path, status, file_path = parts
+                    changes.append(
+                        {'repository': repo_path, 'status': status, 'path': file_path}
+                    )
 
-        return all_changes if all_changes else None
-
-    def _get_git_changes_for_directory(self, directory: str) -> list[dict[str, str]]:
-        """
-        Gets git changes for a specific directory.
-
-        Args:
-            directory (str): The directory to check for git changes.
-
-        Returns:
-            list[dict[str, str]]: A list of dictionaries containing file paths, statuses, and repository path.
-        """
-        # Single command that checks git repo, gets status, and handles all cases
-        # git status --porcelain will fail if not in a git repo, so we can use that as our check
-        cmd = (
-            'git --no-pager status --porcelain=v1 --untracked-files=normal 2>/dev/null'
-        )
-        output = self.execute(cmd, directory)
-
-        if output.exit_code != 0:
-            return []
-
-        result = []
-        for line in output.content.splitlines():
-            if len(line) < 3:
-                continue
-
-            # Git status format: XY filename
-            # X = index status, Y = working tree status
-            index_status = line[0]
-            worktree_status = line[1]
-            file_path = line[3:]  # Skip the two status chars and space
-
-            # Determine primary status (prioritize working tree changes)
-            if worktree_status != ' ':
-                primary_status = worktree_status
-            elif index_status != ' ':
-                primary_status = index_status
-            else:
-                continue  # No changes
-
-            # Map git status codes to our expected format
-            if primary_status == '?':
-                primary_status = 'A'  # Untracked files are treated as added
-
-            result.append(
-                {
-                    'status': primary_status,
-                    'path': file_path,
-                    'repository': directory,
-                }
-            )
-
-        return result
+        return changes if changes else None
 
     def get_git_diff(self, file_path: str) -> dict[str, str]:
         """
