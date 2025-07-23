@@ -279,14 +279,14 @@ class GitLabService(BaseGitService, GitService):
             params = {
                 'search': query,
                 'per_page': per_page,
-                'order_by': 'last_activity_at' if sort == 'updated' else sort,
                 'sort': order,
                 'membership': True,  # Include projects user is a member of
+                'search_namespaces': True,
             }
-
+            print('making request')
             response, _ = await self._make_request(url, params)
+            print(response)
             repos = [self._parse_repository(repo) for repo in response]
-
             return repos
 
     async def get_paginated_repos(
