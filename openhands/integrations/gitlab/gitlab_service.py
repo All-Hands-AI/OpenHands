@@ -281,8 +281,16 @@ class GitLabService(BaseGitService, GitService):
         else:
             # Original logic for non-public searches
             url = f'{self.BASE_URL}/projects'
+            
+            # Format search query for GitLab API
+            # Multiple terms should be separated by + and will be ANDed together
+            formatted_query = query.strip()
+            if ' ' in formatted_query:
+                # Replace spaces with + for proper GitLab search
+                formatted_query = formatted_query.replace(' ', '+')
+            
             params = {
-                'search': query,
+                'search': formatted_query,
                 'per_page': per_page,
                 'order_by': 'last_activity_at' if sort == 'updated' else sort,
                 'sort': order,
