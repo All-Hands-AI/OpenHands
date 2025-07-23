@@ -222,6 +222,40 @@ class GitLabService(BaseGitService, GitService):
             link_header=link_header,
         )
 
+    def _parse_gitlab_url(self, url: str) -> str | None:
+        """
+        Parse a GitLab URL to extract the repository path.
+
+        Expected format: https://{domain}/{group}/{possibly_subgroup}/{repo}
+        Returns the full path from group onwards (e.g., 'group/subgroup/repo' or 'group/repo')
+        """
+        try:
+            # Remove protocol and domain
+            if '://' in url:
+                url = url.split('://', 1)[1]
+            if '/' in url:
+                path = url.split('/', 1)[1]
+            else:
+                return None
+
+            # Clean up the path
+            path = path.strip('/')
+            if not path:
+                return None
+
+            # Split the path and remove empty parts
+            path_parts = [part for part in path.split('/') if part]
+
+            # We need at least 2 parts: group/repo
+            if len(path_parts) < 2:
+                return None
+
+            # Join all parts to form the full repository path
+            return '/'.join(path_parts)
+
+        except Exception:
+            return None
+
     async def search_repositories(
         self,
         query: str,
@@ -230,28 +264,35 @@ class GitLabService(BaseGitService, GitService):
         order: str = 'desc',
         public: bool = False,
     ) -> list[Repository]:
-        url = f'{self.BASE_URL}/projects'
         if public:
-            params = {
-                'search': query,
-                'per_page': per_page,
-                'order_by': 'last_activity_at',
-                'sort': order,
-                'visibility': 'public',
-            }
+            # When public=True, query is a GitLab URL that we need to parse
+            repo_path = self._parse_gitlab_url(query)
+            if not repo_path:
+                return []  # Invalid URL format
+
+            try:
+                # Try to get the specific repository
+                repository = await self.get_repository_details_from_repo_name(repo_path)
+                return [repository]
+            except Exception:
+                # Repository doesn't exist or is not accessible
+                return []
         else:
+            # Original logic for non-public searches
+            url = f'{self.BASE_URL}/projects'
             params = {
                 'search': query,
                 'per_page': per_page,
                 'order_by': 'last_activity_at' if sort == 'updated' else sort,
                 'sort': order,
-                'owned': 'true',  # Only get repositories owned by the user
+                'membership': True,  # Include projects user is a member of
+                'min_access_level': 30,  # Developer level (write access)
             }
 
-        response, _ = await self._make_request(url, params)
-        repos = [self._parse_repository(repo) for repo in response]
+            response, _ = await self._make_request(url, params)
+            repos = [self._parse_repository(repo) for repo in response]
 
-        return repos
+            return repos
 
     async def get_paginated_repos(
         self, page: int, per_page: int, sort: str, installation_id: str | None

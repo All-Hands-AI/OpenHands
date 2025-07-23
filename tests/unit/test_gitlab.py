@@ -167,3 +167,200 @@ async def test_gitlab_get_repositories_owner_type_fallback():
         # Verify all repositories default to USER owner_type
         for repo in repositories:
             assert repo.owner_type == OwnerType.USER
+
+
+@pytest.mark.asyncio
+async def test_gitlab_search_repositories_uses_membership_and_min_access_level():
+    """Test that search_repositories uses membership and min_access_level for non-public searches."""
+    service = GitLabService(token=SecretStr('test-token'))
+
+    # Mock repository data
+    mock_repos = [
+        {
+            'id': 123,
+            'path_with_namespace': 'test-user/search-repo1',
+            'star_count': 10,
+            'visibility': 'private',
+            'namespace': {'kind': 'user'},
+        },
+        {
+            'id': 456,
+            'path_with_namespace': 'test-org/search-repo2',
+            'star_count': 25,
+            'visibility': 'private',
+            'namespace': {'kind': 'group'},
+        },
+    ]
+
+    with patch.object(service, '_make_request') as mock_request:
+        mock_request.return_value = (mock_repos, {})
+
+        # Test non-public search (should use membership and min_access_level)
+        repositories = await service.search_repositories(
+            query='test-query', per_page=30, sort='updated', order='desc', public=False
+        )
+
+        # Verify the request was made with correct parameters
+        mock_request.assert_called_once()
+        call_args = mock_request.call_args
+        url = call_args[0][0]
+        params = call_args[0][1]  # params is the second positional argument
+
+        assert url == f'{service.BASE_URL}/projects'
+        assert params['search'] == 'test-query'
+        assert params['per_page'] == 30
+        assert params['order_by'] == 'last_activity_at'
+        assert params['sort'] == 'desc'
+        assert params['membership'] is True
+        assert params['min_access_level'] == 30
+        assert 'owned' not in params
+        assert 'visibility' not in params
+
+        # Verify we got the expected repositories
+        assert len(repositories) == 2
+
+
+@pytest.mark.asyncio
+async def test_gitlab_search_repositories_public_search_legacy():
+    """Test that search_repositories returns empty list for non-URL queries when public=True."""
+    service = GitLabService(token=SecretStr('test-token'))
+
+    with patch.object(service, '_make_request') as mock_request:
+        # Test public search with non-URL query (should return empty list)
+        repositories = await service.search_repositories(
+            query='public-query', per_page=20, sort='updated', order='asc', public=True
+        )
+
+        # Verify no request was made since it's not a valid URL
+        mock_request.assert_not_called()
+
+        # Verify we got empty list
+        assert len(repositories) == 0
+
+
+@pytest.mark.asyncio
+async def test_gitlab_search_repositories_url_parsing():
+    """Test that search_repositories correctly parses GitLab URLs when public=True."""
+    service = GitLabService(token=SecretStr('test-token'))
+
+    # Test URL parsing method directly
+    assert service._parse_gitlab_url('https://gitlab.com/group/repo') == 'group/repo'
+    assert (
+        service._parse_gitlab_url('https://gitlab.com/group/subgroup/repo')
+        == 'group/subgroup/repo'
+    )
+    assert (
+        service._parse_gitlab_url('https://gitlab.example.com/org/team/project')
+        == 'org/team/project'
+    )
+    assert service._parse_gitlab_url('https://gitlab.com/group/repo/') == 'group/repo'
+    assert (
+        service._parse_gitlab_url('https://gitlab.com/group/') is None
+    )  # Missing repo
+    assert service._parse_gitlab_url('https://gitlab.com/') is None  # Empty path
+    assert service._parse_gitlab_url('invalid-url') is None  # Invalid URL
+
+
+@pytest.mark.asyncio
+async def test_gitlab_search_repositories_public_url_lookup():
+    """Test that search_repositories looks up specific repository when public=True."""
+    service = GitLabService(token=SecretStr('test-token'))
+
+    # Mock repository data
+
+    with patch.object(
+        service, 'get_repository_details_from_repo_name'
+    ) as mock_get_repo:
+        mock_get_repo.return_value = Repository(
+            id='123',
+            full_name='group/repo',
+            stargazers_count=50,
+            git_provider=ProviderType.GITLAB,
+            is_public=True,
+            owner_type=OwnerType.ORGANIZATION,
+        )
+
+        # Test with valid GitLab URL
+        repositories = await service.search_repositories(
+            query='https://gitlab.com/group/repo', public=True
+        )
+
+        # Verify the repository lookup was called with correct path
+        mock_get_repo.assert_called_once_with('group/repo')
+
+        # Verify we got the expected repository
+        assert len(repositories) == 1
+        assert repositories[0].full_name == 'group/repo'
+
+
+@pytest.mark.asyncio
+async def test_gitlab_search_repositories_public_url_lookup_with_subgroup():
+    """Test that search_repositories handles subgroups correctly when public=True."""
+    service = GitLabService(token=SecretStr('test-token'))
+
+    with patch.object(
+        service, 'get_repository_details_from_repo_name'
+    ) as mock_get_repo:
+        mock_get_repo.return_value = Repository(
+            id='456',
+            full_name='group/subgroup/repo',
+            stargazers_count=25,
+            git_provider=ProviderType.GITLAB,
+            is_public=True,
+            owner_type=OwnerType.ORGANIZATION,
+        )
+
+        # Test with GitLab URL containing subgroup
+        repositories = await service.search_repositories(
+            query='https://gitlab.example.com/group/subgroup/repo', public=True
+        )
+
+        # Verify the repository lookup was called with correct path
+        mock_get_repo.assert_called_once_with('group/subgroup/repo')
+
+        # Verify we got the expected repository
+        assert len(repositories) == 1
+        assert repositories[0].full_name == 'group/subgroup/repo'
+
+
+@pytest.mark.asyncio
+async def test_gitlab_search_repositories_public_url_not_found():
+    """Test that search_repositories returns empty list when repository doesn't exist."""
+    service = GitLabService(token=SecretStr('test-token'))
+
+    with patch.object(
+        service, 'get_repository_details_from_repo_name'
+    ) as mock_get_repo:
+        # Simulate repository not found
+        mock_get_repo.side_effect = Exception('Repository not found')
+
+        # Test with valid GitLab URL but non-existent repository
+        repositories = await service.search_repositories(
+            query='https://gitlab.com/nonexistent/repo', public=True
+        )
+
+        # Verify the repository lookup was attempted
+        mock_get_repo.assert_called_once_with('nonexistent/repo')
+
+        # Verify we got empty list
+        assert len(repositories) == 0
+
+
+@pytest.mark.asyncio
+async def test_gitlab_search_repositories_public_invalid_url():
+    """Test that search_repositories returns empty list for invalid URLs."""
+    service = GitLabService(token=SecretStr('test-token'))
+
+    with patch.object(
+        service, 'get_repository_details_from_repo_name'
+    ) as mock_get_repo:
+        # Test with invalid URL
+        repositories = await service.search_repositories(
+            query='invalid-url', public=True
+        )
+
+        # Verify no repository lookup was attempted
+        mock_get_repo.assert_not_called()
+
+        # Verify we got empty list
+        assert len(repositories) == 0
