@@ -15,7 +15,7 @@ export const buttonStyles: Record<ComponentVariant, ButtonStyle> = {
       // hover modifier
       "enabled:hover:bg-grey-900 enabled:hover:ring-[1.5px]",
       // focus modifier
-      "enabled:hover:bg-grey-900 enabled:focus:ring-[1.5px]",
+      "enabled:hover:bg-grey-900 enabled:focus-visible:ring-[1.5px]",
       // active modifier
       "enabled:active:ring-1",
       // disabled modifier
@@ -27,7 +27,7 @@ export const buttonStyles: Record<ComponentVariant, ButtonStyle> = {
       // hover modifier
       "group-enabled:group-hover:font-semibold",
       // focus modifier
-      "group-enabled:group-focus:font-semibold",
+      "group-enabled:group-focus-visible:font-semibold",
       // active modifier
       "group-enabled:group-active:font-normal",
     ]),
@@ -38,7 +38,7 @@ export const buttonStyles: Record<ComponentVariant, ButtonStyle> = {
       // hover modifier
       "enabled:hover:bg-light-neutral-900 enabled:hover:ring-[1.5px]",
       // focus modifier
-      "enabled:focus:bg-light-neutral-900 enabled:focus:ring-[1.5px]",
+      "enabled:focus-visible:bg-light-neutral-900 enabled:focus-visible:ring-[1.5px]",
       // active modifier
       "enabled:active:ring-1",
       // disabled modifier
@@ -50,7 +50,7 @@ export const buttonStyles: Record<ComponentVariant, ButtonStyle> = {
       // hover modifier
       "group-enabled:group-hover:font-semibold",
       // focus modifier
-      "group-enabled:group-focus:font-semibold",
+      "group-enabled:group-focus-visible:font-semibold",
       // active modifier
       "group-enabled:group-active:font-normal",
     ]),
@@ -61,7 +61,7 @@ export const buttonStyles: Record<ComponentVariant, ButtonStyle> = {
       // hover modifier
       "enabled:hover:bg-grey-900",
       // focus modifier
-      "enabled:focus:bg-grey-900",
+      "enabled:focus-visible:bg-grey-900",
       // active modifier
       "enabled:active:bg-grey-970",
       // disabled modifier
@@ -73,7 +73,7 @@ export const buttonStyles: Record<ComponentVariant, ButtonStyle> = {
       // hover modifier
       "group-enabled:group-hover:font-semibold",
       // focus modifier
-      "group-enabled:group-focus:font-semibold",
+      "group-enabled:group-focus-visible:font-semibold",
       // disabled modifier
       "group-disabled:no-underline",
       // active modifier

@@ -1,8 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Button } from "../button/Button";
-import { ToastManager } from "./ToastManager";
 import { toasterMessages } from "./Toast";
-import React from "react";
+import { ToastManager } from "./ToastManager";
 
 const meta = {
   title: "Components/Toast",
@@ -24,32 +23,28 @@ const toastComponents: Record<ToastType, (text?: string) => void> = {
   warning: toasterMessages.warning,
 };
 
-const ToastComponent = ({ type }: { type: ToastType }) => {
+const ToastComponent = () => {
   return (
     <ToastManager>
-      <Button onClick={() => toastComponents[type]("Lorem Ipsum")}>
-        Notify
-      </Button>
+      <div className="flex flex-col gap-y-4">
+        <Button onClick={() => toastComponents["error"]("Lorem Ipsum")}>
+          Show error toast
+        </Button>
+        <Button onClick={() => toastComponents["info"]("Lorem Ipsum")}>
+          Show info toast
+        </Button>
+        <Button onClick={() => toastComponents["success"]("Lorem Ipsum")}>
+          Show success toast
+        </Button>
+        <Button onClick={() => toastComponents["warning"]("Lorem Ipsum")}>
+          Show warning toast
+        </Button>
+      </div>
     </ToastManager>
   );
 };
 
-export const Success: Story = {
+export const Main: Story = {
   args: {},
-  render: () => <ToastComponent type={"success"} />,
-};
-
-export const Error: Story = {
-  args: {},
-  render: () => <ToastComponent type={"error"} />,
-};
-
-export const Info: Story = {
-  args: {},
-  render: () => <ToastComponent type={"info"} />,
-};
-
-export const Warning: Story = {
-  args: {},
-  render: () => <ToastComponent type={"warning"} />,
+  render: () => <ToastComponent />,
 };
