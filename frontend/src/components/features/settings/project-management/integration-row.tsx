@@ -5,6 +5,10 @@ import { useLinkIntegration } from "#/hooks/mutation/use-link-integration";
 import { useUnlinkIntegration } from "#/hooks/mutation/use-unlink-integration";
 import { useValidateIntegration } from "#/hooks/query/use-validate-integration";
 import { ConfirmationModal } from "#/components/features/settings/project-management/confirmation-modal";
+import {
+  ConfigureButton,
+  ConfigureModal,
+} from "#/components/features/settings/project-management/configure-modal";
 import { InfoModal } from "#/components/features/settings/project-management/info-modal";
 import { IntegrationButton } from "#/components/features/settings/project-management/integration-button";
 
@@ -21,6 +25,7 @@ export function IntegrationRow({
 }: IntegrationRowProps) {
   const [isConfirmationModalOpen, setConfirmationModalOpen] =
     React.useState(false);
+  const [isConfigureModalOpen, setConfigureModalOpen] = React.useState(false);
   const [isInfoModalOpen, setInfoModalOpen] = React.useState(false);
   const [isUnlinking, setUnlinking] = React.useState(false);
 
@@ -62,6 +67,10 @@ export function IntegrationRow({
     setConfirmationModalOpen(true);
   };
 
+  const handleConfigure = () => {
+    setConfigureModalOpen(true);
+  };
+
   const handleConfirm = () => {
     if (isUnlinking) {
       unlinkMutation.mutate();
@@ -80,18 +89,30 @@ export function IntegrationRow({
   return (
     <div className="flex items-center justify-between" data-testid={dataTestId}>
       <span className="font-medium">{platformName}</span>
-      <IntegrationButton
-        isLoading={isLoading}
-        isLinked={isLinked}
-        onClick={isLinked ? handleUnlink : handleLink}
-        data-testid={`${platform}-integration-button`}
-      />
+      <div className="flex items-center gap-6">
+        <IntegrationButton
+          isLoading={isLoading}
+          isLinked={isLinked}
+          onClick={isLinked ? handleUnlink : handleLink}
+          data-testid={`${platform}-integration-button`}
+        />
+        <ConfigureButton
+          onClick={handleConfigure}
+          isDisabled={isLoading}
+          data-testid={`${platform}-configure-button`}
+        />
+      </div>
       <ConfirmationModal
         isOpen={isConfirmationModalOpen}
         onClose={() => setConfirmationModalOpen(false)}
         onConfirm={handleConfirm}
         platformName={platformName}
         isUnlinking={isUnlinking}
+      />
+      <ConfigureModal
+        isOpen={isConfigureModalOpen}
+        onClose={() => setConfigureModalOpen(false)}
+        platformName={platformName}
       />
       <InfoModal
         isOpen={isInfoModalOpen}
