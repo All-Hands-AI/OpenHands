@@ -98,7 +98,7 @@ export function MicroagentManagementRepositories({
         className="w-full px-0 gap-3"
         itemClasses={{
           base: "shadow-none bg-transparent border border-[#ffffff40] rounded-[6px] cursor-pointer",
-          trigger: "cursor-pointer",
+          trigger: "cursor-pointer gap-1",
         }}
         selectionMode="multiple"
       >
