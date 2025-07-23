@@ -187,38 +187,22 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
         if public:
             # Extract workspace and repo from URL
             # URL format: https://{domain}/{workspace}/{repo}/{additional_params}
-            try:
-                # Split by '/' and find workspace and repo parts
-                url_parts = query.split('/')
-                if len(url_parts) >= 5:  # https:, '', domain, workspace, repo
-                    workspace_slug = url_parts[3]
-                    repo_name = url_parts[4]
+            # Split by '/' and find workspace and repo parts
+            url_parts = query.split('/')
+            if len(url_parts) >= 5:  # https:, '', domain, workspace, repo
+                workspace_slug = url_parts[3]
+                repo_name = url_parts[4]
 
-                    # Search for the specific repository
-                    url = f'{self.BASE_URL}/repositories/{workspace_slug}/{repo_name}'
-                    try:
-                        response, _ = await self._make_request(url, {})
-                        repo = self._parse_repository(response)
-                        repositories.append(repo)
-                    except Exception:
-                        # If specific repo not found, fall back to general search
-                        pass
-            except Exception:
-                # If URL parsing fails, treat as regular query
-                pass
+                # Search for the specific repository
+                url = f'{self.BASE_URL}/repositories/{workspace_slug}/{repo_name}'
 
-            # If no specific repo found from URL, do general search
-            if not repositories:
-                url = f'{self.BASE_URL}/repositories'
-                params = {'q': f'name~"{query}"', 'pagelen': per_page}
-                response, _ = await self._make_request(url, params)
-                for repo_data in response.get('values', []):
-                    repo = self._parse_repository(repo_data)
-                    repositories.append(repo)
+                response, _ = await self._make_request(url, {})
+                repo = self._parse_repository(response)
+                repositories.append(repo)
 
             return repositories
 
-        # Bitbucket doesn't have a dedicated search endpoint like GitHub
+        # Search for repos once workspace prefix exists
         if '/' in query:
             workspace_slug, repo_query = query.split('/', 1)
 
@@ -232,35 +216,27 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
 
             return repositories
         else:
-            # Search workspaces that match the query (first 2 workspaces)
-            try:
-                matching_workspace_slugs = await self.get_installations(
-                    query=query, limit=2
-                )
+            # Workspace prefix isn't complete. Search workspaces that match the query, then list repos underneath each workspace
+            matching_workspace_slugs = await self.get_installations(
+                query=query, limit=2
+            )
 
-                # For each matching workspace, get the first 3 repositories
-                for workspace_slug in matching_workspace_slugs:
-                    # Get repositories for this workspace
-                    workspace_repos_url = (
-                        f'{self.BASE_URL}/repositories/{workspace_slug}'
+            for workspace_slug in matching_workspace_slugs:
+                # Get repositories for this workspace
+                workspace_repos_url = f'{self.BASE_URL}/repositories/{workspace_slug}'
+                repo_params = {'pagelen': per_page}
+
+                try:
+                    repo_response, _ = await self._make_request(
+                        workspace_repos_url, repo_params
                     )
-                    repo_params = {'pagelen': per_page}
 
-                    try:
-                        repo_response, _ = await self._make_request(
-                            workspace_repos_url, repo_params
-                        )
-
-                        for repo_data in repo_response.get('values', []):
-                            repo = self._parse_repository(repo_data)
-                            repositories.append(repo)
-                    except Exception:
-                        # If we can't access repositories for this workspace, skip it
-                        continue
-
-            except Exception:
-                # If workspace search fails, return empty list
-                pass
+                    for repo_data in repo_response.get('values', []):
+                        repo = self._parse_repository(repo_data)
+                        repositories.append(repo)
+                except Exception:
+                    # If we can't access repositories for this workspace, skip it
+                    continue
 
             return repositories
 
