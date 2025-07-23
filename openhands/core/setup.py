@@ -225,9 +225,26 @@ def create_controller(
 
 
 def generate_sid(config: OpenHandsConfig, session_name: str | None = None) -> str:
-    """Generate a session id based on the session name and the jwt secret."""
+    """Generate a session id based on the session name and the jwt secret.
+    
+    The session ID is kept short to ensure Kubernetes resource names don't exceed
+    the 63-character limit when prefixed with 'openhands-runtime-' (18 chars).
+    Total length is limited to 32 characters to allow for suffixes like '-svc', '-pvc'.
+    """
     session_name = session_name or str(uuid.uuid4())
     jwt_secret = config.jwt_secret
 
     hash_str = hashlib.sha256(f'{session_name}{jwt_secret}'.encode('utf-8')).hexdigest()
-    return f'{session_name}-{hash_str[:16]}'
+    
+    # Limit total session ID length to 32 characters for Kubernetes compatibility:
+    # - 'openhands-runtime-' (18 chars) + session_id (32 chars) = 50 chars
+    # - Leaves 13 chars for suffixes like '-svc' (4), '-pvc' (4), '-ingress-code' (13)
+    if len(session_name) > 16:
+        # If session_name is too long (e.g., full UUID), use first 8 chars + hash
+        session_id = f"{session_name[:8]}-{hash_str[:23]}"
+    else:
+        # If session_name is short enough, use it + remaining space for hash
+        remaining_chars = 32 - len(session_name) - 1  # -1 for the dash
+        session_id = f"{session_name}-{hash_str[:remaining_chars]}"
+    
+    return session_id[:32]  # Ensure we never exceed 32 characters
