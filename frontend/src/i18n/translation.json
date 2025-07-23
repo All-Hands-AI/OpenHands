@@ -11183,6 +11183,22 @@
         "de": "Microagent hinzufügen",
         "uk": "Додати мікроагента"
     },
+    "MICROAGENT_MANAGEMENT$UPDATE_MICROAGENT": {
+        "en": "Update microagent",
+        "ja": "マイクロエージェントを更新",
+        "zh-CN": "更新微代理",
+        "zh-TW": "更新微代理",
+        "ko-KR": "마이크로에이전트 업데이트",
+        "no": "Oppdater mikroagent",
+        "it": "Aggiorna microagent",
+        "pt": "Atualizar microagente",
+        "es": "Actualizar microagente",
+        "ar": "تحديث الوكيل الصغير",
+        "fr": "Mettre à jour le microagent",
+        "tr": "Mikro ajanı güncelle",
+        "de": "Microagent aktualisieren",
+        "uk": "Оновити мікроагента"
+    },
     "MICROAGENT_MANAGEMENT$ADD_MICROAGENT_MODAL_DESCRIPTION": {
         "en": "OpenHands will create a new microagent based on your instructions.",
         "ja": "OpenHandsはあなたの指示に基づいて新しいマイクロエージェントを作成します。",
@@ -11567,6 +11583,22 @@
         "de": "Lernen",
         "uk": "Вчитися"
     },
+    "COMMON$LEARN_SOMETHING_NEW": {
+        "en": "Learn something new",
+        "ja": "新しいことを学ぶ",
+        "zh-CN": "学习新东西",
+        "zh-TW": "學習新東西",
+        "ko-KR": "새로운 것을 배우기",
+        "no": "Lær noe nytt",
+        "it": "Impara qualcosa di nuovo",
+        "pt": "Aprender algo novo",
+        "es": "Aprender algo nuevo",
+        "ar": "تعلم شيئًا جديدًا",
+        "fr": "Apprendre quelque chose de nouveau",
+        "tr": "Yeni bir şey öğren",
+        "de": "Etwas Neues lernen",
+        "uk": "Вивчити щось нове"
+    },
     "COMMON$STARTING": {
         "en": "Starting",
         "ja": "開始中",
@@ -11614,5 +11646,21 @@
         "tr": "Konuşma durduruldu.",
         "de": "Das Gespräch wurde gestoppt.",
         "uk": "Розмову зупинено."
+    },
+    "MICROAGENT_MANAGEMENT$UPDATE_MICROAGENT_MODAL_DESCRIPTION": {
+        "en": "OpenHands will update the microagent based on your instructions.",
+        "ja": "OpenHandsはあなたの指示に基づいてマイクロエージェントを更新します。",
+        "zh-CN": "OpenHands 将根据您的指示更新微代理。",
+        "zh-TW": "OpenHands 將根據您的指示更新微代理。",
+        "ko-KR": "OpenHands가 귀하의 지시에 따라 마이크로에이전트를 업데이트합니다.",
+        "no": "OpenHands vil oppdatere mikroagenten basert på dine instruksjoner.",
+        "it": "OpenHands aggiornerà il microagent in base alle tue istruzioni.",
+        "pt": "O OpenHands atualizará o microagente com base nas suas instruções.",
+        "es": "OpenHands actualizará el microagente según tus instrucciones.",
+        "ar": "سيقوم OpenHands بتحديث الوكيل الصغير بناءً على تعليماتك.",
+        "fr": "OpenHands mettra à jour le microagent selon vos instructions.",
+        "tr": "OpenHands, talimatlarınıza göre mikro ajanı güncelleyecektir.",
+        "de": "OpenHands aktualisiert den Microagenten basierend auf Ihren Anweisungen.",
+        "uk": "OpenHands оновить мікроагента відповідно до ваших інструкцій."
     }
 }
