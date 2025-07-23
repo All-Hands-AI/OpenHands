@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { FaCircleInfo } from "react-icons/fa6";
@@ -19,17 +19,19 @@ import {
   BranchErrorState,
 } from "../home/repository-selection";
 
-interface MicroagentManagementAddMicroagentModalProps {
+interface MicroagentManagementUpsertMicroagentModalProps {
   onConfirm: (formData: MicroagentFormData) => void;
   onCancel: () => void;
   isLoading: boolean;
+  isUpdate?: boolean;
 }
 
-export function MicroagentManagementAddMicroagentModal({
+export function MicroagentManagementUpsertMicroagentModal({
   onConfirm,
   onCancel,
   isLoading = false,
-}: MicroagentManagementAddMicroagentModalProps) {
+  isUpdate = false,
+}: MicroagentManagementUpsertMicroagentModalProps) {
   const { t } = useTranslation();
 
   const [triggers, setTriggers] = useState<string[]>([]);
@@ -40,8 +42,22 @@ export function MicroagentManagementAddMicroagentModal({
     (state: RootState) => state.microagentManagement,
   );
 
+  const { selectedMicroagentItem } = useSelector(
+    (state: RootState) => state.microagentManagement,
+  );
+
+  const { microagent } = selectedMicroagentItem ?? {};
+
   // Add a ref to track if the branch was manually cleared by the user
   const branchManuallyClearedRef = useRef<boolean>(false);
+
+  // Populate form fields with existing microagent data when updating
+  useEffect(() => {
+    if (isUpdate && microagent) {
+      setQuery(microagent.content);
+      setTriggers(microagent.triggers || []);
+    }
+  }, [isUpdate, microagent]);
 
   const {
     data: branches,
@@ -75,9 +91,27 @@ export function MicroagentManagementAddMicroagentModal({
     }
   }, [branches, isLoadingBranches, selectedBranch]);
 
-  const modalTitle = selectedRepository
-    ? `${t(I18nKey.MICROAGENT_MANAGEMENT$ADD_A_MICROAGENT_TO)} ${(selectedRepository as GitRepository).full_name}`
-    : t(I18nKey.MICROAGENT_MANAGEMENT$ADD_A_MICROAGENT);
+  const modalTitle = useMemo(() => {
+    if (isUpdate) {
+      return t(I18nKey.MICROAGENT_MANAGEMENT$UPDATE_MICROAGENT);
+    }
+
+    if (selectedRepository) {
+      return `${t(I18nKey.MICROAGENT_MANAGEMENT$ADD_A_MICROAGENT_TO)} ${(selectedRepository as GitRepository).full_name}`;
+    }
+
+    return t(I18nKey.MICROAGENT_MANAGEMENT$ADD_A_MICROAGENT);
+  }, [isUpdate, selectedRepository, t]);
+
+  const modalDescription = useMemo(() => {
+    if (isUpdate) {
+      return t(
+        I18nKey.MICROAGENT_MANAGEMENT$UPDATE_MICROAGENT_MODAL_DESCRIPTION,
+      );
+    }
+
+    return t(I18nKey.MICROAGENT_MANAGEMENT$ADD_MICROAGENT_MODAL_DESCRIPTION);
+  }, [isUpdate, t]);
 
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -90,6 +124,7 @@ export function MicroagentManagementAddMicroagentModal({
       query: query.trim(),
       triggers,
       selectedBranch: selectedBranch?.name || "",
+      microagentPath: microagent?.path || "",
     });
   };
 
@@ -102,6 +137,7 @@ export function MicroagentManagementAddMicroagentModal({
       query: query.trim(),
       triggers,
       selectedBranch: selectedBranch?.name || "",
+      microagentPath: microagent?.path || "",
     });
   };
 
@@ -162,7 +198,7 @@ export function MicroagentManagementAddMicroagentModal({
   };
 
   return (
-    <ModalBackdrop>
+    <ModalBackdrop onClose={onCancel}>
       <ModalBody className="items-start rounded-[12px] p-6 min-w-[611px]">
         <div className="flex flex-col gap-2 w-full">
           <div className="flex justify-between items-center">
@@ -181,7 +217,7 @@ export function MicroagentManagementAddMicroagentModal({
             </button>
           </div>
           <span className="text-white text-sm font-normal">
-            {t(I18nKey.MICROAGENT_MANAGEMENT$ADD_MICROAGENT_MODAL_DESCRIPTION)}
+            {modalDescription}
           </span>
         </div>
         <form

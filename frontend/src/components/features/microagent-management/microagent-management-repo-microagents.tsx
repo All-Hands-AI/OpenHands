@@ -1,10 +1,10 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { Spinner } from "@heroui/react";
 import { MicroagentManagementMicroagentCard } from "./microagent-management-microagent-card";
 import { MicroagentManagementLearnThisRepo } from "./microagent-management-learn-this-repo";
 import { useRepositoryMicroagents } from "#/hooks/query/use-repository-microagents";
 import { useSearchConversations } from "#/hooks/query/use-search-conversations";
-import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { GitRepository } from "#/types/git";
 import { getGitProviderBaseUrl } from "#/utils/utils";
 import { RootState } from "#/store";
@@ -34,13 +34,18 @@ export function MicroagentManagementRepoMicroagents({
     data: microagents,
     isLoading: isLoadingMicroagents,
     isError: isErrorMicroagents,
-  } = useRepositoryMicroagents(owner, repo);
+  } = useRepositoryMicroagents(owner, repo, true);
 
   const {
     data: conversations,
     isLoading: isLoadingConversations,
     isError: isErrorConversations,
-  } = useSearchConversations(repositoryName, "microagent_management", 1000);
+  } = useSearchConversations(
+    repositoryName,
+    "microagent_management",
+    1000,
+    true,
+  );
 
   useEffect(() => {
     const hasConversations = conversations && conversations.length > 0;
@@ -72,7 +77,7 @@ export function MicroagentManagementRepoMicroagents({
   if (isLoading) {
     return (
       <div className="pb-4 flex justify-center">
-        <LoadingSpinner size="small" />
+        <Spinner size="sm" data-testid="loading-spinner" />
       </div>
     );
   }
