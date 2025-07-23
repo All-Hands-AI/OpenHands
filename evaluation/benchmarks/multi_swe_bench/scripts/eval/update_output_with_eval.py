@@ -7,6 +7,10 @@ from tqdm import tqdm
 
 parser = argparse.ArgumentParser()
 parser.add_argument('input_file', type=str)
+parser.add_argument('--force', action='store_true', 
+                    help='Force update all reports even if no changes are detected')
+parser.add_argument('--overwrite-backup', action='store_true',
+                    help='Automatically overwrite existing backup files without prompting')
 args = parser.parse_args()
 
 dirname = os.path.dirname(args.input_file)
@@ -24,6 +28,9 @@ instance_id_to_status = defaultdict(
 
 # Process official report if it exists
 swebench_official_report_json = os.path.join(dirname, 'eval_files/dataset/final_report.json')
+openhands_remote_report_jsonl = args.input_file.replace(
+    '.jsonl', '.swebench_eval.jsonl'
+)
 
 if os.path.exists(swebench_official_report_json):
     output_md_filepath = os.path.join(dirname, 'README.md')
@@ -86,30 +93,37 @@ else:
     )
     exit()
 
-# Before backup and update, check if any changes would be made
-needs_update = False
-with open(args.input_file, 'r') as infile:
-    for line in tqdm(infile, desc='Checking for changes'):
-        data = json.loads(line)
-        instance_id = data['instance_id']
-        current_report = data.get('report', {})
-        new_report = instance_id_to_status[
-            instance_id
-        ]  # if no report, it's not resolved
-        if current_report != new_report:
-            needs_update = True
-            break
+# Before backup and update, check if any changes would be made (unless --force is used)
+if not args.force:
+    needs_update = False
+    with open(args.input_file, 'r') as infile:
+        for line in tqdm(infile, desc='Checking for changes'):
+            data = json.loads(line)
+            instance_id = data['instance_id']
+            current_report = data.get('report', {})
+            new_report = instance_id_to_status[
+                instance_id
+            ]  # if no report, it's not resolved
+            if current_report != new_report:
+                needs_update = True
+                break
 
-if not needs_update:
-    print('No updates detected. Skipping file update.')
-    exit()
+    if not needs_update:
+        print('No updates detected. Skipping file update.')
+        exit()
+else:
+    print('Force flag enabled. Updating all reports regardless of changes.')
 
 # Backup and update the original file row by row
 if os.path.exists(args.input_file + '.bak'):
-    conf = input('Existing backup file found. Do you want to overwrite it? (y/n)')
-    if conf != 'y':
-        exit()
-    os.remove(args.input_file + '.bak')
+    if args.overwrite_backup:
+        print('Existing backup file found. Overwriting automatically due to --overwrite-backup flag.')
+        os.remove(args.input_file + '.bak')
+    else:
+        conf = input('Existing backup file found. Do you want to overwrite it? (y/n)')
+        if conf != 'y':
+            exit()
+        os.remove(args.input_file + '.bak')
 
 os.rename(args.input_file, args.input_file + '.bak')
 
