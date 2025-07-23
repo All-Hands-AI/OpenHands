@@ -262,8 +262,6 @@ async def test_fetch_mcp_tools_from_config_with_stdio(mock_create_clients):
 
 
 @pytest.mark.asyncio
-@patch('openhands.mcp.utils.create_mcp_clients')
-@pytest.mark.asyncio
 async def test_call_tool_mcp_stdio_client():
     """Test calling MCP tool on a stdio client."""
     # Create mock stdio client with the requested tool
