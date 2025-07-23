@@ -7,6 +7,8 @@ import {
 } from "#/state/microagent-management-slice";
 import { RootState } from "#/store";
 import { GitRepository } from "#/types/git";
+import PlusIcon from "#/icons/plus.svg?react";
+import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
 
 interface MicroagentManagementAddMicroagentButtonProps {
   repository: GitRepository;
@@ -23,19 +25,23 @@ export function MicroagentManagementAddMicroagentButton({
 
   const dispatch = useDispatch();
 
-  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
     dispatch(setAddMicroagentModalVisible(!addMicroagentModalVisible));
     dispatch(setSelectedRepository(repository));
   };
 
   return (
-    <button
-      type="button"
-      className="text-sm font-normal text-[#8480FF] cursor-pointer"
-      onClick={handleClick}
-    >
-      {t(I18nKey.COMMON$ADD_MICROAGENT)}
-    </button>
+    <div onClick={handleClick}>
+      <TooltipButton
+        tooltip={t(I18nKey.COMMON$ADD_MICROAGENT)}
+        ariaLabel={t(I18nKey.COMMON$ADD_MICROAGENT)}
+        className="p-0 min-w-0 h-6 w-6 flex items-center justify-center bg-transparent cursor-pointer"
+        testId="add-microagent-button"
+        placement="bottom"
+      >
+        <PlusIcon width={22} height={22} />
+      </TooltipButton>
+    </div>
   );
 }
