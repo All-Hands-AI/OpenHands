@@ -36,6 +36,25 @@ if os.path.exists(swebench_official_report_json):
     output_md_filepath = os.path.join(dirname, 'README.md')
     with open(swebench_official_report_json, 'r') as f:
         report = json.load(f)
+    
+    # Convert instance IDs from "repo/name:pr-123" format to "repo__name-123" format
+    def convert_instance_id(instance_id):
+        """Convert instance ID from slash/colon-pr format to double underscore/dash format"""
+        if '/' in instance_id and ':pr-' in instance_id:
+            # Split on '/' and ':pr-'
+            parts = instance_id.split('/')
+            if len(parts) == 2:
+                repo_part = parts[0]
+                name_and_pr = parts[1]
+                if ':pr-' in name_and_pr:
+                    name, pr_number = name_and_pr.split(':pr-')
+                    return f"{repo_part}__{name}-{pr_number}"
+        return instance_id
+    
+    # Convert all instance ID lists in the report
+    for key in ['resolved_ids', 'unresolved_ids', 'error_ids', 'empty_patch_ids', 'incomplete_ids']:
+        if key in report:
+            report[key] = [convert_instance_id(instance_id) for instance_id in report[key]]
 
     output_md = (
         '# Multi-SWE-bench Report\n'
