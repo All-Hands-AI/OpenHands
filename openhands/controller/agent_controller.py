@@ -464,12 +464,9 @@ class AgentController:
             observation (observation): The observation to handle.
         """
         observation_to_print = copy.deepcopy(observation)
-        if self.agent.llm and (
-            len(observation_to_print.content) > self.agent.llm.config.max_message_chars
-        ):
+        if len(observation_to_print.content) > self.agent.llm.config.max_message_chars:
             observation_to_print.content = truncate_content(
-                observation_to_print.content,
-                self.agent.llm.config.max_message_chars,
+                observation_to_print.content, self.agent.llm.config.max_message_chars
             )
         # Use info level if LOG_ALL_EVENTS is set
         log_level = 'info' if os.getenv('LOG_ALL_EVENTS') in ('true', '1') else 'debug'

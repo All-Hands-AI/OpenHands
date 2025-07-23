@@ -84,6 +84,7 @@ class CodeActAgent(Agent):
         Parameters:
         - llm (LLM): The llm to be used by this agent
         - config (AgentConfig): The configuration for this agent
+        - model_routing_config (ModelRoutingConfig | None): The model routing configuration to use
         - routing_llms (dict[str, LLM]): The LLMs to be selected for routing
         """
         super().__init__(llm, config)
