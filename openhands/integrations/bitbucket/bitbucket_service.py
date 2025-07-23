@@ -1,5 +1,6 @@
 import base64
 import os
+import re
 from typing import Any
 
 import httpx
@@ -243,8 +244,23 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
         # Extract repositories from the response
         repos = response.get('values', [])
 
-        # Extract link header for pagination
+        # Extract next URL from response
         next_link = response.get('next', '')
+        
+        # Format the link header in a way that the frontend can understand
+        # The frontend expects a format like: <url>; rel="next"
+        # where the URL contains a page parameter
+        formatted_link_header = ''
+        if next_link:
+            # Extract the page number from the next URL if possible
+            page_match = re.search(r'[?&]page=(\d+)', next_link)
+            if page_match:
+                next_page = page_match.group(1)
+                # Format it in a way that extractNextPageFromLink in frontend can parse
+                formatted_link_header = f'<{workspace_repos_url}?page={next_page}>; rel="next"'
+            else:
+                # If we can't extract the page, just use the next URL as is
+                formatted_link_header = f'<{next_link}>; rel="next"'
 
         repositories = [
             Repository(
@@ -259,7 +275,7 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
                     if repo.get('workspace', {}).get('is_private') is False
                     else OwnerType.USER
                 ),
-                link_header=next_link,
+                link_header=formatted_link_header,
             )
             for repo in repos
         ]
