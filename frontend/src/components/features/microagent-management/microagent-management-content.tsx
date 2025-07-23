@@ -231,25 +231,19 @@ export function MicroagentManagementContent() {
     });
   };
 
-  const renderModals = () => (
-    <>
-      {addMicroagentModalVisible && (
+  const renderModals = () => {
+    if (addMicroagentModalVisible || updateMicroagentModalVisible) {
+      return (
         <MicroagentManagementUpsertMicroagentModal
           onConfirm={(formData) => handleUpsertMicroagent(formData, false)}
           onCancel={() => hideUpsertMicroagentModal(false)}
           isLoading={isPending}
+          isUpdate={updateMicroagentModalVisible}
         />
-      )}
-      {updateMicroagentModalVisible && (
-        <MicroagentManagementUpsertMicroagentModal
-          onConfirm={(formData) => handleUpsertMicroagent(formData, true)}
-          onCancel={() => hideUpsertMicroagentModal(true)}
-          isLoading={isPending}
-          isUpdate
-        />
-      )}
-    </>
-  );
+      );
+    }
+    return null;
+  };
 
   if (width < 1024) {
     return (
