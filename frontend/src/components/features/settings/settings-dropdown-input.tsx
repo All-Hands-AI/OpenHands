@@ -106,15 +106,6 @@ export function SettingsDropdownInput({
         {(item) => (
           <AutocompleteItem key={item.key}>{item.label}</AutocompleteItem>
         )}
-        {/* Show loading indicator at the bottom when fetching more */}
-        {isFetchingNextPage && (
-          <AutocompleteItem key="loading" isDisabled>
-            <div className="flex items-center justify-center py-2">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-              <span className="ml-2 text-sm">{t("HOME$LOADING")}</span>
-            </div>
-          </AutocompleteItem>
-        )}
       </Autocomplete>
     </label>
   );
