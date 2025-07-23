@@ -234,11 +234,7 @@ async def git_changes(
 ) -> list[dict[str, str]] | JSONResponse:
     runtime: Runtime = conversation.runtime
 
-    cwd = await get_cwd(
-        conversation_store,
-        conversation.sid,
-        runtime.config.workspace_mount_path_in_sandbox,
-    )
+    cwd = runtime.config.workspace_mount_path_in_sandbox
     logger.info(f'Getting git changes in {cwd}')
 
     try:
