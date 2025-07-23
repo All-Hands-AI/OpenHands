@@ -41,9 +41,9 @@ export function RepositorySelectionForm({
   const { providers } = useUserProviders();
   const {
     data: repositoriesData,
+    scrollRef,
     isLoading: isLoadingRepositories,
     isError: isRepositoriesError,
-    hasNextPage,
     isFetchingNextPage,
   } = useRepositories(selectedProvider);
   const {
@@ -234,10 +234,8 @@ export function RepositorySelectionForm({
         onSelectionChange={handleRepoSelection}
         onInputChange={handleRepoInputChange}
         isDisabled={false}
-        hasNextPage={hasNextPage}
         isFetchingNextPage={isFetchingNextPage}
-        scrollRef={undefined}
-        onOpenChange={undefined}
+        scrollRef={scrollRef}
         defaultFilter={(textValue, inputValue) => {
           if (!inputValue) return true;
 

@@ -10,11 +10,8 @@ export interface RepositoryDropdownProps {
   defaultFilter?: (textValue: string, inputValue: string) => boolean;
   isDisabled?: boolean;
   // Infinite scroll props
-  hasNextPage?: boolean;
   isFetchingNextPage?: boolean;
-  onLoadMore?: () => void;
   scrollRef?: React.RefObject<HTMLElement>;
-  onOpenChange?: (isOpen: boolean) => void;
 }
 
 export function RepositoryDropdown({
@@ -23,11 +20,8 @@ export function RepositoryDropdown({
   onInputChange,
   defaultFilter,
   isDisabled = false,
-  hasNextPage,
   isFetchingNextPage,
-  onLoadMore,
   scrollRef,
-  onOpenChange,
 }: RepositoryDropdownProps) {
   const { t } = useTranslation();
 
@@ -47,11 +41,8 @@ export function RepositoryDropdown({
       defaultFilter={defaultFilter}
       isDisabled={isDisabled}
       isLoading={isFetchingNextPage}
-      hasNextPage={hasNextPage}
       isFetchingNextPage={isFetchingNextPage}
-      onLoadMore={onLoadMore}
       scrollRef={scrollRef}
-      onOpenChange={onOpenChange}
     />
   );
 }

@@ -14,7 +14,6 @@ export const useInstallationRepositories = (
   const { providers } = useUserProviders();
   const { data: config } = useConfig();
   const { data: installations } = useAppInstallations(selectedProvider);
-  const [isOpen, setIsOpen] = useState(false);
 
   const repos = useInfiniteQuery({
     queryKey: [
@@ -70,7 +69,6 @@ export const useInstallationRepositories = (
   // Use the infinite scroll hook to handle loading more data
   const [, scrollRef] = useInfiniteScroll({
     hasMore: repos.hasNextPage || false,
-    isEnabled: isOpen,
     shouldUseLoader: false,
     onLoadMore: () => {
       if (repos.hasNextPage && !repos.isFetchingNextPage) {
@@ -86,8 +84,6 @@ export const useInstallationRepositories = (
     isError: repos.isError,
     hasNextPage: repos.hasNextPage,
     isFetchingNextPage: repos.isFetchingNextPage,
-    fetchNextPage: repos.fetchNextPage,
     scrollRef,
-    onOpenChange: setIsOpen,
   };
 };

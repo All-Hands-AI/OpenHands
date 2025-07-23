@@ -23,11 +23,8 @@ interface SettingsDropdownInputProps {
   onInputChange?: (value: string) => void;
   defaultFilter?: (textValue: string, inputValue: string) => boolean;
   // Infinite scroll props
-  hasNextPage?: boolean;
   isFetchingNextPage?: boolean;
-  onLoadMore?: () => void;
   scrollRef?: React.RefObject<HTMLElement>;
-  onOpenChange?: (isOpen: boolean) => void;
 }
 
 export function SettingsDropdownInput({
@@ -48,14 +45,8 @@ export function SettingsDropdownInput({
   onSelectionChange,
   onInputChange,
   defaultFilter,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  hasNextPage: _hasNextPage,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  isFetchingNextPage: _isFetchingNextPage,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  onLoadMore: _onLoadMore,
+  isFetchingNextPage,
   scrollRef,
-  onOpenChange,
 }: SettingsDropdownInputProps) {
   const { t } = useTranslation();
 
@@ -78,7 +69,7 @@ export function SettingsDropdownInput({
         onInputChange={onInputChange}
         isClearable={isClearable}
         isDisabled={isDisabled || isLoading}
-        isLoading={isLoading || _isFetchingNextPage}
+        isLoading={isLoading || isFetchingNextPage}
         placeholder={isLoading ? t("HOME$LOADING") : placeholder}
         allowsCustomValue={allowsCustomValue}
         isRequired={required}
@@ -93,7 +84,6 @@ export function SettingsDropdownInput({
           },
         }}
         scrollRef={scrollRef}
-        onOpenChange={onOpenChange}
         defaultFilter={defaultFilter}
       >
         {(item) => (
