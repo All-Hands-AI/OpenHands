@@ -235,7 +235,9 @@ export function MicroagentManagementContent() {
     if (addMicroagentModalVisible || updateMicroagentModalVisible) {
       return (
         <MicroagentManagementUpsertMicroagentModal
-          onConfirm={(formData) => handleUpsertMicroagent(formData, false)}
+          onConfirm={(formData) =>
+            handleUpsertMicroagent(formData, updateMicroagentModalVisible)
+          }
           onCancel={() =>
             hideUpsertMicroagentModal(updateMicroagentModalVisible)
           }
