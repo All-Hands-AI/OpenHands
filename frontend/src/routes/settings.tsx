@@ -134,7 +134,7 @@ function SettingsScreen() {
                 className={({ isActive }) =>
                   cn(
                     "py-2 px-3 rounded flex items-center text-sm",
-                    isActive ? "bg-primary text-white" : "hover:bg-tertiary",
+                    isActive ? "bg-base text-white" : "hover:bg-tertiary",
                   )
                 }
               >
