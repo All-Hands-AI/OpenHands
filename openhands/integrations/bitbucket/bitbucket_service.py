@@ -1,8 +1,9 @@
 import base64
 import os
 import re
-from typing import Any
+from typing import Any, Dict
 
+import aiohttp
 import httpx
 from pydantic import SecretStr
 
@@ -155,19 +156,102 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
     async def search_user_repositories(
         self, query: str, per_page: int, sort: str, order: str, app_mode: AppMode
     ) -> list[Repository]:
-        """Search for user's own repositories"""
-        # Get all user repositories and filter by query
-        all_repos = await self.get_all_repositories(sort, app_mode)
+        """Search for user's own repositories using Bitbucket API search"""
+        repositories = []
         
-        # Filter repositories by query (case-insensitive)
-        filtered_repos = [
-            repo
-            for repo in all_repos
-            if query.lower() in repo.full_name.lower()
-        ]
+        # Check if query contains a forward slash (workspace/repo pattern)
+        if '/' in query:
+            workspace, repo_query = query.split('/', 1)
+            # Search in specific workspace
+            workspace_repos = await self._search_repositories_in_workspace(
+                workspace.strip(), repo_query.strip(), per_page
+            )
+            repositories.extend(workspace_repos)
+        else:
+            # Search across workspaces
+            workspaces = await self._get_user_workspaces()
+            
+            # Filter workspaces that match the query
+            matching_workspaces = [
+                ws for ws in workspaces 
+                if query.lower() in ws['name'].lower() or query.lower() in ws['slug'].lower()
+            ]
+            
+            # Get first 2 repos from each matching workspace
+            for workspace_data in matching_workspaces:
+                workspace_repos = await self._search_repositories_in_workspace(
+                    workspace_data['slug'], query, min(2, per_page)
+                )
+                repositories.extend(workspace_repos)
+                
+                # Stop if we have enough repositories
+                if len(repositories) >= per_page:
+                    break
+            
+            # If we don't have enough repos from matching workspaces, search in all workspaces
+            if len(repositories) < per_page:
+                remaining = per_page - len(repositories)
+                matching_workspace_slugs = {ws['slug'] for ws in matching_workspaces}
+                for workspace_data in workspaces:
+                    if workspace_data['slug'] not in matching_workspace_slugs:
+                        workspace_repos = await self._search_repositories_in_workspace(
+                            workspace_data['slug'], query, min(2, remaining)
+                        )
+                        repositories.extend(workspace_repos)
+                        remaining -= len(workspace_repos)
+                        
+                        if remaining <= 0:
+                            break
         
-        # Return up to per_page results
-        return filtered_repos[:per_page]
+        return repositories[:per_page]
+
+    async def _get_user_workspaces(self) -> list[Dict[str, Any]]:
+        """Get all workspaces the user has access to"""
+        url = f'{self.BASE_URL}/workspaces'
+        headers = {'Authorization': f'Bearer {self.token}'}
+        
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    return data.get('values', [])
+                else:
+                    return []
+    
+    async def _search_repositories_in_workspace(
+        self, workspace: str, query: str, limit: int
+    ) -> list[Repository]:
+        """Search repositories within a specific workspace"""
+        url = f'{self.BASE_URL}/repositories/{workspace}'
+        headers = {'Authorization': f'Bearer {self.token}'}
+        
+        # Use Bitbucket's query syntax to search by name
+        params = {
+            'q': f'name~"{query}"',
+            'pagelen': limit
+        }
+        
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers, params=params) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    repositories = []
+                    
+                    for repo_data in data.get('values', []):
+                        repo = Repository(
+                            id=repo_data['uuid'],
+                            full_name=repo_data['full_name'],
+                            git_provider=ProviderType.BITBUCKET,
+                            is_public=not repo_data['is_private'],
+                            stargazers_count=None,
+                            pushed_at=repo_data.get('updated_on'),
+                            owner_type=OwnerType.USER if repo_data.get('owner', {}).get('type') == 'user' else OwnerType.ORGANIZATION,
+                        )
+                        repositories.append(repo)
+                    
+                    return repositories
+                else:
+                    return []
 
     async def _fetch_paginated_data(
         self, url: str, params: dict, max_items: int
