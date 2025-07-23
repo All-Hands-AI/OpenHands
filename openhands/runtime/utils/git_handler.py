@@ -204,8 +204,10 @@ class GitHandler:
                 parts = line.split('|', 2)
                 if len(parts) == 3:
                     repo_path, status, file_path = parts
+                    if repo_path != self.cwd:
+                        file_path = f'{repo_path[len(self.cwd)+1:]}/{file_path}'
                     changes.append(
-                        {'repository': repo_path, 'status': status, 'path': file_path}
+                        {'status': status, 'path': file_path}
                     )
 
         return changes if changes else None
