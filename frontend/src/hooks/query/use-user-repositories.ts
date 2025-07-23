@@ -4,7 +4,6 @@ import { useUserProviders } from "../use-user-providers";
 import { Provider } from "#/types/settings";
 import OpenHands from "#/api/open-hands";
 import { shouldUseInstallationRepos } from "#/utils/utils";
-import { useInfiniteScroll } from "@heroui/use-infinite-scroll";
 
 export const useUserRepositories = (selectedProvider: Provider | null) => {
   const { providers } = useUserProviders();
@@ -24,6 +23,21 @@ export const useUserRepositories = (selectedProvider: Provider | null) => {
     gcTime: 1000 * 60 * 15, // 15 minutes
   });
 
-  // Remove auto-fetching behavior - let components control when to load more
-  return repos;
+  // Create a function to handle loading more data
+  const onLoadMore = () => {
+    if (repos.hasNextPage && !repos.isFetchingNextPage) {
+      repos.fetchNextPage();
+    }
+  };
+
+  // Return the query result with the load more handler
+  return {
+    data: repos.data,
+    isLoading: repos.isLoading,
+    isError: repos.isError,
+    hasNextPage: repos.hasNextPage,
+    isFetchingNextPage: repos.isFetchingNextPage,
+    fetchNextPage: repos.fetchNextPage,
+    onLoadMore,
+  };
 };

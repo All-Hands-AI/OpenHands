@@ -42,6 +42,7 @@ export function RepositoryDropdown({
       onInputChange={onInputChange}
       defaultFilter={defaultFilter}
       isDisabled={isDisabled}
+      isLoading={isFetchingNextPage}
       hasNextPage={hasNextPage}
       isFetchingNextPage={isFetchingNextPage}
       onLoadMore={onLoadMore}

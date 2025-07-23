@@ -45,7 +45,7 @@ export function RepositorySelectionForm({
     isError: isRepositoriesError,
     hasNextPage,
     isFetchingNextPage,
-    fetchNextPage,
+    onLoadMore,
   } = useRepositories(selectedProvider);
   const {
     data: branches,
@@ -240,7 +240,7 @@ export function RepositorySelectionForm({
         onLoadMore={() => {
           // Only load more when not searching (showing user repositories)
           if (!searchQuery.trim() && hasNextPage && !isFetchingNextPage) {
-            fetchNextPage();
+            onLoadMore();
           }
         }}
         defaultFilter={(textValue, inputValue) => {
