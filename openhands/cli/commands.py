@@ -518,6 +518,27 @@ def save_config_file(config_data: dict, file_path: Path) -> None:
         toml.dump(config_data, f)
 
 
+def _ensure_mcp_config_structure(config_data: dict) -> None:
+    """Ensure MCP configuration structure exists in config data."""
+    if 'mcp' not in config_data:
+        config_data['mcp'] = {}
+
+
+def _add_server_to_config(server_type: str, server_config: dict) -> Path:
+    """Add a server configuration to the config file."""
+    config_file_path = get_config_file_path()
+    config_data = load_config_file(config_file_path)
+    _ensure_mcp_config_structure(config_data)
+
+    if server_type not in config_data['mcp']:
+        config_data['mcp'][server_type] = []
+
+    config_data['mcp'][server_type].append(server_config)
+    save_config_file(config_data, config_file_path)
+
+    return config_file_path
+
+
 async def add_mcp_server(config: OpenHandsConfig) -> None:
     """Add a new MCP server configuration."""
     # Choose transport type
@@ -584,20 +605,11 @@ async def add_sse_server(config: OpenHandsConfig) -> None:
                 return
 
     # Save to config file
-    config_file_path = get_config_file_path()
-    config_data = load_config_file(config_file_path)
-    if 'mcp' not in config_data:
-        config_data['mcp'] = {}
-    if 'sse_servers' not in config_data['mcp']:
-        config_data['mcp']['sse_servers'] = []
-
     server_config = {'url': server.url}
     if server.api_key:
         server_config['api_key'] = server.api_key
 
-    config_data['mcp']['sse_servers'].append(server_config)
-    save_config_file(config_data, config_file_path)
-
+    config_file_path = _add_server_to_config('sse_servers', server_config)
     print_formatted_text(f'✓ SSE MCP server added to {config_file_path}: {server.url}')
 
     # Prompt for restart
@@ -669,13 +681,6 @@ async def add_stdio_server(config: OpenHandsConfig) -> None:
                 return
 
     # Save to config file
-    config_file_path = get_config_file_path()
-    config_data = load_config_file(config_file_path)
-    if 'mcp' not in config_data:
-        config_data['mcp'] = {}
-    if 'stdio_servers' not in config_data['mcp']:
-        config_data['mcp']['stdio_servers'] = []
-
     server_config: dict[str, Any] = {
         'name': server.name,
         'command': server.command,
@@ -685,9 +690,7 @@ async def add_stdio_server(config: OpenHandsConfig) -> None:
     if server.env:
         server_config['env'] = server.env
 
-    config_data['mcp']['stdio_servers'].append(server_config)
-    save_config_file(config_data, config_file_path)
-
+    config_file_path = _add_server_to_config('stdio_servers', server_config)
     print_formatted_text(
         f'✓ Stdio MCP server added to {config_file_path}: {server.name}'
     )
@@ -735,20 +738,11 @@ async def add_shttp_server(config: OpenHandsConfig) -> None:
                 return
 
     # Save to config file
-    config_file_path = get_config_file_path()
-    config_data = load_config_file(config_file_path)
-    if 'mcp' not in config_data:
-        config_data['mcp'] = {}
-    if 'shttp_servers' not in config_data['mcp']:
-        config_data['mcp']['shttp_servers'] = []
-
     server_config = {'url': server.url}
     if server.api_key:
         server_config['api_key'] = server.api_key
 
-    config_data['mcp']['shttp_servers'].append(server_config)
-    save_config_file(config_data, config_file_path)
-
+    config_file_path = _add_server_to_config('shttp_servers', server_config)
     print_formatted_text(
         f'✓ SHTTP MCP server added to {config_file_path}: {server.url}'
     )
@@ -810,9 +804,7 @@ async def remove_mcp_server(config: OpenHandsConfig) -> None:
     config_file_path = get_config_file_path()
     config_data = load_config_file(config_file_path)
 
-    if 'mcp' not in config_data:
-        print_formatted_text('No MCP configuration found.')
-        return
+    _ensure_mcp_config_structure(config_data)
 
     removed = False
 
