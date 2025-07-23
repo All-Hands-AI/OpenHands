@@ -146,62 +146,39 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
         self, query: str, per_page: int, sort: str, order: str, public: bool
     ) -> list[Repository]:
         """Search for repositories."""
-        # Bitbucket doesn't have a dedicated search endpoint like GitHub
-        return []
 
-    async def search_user_repositories(
-        self, query: str, per_page: int, sort: str, order: str, app_mode: AppMode
-    ) -> list[Repository]:
-        """Search for user's own repositories using Bitbucket API search"""
+        if public:
+            # BitBucket doesn't have a public search endpoint
+            return []
+
         repositories = []
-
-        # Check if query contains a forward slash (workspace/repo pattern)
+        # Bitbucket doesn't have a dedicated search endpoint like GitHub
         if '/' in query:
             workspace, repo_query = query.split('/', 1)
-            # Search in specific workspace
-            workspace_repos = await self._search_repositories_in_workspace(
-                workspace.strip(), repo_query.strip(), per_page
-            )
-            repositories.extend(workspace_repos)
-        else:
-            # Search across workspaces
-            workspaces = await self._get_user_workspaces()
 
-            # Filter workspaces that match the query
-            matching_workspaces = [
-                ws
-                for ws in workspaces
-                if query.lower() in ws['name'].lower()
-                or query.lower() in ws['slug'].lower()
-            ]
+            url = f'{self.BASE_URL}/repositories/{workspace}'
+            params = {'q': f'name~"{query}"', 'pagelen': 3}
+            response, _ = await self._make_request(url, params)
 
-            # Get first 2 repos from each matching workspace
-            for workspace_data in matching_workspaces:
-                workspace_repos = await self._search_repositories_in_workspace(
-                    workspace_data['slug'], query, min(2, per_page)
+            for repo_data in response.get('values', []):
+                repo = Repository(
+                    id=repo_data['uuid'],
+                    full_name=repo_data['full_name'],
+                    git_provider=ProviderType.BITBUCKET,
+                    is_public=not repo_data['is_private'],
+                    stargazers_count=None,
+                    pushed_at=repo_data.get('updated_on'),
+                    owner_type=OwnerType.USER
+                    if repo_data.get('owner', {}).get('type') == 'user'
+                    else OwnerType.ORGANIZATION,
                 )
-                repositories.extend(workspace_repos)
+                repositories.append(repo)
 
-                # Stop if we have enough repositories
-                if len(repositories) >= per_page:
-                    break
-
-            # If we don't have enough repos from matching workspaces, search in all workspaces
-            if len(repositories) < per_page:
-                remaining = per_page - len(repositories)
-                matching_workspace_slugs = {ws['slug'] for ws in matching_workspaces}
-                for workspace_data in workspaces:
-                    if workspace_data['slug'] not in matching_workspace_slugs:
-                        workspace_repos = await self._search_repositories_in_workspace(
-                            workspace_data['slug'], query, min(2, remaining)
-                        )
-                        repositories.extend(workspace_repos)
-                        remaining -= len(workspace_repos)
-
-                        if remaining <= 0:
-                            break
-
-        return repositories[:per_page]
+            return repositories
+        else:
+            # TODO: call the workspaces api and pass the query to find the first 2 workspaces
+            # Then get the first 3 repos inside each workspace
+            return []
 
     async def _get_user_workspaces(self) -> list[dict[str, Any]]:
         """Get all workspaces the user has access to"""
@@ -213,40 +190,6 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
                 if response.status == 200:
                     data = await response.json()
                     return data.get('values', [])
-                else:
-                    return []
-
-    async def _search_repositories_in_workspace(
-        self, workspace: str, query: str, limit: int
-    ) -> list[Repository]:
-        """Search repositories within a specific workspace"""
-        url = f'{self.BASE_URL}/repositories/{workspace}'
-        headers = {'Authorization': f'Bearer {self.token}'}
-
-        # Use Bitbucket's query syntax to search by name
-        params = {'q': f'name~"{query}"', 'pagelen': limit}
-
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=headers, params=params) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    repositories = []
-
-                    for repo_data in data.get('values', []):
-                        repo = Repository(
-                            id=repo_data['uuid'],
-                            full_name=repo_data['full_name'],
-                            git_provider=ProviderType.BITBUCKET,
-                            is_public=not repo_data['is_private'],
-                            stargazers_count=None,
-                            pushed_at=repo_data.get('updated_on'),
-                            owner_type=OwnerType.USER
-                            if repo_data.get('owner', {}).get('type') == 'user'
-                            else OwnerType.ORGANIZATION,
-                        )
-                        repositories.append(repo)
-
-                    return repositories
                 else:
                     return []
 
