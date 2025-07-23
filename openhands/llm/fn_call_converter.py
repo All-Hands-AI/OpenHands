@@ -428,6 +428,8 @@ def convert_tool_call_to_string(tool_call: dict) -> str:
             ret += '\n'
         if isinstance(param_value, list) or isinstance(param_value, dict):
             ret += json.dumps(param_value)
+        elif isinstance(param_value, bool):
+            ret += str(param_value).lower()
         else:
             ret += f'{param_value}'
         if is_multiline:
@@ -663,6 +665,34 @@ def _extract_and_validate_params(
                     raise FunctionCallValidationError(
                         f"Parameter '{param_name}' is expected to be an integer."
                     )
+            elif param_name_to_type[param_name] == 'float':
+                try:
+                    param_value = float(param_value)
+                except ValueError:
+                    raise FunctionCallValidationError(
+                        f"Parameter '{param_name}' is expected to be a float."
+                    )
+            elif param_name_to_type[param_name] == 'number':
+                try:
+                    float_value = float(param_value)
+                    if float_value.is_integer():
+                        param_value = int(float_value)
+                    else:
+                        param_value = float_value
+                except ValueError:
+                    raise FunctionCallValidationError(
+                        f"Parameter '{param_name}' is expected to be a number."
+                    )
+            elif param_name_to_type[param_name] == 'boolean':
+                match str(param_value).strip().lower():
+                    case 'true' | '1' | 'y' | 'yes' | 'accept' | 'ok' | 'okay':
+                        param_value = True
+                    case 'false' | '0' | 'n' | 'no' | 'deny':
+                        param_value = False
+                    case _:
+                        raise FunctionCallValidationError(
+                            f"Parameter '{param_name}' is expected to be a boolean."
+                        )
             elif param_name_to_type[param_name] == 'array':
                 try:
                     param_value = json.loads(param_value)
@@ -693,6 +723,7 @@ def _extract_and_validate_params(
         raise FunctionCallValidationError(
             f"Missing required parameters for function '{fn_name}': {missing_params}"
         )
+
     return params
 
 
@@ -815,9 +846,11 @@ def convert_non_fncall_messages_to_fncall_messages(
                     {
                         'role': 'tool',
                         'name': tool_name,
-                        'content': [{'type': 'text', 'text': tool_result}]
-                        if isinstance(content, list)
-                        else tool_result,
+                        'content': (
+                            [{'type': 'text', 'text': tool_result}]
+                            if isinstance(content, list)
+                            else tool_result
+                        ),
                         'tool_call_id': f'toolu_{tool_call_counter - 1:02d}',  # Use last generated ID
                     }
                 )

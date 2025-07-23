@@ -2,6 +2,7 @@
 
 import copy
 import json
+from textwrap import dedent
 
 import pytest
 from litellm import ChatCompletionToolParam
@@ -11,6 +12,7 @@ from openhands.llm.fn_call_converter import (
     IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX,
     TOOL_EXAMPLES,
     FunctionCallConversionError,
+    FunctionCallValidationError,
     convert_fncall_messages_to_non_fncall_messages,
     convert_from_multiple_tool_calls_to_single_tool_call_messages,
     convert_non_fncall_messages_to_fncall_messages,
@@ -18,6 +20,31 @@ from openhands.llm.fn_call_converter import (
     convert_tools_to_description,
     get_example_for_tools,
 )
+
+COERCE_TOOLS: list[ChatCompletionToolParam] = [
+    {
+        'type': 'function',
+        'function': {
+            'name': 'get_resource',
+            'description': 'Get a resource from the store',
+            'parameters': {
+                'type': 'object',
+                'properties': {
+                    'resourceId': {
+                        'type': 'integer',
+                    },
+                    'temperature': {
+                        'type': 'number',
+                    },
+                    'images': {
+                        'type': 'boolean',
+                    },
+                },
+                'required': ['resourceId'],
+            },
+        },
+    },
+]
 
 FNCALL_TOOLS: list[ChatCompletionToolParam] = [
     {
@@ -96,49 +123,68 @@ FNCALL_TOOLS: list[ChatCompletionToolParam] = [
 ]
 
 
+def test_coerce_tools_to_description():
+    formatted_tools = convert_tools_to_description(COERCE_TOOLS)
+    print(formatted_tools)
+    assert (
+        formatted_tools.strip()
+        == dedent("""
+            ---- BEGIN FUNCTION #1: get_resource ----
+            Description: Get a resource from the store
+            Parameters:
+              (1) resourceId (integer, required): No description provided
+              (2) temperature (number, optional): No description provided
+              (3) images (boolean, optional): No description provided
+            ---- END FUNCTION #1 ----
+        """).strip()
+    )
+
+
 def test_convert_tools_to_description():
     formatted_tools = convert_tools_to_description(FNCALL_TOOLS)
     print(formatted_tools)
     assert (
         formatted_tools.strip()
-        == """---- BEGIN FUNCTION #1: execute_bash ----
-Description: Execute a bash command in the terminal.
-* Long running commands: For commands that may run indefinitely, it should be run in the background and the output should be redirected to a file, e.g. command = `python3 app.py > server.log 2>&1 &`.
-* Interactive: If a bash command returns exit code `-1`, this means the process is not yet finished. The assistant must then send a second call to terminal with an empty `command` (which will retrieve any additional logs), or it can send additional text (set `command` to the text) to STDIN of the running process, or it can send command=`ctrl+c` to interrupt the process.
-* Timeout: If a command execution result says "Command timed out. Sending SIGINT to the process", the assistant should retry running the command in the background.
+        == dedent("""
+            ---- BEGIN FUNCTION #1: execute_bash ----
+            Description: Execute a bash command in the terminal.
+            * Long running commands: For commands that may run indefinitely, it should be run in the background and the output should be redirected to a file, e.g. command = `python3 app.py > server.log 2>&1 &`.
+            * Interactive: If a bash command returns exit code `-1`, this means the process is not yet finished. The assistant must then send a second call to terminal with an empty `command` (which will retrieve any additional logs), or it can send additional text (set `command` to the text) to STDIN of the running process, or it can send command=`ctrl+c` to interrupt the process.
+            * Timeout: If a command execution result says "Command timed out. Sending SIGINT to the process", the assistant should retry running the command in the background.
 
-Parameters:
-  (1) command (string, required): The bash command to execute. Can be empty to view additional logs when previous exit code is `-1`. Can be `ctrl+c` to interrupt the currently running process.
----- END FUNCTION #1 ----
+            Parameters:
+              (1) command (string, required): The bash command to execute. Can be empty to view additional logs when previous exit code is `-1`. Can be `ctrl+c` to interrupt the currently running process.
+            ---- END FUNCTION #1 ----
 
----- BEGIN FUNCTION #2: finish ----
-Description: Finish the interaction when the task is complete OR if the assistant cannot proceed further with the task.
-No parameters are required for this function.
----- END FUNCTION #2 ----
+            ---- BEGIN FUNCTION #2: finish ----
+            Description: Finish the interaction when the task is complete OR if the assistant cannot proceed further with the task.
+            No parameters are required for this function.
+            ---- END FUNCTION #2 ----
 
----- BEGIN FUNCTION #3: str_replace_editor ----
-Description: Custom editing tool for viewing, creating and editing files
-* State is persistent across command calls and discussions with the user
-* If `path` is a file, `view` displays the result of applying `cat -n`. If `path` is a directory, `view` lists non-hidden files and directories up to 2 levels deep
-* The `create` command cannot be used if the specified `path` already exists as a file
-* If a `command` generates a long output, it will be truncated and marked with `<response clipped>`
-* The `undo_edit` command will revert the last edit made to the file at `path`
+            ---- BEGIN FUNCTION #3: str_replace_editor ----
+            Description: Custom editing tool for viewing, creating and editing files
+            * State is persistent across command calls and discussions with the user
+            * If `path` is a file, `view` displays the result of applying `cat -n`. If `path` is a directory, `view` lists non-hidden files and directories up to 2 levels deep
+            * The `create` command cannot be used if the specified `path` already exists as a file
+            * If a `command` generates a long output, it will be truncated and marked with `<response clipped>`
+            * The `undo_edit` command will revert the last edit made to the file at `path`
 
-Notes for using the `str_replace` command:
-* The `old_str` parameter should match EXACTLY one or more consecutive lines from the original file. Be mindful of whitespaces!
-* If the `old_str` parameter is not unique in the file, the replacement will not be performed. Make sure to include enough context in `old_str` to make it unique
-* The `new_str` parameter should contain the edited lines that should replace the `old_str`
+            Notes for using the `str_replace` command:
+            * The `old_str` parameter should match EXACTLY one or more consecutive lines from the original file. Be mindful of whitespaces!
+            * If the `old_str` parameter is not unique in the file, the replacement will not be performed. Make sure to include enough context in `old_str` to make it unique
+            * The `new_str` parameter should contain the edited lines that should replace the `old_str`
 
-Parameters:
-  (1) command (string, required): The commands to run. Allowed options are: `view`, `create`, `str_replace`, `insert`, `undo_edit`.
-Allowed values: [`view`, `create`, `str_replace`, `insert`, `undo_edit`]
-  (2) path (string, required): Absolute path to file or directory, e.g. `/repo/file.py` or `/repo`.
-  (3) file_text (string, optional): Required parameter of `create` command, with the content of the file to be created.
-  (4) old_str (string, optional): Required parameter of `str_replace` command containing the string in `path` to replace.
-  (5) new_str (string, optional): Optional parameter of `str_replace` command containing the new string (if not given, no string will be added). Required parameter of `insert` command containing the string to insert.
-  (6) insert_line (integer, optional): Required parameter of `insert` command. The `new_str` will be inserted AFTER the line `insert_line` of `path`.
-  (7) view_range (array, optional): Optional parameter of `view` command when `path` points to a file. If none is given, the full file is shown. If provided, the file will be shown in the indicated line number range, e.g. [11, 12] will show lines 11 and 12. Indexing at 1 to start. Setting `[start_line, -1]` shows all lines from `start_line` to the end of the file.
----- END FUNCTION #3 ----""".strip()
+            Parameters:
+              (1) command (string, required): The commands to run. Allowed options are: `view`, `create`, `str_replace`, `insert`, `undo_edit`.
+            Allowed values: [`view`, `create`, `str_replace`, `insert`, `undo_edit`]
+              (2) path (string, required): Absolute path to file or directory, e.g. `/repo/file.py` or `/repo`.
+              (3) file_text (string, optional): Required parameter of `create` command, with the content of the file to be created.
+              (4) old_str (string, optional): Required parameter of `str_replace` command containing the string in `path` to replace.
+              (5) new_str (string, optional): Optional parameter of `str_replace` command containing the new string (if not given, no string will be added). Required parameter of `insert` command containing the string to insert.
+              (6) insert_line (integer, optional): Required parameter of `insert` command. The `new_str` will be inserted AFTER the line `insert_line` of `path`.
+              (7) view_range (array, optional): Optional parameter of `view` command when `path` points to a file. If none is given, the full file is shown. If provided, the file will be shown in the indicated line number range, e.g. [11, 12] will show lines 11 and 12. Indexing at 1 to start. Setting `[start_line, -1]` shows all lines from `start_line` to the end of the file.
+            ---- END FUNCTION #3 ----
+""").strip()
     )
 
 
@@ -1088,3 +1134,77 @@ def test_convert_fncall_messages_with_image_url():
         next(c for c in converted_messages[0]['content'] if c['type'] == 'text')['text']
         == f'EXECUTION RESULT of [{messages[0]["name"]}]:\n{messages[0]["content"][0]["text"]}'
     )
+
+
+def numeric_coercion_msg(resourceId='1', temperature='0.7', images='false'):
+    return [
+        {
+            'content': [
+                {
+                    'text': dedent(f"""
+                        Let's look at the resource mentioned in the task:
+
+                        <function=get_resource>
+                        <parameter=resourceId>{resourceId}</parameter>
+                        <parameter=temperature>{temperature}</parameter>
+                        <parameter=images>{images}</parameter>
+                        </function>
+                    """).strip(),
+                    'type': 'text',
+                }
+            ],
+            'role': 'assistant',
+        }
+    ]
+
+
+def test_numeric_type_conversions():
+    fncall_messages = [
+        {
+            'content': [
+                {
+                    'type': 'text',
+                    'text': "Let's look at the resource mentioned in the task:",
+                }
+            ],
+            'role': 'assistant',
+            'tool_calls': [
+                {
+                    'index': 1,
+                    'function': {
+                        'arguments': '{"resourceId": 1, "temperature": 0.7, "images": false}',
+                        'name': 'get_resource',
+                    },
+                    'id': 'toolu_01',
+                    'type': 'function',
+                }
+            ],
+        },
+    ]
+    non_fncall_messages = numeric_coercion_msg()
+    converted_non_fncall = convert_fncall_messages_to_non_fncall_messages(
+        fncall_messages, COERCE_TOOLS
+    )
+    assert converted_non_fncall == non_fncall_messages
+
+    converted_fncall = convert_non_fncall_messages_to_fncall_messages(
+        non_fncall_messages, COERCE_TOOLS
+    )
+    assert converted_fncall == fncall_messages
+
+
+def test_invalid_numeric_types_error():
+    with pytest.raises(FunctionCallValidationError):
+        convert_non_fncall_messages_to_fncall_messages(
+            numeric_coercion_msg(resourceId='one'), COERCE_TOOLS
+        )
+
+    with pytest.raises(FunctionCallValidationError):
+        convert_non_fncall_messages_to_fncall_messages(
+            numeric_coercion_msg(temperature='False'), COERCE_TOOLS
+        )
+
+    with pytest.raises(FunctionCallValidationError):
+        convert_non_fncall_messages_to_fncall_messages(
+            numeric_coercion_msg(images='nah'), COERCE_TOOLS
+        )
