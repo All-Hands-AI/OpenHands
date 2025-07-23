@@ -11,7 +11,6 @@ import {
   FiCpu,
   FiDatabase,
 } from "react-icons/fi";
-import { SettingsIcon } from "lucide-react";
 import { cn } from "#/utils/utils";
 import { useConfig } from "#/hooks/query/use-config";
 import { I18nKey } from "#/i18n/declaration";
@@ -103,13 +102,14 @@ function SettingsScreen() {
       data-testid="settings-screen"
       className="bg-base-secondary border border-tertiary h-full rounded-xl flex"
     >
-      <div className="w-64 border-r border-tertiary flex flex-col">
-        <header className="px-3 py-1.5 border-b border-b-tertiary flex items-center gap-2">
-          <SettingsIcon width={16} height={16} />
-          <h1 className="text-sm leading-6">{t(I18nKey.SETTINGS$TITLE)}</h1>
+      <div className="w-64 flex flex-col">
+        <header className="p-4">
+          <h1 className="text-2xl font-semibold text-white">
+            {t(I18nKey.SETTINGS$TITLE)}
+          </h1>
         </header>
 
-        <div className="px-3 py-2 border-b border-tertiary">
+        <div className="px-3 py-2">
           <SettingsDropdownInput
             testId="org-select"
             name="organization"
