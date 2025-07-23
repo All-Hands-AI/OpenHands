@@ -17,7 +17,9 @@ from openhands.cli.settings import modify_llm_settings_basic
 from openhands.cli.shell_config import (
     ShellConfigManager,
     add_aliases_to_shell_config,
+    alias_setup_declined,
     aliases_exist_in_shell_config,
+    mark_alias_setup_declined,
 )
 from openhands.cli.tui import (
     UsageMetrics,
@@ -232,12 +234,26 @@ async def run_session(
                     return
 
                 confirmation_status = await read_confirmation_input(config)
-                if confirmation_status == 'yes' or confirmation_status == 'always':
+                if confirmation_status in ('yes', 'always'):
                     event_stream.add_event(
                         ChangeAgentStateAction(AgentState.USER_CONFIRMED),
                         EventSource.USER,
                     )
-                else:
+                elif confirmation_status == 'edit':
+                    # Tell the agent the proposed action was rejected
+                    event_stream.add_event(
+                        ChangeAgentStateAction(AgentState.USER_REJECTED),
+                        EventSource.USER,
+                    )
+                    # Notify the user
+                    print_formatted_text(
+                        HTML(
+                            '<skyblue>Okay, please tell me what I should do instead.</skyblue>'
+                        )
+                    )
+                    # Solicit replacement isntructions
+                    await prompt_for_next_task(AgentState.AWAITING_USER_INPUT)
+                else:  # 'no' or fallback
                     event_stream.add_event(
                         ChangeAgentStateAction(AgentState.USER_REJECTED),
                         EventSource.USER,
@@ -401,106 +417,86 @@ def run_alias_setup_flow(config: OpenHandsConfig) -> None:
 
     Prompts the user to set up aliases for 'openhands' and 'oh' commands.
     Handles existing aliases by offering to keep or remove them.
+
+    Args:
+        config: OpenHands configuration
     """
     print_formatted_text('')
     print_formatted_text(HTML('<gold>🚀 Welcome to OpenHands CLI!</gold>'))
     print_formatted_text('')
 
-    # Check if aliases already exist
-    if aliases_exist_in_shell_config():
-        print_formatted_text(
-            HTML(
-                '<grey>We detected existing OpenHands aliases in your shell configuration.</grey>'
-            )
+    # Show the normal setup flow
+    print_formatted_text(
+        HTML('<grey>Would you like to set up convenient shell aliases?</grey>')
+    )
+    print_formatted_text('')
+    print_formatted_text(
+        HTML('<grey>This will add the following aliases to your shell profile:</grey>')
+    )
+    print_formatted_text(
+        HTML(
+            '<grey>  • <b>openhands</b> → uvx --python 3.12 --from openhands-ai openhands</grey>'
         )
-        print_formatted_text('')
-        print_formatted_text(
-            HTML(
-                '<grey>  • <b>openhands</b> → uvx --python 3.12 --from openhands-ai openhands</grey>'
-            )
+    )
+    print_formatted_text(
+        HTML(
+            '<grey>  • <b>oh</b> → uvx --python 3.12 --from openhands-ai openhands</grey>'
         )
-        print_formatted_text(
-            HTML(
-                '<grey>  • <b>oh</b> → uvx --python 3.12 --from openhands-ai openhands</grey>'
-            )
+    )
+    print_formatted_text('')
+    print_formatted_text(
+        HTML(
+            '<ansiyellow>⚠️  Note: This requires uv to be installed first.</ansiyellow>'
         )
-        print_formatted_text('')
-        print_formatted_text(
-            HTML('<ansigreen>✅ Aliases are already configured.</ansigreen>')
+    )
+    print_formatted_text(
+        HTML(
+            '<ansiyellow>   Installation guide: https://docs.astral.sh/uv/getting-started/installation</ansiyellow>'
         )
-        return  # Exit early since aliases already exist
-    else:
-        # No existing aliases, show the normal setup flow
-        print_formatted_text(
-            HTML('<grey>Would you like to set up convenient shell aliases?</grey>')
-        )
-        print_formatted_text('')
-        print_formatted_text(
-            HTML(
-                '<grey>This will add the following aliases to your shell profile:</grey>'
-            )
-        )
-        print_formatted_text(
-            HTML(
-                '<grey>  • <b>openhands</b> → uvx --python 3.12 --from openhands-ai openhands</grey>'
-            )
-        )
-        print_formatted_text(
-            HTML(
-                '<grey>  • <b>oh</b> → uvx --python 3.12 --from openhands-ai openhands</grey>'
-            )
-        )
-        print_formatted_text('')
-        print_formatted_text(
-            HTML(
-                '<ansiyellow>⚠️  Note: This requires uv to be installed first.</ansiyellow>'
-            )
-        )
-        print_formatted_text(
-            HTML(
-                '<ansiyellow>   Installation guide: https://docs.astral.sh/uv/getting-started/installation</ansiyellow>'
-            )
-        )
-        print_formatted_text('')
+    )
+    print_formatted_text('')
 
-        # Use cli_confirm to get user choice
-        choice = cli_confirm(
-            config,
-            'Set up shell aliases?',
-            ['Yes, set up aliases', 'No, skip this step'],
-        )
+    # Use cli_confirm to get user choice
+    choice = cli_confirm(
+        config,
+        'Set up shell aliases?',
+        ['Yes, set up aliases', 'No, skip this step'],
+    )
 
-        if choice == 0:  # User chose "Yes"
-            success = add_aliases_to_shell_config()
-            if success:
-                print_formatted_text('')
-                print_formatted_text(
-                    HTML('<ansigreen>✅ Aliases added successfully!</ansigreen>')
+    if choice == 0:  # User chose "Yes"
+        success = add_aliases_to_shell_config()
+        if success:
+            print_formatted_text('')
+            print_formatted_text(
+                HTML('<ansigreen>✅ Aliases added successfully!</ansigreen>')
+            )
+
+            # Get the appropriate reload command using the shell config manager
+            shell_manager = ShellConfigManager()
+            reload_cmd = shell_manager.get_reload_command()
+
+            print_formatted_text(
+                HTML(
+                    f'<grey>Run <b>{reload_cmd}</b> (or restart your terminal) to use the new aliases.</grey>'
                 )
-
-                # Get the appropriate reload command using the shell config manager
-                shell_manager = ShellConfigManager()
-                reload_cmd = shell_manager.get_reload_command()
-
-                print_formatted_text(
-                    HTML(
-                        f'<grey>Run <b>{reload_cmd}</b> (or restart your terminal) to use the new aliases.</grey>'
-                    )
-                )
-            else:
-                print_formatted_text('')
-                print_formatted_text(
-                    HTML(
-                        '<ansired>❌ Failed to add aliases. You can set them up manually later.</ansired>'
-                    )
-                )
-        else:  # User chose "No"
+            )
+        else:
             print_formatted_text('')
             print_formatted_text(
                 HTML(
-                    '<grey>Skipped alias setup. You can run this setup again anytime.</grey>'
+                    '<ansired>❌ Failed to add aliases. You can set them up manually later.</ansired>'
                 )
             )
+    else:  # User chose "No"
+        # Mark that the user has declined alias setup
+        mark_alias_setup_declined()
+
+        print_formatted_text('')
+        print_formatted_text(
+            HTML(
+                '<grey>Skipped alias setup. You can run this setup again anytime.</grey>'
+            )
+        )
 
     print_formatted_text('')
 
@@ -606,15 +602,23 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
         finalize_config(config)
 
     # Check if we should show the alias setup flow
-    # Only show it if aliases don't exist in the shell configuration
-    # and we're in an interactive environment (not during tests or CI)
-    if not aliases_exist_in_shell_config() and sys.stdin.isatty():
-        # Clear the terminal if we haven't shown a banner yet
+    # Only show it if:
+    # 1. Aliases don't exist in the shell configuration
+    # 2. User hasn't previously declined alias setup
+    # 3. We're in an interactive environment (not during tests or CI)
+    should_show_alias_setup = (
+        not aliases_exist_in_shell_config()
+        and not alias_setup_declined()
+        and sys.stdin.isatty()
+    )
+
+    if should_show_alias_setup:
+        # Clear the terminal if we haven't shown a banner yet (i.e., setup flow didn't run)
         if not banner_shown:
             clear()
 
         run_alias_setup_flow(config)
-        banner_shown = True
+        # Don't set banner_shown = True here, so the ASCII art banner will still be shown
 
     # TODO: Set working directory from config or use current working directory?
     current_dir = config.workspace_base

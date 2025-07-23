@@ -123,7 +123,8 @@ docker run -it \
 
 This launches the CLI in Docker, allowing you to interact with OpenHands.
 
-The `-e SANDBOX_USER_ID=$(id -u)` ensures files created by the agent in your workspace have the correct permissions.
+The `-e SANDBOX_USER_ID=$(id -u)` is passed to the Docker command to ensure the sandbox user matches the host user’s
+permissions. This prevents the agent from creating root-owned files in the mounted workspace.
 
 The conversation history will be saved in `~/.openhands/sessions`.
 

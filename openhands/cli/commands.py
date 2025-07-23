@@ -488,30 +488,33 @@ def handle_mcp_errors_command() -> None:
 
 
 def get_config_file_path() -> Path:
-    """Get the path to the config file."""
+    """Get the path to the config file. By default, we use config.toml in the current working directory. If not found, we use ~/.openhands/config.toml."""
+    # Check if config.toml exists in the current directory
+    current_dir = Path.cwd() / 'config.toml'
+    if current_dir.exists():
+        return current_dir
+
+    # Fallback to the user's home directory
     return Path.home() / '.openhands' / 'config.toml'
 
 
-def load_config_file() -> dict:
+def load_config_file(file_path: Path) -> dict:
     """Load the config file, creating it if it doesn't exist."""
-    config_path = get_config_file_path()
-
-    if config_path.exists():
+    if file_path.exists():
         try:
-            with open(config_path, 'r') as f:
+            with open(file_path, 'r') as f:
                 return toml.load(f)
         except Exception:
             pass
 
     # Create directory if it doesn't exist
-    config_path.parent.mkdir(parents=True, exist_ok=True)
+    file_path.parent.mkdir(parents=True, exist_ok=True)
     return {}
 
 
-def save_config_file(config_data: dict) -> None:
+def save_config_file(config_data: dict, file_path: Path) -> None:
     """Save the config file."""
-    config_path = get_config_file_path()
-    with open(config_path, 'w') as f:
+    with open(file_path, 'w') as f:
         toml.dump(config_data, f)
 
 
@@ -581,7 +584,8 @@ async def add_sse_server(config: OpenHandsConfig) -> None:
                 return
 
     # Save to config file
-    config_data = load_config_file()
+    config_file_path = get_config_file_path()
+    config_data = load_config_file(config_file_path)
     if 'mcp' not in config_data:
         config_data['mcp'] = {}
     if 'sse_servers' not in config_data['mcp']:
@@ -592,11 +596,9 @@ async def add_sse_server(config: OpenHandsConfig) -> None:
         server_config['api_key'] = server.api_key
 
     config_data['mcp']['sse_servers'].append(server_config)
-    save_config_file(config_data)
+    save_config_file(config_data, config_file_path)
 
-    print_formatted_text(
-        f'✓ SSE MCP server added to ~/.openhands/config.toml: {server.url}'
-    )
+    print_formatted_text(f'✓ SSE MCP server added to {config_file_path}: {server.url}')
 
     # Prompt for restart
     if await prompt_for_restart(config):
@@ -667,7 +669,8 @@ async def add_stdio_server(config: OpenHandsConfig) -> None:
                 return
 
     # Save to config file
-    config_data = load_config_file()
+    config_file_path = get_config_file_path()
+    config_data = load_config_file(config_file_path)
     if 'mcp' not in config_data:
         config_data['mcp'] = {}
     if 'stdio_servers' not in config_data['mcp']:
@@ -683,10 +686,10 @@ async def add_stdio_server(config: OpenHandsConfig) -> None:
         server_config['env'] = server.env
 
     config_data['mcp']['stdio_servers'].append(server_config)
-    save_config_file(config_data)
+    save_config_file(config_data, config_file_path)
 
     print_formatted_text(
-        f'✓ Stdio MCP server added to ~/.openhands/config.toml: {server.name}'
+        f'✓ Stdio MCP server added to {config_file_path}: {server.name}'
     )
 
     # Prompt for restart
@@ -732,7 +735,8 @@ async def add_shttp_server(config: OpenHandsConfig) -> None:
                 return
 
     # Save to config file
-    config_data = load_config_file()
+    config_file_path = get_config_file_path()
+    config_data = load_config_file(config_file_path)
     if 'mcp' not in config_data:
         config_data['mcp'] = {}
     if 'shttp_servers' not in config_data['mcp']:
@@ -743,10 +747,10 @@ async def add_shttp_server(config: OpenHandsConfig) -> None:
         server_config['api_key'] = server.api_key
 
     config_data['mcp']['shttp_servers'].append(server_config)
-    save_config_file(config_data)
+    save_config_file(config_data, config_file_path)
 
     print_formatted_text(
-        f'✓ SHTTP MCP server added to ~/.openhands/config.toml: {server.url}'
+        f'✓ SHTTP MCP server added to {config_file_path}: {server.url}'
     )
 
     # Prompt for restart
@@ -803,7 +807,8 @@ async def remove_mcp_server(config: OpenHandsConfig) -> None:
         return
 
     # Load config file and remove the server
-    config_data = load_config_file()
+    config_file_path = get_config_file_path()
+    config_data = load_config_file(config_file_path)
 
     if 'mcp' not in config_data:
         print_formatted_text('No MCP configuration found.')
@@ -830,8 +835,10 @@ async def remove_mcp_server(config: OpenHandsConfig) -> None:
         removed = True
 
     if removed:
-        save_config_file(config_data)
-        print_formatted_text(f'✓ {server_type} MCP server "{identifier}" removed.')
+        save_config_file(config_data, config_file_path)
+        print_formatted_text(
+            f'✓ {server_type} MCP server "{identifier}" removed from {config_file_path}.'
+        )
 
         # Prompt for restart
         if await prompt_for_restart(config):

@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import QuestionCircleIcon from "#/icons/question-circle.svg?react";
+import { DOCUMENTATION_URL } from "#/utils/constants";
 
 export function MicroagentManagementSidebarHeader() {
   const { t } = useTranslation();
@@ -10,9 +11,15 @@ export function MicroagentManagementSidebarHeader() {
       <h1 className="text-white text-[28px] font-bold">
         {t(I18nKey.MICROAGENT_MANAGEMENT$DESCRIPTION)}
       </h1>
-      <p className="text-white text-[14px] font-normal leading-[20px] pt-2">
+      <p className="text-white text-sm font-normal leading-[20px] pt-2">
         {t(I18nKey.MICROAGENT_MANAGEMENT$USE_MICROAGENTS)}
-        <QuestionCircleIcon className="inline-block ml-1" />
+        <a
+          href={DOCUMENTATION_URL.MICROAGENTS.MICROAGENTS_OVERVIEW}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <QuestionCircleIcon className="inline-block ml-1" />
+        </a>
       </p>
     </div>
   );
