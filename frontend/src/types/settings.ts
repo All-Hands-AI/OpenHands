@@ -49,6 +49,7 @@ export type Settings = {
   MAX_BUDGET_PER_TASK: number | null;
   EMAIL?: string;
   EMAIL_VERIFIED?: boolean;
+  SYSTEM_PROMPT?: string;
 };
 
 export type ApiSettings = {
@@ -75,6 +76,7 @@ export type ApiSettings = {
   };
   email?: string;
   email_verified?: boolean;
+  system_prompt?: string;
 };
 
 export type PostSettings = Settings & {
