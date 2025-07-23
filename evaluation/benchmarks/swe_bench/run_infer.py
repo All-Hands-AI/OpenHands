@@ -239,7 +239,7 @@ def get_config(
         )
     )
     # get 'draft_editor' config if exists
-    # config.set_llm_config(get_llm_config_arg('draft_editor'), 'draft_editor')
+    config.set_llm_config(get_llm_config_arg('draft_editor'), 'draft_editor')
 
     config_copy = copy.deepcopy(config)
     load_from_toml(config_copy)
@@ -250,14 +250,14 @@ def get_config(
         enable_mcp=False,
         condenser=metadata.condenser_config,
         enable_prompt_extensions=False,
-        # enable_model_routing=config_copy.get_agent_config().enable_model_routing,
     )
     config.set_agent_config(agent_config)
-    config.routing_llms = config_copy.routing_llms
+    config.model_routing = config_copy.model_routing
+
     # Set log_completions to True for all routing LLMs
     for llm_cfg in config.routing_llms.values():
         llm_cfg.log_completions = True
-    config.model_routing = config_copy.model_routing
+
     return config
 
 
@@ -670,14 +670,6 @@ def process_instance(
         )
     finally:
         runtime.close()
-        # try:
-        #     runtime.close()
-        #     call_async_from_sync(runtime.disconnect())
-        # except Exception as e:
-        #     logger.warning(f"Error during runtime cleanup: {e}")
-        # finally:
-        #     # Force cleanup
-        #     runtime = None
     # ==========================================
 
     # ======= Attempt to evaluate the agent's edits =======
@@ -695,9 +687,6 @@ def process_instance(
     # NOTE: this is NO LONGER the event stream, but an agent history that includes delegate agent's events
     histories = [event_to_dict(event) for event in state.history]
     metrics = get_metrics(state)
-
-    # # Clear large objects to free memory
-    # state.history = []  # Clear history after converting to dict
 
     # Save the output
     instruction = message_action.content
