@@ -11183,6 +11183,22 @@
         "de": "Microagent hinzufügen",
         "uk": "Додати мікроагента"
     },
+    "MICROAGENT_MANAGEMENT$UPDATE_MICROAGENT": {
+        "en": "Update microagent",
+        "ja": "マイクロエージェントを更新",
+        "zh-CN": "更新微代理",
+        "zh-TW": "更新微代理",
+        "ko-KR": "마이크로에이전트 업데이트",
+        "no": "Oppdater mikroagent",
+        "it": "Aggiorna microagent",
+        "pt": "Atualizar microagente",
+        "es": "Actualizar microagente",
+        "ar": "تحديث الوكيل الصغير",
+        "fr": "Mettre à jour le microagent",
+        "tr": "Mikro ajanı güncelle",
+        "de": "Microagent aktualisieren",
+        "uk": "Оновити мікроагента"
+    },
     "MICROAGENT_MANAGEMENT$ADD_MICROAGENT_MODAL_DESCRIPTION": {
         "en": "OpenHands will create a new microagent based on your instructions.",
         "ja": "OpenHandsはあなたの指示に基づいて新しいマイクロエージェントを作成します。",
@@ -11566,6 +11582,22 @@
         "tr": "Öğren",
         "de": "Lernen",
         "uk": "Вчитися"
+    },
+    "COMMON$LEARN_SOMETHING_NEW": {
+        "en": "Learn something new",
+        "ja": "新しいことを学ぶ",
+        "zh-CN": "学习新东西",
+        "zh-TW": "學習新東西",
+        "ko-KR": "새로운 것을 배우기",
+        "no": "Lær noe nytt",
+        "it": "Impara qualcosa di nuovo",
+        "pt": "Aprender algo novo",
+        "es": "Aprender algo nuevo",
+        "ar": "تعلم شيئًا جديدًا",
+        "fr": "Apprendre quelque chose de nouveau",
+        "tr": "Yeni bir şey öğren",
+        "de": "Etwas Neues lernen",
+        "uk": "Вивчити щось нове"
     },
     "COMMON$STARTING": {
         "en": "Starting",
