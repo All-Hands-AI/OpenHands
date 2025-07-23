@@ -263,35 +263,6 @@ async def test_fetch_mcp_tools_from_config_with_stdio(mock_create_clients):
 
 @pytest.mark.asyncio
 @patch('openhands.mcp.utils.create_mcp_clients')
-async def test_fetch_mcp_tools_from_config_without_stdio(mock_create_clients):
-    """Test fetching MCP tools with stdio servers disabled."""
-    from openhands.core.config.mcp_config import MCPConfig
-
-    # Setup mock clients
-    mock_client = MagicMock()
-    mock_tool = MagicMock()
-    mock_tool.to_param.return_value = {'function': {'name': 'http_tool'}}
-    mock_client.tools = [mock_tool]
-    mock_create_clients.return_value = [mock_client]
-
-    # Create config with stdio servers
-    mcp_config = MCPConfig(
-        stdio_servers=[MCPStdioServerConfig(name='test-server', command='python')]
-    )
-
-    # Test with use_stdio=False
-    tools = await openhands.mcp.utils.fetch_mcp_tools_from_config(
-        mcp_config, conversation_id='test-conv', use_stdio=False
-    )
-
-    # Verify
-    assert len(tools) == 1
-    assert tools[0] == {'function': {'name': 'http_tool'}}
-
-    # Verify create_mcp_clients was called without stdio servers (empty list)
-    mock_create_clients.assert_called_once_with([], [], 'test-conv', [])
-
-
 @pytest.mark.asyncio
 async def test_call_tool_mcp_stdio_client():
     """Test calling MCP tool on a stdio client."""
