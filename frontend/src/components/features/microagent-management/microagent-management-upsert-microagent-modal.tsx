@@ -103,6 +103,16 @@ export function MicroagentManagementUpsertMicroagentModal({
     return t(I18nKey.MICROAGENT_MANAGEMENT$ADD_A_MICROAGENT);
   }, [isUpdate, selectedRepository, t]);
 
+  const modalDescription = useMemo(() => {
+    if (isUpdate) {
+      return t(
+        I18nKey.MICROAGENT_MANAGEMENT$UPDATE_MICROAGENT_MODAL_DESCRIPTION,
+      );
+    }
+
+    return t(I18nKey.MICROAGENT_MANAGEMENT$ADD_MICROAGENT_MODAL_DESCRIPTION);
+  }, [isUpdate, t]);
+
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -207,7 +217,7 @@ export function MicroagentManagementUpsertMicroagentModal({
             </button>
           </div>
           <span className="text-white text-sm font-normal">
-            {t(I18nKey.MICROAGENT_MANAGEMENT$ADD_MICROAGENT_MODAL_DESCRIPTION)}
+            {modalDescription}
           </span>
         </div>
         <form

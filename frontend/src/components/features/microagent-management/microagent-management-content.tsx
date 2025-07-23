@@ -195,8 +195,6 @@ export function MicroagentManagementContent() {
           gitProvider,
         );
 
-    console.log("conversationInstructions", conversationInstructions);
-
     // Create the CreateMicroagent object
     const createMicroagent = {
       repo: repositoryName,
@@ -233,40 +231,8 @@ export function MicroagentManagementContent() {
     });
   };
 
-  if (width < 1024) {
-    return (
-      <div className="w-full h-full flex flex-col gap-6">
-        <div className="w-full rounded-lg border border-[#525252] bg-[#24272E] max-h-[494px] min-h-[494px]">
-          <MicroagentManagementSidebar isSmallerScreen />
-        </div>
-        <div className="w-full rounded-lg border border-[#525252] bg-[#24272E] flex-1 min-h-[494px]">
-          <MicroagentManagementMain />
-        </div>
-        {addMicroagentModalVisible && (
-          <MicroagentManagementUpsertMicroagentModal
-            onConfirm={(formData) => handleUpsertMicroagent(formData, false)}
-            onCancel={() => hideUpsertMicroagentModal(false)}
-            isLoading={isPending}
-          />
-        )}
-        {updateMicroagentModalVisible && (
-          <MicroagentManagementUpsertMicroagentModal
-            onConfirm={(formData) => handleUpsertMicroagent(formData, true)}
-            onCancel={() => hideUpsertMicroagentModal(true)}
-            isLoading={isPending}
-            isUpdate
-          />
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <div className="w-full h-full flex rounded-lg border border-[#525252] bg-[#24272E] overflow-hidden">
-      <MicroagentManagementSidebar />
-      <div className="flex-1">
-        <MicroagentManagementMain />
-      </div>
+  const renderModals = () => (
+    <>
       {addMicroagentModalVisible && (
         <MicroagentManagementUpsertMicroagentModal
           onConfirm={(formData) => handleUpsertMicroagent(formData, false)}
@@ -282,6 +248,30 @@ export function MicroagentManagementContent() {
           isUpdate
         />
       )}
+    </>
+  );
+
+  if (width < 1024) {
+    return (
+      <div className="w-full h-full flex flex-col gap-6">
+        <div className="w-full rounded-lg border border-[#525252] bg-[#24272E] max-h-[494px] min-h-[494px]">
+          <MicroagentManagementSidebar isSmallerScreen />
+        </div>
+        <div className="w-full rounded-lg border border-[#525252] bg-[#24272E] flex-1 min-h-[494px]">
+          <MicroagentManagementMain />
+        </div>
+        {renderModals()}
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full h-full flex rounded-lg border border-[#525252] bg-[#24272E] overflow-hidden">
+      <MicroagentManagementSidebar />
+      <div className="flex-1">
+        <MicroagentManagementMain />
+      </div>
+      {renderModals()}
     </div>
   );
 }
