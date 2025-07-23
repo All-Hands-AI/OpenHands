@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass
 from typing import Callable
 
@@ -144,21 +145,65 @@ class GitHandler:
 
     def get_git_changes(self) -> list[dict[str, str]] | None:
         """
-        Retrieves the list of changed files in the Git repository.
-        Optimized to use a single git command for maximum performance.
+        Retrieves the list of changed files in Git repositories.
+        Examines each direct subdirectory of the workspace directory looking for git repositories
+        and returns the changes for each of these directories.
+        Optimized to use a single git command per repository for maximum performance.
 
         Returns:
-            list[dict[str, str]] | None: A list of dictionaries containing file paths and statuses. None if not a git repository.
+            list[dict[str, str]] | None: A list of dictionaries containing file paths, statuses, and repository paths. None if no git repositories found.
+        """
+        # If cwd is not set, return None
+        if not self.cwd:
+            return None
+
+        # Check if the current directory itself is a git repository
+        current_dir_changes = self._get_git_changes_for_directory(self.cwd)
+
+        # Get all direct subdirectories of the workspace directory
+        workspace_changes = []
+        try:
+            # List all items in the current directory
+            for item in os.listdir(self.cwd):
+                item_path = os.path.join(self.cwd, item)
+                # Check if it's a directory and not a hidden directory
+                if os.path.isdir(item_path) and not item.startswith('.'):
+                    # Check if this subdirectory is a git repository
+                    subdir_changes = self._get_git_changes_for_directory(item_path)
+                    if subdir_changes:
+                        workspace_changes.extend(subdir_changes)
+        except (OSError, PermissionError):
+            # If we can't list the directory, just use current directory changes
+            pass
+
+        # Combine results from current directory and subdirectories
+        all_changes = []
+        if current_dir_changes:
+            all_changes.extend(current_dir_changes)
+        if workspace_changes:
+            all_changes.extend(workspace_changes)
+
+        return all_changes if all_changes else None
+
+    def _get_git_changes_for_directory(self, directory: str) -> list[dict[str, str]]:
+        """
+        Gets git changes for a specific directory.
+
+        Args:
+            directory (str): The directory to check for git changes.
+
+        Returns:
+            list[dict[str, str]]: A list of dictionaries containing file paths, statuses, and repository path.
         """
         # Single command that checks git repo, gets status, and handles all cases
         # git status --porcelain will fail if not in a git repo, so we can use that as our check
         cmd = (
             'git --no-pager status --porcelain=v1 --untracked-files=normal 2>/dev/null'
         )
-        output = self.execute(cmd, self.cwd)
+        output = self.execute(cmd, directory)
 
         if output.exit_code != 0:
-            return None
+            return []
 
         result = []
         for line in output.content.splitlines():
@@ -187,6 +232,7 @@ class GitHandler:
                 {
                     'status': primary_status,
                     'path': file_path,
+                    'repository': directory,
                 }
             )
 

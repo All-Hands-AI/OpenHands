@@ -352,6 +352,85 @@ class TestGitHandler(unittest.TestCase):
             )
         )
 
+    def test_get_git_changes_multiple_repositories(self):
+        """Test that get_git_changes can detect changes in multiple git repositories within a workspace."""
+        # Create a workspace directory with multiple git repositories
+        workspace_dir = os.path.join(self.test_dir, 'workspace')
+        repo1_dir = os.path.join(workspace_dir, 'repo1')
+        repo2_dir = os.path.join(workspace_dir, 'repo2')
+        non_git_dir = os.path.join(workspace_dir, 'non_git')
+
+        os.makedirs(workspace_dir, exist_ok=True)
+        os.makedirs(repo1_dir, exist_ok=True)
+        os.makedirs(repo2_dir, exist_ok=True)
+        os.makedirs(non_git_dir, exist_ok=True)
+
+        # Set up repo1
+        self._execute_command('git --no-pager init', repo1_dir)
+        self._execute_command(
+            "git --no-pager config user.email 'test@example.com'", repo1_dir
+        )
+        self._execute_command("git --no-pager config user.name 'Test User'", repo1_dir)
+        with open(os.path.join(repo1_dir, 'repo1_file.txt'), 'w') as f:
+            f.write('repo1 content')
+        self._execute_command('git --no-pager add repo1_file.txt', repo1_dir)
+        self._execute_command("git --no-pager commit -m 'Initial commit'", repo1_dir)
+        # Modify the file to create changes
+        with open(os.path.join(repo1_dir, 'repo1_file.txt'), 'w') as f:
+            f.write('repo1 modified content')
+
+        # Set up repo2
+        self._execute_command('git --no-pager init', repo2_dir)
+        self._execute_command(
+            "git --no-pager config user.email 'test@example.com'", repo2_dir
+        )
+        self._execute_command("git --no-pager config user.name 'Test User'", repo2_dir)
+        with open(os.path.join(repo2_dir, 'repo2_file.txt'), 'w') as f:
+            f.write('repo2 content')
+        self._execute_command('git --no-pager add repo2_file.txt', repo2_dir)
+        self._execute_command("git --no-pager commit -m 'Initial commit'", repo2_dir)
+        # Add an untracked file
+        with open(os.path.join(repo2_dir, 'untracked.txt'), 'w') as f:
+            f.write('untracked content')
+
+        # Add a file to the non-git directory (should be ignored)
+        with open(os.path.join(non_git_dir, 'ignored_file.txt'), 'w') as f:
+            f.write('ignored content')
+
+        # Create a GitHandler for the workspace directory
+        workspace_handler = GitHandler(self._execute_command)
+        workspace_handler.set_cwd(workspace_dir)
+
+        # Clear executed commands to start fresh
+        self.executed_commands = []
+
+        # Get changes from all repositories
+        changes = workspace_handler.get_git_changes()
+        self.assertIsNotNone(changes)
+
+        # Should find changes from both repositories
+        repositories = {change['repository'] for change in changes}
+        self.assertIn(repo1_dir, repositories)
+        self.assertIn(repo2_dir, repositories)
+
+        # Check specific changes
+        repo1_changes = [c for c in changes if c['repository'] == repo1_dir]
+        repo2_changes = [c for c in changes if c['repository'] == repo2_dir]
+
+        # repo1 should have a modified file
+        self.assertEqual(len(repo1_changes), 1)
+        self.assertEqual(repo1_changes[0]['path'], 'repo1_file.txt')
+        self.assertEqual(repo1_changes[0]['status'], 'M')
+
+        # repo2 should have an untracked file
+        self.assertEqual(len(repo2_changes), 1)
+        self.assertEqual(repo2_changes[0]['path'], 'untracked.txt')
+        self.assertEqual(repo2_changes[0]['status'], 'A')
+
+        # Should not include changes from non-git directories
+        non_git_changes = [c for c in changes if c['repository'] == non_git_dir]
+        self.assertEqual(len(non_git_changes), 0)
+
 
 if __name__ == '__main__':
     unittest.main()
