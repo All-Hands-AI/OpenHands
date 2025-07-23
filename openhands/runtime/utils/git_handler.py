@@ -180,18 +180,51 @@ class GitHandler:
     def get_git_changes(self) -> list[dict[str, str]] | None:
         """
         Retrieves the list of changed files in the Git repository.
+        Optimized to use a single git command for maximum performance.
 
         Returns:
             list[dict[str, str]] | None: A list of dictionaries containing file paths and statuses. None if not a git repository.
         """
-        if not self._is_git_repo():
+        # Single command that checks git repo, gets status, and handles all cases
+        # git status --porcelain will fail if not in a git repo, so we can use that as our check
+        cmd = (
+            'git --no-pager status --porcelain=v1 --untracked-files=normal 2>/dev/null'
+        )
+        output = self.execute(cmd, self.cwd)
+
+        if output.exit_code != 0:
             return None
 
-        changes_list = self._get_changed_files()
-        result = parse_git_changes(changes_list)
+        result = []
+        for line in output.content.splitlines():
+            if len(line) < 3:
+                continue
 
-        # join with any untracked files
-        result += self._get_untracked_files()
+            # Git status format: XY filename
+            # X = index status, Y = working tree status
+            index_status = line[0]
+            worktree_status = line[1]
+            file_path = line[3:]  # Skip the two status chars and space
+
+            # Determine primary status (prioritize working tree changes)
+            if worktree_status != ' ':
+                primary_status = worktree_status
+            elif index_status != ' ':
+                primary_status = index_status
+            else:
+                continue  # No changes
+
+            # Map git status codes to our expected format
+            if primary_status == '?':
+                primary_status = 'A'  # Untracked files are treated as added
+
+            result.append(
+                {
+                    'status': primary_status,
+                    'path': file_path,
+                }
+            )
+
         return result
 
     def get_git_diff(self, file_path: str) -> dict[str, str]:
