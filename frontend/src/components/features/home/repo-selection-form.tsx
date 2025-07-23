@@ -207,20 +207,6 @@ export function RepositorySelectionForm({
 
   // Render the appropriate UI based on the loading/error state
   const renderRepositorySelector = () => {
-    // Disable repository selector if no provider is selected (and there are multiple providers)
-    const isDisabled = providers.length > 1 && !selectedProvider;
-
-    if (isDisabled) {
-      return (
-        <RepositoryDropdown
-          items={[]}
-          onSelectionChange={() => {}}
-          onInputChange={() => {}}
-          isDisabled
-        />
-      );
-    }
-
     if (isLoadingRepositories) {
       return <RepositoryLoadingState />;
     }
