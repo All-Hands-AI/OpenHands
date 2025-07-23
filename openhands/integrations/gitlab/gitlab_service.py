@@ -270,27 +270,20 @@ class GitLabService(BaseGitService, GitService):
             if not repo_path:
                 return []  # Invalid URL format
 
-            try:
-                # Try to get the specific repository
-                repository = await self.get_repository_details_from_repo_name(repo_path)
-                return [repository]
-            except Exception:
-                # Repository doesn't exist or is not accessible
-                return []
+            repository = await self.get_repository_details_from_repo_name(repo_path)
+            return [repository]
 
-        else:
-            # Original logic for non-public searches
-            url = f'{self.BASE_URL}/projects'
-            params = {
-                'search': query,
-                'per_page': per_page,
-                'sort': order,
-                'membership': True,  # Include projects user is a member of
-                'search_namespaces': True,
-            }
-            response, _ = await self._make_request(url, params)
-            repos = [self._parse_repository(repo) for repo in response]
-            return repos
+        url = f'{self.BASE_URL}/projects'
+        params = {
+            'search': query,
+            'per_page': per_page,
+            'sort': order,
+            'membership': True,  # Include projects user is a member of
+            'search_namespaces': True,
+        }
+        response, _ = await self._make_request(url, params)
+        repos = [self._parse_repository(repo) for repo in response]
+        return repos
 
     async def get_paginated_repos(
         self, page: int, per_page: int, sort: str, installation_id: str | None

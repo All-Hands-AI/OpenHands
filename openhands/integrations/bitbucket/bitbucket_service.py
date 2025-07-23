@@ -213,30 +213,28 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
                 repositories.append(repo)
 
             return repositories
-        else:
-            # Workspace prefix isn't complete. Search workspaces that match the query, then list repos underneath each workspace
-            matching_workspace_slugs = await self.get_installations(
-                query=query, limit=2
-            )
 
-            for workspace_slug in matching_workspace_slugs:
-                # Get repositories for this workspace
-                workspace_repos_url = f'{self.BASE_URL}/repositories/{workspace_slug}'
-                repo_params = {'pagelen': per_page}
+        # Workspace prefix isn't complete. Search workspaces that match the query, then list repos underneath each workspace
+        matching_workspace_slugs = await self.get_installations(query=query, limit=2)
 
-                try:
-                    repo_response, _ = await self._make_request(
-                        workspace_repos_url, repo_params
-                    )
+        for workspace_slug in matching_workspace_slugs:
+            # Get repositories for this workspace
+            workspace_repos_url = f'{self.BASE_URL}/repositories/{workspace_slug}'
+            repo_params = {'pagelen': per_page}
 
-                    for repo_data in repo_response.get('values', []):
-                        repo = self._parse_repository(repo_data)
-                        repositories.append(repo)
-                except Exception:
-                    # If we can't access repositories for this workspace, skip it
-                    continue
+            try:
+                repo_response, _ = await self._make_request(
+                    workspace_repos_url, repo_params
+                )
 
-            return repositories
+                for repo_data in repo_response.get('values', []):
+                    repo = self._parse_repository(repo_data)
+                    repositories.append(repo)
+            except Exception:
+                # If we can't access repositories for this workspace, skip it
+                continue
+
+        return repositories
 
     async def _get_user_workspaces(self) -> list[dict[str, Any]]:
         """Get all workspaces the user has access to"""
