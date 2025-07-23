@@ -203,35 +203,20 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
         # Search for repos once workspace prefix exists
         if '/' in query:
             workspace_slug, repo_query = query.split('/', 1)
-
-            url = f'{self.BASE_URL}/repositories/{workspace_slug}'
-            params = {'q': f'name~"{repo_query}"', 'pagelen': per_page}
-            response, _ = await self._make_request(url, params)
-
-            for repo_data in response.get('values', []):
-                repo = self._parse_repository(repo_data)
-                repositories.append(repo)
-
-            return repositories
+            return await self.get_paginated_repos(
+                1, per_page, sort, workspace_slug, repo_query
+            )
 
         # Workspace prefix isn't complete. Search workspaces that match the query, then list repos underneath each workspace
         matching_workspace_slugs = await self.get_installations(query=query, limit=2)
-
         for workspace_slug in matching_workspace_slugs:
             # Get repositories for this workspace
-            workspace_repos_url = f'{self.BASE_URL}/repositories/{workspace_slug}'
-            repo_params = {'pagelen': per_page}
-
             try:
-                repo_response, _ = await self._make_request(
-                    workspace_repos_url, repo_params
+                repos = await self.get_paginated_repos(
+                    1, per_page, sort, workspace_slug
                 )
-
-                for repo_data in repo_response.get('values', []):
-                    repo = self._parse_repository(repo_data)
-                    repositories.append(repo)
+                repositories.extend(repos)
             except Exception:
-                # If we can't access repositories for this workspace, skip it
                 continue
 
         return repositories
@@ -301,7 +286,12 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
         return installations
 
     async def get_paginated_repos(
-        self, page: int, per_page: int, sort: str, installation_id: str | None
+        self,
+        page: int,
+        per_page: int,
+        sort: str,
+        installation_id: str | None,
+        query: str | None = None,
     ) -> list[Repository]:
         """Get paginated repositories for a specific workspace.
 
@@ -341,6 +331,9 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
             'page': page,
             'sort': bitbucket_sort,
         }
+
+        if query:
+            params['q'] = f'name~"{query}"'
 
         response, headers = await self._make_request(workspace_repos_url, params)
 

@@ -273,20 +273,15 @@ class GitLabService(BaseGitService, GitService):
             repository = await self.get_repository_details_from_repo_name(repo_path)
             return [repository]
 
-        url = f'{self.BASE_URL}/projects'
-        params = {
-            'search': query,
-            'per_page': per_page,
-            'sort': order,
-            'membership': True,  # Include projects user is a member of
-            'search_namespaces': True,
-        }
-        response, _ = await self._make_request(url, params)
-        repos = [self._parse_repository(repo) for repo in response]
-        return repos
+        return await self.get_paginated_repos(1, per_page, sort, None, query)
 
     async def get_paginated_repos(
-        self, page: int, per_page: int, sort: str, installation_id: str | None
+        self,
+        page: int,
+        per_page: int,
+        sort: str,
+        installation_id: str | None,
+        query: str | None = None,
     ) -> list[Repository]:
         url = f'{self.BASE_URL}/projects'
         order_by = {
@@ -303,6 +298,11 @@ class GitLabService(BaseGitService, GitService):
             'sort': 'desc',  # GitLab uses sort for direction (asc/desc)
             'membership': True,  # Include projects user is a member of
         }
+
+        if query:
+            params['search'] = query
+            params['search_namespaces'] = True
+
         response, headers = await self._make_request(url, params)
 
         next_link: str = headers.get('Link', '')

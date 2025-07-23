@@ -242,7 +242,12 @@ class GitService(Protocol):
         ...
 
     async def get_paginated_repos(
-        self, page: int, per_page: int, sort: str, installation_id: str | None
+        self,
+        page: int,
+        per_page: int,
+        sort: str,
+        installation_id: str | None,
+        query: str | None = None,
     ) -> list[Repository]:
         """Get a page of repositories for the authenticated user"""
         ...
