@@ -196,7 +196,12 @@ class GitLabService(BaseGitService, GitService):
         )
 
     async def search_repositories(
-        self, query: str, per_page: int = 30, sort: str = 'updated', order: str = 'desc'
+        self,
+        query: str,
+        per_page: int = 30,
+        sort: str = 'updated',
+        order: str = 'desc',
+        public: bool = False,
     ) -> list[Repository]:
         url = f'{self.BASE_URL}/projects'
         params = {
@@ -231,9 +236,8 @@ class GitLabService(BaseGitService, GitService):
     ) -> list[Repository]:
         """Search for user's own repositories"""
         # Get the authenticated user's information
-        user = await self.get_user()
-        user_id = user.id
-        
+        await self.get_user()
+
         url = f'{self.BASE_URL}/projects'
         params = {
             'search': query,

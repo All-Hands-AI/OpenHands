@@ -230,24 +230,9 @@ class GitService(Protocol):
         ...
 
     async def search_repositories(
-        self,
-        query: str,
-        per_page: int,
-        sort: str,
-        order: str,
+        self, query: str, per_page: int, sort: str, order: str, public: bool
     ) -> list[Repository]:
         """Search for public repositories"""
-        ...
-
-    async def search_user_repositories(
-        self,
-        query: str,
-        per_page: int,
-        sort: str,
-        order: str,
-        app_mode: AppMode,
-    ) -> list[Repository]:
-        """Search for user's own repositories"""
         ...
 
     async def get_all_repositories(

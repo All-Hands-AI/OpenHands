@@ -239,17 +239,34 @@ class ProviderHandler:
 
     async def search_repositories(
         self,
+        selected_provider: ProviderType | None,
         query: str,
         per_page: int,
         sort: str,
         order: str,
     ) -> list[Repository]:
+        public = self._is_repository_url(query)
+
+        if selected_provider:
+            service = self._get_service(selected_provider)
+            try:
+                user_repos = await service.search_repositories(
+                    query, per_page, sort, order, public
+                )
+                return self._deduplicate_repositories(user_repos)
+            except Exception as e:
+                logger.warning(
+                    f'Error searching repos from select provider {selected_provider}: {e}'
+                )
+
+            return []
+
         all_repos: list[Repository] = []
         for provider in self.provider_tokens:
             try:
                 service = self._get_service(provider)
                 service_repos = await service.search_repositories(
-                    query, per_page, sort, order
+                    query, per_page, sort, order, public
                 )
                 all_repos.extend(service_repos)
             except Exception as e:
@@ -270,112 +287,9 @@ class ProviderHandler:
         unique_repos = []
         for repo in repos:
             if repo.full_name not in seen:
-                seen.add(repo.full_name)
+                seen.add(repo.id)
                 unique_repos.append(repo)
         return unique_repos
-
-    async def search_repositories_with_provider(
-        self,
-        query: str,
-        per_page: int,
-        sort: str,
-        order: str,
-        selected_provider: ProviderType | None = None,
-    ) -> list[Repository]:
-        """
-        Search repositories with provider-specific logic.
-
-        If query is regular text: search only user's own repositories that match
-        If query is a URL: search both user's repos AND public repos, then deduplicate
-        """
-        is_url = self._is_repository_url(query)
-        all_repos: list[Repository] = []
-
-        if is_url:
-            # For URLs, search both user repositories and public repositories
-            # First search user repositories that match
-            try:
-                if selected_provider:
-                    # Search only the selected provider
-                    if selected_provider in self.provider_tokens:
-                        service = self._get_service(selected_provider)
-                        user_repos = await service.search_user_repositories(
-                            query, per_page, sort, order, AppMode.SAAS
-                        )
-                        all_repos.extend(user_repos)
-                else:
-                    # Search all providers
-                    for provider in self.provider_tokens:
-                        try:
-                            service = self._get_service(provider)
-                            service_repos = await service.search_user_repositories(
-                                query, per_page, sort, order, AppMode.SAAS
-                            )
-                            all_repos.extend(service_repos)
-                        except Exception as e:
-                            logger.warning(
-                                f'Error searching user repos from {provider}: {e}'
-                            )
-                            continue
-            except Exception as e:
-                logger.warning(f'Error searching user repositories: {e}')
-
-            # Then search public repositories
-            try:
-                if selected_provider:
-                    # Search only the selected provider
-                    if selected_provider in self.provider_tokens:
-                        service = self._get_service(selected_provider)
-                        public_repos = await service.search_repositories(
-                            query, per_page, sort, order
-                        )
-                        all_repos.extend(public_repos)
-                else:
-                    # Search all providers
-                    for provider in self.provider_tokens:
-                        try:
-                            service = self._get_service(provider)
-                            service_repos = await service.search_repositories(
-                                query, per_page, sort, order
-                            )
-                            all_repos.extend(service_repos)
-                        except Exception as e:
-                            logger.warning(
-                                f'Error searching public repos from {provider}: {e}'
-                            )
-                            continue
-            except Exception as e:
-                logger.warning(f'Error searching public repositories: {e}')
-        else:
-            # For regular text, search only user's own repositories that match
-            try:
-                if selected_provider:
-                    # Search only the selected provider
-                    if selected_provider in self.provider_tokens:
-                        service = self._get_service(selected_provider)
-                        user_repos = await service.search_user_repositories(
-                            query, per_page, sort, order, AppMode.SAAS
-                        )
-                        all_repos.extend(user_repos)
-                else:
-                    # Search all providers
-                    for provider in self.provider_tokens:
-                        try:
-                            service = self._get_service(provider)
-                            service_repos = await service.search_user_repositories(
-                                query, per_page, sort, order, AppMode.SAAS
-                            )
-                            all_repos.extend(service_repos)
-                        except Exception as e:
-                            logger.warning(
-                                f'Error searching user repos from {provider}: {e}'
-                            )
-                            continue
-            except Exception as e:
-                logger.warning(f'Error searching user repositories: {e}')
-
-        # Deduplicate and return
-        return self._deduplicate_repositories(all_repos)
 
     async def set_event_stream_secrets(
         self,

@@ -287,7 +287,7 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
         return [str(i['id']) for i in installations]
 
     async def search_repositories(
-        self, query: str, per_page: int, sort: str, order: str
+        self, query: str, per_page: int, sort: str, order: str, public: bool
     ) -> list[Repository]:
         url = f'{self.BASE_URL}/search/repositories'
         # Add is:public to the query to ensure we only search for public repositories
@@ -327,7 +327,7 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
         # Get the authenticated user's username
         user = await self.get_user()
         username = user.login
-        
+
         url = f'{self.BASE_URL}/search/repositories'
         # Search only in user's repositories
         query_with_user = f'{query} user:{username}'

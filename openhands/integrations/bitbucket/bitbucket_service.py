@@ -1,7 +1,7 @@
 import base64
 import os
 import re
-from typing import Any, Dict
+from typing import Any
 
 import aiohttp
 import httpx
@@ -143,11 +143,7 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
         )
 
     async def search_repositories(
-        self,
-        query: str,
-        per_page: int,
-        sort: str,
-        order: str,
+        self, query: str, per_page: int, sort: str, order: str, public: bool
     ) -> list[Repository]:
         """Search for repositories."""
         # Bitbucket doesn't have a dedicated search endpoint like GitHub
@@ -158,7 +154,7 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
     ) -> list[Repository]:
         """Search for user's own repositories using Bitbucket API search"""
         repositories = []
-        
+
         # Check if query contains a forward slash (workspace/repo pattern)
         if '/' in query:
             workspace, repo_query = query.split('/', 1)
@@ -170,24 +166,26 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
         else:
             # Search across workspaces
             workspaces = await self._get_user_workspaces()
-            
+
             # Filter workspaces that match the query
             matching_workspaces = [
-                ws for ws in workspaces 
-                if query.lower() in ws['name'].lower() or query.lower() in ws['slug'].lower()
+                ws
+                for ws in workspaces
+                if query.lower() in ws['name'].lower()
+                or query.lower() in ws['slug'].lower()
             ]
-            
+
             # Get first 2 repos from each matching workspace
             for workspace_data in matching_workspaces:
                 workspace_repos = await self._search_repositories_in_workspace(
                     workspace_data['slug'], query, min(2, per_page)
                 )
                 repositories.extend(workspace_repos)
-                
+
                 # Stop if we have enough repositories
                 if len(repositories) >= per_page:
                     break
-            
+
             # If we don't have enough repos from matching workspaces, search in all workspaces
             if len(repositories) < per_page:
                 remaining = per_page - len(repositories)
@@ -199,17 +197,17 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
                         )
                         repositories.extend(workspace_repos)
                         remaining -= len(workspace_repos)
-                        
+
                         if remaining <= 0:
                             break
-        
+
         return repositories[:per_page]
 
-    async def _get_user_workspaces(self) -> list[Dict[str, Any]]:
+    async def _get_user_workspaces(self) -> list[dict[str, Any]]:
         """Get all workspaces the user has access to"""
         url = f'{self.BASE_URL}/workspaces'
         headers = {'Authorization': f'Bearer {self.token}'}
-        
+
         async with aiohttp.ClientSession() as session:
             async with session.get(url, headers=headers) as response:
                 if response.status == 200:
@@ -217,26 +215,23 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
                     return data.get('values', [])
                 else:
                     return []
-    
+
     async def _search_repositories_in_workspace(
         self, workspace: str, query: str, limit: int
     ) -> list[Repository]:
         """Search repositories within a specific workspace"""
         url = f'{self.BASE_URL}/repositories/{workspace}'
         headers = {'Authorization': f'Bearer {self.token}'}
-        
+
         # Use Bitbucket's query syntax to search by name
-        params = {
-            'q': f'name~"{query}"',
-            'pagelen': limit
-        }
-        
+        params = {'q': f'name~"{query}"', 'pagelen': limit}
+
         async with aiohttp.ClientSession() as session:
             async with session.get(url, headers=headers, params=params) as response:
                 if response.status == 200:
                     data = await response.json()
                     repositories = []
-                    
+
                     for repo_data in data.get('values', []):
                         repo = Repository(
                             id=repo_data['uuid'],
@@ -245,10 +240,12 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
                             is_public=not repo_data['is_private'],
                             stargazers_count=None,
                             pushed_at=repo_data.get('updated_on'),
-                            owner_type=OwnerType.USER if repo_data.get('owner', {}).get('type') == 'user' else OwnerType.ORGANIZATION,
+                            owner_type=OwnerType.USER
+                            if repo_data.get('owner', {}).get('type') == 'user'
+                            else OwnerType.ORGANIZATION,
                         )
                         repositories.append(repo)
-                    
+
                     return repositories
                 else:
                     return []
@@ -347,7 +344,7 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
 
         # Extract next URL from response
         next_link = response.get('next', '')
-        
+
         # Format the link header in a way that the frontend can understand
         # The frontend expects a format like: <url>; rel="next"
         # where the URL contains a page parameter
@@ -358,7 +355,9 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
             if page_match:
                 next_page = page_match.group(1)
                 # Format it in a way that extractNextPageFromLink in frontend can parse
-                formatted_link_header = f'<{workspace_repos_url}?page={next_page}>; rel="next"'
+                formatted_link_header = (
+                    f'<{workspace_repos_url}?page={next_page}>; rel="next"'
+                )
             else:
                 # If we can't extract the page, just use the next URL as is
                 formatted_link_header = f'<{next_link}>; rel="next"'

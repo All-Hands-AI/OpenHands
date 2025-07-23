@@ -177,8 +177,8 @@ async def search_repositories(
             external_auth_id=user_id,
         )
         try:
-            repos: list[Repository] = await client.search_repositories_with_provider(
-                query, per_page, sort, order, selected_provider
+            repos: list[Repository] = await client.search_repositories(
+                selected_provider, query, per_page, sort, order
             )
             return repos
 
