@@ -245,10 +245,9 @@ class ProviderHandler:
         sort: str,
         order: str,
     ) -> list[Repository]:
-        public = self._is_repository_url(query)
-
         if selected_provider:
             service = self._get_service(selected_provider)
+            public = self._is_repository_url(query, selected_provider)
             try:
                 user_repos = await service.search_repositories(
                     query, per_page, sort, order, public
@@ -265,6 +264,7 @@ class ProviderHandler:
         for provider in self.provider_tokens:
             try:
                 service = self._get_service(provider)
+                public = self._is_repository_url(query, provider)
                 service_repos = await service.search_repositories(
                     query, per_page, sort, order, public
                 )
@@ -275,10 +275,14 @@ class ProviderHandler:
 
         return all_repos
 
-    def _is_repository_url(self, query: str) -> bool:
+    def _is_repository_url(self, query: str, provider: ProviderType) -> bool:
         """Check if the query is a repository URL."""
+        custom_host = self.provider_tokens[provider].host
+        custom_host_exists = custom_host and custom_host in query
+        default_host_exists = self.PROVIDER_DOMAINS[provider] in query
+
         return query.startswith(('http://', 'https://')) and (
-            'github.com' in query or 'gitlab.com' in query or 'bitbucket.org' in query
+            custom_host_exists or default_host_exists
         )
 
     def _deduplicate_repositories(self, repos: list[Repository]) -> list[Repository]:
