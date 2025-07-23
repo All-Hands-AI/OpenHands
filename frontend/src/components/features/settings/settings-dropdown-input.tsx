@@ -59,7 +59,7 @@ export function SettingsDropdownInput({
   const [, scrollerRef] = useInfiniteScroll({
     hasMore,
     isEnabled: isOpen,
-    shouldUseLoader: false, // We don't want to show the loader at the bottom of the list
+    shouldUseLoader: false,
     onLoadMore,
   });
 
@@ -82,10 +82,8 @@ export function SettingsDropdownInput({
         onInputChange={onInputChange}
         isClearable={isClearable}
         isDisabled={isDisabled || isLoading}
-        isLoading={isFetchingNextPage}
-        placeholder={
-          isLoading || isFetchingNextPage ? t("HOME$LOADING") : placeholder
-        }
+        isLoading={isLoading || isFetchingNextPage}
+        placeholder={isLoading ? t("HOME$LOADING") : placeholder}
         allowsCustomValue={allowsCustomValue}
         isRequired={required}
         className="w-full"

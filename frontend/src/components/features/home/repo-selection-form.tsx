@@ -43,6 +43,7 @@ export function RepositorySelectionForm({
     data: repositoriesData,
     isLoading: isLoadingRepositories,
     isError: isRepositoriesError,
+    hasNextPage,
     isFetchingNextPage,
     onLoadMore,
   } = useRepositories(selectedProvider);
@@ -234,6 +235,7 @@ export function RepositorySelectionForm({
         onSelectionChange={handleRepoSelection}
         onInputChange={handleRepoInputChange}
         isDisabled={false}
+        hasMore={hasNextPage}
         isFetchingNextPage={isFetchingNextPage}
         onLoadMore={onLoadMore}
         defaultFilter={(textValue, inputValue) => {

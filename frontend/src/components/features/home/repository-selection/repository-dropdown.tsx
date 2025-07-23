@@ -10,6 +10,7 @@ export interface RepositoryDropdownProps {
   defaultFilter?: (textValue: string, inputValue: string) => boolean;
   isDisabled?: boolean;
   // Infinite scroll props
+  hasMore?: boolean;
   isFetchingNextPage?: boolean;
   onLoadMore?: () => void;
 }
@@ -20,6 +21,7 @@ export function RepositoryDropdown({
   onInputChange,
   defaultFilter,
   isDisabled = false,
+  hasMore,
   isFetchingNextPage,
   onLoadMore,
 }: RepositoryDropdownProps) {
@@ -40,6 +42,7 @@ export function RepositoryDropdown({
       onInputChange={onInputChange}
       defaultFilter={defaultFilter}
       isDisabled={isDisabled}
+      hasMore={hasMore}
       isFetchingNextPage={isFetchingNextPage}
       onLoadMore={onLoadMore}
     />
