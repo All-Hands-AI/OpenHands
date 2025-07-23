@@ -182,18 +182,27 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
         self, query: str, per_page: int, sort: str, order: str, public: bool
     ) -> list[Repository]:
         """Search for repositories."""
+        repositories = []
 
         if public:
             # BitBucket doesn't have a public search endpoint
+            url = f'{self.BASE_URL}/repositories'
+            # TODO: extract repo name from url example: https://bitbucket.org/vshpak_bsd/nodejs-docs-hello-world-2nodejs-docs-hello-world-2/src/master/
+            params = {'q': f'name~"{query}"', 'pagelen': per_page}
+            print('got query', query)
+            response, _ = await self._make_request(url, params)
+            for repo_data in response.get('values', []):
+                repo = self._parse_repository(repo_data)
+                repositories.append(repo)
+
             return []
 
-        repositories = []
         # Bitbucket doesn't have a dedicated search endpoint like GitHub
         if '/' in query:
             workspace_slug, repo_query = query.split('/', 1)
 
             url = f'{self.BASE_URL}/repositories/{workspace_slug}'
-            params = {'q': f'name~"{repo_query}"', 'pagelen': 3}
+            params = {'q': f'name~"{repo_query}"', 'pagelen': per_page}
             response, _ = await self._make_request(url, params)
 
             for repo_data in response.get('values', []):
@@ -214,7 +223,7 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
                     workspace_repos_url = (
                         f'{self.BASE_URL}/repositories/{workspace_slug}'
                     )
-                    repo_params = {'pagelen': 3}
+                    repo_params = {'pagelen': per_page}
 
                     try:
                         repo_response, _ = await self._make_request(
