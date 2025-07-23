@@ -193,11 +193,9 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
                 workspace_slug = url_parts[3]
                 repo_name = url_parts[4]
 
-                # Search for the specific repository
-                url = f'{self.BASE_URL}/repositories/{workspace_slug}/{repo_name}'
-
-                response, _ = await self._make_request(url, {})
-                repo = self._parse_repository(response)
+                repo = await self.get_repository_details_from_repo_name(
+                    f'{workspace_slug}/{repo_name}'
+                )
                 repositories.append(repo)
 
             return repositories
