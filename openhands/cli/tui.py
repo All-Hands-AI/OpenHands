@@ -76,6 +76,7 @@ COMMANDS = {
     '/new': 'Create a new conversation',
     '/settings': 'Display and modify current settings',
     '/resume': 'Resume the agent when paused',
+    '/vscode-extension': 'Get the VSCode extension VSIX file for manual installation',
 }
 
 print_lock = threading.Lock()
