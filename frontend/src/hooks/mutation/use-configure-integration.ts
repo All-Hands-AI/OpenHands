@@ -6,7 +6,15 @@ import { I18nKey } from "#/i18n/declaration";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 
-export function useLinkIntegration(
+interface ConfigureIntegrationData {
+  workspace: string;
+  webhookSecret: string;
+  serviceAccountEmail: string;
+  serviceAccountApiKey: string;
+  isActive: boolean;
+}
+
+export function useConfigureIntegration(
   platform: "jira" | "jira-dc" | "linear",
   {
     onSettled,
@@ -18,13 +26,17 @@ export function useLinkIntegration(
   const { t } = useTranslation();
 
   return useMutation({
-    mutationFn: async (workspace: string) => {
+    mutationFn: async (data: ConfigureIntegrationData) => {
       const input = {
-        workspace,
+        workspace_name: data.workspace,
+        webhook_secret: data.webhookSecret,
+        svc_acc_email: data.serviceAccountEmail,
+        svc_acc_api_key: data.serviceAccountApiKey,
+        is_active: data.isActive,
       };
 
       const response = await openHands.post(
-        `/integration/${platform}/users`,
+        `/integration/${platform}/workspaces`,
         input,
       );
 

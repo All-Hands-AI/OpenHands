@@ -3,6 +3,7 @@ import React from "react";
 import { useIntegrationStatus } from "#/hooks/query/use-integration-status";
 import { useLinkIntegration } from "#/hooks/mutation/use-link-integration";
 import { useUnlinkIntegration } from "#/hooks/mutation/use-unlink-integration";
+import { useConfigureIntegration } from "#/hooks/mutation/use-configure-integration";
 import { useValidateIntegration } from "#/hooks/query/use-validate-integration";
 import { ConfirmationModal } from "#/components/features/settings/project-management/confirmation-modal";
 import {
@@ -58,6 +59,12 @@ export function IntegrationRow({
     },
   });
 
+  const configureMutation = useConfigureIntegration(platform, {
+    onSettled: () => {
+      setConfigureModalOpen(false);
+    },
+  });
+
   const handleLink = () => {
     validateMutation.mutate();
   };
@@ -71,12 +78,22 @@ export function IntegrationRow({
     setConfigureModalOpen(true);
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = (workspace?: string) => {
     if (isUnlinking) {
       unlinkMutation.mutate();
     } else {
-      linkMutation.mutate();
+      linkMutation.mutate(workspace || "");
     }
+  };
+
+  const handleConfigureConfirm = (data: {
+    workspace: string;
+    webhookSecret: string;
+    serviceAccountEmail: string;
+    serviceAccountApiKey: string;
+    isActive: boolean;
+  }) => {
+    configureMutation.mutate(data);
   };
 
   const isLinked = status === "active";
@@ -84,7 +101,8 @@ export function IntegrationRow({
     isStatusLoading ||
     validateMutation.isPending ||
     linkMutation.isPending ||
-    unlinkMutation.isPending;
+    unlinkMutation.isPending ||
+    configureMutation.isPending;
 
   return (
     <div className="flex items-center justify-between" data-testid={dataTestId}>
@@ -112,6 +130,7 @@ export function IntegrationRow({
       <ConfigureModal
         isOpen={isConfigureModalOpen}
         onClose={() => setConfigureModalOpen(false)}
+        onConfirm={handleConfigureConfirm}
         platformName={platformName}
       />
       <InfoModal

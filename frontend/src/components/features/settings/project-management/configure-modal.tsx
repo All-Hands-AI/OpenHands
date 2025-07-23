@@ -40,19 +40,27 @@ export function ConfigureButton({
 interface ConfigureModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onConfirm: (data: {
+    workspace: string;
+    webhookSecret: string;
+    serviceAccountEmail: string;
+    serviceAccountApiKey: string;
+    isActive: boolean;
+  }) => void;
   platformName: string;
 }
 
 export function ConfigureModal({
   isOpen,
   onClose,
+  onConfirm,
   platformName,
 }: ConfigureModalProps) {
   const { t } = useTranslation();
   const [workspace, setWorkspace] = useState("");
   const [webhookSecret, setWebhookSecret] = useState("");
   const [serviceAccountEmail, setServiceAccountEmail] = useState("");
-  const [serviceAccountApi, setServiceAccountApi] = useState("");
+  const [serviceAccountApiKey, setServiceAccountApiKey] = useState("");
   const [isActive, setIsActive] = useState(false);
 
   if (!isOpen) {
@@ -60,21 +68,20 @@ export function ConfigureModal({
   }
 
   const handleConnect = () => {
-    // Handle the connection logic here
-    console.log("Connecting with details:", {
+    onConfirm({
       workspace,
       webhookSecret,
       serviceAccountEmail,
-      serviceAccountApi,
+      serviceAccountApiKey,
+      isActive,
     });
-    onClose();
   };
 
   const isConnectDisabled =
     !workspace.trim() ||
     !webhookSecret.trim() ||
     !serviceAccountEmail.trim() ||
-    !serviceAccountApi.trim();
+    !serviceAccountApiKey.trim();
 
   return (
     <ModalBackdrop onClose={onClose}>
@@ -134,8 +141,8 @@ export function ConfigureModal({
             placeholder={t(
               I18nKey.PROJECT_MANAGEMENT$SERVICE_ACCOUNT_API_PLACEHOLDER,
             )}
-            value={serviceAccountApi}
-            onChange={setServiceAccountApi}
+            value={serviceAccountApiKey}
+            onChange={setServiceAccountApiKey}
             className="w-full"
             type="password"
           />
