@@ -308,50 +308,6 @@ class TestGitHandler(unittest.TestCase):
             any(cmd == 'cat file1.txt' for cmd, _ in self.executed_commands)
         )
 
-    def test_get_changed_files(self):
-        """Test that _get_changed_files returns the list of changed files."""
-        # Let's create a new file to ensure it shows up in the diff
-        with open(os.path.join(self.local_dir, 'new_file.txt'), 'w') as f:
-            f.write('New file content')
-        self._execute_command('git --no-pager add new_file.txt', self.local_dir)
-
-        files = self.git_handler._get_changed_files()
-        self.assertTrue(files)
-
-        # Should include file1.txt (modified) and file3.txt (deleted)
-        file_paths = [line.split('\t')[-1] for line in files if '\t' in line]
-        self.assertIn('file1.txt', file_paths)
-        self.assertIn('file3.txt', file_paths)
-        # Also check for the new file
-        self.assertIn('new_file.txt', file_paths)
-
-        # Should have called _get_valid_ref and then git diff
-        diff_commands = [
-            cmd
-            for cmd, _ in self.executed_commands
-            if cmd.startswith('git --no-pager diff')
-        ]
-        self.assertTrue(diff_commands)
-
-    def test_get_untracked_files(self):
-        """Test that _get_untracked_files returns the list of untracked files."""
-        # Create an untracked file
-        with open(os.path.join(self.local_dir, 'untracked.txt'), 'w') as f:
-            f.write('Untracked file content')
-
-        files = self.git_handler._get_untracked_files()
-        self.assertEqual(len(files), 1)
-        self.assertEqual(files[0]['path'], 'untracked.txt')
-        self.assertEqual(files[0]['status'], 'A')
-
-        # Verify the command was executed
-        self.assertTrue(
-            any(
-                cmd == 'git --no-pager ls-files --others --exclude-standard'
-                for cmd, _ in self.executed_commands
-            )
-        )
-
     def test_get_git_changes(self):
         """Test that get_git_changes returns the combined list of changed and untracked files."""
         # Create an untracked file

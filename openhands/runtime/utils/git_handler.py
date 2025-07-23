@@ -142,41 +142,6 @@ class GitHandler:
         output = self.execute(cmd, self.cwd)
         return output.content.strip()
 
-    def _get_changed_files(self) -> list[str]:
-        """
-        Retrieves a list of changed files compared to a valid Git reference.
-
-        Returns:
-            list[str]: A list of changed file paths.
-        """
-        ref = self._get_valid_ref()
-        if not ref:
-            return []
-
-        diff_cmd = f'git --no-pager diff --name-status {ref}'
-        output = self.execute(diff_cmd, self.cwd)
-        if output.exit_code != 0:
-            raise RuntimeError(
-                f'Failed to get diff for ref {ref} in {self.cwd}. Command output: {output.content}'
-            )
-        return output.content.splitlines()
-
-    def _get_untracked_files(self) -> list[dict[str, str]]:
-        """
-        Retrieves a list of untracked files in the repository. This is useful for detecting new files.
-
-        Returns:
-            list[dict[str, str]]: A list of dictionaries containing file paths and statuses.
-        """
-        cmd = 'git --no-pager ls-files --others --exclude-standard'
-        output = self.execute(cmd, self.cwd)
-        obs_list = output.content.splitlines()
-        return (
-            [{'status': 'A', 'path': path} for path in obs_list]
-            if output.exit_code == 0
-            else []
-        )
-
     def get_git_changes(self) -> list[dict[str, str]] | None:
         """
         Retrieves the list of changed files in the Git repository.
