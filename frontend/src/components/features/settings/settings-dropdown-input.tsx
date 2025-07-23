@@ -22,10 +22,6 @@ interface SettingsDropdownInputProps {
   onSelectionChange?: (key: React.Key | null) => void;
   onInputChange?: (value: string) => void;
   defaultFilter?: (textValue: string, inputValue: string) => boolean;
-  // Infinite scroll props
-  hasNextPage?: boolean;
-  isFetchingNextPage?: boolean;
-  onLoadMore?: () => void;
 }
 
 export function SettingsDropdownInput({
@@ -46,25 +42,8 @@ export function SettingsDropdownInput({
   onSelectionChange,
   onInputChange,
   defaultFilter,
-  hasNextPage,
-  isFetchingNextPage,
-  onLoadMore,
 }: SettingsDropdownInputProps) {
   const { t } = useTranslation();
-
-  // Handle scroll events for infinite loading
-  const handleScroll = (e: React.UIEvent<HTMLElement>) => {
-    const target = e.currentTarget;
-    const { scrollTop, scrollHeight, clientHeight } = target;
-
-    // Check if we're near the bottom (within 100px)
-    const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100;
-
-    if (isNearBottom && hasNextPage && !isFetchingNextPage && onLoadMore) {
-      onLoadMore();
-    }
-  };
-
   return (
     <label className={cn("flex flex-col gap-2.5", wrapperClassName)}>
       {label && (
@@ -84,7 +63,7 @@ export function SettingsDropdownInput({
         onInputChange={onInputChange}
         isClearable={isClearable}
         isDisabled={isDisabled || isLoading}
-        isLoading={isLoading || isFetchingNextPage}
+        isLoading={isLoading}
         placeholder={isLoading ? t("HOME$LOADING") : placeholder}
         allowsCustomValue={allowsCustomValue}
         isRequired={required}
@@ -98,22 +77,10 @@ export function SettingsDropdownInput({
               "bg-tertiary border border-[#717888] h-10 w-full rounded-sm p-2 placeholder:italic",
           },
         }}
-        listboxProps={{
-          onScroll: onLoadMore ? handleScroll : undefined,
-        }}
         defaultFilter={defaultFilter}
       >
         {(item) => (
           <AutocompleteItem key={item.key}>{item.label}</AutocompleteItem>
-        )}
-        {/* Show loading indicator at the bottom when fetching more */}
-        {isFetchingNextPage && (
-          <AutocompleteItem key="loading" isDisabled>
-            <div className="flex items-center justify-center py-2">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-              <span className="ml-2 text-sm">{t("HOME$LOADING")}</span>
-            </div>
-          </AutocompleteItem>
         )}
       </Autocomplete>
     </label>
