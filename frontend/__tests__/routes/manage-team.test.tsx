@@ -196,6 +196,25 @@ describe("Manage Team Route", () => {
     ).not.toBeInTheDocument();
   });
 
+  it.only("should not allow an admin to change another admin's role", async () => {
+    renderManageTeam();
+    await screen.findByTestId("manage-team-settings");
+
+    await selectOrganization({ orgIndex: 2 }); // user is admin in org 3
+
+    const memberListItems = await screen.findAllByTestId("member-item");
+    const adminMember = memberListItems[1]; // first member is "admin"
+    expect(adminMember).toBeDefined();
+
+    const roleText = within(adminMember).getByText(/admin/i);
+    await userEvent.click(roleText);
+
+    // Verify that the dropdown does not open for the other admin
+    expect(
+      within(adminMember).queryByTestId("role-dropdown"),
+    ).not.toBeInTheDocument();
+  });
+
   it.todo(
     "should not allow a user to change another user's role if they are the same role",
   );

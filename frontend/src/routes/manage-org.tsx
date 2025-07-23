@@ -264,9 +264,7 @@ function ManageOrg() {
       )}
 
       <div className="flex flex-col gap-2">
-        <span className="text-white text-xs font-semibold ml-1">
-          Credits
-        </span>
+        <span className="text-white text-xs font-semibold ml-1">Credits</span>
         <div className="flex items-center gap-2">
           <TempChip data-testid="available-credits">
             {organization?.balance}

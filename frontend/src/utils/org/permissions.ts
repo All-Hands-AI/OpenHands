@@ -25,7 +25,6 @@ const superadminPerms: UserPermission[] = [
 ];
 const adminPerms: UserPermission[] = [
   "invite_user_to_organization",
-  "change_user_role:admin",
   "change_user_role:user",
 ];
 const userPerms: UserPermission[] = [];

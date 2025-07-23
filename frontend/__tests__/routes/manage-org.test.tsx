@@ -155,6 +155,23 @@ describe("Manage Org Route", () => {
     expect(createCheckoutSessionSpy).not.toHaveBeenCalled();
   });
 
+  it("should NOT show add credits option for ADMIN role", async () => {
+    renderManageOrg();
+    await screen.findByTestId("manage-org-screen");
+
+    await selectOrganization({ orgIndex: 2 }); // user is admin in org 3
+
+    // Verify credits are shown
+    await waitFor(() => {
+      const credits = screen.getByTestId("available-credits");
+      expect(credits).toBeInTheDocument();
+    });
+
+    // Verify add credits button is not present
+    const addButton = screen.queryByText(/add/i);
+    expect(addButton).not.toBeInTheDocument();
+  });
+
   describe("actions", () => {
     it("should be able to update the organization name", async () => {
       const updateOrgNameSpy = vi.spyOn(
