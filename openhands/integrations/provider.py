@@ -258,6 +258,113 @@ class ProviderHandler:
 
         return all_repos
 
+    def _is_repository_url(self, query: str) -> bool:
+        """Check if the query is a repository URL."""
+        return query.startswith(('http://', 'https://')) and (
+            'github.com' in query or 'gitlab.com' in query or 'bitbucket.org' in query
+        )
+
+    def _deduplicate_repositories(self, repos: list[Repository]) -> list[Repository]:
+        """Remove duplicate repositories based on full_name."""
+        seen = set()
+        unique_repos = []
+        for repo in repos:
+            if repo.full_name not in seen:
+                seen.add(repo.full_name)
+                unique_repos.append(repo)
+        return unique_repos
+
+    async def search_repositories_with_provider(
+        self,
+        query: str,
+        per_page: int,
+        sort: str,
+        order: str,
+        selected_provider: ProviderType | None = None,
+    ) -> list[Repository]:
+        """
+        Search repositories with provider-specific logic.
+
+        If query is regular text: search only user's own repositories that match
+        If query is a URL: search both user's repos AND public repos, then deduplicate
+        """
+        is_url = self._is_repository_url(query)
+        all_repos: list[Repository] = []
+
+        if is_url:
+            # For URLs, search both user repositories and public repositories
+            # First get user repositories that match
+            try:
+                user_repos = await self.get_repositories(
+                    sort=sort,
+                    app_mode=AppMode.SAAS,  # This doesn't matter for filtering
+                    selected_provider=selected_provider,
+                    page=1,
+                    per_page=per_page * 2,  # Get more to account for filtering
+                    installation_id=None,
+                )
+
+                # Filter user repos by query
+                filtered_user_repos = [
+                    repo
+                    for repo in user_repos
+                    if query.lower() in repo.full_name.lower()
+                ]
+                all_repos.extend(filtered_user_repos)
+            except Exception as e:
+                logger.warning(f'Error getting user repos for URL search: {e}')
+
+            # Then search public repositories
+            try:
+                if selected_provider:
+                    # Search only the selected provider
+                    if selected_provider in self.provider_tokens:
+                        service = self._get_service(selected_provider)
+                        public_repos = await service.search_repositories(
+                            query, per_page, sort, order
+                        )
+                        all_repos.extend(public_repos)
+                else:
+                    # Search all providers
+                    for provider in self.provider_tokens:
+                        try:
+                            service = self._get_service(provider)
+                            service_repos = await service.search_repositories(
+                                query, per_page, sort, order
+                            )
+                            all_repos.extend(service_repos)
+                        except Exception as e:
+                            logger.warning(
+                                f'Error searching public repos from {provider}: {e}'
+                            )
+                            continue
+            except Exception as e:
+                logger.warning(f'Error searching public repositories: {e}')
+        else:
+            # For regular text, search only user's own repositories that match
+            try:
+                user_repos = await self.get_repositories(
+                    sort=sort,
+                    app_mode=AppMode.SAAS,  # This doesn't matter for filtering
+                    selected_provider=selected_provider,
+                    page=1,
+                    per_page=per_page * 3,  # Get more to account for filtering
+                    installation_id=None,
+                )
+
+                # Filter user repos by query (case-insensitive)
+                filtered_repos = [
+                    repo
+                    for repo in user_repos
+                    if query.lower() in repo.full_name.lower()
+                ]
+                all_repos.extend(filtered_repos[:per_page])  # Limit to requested count
+            except Exception as e:
+                logger.warning(f'Error searching user repositories: {e}')
+
+        # Deduplicate and return
+        return self._deduplicate_repositories(all_repos)
+
     async def set_event_stream_secrets(
         self,
         event_stream: EventStream,

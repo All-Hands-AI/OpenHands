@@ -9,7 +9,6 @@ import { Branch, GitRepository } from "#/types/git";
 import { BrandButton } from "../settings/brand-button";
 import { useSearchRepositories } from "#/hooks/query/use-search-repositories";
 import { useDebounce } from "#/hooks/use-debounce";
-import { sanitizeQuery } from "#/utils/sanitize-query";
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { Provider } from "#/types/settings";
 import { SettingsDropdownInput } from "../settings/settings-dropdown-input";
@@ -60,7 +59,10 @@ export function RepositorySelectionForm({
 
   const [searchQuery, setSearchQuery] = React.useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
-  const { data: searchedRepos } = useSearchRepositories(debouncedSearchQuery);
+  const { data: searchedRepos } = useSearchRepositories(
+    debouncedSearchQuery,
+    selectedProvider,
+  );
 
   // Auto-select provider if there's only one
   React.useEffect(() => {
@@ -102,12 +104,15 @@ export function RepositorySelectionForm({
     return repositoriesData.pages.flatMap((page) => page.data || []);
   }, [repositoriesData]);
 
-  // Combine user repositories with search results
+  // Show search results when user is typing, otherwise show user repositories
   const allRepositories = React.useMemo(() => {
-    const userRepos = repositories || [];
-    const searchRepos = searchedRepos || [];
-    return [...userRepos, ...searchRepos];
-  }, [repositories, searchedRepos]);
+    if (searchQuery.trim()) {
+      // User is typing - show only search results
+      return searchedRepos || [];
+    }
+    // User is not typing - show user repositories
+    return repositories || [];
+  }, [repositories, searchedRepos, searchQuery]);
 
   const repositoriesItems = allRepositories.map((repo) => ({
     key: repo.id,
@@ -142,6 +147,7 @@ export function RepositorySelectionForm({
     setSelectedProvider(provider);
     setSelectedRepository(null); // Reset repository selection when provider changes
     setSelectedBranch(null); // Reset branch selection when provider changes
+    setSearchQuery(""); // Reset search query when provider changes
     onRepoSelection(null); // Reset parent component's selected repo
   };
 
@@ -153,13 +159,13 @@ export function RepositorySelectionForm({
   };
 
   const handleRepoInputChange = (value: string) => {
+    // Always set the search query to exactly what the user types
+    setSearchQuery(value);
+
     if (value === "") {
       setSelectedRepository(null);
       setSelectedBranch(null);
       onRepoSelection(null);
-    } else if (value.startsWith("https://")) {
-      const repoName = sanitizeQuery(value);
-      setSearchQuery(repoName);
     }
   };
 
@@ -229,11 +235,13 @@ export function RepositorySelectionForm({
         defaultFilter={(textValue, inputValue) => {
           if (!inputValue) return true;
 
-          const repo = allRepositories?.find((r) => r.full_name === textValue);
-          if (!repo) return false;
+          // When user is typing, show all search results (no additional filtering)
+          if (searchQuery.trim()) {
+            return true;
+          }
 
-          const sanitizedInput = sanitizeQuery(inputValue);
-          return sanitizeQuery(textValue).includes(sanitizedInput);
+          // When showing user repositories, filter by input
+          return textValue.toLowerCase().includes(inputValue.toLowerCase());
         }}
       />
     );

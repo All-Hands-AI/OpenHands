@@ -165,17 +165,20 @@ async def search_repositories(
     per_page: int = 5,
     sort: str = 'stars',
     order: str = 'desc',
+    selected_provider: ProviderType | None = None,
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
     user_id: str | None = Depends(get_user_id),
 ) -> list[Repository] | JSONResponse:
     if provider_tokens:
         client = ProviderHandler(
-            provider_tokens=provider_tokens, external_auth_token=access_token
+            provider_tokens=provider_tokens,
+            external_auth_token=access_token,
+            external_auth_id=user_id,
         )
         try:
-            repos: list[Repository] = await client.search_repositories(
-                query, per_page, sort, order
+            repos: list[Repository] = await client.search_repositories_with_provider(
+                query, per_page, sort, order, selected_provider
             )
             return repos
 
@@ -192,10 +195,10 @@ async def search_repositories(
             )
 
     logger.info(
-        f'Returning 401 Unauthorized - GitHub token required for user_id: {user_id}'
+        f'Returning 401 Unauthorized - Git provider token required for user_id: {user_id}'
     )
     return JSONResponse(
-        content='GitHub token required.',
+        content='Git provider token required.',
         status_code=status.HTTP_401_UNAUTHORIZED,
     )
 

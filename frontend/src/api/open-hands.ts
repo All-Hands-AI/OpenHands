@@ -401,6 +401,7 @@ class OpenHands {
   static async searchGitRepositories(
     query: string,
     per_page = 5,
+    selected_provider?: Provider,
   ): Promise<GitRepository[]> {
     const response = await openHands.get<GitRepository[]>(
       "/api/user/search/repositories",
@@ -408,6 +409,7 @@ class OpenHands {
         params: {
           query,
           per_page,
+          selected_provider,
         },
       },
     );
