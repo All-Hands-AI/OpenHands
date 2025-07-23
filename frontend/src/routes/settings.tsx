@@ -1,6 +1,17 @@
 import { NavLink, Outlet, redirect, useLocation } from "react-router";
 import { useTranslation } from "react-i18next";
-import SettingsIcon from "#/icons/settings.svg?react";
+import {
+  FiUser,
+  FiBox,
+  FiCreditCard,
+  FiKey,
+  FiUsers,
+  FiGrid,
+  FiBriefcase,
+  FiCpu,
+  FiDatabase,
+} from "react-icons/fi";
+import { SettingsIcon } from "lucide-react";
 import { cn } from "#/utils/utils";
 import { useConfig } from "#/hooks/query/use-config";
 import { I18nKey } from "#/i18n/declaration";
@@ -23,22 +34,30 @@ const SAAS_ONLY_PATHS = [
 ];
 
 const SAAS_NAV_ITEMS = [
-  { to: "/settings/user", text: "SETTINGS$NAV_USER" },
-  { to: "/settings/integrations", text: "SETTINGS$NAV_INTEGRATIONS" },
-  { to: "/settings/app", text: "SETTINGS$NAV_APPLICATION" },
-  { to: "/settings/billing", text: "SETTINGS$NAV_CREDITS" },
-  { to: "/settings/secrets", text: "SETTINGS$NAV_SECRETS" },
-  { to: "/settings/api-keys", text: "SETTINGS$NAV_API_KEYS" },
-  { to: "/settings/team", text: "Team" },
-  { to: "/settings/org", text: "Organization" },
+  { to: "/settings/user", text: "SETTINGS$NAV_USER", icon: FiUser },
+  {
+    to: "/settings/integrations",
+    text: "SETTINGS$NAV_INTEGRATIONS",
+    icon: FiBox,
+  },
+  { to: "/settings/app", text: "SETTINGS$NAV_APPLICATION", icon: FiGrid },
+  { to: "/settings/billing", text: "SETTINGS$NAV_CREDITS", icon: FiCreditCard },
+  { to: "/settings/secrets", text: "SETTINGS$NAV_SECRETS", icon: FiKey },
+  { to: "/settings/api-keys", text: "SETTINGS$NAV_API_KEYS", icon: FiKey },
+  { to: "/settings/team", text: "Team", icon: FiUsers },
+  { to: "/settings/org", text: "Organization", icon: FiBriefcase },
 ];
 
 const OSS_NAV_ITEMS = [
-  { to: "/settings", text: "SETTINGS$NAV_LLM" },
-  { to: "/settings/mcp", text: "SETTINGS$NAV_MCP" },
-  { to: "/settings/integrations", text: "SETTINGS$NAV_INTEGRATIONS" },
-  { to: "/settings/app", text: "SETTINGS$NAV_APPLICATION" },
-  { to: "/settings/secrets", text: "SETTINGS$NAV_SECRETS" },
+  { to: "/settings", text: "SETTINGS$NAV_LLM", icon: FiCpu },
+  { to: "/settings/mcp", text: "SETTINGS$NAV_MCP", icon: FiDatabase },
+  {
+    to: "/settings/integrations",
+    text: "SETTINGS$NAV_INTEGRATIONS",
+    icon: FiBox,
+  },
+  { to: "/settings/app", text: "SETTINGS$NAV_APPLICATION", icon: FiGrid },
+  { to: "/settings/secrets", text: "SETTINGS$NAV_SECRETS", icon: FiKey },
 ];
 
 export const clientLoader = async ({ request }: Route.ClientLoaderArgs) => {
@@ -126,18 +145,19 @@ function SettingsScreen() {
 
               return true;
             })
-            .map(({ to, text }) => (
+            .map(({ to, text, icon: Icon }) => (
               <NavLink
                 end
                 key={to}
                 to={to}
                 className={({ isActive }) =>
                   cn(
-                    "py-2 px-3 rounded flex items-center text-sm",
+                    "py-2 px-3 rounded flex items-center gap-2 text-sm",
                     isActive ? "bg-base text-white" : "hover:bg-tertiary",
                   )
                 }
               >
+                <Icon size={16} />
                 <span>{t(text)}</span>
               </NavLink>
             ))}
