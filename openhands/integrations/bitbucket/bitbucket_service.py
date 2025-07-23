@@ -142,6 +142,58 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
             email=None,  # Bitbucket API doesn't return email in this endpoint
         )
 
+    def _parse_repository(
+        self, repo: dict, link_header: str | None = None
+    ) -> Repository:
+        """
+        Parse a Bitbucket API repository response into a Repository object.
+
+        Args:
+            repo: Repository data from Bitbucket API
+            link_header: Optional link header for pagination
+
+        Returns:
+            Repository object
+        """
+        # Handle different ways of getting the repository ID
+        repo_id = repo.get('uuid', '')
+        if not repo_id:
+            repo_id = repo.get('id', '')
+
+        # Handle different ways of getting the full name
+        full_name = repo.get('full_name')
+        if not full_name:
+            workspace_slug = repo.get('workspace', {}).get('slug', '')
+            repo_slug = repo.get('slug', '')
+            full_name = (
+                f'{workspace_slug}/{repo_slug}' if workspace_slug and repo_slug else ''
+            )
+
+        # Handle different ways of determining if repository is public
+        is_public = not repo.get('is_private', True)
+
+        # Handle different ways of determining owner type
+        owner_type = OwnerType.USER
+        if repo.get('owner', {}).get('type') == 'user':
+            owner_type = OwnerType.USER
+        elif repo.get('owner', {}).get('type') == 'team':
+            owner_type = OwnerType.ORGANIZATION
+        elif repo.get('workspace', {}).get('is_private') is False:
+            owner_type = OwnerType.ORGANIZATION
+        else:
+            owner_type = OwnerType.USER
+
+        return Repository(
+            id=repo_id,
+            full_name=full_name,  # type: ignore[arg-type]
+            git_provider=ProviderType.BITBUCKET,
+            is_public=is_public,
+            stargazers_count=None,  # Bitbucket doesn't have stars
+            pushed_at=repo.get('updated_on'),
+            owner_type=owner_type,
+            link_header=link_header,
+        )
+
     async def search_repositories(
         self, query: str, per_page: int, sort: str, order: str, public: bool
     ) -> list[Repository]:
@@ -161,17 +213,7 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
             response, _ = await self._make_request(url, params)
 
             for repo_data in response.get('values', []):
-                repo = Repository(
-                    id=repo_data['uuid'],
-                    full_name=repo_data['full_name'],
-                    git_provider=ProviderType.BITBUCKET,
-                    is_public=not repo_data['is_private'],
-                    stargazers_count=None,
-                    pushed_at=repo_data.get('updated_on'),
-                    owner_type=OwnerType.USER
-                    if repo_data.get('owner', {}).get('type') == 'user'
-                    else OwnerType.ORGANIZATION,
-                )
+                repo = self._parse_repository(repo_data)
                 repositories.append(repo)
 
             return repositories
@@ -306,20 +348,7 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
                 formatted_link_header = f'<{next_link}>; rel="next"'
 
         repositories = [
-            Repository(
-                id=repo.get('uuid', ''),
-                full_name=f'{repo.get("workspace", {}).get("slug", "")}/{repo.get("slug", "")}',
-                git_provider=ProviderType.BITBUCKET,
-                is_public=repo.get('is_private', True) is False,
-                stargazers_count=None,  # Bitbucket doesn't have stars
-                pushed_at=repo.get('updated_on'),
-                owner_type=(
-                    OwnerType.ORGANIZATION
-                    if repo.get('workspace', {}).get('is_private') is False
-                    else OwnerType.USER
-                ),
-                link_header=formatted_link_header,
-            )
+            self._parse_repository(repo, link_header=formatted_link_header)
             for repo in repos
         ]
 
@@ -380,22 +409,7 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
             )
 
             for repo in workspace_repos:
-                uuid = repo.get('uuid', '')
-                repositories.append(
-                    Repository(
-                        id=uuid,
-                        full_name=f'{repo.get("workspace", {}).get("slug", "")}/{repo.get("slug", "")}',
-                        git_provider=ProviderType.BITBUCKET,
-                        is_public=repo.get('is_private', True) is False,
-                        stargazers_count=None,  # Bitbucket doesn't have stars
-                        pushed_at=repo.get('updated_on'),
-                        owner_type=(
-                            OwnerType.ORGANIZATION
-                            if repo.get('workspace', {}).get('is_private') is False
-                            else OwnerType.USER
-                        ),
-                    )
-                )
+                repositories.append(self._parse_repository(repo))
 
                 # Stop if we've reached the maximum number of repositories
                 if len(repositories) >= MAX_REPOS:
@@ -427,20 +441,7 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
         url = f'{self.BASE_URL}/repositories/{owner}/{repo}'
         data, _ = await self._make_request(url)
 
-        uuid = data.get('uuid', '')
-        return Repository(
-            id=uuid,
-            full_name=f'{data.get("workspace", {}).get("slug", "")}/{data.get("slug", "")}',
-            git_provider=ProviderType.BITBUCKET,
-            is_public=data.get('is_private', True) is False,
-            stargazers_count=None,  # Bitbucket doesn't have stars
-            pushed_at=data.get('updated_on'),
-            owner_type=(
-                OwnerType.ORGANIZATION
-                if data.get('workspace', {}).get('is_private') is False
-                else OwnerType.USER
-            ),
-        )
+        return self._parse_repository(data)
 
     async def get_branches(self, repository: str) -> list[Branch]:
         """Get branches for a repository."""
