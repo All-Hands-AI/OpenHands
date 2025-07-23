@@ -202,9 +202,37 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
 
             return repositories
         else:
-            # TODO: call the workspaces api and pass the query to find the first 2 workspaces
-            # Then get the first 3 repos inside each workspace
-            return []
+            # Search workspaces that match the query (first 2 workspaces)
+            try:
+                matching_workspace_slugs = await self.get_installations(
+                    query=query, limit=2
+                )
+
+                # For each matching workspace, get the first 3 repositories
+                for workspace_slug in matching_workspace_slugs:
+                    # Get repositories for this workspace
+                    workspace_repos_url = (
+                        f'{self.BASE_URL}/repositories/{workspace_slug}'
+                    )
+                    repo_params = {'pagelen': 3}
+
+                    try:
+                        repo_response, _ = await self._make_request(
+                            workspace_repos_url, repo_params
+                        )
+
+                        for repo_data in repo_response.get('values', []):
+                            repo = self._parse_repository(repo_data)
+                            repositories.append(repo)
+                    except Exception:
+                        # If we can't access repositories for this workspace, skip it
+                        continue
+
+            except Exception:
+                # If workspace search fails, return empty list
+                pass
+
+            return repositories
 
     async def _get_user_workspaces(self) -> list[dict[str, Any]]:
         """Get all workspaces the user has access to"""
@@ -254,9 +282,15 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
 
         return all_items[:max_items]  # Trim to max_items if needed
 
-    async def get_installations(self) -> list[str]:
+    async def get_installations(
+        self, query: str | None = None, limit: int = 100
+    ) -> list[str]:
         workspaces_url = f'{self.BASE_URL}/workspaces'
-        workspaces = await self._fetch_paginated_data(workspaces_url, {}, 100)
+        params = {}
+        if query:
+            params['q'] = f'name~"{query}"'
+
+        workspaces = await self._fetch_paginated_data(workspaces_url, params, limit)
 
         installations: list[str] = []
         for workspace in workspaces:

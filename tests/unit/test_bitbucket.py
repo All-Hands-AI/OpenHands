@@ -914,3 +914,233 @@ def test_initialize_repository_for_runtime_without_bitbucket_token(
     assert ProviderType.GITHUB in provider_tokens
     assert ProviderType.GITLAB in provider_tokens
     assert ProviderType.BITBUCKET not in provider_tokens
+
+
+@pytest.mark.asyncio
+async def test_bitbucket_search_repositories_with_workspace_query():
+    """
+    Test that the Bitbucket service correctly searches repositories when query contains workspace.
+    """
+    # Create a service instance
+    service = BitBucketService(token=SecretStr('test-token'))
+
+    # Mock the _make_request method to avoid actual API calls
+    with patch.object(service, '_make_request') as mock_request:
+        # Mock response for workspace/repo query
+        mock_request.return_value = (
+            {
+                'values': [
+                    {
+                        'uuid': '{repo-uuid}',
+                        'slug': 'test-repo',
+                        'workspace': {'slug': 'test-workspace'},
+                        'is_private': False,
+                        'updated_on': '2023-01-01T00:00:00Z',
+                    }
+                ]
+            },
+            {},
+        )
+
+        # Call search_repositories with workspace/repo format
+        result = await service.search_repositories(
+            query='test-workspace/test',
+            per_page=5,
+            sort='stars',
+            order='desc',
+            public=False,
+        )
+
+        # Verify the request was made correctly
+        mock_request.assert_called_once()
+        args, kwargs = mock_request.call_args
+        url, params = args
+
+        assert url == 'https://api.bitbucket.org/2.0/repositories/test-workspace'
+        assert params['q'] == 'name~"test"'
+        assert params['pagelen'] == 3
+
+        # Verify the result
+        assert len(result) == 1
+        assert result[0].full_name == 'test-workspace/test-repo'
+
+
+@pytest.mark.asyncio
+async def test_bitbucket_search_repositories_with_general_query():
+    """
+    Test that the Bitbucket service correctly searches repositories with general query (no workspace).
+    """
+    # Create a service instance
+    service = BitBucketService(token=SecretStr('test-token'))
+
+    # Mock the get_installations method and _make_request method
+    with (
+        patch.object(service, 'get_installations') as mock_get_installations,
+        patch.object(service, '_make_request') as mock_request,
+    ):
+        # Mock get_installations to return matching workspace slugs
+        mock_get_installations.return_value = ['workspace1', 'workspace2']
+
+        # Mock responses for repositories in each workspace
+        mock_request.side_effect = [
+            # Repositories in workspace1
+            (
+                {
+                    'values': [
+                        {
+                            'uuid': '{repo1-uuid}',
+                            'slug': 'repo1',
+                            'workspace': {'slug': 'workspace1'},
+                            'is_private': False,
+                            'updated_on': '2023-01-01T00:00:00Z',
+                        },
+                        {
+                            'uuid': '{repo2-uuid}',
+                            'slug': 'repo2',
+                            'workspace': {'slug': 'workspace1'},
+                            'is_private': True,
+                            'updated_on': '2023-01-02T00:00:00Z',
+                        },
+                    ]
+                },
+                {},
+            ),
+            # Repositories in workspace2
+            (
+                {
+                    'values': [
+                        {
+                            'uuid': '{repo3-uuid}',
+                            'slug': 'repo3',
+                            'workspace': {'slug': 'workspace2'},
+                            'is_private': False,
+                            'updated_on': '2023-01-03T00:00:00Z',
+                        }
+                    ]
+                },
+                {},
+            ),
+        ]
+
+        # Call search_repositories with general query
+        result = await service.search_repositories(
+            query='test', per_page=5, sort='stars', order='desc', public=False
+        )
+
+        # Verify get_installations was called with correct parameters
+        mock_get_installations.assert_called_once_with(query='test', limit=2)
+
+        # Verify the repository requests were made correctly
+        assert mock_request.call_count == 2
+
+        # Check repository calls for each workspace
+        repo_call1 = mock_request.call_args_list[0]
+        repo_url1, repo_params1 = repo_call1[0]
+        assert repo_url1 == 'https://api.bitbucket.org/2.0/repositories/workspace1'
+        assert repo_params1['pagelen'] == 3
+
+        repo_call2 = mock_request.call_args_list[1]
+        repo_url2, repo_params2 = repo_call2[0]
+        assert repo_url2 == 'https://api.bitbucket.org/2.0/repositories/workspace2'
+        assert repo_params2['pagelen'] == 3
+
+        # Verify the result
+        assert len(result) == 3
+        assert result[0].full_name == 'workspace1/repo1'
+        assert result[1].full_name == 'workspace1/repo2'
+        assert result[2].full_name == 'workspace2/repo3'
+
+
+@pytest.mark.asyncio
+async def test_bitbucket_search_repositories_public_returns_empty():
+    """
+    Test that the Bitbucket service returns empty list for public repository search.
+    """
+    # Create a service instance
+    service = BitBucketService(token=SecretStr('test-token'))
+
+    # Call search_repositories with public=True
+    result = await service.search_repositories(
+        query='test', per_page=5, sort='stars', order='desc', public=True
+    )
+
+    # Verify empty result for public search
+    assert result == []
+
+
+@pytest.mark.asyncio
+async def test_bitbucket_search_repositories_handles_exceptions():
+    """
+    Test that the Bitbucket service handles exceptions gracefully during search.
+    """
+    # Create a service instance
+    service = BitBucketService(token=SecretStr('test-token'))
+
+    # Mock the get_installations method to raise an exception
+    with patch.object(service, 'get_installations') as mock_get_installations:
+        mock_get_installations.side_effect = Exception('API Error')
+
+        # Call search_repositories with general query
+        result = await service.search_repositories(
+            query='test', per_page=5, sort='stars', order='desc', public=False
+        )
+
+        # Verify empty result when exception occurs
+        assert result == []
+
+
+@pytest.mark.asyncio
+async def test_bitbucket_get_installations_with_query_and_limit():
+    """
+    Test that the get_installations method correctly handles query and limit parameters.
+    """
+    # Create a service instance
+    service = BitBucketService(token=SecretStr('test-token'))
+
+    # Mock the _fetch_paginated_data method
+    with patch.object(service, '_fetch_paginated_data') as mock_fetch:
+        mock_fetch.return_value = [
+            {'slug': 'workspace1', 'name': 'Test Workspace 1'},
+            {'slug': 'workspace2', 'name': 'Test Workspace 2'},
+        ]
+
+        # Call get_installations with query and limit
+        result = await service.get_installations(query='test', limit=2)
+
+        # Verify _fetch_paginated_data was called with correct parameters
+        mock_fetch.assert_called_once_with(
+            'https://api.bitbucket.org/2.0/workspaces', {'q': 'name~"test"'}, 2
+        )
+
+        # Verify the result
+        assert result == ['workspace1', 'workspace2']
+
+
+@pytest.mark.asyncio
+async def test_bitbucket_get_installations_without_query():
+    """
+    Test that the get_installations method works without query parameter.
+    """
+    # Create a service instance
+    service = BitBucketService(token=SecretStr('test-token'))
+
+    # Mock the _fetch_paginated_data method
+    with patch.object(service, '_fetch_paginated_data') as mock_fetch:
+        mock_fetch.return_value = [
+            {'slug': 'workspace1', 'name': 'Workspace 1'},
+            {'slug': 'workspace2', 'name': 'Workspace 2'},
+            {'slug': 'workspace3', 'name': 'Workspace 3'},
+        ]
+
+        # Call get_installations without query (default behavior)
+        result = await service.get_installations()
+
+        # Verify _fetch_paginated_data was called with correct parameters
+        mock_fetch.assert_called_once_with(
+            'https://api.bitbucket.org/2.0/workspaces',
+            {},  # No query parameters
+            100,  # Default limit
+        )
+
+        # Verify the result
+        assert result == ['workspace1', 'workspace2', 'workspace3']
