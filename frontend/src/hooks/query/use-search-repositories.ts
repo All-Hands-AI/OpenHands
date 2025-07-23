@@ -9,7 +9,7 @@ export function useSearchRepositories(
   return useQuery({
     queryKey: ["repositories", "search", query, selectedProvider],
     queryFn: () =>
-      OpenHands.searchGitRepositories(query, 10, selectedProvider || undefined),
+      OpenHands.searchGitRepositories(query, 3, selectedProvider || undefined),
     enabled: !!query && !!selectedProvider,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes
