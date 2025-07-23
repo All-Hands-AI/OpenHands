@@ -179,6 +179,7 @@ async def test_search_conversations():
                                 selected_repository='foobar',
                                 num_connections=0,
                                 url=None,
+                                pr_number=[],  # Default empty list for pr_number
                             )
                         ]
                     )
@@ -638,6 +639,7 @@ async def test_get_conversation():
                 selected_repository='foobar',
                 num_connections=0,
                 url=None,
+                pr_number=[],  # Default empty list for pr_number
             )
             assert conversation == expected
 
@@ -1198,3 +1200,365 @@ async def test_new_conversation_with_create_microagent_minimal(provider_handler_
             assert (
                 call_args['git_provider'] is None
             )  # Should remain None since not set in create_microagent
+
+
+@pytest.mark.asyncio
+async def test_search_conversations_with_pr_number():
+    """Test searching conversations includes pr_number field in response."""
+    with _patch_store():
+        with patch(
+            'openhands.server.routes.manage_conversations.config'
+        ) as mock_config:
+            mock_config.conversation_max_age_seconds = 864000  # 10 days
+            with patch(
+                'openhands.server.routes.manage_conversations.conversation_manager'
+            ) as mock_manager:
+
+                async def mock_get_running_agent_loops(*args, **kwargs):
+                    return set()
+
+                async def mock_get_connections(*args, **kwargs):
+                    return {}
+
+                async def get_agent_loop_info(*args, **kwargs):
+                    return []
+
+                mock_manager.get_running_agent_loops = mock_get_running_agent_loops
+                mock_manager.get_connections = mock_get_connections
+                mock_manager.get_agent_loop_info = get_agent_loop_info
+                with patch(
+                    'openhands.server.routes.manage_conversations.datetime'
+                ) as mock_datetime:
+                    mock_datetime.now.return_value = datetime.fromisoformat(
+                        '2025-01-01T00:00:00+00:00'
+                    )
+                    mock_datetime.fromisoformat = datetime.fromisoformat
+                    mock_datetime.timezone = timezone
+
+                    # Mock the conversation store
+                    mock_store = MagicMock()
+                    mock_store.search = AsyncMock(
+                        return_value=ConversationInfoResultSet(
+                            results=[
+                                ConversationMetadata(
+                                    conversation_id='conversation_with_pr',
+                                    title='Conversation with PR',
+                                    created_at=datetime.fromisoformat(
+                                        '2025-01-01T00:00:00+00:00'
+                                    ),
+                                    last_updated_at=datetime.fromisoformat(
+                                        '2025-01-01T00:01:00+00:00'
+                                    ),
+                                    selected_repository='test/repo',
+                                    user_id='12345',
+                                    pr_number=[123, 456],  # Multiple PR numbers
+                                )
+                            ]
+                        )
+                    )
+
+                    result_set = await search_conversations(
+                        page_id=None,
+                        limit=20,
+                        selected_repository=None,
+                        conversation_trigger=None,
+                        conversation_store=mock_store,
+                    )
+
+                    # Verify the result includes pr_number field
+                    assert len(result_set.results) == 1
+                    conversation_info = result_set.results[0]
+                    assert conversation_info.pr_number == [123, 456]
+                    assert conversation_info.conversation_id == 'conversation_with_pr'
+                    assert conversation_info.title == 'Conversation with PR'
+
+
+@pytest.mark.asyncio
+async def test_search_conversations_with_empty_pr_number():
+    """Test searching conversations with empty pr_number field."""
+    with _patch_store():
+        with patch(
+            'openhands.server.routes.manage_conversations.config'
+        ) as mock_config:
+            mock_config.conversation_max_age_seconds = 864000  # 10 days
+            with patch(
+                'openhands.server.routes.manage_conversations.conversation_manager'
+            ) as mock_manager:
+
+                async def mock_get_running_agent_loops(*args, **kwargs):
+                    return set()
+
+                async def mock_get_connections(*args, **kwargs):
+                    return {}
+
+                async def get_agent_loop_info(*args, **kwargs):
+                    return []
+
+                mock_manager.get_running_agent_loops = mock_get_running_agent_loops
+                mock_manager.get_connections = mock_get_connections
+                mock_manager.get_agent_loop_info = get_agent_loop_info
+                with patch(
+                    'openhands.server.routes.manage_conversations.datetime'
+                ) as mock_datetime:
+                    mock_datetime.now.return_value = datetime.fromisoformat(
+                        '2025-01-01T00:00:00+00:00'
+                    )
+                    mock_datetime.fromisoformat = datetime.fromisoformat
+                    mock_datetime.timezone = timezone
+
+                    # Mock the conversation store
+                    mock_store = MagicMock()
+                    mock_store.search = AsyncMock(
+                        return_value=ConversationInfoResultSet(
+                            results=[
+                                ConversationMetadata(
+                                    conversation_id='conversation_no_pr',
+                                    title='Conversation without PR',
+                                    created_at=datetime.fromisoformat(
+                                        '2025-01-01T00:00:00+00:00'
+                                    ),
+                                    last_updated_at=datetime.fromisoformat(
+                                        '2025-01-01T00:01:00+00:00'
+                                    ),
+                                    selected_repository='test/repo',
+                                    user_id='12345',
+                                    pr_number=[],  # Empty PR numbers list
+                                )
+                            ]
+                        )
+                    )
+
+                    result_set = await search_conversations(
+                        page_id=None,
+                        limit=20,
+                        selected_repository=None,
+                        conversation_trigger=None,
+                        conversation_store=mock_store,
+                    )
+
+                    # Verify the result includes empty pr_number field
+                    assert len(result_set.results) == 1
+                    conversation_info = result_set.results[0]
+                    assert conversation_info.pr_number == []
+                    assert conversation_info.conversation_id == 'conversation_no_pr'
+                    assert conversation_info.title == 'Conversation without PR'
+
+
+@pytest.mark.asyncio
+async def test_search_conversations_with_single_pr_number():
+    """Test searching conversations with single PR number."""
+    with _patch_store():
+        with patch(
+            'openhands.server.routes.manage_conversations.config'
+        ) as mock_config:
+            mock_config.conversation_max_age_seconds = 864000  # 10 days
+            with patch(
+                'openhands.server.routes.manage_conversations.conversation_manager'
+            ) as mock_manager:
+
+                async def mock_get_running_agent_loops(*args, **kwargs):
+                    return set()
+
+                async def mock_get_connections(*args, **kwargs):
+                    return {}
+
+                async def get_agent_loop_info(*args, **kwargs):
+                    return []
+
+                mock_manager.get_running_agent_loops = mock_get_running_agent_loops
+                mock_manager.get_connections = mock_get_connections
+                mock_manager.get_agent_loop_info = get_agent_loop_info
+                with patch(
+                    'openhands.server.routes.manage_conversations.datetime'
+                ) as mock_datetime:
+                    mock_datetime.now.return_value = datetime.fromisoformat(
+                        '2025-01-01T00:00:00+00:00'
+                    )
+                    mock_datetime.fromisoformat = datetime.fromisoformat
+                    mock_datetime.timezone = timezone
+
+                    # Mock the conversation store
+                    mock_store = MagicMock()
+                    mock_store.search = AsyncMock(
+                        return_value=ConversationInfoResultSet(
+                            results=[
+                                ConversationMetadata(
+                                    conversation_id='conversation_single_pr',
+                                    title='Conversation with Single PR',
+                                    created_at=datetime.fromisoformat(
+                                        '2025-01-01T00:00:00+00:00'
+                                    ),
+                                    last_updated_at=datetime.fromisoformat(
+                                        '2025-01-01T00:01:00+00:00'
+                                    ),
+                                    selected_repository='test/repo',
+                                    user_id='12345',
+                                    pr_number=[789],  # Single PR number
+                                )
+                            ]
+                        )
+                    )
+
+                    result_set = await search_conversations(
+                        page_id=None,
+                        limit=20,
+                        selected_repository=None,
+                        conversation_trigger=None,
+                        conversation_store=mock_store,
+                    )
+
+                    # Verify the result includes single pr_number
+                    assert len(result_set.results) == 1
+                    conversation_info = result_set.results[0]
+                    assert conversation_info.pr_number == [789]
+                    assert conversation_info.conversation_id == 'conversation_single_pr'
+                    assert conversation_info.title == 'Conversation with Single PR'
+
+
+@pytest.mark.asyncio
+async def test_get_conversation_with_pr_number():
+    """Test getting a single conversation includes pr_number field."""
+    with _patch_store():
+        # Mock the conversation store
+        mock_store = MagicMock()
+        mock_store.get_metadata = AsyncMock(
+            return_value=ConversationMetadata(
+                conversation_id='conversation_with_pr',
+                title='Conversation with PR',
+                created_at=datetime.fromisoformat('2025-01-01T00:00:00+00:00'),
+                last_updated_at=datetime.fromisoformat('2025-01-01T00:01:00+00:00'),
+                selected_repository='test/repo',
+                user_id='12345',
+                pr_number=[123, 456, 789],  # Multiple PR numbers
+            )
+        )
+
+        # Mock the conversation manager
+        with patch(
+            'openhands.server.routes.manage_conversations.conversation_manager'
+        ) as mock_manager:
+            mock_manager.is_agent_loop_running = AsyncMock(return_value=False)
+            mock_manager.get_connections = AsyncMock(return_value={})
+            mock_manager.get_agent_loop_info = AsyncMock(return_value=[])
+
+            conversation = await get_conversation(
+                'conversation_with_pr', conversation_store=mock_store
+            )
+
+            expected = ConversationInfo(
+                conversation_id='conversation_with_pr',
+                title='Conversation with PR',
+                created_at=datetime.fromisoformat('2025-01-01T00:00:00+00:00'),
+                last_updated_at=datetime.fromisoformat('2025-01-01T00:01:00+00:00'),
+                status=ConversationStatus.STOPPED,
+                selected_repository='test/repo',
+                num_connections=0,
+                url=None,
+                pr_number=[123, 456, 789],  # Should include PR numbers
+            )
+            assert conversation == expected
+
+
+@pytest.mark.asyncio
+async def test_search_conversations_multiple_with_pr_numbers():
+    """Test searching conversations with multiple conversations having different PR numbers."""
+    with _patch_store():
+        with patch(
+            'openhands.server.routes.manage_conversations.config'
+        ) as mock_config:
+            mock_config.conversation_max_age_seconds = 864000  # 10 days
+            with patch(
+                'openhands.server.routes.manage_conversations.conversation_manager'
+            ) as mock_manager:
+
+                async def mock_get_running_agent_loops(*args, **kwargs):
+                    return set()
+
+                async def mock_get_connections(*args, **kwargs):
+                    return {}
+
+                async def get_agent_loop_info(*args, **kwargs):
+                    return []
+
+                mock_manager.get_running_agent_loops = mock_get_running_agent_loops
+                mock_manager.get_connections = mock_get_connections
+                mock_manager.get_agent_loop_info = get_agent_loop_info
+                with patch(
+                    'openhands.server.routes.manage_conversations.datetime'
+                ) as mock_datetime:
+                    mock_datetime.now.return_value = datetime.fromisoformat(
+                        '2025-01-01T00:00:00+00:00'
+                    )
+                    mock_datetime.fromisoformat = datetime.fromisoformat
+                    mock_datetime.timezone = timezone
+
+                    # Mock the conversation store
+                    mock_store = MagicMock()
+                    mock_store.search = AsyncMock(
+                        return_value=ConversationInfoResultSet(
+                            results=[
+                                ConversationMetadata(
+                                    conversation_id='conversation_1',
+                                    title='Conversation 1',
+                                    created_at=datetime.fromisoformat(
+                                        '2025-01-01T00:00:00+00:00'
+                                    ),
+                                    last_updated_at=datetime.fromisoformat(
+                                        '2025-01-01T00:01:00+00:00'
+                                    ),
+                                    selected_repository='test/repo',
+                                    user_id='12345',
+                                    pr_number=[100, 200],  # Multiple PR numbers
+                                ),
+                                ConversationMetadata(
+                                    conversation_id='conversation_2',
+                                    title='Conversation 2',
+                                    created_at=datetime.fromisoformat(
+                                        '2025-01-01T00:00:00+00:00'
+                                    ),
+                                    last_updated_at=datetime.fromisoformat(
+                                        '2025-01-01T00:01:00+00:00'
+                                    ),
+                                    selected_repository='test/repo',
+                                    user_id='12345',
+                                    pr_number=[],  # Empty PR numbers
+                                ),
+                                ConversationMetadata(
+                                    conversation_id='conversation_3',
+                                    title='Conversation 3',
+                                    created_at=datetime.fromisoformat(
+                                        '2025-01-01T00:00:00+00:00'
+                                    ),
+                                    last_updated_at=datetime.fromisoformat(
+                                        '2025-01-01T00:01:00+00:00'
+                                    ),
+                                    selected_repository='test/repo',
+                                    user_id='12345',
+                                    pr_number=[300],  # Single PR number
+                                ),
+                            ]
+                        )
+                    )
+
+                    result_set = await search_conversations(
+                        page_id=None,
+                        limit=20,
+                        selected_repository=None,
+                        conversation_trigger=None,
+                        conversation_store=mock_store,
+                    )
+
+                    # Verify all results include pr_number field
+                    assert len(result_set.results) == 3
+
+                    # Check first conversation
+                    assert result_set.results[0].conversation_id == 'conversation_1'
+                    assert result_set.results[0].pr_number == [100, 200]
+
+                    # Check second conversation
+                    assert result_set.results[1].conversation_id == 'conversation_2'
+                    assert result_set.results[1].pr_number == []
+
+                    # Check third conversation
+                    assert result_set.results[2].conversation_id == 'conversation_3'
+                    assert result_set.results[2].pr_number == [300]
