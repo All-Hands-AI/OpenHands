@@ -270,8 +270,13 @@ class GitLabService(BaseGitService, GitService):
             if not repo_path:
                 return []  # Invalid URL format
 
-            repository = await self.get_repository_details_from_repo_name(repo_path)
-            return [repository]
+            try:
+                # Try to get the specific repository
+                repository = await self.get_repository_details_from_repo_name(repo_path)
+                return [repository]
+            except Exception:
+                # Repository doesn't exist or is not accessible
+                return []
 
         else:
             # Original logic for non-public searches
@@ -282,6 +287,7 @@ class GitLabService(BaseGitService, GitService):
                 'order_by': 'last_activity_at' if sort == 'updated' else sort,
                 'sort': order,
                 'membership': True,  # Include projects user is a member of
+                'min_access_level': 30,  # Developer level (write access)
             }
 
             response, _ = await self._make_request(url, params)
