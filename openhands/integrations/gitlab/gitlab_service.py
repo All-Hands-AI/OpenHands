@@ -204,13 +204,22 @@ class GitLabService(BaseGitService, GitService):
         public: bool = False,
     ) -> list[Repository]:
         url = f'{self.BASE_URL}/projects'
-        params = {
-            'search': query,
-            'per_page': per_page,
-            'order_by': 'last_activity_at',
-            'sort': order,
-            'visibility': 'public',
-        }
+        if public:
+            params = {
+                'search': query,
+                'per_page': per_page,
+                'order_by': 'last_activity_at',
+                'sort': order,
+                'visibility': 'public',
+            }
+        else:
+            params = {
+                'search': query,
+                'per_page': per_page,
+                'order_by': 'last_activity_at' if sort == 'updated' else sort,
+                'sort': order,
+                'owned': 'true',  # Only get repositories owned by the user
+            }
 
         response, _ = await self._make_request(url, params)
         repos = [
@@ -220,41 +229,6 @@ class GitLabService(BaseGitService, GitService):
                 stargazers_count=repo.get('star_count'),
                 git_provider=ProviderType.GITLAB,
                 is_public=True,
-                owner_type=(
-                    OwnerType.ORGANIZATION
-                    if repo.get('namespace', {}).get('kind') == 'group'
-                    else OwnerType.USER
-                ),
-            )
-            for repo in response
-        ]
-
-        return repos
-
-    async def search_user_repositories(
-        self, query: str, per_page: int, sort: str, order: str, app_mode: AppMode
-    ) -> list[Repository]:
-        """Search for user's own repositories"""
-        # Get the authenticated user's information
-        await self.get_user()
-
-        url = f'{self.BASE_URL}/projects'
-        params = {
-            'search': query,
-            'per_page': per_page,
-            'order_by': 'last_activity_at' if sort == 'updated' else sort,
-            'sort': order,
-            'owned': 'true',  # Only get repositories owned by the user
-        }
-
-        response, _ = await self._make_request(url, params)
-        repos = [
-            Repository(
-                id=str(repo.get('id')),
-                full_name=repo.get('path_with_namespace'),
-                stargazers_count=repo.get('star_count'),
-                git_provider=ProviderType.GITLAB,
-                is_public=repo.get('visibility') == 'public',
                 owner_type=(
                     OwnerType.ORGANIZATION
                     if repo.get('namespace', {}).get('kind') == 'group'
