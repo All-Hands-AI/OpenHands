@@ -293,26 +293,32 @@ class ProviderHandler:
 
         if is_url:
             # For URLs, search both user repositories and public repositories
-            # First get user repositories that match
+            # First search user repositories that match
             try:
-                user_repos = await self.get_repositories(
-                    sort=sort,
-                    app_mode=AppMode.SAAS,  # This doesn't matter for filtering
-                    selected_provider=selected_provider,
-                    page=1,
-                    per_page=per_page * 2,  # Get more to account for filtering
-                    installation_id=None,
-                )
-
-                # Filter user repos by query
-                filtered_user_repos = [
-                    repo
-                    for repo in user_repos
-                    if query.lower() in repo.full_name.lower()
-                ]
-                all_repos.extend(filtered_user_repos)
+                if selected_provider:
+                    # Search only the selected provider
+                    if selected_provider in self.provider_tokens:
+                        service = self._get_service(selected_provider)
+                        user_repos = await service.search_user_repositories(
+                            query, per_page, sort, order, AppMode.SAAS
+                        )
+                        all_repos.extend(user_repos)
+                else:
+                    # Search all providers
+                    for provider in self.provider_tokens:
+                        try:
+                            service = self._get_service(provider)
+                            service_repos = await service.search_user_repositories(
+                                query, per_page, sort, order, AppMode.SAAS
+                            )
+                            all_repos.extend(service_repos)
+                        except Exception as e:
+                            logger.warning(
+                                f'Error searching user repos from {provider}: {e}'
+                            )
+                            continue
             except Exception as e:
-                logger.warning(f'Error getting user repos for URL search: {e}')
+                logger.warning(f'Error searching user repositories: {e}')
 
             # Then search public repositories
             try:
@@ -343,22 +349,28 @@ class ProviderHandler:
         else:
             # For regular text, search only user's own repositories that match
             try:
-                user_repos = await self.get_repositories(
-                    sort=sort,
-                    app_mode=AppMode.SAAS,  # This doesn't matter for filtering
-                    selected_provider=selected_provider,
-                    page=1,
-                    per_page=per_page * 3,  # Get more to account for filtering
-                    installation_id=None,
-                )
-
-                # Filter user repos by query (case-insensitive)
-                filtered_repos = [
-                    repo
-                    for repo in user_repos
-                    if query.lower() in repo.full_name.lower()
-                ]
-                all_repos.extend(filtered_repos[:per_page])  # Limit to requested count
+                if selected_provider:
+                    # Search only the selected provider
+                    if selected_provider in self.provider_tokens:
+                        service = self._get_service(selected_provider)
+                        user_repos = await service.search_user_repositories(
+                            query, per_page, sort, order, AppMode.SAAS
+                        )
+                        all_repos.extend(user_repos)
+                else:
+                    # Search all providers
+                    for provider in self.provider_tokens:
+                        try:
+                            service = self._get_service(provider)
+                            service_repos = await service.search_user_repositories(
+                                query, per_page, sort, order, AppMode.SAAS
+                            )
+                            all_repos.extend(service_repos)
+                        except Exception as e:
+                            logger.warning(
+                                f'Error searching user repos from {provider}: {e}'
+                            )
+                            continue
             except Exception as e:
                 logger.warning(f'Error searching user repositories: {e}')
 

@@ -320,6 +320,45 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
 
         return repos
 
+    async def search_user_repositories(
+        self, query: str, per_page: int, sort: str, order: str, app_mode: AppMode
+    ) -> list[Repository]:
+        """Search for user's own repositories using GitHub search API"""
+        # Get the authenticated user's username
+        user = await self.get_user()
+        username = user.login
+        
+        url = f'{self.BASE_URL}/search/repositories'
+        # Search only in user's repositories
+        query_with_user = f'{query} user:{username}'
+        params = {
+            'q': query_with_user,
+            'per_page': per_page,
+            'sort': sort,
+            'order': order,
+        }
+
+        response, _ = await self._make_request(url, params)
+        repo_items = response.get('items', [])
+
+        repos = [
+            Repository(
+                id=str(repo.get('id')),
+                full_name=repo.get('full_name'),
+                stargazers_count=repo.get('stargazers_count'),
+                git_provider=ProviderType.GITHUB,
+                is_public=not repo.get('private', False),
+                owner_type=(
+                    OwnerType.ORGANIZATION
+                    if repo.get('owner', {}).get('type') == 'Organization'
+                    else OwnerType.USER
+                ),
+            )
+            for repo in repo_items
+        ]
+
+        return repos
+
     async def execute_graphql_query(
         self, query: str, variables: dict[str, Any]
     ) -> dict[str, Any]:

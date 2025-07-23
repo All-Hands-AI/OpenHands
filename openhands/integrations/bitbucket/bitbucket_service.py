@@ -152,6 +152,23 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
         # Bitbucket doesn't have a dedicated search endpoint like GitHub
         return []
 
+    async def search_user_repositories(
+        self, query: str, per_page: int, sort: str, order: str, app_mode: AppMode
+    ) -> list[Repository]:
+        """Search for user's own repositories"""
+        # Get all user repositories and filter by query
+        all_repos = await self.get_all_repositories(sort, app_mode)
+        
+        # Filter repositories by query (case-insensitive)
+        filtered_repos = [
+            repo
+            for repo in all_repos
+            if query.lower() in repo.full_name.lower()
+        ]
+        
+        # Return up to per_page results
+        return filtered_repos[:per_page]
+
     async def _fetch_paginated_data(
         self, url: str, params: dict, max_items: int
     ) -> list[dict]:
