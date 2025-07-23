@@ -1,5 +1,4 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import React from "react";
 import { useAppInstallations } from "./use-app-installations";
 import { useConfig } from "./use-config";
 import { useUserProviders } from "../use-user-providers";
@@ -60,12 +59,6 @@ export const useInstallationRepositories = (
     gcTime: 1000 * 60 * 15, // 15 minutes
   });
 
-  const { isSuccess, isFetchingNextPage, hasNextPage, fetchNextPage } = repos;
-  React.useEffect(() => {
-    if (!isFetchingNextPage && isSuccess && hasNextPage) {
-      fetchNextPage();
-    }
-  }, [isFetchingNextPage, isSuccess, hasNextPage, fetchNextPage]);
-
+  // Remove auto-fetching behavior - let components control when to load more
   return repos;
 };

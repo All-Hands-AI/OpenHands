@@ -43,6 +43,9 @@ export function RepositorySelectionForm({
     data: repositoriesData,
     isLoading: isLoadingRepositories,
     isError: isRepositoriesError,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
   } = useRepositories(selectedProvider);
   const {
     data: branches,
@@ -232,6 +235,14 @@ export function RepositorySelectionForm({
         onSelectionChange={handleRepoSelection}
         onInputChange={handleRepoInputChange}
         isDisabled={false}
+        hasNextPage={hasNextPage}
+        isFetchingNextPage={isFetchingNextPage}
+        onLoadMore={() => {
+          // Only load more when not searching (showing user repositories)
+          if (!searchQuery.trim() && hasNextPage && !isFetchingNextPage) {
+            fetchNextPage();
+          }
+        }}
         defaultFilter={(textValue, inputValue) => {
           if (!inputValue) return true;
 
