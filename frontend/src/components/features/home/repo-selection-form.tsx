@@ -237,12 +237,8 @@ export function RepositorySelectionForm({
         isDisabled={false}
         hasNextPage={hasNextPage}
         isFetchingNextPage={isFetchingNextPage}
-        onLoadMore={() => {
-          // Only load more when not searching (showing user repositories)
-          if (!searchQuery.trim() && hasNextPage && !isFetchingNextPage) {
-            onLoadMore();
-          }
-        }}
+        scrollRef={repositoriesData?.scrollRef}
+        onOpenChange={repositoriesData?.onOpenChange}
         defaultFilter={(textValue, inputValue) => {
           if (!inputValue) return true;
 

@@ -26,6 +26,8 @@ interface SettingsDropdownInputProps {
   hasNextPage?: boolean;
   isFetchingNextPage?: boolean;
   onLoadMore?: () => void;
+  scrollRef?: React.RefObject<HTMLElement>;
+  onOpenChange?: (isOpen: boolean) => void;
 }
 
 export function SettingsDropdownInput({
@@ -49,21 +51,10 @@ export function SettingsDropdownInput({
   hasNextPage,
   isFetchingNextPage,
   onLoadMore,
+  scrollRef,
+  onOpenChange,
 }: SettingsDropdownInputProps) {
   const { t } = useTranslation();
-
-  // Handle scroll events for infinite loading
-  const handleScroll = (e: React.UIEvent<HTMLElement>) => {
-    const target = e.currentTarget;
-    const { scrollTop, scrollHeight, clientHeight } = target;
-
-    // Check if we're near the bottom (within 100px)
-    const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100;
-
-    if (isNearBottom && hasNextPage && !isFetchingNextPage && onLoadMore) {
-      onLoadMore();
-    }
-  };
 
   return (
     <label className={cn("flex flex-col gap-2.5", wrapperClassName)}>
@@ -98,9 +89,8 @@ export function SettingsDropdownInput({
               "bg-tertiary border border-[#717888] h-10 w-full rounded-sm p-2 placeholder:italic",
           },
         }}
-        listboxProps={{
-          onScroll: onLoadMore ? handleScroll : undefined,
-        }}
+        scrollRef={scrollRef}
+        onOpenChange={onOpenChange}
         defaultFilter={defaultFilter}
       >
         {(item) => (

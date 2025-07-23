@@ -13,6 +13,8 @@ export interface RepositoryDropdownProps {
   hasNextPage?: boolean;
   isFetchingNextPage?: boolean;
   onLoadMore?: () => void;
+  scrollRef?: React.RefObject<HTMLElement>;
+  onOpenChange?: (isOpen: boolean) => void;
 }
 
 export function RepositoryDropdown({
@@ -24,6 +26,8 @@ export function RepositoryDropdown({
   hasNextPage,
   isFetchingNextPage,
   onLoadMore,
+  scrollRef,
+  onOpenChange,
 }: RepositoryDropdownProps) {
   const { t } = useTranslation();
 
@@ -46,6 +50,8 @@ export function RepositoryDropdown({
       hasNextPage={hasNextPage}
       isFetchingNextPage={isFetchingNextPage}
       onLoadMore={onLoadMore}
+      scrollRef={scrollRef}
+      onOpenChange={onOpenChange}
     />
   );
 }

@@ -4,10 +4,13 @@ import { useUserProviders } from "../use-user-providers";
 import { Provider } from "#/types/settings";
 import OpenHands from "#/api/open-hands";
 import { shouldUseInstallationRepos } from "#/utils/utils";
+import { useInfiniteScroll } from "@heroui/use-infinite-scroll";
+import { useRef, useState } from "react";
 
 export const useUserRepositories = (selectedProvider: Provider | null) => {
   const { providers } = useUserProviders();
   const { data: config } = useConfig();
+  const [isOpen, setIsOpen] = useState(false);
 
   const repos = useInfiniteQuery({
     queryKey: ["repositories", providers, selectedProvider],
@@ -23,14 +26,19 @@ export const useUserRepositories = (selectedProvider: Provider | null) => {
     gcTime: 1000 * 60 * 15, // 15 minutes
   });
 
-  // Create a function to handle loading more data
-  const onLoadMore = () => {
-    if (repos.hasNextPage && !repos.isFetchingNextPage) {
-      repos.fetchNextPage();
-    }
-  };
+  // Use the infinite scroll hook to handle loading more data
+  const [_, scrollRef] = useInfiniteScroll({
+    hasMore: repos.hasNextPage || false,
+    isEnabled: isOpen,
+    shouldUseLoader: false,
+    onLoadMore: () => {
+      if (repos.hasNextPage && !repos.isFetchingNextPage) {
+        repos.fetchNextPage();
+      }
+    },
+  });
 
-  // Return the query result with the load more handler
+  // Return the query result with the scroll ref
   return {
     data: repos.data,
     isLoading: repos.isLoading,
@@ -38,6 +46,7 @@ export const useUserRepositories = (selectedProvider: Provider | null) => {
     hasNextPage: repos.hasNextPage,
     isFetchingNextPage: repos.isFetchingNextPage,
     fetchNextPage: repos.fetchNextPage,
-    onLoadMore,
+    scrollRef,
+    onOpenChange: setIsOpen,
   };
 };
