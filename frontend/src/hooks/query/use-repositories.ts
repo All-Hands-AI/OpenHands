@@ -29,10 +29,14 @@ export const useRepositories = (selectedProvider: Provider | null) => {
     }
   }, [selectedProvider, config?.APP_MODE]);
 
-  // Only call the appropriate hook based on the provider and app mode
-  const userRepos = !shouldUseInstallationRepos ? useUserRepositories(selectedProvider) : null;
-  const installationRepos = shouldUseInstallationRepos ? useInstallationRepositories(selectedProvider) : null;
+  // Always call both hooks to maintain hook order, but disable the unused one
+  const userRepos = useUserRepositories(
+    !shouldUseInstallationRepos ? selectedProvider : null,
+  );
+  const installationRepos = useInstallationRepositories(
+    shouldUseInstallationRepos ? selectedProvider : null,
+  );
 
   // Return the active repository data
-  return shouldUseInstallationRepos ? installationRepos! : userRepos!;
+  return shouldUseInstallationRepos ? installationRepos : userRepos;
 };

@@ -48,9 +48,12 @@ export function SettingsDropdownInput({
   onSelectionChange,
   onInputChange,
   defaultFilter,
-  hasNextPage,
-  isFetchingNextPage,
-  onLoadMore,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  hasNextPage: _hasNextPage,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  isFetchingNextPage: _isFetchingNextPage,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  onLoadMore: _onLoadMore,
   scrollRef,
   onOpenChange,
 }: SettingsDropdownInputProps) {
@@ -75,7 +78,7 @@ export function SettingsDropdownInput({
         onInputChange={onInputChange}
         isClearable={isClearable}
         isDisabled={isDisabled || isLoading}
-        isLoading={isLoading || isFetchingNextPage}
+        isLoading={isLoading || _isFetchingNextPage}
         placeholder={isLoading ? t("HOME$LOADING") : placeholder}
         allowsCustomValue={allowsCustomValue}
         isRequired={required}

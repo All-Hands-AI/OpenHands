@@ -1,12 +1,12 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteScroll } from "@heroui/use-infinite-scroll";
+import { useState } from "react";
 import { useAppInstallations } from "./use-app-installations";
 import { useConfig } from "./use-config";
 import { useUserProviders } from "../use-user-providers";
 import { Provider } from "#/types/settings";
 import OpenHands from "#/api/open-hands";
 import { shouldUseInstallationRepos } from "#/utils/utils";
-import { useInfiniteScroll } from "@heroui/use-infinite-scroll";
-import { useState } from "react";
 
 export const useInstallationRepositories = (
   selectedProvider: Provider | null,
@@ -17,7 +17,12 @@ export const useInstallationRepositories = (
   const [isOpen, setIsOpen] = useState(false);
 
   const repos = useInfiniteQuery({
-    queryKey: ["repositories", providers, selectedProvider, installations],
+    queryKey: [
+      "repositories",
+      providers || [],
+      selectedProvider,
+      installations || [],
+    ],
     queryFn: async ({
       pageParam,
     }: {
@@ -53,7 +58,7 @@ export const useInstallationRepositories = (
       return null;
     },
     enabled:
-      providers.length > 0 &&
+      (providers || []).length > 0 &&
       !!selectedProvider &&
       shouldUseInstallationRepos(selectedProvider, config?.APP_MODE) &&
       Array.isArray(installations) &&
@@ -63,7 +68,7 @@ export const useInstallationRepositories = (
   });
 
   // Use the infinite scroll hook to handle loading more data
-  const [_, scrollRef] = useInfiniteScroll({
+  const [, scrollRef] = useInfiniteScroll({
     hasMore: repos.hasNextPage || false,
     isEnabled: isOpen,
     shouldUseLoader: false,

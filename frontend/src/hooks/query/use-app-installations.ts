@@ -12,7 +12,7 @@ export const useAppInstallations = (selectedProvider: Provider | null) => {
   const { providers } = useUserProviders();
 
   return useQuery({
-    queryKey: ["installations", providers, selectedProvider],
+    queryKey: ["installations", providers || [], selectedProvider],
     queryFn: () => OpenHands.getUserInstallationIds(selectedProvider!),
     enabled:
       userIsAuthenticated &&
