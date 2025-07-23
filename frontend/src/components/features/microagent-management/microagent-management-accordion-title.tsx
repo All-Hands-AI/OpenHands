@@ -10,21 +10,18 @@ interface MicroagentManagementAccordionTitleProps {
 export function MicroagentManagementAccordionTitle({
   repository,
 }: MicroagentManagementAccordionTitleProps) {
-  const repoName = repository.full_name;
-  const isLong = repoName.length > 25;
-  const displayName = isLong ? `${repoName.slice(0, 25)}...` : repoName;
-
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2">
         <GitProviderIcon gitProvider={repository.git_provider} />
         <TooltipButton
-          tooltip={repoName}
-          ariaLabel={repoName}
-          className="text-white text-base font-normal bg-transparent p-0 min-w-0 h-auto cursor-pointer"
+          tooltip={repository.full_name}
+          ariaLabel={repository.full_name}
+          className="text-white text-base font-normal bg-transparent p-0 min-w-0 h-auto cursor-pointer truncate max-w-[232px]"
           testId="repository-name-tooltip"
+          placement="bottom"
         >
-          <span>{displayName}</span>
+          <span>{repository.full_name}</span>
         </TooltipButton>
       </div>
       <MicroagentManagementAddMicroagentButton repository={repository} />

@@ -38,6 +38,7 @@ export function MicroagentManagementAddMicroagentButton({
         ariaLabel={t(I18nKey.COMMON$ADD_MICROAGENT)}
         className="p-0 min-w-0 h-6 w-6 flex items-center justify-center bg-transparent cursor-pointer"
         testId="add-microagent-button"
+        placement="bottom"
       >
         <PlusIcon width={22} height={22} />
       </TooltipButton>

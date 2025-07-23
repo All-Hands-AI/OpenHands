@@ -109,10 +109,8 @@ export function MicroagentManagementContent() {
     addMicroagentModalVisible,
     updateMicroagentModalVisible,
     selectedRepository,
+    learnThisRepoModalVisible,
   } = useSelector((state: RootState) => state.microagentManagement);
-  const learnThisRepoModalVisible = useSelector(
-    (state: RootState) => state.microagentManagement.learnThisRepoModalVisible,
-  );
 
   const dispatch = useDispatch();
 
@@ -269,19 +267,16 @@ export function MicroagentManagementContent() {
 
   const renderModals = () => (
     <>
-      {addMicroagentModalVisible && (
+      {(addMicroagentModalVisible || updateMicroagentModalVisible) && (
         <MicroagentManagementUpsertMicroagentModal
-          onConfirm={(formData) => handleUpsertMicroagent(formData, false)}
-          onCancel={() => hideUpsertMicroagentModal(false)}
+          onConfirm={(formData) =>
+            handleUpsertMicroagent(formData, updateMicroagentModalVisible)
+          }
+          onCancel={() =>
+            hideUpsertMicroagentModal(updateMicroagentModalVisible)
+          }
           isLoading={isPending}
-        />
-      )}
-      {updateMicroagentModalVisible && (
-        <MicroagentManagementUpsertMicroagentModal
-          onConfirm={(formData) => handleUpsertMicroagent(formData, true)}
-          onCancel={() => hideUpsertMicroagentModal(true)}
-          isLoading={isPending}
-          isUpdate
+          isUpdate={updateMicroagentModalVisible}
         />
       )}
       {learnThisRepoModalVisible && (

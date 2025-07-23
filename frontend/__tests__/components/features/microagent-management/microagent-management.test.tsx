@@ -2000,10 +2000,8 @@ describe("MicroagentManagement", () => {
       });
 
       // Check that the form fields are populated with existing data
-      const queryInput = screen.getByTestId(
-        "query-input",
-      ) as HTMLTextAreaElement;
-      expect(queryInput.value).toBe(
+      const queryInput = screen.getByTestId("query-input");
+      expect(queryInput).toHaveValue(
         "Original microagent content for testing updates",
       );
     });
@@ -2056,13 +2054,12 @@ describe("MicroagentManagement", () => {
       const confirmButton = screen.getByTestId("confirm-button");
       await user.click(confirmButton);
 
-      // Check that the form submission was triggered
-      // The modal might close after form submission, which is expected behavior
-      // We'll verify that the form submission was handled by checking if the form was submitted
-      // Since the modal closes after submission, we'll check that the submission was triggered
-      expect(
-        screen.queryByTestId("add-microagent-modal"),
-      ).not.toBeInTheDocument();
+      // Wait for the modal to be removed after form submission
+      await waitFor(() => {
+        expect(
+          screen.queryByTestId("add-microagent-modal"),
+        ).not.toBeInTheDocument();
+      });
     });
 
     it("should close update modal when cancel button is clicked", async () => {
@@ -2247,10 +2244,8 @@ describe("MicroagentManagement", () => {
       });
 
       // Check that the form field is empty
-      const queryInput = screen.getByTestId(
-        "query-input",
-      ) as HTMLTextAreaElement;
-      expect(queryInput.value).toBe("");
+      const queryInput = screen.getByTestId("query-input");
+      expect(queryInput).toHaveValue("");
     });
 
     it("should handle update modal with microagent that has no triggers", async () => {
@@ -2632,10 +2627,8 @@ describe("MicroagentManagement", () => {
       });
 
       // Check that the form fields are populated with current microagent data
-      const queryInput = screen.getByTestId(
-        "query-input",
-      ) as HTMLTextAreaElement;
-      expect(queryInput.value).toBe(
+      const queryInput = screen.getByTestId("query-input");
+      expect(queryInput).toHaveValue(
         "Test microagent content for learn functionality",
       );
     });
@@ -2688,10 +2681,8 @@ describe("MicroagentManagement", () => {
       });
 
       // Check that the form field is empty
-      const queryInput = screen.getByTestId(
-        "query-input",
-      ) as HTMLTextAreaElement;
-      expect(queryInput.value).toBe("");
+      const queryInput = screen.getByTestId("query-input");
+      expect(queryInput).toHaveValue("");
     });
 
     it("should handle learn button click with microagent that has no triggers", async () => {
