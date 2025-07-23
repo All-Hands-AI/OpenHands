@@ -195,6 +195,33 @@ class GitLabService(BaseGitService, GitService):
             company=response.get('organization'),
         )
 
+    def _parse_repository(
+        self, repo: dict, link_header: str | None = None
+    ) -> Repository:
+        """
+        Parse a GitLab API project response into a Repository object.
+
+        Args:
+            repo: Project data from GitLab API
+            link_header: Optional link header for pagination
+
+        Returns:
+            Repository object
+        """
+        return Repository(
+            id=str(repo.get('id')),  # type: ignore[arg-type]
+            full_name=repo.get('path_with_namespace'),  # type: ignore[arg-type]
+            stargazers_count=repo.get('star_count'),
+            git_provider=ProviderType.GITLAB,
+            is_public=repo.get('visibility') == 'public',
+            owner_type=(
+                OwnerType.ORGANIZATION
+                if repo.get('namespace', {}).get('kind') == 'group'
+                else OwnerType.USER
+            ),
+            link_header=link_header,
+        )
+
     async def search_repositories(
         self,
         query: str,
@@ -222,21 +249,7 @@ class GitLabService(BaseGitService, GitService):
             }
 
         response, _ = await self._make_request(url, params)
-        repos = [
-            Repository(
-                id=str(repo.get('id')),
-                full_name=repo.get('path_with_namespace'),
-                stargazers_count=repo.get('star_count'),
-                git_provider=ProviderType.GITLAB,
-                is_public=True,
-                owner_type=(
-                    OwnerType.ORGANIZATION
-                    if repo.get('namespace', {}).get('kind') == 'group'
-                    else OwnerType.USER
-                ),
-            )
-            for repo in response
-        ]
+        repos = [self._parse_repository(repo) for repo in response]
 
         return repos
 
@@ -263,20 +276,7 @@ class GitLabService(BaseGitService, GitService):
 
         next_link: str = headers.get('Link', '')
         repos = [
-            Repository(
-                id=str(repo.get('id')),  # type: ignore[arg-type]
-                full_name=repo.get('path_with_namespace'),  # type: ignore[arg-type]
-                stargazers_count=repo.get('star_count'),
-                git_provider=ProviderType.GITLAB,
-                is_public=repo.get('visibility') == 'public',
-                owner_type=(
-                    OwnerType.ORGANIZATION
-                    if repo.get('namespace', {}).get('kind') == 'group'
-                    else OwnerType.USER
-                ),
-                link_header=next_link,
-            )
-            for repo in response
+            self._parse_repository(repo, link_header=next_link) for repo in response
         ]
         return repos
 
@@ -320,21 +320,7 @@ class GitLabService(BaseGitService, GitService):
 
         # Trim to MAX_REPOS if needed and convert to Repository objects
         all_repos = all_repos[:MAX_REPOS]
-        return [
-            Repository(
-                id=str(repo.get('id')),  # type: ignore[arg-type]
-                full_name=repo.get('path_with_namespace'),  # type: ignore[arg-type]
-                stargazers_count=repo.get('star_count'),
-                git_provider=ProviderType.GITLAB,
-                is_public=repo.get('visibility') == 'public',
-                owner_type=(
-                    OwnerType.ORGANIZATION
-                    if repo.get('namespace', {}).get('kind') == 'group'
-                    else OwnerType.USER
-                ),
-            )
-            for repo in all_repos
-        ]
+        return [self._parse_repository(repo) for repo in all_repos]
 
     async def get_suggested_tasks(self) -> list[SuggestedTask]:
         """Get suggested tasks for the authenticated user across all repositories.
@@ -476,18 +462,7 @@ class GitLabService(BaseGitService, GitService):
         url = f'{self.BASE_URL}/projects/{encoded_name}'
         repo, _ = await self._make_request(url)
 
-        return Repository(
-            id=str(repo.get('id')),
-            full_name=repo.get('path_with_namespace'),
-            stargazers_count=repo.get('star_count'),
-            git_provider=ProviderType.GITLAB,
-            is_public=repo.get('visibility') == 'public',
-            owner_type=(
-                OwnerType.ORGANIZATION
-                if repo.get('namespace', {}).get('kind') == 'group'
-                else OwnerType.USER
-            ),
-        )
+        return self._parse_repository(repo)
 
     async def get_branches(self, repository: str) -> list[Branch]:
         """Get branches for a repository"""
