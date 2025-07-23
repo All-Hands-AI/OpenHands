@@ -3,6 +3,8 @@ import { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { OptionalTag } from "./optional-tag";
 import { cn } from "#/utils/utils";
+import React from "react";
+import { useInfiniteScroll } from "@heroui/use-infinite-scroll";
 
 interface SettingsDropdownInputProps {
   testId: string;
@@ -14,6 +16,7 @@ interface SettingsDropdownInputProps {
   showOptionalTag?: boolean;
   isDisabled?: boolean;
   isLoading?: boolean;
+  isFetchingNextPage?: boolean;
   defaultSelectedKey?: string;
   selectedKey?: string;
   isClearable?: boolean;
@@ -23,8 +26,8 @@ interface SettingsDropdownInputProps {
   onInputChange?: (value: string) => void;
   defaultFilter?: (textValue: string, inputValue: string) => boolean;
   // Infinite scroll props
-  isFetchingNextPage?: boolean;
-  scrollRef?: React.RefObject<HTMLElement>;
+  onLoadMore?: () => void;
+  hasMore?: boolean;
 }
 
 export function SettingsDropdownInput({
@@ -37,6 +40,7 @@ export function SettingsDropdownInput({
   showOptionalTag,
   isDisabled,
   isLoading,
+  isFetchingNextPage,
   defaultSelectedKey,
   selectedKey,
   isClearable,
@@ -45,10 +49,19 @@ export function SettingsDropdownInput({
   onSelectionChange,
   onInputChange,
   defaultFilter,
-  isFetchingNextPage,
-  scrollRef,
+  hasMore,
+  onLoadMore,
 }: SettingsDropdownInputProps) {
   const { t } = useTranslation();
+
+  const [isOpen, setIsOpen] = React.useState(false);
+
+  const [, scrollerRef] = useInfiniteScroll({
+    hasMore,
+    isEnabled: isOpen,
+    shouldUseLoader: false, // We don't want to show the loader at the bottom of the list
+    onLoadMore,
+  });
 
   return (
     <label className={cn("flex flex-col gap-2.5", wrapperClassName)}>
@@ -69,8 +82,10 @@ export function SettingsDropdownInput({
         onInputChange={onInputChange}
         isClearable={isClearable}
         isDisabled={isDisabled || isLoading}
-        isLoading={isLoading || isFetchingNextPage}
-        placeholder={isLoading ? t("HOME$LOADING") : placeholder}
+        isLoading={isFetchingNextPage}
+        placeholder={
+          isLoading || isFetchingNextPage ? t("HOME$LOADING") : placeholder
+        }
         allowsCustomValue={allowsCustomValue}
         isRequired={required}
         className="w-full"
@@ -83,8 +98,9 @@ export function SettingsDropdownInput({
               "bg-tertiary border border-[#717888] h-10 w-full rounded-sm p-2 placeholder:italic",
           },
         }}
-        scrollRef={scrollRef}
+        scrollRef={scrollerRef}
         defaultFilter={defaultFilter}
+        onOpenChange={setIsOpen}
       >
         {(item) => (
           <AutocompleteItem key={item.key}>{item.label}</AutocompleteItem>

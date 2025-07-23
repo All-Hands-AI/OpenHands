@@ -1,6 +1,4 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { useInfiniteScroll } from "@heroui/use-infinite-scroll";
-import { useState } from "react";
 import { useAppInstallations } from "./use-app-installations";
 import { useConfig } from "./use-config";
 import { useUserProviders } from "../use-user-providers";
@@ -66,16 +64,11 @@ export const useInstallationRepositories = (
     gcTime: 1000 * 60 * 15, // 15 minutes
   });
 
-  // Use the infinite scroll hook to handle loading more data
-  const [, scrollRef] = useInfiniteScroll({
-    hasMore: repos.hasNextPage || false,
-    shouldUseLoader: false,
-    onLoadMore: () => {
-      if (repos.hasNextPage && !repos.isFetchingNextPage) {
-        repos.fetchNextPage();
-      }
-    },
-  });
+  const onLoadMore = () => {
+    if (repos.hasNextPage && !repos.isFetchingNextPage) {
+      repos.fetchNextPage();
+    }
+  };
 
   // Return the query result with the scroll ref
   return {
@@ -84,6 +77,6 @@ export const useInstallationRepositories = (
     isError: repos.isError,
     hasNextPage: repos.hasNextPage,
     isFetchingNextPage: repos.isFetchingNextPage,
-    scrollRef,
+    onLoadMore,
   };
 };
