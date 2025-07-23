@@ -270,8 +270,13 @@ class GitLabService(BaseGitService, GitService):
             if not repo_path:
                 return []  # Invalid URL format
 
-            repository = await self.get_repository_details_from_repo_name(repo_path)
-            return [repository]
+            try:
+                # Try to get the specific repository
+                repository = await self.get_repository_details_from_repo_name(repo_path)
+                return [repository]
+            except Exception:
+                # Repository doesn't exist or is not accessible
+                return []
 
         else:
             # Original logic for non-public searches
@@ -283,9 +288,7 @@ class GitLabService(BaseGitService, GitService):
                 'membership': True,  # Include projects user is a member of
                 'search_namespaces': True,
             }
-            print('making request')
             response, _ = await self._make_request(url, params)
-            print(response)
             repos = [self._parse_repository(repo) for repo in response]
             return repos
 

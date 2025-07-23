@@ -364,3 +364,77 @@ async def test_gitlab_search_repositories_public_invalid_url():
 
         # Verify we got empty list
         assert len(repositories) == 0
+
+
+@pytest.mark.asyncio
+async def test_gitlab_search_repositories_formats_search_query():
+    """Test that search_repositories properly formats search queries with multiple terms."""
+    service = GitLabService(token=SecretStr('test-token'))
+
+    # Mock repository data
+    mock_repos = [
+        {
+            'id': 123,
+            'path_with_namespace': 'group/repo',
+            'star_count': 50,
+            'visibility': 'private',
+            'namespace': {'kind': 'group'},
+        },
+    ]
+
+    with patch.object(service, '_make_request') as mock_request:
+        mock_request.return_value = (mock_repos, {})
+
+        # Test search with multiple terms (should format with + separator)
+        repositories = await service.search_repositories(
+            query='my project name', public=False
+        )
+
+        # Verify the request was made with correct parameters
+        mock_request.assert_called_once()
+        call_args = mock_request.call_args
+        url = call_args[0][0]
+        params = call_args[0][1]
+
+        assert url == f'{service.BASE_URL}/projects'
+        assert params['search'] == 'my+project+name'  # Spaces replaced with +
+        assert params['membership'] is True
+        assert params['min_access_level'] == 30
+
+        # Verify we got the expected repositories
+        assert len(repositories) == 1
+
+
+@pytest.mark.asyncio
+async def test_gitlab_search_repositories_single_term_query():
+    """Test that search_repositories handles single term queries correctly."""
+    service = GitLabService(token=SecretStr('test-token'))
+
+    # Mock repository data
+    mock_repos = [
+        {
+            'id': 456,
+            'path_with_namespace': 'user/single-repo',
+            'star_count': 25,
+            'visibility': 'private',
+            'namespace': {'kind': 'user'},
+        },
+    ]
+
+    with patch.object(service, '_make_request') as mock_request:
+        mock_request.return_value = (mock_repos, {})
+
+        # Test search with single term (should remain unchanged)
+        repositories = await service.search_repositories(
+            query='singleterm', public=False
+        )
+
+        # Verify the request was made with correct parameters
+        mock_request.assert_called_once()
+        call_args = mock_request.call_args
+        params = call_args[0][1]
+
+        assert params['search'] == 'singleterm'  # No change for single term
+
+        # Verify we got the expected repositories
+        assert len(repositories) == 1
