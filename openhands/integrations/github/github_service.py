@@ -290,18 +290,31 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
         self, query: str, per_page: int, sort: str, order: str, public: bool
     ) -> list[Repository]:
         url = f'{self.BASE_URL}/search/repositories'
-        # Add is:public to the query to ensure we only search for public repositories
-        query_with_visibility = f'{query} is:public'
-        params = {
-            'q': query_with_visibility,
-            'per_page': per_page,
-            'sort': sort,
-            'order': order,
-        }
+        if public:
+            # Add is:public to the query to ensure we only search for public repositories
+            query_with_visibility = f'{query} is:public'
+            params = {
+                'q': query_with_visibility,
+                'per_page': per_page,
+                'sort': sort,
+                'order': order,
+            }
+        else:
+            # Get the authenticated user's username
+            user = await self.get_user()
+            username = user.login
+
+            # Search only in user's repositories
+            query_with_user = f'{query} user:{username}'
+            params = {
+                'q': query_with_user,
+                'per_page': per_page,
+                'sort': sort,
+                'order': order,
+            }
 
         response, _ = await self._make_request(url, params)
         repo_items = response.get('items', [])
-
         repos = [
             Repository(
                 id=str(repo.get('id')),
@@ -309,45 +322,6 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
                 stargazers_count=repo.get('stargazers_count'),
                 git_provider=ProviderType.GITHUB,
                 is_public=True,
-                owner_type=(
-                    OwnerType.ORGANIZATION
-                    if repo.get('owner', {}).get('type') == 'Organization'
-                    else OwnerType.USER
-                ),
-            )
-            for repo in repo_items
-        ]
-
-        return repos
-
-    async def search_user_repositories(
-        self, query: str, per_page: int, sort: str, order: str, app_mode: AppMode
-    ) -> list[Repository]:
-        """Search for user's own repositories using GitHub search API"""
-        # Get the authenticated user's username
-        user = await self.get_user()
-        username = user.login
-
-        url = f'{self.BASE_URL}/search/repositories'
-        # Search only in user's repositories
-        query_with_user = f'{query} user:{username}'
-        params = {
-            'q': query_with_user,
-            'per_page': per_page,
-            'sort': sort,
-            'order': order,
-        }
-
-        response, _ = await self._make_request(url, params)
-        repo_items = response.get('items', [])
-
-        repos = [
-            Repository(
-                id=str(repo.get('id')),
-                full_name=repo.get('full_name'),
-                stargazers_count=repo.get('stargazers_count'),
-                git_provider=ProviderType.GITHUB,
-                is_public=not repo.get('private', False),
                 owner_type=(
                     OwnerType.ORGANIZATION
                     if repo.get('owner', {}).get('type') == 'Organization'
