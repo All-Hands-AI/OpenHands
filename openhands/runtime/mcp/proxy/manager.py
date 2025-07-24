@@ -99,7 +99,7 @@ class MCPProxyManager:
                     if message['type'] == 'http.response.start':
                         if start_sent:
                             raise get_cancelled_exc_class()(
-                                'closed because of double http.response.start (mcp issue #883)'
+                                'closed because of double http.response.start (mcp issue https://github.com/modelcontextprotocol/python-sdk/issues/883)'
                             )
                         start_sent = True
                     await send(message)
