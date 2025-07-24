@@ -1,10 +1,9 @@
 import { Autocomplete, AutocompleteItem } from "@heroui/react";
-import { ReactNode } from "react";
+import React, { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { useInfiniteScroll } from "@heroui/use-infinite-scroll";
 import { OptionalTag } from "./optional-tag";
 import { cn } from "#/utils/utils";
-import React from "react";
-import { useInfiniteScroll } from "@heroui/use-infinite-scroll";
 
 interface SettingsDropdownInputProps {
   testId: string;
