@@ -1,5 +1,4 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTranslation } from "react-i18next";
 import OpenHands from "#/api/open-hands";
 import { useConversationId } from "#/hooks/use-conversation-id";
 import {
@@ -16,7 +15,6 @@ type SubmitConversationFeedbackArgs = {
 export const useSubmitConversationFeedback = () => {
   const { conversationId } = useConversationId();
   const queryClient = useQueryClient();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: ({ rating, eventId, reason }: SubmitConversationFeedbackArgs) =>
@@ -67,7 +65,7 @@ export const useSubmitConversationFeedback = () => {
       }
       // Log error but don't show toast - user will just see the UI stay in unsubmitted state
       // eslint-disable-next-line no-console
-      console.error(t("FEEDBACK$FAILED_TO_SUBMIT"), error);
+      console.error(error);
     },
     onSettled: (_, __, { eventId }) => {
       if (eventId) {
