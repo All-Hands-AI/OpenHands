@@ -78,6 +78,7 @@ class GitHandler:
     def _get_ref_content(self, file_path: str) -> str:
         """
         Retrieves the content of a file from a valid Git reference.
+        Finds the git repository closest to the file in the tree and executes the command in that context.
 
         Args:
             file_path (str): The file path in the repository.
@@ -85,9 +86,93 @@ class GitHandler:
         Returns:
             str: The content of the file from the reference, or an empty string if unavailable.
         """
-        cmd = f'git --no-pager show :{file_path}'
-        output = self.execute(cmd, self.cwd)
-        return output.content if output.exit_code == 0 else ''
+        if not self.cwd:
+            return ''
+
+        # Single bash command that finds the closest git repository to the file and gets the ref content
+        cmd = f"""bash -c '
+        file_path="{file_path}"
+
+        # Convert to absolute path if relative
+        if [[ "$file_path" != /* ]]; then
+            file_path="$(cd "{self.cwd}" && pwd)/$file_path"
+        fi
+
+        # Find the closest git repository by walking up the directory tree
+        current_dir="$(dirname "$file_path")"
+        git_repo_dir=""
+
+        while [[ "$current_dir" != "/" ]]; do
+            if [[ -d "$current_dir/.git" ]] || git -C "$current_dir" rev-parse --git-dir >/dev/null 2>&1; then
+                git_repo_dir="$current_dir"
+                break
+            fi
+            current_dir="$(dirname "$current_dir")"
+        done
+
+        # If no git repository found, exit
+        if [[ -z "$git_repo_dir" ]]; then
+            exit 1
+        fi
+
+        # Get the file path relative to the git repository root
+        repo_root="$(cd "$git_repo_dir" && git rev-parse --show-toplevel)"
+        relative_file_path="$(realpath --relative-to="$repo_root" "$file_path" 2>/dev/null || echo "$file_path")"
+
+        # Function to get current branch
+        get_current_branch() {{
+            git -C "$git_repo_dir" rev-parse --abbrev-ref HEAD 2>/dev/null
+        }}
+
+        # Function to get default branch
+        get_default_branch() {{
+            git -C "$git_repo_dir" remote show origin 2>/dev/null | grep "HEAD branch" | awk "{{print \\$NF}}" || echo "main"
+        }}
+
+        # Function to verify if a ref exists
+        verify_ref_exists() {{
+            git -C "$git_repo_dir" rev-parse --verify "$1" >/dev/null 2>&1
+        }}
+
+        # Get valid reference for comparison
+        current_branch="$(get_current_branch)"
+        default_branch="$(get_default_branch)"
+
+        # Check if origin remote exists
+        has_origin="$(git -C "$git_repo_dir" remote | grep -q "^origin$" && echo "true" || echo "false")"
+
+        if [[ "$has_origin" == "true" ]]; then
+            ref_current_branch="origin/$current_branch"
+            ref_non_default_branch="$(git -C "$git_repo_dir" merge-base HEAD "$(git -C "$git_repo_dir" rev-parse --abbrev-ref origin/$default_branch)" 2>/dev/null || echo "")"
+            ref_default_branch="origin/$default_branch"
+        else
+            # For repositories without origin, try HEAD~1 (previous commit) or empty tree
+            ref_current_branch="HEAD~1"
+            ref_non_default_branch=""
+            ref_default_branch=""
+        fi
+        ref_new_repo="$(git -C "$git_repo_dir" rev-parse --verify 4b825dc642cb6eb9a060e54bf8d69288fbee4904 2>/dev/null || echo "")"  # empty tree
+
+        # Try refs in order of preference
+        valid_ref=""
+        for ref in "$ref_current_branch" "$ref_non_default_branch" "$ref_default_branch" "$ref_new_repo"; do
+            if [[ -n "$ref" ]] && verify_ref_exists "$ref"; then
+                valid_ref="$ref"
+                break
+            fi
+        done
+
+        # If no valid ref found, exit
+        if [[ -z "$valid_ref" ]]; then
+            exit 1
+        fi
+
+        # Get the file content from the reference
+        git -C "$git_repo_dir" show "$valid_ref:$relative_file_path" 2>/dev/null || exit 1
+        ' """
+
+        result = self.execute(cmd.strip(), self.cwd)
+        return result.content if result.exit_code == 0 else ''
 
     def _get_default_branch(self) -> str:
         """
