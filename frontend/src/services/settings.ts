@@ -26,8 +26,8 @@ export const DEFAULT_SETTINGS: Settings = {
     sse_servers: [],
     stdio_servers: [],
   },
-  TEMPERATURE: 0.15,
-  TOP_P: 0.95,
+  TEMPERATURE: 0.0,
+  TOP_P: 1,
 };
 
 /**

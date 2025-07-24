@@ -669,8 +669,8 @@ it("should render temperature and top_p inputs with default values", async () =>
 
   expect(temperatureInput).toBeInTheDocument();
   expect(topPInput).toBeInTheDocument();
-  expect(temperatureInput).toHaveValue(0.15);
-  expect(topPInput).toHaveValue(0.95);
+  expect(temperatureInput).toHaveValue(0.0);
+  expect(topPInput).toHaveValue(1.0);
 });
 
 it("should enable save button when temperature or top_p values are changed", async () => {

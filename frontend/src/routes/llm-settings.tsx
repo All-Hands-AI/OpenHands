@@ -273,7 +273,7 @@ function LlmSettingsScreen() {
     const temperatureValue = parseFloat(temperature);
     const temperatureIsDirty =
       !Number.isNaN(temperatureValue) &&
-      temperatureValue !== (settings?.TEMPERATURE ?? 0.15);
+      temperatureValue !== (settings?.TEMPERATURE ?? 0.0);
     setDirtyInputs((prev) => ({
       ...prev,
       temperature: temperatureIsDirty,
@@ -283,7 +283,7 @@ function LlmSettingsScreen() {
   const handleTopPIsDirty = (topP: string) => {
     const topPValue = parseFloat(topP);
     const topPIsDirty =
-      !Number.isNaN(topPValue) && topPValue !== (settings?.TOP_P ?? 0.95);
+      !Number.isNaN(topPValue) && topPValue !== (settings?.TOP_P ?? 1.0);
     setDirtyInputs((prev) => ({
       ...prev,
       topP: topPIsDirty,
@@ -561,8 +561,8 @@ function LlmSettingsScreen() {
                 label="Temperature"
                 type="number"
                 className="w-full max-w-[680px]"
-                defaultValue={(settings.TEMPERATURE ?? 0.15).toString()}
-                placeholder="0.15"
+                defaultValue={(settings.TEMPERATURE ?? 0.0).toString()}
+                placeholder="0.0"
                 min="0"
                 max="1"
                 step="0.01"
