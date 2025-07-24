@@ -8,6 +8,7 @@ including initialization, configuration, and mounting to FastAPI applications.
 import logging
 from typing import Any, Optional
 
+from anyio import get_cancelled_exc_class
 from fastapi import FastAPI
 from fastmcp import FastMCP
 from fastmcp.utilities.logging import get_logger as fastmcp_get_logger
@@ -89,9 +90,29 @@ class MCPProxyManager:
         if not self.proxy:
             raise ValueError('FastMCP Proxy is not initialized')
 
+        def close_on_double_start(app):
+            async def wrapped(scope, receive, send):
+                start_sent = False
+
+                async def check_send(message):
+                    nonlocal start_sent
+                    if message['type'] == 'http.response.start':
+                        if start_sent:
+                            raise get_cancelled_exc_class()(
+                                'closed because of double http.response.start (mcp issue #883)'
+                            )
+                        start_sent = True
+                    await send(message)
+
+                await app(scope, receive, check_send)
+
+            return wrapped
+
         # Get the SSE app
         # mcp_app = self.proxy.http_app(path='/shttp')
-        mcp_app = self.proxy.http_app(path='/sse', transport='sse')
+        mcp_app = close_on_double_start(
+            self.proxy.http_app(path='/sse', transport='sse')
+        )
         app.mount('/mcp', mcp_app)
 
         # Remove any existing mounts at root path
