@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import OpenHands from "#/api/open-hands";
 import { useConversationId } from "#/hooks/use-conversation-id";
 import { useConfig } from "#/hooks/query/use-config";
@@ -14,9 +14,14 @@ export interface BatchFeedbackData {
 export const getFeedbackQueryKey = (conversationId?: string) =>
   ["feedback", "data", conversationId] as const;
 
+// Query key factory for individual feedback existence
+export const getFeedbackExistsQueryKey = (conversationId: string, eventId: number) =>
+  ["feedback", "exists", conversationId, eventId] as const;
+
 export const useBatchFeedback = () => {
   const { conversationId } = useConversationId();
   const { data: config } = useConfig();
+  const queryClient = useQueryClient();
 
   return useQuery<Record<string, BatchFeedbackData>>({
     queryKey: getFeedbackQueryKey(conversationId),
@@ -26,6 +31,15 @@ export const useBatchFeedback = () => {
     },
     enabled: !!conversationId && config?.APP_MODE === "saas",
     staleTime: 1000 * 60 * 5, // 5 minutes
-    gcTime: 1000 * 60 * 15, // 15 minutes
+    gcTime: 1000 * 60 * 15, // 15 minutes,
+    onSuccess: (data) => {
+      // Update individual feedback existence queries
+      Object.entries(data).forEach(([eventId, feedback]) => {
+        queryClient.setQueryData(
+          getFeedbackExistsQueryKey(conversationId!, parseInt(eventId, 10)),
+          feedback.exists
+        );
+      });
+    },
   });
 };
