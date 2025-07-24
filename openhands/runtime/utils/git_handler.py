@@ -177,7 +177,7 @@ class GitHandler:
             return ''
 
         # TODO: The command echoes the bash script. Why?
-        content = result.content.split(f'{unique_id}')[1]
+        content = result.content.split(f'{unique_id}')[-1]
 
         return content
 
