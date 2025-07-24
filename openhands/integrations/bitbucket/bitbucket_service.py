@@ -207,13 +207,27 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
                 1, per_page, sort, workspace_slug, repo_query
             )
 
-        # Workspace prefix isn't complete. Search workspaces that match the query, then list repos underneath each workspace
-        matching_workspace_slugs = await self.get_installations(query=query, limit=2)
+        all_installations = await self.get_installations()
+
+        # Workspace prefix isn't complete. Search workspace names and repos underneath each workspace
+        matching_workspace_slugs = [
+            installation for installation in all_installations if query in installation
+        ]
         for workspace_slug in matching_workspace_slugs:
-            # Get repositories for this workspace
+            # Get repositories where query matches workspace name
             try:
                 repos = await self.get_paginated_repos(
                     1, per_page, sort, workspace_slug
+                )
+                repositories.extend(repos)
+            except Exception:
+                continue
+
+        for workspace_slug in all_installations:
+            # Get repositories in all workspaces where query matches repo name
+            try:
+                repos = await self.get_paginated_repos(
+                    1, per_page, sort, workspace_slug, query
                 )
                 repositories.extend(repos)
             except Exception:
