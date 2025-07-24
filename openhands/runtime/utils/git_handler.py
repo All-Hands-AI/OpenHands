@@ -75,33 +75,6 @@ class GitHandler:
         output = self.execute(cmd, self.cwd)
         return output.exit_code == 0
 
-    def _get_valid_ref(self) -> str | None:
-        """
-        Determines a valid Git reference for comparison.
-
-        Returns:
-            str | None: A valid Git reference or None if no valid reference is found.
-        """
-        current_branch = self._get_current_branch()
-        default_branch = self._get_default_branch()
-
-        ref_current_branch = f'origin/{current_branch}'
-        ref_non_default_branch = f'$(git --no-pager merge-base HEAD "$(git --no-pager rev-parse --abbrev-ref origin/{default_branch})")'
-        ref_default_branch = 'origin/' + default_branch
-        ref_new_repo = '$(git --no-pager rev-parse --verify 4b825dc642cb6eb9a060e54bf8d69288fbee4904)'  # compares with empty tree
-
-        refs = [
-            ref_current_branch,
-            ref_non_default_branch,
-            ref_default_branch,
-            ref_new_repo,
-        ]
-        for ref in refs:
-            if self._verify_ref_exists(ref):
-                return ref
-
-        return None
-
     def _get_ref_content(self, file_path: str) -> str:
         """
         Retrieves the content of a file from a valid Git reference.
@@ -112,11 +85,7 @@ class GitHandler:
         Returns:
             str: The content of the file from the reference, or an empty string if unavailable.
         """
-        ref = self._get_valid_ref()
-        if not ref:
-            return ''
-
-        cmd = f'git --no-pager show {ref}:{file_path}'
+        cmd = f'git --no-pager show :{file_path}'
         output = self.execute(cmd, self.cwd)
         return output.content if output.exit_code == 0 else ''
 
@@ -169,23 +138,22 @@ class GitHandler:
         } | while IFS= read -r dir; do
             if [ -d "$dir/.git" ] || git -C "$dir" rev-parse --git-dir >/dev/null 2>&1; then
                 # Get absolute path of the directory
-                repo_path=$(cd "$dir" && pwd)
                 # Get git status for this repository
-                git -C "$dir" status --porcelain 2>/dev/null | while IFS= read -r line; do
+                git -C "$dir" status --porcelain -uall 2>/dev/null | while IFS= read -r line; do
                     if [ -n "$line" ]; then
                         # Extract status (first 2 chars) and file path (from char 3 onwards)
                         status=$(echo "$line" | cut -c1-2)
                         file_path=$(echo "$line" | cut -c4-)
                         # Convert status codes to single character
                         case "$status" in
-                            "M "*|" M") echo "$repo_path|M|$file_path" ;;
-                            "A "*|" A") echo "$repo_path|A|$file_path" ;;
-                            "D "*|" D") echo "$repo_path|D|$file_path" ;;
-                            "R "*|" R") echo "$repo_path|R|$file_path" ;;
-                            "C "*|" C") echo "$repo_path|C|$file_path" ;;
-                            "U "*|" U") echo "$repo_path|U|$file_path" ;;
-                            "??") echo "$repo_path|A|$file_path" ;;
-                            *) echo "$repo_path|M|$file_path" ;;
+                            "M "*|" M") echo "$dir|M|$file_path" ;;
+                            "A "*|" A") echo "$dir|A|$file_path" ;;
+                            "D "*|" D") echo "$dir|D|$file_path" ;;
+                            "R "*|" R") echo "$dir|R|$file_path" ;;
+                            "C "*|" C") echo "$dir|C|$file_path" ;;
+                            "U "*|" U") echo "$dir|U|$file_path" ;;
+                            "??") echo "$dir|A|$file_path" ;;
+                            *) echo "$dir|M|$file_path" ;;
                         esac
                     fi
                 done
@@ -204,8 +172,7 @@ class GitHandler:
                 parts = line.split('|', 2)
                 if len(parts) == 3:
                     repo_path, status, file_path = parts
-                    if repo_path != self.cwd:
-                        file_path = f'{repo_path[len(self.cwd)+1:]}/{file_path}'
+                    file_path = f'{repo_path}/{file_path}'[2:]
                     changes.append(
                         {'status': status, 'path': file_path}
                     )
