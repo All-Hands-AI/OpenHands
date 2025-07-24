@@ -49,6 +49,7 @@ from openhands.integrations.provider import (
     ProviderHandler,
     ProviderType,
 )
+from openhands.integrations.service_types import AuthenticationError
 from openhands.microagent import (
     BaseMicroagent,
     load_microagents_from_dir,
@@ -701,12 +702,18 @@ fi
                     GENERAL_TIMEOUT,
                     org_openhands_repo,
                 )
+            except AuthenticationError as e:
+                self.log(
+                    'debug',
+                    f'org-level microagent directory {org_openhands_repo} not found: {str(e)}',
+                )
+                raise
             except Exception as e:
                 self.log(
-                    'error',
+                    'debug',
                     f'Failed to get authenticated URL for {org_openhands_repo}: {str(e)}',
                 )
-                raise Exception(str(e))
+                raise
 
             clone_cmd = (
                 f'GIT_TERMINAL_PROMPT=0 git clone --depth 1 {remote_url} {org_repo_dir}'
@@ -762,6 +769,11 @@ fi
                     f'Clone command output: {clone_error_msg}',
                 )
 
+        except AuthenticationError as e:
+            self.log(
+                'debug',
+                f'org-level microagent directory {org_openhands_repo} not found: {str(e)}',
+            )
         except Exception as e:
             self.log(
                 'debug',
