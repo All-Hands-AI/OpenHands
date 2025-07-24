@@ -34,7 +34,7 @@ export function MicroagentManagementViewMicroagentContent() {
   ---
 
   triggers:
-  ${microagent.triggers.map((trigger) => `  - ${trigger}`).join("\n")}
+  ${microagent.triggers.map((trigger) => ` - ${trigger}`).join("\n")}
 
   ---
   `;

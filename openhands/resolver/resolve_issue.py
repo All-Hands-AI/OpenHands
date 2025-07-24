@@ -46,6 +46,12 @@ def main() -> None:
         help='Container image to use.',
     )
     parser.add_argument(
+        '--runtime',
+        type=str,
+        default=None,
+        help='Runtime environment to use (default: docker).',
+    )
+    parser.add_argument(
         '--max-iterations',
         type=int,
         default=50,
