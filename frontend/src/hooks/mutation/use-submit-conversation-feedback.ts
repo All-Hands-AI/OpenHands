@@ -2,7 +2,10 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import OpenHands from "#/api/open-hands";
 import { useConversationId } from "#/hooks/use-conversation-id";
-import { BatchFeedbackData, getFeedbackQueryKey } from "../query/use-batch-feedback";
+import {
+  BatchFeedbackData,
+  getFeedbackQueryKey,
+} from "../query/use-batch-feedback";
 
 type SubmitConversationFeedbackArgs = {
   rating: number;
@@ -24,7 +27,7 @@ export const useSubmitConversationFeedback = () => {
         reason,
       ),
     onMutate: async ({ rating, eventId, reason }) => {
-      if (!eventId) return;
+      if (!eventId) return { previousFeedback: null };
 
       // Get the query key for the feedback data
       const queryKey = getFeedbackQueryKey(conversationId);
@@ -33,19 +36,23 @@ export const useSubmitConversationFeedback = () => {
       await queryClient.cancelQueries({ queryKey });
 
       // Snapshot the previous value
-      const previousFeedback = queryClient.getQueryData<Record<string, BatchFeedbackData>>(queryKey);
+      const previousFeedback =
+        queryClient.getQueryData<Record<string, BatchFeedbackData>>(queryKey);
 
       // Optimistically update the cache
-      queryClient.setQueryData<Record<string, BatchFeedbackData>>(queryKey, (old = {}) => {
-        const newData = { ...old };
-        newData[eventId.toString()] = {
-          exists: true,
-          rating,
-          reason,
-          metadata: { source: "likert-scale" },
-        };
-        return newData;
-      });
+      queryClient.setQueryData<Record<string, BatchFeedbackData>>(
+        queryKey,
+        (old = {}) => {
+          const newData = { ...old };
+          newData[eventId.toString()] = {
+            exists: true,
+            rating,
+            reason,
+            metadata: { source: "likert-scale" },
+          };
+          return newData;
+        },
+      );
 
       // Return a context object with the snapshotted value
       return { previousFeedback };
@@ -53,7 +60,10 @@ export const useSubmitConversationFeedback = () => {
     onError: (error, { eventId }, context) => {
       // Roll back to the previous value on error
       if (context?.previousFeedback && eventId) {
-        queryClient.setQueryData(getFeedbackQueryKey(conversationId), context.previousFeedback);
+        queryClient.setQueryData(
+          getFeedbackQueryKey(conversationId),
+          context.previousFeedback,
+        );
       }
       // Log error but don't show toast - user will just see the UI stay in unsubmitted state
       // eslint-disable-next-line no-console
