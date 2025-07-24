@@ -91,12 +91,8 @@ class GitHandler:
 
         # Single bash command that finds the closest git repository to the file and gets the ref content
         cmd = f"""bash -c '
-        file_path="{file_path}"
-
-        # Convert to absolute path if relative
-        if [[ "$file_path" != /* ]]; then
-            file_path="$(cd "{self.cwd}" && pwd)/$file_path"
-        fi
+        # Convert to absolute path
+        file_path="$(realpath "{file_path}")"
 
         # Find the closest git repository by walking up the directory tree
         current_dir="$(dirname "$file_path")"
@@ -117,7 +113,7 @@ class GitHandler:
 
         # Get the file path relative to the git repository root
         repo_root="$(cd "$git_repo_dir" && git rev-parse --show-toplevel)"
-        relative_file_path="$(realpath --relative-to="$repo_root" "$file_path" 2>/dev/null || echo "$file_path")"
+        relative_file_path="${{file_path#${{repo_root}}/}}"
 
         # Function to get current branch
         get_current_branch() {{
@@ -173,28 +169,6 @@ class GitHandler:
 
         result = self.execute(cmd.strip(), self.cwd)
         return result.content if result.exit_code == 0 else ''
-
-    def _get_default_branch(self) -> str:
-        """
-        Retrieves the primary Git branch name of the repository.
-
-        Returns:
-            str: The name of the primary branch.
-        """
-        cmd = 'git --no-pager remote show origin | grep "HEAD branch"'
-        output = self.execute(cmd, self.cwd)
-        return output.content.split()[-1].strip()
-
-    def _get_current_branch(self) -> str:
-        """
-        Retrieves the currently selected Git branch.
-
-        Returns:
-            str: The name of the current branch.
-        """
-        cmd = 'git --no-pager rev-parse --abbrev-ref HEAD'
-        output = self.execute(cmd, self.cwd)
-        return output.content.strip()
 
     def get_git_changes(self) -> list[dict[str, str]] | None:
         """

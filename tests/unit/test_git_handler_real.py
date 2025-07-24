@@ -79,32 +79,6 @@ class TestGitHandlerWithRealRepo(unittest.TestCase):
         """Test that _is_git_repo returns True for a git repository."""
         self.assertTrue(self.git_handler._is_git_repo())
 
-    def test_get_default_branch(self):
-        """Test that _get_default_branch returns the correct branch name."""
-        branch = self.git_handler._get_default_branch()
-        self.assertEqual(branch, 'main')
-
-    def test_get_current_branch(self):
-        """Test that _get_current_branch returns the correct branch name."""
-        branch = self.git_handler._get_current_branch()
-        self.assertEqual(branch, 'feature-branch')
-
-    def test_get_valid_ref(self):
-        """Test that _get_valid_ref returns a valid ref."""
-        ref = self.git_handler._get_valid_ref()
-        self.assertIsNotNone(ref)
-
-        # Push the feature branch to origin to test the highest priority ref
-        self._execute_command('git push -u origin feature-branch', self.local_dir)
-
-        # Get the valid ref again, should be origin/feature-branch now
-        ref = self.git_handler._get_valid_ref()
-        self.assertIsNotNone(ref)
-
-        # Verify the ref exists
-        result = self._execute_command(f'git rev-parse --verify {ref}', self.local_dir)
-        self.assertEqual(result.exit_code, 0)
-
     def test_get_ref_content(self):
         """Test that _get_ref_content returns the content from a valid ref."""
         # First commit the changes to make sure we have a valid ref
