@@ -20,6 +20,7 @@ import { ApiSettings, PostApiSettings, Provider } from "#/types/settings";
 import { GitUser, GitRepository, Branch } from "#/types/git";
 import { SuggestedTask } from "#/components/features/home/tasks/task.types";
 import { RepositoryMicroagent } from "#/types/microagent-management";
+import { BatchFeedbackData } from "#/hooks/query/use-batch-feedback";
 
 class OpenHands {
   private static currentConversation: Conversation | null = null;
@@ -178,7 +179,7 @@ class OpenHands {
         exists: boolean;
         rating?: number;
         reason?: string;
-        metadata?: Record<string, unknown>;
+        metadata?: Record<string, BatchFeedbackData>;
       }
     >
   > {
@@ -190,7 +191,7 @@ class OpenHands {
           exists: boolean;
           rating?: number;
           reason?: string;
-          metadata?: Record<string, unknown>;
+          metadata?: Record<string, BatchFeedbackData>;
         }
       >
     >(url);
