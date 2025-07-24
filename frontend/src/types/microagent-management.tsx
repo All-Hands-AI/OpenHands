@@ -25,3 +25,8 @@ export interface MicroagentFormData {
   selectedBranch: string;
   microagentPath: string;
 }
+
+export interface LearnThisRepoFormData {
+  query: string;
+  selectedBranch: string;
+}
