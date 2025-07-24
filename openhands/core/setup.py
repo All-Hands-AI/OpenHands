@@ -166,8 +166,10 @@ def create_memory(
         memory.set_runtime_info(runtime, {})
 
         # loads microagents from repo/.openhands/microagents
-        # Note: We pass None here since we don't have Repository object in this context
-        # The Repository object is only available after clone_or_init_repo is called
+        # We pass None here because get_microagents_from_selected_repo now expects a Repository object
+        # instead of a string. At this point in the code flow, we don't have a Repository object yet
+        # since it's only created by clone_or_init_repo, which happens later in initialize_repository_for_runtime.
+        # When None is passed, the method will only load microagents from the workspace root.
         microagents: list[BaseMicroagent] = runtime.get_microagents_from_selected_repo(
             None
         )
