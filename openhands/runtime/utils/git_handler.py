@@ -189,7 +189,7 @@ class GitHandler:
         Optimized to use a single git command per repository for maximum performance.
 
         Returns:
-            list[dict[str, str]] | None: A list of dictionaries containing file paths, statuses, and repository paths. None if no git repositories found.
+            list[dict[str, str]] | None: A list of dictionaries containing file paths and statuses. None if no git repositories found.
         """
         # If cwd is not set, return None
         if not self.cwd:
