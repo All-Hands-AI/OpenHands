@@ -167,6 +167,38 @@ class OpenHands {
   }
 
   /**
+   * Get feedback for multiple events in a conversation
+   * @param conversationId The conversation ID
+   * @returns Map of event IDs to feedback data including existence, rating, reason and metadata
+   */
+  static async getBatchFeedback(conversationId: string): Promise<
+    Record<
+      string,
+      {
+        exists: boolean;
+        rating?: number;
+        reason?: string;
+        metadata?: Record<string, unknown>;
+      }
+    >
+  > {
+    const url = `/conversation/${conversationId}/batch`;
+    const { data } = await openHands.post<
+      Record<
+        string,
+        {
+          exists: boolean;
+          rating?: number;
+          reason?: string;
+          metadata?: Record<string, unknown>;
+        }
+      >
+    >(url);
+
+    return data;
+  }
+
+  /**
    * Authenticate with GitHub token
    * @returns Response with authentication status and user info if successful
    */
