@@ -73,7 +73,7 @@ export function ConfigureModal({
 
   // Validation functions
   const validateWorkspace = (value: string) => {
-    const isValid = /^[a-zA-Z0-9\-_]*$/.test(value);
+    const isValid = /^[a-zA-Z0-9\-_.]*$/.test(value);
     if (!isValid && value.length > 0) {
       setWorkspaceError(
         t(I18nKey.PROJECT_MANAGEMENT$WORKSPACE_NAME_VALIDATION_ERROR),
@@ -212,7 +212,7 @@ export function ConfigureModal({
               onChange={handleWorkspaceChange}
               className="w-full"
               type="text"
-              pattern="^[a-zA-Z0-9\-_]*$"
+              pattern="^[a-zA-Z0-9\-_.]*$"
             />
             {workspaceError && (
               <p className="text-red-500 text-sm mt-2">{workspaceError}</p>

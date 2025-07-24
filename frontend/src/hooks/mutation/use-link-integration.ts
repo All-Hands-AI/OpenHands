@@ -28,12 +28,20 @@ export function useLinkIntegration(
         input,
       );
 
-      const { authorizationUrl } = response.data;
+      const { success, redirect, authorizationUrl } = response.data;
 
-      if (authorizationUrl) {
-        window.location.href = authorizationUrl;
+      if (success) {
+        if (redirect) {
+          if (authorizationUrl) {
+            window.location.href = authorizationUrl;
+          } else {
+            throw new Error("Could not get authorization URL from the server.");
+          }
+        } else {
+          window.location.reload();
+        }
       } else {
-        throw new Error("Could not get authorization URL from the server.");
+        throw new Error("Link integration failed");
       }
 
       return response.data;

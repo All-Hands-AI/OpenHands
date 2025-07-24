@@ -30,8 +30,8 @@ export function ConfirmationModal({
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const validateWorkspace = (value: string) => {
-    // Check if workspace contains only alphanumeric characters, hyphens, and underscores
-    const isValid = /^[a-zA-Z0-9\-_]*$/.test(value);
+    // Check if workspace contains only alphanumeric characters, hyphens, underscores, and periods
+    const isValid = /^[a-zA-Z0-9\-_.]*$/.test(value);
 
     if (!isValid && value.length > 0) {
       setValidationError(
@@ -113,7 +113,7 @@ export function ConfirmationModal({
               onChange={handleWorkspaceChange}
               className="w-full"
               type="text"
-              pattern="^[a-zA-Z0-9\-_]*$"
+              pattern="^[a-zA-Z0-9\-_.]*$"
             />
             {validationError && (
               <p className="text-red-500 text-sm mt-2">{validationError}</p>
