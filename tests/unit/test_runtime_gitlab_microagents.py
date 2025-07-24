@@ -6,6 +6,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from openhands.core.config import OpenHandsConfig, SandboxConfig
+from openhands.events import EventStream
 from openhands.integrations.service_types import ProviderType, Repository
 from openhands.microagent.microagent import (
     RepoMicroagent,
@@ -17,8 +19,20 @@ class MockRuntime(Runtime):
     """Mock runtime for testing."""
 
     def __init__(self, workspace_root: Path):
+        # Create a minimal config for testing
+        config = OpenHandsConfig()
+        config.workspace_mount_path_in_sandbox = str(workspace_root)
+        config.sandbox = SandboxConfig()
+
+        # Create a mock event stream
+        event_stream = MagicMock(spec=EventStream)
+
+        # Initialize the parent class properly
+        super().__init__(
+            config=config, event_stream=event_stream, sid='test', git_provider_tokens={}
+        )
+
         self._workspace_root = workspace_root
-        self.git_provider_tokens = {}
         self._logs = []
 
     @property

@@ -367,9 +367,7 @@ class Runtime(FileEditRuntimeMixin):
         selected_branch: str | None,
     ) -> str:
         if not selected_repository:
-            # In SaaS mode (indicated by user_id being set), always run git init
-            # In OSS mode, only run git init if workspace_base is not set
-            if self.user_id or not self.config.workspace_base:
+            if self.config.init_git_in_empty_workspace:
                 logger.debug(
                     'No repository selected. Initializing a new git repository in the workspace.'
                 )
@@ -383,8 +381,8 @@ class Runtime(FileEditRuntimeMixin):
                 )
             return ''
 
-        remote_repo_url = await self._get_authenticated_git_url(
-            selected_repository, git_provider_tokens
+        remote_repo_url = await self.provider_handler.get_authenticated_git_url(
+            selected_repository
         )
 
         if not remote_repo_url:
@@ -603,68 +601,6 @@ fi
 
         return loaded_microagents
 
-    async def _get_authenticated_git_url(
-        self, repo_name: str, git_provider_tokens: PROVIDER_TOKEN_TYPE | None
-    ) -> str:
-        """Get an authenticated git URL for a repository.
-
-        Args:
-            repo_path: Repository name (owner/repo)
-
-        Returns:
-            Authenticated git URL if credentials are available, otherwise regular HTTPS URL
-        """
-
-        try:
-            provider_handler = ProviderHandler(
-                git_provider_tokens or MappingProxyType({})
-            )
-            repository = await provider_handler.verify_repo_provider(repo_name)
-        except AuthenticationError:
-            raise Exception('Git provider authentication issue when getting remote URL')
-
-        provider = repository.git_provider
-        repo_name = repository.full_name
-
-        provider_domains = {
-            ProviderType.GITHUB: 'github.com',
-            ProviderType.GITLAB: 'gitlab.com',
-            ProviderType.BITBUCKET: 'bitbucket.org',
-        }
-
-        domain = provider_domains[provider]
-
-        # If git_provider_tokens is provided, use the host from the token if available
-        if git_provider_tokens and provider in git_provider_tokens:
-            domain = git_provider_tokens[provider].host or domain
-
-        # Try to use token if available, otherwise use public URL
-        if git_provider_tokens and provider in git_provider_tokens:
-            git_token = git_provider_tokens[provider].token
-            if git_token:
-                token_value = git_token.get_secret_value()
-                if provider == ProviderType.GITLAB:
-                    remote_url = (
-                        f'https://oauth2:{token_value}@{domain}/{repo_name}.git'
-                    )
-                elif provider == ProviderType.BITBUCKET:
-                    # For Bitbucket, handle username:app_password format
-                    if ':' in token_value:
-                        # App token format: username:app_password
-                        remote_url = f'https://{token_value}@{domain}/{repo_name}.git'
-                    else:
-                        # Access token format: use x-token-auth
-                        remote_url = f'https://x-token-auth:{token_value}@{domain}/{repo_name}.git'
-                else:
-                    # GitHub
-                    remote_url = f'https://{token_value}@{domain}/{repo_name}.git'
-            else:
-                remote_url = f'https://{domain}/{repo_name}.git'
-        else:
-            remote_url = f'https://{domain}/{repo_name}.git'
-
-        return remote_url
-
     def _is_gitlab_repository(self, repo_name: str) -> bool:
         """Check if a repository is hosted on GitLab.
 
@@ -762,17 +698,22 @@ fi
             # Get authenticated URL and do a shallow clone (--depth 1) for efficiency
             try:
                 remote_url = call_async_from_sync(
-                    self._get_authenticated_git_url,
+                    self.provider_handler.get_authenticated_git_url,
                     GENERAL_TIMEOUT,
                     org_openhands_repo,
-                    self.git_provider_tokens,
                 )
+            except AuthenticationError as e:
+                self.log(
+                    'debug',
+                    f'org-level microagent directory {org_openhands_repo} not found: {str(e)}',
+                )
+                raise
             except Exception as e:
                 self.log(
-                    'error',
+                    'debug',
                     f'Failed to get authenticated URL for {org_openhands_repo}: {str(e)}',
                 )
-                raise Exception(str(e))
+                raise
 
             clone_cmd = (
                 f'GIT_TERMINAL_PROMPT=0 git clone --depth 1 {remote_url} {org_repo_dir}'
@@ -828,6 +769,11 @@ fi
                     f'Clone command output: {clone_error_msg}',
                 )
 
+        except AuthenticationError as e:
+            self.log(
+                'debug',
+                f'org-level microagent directory {org_openhands_repo} not found: {str(e)}',
+            )
         except Exception as e:
             self.log(
                 'debug',
@@ -1062,7 +1008,8 @@ fi
 
     def get_git_changes(self, cwd: str) -> list[dict[str, str]] | None:
         self.git_handler.set_cwd(cwd)
-        return self.git_handler.get_git_changes()
+        changes = self.git_handler.get_git_changes()
+        return changes
 
     def get_git_diff(self, file_path: str, cwd: str) -> dict[str, str]:
         self.git_handler.set_cwd(cwd)

@@ -4,6 +4,7 @@ import { Trans, useTranslation } from "react-i18next";
 import Markdown from "react-markdown";
 import { Link } from "react-router";
 import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 import { useConfig } from "#/hooks/query/use-config";
 import { I18nKey } from "#/i18n/declaration";
 import ArrowDown from "#/icons/angle-down-solid.svg?react";
@@ -199,7 +200,7 @@ export function ExpandableMessage({
                 ol,
                 p: paragraph,
               }}
-              remarkPlugins={[remarkGfm]}
+              remarkPlugins={[remarkGfm, remarkBreaks]}
             >
               {details}
             </Markdown>
