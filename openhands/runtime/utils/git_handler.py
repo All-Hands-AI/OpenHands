@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Callable
+from uuid import uuid4
 
 
 @dataclass
@@ -89,6 +90,8 @@ class GitHandler:
         if not self.cwd:
             return ''
 
+        unique_id = uuid4().hex
+
         # Single bash command that finds the closest git repository to the file and gets the ref content
         cmd = f"""bash -c '
         # Convert to absolute path
@@ -165,10 +168,18 @@ class GitHandler:
 
         # Get the file content from the reference
         git -C "$git_repo_dir" show "$valid_ref:$relative_file_path" 2>/dev/null || exit 1
-        ' """
 
-        result = self.execute(cmd.strip(), self.cwd)
-        return result.content if result.exit_code == 0 else ''
+        # {unique_id}'"""
+
+        result = self.execute(cmd, self.cwd)
+
+        if result.exit_code != 0:
+            return ''
+
+        #TODO: The command echoes the bash script. Why?
+        content = result.content.split(f"{unique_id}")[1]
+
+        return content
 
     def get_git_changes(self) -> list[dict[str, str]] | None:
         """
@@ -232,9 +243,7 @@ class GitHandler:
                 if len(parts) == 3:
                     repo_path, status, file_path = parts
                     file_path = f'{repo_path}/{file_path}'[2:]
-                    changes.append(
-                        {'status': status, 'path': file_path}
-                    )
+                    changes.append({'status': status, 'path': file_path})
 
         return changes if changes else None
 
