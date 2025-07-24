@@ -4,7 +4,7 @@ import { useIntegrationStatus } from "#/hooks/query/use-integration-status";
 import { useLinkIntegration } from "#/hooks/mutation/use-link-integration";
 import { useUnlinkIntegration } from "#/hooks/mutation/use-unlink-integration";
 import { useConfigureIntegration } from "#/hooks/mutation/use-configure-integration";
-import { useValidateIntegration } from "#/hooks/query/use-validate-integration";
+import { useValidateIntegration } from "#/hooks/mutation/use-validate-integration";
 import { ConfirmationModal } from "#/components/features/settings/project-management/confirmation-modal";
 import {
   ConfigureButton,
@@ -29,27 +29,32 @@ export function IntegrationRow({
   const [isConfigureModalOpen, setConfigureModalOpen] = React.useState(false);
   const [isInfoModalOpen, setInfoModalOpen] = React.useState(false);
   const [isUnlinking, setUnlinking] = React.useState(false);
+  const [validatedWorkspace, setValidatedWorkspace] =
+    React.useState<string>("");
 
   const { data: status, isLoading: isStatusLoading } =
     useIntegrationStatus(platform);
 
+  const linkMutation = useLinkIntegration(platform, {
+    onSettled: () => {
+      setConfirmationModalOpen(false);
+    },
+  });
+
   const validateMutation = useValidateIntegration(platform, {
     onSuccess: (data) => {
       if (data.data.status === "active") {
-        setUnlinking(false);
-        setConfirmationModalOpen(true);
+        // Validation successful, proceed with linking using the validated workspace
+        linkMutation.mutate(validatedWorkspace);
+        setConfirmationModalOpen(false);
       } else {
+        setConfirmationModalOpen(false);
         setInfoModalOpen(true);
       }
     },
     onError: () => {
-      setInfoModalOpen(true);
-    },
-  });
-
-  const linkMutation = useLinkIntegration(platform, {
-    onSettled: () => {
       setConfirmationModalOpen(false);
+      setInfoModalOpen(true);
     },
   });
 
@@ -66,7 +71,8 @@ export function IntegrationRow({
   });
 
   const handleLink = () => {
-    validateMutation.mutate();
+    setUnlinking(false);
+    setConfirmationModalOpen(true);
   };
 
   const handleUnlink = () => {
@@ -81,8 +87,13 @@ export function IntegrationRow({
   const handleConfirm = (workspace?: string) => {
     if (isUnlinking) {
       unlinkMutation.mutate();
-    } else {
-      linkMutation.mutate(workspace || "");
+      return;
+    }
+
+    // Workspace is already validated in the modal
+    if (workspace?.trim()) {
+      setValidatedWorkspace(workspace.trim());
+      validateMutation.mutate(workspace.trim());
     }
   };
 

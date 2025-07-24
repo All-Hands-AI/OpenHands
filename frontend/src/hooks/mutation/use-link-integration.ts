@@ -24,7 +24,7 @@ export function useLinkIntegration(
       };
 
       const response = await openHands.post(
-        `/integration/${platform}/users`,
+        `/integration/${platform}/link`,
         input,
       );
 

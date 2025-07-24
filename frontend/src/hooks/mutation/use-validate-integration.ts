@@ -21,7 +21,12 @@ export function useValidateIntegration(
   const { t } = useTranslation();
 
   return useMutation({
-    mutationFn: () => openHands.get(`/integration/${platform}/validate`),
+    mutationFn: (workspace?: string) => {
+      const workspaceParam = workspace ? `/${workspace}` : "";
+      return openHands.get(
+        `/integration/${platform}/workspaces/validate${workspaceParam}`,
+      );
+    },
     onSuccess,
     onError: (error) => {
       if (axios.isAxiosError(error) && error.response?.status === 404) {

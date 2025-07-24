@@ -27,6 +27,33 @@ export function ConfirmationModal({
 }: ConfirmationModalProps) {
   const { t } = useTranslation();
   const [workspace, setWorkspace] = useState("");
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const validateWorkspace = (value: string) => {
+    // Check if workspace contains only alphanumeric characters, hyphens, and underscores
+    const isValid = /^[a-zA-Z0-9\-_]*$/.test(value);
+
+    if (!isValid && value.length > 0) {
+      setValidationError(
+        t(I18nKey.PROJECT_MANAGEMENT$WORKSPACE_NAME_VALIDATION_ERROR),
+      );
+    } else {
+      setValidationError(null);
+    }
+
+    return isValid;
+  };
+
+  const handleWorkspaceChange = (value: string) => {
+    setWorkspace(value);
+    validateWorkspace(value);
+  };
+
+  const handleClose = () => {
+    setWorkspace("");
+    setValidationError(null);
+    onClose();
+  };
 
   if (!isOpen) {
     return null;
@@ -45,7 +72,7 @@ export function ConfirmationModal({
   }
 
   return (
-    <ModalBackdrop onClose={onClose}>
+    <ModalBackdrop onClose={handleClose}>
       <ModalBody className="items-start border border-tertiary w-96">
         <BaseModalTitle title={title} />
         <BaseModalDescription>
@@ -83,10 +110,14 @@ export function ConfirmationModal({
                 I18nKey.PROJECT_MANAGEMENT$WORKSPACE_NAME_PLACEHOLDER,
               )}
               value={workspace}
-              onChange={setWorkspace}
+              onChange={handleWorkspaceChange}
               className="w-full"
               type="text"
+              pattern="^[a-zA-Z0-9\-_]*$"
             />
+            {validationError && (
+              <p className="text-red-500 text-sm mt-2">{validationError}</p>
+            )}
           </div>
         )}
         <div className="flex flex-col gap-2 w-full">
@@ -96,13 +127,15 @@ export function ConfirmationModal({
             type="button"
             variant="primary"
             className="w-full"
-            isDisabled={!isUnlinking && !workspace.trim()}
+            isDisabled={
+              !isUnlinking && (!workspace.trim() || validationError !== null)
+            }
           >
             {t(I18nKey.PROJECT_MANAGEMENT$CONFIRM_BUTTON_LABEL)}
           </BrandButton>
           <BrandButton
             variant="secondary"
-            onClick={onClose}
+            onClick={handleClose}
             data-testid="cancel-button"
             type="button"
             className="w-full"

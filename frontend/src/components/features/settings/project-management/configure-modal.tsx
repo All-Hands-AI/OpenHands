@@ -63,6 +63,98 @@ export function ConfigureModal({
   const [serviceAccountApiKey, setServiceAccountApiKey] = useState("");
   const [isActive, setIsActive] = useState(false);
 
+  // Validation states
+  const [workspaceError, setWorkspaceError] = useState<string | null>(null);
+  const [webhookSecretError, setWebhookSecretError] = useState<string | null>(
+    null,
+  );
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [apiKeyError, setApiKeyError] = useState<string | null>(null);
+
+  // Validation functions
+  const validateWorkspace = (value: string) => {
+    const isValid = /^[a-zA-Z0-9\-_]*$/.test(value);
+    if (!isValid && value.length > 0) {
+      setWorkspaceError(
+        t(I18nKey.PROJECT_MANAGEMENT$WORKSPACE_NAME_VALIDATION_ERROR),
+      );
+    } else {
+      setWorkspaceError(null);
+    }
+    return isValid;
+  };
+
+  const validateWebhookSecret = (value: string) => {
+    const hasSpaces = /\s/.test(value);
+    if (hasSpaces) {
+      setWebhookSecretError(
+        t(I18nKey.PROJECT_MANAGEMENT$WORKSPACE_NAME_VALIDATION_ERROR),
+      );
+    } else {
+      setWebhookSecretError(null);
+    }
+    return !hasSpaces;
+  };
+
+  const validateEmail = (value: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const isValid = emailRegex.test(value) || value.length === 0;
+    if (!isValid && value.length > 0) {
+      setEmailError(
+        t(I18nKey.PROJECT_MANAGEMENT$WORKSPACE_NAME_VALIDATION_ERROR),
+      );
+    } else {
+      setEmailError(null);
+    }
+    return isValid;
+  };
+
+  const validateApiKey = (value: string) => {
+    const hasSpaces = /\s/.test(value);
+    if (hasSpaces) {
+      setApiKeyError(
+        t(I18nKey.PROJECT_MANAGEMENT$WORKSPACE_NAME_VALIDATION_ERROR),
+      );
+    } else {
+      setApiKeyError(null);
+    }
+    return !hasSpaces;
+  };
+
+  // Input handlers with validation
+  const handleWorkspaceChange = (value: string) => {
+    setWorkspace(value);
+    validateWorkspace(value);
+  };
+
+  const handleWebhookSecretChange = (value: string) => {
+    setWebhookSecret(value);
+    validateWebhookSecret(value);
+  };
+
+  const handleEmailChange = (value: string) => {
+    setServiceAccountEmail(value);
+    validateEmail(value);
+  };
+
+  const handleApiKeyChange = (value: string) => {
+    setServiceAccountApiKey(value);
+    validateApiKey(value);
+  };
+
+  const handleClose = () => {
+    setWorkspace("");
+    setWebhookSecret("");
+    setServiceAccountEmail("");
+    setServiceAccountApiKey("");
+    setIsActive(false);
+    setWorkspaceError(null);
+    setWebhookSecretError(null);
+    setEmailError(null);
+    setApiKeyError(null);
+    onClose();
+  };
+
   if (!isOpen) {
     return null;
   }
@@ -81,10 +173,14 @@ export function ConfigureModal({
     !workspace.trim() ||
     !webhookSecret.trim() ||
     !serviceAccountEmail.trim() ||
-    !serviceAccountApiKey.trim();
+    !serviceAccountApiKey.trim() ||
+    workspaceError !== null ||
+    webhookSecretError !== null ||
+    emailError !== null ||
+    apiKeyError !== null;
 
   return (
-    <ModalBackdrop onClose={onClose}>
+    <ModalBackdrop onClose={handleClose}>
       <ModalBody className="items-start border border-tertiary w-96">
         <BaseModalTitle title={`Configure ${platformName}`} />
         <BaseModalDescription>
@@ -106,46 +202,67 @@ export function ConfigureModal({
           />
         </BaseModalDescription>
         <div className="w-full flex flex-col gap-4 mt-4">
-          <SettingsInput
-            label={t(I18nKey.PROJECT_MANAGEMENT$WORKSPACE_NAME_LABEL)}
-            placeholder={t(
-              I18nKey.PROJECT_MANAGEMENT$WORKSPACE_NAME_PLACEHOLDER,
+          <div>
+            <SettingsInput
+              label={t(I18nKey.PROJECT_MANAGEMENT$WORKSPACE_NAME_LABEL)}
+              placeholder={t(
+                I18nKey.PROJECT_MANAGEMENT$WORKSPACE_NAME_PLACEHOLDER,
+              )}
+              value={workspace}
+              onChange={handleWorkspaceChange}
+              className="w-full"
+              type="text"
+              pattern="^[a-zA-Z0-9\-_]*$"
+            />
+            {workspaceError && (
+              <p className="text-red-500 text-sm mt-2">{workspaceError}</p>
             )}
-            value={workspace}
-            onChange={setWorkspace}
-            className="w-full"
-            type="text"
-          />
-          <SettingsInput
-            label={t(I18nKey.PROJECT_MANAGEMENT$WEBHOOK_SECRET_LABEL)}
-            placeholder={t(
-              I18nKey.PROJECT_MANAGEMENT$WEBHOOK_SECRET_PLACEHOLDER,
+          </div>
+          <div>
+            <SettingsInput
+              label={t(I18nKey.PROJECT_MANAGEMENT$WEBHOOK_SECRET_LABEL)}
+              placeholder={t(
+                I18nKey.PROJECT_MANAGEMENT$WEBHOOK_SECRET_PLACEHOLDER,
+              )}
+              value={webhookSecret}
+              onChange={handleWebhookSecretChange}
+              className="w-full"
+              type="password"
+            />
+            {webhookSecretError && (
+              <p className="text-red-500 text-sm mt-2">{webhookSecretError}</p>
             )}
-            value={webhookSecret}
-            onChange={setWebhookSecret}
-            className="w-full"
-            type="password"
-          />
-          <SettingsInput
-            label={t(I18nKey.PROJECT_MANAGEMENT$SERVICE_ACCOUNT_EMAIL_LABEL)}
-            placeholder={t(
-              I18nKey.PROJECT_MANAGEMENT$SERVICE_ACCOUNT_EMAIL_PLACEHOLDER,
+          </div>
+          <div>
+            <SettingsInput
+              label={t(I18nKey.PROJECT_MANAGEMENT$SERVICE_ACCOUNT_EMAIL_LABEL)}
+              placeholder={t(
+                I18nKey.PROJECT_MANAGEMENT$SERVICE_ACCOUNT_EMAIL_PLACEHOLDER,
+              )}
+              value={serviceAccountEmail}
+              onChange={handleEmailChange}
+              className="w-full"
+              type="email"
+            />
+            {emailError && (
+              <p className="text-red-500 text-sm mt-2">{emailError}</p>
             )}
-            value={serviceAccountEmail}
-            onChange={setServiceAccountEmail}
-            className="w-full"
-            type="email"
-          />
-          <SettingsInput
-            label={t(I18nKey.PROJECT_MANAGEMENT$SERVICE_ACCOUNT_API_LABEL)}
-            placeholder={t(
-              I18nKey.PROJECT_MANAGEMENT$SERVICE_ACCOUNT_API_PLACEHOLDER,
+          </div>
+          <div>
+            <SettingsInput
+              label={t(I18nKey.PROJECT_MANAGEMENT$SERVICE_ACCOUNT_API_LABEL)}
+              placeholder={t(
+                I18nKey.PROJECT_MANAGEMENT$SERVICE_ACCOUNT_API_PLACEHOLDER,
+              )}
+              value={serviceAccountApiKey}
+              onChange={handleApiKeyChange}
+              className="w-full"
+              type="password"
+            />
+            {apiKeyError && (
+              <p className="text-red-500 text-sm mt-2">{apiKeyError}</p>
             )}
-            value={serviceAccountApiKey}
-            onChange={setServiceAccountApiKey}
-            className="w-full"
-            type="password"
-          />
+          </div>
           <div className="mt-4">
             <SettingsSwitch
               testId="active-toggle"
@@ -169,7 +286,7 @@ export function ConfigureModal({
           </BrandButton>
           <BrandButton
             variant="secondary"
-            onClick={onClose}
+            onClick={handleClose}
             data-testid="cancel-button"
             type="button"
             className="w-full"
