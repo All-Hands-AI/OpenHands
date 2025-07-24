@@ -705,7 +705,7 @@ async def read_confirmation_input(config: OpenHandsConfig) -> str:
         choices = [
             'Yes, proceed',
             'No (and allow to enter instructions)',
-            "Always proceed (don't ask again)"
+            "Always proceed (don't ask again)",
         ]
 
         # keep the outer coroutine responsive by using asyncio.to_thread which puts the blocking call app.run() of cli_confirm() in a separate thread
