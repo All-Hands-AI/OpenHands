@@ -10,6 +10,25 @@ Model Context Protocol (MCP) is a mechanism that allows OpenHands to communicate
 servers can provide additional functionality to the agent, such as specialized data processing, external API access,
 or custom tools. MCP is based on the open standard defined at [modelcontextprotocol.io](https://modelcontextprotocol.io).
 
+<Note>
+MCP is currently not available on OpenHands Cloud. This feature is only available when running OpenHands locally.
+</Note>
+
+### How MCP Works
+
+When OpenHands starts, it:
+
+1. Reads the MCP configuration.
+2. Connects to any configured SSE and SHTTP servers.
+3. Starts any configured stdio servers.
+4. Registers the tools provided by these servers with the agent.
+
+The agent can then use these tools just like any built-in tool. When the agent calls an MCP tool:
+
+1. OpenHands routes the call to the appropriate MCP server.
+2. The server processes the request and returns a response.
+3. OpenHands converts the response to an observation and presents it to the agent.
+
 ## Configuration
 
 MCP configuration can be defined in:
@@ -103,21 +122,6 @@ Stdio servers are configured using an object with the following properties:
   - Type: `dict of str to str`
   - Default: `{}`
   - Description: Environment variables to set for the server process
-
-## How MCP Works
-
-When OpenHands starts, it:
-
-1. Reads the MCP configuration.
-2. Connects to any configured SSE and SHTTP servers.
-3. Starts any configured stdio servers.
-4. Registers the tools provided by these servers with the agent.
-
-The agent can then use these tools just like any built-in tool. When the agent calls an MCP tool:
-
-1. OpenHands routes the call to the appropriate MCP server.
-2. The server processes the request and returns a response.
-3. OpenHands converts the response to an observation and presents it to the agent.
 
 ## Transport Protocols
 
