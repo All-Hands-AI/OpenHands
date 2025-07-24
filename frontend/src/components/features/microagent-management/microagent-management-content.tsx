@@ -7,9 +7,13 @@ import { RootState } from "#/store";
 import {
   setAddMicroagentModalVisible,
   setUpdateMicroagentModalVisible,
+  setLearnThisRepoModalVisible,
 } from "#/state/microagent-management-slice";
 import { useCreateConversationAndSubscribeMultiple } from "#/hooks/use-create-conversation-and-subscribe-multiple";
-import { MicroagentFormData } from "#/types/microagent-management";
+import {
+  LearnThisRepoFormData,
+  MicroagentFormData,
+} from "#/types/microagent-management";
 import { AgentState } from "#/types/agent-state";
 import { getPR, getProviderName, getPRShort } from "#/utils/utils";
 import {
@@ -20,6 +24,7 @@ import {
 import { GitRepository } from "#/types/git";
 import { queryClient } from "#/query-client-config";
 import { Provider } from "#/types/settings";
+import { MicroagentManagementLearnThisRepoModal } from "./microagent-management-learn-this-repo-modal";
 
 // Handle error events
 const isErrorEvent = (evt: unknown): evt is { error: true; message: string } =>
@@ -104,6 +109,7 @@ export function MicroagentManagementContent() {
     addMicroagentModalVisible,
     updateMicroagentModalVisible,
     selectedRepository,
+    learnThisRepoModalVisible,
   } = useSelector((state: RootState) => state.microagentManagement);
 
   const dispatch = useDispatch();
@@ -231,9 +237,37 @@ export function MicroagentManagementContent() {
     });
   };
 
-  const renderModals = () => {
-    if (addMicroagentModalVisible || updateMicroagentModalVisible) {
-      return (
+  const hideLearnThisRepoModal = () => {
+    dispatch(setLearnThisRepoModalVisible(false));
+  };
+
+  const handleLearnThisRepoConfirm = (formData: LearnThisRepoFormData) => {
+    if (!selectedRepository || typeof selectedRepository !== "object") {
+      return;
+    }
+
+    const repository = selectedRepository as GitRepository;
+    const repositoryName = repository.full_name;
+    const gitProvider = repository.git_provider;
+
+    // Launch a new conversation to help the user understand the repo
+    createConversationAndSubscribe({
+      query: formData.query,
+      conversationInstructions: formData.query,
+      repository: {
+        name: repositoryName,
+        branch: formData.selectedBranch,
+        gitProvider,
+      },
+      onSuccessCallback: () => {
+        hideLearnThisRepoModal();
+      },
+    });
+  };
+
+  const renderModals = () => (
+    <>
+      {(addMicroagentModalVisible || updateMicroagentModalVisible) && (
         <MicroagentManagementUpsertMicroagentModal
           onConfirm={(formData) =>
             handleUpsertMicroagent(formData, updateMicroagentModalVisible)
@@ -244,10 +278,16 @@ export function MicroagentManagementContent() {
           isLoading={isPending}
           isUpdate={updateMicroagentModalVisible}
         />
-      );
-    }
-    return null;
-  };
+      )}
+      {learnThisRepoModalVisible && (
+        <MicroagentManagementLearnThisRepoModal
+          onCancel={hideLearnThisRepoModal}
+          onConfirm={handleLearnThisRepoConfirm}
+          isLoading={isPending}
+        />
+      )}
+    </>
+  );
 
   if (width < 1024) {
     return (

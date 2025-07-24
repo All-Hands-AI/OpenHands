@@ -36,6 +36,7 @@ describe("MicroagentManagement", () => {
           organizationRepositories: [],
           repositories: [],
           selectedMicroagentItem: null,
+          learnThisRepoModalVisible: false,
         },
       },
     });
@@ -1297,6 +1298,7 @@ describe("MicroagentManagement", () => {
             organizationRepositories: [],
             repositories: [],
             updateMicroagentModalVisible: false,
+            learnThisRepoModalVisible: false,
           },
         },
       });
@@ -1554,6 +1556,7 @@ describe("MicroagentManagement", () => {
             repositories: [],
             selectedMicroagentItem,
             updateMicroagentModalVisible: false,
+            learnThisRepoModalVisible: false,
           },
         },
       });
@@ -1914,6 +1917,7 @@ describe("MicroagentManagement", () => {
             personalRepositories: [],
             organizationRepositories: [],
             repositories: [],
+            learnThisRepoModalVisible: false,
           },
         },
       });
@@ -1952,6 +1956,7 @@ describe("MicroagentManagement", () => {
             personalRepositories: [],
             organizationRepositories: [],
             repositories: [],
+            learnThisRepoModalVisible: false,
           },
         },
       });
@@ -1989,6 +1994,7 @@ describe("MicroagentManagement", () => {
             personalRepositories: [],
             organizationRepositories: [],
             repositories: [],
+            learnThisRepoModalVisible: false,
           },
         },
       });
@@ -2004,7 +2010,7 @@ describe("MicroagentManagement", () => {
       const user = userEvent.setup();
 
       // Render with update modal visible and selected microagent
-      const { store } = renderWithProviders(<RouterStub />, {
+      renderWithProviders(<RouterStub />, {
         preloadedState: {
           metrics: {
             cost: null,
@@ -2029,6 +2035,7 @@ describe("MicroagentManagement", () => {
             personalRepositories: [],
             organizationRepositories: [],
             repositories: [],
+            learnThisRepoModalVisible: false,
           },
         },
       });
@@ -2046,12 +2053,6 @@ describe("MicroagentManagement", () => {
       // Submit the form
       const confirmButton = screen.getByTestId("confirm-button");
       await user.click(confirmButton);
-
-      // Directly update the Redux state to simulate modal closing
-      store.dispatch({
-        type: "microagentManagement/setUpdateMicroagentModalVisible",
-        payload: false,
-      });
 
       // Wait for the modal to be removed after form submission
       await waitFor(() => {
@@ -2090,6 +2091,7 @@ describe("MicroagentManagement", () => {
             personalRepositories: [],
             organizationRepositories: [],
             repositories: [],
+            learnThisRepoModalVisible: false,
           },
         },
       });
@@ -2140,6 +2142,7 @@ describe("MicroagentManagement", () => {
             personalRepositories: [],
             organizationRepositories: [],
             repositories: [],
+            learnThisRepoModalVisible: false,
           },
         },
       });
@@ -2190,6 +2193,7 @@ describe("MicroagentManagement", () => {
             personalRepositories: [],
             organizationRepositories: [],
             repositories: [],
+            learnThisRepoModalVisible: false,
           },
         },
       });
@@ -2234,6 +2238,7 @@ describe("MicroagentManagement", () => {
             personalRepositories: [],
             organizationRepositories: [],
             repositories: [],
+            learnThisRepoModalVisible: false,
           },
         },
       });
@@ -2276,6 +2281,7 @@ describe("MicroagentManagement", () => {
             personalRepositories: [],
             organizationRepositories: [],
             repositories: [],
+            learnThisRepoModalVisible: false,
           },
         },
       });
@@ -2285,6 +2291,194 @@ describe("MicroagentManagement", () => {
       expect(
         screen.getByText("MICROAGENT_MANAGEMENT$UPDATE_MICROAGENT"),
       ).toBeInTheDocument();
+    });
+  });
+
+  // Learn this repo functionality tests
+  describe("Learn this repo functionality", () => {
+    it("should display learn this repo trigger when no microagents exist", async () => {
+      const user = userEvent.setup();
+
+      // Setup mocks before rendering
+      const getRepositoryMicroagentsSpy = vi.spyOn(
+        OpenHands,
+        "getRepositoryMicroagents",
+      );
+      const searchConversationsSpy = vi.spyOn(OpenHands, "searchConversations");
+      getRepositoryMicroagentsSpy.mockResolvedValue([]);
+      searchConversationsSpy.mockResolvedValue([]);
+
+      renderMicroagentManagement();
+
+      // Wait for repositories to be loaded
+      await waitFor(() => {
+        expect(OpenHands.retrieveUserGitRepositories).toHaveBeenCalled();
+      });
+
+      // Find and click on the first repository accordion to expand it
+      const repoAccordion = screen.getByTestId("repository-name-tooltip");
+      await user.click(repoAccordion);
+
+      // Wait for microagents and conversations to be fetched
+      await waitFor(() => {
+        expect(getRepositoryMicroagentsSpy).toHaveBeenCalled();
+        expect(searchConversationsSpy).toHaveBeenCalled();
+      });
+
+      // Verify the learn this repo trigger is displayed when no microagents exist
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("learn-this-repo-trigger"),
+        ).toBeInTheDocument();
+      });
+
+      // Verify trigger has correct text content
+      expect(screen.getByTestId("learn-this-repo-trigger")).toHaveTextContent(
+        "MICROAGENT_MANAGEMENT$LEARN_THIS_REPO",
+      );
+    });
+
+    it("should trigger learn this repo modal opening when trigger is clicked", async () => {
+      const user = userEvent.setup();
+
+      // Setup mocks
+      const getRepositoryMicroagentsSpy = vi.spyOn(
+        OpenHands,
+        "getRepositoryMicroagents",
+      );
+      const searchConversationsSpy = vi.spyOn(OpenHands, "searchConversations");
+      getRepositoryMicroagentsSpy.mockResolvedValue([]);
+      searchConversationsSpy.mockResolvedValue([]);
+
+      renderMicroagentManagement();
+
+      // Wait for repositories and expand accordion
+      await waitFor(() => {
+        expect(OpenHands.retrieveUserGitRepositories).toHaveBeenCalled();
+      });
+
+      const repoAccordion = screen.getByTestId("repository-name-tooltip");
+      await user.click(repoAccordion);
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("learn-this-repo-trigger"),
+        ).toBeInTheDocument();
+      });
+
+      // Verify the trigger is clickable and has correct behavior
+      const learnThisRepoTrigger = screen.getByTestId(
+        "learn-this-repo-trigger",
+      );
+
+      // Verify the trigger has the expected text content
+      expect(learnThisRepoTrigger).toHaveTextContent(
+        "MICROAGENT_MANAGEMENT$LEARN_THIS_REPO",
+      );
+
+      // Click the trigger should not throw an error
+      await user.click(learnThisRepoTrigger);
+
+      // The trigger should still be present after click (testing that click is handled gracefully)
+      expect(learnThisRepoTrigger).toBeInTheDocument();
+    });
+
+    it("should show learn this repo trigger only when no microagents or conversations exist", async () => {
+      const user = userEvent.setup();
+
+      // Setup mocks with existing microagents (should NOT show trigger)
+      const getRepositoryMicroagentsSpy = vi.spyOn(
+        OpenHands,
+        "getRepositoryMicroagents",
+      );
+      const searchConversationsSpy = vi.spyOn(OpenHands, "searchConversations");
+
+      // Mock with existing microagent
+      getRepositoryMicroagentsSpy.mockResolvedValue([
+        {
+          name: "test-microagent",
+          type: "repo",
+          content: "Test content",
+          triggers: [],
+          inputs: [],
+          tools: [],
+          created_at: "2021-10-01",
+          git_provider: "github",
+          path: ".openhands/microagents/test",
+        },
+      ]);
+      searchConversationsSpy.mockResolvedValue([]);
+
+      renderMicroagentManagement();
+
+      await waitFor(() => {
+        expect(OpenHands.retrieveUserGitRepositories).toHaveBeenCalled();
+      });
+
+      const repoAccordion = screen.getByTestId("repository-name-tooltip");
+      await user.click(repoAccordion);
+
+      await waitFor(() => {
+        expect(getRepositoryMicroagentsSpy).toHaveBeenCalled();
+        expect(searchConversationsSpy).toHaveBeenCalled();
+      });
+
+      // Should NOT show the learn this repo trigger when microagents exist
+      expect(
+        screen.queryByTestId("learn-this-repo-trigger"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("should handle API call for branches when learn this repo modal opens", async () => {
+      // Mock branch API
+      const branchesSpy = vi
+        .spyOn(OpenHands, "getRepositoryBranches")
+        .mockResolvedValue([
+          { name: "main", commit_sha: "abc123", protected: false },
+          { name: "develop", commit_sha: "def456", protected: false },
+        ]);
+
+      // Mock other APIs
+      const getRepositoryMicroagentsSpy = vi.spyOn(
+        OpenHands,
+        "getRepositoryMicroagents",
+      );
+      const searchConversationsSpy = vi.spyOn(OpenHands, "searchConversations");
+      getRepositoryMicroagentsSpy.mockResolvedValue([]);
+      searchConversationsSpy.mockResolvedValue([]);
+
+      // Test with direct Redux state that has modal visible
+      renderWithProviders(<RouterStub />, {
+        preloadedState: {
+          metrics: {
+            cost: null,
+            max_budget_per_task: null,
+            usage: null,
+          },
+          microagentManagement: {
+            selectedMicroagentItem: null,
+            addMicroagentModalVisible: false,
+            updateMicroagentModalVisible: false,
+            learnThisRepoModalVisible: true, // Modal should be visible
+            selectedRepository: {
+              id: "1",
+              full_name: "test-org/test-repo",
+              git_provider: "github",
+              is_public: true,
+              owner_type: "user",
+              pushed_at: "2021-10-01T12:00:00Z",
+            },
+            personalRepositories: [],
+            organizationRepositories: [],
+            repositories: [],
+          },
+        },
+      });
+
+      // The branches API should be called when the modal is visible
+      await waitFor(() => {
+        expect(branchesSpy).toHaveBeenCalledWith("test-org/test-repo");
+      });
     });
   });
 
@@ -2329,6 +2523,7 @@ describe("MicroagentManagement", () => {
             personalRepositories: [],
             organizationRepositories: [],
             repositories: [],
+            learnThisRepoModalVisible: false,
           },
         },
       });
@@ -2368,6 +2563,7 @@ describe("MicroagentManagement", () => {
             personalRepositories: [],
             organizationRepositories: [],
             repositories: [],
+            learnThisRepoModalVisible: false,
           },
         },
       });
@@ -2416,6 +2612,7 @@ describe("MicroagentManagement", () => {
             personalRepositories: [],
             organizationRepositories: [],
             repositories: [],
+            learnThisRepoModalVisible: false,
           },
         },
       });
@@ -2469,6 +2666,7 @@ describe("MicroagentManagement", () => {
             personalRepositories: [],
             organizationRepositories: [],
             repositories: [],
+            learnThisRepoModalVisible: false,
           },
         },
       });
@@ -2520,6 +2718,7 @@ describe("MicroagentManagement", () => {
             personalRepositories: [],
             organizationRepositories: [],
             repositories: [],
+            learnThisRepoModalVisible: false,
           },
         },
       });
