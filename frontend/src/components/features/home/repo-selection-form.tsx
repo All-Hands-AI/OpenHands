@@ -220,7 +220,7 @@ export function RepositorySelectionForm({
         items={repositoriesItems || []}
         onSelectionChange={handleRepoSelection}
         onInputChange={handleRepoInputChange}
-        isDisabled={false}
+        isDisabled={!selectedProvider}
         hasMore={hasNextPage}
         isFetchingNextPage={isFetchingNextPage}
         onLoadMore={onLoadMore}
