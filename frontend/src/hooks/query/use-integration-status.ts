@@ -10,10 +10,10 @@ export function useIntegrationStatus(platform: "jira" | "jira-dc" | "linear") {
         const response = await openHands.get(
           `/integration/${platform}/users/me`,
         );
-        return response.data.status;
+        return response.data;
       } catch (error) {
         if (axios.isAxiosError(error) && error.response?.status === 404) {
-          return "inactive";
+          return null;
         }
         throw error;
       }

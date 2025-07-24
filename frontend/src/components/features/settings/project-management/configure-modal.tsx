@@ -10,16 +10,19 @@ import {
   BaseModalTitle,
 } from "#/components/shared/modals/confirmation-modals/base-modal";
 import { SettingsSwitch } from "#/components/features/settings/settings-switch";
+import { useValidateIntegration } from "#/hooks/mutation/use-validate-integration";
 
 interface ConfigureButtonProps {
   onClick: () => void;
   isDisabled: boolean;
+  text?: string;
   "data-testid"?: string;
 }
 
 export function ConfigureButton({
   onClick,
   isDisabled,
+  text,
   "data-testid": dataTestId,
 }: ConfigureButtonProps) {
   const { t } = useTranslation();
@@ -32,7 +35,7 @@ export function ConfigureButton({
       type="button"
       className="w-30 min-w-20"
     >
-      {t(I18nKey.PROJECT_MANAGEMENT$CONFIGURE_BUTTON_LABEL)}
+      {text || t(I18nKey.PROJECT_MANAGEMENT$CONFIGURE_BUTTON_LABEL)}
     </BrandButton>
   );
 }
@@ -47,21 +50,55 @@ interface ConfigureModalProps {
     serviceAccountApiKey: string;
     isActive: boolean;
   }) => void;
+  onLink: (workspace: string) => void;
+  onUnlink?: () => void;
   platformName: string;
+  platform: "jira" | "jira-dc" | "linear";
+  integrationData?: {
+    id: number;
+    keycloak_user_id: string;
+    status: string;
+    workspace?: {
+      id: number;
+      name: string;
+      status: string;
+      editable: boolean;
+    };
+  } | null;
 }
 
 export function ConfigureModal({
   isOpen,
   onClose,
   onConfirm,
+  onLink,
+  onUnlink,
   platformName,
+  platform,
+  integrationData,
 }: ConfigureModalProps) {
   const { t } = useTranslation();
   const [workspace, setWorkspace] = useState("");
   const [webhookSecret, setWebhookSecret] = useState("");
   const [serviceAccountEmail, setServiceAccountEmail] = useState("");
   const [serviceAccountApiKey, setServiceAccountApiKey] = useState("");
-  const [isActive, setIsActive] = useState(false);
+  const [isActive, setIsActive] = useState(true);
+  const [showConfigurationFields, setShowConfigurationFields] = useState(false);
+
+  // Determine initial state based on integrationData
+  const existingWorkspace = integrationData?.workspace;
+  const isWorkspaceEditable = existingWorkspace?.editable ?? false;
+
+  // Set initial workspace value when modal opens
+  React.useEffect(() => {
+    if (isOpen && existingWorkspace) {
+      setWorkspace(existingWorkspace.name);
+      setShowConfigurationFields(isWorkspaceEditable);
+    } else if (isOpen && !existingWorkspace) {
+      setWorkspace("");
+      setShowConfigurationFields(false);
+    }
+  }, [isOpen, existingWorkspace, isWorkspaceEditable]);
 
   // Validation states
   const [workspaceError, setWorkspaceError] = useState<string | null>(null);
@@ -70,6 +107,30 @@ export function ConfigureModal({
   );
   const [emailError, setEmailError] = useState<string | null>(null);
   const [apiKeyError, setApiKeyError] = useState<string | null>(null);
+
+  const validateMutation = useValidateIntegration(platform, {
+    onSuccess: (data) => {
+      if (data.data.status === "active") {
+        // Validation successful, proceed with linking
+        onLink(workspace.trim());
+      } else {
+        // Show configuration fields for further setup
+        setShowConfigurationFields(true);
+        setIsActive(true);
+      }
+    },
+    onError: (error) => {
+      if (error.response?.status === 404) {
+        // Integration not found, show configuration fields
+        setShowConfigurationFields(true);
+        setIsActive(true);
+      } else {
+        // Other errors - still show configuration fields as fallback
+        setShowConfigurationFields(true);
+        setIsActive(true);
+      }
+    },
+  });
 
   // Validation functions
   const validateWorkspace = (value: string) => {
@@ -148,6 +209,7 @@ export function ConfigureModal({
     setServiceAccountEmail("");
     setServiceAccountApiKey("");
     setIsActive(false);
+    setShowConfigurationFields(false);
     setWorkspaceError(null);
     setWebhookSecretError(null);
     setEmailError(null);
@@ -160,130 +222,213 @@ export function ConfigureModal({
   }
 
   const handleConnect = () => {
-    onConfirm({
-      workspace,
-      webhookSecret,
-      serviceAccountEmail,
-      serviceAccountApiKey,
-      isActive,
-    });
+    if (showConfigurationFields) {
+      // Full configuration flow (either new configuration or editing existing)
+      onConfirm({
+        workspace,
+        webhookSecret,
+        serviceAccountEmail,
+        serviceAccountApiKey,
+        isActive,
+      });
+    } else if (!existingWorkspace) {
+      // First check the workspace with validation for new integrations
+      validateMutation.mutate(workspace.trim());
+    }
+    // For existing workspace that's not editable, no action needed
+    // This case shouldn't happen as the button should be hidden
   };
 
-  const isConnectDisabled =
-    !workspace.trim() ||
-    !webhookSecret.trim() ||
-    !serviceAccountEmail.trim() ||
-    !serviceAccountApiKey.trim() ||
-    workspaceError !== null ||
-    webhookSecretError !== null ||
-    emailError !== null ||
-    apiKeyError !== null;
+  const isConnectDisabled = showConfigurationFields
+    ? !workspace.trim() ||
+      !webhookSecret.trim() ||
+      !serviceAccountEmail.trim() ||
+      !serviceAccountApiKey.trim() ||
+      workspaceError !== null ||
+      webhookSecretError !== null ||
+      emailError !== null ||
+      apiKeyError !== null ||
+      validateMutation.isPending
+    : !workspace.trim() ||
+      workspaceError !== null ||
+      validateMutation.isPending;
 
   return (
     <ModalBackdrop onClose={handleClose}>
       <ModalBody className="items-start border border-tertiary w-96">
-        <BaseModalTitle title={`Configure ${platformName}`} />
+        <BaseModalTitle
+          title={
+            showConfigurationFields
+              ? t(I18nKey.PROJECT_MANAGEMENT$CONFIGURE_MODAL_TITLE, {
+                  platform: platformName,
+                })
+              : t(I18nKey.PROJECT_MANAGEMENT$LINK_CONFIRMATION_TITLE)
+          }
+        />
         <BaseModalDescription>
-          <Trans
-            i18nKey={I18nKey.PROJECT_MANAGEMENT$CONFIGURE_MODAL_DESCRIPTION}
-            components={{
-              a: (
-                <a
-                  href="https://docs.all-hands.dev/usage/cloud/openhands-cloud"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-500 hover:underline"
-                >
-                  Check the document for more information
-                </a>
-              ),
-              b: <b />,
-            }}
-          />
+          {showConfigurationFields ? (
+            <Trans
+              i18nKey={I18nKey.PROJECT_MANAGEMENT$CONFIGURE_MODAL_DESCRIPTION}
+              components={{
+                a: (
+                  <a
+                    href="https://docs.all-hands.dev/usage/cloud/openhands-cloud"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-500 hover:underline"
+                  >
+                    Check the document for more information
+                  </a>
+                ),
+                b: <b />,
+              }}
+            />
+          ) : (
+            <>
+              {t(I18nKey.PROJECT_MANAGEMENT$LINK_CONFIRMATION_DESCRIPTION, {
+                platform: platformName,
+              })}
+              <p className="mt-4">
+                <Trans
+                  i18nKey={
+                    I18nKey.PROJECT_MANAGEMENT$IMPORTANT_WORKSPACE_INTEGRATION
+                  }
+                  components={{
+                    b: <b />,
+                    a: (
+                      <a
+                        href="https://docs.all-hands.dev/usage/cloud/openhands-cloud"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-500 underline"
+                      >
+                        Check the document for more information
+                      </a>
+                    ),
+                  }}
+                />
+              </p>
+            </>
+          )}
         </BaseModalDescription>
         <div className="w-full flex flex-col gap-4 mt-4">
           <div>
-            <SettingsInput
-              label={t(I18nKey.PROJECT_MANAGEMENT$WORKSPACE_NAME_LABEL)}
-              placeholder={t(
-                I18nKey.PROJECT_MANAGEMENT$WORKSPACE_NAME_PLACEHOLDER,
+            <div className="flex gap-2 items-end">
+              <div className="flex-1">
+                <SettingsInput
+                  label={t(I18nKey.PROJECT_MANAGEMENT$WORKSPACE_NAME_LABEL)}
+                  placeholder={t(
+                    I18nKey.PROJECT_MANAGEMENT$WORKSPACE_NAME_PLACEHOLDER,
+                  )}
+                  value={workspace}
+                  onChange={handleWorkspaceChange}
+                  className="w-full"
+                  type="text"
+                  pattern="^[a-zA-Z0-9\-_.]*$"
+                  isDisabled={!!existingWorkspace}
+                />
+              </div>
+              {existingWorkspace && onUnlink && (
+                <BrandButton
+                  variant="secondary"
+                  onClick={onUnlink}
+                  data-testid="unlink-button"
+                  type="button"
+                  className="mb-0"
+                >
+                  {t(I18nKey.PROJECT_MANAGEMENT$UNLINK_BUTTON_LABEL)}
+                </BrandButton>
               )}
-              value={workspace}
-              onChange={handleWorkspaceChange}
-              className="w-full"
-              type="text"
-              pattern="^[a-zA-Z0-9\-_.]*$"
-            />
+            </div>
             {workspaceError && (
               <p className="text-red-500 text-sm mt-2">{workspaceError}</p>
             )}
           </div>
-          <div>
-            <SettingsInput
-              label={t(I18nKey.PROJECT_MANAGEMENT$WEBHOOK_SECRET_LABEL)}
-              placeholder={t(
-                I18nKey.PROJECT_MANAGEMENT$WEBHOOK_SECRET_PLACEHOLDER,
-              )}
-              value={webhookSecret}
-              onChange={handleWebhookSecretChange}
-              className="w-full"
-              type="password"
-            />
-            {webhookSecretError && (
-              <p className="text-red-500 text-sm mt-2">{webhookSecretError}</p>
-            )}
-          </div>
-          <div>
-            <SettingsInput
-              label={t(I18nKey.PROJECT_MANAGEMENT$SERVICE_ACCOUNT_EMAIL_LABEL)}
-              placeholder={t(
-                I18nKey.PROJECT_MANAGEMENT$SERVICE_ACCOUNT_EMAIL_PLACEHOLDER,
-              )}
-              value={serviceAccountEmail}
-              onChange={handleEmailChange}
-              className="w-full"
-              type="email"
-            />
-            {emailError && (
-              <p className="text-red-500 text-sm mt-2">{emailError}</p>
-            )}
-          </div>
-          <div>
-            <SettingsInput
-              label={t(I18nKey.PROJECT_MANAGEMENT$SERVICE_ACCOUNT_API_LABEL)}
-              placeholder={t(
-                I18nKey.PROJECT_MANAGEMENT$SERVICE_ACCOUNT_API_PLACEHOLDER,
-              )}
-              value={serviceAccountApiKey}
-              onChange={handleApiKeyChange}
-              className="w-full"
-              type="password"
-            />
-            {apiKeyError && (
-              <p className="text-red-500 text-sm mt-2">{apiKeyError}</p>
-            )}
-          </div>
-          <div className="mt-4">
-            <SettingsSwitch
-              testId="active-toggle"
-              onToggle={setIsActive}
-              isToggled={isActive}
-            >
-              {t(I18nKey.PROJECT_MANAGEMENT$ACTIVE_TOGGLE_LABEL)}
-            </SettingsSwitch>
-          </div>
+
+          {showConfigurationFields && (
+            <>
+              <div>
+                <SettingsInput
+                  label={t(I18nKey.PROJECT_MANAGEMENT$WEBHOOK_SECRET_LABEL)}
+                  placeholder={t(
+                    I18nKey.PROJECT_MANAGEMENT$WEBHOOK_SECRET_PLACEHOLDER,
+                  )}
+                  value={webhookSecret}
+                  onChange={handleWebhookSecretChange}
+                  className="w-full"
+                  type="password"
+                />
+                {webhookSecretError && (
+                  <p className="text-red-500 text-sm mt-2">
+                    {webhookSecretError}
+                  </p>
+                )}
+              </div>
+              <div>
+                <SettingsInput
+                  label={t(
+                    I18nKey.PROJECT_MANAGEMENT$SERVICE_ACCOUNT_EMAIL_LABEL,
+                  )}
+                  placeholder={t(
+                    I18nKey.PROJECT_MANAGEMENT$SERVICE_ACCOUNT_EMAIL_PLACEHOLDER,
+                  )}
+                  value={serviceAccountEmail}
+                  onChange={handleEmailChange}
+                  className="w-full"
+                  type="email"
+                />
+                {emailError && (
+                  <p className="text-red-500 text-sm mt-2">{emailError}</p>
+                )}
+              </div>
+              <div>
+                <SettingsInput
+                  label={t(
+                    I18nKey.PROJECT_MANAGEMENT$SERVICE_ACCOUNT_API_LABEL,
+                  )}
+                  placeholder={t(
+                    I18nKey.PROJECT_MANAGEMENT$SERVICE_ACCOUNT_API_PLACEHOLDER,
+                  )}
+                  value={serviceAccountApiKey}
+                  onChange={handleApiKeyChange}
+                  className="w-full"
+                  type="password"
+                />
+                {apiKeyError && (
+                  <p className="text-red-500 text-sm mt-2">{apiKeyError}</p>
+                )}
+              </div>
+              <div className="mt-4">
+                <SettingsSwitch
+                  testId="active-toggle"
+                  onToggle={setIsActive}
+                  isToggled={isActive}
+                >
+                  {t(I18nKey.PROJECT_MANAGEMENT$ACTIVE_TOGGLE_LABEL)}
+                </SettingsSwitch>
+              </div>
+            </>
+          )}
         </div>
         <div className="flex flex-col gap-2 w-full mt-4">
-          <BrandButton
-            variant="primary"
-            onClick={handleConnect}
-            data-testid="connect-button"
-            type="button"
-            className="w-full"
-            isDisabled={isConnectDisabled}
-          >
-            {t(I18nKey.PROJECT_MANAGEMENT$CONNECT_BUTTON_LABEL)}
-          </BrandButton>
+          {/* Hide the connect/edit button if workspace exists but is not editable */}
+          {(!existingWorkspace || isWorkspaceEditable) && (
+            <BrandButton
+              variant="primary"
+              onClick={handleConnect}
+              data-testid="connect-button"
+              type="button"
+              className="w-full"
+              isDisabled={isConnectDisabled}
+            >
+              {(() => {
+                if (existingWorkspace && showConfigurationFields) {
+                  return t(I18nKey.PROJECT_MANAGEMENT$EDIT_BUTTON_LABEL);
+                }
+                return t(I18nKey.PROJECT_MANAGEMENT$CONNECT_BUTTON_LABEL);
+              })()}
+            </BrandButton>
+          )}
           <BrandButton
             variant="secondary"
             onClick={handleClose}
