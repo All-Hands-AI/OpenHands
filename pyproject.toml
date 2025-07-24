@@ -108,7 +108,7 @@ third_party_runtimes = [ "e2b", "modal", "runloop-api-client", "daytona" ]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-ruff = "0.12.4"
+ruff = "0.12.5"
 mypy = "1.17.0"
 pre-commit = "4.2.0"
 build = "*"
