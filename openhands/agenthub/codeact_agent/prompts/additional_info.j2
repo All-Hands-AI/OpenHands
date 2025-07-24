@@ -1,6 +1,7 @@
 {% if repository_info %}
 <REPOSITORY_INFO>
 At the user's request, repository {{ repository_info.repo_name }} has been cloned to {{ repository_info.repo_directory }} in the current working directory.
+{% if repository_info.repo_url %}Repository URL: {{ repository_info.repo_url }}{% endif %}
 </REPOSITORY_INFO>
 {% endif %}
 {% if repository_instructions -%}
