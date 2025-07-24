@@ -176,8 +176,8 @@ class GitHandler:
         if result.exit_code != 0:
             return ''
 
-        #TODO: The command echoes the bash script. Why?
-        content = result.content.split(f"{unique_id}")[1]
+        # TODO: The command echoes the bash script. Why?
+        content = result.content.split(f'{unique_id}')[1]
 
         return content
 
