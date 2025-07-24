@@ -303,20 +303,22 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
 
         if public:
             url_parts = query.split('/')
-            if len(url_parts) >= 5:  # https:, '', domain, workspace, repo
-                org = url_parts[3]
-                repo_name = url_parts[4]
-                # Add is:public to the query to ensure we only search for public repositories
-                params['q'] = f'in:name {org}/{repo_name} is:public'
+            if len(url_parts) < 4:
+                return []
 
-        user = await self.get_user()
+            org = url_parts[3]
+            repo_name = url_parts[4]
+            # Add is:public to the query to ensure we only search for public repositories
+            params['q'] = f'in:name {org}/{repo_name} is:public'
+
         # Perhaps we should go through all orgs and the search for repos under every org
         # Currently it will only search user repos, and org repos when '/' is in the name
-        if '/' in query:
+        if not public and '/' in query:
             org, repo_query = query.split('/', 1)
             query_with_user = f'org:{org} in:name {repo_query}'
             params['q'] = query_with_user
-        else:
+        elif not public:
+            user = await self.get_user()
             params['q'] = f'in:name {query} user:{user.login}'
 
         response, _ = await self._make_request(url, params)
