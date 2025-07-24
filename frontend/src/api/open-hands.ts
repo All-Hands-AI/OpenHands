@@ -183,7 +183,7 @@ class OpenHands {
       }
     >
   > {
-    const url = `/conversation/${conversationId}/batch`;
+    const url = `/feedback/conversation/${conversationId}/batch`;
     const { data } = await openHands.post<
       Record<
         string,
