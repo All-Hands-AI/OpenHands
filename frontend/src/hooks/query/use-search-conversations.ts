@@ -5,6 +5,7 @@ export const useSearchConversations = (
   selectedRepository?: string,
   conversationTrigger?: string,
   limit: number = 20,
+  cacheDisabled: boolean = false,
 ) =>
   useQuery({
     queryKey: [
@@ -21,6 +22,6 @@ export const useSearchConversations = (
         limit,
       ),
     enabled: true, // Always enabled since parameters are optional
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    gcTime: 1000 * 60 * 15, // 15 minutes
+    staleTime: cacheDisabled ? 0 : 1000 * 60 * 5, // 5 minutes
+    gcTime: cacheDisabled ? 0 : 1000 * 60 * 15, // 15 minutes
   });

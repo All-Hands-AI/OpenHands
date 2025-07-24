@@ -1,84 +1,65 @@
-import {
-  cloneElement,
-  isValidElement,
-  type PropsWithChildren,
-  type ReactElement,
-} from "react";
+import { type PropsWithChildren, type ReactElement } from "react";
 import type { HTMLProps } from "../../shared/types";
 import { cn } from "../../shared/utils/cn";
-import { Typography } from "../typography/Typography";
-
-import { invariant } from "../../shared/utils/invariant";
-import { interactiveChipStyles, type InteractiveChipType } from "./utils";
+import { cloneIcon } from "../../shared/utils/clone-icon";
+import "./index.css";
+import {
+  buttonStyles,
+  useAndApplyBoldTextWidth,
+  type InteractiveChipType,
+} from "./utils";
 
 export type InteractiveChipProps = Omit<
-  HTMLProps<"div">,
-  "label" | "aria-disabled" | "tabIndex"
+  HTMLProps<"button">,
+  "aria-disabled"
 > & {
+  chipType?: InteractiveChipType;
   start?: ReactElement<HTMLProps<"svg">>;
-  onStartClick?: React.MouseEventHandler<HTMLButtonElement>;
   end?: ReactElement<HTMLProps<"svg">>;
-  onEndClick?: React.MouseEventHandler<HTMLButtonElement>;
-  type?: InteractiveChipType;
-  disabled?: boolean;
 };
 
 export const InteractiveChip = ({
+  chipType = "elevated",
   className,
+  children,
   start,
   end,
-  type = "elevated",
-  children,
-  disabled = false,
-  onStartClick,
-  onEndClick,
   ...props
 }: PropsWithChildren<InteractiveChipProps>) => {
-  invariant(typeof children === "string", "Children must be string");
-
-  const iconCss = cn("w-4 h-4 text-inherit");
-  const buttonCss = cn(disabled ? "cursor-not-allowed" : "cursor-pointer");
-
-  const interactiveChipClassName = interactiveChipStyles[type];
+  const buttonClassNames = buttonStyles[chipType];
+  const iconCss = "w-6 h-6";
+  const hasIcons = start || end;
+  const textRef = useAndApplyBoldTextWidth(children, "text-increase-size");
 
   return (
-    <div
+    <button
       {...props}
-      data-disabled={disabled ? "true" : "false"}
-      aria-disabled={disabled ? "true" : "false"}
+      aria-disabled={props.disabled ? "true" : "false"}
       className={cn(
-        "flex flex-row items-center p-1 gap-x-1 rounded-lg",
-        "active:data-[disabled=false]:scale-90 transition",
-        interactiveChipClassName,
-        className
+        "px-1.5 py-1 min-w-32",
+        "flex flex-row items-center gap-x-2",
+        hasIcons ? " justify-between" : " justify-center",
+        "group enabled:cursor-pointer focus:outline-0",
+        buttonClassNames.button
       )}
     >
-      {start && isValidElement(start) ? (
-        <button
-          tabIndex={disabled ? -1 : 0}
-          onClick={onStartClick}
-          className={cn(buttonCss)}
-        >
-          {cloneElement(start, {
-            className: iconCss,
-          })}
-        </button>
-      ) : null}
-      <Typography.Text fontSize="xs" className="text-inherit">
-        {children}
-      </Typography.Text>
+      {cloneIcon(start, {
+        className: cn(iconCss, buttonClassNames.icon),
+      })}
 
-      {end && isValidElement(end) ? (
-        <button
-          tabIndex={disabled ? -1 : 0}
-          onClick={onEndClick}
-          className={cn(buttonCss)}
-        >
-          {cloneElement(end, {
-            className: iconCss,
-          })}
-        </button>
-      ) : null}
-    </div>
+      <span
+        ref={textRef}
+        className={cn(
+          "tg-family-outfit tg-xs text-center font-normal line-1",
+          buttonClassNames.text,
+          !props.disabled && `button-bold-text`
+        )}
+      >
+        {children}
+      </span>
+      {cloneIcon(end, {
+        className: cn(iconCss, buttonClassNames.icon),
+      })}
+    </button>
   );
 };
