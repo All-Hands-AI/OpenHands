@@ -229,6 +229,7 @@ export function ConversationSubscriptionsProvider({
           console.warn(
             `Socket for conversation ${conversationId} CONNECTION ERROR:`,
             error,
+          );
         });
 
         socket.on("disconnect", (reason) => {
