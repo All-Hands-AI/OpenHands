@@ -255,6 +255,11 @@ class CheckUserActivationMiddleware(BaseHTTPMiddleware):
                     return await call_next(request)
 
         if '/api/conversations/' in request.url.path:
+            path_parts = request.url.path.split('/')
+
+            # Bypass authentication for visibility endpoints
+            if len(path_parts) > 0 and path_parts[-1] == 'visibility':
+                return await call_next(request)
             if (
                 request.state
                 and hasattr(request.state, 'user_id')
@@ -323,6 +328,10 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
                     return await call_next(request)
         if '/api/conversations/' in request.url.path:
             path_parts = request.url.path.split('/')
+
+            # Bypass authentication for visibility endpoints
+            if len(path_parts) > 0 and path_parts[-1] == 'visibility':
+                return await call_next(request)
 
             conversation_index = path_parts.index('conversations')
             if len(path_parts) > conversation_index + 1:

@@ -66,7 +66,6 @@ class ConversationModule:
         try:
             query = Conversation.select().where(
                 (Conversation.c.conversation_id == conversation_id)
-                & (Conversation.c.user_id == user_id)
             )
             existing_record = await database.fetch_one(query)
 
