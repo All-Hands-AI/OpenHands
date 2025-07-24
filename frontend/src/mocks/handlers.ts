@@ -186,6 +186,7 @@ export const handlers = [
       FEATURE_FLAGS: {
         ENABLE_BILLING: false,
         HIDE_LLM_SETTINGS: mockSaas,
+        HIDE_CONVERSATION_UX_IMPROVEMENTS: false,
       },
     };
 

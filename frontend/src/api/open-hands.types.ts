@@ -55,6 +55,7 @@ export interface GetConfigResponse {
     ENABLE_BILLING: boolean;
     HIDE_LLM_SETTINGS: boolean;
     HIDE_MICROAGENT_MANAGEMENT?: boolean;
+    HIDE_CONVERSATION_UX_IMPROVEMENTS?: boolean;
   };
 }
 

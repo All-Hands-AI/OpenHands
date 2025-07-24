@@ -14,6 +14,8 @@ class ServerConfig(ServerConfigInterface):
     hide_llm_settings = os.environ.get('HIDE_LLM_SETTINGS', 'false') == 'true'
     # This config is used to hide the microagent management page from the users for now. We will remove this once we release the new microagent management page.
     hide_microagent_management = True
+    # This config is used to hide the conversation UX improvements from the users for now. We will remove this once we release the conversation UX improvements.
+    hide_conversation_ux_improvements = True
     settings_store_class: str = (
         'openhands.storage.settings.file_settings_store.FileSettingsStore'
     )
@@ -45,6 +47,7 @@ class ServerConfig(ServerConfigInterface):
                 'ENABLE_BILLING': self.enable_billing,
                 'HIDE_LLM_SETTINGS': self.hide_llm_settings,
                 'HIDE_MICROAGENT_MANAGEMENT': self.hide_microagent_management,
+                'HIDE_CONVERSATION_UX_IMPROVEMENTS': self.hide_conversation_ux_improvements,
             },
         }
 
