@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Callable
+from uuid import uuid4
 
 
 @dataclass
@@ -75,36 +76,10 @@ class GitHandler:
         output = self.execute(cmd, self.cwd)
         return output.exit_code == 0
 
-    def _get_valid_ref(self) -> str | None:
-        """
-        Determines a valid Git reference for comparison.
-
-        Returns:
-            str | None: A valid Git reference or None if no valid reference is found.
-        """
-        current_branch = self._get_current_branch()
-        default_branch = self._get_default_branch()
-
-        ref_current_branch = f'origin/{current_branch}'
-        ref_non_default_branch = f'$(git --no-pager merge-base HEAD "$(git --no-pager rev-parse --abbrev-ref origin/{default_branch})")'
-        ref_default_branch = 'origin/' + default_branch
-        ref_new_repo = '$(git --no-pager rev-parse --verify 4b825dc642cb6eb9a060e54bf8d69288fbee4904)'  # compares with empty tree
-
-        refs = [
-            ref_current_branch,
-            ref_non_default_branch,
-            ref_default_branch,
-            ref_new_repo,
-        ]
-        for ref in refs:
-            if self._verify_ref_exists(ref):
-                return ref
-
-        return None
-
     def _get_ref_content(self, file_path: str) -> str:
         """
         Retrieves the content of a file from a valid Git reference.
+        Finds the git repository closest to the file in the tree and executes the command in that context.
 
         Args:
             file_path (str): The file path in the repository.
@@ -112,87 +87,165 @@ class GitHandler:
         Returns:
             str: The content of the file from the reference, or an empty string if unavailable.
         """
-        ref = self._get_valid_ref()
-        if not ref:
+        if not self.cwd:
             return ''
 
-        cmd = f'git --no-pager show {ref}:{file_path}'
-        output = self.execute(cmd, self.cwd)
-        return output.content if output.exit_code == 0 else ''
+        unique_id = uuid4().hex
 
-    def _get_default_branch(self) -> str:
-        """
-        Retrieves the primary Git branch name of the repository.
+        # Single bash command that finds the closest git repository to the file and gets the ref content
+        cmd = f"""bash -c '
+        # Convert to absolute path
+        file_path="$(realpath "{file_path}")"
 
-        Returns:
-            str: The name of the primary branch.
-        """
-        cmd = 'git --no-pager remote show origin | grep "HEAD branch"'
-        output = self.execute(cmd, self.cwd)
-        return output.content.split()[-1].strip()
+        # Find the closest git repository by walking up the directory tree
+        current_dir="$(dirname "$file_path")"
+        git_repo_dir=""
 
-    def _get_current_branch(self) -> str:
-        """
-        Retrieves the currently selected Git branch.
+        while [[ "$current_dir" != "/" ]]; do
+            if [[ -d "$current_dir/.git" ]] || git -C "$current_dir" rev-parse --git-dir >/dev/null 2>&1; then
+                git_repo_dir="$current_dir"
+                break
+            fi
+            current_dir="$(dirname "$current_dir")"
+        done
 
-        Returns:
-            str: The name of the current branch.
-        """
-        cmd = 'git --no-pager rev-parse --abbrev-ref HEAD'
-        output = self.execute(cmd, self.cwd)
-        return output.content.strip()
+        # If no git repository found, exit
+        if [[ -z "$git_repo_dir" ]]; then
+            exit 1
+        fi
 
-    def _get_changed_files(self) -> list[str]:
-        """
-        Retrieves a list of changed files compared to a valid Git reference.
+        # Get the file path relative to the git repository root
+        repo_root="$(cd "$git_repo_dir" && git rev-parse --show-toplevel)"
+        relative_file_path="${{file_path#${{repo_root}}/}}"
 
-        Returns:
-            list[str]: A list of changed file paths.
-        """
-        ref = self._get_valid_ref()
-        if not ref:
-            return []
+        # Function to get current branch
+        get_current_branch() {{
+            git -C "$git_repo_dir" rev-parse --abbrev-ref HEAD 2>/dev/null
+        }}
 
-        diff_cmd = f'git --no-pager diff --name-status {ref}'
-        output = self.execute(diff_cmd, self.cwd)
-        if output.exit_code != 0:
-            raise RuntimeError(
-                f'Failed to get diff for ref {ref} in {self.cwd}. Command output: {output.content}'
-            )
-        return output.content.splitlines()
+        # Function to get default branch
+        get_default_branch() {{
+            git -C "$git_repo_dir" remote show origin 2>/dev/null | grep "HEAD branch" | awk "{{print \\$NF}}" || echo "main"
+        }}
 
-    def _get_untracked_files(self) -> list[dict[str, str]]:
-        """
-        Retrieves a list of untracked files in the repository. This is useful for detecting new files.
+        # Function to verify if a ref exists
+        verify_ref_exists() {{
+            git -C "$git_repo_dir" rev-parse --verify "$1" >/dev/null 2>&1
+        }}
 
-        Returns:
-            list[dict[str, str]]: A list of dictionaries containing file paths and statuses.
-        """
-        cmd = 'git --no-pager ls-files --others --exclude-standard'
-        output = self.execute(cmd, self.cwd)
-        obs_list = output.content.splitlines()
-        return (
-            [{'status': 'A', 'path': path} for path in obs_list]
-            if output.exit_code == 0
-            else []
-        )
+        # Get valid reference for comparison
+        current_branch="$(get_current_branch)"
+        default_branch="$(get_default_branch)"
+
+        # Check if origin remote exists
+        has_origin="$(git -C "$git_repo_dir" remote | grep -q "^origin$" && echo "true" || echo "false")"
+
+        if [[ "$has_origin" == "true" ]]; then
+            ref_current_branch="origin/$current_branch"
+            ref_non_default_branch="$(git -C "$git_repo_dir" merge-base HEAD "$(git -C "$git_repo_dir" rev-parse --abbrev-ref origin/$default_branch)" 2>/dev/null || echo "")"
+            ref_default_branch="origin/$default_branch"
+        else
+            # For repositories without origin, try HEAD~1 (previous commit) or empty tree
+            ref_current_branch="HEAD~1"
+            ref_non_default_branch=""
+            ref_default_branch=""
+        fi
+        ref_new_repo="$(git -C "$git_repo_dir" rev-parse --verify 4b825dc642cb6eb9a060e54bf8d69288fbee4904 2>/dev/null || echo "")"  # empty tree
+
+        # Try refs in order of preference
+        valid_ref=""
+        for ref in "$ref_current_branch" "$ref_non_default_branch" "$ref_default_branch" "$ref_new_repo"; do
+            if [[ -n "$ref" ]] && verify_ref_exists "$ref"; then
+                valid_ref="$ref"
+                break
+            fi
+        done
+
+        # If no valid ref found, exit
+        if [[ -z "$valid_ref" ]]; then
+            exit 1
+        fi
+
+        # Get the file content from the reference
+        git -C "$git_repo_dir" show "$valid_ref:$relative_file_path" 2>/dev/null || exit 1
+
+        # {unique_id}'"""
+
+        result = self.execute(cmd, self.cwd)
+
+        if result.exit_code != 0:
+            return ''
+
+        # TODO: The command echoes the bash script. Why?
+        content = result.content.split(f'{unique_id}')[-1]
+
+        return content
 
     def get_git_changes(self) -> list[dict[str, str]] | None:
         """
-        Retrieves the list of changed files in the Git repository.
+        Retrieves the list of changed files in Git repositories.
+        Examines each direct subdirectory of the workspace directory looking for git repositories
+        and returns the changes for each of these directories.
+        Optimized to use a single git command per repository for maximum performance.
 
         Returns:
-            list[dict[str, str]] | None: A list of dictionaries containing file paths and statuses. None if not a git repository.
+            list[dict[str, str]] | None: A list of dictionaries containing file paths and statuses. None if no git repositories found.
         """
-        if not self._is_git_repo():
+        # If cwd is not set, return None
+        if not self.cwd:
             return None
 
-        changes_list = self._get_changed_files()
-        result = parse_git_changes(changes_list)
+        # Single bash command that:
+        # 1. Creates a list of directories to check (current dir + direct subdirectories)
+        # 2. For each directory, checks if it's a git repo and gets status
+        # 3. Outputs in format: REPO_PATH|STATUS|FILE_PATH
+        cmd = """bash -c '
+        {
+            # Check current directory first
+            echo "."
+            # List direct subdirectories (excluding hidden ones)
+            find . -maxdepth 1 -type d ! -name ".*" ! -name "." 2>/dev/null || true
+        } | while IFS= read -r dir; do
+            if [ -d "$dir/.git" ] || git -C "$dir" rev-parse --git-dir >/dev/null 2>&1; then
+                # Get absolute path of the directory
+                # Get git status for this repository
+                git -C "$dir" status --porcelain -uall 2>/dev/null | while IFS= read -r line; do
+                    if [ -n "$line" ]; then
+                        # Extract status (first 2 chars) and file path (from char 3 onwards)
+                        status=$(echo "$line" | cut -c1-2)
+                        file_path=$(echo "$line" | cut -c4-)
+                        # Convert status codes to single character
+                        case "$status" in
+                            "M "*|" M") echo "$dir|M|$file_path" ;;
+                            "A "*|" A") echo "$dir|A|$file_path" ;;
+                            "D "*|" D") echo "$dir|D|$file_path" ;;
+                            "R "*|" R") echo "$dir|R|$file_path" ;;
+                            "C "*|" C") echo "$dir|C|$file_path" ;;
+                            "U "*|" U") echo "$dir|U|$file_path" ;;
+                            "??") echo "$dir|A|$file_path" ;;
+                            *) echo "$dir|M|$file_path" ;;
+                        esac
+                    fi
+                done
+            fi
+        done
+        ' """
 
-        # join with any untracked files
-        result += self._get_untracked_files()
-        return result
+        result = self.execute(cmd.strip(), self.cwd)
+        if result.exit_code != 0 or not result.content.strip():
+            return None
+
+        # Parse the output
+        changes = []
+        for line in result.content.strip().split('\n'):
+            if '|' in line:
+                parts = line.split('|', 2)
+                if len(parts) == 3:
+                    repo_path, status, file_path = parts
+                    file_path = f'{repo_path}/{file_path}'[2:]
+                    changes.append({'status': status, 'path': file_path})
+
+        return changes if changes else None
 
     def get_git_diff(self, file_path: str) -> dict[str, str]:
         """
