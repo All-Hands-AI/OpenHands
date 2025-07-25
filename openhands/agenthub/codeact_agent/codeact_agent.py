@@ -11,17 +11,18 @@ if TYPE_CHECKING:
 
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
 from openhands.agenthub.codeact_agent.tools.bash import create_cmd_run_tool
-from openhands.agenthub.codeact_agent.tools.browser import BrowserTool
 from openhands.agenthub.codeact_agent.tools.condensation_request import (
     CondensationRequestTool,
 )
-from openhands.agenthub.codeact_agent.tools.finish import FinishTool
 from openhands.agenthub.codeact_agent.tools.ipython import IPythonTool
 from openhands.agenthub.codeact_agent.tools.llm_based_edit import LLMBasedFileEditTool
-from openhands.agenthub.codeact_agent.tools.str_replace_editor import (
-    create_str_replace_editor_tool,
-)
 from openhands.agenthub.codeact_agent.tools.think import ThinkTool
+from openhands.agenthub.codeact_agent.tools.unified import (
+    BashTool,
+    BrowserTool,
+    FileEditorTool,
+    FinishTool,
+)
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
@@ -116,24 +117,31 @@ class CodeActAgent(Agent):
             )
 
         tools = []
+        
+        # New unified tools
         if self.config.enable_cmd:
-            tools.append(create_cmd_run_tool(use_short_description=use_short_tool_desc))
-        if self.config.enable_think:
-            tools.append(ThinkTool)
+            tools.append(BashTool().get_schema())
         if self.config.enable_finish:
-            tools.append(FinishTool)
-        if self.config.enable_condensation_request:
-            tools.append(CondensationRequestTool)
+            tools.append(FinishTool().get_schema())
         if self.config.enable_browsing:
             if sys.platform == 'win32':
                 logger.warning('Windows runtime does not support browsing yet')
             else:
-                tools.append(BrowserTool)
+                tools.append(BrowserTool().get_schema())
+        if self.config.enable_editor:
+            tools.append(FileEditorTool().get_schema())
+        
+        # Legacy tools (to be migrated)
+        if self.config.enable_think:
+            tools.append(ThinkTool)
+        if self.config.enable_condensation_request:
+            tools.append(CondensationRequestTool)
         if self.config.enable_jupyter:
             tools.append(IPythonTool)
         if self.config.enable_llm_editor:
             tools.append(LLMBasedFileEditTool)
-        elif self.config.enable_editor:
+        elif self.config.enable_editor and not any(tool.get('function', {}).get('name') == 'str_replace_editor' for tool in tools):
+            # Fallback to old editor if FileEditorTool wasn't added
             tools.append(
                 create_str_replace_editor_tool(
                     use_short_description=use_short_tool_desc
