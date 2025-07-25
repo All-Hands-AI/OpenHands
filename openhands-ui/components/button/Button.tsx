@@ -40,7 +40,8 @@ export const Button = ({
         "flex flex-row items-center gap-x-8",
         hasIcons ? " justify-between" : " justify-center",
         "group enabled:cursor-pointer focus:outline-0",
-        buttonClassNames.button
+        buttonClassNames.button,
+        className
       )}
     >
       {cloneIcon(start, {

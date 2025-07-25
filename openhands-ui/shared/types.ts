@@ -1,6 +1,7 @@
 export type BaseProps = {
   className?: string;
   style?: React.CSSProperties;
+  testId?: string;
 };
 
 export type HTMLProps<T extends React.ElementType> = Omit<
