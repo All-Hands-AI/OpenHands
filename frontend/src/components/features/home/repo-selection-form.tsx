@@ -3,15 +3,14 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { useRepositoryBranches } from "#/hooks/query/use-repository-branches";
-import { useGitRepositories } from "#/hooks/query/use-git-repositories";
 import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation";
 import { Branch, GitRepository } from "#/types/git";
 import { BrandButton } from "../settings/brand-button";
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { Provider } from "#/types/settings";
-import { SettingsDropdownInput } from "../settings/settings-dropdown-input";
-import { GitRepositoryAutocomplete } from "../../common/git-repository-autocomplete";
-import { BranchDropdown } from "./repository-selection";
+import { GitProviderDropdown } from "../../common/git-provider-dropdown";
+import { GitRepositoryDropdown } from "../../common/git-repository-dropdown";
+import { GitBranchDropdown } from "../../common/git-branch-dropdown";
 
 interface RepositorySelectionFormProps {
   onRepoSelection: (repo: GitRepository | null) => void;
@@ -31,14 +30,9 @@ export function RepositorySelectionForm({
   // Add a ref to track if the branch was manually cleared by the user
   const branchManuallyClearedRef = React.useRef<boolean>(false);
   const { providers } = useUserProviders();
-  const { data: repositoriesData, isError: isRepositoriesError } =
-    useGitRepositories({
-      provider: selectedProvider || providers[0],
-      enabled: !!selectedProvider,
-    });
-
-  const { data: branches, isLoading: isLoadingBranches } =
-    useRepositoryBranches(selectedRepository?.full_name || null);
+  const { data: branches } = useRepositoryBranches(
+    selectedRepository?.full_name || null,
+  );
   const {
     mutate: createConversation,
     isPending,
@@ -54,69 +48,25 @@ export function RepositorySelectionForm({
     }
   }, [providers, selectedProvider]);
 
-  // Auto-select main or master branch if it exists, but only if the branch wasn't manually cleared
-  React.useEffect(() => {
-    if (
-      branches &&
-      branches.length > 0 &&
-      !selectedBranch &&
-      !isLoadingBranches &&
-      !branchManuallyClearedRef.current // Only auto-select if not manually cleared
-    ) {
-      // Look for main or master branch
-      const mainBranch = branches.find((branch) => branch.name === "main");
-      const masterBranch = branches.find((branch) => branch.name === "master");
-
-      // Select main if it exists, otherwise select master if it exists
-      if (mainBranch) {
-        setSelectedBranch(mainBranch);
-      } else if (masterBranch) {
-        setSelectedBranch(masterBranch);
-      }
-    }
-  }, [branches, isLoadingBranches, selectedBranch]);
-
   // We check for isSuccess because the app might require time to render
   // into the new conversation screen after the conversation is created.
   const isCreatingConversation =
     isPending || isSuccess || isCreatingConversationElsewhere;
 
-  // Create provider dropdown items
-  const providerItems = React.useMemo(
-    () =>
-      providers.map((provider) => ({
-        key: provider,
-        label: provider.charAt(0).toUpperCase() + provider.slice(1), // Capitalize first letter
-      })),
-    [providers],
-  );
-
-  const handleProviderSelection = (key: React.Key | null) => {
-    const provider = key as Provider | null;
+  const handleProviderSelection = (provider: Provider | null) => {
     setSelectedProvider(provider);
     setSelectedRepository(null); // Reset repository selection when provider changes
     setSelectedBranch(null); // Reset branch selection when provider changes
     onRepoSelection(null); // Reset parent component's selected repo
   };
 
-  const handleBranchSelection = (key: React.Key | null) => {
-    const selectedBranchObj = branches?.find((branch) => branch.name === key);
+  const handleBranchSelection = (branchName: string | null) => {
+    const selectedBranchObj = branches?.find(
+      (branch) => branch.name === branchName,
+    );
     setSelectedBranch(selectedBranchObj || null);
     // Reset the manually cleared flag when a branch is explicitly selected
     branchManuallyClearedRef.current = false;
-  };
-
-  const handleBranchInputChange = (value: string) => {
-    // Clear the selected branch if the input is empty or contains only whitespace
-    // This fixes the issue where users can't delete the entire default branch name
-    if (value === "" || value.trim() === "") {
-      setSelectedBranch(null);
-      // Set the flag to indicate that the branch was manually cleared
-      branchManuallyClearedRef.current = true;
-    } else {
-      // Reset the flag when the user starts typing again
-      branchManuallyClearedRef.current = false;
-    }
   };
 
   // Render the provider dropdown
@@ -127,71 +77,52 @@ export function RepositorySelectionForm({
     }
 
     return (
-      <SettingsDropdownInput
-        testId="provider-dropdown"
-        name="provider-dropdown"
+      <GitProviderDropdown
+        providers={providers}
+        value={selectedProvider}
         placeholder="Select Provider"
-        items={providerItems}
-        wrapperClassName="max-w-[500px]"
-        onSelectionChange={handleProviderSelection}
-        selectedKey={selectedProvider || undefined}
+        className="max-w-[500px]"
+        onChange={handleProviderSelection}
       />
     );
   };
 
-  // Extract repositories from paginated data structure
-  const repositories = React.useMemo(() => {
-    if (!repositoriesData?.pages) return [];
-    return repositoriesData.pages.flatMap((page) => page.data);
-  }, [repositoriesData]);
-
   // Render the repository selector using our new component
   const renderRepositorySelector = () => {
-    const handleRepoSelection = (key: React.Key | null) => {
-      const repoId = key?.toString();
-      const selectedRepo = repositories.find((repo) => repo.id === repoId);
-      if (selectedRepo) onRepoSelection(selectedRepo);
-      setSelectedRepository(selectedRepo || null);
+    const handleRepoSelection = (repository?: GitRepository) => {
+      if (repository) onRepoSelection(repository);
+      setSelectedRepository(repository || null);
       setSelectedBranch(null); // Reset branch selection when repo changes
       branchManuallyClearedRef.current = false; // Reset the flag when repo changes
     };
 
     return (
-      <GitRepositoryAutocomplete
+      <GitRepositoryDropdown
         provider={selectedProvider || providers[0]}
+        value={selectedRepository?.id || null}
         placeholder={
           selectedProvider
             ? "Search repositories..."
             : "Please select a provider first"
         }
         disabled={!selectedProvider}
-        onSelectionChange={handleRepoSelection}
-        errorMessage={
-          isRepositoriesError ? "Failed to load repositories" : undefined
-        }
+        onChange={handleRepoSelection}
         className="max-w-[500px]"
       />
     );
   };
 
   // Render the branch selector
-  const renderBranchSelector = () => {
-    const branchesItems =
-      branches?.map((branch) => ({
-        key: branch.name,
-        label: branch.name,
-      })) || [];
-
-    return (
-      <BranchDropdown
-        items={branchesItems}
-        onSelectionChange={handleBranchSelection}
-        onInputChange={handleBranchInputChange}
-        isDisabled={!selectedRepository || isLoadingBranches}
-        selectedKey={selectedBranch?.name}
-      />
-    );
-  };
+  const renderBranchSelector = () => (
+    <GitBranchDropdown
+      repositoryName={selectedRepository?.full_name}
+      value={selectedBranch?.name || null}
+      placeholder="Select branch..."
+      className="max-w-[500px]"
+      disabled={!selectedRepository}
+      onChange={handleBranchSelection}
+    />
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -206,7 +137,6 @@ export function RepositorySelectionForm({
         isDisabled={
           !selectedRepository ||
           isCreatingConversation ||
-          isRepositoriesError ||
           (providers.length > 1 && !selectedProvider)
         }
         onClick={() =>

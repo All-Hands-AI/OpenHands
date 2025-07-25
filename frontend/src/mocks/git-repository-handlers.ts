@@ -21,9 +21,9 @@ const generateMockRepositories = (
 
 // Mock repositories for each provider
 const MOCK_REPOSITORIES = {
-  github: generateMockRepositories(100, "github"),
-  gitlab: generateMockRepositories(100, "gitlab"),
-  bitbucket: generateMockRepositories(100, "bitbucket"),
+  github: generateMockRepositories(120, "github"),
+  gitlab: generateMockRepositories(120, "gitlab"),
+  bitbucket: generateMockRepositories(120, "bitbucket"),
 };
 
 export const GIT_REPOSITORY_HANDLERS = [

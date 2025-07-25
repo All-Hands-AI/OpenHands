@@ -44,6 +44,7 @@
     "react-markdown": "^10.1.0",
     "react-redux": "^9.2.0",
     "react-router": "^7.7.0",
+    "react-select": "^5.10.2",
     "react-syntax-highlighter": "^15.6.1",
     "react-textarea-autosize": "^8.5.9",
     "remark-breaks": "^4.0.0",
