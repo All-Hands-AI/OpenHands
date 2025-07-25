@@ -277,3 +277,21 @@ def get_shell_config_path() -> Path:
     """Get the path to the shell configuration file."""
     manager = ShellConfigManager()
     return manager.get_shell_config_path()
+
+
+def alias_setup_declined() -> bool:
+    """Check if the user has previously declined alias setup.
+
+    Returns:
+        True if user has declined alias setup, False otherwise.
+    """
+    marker_file = Path.home() / '.openhands' / '.cli_alias_setup_declined'
+    return marker_file.exists()
+
+
+def mark_alias_setup_declined() -> None:
+    """Mark that the user has declined alias setup."""
+    openhands_dir = Path.home() / '.openhands'
+    openhands_dir.mkdir(exist_ok=True)
+    marker_file = openhands_dir / '.cli_alias_setup_declined'
+    marker_file.touch()

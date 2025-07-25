@@ -19,7 +19,13 @@ describe("AuthModal", () => {
   });
 
   it("should render the GitHub and GitLab buttons", () => {
-    render(<AuthModal githubAuthUrl="mock-url" appMode="saas" />);
+    render(
+      <AuthModal
+        githubAuthUrl="mock-url"
+        appMode="saas"
+        providersConfigured={["github", "gitlab"]}
+      />,
+    );
 
     const githubButton = screen.getByRole("button", {
       name: "GITHUB$CONNECT_TO_GITHUB",
@@ -35,7 +41,13 @@ describe("AuthModal", () => {
   it("should redirect to GitHub auth URL when GitHub button is clicked", async () => {
     const user = userEvent.setup();
     const mockUrl = "https://github.com/login/oauth/authorize";
-    render(<AuthModal githubAuthUrl={mockUrl} appMode="saas" />);
+    render(
+      <AuthModal
+        githubAuthUrl={mockUrl}
+        appMode="saas"
+        providersConfigured={["github"]}
+      />,
+    );
 
     const githubButton = screen.getByRole("button", {
       name: "GITHUB$CONNECT_TO_GITHUB",
@@ -51,7 +63,6 @@ describe("AuthModal", () => {
     // Find the terms of service section using data-testid
     const termsSection = screen.getByTestId("auth-modal-terms-of-service");
     expect(termsSection).toBeInTheDocument();
-
 
     // Check that all text content is present in the paragraph
     expect(termsSection).toHaveTextContent(
