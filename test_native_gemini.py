@@ -24,9 +24,9 @@ def test_native_gemini():
     if not NATIVE_AVAILABLE:
         return {'success': False, 'error': 'google-generativeai not installed'}
 
-    api_key = os.getenv('GOOGLE_API_KEY')
+    api_key = os.getenv('GEMINI_API_KEY')
     if not api_key:
-        return {'success': False, 'error': 'GOOGLE_API_KEY not set'}
+        return {'success': False, 'error': 'GEMINI_API_KEY not set'}
 
     print('\n🚀 Testing Native Google Generative AI')
     print('=' * 40)
@@ -142,8 +142,8 @@ def main():
         print('Install with: pip install google-generativeai')
         return
 
-    if not os.getenv('GOOGLE_API_KEY'):
-        print('❌ Error: GOOGLE_API_KEY environment variable not set')
+    if not os.getenv('GEMINI_API_KEY'):
+        print('❌ Error: GEMINI_API_KEY environment variable not set')
         return
 
     results = test_native_gemini()

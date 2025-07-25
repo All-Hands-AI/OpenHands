@@ -136,9 +136,9 @@ def main():
     print('=' * 50)
 
     # Check for API key
-    if not os.getenv('GOOGLE_API_KEY'):
-        print('❌ Error: GOOGLE_API_KEY environment variable not set')
-        print('Please set your Google API key: export GOOGLE_API_KEY=your_key_here')
+    if not os.getenv('GEMINI_API_KEY'):
+        print('❌ Error: GEMINI_API_KEY environment variable not set')
+        print('Please set your Google API key: export GEMINI_API_KEY=your_key_here')
         return
 
     results = []

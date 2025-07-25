@@ -18,7 +18,7 @@ def create_openhands_completion_function():
     # OpenHands default config (from llm_config.py)
     config = {
         'model': 'gemini-2.5-pro',
-        'api_key': os.getenv('GOOGLE_API_KEY'),
+        'api_key': os.getenv('GEMINI_API_KEY'),
         'base_url': None,
         'api_version': None,
         'custom_llm_provider': None,
@@ -166,8 +166,8 @@ def main():
     print('🔍 OpenHands LiteLLM Performance Test')
     print('=' * 50)
 
-    if not os.getenv('GOOGLE_API_KEY'):
-        print('❌ Error: GOOGLE_API_KEY environment variable not set')
+    if not os.getenv('GEMINI_API_KEY'):
+        print('❌ Error: GEMINI_API_KEY environment variable not set')
         return
 
     # Test different configurations

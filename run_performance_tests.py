@@ -41,10 +41,10 @@ def check_dependencies():
 
 def check_api_key():
     """Check if Google API key is set."""
-    if not os.getenv('GOOGLE_API_KEY'):
-        print('❌ GOOGLE_API_KEY environment variable not set')
+    if not os.getenv('GEMINI_API_KEY'):
+        print('❌ GEMINI_API_KEY environment variable not set')
         print('Please set your Google API key:')
-        print('   export GOOGLE_API_KEY=your_key_here')
+        print('   export GEMINI_API_KEY=your_key_here')
         return False
     return True
 
