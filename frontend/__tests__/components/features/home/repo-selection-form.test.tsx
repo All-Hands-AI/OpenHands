@@ -115,7 +115,7 @@ describe("RepositorySelectionForm", () => {
       OpenHands,
       "retrieveUserGitRepositories",
     );
-    retrieveUserGitRepositoriesSpy.mockResolvedValue(MOCK_REPOS);
+    retrieveUserGitRepositoriesSpy.mockResolvedValue({ data: MOCK_REPOS, nextPage: null });
 
     renderForm();
 
@@ -143,7 +143,7 @@ describe("RepositorySelectionForm", () => {
       OpenHands,
       "retrieveUserGitRepositories",
     );
-    retrieveUserGitRepositoriesSpy.mockResolvedValue(MOCK_REPOS);
+    retrieveUserGitRepositoriesSpy.mockResolvedValue({ data: MOCK_REPOS, nextPage: null });
 
     renderForm();
     expect(await screen.findByTestId("repo-dropdown")).toBeInTheDocument();
@@ -200,7 +200,7 @@ describe("RepositorySelectionForm", () => {
     );
 
     searchGitReposSpy.mockResolvedValue(MOCK_SEARCH_REPOS);
-    retrieveUserGitRepositoriesSpy.mockResolvedValue(MOCK_REPOS);
+    retrieveUserGitRepositoriesSpy.mockResolvedValue({ data: MOCK_REPOS, nextPage: null });
 
     renderForm();
 

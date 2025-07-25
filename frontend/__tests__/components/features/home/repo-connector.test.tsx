@@ -85,7 +85,7 @@ describe("RepoConnector", () => {
       OpenHands,
       "retrieveUserGitRepositories",
     );
-    retrieveUserGitRepositoriesSpy.mockResolvedValue(MOCK_RESPOSITORIES);
+    retrieveUserGitRepositoriesSpy.mockResolvedValue({ data: MOCK_RESPOSITORIES, nextPage: null });
 
     renderRepoConnector();
 
@@ -104,7 +104,7 @@ describe("RepoConnector", () => {
       OpenHands,
       "retrieveUserGitRepositories",
     );
-    retrieveUserGitRepositoriesSpy.mockResolvedValue(MOCK_RESPOSITORIES);
+    retrieveUserGitRepositoriesSpy.mockResolvedValue({ data: MOCK_RESPOSITORIES, nextPage: null });
 
     renderRepoConnector();
 
@@ -180,7 +180,7 @@ describe("RepoConnector", () => {
       OpenHands,
       "retrieveUserGitRepositories",
     );
-    retrieveUserGitRepositoriesSpy.mockResolvedValue(MOCK_RESPOSITORIES);
+    retrieveUserGitRepositoriesSpy.mockResolvedValue({ data: MOCK_RESPOSITORIES, nextPage: null });
 
     renderRepoConnector();
 
@@ -217,7 +217,7 @@ describe("RepoConnector", () => {
       OpenHands,
       "retrieveUserGitRepositories",
     );
-    retrieveUserGitRepositoriesSpy.mockResolvedValue(MOCK_RESPOSITORIES);
+    retrieveUserGitRepositoriesSpy.mockResolvedValue({ data: MOCK_RESPOSITORIES, nextPage: null });
 
     renderRepoConnector();
 

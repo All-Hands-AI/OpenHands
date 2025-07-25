@@ -98,7 +98,7 @@ describe("HomeScreen", () => {
       OpenHands,
       "retrieveUserGitRepositories",
     );
-    retrieveUserGitRepositoriesSpy.mockResolvedValue(MOCK_RESPOSITORIES);
+    retrieveUserGitRepositoriesSpy.mockResolvedValue({ data: MOCK_RESPOSITORIES, nextPage: null });
 
     renderHomeScreen();
 
@@ -133,7 +133,7 @@ describe("HomeScreen", () => {
       OpenHands,
       "retrieveUserGitRepositories",
     );
-    retrieveUserGitRepositoriesSpy.mockResolvedValue(MOCK_RESPOSITORIES);
+    retrieveUserGitRepositoriesSpy.mockResolvedValue({ data: MOCK_RESPOSITORIES, nextPage: null });
 
     renderHomeScreen();
 
@@ -208,7 +208,7 @@ describe("HomeScreen", () => {
         OpenHands,
         "retrieveUserGitRepositories",
       );
-      retrieveUserGitRepositoriesSpy.mockResolvedValue(MOCK_RESPOSITORIES);
+      retrieveUserGitRepositoriesSpy.mockResolvedValue({ data: MOCK_RESPOSITORIES, nextPage: null });
     });
 
     it("should disable the other launch buttons when the header launch button is clicked", async () => {

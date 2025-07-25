@@ -162,9 +162,10 @@ describe("MicroagentManagement", () => {
     vi.clearAllMocks();
     vi.restoreAllMocks();
     // Setup default mock for retrieveUserGitRepositories
-    vi.spyOn(OpenHands, "retrieveUserGitRepositories").mockResolvedValue([
-      ...mockRepositories,
-    ]);
+    vi.spyOn(OpenHands, "retrieveUserGitRepositories").mockResolvedValue({
+      data: [...mockRepositories],
+      nextPage: null,
+    });
     // Setup default mock for getRepositoryMicroagents
     vi.spyOn(OpenHands, "getRepositoryMicroagents").mockResolvedValue([
       ...mockMicroagents,
@@ -459,7 +460,10 @@ describe("MicroagentManagement", () => {
       OpenHands,
       "retrieveUserGitRepositories",
     );
-    retrieveUserGitRepositoriesSpy.mockResolvedValue([]);
+    retrieveUserGitRepositoriesSpy.mockResolvedValue({
+      data: [],
+      nextPage: null,
+    });
 
     renderMicroagentManagement();
 
