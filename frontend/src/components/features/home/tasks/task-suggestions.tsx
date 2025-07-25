@@ -36,12 +36,12 @@ export function TaskSuggestions({ filterFor }: TaskSuggestionsProps) {
       )}
     >
       <div className="flex items-center gap-2">
-        <Typography.H2 className="text-sm leading-[16px] text-white font-medium">
+        <Typography.Text className="text-sm leading-[16px] text-white font-medium">
           {t(I18nKey.TASKS$SUGGESTED_TASKS)}
-        </Typography.H2>
+        </Typography.Text>
       </div>
 
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col">
         {isLoading && <TaskSuggestionsSkeleton />}
         {!hasSuggestedTasks && !isLoading && (
           <Typography.Text className="text-sm leading-[16px] text-white font-medium">
