@@ -27,6 +27,7 @@ from evaluation.utils.shared import (
     prepare_dataset,
     reset_logger_for_multiprocessing,
     run_evaluation,
+    update_llm_config_for_completions_logging,
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
@@ -56,6 +57,7 @@ AGENT_CLS_TO_INST_SUFFIX = {
 
 
 def get_config(
+    instance: pd.Series,
     metadata: EvalMetadata,
 ) -> OpenHandsConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
@@ -70,18 +72,32 @@ def get_config(
         workspace_base=None,
         workspace_mount_path=None,
     )
-    config.set_llm_config(metadata.llm_config)
-    if metadata.agent_config:
-        config.set_agent_config(metadata.agent_config, metadata.agent_class)
-    else:
-        logger.info('Agent config not provided, using default settings')
-        agent_config = config.get_agent_config(metadata.agent_class)
-        agent_config.enable_prompt_extensions = False
+    config.set_llm_config(
+        update_llm_config_for_completions_logging(
+            metadata.llm_config, metadata.eval_output_dir, instance['instance_id']
+        )
+    )
 
     config_copy = copy.deepcopy(config)
     load_from_toml(config_copy)
     if config_copy.search_api_key:
         config.search_api_key = SecretStr(config_copy.search_api_key)
+
+    if metadata.agent_config:
+        config.model_routing = config_copy.model_routing
+        config.set_agent_config(metadata.agent_config, metadata.agent_class)
+    else:
+        logger.info('Agent config not provided, using default settings')
+        agent_config = config.get_agent_config(metadata.agent_class)
+        agent_config.enable_prompt_extensions = False
+        config.model_routing = config_copy.model_routing
+
+    config.routing_llms = config_copy.routing_llms
+    # Set log_completions to True for all routing LLMs
+    for llm_cfg in config.routing_llms.values():
+        llm_cfg.log_completions = True
+    config.model_routing = config_copy.model_routing
+
     return config
 
 
@@ -150,7 +166,7 @@ def process_instance(
     metadata: EvalMetadata,
     reset_logger: bool = True,
 ) -> EvalOutput:
-    config = get_config(metadata)
+    config = get_config(instance, metadata)
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
@@ -288,6 +304,7 @@ Here is the task:
         metrics=metrics,
         error=state.last_error if state and state.last_error else None,
         test_result=test_result,
+        routing_history=state.routing_history,
     )
     runtime.close()
     return output

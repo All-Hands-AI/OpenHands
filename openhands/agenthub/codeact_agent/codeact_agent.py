@@ -24,7 +24,7 @@ from openhands.agenthub.codeact_agent.tools.str_replace_editor import (
 from openhands.agenthub.codeact_agent.tools.think import ThinkTool
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
-from openhands.core.config import AgentConfig
+from openhands.core.config import AgentConfig, ModelRoutingConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
 from openhands.events.action import AgentFinishAction, MessageAction
@@ -34,6 +34,7 @@ from openhands.llm.llm_utils import check_tools
 from openhands.memory.condenser import Condenser
 from openhands.memory.condenser.condenser import Condensation, View
 from openhands.memory.conversation_memory import ConversationMemory
+from openhands.router import ROUTER_REGISTRY
 from openhands.runtime.plugins import (
     AgentSkillsRequirement,
     JupyterRequirement,
@@ -75,12 +76,16 @@ class CodeActAgent(Agent):
         self,
         llm: LLM,
         config: AgentConfig,
+        model_routing_config: ModelRoutingConfig | None = None,
+        routing_llms: dict[str, LLM] | None = None,
     ) -> None:
         """Initializes a new instance of the CodeActAgent class.
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
         - config (AgentConfig): The configuration for this agent
+        - model_routing_config (ModelRoutingConfig | None): The model routing configuration to use
+        - routing_llms (dict[str, LLM]): The LLMs to be selected for routing
         """
         super().__init__(llm, config)
         self.pending_actions: deque['Action'] = deque()
@@ -92,6 +97,18 @@ class CodeActAgent(Agent):
 
         self.condenser = Condenser.from_config(self.config.condenser)
         logger.debug(f'Using condenser: {type(self.condenser)}')
+
+        model_routing_config = model_routing_config or ModelRoutingConfig()
+        router_cls = ROUTER_REGISTRY.get(model_routing_config.router_name, None)
+        if router_cls is None:
+            raise ValueError(
+                f'Router {model_routing_config.router_name} not found in registry.'
+            )
+        self.router = router_cls(
+            llm=self.llm,
+            routing_llms=routing_llms or dict(),
+            model_routing_config=model_routing_config,
+        )
 
     @property
     def prompt_manager(self) -> PromptManager:
@@ -188,13 +205,22 @@ class CodeActAgent(Agent):
         )
 
         initial_user_message = self._get_initial_user_message(state.history)
+
+        messages_for_routing_decision = self._get_messages(
+            condensed_history, initial_user_message
+        )
+        self.router.set_active_llm(messages_for_routing_decision, condensed_history)
+        logger.debug(f'Active LLM set to: {self.router.active_llm.config.model}')
+
+        state.routing_history = self.router.routing_history
+
         messages = self._get_messages(condensed_history, initial_user_message)
         params: dict = {
-            'messages': self.llm.format_messages_for_llm(messages),
+            'messages': self.router.active_llm.format_messages_for_llm(messages),
         }
-        params['tools'] = check_tools(self.tools, self.llm.config)
+        params['tools'] = check_tools(self.tools, self.router.active_llm.config)
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
-        response = self.llm.completion(**params)
+        response = self.router.active_llm.completion(**params)
         logger.debug(f'Response from LLM: {response}')
         actions = self.response_to_actions(response)
         logger.debug(f'Actions after response_to_actions: {actions}')
@@ -262,11 +288,11 @@ class CodeActAgent(Agent):
         messages = self.conversation_memory.process_events(
             condensed_history=events,
             initial_user_action=initial_user_message,
-            max_message_chars=self.llm.config.max_message_chars,
-            vision_is_active=self.llm.vision_is_active(),
+            max_message_chars=self.router.active_llm.config.max_message_chars,
+            vision_is_active=self.router.active_llm.vision_is_active(),
         )
 
-        if self.llm.is_caching_prompt_active():
+        if self.router.active_llm.is_caching_prompt_active():
             self.conversation_memory.apply_prompt_caching(messages)
 
         return messages
