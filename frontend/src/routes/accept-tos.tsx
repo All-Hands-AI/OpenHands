@@ -1,11 +1,10 @@
 import React from "react";
+import { Button, Checkbox } from "@openhands/ui";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router";
 import { useMutation } from "@tanstack/react-query";
 import { I18nKey } from "#/i18n/declaration";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
-import { TOSCheckbox } from "#/components/features/waitlist/tos-checkbox";
-import { BrandButton } from "#/components/features/settings/brand-button";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 import { openHands } from "#/api/open-hands-axios";
 
@@ -70,17 +69,33 @@ export default function AcceptTOS() {
           </p>
         </div>
 
-        <TOSCheckbox onChange={() => setIsTosAccepted((prev) => !prev)} />
+        <Checkbox
+          checked={isTosAccepted}
+          onChange={() => setIsTosAccepted((prev) => !prev)}
+          label={
+            <span>
+              {t(I18nKey.TOS$ACCEPT)}{" "}
+              <a
+                href="https://www.all-hands.dev/tos"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline underline-offset-2 text-blue-500 hover:text-blue-700"
+              >
+                {t(I18nKey.TOS$TERMS)}
+              </a>
+            </span>
+          }
+        />
 
-        <BrandButton
-          isDisabled={!isTosAccepted || isSubmitting}
+        <Button
+          disabled={!isTosAccepted || isSubmitting}
           type="button"
           variant="primary"
           onClick={handleAcceptTOS}
           className="w-full"
         >
           {isSubmitting ? t(I18nKey.HOME$LOADING) : t(I18nKey.TOS$CONTINUE)}
-        </BrandButton>
+        </Button>
       </div>
     </div>
   );
