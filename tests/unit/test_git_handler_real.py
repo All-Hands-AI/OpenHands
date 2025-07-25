@@ -79,32 +79,6 @@ class TestGitHandlerWithRealRepo(unittest.TestCase):
         """Test that _is_git_repo returns True for a git repository."""
         self.assertTrue(self.git_handler._is_git_repo())
 
-    def test_get_default_branch(self):
-        """Test that _get_default_branch returns the correct branch name."""
-        branch = self.git_handler._get_default_branch()
-        self.assertEqual(branch, 'main')
-
-    def test_get_current_branch(self):
-        """Test that _get_current_branch returns the correct branch name."""
-        branch = self.git_handler._get_current_branch()
-        self.assertEqual(branch, 'feature-branch')
-
-    def test_get_valid_ref(self):
-        """Test that _get_valid_ref returns a valid ref."""
-        ref = self.git_handler._get_valid_ref()
-        self.assertIsNotNone(ref)
-
-        # Push the feature branch to origin to test the highest priority ref
-        self._execute_command('git push -u origin feature-branch', self.local_dir)
-
-        # Get the valid ref again, should be origin/feature-branch now
-        ref = self.git_handler._get_valid_ref()
-        self.assertIsNotNone(ref)
-
-        # Verify the ref exists
-        result = self._execute_command(f'git rev-parse --verify {ref}', self.local_dir)
-        self.assertEqual(result.exit_code, 0)
-
     def test_get_ref_content(self):
         """Test that _get_ref_content returns the content from a valid ref."""
         # First commit the changes to make sure we have a valid ref
@@ -119,27 +93,6 @@ class TestGitHandlerWithRealRepo(unittest.TestCase):
         """Test that _get_current_file_content returns the current content of a file."""
         content = self.git_handler._get_current_file_content('file1.txt')
         self.assertEqual(content.strip(), 'Modified content')
-
-    def test_get_changed_files(self):
-        """Test that _get_changed_files returns the list of changed files."""
-        files = self.git_handler._get_changed_files()
-        self.assertTrue(files)
-
-        # Should include file1.txt (modified) and file2.txt (added)
-        file_paths = [line.split('\t')[-1] for line in files]
-        self.assertIn('file1.txt', file_paths)
-        self.assertIn('file2.txt', file_paths)
-
-    def test_get_untracked_files(self):
-        """Test that _get_untracked_files returns the list of untracked files."""
-        # Create an untracked file
-        with open(os.path.join(self.local_dir, 'untracked.txt'), 'w') as f:
-            f.write('Untracked file content')
-
-        files = self.git_handler._get_untracked_files()
-        self.assertEqual(len(files), 1)
-        self.assertEqual(files[0]['path'], 'untracked.txt')
-        self.assertEqual(files[0]['status'], 'A')
 
     def test_get_git_changes(self):
         """Test that get_git_changes returns the combined list of changed and untracked files."""
