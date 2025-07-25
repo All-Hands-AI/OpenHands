@@ -515,7 +515,9 @@ def get_llm_config_arg(
     if llm_config_arg.startswith('llm.'):
         llm_config_arg = llm_config_arg[4:]
 
-    logger.openhands_logger.debug(f'Loading llm config "{llm_config_arg}" from {toml_file}')
+    logger.openhands_logger.debug(
+        f'Loading llm config "{llm_config_arg}" from {toml_file}'
+    )
 
     # Check if the file exists
     if not os.path.exists(toml_file):
@@ -539,7 +541,9 @@ def get_llm_config_arg(
     if 'llm' in toml_config and llm_config_arg in toml_config['llm']:
         return LLMConfig(**toml_config['llm'][llm_config_arg])
 
-    logger.openhands_logger.debug(f'LLM config "{llm_config_arg}" not found in {toml_file}')
+    logger.openhands_logger.debug(
+        f'LLM config "{llm_config_arg}" not found in {toml_file}'
+    )
     return None
 
 
@@ -858,7 +862,7 @@ def setup_config_from_args(args: argparse.Namespace) -> OpenHandsConfig:
 
     # Override with command line arguments if provided
     if args.llm_config:
-        logger.openhands_logger.debug(f"CLI specified LLM config: {args.llm_config}")
+        logger.openhands_logger.debug(f'CLI specified LLM config: {args.llm_config}')
 
         # Check if the LLM config is NOT in the loaded configs
         if args.llm_config not in config.llms:
@@ -866,21 +870,33 @@ def setup_config_from_args(args: argparse.Namespace) -> OpenHandsConfig:
             llm_config = get_llm_config_arg(args.llm_config, args.config_file)
 
             # If not found in the specified config file, try the user's config.toml
-            if llm_config is None and args.config_file != os.path.join(os.path.expanduser('~'), '.openhands', 'config.toml'):
-                user_config = os.path.join(os.path.expanduser('~'), '.openhands', 'config.toml')
+            if llm_config is None and args.config_file != os.path.join(
+                os.path.expanduser('~'), '.openhands', 'config.toml'
+            ):
+                user_config = os.path.join(
+                    os.path.expanduser('~'), '.openhands', 'config.toml'
+                )
                 if os.path.exists(user_config):
-                    logger.openhands_logger.debug(f"Trying to load LLM config '{args.llm_config}' from user config: {user_config}")
+                    logger.openhands_logger.debug(
+                        f"Trying to load LLM config '{args.llm_config}' from user config: {user_config}"
+                    )
                     llm_config = get_llm_config_arg(args.llm_config, user_config)
         else:
             # If it's already in the loaded configs, use that
             llm_config = config.llms[args.llm_config]
-            logger.openhands_logger.debug(f"Using LLM config '{args.llm_config}' from loaded configuration")
+            logger.openhands_logger.debug(
+                f"Using LLM config '{args.llm_config}' from loaded configuration"
+            )
         if llm_config is None:
-            raise ValueError(f"Cannot find LLM configuration '{args.llm_config}' in any config file")
+            raise ValueError(
+                f"Cannot find LLM configuration '{args.llm_config}' in any config file"
+            )
 
         # Set this as the default LLM config (highest precedence)
         config.set_llm_config(llm_config)
-        logger.openhands_logger.debug(f"Set LLM config from CLI parameter: {args.llm_config}")
+        logger.openhands_logger.debug(
+            f'Set LLM config from CLI parameter: {args.llm_config}'
+        )
 
     # Override default agent if provided
     if args.agent_cls:
