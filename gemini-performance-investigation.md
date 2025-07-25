@@ -178,19 +178,40 @@ The performance difference is likely due to LiteLLM's abstraction overhead and s
 4. ✅ Identify root cause (LiteLLM abstraction overhead)
 
 ### 🚀 READY TO IMPLEMENT
-1. **Implement Native Gemini Provider** (Recommended)
-   - Create `openhands/llm/gemini_native.py` based on RooCode's implementation
-   - Add Python equivalent of `@google/genai` (use `google-generativeai` package)
-   - Implement streaming, reasoning, and native request format
 
-2. **Quick Performance Test** (Alternative)
-   - Force streaming for Gemini models in current LiteLLM setup
-   - Compare performance with/without streaming
+**🔬 FIRST: Systematic Performance Testing (RECOMMENDED)**
 
-3. **Benchmark Performance**
-   - Test same prompts with both implementations
-   - Measure response time differences
-   - Document performance improvements
+Before implementing solutions, we need to isolate the root cause:
+
+1. **Performance Test Suite Created:**
+   - `test_litellm_performance.py` - Tests pure LiteLLM with different configs
+   - `test_openhands_litellm.py` - Tests LiteLLM exactly as OpenHands calls it
+   - `test_native_gemini.py` - Tests native Google Generative AI (like RooCode)
+   - `run_performance_tests.py` - Comprehensive test runner and analysis
+
+2. **Key Questions to Answer:**
+   - Is LiteLLM itself slow with Gemini?
+   - Are OpenHands-specific configurations causing the slowdown?
+   - How much faster is the native Google API?
+   - Does streaming vs non-streaming make a significant difference?
+
+3. **Run Tests:**
+   ```bash
+   python run_performance_tests.py
+   ```
+
+**🛠️ THEN: Implement Based on Results**
+
+**If LiteLLM is the bottleneck:**
+- Implement native Gemini provider
+
+**If it's configuration issues:**
+- Fix OpenHands' LiteLLM parameters
+- Force streaming for Gemini models
+- Optimize request format
+
+**If it's specific parameters:**
+- Identify and fix the problematic settings
 
 ### 🎯 HYPOTHESIS
 The performance issue is caused by:
