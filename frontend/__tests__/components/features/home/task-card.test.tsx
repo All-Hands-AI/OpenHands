@@ -110,4 +110,29 @@ describe("TaskCard", () => {
     expect(launchButton).toHaveTextContent(/Loading/i);
     expect(launchButton).toBeDisabled();
   });
+
+  it("should navigate to the conversation page after creating a conversation", async () => {
+    const createConversationSpy = vi.spyOn(OpenHands, "createConversation");
+    createConversationSpy.mockResolvedValue({
+      conversation_id: "test-conversation-id",
+      title: "Test Conversation",
+      selected_repository: "repo1",
+      selected_branch: "main",
+      git_provider: "github",
+      last_updated_at: "2023-01-01T00:00:00Z",
+      created_at: "2023-01-01T00:00:00Z",
+      status: "RUNNING",
+      runtime_status: "STATUS$READY",
+      url: null,
+      session_api_key: null
+    });
+
+    renderTaskCard();
+
+    const launchButton = screen.getByTestId("task-launch-button");
+    await userEvent.click(launchButton);
+
+    // Wait for navigation to the conversation page
+    await screen.findByTestId("conversation-screen");
+  });
 });

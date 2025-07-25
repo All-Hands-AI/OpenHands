@@ -3,7 +3,6 @@ import type { HTMLProps } from "../../shared/types";
 import { cn } from "../../shared/utils/cn";
 import { Typography } from "../typography/Typography";
 import { chipStyles, type ChipColor, type ChipVariant } from "./utils";
-import { invariant } from "../../shared/utils/invariant";
 
 export type ChipProps = Omit<HTMLProps<"div">, "label"> & {
   color?: ChipColor;
@@ -17,8 +16,6 @@ export const Chip = ({
   children,
   ...props
 }: PropsWithChildren<ChipProps>) => {
-  invariant(typeof children === "string", "Children must be string");
-
   return (
     <div
       {...props}
