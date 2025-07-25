@@ -24,6 +24,7 @@ class RepositoryInfo:
 
     repo_name: str | None = None
     repo_directory: str | None = None
+    branch_name: str | None = None
 
 
 @dataclass
