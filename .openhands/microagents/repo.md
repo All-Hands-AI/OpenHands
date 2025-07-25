@@ -81,7 +81,6 @@ Microagents are specialized prompts that enhance OpenHands with domain-specific 
 #### Types:
 - **Public Microagents**: Located in `microagents/`, available to all users
 - **Repository Microagents**: Located in `.openhands/microagents/`, specific to this repository
-- **User Microagents**: Located in `~/.openhands/microagents/`, for development files that shouldn't be committed to repositories
 
 #### Loading Behavior:
 - **Without frontmatter**: Always loaded into LLM context
