@@ -1,9 +1,9 @@
+import { Typography } from "@openhands/ui";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { SuggestedTask } from "./task.types";
 import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
-import { cn } from "#/utils/utils";
 import { TaskIssueNumber } from "./task-issue-number";
 import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
 
@@ -66,17 +66,18 @@ export function TaskCard({ task }: TaskCardProps) {
       <TaskIssueNumber issueNumber={task.issue_number} href={href} />
 
       <div className="w-full pl-8">
-        <p className="font-semibold">{getTaskTypeMap(t)[task.task_type]}</p>
-        <p>{task.title}</p>
+        <Typography.Text className="text-xs text-white leading-6 font-semibold">
+          {getTaskTypeMap(t)[task.task_type]}
+        </Typography.Text>
+        <Typography.Text className="text-xs text-[#A3A3A3] leading-4 font-normal">
+          {task.title}
+        </Typography.Text>
       </div>
 
       <button
         type="button"
         data-testid="task-launch-button"
-        className={cn(
-          "underline underline-offset-2 disabled:opacity-80",
-          isPending && "no-underline font-bold",
-        )}
+        className="text-xs text-[#A3A3A3] leading-4 font-normal cursor-pointer"
         disabled={isCreatingConversation}
         onClick={handleLaunchConversation}
       >
