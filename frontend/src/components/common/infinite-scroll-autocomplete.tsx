@@ -66,9 +66,7 @@ export function InfiniteScrollAutocomplete({
       }}
     >
       {items.map((item) => (
-        <AutocompleteItem key={item.key} value={item.key}>
-          {item.value}
-        </AutocompleteItem>
+        <AutocompleteItem key={item.key}>{item.value}</AutocompleteItem>
       ))}
     </Autocomplete>
   );

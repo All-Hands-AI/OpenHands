@@ -29,22 +29,26 @@ export function GitRepositoryAutocomplete({
 }: GitRepositoryAutocompleteProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const { data, fetchNextPage, hasNextPage, isLoading } = useGitRepositories({
-    provider,
-    enabled: !disabled,
-  });
+  const { data, fetchNextPage, hasNextPage, isLoading, isFetchingNextPage } =
+    useGitRepositories({
+      provider,
+      enabled: !disabled,
+    });
 
-  const items: AutocompleteOption[] =
-    data?.pages.flatMap((page) =>
-      page.data.map((repo) => ({
-        key: repo.id,
-        value: repo.full_name,
-      })),
-    ) ?? [];
+  const items: AutocompleteOption[] = data?.pages
+    ? data.pages.flatMap((page) =>
+        page.data.map((repo) => ({
+          key: repo.id,
+          value: repo.full_name,
+        })),
+      )
+    : [];
 
   const handleLoadMore = useCallback(() => {
-    fetchNextPage();
-  }, [fetchNextPage]);
+    if (!isFetchingNextPage && hasNextPage) {
+      fetchNextPage();
+    }
+  }, [fetchNextPage, isFetchingNextPage, hasNextPage]);
 
   const handleOpenChange = useCallback(
     (open: boolean) => {
@@ -63,7 +67,7 @@ export function GitRepositoryAutocomplete({
       defaultSelectedKey={defaultSelectedKey}
       className={className}
       errorMessage={errorMessage}
-      isLoading={isLoading}
+      isLoading={isLoading || isFetchingNextPage}
       hasMore={hasNextPage}
       isOpen={isOpen}
       onOpenChange={handleOpenChange}

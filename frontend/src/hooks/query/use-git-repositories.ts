@@ -20,7 +20,11 @@ export function useGitRepositories(options: UseGitRepositoriesOptions) {
   return useInfiniteQuery<GitRepositoriesResponse>({
     queryKey: ["git-repositories", provider, pageSize],
     queryFn: async ({ pageParam = 1 }) =>
-      OpenHands.retrieveUserGitRepositories(provider, pageParam, pageSize),
+      OpenHands.retrieveUserGitRepositories(
+        provider,
+        pageParam as number,
+        pageSize,
+      ),
     getNextPageParam: (lastPage) => lastPage.nextPage,
     initialPageParam: 1,
     enabled,
