@@ -35,7 +35,7 @@ class TestGrepToolSchema:
         
         required = schema['function']['parameters']['required']
         assert 'pattern' in required
-        assert 'path' in required
+        assert 'path' not in required  # path is now optional
         
         properties = schema['function']['parameters']['properties']
         assert 'pattern' in properties
@@ -89,12 +89,14 @@ class TestGrepToolParameterValidation:
         with pytest.raises(ToolValidationError, match="Missing required parameter: pattern"):
             tool.validate_parameters(params)
     
-    def test_validate_missing_path(self):
+    def test_validate_missing_path_is_optional(self):
         tool = GrepTool()
         params = {'pattern': 'test'}
         
-        with pytest.raises(ToolValidationError, match="Missing required parameter: path"):
-            tool.validate_parameters(params)
+        # Path is optional, should not raise an error
+        result = tool.validate_parameters(params)
+        assert result['pattern'] == 'test'
+        assert 'path' not in result  # path should not be in result when not provided
     
     def test_validate_empty_pattern(self):
         tool = GrepTool()
@@ -265,14 +267,16 @@ class TestGrepToolFunctionCallValidation:
         with pytest.raises(ToolValidationError, match="Missing required parameter: pattern"):
             tool.validate_function_call(function_call)
     
-    def test_function_call_missing_path(self):
+    def test_function_call_missing_path_is_optional(self):
         tool = GrepTool()
         
         function_call = Mock()
         function_call.arguments = '{"pattern": "test"}'
         
-        with pytest.raises(ToolValidationError, match="Missing required parameter: path"):
-            tool.validate_function_call(function_call)
+        # Path is optional, should not raise an error
+        result = tool.validate_function_call(function_call)
+        assert result['pattern'] == 'test'
+        assert 'path' not in result  # path should not be in result when not provided
 
 
 class TestGrepToolEdgeCases:

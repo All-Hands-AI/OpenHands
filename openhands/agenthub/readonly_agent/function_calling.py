@@ -15,13 +15,27 @@ from openhands.agenthub.codeact_agent.function_calling import (
     combine_thought,
 )
 from openhands.agenthub.codeact_agent.tools import (
-    FinishTool,
     ThinkTool,
 )
+from openhands.agenthub.codeact_agent.tools import (
+    FinishTool as LegacyFinishTool,
+)
 from openhands.agenthub.readonly_agent.tools import (
+    GlobTool as LegacyGlobTool,
+    GrepTool as LegacyGrepTool,
+    ViewTool as LegacyViewTool,
+)
+from openhands.agenthub.readonly_agent.tools.unified import (
+    FinishTool,
     GlobTool,
     GrepTool,
     ViewTool,
+)
+from openhands.agenthub.codeact_agent.tools.unified import (
+    ToolValidationError,
+)
+from openhands.llm.tool_names import (
+    FINISH_TOOL_NAME,
 )
 from openhands.core.exceptions import (
     FunctionCallNotExistsError,
@@ -39,6 +53,14 @@ from openhands.events.action import (
 )
 from openhands.events.event import FileReadSource
 from openhands.events.tool import ToolCallMetadata
+
+# Tool instances for validation
+_TOOL_INSTANCES = {
+    FINISH_TOOL_NAME: FinishTool(),
+    'str_replace_editor': ViewTool(),  # ViewTool uses str_replace_editor name
+    'grep': GrepTool(),
+    'glob': GlobTool(),
+}
 
 
 def grep_to_cmdrun(
@@ -138,25 +160,50 @@ def response_to_actions(
             # ================================================
             # AgentFinishAction
             # ================================================
-            if tool_call.function.name == FinishTool['function']['name']:
-                action = AgentFinishAction(
-                    final_thought=arguments.get('message', ''),
-                    task_completed=arguments.get('task_completed', None),
-                )
+            if tool_call.function.name == FINISH_TOOL_NAME:
+                # Use unified tool validation
+                try:
+                    validated_args = _TOOL_INSTANCES[FINISH_TOOL_NAME].validate_parameters(arguments)
+                    action = AgentFinishAction(
+                        final_thought=validated_args.get('summary', ''),
+                        task_completed=validated_args.get('outputs', {}).get('task_completed', None),
+                    )
+                except ToolValidationError as e:
+                    raise FunctionCallValidationError(f'FinishTool validation failed: {e}') from e
+                except Exception as e:
+                    # Fallback to legacy behavior
+                    logger.warning(f'FinishTool unified validation failed, falling back to legacy: {e}')
+                    action = AgentFinishAction(
+                        final_thought=arguments.get('message', ''),
+                        task_completed=arguments.get('task_completed', None),
+                    )
 
             # ================================================
             # ViewTool (ACI-based file viewer, READ-ONLY)
             # ================================================
-            elif tool_call.function.name == ViewTool['function']['name']:
-                if 'path' not in arguments:
-                    raise FunctionCallValidationError(
-                        f'Missing required argument "path" in tool call {tool_call.function.name}'
+            elif tool_call.function.name == 'str_replace_editor':
+                # Use unified tool validation
+                try:
+                    validated_args = _TOOL_INSTANCES['str_replace_editor'].validate_parameters(arguments)
+                    action = FileReadAction(
+                        path=validated_args['path'],
+                        impl_source=FileReadSource.OH_ACI,
+                        view_range=validated_args.get('view_range', None),
                     )
-                action = FileReadAction(
-                    path=arguments['path'],
-                    impl_source=FileReadSource.OH_ACI,
-                    view_range=arguments.get('view_range', None),
-                )
+                except ToolValidationError as e:
+                    raise FunctionCallValidationError(f'ViewTool validation failed: {e}') from e
+                except Exception as e:
+                    # Fallback to legacy behavior
+                    logger.warning(f'ViewTool unified validation failed, falling back to legacy: {e}')
+                    if 'path' not in arguments:
+                        raise FunctionCallValidationError(
+                            f'Missing required argument "path" in tool call {tool_call.function.name}'
+                        )
+                    action = FileReadAction(
+                        path=arguments['path'],
+                        impl_source=FileReadSource.OH_ACI,
+                        view_range=arguments.get('view_range', None),
+                    )
 
             # ================================================
             # AgentThinkAction
@@ -167,33 +214,60 @@ def response_to_actions(
             # ================================================
             # GrepTool (file content search)
             # ================================================
-            elif tool_call.function.name == GrepTool['function']['name']:
-                if 'pattern' not in arguments:
-                    raise FunctionCallValidationError(
-                        f'Missing required argument "pattern" in tool call {tool_call.function.name}'
-                    )
+            elif tool_call.function.name == 'grep':
+                # Use unified tool validation
+                try:
+                    validated_args = _TOOL_INSTANCES['grep'].validate_parameters(arguments)
+                    pattern = validated_args['pattern']
+                    path = validated_args.get('path')
+                    include = validated_args.get('include')
 
-                pattern = arguments['pattern']
-                path = arguments.get('path')
-                include = arguments.get('include')
+                    grep_cmd = grep_to_cmdrun(pattern, path, include)
+                    action = CmdRunAction(command=grep_cmd, is_input=False)
+                except ToolValidationError as e:
+                    raise FunctionCallValidationError(f'GrepTool validation failed: {e}') from e
+                except Exception as e:
+                    # Fallback to legacy behavior
+                    logger.warning(f'GrepTool unified validation failed, falling back to legacy: {e}')
+                    if 'pattern' not in arguments:
+                        raise FunctionCallValidationError(
+                            f'Missing required argument "pattern" in tool call {tool_call.function.name}'
+                        )
 
-                grep_cmd = grep_to_cmdrun(pattern, path, include)
-                action = CmdRunAction(command=grep_cmd, is_input=False)
+                    pattern = arguments['pattern']
+                    path = arguments.get('path')
+                    include = arguments.get('include')
+
+                    grep_cmd = grep_to_cmdrun(pattern, path, include)
+                    action = CmdRunAction(command=grep_cmd, is_input=False)
 
             # ================================================
             # GlobTool (file pattern matching)
             # ================================================
-            elif tool_call.function.name == GlobTool['function']['name']:
-                if 'pattern' not in arguments:
-                    raise FunctionCallValidationError(
-                        f'Missing required argument "pattern" in tool call {tool_call.function.name}'
-                    )
+            elif tool_call.function.name == 'glob':
+                # Use unified tool validation
+                try:
+                    validated_args = _TOOL_INSTANCES['glob'].validate_parameters(arguments)
+                    pattern = validated_args['pattern']
+                    path = validated_args.get('path', '.')
 
-                pattern = arguments['pattern']
-                path = arguments.get('path', '.')
+                    glob_cmd = glob_to_cmdrun(pattern, path)
+                    action = CmdRunAction(command=glob_cmd, is_input=False)
+                except ToolValidationError as e:
+                    raise FunctionCallValidationError(f'GlobTool validation failed: {e}') from e
+                except Exception as e:
+                    # Fallback to legacy behavior
+                    logger.warning(f'GlobTool unified validation failed, falling back to legacy: {e}')
+                    if 'pattern' not in arguments:
+                        raise FunctionCallValidationError(
+                            f'Missing required argument "pattern" in tool call {tool_call.function.name}'
+                        )
 
-                glob_cmd = glob_to_cmdrun(pattern, path)
-                action = CmdRunAction(command=glob_cmd, is_input=False)
+                    pattern = arguments['pattern']
+                    path = arguments.get('path', '.')
+
+                    glob_cmd = glob_to_cmdrun(pattern, path)
+                    action = CmdRunAction(command=glob_cmd, is_input=False)
 
             # ================================================
             # MCPAction (MCP)
@@ -242,8 +316,8 @@ def response_to_actions(
 def get_tools() -> list[ChatCompletionToolParam]:
     return [
         ThinkTool,
-        FinishTool,
-        GrepTool,
-        GlobTool,
-        ViewTool,
+        _TOOL_INSTANCES[FINISH_TOOL_NAME].get_schema(),
+        _TOOL_INSTANCES['grep'].get_schema(),
+        _TOOL_INSTANCES['glob'].get_schema(),
+        _TOOL_INSTANCES['str_replace_editor'].get_schema(),
     ]

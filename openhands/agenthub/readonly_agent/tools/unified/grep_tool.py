@@ -31,7 +31,11 @@ class GrepTool(Tool):
                         },
                         'path': {
                             'type': 'string',
-                            'description': 'The directory or file path to search in',
+                            'description': 'The directory or file path to search in (optional, defaults to current directory)',
+                        },
+                        'include': {
+                            'type': 'string',
+                            'description': 'Optional file pattern to filter which files to search (e.g., "*.js", "*.{ts,tsx}")',
                         },
                         'recursive': {
                             'type': 'boolean',
@@ -44,7 +48,7 @@ class GrepTool(Tool):
                             'default': False,
                         },
                     },
-                    'required': ['pattern', 'path'],
+                    'required': ['pattern'],
                 },
             },
         }
@@ -57,26 +61,34 @@ class GrepTool(Tool):
         # Validate required parameters
         if 'pattern' not in parameters:
             raise ToolValidationError("Missing required parameter: pattern")
-        if 'path' not in parameters:
-            raise ToolValidationError("Missing required parameter: path")
         
         pattern = parameters['pattern']
-        path = parameters['path']
         
         if not isinstance(pattern, str):
             raise ToolValidationError("Parameter 'pattern' must be a string")
-        if not isinstance(path, str):
-            raise ToolValidationError("Parameter 'path' must be a string")
         
         if not pattern.strip():
             raise ToolValidationError("Parameter 'pattern' cannot be empty")
-        if not path.strip():
-            raise ToolValidationError("Parameter 'path' cannot be empty")
         
         validated: dict[str, Any] = {
-            'pattern': pattern.strip(),
-            'path': path.strip()
+            'pattern': pattern.strip()
         }
+        
+        # Validate optional path parameter
+        if 'path' in parameters:
+            path = parameters['path']
+            if not isinstance(path, str):
+                raise ToolValidationError("Parameter 'path' must be a string")
+            if not path.strip():
+                raise ToolValidationError("Parameter 'path' cannot be empty")
+            validated['path'] = path.strip()
+        
+        # Handle include parameter (legacy compatibility)
+        if 'include' in parameters:
+            include = parameters['include']
+            if not isinstance(include, str):
+                raise ToolValidationError("Parameter 'include' must be a string")
+            validated['include'] = include.strip()
         
         # Validate optional parameters
         if 'recursive' in parameters:
