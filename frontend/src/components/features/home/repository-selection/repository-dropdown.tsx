@@ -8,6 +8,7 @@ export interface RepositoryDropdownProps {
   onSelectionChange: (key: React.Key | null) => void;
   onInputChange: (value: string) => void;
   defaultFilter?: (textValue: string, inputValue: string) => boolean;
+  placeholder?: string;
 }
 
 export function RepositoryDropdown({
@@ -15,6 +16,7 @@ export function RepositoryDropdown({
   onSelectionChange,
   onInputChange,
   defaultFilter,
+  placeholder,
 }: RepositoryDropdownProps) {
   const { t } = useTranslation();
 
@@ -22,7 +24,7 @@ export function RepositoryDropdown({
     <SettingsDropdownInput
       testId="repo-dropdown"
       name="repo-dropdown"
-      placeholder={t(I18nKey.REPOSITORY$SELECT_REPO)}
+      placeholder={placeholder || t(I18nKey.REPOSITORY$SELECT_REPO)}
       items={items}
       wrapperClassName="max-w-[500px]"
       onSelectionChange={onSelectionChange}

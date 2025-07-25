@@ -10,6 +10,7 @@
     "@heroui/react": "^2.8.1",
     "@microlink/react-json-view": "^1.26.2",
     "@monaco-editor/react": "^4.7.0-rc.0",
+    "@openhands/ui": "file:../openhands-ui/openhands-ui-1.0.0-beta.5.tgz",
     "@react-router/node": "^7.7.0",
     "@react-router/serve": "^7.7.0",
     "@react-types/shared": "^3.29.1",

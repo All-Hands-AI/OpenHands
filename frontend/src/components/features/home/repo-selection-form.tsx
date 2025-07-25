@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
+import { Typography } from "@openhands/ui";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { useUserRepositories } from "#/hooks/query/use-user-repositories";
 import { useRepositoryBranches } from "#/hooks/query/use-repository-branches";
@@ -18,6 +19,10 @@ import {
   BranchLoadingState,
   BranchErrorState,
 } from "./repository-selection";
+import RepoForkedIcon from "#/icons/repo-forked.svg?react";
+import { I18nKey } from "#/i18n/declaration";
+import { GIT_PROVIDER_OPTIONS } from "#/utils/constants";
+import { IOption } from "#/api/open-hands.types";
 
 interface RepositorySelectionFormProps {
   onRepoSelection: (repo: GitRepository | null) => void;
@@ -32,6 +37,8 @@ export function RepositorySelectionForm({
   const [selectedBranch, setSelectedBranch] = React.useState<Branch | null>(
     null,
   );
+  const [selectedGitProvider, setSelectedGitProvider] =
+    React.useState<IOption<string> | null>(null);
   // Add a ref to track if the branch was manually cleared by the user
   const branchManuallyClearedRef = React.useRef<boolean>(false);
   const {
@@ -84,10 +91,6 @@ export function RepositorySelectionForm({
     isPending || isSuccess || isCreatingConversationElsewhere;
 
   const allRepositories = repositories?.concat(searchedRepos || []);
-  const repositoriesItems = allRepositories?.map((repo) => ({
-    key: repo.id,
-    label: decodeURIComponent(repo.full_name),
-  }));
 
   const branchesItems = branches?.map((branch) => ({
     key: branch.name,
@@ -132,6 +135,67 @@ export function RepositorySelectionForm({
       branchManuallyClearedRef.current = false;
     }
   };
+
+  const handleGitProviderSelection = (key: React.Key | null) => {
+    const currentGitProvider = GIT_PROVIDER_OPTIONS.find(
+      (provider) => provider.value === key,
+    );
+    setSelectedGitProvider(currentGitProvider || null);
+    onRepoSelection(null);
+    setSelectedRepository(null);
+    setSelectedBranch(null); // Reset branch selection when repo changes
+    branchManuallyClearedRef.current = false; // Reset the flag when repo changes
+  };
+
+  const handleGitProviderInputChange = (value: string) => {
+    if (value === "") {
+      setSelectedRepository(null);
+      setSelectedBranch(null);
+      onRepoSelection(null);
+    }
+  };
+
+  // Render the git provider selector UI based on the loading/error state
+  const renderGitProviderSelector = () => (
+    <RepositoryDropdown
+      items={GIT_PROVIDER_OPTIONS.map((provider) => ({
+        key: provider.value,
+        label: provider.label,
+      }))}
+      placeholder={t(I18nKey.COMMON$SELECT_GIT_PROVIDER)}
+      onSelectionChange={handleGitProviderSelection}
+      onInputChange={handleGitProviderInputChange}
+      defaultFilter={(textValue, inputValue) => {
+        if (!inputValue) return true;
+
+        const gitProvider = GIT_PROVIDER_OPTIONS.find(
+          (provider) => provider.label === textValue,
+        );
+
+        return !!gitProvider;
+      }}
+    />
+  );
+
+  const repositoriesItems = useMemo(() => {
+    if (!allRepositories) {
+      return [];
+    }
+
+    if (selectedGitProvider) {
+      return allRepositories
+        .filter((repo) => repo.git_provider === selectedGitProvider.value)
+        .map((repo) => ({
+          key: repo.id,
+          label: decodeURIComponent(repo.full_name),
+        }));
+    }
+
+    return allRepositories.map((repo) => ({
+      key: repo.id,
+      label: decodeURIComponent(repo.full_name),
+    }));
+  }, [allRepositories, selectedGitProvider]);
 
   // Render the appropriate UI based on the loading/error state
   const renderRepositorySelector = () => {
@@ -195,6 +259,17 @@ export function RepositorySelectionForm({
 
   return (
     <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-[10px]">
+          <RepoForkedIcon width={24} height={24} />
+          <Typography.Text className="leading-5 font-bold text-base">
+            {t(I18nKey.COMMON$OPEN_REPOSITORY)}
+          </Typography.Text>
+        </div>
+      </div>
+
+      {renderGitProviderSelector()}
+
       {renderRepositorySelector()}
 
       {renderBranchSelector()}

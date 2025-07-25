@@ -133,3 +133,16 @@ export interface GetMicroagentPromptResponse {
   status: string;
   prompt: string;
 }
+
+export interface IOption<T> {
+  label: string;
+  value: T;
+}
+
+export interface RecentProject {
+  projectName: string;
+  gitProvider: Provider;
+  repositoryName: string;
+  pr: string;
+  createdAt: string;
+}
