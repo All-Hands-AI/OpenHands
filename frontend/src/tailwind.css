@@ -3,6 +3,26 @@
 @plugin '../hero.ts';
 @config "../tailwind.config.js";
 @source '../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
+@import '../node_modules/@openhands/ui/dist/index.css';
+
+
+
+/* OLD TAILWIND STYLES */
+@theme {
+  --color-primary: #C9B974;
+  --color-logo: #CFB755;
+  --color-base: #0D0F11;
+  --color-base-secondary: #24272E;
+  --color-danger: #E76A5E;
+  --color-success: #A5E75E;
+  --color-basic: #9099AC;
+  --color-tertiary: #454545;
+  --color-tertiary-light: #B7BDC2;
+  --color-content: #ECEDEE;
+  --color-content-2: #F9FBFE;
+}
+
+
 
 
 .button-base {

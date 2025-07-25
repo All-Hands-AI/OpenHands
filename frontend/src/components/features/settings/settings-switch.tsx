@@ -1,7 +1,7 @@
 import React from "react";
+import { Toggle } from "@openhands/ui";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
-import { StyledSwitchComponent } from "./styled-switch-component";
 
 interface SettingsSwitchProps {
   testId?: string;
@@ -30,26 +30,21 @@ export function SettingsSwitch({
   };
 
   return (
-    <label className="flex items-center gap-2 w-fit cursor-pointer">
-      <input
-        hidden
-        data-testid={testId}
-        name={name}
-        type="checkbox"
-        onChange={(e) => handleToggle(e.target.checked)}
-        checked={controlledIsToggled ?? isToggled}
-      />
-
-      <StyledSwitchComponent isToggled={controlledIsToggled ?? isToggled} />
-
-      <div className="flex items-center gap-1">
-        <span className="text-sm">{children}</span>
-        {isBeta && (
-          <span className="text-[11px] leading-4 text-[#0D0F11] font-[500] tracking-tighter bg-primary px-1 rounded-full">
-            {t(I18nKey.BADGE$BETA)}
-          </span>
-        )}
-      </div>
-    </label>
+    <Toggle
+      name={name}
+      testId={testId}
+      checked={controlledIsToggled ?? isToggled}
+      onChange={(e) => handleToggle(e.target.checked)}
+      label={
+        <div className="flex items-center gap-1">
+          <span className="text-sm">{children}</span>
+          {isBeta && (
+            <span className="text-[11px] leading-4 text-[#0D0F11] font-[500] tracking-tighter bg-primary px-1 rounded-full">
+              {t(I18nKey.BADGE$BETA)}
+            </span>
+          )}
+        </div>
+      }
+    />
   );
 }
