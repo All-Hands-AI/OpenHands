@@ -15,6 +15,7 @@ from openhands.events.action import (
 from openhands.events.observation import (
     BrowserOutputObservation,
     CmdOutputObservation,
+    ErrorObservation,
     FileDownloadObservation,
 )
 
@@ -122,8 +123,30 @@ def find_element_by_tag_and_attributes(
     return None
 
 
+def test_browser_disabled(temp_dir, runtime_cls, run_as_openhands):
+    runtime, _ = _load_runtime(
+        temp_dir, runtime_cls, run_as_openhands, enable_browser=False
+    )
+
+    action_cmd = CmdRunAction(command='python3 -m http.server 8000 > server.log 2>&1 &')
+    logger.info(action_cmd, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action_cmd)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+    action_browse = BrowseURLAction(url='http://localhost:8000', return_axtree=False)
+    logger.info(action_browse, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action_browse)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, ErrorObservation)
+    assert 'Browser functionality is not supported or disabled' in obs.content
+
+    _close_test_runtime(runtime)
+
+
 def test_simple_browse(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(
+        temp_dir, runtime_cls, run_as_openhands, enable_browser=True
+    )
 
     # Test browse
     action_cmd = CmdRunAction(command='python3 -m http.server 8000 > server.log 2>&1 &')
@@ -168,7 +191,9 @@ def test_simple_browse(temp_dir, runtime_cls, run_as_openhands):
 
 def test_browser_navigation_actions(temp_dir, runtime_cls, run_as_openhands):
     """Test browser navigation actions: goto, go_back, go_forward, noop."""
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(
+        temp_dir, runtime_cls, run_as_openhands, enable_browser=True
+    )
     try:
         # Create test HTML pages
         page1_content = """
@@ -301,7 +326,9 @@ def test_browser_navigation_actions(temp_dir, runtime_cls, run_as_openhands):
 
 def test_browser_form_interactions(temp_dir, runtime_cls, run_as_openhands):
     """Test browser form interaction actions: fill, click, select_option, clear."""
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(
+        temp_dir, runtime_cls, run_as_openhands, enable_browser=True
+    )
     try:
         # Create a test form page
         form_content = """
@@ -515,7 +542,9 @@ fill("{textarea_bid}", "This is a test message")
 
 def test_browser_interactive_actions(temp_dir, runtime_cls, run_as_openhands):
     """Test browser interactive actions: scroll, hover, fill, press, focus."""
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(
+        temp_dir, runtime_cls, run_as_openhands, enable_browser=True
+    )
     try:
         # Create a test page with scrollable content
         scroll_content = """
@@ -721,7 +750,9 @@ scroll(0, 400)
 
 def test_browser_file_upload(temp_dir, runtime_cls, run_as_openhands):
     """Test browser file upload action."""
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(
+        temp_dir, runtime_cls, run_as_openhands, enable_browser=True
+    )
     try:
         # Create a test file to upload
         test_file_content = 'This is a test file for upload testing.'
@@ -876,7 +907,9 @@ def test_browser_file_upload(temp_dir, runtime_cls, run_as_openhands):
 
 
 def test_read_pdf_browse(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(
+        temp_dir, runtime_cls, run_as_openhands, enable_browser=True
+    )
     try:
         # Create a PDF file using reportlab in the host environment
         from reportlab.lib.pagesizes import letter
@@ -948,7 +981,9 @@ def test_read_pdf_browse(temp_dir, runtime_cls, run_as_openhands):
 
 
 def test_read_png_browse(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(
+        temp_dir, runtime_cls, run_as_openhands, enable_browser=True
+    )
     try:
         # Create a PNG file using PIL in the host environment
         from PIL import Image, ImageDraw
@@ -1016,7 +1051,9 @@ def test_read_png_browse(temp_dir, runtime_cls, run_as_openhands):
 
 def test_download_file(temp_dir, runtime_cls, run_as_openhands):
     """Test downloading a file using the browser."""
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(
+        temp_dir, runtime_cls, run_as_openhands, enable_browser=True
+    )
     try:
         # Minimal PDF content for testing
         pdf_content = b"""%PDF-1.4
