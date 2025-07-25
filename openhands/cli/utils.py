@@ -231,6 +231,26 @@ def split_is_actually_version(split: list[str]) -> bool:
 
 
 def read_file(file_path: str | Path) -> str:
+    """Read content from a file.
+
+    Args:
+        file_path: Path to the file to read
+
+    Returns:
+        str: Content of the file
+
+    Raises:
+        IsADirectoryError: If the path is a directory
+        FileNotFoundError: If the file doesn't exist
+        PermissionError: If there are permission issues
+    """
+    from pathlib import Path
+
+    path = Path(file_path)
+
+    if path.is_dir():
+        raise IsADirectoryError(f"'{file_path}' is a directory, not a file")
+
     with open(file_path, 'r') as f:
         return f.read()
 

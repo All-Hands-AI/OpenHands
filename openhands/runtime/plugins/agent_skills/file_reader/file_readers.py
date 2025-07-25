@@ -41,16 +41,30 @@ def parse_pdf(file_path: str) -> None:
     Args:
         file_path: str: The path to the file to open.
     """
+    import os
+
     print(f'[Reading PDF file from {file_path}]')
-    content = PyPDF2.PdfReader(file_path)
-    text = ''
-    for page_idx in range(len(content.pages)):
-        text += (
-            f'@@ Page {page_idx + 1} @@\n'
-            + content.pages[page_idx].extract_text()
-            + '\n\n'
-        )
-    print(text.strip())
+
+    if not os.path.exists(file_path):
+        print(f'ERROR: File not found: {file_path}')
+        return
+
+    if os.path.isdir(file_path):
+        print(f'ERROR: Cannot read directory as PDF file: {file_path}')
+        return
+
+    try:
+        content = PyPDF2.PdfReader(file_path)
+        text = ''
+        for page_idx in range(len(content.pages)):
+            text += (
+                f'@@ Page {page_idx + 1} @@\n'
+                + content.pages[page_idx].extract_text()
+                + '\n\n'
+            )
+        print(text.strip())
+    except Exception as e:
+        print(f'Error reading PDF file: {e}')
 
 
 def parse_docx(file_path: str) -> None:
@@ -59,12 +73,26 @@ def parse_docx(file_path: str) -> None:
     Args:
         file_path: str: The path to the file to open.
     """
+    import os
+
     print(f'[Reading DOCX file from {file_path}]')
-    content = docx.Document(file_path)
-    text = ''
-    for i, para in enumerate(content.paragraphs):
-        text += f'@@ Page {i + 1} @@\n' + para.text + '\n\n'
-    print(text)
+
+    if not os.path.exists(file_path):
+        print(f'ERROR: File not found: {file_path}')
+        return
+
+    if os.path.isdir(file_path):
+        print(f'ERROR: Cannot read directory as DOCX file: {file_path}')
+        return
+
+    try:
+        content = docx.Document(file_path)
+        text = ''
+        for i, para in enumerate(content.paragraphs):
+            text += f'@@ Page {i + 1} @@\n' + para.text + '\n\n'
+        print(text)
+    except Exception as e:
+        print(f'Error reading DOCX file: {e}')
 
 
 def parse_latex(file_path: str) -> None:
@@ -73,7 +101,18 @@ def parse_latex(file_path: str) -> None:
     Args:
         file_path: str: The path to the file to open.
     """
+    import os
+
     print(f'[Reading LaTex file from {file_path}]')
+
+    if not os.path.exists(file_path):
+        print(f'ERROR: File not found: {file_path}')
+        return
+
+    if os.path.isdir(file_path):
+        print(f'ERROR: Cannot read directory as LaTeX file: {file_path}')
+        return
+
     with open(file_path) as f:
         data = f.read()
     text = LatexNodes2Text().latex_to_text(data)
@@ -81,6 +120,14 @@ def parse_latex(file_path: str) -> None:
 
 
 def _base64_img(file_path: str) -> str:
+    import os
+
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f'File not found: {file_path}')
+
+    if os.path.isdir(file_path):
+        raise IsADirectoryError(f'Cannot read directory as image file: {file_path}')
+
     with open(file_path, 'rb') as image_file:
         encoded_image = base64.b64encode(image_file.read()).decode('utf-8')
     return encoded_image
@@ -126,7 +173,18 @@ def parse_audio(file_path: str, model: str = 'whisper-1') -> None:
         file_path: str: The path to the audio file to transcribe.
         model: str: The audio model to use for transcription. Defaults to 'whisper-1'.
     """
+    import os
+
     print(f'[Transcribing audio file from {file_path}]')
+
+    if not os.path.exists(file_path):
+        print(f'ERROR: File not found: {file_path}')
+        return
+
+    if os.path.isdir(file_path):
+        print(f'ERROR: Cannot read directory as audio file: {file_path}')
+        return
+
     try:
         # TODO: record the COST of the API call
         with open(file_path, 'rb') as audio_file:
@@ -217,7 +275,18 @@ def parse_pptx(file_path: str) -> None:
     Args:
         file_path: str: The path to the file to open.
     """
+    import os
+
     print(f'[Reading PowerPoint file from {file_path}]')
+
+    if not os.path.exists(file_path):
+        print(f'ERROR: File not found: {file_path}')
+        return
+
+    if os.path.isdir(file_path):
+        print(f'ERROR: Cannot read directory as PowerPoint file: {file_path}')
+        return
+
     try:
         pres = Presentation(str(file_path))
         text = []

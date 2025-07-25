@@ -461,6 +461,26 @@ class TestFileOperations:
 
         assert result == mock_content
 
+    def test_read_file_directory_error(self):
+        """Test that read_file raises IsADirectoryError when trying to read a directory."""
+        with patch('pathlib.Path.is_dir', return_value=True):
+            try:
+                read_file('/some/directory')
+                raise AssertionError('Expected IsADirectoryError to be raised')
+            except IsADirectoryError as e:
+                assert 'is a directory, not a file' in str(e)
+                assert '/some/directory' in str(e)
+
+    def test_read_file_regular_file(self):
+        """Test that read_file works normally for regular files."""
+        mock_content = 'test file content'
+        with (
+            patch('pathlib.Path.is_dir', return_value=False),
+            patch('builtins.open', mock_open(read_data=mock_content)),
+        ):
+            result = read_file('test.txt')
+            assert result == mock_content
+
     def test_write_to_file(self):
         mock_content = 'test file content'
         mock_file = mock_open()
