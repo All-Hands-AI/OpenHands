@@ -1,16 +1,39 @@
-import { toast as sonnerToast } from "sonner";
+import { toast as sonnerToast, type ExternalToast } from "sonner";
 import { Icon, type IconProps } from "../icon/Icon";
 import { cn } from "../../shared/utils/cn";
 import { Typography } from "../typography/Typography";
 import { toastStyles } from "./utils";
+import type { JSX } from "react";
+import { invariant } from "../../shared/utils/invariant";
 
-type IBaseToastProps = {
-  id: string | number;
+type RenderContentProps = {
+  onDismiss: () => void;
+};
+
+type WithRenderContent = {
+  renderContent: (props: RenderContentProps) => JSX.Element;
+  text?: never;
+  icon?: never;
+};
+
+type WithTextAndIcon = {
   text: string;
   icon: IconProps["icon"];
   iconClassName: string;
+  renderContent?: never;
+};
+
+type IBaseToastProps = (WithRenderContent | WithTextAndIcon) & {
+  id: string | number;
 };
 const BaseToast = (props: IBaseToastProps) => {
+  invariant(
+    !!props.renderContent || !!props.text,
+    "Either define renderContent or text. Both cannot be defined."
+  );
+
+  const onDismiss = () => sonnerToast.dismiss(props.id);
+
   return (
     <div
       className={cn(
@@ -20,66 +43,90 @@ const BaseToast = (props: IBaseToastProps) => {
         "flex flex-row items-center justify-between gap-x-4"
       )}
     >
-      <Icon
-        icon={props.icon}
-        className={cn("w-6 h-6 flex-shrink-0", props.iconClassName)}
-      />
-      <Typography.Text fontSize="xs" className="text-white">
-        {props.text}
-      </Typography.Text>
-      <button
-        onClick={() => sonnerToast.dismiss(props.id)}
-        className="cursor-pointer"
-      >
-        <Icon icon="X" className={cn("w-6 h-6 flex-shrink-0 text-white")} />
-      </button>
+      {props.renderContent ? (
+        props.renderContent({ onDismiss })
+      ) : (
+        <>
+          <Icon
+            icon={props.icon}
+            className={cn("w-6 h-6 flex-shrink-0", props.iconClassName)}
+          />
+          <Typography.Text fontSize="xs" className="text-white">
+            {props.text}
+          </Typography.Text>
+          <button onClick={onDismiss} className="cursor-pointer">
+            <Icon icon="X" className={cn("w-6 h-6 flex-shrink-0 text-white")} />
+          </button>
+        </>
+      )}
     </div>
   );
 };
 
 export const toasterMessages = {
-  error: (text?: string) => {
+  error: (text?: string, props?: ExternalToast) => {
     const styles = toastStyles["error"];
-    sonnerToast.custom((id) => (
-      <BaseToast
-        id={id}
-        icon={styles.icon}
-        iconClassName={cn(styles.iconColor)}
-        text={text!}
-      />
-    ));
+    sonnerToast.custom(
+      (id) => (
+        <BaseToast
+          id={id}
+          icon={styles.icon}
+          iconClassName={cn(styles.iconColor)}
+          text={text!}
+        />
+      ),
+      props
+    );
   },
-  success: (text?: string) => {
+  success: (text?: string, props?: ExternalToast) => {
     const styles = toastStyles["success"];
-    sonnerToast.custom((id) => (
-      <BaseToast
-        id={id}
-        icon={styles.icon}
-        iconClassName={cn(styles.iconColor)}
-        text={text!}
-      />
-    ));
+    sonnerToast.custom(
+      (id) => (
+        <BaseToast
+          id={id}
+          icon={styles.icon}
+          iconClassName={cn(styles.iconColor)}
+          text={text!}
+        />
+      ),
+      props
+    );
   },
-  info: (text?: string) => {
+  info: (text?: string, props?: ExternalToast) => {
     const styles = toastStyles["info"];
-    sonnerToast.custom((id) => (
-      <BaseToast
-        id={id}
-        icon={styles.icon}
-        iconClassName={cn(styles.iconColor)}
-        text={text!}
-      />
-    ));
+    sonnerToast.custom(
+      (id) => (
+        <BaseToast
+          id={id}
+          icon={styles.icon}
+          iconClassName={cn(styles.iconColor)}
+          text={text!}
+        />
+      ),
+      props
+    );
   },
-  warning: (text?: string) => {
+  warning: (text?: string, props?: ExternalToast) => {
     const styles = toastStyles["warning"];
-    sonnerToast.custom((id) => (
-      <BaseToast
-        id={id}
-        icon={styles.icon}
-        iconClassName={cn(styles.iconColor)}
-        text={text!}
-      />
-    ));
+    sonnerToast.custom(
+      (id) => (
+        <BaseToast
+          id={id}
+          icon={styles.icon}
+          iconClassName={cn(styles.iconColor)}
+          text={text!}
+        />
+      ),
+      props
+    );
+  },
+  custom: (
+    renderContent: WithRenderContent["renderContent"],
+    props?: ExternalToast
+  ) => {
+    sonnerToast.custom(
+      (id) => <BaseToast id={id} renderContent={renderContent} />,
+      props
+    );
   },
 };
