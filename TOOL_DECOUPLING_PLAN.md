@@ -3,17 +3,30 @@
 ## 🎯 Goal
 Decouple AI agent tools into their own classes to encapsulate tool definitions, error validation, and response interpretation separate from regular agent LLM response processing.
 
-## 📊 Current Status: MAJOR MILESTONE ACHIEVED ✅
+## 📊 Current Status: CRITICAL MILESTONE ACHIEVED ✅
 
-**Tool Architecture Complete**: All three main agent types now have unified tool architectures with comprehensive validation and testing.
+**function_calling.py Migration Complete**: Successfully migrated CodeActAgent to use unified tool validation for all 4 core tools!
 
 ### 🏗️ Architecture Summary
 - **CodeActAgent**: 4 base tools (BashTool, FileEditorTool, BrowserTool, FinishTool)
 - **ReadOnlyAgent**: Inherits FinishTool + adds 3 safe tools (ViewTool, GrepTool, GlobTool)  
 - **LocAgent**: Inherits all CodeAct tools + adds 3 search tools (SearchEntityTool, SearchRepoTool, ExploreStructureTool)
 
+### 🚀 Migration Achievement: function_calling.py Complete
+- ✅ **Fixed legacy tool import conflicts** with proper aliasing (LegacyBrowserTool, LegacyFinishTool)
+- ✅ **Updated BrowserTool interface** to match legacy (code parameter instead of action)
+- ✅ **All 4 core tools using unified validation**:
+  - BashTool: `validate_parameters()` with proper error handling
+  - FinishTool: `validate_parameters()` with parameter mapping (summary/outputs)
+  - FileEditorTool: `validate_parameters()` with command handling (view/edit)
+  - BrowserTool: `validate_parameters()` with code parameter validation
+- ✅ **Fixed tool name constant references** throughout function_calling.py
+- ✅ **Created comprehensive integration tests** verifying tool validation works
+- ✅ **Maintained backward compatibility** with legacy fallback paths
+
 ### 🧪 Testing Status
 - **192 total tests** (all passing)
+- **Integration tests passing** for all 4 core tools
 - **163 original tests**: Base Tool class, validation, error handling, inheritance patterns
 - **29 new LocAgent tests**: Complete coverage of search tools and inheritance
 
@@ -23,6 +36,7 @@ Decouple AI agent tools into their own classes to encapsulate tool definitions, 
 - ✅ **ReadOnly tools** with inheritance pattern and safety validation
 - ✅ **LocAgent tools** with complex parameter validation and search capabilities
 - ✅ **Comprehensive test suite** covering all tools and edge cases
+- ✅ **CodeActAgent function_calling.py migration** with unified tool validation
 
 ## Architecture Decision: Agent-Specific Tool Organization
 
@@ -70,14 +84,14 @@ openhands/agenthub/loc_agent/tools/unified/
 - [x] All agent-specific tool architectures complete
 
 ### 🔄 IN PROGRESS (Phase 3: Integration & Migration)
-- [ ] Integration with function_calling.py modules (CURRENT TASK)
-- [ ] Bridge layer for gradual migration
-- [ ] Update all agent function_calling.py to use new tool classes
+- ✅ **CodeActAgent function_calling.py migration** (COMPLETED!)
+- [ ] ReadOnlyAgent function_calling.py migration (NEXT)
+- [ ] LocAgent function_calling.py migration (NEXT)
 
 ### 📋 TODO (Phase 3: Full Migration)
-- [ ] Migrate existing tool implementations incrementally
-- [ ] Remove old tool definitions
+- [ ] Remove old tool definitions after migration complete
 - [ ] Documentation and cleanup
+- [ ] Performance testing and optimization
 
 ## Detailed Implementation Plan
 
