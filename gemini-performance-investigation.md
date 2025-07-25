@@ -177,9 +177,9 @@ The performance difference is likely due to LiteLLM's abstraction overhead and s
 3. ✅ Compare implementations
 4. ✅ Identify root cause (LiteLLM abstraction overhead)
 
-### ✅ ROOT CAUSE IDENTIFIED
+### ⚠️ INVESTIGATION UPDATE: DEEPER ANALYSIS NEEDED
 
-**🎯 BREAKTHROUGH: LiteLLM is NOT the bottleneck!**
+**🎯 INITIAL FINDING: LiteLLM is NOT the bottleneck!**
 
 **Performance Test Results (gemini-2.5-pro):**
 
@@ -193,48 +193,67 @@ The performance difference is likely due to LiteLLM's abstraction overhead and s
 
 **🔍 Key Finding:** LiteLLM overhead is only 1-3 seconds (4-12%), NOT the 10x+ slowdown reported.
 
-**🚨 Real Issue: Model Selection**
-- ❌ `gemini-2.0-flash-exp`: ~25+ seconds (slow experimental model)
-- ✅ `gemini-2.0-flash-001`: ~0.6 seconds (RooCode's default)
-- ⚠️ `gemini-2.5-pro`: ~25 seconds (powerful but slow)
+**🚨 CRITICAL DISCOVERY: User reports RooCode is FAST with gemini-2.5-pro!**
 
-**🏆 RooCode's Speed Advantage:**
-1. **Faster model** - Uses `gemini-2.0-flash-001` by default
-2. **Simpler prompts** - Shorter, more focused requests
-3. **Optimized config** - Temperature 0, efficient streaming
+This contradicts our test results where ALL approaches with `gemini-2.5-pro` are slow (~25s).
+
+**🔬 Thinking Budget Investigation:**
+
+RooCode sets `thinkingConfig` for `gemini-2.5-pro` (marked as `requiredReasoningBudget: true`):
+```typescript
+// RooCode's approach
+thinkingConfig: { thinkingBudget: 4096, includeThoughts: true }
+```
+
+**Thinking Budget Test Results:**
+- No thinking config: 25.979s
+- Thinking disabled: 26.113s
+- Small thinking budget (1024): 23.724s ⭐ (fastest)
+
+**🤔 HYPOTHESIS REFINEMENT:**
+1. **Model selection was premature** - RooCode IS fast with `gemini-2.5-pro`
+2. **Thinking budget helps slightly** - 2-3s improvement with small budget
+3. **Missing configuration** - RooCode likely has other optimizations we haven't found
+4. **Prompt differences** - RooCode may use different prompts/context
 
 **📊 Test Suite Results:**
    ```bash
-   # All tests completed successfully
+   # All tests show similar slow performance with gemini-2.5-pro
    python test_native_gemini.py     # 24-26s
    python test_litellm_performance.py  # 25-29s
    python test_openhands_litellm.py    # 25-31s
+   python test_thinking_budget.py      # 23-26s
    ```
 
-### 🛠️ RECOMMENDED SOLUTIONS
+### 🛠️ NEXT STEPS
 
-**Priority 1: Model Configuration (Immediate Impact)**
-1. **Add faster Gemini models to OpenHands:**
-   - `gemini-2.0-flash-001` (RooCode's default, ~0.6s)
-   - `gemini-1.5-flash-002` (balanced speed/capability)
+**🔍 IMMEDIATE INVESTIGATION NEEDED:**
 
-2. **Update default model selection:**
-   - Consider `gemini-2.0-flash-001` for speed-critical operations
-   - Keep `gemini-2.5-pro` for complex reasoning tasks
+1. **Verify RooCode's actual performance** with `gemini-2.5-pro`
+   - Test RooCode directly with same prompt
+   - Measure actual response times
+   - Compare with our test results
 
-**Priority 2: Configuration Optimization**
-1. **Streaming optimization** - Already good (minimal difference)
-2. **Parameter tuning** - Remove unnecessary LiteLLM parameters
-3. **Prompt optimization** - Shorter, more focused prompts
+2. **Identify missing RooCode optimizations:**
+   - Analyze RooCode's exact API calls (network inspection)
+   - Check for additional parameters we missed
+   - Compare prompt formatting and context
 
-**Priority 3: Optional Native Provider (Lower Priority)**
-- LiteLLM overhead is minimal (1-3s), so native provider would only provide marginal gains
-- Focus on model selection first for maximum impact
+3. **Test LiteLLM with thinking budget:**
+   - Implement thinking budget in LiteLLM calls
+   - Test if LiteLLM supports `thinkingConfig` parameter
+   - Compare with native API performance
 
-### 🎯 CONCLUSION
+### 🎯 CURRENT STATUS
 
-**The performance issue is NOT LiteLLM abstraction overhead.**
+**The performance issue is NOT primarily LiteLLM abstraction overhead (only 1-3s difference).**
 
-**Root cause: Model selection and configuration differences between RooCode and OpenHands.**
+**However, we haven't yet identified why RooCode is fast with `gemini-2.5-pro` while our tests are slow.**
 
-**Solution: Update OpenHands to use faster Gemini models like `gemini-2.0-flash-001` for speed-critical operations.**
+**Possible remaining factors:**
+- Different prompt structure/length
+- Additional API parameters we haven't discovered
+- Different API endpoints or versions
+- Caching or other optimizations
+
+**CRITICAL:** Need to verify user's claim that RooCode is fast with `gemini-2.5-pro` before proceeding with solutions.
