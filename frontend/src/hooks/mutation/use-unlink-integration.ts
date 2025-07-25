@@ -21,7 +21,8 @@ export function useUnlinkIntegration(
   const { t } = useTranslation();
 
   return useMutation({
-    mutationFn: () => openHands.post(`/integration/${platform}/unlink`),
+    mutationFn: () =>
+      openHands.post(`/integration/${platform}/workspaces/unlink`),
     onSuccess: () => {
       displaySuccessToast(t(I18nKey.SETTINGS$SAVED));
       queryClient.invalidateQueries({

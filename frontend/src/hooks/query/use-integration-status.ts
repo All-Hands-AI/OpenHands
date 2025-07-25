@@ -8,7 +8,7 @@ export function useIntegrationStatus(platform: "jira" | "jira-dc" | "linear") {
     queryFn: async () => {
       try {
         const response = await openHands.get(
-          `/integration/${platform}/users/me`,
+          `/integration/${platform}/workspaces/link`,
         );
         return response.data;
       } catch (error) {

@@ -20,11 +20,11 @@ export function useLinkIntegration(
   return useMutation({
     mutationFn: async (workspace: string) => {
       const input = {
-        workspace,
+        workspace_name: workspace,
       };
 
       const response = await openHands.post(
-        `/integration/${platform}/link`,
+        `/integration/${platform}/workspaces/link`,
         input,
       );
 
