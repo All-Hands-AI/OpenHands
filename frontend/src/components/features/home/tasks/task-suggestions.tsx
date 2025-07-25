@@ -36,9 +36,9 @@ export function TaskSuggestions({ filterFor }: TaskSuggestionsProps) {
       )}
     >
       <div className="flex items-center gap-2">
-        <Typography.Text className="text-sm leading-[16px] text-white font-medium">
+        <Typography.H2 className="text-sm leading-[16px] text-white font-medium">
           {t(I18nKey.TASKS$SUGGESTED_TASKS)}
-        </Typography.Text>
+        </Typography.H2>
       </div>
 
       <div className="flex flex-col">

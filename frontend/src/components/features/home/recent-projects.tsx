@@ -38,9 +38,9 @@ export function RecentProjects() {
       className="w-full flex flex-col pr-[16px] py-[10.5px]"
     >
       <div className="flex items-center gap-2">
-        <Typography.Text className="text-sm leading-[16px] text-white font-medium">
+        <Typography.H2 className="text-sm leading-[16px] text-white font-medium">
           {t(I18nKey.COMMON$RECENT_PROJECTS)}
-        </Typography.Text>
+        </Typography.H2>
       </div>
 
       <div className="flex flex-col">
