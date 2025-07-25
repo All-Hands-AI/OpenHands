@@ -533,8 +533,15 @@ class CLIRuntime(Runtime):
 
         file_path = self._sanitize_filename(action.path)
 
+        # Check if the file exists and is a directory first (before any file operations)
+        if not os.path.exists(file_path):
+            return ErrorObservation(f'File not found: {action.path}')
+
+        if os.path.isdir(file_path):
+            return ErrorObservation(f'Cannot read directory: {action.path}')
+
         # Cannot read binary files
-        if os.path.exists(file_path) and is_binary(file_path):
+        if is_binary(file_path):
             return ErrorObservation('ERROR_BINARY_FILE')
 
         # Use OHEditor for OH_ACI implementation source
@@ -552,14 +559,6 @@ class CLIRuntime(Runtime):
             )
 
         try:
-            # Check if the file exists
-            if not os.path.exists(file_path):
-                return ErrorObservation(f'File not found: {action.path}')
-
-            # Check if it's a directory
-            if os.path.isdir(file_path):
-                return ErrorObservation(f'Cannot read directory: {action.path}')
-
             # Read the file
             with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
                 content = f.read()

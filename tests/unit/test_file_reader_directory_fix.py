@@ -8,7 +8,10 @@ import pytest
 from openhands.runtime.plugins.agent_skills.file_reader.file_readers import (
     _base64_img,
     parse_audio,
+    parse_docx,
     parse_latex,
+    parse_pdf,
+    parse_pptx,
 )
 
 
@@ -81,3 +84,27 @@ class TestFileReaderDirectoryHandling:
         captured = capsys.readouterr()
         assert 'ERROR: File not found' in captured.out
         assert str(nonexistent_file) in captured.out
+
+    def test_parse_pdf_with_directory(self, capsys):
+        """Test that parse_pdf handles directory input gracefully."""
+        parse_pdf(str(self.test_dir))
+
+        captured = capsys.readouterr()
+        assert 'ERROR: Cannot read directory as PDF file' in captured.out
+        assert str(self.test_dir) in captured.out
+
+    def test_parse_docx_with_directory(self, capsys):
+        """Test that parse_docx handles directory input gracefully."""
+        parse_docx(str(self.test_dir))
+
+        captured = capsys.readouterr()
+        assert 'ERROR: Cannot read directory as DOCX file' in captured.out
+        assert str(self.test_dir) in captured.out
+
+    def test_parse_pptx_with_directory(self, capsys):
+        """Test that parse_pptx handles directory input gracefully."""
+        parse_pptx(str(self.test_dir))
+
+        captured = capsys.readouterr()
+        assert 'ERROR: Cannot read directory as PowerPoint file' in captured.out
+        assert str(self.test_dir) in captured.out
