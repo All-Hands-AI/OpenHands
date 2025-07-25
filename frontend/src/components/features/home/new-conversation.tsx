@@ -6,7 +6,7 @@ import { BrandButton } from "../settings/brand-button";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation";
 
-export function NewProject() {
+export function NewConversation() {
   const { t } = useTranslation();
 
   const navigate = useNavigate();
@@ -28,7 +28,7 @@ export function NewProject() {
         <div className="flex items-center gap-[10px]">
           <Icon icon="Plus" width={28} height={28} />
           <Typography.Text className="leading-5 font-bold text-base">
-            {t(I18nKey.PROJECT$NEW_PROJECT)}
+            {t(I18nKey.COMMON$NEW_CONVERSATION)}
           </Typography.Text>
         </div>
       </div>

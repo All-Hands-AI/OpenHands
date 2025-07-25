@@ -5,8 +5,7 @@ import { RepoConnector } from "#/components/features/home/repo-connector";
 import { TaskSuggestions } from "#/components/features/home/tasks/task-suggestions";
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { GitRepository } from "#/types/git";
-import { NewProject } from "#/components/features/home/new-project";
-import { RecentProjects } from "#/components/features/home/recent-projects";
+import { NewConversation } from "#/components/features/home/new-conversation";
 import { useResizeWindow } from "#/hooks/use-resize-window";
 import { cn } from "#/utils/utils";
 
@@ -37,7 +36,7 @@ function HomeScreen() {
           )}
         >
           <RepoConnector onRepoSelection={(repo) => setSelectedRepo(repo)} />
-          <NewProject />
+          <NewConversation />
         </div>
       </div>
 
@@ -48,7 +47,6 @@ function HomeScreen() {
             isSmallerDevice && "flex-col max-w-full min-w-full",
           )}
         >
-          <RecentProjects />
           {providersAreSet && <TaskSuggestions filterFor={selectedRepo} />}
         </div>
       </div>
