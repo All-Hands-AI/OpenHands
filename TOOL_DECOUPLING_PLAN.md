@@ -194,7 +194,26 @@ openhands/agenthub/loc_agent/tools/unified/
 
 ## Current State Summary
 
-**COMPLETED**: Tool architecture with inheritance patterns
-**CURRENT**: Creating comprehensive unit tests
-**NEXT**: Integration with function_calling.py modules
-**GOAL**: Full decoupling of tool logic from agent processing
+**MAJOR MILESTONE ACHIEVED**: ReadOnlyAgent function_calling.py migration complete!
+
+### Phase 2 Complete: Agent-Specific Tool Implementation ✅
+- **CodeActAgent tools**: 4 unified tools (BashTool, FileEditorTool, BrowserTool, FinishTool)
+- **ReadOnlyAgent tools**: 4 unified tools (ViewTool, GrepTool, GlobTool, FinishTool inherited)
+- **LocAgent tools**: 3 specialized tools + all CodeAct tools inherited
+- **All 192 tests passing** (163 original + 29 LocAgent tests)
+
+### Phase 3 In Progress: function_calling.py Migration 🔄
+- **CodeActAgent function_calling.py**: ✅ COMPLETE (unified validation for all 4 tools)
+- **ReadOnlyAgent function_calling.py**: ✅ COMPLETE (unified validation for all 4 tools)
+- **LocAgent function_calling.py**: ⏳ PENDING (next step)
+
+### Architecture Summary
+- **Tool Classes**: Encapsulate schema definition and parameter validation
+- **Inheritance Pattern**: Child agents import parent tools + add their own
+- **Validation Strategy**: Unified validation with legacy fallbacks
+- **Error Handling**: Comprehensive ToolValidationError system
+- **Testing**: 192 comprehensive unit tests covering all scenarios
+
+**CURRENT**: LocAgent function_calling.py migration
+**NEXT**: Final integration testing and cleanup
+**GOAL**: Complete tool decoupling with zero regression
