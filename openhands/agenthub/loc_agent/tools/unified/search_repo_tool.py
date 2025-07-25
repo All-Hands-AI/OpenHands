@@ -117,7 +117,7 @@ search_code_snippets(line_nums=[10, 15], file_path_or_pattern='src/example.py')
             raise ToolValidationError("When 'line_nums' is provided, 'file_path_or_pattern' must specify a specific file path")
         
         # Normalize parameters
-        result = {"file_path_or_pattern": file_path_or_pattern.strip()}
+        result: dict[str, Any] = {"file_path_or_pattern": file_path_or_pattern.strip()}
         
         if search_terms:
             result["search_terms"] = [term.strip() for term in search_terms]

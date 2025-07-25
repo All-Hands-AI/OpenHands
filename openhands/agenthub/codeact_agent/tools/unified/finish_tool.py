@@ -47,7 +47,7 @@ class FinishTool(Tool):
     
     def validate_parameters(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
         """Validate and normalize finish tool parameters."""
-        validated = {}
+        validated: Dict[str, Any] = {}
         
         if 'outputs' in parameters:
             outputs = parameters['outputs']

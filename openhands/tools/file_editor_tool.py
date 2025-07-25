@@ -1,9 +1,8 @@
 """File editor tool for OpenHands using str_replace_editor interface."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
-
 
 from openhands.llm.tool_names import STR_REPLACE_EDITOR_TOOL_NAME
 
@@ -12,20 +11,22 @@ from .base import Tool, ToolValidationError
 
 class FileEditorTool(Tool):
     """Tool for viewing, creating and editing files using str_replace_editor interface."""
-    
+
     def __init__(self):
         super().__init__(
             name=STR_REPLACE_EDITOR_TOOL_NAME,
-            description="Custom editing tool for viewing, creating and editing files"
+            description='Custom editing tool for viewing, creating and editing files',
         )
-    
-    def get_schema(self, use_short_description: bool = False) -> ChatCompletionToolParam:
+
+    def get_schema(
+        self, use_short_description: bool = False
+    ) -> ChatCompletionToolParam:
         """Get the tool schema for function calling."""
         if use_short_description:
             description = self._get_short_description()
         else:
             description = self._get_detailed_description()
-            
+
         return ChatCompletionToolParam(
             type='function',
             function=ChatCompletionToolParamFunctionChunk(
@@ -75,63 +76,75 @@ class FileEditorTool(Tool):
                 },
             ),
         )
-    
-    def validate_parameters(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+
+    def validate_parameters(self, parameters: dict[str, Any]) -> dict[str, Any]:
         """Validate and normalize file editor tool parameters."""
         if 'command' not in parameters:
             raise ToolValidationError("Missing required parameter 'command'")
         if 'path' not in parameters:
             raise ToolValidationError("Missing required parameter 'path'")
-        
+
         command = parameters['command']
         valid_commands = ['view', 'create', 'str_replace', 'insert', 'undo_edit']
         if command not in valid_commands:
-            raise ToolValidationError(f"Invalid command '{command}'. Must be one of: {valid_commands}")
-        
+            raise ToolValidationError(
+                f"Invalid command '{command}'. Must be one of: {valid_commands}"
+            )
+
         validated = {
             'command': command,
             'path': str(parameters['path']),
         }
-        
+
         # Validate command-specific parameters
         if command == 'create':
             if 'file_text' not in parameters:
-                raise ToolValidationError("'create' command requires 'file_text' parameter")
+                raise ToolValidationError(
+                    "'create' command requires 'file_text' parameter"
+                )
             validated['file_text'] = str(parameters['file_text'])
-        
+
         elif command == 'str_replace':
             if 'old_str' not in parameters:
-                raise ToolValidationError("'str_replace' command requires 'old_str' parameter")
+                raise ToolValidationError(
+                    "'str_replace' command requires 'old_str' parameter"
+                )
             validated['old_str'] = str(parameters['old_str'])
             validated['new_str'] = str(parameters.get('new_str', ''))
-        
+
         elif command == 'insert':
             if 'insert_line' not in parameters:
-                raise ToolValidationError("'insert' command requires 'insert_line' parameter")
+                raise ToolValidationError(
+                    "'insert' command requires 'insert_line' parameter"
+                )
             if 'new_str' not in parameters:
-                raise ToolValidationError("'insert' command requires 'new_str' parameter")
-            
+                raise ToolValidationError(
+                    "'insert' command requires 'new_str' parameter"
+                )
+
             try:
                 validated['insert_line'] = int(parameters['insert_line'])
             except (ValueError, TypeError):
-                raise ToolValidationError(f"Invalid insert_line value: {parameters['insert_line']}")
-            
+                raise ToolValidationError(
+                    f'Invalid insert_line value: {parameters["insert_line"]}'
+                )
+
             validated['new_str'] = str(parameters['new_str'])
-        
+
         elif command == 'view':
             if 'view_range' in parameters:
                 view_range = parameters['view_range']
                 if not isinstance(view_range, list) or len(view_range) != 2:
-                    raise ToolValidationError("view_range must be a list of two integers")
+                    raise ToolValidationError(
+                        'view_range must be a list of two integers'
+                    )
                 try:
                     validated['view_range'] = [int(view_range[0]), int(view_range[1])]
                 except (ValueError, TypeError):
-                    raise ToolValidationError("view_range must contain valid integers")
-        
-        return validated
-    
+                    raise ToolValidationError('view_range must contain valid integers')
 
-    
+        return validated
+
     def _get_detailed_description(self) -> str:
         """Get detailed description for the tool."""
         return """Custom editing tool for viewing, creating and editing files in plain-text format
@@ -165,7 +178,7 @@ CRITICAL REQUIREMENTS FOR USING THIS TOOL:
 3. REPLACEMENT: The `new_str` parameter should contain the edited lines that replace the `old_str`. Both strings must be different.
 
 Remember: when making multiple file edits in a row to the same file, you should prefer to send all edits in a single message with multiple calls to this tool, rather than multiple messages with a single call each."""
-    
+
     def _get_short_description(self) -> str:
         """Get short description for the tool."""
         return """Custom editing tool for viewing, creating and editing files in plain-text format

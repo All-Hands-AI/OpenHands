@@ -12,7 +12,7 @@ class GlobTool(Tool):
     def __init__(self):
         super().__init__('glob', 'Find files using glob patterns safely')
     
-    def get_schema(self):
+    def get_schema(self, use_short_description: bool = False):
         return {
             'type': 'function',
             'function': {

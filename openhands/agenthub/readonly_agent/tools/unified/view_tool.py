@@ -12,7 +12,7 @@ class ViewTool(Tool):
     def __init__(self):
         super().__init__('view', 'View files and directories safely')
     
-    def get_schema(self):
+    def get_schema(self, use_short_description: bool = False):
         return {
             'type': 'function',
             'function': {
@@ -59,7 +59,7 @@ class ViewTool(Tool):
         if not path.strip():
             raise ToolValidationError("Parameter 'path' cannot be empty")
         
-        validated = {'path': path.strip()}
+        validated: dict[str, Any] = {'path': path.strip()}
         
         # Validate optional view_range parameter
         if 'view_range' in parameters:

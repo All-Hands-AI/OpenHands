@@ -1,10 +1,9 @@
 """Bash/Command execution tool for OpenHands."""
 
 import sys
-from typing import Any, Dict
+from typing import Any
 
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
-
 
 from openhands.llm.tool_names import EXECUTE_BASH_TOOL_NAME
 
@@ -13,20 +12,22 @@ from .base import Tool, ToolValidationError
 
 class BashTool(Tool):
     """Tool for executing bash commands in a persistent shell session."""
-    
+
     def __init__(self):
         super().__init__(
             name=EXECUTE_BASH_TOOL_NAME,
-            description="Execute bash commands in a persistent shell session"
+            description='Execute bash commands in a persistent shell session',
         )
-    
-    def get_schema(self, use_short_description: bool = False) -> ChatCompletionToolParam:
+
+    def get_schema(
+        self, use_short_description: bool = False
+    ) -> ChatCompletionToolParam:
         """Get the tool schema for function calling."""
         if use_short_description:
             description = self._get_short_description()
         else:
             description = self._get_detailed_description()
-            
+
         return ChatCompletionToolParam(
             type='function',
             function=ChatCompletionToolParamFunctionChunk(
@@ -57,31 +58,31 @@ class BashTool(Tool):
                 },
             ),
         )
-    
-    def validate_parameters(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+
+    def validate_parameters(self, parameters: dict[str, Any]) -> dict[str, Any]:
         """Validate and normalize bash tool parameters."""
         if 'command' not in parameters:
             raise ToolValidationError("Missing required parameter 'command'")
-        
+
         validated = {
             'command': str(parameters['command']),
             'is_input': parameters.get('is_input', 'false') == 'true',
         }
-        
+
         # Validate timeout if provided
         if 'timeout' in parameters:
             try:
                 timeout = float(parameters['timeout'])
                 if timeout <= 0:
-                    raise ToolValidationError("Timeout must be positive")
+                    raise ToolValidationError('Timeout must be positive')
                 validated['timeout'] = timeout
             except (ValueError, TypeError):
-                raise ToolValidationError(f"Invalid timeout value: {parameters['timeout']}")
-        
-        return validated
-    
+                raise ToolValidationError(
+                    f'Invalid timeout value: {parameters["timeout"]}'
+                )
 
-    
+        return validated
+
     def _get_detailed_description(self) -> str:
         """Get detailed description for the tool."""
         return """Execute a bash command in the terminal within a persistent shell session.
@@ -107,14 +108,14 @@ class BashTool(Tool):
 
 ### Output Handling
 * Output truncation: If the output exceeds a maximum length, it will be truncated before being returned."""
-    
+
     def _get_short_description(self) -> str:
         """Get short description for the tool."""
         return """Execute a bash command in the terminal.
 * Long running commands: For commands that may run indefinitely, it should be run in the background and the output should be redirected to a file, e.g. command = `python3 app.py > server.log 2>&1 &`. For commands that need to run for a specific duration, you can set the "timeout" argument to specify a hard timeout in seconds.
 * Interact with running process: If a bash command returns exit code `-1`, this means the process is not yet finished. By setting `is_input` to `true`, the assistant can interact with the running process and send empty `command` to retrieve any additional logs, or send additional text (set `command` to the text) to STDIN of the running process, or send command like `C-c` (Ctrl+C), `C-d` (Ctrl+D), `C-z` (Ctrl+Z) to interrupt the process.
 * One command at a time: You can only execute one bash command at a time. If you need to run multiple commands sequentially, you can use `&&` or `;` to chain them together."""
-    
+
     def _refine_prompt(self, prompt: str) -> str:
         """Refine prompt for platform-specific commands."""
         if sys.platform == 'win32':

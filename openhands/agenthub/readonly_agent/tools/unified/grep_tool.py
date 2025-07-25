@@ -12,7 +12,7 @@ class GrepTool(Tool):
     def __init__(self):
         super().__init__('grep', 'Search for patterns in files safely')
     
-    def get_schema(self):
+    def get_schema(self, use_short_description: bool = False):
         return {
             'type': 'function',
             'function': {
@@ -73,7 +73,7 @@ class GrepTool(Tool):
         if not path.strip():
             raise ToolValidationError("Parameter 'path' cannot be empty")
         
-        validated = {
+        validated: dict[str, Any] = {
             'pattern': pattern.strip(),
             'path': path.strip()
         }
