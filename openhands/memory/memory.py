@@ -237,11 +237,16 @@ class Memory:
         if not query:
             return recalled_content
 
-        # Search for microagent triggers in the query
+        # Get repository name if available
+        repo_name = None
+        if self.repository_info and self.repository_info.repo_name:
+            repo_name = self.repository_info.repo_name
+
+        # Search for microagent triggers in the query or repository name
         for name, microagent in self.knowledge_microagents.items():
-            trigger = microagent.match_trigger(query)
+            trigger = microagent.match_trigger(query, repo_name)
             if trigger:
-                logger.info("Microagent '%s' triggered by keyword '%s'", name, trigger)
+                logger.info("Microagent '%s' triggered by '%s'", name, trigger)
                 recalled_content.append(
                     MicroagentKnowledge(
                         name=microagent.name,

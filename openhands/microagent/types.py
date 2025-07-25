@@ -30,6 +30,9 @@ class MicroagentMetadata(BaseModel):
     version: str = Field(default='1.0.0')
     agent: str = Field(default='CodeActAgent')
     triggers: list[str] = []  # optional, only exists for knowledge microagents
+    repo_triggers: list[
+        str
+    ] = []  # optional, list of repository names that trigger this microagent
     inputs: list[InputMetadata] = []  # optional, only exists for task microagents
     mcp_tools: MCPConfig | None = (
         None  # optional, for microagents that provide additional MCP tools
