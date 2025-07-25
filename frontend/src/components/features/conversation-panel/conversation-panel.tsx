@@ -12,6 +12,8 @@ import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { ExitConversationModal } from "./exit-conversation-modal";
 import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 import { Provider } from "#/types/settings";
+import { useUpdateConversation } from "#/hooks/mutation/use-update-conversation";
+import { displaySuccessToast } from "#/utils/custom-toast-handlers";
 
 interface ConversationPanelProps {
   onClose: () => void;
@@ -34,11 +36,15 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
   const [selectedConversationId, setSelectedConversationId] = React.useState<
     string | null
   >(null);
+  const [openContextMenuId, setOpenContextMenuId] = React.useState<
+    string | null
+  >(null);
 
   const { data: conversations, isFetching, error } = useUserConversations();
 
   const { mutate: deleteConversation } = useDeleteConversation();
   const { mutate: stopConversation } = useStopConversation();
+  const { mutate: updateConversation } = useUpdateConversation();
 
   const handleDeleteProject = (conversationId: string) => {
     setConfirmDeleteModalVisible(true);
@@ -48,6 +54,20 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
   const handleStopConversation = (conversationId: string) => {
     setConfirmStopModalVisible(true);
     setSelectedConversationId(conversationId);
+  };
+
+  const handleConversationTitleChange = async (
+    conversationId: string,
+    newTitle: string,
+  ) => {
+    updateConversation(
+      { conversationId, newTitle },
+      {
+        onSuccess: () => {
+          displaySuccessToast(t(I18nKey.CONVERSATION$TITLE_UPDATED));
+        },
+      },
+    );
   };
 
   const handleConfirmDelete = () => {
@@ -114,6 +134,9 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
               isActive={isActive}
               onDelete={() => handleDeleteProject(project.conversation_id)}
               onStop={() => handleStopConversation(project.conversation_id)}
+              onChangeTitle={(title) =>
+                handleConversationTitleChange(project.conversation_id, title)
+              }
               title={project.title}
               selectedRepository={{
                 selected_repository: project.selected_repository,
@@ -124,6 +147,10 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
               createdAt={project.created_at}
               conversationStatus={project.status}
               conversationId={project.conversation_id}
+              contextMenuOpen={openContextMenuId === project.conversation_id}
+              onContextMenuToggle={(isOpen) =>
+                setOpenContextMenuId(isOpen ? project.conversation_id : null)
+              }
             />
           )}
         </NavLink>

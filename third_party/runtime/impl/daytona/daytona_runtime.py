@@ -50,7 +50,6 @@ class DaytonaRuntime(ActionExecutionClient):
         daytona_api_key = os.getenv('DAYTONA_API_KEY')
         if not daytona_api_key:
             raise ValueError('DAYTONA_API_KEY environment variable is required for Daytona runtime')
-        
         daytona_api_url = os.getenv('DAYTONA_API_URL', 'https://app.daytona.io/api')
         daytona_target = os.getenv('DAYTONA_TARGET', 'eu')
 
@@ -118,20 +117,23 @@ class DaytonaRuntime(ActionExecutionClient):
         return env_vars
 
     def _create_sandbox(self) -> Sandbox:
+        # Check if auto-stop should be disabled - otherwise have it trigger after 60 minutes
+        disable_auto_stop = os.getenv('DAYTONA_DISABLE_AUTO_STOP', 'false').lower() == 'true'
+        auto_stop_interval = 0 if disable_auto_stop else 60
+
         sandbox_params = CreateSandboxFromSnapshotParams(
             language='python',
             snapshot=self.config.sandbox.runtime_container_image,
             public=True,
             env_vars=self._get_creation_env_vars(),
             labels={OPENHANDS_SID_LABEL: self.sid},
+            auto_stop_interval=auto_stop_interval,
         )
         return self.daytona.create(sandbox_params)
 
     def _construct_api_url(self, port: int) -> str:
         assert self.sandbox is not None, 'Sandbox is not initialized'
-        assert self.sandbox.runner_domain is not None, 'Runner domain is not available'
-
-        return f'https://{port}-{self.sandbox.id}.{self.sandbox.runner_domain}'
+        return self.sandbox.get_preview_link(port).url
 
     @property
     def action_execution_server_url(self) -> str:
@@ -248,7 +250,14 @@ class DaytonaRuntime(ActionExecutionClient):
             return
 
         if self.sandbox:
-            self.sandbox.delete()
+            delete_on_close = os.getenv('DAYTONA_DELETE_ON_CLOSE', 'false').lower() == 'true'
+
+            if delete_on_close:
+                self.sandbox.delete()
+            else:
+                # Only stop if sandbox is currently started
+                if self._get_sandbox().state == 'started':
+                    self.sandbox.stop()
 
     @property
     def vscode_url(self) -> str | None:
