@@ -49,6 +49,14 @@ class AgentConfig(BaseModel):
     extended: ExtendedConfig = Field(default_factory=lambda: ExtendedConfig({}))
     """Extended configuration for the agent."""
 
+    # TOM-specific configuration
+    tom_min_instruction_length: int = Field(default=10)
+    """Minimum instruction length to trigger TOM instruction improvement."""
+    tom_fallback_on_error: bool = Field(default=True)
+    """Whether to fall back to normal operation when TOM encounters errors."""
+    tom_user_id: str | None = Field(default=None)
+    """Specific user ID to use for TOM API calls. If None, will use session ID."""
+
     model_config = ConfigDict(extra='forbid')
 
     @classmethod
@@ -99,10 +107,11 @@ class AgentConfig(BaseModel):
             try:
                 # Merge base config with overrides
                 merged = {**base_config.model_dump(), **overrides}
+                # Import Agent class for both paths
+                from openhands.controller.agent import Agent
+
                 if merged.get('classpath'):
                     # if an explicit classpath is given, try to load it and look up its config model class
-                    from openhands.controller.agent import Agent
-
                     try:
                         agent_cls = get_impl(Agent, merged.get('classpath'))
                         custom_config = agent_cls.config_model.model_validate(merged)
