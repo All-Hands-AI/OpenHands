@@ -1,3 +1,8 @@
+---
+title: Project Management Tool Integrations
+description: Overview of OpenHands Cloud integrations with project management platforms including Jira Cloud, Jira Data Center, and Linear. Learn about setup requirements, usage methods, and troubleshooting.
+---
+
 # Project Management Tool Integrations
 
 ## Overview
@@ -13,9 +18,9 @@ Integration requires two levels of setup:
 2. **Workspace Integration** - Self-service configuration through the OpenHands Cloud UI to link your OpenHands account to the target workspace
 
 ### Platform-Specific Setup Guides:
-- [Linear Integration](./linear-integration.md)
 - [Jira Cloud Integration](./jira-integration.md)
 - [Jira Data Center Integration](./jira-dc-integration.md)
+- [Linear Integration](./linear-integration.md)
 
 ## Usage
 
@@ -30,14 +35,6 @@ Add a comment to any issue with `@openhands` followed by your task description:
 ### Method 2: Label-based Delegation
 Add the label `openhands` to any issue. The OpenHands agent will automatically process the issue based on its description and requirements.
 
-## What Happens Next
-
-1. The webhook triggers when you mention `@openhands` or add the `openhands` label
-2. OpenHands Cloud receives the event and processes the task
-3. The OpenHands agent analyzes the issue and begins implementation
-4. Progress updates and results are posted back to the original issue
-5. You can follow the link from the agent's acknowledgment message to monitor live progress through the OpenHands Cloud UI
-
 ## Troubleshooting
 
 ### Platform Configuration Issues
@@ -46,7 +43,7 @@ Add the label `openhands` to any issue. The OpenHands agent will automatically p
 - **Permission errors**: Ensure the service account has access to relevant projects/teams and appropriate permissions
 
 ### Workspace Integration Issues
-- **Workspace linking requests credentials**: If there are no active workspace integrations for the workspace you specified, you need to configure it first. Contact your platform administrator if you don't have the necessary access
+- **Workspace linking requests credentials**: If there are no active workspace integrations for the workspace you specified, you need to configure it first. Contact your platform administrator that you want to integrate with (eg: Jira, Linear)
 - **OAuth flow fails**: Ensure you're signing in with the same Git provider account that contains the repositories you want OpenHands to work on
 - **Integration not found**: Verify the workspace name matches exactly and that platform configuration was completed first
 

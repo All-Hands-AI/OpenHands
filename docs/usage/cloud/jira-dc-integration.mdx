@@ -1,3 +1,8 @@
+---
+title: Jira Data Center Integration
+description: Complete guide for setting up Jira Data Center integration with OpenHands Cloud, including service account creation, personal access token generation, webhook configuration, and workspace integration setup.
+---
+
 # Jira Data Center Integration
 
 ## Platform Configuration
@@ -82,12 +87,32 @@
 
 **Edit Configuration:**
 - Click the **Edit** button next to your configured platform
-- **Important:** Only the original user who created the integration can see the edit view
 - Update any necessary credentials or settings
 - Click **Update** to apply changes
 - You will need to repeat the OAuth flow as before
+- **Important:** Only the original user who created the integration can see the edit view
 
 **Unlink Workspace:**
 - In the edit view, click **Unlink** next to the workspace name
 - This will deactivate your workspace link
-- **Important:** If the original user who configured the integration chooses to unlink their integration, any users currently linked to that integration will also be unlinked, and the workspace integration will be deactivated. Only they will be able to reactivate it by following the workspace integration flow again.
+- **Important:** If the original user who configured the integration chooses to unlink their integration, any users currently linked to that integration will also be unlinked, and the workspace integration will be deactivated. The integration can only be reactivated by the original user.
+
+### Screenshots
+
+<AccordionGroup>
+<Accordion title="Workspace link flow">
+![workspace-link.png](/static/img/workspace-link.png)
+</Accordion>
+
+<Accordion title="Workspace Configure flow">
+![workspace-link.png](/static/img/workspace-configure.png)
+</Accordion>
+
+<Accordion title="Edit view as a user">
+![workspace-link.png](/static/img/workspace-user-edit.png)
+</Accordion>
+
+<Accordion title="Edit view as the workspace creator">
+![workspace-link.png](/static/img/workspace-admin-edit.png)
+</Accordion>
+</AccordionGroup>

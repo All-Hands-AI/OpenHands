@@ -37,7 +37,16 @@
                   "usage/cloud/bitbucket-installation",
                   "usage/cloud/github-installation",
                   "usage/cloud/gitlab-installation",
-                  "usage/cloud/slack-installation"
+                  "usage/cloud/slack-installation",
+                  {
+                    "group": "Project Management Tools",
+                    "pages": [
+                      "usage/cloud/project-management-tool-integrations",
+                      "usage/cloud/jira-integration",
+                      "usage/cloud/jira-dc-integration",
+                      "usage/cloud/linear-integration"
+                    ]
+                  }
                 ]
               },
               "usage/cloud/cloud-ui",
