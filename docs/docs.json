@@ -41,10 +41,10 @@
                   {
                     "group": "Project Management Tools",
                     "pages": [
-                      "usage/cloud/project-management-tool-integrations",
-                      "usage/cloud/jira-integration",
-                      "usage/cloud/jira-dc-integration",
-                      "usage/cloud/linear-integration"
+                      "usage/cloud/project-management/overview",
+                      "usage/cloud/project-management/jira-integration",
+                      "usage/cloud/project-management/jira-dc-integration",
+                      "usage/cloud/project-management/linear-integration"
                     ]
                   }
                 ]

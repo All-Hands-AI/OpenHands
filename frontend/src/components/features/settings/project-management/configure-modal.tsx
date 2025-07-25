@@ -149,7 +149,7 @@ export function ConfigureModal({
     const hasSpaces = /\s/.test(value);
     if (hasSpaces) {
       setWebhookSecretError(
-        t(I18nKey.PROJECT_MANAGEMENT$WORKSPACE_NAME_VALIDATION_ERROR),
+        t(I18nKey.PROJECT_MANAGEMENT$WEBHOOK_SECRET_NAME_VALIDATION_ERROR),
       );
     } else {
       setWebhookSecretError(null);
@@ -162,7 +162,7 @@ export function ConfigureModal({
     const isValid = emailRegex.test(value) || value.length === 0;
     if (!isValid && value.length > 0) {
       setEmailError(
-        t(I18nKey.PROJECT_MANAGEMENT$WORKSPACE_NAME_VALIDATION_ERROR),
+        t(I18nKey.PROJECT_MANAGEMENT$SVC_ACC_EMAIL_VALIDATION_ERROR),
       );
     } else {
       setEmailError(null);
@@ -174,7 +174,7 @@ export function ConfigureModal({
     const hasSpaces = /\s/.test(value);
     if (hasSpaces) {
       setApiKeyError(
-        t(I18nKey.PROJECT_MANAGEMENT$WORKSPACE_NAME_VALIDATION_ERROR),
+        t(I18nKey.PROJECT_MANAGEMENT$SVC_ACC_API_KEY_VALIDATION_ERROR),
       );
     } else {
       setApiKeyError(null);
@@ -284,31 +284,26 @@ export function ConfigureModal({
               }}
             />
           ) : (
-            <>
-              {t(I18nKey.PROJECT_MANAGEMENT$LINK_CONFIRMATION_DESCRIPTION, {
-                platform: platformName,
-              })}
-              <p className="mt-4">
-                <Trans
-                  i18nKey={
-                    I18nKey.PROJECT_MANAGEMENT$IMPORTANT_WORKSPACE_INTEGRATION
-                  }
-                  components={{
-                    b: <b />,
-                    a: (
-                      <a
-                        href="https://docs.all-hands.dev/usage/cloud/openhands-cloud"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-500 underline"
-                      >
-                        Check the document for more information
-                      </a>
-                    ),
-                  }}
-                />
-              </p>
-            </>
+            <p className="mt-4">
+              <Trans
+                i18nKey={
+                  I18nKey.PROJECT_MANAGEMENT$IMPORTANT_WORKSPACE_INTEGRATION
+                }
+                components={{
+                  b: <b />,
+                  a: (
+                    <a
+                      href="https://docs.all-hands.dev/usage/cloud/openhands-cloud"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 underline"
+                    >
+                      Check the document for more information
+                    </a>
+                  ),
+                }}
+              />
+            </p>
           )}
         </BaseModalDescription>
         <div className="w-full flex flex-col gap-4 mt-4">
