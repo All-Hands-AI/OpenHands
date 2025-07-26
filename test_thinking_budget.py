@@ -8,6 +8,15 @@ import google.generativeai as genai
 from google import genai as new_genai
 from google.genai import types
 
+# Add LiteLLM import
+try:
+    import litellm
+
+    LITELLM_AVAILABLE = True
+except ImportError:
+    LITELLM_AVAILABLE = False
+    print('⚠️  LiteLLM not available - skipping LiteLLM tests')
+
 
 def test_thinking_budget():
     """Test Gemini 2.5 Pro with and without thinking budget"""
@@ -132,6 +141,87 @@ def test_thinking_budget():
         print(f'❌ Error: {e}')
         duration5 = None
 
+    # LiteLLM Tests
+    duration6 = duration7 = duration8 = duration9 = None
+    if LITELLM_AVAILABLE:
+        # Test 6: LiteLLM with reasoning_effort="low"
+        print('\n🔍 Test 6: LiteLLM with reasoning_effort="low"')
+        start_time = time.time()
+        try:
+            response6 = litellm.completion(
+                model='gemini/gemini-2.5-pro',
+                messages=[{'role': 'user', 'content': prompt}],
+                reasoning_effort='low',
+                api_key=api_key,
+            )
+            duration6 = time.time() - start_time
+            print(f'✅ Duration: {duration6:.3f}s')
+            print(
+                f'📝 Response length: {len(response6.choices[0].message.content)} chars'
+            )
+        except Exception as e:
+            print(f'❌ Error: {e}')
+
+        # Test 7: LiteLLM with reasoning_effort="medium"
+        print('\n🔍 Test 7: LiteLLM with reasoning_effort="medium"')
+        start_time = time.time()
+        try:
+            response7 = litellm.completion(
+                model='gemini/gemini-2.5-pro',
+                messages=[{'role': 'user', 'content': prompt}],
+                reasoning_effort='medium',
+                api_key=api_key,
+            )
+            duration7 = time.time() - start_time
+            print(f'✅ Duration: {duration7:.3f}s')
+            print(
+                f'📝 Response length: {len(response7.choices[0].message.content)} chars'
+            )
+        except Exception as e:
+            print(f'❌ Error: {e}')
+
+        # Test 8: LiteLLM with thinking parameter (Anthropic-style)
+        print('\n🔍 Test 8: LiteLLM with thinking parameter (128 tokens)')
+        start_time = time.time()
+        try:
+            response8 = litellm.completion(
+                model='gemini/gemini-2.5-pro',
+                messages=[{'role': 'user', 'content': prompt}],
+                thinking={'type': 'enabled', 'budget_tokens': 128},
+                api_key=api_key,
+            )
+            duration8 = time.time() - start_time
+            print(f'✅ Duration: {duration8:.3f}s')
+            print(
+                f'📝 Response length: {len(response8.choices[0].message.content)} chars'
+            )
+        except Exception as e:
+            print(f'❌ Error: {e}')
+
+        # Test 9: LiteLLM with debug logging enabled
+        print('\n🔍 Test 9: LiteLLM with debug logging (reasoning_effort="low")')
+        os.environ['LITELLM_LOG'] = 'DEBUG'
+        litellm.set_verbose = True
+        start_time = time.time()
+        try:
+            response9 = litellm.completion(
+                model='gemini/gemini-2.5-pro',
+                messages=[{'role': 'user', 'content': prompt}],
+                reasoning_effort='low',
+                api_key=api_key,
+            )
+            duration9 = time.time() - start_time
+            print(f'✅ Duration: {duration9:.3f}s')
+            print(
+                f'📝 Response length: {len(response9.choices[0].message.content)} chars'
+            )
+        except Exception as e:
+            print(f'❌ Error: {e}')
+        finally:
+            # Reset debug logging
+            os.environ.pop('LITELLM_LOG', None)
+            litellm.set_verbose = False
+
     # Summary
     print('\n📊 SUMMARY')
     print('=' * 60)
@@ -146,10 +236,31 @@ def test_thinking_budget():
     if duration5:
         print(f'Medium thinking budget:    {duration5:.3f}s')
 
+    # LiteLLM results
+    if LITELLM_AVAILABLE:
+        if duration6:
+            print(f'LiteLLM reasoning_effort=low:   {duration6:.3f}s')
+        if duration7:
+            print(f'LiteLLM reasoning_effort=medium: {duration7:.3f}s')
+        if duration8:
+            print(f'LiteLLM thinking (128 tokens):  {duration8:.3f}s')
+        if duration9:
+            print(f'LiteLLM debug logging:     {duration9:.3f}s')
+
     # Find the fastest approach
     durations = [
         d
-        for d in [duration1, duration2, duration3, duration4, duration5]
+        for d in [
+            duration1,
+            duration2,
+            duration3,
+            duration4,
+            duration5,
+            duration6,
+            duration7,
+            duration8,
+            duration9,
+        ]
         if d is not None
     ]
     if durations:
