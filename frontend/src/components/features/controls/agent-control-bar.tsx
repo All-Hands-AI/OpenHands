@@ -39,6 +39,7 @@ export function AgentControlBar() {
             : AgentState.PAUSED
         }
         handleAction={handleAction}
+        variant={curAgentState === AgentState.RUNNING ? "prominent" : "default"}
       >
         {curAgentState === AgentState.PAUSED ? <PlayIcon /> : <PauseIcon />}
       </ActionButton>
