@@ -297,38 +297,81 @@ Google's official Gemini CLI achieves **2.6-5.2s** with `gemini-2.5-pro` - valid
 **🔍 NEXT PHASE:**
 Analyze what makes Gemini CLI fast vs our slow implementations (~25s) to identify the optimization gap.
 
-## 🔍 HTTP Request Analysis - CRITICAL DISCOVERY
+## 🚀 HTTP Request Analysis - BREAKTHROUGH ACHIEVED
 
-**BREAKTHROUGH**: Gemini CLI uses a **completely different API endpoint** than our implementations!
+**MAJOR SUCCESS**: Successfully captured full HTTP request details from Gemini CLI!
 
-### API Endpoint Differences
-- **Gemini CLI**: `play.googleapis.com` (POST request)
-- **Our implementations**: `generativelanguage.googleapis.com` (standard Gemini API)
+### Corrected Understanding
+- **CORRECTION**: `play.googleapis.com` requests were telemetry logging, not actual API calls
+- **ACTUAL API**: Gemini CLI uses same `generativelanguage.googleapis.com` endpoint as our implementations
+- **REAL DIFFERENCE**: Configuration and request structure differences, not endpoint
 
-### Network Analysis Results
-Using `NODE_DEBUG=http,https` on Gemini CLI revealed:
+### Captured HTTP Requests
+
+#### Request 1: Model Test/Initialization (972ms)
 ```bash
-HTTP: createConnection play.googleapis.com:443:::::::::::::::::::::
-method: 'POST',
-headers: { 'Content-Length': 1054 },
-hostname: 'play.googleapis.com',
+🚀 FETCH REQUEST: {
+  method: 'POST',
+  url: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent',
+  headers: {
+    'Content-Type': 'application/json',
+    'x-goog-api-key': 'AIz...'
+  }
+}
+📤 REQUEST BODY: {
+  "contents":[{"parts":[{"text":"test"}]}],
+  "generationConfig":{
+    "maxOutputTokens":1,
+    "temperature":0,
+    "topK":1,
+    "thinkingConfig":{
+      "thinkingBudget":128,
+      "includeThoughts":false
+    }
+  }
+}
 ```
 
-### Key Findings
-1. **Different Endpoint**: `play.googleapis.com` vs `generativelanguage.googleapis.com`
-2. **Same Protocol**: Both use HTTPS POST requests
-3. **Request Size**: Gemini CLI sends 1054 bytes (compact request)
-4. **Performance Impact**: Different endpoint may have different routing/optimization
-5. **Same SDK**: Both use Google's official SDK but hit different endpoints
+#### Request 2: Actual Generation (3714ms)
+```bash
+🚀 FETCH REQUEST: {
+  method: 'POST',
+  url: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:streamGenerateContent?alt=sse',
+  headers: {
+    'User-Agent': 'GeminiCLI/0.1.13 (darwin; arm64)',
+    'x-goog-api-client': 'google-genai-sdk/1.9.0 gl-node/v23.11.0',
+    'Content-Type': 'application/json',
+    'x-goog-api-key': 'AIz...'
+  }
+}
+```
 
-### Implications
-- **Root Cause Identified**: Different API endpoints explain the 5-10x performance difference
-- **Not Configuration**: The issue isn't hyperparameters or request structure
-- **Infrastructure**: `play.googleapis.com` appears to be a faster/optimized endpoint
-- **SDK Behavior**: Same `@google/genai` SDK routes to different endpoints based on configuration
+### Critical Configuration Differences
+
+1. **Thinking Budget**: Gemini CLI uses `thinkingBudget: 128` with `includeThoughts: false`
+2. **Streaming**: Uses `:streamGenerateContent?alt=sse` for streaming responses
+3. **SDK Headers**: Includes specific SDK identification headers:
+   - `User-Agent: GeminiCLI/0.1.13 (darwin; arm64)`
+   - `x-goog-api-client: google-genai-sdk/1.9.0 gl-node/v23.11.0`
+4. **Request Structure**: Two-phase approach (test + generation)
+5. **Model Initialization**: Separate test request with minimal output
+
+### Performance Analysis
+- **Total Time**: ~21s (similar to our implementations)
+- **Request 1**: 972ms (model initialization)
+- **Request 2**: 3714ms (actual generation)
+- **Remaining Time**: ~16s (likely model processing/thinking time)
+
+### Key Insights
+1. **Same Endpoint**: No infrastructure advantage from different endpoints
+2. **Configuration Focus**: Differences are in request configuration, not infrastructure
+3. **Streaming vs Non-streaming**: Gemini CLI uses streaming, we use non-streaming
+4. **SDK Headers**: Proper SDK identification may affect routing/prioritization
+5. **Two-phase Approach**: Separate initialization may optimize subsequent requests
 
 ### Next Steps
-1. **Investigate endpoint differences**: Why does Gemini CLI use `play.googleapis.com`?
-2. **Configuration analysis**: What makes the SDK choose different endpoints?
-3. **Test endpoint switching**: Can we force our implementations to use `play.googleapis.com`?
-4. **Apply optimization**: Update OpenHands to use the faster endpoint
+1. **Test streaming vs non-streaming** in our implementations
+2. **Add proper SDK headers** to match Gemini CLI
+3. **Implement two-phase approach** (test + generation)
+4. **Compare thinking budget settings** (128 vs our current settings)
+5. **Analyze why total time is still ~21s** despite fast individual requests
