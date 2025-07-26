@@ -38,7 +38,7 @@ def create_openhands_llm_completion_func(
             return None
 
         config = LLMConfig(
-            model='gemini-2.5-pro',
+            model='litellm_proxy/gemini/gemini-2.5-pro',
             api_key=api_key,
             base_url=base_url,
             max_output_tokens=1000,

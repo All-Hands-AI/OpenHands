@@ -33,7 +33,7 @@ def create_litellm_completion_func(**config_params):
 
     def completion_func(messages, tools=None, **kwargs):
         params = {
-            'model': 'gemini-2.5-pro',
+            'model': 'litellm_proxy/gemini/gemini-2.5-pro',
             'messages': messages,
             'api_key': api_key,
             'base_url': base_url,
@@ -59,7 +59,7 @@ def create_openhands_completion_func(**additional_params):
 
     # OpenHands default config
     config = {
-        'model': 'gemini-2.5-pro',
+        'model': 'litellm_proxy/gemini/gemini-2.5-pro',
         'api_key': api_key,
         'base_url': base_url,
         'api_version': None,
