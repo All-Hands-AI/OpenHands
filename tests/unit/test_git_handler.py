@@ -113,7 +113,7 @@ class TestGitHandler(unittest.TestCase):
         try:
             os.remove(os.path.join(self.local_dir, 'staged_delete.txt'))
         except FileNotFoundError:
-            content = ';'.join(['self.local_dir'] + os.listdir(self.local_dir))
+            content = ';'.join([self.local_dir] + os.listdir(self.local_dir))
             raise RuntimeError(f'file_not_found:{content}')
         self._execute_command('git add .', self.local_dir)
 
