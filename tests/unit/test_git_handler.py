@@ -4,6 +4,7 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from time import time
 from unittest.mock import patch
 
 from openhands.runtime.utils import git_changes, git_diff, git_handler
@@ -48,6 +49,7 @@ class TestGitHandler(unittest.TestCase):
             result = subprocess.run(
                 cmd, shell=True, cwd=cwd, capture_output=True, text=True, check=False
             )
+            time.sleep(0.1)
             return CommandResult(result.stdout, result.returncode)
         except Exception as e:
             return CommandResult(str(e), 1)
