@@ -19,6 +19,7 @@ from openhands.core.config import OpenHandsConfig, SandboxConfig
 from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig
 from openhands.core.exceptions import (
     AgentRuntimeDisconnectedError,
+    AgentRuntimeTimeoutError,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventSource, EventStream, EventStreamSubscriber
@@ -348,6 +349,14 @@ class Runtime(FileEditRuntimeMixin):
             observation = ErrorObservation(content=str(e))
         except (httpx.NetworkError, AgentRuntimeDisconnectedError) as e:
             runtime_status = RuntimeStatus.ERROR_RUNTIME_DISCONNECTED
+            error_message = f'{type(e).__name__}: {str(e)}'
+            self.log('error', f'Unexpected error while running action: {error_message}')
+            self.log('error', f'Problematic action: {str(event)}')
+            self.set_runtime_status(runtime_status, error_message)
+            return
+        except AgentRuntimeTimeoutError as e:
+            # Handle timeout errors specifically to ensure they're properly propagated
+            runtime_status = RuntimeStatus.ERROR_RUNTIME_TIMEOUT
             error_message = f'{type(e).__name__}: {str(e)}'
             self.log('error', f'Unexpected error while running action: {error_message}')
             self.log('error', f'Problematic action: {str(event)}')
