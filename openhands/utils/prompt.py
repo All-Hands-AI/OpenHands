@@ -20,10 +20,11 @@ class RuntimeInfo:
 
 @dataclass
 class RepositoryInfo:
-    """Information about a GitHub repository that has been cloned."""
+    """Information about a repository that has been cloned."""
 
     repo_name: str | None = None
     repo_directory: str | None = None
+    repo_url: str | None = None
 
 
 @dataclass
