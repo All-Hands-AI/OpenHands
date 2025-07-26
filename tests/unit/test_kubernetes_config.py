@@ -19,7 +19,6 @@ def test_kubernetes_config_defaults():
     assert config.node_selector_key is None
     assert config.node_selector_val is None
     assert config.tolerations_yaml is None
-    assert config.privileged is False
 
 
 def test_kubernetes_config_custom_values():
@@ -37,7 +36,6 @@ def test_kubernetes_config_custom_values():
         node_selector_key='zone',
         node_selector_val='us-east-1',
         tolerations_yaml='- key: special\n  value: true',
-        privileged=True,
     )
 
     assert config.namespace == 'test-ns'
@@ -52,7 +50,6 @@ def test_kubernetes_config_custom_values():
     assert config.node_selector_key == 'zone'
     assert config.node_selector_val == 'us-east-1'
     assert config.tolerations_yaml == '- key: special\n  value: true'
-    assert config.privileged is True
 
 
 def test_kubernetes_config_validation():
