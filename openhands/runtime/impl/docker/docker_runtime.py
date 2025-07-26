@@ -44,6 +44,12 @@ VSCODE_PORT_RANGE = (40000, 49999)
 APP_PORT_RANGE_1 = (50000, 54999)
 APP_PORT_RANGE_2 = (55000, 59999)
 
+if os.name == 'nt':
+    EXECUTION_SERVER_PORT_RANGE = (30000, 34999)
+    VSCODE_PORT_RANGE = (35000, 39999)
+    APP_PORT_RANGE_1 = (40000, 44999)
+    APP_PORT_RANGE_2 = (45000, 49151)
+
 
 def _is_retryablewait_until_alive_error(exception: Exception) -> bool:
     if isinstance(exception, tenacity.RetryError):
