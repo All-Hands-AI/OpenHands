@@ -24,7 +24,6 @@ from kubernetes.client.models import (
     V1Pod,
     V1PodSpec,
     V1ResourceRequirements,
-    V1SecurityContext,
     V1Service,
     V1ServiceBackendPort,
     V1ServicePort,
@@ -526,9 +525,6 @@ class KubernetesRuntime(ActionExecutionClient):
             },
         )
 
-        # Set security context for the container
-        security_context = V1SecurityContext(privileged=self._k8s_config.privileged)
-
         # Create the container definition
         container = V1Container(
             name='runtime',
@@ -540,7 +536,6 @@ class KubernetesRuntime(ActionExecutionClient):
             working_dir='/openhands/code/',
             resources=resources,
             readiness_probe=health_check,
-            security_context=security_context,
         )
 
         # Create the pod definition
