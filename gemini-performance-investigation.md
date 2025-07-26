@@ -225,30 +225,63 @@ thinkingConfig: { thinkingBudget: 4096, includeThoughts: true }
    python test_thinking_budget.py      # 23-26s
    ```
 
-### 🛠️ CURRENT EXPERIMENT: Direct Code Analysis
+### 🛠️ CURRENT EXPERIMENT: Google's Gemini CLI Analysis
 
-**🎯 NEW APPROACH: Modify RooCode to Log API Requests**
+**🎯 NEW DISCOVERY: Google's Official Gemini CLI**
 
-We're taking a direct approach:
+Found Google's official open-source Gemini CLI in workspace directory - perfect for investigation!
 
-**Plan:**
-1. **Find RooCode extension directory** in Windsurf
-2. **Locate API request code** where it calls the LLM API
-3. **Add console.log statements** to capture:
-   - Exact URL being called
-   - Complete request payload (headers + body)
-   - Model being used (`gemini-2.5-pro`)
-   - All parameters and configuration
-4. **Reload extension** and observe logs in Windsurf Developer Console
-5. **Compare with our test requests** to identify differences
+**✅ KEY FINDINGS:**
+- **Uses native `@google/genai` SDK** (not LiteLLM) - direct comparison baseline
+- **Has built-in debug mode**: `--debug` flag for detailed logging
+- **Supports gemini-2.5-pro**: Default model is `gemini-2.5-pro`
+- **Easy to modify**: Open source, can add custom logging if needed
+
+**🔬 INVESTIGATION PLAN:**
+1. **Test Gemini CLI performance** with `gemini-2.5-pro` in debug mode
+2. **Compare timing** with our test results (~25s)
+3. **Analyze debug output** to see exact API configuration
+4. **If needed**: Add custom logging to capture full request details
+5. **Compare** with RooCode's LiteLLM proxy approach
+
+**Commands to test:**
+```bash
+cd workspace/gemini-cli
+./bundle/gemini.js --model gemini-2.5-pro --debug --prompt "Hello, test message"
+```
 
 **Expected Benefits:**
-- See exact request RooCode sends to LLM API
-- Identify any special parameters or configuration we missed
-- Understand why RooCode is fast while our tests are slow
-- Direct comparison without network interception complexity
+- Direct performance comparison with native Google SDK
+- Detailed debug output showing API configuration
+- Easier to modify than browser extension
+- Clear baseline for "fast" vs "slow" performance
 
-**Status:** 🔄 IN PROGRESS
+**Status:** ✅ **BREAKTHROUGH ACHIEVED!**
+
+**🚨 CRITICAL DISCOVERY:**
+- **Gemini CLI with gemini-2.5-pro: 2.6-5.2 seconds** ⚡
+- **Our test implementations: ~25 seconds** 🐌
+- **Performance gap: 5-10x faster!**
+
+**Test Results:**
+```bash
+# Test 1: Simple greeting
+time ./bundle/gemini.js --model gemini-2.5-pro --debug --prompt "Hello, test message"
+# Result: 2.589s
+
+# Test 2: Code generation
+time ./bundle/gemini.js --model gemini-2.5-pro --debug --prompt "Write Python function"
+# Result: 5.188s
+```
+
+**✅ CONFIRMED:** Google's official CLI achieves the fast performance user reported!
+
+### 🎯 SECONDARY APPROACH: RooCode Extension Analysis
+
+**Plan B:** If Gemini CLI shows similar slow performance, investigate RooCode directly:
+1. **Find RooCode extension directory** in Windsurf
+2. **Add console.log statements** to capture LiteLLM proxy requests
+3. **Compare exact request payloads** with our test implementations
 
 ### 🎯 CURRENT STATUS
 
@@ -258,8 +291,8 @@ We're taking a direct approach:
 - **RooCode uses LiteLLM proxy** (`llm-proxy.eval.all-hands.dev`) - NOT Google's direct API
 - **Thinking budget provides small improvement** (2-3s faster) but not dramatic speedup
 
-**🚨 CRITICAL MYSTERY:**
-User reports RooCode is **fast** with `gemini-2.5-pro`, but our comprehensive testing shows all approaches are **slow** (~25s) with that model.
+**🎯 BREAKTHROUGH CONFIRMED:**
+Google's official Gemini CLI achieves **2.6-5.2s** with `gemini-2.5-pro` - validating user's fast performance reports!
 
-**🔍 INVESTIGATION APPROACH:**
-Direct code analysis of RooCode extension to capture exact API requests and identify missing optimizations.
+**🔍 NEXT PHASE:**
+Analyze what makes Gemini CLI fast vs our slow implementations (~25s) to identify the optimization gap.
