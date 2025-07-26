@@ -11,13 +11,17 @@ from litellm import (
 
 from openhands.agenthub.codeact_agent.tools import (
     BrowserTool as LegacyBrowserTool,
+)
+from openhands.agenthub.codeact_agent.tools import (
     CondensationRequestTool,
-    FinishTool as LegacyFinishTool,
     IPythonTool,
     LLMBasedFileEditTool,
     ThinkTool,
     create_cmd_run_tool,
     create_str_replace_editor_tool,
+)
+from openhands.agenthub.codeact_agent.tools import (
+    FinishTool as LegacyFinishTool,
 )
 from openhands.agenthub.codeact_agent.tools.unified import (
     BashTool,
@@ -47,12 +51,11 @@ from openhands.events.action.mcp import MCPAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
 from openhands.llm.tool_names import (
-    EXECUTE_BASH_TOOL_NAME,
-    STR_REPLACE_EDITOR_TOOL_NAME,
     BROWSER_TOOL_NAME,
+    EXECUTE_BASH_TOOL_NAME,
     FINISH_TOOL_NAME,
+    STR_REPLACE_EDITOR_TOOL_NAME,
 )
-
 
 # Tool instances for validation
 _TOOL_INSTANCES = {
@@ -108,10 +111,12 @@ def response_to_actions(
                 # Use unified tool validation
                 bash_tool = _TOOL_INSTANCES[EXECUTE_BASH_TOOL_NAME]
                 validated_args = bash_tool.validate_parameters(arguments)
-                
+
                 # convert is_input to boolean
                 is_input = validated_args.get('is_input', 'false') == 'true'
-                action = CmdRunAction(command=validated_args['command'], is_input=is_input)
+                action = CmdRunAction(
+                    command=validated_args['command'], is_input=is_input
+                )
 
                 # Set hard timeout if provided
                 if 'timeout' in validated_args:
@@ -121,7 +126,7 @@ def response_to_actions(
                         raise FunctionCallValidationError(
                             f"Invalid float passed to 'timeout' argument: {validated_args['timeout']}"
                         ) from e
-            
+
             # ================================================
             # CmdRunTool (Legacy - fallback)
             # ================================================
@@ -165,12 +170,12 @@ def response_to_actions(
                 # Use unified tool validation
                 finish_tool = _TOOL_INSTANCES[FINISH_TOOL_NAME]
                 validated_args = finish_tool.validate_parameters(arguments)
-                
+
                 action = AgentFinishAction(
                     final_thought=validated_args.get('summary', ''),
                     task_completed=validated_args.get('task_completed', None),
                 )
-            
+
             # ================================================
             # AgentFinishAction (Legacy - fallback)
             # ================================================
@@ -201,7 +206,7 @@ def response_to_actions(
                         'impl_source', FileEditSource.LLM_BASED_EDIT
                     ),
                 )
-            
+
             # ================================================
             # FileEditorTool (Unified)
             # ================================================
@@ -209,10 +214,10 @@ def response_to_actions(
                 # Use unified tool validation
                 file_editor_tool = _TOOL_INSTANCES[STR_REPLACE_EDITOR_TOOL_NAME]
                 validated_args = file_editor_tool.validate_parameters(arguments)
-                
+
                 path = validated_args['path']
                 command = validated_args['command']
-                
+
                 if command == 'view':
                     action = FileReadAction(
                         path=path,
@@ -221,16 +226,19 @@ def response_to_actions(
                     )
                 else:
                     # Remove view_range for edit commands
-                    edit_kwargs = {k: v for k, v in validated_args.items() 
-                                 if k not in ['command', 'path', 'view_range']}
-                    
+                    edit_kwargs = {
+                        k: v
+                        for k, v in validated_args.items()
+                        if k not in ['command', 'path', 'view_range']
+                    }
+
                     action = FileEditAction(
                         path=path,
                         command=command,
                         impl_source=FileEditSource.OH_ACI,
                         **edit_kwargs,
                     )
-            
+
             # ================================================
             # str_replace_editor (Legacy - fallback)
             # ================================================
@@ -305,9 +313,9 @@ def response_to_actions(
                 # Use unified tool validation
                 browser_tool = _TOOL_INSTANCES[BROWSER_TOOL_NAME]
                 validated_args = browser_tool.validate_parameters(arguments)
-                
+
                 action = BrowseInteractiveAction(browser_actions=validated_args['code'])
-            
+
             # ================================================
             # BrowserTool (Legacy - fallback)
             # ================================================

@@ -10,13 +10,14 @@ if TYPE_CHECKING:
     from openhands.llm.llm import ModelResponse
 
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
-from openhands.agenthub.codeact_agent.tools.bash import create_cmd_run_tool
 from openhands.agenthub.codeact_agent.tools.condensation_request import (
     CondensationRequestTool,
 )
 from openhands.agenthub.codeact_agent.tools.ipython import IPythonTool
 from openhands.agenthub.codeact_agent.tools.llm_based_edit import LLMBasedFileEditTool
-from openhands.agenthub.codeact_agent.tools.str_replace_editor import create_str_replace_editor_tool
+from openhands.agenthub.codeact_agent.tools.str_replace_editor import (
+    create_str_replace_editor_tool,
+)
 from openhands.agenthub.codeact_agent.tools.think import ThinkTool
 from openhands.agenthub.codeact_agent.tools.unified import (
     BashTool,
@@ -118,7 +119,7 @@ class CodeActAgent(Agent):
             )
 
         tools = []
-        
+
         # New unified tools
         if self.config.enable_cmd:
             tools.append(BashTool().get_schema())
@@ -131,7 +132,7 @@ class CodeActAgent(Agent):
                 tools.append(BrowserTool().get_schema())
         if self.config.enable_editor:
             tools.append(FileEditorTool().get_schema())
-        
+
         # Legacy tools (to be migrated)
         if self.config.enable_think:
             tools.append(ThinkTool)
@@ -141,7 +142,10 @@ class CodeActAgent(Agent):
             tools.append(IPythonTool)
         if self.config.enable_llm_editor:
             tools.append(LLMBasedFileEditTool)
-        elif self.config.enable_editor and not any(tool.get('function', {}).get('name') == 'str_replace_editor' for tool in tools):
+        elif self.config.enable_editor and not any(
+            tool.get('function', {}).get('name') == 'str_replace_editor'
+            for tool in tools
+        ):
             # Fallback to old editor if FileEditorTool wasn't added
             tools.append(
                 create_str_replace_editor_tool(

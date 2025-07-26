@@ -20,7 +20,7 @@ from .search_repo_tool import SearchRepoTool
 __all__ = [
     # Inherited from CodeAct
     'BashTool',
-    'BrowserTool', 
+    'BrowserTool',
     'FileEditorTool',
     'FinishTool',
     # LocAgent-specific

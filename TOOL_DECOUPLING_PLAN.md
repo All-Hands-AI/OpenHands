@@ -9,7 +9,7 @@ Decouple AI agent tools into their own classes to encapsulate tool definitions, 
 
 ### 🏗️ Architecture Summary
 - **CodeActAgent**: 4 base tools (BashTool, FileEditorTool, BrowserTool, FinishTool)
-- **ReadOnlyAgent**: Inherits FinishTool + adds 3 safe tools (ViewTool, GrepTool, GlobTool)  
+- **ReadOnlyAgent**: Inherits FinishTool + adds 3 safe tools (ViewTool, GrepTool, GlobTool)
 - **LocAgent**: Inherits all CodeAct tools + adds 3 search tools (SearchEntityTool, SearchRepoTool, ExploreStructureTool)
 
 ### 🚀 Migration Achievement: function_calling.py Complete
@@ -73,7 +73,7 @@ openhands/agenthub/loc_agent/tools/unified/
 ### ✅ COMPLETED (Phase 1: Tool Architecture)
 - [x] Base Tool class with schema definition and parameter validation
 - [x] CodeAct unified tools (BashTool, FileEditorTool, BrowserTool, FinishTool)
-- [x] ReadOnly unified tools (ViewTool, GrepTool, GlobTool) 
+- [x] ReadOnly unified tools (ViewTool, GrepTool, GlobTool)
 - [x] Inheritance pattern: ReadOnly imports FinishTool from CodeAct parent
 - [x] Parameter validation with comprehensive error handling
 - [x] Schema generation compatible with LiteLLM function calling
@@ -106,7 +106,7 @@ Create `tests/unit/tools/` with complete test coverage:
 
 **CodeAct Tool Tests:**
 - `test_bash_tool.py` - BashTool schema and validation
-- `test_file_editor_tool.py` - FileEditorTool schema and validation  
+- `test_file_editor_tool.py` - FileEditorTool schema and validation
 - `test_browser_tool.py` - BrowserTool schema and validation
 - `test_finish_tool.py` - FinishTool schema and validation
 

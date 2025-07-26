@@ -1,9 +1,8 @@
 """Finish tool for OpenHands task completion."""
 
-from typing import Any, Dict
+from typing import Any
 
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
-
 
 from openhands.llm.tool_names import FINISH_TOOL_NAME
 
@@ -12,17 +11,19 @@ from .base import Tool, ToolValidationError
 
 class FinishTool(Tool):
     """Tool for finishing tasks and providing final outputs."""
-    
+
     def __init__(self):
         super().__init__(
             name=FINISH_TOOL_NAME,
-            description="Finish the current task and provide final output"
+            description='Finish the current task and provide final output',
         )
-    
-    def get_schema(self, use_short_description: bool = False) -> ChatCompletionToolParam:
+
+    def get_schema(
+        self, use_short_description: bool = False
+    ) -> ChatCompletionToolParam:
         """Get the tool schema for function calling."""
         description = self._get_description(use_short_description)
-            
+
         return ChatCompletionToolParam(
             type='function',
             function=ChatCompletionToolParamFunctionChunk(
@@ -44,28 +45,26 @@ class FinishTool(Tool):
                 },
             ),
         )
-    
-    def validate_parameters(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+
+    def validate_parameters(self, parameters: dict[str, Any]) -> dict[str, Any]:
         """Validate and normalize finish tool parameters."""
-        validated: Dict[str, Any] = {}
-        
+        validated: dict[str, Any] = {}
+
         if 'outputs' in parameters:
             outputs = parameters['outputs']
             if not isinstance(outputs, dict):
                 raise ToolValidationError("'outputs' must be a dictionary")
             validated['outputs'] = outputs
-        
+
         if 'summary' in parameters:
             validated['summary'] = str(parameters['summary'])
-        
-        return validated
-    
 
-    
+        return validated
+
     def _get_description(self, use_short_description: bool) -> str:
         """Get description for the tool."""
         if use_short_description:
-            return "Finish the current task and provide final outputs."
+            return 'Finish the current task and provide final outputs.'
         else:
             return """Finish the current task and provide final outputs.
 

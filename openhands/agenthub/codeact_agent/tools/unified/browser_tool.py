@@ -1,9 +1,8 @@
 """Browser tool for OpenHands web browsing capabilities."""
 
-from typing import Any, Dict
+from typing import Any
 
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
-
 
 from openhands.llm.tool_names import BROWSER_TOOL_NAME
 
@@ -12,17 +11,19 @@ from .base import Tool, ToolValidationError
 
 class BrowserTool(Tool):
     """Tool for web browsing and interaction."""
-    
+
     def __init__(self):
         super().__init__(
             name=BROWSER_TOOL_NAME,
-            description="Interact with the browser using Python code. Use it ONLY when you need to interact with a webpage."
+            description='Interact with the browser using Python code. Use it ONLY when you need to interact with a webpage.',
         )
-    
-    def get_schema(self, use_short_description: bool = False) -> ChatCompletionToolParam:
+
+    def get_schema(
+        self, use_short_description: bool = False
+    ) -> ChatCompletionToolParam:
         """Get the tool schema for function calling."""
         description = self._get_description(use_short_description)
-            
+
         return ChatCompletionToolParam(
             type='function',
             function=ChatCompletionToolParamFunctionChunk(
@@ -40,27 +41,25 @@ class BrowserTool(Tool):
                 },
             ),
         )
-    
-    def validate_parameters(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+
+    def validate_parameters(self, parameters: dict[str, Any]) -> dict[str, Any]:
         """Validate and normalize browser tool parameters."""
         if 'code' not in parameters:
             raise ToolValidationError("Missing required parameter 'code'")
-        
+
         code = parameters['code']
         if not isinstance(code, str):
             raise ToolValidationError("Parameter 'code' must be a string")
-        
+
         if not code.strip():
             raise ToolValidationError("Parameter 'code' cannot be empty")
-        
-        return {'code': code}
-    
 
-    
+        return {'code': code}
+
     def _get_description(self, use_short_description: bool) -> str:
         """Get description for the tool."""
         if use_short_description:
-            return "Interact with the browser using Python code. Use it ONLY when you need to interact with a webpage."
+            return 'Interact with the browser using Python code. Use it ONLY when you need to interact with a webpage.'
         else:
             return """Interact with the browser using Python code. Use it ONLY when you need to interact with a webpage.
 

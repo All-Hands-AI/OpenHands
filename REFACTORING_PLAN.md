@@ -84,20 +84,20 @@
 def validate_with_new_tools(tool_call):
     """Try new tool classes for validation, fall back to old logic"""
     from openhands.tools import BashTool, FileEditorTool
-    
+
     # Map tool names to tool instances
     tools = {
         'execute_bash': BashTool(),
         'str_replace_editor': FileEditorTool(),
     }
-    
+
     tool = tools.get(tool_call.function.name)
     if tool:
         try:
             return tool.validate_function_call(tool_call.function)
         except ToolValidationError as e:
             raise FunctionCallValidationError(str(e))
-    
+
     # Fall back to existing hardcoded validation
     return None  # Signal to use old logic
 ```
@@ -107,16 +107,16 @@ def validate_with_new_tools(tool_call):
 def response_to_actions(response: ModelResponse, mcp_tool_names: list[str] | None = None) -> list[Action]:
     """Convert LLM response to OpenHands actions using new tool classes"""
     from openhands.tools import BashTool, FileEditorTool
-    
+
     # Create tool instances (could be module-level for efficiency)
     tools = {
         'execute_bash': BashTool(),
         'str_replace_editor': FileEditorTool(),
     }
-    
+
     actions = []
     # ... existing response parsing logic ...
-    
+
     for tool_call in assistant_msg.tool_calls:
         tool = tools.get(tool_call.function.name)
         if tool:
@@ -125,21 +125,21 @@ def response_to_actions(response: ModelResponse, mcp_tool_names: list[str] | Non
                 validated_params = tool.validate_function_call(tool_call.function)
             except ToolValidationError as e:
                 raise FunctionCallValidationError(str(e))
-            
+
             # Create action based on tool type (simple logic remains here)
             if tool_call.function.name == 'execute_bash':
                 action = CmdRunAction(command=validated_params['command'], ...)
             elif tool_call.function.name == 'str_replace_editor':
                 action = FileEditAction(path=validated_params['path'], ...)
             # ... etc for other tools
-            
+
             actions.append(action)
         elif mcp_tool_names and tool_call.function.name in mcp_tool_names:
             # Handle MCP tools
             actions.append(MCPAction(...))
         else:
             raise FunctionCallNotExistsError(f'Tool {tool_call.function.name} not found')
-    
+
     return actions
 ```
 
@@ -154,7 +154,7 @@ def response_to_actions(response: ModelResponse, mcp_tool_names: list[str] | Non
 ## Success Criteria
 
 - [ ] All existing tests pass
-- [ ] Function calling behavior unchanged from user perspective  
+- [ ] Function calling behavior unchanged from user perspective
 - [ ] Tool logic consolidated in single location
 - [ ] Easy to add new tools by extending Tool base class
 - [ ] Reduced code duplication across agents

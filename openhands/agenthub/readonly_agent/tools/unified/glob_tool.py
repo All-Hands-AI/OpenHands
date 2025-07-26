@@ -2,16 +2,20 @@
 GlobTool for ReadOnlyAgent - safe file pattern matching.
 """
 
-from typing import Any, Dict
-from openhands.agenthub.codeact_agent.tools.unified.base import Tool, ToolValidationError
+from typing import Any
+
+from openhands.agenthub.codeact_agent.tools.unified.base import (
+    Tool,
+    ToolValidationError,
+)
 
 
 class GlobTool(Tool):
     """Tool for safely finding files using glob patterns without modification."""
-    
+
     def __init__(self):
         super().__init__('glob', 'Find files using glob patterns safely')
-    
+
     def get_schema(self, use_short_description: bool = False):
         return {
             'type': 'function',
@@ -39,25 +43,25 @@ class GlobTool(Tool):
                 },
             },
         }
-    
-    def validate_parameters(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+
+    def validate_parameters(self, parameters: dict[str, Any]) -> dict[str, Any]:
         """Validate glob tool parameters."""
         if not isinstance(parameters, dict):
-            raise ToolValidationError("Parameters must be a dictionary")
-        
+            raise ToolValidationError('Parameters must be a dictionary')
+
         # Validate required pattern parameter
         if 'pattern' not in parameters:
-            raise ToolValidationError("Missing required parameter: pattern")
-        
+            raise ToolValidationError('Missing required parameter: pattern')
+
         pattern = parameters['pattern']
         if not isinstance(pattern, str):
             raise ToolValidationError("Parameter 'pattern' must be a string")
-        
+
         if not pattern.strip():
             raise ToolValidationError("Parameter 'pattern' cannot be empty")
-        
+
         validated = {'pattern': pattern.strip()}
-        
+
         # Validate optional base_path parameter
         if 'base_path' in parameters:
             base_path = parameters['base_path']
@@ -66,5 +70,5 @@ class GlobTool(Tool):
             validated['base_path'] = base_path.strip() if base_path.strip() else '.'
         else:
             validated['base_path'] = '.'  # Default value
-        
+
         return validated

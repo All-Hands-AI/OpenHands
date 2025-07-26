@@ -2,16 +2,20 @@
 GrepTool for ReadOnlyAgent - safe text searching.
 """
 
-from typing import Any, Dict
-from openhands.agenthub.codeact_agent.tools.unified.base import Tool, ToolValidationError
+from typing import Any
+
+from openhands.agenthub.codeact_agent.tools.unified.base import (
+    Tool,
+    ToolValidationError,
+)
 
 
 class GrepTool(Tool):
     """Tool for safely searching text in files without modification."""
-    
+
     def __init__(self):
         super().__init__('grep', 'Search for patterns in files safely')
-    
+
     def get_schema(self, use_short_description: bool = False):
         return {
             'type': 'function',
@@ -52,28 +56,26 @@ class GrepTool(Tool):
                 },
             },
         }
-    
-    def validate_parameters(self, parameters: Dict[str, Any]) -> Dict[str, Any]:
+
+    def validate_parameters(self, parameters: dict[str, Any]) -> dict[str, Any]:
         """Validate grep tool parameters."""
         if not isinstance(parameters, dict):
-            raise ToolValidationError("Parameters must be a dictionary")
-        
+            raise ToolValidationError('Parameters must be a dictionary')
+
         # Validate required parameters
         if 'pattern' not in parameters:
-            raise ToolValidationError("Missing required parameter: pattern")
-        
+            raise ToolValidationError('Missing required parameter: pattern')
+
         pattern = parameters['pattern']
-        
+
         if not isinstance(pattern, str):
             raise ToolValidationError("Parameter 'pattern' must be a string")
-        
+
         if not pattern.strip():
             raise ToolValidationError("Parameter 'pattern' cannot be empty")
-        
-        validated: dict[str, Any] = {
-            'pattern': pattern.strip()
-        }
-        
+
+        validated: dict[str, Any] = {'pattern': pattern.strip()}
+
         # Validate optional path parameter
         if 'path' in parameters:
             path = parameters['path']
@@ -82,14 +84,14 @@ class GrepTool(Tool):
             if not path.strip():
                 raise ToolValidationError("Parameter 'path' cannot be empty")
             validated['path'] = path.strip()
-        
+
         # Handle include parameter (legacy compatibility)
         if 'include' in parameters:
             include = parameters['include']
             if not isinstance(include, str):
                 raise ToolValidationError("Parameter 'include' must be a string")
             validated['include'] = include.strip()
-        
+
         # Validate optional parameters
         if 'recursive' in parameters:
             recursive = parameters['recursive']
@@ -98,13 +100,15 @@ class GrepTool(Tool):
             validated['recursive'] = recursive
         else:
             validated['recursive'] = True  # Default value
-        
+
         if 'case_sensitive' in parameters:
             case_sensitive = parameters['case_sensitive']
             if not isinstance(case_sensitive, bool):
-                raise ToolValidationError("Parameter 'case_sensitive' must be a boolean")
+                raise ToolValidationError(
+                    "Parameter 'case_sensitive' must be a boolean"
+                )
             validated['case_sensitive'] = case_sensitive
         else:
             validated['case_sensitive'] = False  # Default value
-        
+
         return validated
