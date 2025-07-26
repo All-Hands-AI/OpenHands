@@ -302,6 +302,7 @@ class LLM(RetryMixin, DebugMixin):
 
             # log the entire LLM prompt
             self.log_prompt(messages)
+            print(self.config.model)
 
             # set litellm modify_params to the configured value
             # True by default to allow litellm to do transformations like adding a default message, when a message is empty
