@@ -73,6 +73,7 @@ class TestGitHandler(unittest.TestCase):
             for line in additional_content:
                 f.write('\n')
                 f.write(line)
+        assert os.path.exists(os.path.join(dir, name))
 
     def _setup_git_repos(self):
         """Set up real git repositories for testing."""
