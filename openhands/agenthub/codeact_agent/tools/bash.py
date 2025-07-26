@@ -2,7 +2,10 @@ import sys
 
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
-from openhands.llm.tool_names import EXECUTE_BASH_TOOL_NAME
+from openhands.llm.tool_names import (
+    EXECUTE_BASH_TOOL_NAME,
+    EXECUTE_STREAM_BASH_TOOL_NAME,
+)
 
 _DETAILED_BASH_DESCRIPTION = """Execute a bash command in the terminal within a persistent shell session.
 
@@ -72,6 +75,28 @@ def create_cmd_run_tool(
                         'type': 'number',
                         'description': 'Optional. Sets a hard timeout in seconds for the command execution. If not provided, the command will use the default soft timeout behavior.',
                     },
+                },
+                'required': ['command'],
+            },
+        ),
+    )
+
+
+def create_stream_cmd_run_tool() -> ChatCompletionToolParam:
+    return ChatCompletionToolParam(
+        type='function',
+        function=ChatCompletionToolParamFunctionChunk(
+            name=EXECUTE_STREAM_BASH_TOOL_NAME,
+            description=_DETAILED_BASH_DESCRIPTION,
+            parameters={
+                'type': 'object',
+                'properties': {
+                    'command': {
+                        'type': 'string',
+                        'description': refine_prompt(
+                            'The bash command to execute. Can be empty string to view additional logs when previous exit code is `-1`. Can be `C-c` (Ctrl+C) to interrupt the currently running process. Note: You can only execute one bash command at a time. If you need to run multiple commands sequentially, you can use `&&` or `;` to chain them together.'
+                        ),
+                    }
                 },
                 'required': ['command'],
             },
