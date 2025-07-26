@@ -387,9 +387,79 @@ The 5x performance gap is due to:
 
 **Gap Reduced**: From 5x to 2x difference remaining
 
+## 🎯 FINAL BREAKTHROUGH: LiteLLM Comprehensive Testing
+
+**Date**: December 26, 2024
+**Status**: ✅ **COMPLETED** - Comprehensive performance testing with all approaches
+
+### Test Results Summary
+
+| Test Configuration | Duration | Performance |
+|-------------------|----------|-------------|
+| **New API Gemini CLI (128)** | **11.366s** | 🏆 **Fastest** |
+| **LiteLLM thinking (128 tokens)** | **11.548s** | 🥈 **2nd Fastest** |
+| LiteLLM reasoning_effort=low | 20.549s | Moderate |
+| Medium thinking budget (1024) | 22.032s | Moderate |
+| LiteLLM debug logging | 23.037s | Moderate |
+| No thinking config (default) | 24.903s | Slow |
+| New API large budget (4096) | 25.308s | Slow |
+| Thinking disabled | 26.914s | Slow |
+| **LiteLLM reasoning_effort=medium** | **27.296s** | 🐌 **Slowest** |
+
+### Critical Discoveries
+
+**🎯 128-Token Thinking Budget is Optimal:**
+- **New API + 128 tokens**: 11.366s ⚡ (matches our previous breakthrough)
+- **LiteLLM + 128 tokens**: 11.548s ⚡ (virtually identical performance!)
+- Both approaches achieve ~2.4x speedup vs slowest configuration
+
+**📊 LiteLLM Internal Mapping Revealed:**
+From debug output, discovered LiteLLM's reasoning_effort mapping:
+- `reasoning_effort="low"` → `thinkingBudget: 1024` (20.549s)
+- `reasoning_effort="medium"` → `thinkingBudget: 2048` (27.296s - slowest!)
+- `thinking={"budget_tokens": 128}` → `thinkingBudget: 128` (11.548s - fast!)
+
+**🔍 LiteLLM Debug Output:**
+```json
+{
+  "thinkingConfig": {
+    "thinkingBudget": 1024,
+    "includeThoughts": true
+  }
+}
+```
+
+### Performance Gap Analysis
+- **Target**: Gemini CLI ~5s (from HTTP capture)
+- **Current Best**: 11.366s (new API + 128 tokens)
+- **Remaining Gap**: ~2x improvement needed
+- **Major Progress**: Reduced from 5x to 2x gap!
+
+### Key Insights for OpenHands
+
+1. **✅ CONFIRMED**: Thinking budget is the primary performance factor
+2. **✅ OPTIMAL SETTING**: 128 tokens (not 1024, 2048, or 4096)
+3. **✅ LITELLM PARITY**: LiteLLM with correct config matches native API performance
+4. **✅ WRONG PARAMETER**: `reasoning_effort` maps to suboptimal budgets, use `thinking` instead
+
+### Implementation Recommendations
+
+**For OpenHands Gemini Integration:**
+1. **Use 128-token thinking budget** instead of default/large budgets
+2. **LiteLLM Configuration**: Use `thinking={"budget_tokens": 128}` instead of `reasoning_effort`
+3. **Avoid**: `reasoning_effort="medium"` (slowest configuration!)
+4. **Target**: Apply remaining optimizations to close 2x gap
+
+### Remaining Investigation
+**2x Performance Gap (11.366s → ~5s):**
+1. **Streaming vs non-streaming** requests
+2. **SDK identification headers** (`User-Agent`, `x-goog-api-client`)
+3. **Two-phase request approach** (test + generation)
+4. **Request structure optimizations**
+
 ### Next Steps
-1. **✅ DONE**: Use new `google.genai` API with `thinking_budget=128`
-2. **Implement streaming** in OpenHands Gemini integration
-3. **Add proper SDK headers** (`User-Agent`, `x-goog-api-client`)
-4. **Test two-phase approach** (initialization + generation)
-5. **Target**: Close remaining 2x gap (~9.6s → ~5s)
+1. **✅ DONE**: Comprehensive thinking budget analysis
+2. **✅ DONE**: LiteLLM parameter mapping discovery
+3. **Implement**: 128-token thinking budget in OpenHands
+4. **Investigate**: Remaining streaming/headers optimizations
+5. **Target**: Achieve ~5s performance parity with Gemini CLI
