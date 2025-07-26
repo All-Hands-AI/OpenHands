@@ -372,15 +372,24 @@ Analyze what makes Gemini CLI fast vs our slow implementations (~25s) to identif
 5. **Thinking Budget**: Uses `thinkingBudget: 128, includeThoughts: false`
 
 ### Root Cause Identified
-The 5x performance gap is due to configuration differences:
-- **Streaming vs non-streaming requests**
-- **Missing SDK identification headers**
-- **Different thinking budget settings**
-- **Two-phase request approach**
+The 5x performance gap is due to:
+1. **API Version**: New `google.genai` API vs old `google.generativeai` API
+2. **Thinking Budget**: Optimal setting of 128 tokens (Gemini CLI config)
+3. **Streaming vs non-streaming requests**
+4. **Missing SDK identification headers**
+5. **Two-phase request approach**
+
+### Major Breakthrough: API + Thinking Budget
+**Performance Results:**
+- **New API + thinking_budget=128**: 9.6s ⚡ (3x faster than old API)
+- **Old API default**: ~28s 🐌
+- **Gemini CLI**: ~5s (target)
+
+**Gap Reduced**: From 5x to 2x difference remaining
 
 ### Next Steps
-1. **Implement streaming** in OpenHands Gemini integration
-2. **Add proper SDK headers** (`User-Agent`, `x-goog-api-client`)
-3. **Apply thinking budget configuration** (`thinkingBudget: 128`)
+1. **✅ DONE**: Use new `google.genai` API with `thinking_budget=128`
+2. **Implement streaming** in OpenHands Gemini integration
+3. **Add proper SDK headers** (`User-Agent`, `x-goog-api-client`)
 4. **Test two-phase approach** (initialization + generation)
-5. **Measure performance improvement** (target: ~25s → ~5s)
+5. **Target**: Close remaining 2x gap (~9.6s → ~5s)
