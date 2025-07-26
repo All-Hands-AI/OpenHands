@@ -193,7 +193,12 @@ class LLM(RetryMixin, DebugMixin):
             self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS
             or self.config.model.split('/')[-1] in REASONING_EFFORT_SUPPORTED_MODELS
         ):
-            kwargs['reasoning_effort'] = self.config.reasoning_effort
+            # For Gemini models, use optimized thinking budget instead of reasoning_effort
+            # Based on performance testing: 128 tokens achieves ~2.4x speedup vs reasoning_effort
+            if 'gemini' in self.config.model.lower():
+                kwargs['thinking'] = {'budget_tokens': 128}
+            else:
+                kwargs['reasoning_effort'] = self.config.reasoning_effort
             kwargs.pop(
                 'temperature'
             )  # temperature is not supported for reasoning models
