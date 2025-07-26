@@ -23,16 +23,14 @@ def get_closest_git_repo(path: Path) -> Path | None:
 
 def run(cmd: str, cwd: str) -> str:
     result = subprocess.run(
-        args=cmd,
-        shell=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        cwd=cwd
+        args=cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd
     )
     byte_content = result.stderr or result.stdout or b''
 
     if result.returncode != 0:
-        raise RuntimeError(f'error_running_cmd:{result.returncode}:{byte_content.decode()}')
+        raise RuntimeError(
+            f'error_running_cmd:{result.returncode}:{byte_content.decode()}'
+        )
     return byte_content.decode().strip()
 
 
@@ -44,7 +42,11 @@ def get_valid_ref(repo_dir: str) -> str | None:
         return None
 
     try:
-        default_branch = run('git --no-pager remote show origin | grep "HEAD branch"', repo_dir).split()[-1].strip()
+        default_branch = (
+            run('git --no-pager remote show origin | grep "HEAD branch"', repo_dir)
+            .split()[-1]
+            .strip()
+        )
     except RuntimeError:
         # Git repository does not have a remote origin - use current
         return current_branch
@@ -79,7 +81,10 @@ def get_git_diff(relative_file_path: str) -> dict[str, str]:
         raise ValueError('no_repo')
     current_rev = get_valid_ref(str(closest_git_repo))
     try:
-        original = run(f'git show "{current_rev}:{path.relative_to(closest_git_repo)}"', str(closest_git_repo))
+        original = run(
+            f'git show "{current_rev}:{path.relative_to(closest_git_repo)}"',
+            str(closest_git_repo),
+        )
     except RuntimeError:
         original = ''
     try:

@@ -81,7 +81,7 @@ class GitHandler:
             except Exception:
                 logger.exception(
                     'GitHandler:get_git_changes:error',
-                    extra={'content': result.content}
+                    extra={'content': result.content},
                 )
                 return None
 

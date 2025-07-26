@@ -13,16 +13,14 @@ from pathlib import Path
 
 def run(cmd: str, cwd: str) -> str:
     result = subprocess.run(
-        args=cmd,
-        shell=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        cwd=cwd
+        args=cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd
     )
     byte_content = result.stderr or result.stdout or b''
 
     if result.returncode != 0:
-        raise RuntimeError(f'error_running_cmd:{result.returncode}:{byte_content.decode()}')
+        raise RuntimeError(
+            f'error_running_cmd:{result.returncode}:{byte_content.decode()}'
+        )
     return byte_content.decode().strip()
 
 
@@ -34,7 +32,11 @@ def get_valid_ref(repo_dir: str) -> str | None:
         return None
 
     try:
-        default_branch = run('git --no-pager remote show origin | grep "HEAD branch"', repo_dir).split()[-1].strip()
+        default_branch = (
+            run('git --no-pager remote show origin | grep "HEAD branch"', repo_dir)
+            .split()[-1]
+            .strip()
+        )
     except RuntimeError:
         # Git repository does not have a remote origin - use current
         return current_branch
@@ -72,7 +74,9 @@ def get_changes_in_repo(repo_dir: str) -> list[dict[str, str]]:
     try:
 
         # Get changed files
-        changed_files = run(f'git --no-pager diff --name-status {ref}', repo_dir).splitlines()
+        changed_files = run(
+            f'git --no-pager diff --name-status {ref}', repo_dir
+        ).splitlines()
         changes = []
         for line in changed_files:
             status = line[:2].strip()
@@ -82,19 +86,20 @@ def get_changes_in_repo(repo_dir: str) -> list[dict[str, str]]:
             elif status == '*':
                 status = 'M'
             if status in {'M', 'A', 'D', 'R', 'C', 'U'}:
-                changes.append({
-                    'status': status,
-                    'path': path,
-                })
+                changes.append(
+                    {
+                        'status': status,
+                        'path': path,
+                    }
+                )
 
         # Get untracked files
-        untracked_files = run('git --no-pager ls-files --others --exclude-standard', repo_dir).splitlines()
+        untracked_files = run(
+            'git --no-pager ls-files --others --exclude-standard', repo_dir
+        ).splitlines()
         for path in untracked_files:
             if path:
-                changes.append({
-                    'status': 'A',
-                    'path': path
-                })
+                changes.append({'status': 'A', 'path': path})
     except RuntimeError:
         # Unknown error
         pass
@@ -113,10 +118,13 @@ def get_git_changes(cwd: str) -> list[dict[str, str]]:
 
     # Filter out any changes which are in one of the git directories
     changes = [
-        change for change in changes
-        if next(iter(
-            git_dir for git_dir in git_dirs if change['path'].startswith(git_dir)
-        ), None) is None
+        change
+        for change in changes
+        if next(
+            iter(git_dir for git_dir in git_dirs if change['path'].startswith(git_dir)),
+            None
+        )
+        is None
     ]
 
     # Add changes from git directories
