@@ -1,14 +1,15 @@
-from dataclasses import dataclass
 import json
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
-from uuid import uuid4
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.utils import git_changes, git_diff
 
 GIT_CHANGES_CMD = 'python3 /openhands/code/openhands/runtime/utils/git_changes.py'
-GIT_DIFF_CMD = 'python3 /openhands/code/openhands/runtime/utils/git_diff.py "{file_path}"'
+GIT_DIFF_CMD = (
+    'python3 /openhands/code/openhands/runtime/utils/git_diff.py "{file_path}"'
+)
 
 
 @dataclass
@@ -51,7 +52,7 @@ class GitHandler:
         self.cwd = cwd
 
     def _create_python_script_file(self, file: str):
-        result = self.execute("mktemp -d", self.cwd)
+        result = self.execute('mktemp -d', self.cwd)
         script_file = Path(result.content.strip(), Path(file).name)
         with open(file, 'r') as f:
             self.create_file_fn(str(script_file), f.read())
@@ -78,7 +79,10 @@ class GitHandler:
                 changes = json.loads(result.content)
                 return changes
             except Exception:
-                logger.exception('GitHandler:get_git_changes:error', extra={'content': result.content})
+                logger.exception(
+                    'GitHandler:get_git_changes:error',
+                    extra={'content': result.content}
+                )
                 return None
 
         if self.git_changes_cmd != GIT_CHANGES_CMD:
@@ -86,7 +90,9 @@ class GitHandler:
             return None
 
         # We try to add a script for getting git changes to the runtime - legacy runtimes may be missing the script
-        logger.info('GitHandler:get_git_changes: adding git_changes script to runtime...')
+        logger.info(
+            'GitHandler:get_git_changes: adding git_changes script to runtime...'
+        )
         script_file = self._create_python_script_file(git_changes.__file__)
         self.git_changes_cmd = f'python3 {script_file}'
 

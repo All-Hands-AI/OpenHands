@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
-'''
+"""
 Get git diff in a single git file for the closest git repo in the file system
 NOTE: Since this is run as a script, there should be no imports from project files!
-'''
+"""
 
-import argparse
-import glob
 import json
 import os
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 
 
 def get_closest_git_repo(path: Path) -> Path | None:
@@ -67,7 +65,7 @@ def get_valid_ref(repo_dir: str) -> str | None:
         try:
             run(f'git --no-pager rev-parse --verify {ref}', repo_dir)
             return ref
-        except RuntimeError as e:
+        except RuntimeError:
             # invalid ref - try next
             continue
 
