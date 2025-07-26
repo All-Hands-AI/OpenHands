@@ -85,7 +85,7 @@ class LLMConfig(BaseModel):
     log_completions_folder: str = Field(default=os.path.join(LOG_DIR, 'completions'))
     custom_tokenizer: str | None = Field(default=None)
     native_tool_calling: bool | None = Field(default=None)
-    reasoning_effort: str | None = Field(default='high')
+    reasoning_effort: str | None = Field(default=None)
     seed: int | None = Field(default=None)
     safety_settings: list[dict[str, str]] | None = Field(
         default=None,
@@ -170,6 +170,11 @@ class LLMConfig(BaseModel):
             os.environ['OR_SITE_URL'] = self.openrouter_site_url
         if self.openrouter_app_name:
             os.environ['OR_APP_NAME'] = self.openrouter_app_name
+
+        # Set reasoning_effort to 'high' by default for non-Gemini models
+        # Gemini models use optimized thinking budget when reasoning_effort is None
+        if self.reasoning_effort is None and self.model != 'gemini-2.5-pro':
+            self.reasoning_effort = 'high'
 
         # Set an API version by default for Azure models
         # Required for newer models.

@@ -14,7 +14,6 @@ from google.genai import types
 
 # Import shared utilities
 from test_utils import (
-    MATH_TOOL,
     check_credentials,
     run_tool_call_test,
 )
@@ -35,8 +34,31 @@ def create_old_genai_completion_func():
     if not api_key:
         return None
 
+    # Google API compatible math tool (without 'type' field)
+    google_math_tool = {
+        'function_declarations': [
+            {
+                'name': 'math',
+                'description': 'Perform mathematical calculations',
+                'parameters': {
+                    'type': 'object',
+                    'properties': {
+                        'operation': {
+                            'type': 'string',
+                            'description': 'The mathematical operation to perform',
+                            'enum': ['add', 'subtract', 'multiply', 'divide'],
+                        },
+                        'a': {'type': 'number', 'description': 'First number'},
+                        'b': {'type': 'number', 'description': 'Second number'},
+                    },
+                    'required': ['operation', 'a', 'b'],
+                },
+            }
+        ]
+    }
+
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-2.5-pro', tools=[MATH_TOOL])
+    model = genai.GenerativeModel('gemini-2.5-pro', tools=[google_math_tool])
 
     def completion_func(messages, **kwargs):
         # Convert messages to old API format
