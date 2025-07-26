@@ -60,7 +60,7 @@ class ModalRuntime(ActionExecutionClient):
         # Read Modal API credentials from environment variables
         modal_token_id = os.getenv('MODAL_TOKEN_ID')
         modal_token_secret = os.getenv('MODAL_TOKEN_SECRET')
-        
+
         if not modal_token_id:
             raise ValueError('MODAL_TOKEN_ID environment variable is required for Modal runtime')
         if not modal_token_secret:
@@ -186,6 +186,7 @@ class ModalRuntime(ActionExecutionClient):
                 base_image=base_container_image_id,
                 build_from=BuildFromImageType.SCRATCH,
                 extra_deps=runtime_extra_deps,
+                enable_browser=True,
             )
 
             base_runtime_image = modal.Image.from_dockerfile(
