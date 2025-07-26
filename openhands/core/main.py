@@ -15,6 +15,12 @@ from openhands.core.config import (
     setup_config_from_args,
 )
 from openhands.core.config.mcp_config import OpenHandsMCPConfigImpl
+from openhands.core.exceptions import (
+    AgentRuntimeDisconnectedError,
+    AgentRuntimeNotFoundError,
+    AgentRuntimeTimeoutError,
+    AgentRuntimeUnavailableError,
+)
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.loop import run_agent_until_done
 from openhands.core.schema import AgentState
@@ -207,6 +213,19 @@ async def run_controller(
         await run_agent_until_done(controller, runtime, memory, end_states)
     except Exception as e:
         logger.error(f'Exception in main loop: {e}')
+        # Set the error in the state so it can be detected by is_fatal_evaluation_error
+        controller.state.last_error = f'{type(e).__name__}: {str(e)}'
+        # If it's a fatal runtime error, we should re-raise it so the evaluation loop can handle it
+        if isinstance(
+            e,
+            (
+                AgentRuntimeTimeoutError,
+                AgentRuntimeDisconnectedError,
+                AgentRuntimeUnavailableError,
+                AgentRuntimeNotFoundError,
+            ),
+        ):
+            raise e
 
     # save session when we're about to close
     if config.file_store is not None and config.file_store != 'memory':

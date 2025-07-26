@@ -641,7 +641,9 @@ def process_instance(
             )
         )
 
-        # if fatal error, throw EvalError to trigger re-run
+        # if state is None or has a fatal error, throw EvalError to trigger re-run
+        if state is None:
+            raise EvalException('State is None, likely due to a runtime error')
         if is_fatal_evaluation_error(state.last_error):
             raise EvalException('Fatal error detected: ' + state.last_error)
 
@@ -671,8 +673,9 @@ def process_instance(
 
     # If you are working on some simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
     # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
+    # This check is redundant since we already check above, but keeping it for safety
     if state is None:
-        raise ValueError('State should not be None.')
+        raise EvalException('State is None, likely due to a runtime error')
 
     # NOTE: this is NO LONGER the event stream, but an agent history that includes delegate agent's events
     histories = [event_to_dict(event) for event in state.history]
