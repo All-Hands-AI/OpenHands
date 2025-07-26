@@ -5,6 +5,8 @@ import os
 import time
 
 import google.generativeai as genai
+from google import genai as new_genai
+from google.genai import types
 
 
 def test_thinking_budget():
@@ -34,16 +36,16 @@ def test_thinking_budget():
         print(f'❌ Error: {e}')
         duration1 = None
 
-    # Test 2: With thinking budget via request_options (try different approach)
-    print('\n🔍 Test 2: With thinking budget via request_options')
-    model2 = genai.GenerativeModel('gemini-2.5-pro')
+    # Test 2: With thinking budget using new google.genai API
+    print('\n🔍 Test 2: With thinking budget using new google.genai API (4096)')
     start_time = time.time()
     try:
-        response2 = model2.generate_content(
-            prompt,
-            request_options={
-                'thinkingConfig': {'thinkingBudget': 4096, 'includeThoughts': True}
-            },
+        client = new_genai.Client(api_key=api_key)
+        config = types.GenerateContentConfig(
+            thinking_config=types.ThinkingConfig(thinking_budget=4096)
+        )
+        response2 = client.models.generate_content(
+            model='gemini-2.5-pro', contents=prompt, config=config
         )
         duration2 = time.time() - start_time
         print(f'✅ Duration: {duration2:.3f}s')
@@ -52,13 +54,16 @@ def test_thinking_budget():
         print(f'❌ Error: {e}')
         duration2 = None
 
-    # Test 3: Try with reasoning_effort parameter (LiteLLM style)
-    print("\n🔍 Test 3: Try with reasoning_effort = 'low'")
-    model3 = genai.GenerativeModel('gemini-2.5-pro')
+    # Test 3: Try with small thinking budget like Gemini CLI (128)
+    print('\n🔍 Test 3: Try with small thinking budget like Gemini CLI (128)')
     start_time = time.time()
     try:
-        response3 = model3.generate_content(
-            prompt, generation_config={'reasoning_effort': 'low'}
+        client = new_genai.Client(api_key=api_key)
+        config = types.GenerateContentConfig(
+            thinking_config=types.ThinkingConfig(thinking_budget=128)
+        )
+        response3 = client.models.generate_content(
+            model='gemini-2.5-pro', contents=prompt, config=config
         )
         duration3 = time.time() - start_time
         print(f'✅ Duration: {duration3:.3f}s')
@@ -131,15 +136,15 @@ def test_thinking_budget():
     print('\n📊 SUMMARY')
     print('=' * 60)
     if duration1:
-        print(f'No thinking config:     {duration1:.3f}s')
+        print(f'No thinking config:        {duration1:.3f}s')
     if duration2:
-        print(f'Request options test:   {duration2:.3f}s')
+        print(f'New API large budget:      {duration2:.3f}s')
     if duration3:
-        print(f'Reasoning effort test:  {duration3:.3f}s')
+        print(f'New API Gemini CLI (128):  {duration3:.3f}s')
     if duration4:
-        print(f'Thinking disabled:      {duration4:.3f}s')
+        print(f'Thinking disabled:         {duration4:.3f}s')
     if duration5:
-        print(f'Small thinking budget:  {duration5:.3f}s')
+        print(f'Medium thinking budget:    {duration5:.3f}s')
 
     # Find the fastest approach
     durations = [
