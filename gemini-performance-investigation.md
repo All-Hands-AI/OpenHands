@@ -225,35 +225,41 @@ thinkingConfig: { thinkingBudget: 4096, includeThoughts: true }
    python test_thinking_budget.py      # 23-26s
    ```
 
-### 🛠️ NEXT STEPS
+### 🛠️ CURRENT EXPERIMENT: Direct Code Analysis
 
-**🔍 IMMEDIATE INVESTIGATION NEEDED:**
+**🎯 NEW APPROACH: Modify RooCode to Log API Requests**
 
-1. **Verify RooCode's actual performance** with `gemini-2.5-pro`
-   - Test RooCode directly with same prompt
-   - Measure actual response times
-   - Compare with our test results
+We're taking a direct approach:
 
-2. **Identify missing RooCode optimizations:**
-   - Analyze RooCode's exact API calls (network inspection)
-   - Check for additional parameters we missed
-   - Compare prompt formatting and context
+**Plan:**
+1. **Find RooCode extension directory** in Windsurf
+2. **Locate API request code** where it calls the LLM API
+3. **Add console.log statements** to capture:
+   - Exact URL being called
+   - Complete request payload (headers + body)
+   - Model being used (`gemini-2.5-pro`)
+   - All parameters and configuration
+4. **Reload extension** and observe logs in Windsurf Developer Console
+5. **Compare with our test requests** to identify differences
 
-3. **Test LiteLLM with thinking budget:**
-   - Implement thinking budget in LiteLLM calls
-   - Test if LiteLLM supports `thinkingConfig` parameter
-   - Compare with native API performance
+**Expected Benefits:**
+- See exact request RooCode sends to LLM API
+- Identify any special parameters or configuration we missed
+- Understand why RooCode is fast while our tests are slow
+- Direct comparison without network interception complexity
+
+**Status:** 🔄 IN PROGRESS
 
 ### 🎯 CURRENT STATUS
 
-**The performance issue is NOT primarily LiteLLM abstraction overhead (only 1-3s difference).**
+**✅ CONFIRMED FINDINGS:**
+- **LiteLLM abstraction overhead is minimal** (only 1-3s difference, 4-12%)
+- **All our test approaches show ~25s with gemini-2.5-pro** (Native API, LiteLLM, thinking budget)
+- **RooCode uses LiteLLM proxy** (`llm-proxy.eval.all-hands.dev`) - NOT Google's direct API
+- **Thinking budget provides small improvement** (2-3s faster) but not dramatic speedup
 
-**However, we haven't yet identified why RooCode is fast with `gemini-2.5-pro` while our tests are slow.**
+**🚨 CRITICAL MYSTERY:**
+User reports RooCode is **fast** with `gemini-2.5-pro`, but our comprehensive testing shows all approaches are **slow** (~25s) with that model.
 
-**Possible remaining factors:**
-- Different prompt structure/length
-- Additional API parameters we haven't discovered
-- Different API endpoints or versions
-- Caching or other optimizations
-
-**CRITICAL:** Need to verify user's claim that RooCode is fast with `gemini-2.5-pro` before proceeding with solutions.
+**🔍 INVESTIGATION APPROACH:**
+Direct code analysis of RooCode extension to capture exact API requests and identify missing optimizations.
