@@ -78,7 +78,7 @@ def check_credentials() -> tuple[bool, dict[str, Optional[str]]]:
 
     if not (has_litellm or has_gemini):
         print('❌ No valid credentials found')
-        print('   For LiteLLM: Set LITELLM_API_KEY and LITELLM_BASE_URL')
+        print('   For LiteLLM: Set LITELLM_PROXY_API_KEY and LITELLM_BASE_URL')
         print('   For Gemini: Set GEMINI_API_KEY')
         return False, credentials
 

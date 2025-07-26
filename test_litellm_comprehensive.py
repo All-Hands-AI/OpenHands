@@ -8,7 +8,7 @@ This script tests LiteLLM performance with various configurations including:
 3. Reasoning effort and thinking budget parameters
 4. Tool call workflows for realistic testing
 
-Uses secure credential handling with LITELLM_API_KEY and LITELLM_BASE_URL.
+Uses secure credential handling with LITELLM_PROXY_API_KEY and LITELLM_BASE_URL.
 """
 
 import os
@@ -283,7 +283,7 @@ def main():
     print('🚀 COMPREHENSIVE LITELLM PERFORMANCE TEST WITH TOOL CALLS')
     print('=' * 70)
     print('This test evaluates LiteLLM performance using realistic tool call workflows')
-    print('Uses secure credentials: LITELLM_API_KEY and LITELLM_BASE_URL')
+    print('Uses secure credentials: LITELLM_PROXY_API_KEY and LITELLM_BASE_URL')
     print()
 
     results = test_litellm_configurations()
