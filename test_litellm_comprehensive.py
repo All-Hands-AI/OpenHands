@@ -1,120 +1,67 @@
 #!/usr/bin/env python3
 """
-Comprehensive LiteLLM performance test for Gemini.
+Comprehensive LiteLLM performance test for Gemini with tool calls.
 
 This script tests LiteLLM performance with various configurations including:
 1. Different parameter combinations (streaming, temperature, etc.)
 2. OpenHands-style configuration and calls
 3. Reasoning effort and thinking budget parameters
+4. Tool call workflows for realistic testing
 
-Consolidates functionality from test_litellm_performance.py and test_openhands_litellm.py
+Uses secure credential handling with LITELLM_API_KEY and LITELLM_BASE_URL.
 """
 
 import os
-import time
 from functools import partial
-from typing import Any
 
 import litellm
 
-# Test configurations to compare
-BASIC_CONFIGS = [
-    {
-        'name': 'Minimal Config',
-        'params': {
+# Import shared utilities
+from test_utils import (
+    check_credentials,
+    run_tool_call_test,
+)
+
+
+def create_litellm_completion_func(**config_params):
+    """Create LiteLLM completion function with secure credentials."""
+    api_key = os.getenv('LITELLM_PROXY_API_KEY')
+    base_url = os.getenv('LITELLM_BASE_URL')
+
+    if not api_key or not base_url:
+        return None
+
+    def completion_func(messages, tools=None, **kwargs):
+        params = {
             'model': 'gemini-2.5-pro',
-            'temperature': 0,
-        },
-    },
-    {
-        'name': 'Streaming Config',
-        'params': {
-            'model': 'gemini-2.5-pro',
-            'temperature': 0,
-            'stream': True,
-            'max_tokens': 8192,
-        },
-    },
-    {
-        'name': 'OpenHands Default (No Stream)',
-        'params': {
-            'model': 'gemini-2.5-pro',
-            'temperature': 0.0,
-            'stream': False,
-            'max_tokens': None,
+            'messages': messages,
+            'api_key': api_key,
+            'base_url': base_url,
             'drop_params': True,
-        },
-    },
-    {
-        'name': 'OpenHands with Streaming',
-        'params': {
-            'model': 'gemini-2.5-pro',
-            'temperature': 0.0,
-            'stream': True,
-            'max_tokens': None,
-            'drop_params': True,
-        },
-    },
-]
+            **config_params,  # Apply configuration parameters
+        }
 
-# Reasoning/thinking configurations
-REASONING_CONFIGS = [
-    {
-        'name': 'Reasoning Effort: Low',
-        'params': {
-            'model': 'gemini-2.5-pro',
-            'temperature': 0.0,
-            'reasoning_effort': 'low',
-        },
-    },
-    {
-        'name': 'Reasoning Effort: Medium',
-        'params': {
-            'model': 'gemini-2.5-pro',
-            'temperature': 0.0,
-            'reasoning_effort': 'medium',
-        },
-    },
-    {
-        'name': 'Reasoning Effort: High',
-        'params': {
-            'model': 'gemini-2.5-pro',
-            'temperature': 0.0,
-            'reasoning_effort': 'high',
-        },
-    },
-    {
-        'name': 'Thinking Budget: 128 tokens',
-        'params': {
-            'model': 'gemini-2.5-pro',
-            'temperature': 0.0,
-            'thinking': {'budget_tokens': 128},
-        },
-    },
-    {
-        'name': 'Thinking Budget: 1024 tokens',
-        'params': {
-            'model': 'gemini-2.5-pro',
-            'temperature': 0.0,
-            'thinking': {'budget_tokens': 1024},
-        },
-    },
-]
+        if tools:
+            params['tools'] = tools
 
-TEST_PROMPT = [
-    {
-        'role': 'user',
-        'content': 'Write a simple Python function that calculates the factorial of a number. Include error handling for negative numbers.',
-    }
-]
+        return litellm.completion(**params)
+
+    return completion_func
 
 
-def create_openhands_completion_function():
-    """Create a completion function exactly like OpenHands does."""
+def create_openhands_completion_func(**additional_params):
+    """Create completion function exactly like OpenHands does."""
+    api_key = os.getenv('LITELLM_PROXY_API_KEY')
+    base_url = os.getenv('LITELLM_BASE_URL')
+
+    if not api_key or not base_url:
+        return None
+
+    # OpenHands default config
     config = {
         'model': 'gemini-2.5-pro',
-        'api_key': os.getenv('GEMINI_API_KEY'),
-        'base_url': None,
+        'api_key': api_key,
+        'base_url': base_url,
         'api_version': None,
         'custom_llm_provider': None,
         'timeout': None,
@@ -124,6 +71,7 @@ def create_openhands_completion_function():
         'top_p': 1.0,
         'top_k': None,
         'max_output_tokens': None,
+        **additional_params,  # Apply additional parameters
     }
 
     completion_func = partial(
@@ -138,278 +86,139 @@ def create_openhands_completion_function():
         seed=config['seed'],
     )
 
-    return completion_func, config
+    return completion_func
 
 
-def test_litellm_config(config: dict[str, Any]) -> dict[str, Any]:
-    """Test a specific LiteLLM configuration and measure performance."""
-    print(f'\n🧪 Testing: {config["name"]}')
-    print(f'Parameters: {config["params"]}')
+def test_litellm_configurations():
+    """Test various LiteLLM configurations with tool calls."""
+    print('🚀 Testing LiteLLM Configurations with Tool Calls')
+    print('=' * 70)
 
-    start_time = time.time()
+    # Check credentials
+    success, credentials = check_credentials()
+    if not success:
+        return []
 
-    try:
-        # Make the API call
-        response = litellm.completion(messages=TEST_PROMPT, **config['params'])
+    if not credentials['litellm_api_key'] or not credentials['litellm_base_url']:
+        print('❌ LiteLLM credentials not available')
+        return []
 
-        end_time = time.time()
-        duration = end_time - start_time
+    all_results = []
 
-        # Handle streaming vs non-streaming response
-        if config['params'].get('stream', False):
-            # For streaming, we need to consume the generator
-            full_response = ''
-            chunk_count = 0
-            first_chunk_time = None
-
-            for chunk in response:
-                if first_chunk_time is None:
-                    first_chunk_time = time.time()
-
-                if hasattr(chunk, 'choices') and len(chunk.choices) > 0:
-                    delta = chunk.choices[0].delta
-                    if hasattr(delta, 'content') and delta.content:
-                        full_response += delta.content
-                        chunk_count += 1
-
-            final_time = time.time()
-            total_duration = final_time - start_time
-            time_to_first_chunk = (
-                first_chunk_time - start_time if first_chunk_time else None
-            )
-
-            return {
-                'success': True,
-                'total_duration': total_duration,
-                'time_to_first_chunk': time_to_first_chunk,
-                'chunk_count': chunk_count,
-                'response_length': len(full_response),
-                'streaming': True,
-            }
-        else:
-            # Non-streaming response
-            content = response.choices[0].message.content if response.choices else ''
-
-            return {
-                'success': True,
-                'total_duration': duration,
-                'time_to_first_chunk': duration,  # Same as total for non-streaming
-                'chunk_count': 1,
-                'response_length': len(content),
-                'streaming': False,
-            }
-
-    except Exception as e:
-        end_time = time.time()
-        duration = end_time - start_time
-
-        return {'success': False, 'error': str(e), 'duration': duration}
-
-
-def test_openhands_style_call(
-    stream: bool = False, reasoning_effort: str = None, thinking: dict = None
-):
-    """Test LiteLLM call exactly like OpenHands would make it."""
-    completion_func, config = create_openhands_completion_function()
-
-    # Additional parameters that might be passed at call time
-    call_params = {
-        'messages': TEST_PROMPT,
-        'temperature': config['temperature'],
-        'top_p': config['top_p'],
-        'stream': stream,
-    }
-
-    if config['top_k'] is not None:
-        call_params['top_k'] = config['top_k']
-
-    if config['max_output_tokens'] is not None:
-        call_params['max_tokens'] = config['max_output_tokens']
-
-    if reasoning_effort:
-        call_params['reasoning_effort'] = reasoning_effort
-
-    if thinking:
-        call_params['thinking'] = thinking
-
-    config_desc = f'stream={stream}'
-    if reasoning_effort:
-        config_desc += f', reasoning_effort={reasoning_effort}'
-    if thinking:
-        config_desc += f', thinking={thinking}'
-
-    print(f'\n🔧 OpenHands-style call ({config_desc})')
-
-    start_time = time.time()
-
-    try:
-        response = completion_func(**call_params)
-
-        if stream:
-            # Handle streaming response
-            full_response = ''
-            chunk_count = 0
-            first_chunk_time = None
-
-            for chunk in response:
-                if first_chunk_time is None:
-                    first_chunk_time = time.time()
-
-                if hasattr(chunk, 'choices') and len(chunk.choices) > 0:
-                    delta = chunk.choices[0].delta
-                    if hasattr(delta, 'content') and delta.content:
-                        full_response += delta.content
-                        chunk_count += 1
-
-            end_time = time.time()
-            total_duration = end_time - start_time
-            time_to_first_chunk = (
-                first_chunk_time - start_time if first_chunk_time else None
-            )
-
-            return {
-                'success': True,
-                'total_duration': total_duration,
-                'time_to_first_chunk': time_to_first_chunk,
-                'streaming': True,
-                'response_length': len(full_response),
-                'config_desc': config_desc,
-            }
-        else:
-            # Handle non-streaming response
-            end_time = time.time()
-            duration = end_time - start_time
-
-            content = response.choices[0].message.content if response.choices else ''
-
-            return {
-                'success': True,
-                'total_duration': duration,
-                'time_to_first_chunk': duration,
-                'streaming': False,
-                'response_length': len(content),
-                'config_desc': config_desc,
-            }
-
-    except Exception as e:
-        end_time = time.time()
-        duration = end_time - start_time
-
-        return {
-            'success': False,
-            'error': str(e),
-            'duration': duration,
-            'config_desc': config_desc,
-        }
-
-
-def run_basic_tests():
-    """Run basic LiteLLM configuration tests."""
-    print('🚀 Basic LiteLLM Configuration Tests')
-    print('=' * 50)
-
-    results = []
-
-    for config in BASIC_CONFIGS:
-        result = test_litellm_config(config)
-        result['config_name'] = config['name']
-        results.append(result)
-
-        if result['success']:
-            print('✅ Success!')
-            print(f'   Total Duration: {result["total_duration"]:.3f}s')
-            if result.get('time_to_first_chunk'):
-                print(f'   Time to First Chunk: {result["time_to_first_chunk"]:.3f}s')
-            print(f'   Response Length: {result["response_length"]} chars')
-            if result['streaming']:
-                print(f'   Chunks Received: {result["chunk_count"]}')
-        else:
-            print(f'❌ Failed: {result["error"]}')
-            print(f'   Duration: {result["duration"]:.3f}s')
-
-    return results
-
-
-def run_reasoning_tests():
-    """Run reasoning/thinking configuration tests."""
-    print('\n🧠 Reasoning & Thinking Configuration Tests')
-    print('=' * 50)
-
-    results = []
-
-    for config in REASONING_CONFIGS:
-        result = test_litellm_config(config)
-        result['config_name'] = config['name']
-        results.append(result)
-
-        if result['success']:
-            print('✅ Success!')
-            print(f'   Total Duration: {result["total_duration"]:.3f}s')
-            print(f'   Response Length: {result["response_length"]} chars')
-        else:
-            print(f'❌ Failed: {result["error"]}')
-            print(f'   Duration: {result["duration"]:.3f}s')
-
-    return results
-
-
-def run_openhands_tests():
-    """Run OpenHands-style tests."""
-    print('\n🔧 OpenHands-Style Configuration Tests')
-    print('=' * 50)
-
-    test_cases = [
-        {'stream': False, 'reasoning_effort': None, 'thinking': None},
-        {'stream': True, 'reasoning_effort': None, 'thinking': None},
-        {'stream': False, 'reasoning_effort': 'high', 'thinking': None},
-        {'stream': False, 'reasoning_effort': None, 'thinking': {'budget_tokens': 128}},
+    # Test configurations
+    test_configs = [
+        {
+            'name': 'Basic LiteLLM',
+            'func': create_litellm_completion_func(temperature=0.0),
+        },
+        {
+            'name': 'LiteLLM with Streaming',
+            'func': create_litellm_completion_func(temperature=0.0, stream=True),
+        },
+        {
+            'name': 'OpenHands Style (No Stream)',
+            'func': create_openhands_completion_func(),
+        },
+        {
+            'name': 'OpenHands Style (Streaming)',
+            'func': create_openhands_completion_func(stream=True),
+        },
+        {
+            'name': 'Reasoning Effort: Low',
+            'func': create_litellm_completion_func(reasoning_effort='low'),
+        },
+        {
+            'name': 'Reasoning Effort: Medium',
+            'func': create_litellm_completion_func(reasoning_effort='medium'),
+        },
+        {
+            'name': 'Reasoning Effort: High',
+            'func': create_litellm_completion_func(reasoning_effort='high'),
+        },
+        {
+            'name': 'Thinking Budget: 128',
+            'func': create_litellm_completion_func(thinking={'budget_tokens': 128}),
+        },
+        {
+            'name': 'Thinking Budget: 1024',
+            'func': create_litellm_completion_func(thinking={'budget_tokens': 1024}),
+        },
     ]
 
-    results = []
+    # Run tests
+    for config in test_configs:
+        if config['func'] is None:
+            print(f'\n⏭️  Skipping {config["name"]} - not available')
+            continue
 
-    for case in test_cases:
-        result = test_openhands_style_call(**case)
-        results.append(result)
+        print(f'\n🧪 Testing: {config["name"]}')
+        print('-' * 50)
 
-        if result['success']:
-            print('✅ Success!')
-            print(f'   Total Duration: {result["total_duration"]:.3f}s')
-            print(f'   Response Length: {result["response_length"]} chars')
-        else:
-            print(f'❌ Failed: {result["error"]}')
+        try:
+            result = run_tool_call_test(config['func'], config['name'])
+            result_dict = result.to_dict()
+            result_dict['config_name'] = config['name']
+            all_results.append(result_dict)
 
-    return results
+            if result.success:
+                print(f'✅ Success - Total: {result.total_duration:.3f}s')
+                print(f'   Step 1 (Tool Request): {result.step1_duration:.3f}s')
+                print(f'   Step 2 (Tool Response): {result.step2_duration:.3f}s')
+                print(f'   Step 3 (Summary): {result.step3_duration:.3f}s')
+                print(f'   Tool Result: {result.tool_call_result}')
+            else:
+                print(f'❌ Failed: {result.error}')
+
+        except Exception as e:
+            print(f'❌ Test failed with exception: {e}')
+            all_results.append(
+                {
+                    'config_name': config['name'],
+                    'success': False,
+                    'error': str(e),
+                    'total_duration': 0,
+                }
+            )
+
+    return all_results
 
 
-def print_summary(all_results):
-    """Print comprehensive performance summary."""
-    print('\n📊 COMPREHENSIVE PERFORMANCE SUMMARY')
-    print('=' * 60)
+def analyze_litellm_results(results):
+    """Analyze and compare LiteLLM test results."""
+    print('\n📊 LITELLM PERFORMANCE ANALYSIS')
+    print('=' * 70)
 
-    successful_results = [r for r in all_results if r['success']]
+    successful_results = [r for r in results if r['success']]
+
     if not successful_results:
-        print('❌ No successful tests to summarize')
+        print('❌ No successful tests to analyze')
         return
 
-    # Find fastest and slowest
-    fastest = min(successful_results, key=lambda x: x['total_duration'])
-    slowest = max(successful_results, key=lambda x: x['total_duration'])
+    # Performance summary
+    print('📈 Performance Summary:')
+    sorted_results = sorted(successful_results, key=lambda x: x['total_duration'])
+    for i, result in enumerate(sorted_results, 1):
+        print(f'   {i}. {result["config_name"]}: {result["total_duration"]:.3f}s')
 
-    print(
-        f'🏆 Fastest: {fastest.get("config_name", fastest.get("config_desc", "Unknown"))} ({fastest["total_duration"]:.3f}s)'
-    )
-    print(
-        f'🐌 Slowest: {slowest.get("config_name", slowest.get("config_desc", "Unknown"))} ({slowest["total_duration"]:.3f}s)'
-    )
-
-    if fastest['total_duration'] > 0:
-        speedup = slowest['total_duration'] / fastest['total_duration']
-        print(f'📈 Speed Difference: {speedup:.2f}x')
+    # Group by configuration type
+    [
+        r
+        for r in successful_results
+        if 'Basic' in r['config_name'] or 'OpenHands Style' in r['config_name']
+    ]
+    reasoning_results = [
+        r for r in successful_results if 'Reasoning Effort' in r['config_name']
+    ]
+    thinking_results = [
+        r for r in successful_results if 'Thinking Budget' in r['config_name']
+    ]
 
     # Analyze streaming vs non-streaming
-    streaming_results = [r for r in successful_results if r.get('streaming', False)]
+    streaming_results = [
+        r for r in successful_results if 'Streaming' in r['config_name']
+    ]
     non_streaming_results = [
-        r for r in successful_results if not r.get('streaming', False)
+        r for r in successful_results if 'Streaming' not in r['config_name']
     ]
 
     if streaming_results and non_streaming_results:
@@ -420,39 +229,69 @@ def print_summary(all_results):
             r['total_duration'] for r in non_streaming_results
         ) / len(non_streaming_results)
 
-        print('\n🌊 Streaming vs Non-Streaming Analysis:')
+        print('\n🌊 Streaming vs Non-Streaming:')
         print(f'   Average Streaming: {avg_streaming:.3f}s')
         print(f'   Average Non-Streaming: {avg_non_streaming:.3f}s')
 
         if avg_non_streaming > 0:
-            streaming_advantage = avg_non_streaming / avg_streaming
-            print(f'   Streaming Advantage: {streaming_advantage:.2f}x')
+            advantage = (
+                avg_non_streaming / avg_streaming
+                if avg_streaming < avg_non_streaming
+                else avg_streaming / avg_non_streaming
+            )
+            faster = (
+                'Streaming' if avg_streaming < avg_non_streaming else 'Non-Streaming'
+            )
+            print(f'   {faster} is {advantage:.2f}x faster')
 
-    # Show top 5 fastest configurations
-    print('\n🏃 Top 5 Fastest Configurations:')
-    sorted_results = sorted(successful_results, key=lambda x: x['total_duration'])
-    for i, result in enumerate(sorted_results[:5], 1):
-        name = result.get('config_name', result.get('config_desc', 'Unknown'))
-        print(f'   {i}. {name}: {result["total_duration"]:.3f}s')
+    # Analyze reasoning effort impact
+    if len(reasoning_results) > 1:
+        print('\n🧠 Reasoning Effort Impact:')
+        for result in sorted(reasoning_results, key=lambda x: x['total_duration']):
+            effort = 'Unknown'
+            if 'Low' in result['config_name']:
+                effort = 'Low'
+            elif 'Medium' in result['config_name']:
+                effort = 'Medium'
+            elif 'High' in result['config_name']:
+                effort = 'High'
+            print(f'   {effort}: {result["total_duration"]:.3f}s')
+
+    # Analyze thinking budget impact
+    if len(thinking_results) > 1:
+        print('\n💭 Thinking Budget Impact:')
+        for result in sorted(thinking_results, key=lambda x: x['total_duration']):
+            budget = 'Unknown'
+            if '128' in result['config_name']:
+                budget = '128'
+            elif '1024' in result['config_name']:
+                budget = '1024'
+            print(f'   Budget {budget}: {result["total_duration"]:.3f}s')
+
+    # Tool call accuracy
+    correct_results = sum(
+        1 for r in successful_results if r.get('result_correct', False)
+    )
+    accuracy = correct_results / len(successful_results) * 100
+    print(
+        f'\n🎯 Tool Call Accuracy: {accuracy:.1f}% ({correct_results}/{len(successful_results)})'
+    )
 
 
 def main():
-    """Run comprehensive LiteLLM performance tests."""
-    # Check for API key
-    if not os.getenv('GEMINI_API_KEY'):
-        print('❌ Error: GEMINI_API_KEY environment variable not set')
-        print('Please set your Google API key: export GEMINI_API_KEY=your_key_here')
-        return
+    """Run comprehensive LiteLLM performance tests with tool calls."""
+    print('🚀 COMPREHENSIVE LITELLM PERFORMANCE TEST WITH TOOL CALLS')
+    print('=' * 70)
+    print('This test evaluates LiteLLM performance using realistic tool call workflows')
+    print('Uses secure credentials: LITELLM_API_KEY and LITELLM_BASE_URL')
+    print()
 
-    all_results = []
+    results = test_litellm_configurations()
 
-    # Run all test suites
-    all_results.extend(run_basic_tests())
-    all_results.extend(run_reasoning_tests())
-    all_results.extend(run_openhands_tests())
-
-    # Print comprehensive summary
-    print_summary(all_results)
+    if results:
+        analyze_litellm_results(results)
+    else:
+        print('❌ No test results to analyze')
 
 
 if __name__ == '__main__':

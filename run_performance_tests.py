@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 """
-Comprehensive performance test runner.
+Comprehensive performance test runner with tool calls.
 
-This script runs all performance tests and provides a detailed comparison
-to help identify the root cause of Gemini performance issues.
+This script runs all performance tests using realistic tool call workflows
+and provides detailed comparison to identify performance characteristics.
 """
 
 import json
-import os
-import subprocess
 import sys
 from typing import Any
+
+# Import shared utilities
+from test_utils import check_credentials
 
 
 def check_dependencies():
@@ -50,190 +51,236 @@ def check_dependencies():
     return True
 
 
-def check_api_key():
-    """Check if Google API key is set."""
-    if not os.getenv('GEMINI_API_KEY'):
-        print('❌ GEMINI_API_KEY environment variable not set')
-        print('Please set your Google API key:')
-        print('   export GEMINI_API_KEY=your_key_here')
-        return False
-    return True
+def run_all_tests():
+    """Run all performance tests and collect results."""
+    print('🚀 Running All Performance Tests with Tool Calls')
+    print('=' * 70)
+
+    all_results = []
+
+    # Import and run each test module
+    test_modules = [
+        ('test_thinking_budget', 'Thinking Budget Tests'),
+        ('test_litellm_comprehensive', 'LiteLLM Comprehensive Tests'),
+        ('test_native_gemini', 'Native Gemini Tests'),
+        ('test_openhands_gemini_fix', 'OpenHands Gemini Fix Tests'),
+    ]
+
+    for module_name, description in test_modules:
+        print(f'\n🧪 {description}')
+        print('-' * 50)
+
+        try:
+            # Import the module dynamically
+            module = __import__(module_name)
+
+            # Get the test function based on module
+            if hasattr(module, 'test_thinking_budget_configurations'):
+                results = module.test_thinking_budget_configurations()
+            elif hasattr(module, 'test_litellm_configurations'):
+                results = module.test_litellm_configurations()
+            elif hasattr(module, 'test_native_gemini_configurations'):
+                results = module.test_native_gemini_configurations()
+            elif hasattr(module, 'test_openhands_gemini_configurations'):
+                results = module.test_openhands_gemini_configurations()
+            else:
+                print(f'⚠️  No test function found in {module_name}')
+                continue
+
+            # Add module info to results
+            for result in results:
+                result['test_module'] = module_name
+                result['test_description'] = description
+
+            all_results.extend(results)
+            print(f'✅ Completed {len(results)} tests from {module_name}')
+
+        except ImportError as e:
+            print(f'⚠️  Could not import {module_name}: {e}')
+        except Exception as e:
+            print(f'❌ Error running {module_name}: {e}')
+
+    return all_results
 
 
-def run_test_script(script_name: str) -> dict[str, Any]:
-    """Run a test script and capture its output."""
-    print(f'\n🏃 Running {script_name}...')
-    print('=' * 60)
+def analyze_comprehensive_results(all_results: list[dict[str, Any]]):
+    """Analyze results from all test modules."""
+    print('\n📊 COMPREHENSIVE PERFORMANCE ANALYSIS')
+    print('=' * 70)
 
-    try:
-        result = subprocess.run(
-            [sys.executable, script_name],
-            capture_output=True,
-            text=True,
-            timeout=300,  # 5 minute timeout
+    successful_results = [r for r in all_results if r.get('success', False)]
+
+    if not successful_results:
+        print('❌ No successful tests to analyze')
+        return
+
+    print(f'📈 Total Tests: {len(all_results)}')
+    print(f'✅ Successful: {len(successful_results)}')
+    print(f'❌ Failed: {len(all_results) - len(successful_results)}')
+
+    # Group by test module
+    by_module = {}
+    for result in successful_results:
+        module = result.get('test_module', 'unknown')
+        by_module.setdefault(module, []).append(result)
+
+    print('\n📋 Results by Test Module:')
+    for module, results in by_module.items():
+        avg_duration = sum(r.get('total_duration', 0) for r in results) / len(results)
+        print(f'   {module}: {len(results)} tests, avg {avg_duration:.3f}s')
+
+    # Overall performance ranking
+    print('\n🏆 Overall Performance Ranking:')
+    sorted_results = sorted(
+        successful_results, key=lambda x: x.get('total_duration', float('inf'))
+    )
+
+    for i, result in enumerate(sorted_results[:10], 1):  # Top 10
+        config_name = result.get('config_name', 'Unknown')
+        duration = result.get('total_duration', 0)
+        module = result.get('test_module', 'unknown')
+        print(f'   {i:2d}. {config_name} ({module}): {duration:.3f}s')
+
+    # Performance categories
+    excellent = [r for r in successful_results if r.get('total_duration', 0) < 10]
+    good = [r for r in successful_results if 10 <= r.get('total_duration', 0) < 20]
+    slow = [r for r in successful_results if r.get('total_duration', 0) >= 20]
+
+    print('\n⚡ Performance Categories:')
+    print(f'   🎉 Excellent (<10s): {len(excellent)} tests')
+    print(f'   👍 Good (10-20s): {len(good)} tests')
+    print(f'   🐌 Slow (≥20s): {len(slow)} tests')
+
+    # Tool call accuracy
+    correct_results = sum(
+        1 for r in successful_results if r.get('result_correct', False)
+    )
+    accuracy = (
+        correct_results / len(successful_results) * 100 if successful_results else 0
+    )
+    print(
+        f'\n🎯 Overall Tool Call Accuracy: {accuracy:.1f}% ({correct_results}/{len(successful_results)})'
+    )
+
+    # API comparison
+    litellm_results = [
+        r for r in successful_results if 'litellm' in r.get('test_module', '').lower()
+    ]
+    native_results = [
+        r for r in successful_results if 'native' in r.get('test_module', '').lower()
+    ]
+    openhands_results = [
+        r for r in successful_results if 'openhands' in r.get('test_module', '').lower()
+    ]
+
+    if litellm_results and native_results:
+        avg_litellm = sum(r.get('total_duration', 0) for r in litellm_results) / len(
+            litellm_results
+        )
+        avg_native = sum(r.get('total_duration', 0) for r in native_results) / len(
+            native_results
         )
 
-        return {
-            'success': result.returncode == 0,
-            'stdout': result.stdout,
-            'stderr': result.stderr,
-            'returncode': result.returncode,
-        }
-    except subprocess.TimeoutExpired:
-        return {
-            'success': False,
-            'error': 'Test timed out after 5 minutes',
-            'stdout': '',
-            'stderr': '',
-        }
-    except Exception as e:
-        return {'success': False, 'error': str(e), 'stdout': '', 'stderr': ''}
+        print('\n🔄 API Comparison:')
+        print(f'   LiteLLM Average: {avg_litellm:.3f}s ({len(litellm_results)} tests)')
+        print(f'   Native API Average: {avg_native:.3f}s ({len(native_results)} tests)')
 
+        if avg_native > 0:
+            advantage = (
+                avg_litellm / avg_native
+                if avg_native < avg_litellm
+                else avg_native / avg_litellm
+            )
+            faster = 'Native API' if avg_native < avg_litellm else 'LiteLLM'
+            print(f'   {faster} is {advantage:.2f}x faster')
 
-def extract_performance_metrics(output: str) -> dict[str, Any]:
-    """Extract performance metrics from test output."""
-    lines = output.split('\n')
-    metrics = {}
+    if openhands_results:
+        avg_openhands = sum(
+            r.get('total_duration', 0) for r in openhands_results
+        ) / len(openhands_results)
+        print(
+            f'   OpenHands Average: {avg_openhands:.3f}s ({len(openhands_results)} tests)'
+        )
 
-    # Look for duration patterns
-    for line in lines:
-        if 'Total Duration:' in line:
-            try:
-                duration = float(line.split('Total Duration:')[1].split('s')[0].strip())
-                metrics.setdefault('durations', []).append(duration)
-            except (ValueError, IndexError):
-                pass
-        elif 'Duration:' in line and 'Total' not in line:
-            try:
-                duration = float(line.split('Duration:')[1].split('s')[0].strip())
-                metrics.setdefault('durations', []).append(duration)
-            except (ValueError, IndexError):
-                pass
-        elif 'Time to First Chunk:' in line:
-            try:
-                ttfc = float(
-                    line.split('Time to First Chunk:')[1].split('s')[0].strip()
-                )
-                metrics['time_to_first_chunk'] = ttfc
-            except (ValueError, IndexError):
-                pass
+    # Save comprehensive results
+    output_file = 'comprehensive_performance_results.json'
+    with open(output_file, 'w') as f:
+        json.dump(
+            {
+                'summary': {
+                    'total_tests': len(all_results),
+                    'successful_tests': len(successful_results),
+                    'failed_tests': len(all_results) - len(successful_results),
+                    'overall_accuracy': accuracy,
+                },
+                'results': all_results,
+                'analysis': {
+                    'by_module': {
+                        module: len(results) for module, results in by_module.items()
+                    },
+                    'performance_categories': {
+                        'excellent': len(excellent),
+                        'good': len(good),
+                        'slow': len(slow),
+                    },
+                },
+            },
+            f,
+            indent=2,
+        )
 
-    # Calculate average duration if multiple found
-    if 'durations' in metrics:
-        metrics['avg_duration'] = sum(metrics['durations']) / len(metrics['durations'])
-        metrics['min_duration'] = min(metrics['durations'])
-        metrics['max_duration'] = max(metrics['durations'])
-
-    return metrics
+    print(f'\n💾 Comprehensive results saved to: {output_file}')
 
 
 def main():
-    """Run comprehensive performance tests."""
-    print('🚀 COMPREHENSIVE GEMINI PERFORMANCE INVESTIGATION')
-    print('=' * 60)
-    print('This will test:')
-    print('1. Comprehensive LiteLLM performance (basic + OpenHands-style + reasoning)')
-    print('2. Native Google Generative AI performance')
-    print('3. Thinking budget configurations')
-    print('4. OpenHands Gemini fix verification')
-    print('5. Comparative analysis')
+    """Run comprehensive performance tests with tool calls."""
+    print('🚀 COMPREHENSIVE GEMINI PERFORMANCE INVESTIGATION WITH TOOL CALLS')
+    print('=' * 70)
+    print(
+        'This comprehensive test suite uses realistic tool call workflows to evaluate:'
+    )
+    print('1. 🧠 Thinking Budget Configurations (optimized vs standard)')
+    print('2. 🔄 LiteLLM Performance (various configurations)')
+    print('3. 🎯 Native Google API Performance (baseline)')
+    print('4. 🛠️  OpenHands Gemini Fix Verification (performance improvements)')
+    print('5. 📊 Comparative Analysis (identify best configurations)')
+    print()
+    print('Each test uses a 3-step tool call workflow:')
+    print('  Step 1: Ask LLM to calculate 45×126 using math tool')
+    print('  Step 2: Execute tool (returns 5670) and send result back')
+    print('  Step 3: Ask LLM to summarize the conversation')
     print()
 
     # Check prerequisites
     if not check_dependencies():
         return 1
 
-    if not check_api_key():
+    # Check credentials
+    success, credentials = check_credentials()
+    if not success:
         return 1
 
-    # Test scripts to run (updated for consolidated tests)
-    test_scripts = [
-        'test_litellm_comprehensive.py',
-        'test_native_gemini.py',
-        'test_thinking_budget.py',
-        'test_openhands_gemini_fix.py',
-    ]
+    print('✅ All dependencies and credentials available')
+    print()
 
-    results = {}
+    # Run all tests
+    all_results = run_all_tests()
 
-    # Run each test
-    for script in test_scripts:
-        if not os.path.exists(script):
-            print(f'❌ Test script {script} not found')
-            continue
+    if all_results:
+        analyze_comprehensive_results(all_results)
 
-        result = run_test_script(script)
-        results[script] = result
-
-        if result['success']:
-            print(result['stdout'])
-            if result['stderr']:
-                print('STDERR:', result['stderr'])
-        else:
-            print(f'❌ {script} failed:')
-            if 'error' in result:
-                print(f'   Error: {result["error"]}')
-            if result['stderr']:
-                print(f'   STDERR: {result["stderr"]}')
-
-    # Analyze results
-    print('\n' + '=' * 60)
-    print('🔍 COMPREHENSIVE ANALYSIS')
-    print('=' * 60)
-
-    analysis = {}
-
-    for script, result in results.items():
-        if result['success']:
-            metrics = extract_performance_metrics(result['stdout'])
-            analysis[script] = metrics
-
-            print(f'\n📊 {script}:')
-            if 'avg_duration' in metrics:
-                print(f'   Average Duration: {metrics["avg_duration"]:.3f}s')
-                print(f'   Min Duration: {metrics["min_duration"]:.3f}s')
-                print(f'   Max Duration: {metrics["max_duration"]:.3f}s')
-            if 'time_to_first_chunk' in metrics:
-                print(f'   Time to First Chunk: {metrics["time_to_first_chunk"]:.3f}s')
-
-    # Compare performance
-    if len(analysis) >= 2:
-        print('\n🏆 PERFORMANCE COMPARISON:')
-
-        # Find fastest and slowest
-        avg_durations = {}
-        for script, metrics in analysis.items():
-            if 'avg_duration' in metrics:
-                avg_durations[script] = metrics['avg_duration']
-
-        if avg_durations:
-            fastest_script = min(avg_durations.keys(), key=lambda k: avg_durations[k])
-            slowest_script = max(avg_durations.keys(), key=lambda k: avg_durations[k])
-
-            print(
-                f'   🥇 Fastest: {fastest_script} ({avg_durations[fastest_script]:.3f}s)'
-            )
-            print(
-                f'   🐌 Slowest: {slowest_script} ({avg_durations[slowest_script]:.3f}s)'
-            )
-
-            if avg_durations[fastest_script] > 0:
-                speedup = avg_durations[slowest_script] / avg_durations[fastest_script]
-                print(f'   📈 Performance Difference: {speedup:.2f}x')
-
-    # Conclusions
-    print('\n💡 CONCLUSIONS:')
-    print('   Based on these results, you can determine:')
-    print('   1. Is LiteLLM itself slow with Gemini?')
-    print('   2. Are OpenHands-specific configs causing slowdown?')
-    print('   3. How much faster is native Google API?')
-    print('   4. Which specific parameters affect performance most?')
-
-    # Save detailed results
-    with open('performance_test_results.json', 'w') as f:
-        json.dump({'results': results, 'analysis': analysis}, f, indent=2)
-
-    print('\n💾 Detailed results saved to: performance_test_results.json')
+        print('\n💡 KEY INSIGHTS:')
+        print('   Based on these tool call workflow results, you can determine:')
+        print('   1. Which API approach (LiteLLM vs Native) performs best with tools')
+        print(
+            '   2. Impact of reasoning effort and thinking budget on tool call performance'
+        )
+        print('   3. Whether OpenHands optimizations improve real-world tool usage')
+        print('   4. Tool call accuracy across different configurations')
+        print('   5. Optimal configuration for production tool-enabled workflows')
+    else:
+        print('❌ No test results collected')
+        return 1
 
     return 0
 
