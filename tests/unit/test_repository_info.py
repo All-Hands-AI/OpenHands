@@ -61,4 +61,3 @@ class TestRepositoryInfo:
         assert observation.repo_name == repo_name
         assert observation.repo_directory == repo_directory
         assert observation.repo_url == repo_url
-

@@ -420,11 +420,15 @@ class Runtime(FileEditRuntimeMixin):
         action = cd_checkout_action
         self.log('info', f'Cloning repo: {selected_repository}')
         self.run_action(action)
-        
+
         # Store the repository URL in the memory
         if hasattr(self, 'memory') and self.memory:
-            self.memory.set_repository_info(selected_repository, str(self.workspace_root / dir_name), remote_repo_url)
-            
+            self.memory.set_repository_info(
+                selected_repository,
+                str(self.workspace_root / dir_name),
+                remote_repo_url,
+            )
+
         return dir_name
 
     def maybe_run_setup_script(self):
