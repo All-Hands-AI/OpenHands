@@ -46,6 +46,7 @@ from openhands.runtime.impl.action_execution.action_execution_client import (
 )
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.storage.memory import InMemoryFileStore
+from openhands.core.exceptions import AgentRuntimeTimeoutError
 
 
 @pytest.fixture
@@ -1652,3 +1653,47 @@ def test_system_message_in_event_stream(mock_agent, test_event_stream):
     assert isinstance(events[0], SystemMessageAction)
     assert events[0].content == 'Test system message'
     assert events[0].tools == ['test_tool']
+
+
+@pytest.mark.asyncio
+async def test_agent_runtime_timeout_error_propagation(mock_agent, mock_event_stream, mock_status_callback):
+    """Test that AgentRuntimeTimeoutError is properly propagated to the evaluation loop.
+    
+    This test reproduces the issue where AgentRuntimeTimeoutError is not properly
+    detected by the evaluation system, causing it to wait for the full timeout
+    instead of stopping immediately.
+    """
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=mock_event_stream,
+        status_callback=mock_status_callback,
+        iteration_delta=10,
+        sid='test',
+        confirmation_mode=False,
+        headless_mode=True,
+    )
+    
+    # Simulate an AgentRuntimeTimeoutError
+    timeout_error = AgentRuntimeTimeoutError(
+        'Runtime failed to return execute_action before the requested timeout of 300.0s'
+    )
+    
+    # Call the error handling method directly
+    await controller._react_to_exception(timeout_error)
+    
+    # Verify that the error was properly set in the state
+    assert controller.state.agent_state == AgentState.ERROR
+    assert 'AgentRuntimeTimeoutError' in controller.state.last_error
+    assert 'Runtime failed to return execute_action before the requested timeout' in controller.state.last_error
+    
+    # This is the key test - the error should contain the proper exception name
+    # so that is_fatal_evaluation_error can detect it
+    # We'll check if the error string contains the exception name directly
+    assert 'AgentRuntimeTimeoutError' in controller.state.last_error, f"Error '{controller.state.last_error}' should contain 'AgentRuntimeTimeoutError'"
+    
+    # Test that the evaluation system can detect this as a fatal error
+    from evaluation.utils.shared import is_fatal_evaluation_error, is_fatal_runtime_error
+    assert is_fatal_evaluation_error(controller.state.last_error), f"Error '{controller.state.last_error}' should be detected as fatal by evaluation system"
+    assert is_fatal_runtime_error(controller.state.last_error), f"Error '{controller.state.last_error}' should be detected as fatal runtime error"
+    
+    await controller.close()
