@@ -110,7 +110,11 @@ class TestGitHandler(unittest.TestCase):
         # Setup staged changes...
         self.write_file(self.local_dir, 'staged_modified.txt', ('Line 4',))
         self.write_file(self.local_dir, 'staged_add.txt')
-        os.remove(os.path.join(self.local_dir, 'staged_delete.txt'))
+        try:
+            os.remove(os.path.join(self.local_dir, 'staged_delete.txt'))
+        except FileNotFoundError:
+            content = ';'.join(['self.local_dir'] + os.listdir(self.local_dir))
+            raise RuntimeError(f'file_not_found:{content}')
         self._execute_command('git add .', self.local_dir)
 
         # Setup unstaged changes...
