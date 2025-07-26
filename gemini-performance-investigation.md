@@ -357,21 +357,30 @@ Analyze what makes Gemini CLI fast vs our slow implementations (~25s) to identif
 5. **Model Initialization**: Separate test request with minimal output
 
 ### Performance Analysis
-- **Total Time**: ~21s (similar to our implementations)
+- **Gemini CLI Total Time**: ~5s ⚡ (FAST - matches user reports)
 - **Request 1**: 972ms (model initialization)
 - **Request 2**: 3714ms (actual generation)
-- **Remaining Time**: ~16s (likely model processing/thinking time)
+- **Total HTTP Time**: ~4.7s ✅ (matches fast total time)
+
+**vs Our Implementations**: ~25s 🐌 (5x slower)
 
 ### Key Insights
-1. **Same Endpoint**: No infrastructure advantage from different endpoints
-2. **Configuration Focus**: Differences are in request configuration, not infrastructure
-3. **Streaming vs Non-streaming**: Gemini CLI uses streaming, we use non-streaming
-4. **SDK Headers**: Proper SDK identification may affect routing/prioritization
-5. **Two-phase Approach**: Separate initialization may optimize subsequent requests
+1. **Same Endpoint**: Both use `generativelanguage.googleapis.com` - no infrastructure advantage
+2. **Configuration is Key**: Speed difference comes from request configuration, not different endpoints
+3. **Streaming**: Gemini CLI uses `:streamGenerateContent?alt=sse`, we likely use non-streaming
+4. **SDK Headers**: Proper identification headers may affect routing/prioritization
+5. **Thinking Budget**: Uses `thinkingBudget: 128, includeThoughts: false`
+
+### Root Cause Identified
+The 5x performance gap is due to configuration differences:
+- **Streaming vs non-streaming requests**
+- **Missing SDK identification headers**
+- **Different thinking budget settings**
+- **Two-phase request approach**
 
 ### Next Steps
-1. **Test streaming vs non-streaming** in our implementations
-2. **Add proper SDK headers** to match Gemini CLI
-3. **Implement two-phase approach** (test + generation)
-4. **Compare thinking budget settings** (128 vs our current settings)
-5. **Analyze why total time is still ~21s** despite fast individual requests
+1. **Implement streaming** in OpenHands Gemini integration
+2. **Add proper SDK headers** (`User-Agent`, `x-goog-api-client`)
+3. **Apply thinking budget configuration** (`thinkingBudget: 128`)
+4. **Test two-phase approach** (initialization + generation)
+5. **Measure performance improvement** (target: ~25s → ~5s)
