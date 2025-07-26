@@ -72,7 +72,6 @@ def get_changes_in_repo(repo_dir: str) -> list[dict[str, str]]:
         return []
 
     try:
-
         # Get changed files
         changed_files = run(
             f'git --no-pager diff --name-status {ref}', repo_dir
