@@ -122,7 +122,7 @@ def get_git_changes(cwd: str) -> list[dict[str, str]]:
         for change in changes
         if next(
             iter(git_dir for git_dir in git_dirs if change['path'].startswith(git_dir)),
-            None
+            None,
         )
         is None
     ]
