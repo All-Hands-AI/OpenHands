@@ -7,6 +7,15 @@ description: The Command-Line Interface (CLI) provides a powerful interface that
 This mode is different from the [headless mode](/usage/how-to/headless-mode), which is non-interactive and better
 for scripting.
 
+<iframe
+  className="w-full aspect-video"
+  src="https://www.youtube.com/embed/PfvIx4y8h7w"
+  title="OpenHands CLI Tutorial"
+  frameBorder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+  allowFullScreen>
+</iframe>
+
 ## Getting Started
 
 ### Running with Python
@@ -23,6 +32,45 @@ pip install openhands-ai
 ```bash
 uvx --python 3.12 --from openhands-ai openhands
 ```
+
+<AccordionGroup>
+
+<Accordion title="Create shell aliases for easy access across environments">
+
+Add the following to your shell configuration file (`.bashrc`, `.zshrc`, etc.):
+
+```bash
+# Add OpenHands aliases
+alias openhands="uvx --python 3.12 --from openhands-ai openhands"
+alias oh="uvx --python 3.12 --from openhands-ai openhands"
+```
+
+After adding these lines, reload your shell configuration with `source ~/.bashrc` or `source ~/.zshrc` (depending on your shell).
+
+</Accordion>
+
+<Accordion title="Install OpenHands in home directory without global installation">
+
+You can install OpenHands in a virtual environment in your home directory using `uv`:
+
+```bash
+# Create a virtual environment in your home directory
+cd ~
+uv venv .openhands-venv --python 3.12
+
+# Install OpenHands in the virtual environment
+uv pip install -t ~/.openhands-venv/lib/python3.12/site-packages openhands-ai
+
+# Add the bin directory to your PATH in your shell configuration file
+echo 'export PATH="$PATH:$HOME/.openhands-venv/bin"' >> ~/.bashrc  # or ~/.zshrc
+
+# Reload your shell configuration
+source ~/.bashrc  # or source ~/.zshrc
+```
+
+</Accordion>
+
+</AccordionGroup>
 
 2. Launch an interactive OpenHands conversation from the command line:
 ```bash
@@ -55,7 +103,7 @@ The conversation history will be saved in `~/.openhands/sessions`.
 ```bash
 docker run -it \
     --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.45-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.50-nikolaik \
     -e SANDBOX_USER_ID=$(id -u) \
     -e SANDBOX_VOLUMES=$SANDBOX_VOLUMES \
     -e LLM_API_KEY=$LLM_API_KEY \
@@ -64,7 +112,7 @@ docker run -it \
     -v ~/.openhands:/.openhands \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app-$(date +%Y%m%d%H%M%S) \
-    docker.all-hands.dev/all-hands-ai/openhands:0.45 \
+    docker.all-hands.dev/all-hands-ai/openhands:0.50 \
     python -m openhands.cli.main --override-cli-mode true
 ```
 
@@ -75,7 +123,8 @@ docker run -it \
 
 This launches the CLI in Docker, allowing you to interact with OpenHands.
 
-The `-e SANDBOX_USER_ID=$(id -u)` ensures files created by the agent in your workspace have the correct permissions.
+The `-e SANDBOX_USER_ID=$(id -u)` is passed to the Docker command to ensure the sandbox user matches the host user’s
+permissions. This prevents the agent from creating root-owned files in the mounted workspace.
 
 The conversation history will be saved in `~/.openhands/sessions`.
 
@@ -104,6 +153,7 @@ You can use the following commands whenever the prompt (`>`) is displayed:
 | `/new`       | Start a new conversation                                       |
 | `/settings`  | View and modify current LLM/agent settings                     |
 | `/resume`    | Resume the agent if paused                                     |
+| `/mcp`       | Manage MCP server configuration and view connection errors    |
 
 #### Settings and Configuration
 
@@ -113,7 +163,7 @@ follow the prompts:
 - **Basic settings**: Choose a model/provider and enter your API key.
 - **Advanced settings**: Set custom endpoints, enable or disable confirmation mode, and configure memory condensation.
 
-Settings can also be managed via the `config.toml` file.
+Settings can also be managed via the `config.toml` file in the current directory or `~/.openhands/config.toml`.
 
 #### Repository Initialization
 
@@ -124,6 +174,41 @@ project details and structure. Use this when onboarding the agent to a new codeb
 
 You can pause the agent while it is running by pressing `Ctrl-P`. To continue the conversation after pausing, simply
 type `/resume` at the prompt.
+
+#### MCP Server Management
+
+To configure Model Context Protocol (MCP) servers, you can refer to the documentation on [MCP servers](../mcp) and use the `/mcp` command in the CLI. This command provides an interactive interface for managing Model Context Protocol (MCP) servers:
+
+- **List configured servers**: View all currently configured MCP servers (SSE, Stdio, and SHTTP)
+- **Add new server**: Interactively add a new MCP server with guided prompts
+- **Remove server**: Remove an existing MCP server from your configuration
+- **View errors**: Display any connection errors that occurred during MCP server startup
+
+This command modifies your `~/.openhands/config.toml` file and will prompt you to restart OpenHands for changes to take effect.
+
+To enable the [Tavily MCP server](https://github.com/tavily-ai/tavily-mcp) search engine, you can set the `search_api_key` under the `[core]` section in the `~/.openhands/config.toml` file.
+
+##### Example of the `config.toml` file with MCP server configuration:
+
+```toml
+[core]
+search_api_key = "tvly-your-api-key-here"
+
+[mcp]
+stdio_servers = [
+    {name="fetch", command="uvx", args=["mcp-server-fetch"]},
+]
+
+sse_servers = [
+    # Basic SSE server with just a URL
+    "http://example.com:8080/sse",
+]
+
+shttp_servers = [
+    # Streamable HTTP server with API key authentication
+    {url="https://secure-example.com/mcp", api_key="your-api-key"}
+]
+```
 
 ## Tips and Troubleshooting
 
