@@ -27,6 +27,17 @@ def check_dependencies():
     except ImportError:
         missing.append('google-generativeai')
 
+    try:
+        import google.genai  # noqa: F401
+    except ImportError:
+        missing.append('google-genai')
+
+    try:
+        from openhands.core.config import LLMConfig  # noqa: F401
+        from openhands.llm.llm import LLM  # noqa: F401
+    except ImportError:
+        print('⚠️  OpenHands modules not available - some tests will be skipped')
+
     if missing:
         print('❌ Missing dependencies:')
         for dep in missing:
@@ -121,10 +132,11 @@ def main():
     print('🚀 COMPREHENSIVE GEMINI PERFORMANCE INVESTIGATION')
     print('=' * 60)
     print('This will test:')
-    print('1. Pure LiteLLM performance with different configs')
-    print('2. OpenHands-style LiteLLM calls')
-    print('3. Native Google Generative AI performance')
-    print('4. Comparative analysis')
+    print('1. Comprehensive LiteLLM performance (basic + OpenHands-style + reasoning)')
+    print('2. Native Google Generative AI performance')
+    print('3. Thinking budget configurations')
+    print('4. OpenHands Gemini fix verification')
+    print('5. Comparative analysis')
     print()
 
     # Check prerequisites
@@ -134,11 +146,12 @@ def main():
     if not check_api_key():
         return 1
 
-    # Test scripts to run
+    # Test scripts to run (updated for consolidated tests)
     test_scripts = [
-        'test_litellm_performance.py',
-        'test_openhands_litellm.py',
+        'test_litellm_comprehensive.py',
         'test_native_gemini.py',
+        'test_thinking_budget.py',
+        'test_openhands_gemini_fix.py',
     ]
 
     results = {}
