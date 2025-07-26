@@ -13,7 +13,6 @@ from openhands.agenthub.tom_codeact_agent.tom_actions import (
     TomInstructionAction,
     TomSuggestionAction,
 )
-from openhands.agenthub.tom_codeact_agent.tom_api_client import TomApiClient
 from openhands.agenthub.tom_codeact_agent.tom_config import TomCodeActAgentConfig
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
@@ -25,6 +24,8 @@ from openhands.llm.llm import LLM
 from openhands.llm.llm_utils import check_tools
 from openhands.memory.condenser.condenser import Condensation, View
 from openhands.utils.prompt import PromptManager
+
+from tom_swe.tom_agent import create_tom_agent
 
 
 class TomCodeActAgent(CodeActAgent):
@@ -54,9 +55,10 @@ class TomCodeActAgent(CodeActAgent):
             tom_config = TomCodeActAgentConfig(
                 **config.model_dump(),
                 enable_tom_integration=False,  # Default to disabled
-                tom_api_url="http://localhost:8000",
+                tom_processed_data_dir="./data/processed_data",
+                tom_user_model_dir="./data/user_model",
+                tom_enable_rag=True,
                 tom_user_id=None,
-                tom_timeout=30,
                 tom_fallback_on_error=True,
                 tom_min_instruction_length=5
             )
@@ -64,13 +66,15 @@ class TomCodeActAgent(CodeActAgent):
             tom_config = config
 
         # Tom integration components
-        self.tom_client = TomApiClient(tom_config.tom_api_url, tom_config.tom_timeout)
+        self.tom_agent = None  # Will be initialized lazily
         self.tom_enabled = tom_config.enable_tom_integration
+        self.tom_config = tom_config
         self._last_processed_user_message_id: Optional[int] = None
 
         logger.info(f"TomCodeActAgent initialized with Tom integration: {self.tom_enabled}")
         if self.tom_enabled:
-            logger.info(f"Tom API URL: {tom_config.tom_api_url}")
+            logger.info(f"Tom processed data dir: {tom_config.tom_processed_data_dir}")
+            logger.info(f"Tom user model dir: {tom_config.tom_user_model_dir}")
 
     @property
     def prompt_manager(self) -> PromptManager:
@@ -81,6 +85,25 @@ class TomCodeActAgent(CodeActAgent):
                 system_prompt_filename=self.config.system_prompt_filename,
             )
         return self._prompt_manager
+
+    async def _ensure_tom_agent_initialized(self) -> None:
+        """Ensure Tom agent is initialized."""
+        if self.tom_agent is None and self.tom_enabled:
+            try:
+                logger.info("🔄 Tom: Initializing Tom agent...")
+                self.tom_agent = await create_tom_agent(
+                    processed_data_dir=self.tom_config.tom_processed_data_dir,
+                    user_model_dir=self.tom_config.tom_user_model_dir,
+                    enable_rag=self.tom_config.tom_enable_rag,
+                )
+                logger.info("✅ Tom: Agent initialized successfully")
+            except Exception as e:
+                logger.error(f"❌ Tom: Failed to initialize Tom agent: {e}")
+                if not self.tom_config.tom_fallback_on_error:
+                    raise
+                else:
+                    logger.warning("🔄 Tom: Disabling Tom integration due to initialization error")
+                    self.tom_enabled = False
 
     def step(self, state: State) -> 'Action':
         """Enhanced step method with Tom integration at two key points.
@@ -161,32 +184,6 @@ class TomCodeActAgent(CodeActAgent):
         # INTEGRATION POINT 2: Suggest next actions when agent finishes
         finish_actions = [action for action in actions if isinstance(action, AgentFinishAction)]
         logger.debug(f"🔍 Tom: Integration Point 2 check - tom_enabled: {self.tom_enabled}, finish_actions: {len(finish_actions)}")
-
-        if self.tom_enabled and finish_actions:
-            logger.info(f"🚀 Tom: Integration Point 2 triggered - suggesting next actions")
-            try:
-                # Create a new event loop for the async call
-                import concurrent.futures
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    future = executor.submit(self._run_tom_suggestions_sync, formatted_messages, state)
-                    tom_suggestion = future.result(timeout=30)
-            except Exception as e:
-                logger.error(f"❌ Tom: Error in next action suggestions: {e}")
-                tom_suggestion = None
-            if tom_suggestion:
-                # Use Tom's suggestions to enhance the finish action
-                enhanced_finish = self._create_enhanced_finish_with_tom(tom_suggestion, actions)
-                if enhanced_finish:
-                    # Replace the original finish action with the enhanced one
-                    finish_index = next(i for i, action in enumerate(actions)
-                                      if isinstance(action, AgentFinishAction))
-                    actions[finish_index] = enhanced_finish
-                    logger.info(f"✅ Tom: Enhanced finish action with next action suggestions")
-                else:
-                    logger.info(f"➡️ Tom: Could not enhance finish action with Tom suggestions")
-            else:
-                logger.info(f"➡️ Tom: No next action suggestions provided")
-
         # Queue all actions for execution
         for action in actions:
             self.pending_actions.append(action)
@@ -204,9 +201,9 @@ class TomCodeActAgent(CodeActAgent):
         """
         source_check = user_message.source == 'user'
         id_check = id(user_message) != self._last_processed_user_message_id
-        length_check = len(user_message.content.strip()) >= self.config.tom_min_instruction_length
+        length_check = len(user_message.content.strip()) >= self.tom_config.tom_min_instruction_length
 
-        logger.debug(f"🔍 Tom: Message checks - source='{user_message.source}' (=='user': {source_check}), id={id(user_message)} (!=last: {id_check}), length={len(user_message.content.strip())} (>={self.config.tom_min_instruction_length}: {length_check})")
+        logger.debug(f"🔍 Tom: Message checks - source='{user_message.source}' (=='user': {source_check}), id={id(user_message)} (!=last: {id_check}), length={len(user_message.content.strip())} (>={self.tom_config.tom_min_instruction_length}: {length_check})")
 
         return source_check and id_check and length_check
 
@@ -219,14 +216,6 @@ class TomCodeActAgent(CodeActAgent):
         finally:
             loop.close()
 
-    def _run_tom_suggestions_sync(self, formatted_messages, state):
-        """Synchronous wrapper for async Tom suggestions."""
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        try:
-            return loop.run_until_complete(self._suggest_next_actions_with_tom(formatted_messages, state))
-        finally:
-            loop.close()
 
     def _enhance_user_message_with_tom(self, tom_action: TomInstructionAction, user_message: MessageAction) -> str:
         """Enhance user message understanding using Tom's suggestions.
@@ -257,7 +246,6 @@ class TomCodeActAgent(CodeActAgent):
 
         logger.info(f"🎯 Tom: Using suggestion - clarity: {clarity*100:.0f}%, confidence: {confidence*100:.0f}%")
         logger.info(f"💡 Tom: Improved instruction: {improved_instruction}")
-
         return improved_instruction
 
     def _update_messages_with_enhanced_understanding(self, formatted_messages: list, enhanced_message: str) -> list:
@@ -291,64 +279,6 @@ class TomCodeActAgent(CodeActAgent):
 
         return updated_messages
 
-    def _create_enhanced_finish_with_tom(self, tom_suggestion: TomSuggestionAction, actions: list) -> Optional[AgentFinishAction]:
-        """Create an enhanced finish action using Tom's next action suggestions.
-
-        Args:
-            tom_suggestion: The Tom suggestion action
-            actions: List of actions including the original finish action
-
-        Returns:
-            Enhanced AgentFinishAction or None
-        """
-        # Find the original finish action
-        original_finish = None
-        for action in actions:
-            if isinstance(action, AgentFinishAction):
-                original_finish = action
-                break
-
-        if not original_finish:
-            logger.warning("🔄 Tom: No finish action found to enhance")
-            return None
-
-        # Extract Tom's suggestions
-        suggestions = tom_suggestion.suggestions
-
-        if not suggestions:
-            logger.warning("🔄 Tom: No suggestions found in Tom action")
-            return None
-
-        # Get the best suggestions (top 3)
-        best_suggestions = suggestions[:3]
-
-        # Create enhanced finish message
-        original_content = getattr(original_finish, 'content', '') or getattr(original_finish, 'outputs', {}).get('content', '')
-
-        enhanced_content = original_content
-        if enhanced_content:
-            enhanced_content += "\n\n"
-
-        enhanced_content += "🎯 **What would you like to do next?**\n"
-
-        for i, suggestion in enumerate(best_suggestions, 1):
-            suggestion_text = suggestion.get('suggestion', '')
-            reasoning = suggestion.get('reasoning', '')
-            confidence = suggestion.get('confidence_score', 0)
-
-            if suggestion_text:
-                enhanced_content += f"\n{i}. {suggestion_text}"
-                if reasoning:
-                    enhanced_content += f" *(Why: {reasoning})*"
-
-        enhanced_content += "\n\nFeel free to ask me to help with any of these or something else entirely!"
-
-        logger.info(f"🎯 Tom: Enhanced finish action with {len(best_suggestions)} suggestions")
-
-        # Create new finish action with enhanced content
-        # AgentFinishAction uses final_thought for the main message content
-        return AgentFinishAction(final_thought=enhanced_content)
-
     async def _improve_instruction_with_tom(
         self, user_message: MessageAction, formatted_messages: list, state: State
     ) -> Optional[TomInstructionAction]:
@@ -363,90 +293,52 @@ class TomCodeActAgent(CodeActAgent):
             TomInstructionAction if improvements are available, None otherwise
         """
         try:
+            # Ensure Tom agent is initialized
+            await self._ensure_tom_agent_initialized()
+
+            if not self.tom_agent:
+                logger.warning("⚠️ Tom: Tom agent not available, skipping instruction improvement")
+                return None
+
             user_id = self._get_user_id(state)
             context = self._extract_context_from_messages(formatted_messages)
 
             logger.info(f"🔄 Tom: Requesting instruction improvement for user: {user_id}")
             logger.info(f"📝 Tom: Original instruction: {user_message.content}")
-            logger.info(f"📋 Tom: Context: {context}")
+            logger.info(f"📋 Tom: Context length: {len(context)} characters")
 
-            # Call Tom API for instruction improvement
-            response = await self.tom_client.propose_instructions(
-                user_id=user_id,
+            # Step 1: Analyze user context
+            user_context = await self.tom_agent.analyze_user_context(user_id, user_message.content)
+            logger.info(f"🔍 Tom: Analyzed user context: {user_context}")
+
+            # Step 2: Get improved instructions
+            recommendations = await self.tom_agent.propose_instructions(
+                user_context=user_context,
                 original_instruction=user_message.content,
-                context=context
+                user_msg_context=context,
             )
 
-            logger.info(f"✅ Tom: Received response: {response}")
+            logger.info(f"✅ Tom: Received {len(recommendations)} recommendations")
 
-            if response.get("success") and response.get("recommendations"):
-                logger.info(f"🎯 Tom: Provided {len(response['recommendations'])} instruction improvements")
-                for i, rec in enumerate(response['recommendations']):
+            if recommendations:
+                logger.info(f"🎯 Tom: Provided instruction improvements")
+                for i, rec in enumerate(recommendations):
                     logger.info(f"💡 Tom: Recommendation {i+1}: {rec}")
 
                 return TomInstructionAction(
                     content="",  # Will be set in __post_init__
                     original_instruction=user_message.content,
-                    improved_instructions=response["recommendations"]
+                    improved_instructions=recommendations
                 )
             else:
-                logger.warning(f"⚠️ Tom: Instruction improvement failed: {response.get('error', 'Unknown error')}")
+                logger.warning(f"⚠️ Tom: No instruction improvements provided")
 
         except Exception as e:
             logger.error(f"❌ Tom: Instruction improvement failed with exception: {e}")
-            if not self.config.tom_fallback_on_error:
+            if not self.tom_config.tom_fallback_on_error:
                 raise
             else:
                 logger.warning(f"🔄 Tom: Falling back to original instruction due to error")
-
-        return None
-
-    async def _suggest_next_actions_with_tom(
-        self, formatted_messages: list, state: State
-    ) -> Optional[TomSuggestionAction]:
-        """INTEGRATION POINT 2: Get next action suggestions from Tom.
-
-        Args:
-            formatted_messages: Full conversation context in LLM format
-            state: Current agent state
-
-        Returns:
-            TomSuggestionAction if suggestions are available, None otherwise
-        """
-        try:
-            user_id = self._get_user_id(state)
-            context = self._extract_context_from_messages(formatted_messages)
-
-            logger.info(f"🔄 Tom: Requesting next action suggestions for user: {user_id}")
-            logger.info(f"📋 Tom: Context length: {len(context)} characters")
-
-            # Call Tom API for next action suggestions
-            response = await self.tom_client.suggest_next_actions(
-                user_id=user_id,
-                context=context
-            )
-
-            logger.info(f"✅ Tom: Received response: {response}")
-
-            if response.get("success") and response.get("suggestions"):
-                logger.info(f"🎯 Tom: Provided {len(response['suggestions'])} next action suggestions")
-                for i, suggestion in enumerate(response['suggestions']):
-                    logger.info(f"💡 Tom: Suggestion {i+1}: {suggestion}")
-
-                return TomSuggestionAction(
-                    content="",  # Will be set in __post_init__
-                    suggestions=response["suggestions"],
-                    context=context
-                )
-            else:
-                logger.warning(f"⚠️ Tom: Next action suggestions failed: {response.get('error', 'Unknown error')}")
-
-        except Exception as e:
-            logger.error(f"❌ Tom: Next action suggestions failed with exception: {e}")
-            if not self.config.tom_fallback_on_error:
-                raise
-            else:
-                logger.warning(f"🔄 Tom: Continuing without next action suggestions due to error")
 
         return None
 
@@ -511,7 +403,3 @@ class TomCodeActAgent(CodeActAgent):
     async def __aenter__(self):
         """Async context manager entry."""
         return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Async context manager exit - cleanup Tom client."""
-        await self.tom_client.close()

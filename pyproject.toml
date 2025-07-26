@@ -94,6 +94,7 @@ kubernetes = "^33.1.0"
 pyyaml = "^6.0.2"
 memory-profiler = "^0.61.0"
 jupyter_kernel_gateway = "*"
+tom-swe = { git = "https://github.com/All-Hands-AI/ToM-SWE.git", rev = "feat/update_example_and_data_ui" }
 
 # Third-party runtime dependencies (optional)
 e2b = { version = ">=1.0.5,<1.8.0", optional = true }

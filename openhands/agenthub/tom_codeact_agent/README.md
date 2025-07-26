@@ -12,9 +12,9 @@ This agent extends the capabilities of CodeActAgent by adding two key integratio
 ## Architecture
 
 ```
-User Message → TomCodeActAgent → Tom API (propose_instructions) → Present Choices → User Decides → CodeAct Execution
+User Message → TomCodeActAgent → Tom Agent (propose_instructions) → Present Choices → User Decides → CodeAct Execution
 
-Task Complete → TomCodeActAgent → Tom API (suggest_next_actions) → Present Suggestions → User Decides → Continue
+Task Complete → TomCodeActAgent → Tom Agent (suggest_next_actions) → Present Suggestions → User Decides → Continue
 ```
 
 ## Key Features
@@ -23,19 +23,19 @@ Task Complete → TomCodeActAgent → Tom API (suggest_next_actions) → Present
 
 #### 1. Instruction Improvement
 - Triggered when a new user message is received
-- Calls `POST /propose_instructions` with full conversation context
+- Calls Tom agent's `propose_instructions` method with full conversation context
 - Presents both original and improved instructions to the user
 - User can choose original, improved, or edit manually
 
-#### 2. Next Action Suggestions  
+#### 2. Next Action Suggestions
 - Triggered when the agent produces an `AgentFinishAction`
-- Calls `POST /suggest_next_actions` with conversation context
+- Calls Tom agent's `suggest_next_actions` method with conversation context
 - Presents personalized suggestions with reasoning and expected outcomes
 - User decides what to do next
 
 ### Graceful Fallbacks
-- Continues with normal CodeAct behavior if Tom API is unavailable
-- Configurable timeout and error handling
+- Continues with normal CodeAct behavior if Tom agent is unavailable
+- Configurable error handling
 - No disruption to core functionality when Tom integration fails
 
 ## Configuration
@@ -45,9 +45,10 @@ Task Complete → TomCodeActAgent → Tom API (suggest_next_actions) → Present
 ```toml
 [agent.TomCodeActAgent]
 enable_tom_integration = true
-tom_api_url = "http://localhost:8000"
+tom_processed_data_dir = "./data/processed_data"
+tom_user_model_dir = "./data/user_model"
+tom_enable_rag = true
 tom_user_id = "user_123"
-tom_timeout = 30
 tom_fallback_on_error = true
 tom_min_instruction_length = 5
 ```
@@ -55,32 +56,16 @@ tom_min_instruction_length = 5
 ### Configuration Options
 
 - `enable_tom_integration`: Whether to enable Tom agent integration (default: false)
-- `tom_api_url`: Base URL of the Tom API server (default: "http://localhost:8000")
-- `tom_user_id`: User ID for Tom API calls (default: None, auto-generated)
-- `tom_timeout`: Timeout for Tom API requests in seconds (default: 30)
-- `tom_fallback_on_error`: Continue with normal behavior on Tom API errors (default: true)
+- `tom_processed_data_dir`: Directory for Tom agent processed data (default: "./data/processed_data")
+- `tom_user_model_dir`: Directory for Tom agent user models (default: "./data/user_model")
+- `tom_enable_rag`: Whether to enable RAG in Tom agent (default: true)
+- `tom_user_id`: User ID for Tom agent calls (default: None, auto-generated)
+- `tom_fallback_on_error`: Continue with normal behavior on Tom agent errors (default: true)
 - `tom_min_instruction_length`: Minimum instruction length to trigger Tom improvement (default: 5)
 
-## Tom API Integration
+## Tom Agent Integration
 
-### Endpoints Used
-
-#### POST /propose_instructions
-```json
-{
-  "user_id": "user_123",
-  "original_instruction": "Debug the function that's causing errors",
-  "context": "Full conversation context in LLM format..."
-}
-```
-
-#### POST /suggest_next_actions
-```json
-{
-  "user_id": "user_123", 
-  "context": "Full conversation context including agent completion..."
-}
-```
+The agent directly creates and interacts with a Tom agent instance using the `create_tom_agent` function. All communication is in-process, with no HTTP or API calls required.
 
 ### Context Extraction
 
@@ -99,7 +84,7 @@ The agent extracts context from the same formatted messages that are sent to the
    Original: Debug my Python application
 
    ✨ Improved Option 1:
-   Debug the Python application by systematically adding logging statements 
+   Debug the Python application by systematically adding logging statements
    and checking each variable step-by-step to identify the root cause
 
    💡 Why: Personalized for your preference for detailed, systematic approaches
@@ -133,11 +118,11 @@ The agent extracts context from the same formatted messages that are sent to the
 
 ### Key Components
 
-- `TomCodeActAgent`: Main agent class extending CodeActAgent
-- `TomApiClient`: HTTP client for Tom API communication
-- `TomInstructionAction`: Action for presenting instruction improvements
-- `TomSuggestionAction`: Action for presenting next action suggestions
-- `TomCodeActAgentConfig`: Configuration class with Tom settings
+- `tom_codeact_agent.py`: Main agent class extending CodeActAgent
+- `tom_actions.py`: Tom-specific action types
+- `tom_config.py`: Configuration classes
+- `prompts/system_prompt.j2`: Enhanced system prompt with Tom integration
+- `README.md`: This documentation
 
 ### Integration Timing
 
@@ -146,39 +131,31 @@ The agent extracts context from the same formatted messages that are sent to the
 
 ### Error Handling
 
-- Graceful degradation when Tom API is unavailable
-- Configurable timeouts prevent blocking
-- Optional strict mode (tom_fallback_on_error=false) for debugging
+- Graceful degradation when Tom agent is unavailable
+- Optional strict mode (`tom_fallback_on_error=false`) for debugging
 - Comprehensive logging of Tom interactions
 
 ## Development
 
 ### Testing Tom Integration
 
-1. Start Tom API server:
+1. Ensure the Tom agent code and data directories exist:
    ```bash
-   tom-api --host 0.0.0.0 --port 8000
+   mkdir -p ./data/processed_data ./data/user_model
    ```
 
-2. Configure OpenHands:
-   ```toml
-   [agent.TomCodeActAgent]
-   enable_tom_integration = true
-   tom_api_url = "http://localhost:8000"
-   ```
+2. Configure OpenHands as shown above.
 
-3. Use TomCodeActAgent in OpenHands interface
+3. Use TomCodeActAgent in OpenHands interface.
 
 ### Debugging
 
-- Set `DEBUG=1` to see detailed Tom API interactions
-- Check logs for Tom API call details and responses
-- Use Tom API health endpoint to verify connectivity
+- Set `DEBUG=1` to see detailed Tom agent interactions
+- Check logs for Tom agent call details and responses
 
 ## Files
 
 - `tom_codeact_agent.py`: Main agent implementation
-- `tom_api_client.py`: HTTP client for Tom API
 - `tom_actions.py`: Tom-specific action types
 - `tom_config.py`: Configuration classes
 - `prompts/system_prompt.j2`: Enhanced system prompt with Tom integration
@@ -189,4 +166,4 @@ The agent extracts context from the same formatted messages that are sent to the
 - Support for user preference learning over time
 - Integration with additional Tom capabilities
 - Enhanced context understanding for better personalization
-- Performance optimizations for Tom API calls
+- Performance optimizations for Tom agent calls
