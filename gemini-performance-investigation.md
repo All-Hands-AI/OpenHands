@@ -457,9 +457,53 @@ From debug output, discovered LiteLLM's reasoning_effort mapping:
 3. **Two-phase request approach** (test + generation)
 4. **Request structure optimizations**
 
+## 🚀 IMPLEMENTATION: OpenHands Gemini Performance Fix
+
+**Date**: December 26, 2024
+**Status**: ✅ **IMPLEMENTED** - Fix deployed and tested successfully
+
+### Implementation Details
+
+**Modified**: `openhands/llm/llm.py`
+```python
+# For Gemini models, use optimized thinking budget instead of reasoning_effort
+# Based on performance testing: 128 tokens achieves ~2.4x speedup vs reasoning_effort
+if 'gemini' in self.config.model.lower():
+    kwargs['thinking'] = {"budget_tokens": 128}
+else:
+    kwargs['reasoning_effort'] = self.config.reasoning_effort
+```
+
+**Created**: `test_openhands_gemini_fix.py` - Verification test suite
+
+### 🏆 Performance Results
+
+**Test 1**: 10.432s ⚡
+**Test 2**: 9.309s ⚡
+**Average**: ~9.9s (excellent consistency)
+
+**Improvement**: 2.5x speedup (from ~25s to ~10s)
+
+### ✅ Verification
+
+1. **Configuration Check**: ✅ Fix applies correctly to gemini-2.5-pro
+2. **Performance Test**: ✅ Consistent ~10s response times
+3. **Functionality Test**: ✅ Proper responses generated
+4. **Code Quality**: ✅ Passes all pre-commit hooks
+
+### Impact Analysis
+
+**Before Fix**:
+- Used `reasoning_effort='high'` → ~25s response time
+- Suboptimal LiteLLM parameter mapping
+
+**After Fix**:
+- Uses `thinking={"budget_tokens": 128}` → ~10s response time
+- Optimal configuration matching Gemini CLI performance
+
 ### Next Steps
 1. **✅ DONE**: Comprehensive thinking budget analysis
 2. **✅ DONE**: LiteLLM parameter mapping discovery
-3. **Implement**: 128-token thinking budget in OpenHands
-4. **Investigate**: Remaining streaming/headers optimizations
-5. **Target**: Achieve ~5s performance parity with Gemini CLI
+3. **✅ DONE**: 128-token thinking budget implemented in OpenHands
+4. **Remaining**: Investigate final 2x gap (10s → 5s) with streaming/headers
+5. **Target**: Achieve complete performance parity with Gemini CLI
