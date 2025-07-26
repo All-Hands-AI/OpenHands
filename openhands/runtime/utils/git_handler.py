@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import json
+from pathlib import Path
 from typing import Callable
 from uuid import uuid4
 
@@ -50,11 +51,11 @@ class GitHandler:
         self.cwd = cwd
 
     def _create_python_script_file(self, file: str):
-        result = self.execute("mktemp --suffix=.py", self.cwd)
-        script_file = result.content
+        result = self.execute("mktemp -d", self.cwd)
+        script_file = Path(result.content.strip(), Path(file).name)
         with open(file, 'r') as f:
-            self.create_file_fn(script_file, f.read())
-            result = self.execute(f'chmod +x {script_file}', self.cwd)
+            self.create_file_fn(str(script_file), f.read())
+            result = self.execute(f'chmod +x "{script_file}"', self.cwd)
         return script_file
 
     def get_git_changes(self) -> list[dict[str, str]] | None:

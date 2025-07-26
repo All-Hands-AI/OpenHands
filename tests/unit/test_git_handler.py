@@ -3,8 +3,10 @@ import shutil
 import subprocess
 import tempfile
 import unittest
-from unittest.mock import patch, MagicMock
+from pathlib import Path
+from unittest.mock import patch
 
+from openhands.runtime.utils import git_changes, git_diff, git_handler
 from openhands.runtime.utils.git_handler import CommandResult, GitHandler
 
 
@@ -25,10 +27,12 @@ class TestGitHandler(unittest.TestCase):
 
         # Initialize the GitHandler with our mock functions
         self.git_handler = GitHandler(
-            execute_shell_fn=self._execute_command,
-            create_file_fn=self._create_file
+            execute_shell_fn=self._execute_command, create_file_fn=self._create_file
         )
         self.git_handler.set_cwd(self.local_dir)
+
+        self.git_handler.git_changes_cmd = f'python3 {git_changes.__file__}'
+        self.git_handler.git_diff_cmd = f'python3 {git_diff.__file__} "{{file_path}}"'
 
         # Set up the git repositories
         self._setup_git_repos()
@@ -58,216 +62,213 @@ class TestGitHandler(unittest.TestCase):
         except Exception:
             return -1
 
+    def write_file(
+        self,
+        dir: str,
+        name: str,
+        additional_content: tuple[str, ...] = ('Line 1', 'Line 2', 'Line 3'),
+    ):
+        with open(os.path.join(dir, name), 'w') as f:
+            f.write(name)
+            for line in additional_content:
+                f.write('\n')
+                f.write(line)
+
     def _setup_git_repos(self):
         """Set up real git repositories for testing."""
         # Set up origin repository
-        self._execute_command(
-            'git init --initial-branch=main', self.origin_dir
-        )
-        self._execute_command(
-            "git config user.email 'test@example.com'", self.origin_dir
-        )
-        self._execute_command(
-            "git config user.name 'Test User'", self.origin_dir
-        )
+        self._execute_command('git init --initial-branch=main', self.origin_dir)
 
-        # Create a file and commit it
-        with open(os.path.join(self.origin_dir, 'file1.txt'), 'w') as f:
-            f.write('Original content')
-
-        self._execute_command('git add file1.txt', self.origin_dir)
+        # Set up the initial state...
+        self.write_file(self.origin_dir, 'unchanged.txt')
+        self.write_file(self.origin_dir, 'committed_modified.txt')
+        self.write_file(self.origin_dir, 'staged_modified.txt')
+        self.write_file(self.origin_dir, 'unstaged_modified.txt')
+        self.write_file(self.origin_dir, 'committed_delete.txt')
+        self.write_file(self.origin_dir, 'staged_delete.txt')
+        self.write_file(self.origin_dir, 'unstaged_delete.txt')
         self._execute_command(
-            "git commit -m 'Initial commit'", self.origin_dir
+            "git add . && git commit -m 'Initial Commit'", self.origin_dir
         )
 
         # Clone the origin repository to local
-        self._execute_command(
-            f'git clone {self.origin_dir} {self.local_dir}'
-        )
+        self._execute_command(f'git clone {self.origin_dir} {self.local_dir}')
         self._execute_command(
             "git config user.email 'test@example.com'", self.local_dir
         )
+        self._execute_command("git config user.name 'Test User'", self.local_dir)
+        self._execute_command('git checkout -b feature-branch', self.local_dir)
+
+        # Setup committed changes...
+        self.write_file(self.local_dir, 'committed_modified.txt', ('Line 4',))
+        self.write_file(self.local_dir, 'committed_add.txt')
         self._execute_command(
-            "git config user.name 'Test User'", self.local_dir
+            "git add . && git commit -m 'First batch of changes'", self.local_dir
         )
 
-        # Create a feature branch in the local repository
-        self._execute_command(
-            'git checkout -b feature-branch', self.local_dir
-        )
+        # Setup staged changes...
+        self.write_file(self.local_dir, 'staged_modified.txt', ('Line 4',))
+        self.write_file(self.local_dir, 'staged_add.txt')
+        os.remove(os.path.join(self.local_dir, 'staged_delete.txt'))
+        self._execute_command('git add .', self.local_dir)
 
-        # Modify a file and create a new file
-        with open(os.path.join(self.local_dir, 'file1.txt'), 'w') as f:
-            f.write('Modified content')
+        # Setup unstaged changes...
+        self.write_file(self.local_dir, 'unstaged_modified.txt', ('Line 4',))
+        self.write_file(self.local_dir, 'unstaged_add.txt')
+        os.remove(os.path.join(self.local_dir, 'unstaged_delete.txt'))
 
-        with open(os.path.join(self.local_dir, 'file2.txt'), 'w') as f:
-            f.write('New file content')
+    def setup_nested(self):
+        nested_1 = Path(self.local_dir, 'nested 1')
+        nested_1.mkdir()
+        nested_1 = str(nested_1)
+        self._execute_command('git init --initial-branch=main', nested_1)
+        self.write_file(nested_1, 'committed_add.txt')
+        self._execute_command('git add .', nested_1)
+        self._execute_command('git commit -m "Initial Commit"', nested_1)
+        self.write_file(nested_1, 'staged_add.txt')
 
-        # Add and commit file1.txt changes to create a baseline
-        self._execute_command('git add file1.txt', self.local_dir)
-        self._execute_command(
-            "git commit -m 'Update file1.txt'", self.local_dir
-        )
+        nested_2 = Path(self.local_dir, 'nested_2')
+        nested_2.mkdir()
+        nested_2 = str(nested_2)
+        self._execute_command('git init --initial-branch=main', nested_2)
+        self.write_file(nested_2, 'committed_add.txt')
+        self._execute_command('git add .', nested_2)
+        self._execute_command('git commit -m "Initial Commit"', nested_2)
+        self.write_file(nested_2, 'unstaged_add.txt')
 
-        # Add and commit file2.txt, then modify it
-        self._execute_command('git add file2.txt', self.local_dir)
-        self._execute_command(
-            "git commit -m 'Add file2.txt'", self.local_dir
-        )
-
-        # Modify file2.txt and stage it
-        with open(os.path.join(self.local_dir, 'file2.txt'), 'w') as f:
-            f.write('Modified new file content')
-        self._execute_command('git add file2.txt', self.local_dir)
-
-        # Create a file that will be deleted
-        with open(os.path.join(self.local_dir, 'file3.txt'), 'w') as f:
-            f.write('File to be deleted')
-
-        self._execute_command('git add file3.txt', self.local_dir)
-        self._execute_command(
-            "git commit -m 'Add file3.txt'", self.local_dir
-        )
-        self._execute_command('git rm file3.txt', self.local_dir)
-
-        # Modify file1.txt again but don't stage it (unstaged change)
-        with open(os.path.join(self.local_dir, 'file1.txt'), 'w') as f:
-            f.write('Modified content again')
-
-        # Push the feature branch to origin
-        self._execute_command(
-            'git push -u origin feature-branch', self.local_dir
-        )
-
-    @patch('openhands.runtime.utils.git_handler.git_changes')
-    def test_get_git_changes(self, mock_git_changes_module):
-        """Test that get_git_changes delegates to the git_changes module."""
-        # Mock the git_changes.get_git_changes function
-        expected_changes = [
-            {'status': 'M', 'path': 'file1.txt'},
-            {'status': 'A', 'path': 'file2.txt'},
-            {'status': 'D', 'path': 'file3.txt'},
-            {'status': 'A', 'path': 'untracked.txt'}
-        ]
-        mock_git_changes_module.get_git_changes.return_value = expected_changes
-        
-        # Mock the __file__ attribute
-        type(mock_git_changes_module).__file__ = '/fake/path/git_changes.py'
-        
-        # Call the method
+    def test_get_git_changes(self):
+        """
+        Test with unpushed commits, staged commits, and unstaged commits
+        """
         changes = self.git_handler.get_git_changes()
-        
-        # Verify the result
-        self.assertEqual(changes, expected_changes)
-        mock_git_changes_module.get_git_changes.assert_called_once_with(self.local_dir)
 
-    @patch('openhands.runtime.utils.git_handler.git_diff')
-    def test_get_git_diff(self, mock_git_diff_module):
-        """Test that get_git_diff delegates to the git_diff module."""
-        # Mock the git_diff.get_git_diff function
+        expected_changes = [
+            {'status': 'A', 'path': 'committed_add.txt'},
+            {'status': 'M', 'path': 'committed_modified.txt'},
+            {'status': 'A', 'path': 'staged_add.txt'},
+            {'status': 'D', 'path': 'staged_delete.txt'},
+            {'status': 'M', 'path': 'staged_modified.txt'},
+            {'status': 'A', 'path': 'unstaged_add.txt'},
+            {'status': 'D', 'path': 'unstaged_delete.txt'},
+            {'status': 'M', 'path': 'unstaged_modified.txt'},
+        ]
+
+        assert changes == expected_changes
+
+    def test_get_git_changes_after_push(self):
+        """
+        Test with staged commits, and unstaged commits
+        """
+        self._execute_command('git push -u origin feature-branch', self.local_dir)
+        changes = self.git_handler.get_git_changes()
+
+        expected_changes = [
+            {'status': 'A', 'path': 'staged_add.txt'},
+            {'status': 'D', 'path': 'staged_delete.txt'},
+            {'status': 'M', 'path': 'staged_modified.txt'},
+            {'status': 'A', 'path': 'unstaged_add.txt'},
+            {'status': 'D', 'path': 'unstaged_delete.txt'},
+            {'status': 'M', 'path': 'unstaged_modified.txt'},
+        ]
+
+        assert changes == expected_changes
+
+    def test_get_git_changes_nested_repos(self):
+        """
+        Test with staged commits, and unstaged commits
+        """
+        self.setup_nested()
+
+        changes = self.git_handler.get_git_changes()
+
+        expected_changes = [
+            {'status': 'A', 'path': 'committed_add.txt'},
+            {'status': 'M', 'path': 'committed_modified.txt'},
+            {'status': 'A', 'path': 'nested 1/staged_add.txt'},
+            {'status': 'A', 'path': 'nested_2/unstaged_add.txt'},
+            {'status': 'A', 'path': 'staged_add.txt'},
+            {'status': 'D', 'path': 'staged_delete.txt'},
+            {'status': 'M', 'path': 'staged_modified.txt'},
+            {'status': 'A', 'path': 'unstaged_add.txt'},
+            {'status': 'D', 'path': 'unstaged_delete.txt'},
+            {'status': 'M', 'path': 'unstaged_modified.txt'},
+        ]
+
+        assert changes == expected_changes
+
+    def test_get_git_diff_staged_modified(self):
+        """Test on a staged modified"""
+        diff = self.git_handler.get_git_diff('staged_modified.txt')
         expected_diff = {
-            'original': 'Original content',
-            'modified': 'Modified content again'
+            'original': 'staged_modified.txt\nLine 1\nLine 2\nLine 3',
+            'modified': 'staged_modified.txt\nLine 4',
         }
-        mock_git_diff_module.get_git_diff.return_value = expected_diff
-        
-        # Mock the __file__ attribute
-        type(mock_git_diff_module).__file__ = '/fake/path/git_diff.py'
-        
-        # Call the method
-        diff = self.git_handler.get_git_diff('file1.txt')
-        
-        # Verify the result
-        self.assertEqual(diff, expected_diff)
-        mock_git_diff_module.get_git_diff.assert_called_once_with('file1.txt')
+        assert diff == expected_diff
 
-    def test_create_python_script_file(self):
-        """Test that _create_python_script_file creates a temporary Python script."""
-        # Create a temporary script file for testing
-        script_content = "print('Hello, World!')"
-        script_path = os.path.join(self.test_dir, 'test_script.py')
-        
-        with open(script_path, 'w') as f:
-            f.write(script_content)
-        
-        # Mock the execute command to return a predictable temp file path
-        temp_file_path = os.path.join(self.test_dir, 'temp_script.py')
-        with patch.object(self.git_handler, 'execute') as mock_execute:
-            mock_execute.side_effect = [
-                CommandResult(temp_file_path, 0),  # mktemp result
-                CommandResult('', 0)  # chmod result
-            ]
-            
-            # Call the method
-            result = self.git_handler._create_python_script_file(script_path)
-            
-            # Verify the result
-            self.assertEqual(result, temp_file_path)
-            self.assertEqual(len(self.created_files), 1)
-            self.assertEqual(self.created_files[0][0], temp_file_path)
-            self.assertEqual(self.created_files[0][1], script_content)
+    def test_get_git_diff_unchanged(self):
+        """Test that get_git_diff delegates to the git_diff module."""
+        diff = self.git_handler.get_git_diff('unchanged.txt')
+        expected_diff = {
+            'original': 'unchanged.txt\nLine 1\nLine 2\nLine 3',
+            'modified': 'unchanged.txt\nLine 1\nLine 2\nLine 3',
+        }
+        assert diff == expected_diff
 
-    @patch('openhands.runtime.utils.git_handler.git_changes')
-    @patch('openhands.runtime.utils.git_handler.json')
-    def test_get_git_changes_fallback(self, mock_json, mock_git_changes_module):
+    def test_get_git_diff_unpushed(self):
+        """Test that get_git_diff delegates to the git_diff module."""
+        diff = self.git_handler.get_git_diff('committed_modified.txt')
+        expected_diff = {
+            'original': 'committed_modified.txt\nLine 1\nLine 2\nLine 3',
+            'modified': 'committed_modified.txt\nLine 4',
+        }
+        assert diff == expected_diff
+
+    def test_get_git_diff_unstaged_add(self):
+        """Test that get_git_diff delegates to the git_diff module."""
+        diff = self.git_handler.get_git_diff('unstaged_add.txt')
+        expected_diff = {
+            'original': '',
+            'modified': 'unstaged_add.txt\nLine 1\nLine 2\nLine 3',
+        }
+        assert diff == expected_diff
+
+    def test_get_git_changes_fallback(self):
         """Test that get_git_changes falls back to creating a script file when needed."""
-        # Mock the __file__ attribute
-        type(mock_git_changes_module).__file__ = '/fake/path/git_changes.py'
-        
-        # Mock the execute command for the fallback path
-        with patch.object(self.git_handler, 'execute') as mock_execute:
-            # First call succeeds but returns invalid JSON
-            mock_execute.return_value = CommandResult('invalid json', 0)
-            
-            # Mock json.loads to raise an exception and then return an empty list
-            mock_json.loads.side_effect = [Exception("Invalid JSON"), []]
-            
-            # Mock _create_python_script_file
-            with patch.object(self.git_handler, '_create_python_script_file') as mock_create_script:
-                mock_create_script.return_value = '/tmp/git_changes.py'
-                
-                # Second call with the new script path returns valid JSON
-                mock_execute.side_effect = [
-                    CommandResult('invalid json', 0),  # First call
-                    CommandResult('[]', 0)  # Second call with new script
-                ]
-                
-                # Call the method - should use fallback
-                changes = self.git_handler.get_git_changes()
-                
-                # Verify the script creation was attempted
-                mock_create_script.assert_called_once()
-                self.assertEqual(changes, [])
 
-    @patch('openhands.runtime.utils.git_handler.git_diff')
-    @patch('openhands.runtime.utils.git_handler.json')
-    def test_get_git_diff_fallback(self, mock_json, mock_git_diff_module):
-        """Test that get_git_diff falls back to creating a script file when needed."""
-        # Mock the __file__ attribute
-        type(mock_git_diff_module).__file__ = '/fake/path/git_diff.py'
-        
-        # Mock the execute command for the fallback path
-        with patch.object(self.git_handler, 'execute') as mock_execute:
-            # First call succeeds but returns invalid JSON
-            mock_execute.return_value = CommandResult('invalid json', 0)
-            
-            # Mock json.loads to raise an exception and then return the expected diff
-            expected_diff = {'original': 'content', 'modified': 'new content'}
-            mock_json.loads.side_effect = [Exception("Invalid JSON"), expected_diff]
-            
-            # Mock _create_python_script_file
-            with patch.object(self.git_handler, '_create_python_script_file') as mock_create_script:
-                mock_create_script.return_value = '/tmp/git_diff.py'
-                
-                # Second call with the new script path returns valid JSON
-                mock_execute.side_effect = [
-                    CommandResult('invalid json', 0),  # First call
-                    CommandResult('{"original": "content", "modified": "new content"}', 0)  # Second call with new script
-                ]
-                
-                # Call the method - should use fallback
-                diff = self.git_handler.get_git_diff('file1.txt')
-                
-                # Verify the script creation was attempted
-                mock_create_script.assert_called_once()
-                self.assertEqual(diff, expected_diff)
+        # Break the git changes command
+        with patch(
+            'openhands.runtime.utils.git_handler.GIT_CHANGES_CMD',
+            'non-existant-command',
+        ):
+            self.git_handler.git_changes_cmd = git_handler.GIT_CHANGES_CMD
+
+            changes = self.git_handler.get_git_changes()
+
+            expected_changes = [
+                {'status': 'A', 'path': 'committed_add.txt'},
+                {'status': 'M', 'path': 'committed_modified.txt'},
+                {'status': 'A', 'path': 'staged_add.txt'},
+                {'status': 'D', 'path': 'staged_delete.txt'},
+                {'status': 'M', 'path': 'staged_modified.txt'},
+                {'status': 'A', 'path': 'unstaged_add.txt'},
+                {'status': 'D', 'path': 'unstaged_delete.txt'},
+                {'status': 'M', 'path': 'unstaged_modified.txt'},
+            ]
+
+            assert changes == expected_changes
+
+    def test_get_git_diff_fallback(self):
+        """Test that get_git_diff delegates to the git_diff module."""
+
+        # Break the git diff command
+        with patch(
+            'openhands.runtime.utils.git_handler.GIT_DIFF_CMD', 'non-existant-command'
+        ):
+            self.git_handler.git_diff_cmd = git_handler.GIT_DIFF_CMD
+
+            diff = self.git_handler.get_git_diff('unchanged.txt')
+            expected_diff = {
+                'original': 'unchanged.txt\nLine 1\nLine 2\nLine 3',
+                'modified': 'unchanged.txt\nLine 1\nLine 2\nLine 3',
+            }
+            assert diff == expected_diff
