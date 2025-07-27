@@ -13,11 +13,7 @@ from openhands.runtime.utils import git_changes, git_diff, git_handler
 from openhands.runtime.utils.git_handler import CommandResult, GitHandler
 
 
-@pytest.mark.skipif(
-    sys.platform == 'win32'
-    or os.getenv('TEST_IN_CI', 'False').lower() in ['true', '1', 'yes'],
-    reason='Windows is not supported, and Git clone in CI does not seem to work properly',
-)
+@pytest.mark.skipif(sys.platform == 'win32', reason='Windows is not supported')
 class TestGitHandler(unittest.TestCase):
     def setUp(self):
         # Create temporary directories for our test repositories
@@ -101,7 +97,7 @@ class TestGitHandler(unittest.TestCase):
         )
 
         # Clone the origin repository to local
-        self._execute_command(f'git clone {self.origin_dir} {self.local_dir}')
+        self._execute_command(f'git clone "{self.origin_dir}" "{self.local_dir}"')
 
         expected_after_clone = [
             '.git',
