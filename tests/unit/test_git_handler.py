@@ -49,7 +49,7 @@ class TestGitHandler(unittest.TestCase):
             result = subprocess.run(
                 cmd, shell=True, cwd=cwd, capture_output=True, text=True, check=False
             )
-            time.sleep(0.1)
+            time.sleep(0.5)
             return CommandResult(result.stdout, result.returncode)
         except Exception as e:
             return CommandResult(str(e), 1)
@@ -96,6 +96,7 @@ class TestGitHandler(unittest.TestCase):
 
         # Clone the origin repository to local
         self._execute_command(f'git clone {self.origin_dir} {self.local_dir}')
+        time.sleep(1)
 
         expected_after_clone = [
             '.git',
