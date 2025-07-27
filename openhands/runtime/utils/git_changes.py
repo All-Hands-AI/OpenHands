@@ -78,8 +78,21 @@ def get_changes_in_repo(repo_dir: str) -> list[dict[str, str]]:
         ).splitlines()
         changes = []
         for line in changed_files:
-            status = line[:2].strip()
-            path = line[2:].strip()
+            if not line.strip():
+                continue
+
+            # Handle different output formats from git diff --name-status
+            # Depending on git config, format can be either:
+            # * "A file.txt"
+            # * "A       file.txt"
+            parts = line.split(maxsplit=1)
+            if len(parts) != 2:
+                continue
+
+            status, path = parts
+            status = status.strip()
+            path = path.strip()
+
             if status == '??':
                 status = 'A'
             elif status == '*':
