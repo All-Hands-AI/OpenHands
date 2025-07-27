@@ -85,6 +85,7 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'gemini-2.5-pro',
     'gpt-4.1',
     'kimi-k2-0711-preview',
+    'Qwen3-Coder-480B-A35B-Instruct',
 ]
 
 REASONING_EFFORT_SUPPORTED_MODELS = [
