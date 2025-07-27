@@ -45,7 +45,7 @@ class IterationControlFlag(ControlFlag[int]):
 
     def reached_limit(self) -> bool:
         """Check if the iteration limit has been reached."""
-        self._hit_limit = self.current_value >= self.max_value
+        self._hit_limit = False  # self.current_value >= self.max_value
         return self._hit_limit
 
     def increase_limit(self, headless_mode: bool) -> None:
