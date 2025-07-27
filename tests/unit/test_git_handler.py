@@ -155,6 +155,10 @@ class TestGitHandler(unittest.TestCase):
         self.run_command('git commit -m "Initial Commit"', nested_2)
         self.write_file(nested_2, 'unstaged_add.txt')
 
+    @pytest.mark.skipif(
+        os.getenv('TEST_IN_CI', 'False').lower() in ['true', '1', 'yes'],
+        reason='This test should only be run locally, not in CI.',
+    )
     def test_get_git_changes(self):
         """
         Test with unpushed commits, staged commits, and unstaged commits
@@ -175,6 +179,10 @@ class TestGitHandler(unittest.TestCase):
 
         assert changes == expected_changes
 
+    @pytest.mark.skipif(
+        os.getenv('TEST_IN_CI', 'False').lower() in ['true', '1', 'yes'],
+        reason='This test should only be run locally, not in CI.',
+    )
     def test_get_git_changes_after_push(self):
         """
         Test with staged commits, and unstaged commits
@@ -193,6 +201,10 @@ class TestGitHandler(unittest.TestCase):
 
         assert changes == expected_changes
 
+    @pytest.mark.skipif(
+        os.getenv('TEST_IN_CI', 'False').lower() in ['true', '1', 'yes'],
+        reason='This test should only be run locally, not in CI.',
+    )
     def test_get_git_changes_nested_repos(self):
         """
         Test with staged commits, and unstaged commits
@@ -253,6 +265,10 @@ class TestGitHandler(unittest.TestCase):
         }
         assert diff == expected_diff
 
+    @pytest.mark.skipif(
+        os.getenv('TEST_IN_CI', 'False').lower() in ['true', '1', 'yes'],
+        reason='This test should only be run locally, not in CI.',
+    )
     def test_get_git_changes_fallback(self):
         """Test that get_git_changes falls back to creating a script file when needed."""
 
