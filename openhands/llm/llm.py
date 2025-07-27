@@ -195,16 +195,22 @@ class LLM(RetryMixin, DebugMixin):
         ):
             # For Gemini models, only map 'low' to optimized thinking budget
             # Let other reasoning_effort values pass through to API as-is
-            if self.config.model == 'gemini-2.5-pro':
+            if 'gemini-2.5-pro' in self.config.model:
                 if self.config.reasoning_effort == 'low':
                     kwargs['thinking'] = {'budget_tokens': 128}
+                    kwargs.pop('reasoning_effort')
                 elif self.config.reasoning_effort is None:
                     # Default optimized thinking budget when not explicitly set
                     # Based on performance testing: 128 tokens achieves ~2.4x speedup
                     kwargs['thinking'] = {'budget_tokens': 128}
+                    kwargs.pop('reasoning_effort')
                 else:
                     # Pass through medium, high, none to API as reasoning_effort
                     kwargs['reasoning_effort'] = self.config.reasoning_effort
+                    kwargs.pop('thinking')
+                logger.debug(
+                    f'Gemini model {self.config.model} with reasoning_effort {self.config.reasoning_effort} mapped to thinking {kwargs.get("thinking")}'
+                )
             else:
                 kwargs['reasoning_effort'] = self.config.reasoning_effort
             kwargs.pop(
