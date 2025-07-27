@@ -141,6 +141,8 @@ class TestGitHandler(unittest.TestCase):
         nested_1.mkdir()
         nested_1 = str(nested_1)
         self.run_command('git init --initial-branch=main', nested_1)
+        self._execute_command("git config user.email 'test@example.com'", nested_1)
+        self._execute_command("git config user.name 'Test User'", nested_1)
         self.write_file(nested_1, 'committed_add.txt')
         self.run_command('git add .', nested_1)
         self.run_command('git commit -m "Initial Commit"', nested_1)
@@ -150,6 +152,8 @@ class TestGitHandler(unittest.TestCase):
         nested_2.mkdir()
         nested_2 = str(nested_2)
         self.run_command('git init --initial-branch=main', nested_2)
+        self._execute_command("git config user.email 'test@example.com'", nested_2)
+        self._execute_command("git config user.name 'Test User'", nested_2)
         self.write_file(nested_2, 'committed_add.txt')
         self.run_command('git add .', nested_2)
         self.run_command('git commit -m "Initial Commit"', nested_2)
@@ -172,6 +176,17 @@ class TestGitHandler(unittest.TestCase):
             {'status': 'D', 'path': 'unstaged_delete.txt'},
             {'status': 'M', 'path': 'unstaged_modified.txt'},
         ]
+
+        if changes != expected_changes:
+            raise RuntimeError(
+                '\n'.join(
+                    [
+                        f'incorrect_changes: {changes};',
+                        f'content: {os.listdir(self.local_dir)}',
+                        f'ref: {git_changes.get_valid_ref(self.local_dir)}',
+                    ]
+                )
+            )
 
         assert changes == expected_changes
 
