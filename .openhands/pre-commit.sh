@@ -1,26 +1,99 @@
 #!/bin/bash
 
 echo "Running OpenHands pre-commit hook..."
-echo "This hook runs 'make lint' to ensure code quality before committing."
+echo "This hook runs selective linting based on changed files."
 
 # Store the exit code to return at the end
 # This allows us to be additive to existing pre-commit hooks
 EXIT_CODE=0
 
-# Run make lint to check both frontend and backend code
-echo "Running linting checks with 'make lint'..."
-make lint
-if [ $? -ne 0 ]; then
-    echo "Linting failed. Please fix the issues before committing."
-    EXIT_CODE=1
-else
-    echo "Linting checks passed!"
+# Check what files have changed
+changed_files=$(git diff --cached --name-only)
+frontend_changes=$(echo "$changed_files" | grep "^frontend/")
+backend_changes=$(echo "$changed_files" | grep -E "^(openhands/|evaluation/|tests/)")
+vscode_extension_changes=$(echo "$changed_files" | grep "^openhands/integrations/vscode/")
+
+# Run linting only for the parts that have changed
+if [ -n "$frontend_changes" ]; then
+    echo "Frontend changes detected. Running frontend linting..."
+    make lint-frontend
+    if [ $? -ne 0 ]; then
+        echo "Frontend linting failed. Please fix the issues before committing."
+        EXIT_CODE=1
+    else
+        echo "Frontend linting checks passed!"
+    fi
 fi
 
-# Check if frontend directory has changed
-frontend_changes=$(git diff --cached --name-only | grep "^frontend/")
+if [ -n "$backend_changes" ]; then
+    echo "Backend changes detected. Running backend linting..."
+    make lint-backend
+    if [ $? -ne 0 ]; then
+        echo "Backend linting failed. Please fix the issues before committing."
+        EXIT_CODE=1
+    else
+        echo "Backend linting checks passed!"
+    fi
+fi
+
+# Check for VSCode extension changes
+if [ -n "$vscode_extension_changes" ]; then
+    echo "VSCode extension changes detected. Running VSCode extension linting..."
+    if [ -d "openhands/integrations/vscode" ]; then
+        cd openhands/integrations/vscode || exit 1
+        echo "Running npm lint:fix..."
+        npm run lint:fix
+        if [ $? -ne 0 ]; then
+            echo "VSCode extension linting failed. Please fix the issues before committing."
+            EXIT_CODE=1
+        else
+            echo "VSCode extension linting passed!"
+        fi
+
+        echo "Running npm typecheck..."
+        npm run typecheck
+        if [ $? -ne 0 ]; then
+            echo "VSCode extension type checking failed. Please fix the issues before committing."
+            EXIT_CODE=1
+        else
+            echo "VSCode extension type checking passed!"
+        fi
+
+        echo "Running npm compile..."
+        npm run compile
+        if [ $? -ne 0 ]; then
+            echo "VSCode extension compilation failed. Please fix the issues before committing."
+            EXIT_CODE=1
+        else
+            echo "VSCode extension compilation passed!"
+        fi
+
+        cd ../../..
+    else
+        echo "VSCode extension directory not found. Skipping VSCode extension checks."
+    fi
+fi
+
+# If no specific changes detected that match our patterns, run basic checks
+if [ -z "$frontend_changes" ] && [ -z "$backend_changes" ] && [ -z "$vscode_extension_changes" ]; then
+    echo "No specific code changes detected. Running basic checks..."
+    # Run only basic pre-commit hooks for non-code files
+    if [ -n "$changed_files" ]; then
+        poetry run pre-commit run --files $(echo "$changed_files" | tr '\n' ' ') --hook-stage commit --config ./dev_config/python/.pre-commit-config.yaml
+        if [ $? -ne 0 ]; then
+            echo "Basic checks failed. Please fix the issues before committing."
+            EXIT_CODE=1
+        else
+            echo "Basic checks passed!"
+        fi
+    else
+        echo "No files changed. Skipping basic checks."
+    fi
+fi
+
+# Run additional frontend checks if frontend files have changed
 if [ -n "$frontend_changes" ]; then
-    echo "Frontend changes detected. Running additional frontend checks..."
+    echo "Running additional frontend checks..."
 
     # Check if frontend directory exists
     if [ -d "frontend" ]; then
