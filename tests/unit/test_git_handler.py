@@ -96,10 +96,20 @@ class TestGitHandler(unittest.TestCase):
 
         # Clone the origin repository to local
         self._execute_command(f'git clone {self.origin_dir} {self.local_dir}')
-        # self._execute_command(
-        #    "git config user.email 'test@example.com'", self.local_dir
-        # )
-        # self._execute_command("git config user.name 'Test User'", self.local_dir)
+
+        expected_after_clone = [
+            '.git',
+            'committed_delete.txt',
+            'committed_modified.txt',
+            'staged_delete.txt',
+            'staged_modified.txt',
+            'unchanged.txt',
+            'unstaged_delete.txt',
+            'unstaged_modified.txt',
+        ]
+        cloned_content = sorted(os.listdir(self.local_dir))
+        assert cloned_content == expected_after_clone
+
         self._execute_command('git checkout -b feature-branch', self.local_dir)
 
         # Setup committed changes...
@@ -113,11 +123,7 @@ class TestGitHandler(unittest.TestCase):
         # Setup staged changes...
         self.write_file(self.local_dir, 'staged_modified.txt', ('Line 4',))
         self.write_file(self.local_dir, 'staged_add.txt')
-        try:
-            os.remove(os.path.join(self.local_dir, 'staged_delete.txt'))
-        except FileNotFoundError:
-            content = ';'.join([self.local_dir] + os.listdir(self.local_dir))
-            raise RuntimeError(f'file_not_found:{content}')
+        os.remove(os.path.join(self.local_dir, 'staged_delete.txt'))
         self._execute_command('git add .', self.local_dir)
 
         # Setup unstaged changes...
