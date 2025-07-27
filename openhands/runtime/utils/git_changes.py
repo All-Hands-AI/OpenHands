@@ -55,8 +55,8 @@ def get_valid_ref(repo_dir: str) -> str | None:
     # Find a ref that exists...
     for ref in refs:
         try:
-            run(f'git --no-pager rev-parse --verify {ref}', repo_dir)
-            return ref
+            result = run(f'git --no-pager rev-parse --verify {ref}', repo_dir)
+            return result
         except RuntimeError:
             # invalid ref - try next
             continue
@@ -76,10 +76,12 @@ def get_changes_in_repo(repo_dir: str) -> list[dict[str, str]]:
         changed_files = run(
             f'git --no-pager diff --name-status {ref}', repo_dir
         ).splitlines()
-        changes = [{
-            'status': 'X',
-            'path': ref,
-        }]
+        changes = [
+            {
+                'status': 'X',
+                'path': ref,
+            }
+        ]
         for line in changed_files:
             status = line[:2].strip()
             path = line[2:].strip()
