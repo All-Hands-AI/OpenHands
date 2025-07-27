@@ -47,16 +47,23 @@ class TestGitHandler(unittest.TestCase):
 
     def _execute_command(self, cmd, cwd=None):
         """Execute a shell command and return the result."""
-        self.executed_commands.append((cmd, cwd))
-        try:
-            result = subprocess.run(
-                cmd, shell=True, cwd=cwd, capture_output=True, text=True, check=False
+        result = subprocess.run(
+            args=cmd,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            cwd=cwd,
+        )
+        stderr = result.stderr or b''
+        stdout = result.stdout or b''
+        return CommandResult((stderr + stdout).decode(), result.returncode)
+
+    def run_command(self, cmd, cwd=None):
+        result = self._execute_command(cmd, cwd)
+        if result.exit_code != 0:
+            raise RuntimeError(
+                f'command_error:{cmd};{result.exit_code};{result.content}'
             )
-            stderr = result.stderr or ''
-            stdout = result.stdout or ''
-            return CommandResult(stderr + stdout, result.returncode)
-        except Exception as e:
-            return CommandResult(str(e), 1)
 
     def _create_file(self, path, content):
         """Mock function for creating files."""
@@ -84,7 +91,7 @@ class TestGitHandler(unittest.TestCase):
     def _setup_git_repos(self):
         """Set up real git repositories for testing."""
         # Set up origin repository
-        self._execute_command('git init --initial-branch=main', self.origin_dir)
+        self.run_command('git init --initial-branch=main', self.origin_dir)
 
         # Set up the initial state...
         self.write_file(self.origin_dir, 'unchanged.txt')
@@ -94,12 +101,10 @@ class TestGitHandler(unittest.TestCase):
         self.write_file(self.origin_dir, 'committed_delete.txt')
         self.write_file(self.origin_dir, 'staged_delete.txt')
         self.write_file(self.origin_dir, 'unstaged_delete.txt')
-        self._execute_command(
-            "git add . && git commit -m 'Initial Commit'", self.origin_dir
-        )
+        self.run_command("git add . && git commit -m 'Initial Commit'", self.origin_dir)
 
         # Clone the origin repository to local
-        clone_result = self._execute_command(
+        clone_result = self.run_command(
             f'git clone "{self.origin_dir}" "{self.local_dir}"'
         )
 
@@ -119,13 +124,13 @@ class TestGitHandler(unittest.TestCase):
                 f'error_in_clone:{cloned_content}:{clone_result.content}'
             )
 
-        self._execute_command('git checkout -b feature-branch', self.local_dir)
+        self.run_command('git checkout -b feature-branch', self.local_dir)
 
         # Setup committed changes...
         self.write_file(self.local_dir, 'committed_modified.txt', ('Line 4',))
         self.write_file(self.local_dir, 'committed_add.txt')
         os.remove(os.path.join(self.local_dir, 'committed_delete.txt'))
-        self._execute_command(
+        self.run_command(
             "git add . && git commit -m 'First batch of changes'", self.local_dir
         )
 
@@ -133,7 +138,7 @@ class TestGitHandler(unittest.TestCase):
         self.write_file(self.local_dir, 'staged_modified.txt', ('Line 4',))
         self.write_file(self.local_dir, 'staged_add.txt')
         os.remove(os.path.join(self.local_dir, 'staged_delete.txt'))
-        self._execute_command('git add .', self.local_dir)
+        self.run_command('git add .', self.local_dir)
 
         # Setup unstaged changes...
         self.write_file(self.local_dir, 'unstaged_modified.txt', ('Line 4',))
@@ -144,19 +149,19 @@ class TestGitHandler(unittest.TestCase):
         nested_1 = Path(self.local_dir, 'nested 1')
         nested_1.mkdir()
         nested_1 = str(nested_1)
-        self._execute_command('git init --initial-branch=main', nested_1)
+        self.run_command('git init --initial-branch=main', nested_1)
         self.write_file(nested_1, 'committed_add.txt')
-        self._execute_command('git add .', nested_1)
-        self._execute_command('git commit -m "Initial Commit"', nested_1)
+        self.run_command('git add .', nested_1)
+        self.run_command('git commit -m "Initial Commit"', nested_1)
         self.write_file(nested_1, 'staged_add.txt')
 
         nested_2 = Path(self.local_dir, 'nested_2')
         nested_2.mkdir()
         nested_2 = str(nested_2)
-        self._execute_command('git init --initial-branch=main', nested_2)
+        self.run_command('git init --initial-branch=main', nested_2)
         self.write_file(nested_2, 'committed_add.txt')
-        self._execute_command('git add .', nested_2)
-        self._execute_command('git commit -m "Initial Commit"', nested_2)
+        self.run_command('git add .', nested_2)
+        self.run_command('git commit -m "Initial Commit"', nested_2)
         self.write_file(nested_2, 'unstaged_add.txt')
 
     def test_get_git_changes(self):
@@ -183,7 +188,7 @@ class TestGitHandler(unittest.TestCase):
         """
         Test with staged commits, and unstaged commits
         """
-        self._execute_command('git push -u origin feature-branch', self.local_dir)
+        self.run_command('git push -u origin feature-branch', self.local_dir)
         changes = self.git_handler.get_git_changes()
 
         expected_changes = [
