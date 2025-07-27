@@ -52,7 +52,9 @@ class TestGitHandler(unittest.TestCase):
             result = subprocess.run(
                 cmd, shell=True, cwd=cwd, capture_output=True, text=True, check=False
             )
-            return CommandResult(result.stdout, result.returncode)
+            stderr = result.stderr or ''
+            stdout = result.stdout or ''
+            return CommandResult(stderr + stdout, result.returncode)
         except Exception as e:
             return CommandResult(str(e), 1)
 
@@ -97,7 +99,9 @@ class TestGitHandler(unittest.TestCase):
         )
 
         # Clone the origin repository to local
-        self._execute_command(f'git clone "{self.origin_dir}" "{self.local_dir}"')
+        clone_result = self._execute_command(
+            f'git clone "{self.origin_dir}" "{self.local_dir}"'
+        )
 
         expected_after_clone = [
             '.git',
@@ -110,7 +114,10 @@ class TestGitHandler(unittest.TestCase):
             'unstaged_modified.txt',
         ]
         cloned_content = sorted(os.listdir(self.local_dir))
-        assert cloned_content == expected_after_clone
+        if cloned_content != expected_after_clone:
+            raise RuntimeError(
+                f'error_in_clone:{cloned_content}:{clone_result.content}'
+            )
 
         self._execute_command('git checkout -b feature-branch', self.local_dir)
 
