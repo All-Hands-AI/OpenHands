@@ -2,9 +2,9 @@ import os
 import shutil
 import subprocess
 import tempfile
+import time
 import unittest
 from pathlib import Path
-from time import time
 from unittest.mock import patch
 
 from openhands.runtime.utils import git_changes, git_diff, git_handler
@@ -96,15 +96,16 @@ class TestGitHandler(unittest.TestCase):
 
         # Clone the origin repository to local
         self._execute_command(f'git clone {self.origin_dir} {self.local_dir}')
-        self._execute_command(
-            "git config user.email 'test@example.com'", self.local_dir
-        )
-        self._execute_command("git config user.name 'Test User'", self.local_dir)
+        # self._execute_command(
+        #    "git config user.email 'test@example.com'", self.local_dir
+        # )
+        # self._execute_command("git config user.name 'Test User'", self.local_dir)
         self._execute_command('git checkout -b feature-branch', self.local_dir)
 
         # Setup committed changes...
         self.write_file(self.local_dir, 'committed_modified.txt', ('Line 4',))
         self.write_file(self.local_dir, 'committed_add.txt')
+        os.remove(os.path.join(self.local_dir, 'committed_delete.txt'))
         self._execute_command(
             "git add . && git commit -m 'First batch of changes'", self.local_dir
         )
@@ -151,6 +152,7 @@ class TestGitHandler(unittest.TestCase):
 
         expected_changes = [
             {'status': 'A', 'path': 'committed_add.txt'},
+            {'status': 'D', 'path': 'committed_delete.txt'},
             {'status': 'M', 'path': 'committed_modified.txt'},
             {'status': 'A', 'path': 'staged_add.txt'},
             {'status': 'D', 'path': 'staged_delete.txt'},
@@ -190,6 +192,7 @@ class TestGitHandler(unittest.TestCase):
 
         expected_changes = [
             {'status': 'A', 'path': 'committed_add.txt'},
+            {'status': 'D', 'path': 'committed_delete.txt'},
             {'status': 'M', 'path': 'committed_modified.txt'},
             {'status': 'A', 'path': 'nested 1/staged_add.txt'},
             {'status': 'A', 'path': 'nested_2/unstaged_add.txt'},
@@ -253,6 +256,7 @@ class TestGitHandler(unittest.TestCase):
 
             expected_changes = [
                 {'status': 'A', 'path': 'committed_add.txt'},
+                {'status': 'D', 'path': 'committed_delete.txt'},
                 {'status': 'M', 'path': 'committed_modified.txt'},
                 {'status': 'A', 'path': 'staged_add.txt'},
                 {'status': 'D', 'path': 'staged_delete.txt'},
