@@ -127,6 +127,10 @@ class TestGitHandler(unittest.TestCase):
             raise RuntimeError(
                 f'error_in_clone:{cloned_content}:{clone_result.content}'
             )
+        self._execute_command(
+            "git config user.email 'test@example.com'", self.origin_dir
+        )
+        self._execute_command("git config user.name 'Test User'", self.origin_dir)
 
         self.run_command('git checkout -b feature-branch', self.local_dir)
 
