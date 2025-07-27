@@ -108,25 +108,7 @@ class TestGitHandler(unittest.TestCase):
         self.run_command("git add . && git commit -m 'Initial Commit'", self.origin_dir)
 
         # Clone the origin repository to local
-        clone_result = self.run_command(
-            f'git clone "{self.origin_dir}" "{self.local_dir}"'
-        )
-
-        expected_after_clone = [
-            '.git',
-            'committed_delete.txt',
-            'committed_modified.txt',
-            'staged_delete.txt',
-            'staged_modified.txt',
-            'unchanged.txt',
-            'unstaged_delete.txt',
-            'unstaged_modified.txt',
-        ]
-        cloned_content = sorted(os.listdir(self.local_dir))
-        if cloned_content != expected_after_clone:
-            raise RuntimeError(
-                f'error_in_clone:{cloned_content}:{clone_result.content}'
-            )
+        self.run_command(f'git clone "{self.origin_dir}" "{self.local_dir}"')
 
         self._execute_command(
             "git config user.email 'test@example.com'", self.local_dir

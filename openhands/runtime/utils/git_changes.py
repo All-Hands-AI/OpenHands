@@ -43,7 +43,7 @@ def get_valid_ref(repo_dir: str) -> str | None:
 
     ref_current_branch = f'origin/{current_branch}'
     ref_non_default_branch = f'$(git --no-pager merge-base HEAD "$(git --no-pager rev-parse --abbrev-ref origin/{default_branch})")'
-    ref_default_branch = 'origin/' + default_branch
+    ref_default_branch = f'origin/{default_branch}'
     ref_new_repo = '$(git --no-pager rev-parse --verify 4b825dc642cb6eb9a060e54bf8d69288fbee4904)'  # compares with empty tree
 
     refs = [
@@ -76,7 +76,10 @@ def get_changes_in_repo(repo_dir: str) -> list[dict[str, str]]:
         changed_files = run(
             f'git --no-pager diff --name-status {ref}', repo_dir
         ).splitlines()
-        changes = []
+        changes = [{
+            'status': 'X',
+            'path': ref,
+        }]
         for line in changed_files:
             status = line[:2].strip()
             path = line[2:].strip()
