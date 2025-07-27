@@ -84,19 +84,57 @@ def get_changes_in_repo(repo_dir: str) -> list[dict[str, str]]:
         # Depending on git config, format can be either:
         # * "A file.txt"
         # * "A       file.txt"
-        parts = line.split(maxsplit=1)
-        if len(parts) != 2:
+        # * "R100    old_file.txt    new_file.txt" (rename with similarity percentage)
+        parts = line.split()
+        if len(parts) < 2:
             raise RuntimeError(f'unexpected_value_in_git_diff:{changed_files}')
 
-        status, path = parts
-        status = status.strip()
-        path = path.strip()
+        status = parts[0].strip()
+
+        # Handle rename operations (status starts with 'R' followed by similarity percentage)
+        if status.startswith('R') and len(parts) == 3:
+            # Rename: convert to delete (old path) + add (new path)
+            old_path = parts[1].strip()
+            new_path = parts[2].strip()
+            changes.append(
+                {
+                    'status': 'D',
+                    'path': old_path,
+                }
+            )
+            changes.append(
+                {
+                    'status': 'A',
+                    'path': new_path,
+                }
+            )
+            continue
+
+        # Handle copy operations (status starts with 'C' followed by similarity percentage)
+        elif status.startswith('C') and len(parts) == 3:
+            # Copy: only add the new path (original remains)
+            new_path = parts[2].strip()
+            changes.append(
+                {
+                    'status': 'A',
+                    'path': new_path,
+                }
+            )
+            continue
+
+        # Handle regular operations (M, A, D, etc.)
+        elif len(parts) == 2:
+            path = parts[1].strip()
+        else:
+            raise RuntimeError(f'unexpected_value_in_git_diff:{changed_files}')
 
         if status == '??':
             status = 'A'
         elif status == '*':
             status = 'M'
-        if status in {'M', 'A', 'D', 'R', 'C', 'U'}:
+
+        # Check for valid single-character status codes
+        if status in {'M', 'A', 'D', 'U'}:
             changes.append(
                 {
                     'status': status,
