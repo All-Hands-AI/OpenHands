@@ -6,7 +6,7 @@ requires = [
 
 [tool.poetry]
 name = "openhands-ai"
-version = "0.49.1"
+version = "0.50.0"
 description = "OpenHands: Code Less, Make More"
 authors = [ "OpenHands" ]
 license = "MIT"
@@ -96,10 +96,10 @@ memory-profiler = "^0.61.0"
 jupyter_kernel_gateway = "*"
 
 # Third-party runtime dependencies (optional)
-e2b = { version = ">=1.0.5,<1.6.0", optional = true }
-modal = { version = ">=0.66.26,<1.1.0", optional = true }
-runloop-api-client = { version = "0.43.0", optional = true }
-daytona = { version = "0.22.0", optional = true }
+e2b = { version = ">=1.0.5,<1.8.0", optional = true }
+modal = { version = ">=0.66.26,<1.2.0", optional = true }
+runloop-api-client = { version = "0.50.0", optional = true }
+daytona = { version = "0.24.2", optional = true }
 
 [tool.poetry.extras]
 third_party_runtimes = [ "e2b", "modal", "runloop-api-client", "daytona" ]
@@ -108,8 +108,8 @@ third_party_runtimes = [ "e2b", "modal", "runloop-api-client", "daytona" ]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-ruff = "0.12.0"
-mypy = "1.16.1"
+ruff = "0.12.5"
+mypy = "1.17.0"
 pre-commit = "4.2.0"
 build = "*"
 types-setuptools = "*"
@@ -160,7 +160,7 @@ browsergym-miniwob = "0.13.3"
 browsergym-visualwebarena = "0.13.3"
 boto3-stubs = { extras = [ "s3" ], version = "^1.37.19" }
 # transitive dependency, pinned here to avoid conflicts
-pyarrow = "20.0.0"
+pyarrow = "21.0.0"
 datasets = "*"
 joblib = "*"
 swebench = { git = "https://github.com/ryanhoangt/SWE-bench.git", rev = "fix-modal-patch-eval" }

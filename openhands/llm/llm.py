@@ -87,6 +87,8 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'gemini-2.5-pro',
     'gpt-4.1',
     'kimi-k2-0711-preview',
+    'kimi-k2-instruct',
+    'Qwen3-Coder-480B-A35B-Instruct',
 ]
 
 REASONING_EFFORT_SUPPORTED_MODELS = [
@@ -809,6 +811,8 @@ class LLM(RetryMixin, DebugMixin):
             message.vision_enabled = self.vision_is_active()
             message.function_calling_enabled = self.is_function_calling_active()
             if 'deepseek' in self.config.model:
+                message.force_string_serializer = True
+            if 'kimi-k2-instruct' in self.config.model and 'groq' in self.config.model:
                 message.force_string_serializer = True
 
         # let pydantic handle the serialization
