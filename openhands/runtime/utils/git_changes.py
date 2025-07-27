@@ -150,5 +150,8 @@ def get_git_changes(cwd: str) -> list[dict[str, str]]:
 
 
 if __name__ == '__main__':
-    changes = get_git_changes(os.getcwd())
-    print(json.dumps(changes))
+    try:
+        changes = get_git_changes(os.getcwd())
+        print(json.dumps(changes))
+    except Exception as e:
+        print(json.dumps({'error': str(e)}))
