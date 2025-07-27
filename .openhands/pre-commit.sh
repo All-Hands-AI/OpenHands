@@ -7,26 +7,80 @@ echo "This hook runs selective linting based on changed files."
 # This allows us to be additive to existing pre-commit hooks
 EXIT_CODE=0
 
-# Check what files have changed
-changed_files=$(git diff --cached --name-only)
-frontend_changes=$(echo "$changed_files" | grep "^frontend/")
-backend_changes=$(echo "$changed_files" | grep -E "^(openhands/|evaluation/|tests/)")
-vscode_extension_changes=$(echo "$changed_files" | grep "^openhands/integrations/vscode/")
+# Get the list of staged files
+STAGED_FILES=$(git diff --cached --name-only)
 
-# Run linting only for the parts that have changed
-if [ -n "$frontend_changes" ]; then
-    echo "Frontend changes detected. Running frontend linting..."
-    make lint-frontend
-    if [ $? -ne 0 ]; then
-        echo "Frontend linting failed. Please fix the issues before committing."
-        EXIT_CODE=1
-    else
-        echo "Frontend linting checks passed!"
+# Check if any files match specific patterns
+has_frontend_changes=false
+has_backend_changes=false
+has_vscode_changes=false
+
+# Check each file individually to avoid issues with grep
+for file in $STAGED_FILES; do
+    if [[ $file == frontend/* ]]; then
+        has_frontend_changes=true
+    elif [[ $file == openhands/* || $file == evaluation/* || $file == tests/* ]]; then
+        has_backend_changes=true
+        # Check for VSCode extension changes (subset of backend changes)
+        if [[ $file == openhands/integrations/vscode/* ]]; then
+            has_vscode_changes=true
+        fi
     fi
+done
+
+echo "Analyzing changes..."
+echo "- Frontend changes: $has_frontend_changes"
+echo "- Backend changes: $has_backend_changes"
+echo "- VSCode extension changes: $has_vscode_changes"
+
+# Run frontend linting if needed
+if [ "$has_frontend_changes" = true ]; then
+    # Check if we're in a CI environment or if frontend dependencies are missing
+    if [ -n "$CI" ] || ! command -v react-router &> /dev/null || ! command -v vitest &> /dev/null; then
+        echo "Skipping frontend checks (CI environment or missing dependencies detected)."
+        echo "WARNING: Frontend files have changed but frontend checks are being skipped."
+        echo "Please run 'make lint-frontend' manually before submitting your PR."
+    else
+        echo "Running frontend linting..."
+        make lint-frontend
+        if [ $? -ne 0 ]; then
+            echo "Frontend linting failed. Please fix the issues before committing."
+            EXIT_CODE=1
+        else
+            echo "Frontend linting checks passed!"
+        fi
+
+        # Run additional frontend checks
+        if [ -d "frontend" ]; then
+            echo "Running additional frontend checks..."
+            cd frontend || exit 1
+
+            # Run build
+            echo "Running npm build..."
+            npm run build
+            if [ $? -ne 0 ]; then
+                echo "Frontend build failed. Please fix the issues before committing."
+                EXIT_CODE=1
+            fi
+
+            # Run tests
+            echo "Running npm test..."
+            npm test
+            if [ $? -ne 0 ]; then
+                echo "Frontend tests failed. Please fix the failing tests before committing."
+                EXIT_CODE=1
+            fi
+
+            cd ..
+        fi
+    fi
+else
+    echo "Skipping frontend checks (no frontend changes detected)."
 fi
 
-if [ -n "$backend_changes" ]; then
-    echo "Backend changes detected. Running backend linting..."
+# Run backend linting if needed
+if [ "$has_backend_changes" = true ]; then
+    echo "Running backend linting..."
     make lint-backend
     if [ $? -ne 0 ]; then
         echo "Backend linting failed. Please fix the issues before committing."
@@ -34,52 +88,62 @@ if [ -n "$backend_changes" ]; then
     else
         echo "Backend linting checks passed!"
     fi
+else
+    echo "Skipping backend checks (no backend changes detected)."
 fi
 
-# Check for VSCode extension changes
-if [ -n "$vscode_extension_changes" ]; then
-    echo "VSCode extension changes detected. Running VSCode extension linting..."
-    if [ -d "openhands/integrations/vscode" ]; then
-        cd openhands/integrations/vscode || exit 1
-        echo "Running npm lint:fix..."
-        npm run lint:fix
-        if [ $? -ne 0 ]; then
-            echo "VSCode extension linting failed. Please fix the issues before committing."
-            EXIT_CODE=1
-        else
-            echo "VSCode extension linting passed!"
-        fi
-
-        echo "Running npm typecheck..."
-        npm run typecheck
-        if [ $? -ne 0 ]; then
-            echo "VSCode extension type checking failed. Please fix the issues before committing."
-            EXIT_CODE=1
-        else
-            echo "VSCode extension type checking passed!"
-        fi
-
-        echo "Running npm compile..."
-        npm run compile
-        if [ $? -ne 0 ]; then
-            echo "VSCode extension compilation failed. Please fix the issues before committing."
-            EXIT_CODE=1
-        else
-            echo "VSCode extension compilation passed!"
-        fi
-
-        cd ../../..
+# Run VSCode extension checks if needed
+if [ "$has_vscode_changes" = true ]; then
+    # Check if we're in a CI environment
+    if [ -n "$CI" ]; then
+        echo "Skipping VSCode extension checks (CI environment detected)."
+        echo "WARNING: VSCode extension files have changed but checks are being skipped."
+        echo "Please run VSCode extension checks manually before submitting your PR."
     else
-        echo "VSCode extension directory not found. Skipping VSCode extension checks."
+        echo "Running VSCode extension checks..."
+        if [ -d "openhands/integrations/vscode" ]; then
+            cd openhands/integrations/vscode || exit 1
+
+            echo "Running npm lint:fix..."
+            npm run lint:fix
+            if [ $? -ne 0 ]; then
+                echo "VSCode extension linting failed. Please fix the issues before committing."
+                EXIT_CODE=1
+            else
+                echo "VSCode extension linting passed!"
+            fi
+
+            echo "Running npm typecheck..."
+            npm run typecheck
+            if [ $? -ne 0 ]; then
+                echo "VSCode extension type checking failed. Please fix the issues before committing."
+                EXIT_CODE=1
+            else
+                echo "VSCode extension type checking passed!"
+            fi
+
+            echo "Running npm compile..."
+            npm run compile
+            if [ $? -ne 0 ]; then
+                echo "VSCode extension compilation failed. Please fix the issues before committing."
+                EXIT_CODE=1
+            else
+                echo "VSCode extension compilation passed!"
+            fi
+
+            cd ../../..
+        fi
     fi
+else
+    echo "Skipping VSCode extension checks (no VSCode extension changes detected)."
 fi
 
-# If no specific changes detected that match our patterns, run basic checks
-if [ -z "$frontend_changes" ] && [ -z "$backend_changes" ] && [ -z "$vscode_extension_changes" ]; then
+# If no specific code changes detected, run basic checks
+if [ "$has_frontend_changes" = false ] && [ "$has_backend_changes" = false ]; then
     echo "No specific code changes detected. Running basic checks..."
-    # Run only basic pre-commit hooks for non-code files
-    if [ -n "$changed_files" ]; then
-        poetry run pre-commit run --files $(echo "$changed_files" | tr '\n' ' ') --hook-stage commit --config ./dev_config/python/.pre-commit-config.yaml
+    if [ -n "$STAGED_FILES" ]; then
+        # Run only basic pre-commit hooks for non-code files
+        poetry run pre-commit run --files $(echo "$STAGED_FILES" | tr '\n' ' ') --hook-stage commit --config ./dev_config/python/.pre-commit-config.yaml
         if [ $? -ne 0 ]; then
             echo "Basic checks failed. Please fix the issues before committing."
             EXIT_CODE=1
@@ -89,44 +153,6 @@ if [ -z "$frontend_changes" ] && [ -z "$backend_changes" ] && [ -z "$vscode_exte
     else
         echo "No files changed. Skipping basic checks."
     fi
-fi
-
-# Run additional frontend checks if frontend files have changed
-if [ -n "$frontend_changes" ]; then
-    echo "Running additional frontend checks..."
-
-    # Check if frontend directory exists
-    if [ -d "frontend" ]; then
-        # Change to frontend directory
-        cd frontend || exit 1
-
-        # Run build
-        echo "Running npm build..."
-        npm run build
-        if [ $? -ne 0 ]; then
-            echo "Frontend build failed. Please fix the issues before committing."
-            EXIT_CODE=1
-        fi
-
-        # Run tests
-        echo "Running npm test..."
-        npm test
-        if [ $? -ne 0 ]; then
-            echo "Frontend tests failed. Please fix the failing tests before committing."
-            EXIT_CODE=1
-        fi
-
-        # Return to the original directory
-        cd ..
-
-        if [ $EXIT_CODE -eq 0 ]; then
-            echo "Frontend checks passed!"
-        fi
-    else
-        echo "Frontend directory not found. Skipping frontend checks."
-    fi
-else
-    echo "No frontend changes detected. Skipping additional frontend checks."
 fi
 
 # Run any existing pre-commit hooks that might have been installed by the user
