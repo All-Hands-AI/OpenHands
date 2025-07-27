@@ -89,7 +89,13 @@ class SandboxConfig(BaseModel):
     )
     docker_out_of_docker: bool = Field(
         default=False,
-        description='Whether to enable docker-out-of-docker functionality by mounting the Docker socket and using host networking. WARNING: This grants container access to the host Docker daemon with root-equivalent privileges and host network interfaces. Use only in trusted environments.',
+        description=(
+            'Whether to enable docker-out-of-docker functionality by mounting the '
+            'Docker socket, using host networking, and running in privileged mode. '
+            'WARNING: This grants container access to the host Docker daemon with '
+            'root-equivalent privileges, host network interfaces, and elevated system '
+            'capabilities. Use only in trusted environments.'
+        ),
     )
 
     cuda_visible_devices: str | None = Field(default=None)

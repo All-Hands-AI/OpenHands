@@ -429,6 +429,28 @@ class DockerRuntime(ActionExecutionClient):
                 ]
         else:
             device_requests = None
+
+        # Prepare additional Docker runtime arguments
+        docker_kwargs = dict(self.config.sandbox.docker_runtime_kwargs or {})
+
+        # Add privileged mode and capabilities for docker-out-of-docker functionality
+        if self.config.sandbox.docker_out_of_docker:
+            # Enable privileged mode to allow Docker daemon operations
+            docker_kwargs['privileged'] = True
+            # Add necessary capabilities for Docker operations
+            docker_kwargs['cap_add'] = [
+                'SYS_ADMIN',  # Required for mount operations
+                'NET_ADMIN',  # Required for network bridge creation
+                'SYS_PTRACE',  # Required for debugging and process tracing
+                'DAC_OVERRIDE',  # Required for file access permissions
+            ]
+            self.log(
+                'warning',
+                'Running container in privileged mode with additional capabilities '
+                'for docker-out-of-docker functionality. '
+                'This significantly increases security risks.',
+            )
+
         try:
             if self.runtime_container_image is None:
                 raise ValueError('Runtime container image is not set')
@@ -445,7 +467,7 @@ class DockerRuntime(ActionExecutionClient):
                 environment=environment,
                 volumes=volumes,  # type: ignore
                 device_requests=device_requests,
-                **(self.config.sandbox.docker_runtime_kwargs or {}),
+                **docker_kwargs,
             )
             self.log('debug', f'Container started. Server url: {self.api_url}')
             self.set_runtime_status(RuntimeStatus.RUNTIME_STARTED)

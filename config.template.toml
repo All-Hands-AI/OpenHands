@@ -302,9 +302,9 @@ classpath = "my_package.my_module.MyCustomAgent"
 # Whether to initialize plugins
 #initialize_plugins = true
 
-# Enable docker-out-of-docker functionality (mounts Docker socket and uses host networking)
-# WARNING: This grants container access to the host Docker daemon with root-equivalent privileges
-# and host network interfaces. Use only in trusted environments
+# Enable docker-out-of-docker functionality (mounts Docker socket, uses host networking, and runs in privileged mode)
+# WARNING: This grants container access to the host Docker daemon with root-equivalent privileges,
+# host network interfaces, and elevated system capabilities. Use only in trusted environments
 #docker_out_of_docker = false
 
 # Extra dependencies to install in the runtime image

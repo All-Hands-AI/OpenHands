@@ -209,6 +209,11 @@ def test_docker_socket_mounting_enabled_socket_exists(
         'SECURITY WARNING: This grants container access to the host Docker daemon '
         'with root-equivalent privileges and host network interfaces. Use only in trusted environments.',
     )
+    runtime.log.assert_any_call(
+        'warning',
+        'Running container in privileged mode with additional capabilities for docker-out-of-docker functionality. '
+        'This significantly increases security risks.',
+    )
 
     # Check that docker.containers.run was called with the Docker socket mounted
     call_args = mock_docker_client.containers.run.call_args
@@ -216,6 +221,13 @@ def test_docker_socket_mounting_enabled_socket_exists(
     assert '/var/run/docker.sock' in volumes_arg
     assert volumes_arg['/var/run/docker.sock']['bind'] == '/var/run/docker.sock'
     assert volumes_arg['/var/run/docker.sock']['mode'] == 'rw'
+    
+    # Check that privileged mode is enabled
+    assert call_args[1]['privileged'] is True
+    
+    # Check that necessary capabilities are added
+    expected_caps = ['SYS_ADMIN', 'NET_ADMIN', 'SYS_PTRACE', 'DAC_OVERRIDE']
+    assert call_args[1]['cap_add'] == expected_caps
 
 
 @patch('os.path.exists')
@@ -362,3 +374,10 @@ def test_docker_out_of_docker_enables_host_networking(
     assert '/var/run/docker.sock' in volumes_arg
     assert volumes_arg['/var/run/docker.sock']['bind'] == '/var/run/docker.sock'
     assert volumes_arg['/var/run/docker.sock']['mode'] == 'rw'
+    
+    # Check that privileged mode is enabled
+    assert call_args[1]['privileged'] is True
+    
+    # Check that necessary capabilities are added
+    expected_caps = ['SYS_ADMIN', 'NET_ADMIN', 'SYS_PTRACE', 'DAC_OVERRIDE']
+    assert call_args[1]['cap_add'] == expected_caps
