@@ -15,6 +15,7 @@ from openhands.integrations.service_types import (
     BaseGitService,
     Branch,
     GitService,
+    OwnerType,
     ProviderType,
     Repository,
     RequestMethod,
@@ -236,6 +237,11 @@ class GitHubService(BaseGitService, GitService):
                 stargazers_count=repo.get('stargazers_count'),
                 git_provider=ProviderType.GITHUB,
                 is_public=not repo.get('private', True),
+                owner_type=(
+                    OwnerType.ORGANIZATION
+                    if repo.get('owner', {}).get('type') == 'Organization'
+                    else OwnerType.USER
+                ),
             )
             for repo in all_repos
         ]
@@ -269,6 +275,11 @@ class GitHubService(BaseGitService, GitService):
                 stargazers_count=repo.get('stargazers_count'),
                 git_provider=ProviderType.GITHUB,
                 is_public=True,
+                owner_type=(
+                    OwnerType.ORGANIZATION
+                    if repo.get('owner', {}).get('type') == 'Organization'
+                    else OwnerType.USER
+                ),
             )
             for repo in repo_items
         ]
@@ -414,6 +425,11 @@ class GitHubService(BaseGitService, GitService):
             stargazers_count=repo.get('stargazers_count'),
             git_provider=ProviderType.GITHUB,
             is_public=not repo.get('private', True),
+            owner_type=(
+                OwnerType.ORGANIZATION
+                if repo.get('owner', {}).get('type') == 'Organization'
+                else OwnerType.USER
+            ),
         )
 
     async def get_branches(self, repository: str) -> list[Branch]:

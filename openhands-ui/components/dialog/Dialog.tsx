@@ -1,14 +1,7 @@
-import {
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type PropsWithChildren,
-} from "react";
-import type { HTMLProps } from "../../shared/types";
+import { useId, type PropsWithChildren } from "react";
+import type { BaseProps, HTMLProps } from "../../shared/types";
 import { cn } from "../../shared/utils/cn";
 import { Icon } from "../icon/Icon";
-import { createPortal } from "react-dom";
 import {
   FloatingOverlay,
   FloatingPortal,
@@ -24,13 +17,14 @@ import { FocusTrap } from "focus-trap-react";
 export type DialogProps = HTMLProps<"div"> & {
   open: boolean;
   onOpenChange(value: boolean): void;
-};
+} & BaseProps;
 
 export const Dialog = ({
   open,
   onOpenChange,
   className,
   children,
+  testId,
 }: PropsWithChildren<DialogProps>) => {
   const id = useId();
 
@@ -80,6 +74,7 @@ export const Dialog = ({
             aria-describedby={`${id}-description`}
             {...getFloatingProps()}
             style={styles}
+            data-testid={testId}
             className={cn(
               "rounded-4xl border-1 border-light-neutral-500 outline-none",
               "transition-all will-change-transform",

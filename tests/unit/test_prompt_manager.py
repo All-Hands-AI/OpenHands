@@ -236,6 +236,7 @@ Today's date is {{ runtime_info.date }}
         date='02/12/1232',
         available_hosts={'example.com': 8080},
         additional_agent_instructions='You know everything about this runtime.',
+        working_dir='/workspace',
     )
     repo_instructions = 'This repository contains important code.'
 
