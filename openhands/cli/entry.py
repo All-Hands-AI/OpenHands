@@ -1,5 +1,6 @@
 """Main entry point for OpenHands CLI with subcommand support."""
 
+import argparse
 import asyncio
 import sys
 
@@ -60,11 +61,22 @@ def main():
             parser.print_help()
     else:
         # Legacy interface - default to CLI mode for backward compatibility
-        # Use the same CLI subcommand path for consistency
-        parser = create_subcommand_parser()
-        # Simulate the 'cli' subcommand being passed
-        sys.argv.insert(1, 'cli')
+        # Create a CLI-only parser for backward compatibility
+        from openhands.cli.subcommands import _add_cli_arguments
+
+        parser = argparse.ArgumentParser(
+            description='OpenHands: Code Less, Make More', prog='openhands'
+        )
+        parser.add_argument(
+            '-v', '--version', action='store_true', help='Show version information'
+        )
+        _add_cli_arguments(parser)
+
         args = parser.parse_args()
+
+        if args.version:
+            print(f'OpenHands version: {__version__}')
+            sys.exit(0)
 
         # Run CLI mode using the same function as the explicit CLI subcommand
         run_cli_command(args)
