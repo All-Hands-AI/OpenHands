@@ -103,6 +103,8 @@ def get_changes_in_repo(repo_dir: str) -> list[dict[str, str]]:
                     'path': path,
                 }
             )
+        else:
+            raise RuntimeError('unexpected_status_in_git_diff:{changed_files}')
 
     # Get untracked files
     untracked_files = run(
