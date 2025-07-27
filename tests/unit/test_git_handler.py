@@ -92,6 +92,10 @@ class TestGitHandler(unittest.TestCase):
         """Set up real git repositories for testing."""
         # Set up origin repository
         self.run_command('git init --initial-branch=main', self.origin_dir)
+        self._execute_command(
+            "git config user.email 'test@example.com'", self.origin_dir
+        )
+        self._execute_command("git config user.name 'Test User'", self.origin_dir)
 
         # Set up the initial state...
         self.write_file(self.origin_dir, 'unchanged.txt')
