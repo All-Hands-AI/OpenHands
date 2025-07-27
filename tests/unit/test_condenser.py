@@ -654,6 +654,26 @@ def test_token_aware_condenser_from_config():
     assert isinstance(condenser, TokenAwareCondenser)
     assert condenser.llm.config.model == 'gpt-4o'
     assert condenser.llm.config.api_key.get_secret_value() == 'test_key'
+    assert condenser.threshold == 0.85
+    assert condenser.keep_first == 2
+
+def test_structured_summary_condenser_from_config():
+    """Test that StructuredSummaryCondenser objects can be made from config."""
+    config = StructuredSummaryCondenserConfig(
+        max_size=50,
+        keep_first=10,
+        llm_config=LLMConfig(
+            model='gpt-4o',
+            api_key='test_key',
+            caching_prompt=True,
+        ),
+    )
+    condenser = Condenser.from_config(config)
+
+    assert isinstance(condenser, StructuredSummaryCondenser)
+    assert condenser.llm.config.model == 'gpt-4o'
+    assert condenser.llm.config.api_key.get_secret_value() == 'test_key'
+>>>>>>> a6d20305d (🤖 Auto-fix Python linting issues)
     assert condenser.max_size == 50
     assert condenser.keep_first == 10
 
