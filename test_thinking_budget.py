@@ -6,6 +6,7 @@ This is the PRIMARY test for thinking/reasoning functionality, using the new
 3-step tool call architecture to better simulate real-world usage.
 """
 
+import json
 import os
 
 import google.generativeai as genai
@@ -80,7 +81,7 @@ def create_new_genai_completion_func(thinking_budget: int = None):
 
     config = {}
     if thinking_budget:
-        config['thinking'] = {'budget_tokens': thinking_budget}
+        config['thinking_config'] = types.ThinkingConfig(thinking_budget=thinking_budget)
 
     def completion_func(messages, tools=None, **kwargs):
         # Convert to new API format
@@ -89,7 +90,7 @@ def create_new_genai_completion_func(thinking_budget: int = None):
             if msg['role'] == 'user':
                 contents.append(
                     types.Content(
-                        role='user', parts=[types.Part.from_text(msg['content'])]
+                        role='user', parts=[types.Part(text=msg['content'])]
                     )
                 )
             elif msg['role'] == 'assistant':
@@ -97,11 +98,16 @@ def create_new_genai_completion_func(thinking_budget: int = None):
                     # Handle tool calls
                     parts = []
                     for tool_call in msg['tool_calls']:
+                        # Parse arguments if they're JSON string (from LiteLLM format)
+                        args = tool_call['function']['arguments']
+                        if isinstance(args, str):
+                            args = json.loads(args)
+                        
                         parts.append(
-                            types.Part.from_function_call(
-                                types.FunctionCall(
+                            types.Part(
+                                function_call=types.FunctionCall(
                                     name=tool_call['function']['name'],
-                                    args=tool_call['function']['arguments'],
+                                    args=args,
                                 )
                             )
                         )
@@ -109,7 +115,7 @@ def create_new_genai_completion_func(thinking_budget: int = None):
                 else:
                     contents.append(
                         types.Content(
-                            role='model', parts=[types.Part.from_text(msg['content'])]
+                            role='model', parts=[types.Part(text=msg['content'])]
                         )
                     )
             elif msg['role'] == 'tool':
@@ -117,8 +123,8 @@ def create_new_genai_completion_func(thinking_budget: int = None):
                     types.Content(
                         role='function',
                         parts=[
-                            types.Part.from_function_response(
-                                types.FunctionResponse(
+                            types.Part(
+                                function_response=types.FunctionResponse(
                                     name='math', response={'result': msg['content']}
                                 )
                             )
@@ -142,11 +148,14 @@ def create_new_genai_completion_func(thinking_budget: int = None):
                     )
                 )
 
+        # Add tools to config if available
+        if tool_configs:
+            config['tools'] = tool_configs
+        
         return client.models.generate_content(
             model='gemini-2.5-pro',
             contents=contents,
-            tools=tool_configs,
-            config=types.GenerateContentConfig(**config),
+            config=types.GenerateContentConfig(**config) if config else None,
         )
 
     return completion_func
@@ -168,7 +177,7 @@ def create_litellm_completion_func(
 
     def completion_func(messages, tools=None, **kwargs):
         params = {
-            'model': 'gemini-2.5-pro',
+            'model': 'litellm_proxy/gemini/gemini-2.5-pro',
             'messages': messages,
             'api_key': api_key,
             'base_url': base_url,

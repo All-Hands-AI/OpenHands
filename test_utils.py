@@ -100,6 +100,22 @@ def extract_tool_call(response: Any) -> Optional[dict[str, Any]]:
     Works with both LiteLLM and native API responses.
     """
     try:
+        # Handle LiteLLM streaming response format
+        if hasattr(response, '__iter__') and not isinstance(response, (str, bytes)):
+            # Collect streaming chunks to find tool calls
+            for chunk in response:
+                if hasattr(chunk, 'choices') and chunk.choices:
+                    choice = chunk.choices[0]
+                    if hasattr(choice, 'delta') and hasattr(choice.delta, 'tool_calls'):
+                        tool_calls = choice.delta.tool_calls
+                        if tool_calls and len(tool_calls) > 0:
+                            tool_call = tool_calls[0]
+                            return {
+                                'id': tool_call.id,
+                                'name': tool_call.function.name,
+                                'arguments': json.loads(tool_call.function.arguments),
+                            }
+        
         # Handle LiteLLM response format
         if hasattr(response, 'choices') and response.choices:
             choice = response.choices[0]
