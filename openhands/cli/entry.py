@@ -64,8 +64,19 @@ def main():
         # Create a CLI-only parser for backward compatibility
         from openhands.cli.subcommands import _add_cli_arguments
 
+        # Create a description with welcome message explaining available commands
+        description = (
+            'Welcome to OpenHands: Code Less, Make More\n\n'
+            'OpenHands supports two main commands:\n'
+            '  serve - Launch the OpenHands GUI server (web interface)\n'
+            '  cli   - Run OpenHands in CLI mode (terminal interface)\n\n'
+            'Running "openhands" without a command is the same as "openhands cli"'
+        )
+
         parser = argparse.ArgumentParser(
-            description='OpenHands: Code Less, Make More', prog='openhands'
+            description=description,
+            prog='openhands',
+            formatter_class=argparse.RawDescriptionHelpFormatter,  # Preserve formatting in description
         )
         parser.add_argument(
             '-v', '--version', action='store_true', help='Show version information'
