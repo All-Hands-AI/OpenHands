@@ -398,7 +398,7 @@ Successfully resolved all remaining compatibility issues between old and new Gem
 
 **Fixed Issues:**
 - Thinking budget configuration syntax (`types.ThinkingConfig()`)
-- Part API compatibility for function calls/responses  
+- Part API compatibility for function calls/responses
 - JSON argument parsing for New API compatibility
 - Tools configuration structure (passed in config object)
 - Streaming response parsing in `extract_tool_call` function

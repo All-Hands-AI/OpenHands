@@ -81,7 +81,9 @@ def create_new_genai_completion_func(thinking_budget: int = None):
 
     config = {}
     if thinking_budget:
-        config['thinking_config'] = types.ThinkingConfig(thinking_budget=thinking_budget)
+        config['thinking_config'] = types.ThinkingConfig(
+            thinking_budget=thinking_budget
+        )
 
     def completion_func(messages, tools=None, **kwargs):
         # Convert to new API format
@@ -89,9 +91,7 @@ def create_new_genai_completion_func(thinking_budget: int = None):
         for msg in messages:
             if msg['role'] == 'user':
                 contents.append(
-                    types.Content(
-                        role='user', parts=[types.Part(text=msg['content'])]
-                    )
+                    types.Content(role='user', parts=[types.Part(text=msg['content'])])
                 )
             elif msg['role'] == 'assistant':
                 if 'tool_calls' in msg:
@@ -102,7 +102,7 @@ def create_new_genai_completion_func(thinking_budget: int = None):
                         args = tool_call['function']['arguments']
                         if isinstance(args, str):
                             args = json.loads(args)
-                        
+
                         parts.append(
                             types.Part(
                                 function_call=types.FunctionCall(
@@ -151,7 +151,7 @@ def create_new_genai_completion_func(thinking_budget: int = None):
         # Add tools to config if available
         if tool_configs:
             config['tools'] = tool_configs
-        
+
         return client.models.generate_content(
             model='gemini-2.5-pro',
             contents=contents,
