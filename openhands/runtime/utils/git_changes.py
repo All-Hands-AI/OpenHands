@@ -71,50 +71,46 @@ def get_changes_in_repo(repo_dir: str) -> list[dict[str, str]]:
     if not ref:
         return []
 
-    try:
-        # Get changed files
-        changed_files = run(
-            f'git --no-pager diff --name-status {ref}', repo_dir
-        ).splitlines()
-        changes = []
-        for line in changed_files:
-            if not line.strip():
-                raise RuntimeError(f'unexpected_value_in_git_diff:{changed_files}')
+    # Get changed files
+    changed_files = run(
+        f'git --no-pager diff --name-status {ref}', repo_dir
+    ).splitlines()
+    changes = []
+    for line in changed_files:
+        if not line.strip():
+            raise RuntimeError(f'unexpected_value_in_git_diff:{changed_files}')
 
-            # Handle different output formats from git diff --name-status
-            # Depending on git config, format can be either:
-            # * "A file.txt"
-            # * "A       file.txt"
-            parts = line.split(maxsplit=1)
-            if len(parts) != 2:
-                continue
+        # Handle different output formats from git diff --name-status
+        # Depending on git config, format can be either:
+        # * "A file.txt"
+        # * "A       file.txt"
+        parts = line.split(maxsplit=1)
+        if len(parts) != 2:
+            raise RuntimeError(f'unexpected_value_in_git_diff:{changed_files}')
 
-            status, path = parts
-            status = status.strip()
-            path = path.strip()
+        status, path = parts
+        status = status.strip()
+        path = path.strip()
 
-            if status == '??':
-                status = 'A'
-            elif status == '*':
-                status = 'M'
-            if status in {'M', 'A', 'D', 'R', 'C', 'U'}:
-                changes.append(
-                    {
-                        'status': status,
-                        'path': path,
-                    }
-                )
+        if status == '??':
+            status = 'A'
+        elif status == '*':
+            status = 'M'
+        if status in {'M', 'A', 'D', 'R', 'C', 'U'}:
+            changes.append(
+                {
+                    'status': status,
+                    'path': path,
+                }
+            )
 
-        # Get untracked files
-        untracked_files = run(
-            'git --no-pager ls-files --others --exclude-standard', repo_dir
-        ).splitlines()
-        for path in untracked_files:
-            if path:
-                changes.append({'status': 'A', 'path': path})
-    except RuntimeError:
-        # Unknown error
-        pass
+    # Get untracked files
+    untracked_files = run(
+        'git --no-pager ls-files --others --exclude-standard', repo_dir
+    ).splitlines()
+    for path in untracked_files:
+        if path:
+            changes.append({'status': 'A', 'path': path})
 
     return changes
 
