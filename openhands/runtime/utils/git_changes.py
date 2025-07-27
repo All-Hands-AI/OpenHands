@@ -79,7 +79,7 @@ def get_changes_in_repo(repo_dir: str) -> list[dict[str, str]]:
         changes = []
         for line in changed_files:
             if not line.strip():
-                continue
+                raise RuntimeError(f'unexpected_value_in_git_diff:{changed_files}')
 
             # Handle different output formats from git diff --name-status
             # Depending on git config, format can be either:
